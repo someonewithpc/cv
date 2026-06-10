@@ -1,0 +1,152 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const THEMES = {
+  light: {
+    fg: '#eee',
+    bg: '#222',
+    accent: 'orange',
+    follows: 'light',
+    name: 'Light Theme',
+    icons: {
+      checked: 'boxicons:sun-filled',
+      unchecked: 'boxicons:sun',
+    },
+  },
+
+  dark: {
+    fg: '#222',
+    bg: '#eee',
+    accent: 'orange',
+    follows: 'dark',
+    name: 'Dark Theme',
+    icons: {
+      checked: 'boxicons:moon-filled',
+      unchecked: 'boxicons:moon',
+    },
+  },
+
+  /* cave: {
+    fg: '#222',
+    bg: '#eee',
+    accent: 'orange',
+    follows: 'dark',
+    name: 'Cave Theme',
+    icons: {
+      checked: 'cave',
+      unchecked: 'cave',
+    },
+  }, */
+};
+
+const THEMES_CSS = `
+${Object.entries({ light: THEMES.light, dark: THEMES.dark }).map(([id, settings]) => (
+  `  @media (prefers-color-scheme: ${id}) {
+    :root:not(:has(#theme-picker input[name="theme"]:checked)) {
+      --base-fg: ${settings.fg};
+      --base-bg: ${settings.bg};
+      --base-accent: ${settings.accent};
+    }
+  }`
+)).join('\n\n')}
+${Object.entries(THEMES).map(([id, settings]) => `
+  :root:has(#theme-picker input[name="theme"][value="${id}"]:checked) {
+    --base-fg: ${settings.fg};
+    --base-bg: ${settings.bg};
+    --base-accent: ${settings.accent};
+    body {
+      color-scheme: only ${settings.follows};
+    }
+  }`).join('\n')}
+`;
+---
+
+<aside id="theme-picker">
+  {Object.entries(THEMES).map(([id, settings], index) => (
+  <>
+    <label class="bypass-contrast-check">
+      <input tabindex="0" type="radio" name="theme" value={id} class="sr-only" />
+      <Icon name={settings.icons.unchecked} class="unchecked" />
+      <Icon name={settings.icons.checked} class="checked" />
+      <span>{settings.name}</span>
+    </label>
+  </>
+  ))}
+</aside>
+
+<style lang="scss">
+aside {
+  padding: 0.75em;
+  $border: 2px solid var(--accent-600);
+  border-left: $border;
+  border-bottom: $border;
+  border-bottom-left-radius: 1em;
+
+  display: inline-block;
+  position: fixed;
+  right: 0;
+  top: 0;
+
+  color: var(--fg-500);
+  background: var(--bg-850);
+
+  &:hover, &:focus-within {
+    color: var(--fg-800);
+    background: var(--bg-875);
+  }
+
+  label {
+    cursor: pointer;
+
+    &:focus-within {
+      outline: 1px solid var(--fg-850);
+    }
+
+    display: flex block;
+    align-items: center;
+    gap: 1ch;
+
+    svg {
+      display: none;
+    }
+
+    &:has(input[name="theme"]:checked) svg.checked {
+      display: revert;
+    }
+
+    &:has(input[name="theme"]:not(:checked)) svg.unchecked {
+      display: revert;
+    }
+  }
+}
+</style>
+
+<style is:global set:html={THEMES_CSS} />
+
+<style is:global lang="scss">
+@use "sass:map";
+@use "sass:math";
+@use 'sass:list';
+
+$weights: 100, 200, 300, 400, 500, 600, 700, 800, 825, 850, 875, 900;
+$min-weight: list.nth($weights, 1);
+$max-weight: list.nth($weights, -1);
+
+:root {
+  @each $weight in $weights {
+    $percent: #{math.div(($weight - $min-weight), ($max-weight - $min-weight)) * 100%};
+
+    --fg-#{$weight}: color-mix(in oklab, var(--base-fg), var(--base-bg) #{$percent});
+    --bg-#{$weight}: color-mix(in oklab, var(--base-bg), var(--base-fg) #{$percent});
+    --accent-#{$weight}: color-mix(in oklab, var(--base-bg), var(--base-accent) #{$percent});
+  }
+
+  color-scheme: light dark;
+
+  body {
+    color: var(--fg-900);
+    background: var(--bg-900);
+    accent-color: var(--accent-900);
+  }
+}
+</style>
