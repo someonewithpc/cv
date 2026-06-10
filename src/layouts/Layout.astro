@@ -1,23 +1,83 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" href="/favicon.ico" />
+        <title>Hugo Sales' CV</title>
+    </head>
+    <body>
+        <slot />
+    </body>
 </html>
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
+<style lamg="scss" is:global>
+/* No list-markers by default, since lists are used more often for semantics */
+ul, ol {
+  list-style: none;
+}
+
+/* Avoid browser default inconsistent heading font-sizes */
+h1, h2, h3, h4, h5, h6, pre, code {
+  font-size: 1em;
+}
+
+/* Remove the inconsistent (among browsers) default ul,ol padding or margin  */
+/* the default spacing on headings does not match nor align with normal interline spacing at all, so let's get rid of it. */
+/* zero out the spacing around pre, form, body, html, p, blockquote as well */
+/* form elements are oddly inconsistent, and not quite CSS emulatable. */
+/*  nonetheless strip their margin and padding as well */
+ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, body, html, p, blockquote, fieldset, input, textarea, figure {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* Whoever thought blue linked image borders were a good idea? */
+a img,
+:link img,
+:visited img {
+  border: none;
+}
+
+address {
+  font-style: normal;
+}
+
+input {
+  font: inherit;
+  border-color: currentColor;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+<style is:global>
+.sr-only {
+  position: absolute;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  border: none;
+  outline: none;
+  overflow: hidden;
+}
+
+.bypass-contrast-check {
+  background-image: linear-gradient(transparent, transparent);
+}
+
+.inline {
+  display: inline;
+}
+
+.block {
+  display: block;
+}
 </style>
