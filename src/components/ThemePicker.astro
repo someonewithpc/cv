@@ -42,7 +42,7 @@ const THEMES = {
 const THEMES_CSS = `
 ${Object.entries({ light: THEMES.light, dark: THEMES.dark }).map(([id, settings]) => (
   `  @media (prefers-color-scheme: ${id}) {
-    :root:not(:has(#theme-picker input[name="theme"]:checked)) {
+    :root:not(:has(#theme-picker input[name="theme"]:is(:not(.with-transition):checked, .with-transition.checked))) {
       --base-fg: ${settings.fg};
       --base-bg: ${settings.bg};
       --base-accent: ${settings.accent};
@@ -50,7 +50,7 @@ ${Object.entries({ light: THEMES.light, dark: THEMES.dark }).map(([id, settings]
   }`
 )).join('\n\n')}
 ${Object.entries(THEMES).map(([id, settings]) => `
-  :root:has(#theme-picker input[name="theme"][value="${id}"]:checked) {
+  :root:has(#theme-picker input[name="theme"][value="${id}"]:is(:not(.with-transition):checked, .with-transition.checked)) {
     --base-fg: ${settings.fg};
     --base-bg: ${settings.bg};
     --base-accent: ${settings.accent};
@@ -147,6 +147,33 @@ $max-weight: list.nth($weights, -1);
     color: var(--fg-900);
     background: var(--bg-900);
     accent-color: var(--accent-900);
+
+    &.theme-transition {
+      view-transition-name: theme-transition;
+    }
   }
 }
+
+::view-transition-group(theme-transition) {
+  animation-duration: 1s;
+}
 </style>
+
+<script>
+const inputs = [...document.querySelectorAll('#theme-picker input')];
+inputs.forEach((inputEl) => {
+  inputEl.classList.add('with-transition');
+  inputEl.addEventListener('input', (e) => {
+    document.body.classList.add('theme-transition');
+    document.startViewTransition({
+      types: ['theme-transition'],
+      update() {
+        inputs.forEach((input) => input.classList.remove('checked'));
+        inputEl.classList.add('checked');
+      },
+    }).finished.then(() => {
+      document.body.classList.remove('theme-transition');
+    });
+  }, { passive: true });
+});
+</script>
