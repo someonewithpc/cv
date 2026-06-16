@@ -8,6 +8,7 @@ const THEMES = {
     accent: 'orange',
     follows: 'light',
     name: 'Light Theme',
+    transitionScaleFactor: 2.4,
     icons: {
       checked: 'boxicons:sun-filled',
       unchecked: 'boxicons:sun',
@@ -20,6 +21,7 @@ const THEMES = {
     accent: 'orange',
     follows: 'dark',
     name: 'Dark Theme',
+    transitionScaleFactor: 1.2,
     icons: {
       checked: 'boxicons:moon-filled',
       unchecked: 'boxicons:moon',
@@ -69,7 +71,7 @@ ${Object.entries(THEMES).map(([id, settings]) => `
     <label class="bypass-contrast-check">
       <input tabindex="0" type="radio" name="theme" value={id} class="sr-only" />
       <Icon name={settings.icons.unchecked} class="unchecked" />
-      <Icon name={settings.icons.checked} class="checked" />
+      <Icon name={settings.icons.checked} class="checked" data-theme-transition-scale-factor={settings.transitionScaleFactor} />
       <span>{settings.name}</span>
     </label>
   </>
@@ -134,8 +136,6 @@ $weights: 100, 200, 300, 400, 500, 600, 700, 800, 825, 850, 875, 900;
 $min-weight: list.nth($weights, 1);
 $max-weight: list.nth($weights, -1);
 
-$theme-transition-animation-duration: 1s;
-
 :root {
   @each $weight in $weights {
     $percent: #{math.div(($weight - $min-weight), ($max-weight - $min-weight)) * 100%};
@@ -155,32 +155,13 @@ $theme-transition-animation-duration: 1s;
     &.theme-transition {
       view-transition-name: theme-transition;
     }
+
+    @at-root ::view-transition-group(theme-transition) {
+      animation: none;
+    }
   }
 }
 
-@keyframes circle-mask {
-  from {
-    clip-path: circle(
-      calc(hypot(var(--theme-transition-circle-mask-width, 0px), var(--theme-transition-circle-mask-height, 0px)))
-      at var(--theme-transition-circle-mask-center-x, top) var(--theme-transition-circle-mask-center-y, right)
-    );
-  }
-
-  to {
-    clip-path: circle(
-      calc(hypot(100vw - var(--theme-transition-circle-mask-width, 0px), 100vh - var(--theme-transition-circle-mask-height, 0px)))
-      at var(--theme-transition-circle-mask-center-x, top) var(--theme-transition-circle-mask-center-y, right)
-    );
-  }
-}
-
-::view-transition-old(theme-transition) {
-  animation: none;
-}
-
-::view-transition-new(theme-transition) {
-  animation: $theme-transition-animation-duration ease-in forwards circle-mask;
-}
 
 #theme-picker-transition-background {
   position: absolute;
@@ -191,6 +172,12 @@ $theme-transition-animation-duration: 1s;
 </style>
 
 <script>
+import { transformPath, pathDataToString } from '../scripts/svg-utils';
+
+if (!('getPathData' in SVGPathElement)) {
+  await import('path-data-polyfill');
+}
+
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 if (!prefersReducedMotion.matches) {
@@ -199,27 +186,45 @@ if (!prefersReducedMotion.matches) {
     inputEl.classList.add('with-transition');
     inputEl.addEventListener('input', (e) => {
       document.body.classList.add('theme-transition');
-      document.startViewTransition({
+      const viewTransition = document.startViewTransition({
         types: ['theme-transition'],
         update() {
           inputs.forEach((input) => input.classList.remove('checked'));
           inputEl.classList.add('checked');
-
-          const svg = e.target.parentElement.querySelector('svg.checked');
-          const rect = svg.getBoundingClientRect();
-          document.documentElement.style.setProperty('--theme-transition-circle-mask-center-x', `${rect.x + rect.width / 2}px`);
-          document.documentElement.style.setProperty('--theme-transition-circle-mask-center-y', `${rect.y + rect.height / 2}px`);
-          document.documentElement.style.setProperty('--theme-transition-circle-mask-width', `${rect.width}px`);
-          document.documentElement.style.setProperty('--theme-transition-circle-mask-height', `${rect.height}px`);
-
-          console.debug(rect);
         },
-      }).finished.then(() => {
+      });
+
+      viewTransition.ready.then((val) => {
+        const svg = e.target.parentElement.querySelector('svg.checked');
+        const rect = svg.getBoundingClientRect();
+
+        const symbol = svg.querySelector('symbol');
+        const viewBox = symbol.viewBox.baseVal;
+
+        const path = svg.querySelector('path');
+        const pathData = path.getPathData();
+
+        const scaleFactor = +(svg.dataset.themeTransitionScaleFactor ?? '1');
+        const size = Math.hypot(window.innerWidth, window.innerHeight) * scaleFactor;
+
+        const startPathData = transformPath(pathData, viewBox, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+        const endPathData = transformPath(pathData, viewBox, { x: rect.x - size, y: rect.y - size, width: size * 2, height: size * 2 });
+
+        document.documentElement.animate(
+          [
+            { clipPath: `path("${pathDataToString(startPathData)}")` },
+            { clipPath: `path("${pathDataToString(endPathData)}")` },
+          ],
+          {
+            duration: 500,
+            easing: 'ease-in',
+            pseudoElement: '::view-transition-new(theme-transition)',
+          },
+        );
+      });
+
+      viewTransition.finished.then(() => {
         document.body.classList.remove('theme-transition');
-        document.documentElement.style.removeProperty('--theme-transition-circle-mask-center-x');
-        document.documentElement.style.removeProperty('--theme-transition-circle-mask-center-y');
-        document.documentElement.style.removeProperty('--theme-transition-circle-mask-width');
-        document.documentElement.style.removeProperty('--theme-transition-circle-mask-height');
       });
     }, { passive: true });
   });
