@@ -1,0 +1,61 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const tags = [
+  { icon: 'devicon:javascript', text: 'JavaScript' },
+  { icon: 'devicon:typescript', text: 'TypeScript' },
+  { icon: 'devicon:cplusplus', text: 'C++' },
+  { icon: 'devicon-plain:bash', text: 'Bash' },
+  { icon: 'devicon:docker', text: 'Docker' },
+  { icon: 'devicon:postgresql', text: 'PostgreSQL' },
+  { icon: 'devicon:mysql', text: 'MySQL' },
+  { icon: 'devicon:ruby', text: 'Ruby' },
+  { icon: 'devicon:php', text: 'PHP' },
+  { icon: 'devicon:haskell', text: 'Haskell' },
+  { icon: 'devicon:prolog', text: 'Prolog' },
+  { icon: 'devicon:nixos', text: 'Nix' },
+  { icon: 'devicon:java', text: 'Java' },
+  { icon: 'emacs', text: 'Emacs' },
+  { icon: 'devicon:nasm', text: 'Nasm' },
+  { icon: 'devicon:cmake', text: 'CMake' },
+  { icon: 'devicon:vulkan', text: 'Vulkan' },
+  { icon: 'devicon:blender', text: 'Blender' },
+  { icon: 'freecad', text: 'FreeCAD' },
+  { icon: 'devicon:linux', text: 'Linux' },
+  { icon: 'devicon:gcc', text: 'GCC' },
+  { icon: 'kicad', text: 'KiCAD' },
+  { icon: 'svg', text: 'SVG' },
+];
+---
+
+<section>
+  {tags.map(({ icon, text }) => (
+  <span>
+    <Icon name={icon} aria-labelledby={`label-${text}`} is:inline />
+    <pre id={`label-${text}`}>{text}</pre>
+  </span>
+  ))}
+</section>
+
+<style>
+section {
+  display: flex;
+  justify-content: center;
+  max-width: 80ch;
+  margin-inline: auto;
+  gap: 0.5em;
+  flex-wrap: wrap;
+
+  & > span {
+    padding: 0.375em 0.5em;
+    border-radius: 100vh;
+    display: inline flex;
+    gap: 1ch;
+    align-items: center;
+
+    color: var(--fg-900);
+    background-color: var(--bg-850);
+    border: 1px solid var(--accent-600);
+  }
+}
+</style>
