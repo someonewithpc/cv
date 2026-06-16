@@ -12,3 +12,5 @@
   - [ ] More langs and tools
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
+- [ ] Access Keys
+- [ ] ARIA roles
