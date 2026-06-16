@@ -160,20 +160,24 @@ $max-weight: list.nth($weights, -1);
 </style>
 
 <script>
-const inputs = [...document.querySelectorAll('#theme-picker input')];
-inputs.forEach((inputEl) => {
-  inputEl.classList.add('with-transition');
-  inputEl.addEventListener('input', (e) => {
-    document.body.classList.add('theme-transition');
-    document.startViewTransition({
-      types: ['theme-transition'],
-      update() {
-        inputs.forEach((input) => input.classList.remove('checked'));
-        inputEl.classList.add('checked');
-      },
-    }).finished.then(() => {
-      document.body.classList.remove('theme-transition');
-    });
-  }, { passive: true });
-});
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+if (!prefersReducedMotion.matches) {
+  const inputs = [...document.querySelectorAll('#theme-picker input')];
+  inputs.forEach((inputEl) => {
+    inputEl.classList.add('with-transition');
+    inputEl.addEventListener('input', (e) => {
+      document.body.classList.add('theme-transition');
+      document.startViewTransition({
+        types: ['theme-transition'],
+        update() {
+          inputs.forEach((input) => input.classList.remove('checked'));
+          inputEl.classList.add('checked');
+        },
+      }).finished.then(() => {
+        document.body.classList.remove('theme-transition');
+      });
+    }, { passive: true });
+  });
+}
 </script>
