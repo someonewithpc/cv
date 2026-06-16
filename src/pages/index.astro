@@ -3,11 +3,26 @@ import Layout from '../layouts/Layout.astro';
 
 import Name from '../components/Name.astro';
 import TagCloud from '../components/TagCloud.astro';
+import MarkerEditorPreview from '../components/MarkerEditor/Preview.astro';
 ---
 
 <Layout>
     <main>
       <Name />
       <TagCloud />
+
+      <section id="demos">
+        <MarkerEditorPreview />
+      </section>
     </main>
 </Layout>
+
+<style>
+#demos {
+  margin-top: 8rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+</style>

@@ -14,3 +14,7 @@
   - [ ] Filter?
 - [ ] Access Keys
 - [ ] ARIA roles
+- [ ] Demos
+  - [ ] Visrez animated icon
+  - [ ] Visrez marker editor
+  - [ ] Own theme picker
