@@ -160,11 +160,17 @@ $theme-transition-animation-duration: 1s;
 
 @keyframes circle-mask {
   from {
-    clip-path: circle(0px at top right);
+    clip-path: circle(
+      calc(hypot(var(--theme-transition-circle-mask-width, 0px), var(--theme-transition-circle-mask-height, 0px)))
+      at var(--theme-transition-circle-mask-center-x, top) var(--theme-transition-circle-mask-center-y, right)
+    );
   }
 
   to {
-    clip-path: circle(calc(hypot(100vw, 100vh)) at top right);
+    clip-path: circle(
+      calc(hypot(100vw - var(--theme-transition-circle-mask-width, 0px), 100vh - var(--theme-transition-circle-mask-height, 0px)))
+      at var(--theme-transition-circle-mask-center-x, top) var(--theme-transition-circle-mask-center-y, right)
+    );
   }
 }
 
@@ -173,7 +179,7 @@ $theme-transition-animation-duration: 1s;
 }
 
 ::view-transition-new(theme-transition) {
-  animation: $theme-transition-animation-duration ease-in-out forwards circle-mask;
+  animation: $theme-transition-animation-duration ease-in forwards circle-mask;
 }
 
 #theme-picker-transition-background {
@@ -198,9 +204,22 @@ if (!prefersReducedMotion.matches) {
         update() {
           inputs.forEach((input) => input.classList.remove('checked'));
           inputEl.classList.add('checked');
+
+          const svg = e.target.parentElement.querySelector('svg.checked');
+          const rect = svg.getBoundingClientRect();
+          document.documentElement.style.setProperty('--theme-transition-circle-mask-center-x', `${rect.x + rect.width / 2}px`);
+          document.documentElement.style.setProperty('--theme-transition-circle-mask-center-y', `${rect.y + rect.height / 2}px`);
+          document.documentElement.style.setProperty('--theme-transition-circle-mask-width', `${rect.width}px`);
+          document.documentElement.style.setProperty('--theme-transition-circle-mask-height', `${rect.height}px`);
+
+          console.debug(rect);
         },
       }).finished.then(() => {
         document.body.classList.remove('theme-transition');
+        document.documentElement.style.removeProperty('--theme-transition-circle-mask-center-x');
+        document.documentElement.style.removeProperty('--theme-transition-circle-mask-center-y');
+        document.documentElement.style.removeProperty('--theme-transition-circle-mask-width');
+        document.documentElement.style.removeProperty('--theme-transition-circle-mask-height');
       });
     }, { passive: true });
   });
