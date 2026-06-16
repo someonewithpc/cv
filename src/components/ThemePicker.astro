@@ -164,7 +164,7 @@ $max-weight: list.nth($weights, -1);
 
 
 #theme-picker-transition-background {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: var(--bg-900);
   z-index: -1;
@@ -207,8 +207,8 @@ if (!prefersReducedMotion.matches) {
         const scaleFactor = +(svg.dataset.themeTransitionScaleFactor ?? '1');
         const size = Math.hypot(window.innerWidth, window.innerHeight) * scaleFactor;
 
-        const startPathData = transformPath(pathData, viewBox, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
-        const endPathData = transformPath(pathData, viewBox, { x: rect.x - size, y: rect.y - size, width: size * 2, height: size * 2 });
+        const startPathData = transformPath(pathData, viewBox, { x: rect.x, y: rect.y + window.scrollY, width: rect.width, height: rect.height });
+        const endPathData = transformPath(pathData, viewBox, { x: rect.x - size, y: rect.y - size + window.scrollY, width: size * 2, height: size * 2 });
 
         document.documentElement.animate(
           [
