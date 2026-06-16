@@ -61,6 +61,8 @@ ${Object.entries(THEMES).map(([id, settings]) => `
 `;
 ---
 
+<div id="theme-picker-transition-background" />
+
 <aside id="theme-picker">
   {Object.entries(THEMES).map(([id, settings], index) => (
   <>
@@ -132,6 +134,8 @@ $weights: 100, 200, 300, 400, 500, 600, 700, 800, 825, 850, 875, 900;
 $min-weight: list.nth($weights, 1);
 $max-weight: list.nth($weights, -1);
 
+$theme-transition-animation-duration: 1s;
+
 :root {
   @each $weight in $weights {
     $percent: #{math.div(($weight - $min-weight), ($max-weight - $min-weight)) * 100%};
@@ -154,8 +158,29 @@ $max-weight: list.nth($weights, -1);
   }
 }
 
-::view-transition-group(theme-transition) {
-  animation-duration: 1s;
+@keyframes circle-mask {
+  from {
+    clip-path: circle(0px at top right);
+  }
+
+  to {
+    clip-path: circle(calc(hypot(100vw, 100vh)) at top right);
+  }
+}
+
+::view-transition-old(theme-transition) {
+  animation: none;
+}
+
+::view-transition-new(theme-transition) {
+  animation: $theme-transition-animation-duration ease-in-out forwards circle-mask;
+}
+
+#theme-picker-transition-background {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-900);
+  z-index: -1;
 }
 </style>
 
