@@ -6,7 +6,15 @@ import TagCloud from '../components/TagCloud.astro';
 
 import TechnicalDrawing from '../components/TechnicalDrawing.astro';
 
+import VisrezLogoAnimation from '../components/VisrezLogoAnimation/Demo.astro';
+import VisrezLogoAnimationRaw from '../components/VisrezLogoAnimation/Result.astro?raw';
 import MarkerEditorPreview from '../components/MarkerEditor/Preview.astro';
+
+function toKiB(text: string) {
+  return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';
+}
+
+const visrezLogoAnimationSize = toKiB(VisrezLogoAnimationRaw);
 ---
 
 <Layout>
@@ -16,7 +24,12 @@ import MarkerEditorPreview from '../components/MarkerEditor/Preview.astro';
 
       <section id="demos">
 
-        <TechnicalDrawing />
+        <TechnicalDrawing
+          title="Visrez Animated Loading Logo"
+          scale="3:1"
+          size={visrezLogoAnimationSize}
+          date="2023"
+        />
 
         <MarkerEditorPreview />
       </section>
