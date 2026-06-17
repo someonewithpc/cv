@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created by Redrose64 for Wikipedia -->
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
+  <title>First Angle Projection</title>
+  <g stroke="currentColor" stroke-width="5" stroke-dasharray="35,5,5,5" stroke-dashoffset="17.5">
+    <line x1="0" y1="50" x2="200" y2="50" />
+    <line x1="50" y1="0" x2="50" y2="100" />
+  </g>
+  <g stroke="currentColor" stroke-width="7" fill="none">
+    <polygon points="110,10 190,30 190,70 110,90" />
+    <circle cx="50" cy="50" r="20" />
+    <circle cx="50" cy="50" r="40" />
+  </g>
+</svg>

@@ -1,0 +1,37 @@
+---
+const { width } = Astro.props;
+---
+
+<svg viewBox="-1 -1 2 2" xmlns="http://www.w3.org/2000/svg" width={width}>
+  <style>
+    @keyframes visrez-logo-path-dash-animation {
+      from {
+        stroke-dashoffset: -1;
+      }
+      85%, to {
+        stroke-dashoffset: 1;
+      }
+    }
+  </style>
+  <g transform="translate(0, 0.2) scale(.707)">
+    <linearGradient id="visrez-linear-gradient" x1="-0.6" y1="0.4242" x2="0.6" y2="-0.4242">
+      <stop stop-color="#0027C2" offset="0" />
+      <stop stop-color="#224A95" offset=".163" />
+      <stop stop-color="#477066" offset=".362" />
+      <stop stop-color="#638D40" offset=".552" />
+      <stop stop-color="#78A325" offset=".726" />
+      <stop stop-color="#85AF15" offset=".881" />
+      <stop stop-color="#89B40F" offset="1" />
+    </linearGradient>
+    <path
+      d="M.6-.42L0 0l-1-.707 1-.707 1 .707v1L0 1l-1-.707V-.2"
+      stroke="url(#visrez-linear-gradient)"
+      stroke-width=".224"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+      pathLength="1"
+      style="stroke-dasharray: 1; animation: visrez-logo-path-dash-animation 4s linear forwards infinite;"
+    />
+  </g>
+</svg>
