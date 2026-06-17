@@ -1,0 +1,199 @@
+---
+import range from 'lodash/range';
+
+const BORDER_ROWS = 16;
+const BORDER_COLS = 16;
+---
+
+<article>
+  <table class="frame-container" role="presentation">
+    <tr class="frame-top">
+      {range(BORDER_COLS).map((i) => (
+        <td>{i}</td>
+      ))}
+    </tr>
+    <tr class="frame-left">
+      {range(BORDER_ROWS).map((i) => (
+        <td>{String.fromCharCode(i + 'A'.charCodeAt(0))}</td>
+      ))}
+    </tr>
+    <tr class="frame-bottom">
+      {range(BORDER_COLS).map((i) => (
+      <td>{i}</td>
+      ))}
+    </tr>
+    <tr class="frame-right">
+      {range(BORDER_ROWS).map((i) => (
+        <td>{String.fromCharCode(i + 'A'.charCodeAt(0))}</td>
+      ))}
+    </tr>
+    <tr class="bottom-right-corner" />
+  </table>
+
+  <section>
+
+  </section>
+</article>
+
+<style lang="scss">
+article {
+  width: 64em;
+  height: 32em;
+
+  $border-thickness: 1px;
+  $frame-border-color: var(--fg-900);
+  $frame-width: 5mm;
+  $frame-bg: var(--bg-850);
+
+  background: $frame-bg;
+  color: var(--fg-850);
+  border: $border-thickness solid var(--accent-500);
+  border-radius: 0.5em;
+  padding: 1em;
+
+  .frame-container {
+    isolation: isolate;
+    overflow: clip;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    anchor-name: --frame-container;
+
+    .frame-top, .frame-bottom, .frame-left, .frame-right {
+      position: absolute;
+      width: 100%;
+      height: $frame-width;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+
+      td {
+        z-index: 1;
+        flex-grow: 0;
+        flex-shrink: 0;
+        flex-basis: 1in;
+        text-align: center;
+        border: $border-thickness solid $frame-border-color;
+      }
+    }
+
+    .frame-top, .frame-bottom {
+      margin-left: -#{$border-thickness};
+      td {
+        margin-right: -#{$border-thickness};
+      }
+    }
+
+    .frame-left, .frame-right {
+      margin-top: -#{$border-thickness};
+      td {
+        margin-bottom: -#{$border-thickness};
+      }
+
+      flex-direction: column;
+      width: $frame-width;
+      height: 100%;
+
+      td {
+        align-content: center;
+      }
+    }
+
+    .frame-top { top: 0; }
+    .frame-bottom { bottom: 0; }
+    .frame-left { left: 0; }
+    .frame-right { right: 0; }
+
+    .frame-left :first-child {
+      position: relative;
+      &::before {
+        position: absolute;
+        content: '';
+        left: 0;
+        top: 0;
+
+        width: calc($frame-width - $border-thickness);
+        height: calc($frame-width - $border-thickness);
+        background: $frame-bg;
+      }
+
+      &::after {
+        position: absolute;
+        content: '';
+        left: calc($frame-width - 2 * $border-thickness);
+        top: calc($frame-width - 2 * $border-thickness);
+
+        width: $border-thickness;
+        height: $border-thickness;
+        background: $frame-border-color;
+      }
+    }
+
+    .frame-bottom :first-child {
+      position: relative;
+      &::before {
+        position: absolute;
+        content: '';
+        left: 0;
+        top: -#{$border-thickness};
+
+        width: calc($frame-width - $border-thickness);
+        height: calc($frame-width);
+        background: $frame-bg;
+      }
+
+      &::after {
+        position: absolute;
+        content: '';
+        left: calc($frame-width - 2 * $border-thickness);
+        bottom: calc($frame-width - 2 * $border-thickness);
+
+        width: $border-thickness;
+        height: $border-thickness;
+        background: $frame-border-color;
+      }
+    }
+
+    .frame-right :first-child {
+      position: relative;
+      &::before {
+        box-sizing: content-box;
+        position: absolute;
+        content: '';
+        left: -#{$border-thickness};
+        top: 0;
+
+        width: calc($frame-width);
+        height: calc($frame-width - 2 * $border-thickness);
+        background: $frame-bg;
+        border-bottom: $border-thickness dashed $frame-border-color;
+      }
+    }
+
+    .bottom-right-corner {
+      &::before {
+        position-anchor: --frame-container;
+        position: fixed;
+        content: '';
+
+        z-index: 2;
+        position-area: bottom right;
+
+        transform: translate(calc(-1 * ($frame-width + $border-thickness)), calc(-1 * ($frame-width + $border-thickness)));
+
+        width: calc($frame-width + $border-thickness);
+        height: calc($frame-width + $border-thickness);
+        background: $frame-bg;
+      }
+    }
+  }
+
+
+  section {
+    background: var(--bg-800);
+    margin: $frame-width;
+    width: calc(100% - 2 * #{$frame-width});
+    height: calc(100% - 2 * #{$frame-width});
+  }
+}
+</style>
