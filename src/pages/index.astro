@@ -3,6 +3,9 @@ import Layout from '../layouts/Layout.astro';
 
 import Name from '../components/Name.astro';
 import TagCloud from '../components/TagCloud.astro';
+
+import TechnicalDrawing from '../components/TechnicalDrawing.astro';
+
 import MarkerEditorPreview from '../components/MarkerEditor/Preview.astro';
 ---
 
@@ -12,6 +15,9 @@ import MarkerEditorPreview from '../components/MarkerEditor/Preview.astro';
       <TagCloud />
 
       <section id="demos">
+
+        <TechnicalDrawing />
+
         <MarkerEditorPreview />
       </section>
     </main>
@@ -24,5 +30,6 @@ import MarkerEditorPreview from '../components/MarkerEditor/Preview.astro';
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 4em;
 }
 </style>
