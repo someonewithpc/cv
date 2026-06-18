@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from '@/layouts/Layout.astro';
 
-import Name from '../components/Name.astro';
-import TagCloud from '../components/TagCloud.astro';
+import Name from '@/components/Name.astro';
+import TagCloud from '@/components/TagCloud.astro';
 
-import TechnicalDrawing from '../components/TechnicalDrawing.astro';
+import TechnicalDrawing from '@/components/TechnicalDrawing.astro';
 
-import VisrezLogoAnimation from '../components/VisrezLogoAnimation/Demo.astro';
-import VisrezLogoAnimationRaw from '../components/VisrezLogoAnimation/Result.astro?raw';
-import MarkerEditorPreview from '../components/MarkerEditor/Preview.astro';
+import VisrezLogoAnimation from '@/components/VisrezLogoAnimation/Demo.astro';
+import VisrezLogoAnimationRaw from '@/components/VisrezLogoAnimation/Result.astro?raw';
+import MarkerEditorPreview from '@/components/MarkerEditor/Preview.astro';
 
 function toKiB(text: string) {
   return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';

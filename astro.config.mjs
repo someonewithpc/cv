@@ -1,4 +1,6 @@
 // @ts-check
+import path from "path";
+
 import { defineConfig } from 'astro/config';
 
 import icon from 'astro-icon';
@@ -10,6 +12,11 @@ export default defineConfig({
   integrations: [icon()],
 
   vite: {
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.url, "./src"),
+      },
+    },
     css: {
       transformer: "lightningcss",
       lightningcss: {

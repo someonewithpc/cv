@@ -172,7 +172,7 @@ $max-weight: list.nth($weights, -1);
 </style>
 
 <script>
-import { transformPath, pathDataToString } from '../scripts/svg-utils';
+import { transformPath, pathDataToString } from '@/scripts/svg-utils';
 
 if (!('getPathData' in SVGPathElement)) {
   await import('path-data-polyfill');
