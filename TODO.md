@@ -18,3 +18,14 @@
   - [ ] Visrez animated icon
   - [ ] Visrez marker editor
   - [ ] Own theme picker
+- [ ] TechnicalDrawing
+  - [ ] Paper texture
+  - [ ] Page flip animation
+    - [ ] Look through Turn.js
+  - [ ] Carousel
+    - [ ] Turned paper corners
+    - [ ] Navigation
+    - [ ] CSS-only when supported?
+    - [ ] Page indicator
+  - [ ] Anotations
+- [ ] Scroll animation stacking demos
