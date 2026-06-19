@@ -5,11 +5,14 @@
   - [ ] Forrest light theme
   - [ ] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
   - [ ] Collapse after delay (prefers-reduced-motion)
-  - [x] SVG icon in light mode broken
-  - [ ] Some icons not very visible in dark mode
   - [ ] Avoid transition to already active theme
 - [ ] Tags
+  - [x] SVG icon in light mode broken
   - [ ] More langs and tools
+    - [ ] Mold
+    - [ ] Better clang
+    - [ ] Make
+  - [ ] Some icons not very visible in dark mode
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
 - [ ] Access Keys
@@ -29,3 +32,4 @@
     - [ ] Page indicator
   - [ ] Anotations
 - [ ] Scroll animation stacking demos
+- [ ] Section divider with ripper paper effect
