@@ -1,5 +1,5 @@
 ---
-import TechnicalDrawing from '@/components/TechnicalDrawing.astro';
+import TechnicalDrawingStack from '@/components/TechnicalDrawingStack.astro';
 import Result from './Result.astro';
 import VisrezLogoAnimationRaw from './Result.astro?raw';
 
@@ -10,14 +10,15 @@ function toKiB(text: string) {
 const visrezLogoAnimationSize = toKiB(VisrezLogoAnimationRaw);
 ---
 
-<TechnicalDrawing
-  title="Visrez Animated Loading Logo"
+<TechnicalDrawingStack
+  subtitle="Visrez Animated Loading Logo"
   scale="3:1"
   size={visrezLogoAnimationSize}
   date="2023"
   layers={{
-    main: 'Result',
+    main: null,
     original: 'Original Logo',
+    cube: 'Cube :)',
   }}
 >
   <fragment
@@ -25,7 +26,8 @@ const visrezLogoAnimationSize = toKiB(VisrezLogoAnimationRaw);
   >
     {(layer) => ({
       main: (<Result />),
-      yo: (<Result />),
+      original: (<>Demo blah blah</>),
+      cube: (<>Cube</>),
     }[layer])}
   </fragment>
-</TechnicalDrawing>
+</TechnicalDrawingStack>
