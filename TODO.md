@@ -12,6 +12,7 @@
     - [ ] Mold
     - [ ] Better clang
     - [ ] Make
+    - [ ] Lisp
   - [ ] Some icons not very visible in dark mode
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
@@ -23,12 +24,14 @@
   - [ ] Own theme picker
 - [ ] TechnicalDrawing
   - [ ] Paper texture
+  - [ ] CSS Houdini grid border?
   - [ ] Page flip animation
     - [ ] Look through Turn.js
   - [ ] Carousel
-    - [ ] Turned paper corners
+    - [~] CSS-only when supported?
+    - [ ] Fallback when CSS-only unsupported?
+    - [ ] Turned paper corners/dogear
     - [ ] Navigation
-    - [ ] CSS-only when supported?
     - [ ] Page indicator
   - [ ] Anotations
 - [ ] Scroll animation stacking demos

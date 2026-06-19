@@ -1,0 +1,92 @@
+---
+import TechnicalDrawing from './TechnicalDrawing.astro';
+
+const { layers = {} } = Astro.props;
+const totalLayers = Object.keys(layers).length;
+---
+
+<article>
+  {Object.entries(layers).map(([id, name], index) => (
+    <TechnicalDrawing
+      title={name}
+      subtitle={Astro.props.subtitle}
+      scale={Astro.props.scale}
+      size={Astro.props.size}
+      date={Astro.props.date}
+      index={index + 1}
+      layerCount={totalLayers}
+    >
+      <Fragment slot="content">
+        {Astro.slots.render('layers', [id])}
+      </Fragment>
+    </TechnicalDrawing>
+  ))}
+
+    <!-- {Object.keys(layers).length > 1 && (
+  <nav class="layers">
+    <ol class="monospace">
+      {Object.entries(layers).map(([id, name], index) => (
+      <a href="#">
+              <li>
+                <span>{index + 1}</span>
+                <span>{name}</span>
+              </li>
+            </a>
+            ))}
+        </ol>
+      </nav>
+      )} -->
+</article>
+
+
+<style lang="scss">
+article {
+  width: 64em;
+  height: 32em;
+
+  $padding: 1em;
+  background: var(--bg-850);
+  color: var(--fg-850);
+  border: 1px solid var(--accent-500);
+  border-radius: 0.5em;
+  padding: $padding;
+
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+
+  display: flex;
+  flex-direction: row;
+  gap: $padding;
+
+  anchor-name: --technical-drawing-stack;
+  anchor-scope: --technical-drawing-stack;
+
+  :global(> *) {
+    flex-shrink: 0;
+    flex-basis: 100%;
+    scroll-snap-align: center;
+  }
+
+  &::scroll-button(*) {
+    position-anchor: --technical-drawing-stack;
+    position: absolute;
+  }
+
+  &::scroll-button(left) {
+    content: "⬅" / "Scroll Left";
+    left: calc(anchor(left));
+  }
+
+  &::scroll-button(right) {
+    content: "⮕" / "Scroll Right";
+    right: calc(anchor(right));
+  }
+
+  &::scroll-button(*):focus-visible {
+    outline-offset: 5px;
+  }
+
+}
+</style>
