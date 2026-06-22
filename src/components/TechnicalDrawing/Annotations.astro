@@ -1,63 +1,10 @@
 ---
-const corners = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
+import { roundedCorners } from '@/server/svg-utils';
 
+const vertices = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
 const radius = 0.5;
 
-function length(p0, p1) {
-  return Math.hypot(p0.x - p1.x, p0.y - p1.y);
-}
-
-function subtract(p0, p1) {
-  return { x: p1.x - p0.x, y: p1.y - p0.y };
-}
-
-function crossProduct(p0, p1) {
-  return p0.x * p1.x + p0.y * p1.y;
-}
-
-function alongLine(p0, p1, distance) {
-  const l = length(p0, p1);
-  const x = p0.x + (p1.x - p0.x) / l * distance;
-  const y = p0.y + (p1.y - p0.y) / l * distance;
-
-  return {
-    x: Math.round(x * 1000) / 1000,
-    y: Math.round(y * 1000) / 1000,
-  };
-}
-
-function medianAngle(p0, p1, p2) {
-  const a = subtract(p1, p0);
-  const b = subtract(p1, p2);
-
-  return Math.acos(crossProduct(a, b) / (length(p1, p0) * length(p1, p2))) / 2;
-}
-
-const leftStart = alongLine(corners[0], corners[1], radius);
-const leftEnd = alongLine(corners[1], corners[0], radius);
-
-const leftBottomRoundedRadius = Math.tan(medianAngle(corners[0], corners[1], corners[2])) * radius;
-
-const bottomStart = alongLine(corners[1], corners[2], radius);
-const bottomEnd = alongLine(corners[2], corners[1], radius);
-
-const bottomTopRoundedRadius = Math.tan(medianAngle(corners[1], corners[2], corners[0])) * radius;
-
-const topStart = alongLine(corners[2], corners[0], radius);
-const topEnd = alongLine(corners[0], corners[2], radius);
-
-const topLeftRoundedRadius = Math.tan(medianAngle(corners[2], corners[0], corners[1])) * radius;
-
-const arrowPathD = [
-  `M ${leftStart.x}, ${leftStart.y}`,
-  `L ${leftEnd.x}, ${leftEnd.y}`,
-  `A ${leftBottomRoundedRadius} ${leftBottomRoundedRadius} 0 0 0 ${bottomStart.x} ${bottomStart.y}`,
-  `L ${bottomEnd.x}, ${bottomEnd.y}`,
-  `A ${bottomTopRoundedRadius} ${bottomTopRoundedRadius} 0 0 0 ${topStart.x} ${topStart.y}`,
-  `L ${topEnd.x}, ${topEnd.y}`,
-  `A ${topLeftRoundedRadius} ${topLeftRoundedRadius} 0 0 0 ${leftStart.x} ${leftStart.y}`,
-  `Z`,
-].join(' ');
+const arrowPathD = roundedCorners(vertices, radius);
 ---
 
 <slot name="content" />
