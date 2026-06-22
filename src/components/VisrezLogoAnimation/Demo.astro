@@ -1,13 +1,19 @@
 ---
-import TechnicalDrawingStack from '@/components/TechnicalDrawingStack.astro';
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import Annotation from '@/components/TechnicalDrawing/Annotation.astro';
+
 import Result from './Result.astro';
 import VisrezLogoAnimationRaw from './Result.astro?raw';
+import OriginalVisrezLogo from './OriginalLogo.astro';
+import OriginalVisrezLogoRaw from './OriginalLogo.astro?raw';
 
 function toKiB(text: string) {
   return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';
 }
 
 const visrezLogoAnimationSize = toKiB(VisrezLogoAnimationRaw);
+const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
 ---
 
 <TechnicalDrawingStack
@@ -16,17 +22,26 @@ const visrezLogoAnimationSize = toKiB(VisrezLogoAnimationRaw);
   size={visrezLogoAnimationSize}
   date="2023"
   layers={{
-    main: null,
-    original: 'Original Logo',
-    cube: 'Cube :)',
+    main: { name: null, size: visrezLogoAnimationSize },
+    original: { name: 'Original Logo', size: originalVisrezLogoSize },
+    cube: { name: 'Cube :)' },
   }}
 >
   <fragment
     slot="layers"
   >
     {(layer) => ({
-      main: (<Result />),
-      original: (<>Demo blah blah</>),
+      main: (
+        <Result />
+      ),
+      original: (
+        <Annotations>
+          <OriginalVisrezLogo slot="content" style="scale: 0.675" />
+          <Fragment slot="annotations">
+            <path d="M 0.35 -0.5 l 0.5 -0.6" stroke="var(--fg-800)" stroke-width="0.02" />
+          </Fragment>
+        </Annotations>
+      ),
       cube: (<>Cube</>),
     }[layer])}
   </fragment>

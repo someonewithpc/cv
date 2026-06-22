@@ -1,17 +1,17 @@
 ---
-import TechnicalDrawing from './TechnicalDrawing.astro';
+import TechnicalDrawingPage from './Page.astro';
 
 const { layers = {} } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
 
 <article>
-  {Object.entries(layers).map(([id, name], index) => (
-    <TechnicalDrawing
+  {Object.entries(layers).map(([id, { name, size }], index) => (
+    <TechnicalDrawingPage
       title={name}
       subtitle={Astro.props.subtitle}
       scale={Astro.props.scale}
-      size={Astro.props.size}
+      size={size ?? Astro.props.size}
       date={Astro.props.date}
       index={index + 1}
       layerCount={totalLayers}
@@ -19,7 +19,7 @@ const totalLayers = Object.keys(layers).length;
       <Fragment slot="content">
         {Astro.slots.render('layers', [id])}
       </Fragment>
-    </TechnicalDrawing>
+    </TechnicalDrawingPage>
   ))}
 
     <!-- {Object.keys(layers).length > 1 && (
