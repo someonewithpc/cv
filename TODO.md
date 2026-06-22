@@ -22,6 +22,8 @@
   - [ ] Visrez animated icon
   - [ ] Visrez marker editor
   - [ ] Own theme picker
+  - [ ] TechnicalDrawing
+    - [ ] Arrow heads - rounding
 - [ ] TechnicalDrawing
   - [ ] Paper texture
   - [ ] CSS Houdini grid border?

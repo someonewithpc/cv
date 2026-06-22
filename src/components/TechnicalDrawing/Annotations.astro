@@ -7,6 +7,14 @@ function length(p0, p1) {
   return Math.hypot(p0.x - p1.x, p0.y - p1.y);
 }
 
+function subtract(p0, p1) {
+  return { x: p1.x - p0.x, y: p1.y - p0.y };
+}
+
+function crossProduct(p0, p1) {
+  return p0.x * p1.x + p0.y * p1.y;
+}
+
 function alongLine(p0, p1, distance) {
   const l = length(p0, p1);
   const x = p0.x + (p1.x - p0.x) / l * distance;
@@ -18,23 +26,36 @@ function alongLine(p0, p1, distance) {
   };
 }
 
+function medianAngle(p0, p1, p2) {
+  const a = subtract(p1, p0);
+  const b = subtract(p1, p2);
+
+  return Math.acos(crossProduct(a, b) / (length(p1, p0) * length(p1, p2))) / 2;
+}
+
 const leftStart = alongLine(corners[0], corners[1], radius);
 const leftEnd = alongLine(corners[1], corners[0], radius);
+
+const leftBottomRoundedRadius = Math.tan(medianAngle(corners[0], corners[1], corners[2])) * radius;
 
 const bottomStart = alongLine(corners[1], corners[2], radius);
 const bottomEnd = alongLine(corners[2], corners[1], radius);
 
+const bottomTopRoundedRadius = Math.tan(medianAngle(corners[1], corners[2], corners[0])) * radius;
+
 const topStart = alongLine(corners[2], corners[0], radius);
 const topEnd = alongLine(corners[0], corners[2], radius);
+
+const topLeftRoundedRadius = Math.tan(medianAngle(corners[2], corners[0], corners[1])) * radius;
 
 const arrowPathD = [
   `M ${leftStart.x}, ${leftStart.y}`,
   `L ${leftEnd.x}, ${leftEnd.y}`,
-  `C ${corners[1].x}, ${corners[1].y} ${corners[1].x}, ${corners[1].y} ${bottomStart.x}, ${bottomStart.y}`,
+  `A ${leftBottomRoundedRadius} ${leftBottomRoundedRadius} 0 0 0 ${bottomStart.x} ${bottomStart.y}`,
   `L ${bottomEnd.x}, ${bottomEnd.y}`,
-  `C ${corners[2].x}, ${corners[2].y} ${corners[2].x}, ${corners[2].y} ${topStart.x}, ${topStart.y}`,
+  `A ${bottomTopRoundedRadius} ${bottomTopRoundedRadius} 0 0 0 ${topStart.x} ${topStart.y}`,
   `L ${topEnd.x}, ${topEnd.y}`,
-  `C ${corners[0].x}, ${corners[0].y} ${corners[0].x}, ${corners[0].y} ${leftStart.x}, ${leftStart.y}`,
+  `A ${topLeftRoundedRadius} ${topLeftRoundedRadius} 0 0 0 ${leftStart.x} ${leftStart.y}`,
   `Z`,
 ].join(' ');
 ---
@@ -59,11 +80,6 @@ const arrowPathD = [
       />
     </marker>
   </defs>
-
-  <path
-    d={arrowPathD}
-    style="fill: white; fill-rule: evenodd; stroke:none;"
-  />
 
   <slot name="annotations" />
 </svg>
