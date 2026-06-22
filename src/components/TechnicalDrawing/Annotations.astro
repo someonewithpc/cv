@@ -1,0 +1,89 @@
+---
+const corners = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
+
+const radius = 0.5;
+
+function length(p0, p1) {
+  return Math.hypot(p0.x - p1.x, p0.y - p1.y);
+}
+
+function alongLine(p0, p1, distance) {
+  const l = length(p0, p1);
+  const x = p0.x + (p1.x - p0.x) / l * distance;
+  const y = p0.y + (p1.y - p0.y) / l * distance;
+
+  return {
+    x: Math.round(x * 1000) / 1000,
+    y: Math.round(y * 1000) / 1000,
+  };
+}
+
+const leftStart = alongLine(corners[0], corners[1], radius);
+const leftEnd = alongLine(corners[1], corners[0], radius);
+
+const bottomStart = alongLine(corners[1], corners[2], radius);
+const bottomEnd = alongLine(corners[2], corners[1], radius);
+
+const topStart = alongLine(corners[2], corners[0], radius);
+const topEnd = alongLine(corners[0], corners[2], radius);
+
+const arrowPathD = [
+  `M ${leftStart.x}, ${leftStart.y}`,
+  `L ${leftEnd.x}, ${leftEnd.y}`,
+  `C ${corners[1].x}, ${corners[1].y} ${corners[1].x}, ${corners[1].y} ${bottomStart.x}, ${bottomStart.y}`,
+  `L ${bottomEnd.x}, ${bottomEnd.y}`,
+  `C ${corners[2].x}, ${corners[2].y} ${corners[2].x}, ${corners[2].y} ${topStart.x}, ${topStart.y}`,
+  `L ${topEnd.x}, ${topEnd.y}`,
+  `C ${corners[0].x}, ${corners[0].y} ${corners[0].x}, ${corners[0].y} ${leftStart.x}, ${leftStart.y}`,
+  `Z`,
+].join(' ');
+---
+
+<slot name="content" />
+<svg viewBox="-2 -2 4 4">
+  <defs>
+    <marker
+      id="annotation-rounded-arrow"
+      refX="center"
+      refY="center"
+      orient="auto-start-reverse"
+      markerUnits="strokeWidth"
+      markerWidth="4"
+      markerHeight="4"
+      preserveAspectRatio="xMidYMid"
+      viewBox="-1 -1 2 2"
+    >
+      <path
+        d={arrowPathD}
+        style="fill: context-stroke; fill-rule: evenodd; stroke:none;"
+      />
+    </marker>
+  </defs>
+
+  <path
+    d={arrowPathD}
+    style="fill: white; fill-rule: evenodd; stroke:none;"
+  />
+
+  <slot name="annotations" />
+</svg>
+
+<style lang="scss">
+.content {
+  anchor-name: --annotation-target;
+  anchor-scope: --annotation-target;
+}
+
+svg {
+  position-anchor: --annotation-target;
+  position: absolute;
+  left: -50%;
+  top: -50%;
+  height: 200%;
+  width: 200%;
+
+  :global(path) {
+    marker-start: url('#annotation-rounded-arrow');
+  }
+}
+</style>
