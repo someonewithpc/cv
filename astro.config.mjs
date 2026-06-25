@@ -12,7 +12,7 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: {
-        "@": path.resolve(import.meta.url, "./src"),
+        "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
   },
