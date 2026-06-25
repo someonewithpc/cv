@@ -6,7 +6,7 @@ const totalLayers = Object.keys(layers).length;
 ---
 
 <article>
-  {Object.entries(layers).map(([id, { name, size }], index) => (
+  {Object.entries(layers).map(([id, { name, size, pageStyle }], index) => (
     <TechnicalDrawingPage
       title={name}
       subtitle={Astro.props.subtitle}
@@ -15,6 +15,7 @@ const totalLayers = Object.keys(layers).length;
       date={Astro.props.date}
       index={index + 1}
       layerCount={totalLayers}
+      pageStyle={pageStyle}
     >
       <Fragment slot="content">
         {Astro.slots.render('layers', [id])}
