@@ -132,14 +132,6 @@ section {
       border: $border;
       padding: 0.25em;
 
-      @for $i from 1 through 20 {
-        &:nth-child(#{$i}) {
-          --random1: #{math.random() * 2 - 1};
-          --random2: #{math.random() * 2 - 1};
-          --random3: #{math.random() * 2 - 1};
-        }
-      }
-
       header {
         display: inline-block;
         rotate: calc(var(--random1) * 0.75deg);
@@ -170,6 +162,17 @@ section {
         span, svg {
           margin-inline: auto;
         }
+      }
+    }
+  }
+
+
+  @for $i from 1 through 20 {
+    @for $j from 1 through 20 {
+      &:nth-child(#{$i}) td:nth-child(#{$j}) {
+        --random1: #{math.random() * 2 - 1};
+        --random2: #{math.random() * 2 - 1};
+        --random3: #{math.random() * 2 - 1};
       }
     }
   }
