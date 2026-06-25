@@ -1,0 +1,18 @@
+@use "sass:map";
+@use "sass:math";
+@use 'sass:list';
+
+$weights: 100, 200, 300, 400, 500, 600, 700, 800, 825, 850, 875, 900;
+$min-weight: list.nth($weights, 1);
+$max-weight: list.nth($weights, -1);
+
+@mixin color-variables {
+  @each $weight in $weights {
+    $percent: #{math.div(($weight - $min-weight), ($max-weight - $min-weight)) * 100%};
+
+    --fg-#{$weight}: color-mix(in oklab, var(--base-fg), var(--base-bg) #{$percent});
+    --bg-#{$weight}: color-mix(in oklab, var(--base-bg), var(--base-fg) #{$percent});
+    --accent-#{$weight}: color-mix(in oklab, var(--base-fg), var(--base-accent) #{$percent});
+    --blueprint-#{$weight}: color-mix(in oklab, var(--base-bg), var(--base-blueprint) #{$percent});
+  }
+}
