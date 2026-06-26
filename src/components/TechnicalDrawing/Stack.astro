@@ -20,6 +20,9 @@ const totalLayers = Object.keys(layers).length;
       <Fragment slot="content">
         {Astro.slots.render('layers', [id])}
       </Fragment>
+      <Fragment slot="aside">
+        {Astro.slots.render('aside', [id])}
+      </Fragment>
     </TechnicalDrawingPage>
   ))}
 

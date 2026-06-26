@@ -2,6 +2,7 @@
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import Annotation from '@/components/TechnicalDrawing/Annotation.astro';
+import PostIt from '@/components/PostIt.astro';
 
 import Result from './Result.astro';
 import VisrezLogoAnimationRaw from './Result.astro?raw';
@@ -52,4 +53,16 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
       cube: (<>Cube</>),
     }[layer])}
   </fragment>
+
+  <fragment
+    slot="aside"
+  >
+    {(layer) => ({
+      original: (
+        <PostIt background="#ea1" color="black">
+          The original logo was created in Illustrator and had problems which made animating it harder
+        </PostIt>
+      ),
+    }[layer])}
+    </fragment>
 </TechnicalDrawingStack>

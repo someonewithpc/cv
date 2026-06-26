@@ -9,6 +9,10 @@ const { layers = {} } = Astro.props;
     <slot name="content" />
   </div>
 
+  <div class="aside">
+    <slot name="aside" />
+  </div>
+
   <table>
     <tbody>
       <tr>
@@ -57,7 +61,6 @@ const { layers = {} } = Astro.props;
       </tr>
     </tbody>
   </table>
-
 </section>
 
 <style lang="scss">
@@ -106,6 +109,12 @@ section {
   .content {
     max-height: 100%;
     translate: 50% 0%;
+  }
+
+  .aside {
+    max-height: 100%;
+    grid-column: 3;
+    margin-inline: auto;
   }
 
   .layers {
