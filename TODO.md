@@ -24,6 +24,7 @@
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
+  - [ ] Ball loader animation (~/project/playground)
 - [ ] TechnicalDrawing
   - [ ] Paper texture
   - [ ] CSS Houdini grid border?
@@ -38,4 +39,4 @@
   - [ ] Anotations
 - [ ] Scroll animation stacking demos
 - [ ] Section divider with ripper paper effect
-- [ ] Remove LightningCSS? - annoying
+- [x] Remove LightningCSS? - annoying
