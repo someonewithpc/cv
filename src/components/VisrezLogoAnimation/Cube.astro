@@ -11,15 +11,33 @@ figure {
   display: grid;
 
   transform-origin: calc($width / 2) calc($width / 2) 0;
-  transform: rotateX(-45deg) rotateY(45deg);
+  backface-visibility: hidden;
+
+  animation:
+    0.5s ease-in forwards tilt,
+    5s linear 0.5s forwards spin;
+
+  @keyframes tilt {
+    to {
+      transform: rotateX(calc(atan2(1, sqrt(2)))) rotateY(45deg);
+    }
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotateX(calc(atan2(1, sqrt(2)))) rotateY(45deg);
+    }
+    to {
+      transform: rotateX(calc(atan2(1, sqrt(2)))) rotateY(calc(2turn + 45deg));
+    }
+  }
 
   .face {
     grid-area: 1 / 1;
     inset: 0;
     width: $width;
     height: $width;
-    background: var(--accent-700);
-    border: 0.25em solid var(--accent-800);
+    border: 0.125em solid var(--accent-800);
 
     transform-origin: center center 0;
 
@@ -29,21 +47,6 @@ figure {
     &:nth-child(3) { transform: rotateY(-0.25turn) translateZ(calc($width / 2)); }
     &:nth-child(2) { transform: rotateY(-0.50turn) translateZ(calc($width / 2)); }
     &:nth-child(1) { transform: rotateY(-0.75turn) translateZ(calc($width / 2)); }
-
-    @for $i from 1 through 6 {
-      &:nth-child(#{$i}) {
-        position: relative;
-
-        &:before {
-          content: "#{$i}";
-          font-size: 4rem;
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          translate: -50% -50%;
-        }
-      }
-    }
   }
 }
 </style>
