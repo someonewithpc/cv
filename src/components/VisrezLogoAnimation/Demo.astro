@@ -8,6 +8,7 @@ import Result from './Result.astro';
 import VisrezLogoAnimationRaw from './Result.astro?raw';
 import OriginalVisrezLogo from './OriginalLogo.astro';
 import OriginalVisrezLogoRaw from './OriginalLogo.astro?raw';
+import Cube from './Cube.astro';
 
 function toKiB(text: string) {
   return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';
@@ -50,7 +51,9 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
           </Fragment>
         </Annotations>
       ),
-      cube: (<>Cube</>),
+      cube: (
+        <Cube />
+      ),
     }[layer])}
   </fragment>
 
