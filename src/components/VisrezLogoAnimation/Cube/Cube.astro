@@ -10,25 +10,29 @@ figure {
   height: 100%;
   display: grid;
 
+  $base-transform: translate3d(calc($width / 2), calc($width), 0);
   transform-origin: calc($width / 2) calc($width / 2) 0;
   backface-visibility: hidden;
+  transform: $base-transform;
 
   animation:
     0.5s ease-in forwards tilt,
-    5s linear 0.5s forwards spin;
+    2.5s linear 0.5s forwards spin;
+
+  $xRot: calc(atan2(1, sqrt(2)));
 
   @keyframes tilt {
     to {
-      transform: rotateX(calc(atan2(1, sqrt(2)))) rotateY(45deg);
+      transform: $base-transform rotateX($xRot) rotateY(45deg);
     }
   }
 
   @keyframes spin {
     from {
-      transform: rotateX(calc(atan2(1, sqrt(2)))) rotateY(45deg);
+      transform: $base-transform rotateX($xRot) rotateY(45deg);
     }
     to {
-      transform: rotateX(calc(atan2(1, sqrt(2)))) rotateY(calc(2turn + 45deg));
+      transform: $base-transform rotateX($xRot) rotateY(calc(1turn + 45deg));
     }
   }
 
