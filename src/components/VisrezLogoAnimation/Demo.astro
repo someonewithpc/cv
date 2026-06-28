@@ -2,13 +2,14 @@
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import Annotation from '@/components/TechnicalDrawing/Annotation.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 import PostIt from '@/components/PostIt.astro';
 
 import Result from './Result.astro';
 import VisrezLogoAnimationRaw from './Result.astro?raw';
 import OriginalVisrezLogo from './OriginalLogo.astro';
 import OriginalVisrezLogoRaw from './OriginalLogo.astro?raw';
-import Cube from './Cube.astro';
+import CubeLayer from './Cube/Layer.astro';
 
 function toKiB(text: string) {
   return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';
@@ -52,7 +53,7 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
         </Annotations>
       ),
       cube: (
-        <Cube />
+        <CubeLayer />
       ),
     }[layer])}
   </fragment>
@@ -65,6 +66,34 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
         <PostIt background="#ea1" color="black">
           The original logo was created in Illustrator and had problems which made animating it harder
         </PostIt>
+      ),
+      cube: (
+        <div style="display: flex; flex-direction: column; gap: 3em; align-items: center;">
+          <PostIt background="#3a3" color="black">
+            We can think of the logo as a rotated cube
+          </PostIt>
+
+          <div style="font-size: 1.5rem; padding: 1em; border: 1px solid var(--fg-800); border-radius: 0.5em;">
+            <math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+              <mrow>
+                <mfrac>
+                  <mrow>
+                    <mi>sin</mi><mo>(</mo><mrow><mn>45</mn><mo>&#xb0;</mo></mrow><mo>)</mo>
+                  </mrow>
+                  <mrow><mn>2</mn></mrow>
+                </mfrac>
+                <mo>=</mo>
+                <msqrt>
+                  <mrow>
+                    <mn>2</mn>
+                  </mrow>
+                </msqrt>
+                <mo>&asymp;</mo>
+                <mn>0.707</mn>
+              </mrow>
+            </math>
+          </div>
+        </div>
       ),
     }[layer])}
     </fragment>

@@ -1,0 +1,75 @@
+---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+import Cube from './Cube.astro';
+---
+
+<Annotations>
+  <Cube slot="content" />
+  <Fragment slot="annotations">
+    <g class="annotations">
+      <ArrowAnnotation
+        tipX={Math.sqrt(2) / 2 - 0.025}
+        tipY={-0.4125}
+        angle={30}
+        length={0.2}
+        text="(1.0, -0.707)"
+        textClass="monospace"
+      />
+
+      <ArrowAnnotation
+        tipX={Math.sqrt(2) / 2 - 0.025}
+        tipY={0.4125}
+        angle={-30}
+        length={0.2}
+        text="(1.0, 0.707)"
+        textClass="monospace"
+      />
+    </g>
+  </Fragment>
+</Annotations>
+
+<style lang="scss">
+.annotations {
+  $duration: 0.25s;
+
+  :global(path) {
+    stroke-dasharray: 1;
+    animation:
+      3.1s visrez-logo-cube-marker-start 0s linear forwards 1,
+      $duration visrez-logo-cube-paths 3s linear forwards 1
+    ;
+    stroke-dashoffset: 1;
+
+    @keyframes visrez-logo-cube-marker-start {
+      from, 99% {
+        marker-start: none;
+      }
+    }
+
+    @keyframes visrez-logo-cube-paths {
+      from {
+        stroke-dashoffset: 1;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+  }
+
+  :global(text) {
+    clip-path: rect(0 0 100% 0);
+    animation: $duration visrez-logo-cube-texts 3s linear forwards 1;
+
+    @keyframes visrez-logo-cube-texts {
+      from {
+        clip-path: rect(0 0 100% 0);
+      }
+      to {
+        clip-path: rect(0 100% 100% 0);
+      }
+    }
+  }
+}
+</style>
