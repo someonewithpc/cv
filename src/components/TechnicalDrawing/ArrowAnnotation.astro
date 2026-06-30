@@ -4,10 +4,11 @@ const angleRad = Astro.props.angle * Math.PI / 180;
 <path
   d={`M ${Astro.props.tipX} ${Astro.props.tipY} l ${Astro.props.length * Math.cos(angleRad)} ${-Astro.props.length * Math.sin(angleRad)} l ${Astro.props.text.length * 0.043} 0`}
   pathLength="1"
+  class={Astro.props.arrowClass}
 />
 <text
-  x={Astro.props.tipX + Astro.props.length * Math.cos(angleRad)}
-  y={Astro.props.tipY - Astro.props.length * Math.sin(angleRad) - 0.05}
+  x={Astro.props.tipX + Astro.props.length * Math.cos(angleRad) + (Astro.props.lengthOffset?.x ?? 0)}
+  y={Astro.props.tipY - Astro.props.length * Math.sin(angleRad) - 0.05 + (Astro.props.lengthOffset?.y ?? 0)}
   class={Astro.props.textClass}
 >
   {Astro.props.text}

@@ -1,0 +1,165 @@
+---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+---
+
+<div class="wrapper">
+  <Annotations>
+    <svg viewBox="-1 -1 2 2" slot="content">
+      <g transform="translate(0, 0.2) scale(.707)">
+        <circle cx="1" cy="-0.707" r={0.224 / 2} fill="gray" class="first-vertex-virtual" />
+        <path
+          d="M.6-.42L0 0l-1-.707 1-.707 1 .707v1L0 1l-1-.707V-.2"
+          stroke-width=".224"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+          pathLength="1"
+        />
+      </g>
+    </svg>
+
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        tipX={0.85}
+        tipY={-0.375}
+        angle={30}
+        length={0.2}
+        text="(1.0, -0.707)"
+        textClass="monospace first-vertex-virtual"
+        arrowClass="first-vertex-virtual"
+      />
+
+      <ArrowAnnotation
+        tipX={0.55}
+        tipY={-0.025}
+        angle={-30}
+        length={0.2}
+        text="(1.0, -0.707) * 0.6"
+        textClass="monospace first-vertex"
+        arrowClass="first-vertex"
+      />
+
+      <ArrowAnnotation
+        tipX={0.125}
+        tipY={0.275}
+        angle={-30}
+        length={0.2}
+        text="(0.0, 0.0)"
+        textClass="monospace second-vertex"
+        arrowClass="second-vertex"
+      />
+
+      <ArrowAnnotation
+        tipX={-0.825}
+        tipY={-0.2}
+        angle={-30 - 90}
+        length={0.5}
+        lengthOffset={{ x: 0.125, y: 0 }}
+        text="  (-1.0, -0.707)"
+        textClass="monospace third-vertex"
+        arrowClass="third-vertex"
+      />
+    </Fragment>
+  </Annotations>
+</div>
+
+<style lang="scss">
+@property --first-vertex-virtual-visible {
+  syntax: 'visible | hidden';
+  inherits: true;
+  initial-value: visible;
+}
+
+@property --first-vertex-visible {
+  syntax: 'visible | hidden';
+  inherits: true;
+  initial-value: visible;
+}
+
+@property --second-vertex-visible {
+  syntax: 'visible | hidden';
+  inherits: true;
+  initial-value: hidden;
+}
+
+@property --third-vertex-visible {
+  syntax: 'visible | hidden';
+  inherits: true;
+  initial-value: hidden;
+}
+
+@property --path-dash-offset {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+.wrapper {
+  path {
+    stroke: white;
+    stroke-dasharray: 1;
+    stroke-dashoffset: var(--path-dash-offset);
+  }
+
+  :global(.first-vertex-virtual) {
+    visibility: var(--first-vertex-virtual-visible);
+  }
+
+  :global(.first-vertex) {
+    visibility: var(--first-vertex-visible);
+  }
+
+  :global(.second-vertex) {
+    visibility: var(--second-vertex-visible);
+  }
+
+  :global(.third-vertex) {
+    visibility: var(--third-vertex-visible);
+  }
+
+  animation: visrez-logo-path-dash-animation-demo-path-layer 30s linear forwards 1;
+
+  @keyframes visrez-logo-path-dash-animation-demo-path-layer {
+    from {
+      --path-stroke: white;
+      --path-dash-offset: 0.999;
+      --first-vertex-virtual-visible: visible;
+    }
+
+    20% {
+      --first-vertex-virtual-visible: hidden;
+      --path-dash-offset: 0.9;
+    }
+
+    30% {
+      --first-vertex-visible: hidden;
+      --second-vertex-visible: visible;
+    }
+
+    40% {
+      --second-vertex-visible: hidden;
+      --first-vertex-virtual-visible: hidden;
+    }
+
+    55% {
+      --third-vertex-visible: visible;
+    }
+
+    56% {
+      --third-vertex-visible: hidden;
+    }
+
+    63% {
+      --first-vertex-virtual-visible: visible;
+      --first-vertex-visible: hidden;
+    }
+
+    85%, to {
+      --first-vertex-virtual-visible: hidden;
+      --first-vertex-visible: hidden;
+      --path-dash-offset: 0;
+    }
+  }
+}
+</style>
