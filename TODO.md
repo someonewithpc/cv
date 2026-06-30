@@ -9,10 +9,11 @@
 - [ ] Tags
   - [x] SVG icon in light mode broken
   - [ ] More langs and tools
-    - [ ] Mold
-    - [ ] Better clang
-    - [ ] Make
-    - [ ] Lisp
+    - [x] Mold
+    - [~] Better clang
+    - [x] Make
+    - [x] Lisp
+    - [x] git
   - [ ] Some icons not very visible in dark mode
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
