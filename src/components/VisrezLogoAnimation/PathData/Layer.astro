@@ -8,18 +8,24 @@ import { Code } from 'astro:components';
   viewBox="-1 -1 2 2" -- Define the coordinate system to go
                       -- from (-1, -1) with a width of (2, 2)
 >
-  <path
-    d="M 0.6, -0.42"  -- Move to 60% of (1, -O.707)
-      "L  0, 0"       -- Draw a line to the absolute (0, 0)
-      "l -1, -0.707"  -- Draw a relative line by moving (-1, -0.707)
-      "l  1, -0.707"  -- Draw a relative line by moving ( 1, -0.707)
-      "l  1, 0.707"   -- Draw a relative line by moving ( 1, 0.707)
-      "v  1"          -- Draw a vertical line by moving (0, 1)
-      "L  0, 1"       -- Draw a line by moving to the absolute position (0, 1)
-      "l -1, -0.707"  -- Draw a relative line by moving (-1, -0.707)
-      "v -O.2"        -- Draw a vertical line by moving (0, -0.2)
-    pathLength="1"    -- Tell the renderer to assume the length of the path is 1
-  />
+  <g style="scale: 0.707;" -- Scale the overall shape down. Because
+                           -- we move up (and down) by 2 * 0.707,
+                           -- the overall height becomes 4 * 0.707 = 2.828,
+                           -- so we scale down by 0.707 to get a height of 2
+  >
+    <path
+      d="M 0.6, -0.42"  -- Move to 60% of (1, -O.707)
+        "L  0, 0"       -- Draw a line to the absolute (0, 0)
+        "l -1, -0.707"  -- Draw a relative line by moving (-1, -0.707)
+        "l  1, -0.707"  -- Draw a relative line by moving ( 1, -0.707)
+        "l  1, 0.707"   -- Draw a relative line by moving ( 1, 0.707)
+        "v  1"          -- Draw a vertical line by moving (0, 1)
+        "L  0, 1"       -- Draw a line by moving to the absolute position (0, 1)
+        "l -1, -0.707"  -- Draw a relative line by moving (-1, -0.707)
+        "v -O.2"        -- Draw a vertical line by moving (0, -0.2)
+      pathLength="1"    -- Tell the renderer to assume the length of the path is 1
+    />
+  </g>
 </svg>'
   />
 </div>
