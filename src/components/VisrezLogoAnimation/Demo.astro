@@ -14,6 +14,8 @@ import CubeAside from './Cube/Aside.astro';
 import PathLayer from './Path/Layer.astro';
 import PathAside from './Path/Aside.astro';
 
+import PathDataLayer from './PathData/Layer.astro';
+
 function toKiB(text: string) {
   return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';
 }
@@ -32,6 +34,7 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
     original: { name: 'Original Logo', size: originalVisrezLogoSize, pageStyle: 'blueprint' },
     cube: { name: 'Cube :)' },
     path: { name: 'Authored Path', pageStyle: 'blueprint' },
+    pathData: { name: 'Path Data', pageStyle: 'blueprint' },
   }}
 >
   <fragment
@@ -56,12 +59,9 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
           </Fragment>
         </Annotations>
       ),
-      cube: (
-        <CubeLayer />
-      ),
-      path: (
-        <PathLayer />
-      ),
+      cube: (<CubeLayer />),
+      path: (<PathLayer />),
+      pathData: (<PathDataLayer />),
     }[layer])}
   </fragment>
 
@@ -74,12 +74,8 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
           The original logo was created in Illustrator and had problems which made animating it harder
         </PostIt>
       ),
-      cube: (
-        <CubeAside />
-      ),
-      path: (
-        <PathAside />
-      ),
+      cube: (<CubeAside />),
+      path: (<PathAside />),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
