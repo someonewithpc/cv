@@ -5,7 +5,7 @@ const { layers = {} } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
 
-<article>
+<article class="technical-drawing-stack">
   {Object.entries(layers).map(([id, { name, size, pageStyle }], index) => (
     <TechnicalDrawingPage
       title={name}
@@ -68,6 +68,7 @@ article {
     flex-shrink: 0;
     flex-basis: 100%;
     scroll-snap-align: center;
+    animation-play-state: paused;
   }
 
   &::scroll-button(*) {
@@ -91,3 +92,25 @@ article {
 
 }
 </style>
+
+<script lang="ts">
+document.addEventListener('DOMContentLoaded', () => {
+  [...document.querySelectorAll('article.technical-drawing-stack')].forEach((stack) => {
+    const observer = new IntersectionObserver((intersections) => {
+      [...intersections].forEach((entry) => {
+        entry.target.getAnimations({ subtree: true }).forEach((animation) => {
+          if (!entry.isIntersecting && (animation.playState === 'running' || animation.playState === 'finished')) {
+            animation.cancel();
+            animation.play();
+          }
+        });
+
+        entry.target.style[
+          entry.isIntersecting ? 'removeProperty' : 'setProperty'
+        ]('animation-play-state', 'paused');
+      });
+    }, { root: stack, threshold: 0.25, scrollMargin: '25%' });
+    [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
+  });
+});
+</script>
