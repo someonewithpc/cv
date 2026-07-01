@@ -14,6 +14,8 @@ import CubeAside from './Cube/Aside.astro';
 import PathLayer from './Path/Layer.astro';
 import PathAside from './Path/Aside.astro';
 import PathDataLayer from './PathData/Layer.astro';
+import AllTogetherLayer from './AllTogether/Layer.astro';
+import AllTogetherAside from './AllTogether/Aside.astro';
 
 function toKiB(text: string) {
   return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';
@@ -31,9 +33,10 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
   layers={{
     main: { name: null, size: visrezLogoAnimationSize },
     original: { name: 'Original Logo', size: originalVisrezLogoSize, pageStyle: 'blueprint' },
-    cube: { name: 'Cube :)' },
+    cube: { name: 'Cube :)', pageStyle: 'blueprint' },
     path: { name: 'Authored Path', pageStyle: 'blueprint' },
     pathData: { name: 'Path Data', pageStyle: 'blueprint' },
+    allTogether: { name: 'Putting it all together' },
   }}
 >
   <fragment
@@ -61,6 +64,7 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
       cube: (<CubeLayer />),
       path: (<PathLayer />),
       pathData: (<PathDataLayer />),
+      allTogether: (<AllTogetherLayer />),
     }[layer])}
   </fragment>
 
@@ -75,6 +79,7 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
       ),
       cube: (<CubeAside />),
       path: (<PathAside />),
+      allTogether: (<AllTogetherAside />),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
