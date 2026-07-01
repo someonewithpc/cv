@@ -1,51 +1,45 @@
----
-import { Code } from 'astro:components';
----
-
-<div class="wrapper">
-  <Code lang="xml" code='<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="-1 -1 2 2" -- Define the coordinate system to go
-                      -- from (-1, -1) with a width of (2, 2)
->
-  <g style="scale: 0.707;" -- Scale the overall shape down. Because
-                           -- we move up (and down) by 2 * 0.707,
-                           -- the overall height becomes 4 * 0.707 = 2.828,
-                           -- so we scale down by 0.707 to get a height of 2
-  >
-    <path
-      d="M 0.6, -0.42"  -- Move to 60% of (1, -O.707)
-        "L  0, 0"       -- Draw a line to the absolute (0, 0)
-        "l -1, -0.707"  -- Draw a relative line by moving (-1, -0.707)
-        "l  1, -0.707"  -- Draw a relative line by moving ( 1, -0.707)
-        "l  1, 0.707"   -- Draw a relative line by moving ( 1, 0.707)
-        "v  1"          -- Draw a vertical line by moving (0, 1)
-        "L  0, 1"       -- Draw a line by moving to the absolute position (0, 1)
-        "l -1, -0.707"  -- Draw a relative line by moving (-1, -0.707)
-        "v -O.2"        -- Draw a vertical line by moving (0, -0.2)
-      pathLength="1"    -- Tell the renderer to assume the length of the path is 1
-    />
-  </g>
-</svg>'
-  />
-</div>
+<pre class="path-data-layer" style="background-color:#24292e; color:#e1e4e8;" data-language="xml"><code><span class="line"><span style="color:#E1E4E8">&lt;</span><span style="color:#85E89D">svg</span></span>
+<span class="line"><span style="color:#B392F0">  xmlns</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">"http://www.w3.org/2000/svg"</span></span>
+<span class="line"><span style="color:#B392F0">  viewBox</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">"-1 -1 2 2"</span><span style="color:#E1E4E8">       -- Define the coordinate system to go</span></span>
+<span class="line"><span style="color:#E1E4E8">                            -- from (-1, -1) with a width of (2, 2)</span></span>
+<span class="line"><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;</span><span style="color:#85E89D">g</span><span style="color:#B392F0"> style</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">"scale: 0.707;"</span><span style="color:#E1E4E8">&gt;</span><span style="color:#E1E4E8"> -- Scale the overall shape down. Because</span></span>
+<span class="line"><span style="color:#E1E4E8">                            -- we move up (and down) by 2 * 0.707,</span></span>
+<span class="line"><span style="color:#E1E4E8">                            -- the overall height becomes 4 * 0.707 = 2.828,</span></span>
+<span class="line"><span style="color:#E1E4E8">                            -- so we scale down by 0.707 to get a height of 2</span></span>
+<span class="line"><span style="color:#E1E4E8">    &lt;</span><span style="color:#85E89D">path</span></span>
+<span class="line"><span style="color:#B392F0">      d</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">"M 0.6, -0.42</span><span style="color:#E1E4E8">       -- Move to 60% of (1, -O.707)</span></span>
+<span class="line"><span style="color:#9ECBFF">         L  0, 0</span><span style="color:#E1E4E8">            -- Draw a line to (0, 0)</span></span>
+<span class="line"><span style="color:#9ECBFF">         l -1, -0.707</span><span style="color:#E1E4E8">       -- Draw a relative line by moving (-1, -0.707)</span></span>
+<span class="line"><span style="color:#9ECBFF">         l  1, -0.707</span><span style="color:#E1E4E8">       -- Draw a relative line by moving ( 1, -0.707)</span></span>
+<span class="line"><span style="color:#9ECBFF">         l  1, 0.707</span><span style="color:#E1E4E8">        -- Draw a relative line by moving ( 1, 0.707)</span></span>
+<span class="line"><span style="color:#9ECBFF">         v  1</span><span style="color:#E1E4E8">               -- Draw a vertical line by moving (0, 1)</span></span>
+<span class="line"><span style="color:#9ECBFF">         L  0, 1</span><span style="color:#E1E4E8">            -- Draw a line by moving to (0, 1)</span></span>
+<span class="line"><span style="color:#9ECBFF">         l -1, -0.707</span><span style="color:#E1E4E8">       -- Draw a relative line by moving (-1, -0.707)</span></span>
+<span class="line"><span style="color:#9ECBFF">         v -O.2"</span><span style="color:#E1E4E8">            -- Draw a vertical line by moving (0, -0.2)</span></span>
+<span class="line"><span style="color:#B392F0">      pathLength</span><span style="color:#E1E4E8">=</span><span style="color:#9ECBFF">"1"</span><span style="color:#E1E4E8">        -- Tell the renderer to treat the length</span></span>
+<span class="line"><span style="color:#E1E4E8">                            -- of the path as being 1</span></span>
+<span class="line"><span style="color:#E1E4E8">    /&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">  &lt;/</span><span style="color:#85E89D">g</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">&lt;/</span><span style="color:#85E89D">svg</span><span style="color:#E1E4E8">&gt;</span></span></code></pre>
 
 <style lang="scss">
-.wrapper {
-  position: relative;
+:global(article.technical-drawing-stack > section:has(pre.path-data-layer) > .content) {
+  translate: unset;
 
-  :global(pre) {
-    position: absolute;
-    top: 50%;
-    translate: -17.5% -60%;
+  pre {
+    margin-inline: 2em;
+    padding: 1em;
+    max-width: 100%;
 
-    padding: 0.5em;
-    font-size: 1rem;
-  }
+    &, code {
+      font-size: 0.875rem;
+    }
 
-  :global(pre > code > .line) {
-    &:nth-child(1), &:nth-child(2), &:nth-child(5), &:nth-last-child(2), &:nth-last-child(1) {
-      opacity: 0.5;
+    & > code > .line {
+      &:nth-child(1), &:nth-child(2), &:nth-child(5), &:nth-last-child(2), &:nth-last-child(1) {
+        opacity: 0.5;
+      }
     }
   }
 }
