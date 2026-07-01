@@ -1,0 +1,273 @@
+<div class="all-together-layer">
+  <div class="scene">
+    <svg class="face" viewBox="-1 -1 2 2" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="visrez-logo-animation-all-together-layer" x1="-0.6" y1="0.4242" x2="0.6" y2="-0.4242">
+          <stop stop-color="#0027C2" offset="0" />
+          <stop stop-color="#224A95" offset=".163" />
+          <stop stop-color="#477066" offset=".362" />
+          <stop stop-color="#638D40" offset=".552" />
+          <stop stop-color="#78A325" offset=".726" />
+          <stop stop-color="#85AF15" offset=".881" />
+          <stop stop-color="#89B40F" offset="1" />
+        </linearGradient>
+
+        <mask id="visrez-logo-animation-all-together-face-mask">
+          <rect class="face-mask-full" x="-1" y="-1" width="2" height="2" fill="white" />
+          <g transform="translate(0, 0.2) scale(.707)">
+            <path
+              class="face-mask-path"
+              d="M.6-.42L0 0l-1-.707 1-.707 1 .707v1L0 1l-1-.707V-.2"
+              fill="none"
+              stroke="white"
+              stroke-width=".224"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </g>
+        </mask>
+      </defs>
+      <rect
+        x="-1"
+        y="-1"
+        width="2"
+        height="2"
+        fill="url(#visrez-logo-animation-all-together-layer)"
+        mask="url(#visrez-logo-animation-all-together-face-mask)"
+      />
+    </svg>
+
+    <svg class="path" viewBox="-1 -1 2 2" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="visrez-logo-animation-all-together-path-layer" x1="-0.6" y1="0.4242" x2="0.6" y2="-0.4242">
+          <stop stop-color="#0027C2" offset="0" />
+          <stop stop-color="#224A95" offset=".163" />
+          <stop stop-color="#477066" offset=".362" />
+          <stop stop-color="#638D40" offset=".552" />
+          <stop stop-color="#78A325" offset=".726" />
+          <stop stop-color="#85AF15" offset=".881" />
+          <stop stop-color="#89B40F" offset="1" />
+        </linearGradient>
+      </defs>
+      <g transform="translate(0, 0.2) scale(.707)">
+        <path
+          class="stroke-gradient"
+          d="M.6-.42L0 0l-1-.707 1-.707 1 .707v1L0 1l-1-.707V-.2"
+          stroke="url(#visrez-logo-animation-all-together-path-layer)"
+          stroke-width=".224"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+          pathLength="1"
+        />
+        <path
+          class="stroke-white"
+          d="M.6-.42L0 0l-1-.707 1-.707 1 .707v1L0 1l-1-.707V-.2"
+          stroke="white"
+          stroke-width=".224"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+          pathLength="1"
+        />
+      </g>
+    </svg>
+  </div>
+</div>
+
+<style lang="scss">
+@property --rect-mask-full {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --rect-clip-amount {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --white-stroke-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --path-dash-draw {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --rotate-x {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@property --rotate-y {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@property --path-z {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0em;
+}
+
+.all-together-layer {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+
+  animation: 15s visrez-logo-all-together-layer-animation linear infinite;
+
+  .scene {
+    width: 60%;
+    aspect-ratio: 1;
+    display: grid;
+    transform-style: preserve-3d;
+    transform: rotateX(calc(-1 * var(--rotate-x))) rotateY(var(--rotate-y));
+  }
+
+  svg {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .face {
+    transform: translateZ(0);
+  }
+
+  .face-mask-full {
+    opacity: var(--rect-mask-full);
+  }
+
+  .face-mask-path {
+    opacity: var(--rect-clip-amount);
+  }
+
+  .path {
+    transform: translateZ(var(--path-z));
+
+    path {
+      stroke-dasharray: var(--path-dash-draw) 1;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .stroke-gradient {
+    opacity: calc(1 - var(--white-stroke-opacity));
+  }
+
+  .stroke-white {
+    opacity: var(--white-stroke-opacity);
+  }
+
+  @keyframes visrez-logo-all-together-layer-animation {
+    0%, 12% {
+      --rect-mask-full: 0;
+      --rect-clip-amount: 0;
+      --white-stroke-opacity: 0;
+      --rotate-x: 0deg;
+      --rotate-y: 0deg;
+      --path-z: 0em;
+      --path-dash-draw: 1;
+    }
+
+    19.99% {
+      --path-dash-draw: 1;
+    }
+
+    20% {
+      --rect-mask-full: 1;
+      --rect-clip-amount: 0;
+      --white-stroke-opacity: 1;
+      --rotate-x: 30deg;
+      --rotate-y: 45deg;
+      --path-z: 6em;
+      --path-dash-draw: 0;
+    }
+
+    48% {
+      --rect-mask-full: 1;
+      --rect-clip-amount: 0;
+      --white-stroke-opacity: 1;
+      --rotate-x: 30deg;
+      --rotate-y: 45deg;
+      --path-z: 6em;
+      --path-dash-draw: 1;
+    }
+
+    52% {
+      --rect-mask-full: 1;
+      --rect-clip-amount: 0;
+      --white-stroke-opacity: 1;
+      --rotate-x: 30deg;
+      --rotate-y: 45deg;
+      --path-z: 6em;
+      --path-dash-draw: 1;
+    }
+
+    58% {
+      --rect-mask-full: 0;
+      --rect-clip-amount: 1;
+      --white-stroke-opacity: 1;
+      --rotate-x: 30deg;
+      --rotate-y: 45deg;
+      --path-z: 6em;
+      --path-dash-draw: 1;
+    }
+
+    62% {
+      --rect-mask-full: 0;
+      --rect-clip-amount: 1;
+      --white-stroke-opacity: 1;
+      --rotate-x: 30deg;
+      --rotate-y: 45deg;
+      --path-z: 6em;
+      --path-dash-draw: 1;
+    }
+
+    67% {
+      --white-stroke-opacity: 0;
+    }
+
+    71% {
+      --rect-mask-full: 0;
+      --rect-clip-amount: 1;
+      --white-stroke-opacity: 0;
+      --rotate-x: 3deg;
+      --rotate-y: 4.5deg;
+      --path-z: 0.6em;
+      --path-dash-draw: 1;
+    }
+
+    72% {
+      --rect-mask-full: 0;
+      --rect-clip-amount: 0;
+      --white-stroke-opacity: 0;
+      --rotate-x: 0deg;
+      --rotate-y: 0deg;
+      --path-z: 0em;
+      --path-dash-draw: 1;
+    }
+
+    72%, 100% {
+      --rect-mask-full: 0;
+      --rect-clip-amount: 0;
+      --white-stroke-opacity: 0;
+      --rotate-x: 0deg;
+      --rotate-y: 0deg;
+      --path-z: 0em;
+      --path-dash-draw: 1;
+    }
+  }
+}
+</style>
