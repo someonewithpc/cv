@@ -4,12 +4,12 @@ import { Icon } from 'astro-icon/components';
 import { TECH_TAGS } from '@/server/tech-tags';
 ---
 
-<section>
+<section aria-label="Technologies">
   {TECH_TAGS.map(({ icon, text }) => (
-  <span>
-    <Icon name={icon} aria-labelledby={`label-${text}`} is:inline />
-    <pre id={`label-${text}`}>{text}</pre>
-  </span>
+    <span>
+      <Icon name={icon} is:inline aria-hidden="true" title={text} />
+      <span>{text}</span>
+    </span>
   ))}
 </section>
 
