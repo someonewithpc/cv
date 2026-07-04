@@ -1,5 +1,15 @@
 ---
 import ThemePicker from '@/components/ThemePicker.astro';
+
+type Props = {
+  title?: string;
+  description?: string;
+};
+
+const {
+  title = "Hugo Sales' CV",
+  description = 'CV of Hugo Sales — software engineer with upstream contributions to React, Astro, {fmt}, Git, and co-maintainership of GNU social v3.',
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -7,13 +17,30 @@ import ThemePicker from '@/components/ThemePicker.astro';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
-    <title>Hugo Sales' CV</title>
+    <title>{title}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <ThemePicker />
@@ -21,7 +48,7 @@ import ThemePicker from '@/components/ThemePicker.astro';
   </body>
 </html>
 
-<style lamg="scss" is:global>
+<style lang="scss" is:global>
 /* No list-markers by default, since lists are used more often for semantics */
 ul, ol {
   list-style: none;
