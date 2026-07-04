@@ -1,0 +1,108 @@
+---
+const { statistics } = Astro.props;
+---
+
+<header>
+  <h2 id="open-source-heading">
+    <small lang="ja">オープンソース</small>
+    <span class="typewriter">Open Source</span>
+  </h2>
+
+  <dl>
+    <div>
+      <dt>
+        <small lang="ja">取り込み済</small>
+        Merged
+      </dt>
+      <dd>{statistics.merged}</dd>
+    </div>
+    <div>
+      <dt>
+        <small lang="ja">進行中</small>
+        Open
+      </dt>
+      <dd>{statistics.open}</dd>
+    </div>
+    <div>
+      <dt>
+        <small lang="ja">終了</small>
+        Closed
+      </dt>
+      <dd>{statistics.closed}</dd>
+    </div>
+  </dl>
+</header>
+
+<style lang="scss">
+header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem 3rem;
+  align-items: end;
+  margin-bottom: 2.5rem;
+
+  h2 {
+    display: grid;
+    justify-items: start;
+    gap: 0.125rem;
+
+    [lang='ja'] {
+      font-size: 0.6875rem;
+    }
+
+    .typewriter {
+      font-size: clamp(2.25rem, 5.5vw, 3.25rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1.05;
+      color: var(--fg-900);
+    }
+  }
+
+  dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--fg-850);
+
+    div {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    dt {
+      display: grid;
+      justify-items: start;
+      gap: 0.1rem;
+      font-family: monospace, system-ui;
+      font-size: 0.625rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fg-650);
+
+      [lang='ja'] {
+        font-size: 0.5625rem;
+        letter-spacing: 0.08em;
+      }
+    }
+
+    dd {
+      font-family: monospace, system-ui;
+      font-size: 1.75rem;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--accent-750);
+    }
+  }
+
+  @container (max-width: 50rem) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+
+    dl {
+      gap: 1.25rem 2rem;
+    }
+  }
+}
+</style>
