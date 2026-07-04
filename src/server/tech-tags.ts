@@ -43,6 +43,9 @@ export const TECH_TAGS: TechTag[] = [
   { icon: 'lisp', text: 'Lisp' },
   { icon: 'mold', text: 'Mold linker' },
   { icon: 'makefile', text: 'Make' },
+  { icon: 'leaflet', text: 'Leaflet' },
+  { icon: 'devicon:reactnative-wordmark', text: 'React Native' },
+  { icon: 'devicon:sass', text: 'Sass' },
 ];
 
 export const iconSuffix = (iconId: string): string => {
