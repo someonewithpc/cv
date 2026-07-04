@@ -1,0 +1,190 @@
+---
+import site from './site.json';
+
+import ContributionRow from './ContributionRow.astro';
+import SectionHeader from './SectionHeader.astro';
+import Highlights from './Highlights.astro';
+
+const { highlights, groups } = site;
+
+const statistics = {
+  merged: groups.find((group) => group.id === 'merged')?.items.length ?? 0,
+  open: groups.find((group) => group.id === 'open')?.items.length ?? 0,
+  closed: groups.find((group) => group.id === 'closed')?.items.length ?? 0,
+};
+---
+
+<section id="open-source" aria-labelledby="open-source-heading">
+  <SectionHeader statistics={statistics} />
+
+  <Highlights highlights={highlights} />
+
+  {groups.map(({ id, label, items }) => (
+    <section data-group={id} aria-labelledby={`group-${id}`}>
+      <h3 id={`group-${id}`}>
+        <span class="typewriter">{label}</span>
+        <data value={items.length}>{items.length}</data>
+      </h3>
+
+      <div>
+        <header aria-hidden="true">
+          <span>Language</span>
+          <span>Repository</span>
+          <span>Contribution</span>
+        </header>
+
+        {items.map((entry) => (
+          <ContributionRow {...entry} status={id} />
+        ))}
+      </div>
+    </section>
+  ))}
+</section>
+
+<style lang="scss">
+#open-source {
+  --cell-x: 1.25rem;
+  --row-height: 3.75rem;
+  --grid: 5.5rem minmax(14rem, 20rem) minmax(0, 1fr);
+
+  container-type: inline-size;
+  width: min(72rem, calc(100% - 2.5rem));
+  margin-inline: auto;
+  margin-top: clamp(5rem, 12vw, 8rem);
+  padding-bottom: 5rem;
+
+  :global([lang='ja']) {
+    display: block;
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: color-mix(in oklab, var(--fg-600), transparent 35%);
+    margin-inline-start: -0.125rem;
+  }
+
+  > section {
+    & + section {
+      margin-top: 3rem;
+    }
+
+    h3 {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fg-800);
+
+      data {
+        font-family: monospace, system-ui;
+        font-size: 0.8125rem;
+        color: var(--fg-650);
+      }
+    }
+
+    > div {
+      container-type: inline-size;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      border: 1px solid var(--fg-850);
+      background: var(--bg-850);
+
+      > header,
+      :global(details > summary) {
+        display: grid;
+        grid-template-columns: var(--grid);
+        column-gap: 1.25rem;
+        align-items: center;
+        min-height: var(--row-height);
+        padding-block: 0.75rem;
+        padding-inline-end: var(--cell-x);
+        padding-inline-start: calc(var(--cell-x) + 3px);
+        border-left: 3px solid transparent;
+        box-sizing: border-box;
+      }
+
+      > header {
+        border-bottom: 1px solid var(--fg-850);
+        background: color-mix(in oklab, var(--bg-875), var(--fg-900) 4%);
+        font-family: monospace, system-ui;
+        font-size: 0.6875rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--fg-650);
+
+        span:first-child {
+          justify-self: center;
+          text-align: center;
+        }
+      }
+
+      :global(details) {
+        min-width: 0;
+      }
+
+      :global(details > summary) {
+        border-top: 1px solid var(--fg-875);
+        border-left-color: var(--row-accent, var(--fg-700));
+        cursor: pointer;
+        list-style: none;
+        transition: background 150ms ease;
+
+        ul {
+          justify-self: center;
+        }
+
+        &:hover {
+          background: var(--bg-825);
+        }
+      }
+
+      :global(details > :not(summary)) {
+        min-width: 0;
+      }
+
+      @container (max-width: 50rem) {
+        --row-height: 4.5rem;
+        --grid: 5rem minmax(0, 1fr) minmax(0, 1fr);
+
+        > header {
+          grid-template-areas: 'language repository';
+
+          span:first-child {
+            grid-area: language;
+          }
+
+          span:nth-child(2) {
+            grid-area: repository;
+          }
+
+          span:last-child {
+            display: none;
+          }
+        }
+
+        :global(details > summary) {
+          grid-template-areas:
+            'language repository'
+            'contribution contribution';
+          row-gap: 0.375rem;
+          align-content: center;
+
+          ul {
+            grid-area: language;
+          }
+
+          cite {
+            grid-area: repository;
+          }
+
+          a {
+            grid-area: contribution;
+          }
+        }
+      }
+    }
+  }
+}
+</style>
