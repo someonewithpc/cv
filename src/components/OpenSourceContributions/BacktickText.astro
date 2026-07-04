@@ -1,0 +1,26 @@
+---
+type Props = {
+  text: string;
+};
+
+const { text } = Astro.props;
+
+const segments = text.split(/(`[^`]*`)/g).filter((segment) => segment.length > 0);
+---
+
+<>
+  {segments.map((segment) => (
+    segment.startsWith('`') && segment.endsWith('`')
+      ? <span class="backtick">{segment.slice(1, -1)}</span>
+      : segment
+  ))}
+</>
+
+<style lang="scss">
+.backtick {
+  color: var(--accent-800);
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+}
+</style>

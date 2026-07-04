@@ -45,8 +45,18 @@ export const TECH_TAGS: TechTag[] = [
   { icon: 'makefile', text: 'Make' },
 ];
 
+export const iconSuffix = (iconId: string): string => {
+  const colon = iconId.lastIndexOf(':');
+
+  return colon === -1 ? iconId : iconId.slice(colon + 1);
+};
+
 const TECH_TAG_BY_TEXT = new Map(
   TECH_TAGS.map((tag) => [tag.text.toLowerCase(), tag]),
+);
+
+const TECH_TAG_BY_ICON_SUFFIX = new Map(
+  TECH_TAGS.map((tag) => [iconSuffix(tag.icon).toLowerCase(), tag]),
 );
 
 export const resolveTechTag = (text: string | null | undefined): TechTag | null => {
@@ -55,4 +65,12 @@ export const resolveTechTag = (text: string | null | undefined): TechTag | null 
   }
 
   return TECH_TAG_BY_TEXT.get(text.toLowerCase()) ?? null;
+};
+
+export const resolveTechTagByIconSuffix = (suffix: string | null | undefined): TechTag | null => {
+  if (!suffix) {
+    return null;
+  }
+
+  return TECH_TAG_BY_ICON_SUFFIX.get(suffix.toLowerCase()) ?? null;
 };
