@@ -61,6 +61,7 @@ article {
   display: flex;
   flex-direction: row;
 
+  position: relative;
   anchor-name: --technical-drawing-stack;
   anchor-scope: --technical-drawing-stack;
 
@@ -74,16 +75,17 @@ article {
   &::scroll-button(*) {
     position-anchor: --technical-drawing-stack;
     position: absolute;
+    top: anchor(top);
   }
 
   &::scroll-button(left) {
     content: "⬅" / "Scroll Left";
-    left: calc(anchor(left));
+    left: anchor(left);
   }
 
   &::scroll-button(right) {
     content: "⮕" / "Scroll Right";
-    right: calc(anchor(right));
+    right: anchor(right);
   }
 
   &::scroll-button(*):focus-visible {
