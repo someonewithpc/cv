@@ -94,6 +94,38 @@ body {
   view-transition-name: none;
 }
 
+main {
+  --page-gap: clamp(1rem, 4vw, 2.5rem);
+  --content-max: 120ch;
+  --breakout-max: 90rem;
+
+  --full-width: minmax(var(--page-gap), 1fr);
+  --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
+  --content: min(100% - var(--page-gap) * 2, var(--content-max));
+
+  display: grid;
+  grid-template-columns:
+    [full-width-start] var(--full-width)
+    [breakout-start] var(--breakout)
+    [content-start] var(--content) [content-end]
+    var(--breakout) [breakout-end]
+    var(--full-width) [full-width-end];
+  grid-template-rows: auto;
+  align-content: start;
+
+  > :not(.full-width, .breakout) {
+    grid-column: content;
+  }
+
+  .full-width {
+    grid-column: full-width;
+  }
+
+  .breakout {
+    grid-column: breakout;
+  }
+}
+
 image, svg, img, picture {
   color-scheme: only light;
 }
