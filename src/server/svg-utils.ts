@@ -1,6 +1,3 @@
-import zip from 'lodash/zip';
-import { rotateRight } from '@/server/array';
-
 const PRECISION = 10000;
 
 export interface Vertex {
@@ -33,7 +30,7 @@ export function alongLine(v0: Vertex, v1: Vertex, distance: number): Vertex {
   };
 }
 
-export function medianAngle(v0, v1, p2): number {
+export function medianAngle(v0: Vertex, v1: Vertex, p2: Vertex): number {
   const a = subtract(v1, v0);
   const b = subtract(v1, p2);
 
@@ -41,11 +38,9 @@ export function medianAngle(v0, v1, p2): number {
 }
 
 export function roundedCorners(vertices: Vertex[], radius: number): string {
-  return zip(
-    vertices,
-    rotateRight(vertices, 1),
-    rotateRight(vertices, 2),
-  ).flatMap(([v0, v1, v2], index) => {
+  return vertices.flatMap((v0, index) => {
+    const v1 = vertices[(index + 1) % vertices.length]!;
+    const v2 = vertices[(index + 2) % vertices.length]!;
     const edge1Start = alongLine(v0, v1, radius);
     const edge1End = alongLine(v1, v0, radius);
     const edge2Start = alongLine(v1, v2, radius);

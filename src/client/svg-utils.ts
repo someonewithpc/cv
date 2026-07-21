@@ -1,25 +1,51 @@
 import chunk from 'lodash/chunk';
 
-export function transformPath(pathData, fromViewBox, toViewBox) {
-  const mapWidthRelative = (x) => (x / fromViewBox.width) * toViewBox.width;
-  const mapHeightRelative = (y) => (y / fromViewBox.height) * toViewBox.height;
-  const mapWidthAbsolute = (x) => ((x - fromViewBox.x) / fromViewBox.width) * toViewBox.width + toViewBox.x;
-  const mapHeightAbsolute = (y) => ((y - fromViewBox.y) / fromViewBox.height) * toViewBox.height + toViewBox.y;
+type ViewBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 
-  const map0 = (vals) => vals;
-  const map1WidthAbsolute = (vals) => vals.map((w) => mapWidthAbsolute(w));
-  const map1HeightAbsolute = (vals) => vals.map((h) => mapHeightAbsolute(h));
-  const map2Absolute = (vals) => chunk(vals, 2).flatMap(([w, h]) => [mapWidthAbsolute(w), mapHeightAbsolute(h)]);
-  const map2sAbsolute = (vals) => chunk(vals, 2).flatMap(map2Absolute);
-  const mapArcAbsolute = (vals) => chunk(vals, 7).flatMap(([rx, ry, angle, largeArc, sweep, x, y]) => [mapWidthRelative(rx), mapHeightRelative(ry), angle, largeArc, sweep, mapWidthAbsolute(x), mapHeightAbsolute(y)]);
+type PathCommand = {
+  type: string;
+  values: number[];
+};
 
-  const map1WidthRelative = (vals) => vals.map((w) => mapWidthRelative(w));
-  const map1HeightRelative = (vals) => vals.map((h) => mapHeightRelative(h));
-  const map2Relative = (vals) => chunk(vals, 2).flatMap(([w, h]) => [mapWidthRelative(w), mapHeightRelative(h)]);
-  const map2sRelative = (vals) => chunk(vals, 2).flatMap(map2Relative);
-  const mapArcRelative = (vals) => chunk(vals, 7).flatMap(([rx, ry, angle, largeArc, sweep, x, y]) => [mapWidthRelative(rx), mapHeightRelative(ry), angle, largeArc, sweep, mapWidthRelative(x), mapHeightRelative(y)]);
+type Transformer = (values: number[]) => number[];
 
-  const transformers = {
+export function transformPath(pathData: PathCommand[], fromViewBox: ViewBox, toViewBox: ViewBox): PathCommand[] {
+  const mapWidthRelative = (x: number) => (x / fromViewBox.width) * toViewBox.width;
+  const mapHeightRelative = (y: number) => (y / fromViewBox.height) * toViewBox.height;
+  const mapWidthAbsolute = (x: number) => ((x - fromViewBox.x) / fromViewBox.width) * toViewBox.width + toViewBox.x;
+  const mapHeightAbsolute = (y: number) => ((y - fromViewBox.y) / fromViewBox.height) * toViewBox.height + toViewBox.y;
+
+  const map0: Transformer = (values) => values;
+  const map1WidthAbsolute: Transformer = (values) => values.map((width) => mapWidthAbsolute(width));
+  const map1HeightAbsolute: Transformer = (values) => values.map((height) => mapHeightAbsolute(height));
+  const map2Absolute: Transformer = (values) => chunk(values, 2).flatMap((pair) => {
+    const [width, height] = pair as [number, number];
+    return [mapWidthAbsolute(width), mapHeightAbsolute(height)];
+  });
+  const map2sAbsolute: Transformer = (values) => chunk(values, 2).flatMap(map2Absolute);
+  const mapArcAbsolute: Transformer = (values) => chunk(values, 7).flatMap((arc) => {
+    const [radiusX, radiusY, angle, largeArc, sweep, x, y] = arc as [number, number, number, number, number, number, number];
+    return [mapWidthRelative(radiusX), mapHeightRelative(radiusY), angle, largeArc, sweep, mapWidthAbsolute(x), mapHeightAbsolute(y)];
+  });
+
+  const map1WidthRelative: Transformer = (values) => values.map((width) => mapWidthRelative(width));
+  const map1HeightRelative: Transformer = (values) => values.map((height) => mapHeightRelative(height));
+  const map2Relative: Transformer = (values) => chunk(values, 2).flatMap((pair) => {
+    const [width, height] = pair as [number, number];
+    return [mapWidthRelative(width), mapHeightRelative(height)];
+  });
+  const map2sRelative: Transformer = (values) => chunk(values, 2).flatMap(map2Relative);
+  const mapArcRelative: Transformer = (values) => chunk(values, 7).flatMap((arc) => {
+    const [radiusX, radiusY, angle, largeArc, sweep, x, y] = arc as [number, number, number, number, number, number, number];
+    return [mapWidthRelative(radiusX), mapHeightRelative(radiusY), angle, largeArc, sweep, mapWidthRelative(x), mapHeightRelative(y)];
+  });
+
+  const transformers: Record<string, Transformer> = {
     m: map2Relative, M: map2Absolute,
     l: map2Relative, L: map2Absolute,
     h: map1WidthRelative, H: map1WidthAbsolute,
@@ -32,7 +58,7 @@ export function transformPath(pathData, fromViewBox, toViewBox) {
     t: map2Relative, T: map2Absolute,
   };
 
-  const thrower = (type) => { throw new Error(`No transformer for '${type}'`); };
+  const thrower = (type: string): never => { throw new Error(`No transformer for '${type}'`); };
 
   return pathData.map(({ type, values }) => ({
     type,
@@ -40,6 +66,6 @@ export function transformPath(pathData, fromViewBox, toViewBox) {
   }));
 }
 
-export function pathDataToString(pathData) {
+export function pathDataToString(pathData: PathCommand[]): string {
   return pathData.reduce((acc, { type, values }) => acc + `${type} ${values.join(' ')} `, '');
 }
