@@ -101,6 +101,10 @@ const statistics = {
         padding-inline-start: calc(var(--cell-x) + 3px);
         border-left: 3px solid transparent;
         box-sizing: border-box;
+
+        > * {
+          min-width: 0;
+        }
       }
 
       > header {
@@ -111,6 +115,10 @@ const statistics = {
         letter-spacing: 0.1em;
         text-transform: uppercase;
         color: var(--fg-650);
+
+        span {
+          overflow-wrap: break-word;
+        }
 
         span:first-child {
           justify-self: center;
@@ -143,43 +151,27 @@ const statistics = {
       }
 
       @container (max-width: 50rem) {
+        --cell-x: 0.75rem;
         --row-height: 4.5rem;
-        --grid: 5rem minmax(0, 1fr) minmax(0, 1fr);
+        --grid: minmax(3rem, 4rem) repeat(2, minmax(0, 1fr));
 
-        > header {
-          grid-template-areas: 'language repository';
-
-          span:first-child {
-            grid-area: language;
-          }
-
-          span:nth-child(2) {
-            grid-area: repository;
-          }
-
-          span:last-child {
-            display: none;
-          }
+        > header,
+        :global(details > summary) {
+          column-gap: 0.75rem;
         }
 
-        :global(details > summary) {
-          grid-template-areas:
-            'language repository'
-            'contribution contribution';
-          row-gap: 0.375rem;
-          align-content: center;
+        > header {
+          font-size: 0.625rem;
+          letter-spacing: 0.05em;
+        }
+      }
 
-          ul {
-            grid-area: language;
-          }
+      @container (max-width: 24rem) {
+        --grid: 3rem repeat(2, minmax(0, 1fr));
 
-          cite {
-            grid-area: repository;
-          }
-
-          a {
-            grid-area: contribution;
-          }
+        > header {
+          font-size: 0.5625rem;
+          letter-spacing: 0.025em;
         }
       }
     }
