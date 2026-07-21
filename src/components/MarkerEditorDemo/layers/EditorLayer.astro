@@ -1,0 +1,97 @@
+---
+---
+
+<div class="editor-mock">
+  <div class="chrome">
+    <div class="preview" aria-hidden="true">
+      <svg viewBox="-1 -1 2 2">
+        <path d="M 0 0.85 L 0.55 -0.15 A 0.55 0.55 0 1 0 -0.55 -0.15 Z" fill="#89ab24" stroke="white" stroke-width="0.06" />
+        <circle cx="0" cy="-0.25" r="0.22" fill="white" />
+        <circle cx="0.4" cy="-0.25" r="0.04" fill="blue" stroke="white" stroke-width="0.015" />
+      </svg>
+    </div>
+    <aside>
+      <details open>
+        <summary>Shape</summary>
+        <div class="thumbs">
+          <span class="on"></span><span></span><span></span><span></span>
+        </div>
+      </details>
+      <details>
+        <summary>Decoration</summary>
+      </details>
+      <details>
+        <summary>Fill</summary>
+      </details>
+    </aside>
+  </div>
+</div>
+
+<style lang="scss">
+.editor-mock {
+  display: grid;
+  place-items: center;
+  min-height: 18em;
+
+  .chrome {
+    display: grid;
+    grid-template-columns: 12em 10em;
+    gap: 0.75em;
+    padding: 0.75em;
+    background: #333;
+    border: 2px solid #666;
+    border-radius: 0.75em;
+    color: white;
+  }
+
+  .preview {
+    aspect-ratio: 1;
+    border: 1px solid #aaa7;
+    border-radius: 0.5em;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'%3E%3Cline x1='-0.25' y1='0' x2='0.25' y2='0' stroke='%23aaa7' stroke-width='0.1'/%3E%3Cline x1='0' y1='-0.25' x2='0' y2='0.25' stroke='%23aaa7' stroke-width='0.1'/%3E%3C/svg%3E") repeat center / 12%,
+      #3d3d3b;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  aside {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    font-size: 0.85rem;
+
+    details {
+      border-top: 1px solid #666;
+      padding-top: 0.35em;
+
+      &:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+    }
+
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.35em;
+      margin-top: 0.4em;
+
+      span {
+        aspect-ratio: 1;
+        border: 1px solid #666;
+        border-radius: 0.35em;
+        background: #444;
+
+        &.on {
+          border-color: #aaa;
+          border-width: 2px;
+        }
+      }
+    }
+  }
+}
+</style>

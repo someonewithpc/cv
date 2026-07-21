@@ -1,0 +1,270 @@
+@use 'sass:math';
+
+$visrez-brand: #89ab24;
+$marker-editor-background: #333;
+
+dialog#marker-editor {
+  z-index: 1000;
+
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+
+  background: color-mix(in oklab, #000 45%, transparent);
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  display: none;
+  justify-content: center;
+  align-items: center;
+
+  &[open] {
+    display: flex;
+  }
+
+  & > div.wrapper {
+    background: $marker-editor-background;
+    border: 2px solid #666;
+    $wrapper-padding: 0.75em;
+
+    border-radius: calc($wrapper-padding + 0.5em);
+
+    padding: $wrapper-padding;
+
+    article {
+      margin: auto;
+
+      display: grid;
+      grid-template-areas:
+        "navigation divider sidebar"
+        "content divider sidebar";
+
+      $gap: 1em;
+      gap: $gap;
+
+      color-scheme: only light;
+      user-select: none;
+
+      header {
+        grid-area: navigation;
+
+        translate: 0 0.125em;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        height: fit-content;
+
+        > button {
+          background: #444;
+          border: 1px solid #aaa;
+          border-radius: 0.25em;
+          width: calc(1.5em + 2px);
+          height: calc(1.5em + 2px);
+          padding: 0;
+
+          &:hover {
+            margin: -1px;
+            border-width: 2px;
+            border-color: #ccc;
+            width: calc(1.5em + 4px);
+            height: calc(1.5em + 4px);
+          }
+
+          svg {
+            margin: auto;
+            padding: 0.25em;
+            width: 1.5em;
+            height: 1.5em;
+          }
+        }
+      }
+
+      svg {
+        fill: transparent;
+        stroke: white;
+        stroke-width: 0.2;
+      }
+
+      & > section {
+        grid-area: content;
+        margin-bottom: auto;
+
+        border-radius: 0.5em;
+        padding: 0.25em;
+
+        $background-color: #3d3d3b;
+        $line-color: #aaa7;
+
+        border: 1px solid $line-color;
+
+        $crosses: 17;
+        $cell-size: calc(100% / $crosses);
+
+        background:
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'%3E%3Cline x1='-0.25' y1='0' x2='0.25' y2='0' stroke='%23aaa7' stroke-width='0.1'/%3E%3Cline x1='0' y1='-0.25' x2='0' y2='0.25' stroke='%23aaa7' stroke-width='0.1'/%3E%3C/svg%3E") repeat center / $cell-size,
+          linear-gradient($background-color);
+
+        svg {
+          width: 32em;
+          height: 32em;
+        }
+      }
+
+      hr.vr {
+        grid-area: divider;
+        margin: 0.5em 0;
+        padding: 0;
+        width: 0px;
+        height: auto;
+        border-left: 1px solid #666;
+        color-scheme: light;
+      }
+
+      aside {
+        grid-area: sidebar;
+
+        display: flex;
+        flex-direction: column;
+
+        $gap: 0.5em;
+        gap: $gap;
+        details {
+          color: white;
+          min-width: 18em;
+
+          &:not(:first-of-type) {
+            margin-top: -#{math.div($gap, 2)};
+            padding-top: math.div($gap, 2);
+            border-top: 1px solid #666;
+          }
+
+          &.disabled {
+            color: gray !important;
+            cursor: not-allowed;
+          }
+        }
+
+        details[open] summary {
+          margin-block: 0.25em;
+        }
+
+        details[open]::details-content {
+          padding-block: 0.25em;
+        }
+        @supports not selector(::details-content) {
+          details[open] summary {
+            margin-bottom: 0.25em;
+          }
+        }
+
+        $svg-margin: 0.25em;
+        $ul-width: 4em;
+        $ul-gap: 0.5em;
+        $ul-columns: 4;
+        $ul-border: 1px;
+
+        ul {
+          padding: 0;
+          margin: 0;
+
+          display: grid;
+          grid-template-columns: repeat(#{$ul-columns}, 1fr);
+          min-width: fit-content;
+
+          gap: $ul-gap;
+
+          li {
+            box-sizing: content-box;
+
+            list-style: none;
+            display: flex;
+            border: #{$ul-border} solid #666;
+            border-radius: 0.5em;
+            width: $ul-width;
+            height: $ul-width;
+
+            &[aria-selected=true] {
+              margin: -#{$ul-border};
+              border-color: #aaa;
+              border-width: calc(#{$ul-border} * 2);
+            }
+
+            &:hover, &:focus-within {
+              margin: -#{$ul-border};
+              border-color: #888;
+              border-width: calc(#{$ul-border} * 2);
+            }
+
+            & > * {
+              width: unset !important;
+              height: unset !important;
+              max-width: 100%;
+              max-height: 100%;
+              margin: auto;
+              display: block;
+
+              padding: $svg-margin;
+            }
+          }
+        }
+
+        ul:not(:has(li:not(:empty))) {
+          display: none;
+
+          & + section.marker-step-configuration {
+            padding-top: 0;
+          }
+        }
+
+        details:not(:has(ul)) section.marker-step-configuration {
+          padding-top: 0 !important;
+        }
+
+        section.marker-step-configuration {
+          &:has(> *) {
+            padding-top: 1.25em;
+          }
+
+          &:has(> label) {
+            display: grid;
+            grid-template-columns: fit-content(16ch) 1fr;
+            gap: 0.375em 0.625em;
+            align-items: center;
+            max-width: calc(#{$ul-columns} * (#{$ul-width} + 2 * #{$ul-border}) + (#{$ul-columns} - 1) * #{$ul-gap});
+
+            input, select, textarea {
+              width: 100%;
+              accent-color: $visrez-brand;
+              color-scheme: dark;
+            }
+
+            select, ::picker(select) {
+              appearance: base-select;
+              line-height: normal;
+              color-scheme: dark;
+              padding: 0 0.25em;
+            }
+          }
+
+          .decoration-uploader {
+            svg {
+              width: calc(100% - 2 * #{$svg-margin}) !important;
+              height: calc(100% - 2 * #{$svg-margin}) !important;
+              display: block;
+              margin: auto;
+            }
+
+            input[type=file] {
+              appearance: none;
+              display: none;
+            }
+          }
+        }
+      }
+    }
+  }
+}

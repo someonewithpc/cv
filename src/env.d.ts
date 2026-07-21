@@ -1,6 +1,24 @@
 /// <reference path="../.astro/types.d.ts" />
+/// <reference types="vite/client" />
 
 declare module 'path-data-polyfill';
+
+declare module '/@react-refresh' {
+  const runtime: {
+    injectIntoGlobalHook: (env: Window) => void;
+  };
+  export default runtime;
+}
+
+declare module '*.svg?raw' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.svg?url' {
+  const url: string;
+  export default url;
+}
 
 declare namespace astroHTML.JSX {
   interface SVGAttributes {
