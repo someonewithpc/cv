@@ -104,7 +104,6 @@ article {
     flex: 0 0 100%;
     overflow-y: clip;
     scroll-snap-align: center;
-    animation-play-state: paused;
   }
 
   &::scroll-button(*) {
@@ -130,8 +129,11 @@ article {
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function init() {
   [...document.querySelectorAll('article.technical-drawing-stack')].forEach((stack) => {
+    // Viewport root (not the stack): with root:stack the active slide was
+    // "intersecting" on load even when still below the fold. Stack overflow
+    // still clips off-screen carousel slides from the viewport intersection.
     const observer = new IntersectionObserver((intersections) => {
       [...intersections].forEach((entry) => {
         const target = entry.target as HTMLElement;
@@ -139,6 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
         target.getAnimations({ subtree: true }).forEach((animation) => {
           if (!entry.isIntersecting && (animation.playState === 'running' || animation.playState === 'finished')) {
             animation.cancel();
+            // Cancelled animations get removed, so start them, but pause immediately
+            animation.play();
+            animation.pause();
+          } else {
             animation.play();
           }
         });
@@ -147,8 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
           entry.isIntersecting ? 'removeProperty' : 'setProperty'
         ]('animation-play-state', 'paused');
       });
-    }, { root: stack, threshold: 0.25, scrollMargin: '25%' });
+    }, { threshold: 0.25, scrollMargin: '25%' });
     [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
   });
 });
+
+if (document.readyState !== 'loading') { init(); }
 </script>
