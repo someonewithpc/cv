@@ -1,19 +1,19 @@
 ---
-import { Icon } from 'astro-icon/components';
+import TechIcon from '@/components/TechIcon.astro';
 
 import { TECH_TAGS } from '@/server/tech-tags';
 ---
 
 <section aria-label="Technologies">
-  {TECH_TAGS.map(({ icon, text }) => (
+  {TECH_TAGS.map((tag) => (
     <span>
-      <Icon name={icon} is:inline aria-hidden="true" title={text} />
-      <span>{text}</span>
+      <TechIcon tag={tag} />
+      <span>{tag.text}</span>
     </span>
   ))}
 </section>
 
-<style>
+<style lang="scss">
 section {
   display: flex;
   justify-content: center;
@@ -25,7 +25,7 @@ section {
   & > span {
     padding: 0.375em 0.5em;
     border-radius: 100vh;
-    display: inline flex;
+    display: inline-flex;
     gap: 1ch;
     align-items: center;
 
