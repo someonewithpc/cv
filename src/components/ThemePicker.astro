@@ -56,11 +56,15 @@ ${Object.entries({ light: THEMES.light, dark: THEMES.dark }).map(([id, settings]
       --base-bg: var(--theme-base-bg);
       --base-accent: var(--theme-base-accent);
       --base-blueprint: var(--theme-base-blueprint);
+
+      --theme-kind: ${id};
     }
   }`
 )).join('\n\n')}
 ${Object.entries(THEMES).map(([id, settings]) => `
   :root:has(#theme-picker input[name="theme"][value="${id}"]:is(:not(.with-transition):checked, .with-transition.checked)) {
+    --theme-kind: ${id};
+
     --theme-base-fg: ${settings.fg};
     --theme-base-bg: ${settings.bg};
     --theme-base-accent: ${settings.accent};

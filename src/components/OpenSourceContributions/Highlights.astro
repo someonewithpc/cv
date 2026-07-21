@@ -1,5 +1,5 @@
 ---
-import { Icon } from 'astro-icon/components';
+import TechIcon from '@/components/TechIcon.astro';
 
 import { resolveTechTagByIconSuffix } from '@/server/tech-tags';
 
@@ -35,7 +35,7 @@ const { highlights } = Astro.props;
 
         return resolved && (
           <li>
-            <Icon name={resolved.icon} title={resolved.text} is:inline />
+            <TechIcon tag={resolved} />
           </li>
         );
       })}
