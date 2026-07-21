@@ -1,0 +1,36 @@
+---
+---
+
+<div class="parts-mock">
+  <svg viewBox="-1.2 -1.2 2.4 2.4" aria-hidden="true">
+    <path
+      d="M 0 0.9 L 0.6 -0.1 A 0.6 0.6 0 1 0 -0.6 -0.1 Z"
+      fill="#89ab24"
+      stroke="white"
+      stroke-width="0.07"
+    />
+    <circle cx="0" cy="-0.2" r="0.28" fill="white" opacity="0.9" />
+    <g stroke="blue" fill="white" stroke-width="0.025">
+      <circle cx="0" cy="-0.2" r="0.05" />
+      <circle cx="0.45" cy="-0.2" r="0.05" />
+      <circle cx="0" cy="0.9" r="0.05" />
+    </g>
+    <g stroke="green" stroke-width="0.02">
+      <line x1="-0.08" y1="-0.2" x2="0.08" y2="-0.2" />
+      <line x1="0" y1="-0.28" x2="0" y2="-0.12" />
+    </g>
+  </svg>
+</div>
+
+<style lang="scss">
+.parts-mock {
+  display: grid;
+  place-items: center;
+  min-height: 16em;
+
+  svg {
+    width: min(100%, 14em);
+    height: auto;
+  }
+}
+</style>
