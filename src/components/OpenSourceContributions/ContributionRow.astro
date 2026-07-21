@@ -108,6 +108,7 @@ details {
   > summary {
     ul {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
       gap: 0.375rem;
@@ -132,15 +133,17 @@ details {
       font-style: normal;
       color: var(--fg-750);
       line-height: 1.4;
-      overflow-wrap: anywhere;
+      overflow-wrap: break-word;
     }
 
     a {
+      min-width: 0;
       font-family: sans-serif;
       color: var(--fg-900);
       line-height: 1.4;
       text-decoration: none;
       text-underline-offset: 0.15em;
+      overflow-wrap: break-word;
 
       &:hover {
         color: var(--accent-750);
@@ -169,6 +172,7 @@ details {
     margin: 0;
     line-height: 1.65;
     color: var(--fg-800);
+    overflow-wrap: break-word;
   }
 
   > footer {
@@ -192,6 +196,17 @@ details {
 
     .files {
       color: var(--accent-750);
+    }
+  }
+
+  @container (max-width: 24rem) {
+    > summary ul {
+      flex-direction: column;
+      flex-wrap: nowrap;
+
+      li {
+        min-height: 1.75rem;
+      }
     }
   }
 }
