@@ -10,15 +10,15 @@ type Props = {
   status: string;
   repository: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   url: string;
-  number: number | null;
-  stats: {
+  number?: number | null;
+  stats?: {
     additions: number;
     deletions: number;
     changed_files: number;
   } | null;
-  updatedAt: string | null;
+  updatedAt?: string | null;
 };
 
 const {
@@ -50,7 +50,7 @@ const hasMeta = updatedAt || stats;
       })}
     </ul>
 
-    <cite>{repository}{number !== null && `#${number}`}</cite>
+    <cite>{repository}{number != null && `#${number}`}</cite>
 
     <a
       href={url}

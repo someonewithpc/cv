@@ -1,6 +1,20 @@
 ---
 import TechnicalDrawingPage from './Page.astro';
 
+type Layer = {
+  name: string | null;
+  size?: string;
+  pageStyle?: string;
+};
+
+type Props = {
+  layers?: Record<string, Layer>;
+  subtitle?: string;
+  scale?: string;
+  size?: string;
+  date?: string;
+};
+
 const { layers = {} } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
@@ -115,19 +129,21 @@ article {
 }
 </style>
 
-<script lang="ts">
+<script>
 document.addEventListener('DOMContentLoaded', () => {
   [...document.querySelectorAll('article.technical-drawing-stack')].forEach((stack) => {
     const observer = new IntersectionObserver((intersections) => {
       [...intersections].forEach((entry) => {
-        entry.target.getAnimations({ subtree: true }).forEach((animation) => {
+        const target = entry.target as HTMLElement;
+
+        target.getAnimations({ subtree: true }).forEach((animation) => {
           if (!entry.isIntersecting && (animation.playState === 'running' || animation.playState === 'finished')) {
             animation.cancel();
             animation.play();
           }
         });
 
-        entry.target.style[
+        target.style[
           entry.isIntersecting ? 'removeProperty' : 'setProperty'
         ]('animation-play-state', 'paused');
       });

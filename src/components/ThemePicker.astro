@@ -81,7 +81,7 @@ ${Object.entries(THEMES).map(([id, settings]) => `
 <div id="theme-picker-transition-background" />
 
 <aside id="theme-picker">
-  {Object.entries(THEMES).map(([id, settings], index) => (
+  {Object.entries(THEMES).map(([id, settings]) => (
   <>
     <label class="bypass-contrast-check">
       <input tabindex="0" type="radio" name="theme" value={id} class="sr-only" />
@@ -185,10 +185,10 @@ if (!('getPathData' in SVGPathElement)) {
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 if (!prefersReducedMotion.matches) {
-  const inputs = [...document.querySelectorAll('#theme-picker input')];
+  const inputs = [...document.querySelectorAll<HTMLInputElement>('#theme-picker input')];
   inputs.forEach((inputEl) => {
     inputEl.classList.add('with-transition');
-    inputEl.addEventListener('input', (e) => {
+    inputEl.addEventListener('input', () => {
       document.body.classList.add('theme-transition');
       const viewTransition = document.startViewTransition({
         types: ['theme-transition'],
@@ -198,14 +198,20 @@ if (!prefersReducedMotion.matches) {
         },
       });
 
-      viewTransition.ready.then((val) => {
-        const svg = e.target.parentElement.querySelector('svg.checked');
+      viewTransition.ready.then(() => {
+        const svg = inputEl.parentElement?.querySelector<SVGSVGElement>('svg.checked');
+        if (!svg) return;
+
         const rect = svg.getBoundingClientRect();
 
-        const symbol = svg.querySelector('symbol');
+        const symbol = svg.querySelector<SVGSymbolElement>('symbol');
+        if (!symbol) return;
+
         const viewBox = symbol.viewBox.baseVal;
 
-        const path = svg.querySelector('path');
+        const path = svg.querySelector<SVGPathElement>('path');
+        if (!path) return;
+
         const pathData = path.getPathData();
 
         const scaleFactor = +(svg.dataset.themeTransitionScaleFactor ?? '1');

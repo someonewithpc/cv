@@ -1,8 +1,6 @@
 ---
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import Annotation from '@/components/TechnicalDrawing/Annotation.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 import PostIt from '@/components/PostIt.astro';
 
 import Result from './Result.astro';
@@ -23,6 +21,17 @@ function toKiB(text: string) {
 
 const visrezLogoAnimationSize = toKiB(VisrezLogoAnimationRaw);
 const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
+
+const layers = {
+  main: { name: null, size: visrezLogoAnimationSize },
+  original: { name: 'Original Logo', size: originalVisrezLogoSize, pageStyle: 'blueprint' },
+  cube: { name: 'Cube :)', pageStyle: 'blueprint' },
+  path: { name: 'Authored Path', pageStyle: 'blueprint' },
+  pathData: { name: 'Path Data', pageStyle: 'blueprint' },
+  allTogether: { name: 'Putting it all together' },
+} as const;
+
+type Layer = keyof typeof layers;
 ---
 
 <TechnicalDrawingStack
@@ -30,19 +39,12 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
   scale="3:1"
   size={visrezLogoAnimationSize}
   date="2023"
-  layers={{
-    main: { name: null, size: visrezLogoAnimationSize },
-    original: { name: 'Original Logo', size: originalVisrezLogoSize, pageStyle: 'blueprint' },
-    cube: { name: 'Cube :)', pageStyle: 'blueprint' },
-    path: { name: 'Authored Path', pageStyle: 'blueprint' },
-    pathData: { name: 'Path Data', pageStyle: 'blueprint' },
-    allTogether: { name: 'Putting it all together' },
-  }}
+  layers={layers}
 >
   <fragment
     slot="layers"
   >
-    {(layer) => ({
+    {(layer: Layer) => ({
       main: (
         <Result />
       ),
@@ -74,7 +76,8 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
   <fragment
     slot="aside"
   >
-    {(layer) => ({
+    {(layer: Layer) => ({
+      main: null,
       original: (
         <PostIt background="#ea1" color="black">
           The original logo was created in Illustrator and had problems which made animating it harder
@@ -82,6 +85,7 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
       ),
       cube: (<CubeAside />),
       path: (<PathAside />),
+      pathData: null,
       allTogether: (<AllTogetherAside />),
     }[layer])}
   </fragment>

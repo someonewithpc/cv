@@ -3,6 +3,27 @@ import { Icon } from 'astro-icon/components';
 
 import { resolveTechTagByIconSuffix } from '@/server/tech-tags';
 
+type Link = {
+  label: string;
+  url: string;
+};
+
+type Highlight = {
+  title: string;
+  role?: string;
+  roleJp?: string;
+  description: string;
+  repository: string;
+  commits?: string;
+  period?: string;
+  links: Link[];
+  tags: string[];
+};
+
+type Props = {
+  highlights: Highlight[];
+};
+
 const { highlights } = Astro.props;
 ---
 
