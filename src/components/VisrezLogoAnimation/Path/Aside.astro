@@ -19,8 +19,11 @@ div {
   padding: 0.5em;
   margin: 1em;
   border-radius: 0.5em;
-
   translate: 0 -50px;
+
+  @container technical-drawing (orientation: portrait) {
+    translate: none;
+  }
 
   h3 {
     margin-bottom: 0.75em;

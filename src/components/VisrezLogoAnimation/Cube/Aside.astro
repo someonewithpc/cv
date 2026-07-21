@@ -2,12 +2,12 @@
 import PostIt from '@/components/PostIt.astro';
 ---
 
-<div style="display: flex; flex-direction: column; gap: 3em; align-items: center;">
+<div class="cube-aside">
   <PostIt background="#3a3" color="black">
     We can think of the logo as a rotated cube
   </PostIt>
 
-  <div style="font-size: 1.5rem; padding: 1em; border: 1px solid var(--fg-800); border-radius: 0.5em;">
+  <div class="formula">
     <math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
       <mrow>
         <mfrac>
@@ -28,3 +28,19 @@ import PostIt from '@/components/PostIt.astro';
     </math>
   </div>
 </div>
+
+<style lang="scss">
+.cube-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  align-items: center;
+}
+
+.formula {
+  font-size: 1.5rem;
+  padding: 1em;
+  border: 1px solid var(--fg-800);
+  border-radius: 0.5em;
+}
+</style>

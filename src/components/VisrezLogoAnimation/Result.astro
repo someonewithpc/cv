@@ -1,8 +1,7 @@
----
-const { width } = Astro.props;
----
-
-<svg viewBox="-1 -1 2 2" xmlns="http://www.w3.org/2000/svg" width={width}>
+<svg
+  viewBox="-1 -1 2 2"
+  xmlns="http://www.w3.org/2000/svg"
+>
   <style>
     @keyframes visrez-logo-path-dash-animation {
       from {
@@ -35,3 +34,12 @@ const { width } = Astro.props;
     />
   </g>
 </svg>
+
+<style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
+svg {
+  width: drawing.$artwork-width;
+  aspect-ratio: 1;
+}
+</style>

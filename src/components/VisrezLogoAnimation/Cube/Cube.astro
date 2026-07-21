@@ -1,19 +1,30 @@
 <figure>
-  {Array.from({ length: 6 }, () => (<div class="face"/>))}
+  <div class="scene">
+    {Array.from({ length: 6 }, () => (<div class="face"/>))}
+  </div>
 </figure>
 
 <style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
+$width: drawing.$artwork-width * 0.5;
+
 figure {
-  $width: 10em;
+  display: inline-grid;
+  width: fit-content;
+  height: fit-content;
+  padding: $width calc($width / 2);
+  margin: 0;
+}
+
+.scene {
   transform-style: preserve-3d;
-  width: 100%;
-  height: 100%;
+  width: $width;
+  height: $width;
   display: grid;
 
-  $base-transform: translate3d(calc($width / 2), calc($width), 0);
-  transform-origin: calc($width / 2) calc($width / 2) 0;
+  transform-origin: center center;
   backface-visibility: hidden;
-  transform: $base-transform;
 
   animation:
     0.5s ease-in forwards tilt,
@@ -23,16 +34,16 @@ figure {
 
   @keyframes tilt {
     to {
-      transform: $base-transform rotateX($xRot) rotateY(45deg);
+      transform: rotateX($xRot) rotateY(45deg);
     }
   }
 
   @keyframes spin {
     from {
-      transform: $base-transform rotateX($xRot) rotateY(45deg);
+      transform: rotateX($xRot) rotateY(45deg);
     }
     to {
-      transform: $base-transform rotateX($xRot) rotateY(calc(1turn + 45deg));
+      transform: rotateX($xRot) rotateY(calc(1turn + 45deg));
     }
   }
 
