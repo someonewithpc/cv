@@ -1,0 +1,101 @@
+---
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import MockMap from './MockMap/MockMap.astro';
+import SelectorLayer from './layers/SelectorLayer.astro';
+import EditorLayer from './layers/EditorLayer.astro';
+import PartsLayer from './layers/PartsLayer.astro';
+import StoreLayer from './layers/StoreLayer.astro';
+
+const layers = {
+  main: { name: null },
+  selector: { name: 'Marker Selector', pageStyle: 'blueprint' },
+  editor: { name: 'Marker Editor', pageStyle: 'blueprint' },
+  parts: { name: 'Composable Parts', pageStyle: 'blueprint' },
+  store: { name: 'Undoable Store', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Interactive Map Marker Editor"
+  scale="1:1"
+  date="2025"
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      main: <MockMap />,
+      selector: (
+        <Annotations>
+          <SelectorLayer slot="content" />
+          <Fragment slot="annotations">
+            <ArrowAnnotation tipX={-0.15} tipY={-0.35} angle={-40} length={0.55} text="Pick / create / upload" />
+            <ArrowAnnotation tipX={0.35} tipY={0.2} angle={25} length={0.5} text="Edit & duplicate" />
+          </Fragment>
+        </Annotations>
+      ),
+      editor: (
+        <Annotations>
+          <EditorLayer slot="content" />
+          <Fragment slot="annotations">
+            <ArrowAnnotation tipX={-0.4} tipY={-0.1} angle={180} length={0.45} text="Live SVG preview" />
+            <ArrowAnnotation tipX={0.45} tipY={-0.35} angle={-20} length={0.4} text="Step accordion" />
+          </Fragment>
+        </Annotations>
+      ),
+      parts: (
+        <Annotations>
+          <PartsLayer slot="content" />
+          <Fragment slot="annotations">
+            <ArrowAnnotation tipX={0} tipY={-0.45} angle={-90} length={0.35} text="Control points" />
+            <ArrowAnnotation tipX={0.4} tipY={0.35} angle={30} length={0.45} text="Shape + decoration" />
+          </Fragment>
+        </Annotations>
+      ),
+      store: (
+        <Annotations>
+          <StoreLayer slot="content" />
+          <Fragment slot="annotations">
+            <ArrowAnnotation tipX={-0.2} tipY={0} angle={160} length={0.5} text="redux-undo history" />
+            <ArrowAnnotation tipX={0.35} tipY={0.25} angle={40} length={0.45} text="groupedUndo.batch" />
+          </Fragment>
+        </Annotations>
+      ),
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      main: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over, then click a pin to open the marker picker. Ctrl/Cmd+Z undoes.
+        </PostIt>
+      ),
+      selector: (
+        <PostIt background="#cde" color="black">
+          The selector lists markers for a space: assign, upload SVG, or open the editor to craft a new one.
+        </PostIt>
+      ),
+      editor: (
+        <PostIt background="#fec" color="black">
+          Each accordion step swaps a MarkerPart. Geometry updates imperatively so dragging stays smooth.
+        </PostIt>
+      ),
+      parts: (
+        <PostIt background="#dfd" color="black">
+          Shapes, borders, fills, and decorations serialize into SVG <code>data-*</code> attributes for round-trips.
+        </PostIt>
+      ),
+      store: (
+        <PostIt background="#edf" color="black">
+          Marker and space mutations sit under redux-undo. Multi-dispatch saves batch into one undo step.
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
