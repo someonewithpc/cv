@@ -1,0 +1,31 @@
+---
+---
+
+<div class="store-mock" aria-hidden="true">
+  <pre>{`undoable.present
+├─ markers[]
+└─ spaces[]
+
+groupedUndo.batch(() => {
+  addMarker(...)
+  setSpaceMarker(...)
+})`}</pre>
+</div>
+
+<style lang="scss">
+.store-mock {
+  display: grid;
+  place-items: center;
+  min-height: 16em;
+
+  pre {
+    margin: 0;
+    padding: 1em 1.25em;
+    border: 1px dashed color-mix(in oklab, var(--fg-600, #333) 40%, transparent);
+    border-radius: 0.35em;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    background: color-mix(in oklab, var(--bg, #fff) 80%, #89ab24);
+  }
+}
+</style>

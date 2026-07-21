@@ -1,0 +1,9 @@
+section.marker-step-configuration {
+  .font-settings {
+    color-scheme: light dark !important;
+    display: grid;
+    grid-template-columns: fit-content(16ch) 1fr;
+    gap: 0.375em 0.625em;
+    align-items: center;
+  }
+}

@@ -1,0 +1,88 @@
+---
+import mapUrl from './map.svg?url';
+---
+
+<div class="mock-map-demo">
+  {/* img isolates the SVG from page CSS (theme/color inheritance was tinting fills). */}
+  <img class="mock-map-svg" src={mapUrl} width="800" height="800" alt="" decoding="async" />
+  <div class="mock-map-island" data-mock-map-island></div>
+</div>
+
+{/* Vite React refresh preamble — required when mounting React from an Astro script in dev. */}
+<script>
+  if (import.meta.hot) {
+    // Vite virtual module — only exists in dev
+    // @ts-expect-error
+    const RefreshRuntime = (await import('/@react-refresh')).default;
+    RefreshRuntime.injectIntoGlobalHook(window);
+    // @ts-expect-error Vite React refresh globals
+    window.$RefreshReg$ = () => {};
+    // @ts-expect-error Vite React refresh globals
+    window.$RefreshSig$ = () => (type) => type;
+    // @ts-expect-error Vite React refresh globals
+    window.__vite_plugin_react_preamble_installed__ = true;
+  }
+</script>
+
+<script>
+  async function bootMockMap() {
+    const mount = document.querySelector<HTMLElement>('[data-mock-map-island]');
+    if (!mount || mount.dataset.mounted === 'true') return;
+    mount.dataset.mounted = 'true';
+
+    const [{ createElement }, { createRoot }, { default: MockMapApp }] = await Promise.all([
+      import('react'),
+      import('react-dom/client'),
+      import('./MockMapApp'),
+    ]);
+
+    createRoot(mount).render(createElement(MockMapApp));
+  }
+
+  bootMockMap();
+</script>
+
+<style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
+// Larger than the shared logo artwork so the map can read as a scene
+$mock-map-width: drawing.$artwork-width * 1.75;
+
+.mock-map-demo {
+  position: relative;
+  width: $mock-map-width;
+  max-width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.35em;
+  outline: none;
+  color-scheme: only light;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, #000 6%, transparent);
+  forced-color-adjust: none;
+  --map-scale: 1;
+  --map-focus-x: 0.5;
+  --map-focus-y: 0.5;
+
+  .mock-map-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    user-select: none;
+    transform-origin: 0 0;
+    transform: translate(
+        calc((0.5 - var(--map-focus-x) * var(--map-scale)) * 100%),
+        calc((0.5 - var(--map-focus-y) * var(--map-scale)) * 100%)
+      )
+      scale(var(--map-scale));
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
+  .mock-map-island {
+    position: absolute;
+    inset: 0;
+  }
+}
+</style>

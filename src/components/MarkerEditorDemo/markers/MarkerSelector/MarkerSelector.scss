@@ -1,0 +1,110 @@
+$visrez-brand: #89ab24;
+
+.marker-editing-overlay {
+  background: #333;
+  border: 2px solid #666;
+
+  border-radius: 0.5em;
+  padding: 0.5em;
+
+  & > [role=listbox] {
+    padding: 0;
+    margin: 0;
+
+    $padding: 0.25em;
+    $item-size: calc(64px + #{$padding} * 2);
+    $gap: 0.5em;
+    display: grid;
+
+    $max-column-count: 4;
+    max-width: calc($item-size * $max-column-count + $gap * ($max-column-count - 1));
+    grid-template-columns: repeat(auto-fit, $item-size);
+    gap: $gap;
+
+    color-scheme: only light;
+    box-sizing: content-box;
+
+    li[role=option] {
+      width: $item-size;
+      height: $item-size;
+
+      list-style: none;
+      border: 1px solid #666;
+      border-radius: 0.5em;
+
+      &[aria-selected="true"] {
+        margin: -1px;
+        width: calc(#{$item-size} + 2px);
+        height: calc(#{$item-size} + 2px);
+
+        border-width: 2px;
+        border-color: var(--brand, $visrez-brand);
+      }
+
+      &:focus-within, &:hover {
+        margin: -1px;
+        width: calc(#{$item-size} + 2px);
+        height: calc(#{$item-size} + 2px);
+
+        border-width: 2px;
+        border-color: #aaa;
+      }
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: $padding;
+
+      img {
+        max-width: 100%;
+        height: 100%;
+        color-scheme: only light;
+      }
+
+      .marker-edit-icon, .marker-delete-icon, .marker-duplicate-icon {
+        position: absolute;
+        $padding: 0.25em;
+        $size: 0.75em;
+        $border: 1px;
+
+        $final-size: #{calc($size + 2 * $padding + 2 * $border)};
+        width: $final-size;
+        height: $final-size;
+
+        &.marker-edit-icon {
+          top: calc(-0.25 * #{$final-size} / 2);
+          right: calc(-0.25 * #{$final-size} / 2);
+        }
+
+        &.marker-duplicate-icon {
+          bottom: calc(-0.25 * #{$final-size} / 2);
+          right: calc(-0.25 * #{$final-size} / 2);
+        }
+
+        &.marker-delete-icon {
+          top: calc(-0.25 * #{$final-size} / 2);
+          left: calc(-0.25 * #{$final-size} / 2);
+        }
+
+        background: #333;
+        border: #{$border} solid #888;
+        border-radius: 0.25em;
+        padding: $padding;
+
+        &:not(.disabled):is(:focus-within, :hover) {
+          margin: -#{$border};
+          width: calc(#{$final-size} + 2px);
+          height: calc(#{$final-size} + 2px);
+
+          border-width: 2px;
+          border-color: #aaa;
+        }
+
+        &.disabled {
+          color: darkgray;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
