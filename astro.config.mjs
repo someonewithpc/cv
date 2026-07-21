@@ -13,7 +13,11 @@ export default defineConfig({
     prerenderEnvironment: 'node',
   }),
   compressHTML: true,
-  integrations: [icon()],
+  integrations: [icon({
+    include: {
+      lucide: ['external-link'],
+    },
+  })],
 
   vite: {
     resolve: {

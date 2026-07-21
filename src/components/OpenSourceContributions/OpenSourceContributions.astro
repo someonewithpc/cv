@@ -1,6 +1,5 @@
 ---
 import site from './site.json';
-
 import ContributionRow from './ContributionRow.astro';
 import SectionHeader from './SectionHeader.astro';
 import Highlights from './Highlights.astro';
@@ -28,8 +27,8 @@ const statistics = {
 
       <div>
         <header aria-hidden="true">
-          <span>Language</span>
-          <span>Repository</span>
+          <span>Tech</span>
+          <span>Repo</span>
           <span>Contribution</span>
         </header>
 
@@ -111,8 +110,8 @@ const statistics = {
         border-bottom: 1px solid var(--fg-850);
         background: color-mix(in oklab, var(--bg-875), var(--fg-900) 4%);
         font-family: monospace, system-ui;
-        font-size: 0.6875rem;
-        letter-spacing: 0.1em;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--fg-650);
 
@@ -161,8 +160,8 @@ const statistics = {
         }
 
         > header {
-          font-size: 0.625rem;
-          letter-spacing: 0.05em;
+          font-size: 0.6875rem;
+          letter-spacing: 0.06em;
         }
       }
 
@@ -170,8 +169,8 @@ const statistics = {
         --grid: 3rem repeat(2, minmax(0, 1fr));
 
         > header {
-          font-size: 0.5625rem;
-          letter-spacing: 0.025em;
+          font-size: 0.625rem;
+          letter-spacing: 0.04em;
         }
       }
     }
