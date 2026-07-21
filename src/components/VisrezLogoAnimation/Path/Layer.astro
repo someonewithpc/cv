@@ -5,7 +5,7 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 
 <div class="wrapper">
   <Annotations>
-    <svg viewBox="-1 -1 2 2" slot="content">
+    <svg class="path-layer" viewBox="-1 -1 2 2" slot="content">
       <g transform="translate(0, 0.2) scale(.707)">
         <circle cx="1" cy="-0.707" r={0.224 / 2} fill="gray" class="first-vertex-virtual" />
         <path
@@ -65,6 +65,8 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 </div>
 
 <style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
 @property --first-vertex-virtual-visible {
   syntax: 'visible | hidden';
   inherits: true;
@@ -96,6 +98,14 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 }
 
 .wrapper {
+  width: drawing.$artwork-width;
+  aspect-ratio: 1;
+
+  .path-layer {
+    width: 100%;
+    height: 100%;
+  }
+
   path {
     stroke: white;
     stroke-dasharray: 1;

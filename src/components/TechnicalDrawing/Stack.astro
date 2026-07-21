@@ -5,48 +5,62 @@ const { layers = {} } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
 
-<article class="technical-drawing-stack">
-  {Object.entries(layers).map(([id, { name, size, pageStyle }], index) => (
-    <TechnicalDrawingPage
-      title={name}
-      subtitle={Astro.props.subtitle}
-      scale={Astro.props.scale}
-      size={size ?? Astro.props.size}
-      date={Astro.props.date}
-      index={index + 1}
-      layerCount={totalLayers}
-      pageStyle={pageStyle}
-    >
-      <Fragment slot="content">
-        {Astro.slots.render('layers', [id])}
-      </Fragment>
-      <Fragment slot="aside">
-        {Astro.slots.render('aside', [id])}
-      </Fragment>
-    </TechnicalDrawingPage>
-  ))}
+<div class="technical-drawing-frame">
+  <article class="technical-drawing-stack">
+    {Object.entries(layers).map(([id, { name, size, pageStyle }], index) => (
+      <TechnicalDrawingPage
+        title={name}
+        subtitle={Astro.props.subtitle}
+        scale={Astro.props.scale}
+        size={size ?? Astro.props.size}
+        date={Astro.props.date}
+        index={index + 1}
+        layerCount={totalLayers}
+        pageStyle={pageStyle}
+      >
+        <Fragment slot="content">
+          {Astro.slots.render('layers', [id])}
+        </Fragment>
+        <Fragment slot="aside">
+          {Astro.slots.render('aside', [id])}
+        </Fragment>
+      </TechnicalDrawingPage>
+    ))}
 
-    <!-- {Object.keys(layers).length > 1 && (
-  <nav class="layers">
-    <ol class="monospace">
-      {Object.entries(layers).map(([id, name], index) => (
-      <a href="#">
-              <li>
-                <span>{index + 1}</span>
-                <span>{name}</span>
-              </li>
-            </a>
-            ))}
-        </ol>
-      </nav>
-      )} -->
-</article>
+      <!-- {Object.keys(layers).length > 1 && (
+    <nav class="layers">
+      <ol class="monospace">
+        {Object.entries(layers).map(([id, name], index) => (
+        <a href="#">
+                <li>
+                  <span>{index + 1}</span>
+                  <span>{name}</span>
+                </li>
+              </a>
+              ))}
+          </ol>
+        </nav>
+        )} -->
+  </article>
+</div>
 
 
 <style lang="scss">
+.technical-drawing-frame {
+  container: technical-drawing-width / inline-size;
+  width: 100%;
+  // Allow the frame to shrink within the page grid instead of expanding it
+  // to the carousel's intrinsic width (default min-width: auto).
+  min-width: 0;
+  overflow: hidden;
+}
+
 article {
-  width: 64em;
-  height: 32em;
+  --technical-drawing-aspect: 2 / 1;
+
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--technical-drawing-aspect);
 
   background: var(--bg-850);
   color: var(--fg-850);
@@ -54,6 +68,7 @@ article {
   border-radius: 0.5em;
 
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
   scroll-behavior: smooth;
@@ -62,12 +77,18 @@ article {
   flex-direction: row;
 
   position: relative;
+  container: technical-drawing / size;
   anchor-name: --technical-drawing-stack;
   anchor-scope: --technical-drawing-stack;
 
+  @container technical-drawing-width (max-width: 40em) {
+    --technical-drawing-aspect: 1 / 2;
+    max-height: 48rem;
+  }
+
   > :global(*) {
-    flex-shrink: 0;
-    flex-basis: 100%;
+    flex: 0 0 100%;
+    overflow-y: clip;
     scroll-snap-align: center;
     animation-play-state: paused;
   }
@@ -91,7 +112,6 @@ article {
   &::scroll-button(*):focus-visible {
     outline-offset: 5px;
   }
-
 }
 </style>
 

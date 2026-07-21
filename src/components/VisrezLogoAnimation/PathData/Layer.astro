@@ -24,16 +24,33 @@
 <span class="line"><span style="color:#E1E4E8">&lt;/</span><span style="color:#85E89D">svg</span><span style="color:#E1E4E8">&gt;</span></span></code></pre>
 
 <style lang="scss">
+:global(article.technical-drawing-stack > section:has(pre.path-data-layer)) {
+  overflow: hidden;
+}
+
 :global(article.technical-drawing-stack > section:has(pre.path-data-layer) > .content) {
   translate: unset;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  place-self: stretch;
+  width: 100%;
+  height: 100%;
+  font-size: 1rem;
+  overflow: hidden;
+  justify-content: flex-start;
+  min-height: 0;
 
   pre {
-    margin-inline: 2em;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 1em 1.25em 5.5em;
     padding: 1em;
     max-width: 100%;
+    overflow: auto;
 
     &, code {
       font-size: 0.875rem;
+      line-height: 1.35;
     }
 
     & > code > .line {
