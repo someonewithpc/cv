@@ -76,6 +76,8 @@
 </div>
 
 <style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
 @property --rect-mask-full {
   syntax: '<number>';
   inherits: true;
@@ -119,8 +121,8 @@
 }
 
 .all-together-layer {
-  width: 100%;
-  height: 100%;
+  width: drawing.$artwork-width;
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
 
