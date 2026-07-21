@@ -129,7 +129,7 @@ article {
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function init() {
+function init() {
   [...document.querySelectorAll('article.technical-drawing-stack')].forEach((stack) => {
     // Viewport root (not the stack): with root:stack the active slide was
     // "intersecting" on load even when still below the fold. Stack overflow
@@ -156,7 +156,9 @@ document.addEventListener('DOMContentLoaded', function init() {
     }, { threshold: 0.25, scrollMargin: '25%' });
     [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
   });
-});
+}
+
+document.addEventListener('DOMContentLoaded', init);
 
 if (document.readyState !== 'loading') { init(); }
 </script>
