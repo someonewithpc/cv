@@ -399,6 +399,22 @@
       "label": "Open",
       "items": [
         {
+          "repository": "git/git",
+          "title": "rebase: add `--[no-]edit` to `--continue`",
+          "description": "Add `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening $EDITOR after resolving conflicts, with `--edit` to override the config for a single continue.",
+          "url": "https://lore.kernel.org/git/20260721140443.1809379-1-hugo@hsal.es/T/#me10fd97f2d1bfcc869c6b71e41a22b9727bd2e24",
+          "updatedAt": "2026-07-21",
+          "stats": {
+            "additions": 126,
+            "deletions": 7,
+            "changed_files": 5
+          },
+          "tags": [
+            "git",
+            "c"
+          ]
+        },
+        {
           "repository": "pear/XML_XRD",
           "title": "Switch to PSR-4 with XRD namespace",
           "description": "Modernized XML_XRD with PSR-4 autoloading under an `XRD` namespace, replacing legacy PEAR layout.",
