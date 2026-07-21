@@ -1,0 +1,77 @@
+---
+import { Icon } from 'astro-icon/components';
+
+import type { TechTag } from '@/server/tech-tags';
+
+type Props = {
+  tag: TechTag;
+  class?: string;
+};
+
+/** Icons whose fills must not be remapped when the page is in dark color-scheme.
+ *  Iconify strips style="color-scheme" from local SVG roots, so set it on the
+ *  rendered <svg> (inline style wins over the inherit rule below). */
+const LOCK_COLOR_SCHEME_LIGHT = new Set([
+  'php',
+  'python',
+  'rust',
+  'prolog',
+  'emacs',
+  'linux',
+  'gcc',
+]);
+
+const { tag, class: className } = Astro.props;
+---
+
+<span class:list={['tech-icon', className]}>
+  <Icon
+    name={tag.icon}
+    is:inline
+    aria-hidden="true"
+    title={tag.text}
+    style={LOCK_COLOR_SCHEME_LIGHT.has(tag.icon) ? 'color-scheme: only light' : undefined}
+  />
+</span>
+
+<style lang="scss">
+.tech-icon {
+  display: inline-flex;
+  --icon-contrast-stroke: rgb(0 0 0 / 0.5);
+  --icon-contrast-stroke-width: 3;
+  --icon-outer-stroke: transparent;
+  --icon-outer-stroke-width: 2.75;
+  --mysql-stroke: #00618a;
+  --mysql-stroke-width: 3.5;
+
+  /* Follow ThemePicker / prefers-color-scheme so SVG light-dark() strokes work.
+     Layout forces color-scheme: only light on bare svg. */
+  :global(svg) {
+    color-scheme: inherit;
+  }
+}
+
+:global(:root:has(#theme-picker input[name='theme'][value='dark']:is(:not(.with-transition):checked, .with-transition.checked))) {
+  .tech-icon {
+    --icon-contrast-stroke: rgb(255 255 255 / 0.65);
+    --icon-contrast-stroke-width: 9;
+    --icon-outer-stroke: rgb(255 255 255 / 0.85);
+    --icon-outer-stroke-width: 3.25;
+    --mysql-stroke: rgb(255 255 255 / 0.75);
+    --mysql-stroke-width: 1.75;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not(:has(#theme-picker input[name='theme']:is(:not(.with-transition):checked, .with-transition.checked)))) {
+    .tech-icon {
+      --icon-contrast-stroke: rgb(255 255 255 / 0.65);
+      --icon-contrast-stroke-width: 9;
+      --icon-outer-stroke: rgb(255 255 255 / 0.85);
+      --icon-outer-stroke-width: 3.25;
+      --mysql-stroke: rgb(255 255 255 / 0.75);
+      --mysql-stroke-width: 1.75;
+    }
+  }
+}
+</style>

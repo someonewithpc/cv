@@ -17,6 +17,20 @@ export default defineConfig({
     include: {
       lucide: ['external-link'],
     },
+    // Keep gradient/filter IDs unique across inlined icons (SVGO's cleanupIds
+    // collapses every icon to a/b/c and they steal each other's fills).
+    svgoOptions: {
+      plugins: [
+        {
+          name: 'preset-default',
+          params: {
+            overrides: {
+              cleanupIds: false,
+            },
+          },
+        },
+      ],
+    },
   })],
 
   vite: {
