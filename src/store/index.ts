@@ -9,10 +9,12 @@ import { uiSlice } from './modules/ui';
 
 export type { MarkerDecorationType, MarkerType, SpaceType } from './types';
 export { groupedUndo } from './groupedUndo';
+export { assignSpaceMarker } from './assignSpaceMarker';
 
 export {
   addMarker,
   removeMarker,
+  removeMarkers,
   updateMarker,
   addDecoration,
   setDecorations,
@@ -26,6 +28,10 @@ export {
   svgToDataUrl,
   defaultMarker,
   defaultMarkerDecoration,
+  BASE_MARKER_ID,
+  isBaseMarker,
+  isMarkerInUse,
+  unusedDerivedMarkerIds,
 } from './modules/markers';
 
 export {
@@ -50,6 +56,7 @@ const undoableActions = [
   'markers/add',
   'markers/update',
   'markers/remove',
+  'markers/removeMany',
   'markers/addDecoration',
   'markers/setDecorations',
   'markers/scaleMarker',

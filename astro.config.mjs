@@ -24,6 +24,10 @@ export default defineConfig({
   ],
 
   vite: {
+    server: {
+      // Allow Cloudflare quick tunnels for remote demo previews.
+      allowedHosts: true,
+    },
     optimizeDeps: {
       include: [
         'react',

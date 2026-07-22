@@ -67,7 +67,7 @@ function DemoCursor({
       style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
       aria-hidden="true"
     >
-      <svg viewBox="0 0 32 32" width="56" height="56">
+      <svg viewBox="0 0 32 32" width="28" height="28">
         <path
           d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
           fill="var(--bg-900, #fff)"
@@ -88,11 +88,12 @@ function MockMapOverlayInner() {
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerRef = useRef({ x: 0.5, y: 0.5 });
+  const lastPinRef = useRef<SpaceType | null>(spaces[0] ?? null);
 
   const [userControl, setUserControl] = useState(false);
   const [editingSpaceId, setEditingSpaceId] = useState<SpaceType['id'] | null>(null);
   const [cursorPhase, setCursorPhase] = useState<CursorPhase>('demo');
-  const [cursorPos, setCursorPos] = useState({ x: 0.42, y: 0.38 });
+  const [cursorPos, setCursorPos] = useState({ x: 0.3, y: 0.4 });
 
   const editingSpace = spaces.find((s) => s.id === editingSpaceId);
   const focus = focusTransform(editingSpace);
@@ -110,6 +111,12 @@ function MockMapOverlayInner() {
       handoffTimerRef.current = null;
     }
   };
+
+  useEffect(() => {
+    if (editingSpace) {
+      lastPinRef.current = editingSpace;
+    }
+  }, [editingSpace]);
 
   useEffect(() => {
     const controller = new AutoPlayController(dispatch, setEditingSpaceId);
@@ -136,22 +143,28 @@ function MockMapOverlayInner() {
     demo.style.setProperty('--map-focus-y', String(focus.y));
   }, [focus.scale, focus.x, focus.y]);
 
-  // During demo playback, keep the simulated cursor on the active pin (or a rest spot).
+  // Keep the simulated cursor on the active pin, or the last pin when idle —
+  // never drift to an unrelated rest spot between steps.
   useEffect(() => {
     if (cursorPhase !== 'demo') return;
+
+    const target = editingSpace ?? lastPinRef.current ?? spaces[0];
+    if (!target) return;
+
+    const pin = sceneToOverlay(target.x, target.y, focus);
+    // While the picker is open, aim just above the pin (toward the selector).
     if (editingSpace) {
-      setCursorPos(sceneToOverlay(editingSpace.x, editingSpace.y, focus));
+      setCursorPos({ x: pin.x, y: Math.max(0.08, pin.y - 0.1) });
       return;
     }
-    setCursorPos(sceneToOverlay(48, 44, focus));
+    setCursorPos(pin);
   }, [
     cursorPhase,
-    editingSpace?.id,
-    editingSpace?.x,
-    editingSpace?.y,
+    editingSpace,
     focus.scale,
     focus.x,
     focus.y,
+    spaces,
   ]);
 
   const pauseAutoplay = () => {
@@ -220,6 +233,11 @@ function MockMapOverlayInner() {
       className={`mock-map-overlay${demoCursorActive ? ' is-demo-cursor' : ''}`}
       tabIndex={0}
       onMouseEnter={(e) => {
+        if (cursorPhase === 'gone' || cursorPhase === 'fading') {
+          // Already handed off — stay in user control until leave/resume.
+          pauseAutoplay();
+          return;
+        }
         beginHandoff(e.clientX, e.clientY);
       }}
       onFocus={() => {

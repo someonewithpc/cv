@@ -9,7 +9,17 @@ import _startCase from 'lodash/startCase';
 
 import { useRect } from '../../hooks/useRect';
 import { mapRange } from '../../lib/mapRange';
-import { addMarker, dataUrlToSvg, groupedUndo, markersSelector, setSpaceMarker, spacesSelector, updateMarker, useAppDispatch, useAppSelector } from '@/store';
+import store, {
+  addMarker,
+  assignSpaceMarker,
+  dataUrlToSvg,
+  groupedUndo,
+  markersSelector,
+  spacesSelector,
+  updateMarker,
+  useAppDispatch,
+  useAppSelector,
+} from '@/store';
 import type { MarkerType, SpaceType } from '@/store';
 import { useRootElementEvents } from '../../hooks/useRootElementEvents';
 
@@ -128,10 +138,9 @@ export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { sp
 
       if (isNewMarker) {
         const id = uuidv4();
-        dispatch(setSpaceMarker({ spaceId: space.id, markerId: id }));
         dispatch(addMarker({
           id,
-          baseMarkerId: baseMarkerId,
+          baseMarkerId: baseMarkerId ?? null,
           source: serializeMarker(state, space),
           resolvedSource,
           size: [57, 57],
@@ -139,6 +148,7 @@ export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { sp
           popupAnchor: [0, 57 * -0.70],
           kind: 'editor',
         }));
+        assignSpaceMarker(dispatch, store.getState, space.id, id);
       } else {
         dispatch(updateMarker({
           id: space.markerId,
