@@ -1,13 +1,16 @@
 import { ActionCreators } from 'redux-undo';
-import { v4 as uuidv4 } from 'uuid';
 
-import {
+import store, {
   addMarker,
+  assignSpaceMarker,
+  BASE_MARKER_ID,
   groupedUndo,
+  markersSelector,
   setMarkerEditingSpaceId,
   setSpaceMarker,
   updateMarker,
   type AppDispatch,
+  type RootState,
 } from '@/store';
 
 type Step = {
@@ -15,22 +18,53 @@ type Step = {
   run: (dispatch: AppDispatch) => void;
 };
 
-const DEMO_MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 2 2" data-kind="editor" data-state-shape-kind="circle" data-state-decoration-kind="empty" data-reactive-state-shapefill-color="%2389ab24"><circle class="marker-shape" cx="0" cy="0" r="0.55" fill="%2389ab24" stroke="white" stroke-width="0.08"/></svg>`;
+const DEMO_MARKER_ID = 'demo-shared-marker';
+
+const DEMO_MARKER_SVG_GREEN = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 2 2" data-kind="editor" data-state-shape-kind="circle" data-state-decoration-kind="empty" data-reactive-state-shapefill-color="#89ab24"><circle class="marker-shape" cx="0" cy="0" r="0.55" fill="#89ab24" stroke="white" stroke-width="0.08"/></svg>`;
+const DEMO_MARKER_SVG_BLUE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 2 2" data-kind="editor" data-state-shape-kind="circle" data-state-decoration-kind="empty" data-reactive-state-shapefill-color="#3d7ea6"><circle class="marker-shape" cx="0" cy="0" r="0.55" fill="#3d7ea6" stroke="white" stroke-width="0.08"/></svg>`;
 
 function toDataUrl(svg: string) {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+function ensureDemoMarker(dispatch: AppDispatch, getState: () => RootState) {
+  const existing = markersSelector(getState()).find((marker) => marker.id === DEMO_MARKER_ID);
+  if (existing) {
+    dispatch(updateMarker({
+      id: DEMO_MARKER_ID,
+      source: toDataUrl(DEMO_MARKER_SVG_GREEN),
+      resolvedSource: DEMO_MARKER_SVG_GREEN,
+    }));
+    return;
+  }
+
+  dispatch(addMarker({
+    id: DEMO_MARKER_ID,
+    baseMarkerId: BASE_MARKER_ID,
+    source: toDataUrl(DEMO_MARKER_SVG_GREEN),
+    resolvedSource: DEMO_MARKER_SVG_GREEN,
+    kind: 'editor',
+    size: [57, 57],
+    anchor: [28.5, 57],
+    popupAnchor: [0, -40],
+  }));
 }
 
 export class AutoPlayController {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private stepIndex = 0;
   private paused = false;
-  private demoMarkerId: string | null = null;
   private readonly dispatch: AppDispatch;
+  private readonly getState: () => RootState;
   private readonly onEditingChange: (spaceId: string | null) => void;
 
-  constructor(dispatch: AppDispatch, onEditingChange: (spaceId: string | null) => void) {
+  constructor(
+    dispatch: AppDispatch,
+    onEditingChange: (spaceId: string | null) => void,
+    getState: () => RootState = () => store.getState(),
+  ) {
     this.dispatch = dispatch;
+    this.getState = getState;
     this.onEditingChange = onEditingChange;
   }
 
@@ -69,32 +103,20 @@ export class AutoPlayController {
       {
         delay: 1800,
         run: (dispatch) => {
-          const id = uuidv4();
-          this.demoMarkerId = id;
-          const source = toDataUrl(DEMO_MARKER_SVG.replace(/%23/g, '#'));
           groupedUndo.batch(() => {
-            dispatch(addMarker({
-              id,
-              source,
-              resolvedSource: DEMO_MARKER_SVG.replace(/%23/g, '#'),
-              kind: 'editor',
-              size: [57, 57],
-              anchor: [28.5, 57],
-              popupAnchor: [0, -40],
-            }));
-            dispatch(setSpaceMarker({ spaceId: 'space-lobby', markerId: id }));
+            ensureDemoMarker(dispatch, this.getState);
+            // Reuse the same derived marker — never add a second copy.
+            assignSpaceMarker(dispatch, this.getState, 'space-lobby', DEMO_MARKER_ID);
           });
         },
       },
       {
         delay: 1600,
         run: (dispatch) => {
-          if (!this.demoMarkerId) return;
-          const tinted = DEMO_MARKER_SVG.replace('%2389ab24', '%233d7ea6').replace(/%23/g, '#');
           dispatch(updateMarker({
-            id: this.demoMarkerId,
-            source: toDataUrl(tinted),
-            resolvedSource: tinted,
+            id: DEMO_MARKER_ID,
+            source: toDataUrl(DEMO_MARKER_SVG_BLUE),
+            resolvedSource: DEMO_MARKER_SVG_BLUE,
           }));
         },
       },
@@ -115,9 +137,8 @@ export class AutoPlayController {
       {
         delay: 1600,
         run: (dispatch) => {
-          if (this.demoMarkerId) {
-            dispatch(setSpaceMarker({ spaceId: 'space-cafe', markerId: this.demoMarkerId }));
-          }
+          // Cafe starts on the base each loop so undo/redo has a visible shared assign.
+          dispatch(setSpaceMarker({ spaceId: 'space-cafe', markerId: DEMO_MARKER_ID }));
           this.onEditingChange(null);
           dispatch(setMarkerEditingSpaceId(null));
         },
@@ -136,7 +157,9 @@ export class AutoPlayController {
       },
       {
         delay: 2000,
-        run: () => {
+        run: (dispatch) => {
+          // Return cafe to the base so the next loop can re-assign the same shared marker.
+          dispatch(setSpaceMarker({ spaceId: 'space-cafe', markerId: BASE_MARKER_ID }));
           this.stepIndex = -1;
         },
       },

@@ -4,7 +4,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpload } from "@fortawesome/free-solid-svg-icons";
 import { v4 as uuidv4 } from 'uuid';
 
-import { addMarker, groupedUndo, scaleMarker, setSpaceMarker, useAppDispatch } from '@/store';
+import store, {
+  addMarker,
+  assignSpaceMarker,
+  groupedUndo,
+  scaleMarker,
+  useAppDispatch,
+} from '@/store';
 import type { SpaceType } from '@/store';
 
 export function MarkerUploader({ space, onUploadComplete }: { space: SpaceType, onUploadComplete: () => void }) {
@@ -52,6 +58,8 @@ export function MarkerUploader({ space, onUploadComplete }: { space: SpaceType, 
               source: result.toString(),
               kind: 'upload',
               filename: file.name,
+              // Uploads are library/base markers (kept when unused).
+              baseMarkerId: null,
             }));
 
             // If it's not almost exactly 1
@@ -59,7 +67,7 @@ export function MarkerUploader({ space, onUploadComplete }: { space: SpaceType, 
               dispatch(scaleMarker({ id, scale: [aspectRatio, 1] }));
             }
 
-            dispatch(setSpaceMarker({ spaceId: space.id, markerId: id }));
+            assignSpaceMarker(dispatch, store.getState, space.id, id);
           });
 
           onUploadComplete();

@@ -7,9 +7,12 @@ import { faCopy, faPencil, faPlus, faTrash, faXmark } from '@fortawesome/free-so
 import { v4 as uuidv4 } from 'uuid';
 import cx from 'classnames';
 
-import {
+import store, {
   addMarker,
+  assignSpaceMarker,
   groupedUndo,
+  isBaseMarker,
+  isMarkerInUse,
   mapSpaceToMarkerSelector,
   markersSelector,
   removeMarker,
@@ -79,7 +82,8 @@ export function MarkerSelector({
       >
         <ul role="listbox">
           {markers.map((marker) => {
-            const deleteDisabled = allSpaces.some((s) => (s.id === space.id) !== (s.markerId === marker.id));
+            const usedElsewhere = isMarkerInUse(marker.id, allSpaces, space.id);
+            const deleteDisabled = usedElsewhere || isBaseMarker(marker);
 
             return (
               <li
@@ -89,16 +93,10 @@ export function MarkerSelector({
                 style={{ position: 'relative' }}
                 onClick={() => {
                   groupedUndo.batch(() => {
-                    if (space.markerId !== marker.id) {
-                      dispatch(setSpaceMarker({ spaceId: space.id, markerId: marker.id }));
-
-                      if (space.markerId !== undefined && !deleteDisabled) {
-                        dispatch(removeMarker(space.markerId));
-                        dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
-                      }
-                    }
-                    setEditedMarkerId(undefined);
+                    // Reuse the clicked marker — never add a duplicate on select.
+                    assignSpaceMarker(dispatch, store.getState, space.id, marker.id);
                   });
+                  setEditedMarkerId(undefined);
                   onClose();
                 }}
               >
@@ -119,21 +117,21 @@ export function MarkerSelector({
                     />
                     <FontAwesomeIcon
                       icon={faCopy}
-                      className={cx('marker-duplicate-icon', { disabled: !deleteDisabled })}
+                      className={cx('marker-duplicate-icon', { disabled: !usedElsewhere && !isBaseMarker(marker) })}
                       title="Duplicate marker"
                       onClick={(e) => {
                         e.stopPropagation();
+                        // Only fork when the marker is shared/base — exclusive copies edit in place.
+                        if (!usedElsewhere && !isBaseMarker(marker)) return;
+
                         groupedUndo.batch(() => {
                           const newMarkerId = uuidv4();
                           dispatch(addMarker({
                             ...marker,
                             id: newMarkerId,
+                            baseMarkerId: marker.baseMarkerId ?? String(marker.id),
                           }));
-                          dispatch(setSpaceMarker({ spaceId: space.id, markerId: newMarkerId }));
-                          if (space.markerId !== undefined && !deleteDisabled) {
-                            dispatch(removeMarker(space.markerId));
-                          }
-
+                          assignSpaceMarker(dispatch, store.getState, space.id, newMarkerId);
                           setEditedMarkerId(newMarkerId);
                         });
                       }}
@@ -142,15 +140,21 @@ export function MarkerSelector({
                       icon={faTrash}
                       className={cx('marker-delete-icon', { disabled: deleteDisabled })}
                       title={deleteDisabled
-                        ? 'Cannot delete marker: marker is being used'
+                        ? (isBaseMarker(marker)
+                          ? 'Cannot delete the base marker'
+                          : 'Cannot delete marker: marker is being used')
                         : 'Delete marker'}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!deleteDisabled) {
+                        if (deleteDisabled) return;
+
+                        groupedUndo.batch(() => {
                           dispatch(removeMarker(marker.id));
-                          dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
+                          if (space.markerId === marker.id) {
+                            dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
+                          }
                           setEditedMarkerId(undefined);
-                        }
+                        });
                       }}
                     />
                   </>

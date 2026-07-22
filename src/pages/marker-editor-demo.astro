@@ -1,0 +1,61 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import MarkerEditorDemo from '@/components/MarkerEditorDemo/Demo.astro';
+---
+
+<Layout
+  title="Marker Editor Demo"
+  description="Interactive map marker editor demo — shared markers, undo/redo, and simulated autoplay."
+>
+  <main class="marker-editor-demo-page">
+    <header class="marker-editor-demo-page__header">
+      <p class="marker-editor-demo-page__eyebrow">Preview</p>
+      <h1>Marker Editor Demo</h1>
+      <p>
+        Hover or focus the map to take over. Click a pin to open the marker picker.
+        Ctrl/Cmd+Z undoes.
+      </p>
+    </header>
+
+    <MarkerEditorDemo />
+  </main>
+</Layout>
+
+<style lang="scss">
+.marker-editor-demo-page {
+  display: grid;
+  grid-template-columns: subgrid;
+  row-gap: 2rem;
+  padding-block: 2rem 4rem;
+
+  &__header {
+    grid-column: content;
+    max-width: 40rem;
+
+    h1 {
+      margin: 0.15em 0 0.35em;
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      line-height: 1.15;
+    }
+
+    p {
+      margin: 0;
+      color: color-mix(in oklab, var(--fg-600, #444) 85%, transparent);
+      line-height: 1.45;
+    }
+  }
+
+  &__eyebrow {
+    margin: 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--fg-600, #666) 70%, transparent);
+  }
+
+  :global(.technical-drawing-stack),
+  :global([data-technical-drawing-stack]) {
+    grid-column: breakout;
+  }
+}
+</style>

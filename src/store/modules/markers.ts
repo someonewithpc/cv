@@ -13,6 +13,8 @@ type MarkersRoot = {
   };
 };
 
+export type { MarkersRoot };
+
 export function svgToDataUrl(svg: string): string {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
@@ -39,8 +41,10 @@ function resolveSource(source: string): string | undefined {
   return undefined;
 }
 
+export const BASE_MARKER_ID = 'default' as const;
+
 export const defaultMarker: MarkerType = {
-  id: 'default',
+  id: BASE_MARKER_ID,
   baseMarkerId: null,
   source: svgToDataUrl(defaultMarkerSVG),
   resolvedSource: defaultMarkerSVG,
@@ -49,6 +53,39 @@ export const defaultMarker: MarkerType = {
   popupAnchor: [0, 57 * -0.70],
   kind: 'upload',
 };
+
+/** Main library markers stay; derived/shared copies (`baseMarkerId` set) can be GC'd. */
+export function isBaseMarker(marker: MarkerType): boolean {
+  return marker.id === BASE_MARKER_ID || marker.baseMarkerId == null;
+}
+
+export function isMarkerInUse(
+  markerId: MarkerType['id'],
+  spaces: SpaceType[],
+  exceptSpaceId?: SpaceType['id'],
+): boolean {
+  return spaces.some((space) => (
+    space.markerId === markerId && space.id !== exceptSpaceId
+  ));
+}
+
+/** Derived markers that no space references anymore. */
+export function unusedDerivedMarkerIds(
+  markers: MarkerType[],
+  spaces: SpaceType[],
+  exceptSpaceId?: SpaceType['id'],
+): MarkerType['id'][] {
+  const used = new Set(
+    spaces
+      .filter((space) => space.id !== exceptSpaceId)
+      .map((space) => space.markerId)
+      .filter((id): id is MarkerType['id'] => id !== undefined),
+  );
+
+  return markers
+    .filter((marker) => !isBaseMarker(marker) && !used.has(marker.id))
+    .map((marker) => marker.id);
+}
 
 export const defaultMarkerDecoration: MarkerDecorationType = {
   id: 'default',
@@ -117,6 +154,14 @@ export const markersSlice = createSlice({
     remove: (state, { payload }: { payload: MarkerType['id'] }) => (
       { ...state, list: state.list.filter((marker) => marker.id !== payload) }
     ),
+    removeMany: (state, { payload }: { payload: MarkerType['id'][] }) => {
+      if (payload.length === 0) return state;
+      const removeIds = new Set(payload);
+      return {
+        ...state,
+        list: state.list.filter((marker) => !removeIds.has(marker.id)),
+      };
+    },
     scaleMarker: (state, { payload: { id, scale } }: { payload: { id: MarkerType['id']; scale: number | [number, number] } }) => (
       {
         ...state,
@@ -153,12 +198,13 @@ export const markersSlice = createSlice({
 });
 
 const {
-  add, remove, update, addDecoration, setDecorations, scaleMarker, updateDecoration,
+  add, remove, removeMany, update, addDecoration, setDecorations, scaleMarker, updateDecoration,
 } = markersSlice.actions;
 
 export {
   add as addMarker,
   remove as removeMarker,
+  removeMany as removeMarkers,
   update as updateMarker,
   addDecoration,
   setDecorations,
