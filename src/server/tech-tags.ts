@@ -12,6 +12,7 @@ export const TECH_TAGS: TechTag[] = [
   { icon: 'docker', text: 'Docker' },
   { icon: 'postgresql', text: 'PostgreSQL' },
   { icon: 'mysql', text: 'MySQL' },
+  { icon: 'mariadb', text: 'MariaDB' },
   { icon: 'ruby', text: 'Ruby' },
   { icon: 'php', text: 'PHP' },
   { icon: 'perl', text: 'Perl' },

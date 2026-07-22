@@ -17,28 +17,14 @@ const LOCK_COLOR_SCHEME_LIGHT = new Set([
   'rust',
   'prolog',
   'emacs',
-  'linux',
-  'gcc',
-  'mysql',
   'symfony',
   'vulkan',
 ]);
 
-/** Already light via currentColor / light fills — a halo washes them out. */
-const SKIP_DARK_HALO = new Set([
-  'bash',
-  'leaflet',
-  'lisp',
-  'javascript',
-  'typescript',
-  'css3',
-]);
-
 const { tag, class: className } = Astro.props;
-const needsHalo = !SKIP_DARK_HALO.has(tag.icon);
 ---
 
-<span class:list={['tech-icon', needsHalo && 'tech-icon--halo', className]}>
+<span class:list={['tech-icon', className]}>
   <Icon
     name={tag.icon}
     is:inline
@@ -54,10 +40,11 @@ const needsHalo = !SKIP_DARK_HALO.has(tag.icon);
   width: 1.5em;
   height: 1.5em;
   flex-shrink: 0;
-  --icon-contrast-stroke: rgb(0 0 0 / 0.5);
+  /* Sharp stroke outline for black/near-black silhouettes (rust, symfony). */
+  --icon-contrast-stroke: rgb(0 0 0 / 0.45);
   --icon-contrast-stroke-width: 3;
   --icon-outer-stroke: transparent;
-  --icon-outer-stroke-width: 2.75;
+  --icon-outer-stroke-width: 2.5;
   --mysql-stroke: #00618a;
   --mysql-stroke-width: 3.5;
 
@@ -71,20 +58,14 @@ const needsHalo = !SKIP_DARK_HALO.has(tag.icon);
 }
 
 @mixin dark-icon-contrast {
-  --icon-contrast-stroke: rgb(255 255 255 / 0.95);
-  --icon-contrast-stroke-width: 11;
-  --icon-outer-stroke: rgb(255 255 255 / 0.95);
-  --icon-outer-stroke-width: 4.5;
-  --mysql-stroke: rgb(255 255 255 / 0.95);
-  --mysql-stroke-width: 2.75;
-
-  &.tech-icon--halo :global(svg) {
-    /* Tight outline halo — keeps dark brand fills readable without blooming. */
-    filter:
-      drop-shadow(0 0 0.35px rgb(255 255 255 / 1))
-      drop-shadow(0 0 0.7px rgb(255 255 255 / 0.95))
-      drop-shadow(0 0 1.1px rgb(255 255 255 / 0.7));
-  }
+  /* Opaque white stroke — outline, not glow. */
+  --icon-contrast-stroke: #fff;
+  --icon-contrast-stroke-width: 5;
+  --icon-outer-stroke: #fff;
+  --icon-outer-stroke-width: 2.5;
+  /* MySQL: no extra stroke in dark — was too intense. */
+  --mysql-stroke: transparent;
+  --mysql-stroke-width: 0;
 }
 
 :global(:root:has(#theme-picker input[name='theme'][value='dark']:is(:not(.with-transition):checked, .with-transition.checked))) {
