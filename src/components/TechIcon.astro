@@ -19,12 +19,26 @@ const LOCK_COLOR_SCHEME_LIGHT = new Set([
   'emacs',
   'linux',
   'gcc',
+  'mysql',
+  'symfony',
+  'vulkan',
+]);
+
+/** Already light via currentColor / light fills — a halo washes them out. */
+const SKIP_DARK_HALO = new Set([
+  'bash',
+  'leaflet',
+  'lisp',
+  'javascript',
+  'typescript',
+  'css3',
 ]);
 
 const { tag, class: className } = Astro.props;
+const needsHalo = !SKIP_DARK_HALO.has(tag.icon);
 ---
 
-<span class:list={['tech-icon', className]}>
+<span class:list={['tech-icon', needsHalo && 'tech-icon--halo', className]}>
   <Icon
     name={tag.icon}
     is:inline
@@ -37,6 +51,9 @@ const { tag, class: className } = Astro.props;
 <style lang="scss">
 .tech-icon {
   display: inline-flex;
+  width: 1.5em;
+  height: 1.5em;
+  flex-shrink: 0;
   --icon-contrast-stroke: rgb(0 0 0 / 0.5);
   --icon-contrast-stroke-width: 3;
   --icon-outer-stroke: transparent;
@@ -47,30 +64,39 @@ const { tag, class: className } = Astro.props;
   /* Follow ThemePicker / prefers-color-scheme so SVG light-dark() strokes work.
      Layout forces color-scheme: only light on bare svg. */
   :global(svg) {
+    width: 100%;
+    height: 100%;
     color-scheme: inherit;
+  }
+}
+
+@mixin dark-icon-contrast {
+  --icon-contrast-stroke: rgb(255 255 255 / 0.95);
+  --icon-contrast-stroke-width: 11;
+  --icon-outer-stroke: rgb(255 255 255 / 0.95);
+  --icon-outer-stroke-width: 4.5;
+  --mysql-stroke: rgb(255 255 255 / 0.95);
+  --mysql-stroke-width: 2.75;
+
+  &.tech-icon--halo :global(svg) {
+    /* Tight outline halo — keeps dark brand fills readable without blooming. */
+    filter:
+      drop-shadow(0 0 0.35px rgb(255 255 255 / 1))
+      drop-shadow(0 0 0.7px rgb(255 255 255 / 0.95))
+      drop-shadow(0 0 1.1px rgb(255 255 255 / 0.7));
   }
 }
 
 :global(:root:has(#theme-picker input[name='theme'][value='dark']:is(:not(.with-transition):checked, .with-transition.checked))) {
   .tech-icon {
-    --icon-contrast-stroke: rgb(255 255 255 / 0.65);
-    --icon-contrast-stroke-width: 9;
-    --icon-outer-stroke: rgb(255 255 255 / 0.85);
-    --icon-outer-stroke-width: 3.25;
-    --mysql-stroke: rgb(255 255 255 / 0.75);
-    --mysql-stroke-width: 1.75;
+    @include dark-icon-contrast;
   }
 }
 
 @media (prefers-color-scheme: dark) {
   :global(:root:not(:has(#theme-picker input[name='theme']:is(:not(.with-transition):checked, .with-transition.checked)))) {
     .tech-icon {
-      --icon-contrast-stroke: rgb(255 255 255 / 0.65);
-      --icon-contrast-stroke-width: 9;
-      --icon-outer-stroke: rgb(255 255 255 / 0.85);
-      --icon-outer-stroke-width: 3.25;
-      --mysql-stroke: rgb(255 255 255 / 0.75);
-      --mysql-stroke-width: 1.75;
+      @include dark-icon-contrast;
     }
   }
 }

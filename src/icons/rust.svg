@@ -2,7 +2,7 @@
   .edge {
     fill: #1a171b;
     stroke: var(--icon-contrast-stroke, rgb(0 0 0 / 0.5));
-    stroke-width: 3;
+    stroke-width: var(--icon-contrast-stroke-width, 3);
     stroke-linejoin: round;
     paint-order: stroke fill;
   }

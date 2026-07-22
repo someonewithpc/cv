@@ -14,7 +14,7 @@
     - [x] Make
     - [x] Lisp
     - [x] git
-  - [ ] Some icons not very visible in dark mode
+  - [~] Some icons not very visible in dark mode
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
 - [ ] Access Keys
