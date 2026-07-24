@@ -18,6 +18,22 @@
         "type": "github"
       }
     },
+    "nix-ld": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "./nix/nix-ld",
+        "type": "path"
+      },
+      "original": {
+        "path": "./nix/nix-ld",
+        "type": "path"
+      },
+      "parent": []
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1784796856,
@@ -37,6 +53,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "nix-ld": "nix-ld",
         "nixpkgs": "nixpkgs"
       }
     },
