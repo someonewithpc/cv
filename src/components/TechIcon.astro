@@ -19,6 +19,7 @@ const LOCK_COLOR_SCHEME_LIGHT = new Set([
   'emacs',
   'linux',
   'gcc',
+  'postgresql',
 ]);
 
 const { tag, class: className } = Astro.props;
@@ -43,6 +44,8 @@ const { tag, class: className } = Astro.props;
   --icon-outer-stroke-width: 2.75;
   --mysql-stroke: #00618a;
   --mysql-stroke-width: 3.5;
+  --postgres-stroke: #1a171b;
+  --postgres-stroke-width: 1.25;
 
   /* Follow ThemePicker / prefers-color-scheme so SVG light-dark() strokes work.
      Layout forces color-scheme: only light on bare svg. */
@@ -59,6 +62,8 @@ const { tag, class: className } = Astro.props;
     --icon-outer-stroke-width: 3.25;
     --mysql-stroke: rgb(255 255 255 / 0.75);
     --mysql-stroke-width: 1.75;
+    --postgres-stroke: rgb(255 255 255 / 0.55);
+    --postgres-stroke-width: 1;
   }
 }
 
@@ -71,6 +76,8 @@ const { tag, class: className } = Astro.props;
       --icon-outer-stroke-width: 3.25;
       --mysql-stroke: rgb(255 255 255 / 0.75);
       --mysql-stroke-width: 1.75;
+      --postgres-stroke: rgb(255 255 255 / 0.55);
+      --postgres-stroke-width: 1;
     }
   }
 }
