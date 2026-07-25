@@ -31,16 +31,18 @@
   .mock-map-pins {
     position: absolute;
     inset: 0;
-    pointer-events: none;
   }
 
-  .space-pin {
+  .space-pin,
+  .selected-marker-preview {
     position: absolute;
-    translate: -50% -100%;
+    // Combined transform so hover scale reliably applies with the tip anchor.
+    transform: translate(-50%, -100%);
+    transform-origin: 50% 100%;
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
     padding: 0;
     border: 0;
     background: transparent;
-    cursor: pointer;
     color: var(--accent-800, orange);
     filter: drop-shadow(0 1px 1px color-mix(in oklab, #000 18%, transparent));
 
@@ -52,11 +54,104 @@
       pointer-events: none;
     }
 
+    &:hover,
+    &:focus-visible,
     &.is-demo-target {
-      filter:
-        drop-shadow(0 1px 1px color-mix(in oklab, #000 18%, transparent))
-        drop-shadow(0 0 0 2px color-mix(in oklab, var(--accent-600, #3d7ea6) 70%, transparent));
+      transform: translate(-50%, -100%) scale(1.14);
     }
+  }
+
+  .space-pin {
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  .mock-map-toasts {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 50%;
+    translate: -50% 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    pointer-events: none;
+  }
+
+  .mock-map-toast {
+    display: flex;
+    align-items: center;
+    gap: 0.55em;
+    overflow: hidden;
+    max-height: 3rem;
+    padding: 0.45em 0.7em;
+    border: 1px solid color-mix(in oklab, #000 12%, transparent);
+    border-radius: 0.45em;
+    background: color-mix(in oklab, var(--bg-900, #fff) 92%, transparent);
+    color: var(--fg-850, #222);
+    box-shadow: 0 2px 10px color-mix(in oklab, #000 16%, transparent);
+    font-size: 0.8rem;
+    line-height: 1;
+    white-space: nowrap;
+    animation: mock-map-toast-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    transition:
+      max-height 0.32s ease,
+      padding 0.32s ease,
+      margin 0.32s ease,
+      opacity 0.32s ease,
+      translate 0.32s ease,
+      border-width 0.32s ease;
+
+    &.is-leaving {
+      max-height: 0;
+      margin: 0;
+      padding-block: 0;
+      border-width: 0;
+      opacity: 0;
+      translate: 0 0.85rem;
+      animation: none;
+    }
+
+    &__keys {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2em;
+
+      kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.35em;
+        padding: 0.2em 0.35em;
+        border: 1px solid color-mix(in oklab, #000 18%, transparent);
+        border-bottom-width: 2px;
+        border-radius: 0.3em;
+        background: color-mix(in oklab, var(--bg-800, #f3f3f3) 88%, transparent);
+        font: inherit;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+    }
+
+    &__action {
+      font-weight: 600;
+    }
+  }
+}
+
+@keyframes mock-map-toast-in {
+  from {
+    opacity: 0;
+    translate: 0 0.65rem;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
   }
 }
 

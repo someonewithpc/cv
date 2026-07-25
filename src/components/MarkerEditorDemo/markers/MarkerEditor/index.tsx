@@ -46,7 +46,19 @@ function resetAllMarkerParts() {
   });
 }
 
-export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { space: SpaceType, baseMarkerId: MarkerType['baseMarkerId'], isNewMarker: boolean, onClose: () => void }) {
+export function MarkerEditor({
+  space,
+  baseMarkerId,
+  isNewMarker,
+  onClose,
+  portalHost,
+}: {
+  space: SpaceType;
+  baseMarkerId: MarkerType['baseMarkerId'];
+  isNewMarker: boolean;
+  onClose: () => void;
+  portalHost: HTMLElement | null;
+}) {
   const dispatch = useAppDispatch();
   const storeSpaces = useAppSelector(spacesSelector);
   const storeMarkers = useAppSelector(markersSelector);
@@ -66,13 +78,19 @@ export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { sp
     const sourceMarker = isNewMarker
       ? undefined
       : (storeMarkers.find((m) => m.id === baseMarkerId) ?? storeMarkers.find((m) => m.id === space.markerId));
-    const active = deserializeMarker(sourceMarker) ?? {};
+    const active = { ...defaultActiveState, ...(deserializeMarker(sourceMarker) ?? {}) };
+    // Mark decoration as already aligned with this shape so re-open doesn't yank a
+    // user/demo nudge back onto the shape center via useUpdateDecorationSnapCenter.
+    const shapePart = (markers.shape as Record<string, MarkerPart & { center?: Point }>)[active.shape];
+    const shapeCenter = shapePart?.center;
     setState({
-      active: { ...defaultActiveState, ...active },
+      active,
       step: 'shape',
       draggedControlPoint: undefined,
       snappingDisabled: false,
-      previousDecorationSnapCenter: null,
+      previousDecorationSnapCenter: shapeCenter
+        ? new Point(shapeCenter.x, shapeCenter.y)
+        : null,
     });
     // Only re-seed when the edited marker identity changes — not on every store update.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,16 +220,31 @@ export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { sp
     onClose();
   }, [onClose, state, space, storeMarkers, dispatch, isNewMarker, baseMarkerId, storeSpaces]);
 
-  // Portal to document.body so overflow:hidden on the map demo cannot clip the editor.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  if (!portalHost) return null;
+
+  // Portal into the techdraw frame — avoid <dialog>/showModal (viewport top-layer + focus scroll).
   return createPortal(
     (
-      <dialog
-        open
+      <div
         id="marker-editor"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Marker editor"
         onKeyDown={(e) => e.stopPropagation()}
-        onCancel={(e) => {
-          e.preventDefault();
-          onClose();
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
         }}
       >
         <div className="wrapper">
@@ -369,8 +402,8 @@ export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { sp
             </aside>
           </article>
         </div>
-      </dialog>
+      </div>
     ),
-    document.body,
+    portalHost,
   );
 }
