@@ -1,6 +1,7 @@
 import { mapSpaceToMarkerSelector, useAppSelector, type SpaceType } from '@/store';
 
 import { InlineSVG } from '../markers/MarkerSelector/InlineSVG';
+import { resolveMarkerSvgForSpace } from '../markers/resolveMarkerSvgForSpace';
 
 export function SpacePin({
   space,
@@ -13,6 +14,9 @@ export function SpacePin({
 }) {
   const mapSpaceToMarker = useAppSelector(mapSpaceToMarkerSelector);
   const marker = mapSpaceToMarker(space);
+  const svg = marker.resolvedSource
+    ? resolveMarkerSvgForSpace(marker.resolvedSource, space)
+    : undefined;
 
   return (
     <button
@@ -24,15 +28,15 @@ export function SpacePin({
         top: `${space.y}%`,
         width: marker.size[0],
         height: marker.size[1],
-        pointerEvents: interactive ? 'auto' : 'none',
       }}
       aria-label={`Edit marker for ${space.name}`}
       onClick={() => {
-        if (interactive) onSelect(space);
+        if (!interactive) return;
+        onSelect(space);
       }}
     >
-      {marker.resolvedSource
-        ? <InlineSVG svgString={marker.resolvedSource} />
+      {svg
+        ? <InlineSVG svgString={svg} />
         : <img src={marker.source} alt="" />}
     </button>
   );

@@ -44,19 +44,10 @@ export class TextMarkerDecoration extends MarkerPart {
     return this.center.distanceTo(this.textSizeCP);
   }
 
-  // The browser treats 1px as 1 user unit, which is relative to the viewBox
-  textSizePx(space: SpaceType): string {
-    if (!this.container.current) {
-      throw new Error('Cannot calculate text size because the SVG container ref is null');
-    }
-
-    const svgLength = this.container.current.createSVGLength();
-    svgLength.newValueSpecifiedUnits(
-      SVGLength.SVG_LENGTHTYPE_NUMBER,
-      clamp((this.radius * 2) / this.textContentLength(space), 0.1, 2),
-    );
-    svgLength.convertToSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_PX);
-    return svgLength.valueAsString;
+  // Unitless font-size is in SVG user units so text scales with the viewBox
+  // (px would bake the editor's on-screen size and overflow on map pins).
+  textSize(space: SpaceType): number {
+    return clamp((this.radius * 2) / this.textContentLength(space), 0.1, 2);
   }
 
   Content({ space, extraProps }: { space: SpaceType, extraProps: Record<string, string> }) {
@@ -66,7 +57,7 @@ export class TextMarkerDecoration extends MarkerPart {
         y={this.center.y}
         dominantBaseline="middle"
         textAnchor="middle"
-        fontSize={this.textSizePx(space)}
+        fontSize={this.textSize(space)}
         className="marker-decoration"
         {...extraProps}
       >

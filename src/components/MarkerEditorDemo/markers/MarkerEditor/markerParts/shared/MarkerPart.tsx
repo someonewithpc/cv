@@ -24,6 +24,7 @@ export class MarkerPart {
   reset() {
     this.state = this.default;
     this.controlPoints = this.buildControlPoints();
+    this.snappingControlPoints = [];
 
     const that = this;
 
