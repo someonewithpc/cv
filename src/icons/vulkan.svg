@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="-6 8 140 112" style="color-scheme:only light"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="-6 8 140 112"><style>
   .edge {
     fill: #ac162c;
     stroke: var(--icon-outer-stroke, transparent);

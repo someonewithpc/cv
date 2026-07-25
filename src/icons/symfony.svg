@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 148 148" style="color-scheme:only light"><style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 148 148"><style>
   .edge {
     fill: #1a171b;
     stroke: var(--icon-contrast-stroke, rgb(0 0 0 / 0.5));
