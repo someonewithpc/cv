@@ -1,6 +1,8 @@
 import '../markers/client-only';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useStore } from 'react-redux';
 
 import {
   setAutoplayPaused,
@@ -8,13 +10,18 @@ import {
   spacesSelector,
   useAppDispatch,
   useAppSelector,
+  type RootState,
   type SpaceType,
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
-import { AutoPlayController, bindUndoRedoKeys } from './AutoPlayController';
+import {
+  AutoPlayController,
+  bindUndoRedoKeys,
+  type DemoCursorStep,
+} from './AutoPlayController';
 import { SpacePin } from './SpacePin';
 
 import './MockMapOverlay.scss';
@@ -24,8 +31,12 @@ const FOCUS_SCALE = 1.55;
 const RESUME_DELAY_MS = 2000;
 const CURSOR_HANDOFF_MS = 420;
 const CURSOR_FADE_MS = 320;
+const CURSOR_CLICK_MS = 180;
+const TARGET_RETRY_MS = 40;
+const TARGET_RETRY_ATTEMPTS = 20;
 
 type CursorPhase = 'demo' | 'to-pointer' | 'fading' | 'gone';
+type CursorPos = { x: number; y: number };
 
 function focusTransform(space: SpaceType | undefined): {
   scale: number;
@@ -50,49 +61,83 @@ function sceneToOverlay(
   };
 }
 
+function elementCenter(el: Element): CursorPos {
+  const rect = el.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+}
+
+function overlayPoint(overlay: Element, nx: number, ny: number): CursorPos {
+  const rect = overlay.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width * nx,
+    y: rect.top + rect.height * ny,
+  };
+}
+
 function DemoCursor({
   x,
   y,
   phase,
+  clicking,
+  dragging,
 }: {
   x: number;
   y: number;
   phase: CursorPhase;
+  clicking: boolean;
+  dragging: boolean;
 }) {
-  if (phase === 'gone') return null;
+  if (phase === 'gone' || typeof document === 'undefined') return null;
 
-  return (
-    <div
-      className={`mock-map-demo-cursor mock-map-demo-cursor--${phase}`}
-      style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
-      aria-hidden="true"
-    >
-      <svg viewBox="0 0 32 32" width="56" height="56">
-        <path
-          d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
-          fill="var(--bg-900, #fff)"
-          stroke="var(--fg-850, #222)"
-          strokeWidth="1.6"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
+  return createPortal(
+    (
+      <div
+        className={[
+          'mock-map-demo-cursor',
+          `mock-map-demo-cursor--${phase}`,
+          clicking ? 'mock-map-demo-cursor--clicking' : '',
+          dragging ? 'mock-map-demo-cursor--dragging' : '',
+        ].filter(Boolean).join(' ')}
+        style={{ left: x, top: y }}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 32 32" width="56" height="56">
+          <path
+            d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
+            fill="var(--bg-900, #fff)"
+            stroke="var(--fg-850, #222)"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    ),
+    document.body,
   );
 }
 
 function MockMapOverlayInner() {
   const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
   const spaces = useAppSelector(spacesSelector);
   const containerRef = useRef<HTMLDivElement>(null);
   const autoplayRef = useRef<AutoPlayController | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pointerRef = useRef({ x: 0.5, y: 0.5 });
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const targetRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeTargetRef = useRef<Element | null>(null);
+  const pointerRef = useRef<CursorPos>({ x: 0, y: 0 });
 
   const [userControl, setUserControl] = useState(false);
   const [editingSpaceId, setEditingSpaceId] = useState<SpaceType['id'] | null>(null);
   const [cursorPhase, setCursorPhase] = useState<CursorPhase>('demo');
-  const [cursorPos, setCursorPos] = useState({ x: 0.42, y: 0.38 });
+  const [cursorPos, setCursorPos] = useState<CursorPos>({ x: 0, y: 0 });
+  const [cursorClicking, setCursorClicking] = useState(false);
+  const [cursorDragging, setCursorDragging] = useState(false);
 
   const editingSpace = spaces.find((s) => s.id === editingSpaceId);
   const focus = focusTransform(editingSpace);
@@ -111,16 +156,97 @@ function MockMapOverlayInner() {
     }
   };
 
+  const clearClickTimer = () => {
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+  };
+
+  const clearTargetRetry = () => {
+    if (targetRetryRef.current) {
+      clearTimeout(targetRetryRef.current);
+      targetRetryRef.current = null;
+    }
+  };
+
+  const clearDemoTargetHighlight = () => {
+    activeTargetRef.current?.classList.remove('is-demo-target');
+    activeTargetRef.current = null;
+  };
+
+  const restCursorPos = (): CursorPos => {
+    const overlay = containerRef.current;
+    if (!overlay) {
+      return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    }
+    return overlayPoint(overlay, 0.48, 0.44);
+  };
+
+  const applyCursorStepRef = useRef<(step: DemoCursorStep, attempt?: number) => void>(() => {});
+
+  applyCursorStepRef.current = (step: DemoCursorStep, attempt = 0) => {
+    clearTargetRetry();
+    clearDemoTargetHighlight();
+    setCursorDragging(Boolean(step.dragging));
+
+    if (step.client) {
+      setCursorPos(step.client);
+    } else if (step.target == null) {
+      setCursorPos(restCursorPos());
+    } else {
+      const overlay = containerRef.current;
+      const el = (overlay?.querySelector(`[data-demo-target="${CSS.escape(step.target)}"]`)
+        ?? document.querySelector(`[data-demo-target="${CSS.escape(step.target)}"]`));
+      if (!el) {
+        if (attempt < TARGET_RETRY_ATTEMPTS) {
+          targetRetryRef.current = setTimeout(() => {
+            targetRetryRef.current = null;
+            applyCursorStepRef.current(step, attempt + 1);
+          }, TARGET_RETRY_MS);
+          return;
+        }
+        setCursorPos(restCursorPos());
+      } else {
+        activeTargetRef.current = el;
+        el.classList.add('is-demo-target');
+        setCursorPos(elementCenter(el));
+      }
+    }
+
+    if (step.click) {
+      clearClickTimer();
+      setCursorClicking(true);
+      clickTimerRef.current = setTimeout(() => {
+        setCursorClicking(false);
+        clickTimerRef.current = null;
+      }, CURSOR_CLICK_MS);
+    }
+  };
+
   useEffect(() => {
-    const controller = new AutoPlayController(dispatch, setEditingSpaceId);
+    const overlay = containerRef.current;
+    if (overlay) {
+      setCursorPos(overlayPoint(overlay, 0.42, 0.38));
+    }
+
+    const controller = new AutoPlayController(
+      dispatch,
+      () => store.getState(),
+      setEditingSpaceId,
+      (step) => applyCursorStepRef.current(step),
+    );
     autoplayRef.current = controller;
     controller.start();
     return () => {
       controller.destroy();
       clearResumeTimer();
       clearHandoffTimer();
+      clearClickTimer();
+      clearTargetRetry();
+      clearDemoTargetHighlight();
     };
-  }, [dispatch]);
+  }, [dispatch, store]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -136,28 +262,22 @@ function MockMapOverlayInner() {
     demo.style.setProperty('--map-focus-y', String(focus.y));
   }, [focus.scale, focus.x, focus.y]);
 
-  // During demo playback, keep the simulated cursor on the active pin (or a rest spot).
+  const demoCursorActive = cursorPhase === 'demo' || cursorPhase === 'to-pointer';
+
   useEffect(() => {
-    if (cursorPhase !== 'demo') return;
-    if (editingSpace) {
-      setCursorPos(sceneToOverlay(editingSpace.x, editingSpace.y, focus));
-      return;
-    }
-    setCursorPos(sceneToOverlay(48, 44, focus));
-  }, [
-    cursorPhase,
-    editingSpace?.id,
-    editingSpace?.x,
-    editingSpace?.y,
-    focus.scale,
-    focus.x,
-    focus.y,
-  ]);
+    document.body.classList.toggle('is-mock-map-demo-cursor', demoCursorActive);
+    return () => document.body.classList.remove('is-mock-map-demo-cursor');
+  }, [demoCursorActive]);
 
   const pauseAutoplay = () => {
     setUserControl(true);
     dispatch(setAutoplayPaused(true));
     autoplayRef.current?.pause();
+    clearTargetRetry();
+    clearDemoTargetHighlight();
+    clearClickTimer();
+    setCursorClicking(false);
+    setCursorDragging(false);
   };
 
   const resumeAutoplay = () => {
@@ -168,19 +288,13 @@ function MockMapOverlayInner() {
   };
 
   const beginHandoff = (clientX: number, clientY: number) => {
-    const el = containerRef.current;
-    if (!el) return;
     clearResumeTimer();
     clearHandoffTimer();
     pauseAutoplay();
 
-    const rect = el.getBoundingClientRect();
-    const x = (clientX - rect.left) / rect.width;
-    const y = (clientY - rect.top) / rect.height;
-    pointerRef.current = { x, y };
-
+    pointerRef.current = { x: clientX, y: clientY };
     setCursorPhase('to-pointer');
-    setCursorPos({ x, y });
+    setCursorPos({ x: clientX, y: clientY });
 
     handoffTimerRef.current = setTimeout(() => {
       setCursorPhase('fading');
@@ -209,7 +323,6 @@ function MockMapOverlayInner() {
     dispatch(setMarkerEditingSpaceId(null));
   };
 
-  const demoCursorActive = cursorPhase === 'demo' || cursorPhase === 'to-pointer';
   const selectorOverlayPos = editingSpace
     ? sceneToOverlay(editingSpace.x, editingSpace.y, focus)
     : null;
@@ -227,13 +340,7 @@ function MockMapOverlayInner() {
         setCursorPhase('gone');
       }}
       onMouseMove={(e) => {
-        const el = containerRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        pointerRef.current = {
-          x: (e.clientX - rect.left) / rect.width,
-          y: (e.clientY - rect.top) / rect.height,
-        };
+        pointerRef.current = { x: e.clientX, y: e.clientY };
         if (cursorPhase === 'to-pointer') {
           setCursorPos(pointerRef.current);
         }
@@ -270,7 +377,13 @@ function MockMapOverlayInner() {
         />
       )}
 
-      <DemoCursor x={cursorPos.x} y={cursorPos.y} phase={cursorPhase} />
+      <DemoCursor
+        x={cursorPos.x}
+        y={cursorPos.y}
+        phase={cursorPhase}
+        clicking={cursorClicking}
+        dragging={cursorDragging}
+      />
     </div>
   );
 }
