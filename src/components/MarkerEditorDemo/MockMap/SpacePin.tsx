@@ -18,6 +18,7 @@ export function SpacePin({
     <button
       type="button"
       className="space-pin"
+      data-demo-target={`pin:${space.id}`}
       style={{
         left: `${space.x}%`,
         top: `${space.y}%`,

@@ -2,7 +2,8 @@ import '../client-only';
 
 import { faArrowRotateLeft, faArrowRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { createPortal } from 'react-dom';
 import { v4 as uuidv4 } from 'uuid';
 import cx from 'classnames';
 import _startCase from 'lodash/startCase';
@@ -37,21 +38,45 @@ const CONTROL_POINT_INDICATOR_STROKE_WIDTH = 0.00625;
 
 export const defaultActiveState = { shape: 'teardrop', decoration: 'customIcon', shapeBorder: 'solid', shapeBorderColor: 'solid', decorationBorder: 'none', decorationBorderColor: 'solid', shapeFill: 'solid', decorationFill: 'solid', decorationFont: 'font' } as const;
 
+function resetAllMarkerParts() {
+  Object.values(markers).forEach((step) => {
+    Object.values(step).forEach((part) => {
+      part.reset();
+    });
+  });
+}
+
 export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { space: SpaceType, baseMarkerId: MarkerType['baseMarkerId'], isNewMarker: boolean, onClose: () => void }) {
   const dispatch = useAppDispatch();
   const storeSpaces = useAppSelector(spacesSelector);
   const storeMarkers = useAppSelector(markersSelector);
-  const existingMarker = useMemo(() => storeMarkers.find((m) => m.id === space.markerId), [storeMarkers, space]);
-  const baseMarker = useMemo(() => storeMarkers.find((m) => m.id === baseMarkerId), [storeMarkers, baseMarkerId]);
-  const deserializedActiveState = useMemo(() => deserializeMarker(baseMarker ?? existingMarker), [baseMarker, existingMarker]);
 
   const [state, setState] = useState<StateType>({
-    active: { ...defaultActiveState, ...(deserializedActiveState ?? {}) },
+    active: { ...defaultActiveState },
     step: 'shape',
     draggedControlPoint: undefined,
     snappingDisabled: false,
     previousDecorationSnapCenter: null,
   });
+
+  // Marker parts are process-wide singletons — reset + reload whenever this editor session changes,
+  // otherwise leftover geometry/text from the previous marker leaks into the next edit.
+  useLayoutEffect(() => {
+    resetAllMarkerParts();
+    const sourceMarker = isNewMarker
+      ? undefined
+      : (storeMarkers.find((m) => m.id === baseMarkerId) ?? storeMarkers.find((m) => m.id === space.markerId));
+    const active = deserializeMarker(sourceMarker) ?? {};
+    setState({
+      active: { ...defaultActiveState, ...active },
+      step: 'shape',
+      draggedControlPoint: undefined,
+      snappingDisabled: false,
+      previousDecorationSnapCenter: null,
+    });
+    // Only re-seed when the edited marker identity changes — not on every store update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [space.markerId, isNewMarker, baseMarkerId]);
 
   const reactiveState = useMarkerReactiveState();
 
@@ -127,18 +152,28 @@ export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { sp
       const resolvedSource = dataUrlToSvg(source);
 
       if (isNewMarker) {
-        const id = uuidv4();
+        const id = space.markerId ?? uuidv4();
         dispatch(setSpaceMarker({ spaceId: space.id, markerId: id }));
-        dispatch(addMarker({
-          id,
-          baseMarkerId: baseMarkerId,
-          source: serializeMarker(state, space),
-          resolvedSource,
-          size: [57, 57],
-          anchor: [57 / 2, 57],
-          popupAnchor: [0, 57 * -0.70],
-          kind: 'editor',
-        }));
+        if (storeMarkers.some((m) => m.id === id)) {
+          dispatch(updateMarker({
+            id,
+            source,
+            resolvedSource,
+            baseMarkerId,
+            kind: 'editor',
+          }));
+        } else {
+          dispatch(addMarker({
+            id,
+            baseMarkerId: baseMarkerId,
+            source,
+            resolvedSource,
+            size: [57, 57],
+            anchor: [57 / 2, 57],
+            popupAnchor: [0, 57 * -0.70],
+            kind: 'editor',
+          }));
+        }
       } else {
         dispatch(updateMarker({
           id: space.markerId,
@@ -167,158 +202,175 @@ export function MarkerEditor({ space, baseMarkerId, isNewMarker, onClose }: { sp
     onClose();
   }, [onClose, state, space, storeMarkers, dispatch, isNewMarker, baseMarkerId, storeSpaces]);
 
-  return (
-    <dialog
-      open
-      id="marker-editor"
-      onKeyDown={(e) => e.stopPropagation()}
-    >
-      <div className="wrapper">
-        <article>
-          <header>
-            <button title="Go back" onClick={saveAndClose}>
-              <FontAwesomeIcon
-                icon={faArrowRightFromBracket}
-                color="white"
-              />
-            </button>
-            <button title="Reset" onClick={reset}>
-              <FontAwesomeIcon
-                icon={faArrowRotateLeft}
-                color="white"
-              />
-            </button>
-          </header>
-          <section className="marker-preview">
-            {activePart && (
-              <svg
-                id={`marker-${space.markerId}`}
-                viewBox="-1 -1 2 2"
-                ref={measureSvgRef}
-                style={{ position: 'relative' }}
-                xmlns="http://www.w3.org/2000/svg"
-                onMouseLeave={() => {
-                  if (!state.draggedControlPoint) return;
-
-                  activeControlPointIndicatorRefs[state.draggedControlPoint]['user'].current!
-                    .style.setProperty('translate', activePart.controlPoints[state.draggedControlPoint].toCSSTranslate());
-                }}
-                onMouseMove={(e) => {
-                  if (!state.draggedControlPoint) return;
-
-                  e.stopPropagation();
-                  e.preventDefault();
-
-                  const newPoint = new Point(
-                    mapRange(e.pageX, svgRect!.left, svgRect!.right, -1, 1),
-                    mapRange(e.pageY, svgRect!.top, svgRect!.bottom, -1, 1),
-                  );
-                  activePart.controlPoints[state.draggedControlPoint] = newPoint;
-
-                  updateAll();
-
-                  // Update the dragged control point indicator to the position the user dragged to
-                  activeControlPointIndicatorRefs[state.draggedControlPoint]['user'].current!
-                    .style.setProperty('translate', newPoint.toCSSTranslate());
-                }}
-                onMouseUp={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setState((prev) => ({ ...prev, draggedControlPoint: undefined, previousDecorationSnapCenter: null }));
-                }}
+  // Portal to document.body so overflow:hidden on the map demo cannot clip the editor.
+  return createPortal(
+    (
+      <dialog
+        open
+        id="marker-editor"
+        onKeyDown={(e) => e.stopPropagation()}
+        onCancel={(e) => {
+          e.preventDefault();
+          onClose();
+        }}
+      >
+        <div className="wrapper">
+          <article>
+            <header>
+              <button
+                type="button"
+                title="Go back"
+                data-demo-target="editor:save"
+                onClick={saveAndClose}
               >
-                {Object.values(markerStepContent)}
+                <FontAwesomeIcon
+                  icon={faArrowRightFromBracket}
+                  color="white"
+                />
+              </button>
+              <button type="button" title="Reset" onClick={reset}>
+                <FontAwesomeIcon
+                  icon={faArrowRotateLeft}
+                  color="white"
+                />
+              </button>
+            </header>
+            <section className="marker-preview">
+              {activePart && (
+                <svg
+                  id={`marker-${space.markerId}`}
+                  viewBox="-1 -1 2 2"
+                  ref={measureSvgRef}
+                  style={{ position: 'relative' }}
+                  xmlns="http://www.w3.org/2000/svg"
+                  onMouseLeave={() => {
+                    if (!state.draggedControlPoint) return;
 
-                {Object.keys(activePart.controlPoints)
-                  .map((controlPointName) => (
-                    <g key={controlPointName}>
-                      <g
-                        ref={activeControlPointIndicatorRefs[controlPointName]['user']}
-                        style={{
-                          translate: activePart.controlPoints[controlPointName].toCSSTranslate(),
-                        }}
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as any }));
-                        }}
-                      >
-                        {/* We position the indicators on the top left and use CSS `translate` to move them to the appropriate place in order to bypass React's rendering, as it was unusably slow */}
-                        <circle cx={-1} cy={-1} r={MARKER_EDITING_CIRCLE_RADIUS} stroke="blue" fill="white" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
-                      </g>
-                      <g
-                        ref={activeControlPointIndicatorRefs[controlPointName]['constrained']}
-                        style={{
-                          pointerEvents: 'none',
-                          translate: activePart.controlPoints[controlPointName].toCSSTranslate(),
-                        }}
-                      >
-                        <line x1={-1 - MARKER_EDITING_CROSS_RADIUS} y1={-1} x2={-1 + MARKER_EDITING_CROSS_RADIUS} y2={-1} stroke="green" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
-                        <line x1={-1} y1={-1 - MARKER_EDITING_CROSS_RADIUS} x2={-1} y2={-1 + MARKER_EDITING_CROSS_RADIUS} stroke="green" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
-                      </g>
-                    </g>
-                  ))}
-              </svg>
-            )}
-          </section>
-          <hr className="vr" />
-          <aside>
-            {(Object.keys(markers) as StepsType[])
-              .map((step) => {
-                const Configuration = markerConfigurationComponents[step][state.active[step] as string];
-                const disabled = Object.entries(state.active).some(([activeStep, activeOption]) => (disabledStepCombinations as any)[activeStep]?.[activeOption]?.includes(step));
-                return (
-                  <details
-                    key={step}
-                    name="marker-editor-step"
-                    className={cx({ disabled })}
-                    title={disabled ? "This step is disabled because it's not compatible with some selected options" : undefined}
-                    open={state.step === step}
-                    onClick={(e) => {
-                      if (disabled) e.preventDefault();
-                    }}
-                    onToggle={(e) => {
-                      if (disabled && (e.nativeEvent as ToggleEvent).newState === 'open') {
-                        e.currentTarget.open = false;
-                      } else if ((e.nativeEvent as ToggleEvent).newState === 'open' && state.step !== step) {
-                        setState((prev) => ({ ...prev, step }));
-                      } else if ((e.nativeEvent as ToggleEvent).newState === 'closed' && state.step === step) {
-                        e.currentTarget.open = true;
-                      }
-                    }}
-                  >
-                    <summary>{_startCase(step)}</summary>
-                    <ul role="listbox">
-                      {Object.entries(markers[step])
-                        .map(([type, part]) => {
-                          const Thumbnail = markerThumbnailComponents[step][type];
-                          return (
-                            <li
-                              key={type}
-                              role="option"
-                              aria-selected={state.active[step] === type}
-                              onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
-                              title={part.title}
-                            >
-                              <Thumbnail space={space} />
-                            </li>
-                          );
-                        })
-                      }
-                    </ul>
+                    activeControlPointIndicatorRefs[state.draggedControlPoint]['user'].current!
+                      .style.setProperty('translate', activePart.controlPoints[state.draggedControlPoint].toCSSTranslate());
+                  }}
+                  onMouseMove={(e) => {
+                    if (!state.draggedControlPoint) return;
 
-                    <section className="marker-step-configuration">
-                      <Configuration
-                        space={space}
-                      />
-                    </section>
-                  </details>
-                );
-              }
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    // getBoundingClientRect is viewport-relative — use clientX/Y, not pageX/Y
+                    // (page coords break as soon as the document is scrolled and clamp to y=1).
+                    const newPoint = new Point(
+                      mapRange(e.clientX, svgRect!.left, svgRect!.right, -1, 1),
+                      mapRange(e.clientY, svgRect!.top, svgRect!.bottom, -1, 1),
+                    );
+                    activePart.controlPoints[state.draggedControlPoint] = newPoint;
+
+                    updateAll();
+
+                    // Update the dragged control point indicator to the position the user dragged to
+                    activeControlPointIndicatorRefs[state.draggedControlPoint]['user'].current!
+                      .style.setProperty('translate', newPoint.toCSSTranslate());
+                  }}
+                  onMouseUp={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setState((prev) => ({ ...prev, draggedControlPoint: undefined, previousDecorationSnapCenter: null }));
+                  }}
+                >
+                  {Object.values(markerStepContent)}
+
+                  {Object.keys(activePart.controlPoints)
+                    .map((controlPointName) => (
+                      <g key={controlPointName}>
+                        <g
+                          ref={activeControlPointIndicatorRefs[controlPointName]['user']}
+                          data-demo-target={`editor:cp:${controlPointName}`}
+                          style={{
+                            translate: activePart.controlPoints[controlPointName].toCSSTranslate(),
+                          }}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as any }));
+                          }}
+                        >
+                          {/* We position the indicators on the top left and use CSS `translate` to move them to the appropriate place in order to bypass React's rendering, as it was unusably slow */}
+                          <circle cx={-1} cy={-1} r={MARKER_EDITING_CIRCLE_RADIUS} stroke="blue" fill="white" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
+                        </g>
+                        <g
+                          ref={activeControlPointIndicatorRefs[controlPointName]['constrained']}
+                          style={{
+                            pointerEvents: 'none',
+                            translate: activePart.controlPoints[controlPointName].toCSSTranslate(),
+                          }}
+                        >
+                          <line x1={-1 - MARKER_EDITING_CROSS_RADIUS} y1={-1} x2={-1 + MARKER_EDITING_CROSS_RADIUS} y2={-1} stroke="green" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
+                          <line x1={-1} y1={-1 - MARKER_EDITING_CROSS_RADIUS} x2={-1} y2={-1 + MARKER_EDITING_CROSS_RADIUS} stroke="green" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
+                        </g>
+                      </g>
+                    ))}
+                </svg>
               )}
-          </aside>
-        </article>
-      </div>
-    </dialog>
+            </section>
+            <hr className="vr" />
+            <aside>
+              {(Object.keys(markers) as StepsType[])
+                .map((step) => {
+                  const Configuration = markerConfigurationComponents[step][state.active[step] as string];
+                  const disabled = Object.entries(state.active).some(([activeStep, activeOption]) => (disabledStepCombinations as any)[activeStep]?.[activeOption]?.includes(step));
+                  return (
+                    <details
+                      key={step}
+                      name="marker-editor-step"
+                      className={cx({ disabled })}
+                      title={disabled ? "This step is disabled because it's not compatible with some selected options" : undefined}
+                      open={state.step === step}
+                      onClick={(e) => {
+                        if (disabled) e.preventDefault();
+                      }}
+                      onToggle={(e) => {
+                        if (disabled && (e.nativeEvent as ToggleEvent).newState === 'open') {
+                          e.currentTarget.open = false;
+                        } else if ((e.nativeEvent as ToggleEvent).newState === 'open' && state.step !== step) {
+                          setState((prev) => ({ ...prev, step }));
+                        } else if ((e.nativeEvent as ToggleEvent).newState === 'closed' && state.step === step) {
+                          e.currentTarget.open = true;
+                        }
+                      }}
+                    >
+                      <summary data-demo-target={`editor:step:${step}`}>{_startCase(step)}</summary>
+                      <ul role="listbox">
+                        {Object.entries(markers[step])
+                          .map(([type, part]) => {
+                            const Thumbnail = markerThumbnailComponents[step][type];
+                            return (
+                              <li
+                                key={type}
+                                role="option"
+                                aria-selected={state.active[step] === type}
+                                data-demo-target={`editor:${step}:${type}`}
+                                onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
+                                title={part.title}
+                              >
+                                <Thumbnail space={space} />
+                              </li>
+                            );
+                          })
+                        }
+                      </ul>
+
+                      <section className="marker-step-configuration">
+                        <Configuration
+                          space={space}
+                        />
+                      </section>
+                    </details>
+                  );
+                }
+                )}
+            </aside>
+          </article>
+        </div>
+      </dialog>
+    ),
+    document.body,
   );
 }
