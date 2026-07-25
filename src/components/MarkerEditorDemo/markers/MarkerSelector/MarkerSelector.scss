@@ -3,9 +3,10 @@ $visrez-brand: #89ab24;
 .marker-editing-overlay {
   background: #333;
   border: 2px solid #666;
-
   border-radius: 0.5em;
-  padding: 0.5em;
+  // Room for corner action buttons outside each cell.
+  padding: 0.85em;
+  overflow: visible;
 
   & > [role=listbox] {
     padding: 0;
@@ -13,7 +14,7 @@ $visrez-brand: #89ab24;
 
     $padding: 0.25em;
     $item-size: calc(64px + #{$padding} * 2);
-    $gap: 0.5em;
+    $gap: 0.75em;
     display: grid;
 
     $max-column-count: 4;
@@ -25,78 +26,92 @@ $visrez-brand: #89ab24;
     box-sizing: content-box;
 
     li[role=option] {
+      position: relative;
+      overflow: visible;
       width: $item-size;
       height: $item-size;
 
       list-style: none;
-      border: 1px solid #666;
+      // Always 2px so hover/selection only changes color (no layout shift).
+      border: 2px solid #666;
       border-radius: 0.5em;
-
-      &[aria-selected="true"] {
-        margin: -1px;
-        width: calc(#{$item-size} + 2px);
-        height: calc(#{$item-size} + 2px);
-
-        border-width: 2px;
-        border-color: var(--brand, $visrez-brand);
-      }
-
-      &:focus-within, &:hover {
-        margin: -1px;
-        width: calc(#{$item-size} + 2px);
-        height: calc(#{$item-size} + 2px);
-
-        border-width: 2px;
-        border-color: #aaa;
-      }
 
       display: flex;
       align-items: center;
       justify-content: center;
       padding: $padding;
+      box-sizing: border-box;
 
+      &[aria-selected="true"] {
+        border-color: var(--brand, $visrez-brand);
+      }
+
+      &:focus-within, &:hover, &.is-demo-target {
+        border-color: #aaa;
+      }
+
+      &[aria-selected="true"].is-demo-target {
+        border-color: var(--brand, $visrez-brand);
+      }
+
+      // Marker previews fill the cell (InlineSVG + uploaded images).
       img {
         max-width: 100%;
         height: 100%;
         color-scheme: only light;
       }
 
+      > svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
       .marker-edit-icon, .marker-delete-icon, .marker-duplicate-icon {
         position: absolute;
-        $padding: 0.25em;
-        $size: 0.75em;
+        $pad: 0.1em;
+        $size: 0.5em;
         $border: 1px;
+        $final-size: calc(#{$size} + #{2 * $pad} + #{2 * $border});
 
-        $final-size: #{calc($size + 2 * $padding + 2 * $border)};
         width: $final-size;
         height: $final-size;
 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: inherit;
+        z-index: 1;
+
+        // Sit outside the corner so the marker stays readable.
         &.marker-edit-icon {
-          top: calc(-0.25 * #{$final-size} / 2);
-          right: calc(-0.25 * #{$final-size} / 2);
+          top: -0.4em;
+          right: -0.4em;
         }
 
         &.marker-duplicate-icon {
-          bottom: calc(-0.25 * #{$final-size} / 2);
-          right: calc(-0.25 * #{$final-size} / 2);
+          bottom: -0.4em;
+          right: -0.4em;
         }
 
         &.marker-delete-icon {
-          top: calc(-0.25 * #{$final-size} / 2);
-          left: calc(-0.25 * #{$final-size} / 2);
+          top: -0.4em;
+          left: -0.4em;
         }
 
         background: #333;
         border: #{$border} solid #888;
-        border-radius: 0.25em;
-        padding: $padding;
+        border-radius: 0.2em;
+        padding: $pad;
+        box-sizing: border-box;
 
-        &:not(.disabled):is(:focus-within, :hover) {
-          margin: -#{$border};
-          width: calc(#{$final-size} + 2px);
-          height: calc(#{$final-size} + 2px);
+        svg {
+          width: $size;
+          height: $size;
+        }
 
-          border-width: 2px;
+        &:not(.disabled):is(:focus-within, :hover, .is-demo-target) {
           border-color: #aaa;
         }
 
