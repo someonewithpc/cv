@@ -1,9 +1,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faIcons, faSpinner, faUpload } from "@fortawesome/free-solid-svg-icons";
-import { v4 as uuidv4 } from 'uuid';
 
-import $store, { addDecoration, markerDecorationsSelector } from '@/store';
-;
+import $store, { markerDecorationsSelector } from '@/store';
 
 import { optimizeAndParseSVGToComponent } from "../../optimizeAndParseSVGToComponent";
 import { MarkerPart, Point } from "../shared";
@@ -139,35 +137,11 @@ export class IconMarkerDecoration extends MarkerPart {
           <li
             role="option"
             aria-selected={false}
-            className="decoration-uploader"
-            title="Upload new SVG decoration"
+            aria-disabled="true"
+            className="decoration-uploader disabled"
+            title="Uploading is not available in this demo"
           >
-            <label htmlFor="marker-decoration-upload">
-              <FontAwesomeIcon icon={faUpload} />
-            </label>
-            <input
-              id="marker-decoration-upload"
-              type="file"
-              accept="image/svg+xml"
-              onChange={(e) => {
-                if (!e.target.files) return;
-                const uploadedFiles = [...e.target.files];
-
-                if (uploadedFiles.some((f) => f.type !== 'image/svg+xml')) {
-                  return;
-                }
-
-                uploadedFiles.forEach((file) => {
-                  const fileReader = new FileReader();
-                  fileReader.onload = (e) => {
-                    const { result } = e.target!;
-                    if (typeof result !== 'string') return;
-                    $store.dispatch(addDecoration({ id: uuidv4(), source: result, filename: file.name }));
-                  };
-                  fileReader.readAsDataURL(file);
-                });
-              }}
-            />
+            <FontAwesomeIcon icon={faUpload} />
           </li>
         </ul>
       </>

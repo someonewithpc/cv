@@ -54,7 +54,20 @@ $visrez-brand: #89ab24;
         border-color: var(--brand, $visrez-brand);
       }
 
-      // Marker previews fill the cell (InlineSVG + uploaded images).
+      &.disabled {
+        color: #777;
+        cursor: not-allowed;
+
+        &:hover, &:focus-within {
+          border-color: #666;
+        }
+
+        svg {
+          color: inherit;
+        }
+      }
+
+      // Marker previews fill the cell (InlineSVG + images).
       img {
         max-width: 100%;
         height: 100%;
