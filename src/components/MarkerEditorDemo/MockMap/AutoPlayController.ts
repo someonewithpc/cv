@@ -41,10 +41,21 @@ type DemoPreset = {
   decoration: 'empty' | 'freeText' | 'spaceNumber' | 'upperSpaceLetter' | 'lowerSpaceLetter' | 'customIcon';
   fill: string;
   border: string;
+  /** Space opened for editing / creating this preset's marker. */
+  primarySpaceId: string;
+  /** Second space used to demo assigning the same marker. */
+  secondarySpaceId: string;
   /** Decoration/text fill — omit for empty/customIcon (those steps are disabled). */
   textColor?: string;
   /** Free-text decoration content, when `decoration` is `freeText`. */
   text?: string;
+  /** Shape border style — omit to leave the default solid border alone. */
+  shapeBorder?: 'none' | 'solid' | 'dashed';
+  /** Border width slider (shape border Configuration). */
+  borderWidth?: number;
+  /** Dashed border dash/gap sliders. */
+  dashLength?: number;
+  gapLength?: number;
   /** Control-point drags while the shape step is active (resize / reshape). */
   shapeDrags: CpDrag[];
   /** Control-point drags while the decoration step is active. */
@@ -60,9 +71,11 @@ const DEMO_PRESETS: DemoPreset[] = [
     border: '#f4f0ea',
     textColor: '#f4f0ea',
     text: 'H',
+    primarySpaceId: 'space-lobby',
+    secondarySpaceId: 'space-cafe',
     shapeDrags: [{ cp: 'radiusPoint', dx: -20, dy: 0 }],
-    // Past snap tolerance (~0.05 viewBox ≈ 13px); Shift disables snap for a clean nudge.
-    decorationDrags: [{ cp: 'center', dx: 0, dy: 18, disableSnap: true }],
+    // Past snap tolerance only mattered before Shift; keep a small visible nudge.
+    decorationDrags: [{ cp: 'center', dx: 0, dy: 12, disableSnap: true }],
   },
   {
     shape: 'teardrop',
@@ -70,8 +83,19 @@ const DEMO_PRESETS: DemoPreset[] = [
     fill: '#3d7ea6',
     border: '#f4f0ea',
     textColor: '#f4f0ea',
-    shapeDrags: [{ cp: 'tip', dx: 0, dy: 16 }],
-    decorationDrags: [],
+    primarySpaceId: 'space-lobby',
+    secondarySpaceId: 'space-cafe',
+    shapeBorder: 'dashed',
+    borderWidth: 0.028,
+    dashLength: 0.2,
+    gapLength: 0.09,
+    // Widen, shorten the tip, then drop the bulb join so the arc is tangent to the sides.
+    shapeDrags: [
+      { cp: 'sectorStart', dx: -22, dy: 0 },
+      { cp: 'tip', dx: 0, dy: -28 },
+      { cp: 'sectorStart', dx: 6, dy: 24 },
+    ],
+    decorationDrags: [{ cp: 'center', dx: 0, dy: 18, disableSnap: true }],
   },
   {
     shape: 'pin',
@@ -79,8 +103,10 @@ const DEMO_PRESETS: DemoPreset[] = [
     fill: '#a65d3f',
     border: '#f4f0ea',
     textColor: '#f4f0ea',
+    primarySpaceId: 'space-plaza',
+    secondarySpaceId: 'space-cafe',
     shapeDrags: [{ cp: 'circumference', dx: 18, dy: 0 }],
-    decorationDrags: [],
+    decorationDrags: [{ cp: 'center', dx: 0, dy: 14, disableSnap: true }],
   },
 ];
 
@@ -117,6 +143,26 @@ function mouseEvent(type: string, clientX: number, clientY: number, buttons: num
 
 export type DemoCursorHandler = (step: DemoCursorStep) => void;
 
+export type DemoToastPayload = {
+  action: 'Undo' | 'Redo';
+  keys: string[];
+};
+
+export function undoRedoShortcut(action: 'Undo' | 'Redo'): DemoToastPayload {
+  const isApple = typeof navigator !== 'undefined'
+    && /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
+  if (isApple) {
+    return action === 'Undo'
+      ? { action, keys: ['⌘', 'Z'] }
+      : { action, keys: ['⌘', '⇧', 'Z'] };
+  }
+  return action === 'Undo'
+    ? { action, keys: ['Ctrl', 'Z'] }
+    : { action, keys: ['Ctrl', 'Shift', 'Z'] };
+}
+
+export type DemoToastHandler = (toast: DemoToastPayload) => void;
+
 export class AutoPlayController {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private dragRaf: number | null = null;
@@ -129,17 +175,20 @@ export class AutoPlayController {
   private readonly getState: () => RootState;
   private readonly onEditingChange: (spaceId: string | null) => void;
   private readonly onCursor: DemoCursorHandler;
+  private readonly onToast: DemoToastHandler;
 
   constructor(
     dispatch: AppDispatch,
     getState: () => RootState,
     onEditingChange: (spaceId: string | null) => void,
     onCursor: DemoCursorHandler,
+    onToast: DemoToastHandler = () => {},
   ) {
     this.dispatch = dispatch;
     this.getState = getState;
     this.onEditingChange = onEditingChange;
     this.onCursor = onCursor;
+    this.onToast = onToast;
   }
 
   start() {
@@ -217,7 +266,7 @@ export class AutoPlayController {
       const fromY = rect.top + rect.height / 2;
       const toX = fromX + dx;
       const toY = fromY + dy;
-      const durationMs = 1100;
+      const durationMs = 620;
       const root = document.documentElement;
 
       const shiftEvent = (type: 'keydown' | 'keyup', down: boolean) => {
@@ -294,7 +343,7 @@ export class AutoPlayController {
   private dragSteps(drags: CpDrag[]): Step[] {
     return drags.flatMap((drag) => [
       {
-        delay: () => (this.sessionIsCreate ? 650 : 40),
+        delay: () => (this.sessionIsCreate ? 380 : 40),
         cursor: () => (
           this.sessionIsCreate
             ? { target: `editor:cp:${drag.cp}` }
@@ -302,7 +351,7 @@ export class AutoPlayController {
         ),
       },
       {
-        delay: () => (this.sessionIsCreate ? 300 : 40),
+        delay: () => (this.sessionIsCreate ? 160 : 40),
         cursor: () => (
           this.sessionIsCreate
             ? { target: `editor:cp:${drag.cp}`, click: true }
@@ -321,20 +370,148 @@ export class AutoPlayController {
     ]);
   }
 
+  private animateRangeInput(target: string, toValue: number): Promise<void> {
+    return new Promise((resolve) => {
+      const input = queryDemoTarget(target);
+      if (!(input instanceof HTMLInputElement) || input.type !== 'range') {
+        resolve();
+        return;
+      }
+
+      const rect = input.getBoundingClientRect();
+      const min = parseFloat(input.min || '0');
+      const max = parseFloat(input.max || '1');
+      const from = parseFloat(input.value);
+      const durationMs = 420;
+      const startedAt = performance.now();
+
+      const thumbX = (value: number) => {
+        const t = max === min ? 0 : (value - min) / (max - min);
+        return rect.left + rect.width * t;
+      };
+      const thumbY = rect.top + rect.height / 2;
+
+      this.onCursor({ client: { x: thumbX(from), y: thumbY }, click: true });
+
+      const tick = (now: number) => {
+        if (this.paused) {
+          this.dragRaf = null;
+          setNativeInputValue(input, String(toValue));
+          resolve();
+          return;
+        }
+
+        const t = Math.min(1, (now - startedAt) / durationMs);
+        const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+        const value = from + (toValue - from) * eased;
+        setNativeInputValue(input, String(value));
+        this.onCursor({ client: { x: thumbX(value), y: thumbY }, dragging: true });
+
+        if (t < 1) {
+          this.dragRaf = requestAnimationFrame(tick);
+          return;
+        }
+
+        this.dragRaf = null;
+        setNativeInputValue(input, String(toValue));
+        this.onCursor({ client: { x: thumbX(toValue), y: thumbY }, dragging: false });
+        resolve();
+      };
+
+      this.dragRaf = requestAnimationFrame(tick);
+    });
+  }
+
+  private shapeBorderSteps(): Step[] {
+    const hasBorder = () => this.currentPreset().shapeBorder != null;
+    const hasWidth = () => this.currentPreset().borderWidth != null;
+    const hasDash = () => this.currentPreset().dashLength != null;
+    const hasGap = () => this.currentPreset().gapLength != null;
+
+    return [
+      {
+        delay: () => (hasBorder() ? 480 : 40),
+        cursor: () => (hasBorder() ? { target: 'editor:step:shapeBorder' } : undefined),
+      },
+      {
+        delay: () => (hasBorder() ? 320 : 40),
+        cursor: () => (hasBorder() ? { target: 'editor:step:shapeBorder', click: true } : undefined),
+        domClick: () => hasBorder(),
+      },
+      {
+        delay: () => (hasBorder() ? 420 : 40),
+        cursor: () => {
+          const border = this.currentPreset().shapeBorder;
+          return border != null ? { target: `editor:shapeBorder:${border}` } : undefined;
+        },
+      },
+      {
+        delay: () => (hasBorder() ? 320 : 40),
+        cursor: () => {
+          const border = this.currentPreset().shapeBorder;
+          return border != null ? { target: `editor:shapeBorder:${border}`, click: true } : undefined;
+        },
+        domClick: () => hasBorder(),
+      },
+      {
+        delay: () => (hasWidth() ? 380 : 40),
+        cursor: () => (hasWidth() ? { target: 'editor:border-width' } : undefined),
+      },
+      {
+        delay: () => (hasWidth() ? 160 : 40),
+        cursor: () => (hasWidth() ? { target: 'editor:border-width', click: true } : undefined),
+        run: async () => {
+          const width = this.currentPreset().borderWidth;
+          if (width == null) return;
+          await this.animateRangeInput('editor:border-width', width);
+        },
+      },
+      {
+        delay: () => (hasDash() ? 380 : 40),
+        cursor: () => (hasDash() ? { target: 'editor:dash-length' } : undefined),
+      },
+      {
+        delay: () => (hasDash() ? 160 : 40),
+        cursor: () => (hasDash() ? { target: 'editor:dash-length', click: true } : undefined),
+        run: async () => {
+          const dash = this.currentPreset().dashLength;
+          if (dash == null) return;
+          await this.animateRangeInput('editor:dash-length', dash);
+        },
+      },
+      {
+        delay: () => (hasGap() ? 380 : 40),
+        cursor: () => (hasGap() ? { target: 'editor:gap-length' } : undefined),
+      },
+      {
+        delay: () => (hasGap() ? 160 : 40),
+        cursor: () => (hasGap() ? { target: 'editor:gap-length', click: true } : undefined),
+        run: async () => {
+          const gap = this.currentPreset().gapLength;
+          if (gap == null) return;
+          await this.animateRangeInput('editor:gap-length', gap);
+        },
+      },
+    ];
+  }
+
   private get steps(): Step[] {
     const preset = () => this.currentPreset();
+    const primary = () => preset().primarySpaceId;
+    const secondary = () => preset().secondarySpaceId;
 
     return [
       {
         delay: 900,
-        cursor: { target: 'pin:space-lobby' },
+        cursor: () => ({ target: `pin:${primary()}` }),
       },
       {
         delay: 650,
-        cursor: { target: 'pin:space-lobby', click: true },
+        cursor: () => ({ target: `pin:${primary()}`, click: true }),
         run: () => {
-          this.onEditingChange('space-lobby');
-          this.dispatch(setMarkerEditingSpaceId('space-lobby'));
+          const spaceId = primary();
+          this.onEditingChange(spaceId);
+          this.dispatch(setMarkerEditingSpaceId(spaceId));
         },
       },
       {
@@ -350,7 +527,7 @@ export class AutoPlayController {
           // Keep the space preview on the marker being edited (not a leftover assign).
           const id = this.currentMarkerId();
           if (id != null) {
-            this.dispatch(setSpaceMarker({ spaceId: 'space-lobby', markerId: id }));
+            this.dispatch(setSpaceMarker({ spaceId: primary(), markerId: id }));
           }
         },
       },
@@ -410,20 +587,20 @@ export class AutoPlayController {
       // Decoration control points (e.g. resize the letter).
       ...this.dragSteps(preset().decorationDrags),
       {
-        delay: 800,
+        delay: 480,
         cursor: { target: 'editor:step:shapeFill' },
       },
       {
-        delay: 550,
+        delay: 320,
         cursor: { target: 'editor:step:shapeFill', click: true },
         domClick: true,
       },
       {
-        delay: 800,
+        delay: 420,
         cursor: { target: 'editor:fill-color:marker-shape' },
       },
       {
-        delay: 550,
+        delay: 280,
         cursor: { target: 'editor:fill-color:marker-shape', click: true },
         run: () => {
           const input = queryDemoTarget('editor:fill-color:marker-shape');
@@ -432,21 +609,22 @@ export class AutoPlayController {
           }
         },
       },
+      ...this.shapeBorderSteps(),
       {
-        delay: 800,
+        delay: 480,
         cursor: { target: 'editor:step:shapeBorderColor' },
       },
       {
-        delay: 550,
+        delay: 320,
         cursor: { target: 'editor:step:shapeBorderColor', click: true },
         domClick: true,
       },
       {
-        delay: 800,
+        delay: 420,
         cursor: { target: 'editor:border-color:marker-shape' },
       },
       {
-        delay: 550,
+        delay: 280,
         cursor: { target: 'editor:border-color:marker-shape', click: true },
         run: () => {
           const input = queryDemoTarget('editor:border-color:marker-shape');
@@ -456,7 +634,7 @@ export class AutoPlayController {
         },
       },
       {
-        delay: () => (preset().textColor != null ? 800 : 40),
+        delay: () => (preset().textColor != null ? 480 : 40),
         cursor: () => (
           preset().textColor != null
             ? { target: 'editor:step:decorationFill' }
@@ -464,7 +642,7 @@ export class AutoPlayController {
         ),
       },
       {
-        delay: () => (preset().textColor != null ? 550 : 40),
+        delay: () => (preset().textColor != null ? 320 : 40),
         cursor: () => (
           preset().textColor != null
             ? { target: 'editor:step:decorationFill', click: true }
@@ -473,7 +651,7 @@ export class AutoPlayController {
         domClick: () => preset().textColor != null,
       },
       {
-        delay: () => (preset().textColor != null ? 800 : 40),
+        delay: () => (preset().textColor != null ? 420 : 40),
         cursor: () => (
           preset().textColor != null
             ? { target: 'editor:fill-color:marker-decoration' }
@@ -481,7 +659,7 @@ export class AutoPlayController {
         ),
       },
       {
-        delay: () => (preset().textColor != null ? 550 : 40),
+        delay: () => (preset().textColor != null ? 280 : 40),
         cursor: () => (
           preset().textColor != null
             ? { target: 'editor:fill-color:marker-decoration', click: true }
@@ -506,9 +684,9 @@ export class AutoPlayController {
         domClick: true,
         run: () => {
           const slot = this.slotIndex();
-          const lobby = spacesSelector(this.getState()).find((s) => s.id === 'space-lobby');
-          if (lobby?.markerId != null) {
-            this.demoMarkerIds[slot] = lobby.markerId;
+          const space = spacesSelector(this.getState()).find((s) => s.id === primary());
+          if (space?.markerId != null) {
+            this.demoMarkerIds[slot] = space.markerId;
           }
         },
       },
@@ -523,14 +701,15 @@ export class AutoPlayController {
       },
       {
         delay: 900,
-        cursor: { target: 'pin:space-cafe' },
+        cursor: () => ({ target: `pin:${secondary()}` }),
       },
       {
         delay: 650,
-        cursor: { target: 'pin:space-cafe', click: true },
+        cursor: () => ({ target: `pin:${secondary()}`, click: true }),
         run: () => {
-          this.onEditingChange('space-cafe');
-          this.dispatch(setMarkerEditingSpaceId('space-cafe'));
+          const spaceId = secondary();
+          this.onEditingChange(spaceId);
+          this.dispatch(setMarkerEditingSpaceId(spaceId));
         },
       },
       {
@@ -543,7 +722,7 @@ export class AutoPlayController {
         run: (dispatch) => {
           const markerId = this.currentMarkerId();
           if (markerId != null) {
-            dispatch(setSpaceMarker({ spaceId: 'space-cafe', markerId }));
+            dispatch(setSpaceMarker({ spaceId: secondary(), markerId }));
           }
           this.onEditingChange(null);
           dispatch(setMarkerEditingSpaceId(null));
@@ -557,6 +736,7 @@ export class AutoPlayController {
         delay: 700,
         cursor: { target: null, click: true },
         run: (dispatch) => {
+          this.onToast(undoRedoShortcut('Undo'));
           dispatch(ActionCreators.undo());
         },
       },
@@ -564,6 +744,7 @@ export class AutoPlayController {
         delay: 900,
         cursor: { target: null, click: true },
         run: (dispatch) => {
+          this.onToast(undoRedoShortcut('Redo'));
           dispatch(ActionCreators.redo());
         },
       },
@@ -619,14 +800,20 @@ export class AutoPlayController {
   }
 }
 
-export function bindUndoRedoKeys(target: HTMLElement, dispatch: AppDispatch) {
+export function bindUndoRedoKeys(
+  target: HTMLElement,
+  dispatch: AppDispatch,
+  onToast: DemoToastHandler = () => {},
+) {
   const onKeyDown = (e: KeyboardEvent) => {
     const mod = e.metaKey || e.ctrlKey;
     if (!mod || e.key.toLowerCase() !== 'z') return;
     e.preventDefault();
     if (e.shiftKey) {
+      onToast(undoRedoShortcut('Redo'));
       dispatch(ActionCreators.redo());
     } else {
+      onToast(undoRedoShortcut('Undo'));
       dispatch(ActionCreators.undo());
     }
   };

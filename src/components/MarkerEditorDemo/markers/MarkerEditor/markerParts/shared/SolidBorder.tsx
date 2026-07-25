@@ -55,6 +55,7 @@ export class SolidBorder extends MarkerPart {
           max="0.5"
           step="0.001"
           value={this.reactiveState.width}
+          data-demo-target="editor:border-width"
           onChange={(e) => {
             this.throttledSetWidth(parseFloat(e.target.value));
           }}
