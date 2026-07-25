@@ -65,6 +65,7 @@ export class DashedBorder extends SolidBorder {
           max="1.0"
           step="0.001"
           value={this.reactiveState.dashLength}
+          data-demo-target="editor:dash-length"
           onChange={(e) => {
             this.throttledSetDashLength(parseFloat(e.target.value));
           }}
@@ -77,6 +78,7 @@ export class DashedBorder extends SolidBorder {
           max="1.0"
           step="0.001"
           value={this.reactiveState.gapLength}
+          data-demo-target="editor:gap-length"
           onChange={(e) => {
             this.throttledSetGapLength(parseFloat(e.target.value));
           }}
@@ -85,6 +87,7 @@ export class DashedBorder extends SolidBorder {
         <select
           id="marker-line-cap"
           value={this.reactiveState.strokeLinecap}
+          data-demo-target="editor:line-cap"
           onChange={(e) => {
             this.reactiveState.strokeLinecap = e.target.value as 'butt' | 'round' | 'square';
           }}
