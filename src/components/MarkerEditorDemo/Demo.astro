@@ -34,7 +34,7 @@ type Layer = keyof typeof layers;
         <Annotations>
           <SelectorLayer slot="content" />
           <Fragment slot="annotations">
-            <ArrowAnnotation tipX={-0.15} tipY={-0.35} angle={-40} length={0.55} text="Pick / create / upload" />
+            <ArrowAnnotation tipX={-0.15} tipY={-0.35} angle={-40} length={0.55} text="Pick / create" />
             <ArrowAnnotation tipX={0.35} tipY={0.2} angle={25} length={0.5} text="Edit & duplicate" />
           </Fragment>
         </Annotations>
@@ -78,7 +78,7 @@ type Layer = keyof typeof layers;
       ),
       selector: (
         <PostIt background="#cde" color="black">
-          The selector lists markers for a space: assign, upload SVG, or open the editor to craft a new one.
+          The selector lists markers for a space: assign an existing one, or open the editor to craft a new one.
         </PostIt>
       ),
       editor: (
