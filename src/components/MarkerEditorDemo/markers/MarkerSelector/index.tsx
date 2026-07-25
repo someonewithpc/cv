@@ -86,6 +86,7 @@ export function MarkerSelector({
                 key={marker.id}
                 role="option"
                 aria-selected={marker.id === currentMarker.id}
+                data-demo-target={`selector:marker:${marker.id}`}
                 style={{ position: 'relative' }}
                 onClick={() => {
                   groupedUndo.batch(() => {
@@ -107,18 +108,19 @@ export function MarkerSelector({
                   : <InlineSVG svgString={marker.resolvedSource} />}
                 {marker.kind === 'editor' && (
                   <>
-                    <FontAwesomeIcon
-                      icon={faPencil}
+                    <span
                       className="marker-edit-icon"
+                      data-demo-target={`selector:edit:${marker.id}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditedMarkerId(marker.id);
                         setEditedBaseMarkerId(marker.baseMarkerId);
                         setIsNewMarker(false);
                       }}
-                    />
-                    <FontAwesomeIcon
-                      icon={faCopy}
+                    >
+                      <FontAwesomeIcon icon={faPencil} />
+                    </span>
+                    <span
                       className={cx('marker-duplicate-icon', { disabled: !deleteDisabled })}
                       title="Duplicate marker"
                       onClick={(e) => {
@@ -137,9 +139,10 @@ export function MarkerSelector({
                           setEditedMarkerId(newMarkerId);
                         });
                       }}
-                    />
-                    <FontAwesomeIcon
-                      icon={faTrash}
+                    >
+                      <FontAwesomeIcon icon={faCopy} />
+                    </span>
+                    <span
                       className={cx('marker-delete-icon', { disabled: deleteDisabled })}
                       title={deleteDisabled
                         ? 'Cannot delete marker: marker is being used'
@@ -152,7 +155,9 @@ export function MarkerSelector({
                           setEditedMarkerId(undefined);
                         }
                       }}
-                    />
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </span>
                   </>
                 )}
               </li>
@@ -163,6 +168,7 @@ export function MarkerSelector({
             role="option"
             aria-selected={false}
             title="Create new marker"
+            data-demo-target="selector:create"
             onClick={() => {
               setEditedMarkerId(uuidv4());
               setIsNewMarker(true);
@@ -173,6 +179,7 @@ export function MarkerSelector({
           <li
             role="option"
             aria-selected={false}
+            data-demo-target="selector:close"
             onClick={onClose}
             title="Close marker selector"
           >
