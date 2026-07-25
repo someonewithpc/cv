@@ -3,7 +3,7 @@ import '../client-only';
 import { useState } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCopy, faPencil, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { v4 as uuidv4 } from 'uuid';
 import cx from 'classnames';
 
@@ -22,8 +22,8 @@ import {
 } from '@/store';
 
 import { MarkerEditor } from '../MarkerEditor';
+import { resolveMarkerSvgForSpace } from '../resolveMarkerSvgForSpace';
 
-import { MarkerUploader } from './MarkerUploader';
 import { InlineSVG } from './InlineSVG';
 import { SelectedMarkerPreview } from './SelectedMarkerPreview';
 
@@ -35,10 +35,12 @@ export function MarkerSelector({
   space,
   position,
   onClose,
+  portalHost,
 }: {
   space: SpaceType;
   position: Position;
   onClose: () => void;
+  portalHost: HTMLElement | null;
 }) {
   const dispatch = useAppDispatch();
   const markers = useAppSelector(markersSelector);
@@ -56,6 +58,7 @@ export function MarkerSelector({
         space={{ ...space, markerId: editedMarkerId }}
         baseMarkerId={editedBaseMarkerId}
         isNewMarker={isNewMarker}
+        portalHost={portalHost}
         onClose={() => {
           setEditedMarkerId(undefined);
           setEditedBaseMarkerId(undefined);
@@ -105,7 +108,7 @@ export function MarkerSelector({
               >
                 {marker.resolvedSource === undefined
                   ? <img src={marker.source} alt="" />
-                  : <InlineSVG svgString={marker.resolvedSource} />}
+                  : <InlineSVG svgString={resolveMarkerSvgForSpace(marker.resolvedSource, space)} />}
                 {marker.kind === 'editor' && (
                   <>
                     <span
@@ -163,7 +166,6 @@ export function MarkerSelector({
               </li>
             );
           })}
-          <MarkerUploader space={space} onUploadComplete={onClose} />
           <li
             role="option"
             aria-selected={false}
@@ -175,6 +177,15 @@ export function MarkerSelector({
             }}
           >
             <FontAwesomeIcon icon={faPlus} size="3x" color="white" />
+          </li>
+          <li
+            role="option"
+            aria-selected={false}
+            aria-disabled="true"
+            title="Uploading is not available in this demo"
+            className="marker-uploader disabled"
+          >
+            <FontAwesomeIcon icon={faUpload} size="3x" />
           </li>
           <li
             role="option"

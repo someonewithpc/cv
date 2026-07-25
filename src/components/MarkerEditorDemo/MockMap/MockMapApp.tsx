@@ -21,6 +21,7 @@ import {
   AutoPlayController,
   bindUndoRedoKeys,
   type DemoCursorStep,
+  type DemoToastPayload,
 } from './AutoPlayController';
 import { SpacePin } from './SpacePin';
 
@@ -34,9 +35,12 @@ const CURSOR_FADE_MS = 320;
 const CURSOR_CLICK_MS = 180;
 const TARGET_RETRY_MS = 40;
 const TARGET_RETRY_ATTEMPTS = 20;
+const TOAST_VISIBLE_MS = 1800;
+const TOAST_EXIT_MS = 320;
 
 type CursorPhase = 'demo' | 'to-pointer' | 'fading' | 'gone';
 type CursorPos = { x: number; y: number };
+type DemoToast = DemoToastPayload & { id: number; leaving: boolean };
 
 function focusTransform(space: SpaceType | undefined): {
   scale: number;
@@ -133,11 +137,30 @@ function MockMapOverlayInner() {
   const pointerRef = useRef<CursorPos>({ x: 0, y: 0 });
 
   const [userControl, setUserControl] = useState(false);
+  const [inView, setInView] = useState(false);
   const [editingSpaceId, setEditingSpaceId] = useState<SpaceType['id'] | null>(null);
-  const [cursorPhase, setCursorPhase] = useState<CursorPhase>('demo');
+  const [cursorPhase, setCursorPhase] = useState<CursorPhase>('gone');
   const [cursorPos, setCursorPos] = useState<CursorPos>({ x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
   const [cursorDragging, setCursorDragging] = useState(false);
+  const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
+  const [toasts, setToasts] = useState<DemoToast[]>([]);
+  const userControlRef = useRef(false);
+  const inViewRef = useRef(false);
+  const autoplayStartedRef = useRef(false);
+  const toastIdRef = useRef(0);
+  const pushToastRef = useRef<(toast: DemoToastPayload) => void>(() => {});
+
+  pushToastRef.current = (payload: DemoToastPayload) => {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev, { ...payload, id, leaving: false }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
+      window.setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, TOAST_EXIT_MS);
+    }, TOAST_VISIBLE_MS);
+  };
 
   const editingSpace = spaces.find((s) => s.id === editingSpaceId);
   const focus = focusTransform(editingSpace);
@@ -225,21 +248,78 @@ function MockMapOverlayInner() {
   };
 
   useEffect(() => {
+    userControlRef.current = userControl;
+  }, [userControl]);
+
+  useEffect(() => {
+    inViewRef.current = inView;
+  }, [inView]);
+
+  useEffect(() => {
+    const overlay = containerRef.current;
+    if (!overlay) return;
+    setEditorPortalHost(
+      overlay.closest<HTMLElement>('.technical-drawing-frame')
+      ?? overlay.closest<HTMLElement>('.mock-map-demo')
+      ?? overlay,
+    );
+  }, []);
+
+  useEffect(() => {
     const overlay = containerRef.current;
     if (overlay) {
       setCursorPos(overlayPoint(overlay, 0.42, 0.38));
     }
+
+    const visibilityRoot =
+      overlay?.closest<HTMLElement>('.mock-map-demo')
+      ?? overlay?.closest<HTMLElement>('.technical-drawing-frame')
+      ?? overlay;
+    if (!visibilityRoot) return;
 
     const controller = new AutoPlayController(
       dispatch,
       () => store.getState(),
       setEditingSpaceId,
       (step) => applyCursorStepRef.current(step),
+      (toast) => pushToastRef.current(toast),
     );
     autoplayRef.current = controller;
-    controller.start();
+
+    // Only run the demo while the techdraw / map is on screen (page scroll or carousel).
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting;
+        inViewRef.current = visible;
+        setInView(visible);
+        if (visible) {
+          if (!autoplayStartedRef.current) {
+            autoplayStartedRef.current = true;
+            setCursorPhase('demo');
+            controller.start();
+          } else if (!userControlRef.current) {
+            setCursorPhase('demo');
+            controller.resume();
+          }
+        } else {
+          controller.pause();
+          clearResumeTimer();
+          clearTargetRetry();
+          clearDemoTargetHighlight();
+          clearClickTimer();
+          setCursorClicking(false);
+          setCursorDragging(false);
+          setCursorPhase('gone');
+        }
+      },
+      { threshold: 0.25, rootMargin: '0px' },
+    );
+    observer.observe(visibilityRoot);
+
     return () => {
+      observer.disconnect();
       controller.destroy();
+      autoplayStartedRef.current = false;
       clearResumeTimer();
       clearHandoffTimer();
       clearClickTimer();
@@ -251,7 +331,7 @@ function MockMapOverlayInner() {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    return bindUndoRedoKeys(el, dispatch);
+    return bindUndoRedoKeys(el, dispatch, (toast) => pushToastRef.current(toast));
   }, [dispatch]);
 
   useEffect(() => {
@@ -262,7 +342,7 @@ function MockMapOverlayInner() {
     demo.style.setProperty('--map-focus-y', String(focus.y));
   }, [focus.scale, focus.x, focus.y]);
 
-  const demoCursorActive = cursorPhase === 'demo' || cursorPhase === 'to-pointer';
+  const demoCursorActive = inView && (cursorPhase === 'demo' || cursorPhase === 'to-pointer');
 
   useEffect(() => {
     document.body.classList.toggle('is-mock-map-demo-cursor', demoCursorActive);
@@ -281,6 +361,7 @@ function MockMapOverlayInner() {
   };
 
   const resumeAutoplay = () => {
+    if (!inViewRef.current) return;
     setUserControl(false);
     dispatch(setAutoplayPaused(false));
     autoplayRef.current?.resume();
@@ -373,8 +454,27 @@ function MockMapOverlayInner() {
         <MarkerSelector
           space={editingSpace}
           position={{ x: selectorOverlayPos.x * 100, y: selectorOverlayPos.y * 100 }}
+          portalHost={editorPortalHost}
           onClose={clearSelection}
         />
+      )}
+
+      {toasts.length > 0 && (
+        <div className="mock-map-toasts" aria-live="polite">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`mock-map-toast${toast.leaving ? ' is-leaving' : ''}`}
+            >
+              <span className="mock-map-toast__keys">
+                {toast.keys.map((key, index) => (
+                  <kbd key={`${toast.id}-${index}`}>{key}</kbd>
+                ))}
+              </span>
+              <span className="mock-map-toast__action">{toast.action}</span>
+            </div>
+          ))}
+        </div>
       )}
 
       <DemoCursor
