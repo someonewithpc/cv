@@ -51,26 +51,34 @@
       height: 100%;
       pointer-events: none;
     }
+
+    &.is-demo-target {
+      filter:
+        drop-shadow(0 1px 1px color-mix(in oklab, #000 18%, transparent))
+        drop-shadow(0 0 0 2px color-mix(in oklab, var(--accent-600, #3d7ea6) 70%, transparent));
+    }
   }
 }
 
 .mock-map-demo-cursor {
-  position: absolute;
-  z-index: 5;
+  position: fixed;
+  z-index: 1100;
   translate: -12% -8%;
   pointer-events: none;
   filter: drop-shadow(0 2px 2px color-mix(in oklab, #000 28%, transparent));
   transition:
     left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
     top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.32s ease;
+    opacity 0.32s ease,
+    scale 0.12s ease;
   opacity: 1;
 
   &--to-pointer {
     transition:
       left 0.4s cubic-bezier(0.22, 1, 0.36, 1),
       top 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.32s ease;
+      opacity 0.32s ease,
+      scale 0.12s ease;
   }
 
   &--fading {
@@ -78,10 +86,29 @@
     transition:
       left 0s,
       top 0s,
-      opacity 0.32s ease;
+      opacity 0.32s ease,
+      scale 0.12s ease;
+  }
+
+  &--clicking {
+    scale: 0.86;
+  }
+
+  &--dragging {
+    transition: none;
+    scale: 0.9;
   }
 
   svg {
     display: block;
+  }
+}
+
+body.is-mock-map-demo-cursor {
+  cursor: none !important;
+
+  #marker-editor,
+  #marker-editor * {
+    cursor: none !important;
   }
 }
