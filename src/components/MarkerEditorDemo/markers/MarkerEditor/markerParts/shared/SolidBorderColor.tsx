@@ -43,12 +43,14 @@ export class SolidBorderColor extends MarkerPart {
   }
 
   Configuration() {
+    const inputId = `marker-border-color-${this.borderClassName}`;
     return (
       <>
-        <label htmlFor="marker-border-color">Color</label>
+        <label htmlFor={inputId}>Color</label>
         <input
-          id="marker-border-color"
+          id={inputId}
           type="color"
+          data-demo-target={`editor:border-color:${this.borderClassName}`}
           value={this.reactiveState.color}
           onChange={(e) => {
             this.throttledSetColor(e.target.value);

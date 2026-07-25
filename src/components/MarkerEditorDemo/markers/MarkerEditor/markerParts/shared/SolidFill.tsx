@@ -44,12 +44,14 @@ export class SolidFill extends MarkerPart {
   }
 
   Configuration() {
+    const inputId = `marker-fill-color-${this.fillClassName}`;
     return (
       <>
-        <label htmlFor="marker-fill-color">Color</label>
+        <label htmlFor={inputId}>Color</label>
         <input
-          id="marker-fill-color"
+          id={inputId}
           type="color"
+          data-demo-target={`editor:fill-color:${this.fillClassName}`}
           value={this.reactiveState.color}
           onChange={(e) => {
             this.throttledSetColor(e.target.value);
