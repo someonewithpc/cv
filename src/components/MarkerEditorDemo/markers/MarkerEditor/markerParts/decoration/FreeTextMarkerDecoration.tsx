@@ -18,7 +18,7 @@ export class FreeTextMarkerDecoration extends TextMarkerDecoration {
 
   get defaultReactiveState() {
     return {
-      text: undefined as undefined | string,
+      text: 'A' as string,
     };
   }
 
@@ -56,35 +56,33 @@ export class FreeTextMarkerDecoration extends TextMarkerDecoration {
 
   textContentLength(): number {
     return Math.max(
-      ...(this.reactiveState.text?.split('\n').map((s) => s.length / 1.5) ?? [1 / 1.5]), // XXX: I don't understand why the 1.5 factor fixes it
+      1,
+      ...(this.reactiveState.text.split('\n').map((s) => s.length)),
     );
   }
 
   Content({ space, extraProps }: { space: SpaceType, extraProps: Record<string, string> }) {
+    const lines = this.reactiveState.text.split('\n');
     return (
       <text
-        x={this.reactiveState.text === undefined ? this.center.x : this.center.x - 1}
-        y={this.reactiveState.text === undefined ? this.center.y : this.center.y - this.lineHeight}
+        x={this.center.x}
+        y={this.center.y - this.lineHeight}
         dominantBaseline="middle"
         textAnchor="middle"
-        fontSize={this.textSizePx(space)}
-        lengthAdjust='spacingAndGlyphs'
+        fontSize={this.textSize(space)}
+        lengthAdjust="spacingAndGlyphs"
         className="marker-decoration"
         {...extraProps}
       >
-        {(this.reactiveState.text === undefined
-          ? this.spaceNumber(space).toString()
-          : this.reactiveState.text.split('\n')
-            .map((line) => (
-              <tspan
-                key={line}
-                x={0}
-                dy={this.lineHeight}
-              >
-                {line}
-              </tspan>
-            ))
-        )}
+        {lines.map((line) => (
+          <tspan
+            key={line}
+            x={this.center.x}
+            dy={this.lineHeight}
+          >
+            {line}
+          </tspan>
+        ))}
       </text>
     );
   }

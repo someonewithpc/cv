@@ -158,7 +158,15 @@ export function deserializeMarker(storeMarker: MarkerType | undefined) {
 
           nestedAttributes.forEach(([entry, [key, value]]) => {
             if (entry === 'state' && key in part.controlPoints) {
-              part.controlPoints[key] = value;
+              // Write into state directly — controlPoints setters run constrain/snap
+              // and would pull a saved nudge back onto the shape center on re-open.
+              const current = (part.state as Record<string, unknown>)[key];
+              if (current instanceof Point && value instanceof Point) {
+                current.x = value.x;
+                current.y = value.y;
+              } else {
+                (part.state as Record<string, unknown>)[key] = value;
+              }
             } else {
               part[entry][key] = value;
             }
