@@ -2,7 +2,7 @@ import '../client-only';
 
 import { faArrowRotateLeft, faArrowRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from 'react-dom';
 import { v4 as uuidv4 } from 'uuid';
 import cx from 'classnames';
@@ -230,22 +230,44 @@ export function MarkerEditor({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Horizontal / shift-wheel over the editor chrome should still move the carousel.
+  // (The dimmed backdrop already passes through via pointer-events: none.)
+  useEffect(() => {
+    if (!portalHost) return;
+
+    const stack =
+      portalHost.closest<HTMLElement>('article.technical-drawing-stack')
+      ?? portalHost.querySelector<HTMLElement>('article.technical-drawing-stack');
+    const editor = editorRef.current;
+    if (!stack || !editor) return;
+
+    const onWheel = (e: WheelEvent) => {
+      const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey;
+      if (!horizontal) return;
+
+      const delta = e.shiftKey && e.deltaX === 0 ? e.deltaY : e.deltaX || e.deltaY;
+      stack.scrollLeft += delta;
+      e.preventDefault();
+    };
+
+    editor.addEventListener('wheel', onWheel, { passive: false });
+    return () => editor.removeEventListener('wheel', onWheel);
+  }, [portalHost]);
+
   if (!portalHost) return null;
 
-  // Portal into the techdraw frame — avoid <dialog>/showModal (viewport top-layer + focus scroll).
+  // Portal into the carousel page — avoid <dialog>/showModal (viewport top-layer + focus scroll).
   return createPortal(
     (
       <div
+        ref={editorRef}
         id="marker-editor"
         role="dialog"
         aria-modal="true"
         aria-label="Marker editor"
         onKeyDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            onClose();
-          }
-        }}
       >
         <div className="wrapper">
           <article>
