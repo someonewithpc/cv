@@ -14,6 +14,8 @@ export type FontFaceDescriptor = {
 };
 
 const DEMO_FONTS = [
+  { family: 'Poppins', weight: '400' },
+  { family: 'Poppins', weight: '700' },
   { family: 'system-ui', weight: '400' },
   { family: 'system-ui', weight: '700' },
   { family: 'Georgia', weight: '400' },
@@ -23,7 +25,7 @@ const DEMO_FONTS = [
 export class DecorationFont extends MarkerPart {
   get defaultReactiveState() {
     return {
-      fontDescriptor: undefined as undefined | FontFaceDescriptor,
+      fontDescriptor: { family: 'Poppins', weight: 600 } as FontFaceDescriptor | undefined,
       registeredFontFaces: {} as Record<string, string>,
     };
   }
@@ -80,11 +82,11 @@ function DecorationFontConfiguration({
   fontDescriptor: FontFaceDescriptor | undefined;
   setFontDescriptor: (fontDescriptor: FontFaceDescriptor | undefined) => void;
 }) {
-  const [weight, setWeight] = useState(400);
+  const [weight, setWeight] = useState(600);
 
   useEffect(() => {
     if (!fontDescriptor) {
-      setFontDescriptor({ family: 'system-ui', weight: 400 });
+      setFontDescriptor({ family: 'Poppins', weight: 600 });
     }
   }, [fontDescriptor, setFontDescriptor]);
 
@@ -93,7 +95,7 @@ function DecorationFontConfiguration({
       <label htmlFor="marker-font-family">Family</label>
       <select
         id="marker-font-family"
-        value={fontDescriptor?.family ?? 'system-ui'}
+        value={fontDescriptor?.family ?? 'Poppins'}
         onChange={(e) => {
           setFontDescriptor({
             family: e.target.value,
@@ -120,7 +122,7 @@ function DecorationFontConfiguration({
           const next = Number(e.target.value);
           setWeight(next);
           setFontDescriptor({
-            family: fontDescriptor?.family ?? 'system-ui',
+            family: fontDescriptor?.family ?? 'Poppins',
             weight: next,
           });
         }}
