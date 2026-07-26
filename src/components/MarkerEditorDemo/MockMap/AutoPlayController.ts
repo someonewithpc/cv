@@ -2,8 +2,10 @@ import { ActionCreators } from 'redux-undo';
 
 import {
   markersSelector,
+  removeMarker,
   setMarkerEditingSpaceId,
   setSpaceMarker,
+  setSpaces,
   spacesSelector,
   type AppDispatch,
   type MarkerType,
@@ -88,7 +90,6 @@ const DEMO_PRESETS: DemoPreset[] = [
     shapeBorder: 'dashed',
     borderWidth: 0.028,
     dashLength: 0.2,
-    gapLength: 0.09,
     // Widen, shorten the tip, then drop the bulb join so the arc is tangent to the sides.
     shapeDrags: [
       { cp: 'sectorStart', dx: -22, dy: 0 },
@@ -105,8 +106,13 @@ const DEMO_PRESETS: DemoPreset[] = [
     textColor: '#f4f0ea',
     primarySpaceId: 'space-plaza',
     secondarySpaceId: 'space-cafe',
-    shapeDrags: [{ cp: 'circumference', dx: 18, dy: 0 }],
-    decorationDrags: [{ cp: 'center', dx: 0, dy: 14, disableSnap: true }],
+    // Circumference handle sits on the left — drag further left to enlarge the bulb.
+    shapeDrags: [{ cp: 'circumference', dx: -42, dy: 0 }],
+    decorationDrags: [
+      { cp: 'center', dx: 0, dy: 14, disableSnap: true },
+      // Pull the size handle inward so “C” sits inside the bulb.
+      { cp: 'textSizeCP', dx: -16, dy: 0 },
+    ],
   },
 ];
 
@@ -144,8 +150,8 @@ function mouseEvent(type: string, clientX: number, clientY: number, buttons: num
 export type DemoCursorHandler = (step: DemoCursorStep) => void;
 
 export type DemoToastPayload = {
-  action: 'Undo' | 'Redo';
-  keys: string[];
+  action: string;
+  keys?: string[];
 };
 
 export function undoRedoShortcut(action: 'Undo' | 'Redo'): DemoToastPayload {
@@ -161,11 +167,21 @@ export function undoRedoShortcut(action: 'Undo' | 'Redo'): DemoToastPayload {
     : { action, keys: ['Ctrl', 'Shift', 'Z'] };
 }
 
+export const autoplayStartedToast = (): DemoToastPayload => ({
+  action: 'Demo playing · move to take over',
+});
+
+export const autoplayPausedToast = (): DemoToastPayload => ({
+  action: 'Demo paused',
+});
+
 export type DemoToastHandler = (toast: DemoToastPayload) => void;
 
 export class AutoPlayController {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private dragRaf: number | null = null;
+  /** Release an in-flight drag/slider so the real pointer isn't fighting demo state. */
+  private dragCleanup: (() => void) | null = null;
   private stepIndex = 0;
   private paused = false;
   private presetIndex = 0;
@@ -206,6 +222,9 @@ export class AutoPlayController {
       cancelAnimationFrame(this.dragRaf);
       this.dragRaf = null;
     }
+    const cleanup = this.dragCleanup;
+    this.dragCleanup = null;
+    cleanup?.();
   }
 
   resume() {
@@ -247,6 +266,34 @@ export class AutoPlayController {
     return id == null ? 'selector:create' : `selector:edit:${id}`;
   }
 
+  /** Rest the fake cursor outside the map frame (cycle boundary). */
+  private offMapCursor(): DemoCursorStep {
+    const overlay = document.querySelector('.mock-map-overlay');
+    if (overlay) {
+      const rect = overlay.getBoundingClientRect();
+      return { client: { x: rect.left + rect.width * 0.88, y: rect.bottom + 52 } };
+    }
+    return { client: { x: window.innerWidth - 48, y: window.innerHeight - 48 } };
+  }
+
+  /** Close UI and restore the map to the default markers so the demo can loop cleanly. */
+  private resetDemo(dispatch: AppDispatch) {
+    this.onEditingChange(null);
+    dispatch(setMarkerEditingSpaceId(null));
+
+    const spaces = spacesSelector(this.getState());
+    dispatch(setSpaces(spaces.map((space) => ({ ...space, markerId: 'default' }))));
+
+    for (const id of this.demoMarkerIds) {
+      if (id != null) {
+        dispatch(removeMarker(id));
+      }
+    }
+    this.demoMarkerIds = DEMO_PRESETS.map(() => null);
+    this.sessionIsCreate = false;
+    dispatch(ActionCreators.clearHistory());
+  }
+
   private animateCpDrag(
     target: string,
     dx: number,
@@ -256,7 +303,7 @@ export class AutoPlayController {
     return new Promise((resolve) => {
       const handle = queryDemoTarget(target);
       const svg = handle?.closest('svg');
-      if (!(handle instanceof Element) || !svg) {
+      if (!(handle instanceof Element) || !svg || this.paused) {
         resolve();
         return;
       }
@@ -268,6 +315,10 @@ export class AutoPlayController {
       const toY = fromY + dy;
       const durationMs = 620;
       const root = document.documentElement;
+      let curX = fromX;
+      let curY = fromY;
+      let settled = false;
+      let shiftHeld = false;
 
       const shiftEvent = (type: 'keydown' | 'keyup', down: boolean) => {
         root.dispatchEvent(new KeyboardEvent(type, {
@@ -280,50 +331,66 @@ export class AutoPlayController {
       };
 
       const finish = (x: number, y: number) => {
+        if (settled) return;
+        settled = true;
+        if (this.dragCleanup === cleanup) {
+          this.dragCleanup = null;
+        }
+        if (this.dragRaf != null) {
+          cancelAnimationFrame(this.dragRaf);
+          this.dragRaf = null;
+        }
         svg.dispatchEvent(mouseEvent('mouseup', x, y, 0));
-        if (disableSnap) {
+        if (shiftHeld) {
           shiftEvent('keyup', false);
+          shiftHeld = false;
         }
         this.onCursor({ client: { x, y }, dragging: false });
         resolve();
       };
+
+      const cleanup = () => {
+        finish(curX, curY);
+      };
+      this.dragCleanup = cleanup;
 
       handle.dispatchEvent(mouseEvent('mousedown', fromX, fromY, 1));
       this.onCursor({ client: { x: fromX, y: fromY }, dragging: true, click: true });
 
       // Wait for React to commit draggedControlPoint, then optional Shift (snap off).
       window.setTimeout(() => {
-        if (this.paused) {
-          finish(toX, toY);
+        if (settled || this.paused) {
+          cleanup();
           return;
         }
 
         if (disableSnap) {
           shiftEvent('keydown', true);
+          shiftHeld = true;
         }
 
         window.setTimeout(() => {
-          if (this.paused) {
-            finish(toX, toY);
+          if (settled || this.paused) {
+            cleanup();
             return;
           }
 
           const startedAt = performance.now();
 
           const tick = (now: number) => {
-            if (this.paused) {
+            if (settled || this.paused) {
               this.dragRaf = null;
-              finish(toX, toY);
+              cleanup();
               return;
             }
 
             const t = Math.min(1, (now - startedAt) / durationMs);
             const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
-            const x = fromX + (toX - fromX) * eased;
-            const y = fromY + (toY - fromY) * eased;
+            curX = fromX + (toX - fromX) * eased;
+            curY = fromY + (toY - fromY) * eased;
 
-            this.onCursor({ client: { x, y }, dragging: true });
-            svg.dispatchEvent(mouseEvent('mousemove', x, y, 1));
+            this.onCursor({ client: { x: curX, y: curY }, dragging: true });
+            svg.dispatchEvent(mouseEvent('mousemove', curX, curY, 1));
 
             if (t < 1) {
               this.dragRaf = requestAnimationFrame(tick);
@@ -373,7 +440,7 @@ export class AutoPlayController {
   private animateRangeInput(target: string, toValue: number): Promise<void> {
     return new Promise((resolve) => {
       const input = queryDemoTarget(target);
-      if (!(input instanceof HTMLInputElement) || input.type !== 'range') {
+      if (!(input instanceof HTMLInputElement) || input.type !== 'range' || this.paused) {
         resolve();
         return;
       }
@@ -384,6 +451,8 @@ export class AutoPlayController {
       const from = parseFloat(input.value);
       const durationMs = 420;
       const startedAt = performance.now();
+      let settled = false;
+      let curValue = from;
 
       const thumbX = (value: number) => {
         const t = max === min ? 0 : (value - min) / (max - min);
@@ -391,21 +460,40 @@ export class AutoPlayController {
       };
       const thumbY = rect.top + rect.height / 2;
 
+      const finish = (value: number) => {
+        if (settled) return;
+        settled = true;
+        if (this.dragCleanup === cleanup) {
+          this.dragCleanup = null;
+        }
+        if (this.dragRaf != null) {
+          cancelAnimationFrame(this.dragRaf);
+          this.dragRaf = null;
+        }
+        setNativeInputValue(input, String(value));
+        this.onCursor({ client: { x: thumbX(value), y: thumbY }, dragging: false });
+        resolve();
+      };
+
+      const cleanup = () => {
+        finish(curValue);
+      };
+      this.dragCleanup = cleanup;
+
       this.onCursor({ client: { x: thumbX(from), y: thumbY }, click: true });
 
       const tick = (now: number) => {
-        if (this.paused) {
+        if (settled || this.paused) {
           this.dragRaf = null;
-          setNativeInputValue(input, String(toValue));
-          resolve();
+          cleanup();
           return;
         }
 
         const t = Math.min(1, (now - startedAt) / durationMs);
         const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
-        const value = from + (toValue - from) * eased;
-        setNativeInputValue(input, String(value));
-        this.onCursor({ client: { x: thumbX(value), y: thumbY }, dragging: true });
+        curValue = from + (toValue - from) * eased;
+        setNativeInputValue(input, String(curValue));
+        this.onCursor({ client: { x: thumbX(curValue), y: thumbY }, dragging: true });
 
         if (t < 1) {
           this.dragRaf = requestAnimationFrame(tick);
@@ -413,9 +501,7 @@ export class AutoPlayController {
         }
 
         this.dragRaf = null;
-        setNativeInputValue(input, String(toValue));
-        this.onCursor({ client: { x: thumbX(toValue), y: thumbY }, dragging: false });
-        resolve();
+        finish(toValue);
       };
 
       this.dragRaf = requestAnimationFrame(tick);
@@ -749,10 +835,25 @@ export class AutoPlayController {
         },
       },
       {
-        delay: 1600,
-        cursor: { target: null },
-        run: () => {
-          this.presetIndex = (this.presetIndex + 1) % DEMO_PRESETS.length;
+        delay: 1200,
+        cursor: () => {
+          const next = (this.presetIndex + 1) % DEMO_PRESETS.length;
+          // Leaving the map signals the end of a full cycle before we reset.
+          return next === 0 ? this.offMapCursor() : { target: null };
+        },
+      },
+      {
+        delay: 900,
+        cursor: () => {
+          const next = (this.presetIndex + 1) % DEMO_PRESETS.length;
+          return next === 0 ? this.offMapCursor() : { target: null };
+        },
+        run: (dispatch) => {
+          const next = (this.presetIndex + 1) % DEMO_PRESETS.length;
+          if (next === 0) {
+            this.resetDemo(dispatch);
+          }
+          this.presetIndex = next;
           this.stepIndex = -1;
         },
       },
@@ -791,11 +892,12 @@ export class AutoPlayController {
       }
     }
     await step.run?.(this.dispatch, this.getState);
-    if (this.paused) return;
     this.stepIndex += 1;
     if (this.stepIndex >= this.steps.length) {
       this.stepIndex = 0;
     }
+    // Paused mid-step: wait here; resume() will schedule the following step.
+    if (this.paused) return;
     this.scheduleNext();
   }
 }
