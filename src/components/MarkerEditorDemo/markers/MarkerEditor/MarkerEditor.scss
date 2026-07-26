@@ -5,8 +5,9 @@ $marker-editor-background: #333;
 
 #marker-editor {
   z-index: 1000;
+  font-family: var(--font-poppins);
 
-  // Contained by .technical-drawing-frame (not the viewport).
+  // Contained by the carousel page section (scrolls away with that page).
   position: absolute;
   inset: 0;
   width: 100%;
@@ -25,6 +26,10 @@ $marker-editor-background: #333;
   justify-content: center;
   align-items: center;
 
+  // Dimmed frame stays visible, but don't trap wheel/touch — let the
+  // technical-drawing carousel scroll to another page underneath.
+  pointer-events: none;
+
   summary.is-demo-target {
     outline: 1px solid #aaa;
     outline-offset: 2px;
@@ -36,6 +41,8 @@ $marker-editor-background: #333;
   }
 
   & > div.wrapper {
+    pointer-events: auto;
+
     // Scale em-based chrome to the drawing frame.
     font-size: clamp(0.45rem, 2.35cqmin, 1rem);
     max-width: calc(100% - 1.25rem);
