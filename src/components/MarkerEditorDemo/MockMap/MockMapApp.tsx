@@ -19,6 +19,8 @@ import { MarkerSelector } from '../markers/MarkerSelector';
 
 import {
   AutoPlayController,
+  autoplayPausedToast,
+  autoplayStartedToast,
   bindUndoRedoKeys,
   type DemoCursorStep,
   type DemoToastPayload,
@@ -30,7 +32,6 @@ import './MockMapOverlay.scss';
 /** Focus zoom — leave margin so the pin isn't crushed against the frame. */
 const FOCUS_SCALE = 1.55;
 const RESUME_DELAY_MS = 2000;
-const CURSOR_HANDOFF_MS = 420;
 const CURSOR_FADE_MS = 320;
 const CURSOR_CLICK_MS = 180;
 const TARGET_RETRY_MS = 40;
@@ -38,7 +39,7 @@ const TARGET_RETRY_ATTEMPTS = 20;
 const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
-type CursorPhase = 'demo' | 'to-pointer' | 'fading' | 'gone';
+type CursorPhase = 'demo' | 'fading' | 'gone';
 type CursorPos = { x: number; y: number };
 type DemoToast = DemoToastPayload & { id: number; leaving: boolean };
 
@@ -134,7 +135,7 @@ function MockMapOverlayInner() {
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const targetRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeTargetRef = useRef<Element | null>(null);
-  const pointerRef = useRef<CursorPos>({ x: 0, y: 0 });
+  const cursorPhaseRef = useRef<CursorPhase>('gone');
 
   const [userControl, setUserControl] = useState(false);
   const [inView, setInView] = useState(false);
@@ -209,6 +210,11 @@ function MockMapOverlayInner() {
   const applyCursorStepRef = useRef<(step: DemoCursorStep, attempt?: number) => void>(() => {});
 
   applyCursorStepRef.current = (step: DemoCursorStep, attempt = 0) => {
+    // User owns the real pointer — don't move/show the demo cursor over them.
+    if (userControlRef.current || cursorPhaseRef.current !== 'demo') {
+      return;
+    }
+
     clearTargetRetry();
     clearDemoTargetHighlight();
     setCursorDragging(Boolean(step.dragging));
@@ -256,10 +262,15 @@ function MockMapOverlayInner() {
   }, [inView]);
 
   useEffect(() => {
+    cursorPhaseRef.current = cursorPhase;
+  }, [cursorPhase]);
+
+  useEffect(() => {
     const overlay = containerRef.current;
     if (!overlay) return;
+    // Attach to the carousel page (not the frame) so the editor scrolls off with it.
     setEditorPortalHost(
-      overlay.closest<HTMLElement>('.technical-drawing-frame')
+      overlay.closest<HTMLElement>('article.technical-drawing-stack > section')
       ?? overlay.closest<HTMLElement>('.mock-map-demo')
       ?? overlay,
     );
@@ -297,11 +308,14 @@ function MockMapOverlayInner() {
             autoplayStartedRef.current = true;
             setCursorPhase('demo');
             controller.start();
+            pushToastRef.current(autoplayStartedToast());
           } else if (!userControlRef.current) {
             setCursorPhase('demo');
             controller.resume();
+            pushToastRef.current(autoplayStartedToast());
           }
         } else {
+          const wasPlaying = !userControlRef.current && autoplayStartedRef.current;
           controller.pause();
           clearResumeTimer();
           clearTargetRetry();
@@ -310,6 +324,9 @@ function MockMapOverlayInner() {
           setCursorClicking(false);
           setCursorDragging(false);
           setCursorPhase('gone');
+          if (wasPlaying) {
+            pushToastRef.current(autoplayPausedToast());
+          }
         }
       },
       { threshold: 0.25, rootMargin: '0px' },
@@ -342,14 +359,8 @@ function MockMapOverlayInner() {
     demo.style.setProperty('--map-focus-y', String(focus.y));
   }, [focus.scale, focus.x, focus.y]);
 
-  const demoCursorActive = inView && (cursorPhase === 'demo' || cursorPhase === 'to-pointer');
-
-  useEffect(() => {
-    document.body.classList.toggle('is-mock-map-demo-cursor', demoCursorActive);
-    return () => document.body.classList.remove('is-mock-map-demo-cursor');
-  }, [demoCursorActive]);
-
   const pauseAutoplay = () => {
+    userControlRef.current = true;
     setUserControl(true);
     dispatch(setAutoplayPaused(true));
     autoplayRef.current?.pause();
@@ -362,37 +373,60 @@ function MockMapOverlayInner() {
 
   const resumeAutoplay = () => {
     if (!inViewRef.current) return;
+    userControlRef.current = false;
+    cursorPhaseRef.current = 'demo';
     setUserControl(false);
     dispatch(setAutoplayPaused(false));
-    autoplayRef.current?.resume();
     setCursorPhase('demo');
+    autoplayRef.current?.resume();
+    pushToastRef.current(autoplayStartedToast());
   };
 
-  const beginHandoff = (clientX: number, clientY: number) => {
+  // Never hide or teleport the real pointer — on trusted user movement, pause and
+  // fade the demo cursor where it is, then resume after the user goes idle.
+  const yieldToUser = () => {
     clearResumeTimer();
-    clearHandoffTimer();
-    pauseAutoplay();
-
-    pointerRef.current = { x: clientX, y: clientY };
-    setCursorPhase('to-pointer');
-    setCursorPos({ x: clientX, y: clientY });
-
-    handoffTimerRef.current = setTimeout(() => {
+    if (cursorPhaseRef.current === 'demo') {
+      clearHandoffTimer();
+      cursorPhaseRef.current = 'fading';
+      pauseAutoplay();
       setCursorPhase('fading');
+      pushToastRef.current(autoplayPausedToast());
       handoffTimerRef.current = setTimeout(() => {
+        cursorPhaseRef.current = 'gone';
         setCursorPhase('gone');
         handoffTimerRef.current = null;
       }, CURSOR_FADE_MS);
-    }, CURSOR_HANDOFF_MS);
-  };
+    } else if (!userControlRef.current) {
+      pauseAutoplay();
+      cursorPhaseRef.current = 'gone';
+      setCursorPhase('gone');
+      pushToastRef.current(autoplayPausedToast());
+    }
 
-  const scheduleResume = () => {
-    clearResumeTimer();
     resumeTimerRef.current = setTimeout(() => {
       resumeTimerRef.current = null;
       resumeAutoplay();
     }, RESUME_DELAY_MS);
   };
+
+  useEffect(() => {
+    if (!inView) return;
+
+    const onTrustedPointer = (e: PointerEvent) => {
+      if (!e.isTrusted) return;
+      yieldToUser();
+    };
+
+    window.addEventListener('pointermove', onTrustedPointer, { passive: true });
+    window.addEventListener('pointerdown', onTrustedPointer, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onTrustedPointer);
+      window.removeEventListener('pointerdown', onTrustedPointer);
+    };
+  // yieldToUser closes over stable refs / setters; rebind when visibility changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inView, dispatch]);
 
   const selectSpace = (selected: SpaceType) => {
     setEditingSpaceId(selected.id);
@@ -411,28 +445,10 @@ function MockMapOverlayInner() {
   return (
     <div
       ref={containerRef}
-      className={`mock-map-overlay${demoCursorActive ? ' is-demo-cursor' : ''}`}
+      className="mock-map-overlay"
       tabIndex={0}
-      onMouseEnter={(e) => {
-        beginHandoff(e.clientX, e.clientY);
-      }}
       onFocus={() => {
-        pauseAutoplay();
-        setCursorPhase('gone');
-      }}
-      onMouseMove={(e) => {
-        pointerRef.current = { x: e.clientX, y: e.clientY };
-        if (cursorPhase === 'to-pointer') {
-          setCursorPos(pointerRef.current);
-        }
-      }}
-      onMouseLeave={() => {
-        if (document.activeElement === containerRef.current) return;
-        scheduleResume();
-      }}
-      onBlur={(e) => {
-        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-        scheduleResume();
+        yieldToUser();
       }}
     >
       <div className="mock-map-scene">
@@ -466,11 +482,13 @@ function MockMapOverlayInner() {
               key={toast.id}
               className={`mock-map-toast${toast.leaving ? ' is-leaving' : ''}`}
             >
-              <span className="mock-map-toast__keys">
-                {toast.keys.map((key, index) => (
-                  <kbd key={`${toast.id}-${index}`}>{key}</kbd>
-                ))}
-              </span>
+              {toast.keys && toast.keys.length > 0 && (
+                <span className="mock-map-toast__keys">
+                  {toast.keys.map((key, index) => (
+                    <kbd key={`${toast.id}-${index}`}>{key}</kbd>
+                  ))}
+                </span>
+              )}
               <span className="mock-map-toast__action">{toast.action}</span>
             </div>
           ))}
