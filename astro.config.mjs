@@ -18,7 +18,7 @@ export default defineConfig({
     react(),
     icon({
       include: {
-        lucide: ['external-link'],
+        lucide: ['external-link', 'plus', 'upload', 'x'],
       },
       // Keep gradient/filter IDs unique across inlined icons (SVGO's cleanupIds
       // collapses every icon to a/b/c and they steal each other's fills).

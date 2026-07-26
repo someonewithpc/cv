@@ -1,64 +1,265 @@
 ---
+import { Icon } from 'astro-icon/components';
+
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+import defaultDecorationSvg from '../assets/default-decoration.svg?raw';
+import defaultMarkerSvg from '../assets/default-marker.svg?raw';
+
+const spaces = [
+  { name: 'Lobby', label: 'A', active: false },
+  { name: 'Cafe', label: 'B', active: true },
+  { name: 'Plaza', label: 'C', active: false },
+] as const;
+
+/** Unedited squircle — same geometry as SquircleMarkerShape defaults. */
+const squirclePath = [
+  'M -0.5, 0',
+  'C -0.5, -0.5  -0.5, -0.5  0, -0.5',
+  '0.5, -0.5  0.5, -0.5  0.5, 0',
+  '0.5, 0.5  0.5, 0.5  0, 0.5',
+  '-0.5, 0.5  -0.5, 0.5  -0.5, 0',
+  'z',
+].join(' ');
 ---
 
-<div class="selector-mock">
-  <div class="grid">
-    <div class="tile selected" title="Default marker"></div>
-    <div class="tile" title="Custom marker"></div>
-    <div class="tile action">+</div>
-    <div class="tile action">×</div>
-  </div>
-  <p>Marker selector overlay</p>
+<div class="wrapper">
+  <Annotations>
+    <div class="selector-layer" slot="content">
+      <div class="panel" aria-hidden="true">
+        <ul class="chips">
+          <li class="chip" title="Default marker with decoration">
+            <span class="default-marker decorated">
+              <span class="pin" set:html={defaultMarkerSvg} />
+              <span class="decoration" set:html={defaultDecorationSvg} />
+            </span>
+          </li>
+          <li class="chip selected" title="Space-letter squircle">
+            <svg viewBox="-1 -1 2 2">
+              <path d={squirclePath} fill="#a65d3f" stroke="#f4f0ea" stroke-width="0.07" />
+              <text
+                x="0"
+                y="0.04"
+                text-anchor="middle"
+                dominant-baseline="middle"
+                fill="#f4f0ea"
+                font-size="0.7"
+                font-family="Poppins, system-ui, sans-serif"
+                font-weight="600"
+              >B</text>
+            </svg>
+          </li>
+          <li class="chip action" title="Create">
+            <Icon name="lucide:plus" />
+          </li>
+          <li class="chip action" title="Upload">
+            <Icon name="lucide:upload" />
+          </li>
+          <li class="chip action" title="Close">
+            <Icon name="lucide:x" />
+          </li>
+        </ul>
+      </div>
+
+      <div class="resolve" aria-hidden="true">
+        <ul class="spaces">
+          {spaces.map((space) => (
+            <li class:list={[{ active: space.active }]}>
+              <svg viewBox="-1 -1 2 2">
+                <path d={squirclePath} fill="#a65d3f" stroke="#f4f0ea" stroke-width="0.07" />
+                <text
+                  x="0"
+                  y="0.04"
+                  text-anchor="middle"
+                  dominant-baseline="middle"
+                  fill="#f4f0ea"
+                  font-size="0.7"
+                  font-family="Poppins, system-ui, sans-serif"
+                  font-weight="600"
+                >{space.label}</text>
+              </svg>
+              <span>{space.name}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <Fragment slot="annotations">
+      {/* Tip just outside the +, upper-right, aimed at its center. */}
+      <ArrowAnnotation
+        tipX={0.08}
+        tipY={-0.4}
+        angle={50}
+        length={0.55}
+        text="Create marker"
+      />
+      {/* Tip on Cafe (B) from the right; shaft and label stay off the center. */}
+      <ArrowAnnotation
+        tipX={0.08}
+        tipY={0.35}
+        angle={-60}
+        length={0.45}
+        text="Same marker, matches the pin order    "
+      />
+    </Fragment>
+  </Annotations>
 </div>
 
 <style lang="scss">
 @use '@/scss/technical-drawing' as drawing;
 
-.selector-mock {
+.wrapper {
+  width: drawing.$artwork-width * 1.25;
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
-  gap: 1rem;
-  width: drawing.$artwork-width;
-  min-height: 16em;
-  color: var(--fg-700, #333);
+}
 
-  .grid {
+.selector-layer {
+  display: grid;
+  justify-items: center;
+  gap: 1.25em;
+  width: 100%;
+  font-size: 1.25em;
+  color: var(--fg-700, #f4f0ea);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+.panel {
+  padding: 0.85em;
+  background: #333;
+  border: 2px solid #666;
+  border-radius: 0.5em;
+  color: #f4f0ea;
+  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+}
+
+.chips {
+  $item-size: 3.1em;
+  $gap: 0.5em;
+
+  display: grid;
+  // One row for the diagram so + / upload / × stay beside the markers.
+  grid-template-columns: repeat(5, $item-size);
+  gap: $gap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: fit-content;
+}
+
+.chip {
+  position: relative;
+  width: 3.1em;
+  height: 3.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25em;
+  box-sizing: border-box;
+  border: 2px solid #666;
+  border-radius: 0.5em;
+  background: #444;
+  overflow: visible;
+  color: #fff;
+
+  :global(svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &.selected {
+    border-color: #89ab24;
+  }
+
+  &.action {
+    color: #fff;
+
+    :global(svg) {
+      width: 1.45em;
+      height: 1.45em;
+      stroke: currentColor;
+      stroke-width: 2.25;
+    }
+  }
+
+  .default-marker {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    .pin {
+      display: contents;
+
+      :global(svg) {
+        width: 100%;
+        height: 100%;
+        color-scheme: only light;
+        // Warm fill reads clearly under the blue house decoration.
+        --accent-800: #c47a3a;
+        --accent-400: #5c3a1e;
+      }
+    }
+
+    &.decorated .decoration {
+      position: absolute;
+      left: 50%;
+      // Pin bulb center sits below the geometric mid of the viewBox.
+      top: 40%;
+      width: 55%;
+      height: 55%;
+      translate: -50% -50%;
+      pointer-events: none;
+
+      :global(svg) {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+}
+
+.resolve {
+  display: grid;
+  width: 100%;
+}
+
+.spaces {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
     display: grid;
-    grid-template-columns: repeat(2, 4em);
-    gap: 0.5em;
-    padding: 0.75em;
-    background: #333;
-    border: 2px solid #666;
-    border-radius: 0.5em;
-  }
+    justify-items: center;
+    gap: 0.3em;
+    padding: 0.45em 0.25em 0.5em;
+    border: 1px dashed color-mix(in oklab, var(--fg-700, #fff) 35%, transparent);
+    border-radius: 0.45em;
+    background: color-mix(in oklab, #000 18%, transparent);
 
-  .tile {
-    width: 4em;
-    height: 4em;
-    border: 1px solid #666;
-    border-radius: 0.5em;
-    background:
-      radial-gradient(circle at 50% 40%, #89ab24 0 35%, transparent 36%),
-      linear-gradient(#444, #444);
-
-    &.selected {
+    &.active {
+      border-style: solid;
       border-color: #89ab24;
-      border-width: 2px;
+      background: color-mix(in oklab, #89ab24 16%, transparent);
     }
 
-    &.action {
-      display: grid;
-      place-items: center;
-      color: white;
-      font-size: 1.75rem;
-      background: #444;
+    svg {
+      width: 2.75em;
+      height: auto;
     }
-  }
 
-  p {
-    margin: 0;
-    font-size: 0.95rem;
-    opacity: 0.8;
+    span {
+      font-size: 0.7em;
+      opacity: 0.85;
+    }
   }
 }
 </style>

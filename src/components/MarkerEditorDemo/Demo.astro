@@ -30,15 +30,7 @@ type Layer = keyof typeof layers;
   <fragment slot="layers">
     {(layer: Layer) => ({
       main: <MockMap />,
-      selector: (
-        <Annotations>
-          <SelectorLayer slot="content" />
-          <Fragment slot="annotations">
-            <ArrowAnnotation tipX={-0.15} tipY={-0.35} angle={-40} length={0.55} text="Pick / create" />
-            <ArrowAnnotation tipX={0.35} tipY={0.2} angle={25} length={0.5} text="Edit & duplicate" />
-          </Fragment>
-        </Annotations>
-      ),
+      selector: <SelectorLayer />,
       editor: (
         <Annotations>
           <EditorLayer slot="content" />
@@ -78,7 +70,9 @@ type Layer = keyof typeof layers;
       ),
       selector: (
         <PostIt background="#cde" color="black">
-          The selector lists markers for a space: assign an existing one, or open the editor to craft a new one.
+          Pick or create a marker for a space. If the decoration is a space number or letter, the
+          selector rewrites every thumbnail to that space’s label — one shared marker, Lobby A /
+          Cafe B / Plaza C.
         </PostIt>
       ),
       editor: (
