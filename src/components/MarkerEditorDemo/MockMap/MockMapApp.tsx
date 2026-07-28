@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useStore } from 'react-redux';
 
 import {
+  markerEditingSpaceIdSelector,
   setAutoplayPaused,
   setMarkerEditingSpaceId,
   spacesSelector,
@@ -128,6 +129,7 @@ function MockMapOverlayInner() {
   const dispatch = useAppDispatch();
   const store = useStore<RootState>();
   const spaces = useAppSelector(spacesSelector);
+  const storeEditingSpaceId = useAppSelector(markerEditingSpaceIdSelector);
   const containerRef = useRef<HTMLDivElement>(null);
   const autoplayRef = useRef<AutoPlayController | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,6 +167,14 @@ function MockMapOverlayInner() {
 
   const editingSpace = spaces.find((s) => s.id === editingSpaceId);
   const focus = focusTransform(editingSpace);
+
+  // Editor diagram page clears Redux editing id — mirror that locally so the
+  // live MarkerEditor unmounts and releases marker-part singletons.
+  useEffect(() => {
+    if (storeEditingSpaceId === null && editingSpaceId !== null) {
+      setEditingSpaceId(null);
+    }
+  }, [storeEditingSpaceId, editingSpaceId]);
 
   const clearResumeTimer = () => {
     if (resumeTimerRef.current) {
