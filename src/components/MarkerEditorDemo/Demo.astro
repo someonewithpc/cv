@@ -1,19 +1,50 @@
 ---
+import { fileURLToPath } from 'node:url';
+
+import * as esbuild from 'esbuild';
+
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 import PostIt from '@/components/PostIt.astro';
 
 import MockMap from './MockMap/MockMap.astro';
 import SelectorLayer from './layers/SelectorLayer.astro';
 import EditorLayer from './layers/EditorLayer.astro';
+import BackgroundLayer from './layers/BackgroundLayer.astro';
 import PartsLayer from './layers/PartsLayer.astro';
 import StoreLayer from './layers/StoreLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+const markerEditorEntry = fileURLToPath(
+  new URL('./markers/MarkerEditor/index.tsx', import.meta.url),
+);
+const srcRoot = fileURLToPath(new URL('../..', import.meta.url));
+
+const { outputFiles: [markerEditorBundle] } = await esbuild.build({
+  entryPoints: [markerEditorEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  jsx: 'automatic',
+  packages: 'external',
+  alias: { '@': srcRoot },
+  loader: {
+    '.scss': 'empty',
+    '.css': 'empty',
+    '.svg': 'empty',
+  },
+});
+
+const markerEditorSize = toKiB(markerEditorBundle.text);
 
 const layers = {
   main: { name: null },
   selector: { name: 'Marker Selector', pageStyle: 'blueprint' },
   editor: { name: 'Marker Editor', pageStyle: 'blueprint' },
+  background: { name: 'Preview Background', pageStyle: 'blueprint' },
   parts: { name: 'Composable Parts', pageStyle: 'blueprint' },
   store: { name: 'Undoable Store', pageStyle: 'blueprint' },
 } as const;
@@ -24,40 +55,18 @@ type Layer = keyof typeof layers;
 <TechnicalDrawingStack
   subtitle="Interactive Map Marker Editor"
   scale="1:1"
-  date="2025"
+  size={markerEditorSize}
+  date="2026"
   layers={layers}
 >
   <fragment slot="layers">
     {(layer: Layer) => ({
       main: <MockMap />,
       selector: <SelectorLayer />,
-      editor: (
-        <Annotations>
-          <EditorLayer slot="content" />
-          <Fragment slot="annotations">
-            <ArrowAnnotation tipX={-0.4} tipY={-0.1} angle={180} length={0.45} text="Live SVG preview" />
-            <ArrowAnnotation tipX={0.45} tipY={-0.35} angle={-20} length={0.4} text="Step accordion" />
-          </Fragment>
-        </Annotations>
-      ),
-      parts: (
-        <Annotations>
-          <PartsLayer slot="content" />
-          <Fragment slot="annotations">
-            <ArrowAnnotation tipX={0} tipY={-0.45} angle={-90} length={0.35} text="Control points" />
-            <ArrowAnnotation tipX={0.4} tipY={0.35} angle={30} length={0.45} text="Shape + decoration" />
-          </Fragment>
-        </Annotations>
-      ),
-      store: (
-        <Annotations>
-          <StoreLayer slot="content" />
-          <Fragment slot="annotations">
-            <ArrowAnnotation tipX={-0.2} tipY={0} angle={160} length={0.5} text="redux-undo history" />
-            <ArrowAnnotation tipX={0.35} tipY={0.25} angle={40} length={0.45} text="groupedUndo.batch" />
-          </Fragment>
-        </Annotations>
-      ),
+      editor: <EditorLayer />,
+      background: <BackgroundLayer />,
+      parts: <PartsLayer />,
+      store: <StoreLayer />,
     }[layer])}
   </fragment>
 
@@ -77,17 +86,26 @@ type Layer = keyof typeof layers;
       ),
       editor: (
         <PostIt background="#fec" color="black">
-          Each accordion step swaps a MarkerPart. Geometry updates imperatively so dragging stays smooth.
+          Each accordion step swaps a MarkerPart. The live SVG preview updates imperatively while
+          you drag, so editing stays smooth.
+        </PostIt>
+      ),
+      background: (
+        <PostIt background="#dfd" color="black">
+          Overlapping linear-gradients looked fine on paper — subpixel rounding made every stripe
+          jitter. A repeating SVG tile keeps each cross coherent.
         </PostIt>
       ),
       parts: (
-        <PostIt background="#dfd" color="black">
-          Shapes, borders, fills, and decorations serialize into SVG <code>data-*</code> attributes for round-trips.
+        <PostIt background="#cfc" color="black">
+          Shapes, borders, fills, and decorations are MarkerParts. They serialize into SVG{' '}
+          <code>data-*</code> attributes for round-trips.
         </PostIt>
       ),
       store: (
         <PostIt background="#edf" color="black">
-          Marker and space mutations sit under redux-undo. Multi-dispatch saves batch into one undo step.
+          Marker and space mutations sit under redux-undo. Multi-dispatch saves batch into one undo
+          step.
         </PostIt>
       ),
     }[layer])}

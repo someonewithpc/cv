@@ -1,36 +1,226 @@
 ---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+/** Unedited teardrop — TeardropMarkerShape default. */
+const teardropPath =
+  'M -0.5, 0 a 0.5, 0.5, 0 1 1, 1, 0 L 0, 0.9 L -0.5, 0 z';
+
+const parts = [
+  { id: 'shape', label: 'Shape', hint: 'teardrop' },
+  { id: 'decoration', label: 'Decoration', hint: 'icon / letter' },
+  { id: 'border', label: 'Border', hint: 'stroke' },
+  { id: 'fill', label: 'Fill', hint: 'paint' },
+] as const;
 ---
 
-<div class="parts-mock">
-  <svg viewBox="-1.2 -1.2 2.4 2.4" aria-hidden="true">
-    <path
-      d="M 0 0.9 L 0.6 -0.1 A 0.6 0.6 0 1 0 -0.6 -0.1 Z"
-      fill="#89ab24"
-      stroke="white"
-      stroke-width="0.07"
-    />
-    <circle cx="0" cy="-0.2" r="0.28" fill="white" opacity="0.9" />
-    <g stroke="blue" fill="white" stroke-width="0.025">
-      <circle cx="0" cy="-0.2" r="0.05" />
-      <circle cx="0.45" cy="-0.2" r="0.05" />
-      <circle cx="0" cy="0.9" r="0.05" />
-    </g>
-    <g stroke="green" stroke-width="0.02">
-      <line x1="-0.08" y1="-0.2" x2="0.08" y2="-0.2" />
-      <line x1="0" y1="-0.28" x2="0" y2="-0.12" />
-    </g>
-  </svg>
+<div class="wrapper">
+  <Annotations>
+    <div class="parts-layer" slot="content" aria-hidden="true">
+      <div class="panel">
+        <header>
+          <span class="eyebrow">MarkerPart</span>
+          <strong>Composable stack</strong>
+        </header>
+
+        <div class="stage">
+          <svg class="preview" viewBox="-1 -1 2 2">
+            <path
+              class="shape"
+              d={teardropPath}
+              fill="#a65d3f"
+              stroke="#f4f0ea"
+              stroke-width="0.07"
+            />
+            {/* House-like decoration stand-in */}
+            <g class="decoration" transform="translate(0, -0.18) scale(0.42)">
+              <path d="M -0.7 0.2 L 0 -0.55 L 0.7 0.2 Z" fill="#1e3a6e" />
+              <rect x="-0.45" y="0.15" width="0.9" height="0.7" fill="#2f6db5" />
+              <rect x="-0.12" y="0.45" width="0.24" height="0.4" fill="#f4f0ea" />
+            </g>
+            <g class="cps" stroke-width="0.025">
+              <g transform="translate(-0.5, 0)">
+                <circle r="0.045" fill="#fff" stroke="#00f" />
+                <line x1="-0.07" y1="0" x2="0.07" y2="0" stroke="#0a0" stroke-width="0.02" />
+                <line x1="0" y1="-0.07" x2="0" y2="0.07" stroke="#0a0" stroke-width="0.02" />
+              </g>
+              <g transform="translate(0.5, 0)">
+                <circle r="0.045" fill="#fff" stroke="#00f" />
+              </g>
+              <g transform="translate(0, 0.9)">
+                <circle r="0.045" fill="#fff" stroke="#00f" />
+              </g>
+            </g>
+          </svg>
+
+          <ul class="stack">
+            {parts.map((part, i) => (
+              <li class:list={[{ active: i === 0 }]}>
+                <span class="idx">{i + 1}</span>
+                <span class="name">{part.label}</span>
+                <span class="hint">{part.hint}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p class="serialize">
+          Serializes to SVG <code>data-*</code> for round-trips
+        </p>
+      </div>
+    </div>
+
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        tipX={-0.35}
+        tipY={-0.1}
+        angle={165}
+        length={0.4}
+        text="Control points  "
+      />
+      <ArrowAnnotation
+        tipX={0.45}
+        tipY={-0.25}
+        angle={-25}
+        length={0.4}
+        text="Shape + decoration  "
+      />
+    </Fragment>
+  </Annotations>
 </div>
 
 <style lang="scss">
-.parts-mock {
+.wrapper {
+  width: min(56cqw, calc(80cqh * 1.2));
+  aspect-ratio: 1.2 / 1;
+  max-height: 80cqh;
+  position: relative;
+  display: grid;
+  place-items: stretch;
+
+  @container technical-drawing (orientation: portrait) {
+    width: min(90cqw, calc(58cqh * 1.1));
+    aspect-ratio: 1.1 / 1;
+    max-height: 58cqh;
+  }
+
+  > :global(svg) {
+    z-index: 2;
+    pointer-events: none;
+  }
+}
+
+.parts-layer {
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
-  min-height: 16em;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.55rem, 2.6cqmin, 1.05rem);
+  color: #f4f0ea;
+}
 
-  svg {
-    width: min(100%, 14em);
-    height: auto;
+.panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85em;
+  background: #333;
+  border: 2px solid #666;
+  border-radius: 0.55em;
+  display: grid;
+  gap: 0.75em;
+  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+
+  .eyebrow {
+    font-size: 0.7em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 0.75em;
+  align-items: center;
+}
+
+.preview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0.45em;
+  border: 1px solid #aaa7;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'%3E%3Cline x1='-0.25' y1='0' x2='0.25' y2='0' stroke='%23aaa7' stroke-width='0.1'/%3E%3Cline x1='0' y1='-0.25' x2='0' y2='0.25' stroke='%23aaa7' stroke-width='0.1'/%3E%3C/svg%3E")
+      repeat center / calc(100% / 11),
+    linear-gradient(#3d3d3b);
+}
+
+.stack {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35em;
+
+  li {
+    display: grid;
+    grid-template-columns: 1.6em 1fr;
+    grid-template-areas:
+      "idx name"
+      "idx hint";
+    column-gap: 0.45em;
+    padding: 0.4em 0.5em;
+    border-radius: 0.35em;
+    border: 1px solid #555;
+    background: #2c2c2a;
+
+    &.active {
+      border-color: #89ab24;
+      background: color-mix(in oklab, #89ab24 14%, #2c2c2a);
+    }
+  }
+
+  .idx {
+    grid-area: idx;
+    align-self: center;
+    width: 1.35em;
+    height: 1.35em;
+    display: grid;
+    place-items: center;
+    border-radius: 0.25em;
+    background: #444;
+    font-size: 0.75em;
+    font-weight: 700;
+  }
+
+  .name {
+    grid-area: name;
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+
+  .hint {
+    grid-area: hint;
+    font-size: 0.68em;
+    opacity: 0.65;
+  }
+}
+
+.serialize {
+  margin: 0;
+  font-size: 0.75em;
+  opacity: 0.8;
+
+  code {
+    color: #c5e06a;
   }
 }
 </style>
