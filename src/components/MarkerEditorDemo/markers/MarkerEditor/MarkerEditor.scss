@@ -3,7 +3,9 @@
 $visrez-brand: #89ab24;
 $marker-editor-background: #333;
 
-#marker-editor {
+#marker-editor,
+#marker-editor-embed,
+.marker-editor {
   z-index: 1000;
   font-family: var(--font-poppins);
 
@@ -309,6 +311,32 @@ $marker-editor-background: #333;
           }
         }
       }
+    }
+  }
+}
+
+// Diagram embed: no modal dim — chrome hug-wraps and scales to fit the host.
+#marker-editor-embed.marker-editor--embed {
+  z-index: 0;
+  background: transparent;
+
+  & > div.wrapper {
+    // Leave a little slack so the tip / bottom padding isn't clipped.
+    font-size: clamp(
+      0.42rem,
+      min(2.85cqmin, calc((100cqh - 1.25rem) / 35), calc((100cqw - 1rem) / 56)),
+      1.05rem
+    );
+    width: max-content;
+    max-width: calc(100% - 0.75rem);
+    height: max-content;
+    max-height: calc(100% - 1rem);
+    // Don't clip the chrome bottom radius / preview tip.
+    overflow: visible;
+    margin-block: 0.25em;
+
+    article {
+      margin: 0;
     }
   }
 }

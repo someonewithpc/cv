@@ -52,12 +52,15 @@ export function MarkerEditor({
   isNewMarker,
   onClose,
   portalHost,
+  embed = false,
 }: {
   space: SpaceType;
   baseMarkerId: MarkerType['baseMarkerId'];
   isNewMarker: boolean;
   onClose: () => void;
-  portalHost: HTMLElement | null;
+  portalHost?: HTMLElement | null;
+  /** Render in-place (no portal) for static diagram pages. */
+  embed?: boolean;
 }) {
   const dispatch = useAppDispatch();
   const storeSpaces = useAppSelector(spacesSelector);
@@ -79,10 +82,25 @@ export function MarkerEditor({
       ? undefined
       : (storeMarkers.find((m) => m.id === baseMarkerId) ?? storeMarkers.find((m) => m.id === space.markerId));
     const active = { ...defaultActiveState, ...(deserializeMarker(sourceMarker) ?? {}) };
-    // Mark decoration as already aligned with this shape so re-open doesn't yank a
-    // user/demo nudge back onto the shape center via useUpdateDecorationSnapCenter.
     const shapePart = (markers.shape as Record<string, MarkerPart & { center?: Point }>)[active.shape];
     const shapeCenter = shapePart?.center;
+
+    // Diagram embed: park the decoration on the shape center (autoplay may have nudged it).
+    if (embed && shapeCenter) {
+      const decorationPart = (markers.decoration as Record<string, MarkerPart & {
+        controlPoints?: { center?: Point; sizeCP?: Point };
+      }>)[active.decoration];
+      if (decorationPart?.controlPoints?.center) {
+        decorationPart.controlPoints.center = new Point(shapeCenter.x, shapeCenter.y);
+        // Keep the icon modest so it reads as centered in the teardrop head.
+        if (decorationPart.controlPoints.sizeCP) {
+          decorationPart.controlPoints.sizeCP = new Point(shapeCenter.x + 0.28, shapeCenter.y);
+        }
+      }
+    }
+
+    // Mark decoration as already aligned with this shape so re-open doesn't yank a
+    // user/demo nudge back onto the shape center via useUpdateDecorationSnapCenter.
     setState({
       active,
       step: 'shape',
@@ -94,7 +112,7 @@ export function MarkerEditor({
     });
     // Only re-seed when the edited marker identity changes — not on every store update.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [space.markerId, isNewMarker, baseMarkerId]);
+  }, [space.markerId, isNewMarker, baseMarkerId, embed]);
 
   const reactiveState = useMarkerReactiveState();
 
@@ -221,6 +239,8 @@ export function MarkerEditor({
   }, [onClose, state, space, storeMarkers, dispatch, isNewMarker, baseMarkerId, storeSpaces]);
 
   useEffect(() => {
+    if (embed) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.preventDefault();
@@ -228,14 +248,14 @@ export function MarkerEditor({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  }, [onClose, embed]);
 
   const editorRef = useRef<HTMLDivElement>(null);
 
   // Horizontal / shift-wheel over the editor chrome should still move the carousel.
   // (The dimmed backdrop already passes through via pointer-events: none.)
   useEffect(() => {
-    if (!portalHost) return;
+    if (embed || !portalHost) return;
 
     const stack =
       portalHost.closest<HTMLElement>('article.technical-drawing-stack')
@@ -254,18 +274,17 @@ export function MarkerEditor({
 
     editor.addEventListener('wheel', onWheel, { passive: false });
     return () => editor.removeEventListener('wheel', onWheel);
-  }, [portalHost]);
+  }, [portalHost, embed]);
 
-  if (!portalHost) return null;
+  if (!embed && !portalHost) return null;
 
-  // Portal into the carousel page — avoid <dialog>/showModal (viewport top-layer + focus scroll).
-  return createPortal(
-    (
+  const editor = (
       <div
         ref={editorRef}
-        id="marker-editor"
+        id={embed ? 'marker-editor-embed' : 'marker-editor'}
+        className={cx('marker-editor', { 'marker-editor--embed': embed })}
         role="dialog"
-        aria-modal="true"
+        aria-modal={!embed}
         aria-label="Marker editor"
         onKeyDown={(e) => e.stopPropagation()}
       >
@@ -425,7 +444,10 @@ export function MarkerEditor({
           </article>
         </div>
       </div>
-    ),
-    portalHost,
   );
+
+  if (embed) return editor;
+
+  // Portal into the carousel page — avoid <dialog>/showModal (viewport top-layer + focus scroll).
+  return createPortal(editor, portalHost!);
 }
