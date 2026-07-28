@@ -1,15 +1,44 @@
 ---
-const angleRad = Astro.props.angle * Math.PI / 180;
+type Props = {
+  tipX: number;
+  tipY: number;
+  angle: number;
+  length: number;
+  text: string;
+  /** Matches Annotations `fontSize` so the underline tracks glyph width. */
+  fontSize?: number;
+  underlinePerChar?: number;
+  lengthOffset?: { x?: number; y?: number };
+  arrowClass?: string;
+  textClass?: string;
+};
+
+const {
+  tipX,
+  tipY,
+  angle,
+  length,
+  text,
+  fontSize = 0.1,
+  underlinePerChar = fontSize * 0.43,
+  lengthOffset,
+  arrowClass,
+  textClass,
+} = Astro.props as Props;
+
+const angleRad = angle * Math.PI / 180;
+const underline = text.length * underlinePerChar;
+const labelOffsetY = fontSize * 0.5;
 ---
 <path
-  d={`M ${Astro.props.tipX} ${Astro.props.tipY} l ${Astro.props.length * Math.cos(angleRad)} ${-Astro.props.length * Math.sin(angleRad)} l ${Astro.props.text.length * 0.043} 0`}
+  d={`M ${tipX} ${tipY} l ${length * Math.cos(angleRad)} ${-length * Math.sin(angleRad)} l ${underline} 0`}
   pathLength="1"
-  class={Astro.props.arrowClass}
+  class={arrowClass}
 />
 <text
-  x={Astro.props.tipX + Astro.props.length * Math.cos(angleRad) + (Astro.props.lengthOffset?.x ?? 0)}
-  y={Astro.props.tipY - Astro.props.length * Math.sin(angleRad) - 0.05 + (Astro.props.lengthOffset?.y ?? 0)}
-  class={Astro.props.textClass}
+  x={tipX + length * Math.cos(angleRad) + (lengthOffset?.x ?? 0)}
+  y={tipY - length * Math.sin(angleRad) - labelOffsetY + (lengthOffset?.y ?? 0)}
+  class={textClass}
 >
-  {Astro.props.text}
+  {text}
 </text>

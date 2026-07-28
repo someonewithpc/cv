@@ -1,6 +1,21 @@
 ---
 import { roundedCorners } from '@/server/svg-utils';
 
+type Props = {
+  /** Multiplies the default stroke and font sizes when those props are omitted. */
+  scale?: number;
+  strokeWidth?: number;
+  fontSize?: number;
+  preserveAspectRatio?: string;
+};
+
+const {
+  scale = 1,
+  strokeWidth = 0.02 * scale,
+  fontSize = 0.1 * scale,
+  preserveAspectRatio = 'xMidYMid meet',
+} = Astro.props as Props;
+
 const vertices = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
 const radius = 0.5;
 
@@ -9,7 +24,11 @@ const arrowPathD = roundedCorners(vertices, radius);
 
 <slot name="content" />
 <slot name="aside" />
-<svg viewBox="-2 -2 4 4">
+<svg
+  viewBox="-2 -2 4 4"
+  preserveAspectRatio={preserveAspectRatio}
+  style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px;`}
+>
   <defs>
     <marker
       id="annotation-rounded-arrow"
@@ -49,12 +68,12 @@ svg {
   :global(path) {
     marker-start: url('#annotation-rounded-arrow');
     stroke: var(--fg-800);
-    stroke-width: 0.02;
+    stroke-width: var(--annotation-stroke-width, 0.02);
     fill: none;
   }
 
   :global(text) {
-    font-size: 0.1px;
+    font-size: var(--annotation-font-size, 0.1px);
     font-family: sans-serif;
     fill: var(--fg-800);
   }
