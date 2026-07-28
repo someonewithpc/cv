@@ -1,31 +1,233 @@
 ---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 ---
 
-<div class="store-mock" aria-hidden="true">
-  <pre>{`undoable.present
-├─ markers[]
-└─ spaces[]
+<div class="wrapper">
+  <Annotations>
+    <div class="store-layer" slot="content" aria-hidden="true">
+      <div class="panel">
+        <header>
+          <span class="eyebrow">redux-undo</span>
+          <strong>undoable</strong>
+        </header>
 
-groupedUndo.batch(() => {
-  addMarker(...)
-  setSpaceMarker(...)
-})`}</pre>
+        <ol class="history">
+          <li class="lane past">
+            <span class="lane-title">past</span>
+            <ul>
+              <li class="snap">markers′ · spaces′</li>
+              <li class="snap">markers″ · spaces″</li>
+            </ul>
+          </li>
+          <li class="lane present">
+            <span class="lane-title">present</span>
+            <ul class="tree">
+              <li>
+                <code>markers[]</code>
+                <span>editor SVGs</span>
+              </li>
+              <li>
+                <code>spaces[]</code>
+                <span>pin → markerId</span>
+              </li>
+            </ul>
+          </li>
+          <li class="lane future">
+            <span class="lane-title">future</span>
+            <ul>
+              <li class="empty">∅ after new edit</li>
+            </ul>
+          </li>
+        </ol>
+
+        <div class="batch">
+          <span class="batch-label">groupedUndo.batch</span>
+          <pre><code>{`({
+  addMarker(...),
+  setSpaceMarker(...),
+}) → 1 undo step`}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        tipX={-0.4}
+        tipY={-0.2}
+        angle={155}
+        length={0.4}
+        text="history stack  "
+      />
+      <ArrowAnnotation
+        tipX={0.15}
+        tipY={0.45}
+        angle={-55}
+        length={0.38}
+        text="one undo step  "
+      />
+    </Fragment>
+  </Annotations>
 </div>
 
 <style lang="scss">
-.store-mock {
+.wrapper {
+  width: min(58cqw, calc(80cqh * 1.25));
+  aspect-ratio: 1.25 / 1;
+  max-height: 80cqh;
+  position: relative;
+  display: grid;
+  place-items: stretch;
+
+  @container technical-drawing (orientation: portrait) {
+    width: min(90cqw, calc(56cqh * 1.1));
+    aspect-ratio: 1.1 / 1;
+    max-height: 56cqh;
+  }
+
+  > :global(svg) {
+    z-index: 2;
+    pointer-events: none;
+  }
+}
+
+.store-layer {
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
-  min-height: 16em;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.55rem, 2.6cqmin, 1.05rem);
+  color: #f4f0ea;
+}
+
+.panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.9em;
+  background: #333;
+  border: 2px solid #666;
+  border-radius: 0.55em;
+  display: grid;
+  gap: 0.8em;
+  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+
+  .eyebrow {
+    font-size: 0.7em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  strong {
+    font-size: 1.1em;
+  }
+}
+
+.history {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lane {
+  min-width: 0;
+  padding: 0.55em 0.5em;
+  border-radius: 0.4em;
+  border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
+  background: color-mix(in oklab, #000 22%, transparent);
+
+  &.present {
+    border-style: solid;
+    border-color: #89ab24;
+    background: color-mix(in oklab, #89ab24 14%, transparent);
+  }
+
+  .lane-title {
+    display: block;
+    font-size: 0.72em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.45em;
+    opacity: 0.85;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4em;
+    font-size: 0.74em;
+    line-height: 1.3;
+  }
+
+  .snap {
+    padding: 0.35em 0.4em;
+    border-radius: 0.3em;
+    background: color-mix(in oklab, #fff 6%, transparent);
+  }
+
+  .empty {
+    opacity: 0.55;
+    font-style: italic;
+  }
+}
+
+.tree li {
+  display: grid;
+  gap: 0.15em;
+  padding: 0.35em 0.4em;
+  border-radius: 0.3em;
+  background: color-mix(in oklab, #000 18%, transparent);
+
+  code {
+    color: #c5e06a;
+    font-size: 0.95em;
+  }
+
+  span {
+    opacity: 0.7;
+    font-size: 0.92em;
+  }
+}
+
+.batch {
+  display: grid;
+  gap: 0.35em;
+  padding: 0.55em 0.65em;
+  border-radius: 0.4em;
+  border: 1px solid #555;
+  background: #2a2a28;
+
+  .batch-label {
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #89ab24;
+  }
 
   pre {
     margin: 0;
-    padding: 1em 1.25em;
-    border: 1px dashed color-mix(in oklab, var(--fg-600, #333) 40%, transparent);
-    border-radius: 0.35em;
-    font-size: 0.85rem;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78em;
     line-height: 1.45;
-    background: color-mix(in oklab, var(--bg, #fff) 80%, #89ab24);
+    white-space: pre;
+    color: #e8e4dc;
   }
 }
 </style>
