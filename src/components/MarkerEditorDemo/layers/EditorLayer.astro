@@ -2,42 +2,44 @@
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
-const annotationScale = 0.4;
+// Editor artwork is larger than sibling blueprint pages; scale stroke + type
+// together so screen weight matches (do not override strokeWidth alone).
+const annotationScale = 0.7;
 const annotationFontSize = 0.1 * annotationScale;
 ---
 
 <div class="wrapper">
-  <Annotations scale={annotationScale} strokeWidth={0.007}>
+  <Annotations scale={annotationScale}>
     {/* inert: real MarkerEditor chrome, non-interactive diagram. */}
     <div class="editor-layer" slot="content" inert data-editor-layer-island></div>
 
     <Fragment slot="annotations">
-      {/* Tip on left sector CP; shaft up-left so the label sits above the chrome. */}
+      {/* Tip on left sector CP (blue circle); shaft down into the bottom gutter. */}
       <ArrowAnnotation
-        tipX={-0.64}
-        tipY={0.03}
-        angle={115}
-        length={0.85}
+        tipX={-0.025}
+        tipY={0.05}
+        angle={325}
+        length={0.4}
         fontSize={annotationFontSize}
-        text="Control points you drag"
+        text="Circles: drag to edit shape"
       />
-      {/* Tip on tip CP; shaft down into the bottom gutter. */}
+      {/* Tip on tip CP's cross (green); shaft down into the bottom gutter. */}
       <ArrowAnnotation
-        tipX={-0.36}
-        tipY={0.54}
-        angle={-90}
-        length={0.3}
+        tipX={-0.31}
+        tipY={0.51}
+        angle={360 - 325}
+        length={0.2}
         fontSize={annotationFontSize}
-        text="Constrained position"
+        text="Crosses: display resulting constrained position "
       />
-      {/* Tip on the Shape step header; shaft up into the top gutter. */}
+      {/* Tip on the sidebar's first step header; shaft up into the top gutter. */}
       <ArrowAnnotation
-        tipX={0.7}
+        tipX={0.5}
         tipY={-0.61}
-        angle={100}
+        angle={20}
         length={0.35}
         fontSize={annotationFontSize}
-        text="Steps to create the icon"
+        text="Sidebar: internal parts of a marker"
       />
     </Fragment>
   </Annotations>
@@ -73,22 +75,38 @@ const annotationFontSize = 0.1 * annotationScale;
 
     const root = createRoot(mount);
     let mounted = false;
+    // Keep the embed up briefly after leaving so snap-scroll / threshold flicker
+    // doesn't tear down React mid-handoff with the live map editor.
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
 
     const sync = (visible: boolean) => {
-      if (visible && !mounted) {
-        root.render(createElement(EditorLayerApp));
-        mounted = true;
-      } else if (!visible && mounted) {
+      if (visible) {
+        if (hideTimer !== undefined) {
+          clearTimeout(hideTimer);
+          hideTimer = undefined;
+        }
+        if (!mounted) {
+          root.render(createElement(EditorLayerApp));
+          mounted = true;
+        }
+        return;
+      }
+
+      if (!mounted || hideTimer !== undefined) return;
+      hideTimer = setTimeout(() => {
+        hideTimer = undefined;
         root.render(null);
         mounted = false;
-      }
+      }, 150);
     };
 
-    // Observe the drawing page — mount host may be empty before first paint.
+    // Root = carousel stack: active slide is visible regardless of page scroll.
+    // (Viewport + threshold:0.2 missed the page when the drawing was partly below the fold.)
     const page = mount.closest('section') ?? mount;
+    const stack = page.closest('article.technical-drawing-stack');
     const io = new IntersectionObserver(
       ([entry]) => sync(Boolean(entry?.isIntersecting)),
-      { threshold: 0.2 },
+      { root: stack, threshold: 0 },
     );
     io.observe(page);
   }

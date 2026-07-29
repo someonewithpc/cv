@@ -1,0 +1,77 @@
+<div class="sans-serif editor-aside">
+  <h3>React for structure, imperative for the drag</h3>
+  <p>
+    The whole editor is a React app — accordion steps, thumbnails, portals, the lot.
+    That worked until I dragged a control point: every <span class="monospace">pointermove</span>
+    re-rendered a large subtree (preview SVG, indicators, sidebar), and the frame rate fell apart.
+  </p>
+  <p>
+    So the hot path skips React’s render loop. On drag, handlers mutate
+    <span class="monospace">MarkerPart.controlPoints</span> directly, then:
+  </p>
+  <ol>
+    <li>
+      Push circle / cross positions with CSS <span class="monospace">translate</span> on
+      DOM refs — no React commit.
+    </li>
+    <li>
+      Rebuild the SVG layers through <span class="monospace">imperativeReactComponent</span>:
+      each step owns a tiny <span class="monospace">createRoot</span> and calls
+      <span class="monospace">.update()</span>, so only that
+      <span class="monospace">&lt;g&gt;</span> changes.
+    </li>
+    <li>
+      Config widgets that still need React (colors, text, icons) live on an external
+      <span class="monospace">reactiveState</span>. The UI subscribes with
+      <span class="monospace">useSyncExternalStore</span>, so React re-renders only when
+      that store notifies — not sixty times a second while you drag.
+    </li>
+  </ol>
+</div>
+
+<style lang="scss">
+.editor-aside {
+  color-scheme: only-light;
+
+  background: color(from var(--bg-800) srgb r g b / 0.5);
+  padding: 0.5em 0.65em;
+  margin: 1em;
+  border-radius: 0.5em;
+  max-width: 22em;
+  max-height: calc(100cqh - 6em);
+  overflow-y: auto;
+  font-size: 0.9rem;
+  line-height: 1.35;
+
+  @container technical-drawing (orientation: portrait) {
+    max-width: none;
+    font-size: 0.85rem;
+  }
+
+  h3 {
+    margin-bottom: 0.5em;
+    font-size: 1.05em;
+    line-height: 1.25;
+  }
+
+  p {
+    margin-bottom: 0.55em;
+  }
+
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+    padding-left: 1.15em;
+    margin: 0;
+
+    li {
+      padding-left: 0.15em;
+    }
+  }
+
+  .monospace {
+    color: var(--accent-800);
+  }
+}
+</style>

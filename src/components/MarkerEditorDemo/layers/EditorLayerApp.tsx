@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 import {
   markerEditingSpaceIdSelector,
@@ -19,16 +19,25 @@ function EditorLayerInner() {
   const spaces = useAppSelector(spacesSelector);
   const editingSpaceId = useAppSelector(markerEditingSpaceIdSelector);
   const space = spaces.find((s) => s.id === 'space-cafe') ?? spaces[0];
+  // Marker parts are process-wide singletons — only mount after the live map
+  // editor has released them (MockMap clears local state in useLayoutEffect).
+  const [ownsSingletons, setOwnsSingletons] = useState(false);
 
-  // While this diagram page is mounted it owns the marker-part singletons —
-  // close the live map editor so we don't render an empty page.
   useLayoutEffect(() => {
     if (editingSpaceId) {
       dispatch(setMarkerEditingSpaceId(null));
+      setOwnsSingletons(false);
+      return;
     }
+
+    // Defer one frame so MockMap's layout effect can unmount MarkerEditor first.
+    const frame = requestAnimationFrame(() => {
+      setOwnsSingletons(true);
+    });
+    return () => cancelAnimationFrame(frame);
   }, [dispatch, editingSpaceId]);
 
-  if (!space) return null;
+  if (!ownsSingletons || !space) return null;
 
   return (
     <MarkerEditor
