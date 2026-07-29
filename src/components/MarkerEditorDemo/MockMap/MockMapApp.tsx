@@ -1,6 +1,6 @@
 import '../markers/client-only';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useStore } from 'react-redux';
 
@@ -168,9 +168,9 @@ function MockMapOverlayInner() {
   const editingSpace = spaces.find((s) => s.id === editingSpaceId);
   const focus = focusTransform(editingSpace);
 
-  // Editor diagram page clears Redux editing id — mirror that locally so the
-  // live MarkerEditor unmounts and releases marker-part singletons.
-  useEffect(() => {
+  // Editor diagram page clears Redux editing id — mirror that in layout so the
+  // live MarkerEditor unmounts before the embed claims marker-part singletons.
+  useLayoutEffect(() => {
     if (storeEditingSpaceId === null && editingSpaceId !== null) {
       setEditingSpaceId(null);
     }
