@@ -14,8 +14,8 @@
     - [x] Make
     - [x] Lisp
     - [x] git
-    - [ ] Three.js
-    - [ ] Ruby on Rails
+    - [x] Three.js
+    - [x] Ruby on Rails
   - [ ] Some icons not very visible in dark mode
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
