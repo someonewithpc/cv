@@ -176,6 +176,10 @@ export const autoplayPausedToast = (): DemoToastPayload => ({
   action: 'Demo paused',
 });
 
+export const autoplayCompletedToast = (): DemoToastPayload => ({
+  action: 'Demo complete · looping again',
+});
+
 export type DemoToastHandler = (toast: DemoToastPayload) => void;
 
 export class AutoPlayController {
@@ -852,6 +856,7 @@ export class AutoPlayController {
         run: (dispatch) => {
           const next = (this.presetIndex + 1) % DEMO_PRESETS.length;
           if (next === 0) {
+            this.onToast(autoplayCompletedToast());
             this.resetDemo(dispatch);
           }
           this.presetIndex = next;
