@@ -1,30 +1,27 @@
 <div class="sans-serif editor-aside">
-  <h3>React for structure, imperative for the drag</h3>
   <p>
-    The whole editor is a React app — accordion steps, thumbnails, portals, the lot.
+    The whole interactive map is a React app, so it made sense to implement the editor as a regular component.
     That worked until I dragged a control point: every <span class="monospace">pointermove</span>
-    re-rendered a large subtree (preview SVG, indicators, sidebar), and the frame rate fell apart.
+    re-rendered a large subtree (solve contraints, preview SVG, update indicators, update sidebar), and the frame rate fell apart
   </p>
   <p>
-    So the hot path skips React’s render loop. On drag, handlers mutate
+    My solution was to bypass React’s render loop. On drag, handlers mutate
     <span class="monospace">MarkerPart.controlPoints</span> directly, then:
   </p>
   <ol>
     <li>
-      Push circle / cross positions with CSS <span class="monospace">translate</span> on
-      DOM refs — no React commit.
+      Change circle / cross positions with CSS <span class="monospace">translate</span> using DOM <span class="monospace">refs</span>
     </li>
     <li>
-      Rebuild the SVG layers through <span class="monospace">imperativeReactComponent</span>:
-      each step owns a tiny <span class="monospace">createRoot</span> and calls
-      <span class="monospace">.update()</span>, so only that
-      <span class="monospace">&lt;g&gt;</span> changes.
+      Each editor step is a class and has a corresponding <span class="monospace">imperativeReactComponent</span>,
+      a component that uses <span class="monospace">createRoot</span> and provides a
+      <span class="monospace">.update()</span> method so we can update only what changed, imperatively
     </li>
     <li>
-      Config widgets that still need React (colors, text, icons) live on an external
+      Editor widgets that still need React (colors, text, icons) live on an external
       <span class="monospace">reactiveState</span>. The UI subscribes with
       <span class="monospace">useSyncExternalStore</span>, so React re-renders only when
-      that store notifies — not sixty times a second while you drag.
+      that store is notified, after a change is made
     </li>
   </ol>
 </div>
@@ -37,8 +34,8 @@
   padding: 0.5em 0.65em;
   margin: 1em;
   border-radius: 0.5em;
-  max-width: 22em;
-  max-height: calc(100cqh - 6em);
+  max-width: 60ch;
+  max-height: calc(100cqh - 10em);
   overflow-y: auto;
   font-size: 0.9rem;
   line-height: 1.35;
