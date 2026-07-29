@@ -292,8 +292,11 @@ function MockMapOverlayInner() {
       setCursorPos(overlayPoint(overlay, 0.42, 0.38));
     }
 
+    // Attach to the carousel page so leaving the map slide pauses autoplay
+    // (observing .mock-map-demo alone could still look "in view" mid-snap).
     const visibilityRoot =
-      overlay?.closest<HTMLElement>('.mock-map-demo')
+      overlay?.closest<HTMLElement>('article.technical-drawing-stack > section')
+      ?? overlay?.closest<HTMLElement>('.mock-map-demo')
       ?? overlay?.closest<HTMLElement>('.technical-drawing-frame')
       ?? overlay;
     if (!visibilityRoot) return;
@@ -307,7 +310,8 @@ function MockMapOverlayInner() {
     );
     autoplayRef.current = controller;
 
-    // Only run the demo while the techdraw / map is on screen (page scroll or carousel).
+    // Only run the demo while this carousel page intersects the stack.
+    const stack = visibilityRoot.closest('article.technical-drawing-stack');
     const observer = new IntersectionObserver(
       ([entry]) => {
         const visible = entry.isIntersecting;
@@ -339,7 +343,7 @@ function MockMapOverlayInner() {
           }
         }
       },
-      { threshold: 0.25, rootMargin: '0px' },
+      { root: stack, threshold: 0.6 },
     );
     observer.observe(visibilityRoot);
 

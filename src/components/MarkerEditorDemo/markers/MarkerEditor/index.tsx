@@ -13,6 +13,7 @@ import { mapRange } from '../../lib/mapRange';
 import { addMarker, dataUrlToSvg, groupedUndo, markersSelector, setSpaceMarker, spacesSelector, updateMarker, useAppDispatch, useAppSelector } from '@/store';
 import type { MarkerType, SpaceType } from '@/store';
 import { useRootElementEvents } from '../../hooks/useRootElementEvents';
+import { useLiveMarkerEditorSession } from '../liveMarkerEditorSession';
 
 import {
   svgRef,
@@ -73,6 +74,9 @@ export function MarkerEditor({
     snappingDisabled: false,
     previousDecorationSnapCenter: null,
   });
+
+  // Live map sessions own the singleton marker parts; diagram embed waits on this.
+  useLiveMarkerEditorSession(!embed);
 
   // Marker parts are process-wide singletons — reset + reload whenever this editor session changes,
   // otherwise leftover geometry/text from the previous marker leaks into the next edit.
