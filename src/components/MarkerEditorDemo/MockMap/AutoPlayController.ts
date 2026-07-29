@@ -68,16 +68,17 @@ type DemoPreset = {
 const DEMO_PRESETS: DemoPreset[] = [
   {
     shape: 'circle',
-    decoration: 'freeText',
+    decoration: 'upperSpaceLetter',
     fill: '#243b55',
     border: '#f4f0ea',
     textColor: '#f4f0ea',
-    text: 'H',
     primarySpaceId: 'space-lobby',
     secondarySpaceId: 'space-cafe',
     shapeDrags: [{ cp: 'radiusPoint', dx: -20, dy: 0 }],
-    // Past snap tolerance only mattered before Shift; keep a small visible nudge.
-    decorationDrags: [{ cp: 'center', dx: 0, dy: 12, disableSnap: true }],
+    decorationDrags: [
+      { cp: 'center', dx: 0, dy: 12, disableSnap: true },
+      { cp: 'textSizeCP', dx: -14, dy: 0 },
+    ],
   },
   {
     shape: 'teardrop',
