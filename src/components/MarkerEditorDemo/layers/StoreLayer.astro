@@ -1,27 +1,31 @@
 ---
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+const annotationScale = 0.55;
+const annotationFontSize = 0.1 * annotationScale;
 ---
 
 <div class="wrapper">
-  <Annotations>
+  <Annotations scale={annotationScale}>
     <div class="store-layer" slot="content" aria-hidden="true">
       <div class="panel">
         <header>
           <span class="eyebrow">redux-undo</span>
-          <strong>undoable</strong>
+          <strong>History + batch</strong>
         </header>
 
-        <ol class="history">
-          <li class="lane past">
-            <span class="lane-title">past</span>
+        <div class="timeline">
+          <figure class="lane past">
+            <figcaption>Past</figcaption>
             <ul>
               <li class="snap">markers′ · spaces′</li>
               <li class="snap">markers″ · spaces″</li>
             </ul>
-          </li>
-          <li class="lane present">
-            <span class="lane-title">present</span>
+          </figure>
+          <span class="op" aria-hidden="true">→</span>
+          <figure class="lane present">
+            <figcaption>Present</figcaption>
             <ul class="tree">
               <li>
                 <code>markers[]</code>
@@ -32,91 +36,94 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
                 <span>pin → markerId</span>
               </li>
             </ul>
-          </li>
-          <li class="lane future">
-            <span class="lane-title">future</span>
+          </figure>
+          <span class="op" aria-hidden="true">→</span>
+          <figure class="lane future">
+            <figcaption>Future</figcaption>
             <ul>
               <li class="empty">∅ after new edit</li>
             </ul>
-          </li>
-        </ol>
+          </figure>
+        </div>
 
         <div class="batch">
           <span class="batch-label">groupedUndo.batch</span>
-          <pre><code>{`({
-  addMarker(...),
-  setSpaceMarker(...),
-}) → 1 undo step`}</code></pre>
+          <div class="batch-pipeline">
+            <code class="action-chip">addMarker(…)</code>
+            <span class="op" aria-hidden="true">+</span>
+            <code class="action-chip">setSpaceMarker(…)</code>
+            <span class="op" aria-hidden="true">→</span>
+            <span class="result-badge">1 undo step</span>
+          </div>
+          <p class="batch-note">
+            Multi-dispatch saves share one group id — Ctrl/Z reverts the whole batch.
+          </p>
         </div>
       </div>
     </div>
 
     <Fragment slot="annotations">
       <ArrowAnnotation
-        tipX={-0.4}
-        tipY={-0.2}
-        angle={155}
+        tipX={0}
+        tipY={-0.47}
+        angle={95}
         length={0.4}
-        text="history stack  "
+        fontSize={annotationFontSize}
+        text="Current state  "
       />
       <ArrowAnnotation
-        tipX={0.15}
-        tipY={0.45}
-        angle={-55}
+        tipX={0.4}
+        tipY={0.62}
+        angle={-95}
         length={0.38}
-        text="one undo step  "
+        fontSize={annotationFontSize}
+        text="One Ctrl/Z  "
       />
     </Fragment>
   </Annotations>
 </div>
 
 <style lang="scss">
+$accent: #89ab24;
+
 .wrapper {
-  width: min(58cqw, calc(80cqh * 1.25));
-  aspect-ratio: 1.25 / 1;
-  max-height: 80cqh;
+  width: min(85cqw, 52em);
+  max-width: 100%;
   position: relative;
   display: grid;
-  place-items: stretch;
+  place-items: center;
+}
 
-  @container technical-drawing (orientation: portrait) {
-    width: min(90cqw, calc(56cqh * 1.1));
-    aspect-ratio: 1.1 / 1;
-    max-height: 56cqh;
-  }
-
-  > :global(svg) {
-    z-index: 2;
-    pointer-events: none;
-  }
+.wrapper > :global(svg) {
+  z-index: 2;
+  pointer-events: none;
 }
 
 .store-layer {
   width: 100%;
-  height: 100%;
   display: grid;
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.55rem, 2.6cqmin, 1.05rem);
+  font-size: clamp(0.75rem, 2.3cqmin, 1.05rem);
   color: #f4f0ea;
 }
 
 .panel {
-  width: 100%;
   box-sizing: border-box;
-  padding: 0.9em;
+  width: 100%;
+  padding: 0.85em;
   background: #333;
   border: 2px solid #666;
   border-radius: 0.55em;
   display: grid;
-  gap: 0.8em;
+  gap: 0.7em;
   box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
 }
 
 header {
   display: flex;
   flex-direction: column;
-  gap: 0.15em;
+  gap: 0.1em;
 
   .eyebrow {
     font-size: 0.7em;
@@ -124,42 +131,37 @@ header {
     text-transform: uppercase;
     opacity: 0.7;
   }
-
-  strong {
-    font-size: 1.1em;
-  }
 }
 
-.history {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5em;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.timeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.35em 0.45em;
 }
 
 .lane {
-  min-width: 0;
-  padding: 0.55em 0.5em;
-  border-radius: 0.4em;
+  margin: 0;
+  display: grid;
+  gap: 0.3em;
+  align-content: start;
+  min-width: 7.5em;
+  max-width: 11em;
+  flex: 1 1 7.5em;
+  padding: 0.4em;
+  border-radius: 0.35em;
   border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
   background: color-mix(in oklab, #000 22%, transparent);
+  box-sizing: border-box;
 
-  &.present {
-    border-style: solid;
-    border-color: #89ab24;
-    background: color-mix(in oklab, #89ab24 14%, transparent);
-  }
-
-  .lane-title {
-    display: block;
-    font-size: 0.72em;
+  figcaption {
+    font-size: 0.68em;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    margin-bottom: 0.45em;
     opacity: 0.85;
+    text-align: center;
   }
 
   ul {
@@ -167,28 +169,49 @@ header {
     padding: 0;
     list-style: none;
     display: grid;
-    gap: 0.4em;
-    font-size: 0.74em;
-    line-height: 1.3;
+    gap: 0.3em;
+    font-size: 0.72em;
+    line-height: 1.25;
   }
 
   .snap {
-    padding: 0.35em 0.4em;
-    border-radius: 0.3em;
+    padding: 0.3em 0.35em;
+    border-radius: 0.25em;
     background: color-mix(in oklab, #fff 6%, transparent);
+    opacity: 0.75;
   }
 
   .empty {
+    padding: 0.3em 0.35em;
     opacity: 0.55;
     font-style: italic;
+    text-align: center;
+  }
+
+  &.present {
+    flex: 1.2 1 9em;
+    border-style: solid;
+    border-color: $accent;
+    border-width: 2px;
+    background: color-mix(in oklab, $accent 14%, transparent);
+
+    figcaption {
+      color: #e8f5b8;
+      opacity: 1;
+    }
+  }
+
+  &.future {
+    flex: 0.85 1 6.5em;
+    opacity: 0.85;
   }
 }
 
 .tree li {
   display: grid;
-  gap: 0.15em;
-  padding: 0.35em 0.4em;
-  border-radius: 0.3em;
+  gap: 0.1em;
+  padding: 0.3em 0.35em;
+  border-radius: 0.25em;
   background: color-mix(in oklab, #000 18%, transparent);
 
   code {
@@ -198,36 +221,73 @@ header {
 
   span {
     opacity: 0.7;
-    font-size: 0.92em;
+    font-size: 0.9em;
   }
+}
+
+.op {
+  align-self: center;
+  opacity: 0.55;
+  font-size: 0.9em;
+  line-height: 1;
 }
 
 .batch {
   display: grid;
-  gap: 0.35em;
-  padding: 0.55em 0.65em;
-  border-radius: 0.4em;
+  gap: 0.3em;
+  padding: 0.45em 0.55em;
+  border-radius: 0.35em;
   border: 1px solid #555;
   background: #2a2a28;
+}
 
-  .batch-label {
-    font-size: 0.7em;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #89ab24;
-  }
+.batch-label {
+  font-size: 0.68em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $accent;
+}
 
-  pre {
-    margin: 0;
-  }
+.batch-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+}
 
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.78em;
-    line-height: 1.45;
-    white-space: pre;
-    color: #e8e4dc;
-  }
+.action-chip {
+  display: inline-grid;
+  place-items: center;
+  padding: 0.35em 0.5em;
+  border-radius: 0.25em;
+  border: 1px solid #555;
+  background: color-mix(in oklab, #000 22%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72em;
+  line-height: 1.25;
+  color: #e8e4dc;
+}
+
+.result-badge {
+  display: inline-grid;
+  place-items: center;
+  padding: 0.35em 0.55em;
+  border-radius: 0.25em;
+  background: color-mix(in oklab, $accent 40%, #333);
+  color: #e8f5b8;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.batch-note {
+  margin: 0;
+  font-size: 0.68em;
+  opacity: 0.75;
+  line-height: 1.3;
 }
 </style>

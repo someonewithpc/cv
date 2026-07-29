@@ -1,226 +1,431 @@
 ---
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+import defaultDecorationSvg from '../assets/default-decoration.svg?raw';
+import defaultMarkerSvg from '../assets/default-marker.svg?raw';
 
-/** Unedited teardrop — TeardropMarkerShape default. */
-const teardropPath =
-  'M -0.5, 0 a 0.5, 0.5, 0 1 1, 1, 0 L 0, 0.9 L -0.5, 0 z';
+/** Classic map-pin path from default-marker.svg (viewBox 0 0 64 64). */
+const pinPath =
+  'M32 4C20.4 4 11 13.4 11 25c0 14.5 21 35 21 35s21-20.5 21-35C53 13.4 43.6 4 32 4z';
 
-const parts = [
-  { id: 'shape', label: 'Shape', hint: 'teardrop' },
-  { id: 'decoration', label: 'Decoration', hint: 'icon / letter' },
-  { id: 'border', label: 'Border', hint: 'stroke' },
-  { id: 'fill', label: 'Fill', hint: 'paint' },
+const crossTileSvg =
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'>"
+  + "<line x1='-0.25' y1='0' x2='0.25' y2='0' stroke='%23aaa7' stroke-width='0.1'/>"
+  + "<line x1='0' y1='-0.25' x2='0' y2='0.25' stroke='%23aaa7' stroke-width='0.1'/>"
+  + '</svg>';
+
+const crossTileUrl = `url("data:image/svg+xml,${crossTileSvg}")`;
+
+const steps = [
+  { id: 'shape', label: 'Shape', kind: 'outline' as const },
+  { id: 'border', label: 'Border', kind: 'dashed' as const },
+  { id: 'fill', label: 'Fill', kind: 'fill' as const },
+  { id: 'decoration', label: 'Decoration', kind: 'decoration' as const },
+  { id: 'composed', label: 'Composed', kind: 'composed' as const },
 ] as const;
 ---
 
 <div class="wrapper">
-  <Annotations>
-    <div class="parts-layer" slot="content" aria-hidden="true">
-      <div class="panel">
-        <header>
-          <span class="eyebrow">MarkerPart</span>
-          <strong>Composable stack</strong>
-        </header>
+  <div class="parts-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">MarkerPart</span>
+        <strong>Composable stack</strong>
+      </header>
 
-        <div class="stage">
-          <svg class="preview" viewBox="-1 -1 2 2">
-            <path
-              class="shape"
-              d={teardropPath}
-              fill="#a65d3f"
-              stroke="#f4f0ea"
-              stroke-width="0.07"
-            />
-            {/* House-like decoration stand-in */}
-            <g class="decoration" transform="translate(0, -0.18) scale(0.42)">
-              <path d="M -0.7 0.2 L 0 -0.55 L 0.7 0.2 Z" fill="#1e3a6e" />
-              <rect x="-0.45" y="0.15" width="0.9" height="0.7" fill="#2f6db5" />
-              <rect x="-0.12" y="0.45" width="0.24" height="0.4" fill="#f4f0ea" />
-            </g>
-            <g class="cps" stroke-width="0.025">
-              <g transform="translate(-0.5, 0)">
-                <circle r="0.045" fill="#fff" stroke="#00f" />
-                <line x1="-0.07" y1="0" x2="0.07" y2="0" stroke="#0a0" stroke-width="0.02" />
-                <line x1="0" y1="-0.07" x2="0" y2="0.07" stroke="#0a0" stroke-width="0.02" />
-              </g>
-              <g transform="translate(0.5, 0)">
-                <circle r="0.045" fill="#fff" stroke="#00f" />
-              </g>
-              <g transform="translate(0, 0.9)">
-                <circle r="0.045" fill="#fff" stroke="#00f" />
-              </g>
-            </g>
-          </svg>
-
-          <ul class="stack">
-            {parts.map((part, i) => (
-              <li class:list={[{ active: i === 0 }]}>
-                <span class="idx">{i + 1}</span>
-                <span class="name">{part.label}</span>
-                <span class="hint">{part.hint}</span>
-              </li>
-            ))}
-          </ul>
+      <div class="assembly">
+        <div class="captions">
+          {steps.map((step, i) => (
+            <Fragment>
+              {i > 0 && <span class="cap-gap" aria-hidden="true" />}
+              <span class:list={['caption', { composed: step.kind === 'composed' }]}>
+                {step.label}
+              </span>
+            </Fragment>
+          ))}
         </div>
 
-        <p class="serialize">
-          Serializes to SVG <code>data-*</code> for round-trips
-        </p>
+        <div class="samples">
+          {steps.map((step, i) => (
+            <Fragment>
+              {i > 0 && (
+                <span class="op" aria-hidden="true">{i === steps.length - 1 ? '→' : '+'}</span>
+              )}
+              <div
+                class:list={['sample', step.kind, { preview: step.kind === 'composed' }]}
+                style={step.kind === 'composed' ? `--cross-tile: ${crossTileUrl}` : undefined}
+              >
+                {step.kind === 'outline' && (
+                  <svg viewBox="0 0 64 64">
+                    <path d={pinPath} fill="none" stroke="#f4f0ea" stroke-width="3" />
+                  </svg>
+                )}
+                {step.kind === 'dashed' && (
+                  <svg viewBox="0 0 64 64">
+                    <path
+                      d={pinPath}
+                      fill="none"
+                      stroke="#f4f0ea"
+                      stroke-width="3.5"
+                      stroke-dasharray="6 5"
+                    />
+                  </svg>
+                )}
+                {step.kind === 'fill' && (
+                  <svg viewBox="0 0 64 64">
+                    <path d={pinPath} fill="#c47a3a" stroke="none" />
+                  </svg>
+                )}
+                {step.kind === 'decoration' && (
+                  <span class="decoration-only" set:html={defaultDecorationSvg} />
+                )}
+                {step.kind === 'composed' && (
+                  <span class="composed-marker">
+                    <span class="pin" set:html={defaultMarkerSvg} />
+                    <span class="decoration" set:html={defaultDecorationSvg} />
+                  </span>
+                )}
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      </div>
+
+      <div class="serialize">
+        <div class="serialize-head">
+          <span class="serialize-label">Serialization</span>
+          <p class="serialize-lead">
+            Save writes typed <code>data-*</code> attrs (<code>Point:</code> /
+            <code>Number:</code> / <code>String:</code>). Load rebuilds the parts.
+          </p>
+        </div>
+
+        <div class="serialize-flow">
+          <div class="flow-card memory">
+            <span class="flow-title">In editor</span>
+            <ul>
+              <li><code>PinMarkerShape</code></li>
+              <li>center → <code>Point(0, -0.25)</code></li>
+              <li><code>IconMarkerDecoration</code></li>
+            </ul>
+          </div>
+          <span class="flow-op" aria-hidden="true">→</span>
+          <div class="flow-card svg-tag">
+            <span class="flow-title">On the SVG</span>
+            <pre class="tag"><code>{`<path data-kind="PinMarkerShape"
+  data-state-center="Point:0.000,-0.250" />
+<g data-kind="IconMarkerDecoration" …>`}</code></pre>
+          </div>
+        </div>
       </div>
     </div>
-
-    <Fragment slot="annotations">
-      <ArrowAnnotation
-        tipX={-0.35}
-        tipY={-0.1}
-        angle={165}
-        length={0.4}
-        text="Control points  "
-      />
-      <ArrowAnnotation
-        tipX={0.45}
-        tipY={-0.25}
-        angle={-25}
-        length={0.4}
-        text="Shape + decoration  "
-      />
-    </Fragment>
-  </Annotations>
+  </div>
 </div>
 
 <style lang="scss">
+$preview-bg: #3d3d3b;
+$accent: #89ab24;
+$sample: 3.6em;
+$op-slot: 1.1em;
+
 .wrapper {
-  width: min(56cqw, calc(80cqh * 1.2));
-  aspect-ratio: 1.2 / 1;
-  max-height: 80cqh;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(58cqw, 100%);
+  margin-inline: auto;
   position: relative;
   display: grid;
-  place-items: stretch;
-
-  @container technical-drawing (orientation: portrait) {
-    width: min(90cqw, calc(58cqh * 1.1));
-    aspect-ratio: 1.1 / 1;
-    max-height: 58cqh;
-  }
-
-  > :global(svg) {
-    z-index: 2;
-    pointer-events: none;
-  }
+  place-items: center;
 }
 
 .parts-layer {
-  width: 100%;
-  height: 100%;
+  width: max-content;
+  max-width: 100%;
   display: grid;
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.55rem, 2.6cqmin, 1.05rem);
+  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
   color: #f4f0ea;
 }
 
 .panel {
-  width: 100%;
   box-sizing: border-box;
-  padding: 0.85em;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.7em 0.8em;
   background: #333;
   border: 2px solid #666;
-  border-radius: 0.55em;
+  border-radius: 0.5em;
   display: grid;
-  gap: 0.75em;
-  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+  gap: 0.55em;
+  justify-items: stretch;
+  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
 }
 
 header {
   display: flex;
   flex-direction: column;
-  gap: 0.15em;
+  gap: 0.08em;
 
   .eyebrow {
-    font-size: 0.7em;
+    font-size: 0.72em;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     opacity: 0.7;
   }
 }
 
-.stage {
+.assembly {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: 0.75em;
+  gap: 0.2em;
+  justify-items: center;
+}
+
+.captions,
+.samples {
+  display: grid;
+  grid-template-columns:
+    #{$sample} #{$op-slot}
+    #{$sample} #{$op-slot}
+    #{$sample} #{$op-slot}
+    #{$sample} #{$op-slot}
+    calc(#{$sample} * 1.15);
   align-items: center;
+  justify-items: center;
 }
 
-.preview {
+.caption {
+  font-size: 0.72em;
+  font-weight: 600;
+  opacity: 0.8;
+  text-align: center;
   width: 100%;
-  aspect-ratio: 1;
-  border-radius: 0.45em;
-  border: 1px solid #aaa7;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'%3E%3Cline x1='-0.25' y1='0' x2='0.25' y2='0' stroke='%23aaa7' stroke-width='0.1'/%3E%3Cline x1='0' y1='-0.25' x2='0' y2='0.25' stroke='%23aaa7' stroke-width='0.1'/%3E%3C/svg%3E")
-      repeat center / calc(100% / 11),
-    linear-gradient(#3d3d3b);
+
+  &.composed {
+    width: 100%;
+  }
 }
 
-.stack {
+.cap-gap {
+  width: 100%;
+}
+
+.samples {
+  min-height: $sample;
+}
+
+.sample {
+  box-sizing: border-box;
+  width: $sample;
+  height: $sample;
+  border-radius: 0.3em;
+  border: 1px solid #666;
+  overflow: hidden;
+  background: #2a2a28;
+  display: grid;
+  place-items: center;
+
+  svg {
+    width: 78%;
+    height: auto;
+    display: block;
+  }
+
+  &.composed {
+    position: relative;
+    width: calc(#{$sample} * 1.15);
+    height: calc(#{$sample} * 1.15);
+    border-color: $accent;
+    border-width: 2px;
+  }
+
+  &.preview {
+    background:
+      var(--cross-tile) repeat center / calc(100% / 7),
+      linear-gradient($preview-bg);
+  }
+}
+
+.decoration-only {
+  display: grid;
+  place-items: center;
+  width: 70%;
+  height: 70%;
+
+  :global(svg) {
+    width: 100%;
+    height: auto;
+    color-scheme: only light;
+  }
+}
+
+.composed-marker {
+  position: relative;
+  display: block;
+  width: 72%;
+  aspect-ratio: 1;
+
+  .pin {
+    display: contents;
+
+    :global(svg) {
+      width: 100%;
+      height: 100%;
+      color-scheme: only light;
+      --accent-800: #c47a3a;
+      --accent-400: #5c3a1e;
+    }
+  }
+
+  .decoration {
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    width: 52%;
+    height: 52%;
+    translate: -50% -50%;
+    pointer-events: none;
+
+    :global(svg) {
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+.cps {
+  position: absolute;
+  inset: 12%;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.op {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+  font-size: 1em;
+  line-height: 1;
+}
+
+.serialize {
+  display: grid;
+  gap: 0.4em;
+  padding: 0.5em 0.55em;
+  border-radius: 0.35em;
+  border: 1px solid #555;
+  background: #2a2a28;
+}
+
+.serialize-head {
+  display: grid;
+  gap: 0.2em;
+}
+
+.serialize-label {
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $accent;
+}
+
+.serialize-lead {
+  margin: 0;
+  font-size: 0.82em;
+  opacity: 0.85;
+  line-height: 1.35;
+
+  code {
+    color: #c5e06a;
+    font-size: 0.95em;
+  }
+}
+
+.serialize-flow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.flow-card {
+  min-width: 0;
+  padding: 0.45em 0.5em;
+  border-radius: 0.3em;
+  border: 1px solid #555;
+  background: color-mix(in oklab, #000 22%, transparent);
+  display: grid;
+  gap: 0.25em;
+  align-content: start;
+
+  &.memory {
+    flex: 0 1 auto;
+  }
+
+  &.svg-tag {
+    flex: 1 1 auto;
+    border-color: $accent;
+    background: color-mix(in oklab, $accent 10%, transparent);
+  }
+}
+
+.flow-title {
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.flow-card ul {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 0.35em;
-
-  li {
-    display: grid;
-    grid-template-columns: 1.6em 1fr;
-    grid-template-areas:
-      "idx name"
-      "idx hint";
-    column-gap: 0.45em;
-    padding: 0.4em 0.5em;
-    border-radius: 0.35em;
-    border: 1px solid #555;
-    background: #2c2c2a;
-
-    &.active {
-      border-color: #89ab24;
-      background: color-mix(in oklab, #89ab24 14%, #2c2c2a);
-    }
-  }
-
-  .idx {
-    grid-area: idx;
-    align-self: center;
-    width: 1.35em;
-    height: 1.35em;
-    display: grid;
-    place-items: center;
-    border-radius: 0.25em;
-    background: #444;
-    font-size: 0.75em;
-    font-weight: 700;
-  }
-
-  .name {
-    grid-area: name;
-    font-weight: 600;
-    font-size: 0.9em;
-  }
-
-  .hint {
-    grid-area: hint;
-    font-size: 0.68em;
-    opacity: 0.65;
-  }
-}
-
-.serialize {
-  margin: 0;
-  font-size: 0.75em;
-  opacity: 0.8;
+  gap: 0.25em;
+  font-size: 0.82em;
+  line-height: 1.3;
 
   code {
     color: #c5e06a;
+    font-size: 0.95em;
+  }
+}
+
+.flow-op {
+  flex: 0 0 auto;
+  opacity: 0.55;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.tag {
+  margin: 0;
+
+  code {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.72em;
+    line-height: 1.4;
+    color: #e8e4dc;
+    white-space: pre;
+  }
+}
+
+@container technical-drawing (orientation: portrait) {
+  .wrapper {
+    max-width: min(90cqw, 100%);
+  }
+
+  .serialize-flow {
+    flex-direction: column;
+
+    .flow-op {
+      transform: rotate(90deg);
+    }
   }
 }
 </style>

@@ -1,5 +1,5 @@
 ---
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 import * as esbuild from 'esbuild';
 
@@ -18,10 +18,12 @@ function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
 }
 
-const markerEditorEntry = fileURLToPath(
-  new URL('./markers/MarkerEditor/index.tsx', import.meta.url),
+// Resolve from cwd — import.meta.url points at dist prerender chunks during build.
+const srcRoot = path.join(process.cwd(), 'src');
+const markerEditorEntry = path.join(
+  srcRoot,
+  'components/MarkerEditorDemo/markers/MarkerEditor/index.tsx',
 );
-const srcRoot = fileURLToPath(new URL('../..', import.meta.url));
 
 const { outputFiles: [markerEditorBundle] } = await esbuild.build({
   entryPoints: [markerEditorEntry],
@@ -95,14 +97,15 @@ type Layer = keyof typeof layers;
       ),
       parts: (
         <PostIt background="#cfc" color="black">
-          Shapes, borders, fills, and decorations are MarkerParts. They serialize into SVG{' '}
-          <code>data-*</code> attributes for round-trips.
+          Shape, border, fill, and decoration stack into one marker. On save, each MarkerPart
+          writes typed <code>data-*</code> attributes onto the SVG so load can rebuild the same
+          parts.
         </PostIt>
       ),
       store: (
         <PostIt background="#edf" color="black">
-          Marker and space mutations sit under redux-undo. Multi-dispatch saves batch into one undo
-          step.
+          Marker and space mutations live under redux-undo. <code>groupedUndo.batch</code> wraps
+          multi-dispatch saves so Ctrl/Z undoes the whole edit as one step.
         </PostIt>
       ),
     }[layer])}
