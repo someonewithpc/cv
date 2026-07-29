@@ -88,8 +88,9 @@ type Layer = keyof typeof layers;
       editor: (<EditorAside />),
       background: (
         <PostIt background="#dfd" color="black">
-          Overlapping linear-gradients looked fine on paper — subpixel rounding made every stripe
-          jitter. A repeating SVG tile keeps each cross coherent.
+          H and V stripe layers were meant to stack into a cross grid, but each axis rounded stops
+          alone and the columns drifted. A tiny SVG <code>+</code> tiled with{' '}
+          <code>background-repeat</code> keeps every cell coherent.
         </PostIt>
       ),
       parts: (
