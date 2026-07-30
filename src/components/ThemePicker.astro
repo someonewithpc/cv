@@ -27,8 +27,8 @@ const THEMES = {
     name: 'Light',
     transitionScaleFactor: 2.4,
     icons: {
-      checked: 'boxicons:sun-filled',
-      unchecked: 'boxicons:sun',
+      checked: 'sun-filled',
+      unchecked: 'sun',
     },
   },
   dark: {
@@ -40,8 +40,8 @@ const THEMES = {
     name: 'Dark',
     transitionScaleFactor: 1.2,
     icons: {
-      checked: 'boxicons:moon-filled',
-      unchecked: 'boxicons:moon',
+      checked: 'moon-filled',
+      unchecked: 'moon',
     },
   },
   arctic: {
@@ -66,8 +66,8 @@ const THEMES = {
     name: 'Forest',
     transitionScaleFactor: 1.4,
     icons: {
-      checked: 'boxicons:leaf-filled',
-      unchecked: 'boxicons:leaf',
+      checked: 'leaf-filled',
+      unchecked: 'leaf',
     },
   },
 } as const satisfies Record<string, ThemeSettings>;
@@ -343,9 +343,13 @@ inputs.forEach((inputEl) => {
 
       /* VT overlay coords are viewport-relative — do not add scrollY. */
       const rect = svg.getBoundingClientRect();
-      const pathData = path.getPathData();
+      /* Normalize to absolute M/C/L/Z so relative-first paths (e.g. snowflake)
+         are not interpreted from the viewport origin in clip-path: path(). */
+      const pathData = path.getPathData({ normalize: true });
       const scaleFactor = +(svg.dataset.themeTransitionScaleFactor ?? '1');
       const size = Math.hypot(window.innerWidth, window.innerHeight) * scaleFactor;
+      const cx = rect.x + rect.width / 2;
+      const cy = rect.y + rect.height / 2;
 
       const startPathData = transformPath(pathData, viewBox, {
         x: rect.x,
@@ -354,8 +358,8 @@ inputs.forEach((inputEl) => {
         height: rect.height,
       });
       const endPathData = transformPath(pathData, viewBox, {
-        x: rect.x - size,
-        y: rect.y - size,
+        x: cx - size,
+        y: cy - size,
         width: size * 2,
         height: size * 2,
       });
