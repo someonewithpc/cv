@@ -6,6 +6,8 @@ import type { TechTag } from '@/server/tech-tags';
 type Props = {
   tag: TechTag;
   class?: string;
+  /** When true, hide from AT (pair with visible text, or pure decoration). */
+  decorative?: boolean;
 };
 
 /** Icons whose fills must not be remapped when the page is in dark color-scheme.
@@ -25,15 +27,19 @@ const LOCK_COLOR_SCHEME_LIGHT = new Set([
   'vulkan',
 ]);
 
-const { tag, class: className } = Astro.props;
+const { tag, class: className, decorative = false } = Astro.props;
 ---
 
-<span class:list={['tech-icon', className]}>
+<span
+  class:list={['tech-icon', className]}
+  aria-hidden={decorative ? 'true' : undefined}
+  role={decorative ? undefined : 'img'}
+  aria-label={decorative ? undefined : tag.text}
+>
   <Icon
     name={tag.icon}
     is:inline
     aria-hidden="true"
-    title={tag.text}
     style={LOCK_COLOR_SCHEME_LIGHT.has(tag.icon) ? 'color-scheme: only light' : undefined}
   />
 </span>
@@ -57,7 +63,11 @@ const { tag, class: className } = Astro.props;
   }
 }
 
-:global(:root:has(#theme-picker input[name='theme'][value='dark']:is(:not(.with-transition):checked, .with-transition.checked))) {
+/* Dark-following themes (dark, dark-forest): boost contrast strokes */
+:global(:root:has(#theme-picker input[name='theme'][value='dark']:is(:not(.with-transition):checked, .with-transition.checked))),
+:global(:root:has(#theme-picker input[name='theme'][value='dark-forest']:is(:not(.with-transition):checked, .with-transition.checked))),
+:global(:root[data-theme='dark']),
+:global(:root[data-theme='dark-forest']) {
   .tech-icon {
     --icon-contrast-stroke: rgb(255 255 255 / 0.65);
     --icon-contrast-stroke-width: 9;
@@ -71,7 +81,7 @@ const { tag, class: className } = Astro.props;
 }
 
 @media (prefers-color-scheme: dark) {
-  :global(:root:not(:has(#theme-picker input[name='theme']:is(:not(.with-transition):checked, .with-transition.checked)))) {
+  :global(:root:not([data-theme]):not(:has(#theme-picker input[name='theme']:is(:not(.with-transition):checked, .with-transition.checked)))) {
     .tech-icon {
       --icon-contrast-stroke: rgb(255 255 255 / 0.65);
       --icon-contrast-stroke-width: 9;
@@ -83,5 +93,12 @@ const { tag, class: className } = Astro.props;
       --postgres-stroke-width: 1;
     }
   }
+}
+</style>
+
+<style is:global>
+/* SVGO drops paint-order from the SVG; without it the contrast stroke paints over the fill. */
+svg[data-icon='postgresql'] path {
+  paint-order: stroke fill;
 }
 </style>
