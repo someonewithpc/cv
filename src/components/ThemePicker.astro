@@ -208,15 +208,33 @@ aside {
     color: var(--ink);
     background: var(--surface-page);
     accent-color: var(--control-accent);
-
-    &.theme-transition {
-      view-transition-name: theme-transition;
-    }
-
-    @at-root ::view-transition-group(theme-transition) {
-      animation: none;
-    }
   }
+}
+
+/* Opt the document into a named VT only while switching themes.
+   Old/new default fades are disabled so the JS clip-path wipe is the only motion. */
+html.theme-transition {
+  view-transition-name: theme-transition;
+}
+
+::view-transition-group(theme-transition) {
+  animation-duration: 0.5s;
+}
+
+::view-transition-old(theme-transition),
+::view-transition-new(theme-transition) {
+  animation: none;
+  mix-blend-mode: normal;
+  height: 100%;
+  width: 100%;
+}
+
+::view-transition-old(theme-transition) {
+  z-index: 1;
+}
+
+::view-transition-new(theme-transition) {
+  z-index: 2;
 }
 
 #theme-picker-transition-background {
@@ -280,33 +298,50 @@ inputs.forEach((inputEl) => {
   inputEl.addEventListener('input', () => {
     const id = inputEl.value;
 
-    const commit = () => {
+    const commitWithoutTransition = () => {
       syncRadios(id);
       persistTheme(id);
     };
 
     if (prefersReducedMotion.matches || !document.startViewTransition) {
-      commit();
+      commitWithoutTransition();
       return;
     }
 
-    document.body.classList.add('theme-transition');
-    const viewTransition = document.startViewTransition({
-      types: ['theme-transition'],
-      update: commit,
-    });
+    /* Match the pre-data-theme contract: during the VT, theme CSS must follow
+       only `.with-transition.checked`. Do not write `data-theme` until finished. */
+    const updateThemeDom = () => {
+      document.documentElement.removeAttribute('data-theme');
+      inputs.forEach((input) => {
+        input.classList.toggle('checked', input.value === id);
+      });
+    };
+
+    document.documentElement.classList.add('theme-transition');
+
+    const viewTransition = document.startViewTransition(updateThemeDom);
 
     viewTransition.ready.then(() => {
       const svg = inputEl.parentElement?.querySelector<SVGSVGElement>('svg.checked');
-      if (!svg) return;
+      if (!svg) {
+        console.debug('[theme-transition] missing checked icon');
+        return;
+      }
 
       const path = svg.querySelector<SVGPathElement>('path');
-      if (!path || typeof path.getPathData !== 'function') return;
+      if (!path || typeof path.getPathData !== 'function') {
+        console.debug('[theme-transition] path/getPathData unavailable');
+        return;
+      }
 
       const symbol = svg.querySelector<SVGSymbolElement>('symbol');
       const viewBox = symbol?.viewBox.baseVal ?? svg.viewBox?.baseVal;
-      if (!viewBox || viewBox.width === 0) return;
+      if (!viewBox || viewBox.width === 0) {
+        console.debug('[theme-transition] invalid viewBox', viewBox);
+        return;
+      }
 
+      /* VT overlay coords are viewport-relative — do not add scrollY. */
       const rect = svg.getBoundingClientRect();
       const pathData = path.getPathData();
       const scaleFactor = +(svg.dataset.themeTransitionScaleFactor ?? '1');
@@ -314,13 +349,13 @@ inputs.forEach((inputEl) => {
 
       const startPathData = transformPath(pathData, viewBox, {
         x: rect.x,
-        y: rect.y + window.scrollY,
+        y: rect.y,
         width: rect.width,
         height: rect.height,
       });
       const endPathData = transformPath(pathData, viewBox, {
         x: rect.x - size,
-        y: rect.y - size + window.scrollY,
+        y: rect.y - size,
         width: size * 2,
         height: size * 2,
       });
@@ -336,13 +371,16 @@ inputs.forEach((inputEl) => {
           pseudoElement: '::view-transition-new(theme-transition)',
         },
       );
-    }).catch(() => {
-      /* Theme already committed; clip-path is optional. */
+    }).catch((error) => {
+      console.debug('[theme-transition] clip-path setup failed', error);
     });
 
     viewTransition.finished.finally(() => {
-      document.body.classList.remove('theme-transition');
+      document.documentElement.classList.remove('theme-transition');
+      syncRadios(id);
+      persistTheme(id);
     });
   }, { passive: true });
 });
 </script>
+
