@@ -41,6 +41,18 @@ const {
         href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Poppins:wght@400;500;600;700&family=Special+Elite&display=swap"
       />
     </noscript>
+    <script is:inline>
+      (() => {
+        try {
+          const stored = localStorage.getItem('cv-theme');
+          if (stored && ['light', 'dark', 'arctic', 'dark-forest'].includes(stored)) {
+            document.documentElement.dataset.theme = stored;
+          }
+        } catch {
+          /* ignore */
+        }
+      })();
+    </script>
   </head>
   <body>
     <ThemePicker />
@@ -104,6 +116,7 @@ main {
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
   --content: min(100% - var(--page-gap) * 2, var(--content-max));
 
+  position: relative;
   display: grid;
   grid-template-columns:
     [full-width-start] var(--full-width)
@@ -113,6 +126,13 @@ main {
     var(--full-width) [full-width-end];
   grid-template-rows: auto;
   align-content: start;
+
+  /* Quiet drafting grid */
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px);
+  background-size: 2.5rem 2.5rem;
+  background-attachment: local;
 
   > :not(.full-width, .breakout) {
     grid-column: content;
