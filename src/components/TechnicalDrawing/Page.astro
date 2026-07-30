@@ -1,5 +1,24 @@
 ---
 import { Icon } from 'astro-icon/components';
+
+import TechIcon from '@/components/TechIcon.astro';
+
+import { resolveTechTags } from '@/server/tech-tags';
+
+type Props = {
+  title?: string | null;
+  subtitle?: string;
+  scale?: string;
+  size?: string;
+  date?: string;
+  index?: number;
+  layerCount?: number;
+  pageStyle?: string;
+  /** Tech tag text(s) or icon suffix(es) for a square title-block cell. */
+  tech?: string | readonly string[];
+};
+
+const techTags = resolveTechTags(Astro.props.tech);
 ---
 
 <section class={Astro.props.pageStyle}>
@@ -14,7 +33,16 @@ import { Icon } from 'astro-icon/components';
   <table>
     <tbody>
       <tr>
-        <td colspan=5>
+        {techTags.length > 0 && (
+          <td rowspan="2" class="title-tech">
+            <div class="title-tech-stack" data-count={techTags.length}>
+              {techTags.map((tag) => (
+                <TechIcon tag={tag} />
+              ))}
+            </div>
+          </td>
+        )}
+        <td colspan="5">
           <header>
             <h2 class="typewriter">{Astro.props.title ?? Astro.props.subtitle}</h2>
             {Astro.props.title && Astro.props.subtitle && (<h3 class="typewriter">{Astro.props.subtitle}</h3>)}
@@ -159,6 +187,9 @@ section {
   }
 
   & > table {
+    $title-tech-size: 4em;
+    $title-tech-icon-size: 2.25em;
+
     position: absolute;
     right: -1px;
     bottom: -1px;
@@ -170,6 +201,49 @@ section {
       border: $border;
       padding: 0.25em;
       color: var(--fg-850);
+
+      // display must stay table-cell — grid/flex on the td breaks rowspan.
+      &.title-tech {
+        padding: 0.25em;
+        vertical-align: middle;
+
+        .title-tech-stack {
+          position: relative;
+          box-sizing: border-box;
+          width: $title-tech-size;
+          height: $title-tech-size;
+          aspect-ratio: 1;
+          overflow: hidden;
+
+          :global(.tech-icon) {
+            position: absolute;
+
+            :global(svg) {
+              display: block;
+              width: $title-tech-icon-size;
+              height: $title-tech-icon-size;
+              margin: 0;
+            }
+
+            &:first-child {
+              top: 0.2em;
+              left: 0.2em;
+            }
+
+            &:nth-child(2) {
+              right: 0.2em;
+              bottom: 0.2em;
+            }
+          }
+
+          &[data-count='1'] :global(.tech-icon) {
+            inset: 0;
+            margin: auto;
+            width: fit-content;
+            height: fit-content;
+          }
+        }
+      }
 
       header {
         display: inline-block;
