@@ -1,106 +1,138 @@
 ---
 import { Icon } from 'astro-icon/components';
 
+type ThemeFollows = 'light' | 'dark';
+
+type ThemeSettings = {
+  canvas: string;
+  ink: string;
+  accent: string;
+  blueprint: string;
+  follows: ThemeFollows;
+  name: string;
+  transitionScaleFactor: number;
+  icons: {
+    checked: string;
+    unchecked: string;
+  };
+};
+
 const THEMES = {
   light: {
-    fg: '#eee',
-    bg: '#222',
-    blueprint: '#3f77df',
-    accent: 'orange',
+    canvas: 'oklch(0.94 0.014 85)',
+    ink: 'oklch(0.24 0.025 260)',
+    accent: 'oklch(0.7 0.13 65)',
+    blueprint: 'oklch(0.52 0.14 255)',
     follows: 'light',
-    name: 'Light Theme',
+    name: 'Light',
     transitionScaleFactor: 2.4,
     icons: {
       checked: 'boxicons:sun-filled',
       unchecked: 'boxicons:sun',
     },
   },
-
   dark: {
-    fg: '#222',
-    bg: '#eee',
-    blueprint: '#21328a',
-    accent: 'orange',
+    canvas: 'oklch(0.2 0.035 265)',
+    ink: 'oklch(0.92 0.02 250)',
+    accent: 'oklch(0.78 0.1 75)',
+    blueprint: 'oklch(0.4 0.12 265)',
     follows: 'dark',
-    name: 'Dark Theme',
+    name: 'Dark',
     transitionScaleFactor: 1.2,
     icons: {
       checked: 'boxicons:moon-filled',
       unchecked: 'boxicons:moon',
     },
   },
-
-  /* cave: {
-    fg: '#222',
-    bg: '#eee',
-    accent: 'orange',
-    follows: 'dark',
-    name: 'Cave Theme',
+  arctic: {
+    canvas: 'oklch(0.96 0.016 230)',
+    ink: 'oklch(0.3 0.04 250)',
+    accent: 'oklch(0.52 0.1 210)',
+    blueprint: 'oklch(0.58 0.12 220)',
+    follows: 'light',
+    name: 'Arctic',
+    transitionScaleFactor: 2,
     icons: {
-      checked: 'cave',
-      unchecked: 'cave',
+      checked: 'boxicons:snowflake-filled',
+      unchecked: 'boxicons:snowflake',
     },
-  }, */
-};
+  },
+  'dark-forest': {
+    canvas: 'oklch(0.17 0.035 145)',
+    ink: 'oklch(0.9 0.035 110)',
+    accent: 'oklch(0.72 0.1 95)',
+    blueprint: 'oklch(0.36 0.08 165)',
+    follows: 'dark',
+    name: 'Dark Forest',
+    transitionScaleFactor: 1.4,
+    icons: {
+      checked: 'boxicons:leaf-filled',
+      unchecked: 'boxicons:leaf',
+    },
+  },
+} as const satisfies Record<string, ThemeSettings>;
 
+type ThemeId = keyof typeof THEMES;
+
+const OS_THEMES = {
+  light: THEMES.light,
+  dark: THEMES.dark,
+} as const;
+
+const themeVars = (settings: ThemeSettings) => `
+      --theme-canvas: ${settings.canvas};
+      --theme-ink: ${settings.ink};
+      --theme-accent: ${settings.accent};
+      --theme-blueprint: ${settings.blueprint};
+      --theme-mode: ${settings.follows};
+`;
+
+/* Theme application mirrors the original radio/.checked contract so view
+   transitions keep working; data-theme is an extra early-paint / persistence path. */
 const THEMES_CSS = `
-${Object.entries({ light: THEMES.light, dark: THEMES.dark }).map(([id, settings]) => (
+${Object.entries(OS_THEMES).map(([id, settings]) => (
   `  @media (prefers-color-scheme: ${id}) {
-    :root:not(:has(#theme-picker input[name="theme"]:is(:not(.with-transition):checked, .with-transition.checked))) {
-      --theme-base-fg: ${settings.fg};
-      --theme-base-bg: ${settings.bg};
-      --theme-base-accent: ${settings.accent};
-      --theme-base-blueprint: ${settings.blueprint};
-
-      --base-fg: var(--theme-base-fg);
-      --base-bg: var(--theme-base-bg);
-      --base-accent: var(--theme-base-accent);
-      --base-blueprint: var(--theme-base-blueprint);
-
+    :root:not([data-theme]):not(:has(#theme-picker input[name="theme"]:is(:not(.with-transition):checked, .with-transition.checked))) {
+${themeVars(settings)}
       --theme-kind: ${id};
     }
   }`
 )).join('\n\n')}
 ${Object.entries(THEMES).map(([id, settings]) => `
+  :root[data-theme="${id}"],
   :root:has(#theme-picker input[name="theme"][value="${id}"]:is(:not(.with-transition):checked, .with-transition.checked)) {
     --theme-kind: ${id};
-
-    --theme-base-fg: ${settings.fg};
-    --theme-base-bg: ${settings.bg};
-    --theme-base-accent: ${settings.accent};
-    --theme-base-blueprint: ${settings.blueprint};
-
-    --base-fg: var(--theme-base-fg);
-    --base-bg: var(--theme-base-bg);
-    --base-accent: var(--theme-base-accent);
-    --base-blueprint: var(--theme-base-blueprint);
+${themeVars(settings)}
 
     body {
       color-scheme: only ${settings.follows};
     }
   }`).join('\n')}
 `;
+
+const THEME_IDS = Object.keys(THEMES) as ThemeId[];
 ---
 
 <div id="theme-picker-transition-background" />
 
-<aside id="theme-picker">
-  {Object.entries(THEMES).map(([id, settings]) => (
-  <>
-    <label class="bypass-contrast-check">
-      <input tabindex="0" type="radio" name="theme" value={id} class="sr-only" />
-      <Icon name={settings.icons.unchecked} class="unchecked" />
-      <Icon name={settings.icons.checked} class="checked" data-theme-transition-scale-factor={settings.transitionScaleFactor} />
-      <span>{settings.name}</span>
-    </label>
-  </>
-  ))}
+<aside id="theme-picker" aria-label="Theme">
+  {THEME_IDS.map((id) => {
+    const settings = THEMES[id];
+    return (
+      <label class="bypass-contrast-check">
+        <input tabindex="0" type="radio" name="theme" value={id} class="sr-only" />
+        <Icon name={settings.icons.unchecked} class="unchecked" aria-hidden="true" />
+        <Icon name={settings.icons.checked} class="checked" data-theme-transition-scale-factor={settings.transitionScaleFactor} aria-hidden="true" />
+        <span>{settings.name}</span>
+      </label>
+    );
+  })}
 </aside>
 
 <style lang="scss">
 aside {
   padding: 0.75em;
-  $border: 2px solid var(--accent-600);
+  $border: 2px solid var(--accent-muted);
   border-left: $border;
   border-bottom: $border;
   border-bottom-left-radius: 1em;
@@ -111,27 +143,37 @@ aside {
   top: 0;
   z-index: 10;
 
-  color: var(--fg-500);
-  background: var(--bg-850);
+  color: var(--ink-faint);
+  background: var(--surface-raised);
 
-  &:hover, &:focus-within {
-    color: var(--fg-800);
-    background: var(--bg-875);
+  &:hover,
+  &:focus-within {
+    color: var(--ink);
+    background: color-mix(in oklch, var(--surface-raised), var(--accent) 8%);
   }
 
   label {
     cursor: pointer;
 
     &:focus-within {
-      outline: 1px solid var(--fg-850);
+      outline: 1px solid var(--line-strong);
     }
 
-    display: flex block;
+    display: flex;
     align-items: center;
     gap: 1ch;
+    font-family: monospace, system-ui;
+    font-size: 0.8125rem;
+
+    & + & {
+      margin-top: 0.35em;
+    }
 
     svg {
       display: none;
+      width: 1.125em;
+      height: 1.125em;
+      flex-shrink: 0;
     }
 
     &:has(input[name="theme"]:checked) svg.checked {
@@ -151,14 +193,21 @@ aside {
 @use "@/scss/_colors.scss" as colors;
 
 :root {
+  --theme-canvas: oklch(0.94 0.014 85);
+  --theme-ink: oklch(0.24 0.025 260);
+  --theme-accent: oklch(0.7 0.13 65);
+  --theme-blueprint: oklch(0.52 0.14 255);
+  --theme-mode: light;
+  --theme-kind: light;
+
   @include colors.color-variables;
 
   color-scheme: light dark;
 
   body {
-    color: var(--fg-900);
-    background: var(--bg-900);
-    accent-color: var(--accent-900);
+    color: var(--ink);
+    background: var(--surface-page);
+    accent-color: var(--control-accent);
 
     &.theme-transition {
       view-transition-name: theme-transition;
@@ -170,11 +219,10 @@ aside {
   }
 }
 
-
 #theme-picker-transition-background {
   position: fixed;
   inset: 0;
-  background: var(--bg-900);
+  background: var(--surface-page);
   z-index: -1;
 }
 </style>
@@ -182,65 +230,119 @@ aside {
 <script>
 import { transformPath, pathDataToString } from '@/client/svg-utils';
 
+const STORAGE_KEY = 'cv-theme';
+
 if (!('getPathData' in SVGPathElement)) {
   await import('path-data-polyfill');
 }
 
+const inputs = [...document.querySelectorAll<HTMLInputElement>('#theme-picker input')];
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-if (!prefersReducedMotion.matches) {
-  const inputs = [...document.querySelectorAll<HTMLInputElement>('#theme-picker input')];
-  inputs.forEach((inputEl) => {
-    inputEl.classList.add('with-transition');
-    inputEl.addEventListener('input', () => {
-      document.body.classList.add('theme-transition');
-      const viewTransition = document.startViewTransition({
-        types: ['theme-transition'],
-        update() {
-          inputs.forEach((input) => input.classList.remove('checked'));
-          inputEl.classList.add('checked');
-        },
-      });
-
-      viewTransition.ready.then(() => {
-        const svg = inputEl.parentElement?.querySelector<SVGSVGElement>('svg.checked');
-        if (!svg) return;
-
-        const rect = svg.getBoundingClientRect();
-
-        const symbol = svg.querySelector<SVGSymbolElement>('symbol');
-        if (!symbol) return;
-
-        const viewBox = symbol.viewBox.baseVal;
-
-        const path = svg.querySelector<SVGPathElement>('path');
-        if (!path) return;
-
-        const pathData = path.getPathData();
-
-        const scaleFactor = +(svg.dataset.themeTransitionScaleFactor ?? '1');
-        const size = Math.hypot(window.innerWidth, window.innerHeight) * scaleFactor;
-
-        const startPathData = transformPath(pathData, viewBox, { x: rect.x, y: rect.y + window.scrollY, width: rect.width, height: rect.height });
-        const endPathData = transformPath(pathData, viewBox, { x: rect.x - size, y: rect.y - size + window.scrollY, width: size * 2, height: size * 2 });
-
-        document.documentElement.animate(
-          [
-            { clipPath: `path("${pathDataToString(startPathData)}")` },
-            { clipPath: `path("${pathDataToString(endPathData)}")` },
-          ],
-          {
-            duration: 500,
-            easing: 'ease-in',
-            pseudoElement: '::view-transition-new(theme-transition)',
-          },
-        );
-      });
-
-      viewTransition.finished.then(() => {
-        document.body.classList.remove('theme-transition');
-      });
-    }, { passive: true });
+const syncRadios = (id: string) => {
+  inputs.forEach((input) => {
+    const active = input.value === id;
+    input.checked = active;
+    input.classList.toggle('checked', active);
   });
+};
+
+const persistTheme = (id: string) => {
+  document.documentElement.dataset.theme = id;
+  try {
+    localStorage.setItem(STORAGE_KEY, id);
+  } catch {
+    /* ignore */
+  }
+};
+
+const stored = (() => {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+})();
+
+/* Restore persisted choice. Otherwise leave radios unchecked so OS prefers-color-scheme CSS wins (same as original). */
+if (stored && inputs.some((input) => input.value === stored)) {
+  syncRadios(stored);
+  document.documentElement.dataset.theme = stored;
+} else {
+  document.documentElement.removeAttribute('data-theme');
 }
+
+inputs.forEach((inputEl) => {
+  if (!prefersReducedMotion.matches) {
+    inputEl.classList.add('with-transition');
+  }
+
+  inputEl.addEventListener('input', () => {
+    const id = inputEl.value;
+
+    const commit = () => {
+      syncRadios(id);
+      persistTheme(id);
+    };
+
+    if (prefersReducedMotion.matches || !document.startViewTransition) {
+      commit();
+      return;
+    }
+
+    document.body.classList.add('theme-transition');
+    const viewTransition = document.startViewTransition({
+      types: ['theme-transition'],
+      update: commit,
+    });
+
+    viewTransition.ready.then(() => {
+      const svg = inputEl.parentElement?.querySelector<SVGSVGElement>('svg.checked');
+      if (!svg) return;
+
+      const path = svg.querySelector<SVGPathElement>('path');
+      if (!path || typeof path.getPathData !== 'function') return;
+
+      const symbol = svg.querySelector<SVGSymbolElement>('symbol');
+      const viewBox = symbol?.viewBox.baseVal ?? svg.viewBox?.baseVal;
+      if (!viewBox || viewBox.width === 0) return;
+
+      const rect = svg.getBoundingClientRect();
+      const pathData = path.getPathData();
+      const scaleFactor = +(svg.dataset.themeTransitionScaleFactor ?? '1');
+      const size = Math.hypot(window.innerWidth, window.innerHeight) * scaleFactor;
+
+      const startPathData = transformPath(pathData, viewBox, {
+        x: rect.x,
+        y: rect.y + window.scrollY,
+        width: rect.width,
+        height: rect.height,
+      });
+      const endPathData = transformPath(pathData, viewBox, {
+        x: rect.x - size,
+        y: rect.y - size + window.scrollY,
+        width: size * 2,
+        height: size * 2,
+      });
+
+      document.documentElement.animate(
+        [
+          { clipPath: `path("${pathDataToString(startPathData)}")` },
+          { clipPath: `path("${pathDataToString(endPathData)}")` },
+        ],
+        {
+          duration: 500,
+          easing: 'ease-in',
+          pseudoElement: '::view-transition-new(theme-transition)',
+        },
+      );
+    }).catch(() => {
+      /* Theme already committed; clip-path is optional. */
+    });
+
+    viewTransition.finished.finally(() => {
+      document.body.classList.remove('theme-transition');
+    });
+  }, { passive: true });
+});
 </script>

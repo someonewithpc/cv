@@ -1,18 +1,171 @@
-@use "sass:map";
 @use "sass:math";
-@use 'sass:list';
 
-$weights: 100, 200, 300, 400, 500, 600, 700, 800, 825, 850, 875, 900;
-$min-weight: list.nth($weights, 1);
-$max-weight: list.nth($weights, -1);
+// Primitive ramps (1 = nearest canvas / tint, 12 = nearest ink / shade).
+// Themes set --theme-canvas, --theme-ink, --theme-accent, --theme-blueprint.
+@mixin primitive-ramps {
+  @for $i from 1 through 12 {
+    $t: math.div($i - 1, 11) * 100%;
+    --neutral-#{$i}: color-mix(in oklch, var(--theme-canvas), var(--theme-ink) #{$t});
+  }
+
+  // Accent / blueprint: 1–8 tint toward canvas, 9 = solid, 10–12 shade toward ink.
+  // Chroma is preserved better than mixing from paper→hue (old accent scale).
+  @for $i from 1 through 8 {
+    $t: math.div(9 - $i, 8) * 82%;
+    --accent-#{$i}: color-mix(in oklch, var(--theme-accent), var(--theme-canvas) #{$t});
+    --blueprint-#{$i}: color-mix(in oklch, var(--theme-blueprint), var(--theme-canvas) #{$t});
+  }
+
+  --accent-9: var(--theme-accent);
+  --blueprint-9: var(--theme-blueprint);
+
+  @for $i from 10 through 12 {
+    $t: math.div($i - 9, 3) * 42%;
+    --accent-#{$i}: color-mix(in oklch, var(--theme-accent), var(--theme-ink) #{$t});
+    --blueprint-#{$i}: color-mix(in oklch, var(--theme-blueprint), var(--theme-ink) #{$t});
+  }
+}
+
+@mixin semantic-tokens {
+  --surface-page: var(--neutral-1);
+  --surface-raised: var(--neutral-2);
+  --surface-sunken: var(--neutral-3);
+
+  --ink: var(--neutral-12);
+  --ink-muted: var(--neutral-11);
+  --ink-faint: var(--neutral-9);
+
+  --line: var(--neutral-6);
+  --line-strong: var(--neutral-8);
+
+  --accent: var(--accent-9);
+  --accent-muted: var(--accent-7);
+  --accent-contrast: var(--theme-canvas);
+  --control-accent: var(--accent-9);
+
+  --blueprint: var(--blueprint-9);
+  --blueprint-line: var(--blueprint-11);
+  --blueprint-grid: color-mix(in oklch, var(--blueprint-9), var(--theme-canvas) 38%);
+}
+
+// Transitional aliases — do not use in new chrome; remove when consumers are gone.
+@mixin legacy-aliases {
+  --fg-100: var(--neutral-1);
+  --fg-200: var(--neutral-2);
+  --fg-300: var(--neutral-3);
+  --fg-400: var(--neutral-5);
+  --fg-500: var(--neutral-7);
+  --fg-600: var(--neutral-8);
+  --fg-650: var(--neutral-9);
+  --fg-700: var(--neutral-10);
+  --fg-750: var(--neutral-10);
+  --fg-800: var(--neutral-11);
+  --fg-825: var(--neutral-11);
+  --fg-850: var(--neutral-11);
+  --fg-875: var(--neutral-12);
+  --fg-900: var(--neutral-12);
+
+  --bg-100: var(--neutral-12);
+  --bg-200: var(--neutral-11);
+  --bg-300: var(--neutral-10);
+  --bg-400: var(--neutral-8);
+  --bg-500: var(--neutral-6);
+  --bg-600: var(--neutral-5);
+  --bg-700: var(--neutral-4);
+  --bg-800: var(--neutral-3);
+  --bg-825: var(--neutral-3);
+  --bg-850: var(--neutral-2);
+  --bg-875: var(--neutral-2);
+  --bg-900: var(--neutral-1);
+
+  --accent-100: var(--accent-1);
+  --accent-200: var(--accent-2);
+  --accent-300: var(--accent-3);
+  --accent-400: var(--accent-4);
+  --accent-500: var(--accent-5);
+  --accent-600: var(--accent-6);
+  --accent-650: var(--accent-7);
+  --accent-700: var(--accent-7);
+  --accent-750: var(--accent-8);
+  --accent-800: var(--accent-9);
+  --accent-825: var(--accent-9);
+  --accent-850: var(--accent-10);
+  --accent-875: var(--accent-11);
+  --accent-900: var(--accent-9);
+
+  --blueprint-100: var(--blueprint-1);
+  --blueprint-200: var(--blueprint-2);
+  --blueprint-300: var(--blueprint-3);
+  --blueprint-400: var(--blueprint-4);
+  --blueprint-500: var(--blueprint-5);
+  --blueprint-600: var(--blueprint-6);
+  --blueprint-700: var(--blueprint-7);
+  --blueprint-800: var(--blueprint-8);
+  --blueprint-825: var(--blueprint-9);
+  --blueprint-850: var(--blueprint-9);
+  --blueprint-875: var(--blueprint-10);
+  --blueprint-900: var(--blueprint-9);
+}
 
 @mixin color-variables {
-  @each $weight in $weights {
-    $percent: #{math.div(($weight - $min-weight), ($max-weight - $min-weight)) * 100%};
+  @include primitive-ramps;
+  @include semantic-tokens;
+  @include legacy-aliases;
+}
 
-    --fg-#{$weight}: color-mix(in oklab, var(--base-fg), var(--base-bg) #{$percent});
-    --bg-#{$weight}: color-mix(in oklab, var(--base-bg), var(--base-fg) #{$percent});
-    --accent-#{$weight}: color-mix(in oklab, var(--base-fg), var(--base-accent) #{$percent});
-    --blueprint-#{$weight}: color-mix(in oklab, var(--base-bg), var(--base-blueprint) #{$percent});
-  }
+// Full sheet boundary for `.blueprint` pages (drawing ink on blueprint fill).
+@mixin blueprint-sheet-boundary {
+  --sheet-canvas: var(--blueprint-9);
+  --sheet-ink: color-mix(in oklch, white 88%, var(--theme-blueprint));
+  --sheet-ink-muted: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 32%);
+  --sheet-ink-faint: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 48%);
+  --sheet-line: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 40%);
+  --sheet-line-strong: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 22%);
+  --sheet-grid: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 68%);
+  --sheet-accent: color-mix(in oklch, var(--theme-accent), white 28%);
+  --sheet-accent-muted: color-mix(in oklch, var(--sheet-accent), var(--sheet-canvas) 35%);
+
+  --surface-page: var(--sheet-canvas);
+  --surface-raised: color-mix(in oklch, var(--sheet-canvas), white 8%);
+  --surface-sunken: color-mix(in oklch, var(--sheet-canvas), black 8%);
+  --ink: var(--sheet-ink);
+  --ink-muted: var(--sheet-ink-muted);
+  --ink-faint: var(--sheet-ink-faint);
+  --line: var(--sheet-line);
+  --line-strong: var(--sheet-line-strong);
+  --accent: var(--sheet-accent);
+  --accent-muted: var(--sheet-accent-muted);
+  --accent-contrast: var(--sheet-canvas);
+  --control-accent: var(--sheet-accent);
+  --blueprint: var(--sheet-canvas);
+  --blueprint-line: var(--sheet-line);
+  --blueprint-grid: var(--sheet-grid);
+
+  // Keep drawing descendants on legacy names working inside the sheet.
+  --fg-400: var(--sheet-ink-faint);
+  --fg-500: var(--sheet-ink-faint);
+  --fg-600: var(--sheet-ink-muted);
+  --fg-650: var(--sheet-ink-muted);
+  --fg-700: var(--sheet-ink-muted);
+  --fg-750: var(--sheet-ink);
+  --fg-800: var(--sheet-ink);
+  --fg-850: var(--sheet-ink);
+  --fg-875: var(--sheet-ink);
+  --fg-900: var(--sheet-ink);
+
+  --bg-800: var(--sheet-canvas);
+  --bg-825: var(--sheet-canvas);
+  --bg-850: color-mix(in oklch, var(--sheet-canvas), white 6%);
+  --bg-875: color-mix(in oklch, var(--sheet-canvas), white 8%);
+  --bg-900: var(--sheet-canvas);
+
+  --accent-500: var(--sheet-accent-muted);
+  --accent-600: var(--sheet-accent-muted);
+  --accent-650: var(--sheet-accent-muted);
+  --accent-700: var(--sheet-accent);
+  --accent-750: var(--sheet-accent);
+  --accent-800: var(--sheet-accent);
+  --accent-900: var(--sheet-accent);
+
+  --blueprint-900: var(--sheet-canvas);
 }
