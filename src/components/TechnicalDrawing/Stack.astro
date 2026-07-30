@@ -5,6 +5,7 @@ type Layer = {
   name: string | null;
   size?: string;
   pageStyle?: string;
+  /** Per-page tech icon(s); falls back to stack `tech`. */
   tech?: string | readonly string[];
 };
 
@@ -14,6 +15,7 @@ type Props = {
   scale?: string;
   size?: string;
   date?: string;
+  /** Default tech icon(s) for every page (tag text or icon suffix). */
   tech?: string | readonly string[];
 };
 
@@ -80,9 +82,9 @@ article {
   height: auto;
   aspect-ratio: var(--technical-drawing-aspect);
 
-  background: var(--bg-850);
-  color: var(--fg-850);
-  border: 1px solid var(--accent-500);
+  background: var(--surface-raised);
+  color: var(--ink);
+  border: 1px solid color-mix(in oklch, var(--line-strong), var(--accent-muted) 40%);
   border-radius: 0.5em;
 
   overflow-x: auto;
