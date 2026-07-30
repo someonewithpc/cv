@@ -14,14 +14,26 @@ type Props = {
   index?: number;
   layerCount?: number;
   pageStyle?: string;
-  /** Tech tag text(s) or icon suffix(es) for a square title-block cell. */
+  /** Tech tag text(s) or icon suffix(es) in a square rowspan cell. */
   tech?: string | readonly string[];
 };
 
-const techTags = resolveTechTags(Astro.props.tech);
+const {
+  title,
+  subtitle,
+  scale,
+  size,
+  date,
+  index,
+  layerCount,
+  pageStyle,
+  tech,
+} = Astro.props;
+
+const techTags = resolveTechTags(tech);
 ---
 
-<section class={Astro.props.pageStyle}>
+<section class={pageStyle}>
   <div class="content">
     <slot name="content" />
   </div>
@@ -30,22 +42,22 @@ const techTags = resolveTechTags(Astro.props.tech);
     <slot name="aside" />
   </div>
 
-  <table>
+  <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`}>
     <tbody>
       <tr>
         {techTags.length > 0 && (
-          <td rowspan="2" class="title-tech">
+          <td rowspan="2" class="title-tech" aria-hidden="true">
             <div class="title-tech-stack" data-count={techTags.length}>
               {techTags.map((tag) => (
-                <TechIcon tag={tag} />
+                <TechIcon tag={tag} decorative />
               ))}
             </div>
           </td>
         )}
         <td colspan="5">
           <header>
-            <h2 class="typewriter">{Astro.props.title ?? Astro.props.subtitle}</h2>
-            {Astro.props.title && Astro.props.subtitle && (<h3 class="typewriter">{Astro.props.subtitle}</h3>)}
+            <h2 class="typewriter">{title ?? subtitle}</h2>
+            {title && subtitle && (<h3 class="typewriter">{subtitle}</h3>)}
           </header>
         </td>
       </tr>
@@ -53,35 +65,38 @@ const techTags = resolveTechTags(Astro.props.tech);
         <td>
           <div>
             <h3 class="monospace">Drawing No.</h3>
-            <span class="typewriter">{Astro.props.index} / {Astro.props.layerCount}</span>
+            <span class="typewriter">{index} / {layerCount}</span>
           </div>
         </td>
 
         <td>
           <div>
             <h3 class="monospace">Scale</h3>
-            <span class="typewriter">{Astro.props.scale ?? '3:1'}</span>
+            <span class="typewriter">{scale ?? '3:1'}</span>
           </div>
         </td>
 
         <td>
           <div>
             <h3 class="monospace">Weight</h3>
-            <span class="typewriter">{Astro.props.size ?? '-'}</span>
+            <span class="typewriter">{size ?? '-'}</span>
           </div>
         </td>
 
         <td>
           <div>
             <h3 class="monospace">Date</h3>
-            <span class="typewriter"><time datetime={Astro.props.date}>{Astro.props.date ?? '-'}</time></span>
+            <span class="typewriter"><time datetime={date}>{date ?? '-'}</time></span>
           </div>
         </td>
 
         <td>
           <div>
-            <h3 class="monospace" title="Projection">Proj.</h3>
-            <Icon name="first-angle-projection" title="First Angle Projection" />
+            <h3 class="monospace">
+              <span aria-hidden="true">Proj.</span>
+              <span class="sr-only">Projection</span>
+            </h3>
+            <Icon name="first-angle-projection" aria-hidden="true" />
           </div>
         </td>
       </tr>
@@ -95,14 +110,14 @@ const techTags = resolveTechTags(Astro.props.tech);
 @use "@/scss/_colors.scss" as colors;
 
 section {
-  $border: 1px solid var(--fg-800);
+  $border: 1px solid var(--line-strong);
   $border-offset: 1em;
 
   contain: size style;
 
   width: 100%;
   height: 100%;
-  border: $border-offset solid var(--bg-800);
+  border: $border-offset solid var(--surface-sunken);
   outline: $border;
   outline-offset: -$border-offset;
 
@@ -111,25 +126,17 @@ section {
   align-items: center;
   position: relative;
 
-  background: var(--bg-800);
+  background: var(--surface-sunken);
   &:global(.blueprint) {
-    border-color: var(--blueprint-900);
+    @include colors.blueprint-sheet-boundary;
 
-    $alpha: 25%;
-    $line-color: color-mix(in srgb, var(--blueprint-900), white #{$alpha});
+    // Thick margin must match the sheet fill; the outline is the visible border.
+    border-color: var(--blueprint);
+    background-color: var(--blueprint);
     background-size: 1cm 1cm;
     background-image:
-      linear-gradient(to right, #{$line-color} 1px, transparent 1px),
-      linear-gradient(to bottom, #{$line-color} 1px, var(--blueprint-900) 1px);
-
-    --base-fg: #fff;
-    --base-bg: #ddd;
-    --base-accent: hsl(
-      from color-mix(in oklab, var(--theme-base-accent), var(--theme-base-fg) 40%)
-      h calc(s * 2.5) l
-    );
-
-    @include colors.color-variables;
+      linear-gradient(to right, var(--blueprint-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--blueprint-grid) 1px, var(--blueprint) 1px);
   }
 
   .content {
@@ -200,7 +207,7 @@ section {
     td {
       border: $border;
       padding: 0.25em;
-      color: var(--fg-850);
+      color: var(--ink);
 
       // display must stay table-cell — grid/flex on the td breaks rowspan.
       &.title-tech {
@@ -251,7 +258,7 @@ section {
         translate: calc(var(--random2) * 2px) calc(var(--random2) * 2px);
 
         h3 {
-          color: var(--fg-700);
+          color: var(--ink-muted);
           font-size: 0.675em;
           margin-top: 0.25rem;
         }
