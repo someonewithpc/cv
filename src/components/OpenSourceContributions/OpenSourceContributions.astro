@@ -55,11 +55,29 @@ const statistics = {
     font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
     font-weight: 400;
     letter-spacing: 0.12em;
-    color: color-mix(in oklab, var(--fg-600), transparent 35%);
+    color: color-mix(in oklch, var(--ink-faint), transparent 20%);
     margin-inline-start: -0.125rem;
   }
 
   > section {
+    &[data-group='merged'] {
+      --row-accent: hsl(145 42% 38%);
+    }
+
+    &[data-group='open'] {
+      --row-accent: var(--accent);
+    }
+
+    &[data-group='closed'] {
+      --row-accent: var(--ink-faint);
+    }
+
+    &[data-group='patch'],
+    &[data-group='mailing_list'],
+    &[data-group='project'] {
+      --row-accent: var(--accent-muted);
+    }
+
     & + section {
       margin-top: 3rem;
     }
@@ -72,12 +90,12 @@ const statistics = {
       font-size: 0.875rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--fg-800);
+      color: var(--ink-muted);
 
       data {
         font-family: monospace, system-ui;
         font-size: 0.8125rem;
-        color: var(--fg-650);
+        color: var(--ink-faint);
       }
     }
 
@@ -85,8 +103,11 @@ const statistics = {
       container-type: inline-size;
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      border: 1px solid var(--fg-850);
-      background: var(--bg-850);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--row-accent, var(--line-strong));
+      border-radius: 0.5em;
+      background: var(--surface-raised);
+      overflow: hidden;
 
       > header,
       :global(details > summary) {
@@ -96,9 +117,7 @@ const statistics = {
         align-items: center;
         min-height: var(--row-height);
         padding-block: 0.75rem;
-        padding-inline-end: var(--cell-x);
-        padding-inline-start: calc(var(--cell-x) + 3px);
-        border-left: 3px solid transparent;
+        padding-inline: var(--cell-x);
         box-sizing: border-box;
 
         > * {
@@ -107,13 +126,13 @@ const statistics = {
       }
 
       > header {
-        border-bottom: 1px solid var(--fg-850);
-        background: color-mix(in oklab, var(--bg-875), var(--fg-900) 4%);
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-raised);
         font-family: monospace, system-ui;
         font-size: 0.75rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: var(--fg-650);
+        color: var(--ink-faint);
 
         span {
           overflow-wrap: break-word;
@@ -127,11 +146,12 @@ const statistics = {
 
       :global(details) {
         min-width: 0;
+        background: var(--surface-raised);
       }
 
       :global(details > summary) {
-        border-top: 1px solid var(--fg-875);
-        border-left-color: var(--row-accent, var(--fg-700));
+        border-top: 1px solid var(--line);
+        background: var(--surface-raised);
         cursor: pointer;
         list-style: none;
         transition: background 150ms ease;
@@ -141,7 +161,7 @@ const statistics = {
         }
 
         &:hover {
-          background: var(--bg-825);
+          background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 10%);
         }
       }
 

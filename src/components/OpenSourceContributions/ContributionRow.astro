@@ -57,8 +57,11 @@ const hasMeta = updatedAt || stats;
       href={url}
       rel="noopener noreferrer"
       target="_blank"
-      aria-label={`${title} (${repository}), opens in a new tab`}
-    ><BacktickText text={title} /><Icon name="lucide:external-link" class="external-link" aria-hidden="true" /></a>
+    >
+      <BacktickText text={title} />
+      <span class="sr-only"> ({repository}), opens in a new tab</span>
+      <Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
+    </a>
   </summary>
 
   {description && (
@@ -86,24 +89,6 @@ const hasMeta = updatedAt || stats;
 
 <style lang="scss">
 details {
-  &[data-status='merged'] {
-    --row-accent: hsl(145 42% 38%);
-  }
-
-  &[data-status='open'] {
-    --row-accent: var(--accent-700);
-  }
-
-  &[data-status='closed'] {
-    --row-accent: var(--fg-600);
-  }
-
-  &[data-status='patch'],
-  &[data-status='mailing_list'],
-  &[data-status='project'] {
-    --row-accent: var(--accent-650);
-  }
-
   > summary {
     ul {
       display: flex;
@@ -130,15 +115,19 @@ details {
     cite {
       font-family: monospace, system-ui;
       font-style: normal;
-      color: var(--fg-750);
+      color: var(--ink-muted);
       line-height: 1.4;
       overflow-wrap: break-word;
     }
 
     a {
       min-width: 0;
+      min-height: 1.5rem;
+      padding-block: 0.125rem;
+      display: inline-flex;
+      align-items: center;
       font-family: sans-serif;
-      color: var(--fg-900);
+      color: var(--ink);
       line-height: 1.4;
       text-decoration: none;
       text-underline-offset: 0.15em;
@@ -152,43 +141,43 @@ details {
       }
 
       &:hover {
-        color: var(--accent-750);
+        color: var(--accent);
         text-decoration: underline;
       }
     }
   }
 
   &[open] > summary {
-    background: var(--bg-825);
+    background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 10%);
   }
 
   > p,
   > footer {
-    padding: 0 var(--cell-x) 1rem calc(var(--cell-x) + 3px);
-    background: color-mix(in oklab, var(--bg-875), var(--row-accent, var(--fg-700)) 8%);
+    padding: 0 var(--cell-x) 1rem;
+    background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 8%);
     font-family: sans-serif;
   }
 
   > :not(summary):first-of-type {
     padding-top: 0.875rem;
-    box-shadow: inset 0 1px 0 var(--fg-875);
+    box-shadow: inset 0 1px 0 var(--line);
   }
 
   > p {
     margin: 0;
     line-height: 1.65;
-    color: var(--fg-800);
+    color: var(--ink-muted);
     overflow-wrap: break-word;
   }
 
   > footer {
     margin-top: 0.625rem;
     padding-top: 0.625rem;
-    border-top: 1px solid color-mix(in oklab, var(--fg-875), transparent 40%);
+    border-top: 1px solid color-mix(in oklch, var(--line), transparent 40%);
     font-family: monospace, system-ui;
     font-size: 0.75rem;
     line-height: 1.5;
-    color: var(--fg-650);
+    color: var(--ink-faint);
 
     .additions {
       font-weight: 600;
@@ -201,7 +190,7 @@ details {
     }
 
     .files {
-      color: var(--accent-750);
+      color: var(--accent);
     }
   }
 
