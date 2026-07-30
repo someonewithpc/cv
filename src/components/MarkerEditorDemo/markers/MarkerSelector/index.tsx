@@ -80,7 +80,7 @@ export function MarkerSelector({
           zIndex: 20,
         }}
       >
-        <ul role="listbox">
+        <ul role="listbox" aria-label="Markers">
           {markers.map((marker) => {
             const deleteDisabled = allSpaces.some((s) => (s.id === space.id) !== (s.markerId === marker.id));
 
@@ -88,6 +88,7 @@ export function MarkerSelector({
               <li
                 key={marker.id}
                 role="option"
+                aria-label={`Marker ${marker.id}`}
                 aria-selected={marker.id === currentMarker.id}
                 data-demo-target={`selector:marker:${marker.id}`}
                 style={{ position: 'relative' }}
@@ -169,6 +170,7 @@ export function MarkerSelector({
           <li
             role="option"
             aria-selected={false}
+            aria-label="Create new marker"
             title="Create new marker"
             data-demo-target="selector:create"
             onClick={() => {
@@ -182,6 +184,7 @@ export function MarkerSelector({
             role="option"
             aria-selected={false}
             aria-disabled="true"
+            aria-label="Uploading is not available in this demo"
             title="Uploading is not available in this demo"
             className="marker-uploader disabled"
           >
@@ -190,6 +193,7 @@ export function MarkerSelector({
           <li
             role="option"
             aria-selected={false}
+            aria-label="Close marker selector"
             data-demo-target="selector:close"
             onClick={onClose}
             title="Close marker selector"

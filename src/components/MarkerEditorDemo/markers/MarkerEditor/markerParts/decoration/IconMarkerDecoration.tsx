@@ -117,14 +117,15 @@ export class IconMarkerDecoration extends MarkerPart {
 
     return (
       <>
-        <ul role="listbox">
-          {this.reactiveState.decorations.map((d) => {
+        <ul role="listbox" aria-label="Decorations">
+          {this.reactiveState.decorations.map((d, index) => {
             const decoration = d.resolvedSource;
 
             return (
               <li
                 key={d.id}
                 role="option"
+                aria-label={`Decoration ${index + 1}`}
                 aria-selected={d.id === this.reactiveState.activeDecoration}
                 onClick={() => {
                   this.reactiveState.activeDecoration = d.id;
@@ -138,6 +139,7 @@ export class IconMarkerDecoration extends MarkerPart {
             role="option"
             aria-selected={false}
             aria-disabled="true"
+            aria-label="Uploading is not available in this demo"
             className="decoration-uploader disabled"
             title="Uploading is not available in this demo"
           >

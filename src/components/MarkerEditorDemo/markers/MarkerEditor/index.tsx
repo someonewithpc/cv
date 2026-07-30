@@ -415,7 +415,7 @@ export function MarkerEditor({
                       }}
                     >
                       <summary data-demo-target={`editor:step:${step}`}>{_startCase(step)}</summary>
-                      <ul role="listbox">
+                      <ul role="listbox" aria-label={_startCase(step)}>
                         {Object.entries(markers[step])
                           .map(([type, part]) => {
                             const Thumbnail = markerThumbnailComponents[step][type];
@@ -423,6 +423,7 @@ export function MarkerEditor({
                               <li
                                 key={type}
                                 role="option"
+                                aria-label={part.title}
                                 aria-selected={state.active[step] === type}
                                 data-demo-target={`editor:${step}:${type}`}
                                 onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
