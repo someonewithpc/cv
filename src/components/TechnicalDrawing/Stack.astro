@@ -5,6 +5,7 @@ type Layer = {
   name: string | null;
   size?: string;
   pageStyle?: string;
+  tech?: string | readonly string[];
 };
 
 type Props = {
@@ -13,15 +14,16 @@ type Props = {
   scale?: string;
   size?: string;
   date?: string;
+  tech?: string | readonly string[];
 };
 
-const { layers = {} } = Astro.props;
+const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
 
 <div class="technical-drawing-frame">
   <article class="technical-drawing-stack">
-    {Object.entries(layers).map(([id, { name, size, pageStyle }], index) => (
+    {Object.entries(layers).map(([id, { name, size, pageStyle, tech }], index) => (
       <TechnicalDrawingPage
         title={name}
         subtitle={Astro.props.subtitle}
@@ -31,6 +33,7 @@ const totalLayers = Object.keys(layers).length;
         index={index + 1}
         layerCount={totalLayers}
         pageStyle={pageStyle}
+        tech={tech ?? stackTech}
       >
         <Fragment slot="content">
           {Astro.slots.render('layers', [id])}

@@ -68,7 +68,9 @@ export const resolveTechTag = (text: string | null | undefined): TechTag | null 
     return null;
   }
 
-  return TECH_TAG_BY_TEXT.get(text.toLowerCase()) ?? null;
+  const key = text.toLowerCase();
+
+  return TECH_TAG_BY_TEXT.get(key) ?? TECH_TAG_BY_ICON_SUFFIX.get(key) ?? null;
 };
 
 export const resolveTechTagByIconSuffix = (suffix: string | null | undefined): TechTag | null => {
@@ -77,4 +79,14 @@ export const resolveTechTagByIconSuffix = (suffix: string | null | undefined): T
   }
 
   return TECH_TAG_BY_ICON_SUFFIX.get(suffix.toLowerCase()) ?? null;
+};
+
+export const resolveTechTags = (
+  keys: string | readonly string[] | null | undefined,
+): TechTag[] => {
+  const list = keys == null ? [] : Array.isArray(keys) ? keys : [keys];
+
+  return list
+    .map((key) => (resolveTechTag(key)))
+    .filter((tag): tag is TechTag => (tag != null));
 };
