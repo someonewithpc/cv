@@ -3,10 +3,17 @@ const { statistics } = Astro.props;
 ---
 
 <header>
-  <h2 id="open-source-heading">
-    <small lang="ja">オープンソース</small>
-    <span class="typewriter">Open Source</span>
-  </h2>
+  <div class="title">
+    <p class="sheet-code monospace" aria-hidden="true">
+      <span>SH-OSS</span>
+      <span>/</span>
+      <span>REV A</span>
+    </p>
+    <h2 id="open-source-heading">
+      <small lang="ja">オープンソース</small>
+      <span class="typewriter">Open Source</span>
+    </h2>
+  </div>
 
   <dl>
     <div>
@@ -40,6 +47,18 @@ header {
   gap: 2rem 3rem;
   align-items: end;
   margin-bottom: 2.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+
+  .sheet-code {
+    display: flex;
+    gap: 0.5ch;
+    margin: 0 0 0.5rem;
+    font-size: 0.625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
 
   h2 {
     display: grid;
@@ -55,7 +74,7 @@ header {
       letter-spacing: 0.08em;
       text-transform: uppercase;
       line-height: 1.05;
-      color: var(--fg-900);
+      color: var(--ink);
     }
   }
 
@@ -63,12 +82,12 @@ header {
     display: flex;
     flex-wrap: wrap;
     gap: 1.5rem 2.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--fg-850);
+    padding-top: 0.25rem;
 
     div {
       display: grid;
       gap: 0.35rem;
+      min-width: 4.5rem;
     }
 
     dt {
@@ -79,7 +98,7 @@ header {
       font-size: 0.625rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--fg-650);
+      color: var(--ink-faint);
 
       [lang='ja'] {
         font-size: 0.5625rem;
@@ -89,10 +108,12 @@ header {
 
     dd {
       font-family: monospace, system-ui;
-      font-size: 1.75rem;
+      font-size: 1.5rem;
       font-weight: 600;
       line-height: 1;
-      color: var(--accent-750);
+      color: var(--accent);
+      border-bottom: 1px dashed var(--line);
+      padding-bottom: 0.15rem;
     }
   }
 
