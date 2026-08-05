@@ -5,6 +5,7 @@ import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
+import WipStamp from '@/components/WipStamp.astro';
 
 import MockScene from './MockScene/MockScene.astro';
 import PlaceLayer from './layers/PlaceLayer.astro';
@@ -38,7 +39,7 @@ const sceneSize = toKiB(sceneBundle.text);
 const layers = {
   main: { name: null },
   place: { name: 'Place Area', pageStyle: 'blueprint' },
-  parameters: { name: 'Edit Parameters', pageStyle: 'blueprint' },
+  parameters: { name: 'Edit Parameters', pageStyle: 'blueprint wip' },
   layouts: { name: 'Layout Styles', pageStyle: 'blueprint' },
   badge: { name: 'Capacity Badge', pageStyle: 'blueprint' },
   dnd: { name: 'Drag & Drop', pageStyle: 'blueprint' },
@@ -59,7 +60,12 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: <MockScene />,
       place: <PlaceLayer />,
-      parameters: <ParametersLayer />,
+      parameters: (
+        <>
+          <ParametersLayer />
+          <WipStamp />
+        </>
+      ),
       layouts: <LayoutsLayer />,
       badge: <BadgeLayer />,
       dnd: <DnDLayer />,
