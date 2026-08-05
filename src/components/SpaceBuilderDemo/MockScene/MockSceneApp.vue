@@ -1081,9 +1081,9 @@ onBeforeUnmount(() => {
                 data-demo-target="param:inner"
                 type="range"
                 min="0"
-                max="4"
-                step="0.1"
-                :value="snapshot?.options.innerDiameter ?? 0"
+                :max="snapshot?.innerDiameterMax ?? 4"
+                step="0.05"
+                :value="Math.min(snapshot?.options.innerDiameter ?? 0, snapshot?.innerDiameterMax ?? 4)"
                 :disabled="!fieldActive('innerDiameter')"
                 @input="onInnerDiameter"
               >

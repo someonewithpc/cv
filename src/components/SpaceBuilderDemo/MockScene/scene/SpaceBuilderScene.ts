@@ -16,6 +16,7 @@ import {
   PlaneGeometry,
   Raycaster,
   RepeatWrapping,
+  RingGeometry,
   Scene,
   SphereGeometry,
   Spherical,
@@ -35,6 +36,7 @@ import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer
 import {
   DEFAULT_LAYOUT_OPTIONS,
   layoutChairs,
+  maxInnerDiameter,
   tagContent,
   type AreaRect,
   type LayoutOptions,
@@ -78,6 +80,8 @@ export type SceneSnapshot = {
   options: LayoutOptions;
   seats: number;
   maxSeats: number;
+  /** Upper bound for the Inner Circle slider given the current SelectArea. */
+  innerDiameterMax: number;
   valid: boolean;
   flash: string | null;
 };
@@ -136,6 +140,7 @@ export class SpaceBuilderScene {
   private selectGroup = new Group();
   private handles = new Group();
   private handleByKey = {} as Record<HandleKey, Group>;
+  private innerGuide!: Mesh;
   private tagObject!: CSS2DObject;
   private tagEl!: HTMLDivElement;
   private chairs: InstancedMesh | null = null;
@@ -282,6 +287,7 @@ export class SpaceBuilderScene {
       },
       seats: result.seats,
       maxSeats: result.maxSeats,
+      innerDiameterMax: this.area ? maxInnerDiameter(this.area, this.options) : 4,
       valid: result.valid,
       flash: this.flash,
     };
@@ -295,6 +301,7 @@ export class SpaceBuilderScene {
         ? { ...this.options.blocks, ...partial.blocks }
         : this.options.blocks,
     };
+    this.clampInnerDiameter();
     this.reflow();
   }
 
@@ -336,6 +343,7 @@ export class SpaceBuilderScene {
   setArea(area: AreaRect) {
     this.area = { ...area };
     this.selectGroup.visible = true;
+    this.clampInnerDiameter();
     this.updateSelectVisual();
     this.reflow();
   }
@@ -883,6 +891,23 @@ export class SpaceBuilderScene {
     this.selectMesh.position.y = 0.12;
     this.selectGroup.add(this.selectMesh);
 
+    // Unit ring (r≈1) — scaled in updateSelectVisual to the Inner Circle radius.
+    const guideGeo = new RingGeometry(0.92, 1, 64);
+    guideGeo.rotateX(-Math.PI / 2);
+    this.innerGuide = new Mesh(
+      guideGeo,
+      new MeshBasicMaterial({
+        color: 0xf4f0ea,
+        transparent: true,
+        opacity: 0.55,
+        depthWrite: false,
+        side: DoubleSide,
+      }),
+    );
+    this.innerGuide.position.y = 0.14;
+    this.innerGuide.visible = false;
+    this.selectGroup.add(this.innerGuide);
+
     const specs: Array<[HandleKey, number]> = [
       ['topLeft', HANDLE_BLUE],
       ['top', HANDLE_BLUE],
@@ -952,7 +977,28 @@ export class SpaceBuilderScene {
     const mat = this.selectMesh.material as MeshBasicMaterial;
     const result = layoutChairs(this.area, this.options);
     mat.color.set(result.valid ? 0x89ab22 : 0xf76d65);
+    this.updateInnerGuide();
     this.updateTagPosition();
+  }
+
+  private clampInnerDiameter() {
+    if (!this.area) return;
+    if (this.options.style !== 'circle' && this.options.style !== 'semi_circle') return;
+    const max = maxInnerDiameter(this.area, this.options);
+    if (this.options.innerDiameter > max) {
+      this.options.innerDiameter = max;
+    }
+  }
+
+  private updateInnerGuide() {
+    const circleLike = this.options.style === 'circle' || this.options.style === 'semi_circle';
+    const radius = Math.max(0, this.options.innerDiameter / 2);
+    if (!this.area || !circleLike || radius < 0.05) {
+      this.innerGuide.visible = false;
+      return;
+    }
+    this.innerGuide.visible = true;
+    this.innerGuide.scale.set(radius, 1, radius);
   }
 
   private updateTagPosition() {
