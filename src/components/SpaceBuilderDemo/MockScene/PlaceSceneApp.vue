@@ -18,7 +18,7 @@ function onPointerDown(event: PointerEvent) {
   if (!scene || !root) return;
   if (event.target instanceof Element && event.target.closest('button, a, input')) return;
 
-  if (event.button === 2 || (event.button === 0 && event.shiftKey)) {
+  if (event.button === 2 || (event.button === 0 && (event.shiftKey || event.ctrlKey || event.metaKey))) {
     scene.beginPan(event.clientX, event.clientY);
     return;
   }
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
     </div>
 
     <p v-if="ready && !loadError" class="hint">
-      Drag handles to edit · empty ground to orbit · Shift / right-drag to pan
+      Drag handles to edit · empty ground to orbit · Shift / Ctrl / right-drag to pan
     </p>
   </div>
 </template>

@@ -320,8 +320,8 @@ function onPointerDown(event: PointerEvent) {
   const scene = sceneRef.value;
   if (!scene) return;
 
-  // Shift+LMB or RMB pans the orbit target (same in every 3D SB view).
-  if (event.button === 2 || (event.button === 0 && event.shiftKey)) {
+  // Shift/Ctrl+LMB or RMB pans the orbit target (same in every 3D SB view).
+  if (event.button === 2 || (event.button === 0 && (event.shiftKey || event.ctrlKey || event.metaKey))) {
     scene.beginPan(event.clientX, event.clientY);
     return;
   }
