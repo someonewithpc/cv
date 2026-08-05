@@ -519,7 +519,7 @@ export class SpaceBuilderScene {
     return this.orbiting;
   }
 
-  /** Screen-space pan of the orbit target (Shift+drag or right-drag). */
+  /** Screen-space pan of the orbit target (Shift/Ctrl-drag or right-drag). */
   beginPan(clientX: number, clientY: number) {
     this.interactionEpoch += 1;
     this.panning = true;
