@@ -103,7 +103,9 @@ article {
 
   > :global(*) {
     flex: 0 0 100%;
-    overflow-y: clip;
+    // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
+    // scrollWidth, leaving a permanent horizontal scrollbar on every page.
+    overflow: clip;
     scroll-snap-align: center;
   }
 }

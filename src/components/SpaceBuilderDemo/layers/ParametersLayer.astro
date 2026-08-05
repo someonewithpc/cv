@@ -1,0 +1,254 @@
+---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+---
+
+<div class="wrapper">
+  <Annotations scale={0.85}>
+    <div class="shell" slot="content" aria-hidden="true">
+      <div class="intro">
+        <span class="eyebrow">uiOptions</span>
+        <strong>Per-layout Options panels</strong>
+        <p>
+          Grid keeps Blocks + Aisle; Circle drops them for Inner Circle — same sidebar shell,
+          different fields from the inferrer.
+        </p>
+      </div>
+      <div class="panels">
+      <div class="panel">
+        <header>Options · Grid</header>
+        <section>
+          <h4>Seats</h4>
+          <label class="field invalid">
+            <span>Seat Count <em>won’t fit</em></span>
+            <input value="48" readonly tabindex="-1">
+          </label>
+          <label class="field">
+            <span>Blocks of</span>
+            <div class="blocks">
+              <input value="4" readonly tabindex="-1">
+              <span>×</span>
+              <input value="3" readonly tabindex="-1">
+            </div>
+          </label>
+        </section>
+        <section>
+          <h4>Spacing</h4>
+          <label class="field">
+            <span>Main Axis <em>20 cm</em></span>
+            <input type="range" min="0" max="100" value="35" disabled tabindex="-1">
+          </label>
+          <label class="field">
+            <span>Cross Axis <em>35 cm</em></span>
+            <input type="range" min="0" max="100" value="50" disabled tabindex="-1">
+          </label>
+          <label class="field">
+            <span>Aisle <em>80 cm</em></span>
+            <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
+          </label>
+        </section>
+        <footer>
+          <span class="action">Clear</span>
+          <span class="action">Reset</span>
+          <span class="action action--primary">Save</span>
+        </footer>
+      </div>
+
+      <div class="panel circle">
+        <header>Options · Circle</header>
+        <section>
+          <h4>Seats</h4>
+          <label class="field">
+            <span>Seat Count</span>
+            <input value="" placeholder="Fill area" readonly tabindex="-1">
+          </label>
+        </section>
+        <section>
+          <h4>Spacing</h4>
+          <label class="field">
+            <span>Main Axis <em>15 cm</em></span>
+            <input type="range" min="0" max="100" value="25" disabled tabindex="-1">
+          </label>
+          <label class="field">
+            <span>Cross Axis <em>40 cm</em></span>
+            <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
+          </label>
+          <label class="field highlight">
+            <span>Inner Circle <em>120 cm</em></span>
+            <input type="range" min="0" max="100" value="40" disabled tabindex="-1">
+          </label>
+        </section>
+        <p class="hint">No Blocks / Aisle — uiOptions from Circle inferrer</p>
+      </div>
+      </div>
+    </div>
+    <Fragment slot="annotations">
+      <ArrowAnnotation tipX={-0.7} tipY={-0.2} angle={145} length={0.4} fontSize={0.085} text="Live userOptions" />
+      <ArrowAnnotation tipX={0.55} tipY={0.25} angle={20} length={0.4} fontSize={0.085} text="Fields depend on layout" />
+      <ArrowAnnotation tipX={-0.35} tipY={0.78} angle={-40} length={0.45} fontSize={0.085} text="Save gated on objectCount ≥ 1" />
+    </Fragment>
+  </Annotations>
+</div>
+
+<style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
+.wrapper {
+  width: min(drawing.$artwork-width * 1.7, 94cqw);
+  max-width: 100%;
+  max-height: 84cqh;
+  aspect-ratio: 1.55 / 1;
+  position: relative;
+}
+
+.shell {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.45rem;
+  padding: 0.4rem;
+  font-family: var(--font-poppins, system-ui, sans-serif);
+}
+
+.intro {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.35rem 0.45rem;
+  color: #1d241c;
+
+  .eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #666;
+  }
+
+  strong {
+    font-size: 0.92rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.62rem;
+    line-height: 1.35;
+    color: #555;
+    max-width: 42rem;
+  }
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  align-content: center;
+  min-height: 0;
+}
+
+.panel {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.65rem;
+  border: 1px solid #565656;
+  border-radius: 0.25rem;
+  background: #323232;
+  color: #f3f3f4;
+  font-size: 0.62rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  header {
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-align: right;
+  }
+
+  section {
+    display: grid;
+    gap: 0.35rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #565656;
+
+    h4 {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #e9ecef;
+    }
+  }
+
+  .field {
+    display: grid;
+    gap: 0.15rem;
+    color: #ced4da;
+
+    em {
+      float: right;
+      font-style: normal;
+      color: #adb5bd;
+    }
+
+    input:not([type='range']) {
+      width: 100%;
+      background: #151515;
+      border: 1px solid #565656;
+      border-radius: 0.25rem;
+      color: #f3f3f4;
+      padding: 0.2rem 0.3rem;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      accent-color: #1ab394;
+    }
+
+    &.invalid input {
+      border-color: #dc3545;
+    }
+
+    &.highlight span {
+      color: #89ab24;
+      font-weight: 700;
+    }
+  }
+
+  .blocks {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  footer {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .hint {
+    margin: 0;
+    color: #adb5bd;
+    font-size: 0.58rem;
+    line-height: 1.35;
+  }
+
+  .action {
+    flex: 1;
+    text-align: center;
+    padding: 0.25rem;
+    border: 1px solid #6c757d;
+    border-radius: 3px;
+    background: #6c757d;
+    color: #fff;
+
+    &--primary {
+      background: #1ab394;
+      border-color: #1ab394;
+    }
+  }
+}
+
+@media (max-width: 36rem) {
+  .panels {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

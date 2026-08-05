@@ -140,6 +140,32 @@ section {
       linear-gradient(to bottom, var(--blueprint-grid) 1px, var(--blueprint) 1px);
   }
 
+  // Unfinished carousel pages — mute the mat + artwork so the WIP stamp reads clearly.
+  &:global(.wip) {
+    --blueprint: color-mix(in oklch, var(--theme-blueprint) 36%, #6a6e6a 64%);
+    --blueprint-grid: color-mix(in oklch, var(--blueprint), #c5c8c5 34%);
+    border-color: var(--blueprint);
+    background-color: var(--blueprint);
+    background-image:
+      linear-gradient(to right, var(--blueprint-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--blueprint-grid) 1px, var(--blueprint) 1px);
+
+    .content > :global(:not(.wip-stamp)) {
+      filter: grayscale(0.72) brightness(0.88) contrast(0.94);
+      opacity: 0.78;
+    }
+
+    .aside {
+      filter: grayscale(0.4) brightness(0.95);
+      opacity: 0.88;
+    }
+
+    table {
+      filter: grayscale(0.3) brightness(0.96);
+      opacity: 0.92;
+    }
+  }
+
   .content {
     grid-column: 1 / 3;
     place-self: center;
@@ -150,6 +176,10 @@ section {
     max-width: 100%;
     min-width: 0;
     height: fit-content;
+    max-height: 100%;
+    // Clip — overflow:auto + fit-content thrashes scrollbars at the fit boundary
+    // and scrollbar-gutter:stable leaves permanent tracks on every blueprint page.
+    overflow: clip;
     display: flex;
     flex-direction: column;
     justify-content: center;

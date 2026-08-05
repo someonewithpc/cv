@@ -1,0 +1,320 @@
+---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+const annotationScale = 0.8;
+const annotationFontSize = 0.1 * annotationScale;
+---
+
+<div class="wrapper">
+  <Annotations scale={annotationScale}>
+    <div class="panel" slot="content" aria-hidden="true">
+      <header>
+        <span class="eyebrow">Add tool</span>
+        <strong>Two place paradigms</strong>
+      </header>
+
+      <div class="fork">
+        <section class="path drag">
+          <h4>Drag &amp; drop</h4>
+          <div class="flow">
+            <div class="step catalog">
+              <div class="catalog-card">
+                <img src="/demos/space-builder/chair-thumb.webp" alt="" width="64" height="48" />
+                <span class="label">Chair</span>
+              </div>
+              <span class="caption">Catalog</span>
+            </div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="step ghost">
+              <div class="ghost-card">
+                <img src="/demos/space-builder/chair-thumb.webp" alt="" width="48" height="36" />
+              </div>
+              <span class="caption">Ghost</span>
+            </div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="step scene">
+              <span class="floor" />
+              <img class="placed" src="/demos/space-builder/chair-thumb.webp" alt="" width="36" height="28" />
+              <span class="caption">Plane hit</span>
+            </div>
+          </div>
+          <p class="note">Single object · no SelectArea · drop commits pose</p>
+        </section>
+
+        <div class="vs" aria-hidden="true">vs</div>
+
+        <section class="path build">
+          <h4>Build fill</h4>
+          <div class="build-mock">
+            <span class="area" />
+            <span class="dot" style="--x:18%; --y:28%" />
+            <span class="dot" style="--x:42%; --y:28%" />
+            <span class="dot" style="--x:66%; --y:28%" />
+            <span class="dot" style="--x:18%; --y:58%" />
+            <span class="dot" style="--x:42%; --y:58%" />
+            <span class="dot" style="--x:66%; --y:58%" />
+          </div>
+          <p class="note">Draw rectangle → live inferrer → Save when objectCount ≥ 1</p>
+        </section>
+      </div>
+    </div>
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        tipX={-0.75}
+        tipY={-0.2}
+        angle={150}
+        length={0.4}
+        fontSize={annotationFontSize}
+        text="Catalog tile · pointerdown"
+      />
+      <ArrowAnnotation
+        tipX={-0.2}
+        tipY={0.55}
+        angle={-45}
+        length={0.42}
+        fontSize={annotationFontSize}
+        text="Raycast interaction plane"
+      />
+      <ArrowAnnotation
+        tipX={0.72}
+        tipY={-0.15}
+        angle={25}
+        length={0.4}
+        fontSize={annotationFontSize}
+        text="Build · SelectArea fill"
+      />
+    </Fragment>
+  </Annotations>
+</div>
+
+<style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
+.wrapper {
+  width: min(drawing.$artwork-width * 1.55, 92cqw);
+  max-width: 100%;
+  height: auto;
+  max-height: 80cqh;
+  aspect-ratio: 1.5 / 1;
+  position: relative;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.55rem;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 14rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #333;
+  border-radius: 0.35rem;
+  background: color-mix(in oklab, var(--blueprint, #dce8f5) 50%, #fff);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  font-family: var(--font-poppins, system-ui, sans-serif);
+  color: #1d241c;
+
+  > header {
+    display: grid;
+    gap: 0.1rem;
+
+    .eyebrow {
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    strong {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.fork {
+  display: grid;
+  grid-template-columns: 1.35fr auto 1fr;
+  gap: 0.5rem;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.path {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid #565656;
+  border-radius: 0.3rem;
+  background: #323232;
+  color: #f3f3f4;
+  min-width: 0;
+
+  h4 {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .note {
+    margin: 0;
+    font-size: 0.56rem;
+    line-height: 1.35;
+    color: #adb5bd;
+  }
+}
+
+.vs {
+  align-self: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.step {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 0.4rem 0.25rem;
+  border: 1px solid #495057;
+  border-radius: 0.25rem;
+  background: #2a2a2a;
+  font-size: 0.55rem;
+
+  &.scene {
+    position: relative;
+    overflow: hidden;
+    background: #212121;
+    min-height: 4.4rem;
+  }
+}
+
+.catalog-card {
+  width: 100%;
+  max-width: 3.6rem;
+  border: 1px solid #495057;
+  border-radius: 0.2rem;
+  overflow: hidden;
+  background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 0.2rem;
+  }
+
+  .label {
+    display: block;
+    background: #212529;
+    text-align: center;
+    font-weight: 700;
+    padding: 0.12rem;
+  }
+}
+
+.ghost-card {
+  rotate: -8deg;
+  padding: 0.2rem;
+  border-radius: 0.2rem;
+  background: color-mix(in oklab, #fff 88%, transparent);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+
+  img {
+    display: block;
+    max-width: 2.8rem;
+    height: auto;
+  }
+}
+
+.floor {
+  width: 85%;
+  max-width: 3.2rem;
+  height: 1.7rem;
+  border-radius: 0.15rem;
+  background: color-mix(in oklab, #89ab22 35%, #3a4a2e);
+}
+
+.placed {
+  position: absolute;
+  left: 52%;
+  top: 38%;
+  translate: -50% -50%;
+  width: 1.8rem;
+  height: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.caption {
+  font-weight: 600;
+}
+
+.arrow {
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.build-mock {
+  position: relative;
+  min-height: 5rem;
+  border-radius: 0.2rem;
+  background: #212121;
+  border: 1px solid #495057;
+  overflow: hidden;
+
+  .area {
+    position: absolute;
+    left: 12%;
+    top: 16%;
+    width: 70%;
+    height: 62%;
+    border: 2px solid #6f8f1c;
+    border-radius: 0.15rem;
+    background: color-mix(in oklab, #89ab22 35%, transparent);
+  }
+
+  .dot {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 0.1rem;
+    background: #5a4030;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@container technical-drawing (orientation: portrait) {
+  .wrapper {
+    width: min(92cqw, calc(76cqh * 1.15));
+    aspect-ratio: 1.1 / 1;
+    max-height: 76cqh;
+  }
+
+  .fork {
+    grid-template-columns: 1fr;
+  }
+
+  .vs {
+    justify-self: center;
+  }
+}
+</style>

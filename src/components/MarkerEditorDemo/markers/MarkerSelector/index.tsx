@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { v4 as uuidv4 } from 'uuid';
-import cx from 'classnames';
 
 import {
   addMarker,
@@ -112,9 +111,12 @@ export function MarkerSelector({
                   : <InlineSVG svgString={resolveMarkerSvgForSpace(marker.resolvedSource, space)} />}
                 {marker.kind === 'editor' && (
                   <>
-                    <span
+                    <button
+                      type="button"
                       className="marker-edit-icon"
                       data-demo-target={`selector:edit:${marker.id}`}
+                      title="Edit marker"
+                      aria-label="Edit marker"
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditedMarkerId(marker.id);
@@ -123,10 +125,12 @@ export function MarkerSelector({
                       }}
                     >
                       <FontAwesomeIcon icon={faPencil} />
-                    </span>
-                    <span
-                      className={cx('marker-duplicate-icon', { disabled: !deleteDisabled })}
+                    </button>
+                    <button
+                      type="button"
+                      className="marker-duplicate-icon"
                       title="Duplicate marker"
+                      aria-label="Duplicate marker"
                       onClick={(e) => {
                         e.stopPropagation();
                         groupedUndo.batch(() => {
@@ -145,10 +149,15 @@ export function MarkerSelector({
                       }}
                     >
                       <FontAwesomeIcon icon={faCopy} />
-                    </span>
-                    <span
-                      className={cx('marker-delete-icon', { disabled: deleteDisabled })}
+                    </button>
+                    <button
+                      type="button"
+                      className="marker-delete-icon"
+                      disabled={deleteDisabled}
                       title={deleteDisabled
+                        ? 'Cannot delete marker: marker is being used'
+                        : 'Delete marker'}
+                      aria-label={deleteDisabled
                         ? 'Cannot delete marker: marker is being used'
                         : 'Delete marker'}
                       onClick={(e) => {
@@ -161,7 +170,7 @@ export function MarkerSelector({
                       }}
                     >
                       <FontAwesomeIcon icon={faTrash} />
-                    </span>
+                    </button>
                   </>
                 )}
               </li>
@@ -186,7 +195,7 @@ export function MarkerSelector({
             aria-disabled="true"
             aria-label="Uploading is not available in this demo"
             title="Uploading is not available in this demo"
-            className="marker-uploader disabled"
+            className="marker-uploader"
           >
             <FontAwesomeIcon icon={faUpload} size="3x" />
           </li>

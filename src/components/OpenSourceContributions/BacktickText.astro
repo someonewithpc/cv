@@ -18,9 +18,10 @@ const segments = text.split(/(`[^`]*`)/g).filter((segment) => segment.length > 0
 
 <style lang="scss">
 .backtick {
-  color: var(--accent);
+  // Keep accent hue but darken enough for 4.5:1 on light sheet backgrounds.
+  color: color-mix(in oklab, var(--accent) 42%, #1a1208 58%);
   font-size: inherit;
   font-style: inherit;
-  font-weight: inherit;
+  font-weight: 600;
 }
 </style>
