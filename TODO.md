@@ -27,6 +27,7 @@
     - [~] Polish to Marker Editor / live SB quality
       - [x] Grass color / normal / displacement
       - [x] Fill vertical page space (stretch content cell)
+      - [x] Blueprint pages (Place / Parameters / Layouts / Badge / DnD)
       - [~] Faster first paint / load
       - [~] Visual parity (chrome + 3D look)
   - [ ] Own theme picker
