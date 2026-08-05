@@ -312,7 +312,6 @@ function onTrustedPointer(event: PointerEvent) {
 function onPointerDown(event: PointerEvent) {
   if (!event.isTrusted) return;
   if (!userControl.value) yieldToUser();
-  if (event.button !== 0) return;
 
   const target = event.target as HTMLElement | null;
   // UI chrome handles its own clicks — don't steal them for orbit/draw.
@@ -320,6 +319,13 @@ function onPointerDown(event: PointerEvent) {
 
   const scene = sceneRef.value;
   if (!scene) return;
+
+  // Shift+LMB or RMB pans the orbit target (same in every 3D SB view).
+  if (event.button === 2 || (event.button === 0 && event.shiftKey)) {
+    scene.beginPan(event.clientX, event.clientY);
+    return;
+  }
+  if (event.button !== 0) return;
 
   if (phase.value === 'placing') {
     scene.setGhostAt(event.clientX, event.clientY);
@@ -359,6 +365,10 @@ function onPointerMove(event: PointerEvent) {
     scene.setGhostAt(event.clientX, event.clientY);
     return;
   }
+  if (event.buttons > 0 && scene.isPanning()) {
+    scene.pan(event.clientX, event.clientY);
+    return;
+  }
   if (event.buttons > 0 && scene.isOrbiting()) {
     scene.orbit(event.clientX, event.clientY);
   }
@@ -381,7 +391,12 @@ function onPointerUp(event: PointerEvent) {
     pushToast({ action: 'Object placed' });
     return;
   }
+  scene?.endPan();
   scene?.endOrbit();
+}
+
+function onContextMenu(event: Event) {
+  event.preventDefault();
 }
 
 function openAdd() {
@@ -669,6 +684,7 @@ onMounted(async () => {
     window.addEventListener('pointerdown', onTrustedPointer, { passive: true });
     root.addEventListener('pointermove', onPointerMove);
     root.addEventListener('pointerdown', onPointerDown);
+    root.addEventListener('contextmenu', onContextMenu);
     root.addEventListener('keydown', onKeyDown);
     window.addEventListener('pointerup', onPointerUp);
   } catch (error) {
@@ -688,6 +704,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('pointerdown', onTrustedPointer);
   rootRef.value?.removeEventListener('pointermove', onPointerMove);
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
+  rootRef.value?.removeEventListener('contextmenu', onContextMenu);
   rootRef.value?.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('pointerup', onPointerUp);
 });
