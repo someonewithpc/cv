@@ -97,6 +97,9 @@ const DEFAULT_OPTIONS: LayoutOptions = {
   blocks: { ...DEFAULT_LAYOUT_OPTIONS.blocks },
 };
 
+const ORBIT_RADIUS_MIN = 6;
+const ORBIT_RADIUS_MAX = 42;
+
 export class SpaceBuilderScene {
   readonly renderer: WebGLRenderer;
   readonly labelRenderer: CSS2DRenderer;
@@ -436,7 +439,7 @@ export class SpaceBuilderScene {
     if (!this.area) return;
     let angle = this.area.angle + delta;
     if (snap) {
-      const step = Math.PI / 12;
+      const step = Math.PI / 8;
       angle = Math.round(angle / step) * step;
     }
     this.setArea({ ...this.area, angle });
@@ -519,6 +522,23 @@ export class SpaceBuilderScene {
     return this.orbiting;
   }
 
+  getOrbitRadius() {
+    return this.spherical.radius;
+  }
+
+  setOrbitRadius(radius: number) {
+    this.interactionEpoch += 1;
+    this.spherical.radius = Math.min(ORBIT_RADIUS_MAX, Math.max(ORBIT_RADIUS_MIN, radius));
+    this.updateCamera();
+    this.updateTagPosition();
+  }
+
+  /** Multiply orbit radius (e.g. wheel / pinch). Values > 1 zoom out. */
+  dolly(factor: number) {
+    if (!Number.isFinite(factor) || factor <= 0) return;
+    this.setOrbitRadius(this.spherical.radius * factor);
+  }
+
   /** Screen-space pan of the orbit target (Shift/Ctrl-drag or right-drag). */
   beginPan(clientX: number, clientY: number) {
     this.interactionEpoch += 1;
@@ -534,7 +554,12 @@ export class SpaceBuilderScene {
     const dx = clientX - this.lastPointer.x;
     const dy = clientY - this.lastPointer.y;
     this.lastPointer.set(clientX, clientY);
+    this.panByScreenDelta(dx, dy);
+  }
 
+  /** Apply a pan from screen-pixel deltas (also used by two-finger drag). */
+  panByScreenDelta(dx: number, dy: number) {
+    if (dx === 0 && dy === 0) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
     if (rect.height <= 0) return;
 
@@ -590,8 +615,20 @@ export class SpaceBuilderScene {
     return new Vector3(this.area.x, 0, this.area.z);
   }
 
+  /** World position of a SelectArea-local XZ point (0,0 = center), for plane annotations. */
+  getAreaLocalWorldPosition(localX: number, localZ: number): Vector3 | null {
+    if (!this.area || !this.selectGroup.visible) return null;
+    const cos = Math.cos(this.area.angle);
+    const sin = Math.sin(this.area.angle);
+    return new Vector3(
+      this.area.x + localX * cos + localZ * sin,
+      0.05,
+      this.area.z - localX * sin + localZ * cos,
+    );
+  }
+
   /** Raycast SelectArea lollipops or fill; null when the pointer is on empty ground. */
-  pickHandle(clientX: number, clientY: number): HandleKey | null {
+  pickHandle(clientX: number, clientY: number, options?: { screenSlop?: number }): HandleKey | null {
     if (!this.area || !this.selectGroup.visible) return null;
     const rect = this.renderer.domElement.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
@@ -608,6 +645,26 @@ export class SpaceBuilderScene {
     const handleHits = this.raycaster.intersectObjects(handleMeshes, false);
     const handleKey = handleHits[0]?.object.userData.handleKey;
     if (typeof handleKey === 'string') return handleKey as HandleKey;
+
+    const slop = options?.screenSlop ?? 0;
+    if (slop > 0) {
+      let best: HandleKey | null = null;
+      let bestDist = slop;
+      for (const key of Object.keys(this.handleByKey) as HandleKey[]) {
+        const world = this.getHandleWorldPosition(key);
+        if (!world) continue;
+        const projected = world.project(this.camera);
+        if (Math.abs(projected.z) > 1) continue;
+        const sx = rect.left + (projected.x * 0.5 + 0.5) * rect.width;
+        const sy = rect.top + (-projected.y * 0.5 + 0.5) * rect.height;
+        const dist = Math.hypot(sx - clientX, sy - clientY);
+        if (dist <= bestDist) {
+          bestDist = dist;
+          best = key;
+        }
+      }
+      if (best) return best;
+    }
 
     // Dragging the green fill moves the area (same as the center handle) — otherwise
     // the pointer falls through to orbit and the camera nudges while you "drag the area".
@@ -630,7 +687,7 @@ export class SpaceBuilderScene {
     return true;
   }
 
-  updateHandleDrag(clientX: number, clientY: number) {
+  updateHandleDrag(clientX: number, clientY: number, options?: { snap?: boolean }) {
     if (!this.draggingHandle || !this.handleAreaStart) return;
     const point = this.clientToGround(clientX, clientY);
     if (!point) return;
@@ -646,10 +703,12 @@ export class SpaceBuilderScene {
     }
 
     if (this.draggingHandle === 'rotate') {
-      const angle = Math.atan2(
-        point.x - start.x,
-        start.z - point.z,
-      );
+      // Space Builder SelectArea: atan2(dx, dz) - π so the rest pose (handle on −Z) is 0.
+      let angle = Math.atan2(point.x - start.x, point.z - start.z) - Math.PI;
+      if (options?.snap) {
+        const step = Math.PI / 8;
+        angle = Math.round(angle / step) * step;
+      }
       this.setArea({ ...start, angle });
       return;
     }
@@ -934,6 +993,8 @@ export class SpaceBuilderScene {
     this.tagEl = document.createElement('div');
     this.tagEl.className = 'space-builder-tag';
     this.tagObject = new CSS2DObject(this.tagEl);
+    // Anchor at the top of the pill so the body hangs below the area edge.
+    this.tagObject.center.set(0.5, 0);
     this.tagObject.visible = false;
     this.scene.add(this.tagObject);
 
@@ -1020,7 +1081,8 @@ export class SpaceBuilderScene {
       Math.abs(denomCos) > 1e-4 ? (h / 2) / Math.abs(denomCos) : Infinity,
       Math.abs(denomSin) > 1e-4 ? (w / 2) / Math.abs(denomSin) : Infinity,
     );
-    const offset = Number.isFinite(r) ? r + 0.55 : 1.2;
+    // Extra pad past the silhouette so the capacity pill clears chairs / handles.
+    const offset = Number.isFinite(r) ? r + 0.95 : 1.5;
     this.tagObject.position.set(
       this.area.x + offset * Math.sin(cameraAngle),
       0.05,
