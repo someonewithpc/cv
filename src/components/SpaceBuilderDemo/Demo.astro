@@ -109,8 +109,9 @@ type Layer = keyof typeof layers;
       ),
       parameters: (
         <PostIt background="#dfd" color="black">
-          <strong>WIP</strong> — Each Arrange inferrer declares <code>uiOptions</code>, so Grid
-          shows Blocks + Aisle while Circle swaps those for Inner Circle.
+          <strong>WIP</strong> — Inferrers declare <code>uiOptions</code>. Grid keeps Blocks +
+          Aisle; Circle drops them for Inner Circle. Seat Count over max fails Save
+          (<code>objectCount ≥ 1</code>).
         </PostIt>
       ),
       layouts: (

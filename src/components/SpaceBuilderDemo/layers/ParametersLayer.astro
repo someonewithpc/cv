@@ -1,91 +1,180 @@
 ---
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+const annotationScale = 0.85;
+const annotationFontSize = 0.1 * annotationScale;
 ---
 
 <div class="wrapper">
-  <Annotations scale={0.85}>
-    <div class="shell" slot="content" aria-hidden="true">
-      <div class="intro">
-        <span class="eyebrow">uiOptions</span>
-        <strong>Per-layout Options panels</strong>
-        <p>
-          Grid keeps Blocks + Aisle; Circle drops them for Inner Circle — same sidebar shell,
-          different fields from the inferrer.
-        </p>
-      </div>
-      <div class="panels">
+  <Annotations scale={annotationScale}>
+    <div class="diagram" slot="content" aria-hidden="true">
       <div class="panel">
-        <header>Options · Grid</header>
-        <section>
-          <h4>Seats</h4>
-          <label class="field invalid">
-            <span>Seat Count <em>won’t fit</em></span>
-            <input value="48" readonly tabindex="-1">
-          </label>
-          <label class="field">
-            <span>Blocks of</span>
-            <div class="blocks">
-              <input value="4" readonly tabindex="-1">
-              <span>×</span>
-              <input value="3" readonly tabindex="-1">
-            </div>
-          </label>
-        </section>
-        <section>
-          <h4>Spacing</h4>
-          <label class="field">
-            <span>Main Axis <em>20 cm</em></span>
-            <input type="range" min="0" max="100" value="35" disabled tabindex="-1">
-          </label>
-          <label class="field">
-            <span>Cross Axis <em>35 cm</em></span>
-            <input type="range" min="0" max="100" value="50" disabled tabindex="-1">
-          </label>
-          <label class="field">
-            <span>Aisle <em>80 cm</em></span>
-            <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
-          </label>
-        </section>
-        <footer>
-          <span class="action">Clear</span>
-          <span class="action">Reset</span>
-          <span class="action action--primary">Save</span>
-        </footer>
-      </div>
+        <header>
+          <span class="eyebrow">uiOptions</span>
+          <strong>Same shell · fields from the inferrer</strong>
+        </header>
 
-      <div class="panel circle">
-        <header>Options · Circle</header>
-        <section>
-          <h4>Seats</h4>
-          <label class="field">
-            <span>Seat Count</span>
-            <input value="" placeholder="Fill area" readonly tabindex="-1">
-          </label>
-        </section>
-        <section>
-          <h4>Spacing</h4>
-          <label class="field">
-            <span>Main Axis <em>15 cm</em></span>
-            <input type="range" min="0" max="100" value="25" disabled tabindex="-1">
-          </label>
-          <label class="field">
-            <span>Cross Axis <em>40 cm</em></span>
-            <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
-          </label>
-          <label class="field highlight">
-            <span>Inner Circle <em>120 cm</em></span>
-            <input type="range" min="0" max="100" value="40" disabled tabindex="-1">
-          </label>
-        </section>
-        <p class="hint">No Blocks / Aisle — uiOptions from Circle inferrer</p>
-      </div>
+        <div class="stage">
+          <div class="panels">
+            <div class="options grid">
+              <div class="options-title">Options · Grid</div>
+              <section>
+                <h4>
+                  Seats
+                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
+                    <rect x="2" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
+                    <rect x="3" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
+                    <rect x="14" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
+                    <rect x="15" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
+                  </svg>
+                </h4>
+                <label class="field invalid">
+                  <span>Seat Count</span>
+                  <input value="48" readonly tabindex="-1">
+                  <em class="feedback">Too many seats for this area (max 36)</em>
+                </label>
+                <label class="field">
+                  <span>Blocks of</span>
+                  <div class="blocks">
+                    <input value="4" readonly tabindex="-1">
+                    <span>×</span>
+                    <input value="3" readonly tabindex="-1">
+                  </div>
+                </label>
+              </section>
+              <section>
+                <h4>
+                  Spacing
+                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
+                    <path
+                      d="M3 8h6M15 8h6M11 4v8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </h4>
+                <label class="field range">
+                  <span>Side to Side <em>20 cm</em></span>
+                  <input type="range" min="0" max="100" value="35" disabled tabindex="-1">
+                </label>
+                <label class="field range">
+                  <span>Front to Back <em>35 cm</em></span>
+                  <input type="range" min="0" max="100" value="50" disabled tabindex="-1">
+                </label>
+                <label class="field range present">
+                  <span>Aisle Spacing <em>80 cm</em></span>
+                  <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
+                </label>
+              </section>
+              <footer>
+                <span class="action">Clear</span>
+                <span class="action">Reset</span>
+                <span class="action muted">Save</span>
+              </footer>
+            </div>
+
+            <div class="swap" aria-hidden="true">
+              <span class="swap-pill">layout swap</span>
+              <span class="swap-arrow">↔</span>
+              <ul>
+                <li><strong>Grid</strong> keeps Blocks + Aisle</li>
+                <li><strong>Circle</strong> swaps those for Inner Circle</li>
+              </ul>
+            </div>
+
+            <div class="options circle">
+              <div class="options-title">Options · Circle</div>
+              <section>
+                <h4>
+                  Seats
+                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
+                    <rect x="2" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
+                    <rect x="3" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
+                    <rect x="14" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
+                    <rect x="15" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
+                  </svg>
+                </h4>
+                <label class="field">
+                  <span>Seat Count</span>
+                  <input value="" placeholder="Fill area" readonly tabindex="-1">
+                </label>
+                <label class="field absent">
+                  <span>Blocks of <em>not in uiOptions</em></span>
+                  <div class="blocks">
+                    <input value="" disabled tabindex="-1">
+                    <span>×</span>
+                    <input value="" disabled tabindex="-1">
+                  </div>
+                </label>
+              </section>
+              <section>
+                <h4>
+                  Spacing
+                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
+                    <path
+                      d="M3 8h6M15 8h6M11 4v8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </h4>
+                <label class="field range">
+                  <span>Side to Side <em>15 cm</em></span>
+                  <input type="range" min="0" max="100" value="25" disabled tabindex="-1">
+                </label>
+                <label class="field range">
+                  <span>Front to Back <em>40 cm</em></span>
+                  <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
+                </label>
+                <label class="field range absent">
+                  <span>Aisle Spacing <em>not in uiOptions</em></span>
+                  <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
+                </label>
+                <label class="field range present">
+                  <span>Inner Circle <em>120 cm</em></span>
+                  <input type="range" min="0" max="100" value="40" disabled tabindex="-1">
+                </label>
+              </section>
+              <footer>
+                <span class="action">Clear</span>
+                <span class="action">Reset</span>
+                <span class="action primary">Save</span>
+              </footer>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <Fragment slot="annotations">
-      <ArrowAnnotation tipX={-0.7} tipY={-0.2} angle={145} length={0.4} fontSize={0.085} text="Live userOptions" />
-      <ArrowAnnotation tipX={0.55} tipY={0.25} angle={20} length={0.4} fontSize={0.085} text="Fields depend on layout" />
-      <ArrowAnnotation tipX={-0.35} tipY={0.78} angle={-40} length={0.45} fontSize={0.085} text="Save gated on objectCount ≥ 1" />
+      <ArrowAnnotation
+        tipX={-0.78}
+        tipY={-0.15}
+        angle={150}
+        length={0.42}
+        fontSize={annotationFontSize}
+        text="Seat Count validity · objectCount ≥ 1"
+      />
+      <ArrowAnnotation
+        tipX={0.05}
+        tipY={0.55}
+        angle={-55}
+        length={0.4}
+        fontSize={annotationFontSize}
+        text="uiOptions per inferrer"
+      />
+      <ArrowAnnotation
+        tipX={0.78}
+        tipY={-0.05}
+        angle={25}
+        length={0.4}
+        fontSize={annotationFontSize}
+        text="Inner Circle replaces Aisle"
+      />
     </Fragment>
   </Annotations>
 </div>
@@ -96,89 +185,153 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 .wrapper {
   width: min(drawing.$artwork-width * 1.7, 94cqw);
   max-width: 100%;
+  height: auto;
   max-height: 84cqh;
   aspect-ratio: 1.55 / 1;
   position: relative;
 }
 
-.shell {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0.45rem;
-  padding: 0.4rem;
-  font-family: var(--font-poppins, system-ui, sans-serif);
+.diagram {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 14rem;
 }
 
-.intro {
+.panel {
+  position: absolute;
+  inset: 3%;
   display: grid;
-  gap: 0.15rem;
-  padding: 0.35rem 0.45rem;
+  grid-template-rows: auto 1fr;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #333;
+  border-radius: 0.35rem;
+  background: color-mix(in oklab, var(--blueprint, #dce8f5) 55%, #fff);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  font-family: var(--font-poppins, system-ui, sans-serif);
   color: #1d241c;
 
-  .eyebrow {
-    font-size: 0.62rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #666;
-  }
+  header {
+    display: grid;
+    gap: 0.1rem;
 
-  strong {
-    font-size: 0.92rem;
-  }
+    .eyebrow {
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #666;
+    }
 
-  p {
-    margin: 0;
-    font-size: 0.62rem;
-    line-height: 1.35;
-    color: #555;
-    max-width: 42rem;
+    strong {
+      font-size: 0.95rem;
+    }
   }
+}
+
+.stage {
+  position: relative;
+  min-height: 0;
+  border-radius: 0.25rem;
+  background: linear-gradient(180deg, #2a2a2a 0%, #212121 100%);
+  border: 1px solid #444;
+  overflow: hidden;
+  padding: 0.55rem;
 }
 
 .panels {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
-  align-content: center;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.45rem;
+  align-items: stretch;
+  height: 100%;
   min-height: 0;
 }
 
-.panel {
+.swap {
   display: grid;
-  gap: 0.45rem;
-  padding: 0.65rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.25rem;
+  align-self: center;
+  color: #ced4da;
+  text-align: center;
+  font-size: 0.52rem;
+  line-height: 1.3;
+  max-width: 5.6rem;
+
+  .swap-pill {
+    padding: 0.12rem 0.35rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, #89ab22 55%, #111);
+    color: #f4ffe8;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.48rem;
+  }
+
+  .swap-arrow {
+    font-size: 1.1rem;
+    color: #89ab22;
+    line-height: 1;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  strong {
+    color: #f3f3f4;
+  }
+}
+
+.options {
+  display: grid;
+  grid-template-rows: auto 1fr 1fr auto;
+  gap: 0.35rem;
+  padding: 0.5rem 0.55rem;
   border: 1px solid #565656;
   border-radius: 0.25rem;
   background: #323232;
   color: #f3f3f4;
-  font-size: 0.62rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 0.58rem;
+  min-height: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 
-  header {
+  .options-title {
     font-weight: 700;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     text-align: right;
   }
 
   section {
     display: grid;
-    gap: 0.35rem;
-    padding-bottom: 0.35rem;
+    gap: 0.28rem;
+    align-content: start;
+    padding-bottom: 0.3rem;
     border-bottom: 1px solid #565656;
+    min-height: 0;
 
     h4 {
       margin: 0;
-      font-size: 0.68rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+      font-size: 0.64rem;
       font-weight: 600;
       color: #e9ecef;
+      padding-bottom: 0.15rem;
+      border-bottom: 1px solid #444;
     }
   }
 
   .field {
     display: grid;
-    gap: 0.15rem;
+    gap: 0.12rem;
     color: #ced4da;
 
     em {
@@ -193,7 +346,8 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
       border: 1px solid #565656;
       border-radius: 0.25rem;
       color: #f3f3f4;
-      padding: 0.2rem 0.3rem;
+      padding: 0.18rem 0.28rem;
+      font: inherit;
     }
 
     input[type='range'] {
@@ -205,43 +359,84 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
       border-color: #dc3545;
     }
 
-    &.highlight span {
+    .feedback {
+      float: none;
+      color: #f1aeb5;
+      font-size: 0.5rem;
+    }
+
+    &.present span {
       color: #89ab24;
       font-weight: 700;
+    }
+
+    &.absent {
+      opacity: 0.42;
+
+      span em {
+        color: #f76d65;
+        font-weight: 600;
+      }
     }
   }
 
   .blocks {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    gap: 0.25rem;
+    gap: 0.2rem;
     align-items: center;
   }
 
   footer {
     display: flex;
-    gap: 0.3rem;
-  }
-
-  .hint {
-    margin: 0;
-    color: #adb5bd;
-    font-size: 0.58rem;
-    line-height: 1.35;
+    gap: 0.25rem;
   }
 
   .action {
     flex: 1;
     text-align: center;
-    padding: 0.25rem;
+    padding: 0.22rem;
     border: 1px solid #6c757d;
     border-radius: 3px;
     background: #6c757d;
     color: #fff;
+    font-size: 0.55rem;
 
-    &--primary {
+    &.primary {
       background: #1ab394;
       border-color: #1ab394;
+    }
+
+    &.muted {
+      opacity: 0.45;
+    }
+  }
+}
+
+@container technical-drawing (orientation: portrait) {
+  .wrapper {
+    width: min(94cqw, calc(74cqh * 1.25));
+    aspect-ratio: 1.15 / 1;
+    max-height: 74cqh;
+  }
+
+  .panels {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 0.4rem;
+  }
+
+  .swap {
+    max-width: none;
+    grid-auto-flow: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.55rem;
+    text-align: left;
+
+    ul {
+      display: flex;
+      gap: 0.75rem;
     }
   }
 }
@@ -249,6 +444,13 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 @media (max-width: 36rem) {
   .panels {
     grid-template-columns: 1fr;
+  }
+
+  .swap {
+    max-width: none;
+    grid-auto-flow: column;
+    justify-content: center;
+    gap: 0.5rem;
   }
 }
 </style>
