@@ -11,30 +11,30 @@ const annotationFontSize = 0.1 * annotationScale;
     <div class="diagram" slot="content" aria-hidden="true">
       <div class="panel">
         <header>
-          <span class="eyebrow">uiOptions</span>
-          <strong>Same shell · fields from the inferrer</strong>
+          <span class="eyebrow">Options sidebar</span>
+          <strong>Same shell · fields from the active layout</strong>
+          <p class="lede">
+            Change layout and the Options form reshapes. Shared spacing stays; layout-only
+            controls (Blocks, Aisle, Inner Circle) appear or vanish with the chip.
+          </p>
         </header>
 
         <div class="stage">
           <div class="panels">
-            <div class="options grid">
-              <div class="options-title">Options · Grid</div>
+            <article class="options grid">
+              <header class="options-head">
+                <span class="layout-chip">Grid</span>
+                <span class="options-title">Options</span>
+              </header>
+
               <section>
-                <h4>
-                  Seats
-                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
-                    <rect x="2" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
-                    <rect x="3" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
-                    <rect x="14" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
-                    <rect x="15" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
-                  </svg>
-                </h4>
+                <h4>Seats</h4>
                 <label class="field invalid">
                   <span>Seat Count</span>
                   <input value="48" readonly tabindex="-1">
-                  <em class="feedback">Too many seats for this area (max 36)</em>
+                  <em class="feedback">Too many for this area (max 36)</em>
                 </label>
-                <label class="field">
+                <label class="field present">
                   <span>Blocks of</span>
                   <div class="blocks">
                     <input value="4" readonly tabindex="-1">
@@ -43,19 +43,9 @@ const annotationFontSize = 0.1 * annotationScale;
                   </div>
                 </label>
               </section>
+
               <section>
-                <h4>
-                  Spacing
-                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
-                    <path
-                      d="M3 8h6M15 8h6M11 4v8"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                </h4>
+                <h4>Spacing</h4>
                 <label class="field range">
                   <span>Side to Side <em>20 cm</em></span>
                   <input type="range" min="0" max="100" value="35" disabled tabindex="-1">
@@ -69,60 +59,47 @@ const annotationFontSize = 0.1 * annotationScale;
                   <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
                 </label>
               </section>
+
               <footer>
                 <span class="action">Clear</span>
                 <span class="action">Reset</span>
-                <span class="action muted">Save</span>
+                <span class="action muted" title="Blocked while seat count is invalid">Save</span>
               </footer>
-            </div>
+            </article>
 
             <div class="swap" aria-hidden="true">
-              <span class="swap-pill">layout swap</span>
-              <span class="swap-arrow">↔</span>
-              <ul>
-                <li><strong>Grid</strong> keeps Blocks + Aisle</li>
-                <li><strong>Circle</strong> swaps those for Inner Circle</li>
-              </ul>
+              <span class="swap-label">Grid → Circle</span>
+              <span class="swap-arrow">→</span>
+              <p class="swap-note">
+                One Options chrome. Only the declared fields change.
+              </p>
             </div>
 
-            <div class="options circle">
-              <div class="options-title">Options · Circle</div>
+            <article class="options circle">
+              <header class="options-head">
+                <span class="layout-chip circle">Circle</span>
+                <span class="options-title">Options</span>
+              </header>
+
               <section>
-                <h4>
-                  Seats
-                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
-                    <rect x="2" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
-                    <rect x="3" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
-                    <rect x="14" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
-                    <rect x="15" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
-                  </svg>
-                </h4>
+                <h4>Seats</h4>
                 <label class="field">
                   <span>Seat Count</span>
                   <input value="" placeholder="Fill area" readonly tabindex="-1">
                 </label>
                 <label class="field absent">
-                  <span>Blocks of <em>not in uiOptions</em></span>
+                  <span>Blocks of</span>
                   <div class="blocks">
                     <input value="" disabled tabindex="-1">
                     <span>×</span>
                     <input value="" disabled tabindex="-1">
                   </div>
+                  <em class="gone">Not used by Circle</em>
                 </label>
               </section>
+
               <section>
-                <h4>
-                  Spacing
-                  <svg viewBox="0 0 24 16" width="16" height="11" aria-hidden="true">
-                    <path
-                      d="M3 8h6M15 8h6M11 4v8"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                </h4>
+                <h4>Spacing</h4>
                 <label class="field range">
                   <span>Side to Side <em>15 cm</em></span>
                   <input type="range" min="0" max="100" value="25" disabled tabindex="-1">
@@ -132,48 +109,50 @@ const annotationFontSize = 0.1 * annotationScale;
                   <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
                 </label>
                 <label class="field range absent">
-                  <span>Aisle Spacing <em>not in uiOptions</em></span>
+                  <span>Aisle Spacing</span>
                   <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
+                  <em class="gone">Not used by Circle</em>
                 </label>
                 <label class="field range present">
                   <span>Inner Circle <em>120 cm</em></span>
                   <input type="range" min="0" max="100" value="40" disabled tabindex="-1">
                 </label>
               </section>
+
               <footer>
                 <span class="action">Clear</span>
                 <span class="action">Reset</span>
                 <span class="action primary">Save</span>
               </footer>
-            </div>
+            </article>
           </div>
         </div>
       </div>
     </div>
     <Fragment slot="annotations">
       <ArrowAnnotation
-        tipX={-0.78}
-        tipY={-0.15}
-        angle={150}
-        length={0.42}
-        fontSize={annotationFontSize}
-        text="Seat Count validity · objectCount ≥ 1"
-      />
-      <ArrowAnnotation
-        tipX={0.05}
-        tipY={0.55}
-        angle={-55}
+        tipX={-0.72}
+        tipY={-0.22}
+        angle={155}
         length={0.4}
         fontSize={annotationFontSize}
-        text="uiOptions per inferrer"
+        text="Over capacity · Save blocked"
       />
       <ArrowAnnotation
-        tipX={0.78}
-        tipY={-0.05}
-        angle={25}
-        length={0.4}
+        tipX={0.02}
+        tipY={0.58}
+        angle={-70}
+        length={0.36}
         fontSize={annotationFontSize}
-        text="Inner Circle replaces Aisle"
+        text="Declared fields only"
+      />
+      <ArrowAnnotation
+        tipX={0.74}
+        tipY={0.12}
+        angle={20}
+        length={0.38}
+        fontSize={annotationFontSize}
+        text="Inner Circle for rings"
       />
     </Fragment>
   </Annotations>
@@ -183,11 +162,11 @@ const annotationFontSize = 0.1 * annotationScale;
 @use '@/scss/technical-drawing' as drawing;
 
 .wrapper {
-  width: min(drawing.$artwork-width * 1.7, 94cqw);
+  width: min(drawing.$artwork-width * 1.72, 94cqw);
   max-width: 100%;
   height: auto;
   max-height: 84cqh;
-  aspect-ratio: 1.55 / 1;
+  aspect-ratio: 1.52 / 1;
   position: relative;
 }
 
@@ -203,8 +182,8 @@ const annotationFontSize = 0.1 * annotationScale;
   inset: 3%;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 0.5rem;
-  padding: 0.65rem 0.75rem;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem 0.7rem;
   border: 1px solid #333;
   border-radius: 0.35rem;
   background: color-mix(in oklab, var(--blueprint, #dce8f5) 55%, #fff);
@@ -212,9 +191,9 @@ const annotationFontSize = 0.1 * annotationScale;
   font-family: var(--font-poppins, system-ui, sans-serif);
   color: #1d241c;
 
-  header {
+  > header {
     display: grid;
-    gap: 0.1rem;
+    gap: 0.15rem;
 
     .eyebrow {
       font-size: 0.62rem;
@@ -225,6 +204,15 @@ const annotationFontSize = 0.1 * annotationScale;
 
     strong {
       font-size: 0.95rem;
+      line-height: 1.2;
+    }
+
+    .lede {
+      margin: 0.15rem 0 0;
+      max-width: 62ch;
+      font-size: 0.68rem;
+      line-height: 1.35;
+      color: #3d453a;
     }
   }
 }
@@ -241,8 +229,8 @@ const annotationFontSize = 0.1 * annotationScale;
 
 .panels {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0.45rem;
+  grid-template-columns: 1fr minmax(4.5rem, 0.32fr) 1fr;
+  gap: 0.4rem;
   align-items: stretch;
   height: 100%;
   min-height: 0;
@@ -252,45 +240,42 @@ const annotationFontSize = 0.1 * annotationScale;
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
   align-self: center;
   color: #ced4da;
   text-align: center;
-  font-size: 0.52rem;
-  line-height: 1.3;
-  max-width: 5.6rem;
+  padding: 0.2rem;
 
-  .swap-pill {
-    padding: 0.12rem 0.35rem;
-    border-radius: 999px;
+  .swap-label {
+    padding: 0.14rem 0.4rem;
+    border-radius: 0.2rem;
     background: color-mix(in oklab, #89ab22 55%, #111);
     color: #f4ffe8;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    font-size: 0.48rem;
+    font-size: 0.5rem;
   }
 
   .swap-arrow {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     color: #89ab22;
     line-height: 1;
+    font-weight: 700;
   }
 
-  ul {
+  .swap-note {
     margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  strong {
-    color: #f3f3f4;
+    font-size: 0.5rem;
+    line-height: 1.35;
+    color: #adb5bd;
+    max-width: 7.5rem;
   }
 }
 
 .options {
   display: grid;
-  grid-template-rows: auto 1fr 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   gap: 0.35rem;
   padding: 0.5rem 0.55rem;
   border: 1px solid #565656;
@@ -301,10 +286,34 @@ const annotationFontSize = 0.1 * annotationScale;
   min-height: 0;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 
+  .options-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+  }
+
+  .layout-chip {
+    display: inline-grid;
+    place-items: center;
+    padding: 0.12rem 0.4rem;
+    border-radius: 0.2rem;
+    background: #89ab24;
+    color: #1a1f12;
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+
+    &.circle {
+      background: #1ab394;
+      color: #041510;
+    }
+  }
+
   .options-title {
     font-weight: 700;
     font-size: 0.72rem;
-    text-align: right;
+    color: #e9ecef;
   }
 
   section {
@@ -317,10 +326,6 @@ const annotationFontSize = 0.1 * annotationScale;
 
     h4 {
       margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.35rem;
       font-size: 0.64rem;
       font-weight: 600;
       color: #e9ecef;
@@ -365,17 +370,23 @@ const annotationFontSize = 0.1 * annotationScale;
       font-size: 0.5rem;
     }
 
-    &.present span {
+    .gone {
+      float: none;
+      color: #f76d65;
+      font-size: 0.48rem;
+      font-weight: 600;
+    }
+
+    &.present > span {
       color: #89ab24;
       font-weight: 700;
     }
 
     &.absent {
-      opacity: 0.42;
+      opacity: 0.48;
 
-      span em {
-        color: #f76d65;
-        font-weight: 600;
+      input {
+        opacity: 0.7;
       }
     }
   }
@@ -408,7 +419,7 @@ const annotationFontSize = 0.1 * annotationScale;
     }
 
     &.muted {
-      opacity: 0.45;
+      opacity: 0.4;
     }
   }
 }
@@ -416,8 +427,12 @@ const annotationFontSize = 0.1 * annotationScale;
 @container technical-drawing (orientation: portrait) {
   .wrapper {
     width: min(94cqw, calc(74cqh * 1.25));
-    aspect-ratio: 1.15 / 1;
+    aspect-ratio: 1.12 / 1;
     max-height: 74cqh;
+  }
+
+  .panel > header .lede {
+    font-size: 0.62rem;
   }
 
   .panels {
@@ -427,16 +442,15 @@ const annotationFontSize = 0.1 * annotationScale;
   }
 
   .swap {
-    max-width: none;
     grid-auto-flow: column;
     justify-content: center;
     align-items: center;
     gap: 0.55rem;
     text-align: left;
 
-    ul {
-      display: flex;
-      gap: 0.75rem;
+    .swap-note {
+      max-width: 14rem;
+      text-align: left;
     }
   }
 }
@@ -447,7 +461,6 @@ const annotationFontSize = 0.1 * annotationScale;
   }
 
   .swap {
-    max-width: none;
     grid-auto-flow: column;
     justify-content: center;
     gap: 0.5rem;

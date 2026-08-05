@@ -39,7 +39,7 @@ const sceneSize = toKiB(sceneBundle.text);
 const layers = {
   main: { name: null },
   place: { name: 'Place Area', pageStyle: 'blueprint' },
-  parameters: { name: 'Edit Parameters', pageStyle: 'blueprint wip' },
+  parameters: { name: 'Edit Parameters', pageStyle: 'blueprint' },
   layouts: { name: 'Layout Styles', pageStyle: 'blueprint wip' },
   badge: { name: 'Capacity Badge', pageStyle: 'blueprint wip' },
   dnd: { name: 'Drag & Drop', pageStyle: 'blueprint wip' },
@@ -60,12 +60,7 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: <MockScene />,
       place: <PlaceLayer />,
-      parameters: (
-        <>
-          <ParametersLayer />
-          <WipStamp />
-        </>
-      ),
+      parameters: <ParametersLayer />,
       layouts: (
         <>
           <LayoutsLayer />
@@ -104,8 +99,8 @@ type Layer = keyof typeof layers;
       ),
       parameters: (
         <PostIt background="#dfd" color="black">
-          Inferrers declare <code>uiOptions</code>. Grid keeps Blocks + Aisle; Circle swaps those
-          for Inner Circle. Seat Count over max fails Save (<code>objectCount ≥ 1</code>).
+          One Options shell; each layout picks its fields. Grid shows Blocks + Aisle; Circle
+          swaps those for Inner Circle. Seat Count over max keeps Save off.
         </PostIt>
       ),
       layouts: (
