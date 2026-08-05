@@ -4,12 +4,11 @@ import { createElement } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { camelCase, snakeCase, partition } from 'lodash';
-import type { XastElement } from 'svgo/browser';
 
 import { dataUrlToSvg, svgToDataUrl } from '@/store';
 import type { MarkerType, SpaceType } from '@/store';
 
-import { optimizeAndParseSVG } from '../../optimizeAndParseSVGToComponent';
+import { parseSVGDocument } from '../../optimizeAndParseSVGToComponent';
 import { markers } from '..';
 import type { StateType } from '..';
 
@@ -120,23 +119,17 @@ export function deserializeMarker(storeMarker: MarkerType | undefined) {
   if (!storeMarker?.source) return null;
 
   const svg = storeMarker.resolvedSource ?? dataUrlToSvg(storeMarker.source);
-  const root = optimizeAndParseSVG(svg);
-  const [doc] = root.children;
-
-  if (doc.type !== 'element' || doc.name !== 'svg') {
-    console.error('Malformed marker', storeMarker);
-    return null;
-  }
+  const doc = parseSVGDocument(svg);
 
   const activeState: Record<string, string> = {};
 
-  (doc.children as XastElement[])
+  Array.from(doc.children)
     .forEach((node) => {
-      const attributes = Object.entries(node.attributes || {})
-        .filter(([attrKey]) => attrKey.startsWith('data-'))
-        .map(([dataAttribute, value]) => {
-          return deserializeKeyValue(dataAttribute, value as string);
-        })
+      if (!(node instanceof Element)) return;
+
+      const attributes = Array.from(node.attributes)
+        .filter((attr) => attr.name.startsWith('data-'))
+        .map((attr) => deserializeKeyValue(attr.name, attr.value))
         .filter((deserialized) => deserialized !== null);
 
       const [flatAttributes, nestedAttributes] = partition(attributes, ([, value]) => typeof value === 'string');
