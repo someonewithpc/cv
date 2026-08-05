@@ -58,7 +58,7 @@ const HANDLE_GREEN = 0x89ab22;
 const HANDLE_PINK = 0xe600e6;
 const HANDLE_ROTATE_GAP = 1.0;
 
-type HandleKey =
+export type HandleKey =
   | 'topLeft'
   | 'top'
   | 'topRight'
@@ -69,6 +69,9 @@ type HandleKey =
   | 'left'
   | 'center'
   | 'rotate';
+
+/** World-Y of the SelectArea lollipop sphere center — use for annotation tips. */
+export const HANDLE_TIP_Y = HANDLE_SPHERE_HEIGHT;
 
 export type SceneSnapshot = {
   area: AreaRect | null;
@@ -506,6 +509,22 @@ export class SpaceBuilderScene {
 
   hasArea() {
     return this.area != null;
+  }
+
+  /** World position of a SelectArea handle tip (sphere center), or null. */
+  getHandleWorldPosition(key: HandleKey): Vector3 | null {
+    if (!this.area || !this.selectGroup.visible) return null;
+    const handle = this.handleByKey[key];
+    if (!handle) return null;
+    const world = new Vector3();
+    handle.getWorldPosition(world);
+    world.y = HANDLE_SPHERE_HEIGHT;
+    return world;
+  }
+
+  getAreaCenter(): Vector3 | null {
+    if (!this.area) return null;
+    return new Vector3(this.area.x, 0, this.area.z);
   }
 
   /** Raycast SelectArea lollipops or fill; null when the pointer is on empty ground. */
