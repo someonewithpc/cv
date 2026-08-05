@@ -2,9 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import {
+  AutoPlayController,
   autoplayPausedToast,
   autoplayStartedToast,
-  type AutoPlayController,
   type DemoCursorStep,
   type DemoToastPayload,
 } from './AutoPlayController';
