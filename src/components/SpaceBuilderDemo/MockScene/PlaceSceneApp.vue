@@ -2,6 +2,15 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { SceneArrowAnnotations } from './scene/SceneArrowAnnotations';
+import {
+  applyWheelZoom,
+  beginPinch,
+  handleScreenSlop,
+  trySetPointerCapture,
+  updatePinch,
+  type PinchState,
+  type ScreenPoint,
+} from './scene/sceneViewportGestures';
 import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
 
 const rootRef = ref<HTMLElement | null>(null);
@@ -11,6 +20,8 @@ const loadError = ref(false);
 let sceneRef: SpaceBuilderScene | null = null;
 let arrows: SceneArrowAnnotations | null = null;
 let observer: IntersectionObserver | null = null;
+const activePointers = new Map<number, ScreenPoint>();
+let pinch: PinchState | null = null;
 
 function onPointerDown(event: PointerEvent) {
   const scene = sceneRef;
@@ -18,13 +29,24 @@ function onPointerDown(event: PointerEvent) {
   if (!scene || !root) return;
   if (event.target instanceof Element && event.target.closest('button, a, input')) return;
 
+  activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  trySetPointerCapture(event.currentTarget, event.pointerId);
+
+  if (activePointers.size >= 2) {
+    const [a, b] = activePointers.values();
+    if (a && b) pinch = beginPinch(scene, a, b);
+    return;
+  }
+
   if (event.button === 2 || (event.button === 0 && (event.shiftKey || event.ctrlKey || event.metaKey))) {
     scene.beginPan(event.clientX, event.clientY);
     return;
   }
   if (event.button !== 0) return;
 
-  const handle = scene.pickHandle(event.clientX, event.clientY);
+  const handle = scene.pickHandle(event.clientX, event.clientY, {
+    screenSlop: handleScreenSlop(event),
+  });
   if (handle) {
     scene.beginHandleDrag(handle, event.clientX, event.clientY);
     return;
@@ -35,23 +57,50 @@ function onPointerDown(event: PointerEvent) {
 function onPointerMove(event: PointerEvent) {
   const scene = sceneRef;
   if (!scene) return;
+
+  if (activePointers.has(event.pointerId)) {
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  }
+
+  if (pinch && activePointers.size >= 2) {
+    const [a, b] = activePointers.values();
+    if (a && b) {
+      updatePinch(scene, pinch, a, b);
+      arrows?.sync();
+    }
+    return;
+  }
+
   if (scene.isDraggingHandle()) {
-    scene.updateHandleDrag(event.clientX, event.clientY);
+    scene.updateHandleDrag(event.clientX, event.clientY, { snap: event.altKey });
     arrows?.sync();
     return;
   }
-  if (scene.isPanning() && event.buttons > 0) {
+  // Drive from scene gesture flags — touch moves can report buttons === 0 without capture.
+  if (scene.isPanning()) {
     scene.pan(event.clientX, event.clientY);
     return;
   }
-  if (scene.isOrbiting() && event.buttons > 0) {
+  if (scene.isOrbiting()) {
     scene.orbit(event.clientX, event.clientY);
   }
 }
 
-function onPointerUp() {
+function onPointerUp(event: PointerEvent) {
   const scene = sceneRef;
+  activePointers.delete(event.pointerId);
+
   if (!scene) return;
+
+  if (pinch) {
+    if (activePointers.size < 2) {
+      pinch = null;
+      scene.endPan();
+      scene.endOrbit();
+    }
+    return;
+  }
+
   if (scene.isDraggingHandle()) {
     scene.endHandleDrag();
     arrows?.sync();
@@ -59,6 +108,12 @@ function onPointerUp() {
   }
   scene.endPan();
   scene.endOrbit();
+}
+
+function onWheel(event: WheelEvent) {
+  const scene = sceneRef;
+  if (!scene) return;
+  applyWheelZoom(scene, event);
 }
 
 function onContextMenu(event: Event) {
@@ -100,21 +155,22 @@ onMounted(async () => {
       },
       {
         handle: 'center',
-        text: 'Pink center · translate',
+        text: 'Pink center · move',
         length: 1.55,
         direction: { x: 1.1, z: 0.35 },
       },
       {
         handle: 'rotate',
-        text: 'Green rotate · Alt snaps',
+        text: 'Green rotate',
         length: 1.65,
         direction: { x: -0.25, z: -1 },
       },
       {
-        handle: 'bottom',
+        // Tip the fill plane itself — not an edge handle.
+        localTip: { x: 0.55, z: 1.15 },
         text: 'Validity tint on the plane',
         length: 1.75,
-        direction: { x: 0.4, z: 1 },
+        direction: { x: 0.35, z: 1 },
       },
     ]);
 
@@ -169,9 +225,11 @@ onMounted(async () => {
     observer.observe(visibilityRoot);
 
     root.addEventListener('pointerdown', onPointerDown);
+    root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
   } catch (error) {
     console.debug('Place scene failed to start', error);
     loadError.value = true;
@@ -185,9 +243,11 @@ onBeforeUnmount(() => {
   sceneRef?.dispose();
   sceneRef = null;
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
+  rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', onPointerUp);
 });
 </script>
 
@@ -213,7 +273,7 @@ onBeforeUnmount(() => {
     </div>
 
     <p v-if="ready && !loadError" class="hint">
-      Drag handles to edit · empty ground to orbit · Shift / Ctrl / right-drag to pan
+      Drag handles to edit · one-finger orbit · pinch zoom · two-finger pan
     </p>
   </div>
 </template>
@@ -228,6 +288,7 @@ onBeforeUnmount(() => {
   background: #212121;
   color-scheme: only dark;
   outline: none;
+  touch-action: none;
 
   &:focus-visible {
     box-shadow: inset 0 0 0 2px #89ab24;
@@ -308,13 +369,14 @@ onBeforeUnmount(() => {
 .sb-scene-anno {
   pointer-events: none;
   translate: 0 -0.35rem;
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55));
 }
 
 .sb-scene-anno__text {
   display: inline-block;
-  padding: 0 0 0.12rem;
-  border-bottom: 0.09rem solid #f4f0ea;
+  padding: 0.18rem 0.45rem 0.22rem;
+  border-radius: 0.25rem;
+  border-bottom: 0.09rem solid color-mix(in oklab, #f4f0ea 70%, transparent);
+  background: color-mix(in oklab, #3a3d42 72%, transparent);
   color: #f4f0ea;
   font-family: sans-serif;
   font-size: 0.78rem;
@@ -322,6 +384,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.01em;
   white-space: nowrap;
   line-height: 1.15;
+  box-shadow: 0 1px 2px color-mix(in oklab, #000 35%, transparent);
 }
 
 .space-builder-tag {

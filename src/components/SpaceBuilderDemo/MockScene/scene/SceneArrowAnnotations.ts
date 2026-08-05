@@ -15,7 +15,10 @@ import {
 } from './SpaceBuilderScene';
 
 export type SceneArrowDef = {
-  handle: HandleKey;
+  /** Tip at a SelectArea handle sphere. */
+  handle?: HandleKey;
+  /** Tip at a SelectArea-local XZ point on the fill plane (0,0 = center). */
+  localTip?: { x: number; z: number };
   text: string;
   /** World-space shaft length in meters. */
   length?: number;
@@ -113,7 +116,11 @@ export class SceneArrowAnnotations {
   }
 
   private layoutItem(item: ArrowItem) {
-    const tip = this.host.getHandleWorldPosition(item.def.handle);
+    const tip = item.def.localTip
+      ? this.host.getAreaLocalWorldPosition(item.def.localTip.x, item.def.localTip.z)
+      : item.def.handle
+        ? this.host.getHandleWorldPosition(item.def.handle)
+        : null;
     const center = this.host.getAreaCenter();
     if (!tip || !center) {
       item.root.visible = false;
@@ -134,7 +141,8 @@ export class SceneArrowAnnotations {
     dir.normalize();
 
     const length = item.def.length ?? 1.7;
-    tip.y = HANDLE_TIP_Y;
+    // Handles sit on lollipops; plane tips stay near the tinted fill.
+    tip.y = item.def.localTip ? 0.06 : HANDLE_TIP_Y;
     const end = TMP_B.copy(tip).addScaledVector(dir, length);
     end.y = tip.y + 0.45;
 
@@ -145,7 +153,7 @@ export class SceneArrowAnnotations {
     item.shaft.scale.set(0.018, shaftLen, 0.018);
     item.shaft.quaternion.setFromUnitVectors(Y_UP, end.clone().sub(tip).normalize());
 
-    // Cone tip at the handle — pointy end toward the lollipop (matches SVG marker-start).
+    // Cone tip at the target — pointy end toward the tip (matches SVG marker-start).
     const headLen = 0.22;
     const headRadius = 0.09;
     const towardTip = tip.clone().sub(end).normalize();

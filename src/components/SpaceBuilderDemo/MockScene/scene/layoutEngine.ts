@@ -95,11 +95,12 @@ export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   innerDiameter: 0,
 };
 
-/** Which Options controls appear for the active layout — mirrors Space Builder inferrers. */
+/** Which Options controls appear for the active layout — mirrors what each inferrer reads. */
 export function uiFieldsForStyle(style: LayoutStyle): Set<UiFieldId> {
   switch (style) {
     case 'offset':
-      return new Set(['seats', 'blocks', 'distanceX', 'distanceZ', 'aisle', 'offset']);
+      // Staggered rows only — no block packing / aisle in layoutOffset.
+      return new Set(['seats', 'distanceX', 'distanceZ', 'offset']);
     case 'hollow':
     case 'u_shape':
       return new Set(['seats', 'distanceX', 'distanceZ']);
@@ -114,9 +115,14 @@ export function uiFieldsForStyle(style: LayoutStyle): Set<UiFieldId> {
   }
 }
 
+/** True when the inferrer packs chairs into Blocks-of groups (Grid only). */
+export function styleUsesBlocks(style: LayoutStyle) {
+  return style === 'grid';
+}
+
 /** Aisle between blocks only applies once "Blocks of" has a size (not herringbone aisle). */
 export function aisleNeedsBlocks(style: LayoutStyle) {
-  return style === 'grid' || style === 'offset';
+  return styleUsesBlocks(style);
 }
 
 export function isAisleEnabled(style: LayoutStyle, options: LayoutOptions) {
@@ -161,9 +167,11 @@ export function layoutChairs(area: AreaRect, options: LayoutOptions): {
 export function tagContent(seats: number, options?: LayoutOptions): string {
   if (seats <= 0) return '';
   let text = `${seats} ${seats === 1 ? 'seat' : 'seats'}`;
-  const w = options?.blocks.width ?? 0;
-  const h = options?.blocks.height ?? 0;
-  if (w > 0 && h > 0 && (w > 1 || h > 1) && options && uiFieldsForStyle(options.style).has('blocks')) {
+  if (!options || !styleUsesBlocks(options.style)) return text;
+  const w = options.blocks.width;
+  const h = options.blocks.height;
+  // Leftover Blocks-of from a prior Grid pass must not leak onto Offset/etc.
+  if (w > 0 && h > 0 && (w > 1 || h > 1)) {
     text += ` in blocks of ${w} by ${h}`;
   }
   return text;
@@ -220,9 +228,10 @@ function makePusher(area: AreaRect) {
   const poses: ChairPose[] = [];
 
   const pushLocal = (lx: number, lz: number, yaw = 0) => {
+    // Same Y-rotation as Three.js / selectGroup (and localToWorld in SpaceBuilderScene).
     poses.push({
-      x: area.x + lx * cos - lz * sin,
-      z: area.z + lx * sin + lz * cos,
+      x: area.x + lx * cos + lz * sin,
+      z: area.z - lx * sin + lz * cos,
       angle: area.angle + yaw,
     });
   };
