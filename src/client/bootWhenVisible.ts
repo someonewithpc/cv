@@ -1,7 +1,7 @@
 /**
  * Arm heavy demo islands after DOMContentLoaded, then mount when visible.
  *
- * Waiting for DCL avoids competing with the large TagCloud / OSS HTML parse.
+ * Waiting for DCL avoids competing with the large TechIconCloud / OSS HTML parse.
  * IntersectionObserver starts the island once it enters the viewport (no click
  * required). A short idle yield keeps the dynamic import off the parse long-task.
  */
