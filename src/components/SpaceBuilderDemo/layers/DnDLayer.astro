@@ -12,7 +12,11 @@ const annotationFontSize = 0.1 * annotationScale;
       <div class="panel">
         <header>
           <span class="eyebrow">Add tool</span>
-          <strong>Two place paradigms</strong>
+          <strong>One tool · two place paths</strong>
+          <p class="lede">
+            Drag drops a single chair on the ground plane. Double-click / Build draws a
+            SelectArea and fills it. Same catalog entry, different outcomes.
+          </p>
         </header>
 
         <div class="stage">
@@ -75,9 +79,9 @@ const annotationFontSize = 0.1 * annotationScale;
                 <span class="dot" style="--x:18%; --y:58%" />
                 <span class="dot" style="--x:42%; --y:58%" />
                 <span class="dot" style="--x:66%; --y:58%" />
-                <span class="build-label">SelectArea → inferrer</span>
+                <span class="build-label">SelectArea → fill</span>
               </div>
-              <p class="note">Draw rectangle → live fill → Save when objectCount ≥ 1</p>
+              <p class="note">Draw a rectangle → live pack → Save when at least one seat fits</p>
             </section>
           </div>
         </div>
@@ -90,7 +94,7 @@ const annotationFontSize = 0.1 * annotationScale;
         angle={150}
         length={0.4}
         fontSize={annotationFontSize}
-        text="Catalog tile · pointerdown"
+        text="Drag from catalog"
       />
       <ArrowAnnotation
         tipX={-0.2}
@@ -98,7 +102,7 @@ const annotationFontSize = 0.1 * annotationScale;
         angle={-45}
         length={0.42}
         fontSize={annotationFontSize}
-        text="Raycast interaction plane"
+        text="Drop on the ground"
       />
       <ArrowAnnotation
         tipX={0.72}
@@ -106,7 +110,7 @@ const annotationFontSize = 0.1 * annotationScale;
         angle={25}
         length={0.4}
         fontSize={annotationFontSize}
-        text="Build · SelectArea fill"
+        text="Build fills the area"
       />
     </Fragment>
   </Annotations>
@@ -147,7 +151,7 @@ const annotationFontSize = 0.1 * annotationScale;
 
   > header {
     display: grid;
-    gap: 0.1rem;
+    gap: 0.15rem;
 
     .eyebrow {
       font-size: 0.62rem;
@@ -158,6 +162,15 @@ const annotationFontSize = 0.1 * annotationScale;
 
     strong {
       font-size: 0.95rem;
+      line-height: 1.2;
+    }
+
+    .lede {
+      margin: 0.15rem 0 0;
+      max-width: 56ch;
+      font-size: 0.68rem;
+      line-height: 1.35;
+      color: #3d453a;
     }
   }
 }
