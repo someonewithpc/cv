@@ -55,7 +55,7 @@ $visrez-brand: #89ab24;
         border-color: var(--brand, $visrez-brand);
       }
 
-      &.disabled {
+      &[aria-disabled="true"] {
         color: #777;
         cursor: not-allowed;
 
@@ -97,6 +97,8 @@ $visrez-brand: #89ab24;
         cursor: pointer;
         color: inherit;
         z-index: 1;
+        font: inherit;
+        appearance: none;
 
         // Sit outside the corner so the marker stays readable.
         &.marker-edit-icon {
@@ -125,11 +127,11 @@ $visrez-brand: #89ab24;
           height: $size;
         }
 
-        &:not(.disabled):is(:focus-within, :hover, .is-demo-target) {
+        &:not(:disabled):is(:focus-visible, :hover, .is-demo-target) {
           border-color: #aaa;
         }
 
-        &.disabled {
+        &:disabled {
           color: darkgray;
           cursor: not-allowed;
         }

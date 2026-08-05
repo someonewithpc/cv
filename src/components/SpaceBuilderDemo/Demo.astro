@@ -1,0 +1,136 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+import WipStamp from '@/components/WipStamp.astro';
+
+import MockScene from './MockScene/MockScene.astro';
+import PlaceLayer from './layers/PlaceLayer.astro';
+import ParametersLayer from './layers/ParametersLayer.astro';
+import LayoutsLayer from './layers/LayoutsLayer.astro';
+import BadgeLayer from './layers/BadgeLayer.astro';
+import DnDLayer from './layers/DnDLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+const srcRoot = path.join(process.cwd(), 'src');
+const sceneEntry = path.join(
+  srcRoot,
+  'components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene.ts',
+);
+
+const { outputFiles: [sceneBundle] } = await esbuild.build({
+  entryPoints: [sceneEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  packages: 'external',
+  alias: { '@': srcRoot },
+});
+
+const sceneSize = toKiB(sceneBundle.text);
+
+const layers = {
+  main: { name: null },
+  place: { name: 'Place Area', pageStyle: 'blueprint wip' },
+  parameters: { name: 'Edit Parameters', pageStyle: 'blueprint wip' },
+  layouts: { name: 'Layout Styles', pageStyle: 'blueprint wip' },
+  badge: { name: 'Capacity Badge', pageStyle: 'blueprint wip' },
+  dnd: { name: 'Drag & Drop', pageStyle: 'blueprint wip' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Space Builder · Add Tool"
+  scale="1:1"
+  size={sceneSize}
+  date="2023"
+  tech={['vue', 'three']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      main: <MockScene />,
+      place: (
+        <>
+          <PlaceLayer />
+          <WipStamp />
+        </>
+      ),
+      parameters: (
+        <>
+          <ParametersLayer />
+          <WipStamp />
+        </>
+      ),
+      layouts: (
+        <>
+          <LayoutsLayer />
+          <WipStamp />
+        </>
+      ),
+      badge: (
+        <>
+          <BadgeLayer />
+          <WipStamp />
+        </>
+      ),
+      dnd: (
+        <>
+          <DnDLayer />
+          <WipStamp />
+        </>
+      ),
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      main: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over. Add [A] opens the catalog — double-click an object (or
+          Build) fills a drawn area; drag drops a single chair. Same Vue + Three.js stack as Space
+          Builder.
+        </PostIt>
+      ),
+      place: (
+        <PostIt background="#cde" color="black">
+          <strong>WIP</strong> — Build draws a <code>SelectArea</code> on the interaction plane.
+          Create, Edit, and Resize share that helper — live inferrer fill as the box changes.
+        </PostIt>
+      ),
+      parameters: (
+        <PostIt background="#dfd" color="black">
+          <strong>WIP</strong> — Each Arrange inferrer declares <code>uiOptions</code>, so Grid
+          shows Blocks + Aisle while Circle swaps those for Inner Circle.
+        </PostIt>
+      ),
+      layouts: (
+        <PostIt background="#cfc" color="black">
+          <strong>WIP</strong> — Layout chips reflow furniture without redrawing the area. Demo
+          covers Grid, Offset, Hollow, Chevron, Circle, Semi-Circle, and U-Shape.
+        </PostIt>
+      ),
+      badge: (
+        <PostIt background="#edf" color="black">
+          <strong>WIP</strong> — A <code>CSS2DObject</code> with a camera-relative offset pins
+          capacity to the screen-bottom edge of the SelectArea.
+        </PostIt>
+      ),
+      dnd: (
+        <PostIt background="#fed" color="black">
+          <strong>WIP</strong> — Catalog drag is the single-place path; Build is the area-fill
+          path. One Add tool, two paradigms.
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>

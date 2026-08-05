@@ -1,0 +1,210 @@
+---
+---
+
+<div class="mock-scene-demo" data-space-builder-island tabindex="-1">
+  <div class="boot-placeholder" aria-hidden="true">
+    <span class="boot-spinner" />
+    <span>Loading Space Builder…</span>
+  </div>
+</div>
+
+<script>
+  const CHAIR_URL = '/demos/space-builder/chair.glb';
+  const GRASS_URLS = [
+    '/demos/space-builder/grass/color.webp',
+    '/demos/space-builder/grass/normal.webp',
+    '/demos/space-builder/grass/displacement.webp',
+  ] as const;
+
+  let warmed = false;
+  let chairWarm: Promise<Response | null> | null = null;
+
+  function preloadAsset(href: string, as: string) {
+    if (document.querySelector(`link[data-sb-preload="${href}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = as;
+    link.href = href;
+    link.dataset.sbPreload = href;
+    if (as === 'fetch') link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+  }
+
+  /** Warm HTTP cache without decoding into GPU yet. */
+  function warmFetch(url: string) {
+    return fetch(url, { credentials: 'same-origin', priority: 'low' } as RequestInit).catch(() => null);
+  }
+
+  /** Pull Vue / Three / chair into cache before the island scrolls into view. */
+  function warmSpaceBuilder() {
+    if (warmed) return;
+    warmed = true;
+    preloadAsset(CHAIR_URL, 'fetch');
+    preloadAsset(GRASS_URLS[0], 'image');
+    chairWarm = warmFetch(CHAIR_URL);
+    void warmFetch(GRASS_URLS[0]);
+    // Secondary maps after color — keep first paint lighter.
+    queueMicrotask(() => {
+      for (const url of GRASS_URLS.slice(1)) {
+        preloadAsset(url, 'image');
+        void warmFetch(url);
+      }
+    });
+    void import('vue');
+    void import('./MockSceneApp.vue');
+    void import('./scene/SpaceBuilderScene');
+    // Warm meshopt WASM while the user is still scrolling to the demo.
+    void import('three/addons/libs/meshopt_decoder.module.js').then(async (mod) => {
+      const decoder = mod.MeshoptDecoder;
+      if (decoder?.ready) await decoder.ready;
+    });
+  }
+
+  async function bootSpaceBuilder(mount: HTMLElement) {
+    if (mount.dataset.mounted === 'true') return;
+    mount.dataset.mounted = 'true';
+    warmSpaceBuilder();
+
+    try {
+      // Overlap Vue parse with any in-flight chair warm.
+      const boot = Promise.all([
+        import('vue'),
+        import('./MockSceneApp.vue'),
+        chairWarm,
+      ]);
+      const [{ createApp }, { default: MockSceneApp }] = await boot;
+
+      // Keep the dark placeholder until Vue paints its own boot cover (same bg).
+      const app = createApp(MockSceneApp);
+      app.mount(mount);
+      mount.querySelector('.boot-placeholder')?.remove();
+    } catch (error) {
+      console.debug('Space Builder demo failed to boot', error);
+      delete mount.dataset.mounted;
+    }
+  }
+
+  function armBoot() {
+    const mount = document.querySelector<HTMLElement>('[data-space-builder-island]');
+    if (!mount || mount.dataset.mounted === 'true') return;
+
+    const page =
+      mount.closest<HTMLElement>('article.technical-drawing-stack > section')
+      ?? mount;
+    const stack = page.closest('article.technical-drawing-stack');
+    const demos = document.querySelector('#demos') ?? page;
+
+    // Warm as soon as demos are near the viewport (page scroll), not only when
+    // the carousel page intersects the stack.
+    const warmObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        warmObserver.disconnect();
+        warmSpaceBuilder();
+      },
+      { root: null, rootMargin: '900px 0px', threshold: 0 },
+    );
+    warmObserver.observe(demos);
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => warmSpaceBuilder(), { timeout: 1500 });
+    } else {
+      setTimeout(warmSpaceBuilder, 800);
+    }
+
+    const bootObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        bootObserver.disconnect();
+        void bootSpaceBuilder(mount);
+      },
+      {
+        root: stack,
+        threshold: 0.08,
+        // Start the Vue mount earlier so Three is already compiling when the
+        // page is fully on-screen.
+        rootMargin: '55% 0px',
+      },
+    );
+    bootObserver.observe(page);
+  }
+
+  armBoot();
+</script>
+
+<style lang="scss">
+// Stretch the drawing content cell so the interactive frame can fill the sheet
+// (default .content is fit-content + centered, which left empty vertical space).
+:global(article.technical-drawing-stack > section .content:has(.mock-scene-demo)) {
+  place-self: stretch;
+  align-self: stretch;
+  justify-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.mock-scene-demo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  // Clip instead of auto — overflow:auto + max-height thrashes scrollbars
+  // at the fit boundary (especially while the layout is still settling).
+  overflow: hidden;
+  border-radius: 0.35em;
+  outline: none;
+  color-scheme: only dark;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, #000 35%, transparent);
+  background: #212121;
+  container-type: size;
+
+  @container technical-drawing (orientation: portrait) {
+    // In portrait the content row is shorter — keep a usable minimum so the
+    // 3D view doesn't collapse under the aside/title block.
+    min-height: min(52cqh, 100%);
+  }
+
+  &:focus-visible {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklab, #000 35%, transparent),
+      0 0 0 2px #89ab24;
+  }
+
+  .boot-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    background: #212121;
+    color: #adb5bd;
+    font: 0.85rem/1.3 system-ui, sans-serif;
+  }
+
+  .boot-spinner {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 3px solid #89ab24;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: sb-boot-spin 0.8s linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      border-color: #89ab24;
+    }
+  }
+}
+
+@keyframes sb-boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

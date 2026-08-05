@@ -179,7 +179,7 @@ $marker-editor-background: #333;
             border-top: 1px solid #666;
           }
 
-          &.disabled {
+          &[inert] {
             color: gray !important;
             cursor: not-allowed;
           }
@@ -304,8 +304,8 @@ $marker-editor-background: #333;
               fill: currentColor;
             }
 
-            &.disabled:hover,
-            &.disabled:focus-within {
+            &[aria-disabled="true"]:hover,
+            &[aria-disabled="true"]:focus-within {
               border-color: #666;
             }
           }

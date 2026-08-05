@@ -8,29 +8,27 @@
   - [ ] Avoid transition to already active theme
 - [ ] Tech icon cloud
   - [x] SVG icon in light mode broken
-  - [ ] More tools
-    - [x] Mold
-    - [~] Better clang
-    - [x] Make
-    - [x] Lisp
-    - [x] git
-    - [x] Three.js
-    - [x] Ruby on Rails
-    - [x] Cursor
-    - [x] Claude Code
-    - [x] Cloudflare
-    - [x] AWS
-    - [x] Kubernetes
-    - [x] Let's Encrypt
-    - [x] TreeSitter
+  - [x] More tools (Cursor, Claude Code, Cloudflare, AWS, K8s, LE, TreeSitter, …)
+  - [~] Better clang icon
   - [ ] Some icons not very visible in dark mode
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
 - [ ] Access Keys
 - [ ] ARIA roles
 - [ ] Demos
-  - [ ] Visrez animated icon
-  - [ ] Visrez marker editor
+  - [x] Visrez animated icon
+  - [x] Visrez marker editor
+  - [x] Space builder add tool
+    - [x] Place area
+    - [x] Edit parameters
+    - [x] Different layouts
+    - [x] Badge showing number of seats (positioning)
+    - [x] Drag and drop from sidebar to 3D
+    - [~] Polish to Marker Editor / live SB quality
+      - [x] Grass color / normal / displacement
+      - [x] Fill vertical page space (stretch content cell)
+      - [~] Faster first paint / load
+      - [~] Visual parity (chrome + 3D look)
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding

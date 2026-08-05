@@ -140,7 +140,7 @@ export class IconMarkerDecoration extends MarkerPart {
             aria-selected={false}
             aria-disabled="true"
             aria-label="Uploading is not available in this demo"
-            className="decoration-uploader disabled"
+            className="decoration-uploader"
             title="Uploading is not available in this demo"
           >
             <FontAwesomeIcon icon={faUpload} />

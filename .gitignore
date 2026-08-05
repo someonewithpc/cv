@@ -29,3 +29,6 @@ pnpm-debug.log*
 
 # direnv
 .direnv/
+
+# local scratch / source textures (processed assets live in public/)
+tmp/
