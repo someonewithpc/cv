@@ -2,61 +2,85 @@
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
-const annotationScale = 0.8;
+const annotationScale = 0.85;
 const annotationFontSize = 0.1 * annotationScale;
 ---
 
 <div class="wrapper">
   <Annotations scale={annotationScale}>
-    <div class="panel" slot="content" aria-hidden="true">
-      <header>
-        <span class="eyebrow">Add tool</span>
-        <strong>Two place paradigms</strong>
-      </header>
+    <div class="diagram" slot="content" aria-hidden="true">
+      <div class="panel">
+        <header>
+          <span class="eyebrow">Add tool</span>
+          <strong>Two place paradigms</strong>
+        </header>
 
-      <div class="fork">
-        <section class="path drag">
-          <h4>Drag &amp; drop</h4>
-          <div class="flow">
-            <div class="step catalog">
-              <div class="catalog-card">
-                <img src="/demos/space-builder/chair-thumb.webp" alt="" width="64" height="48" />
-                <span class="label">Chair</span>
+        <div class="stage">
+          <div class="fork">
+            <section class="path drag">
+              <h4>Drag &amp; drop</h4>
+              <div class="flow">
+                <div class="step catalog">
+                  <div class="catalog-card">
+                    <img
+                      src="/demos/space-builder/chair-thumb.webp"
+                      alt=""
+                      width="64"
+                      height="48"
+                    />
+                    <span class="label">Chair</span>
+                  </div>
+                  <span class="caption">Catalog</span>
+                </div>
+                <span class="arrow" aria-hidden="true">→</span>
+                <div class="step ghost">
+                  <div class="ghost-card">
+                    <img
+                      src="/demos/space-builder/chair-thumb.webp"
+                      alt=""
+                      width="48"
+                      height="36"
+                    />
+                  </div>
+                  <span class="caption">Ghost</span>
+                </div>
+                <span class="arrow" aria-hidden="true">→</span>
+                <div class="step scene">
+                  <span class="floor" />
+                  <img
+                    class="placed"
+                    src="/demos/space-builder/chair-thumb.webp"
+                    alt=""
+                    width="36"
+                    height="28"
+                  />
+                  <span class="caption">Plane hit</span>
+                </div>
               </div>
-              <span class="caption">Catalog</span>
+              <p class="note">Single object · no SelectArea · drop commits pose</p>
+            </section>
+
+            <div class="vs" aria-hidden="true">
+              <span class="vs-pill">one tool</span>
+              <span class="vs-mark">vs</span>
             </div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="step ghost">
-              <div class="ghost-card">
-                <img src="/demos/space-builder/chair-thumb.webp" alt="" width="48" height="36" />
+
+            <section class="path build">
+              <h4>Build fill</h4>
+              <div class="build-mock">
+                <span class="area" />
+                <span class="dot" style="--x:18%; --y:28%" />
+                <span class="dot" style="--x:42%; --y:28%" />
+                <span class="dot" style="--x:66%; --y:28%" />
+                <span class="dot" style="--x:18%; --y:58%" />
+                <span class="dot" style="--x:42%; --y:58%" />
+                <span class="dot" style="--x:66%; --y:58%" />
+                <span class="build-label">SelectArea → inferrer</span>
               </div>
-              <span class="caption">Ghost</span>
-            </div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="step scene">
-              <span class="floor" />
-              <img class="placed" src="/demos/space-builder/chair-thumb.webp" alt="" width="36" height="28" />
-              <span class="caption">Plane hit</span>
-            </div>
+              <p class="note">Draw rectangle → live fill → Save when objectCount ≥ 1</p>
+            </section>
           </div>
-          <p class="note">Single object · no SelectArea · drop commits pose</p>
-        </section>
-
-        <div class="vs" aria-hidden="true">vs</div>
-
-        <section class="path build">
-          <h4>Build fill</h4>
-          <div class="build-mock">
-            <span class="area" />
-            <span class="dot" style="--x:18%; --y:28%" />
-            <span class="dot" style="--x:42%; --y:28%" />
-            <span class="dot" style="--x:66%; --y:28%" />
-            <span class="dot" style="--x:18%; --y:58%" />
-            <span class="dot" style="--x:42%; --y:58%" />
-            <span class="dot" style="--x:66%; --y:58%" />
-          </div>
-          <p class="note">Draw rectangle → live inferrer → Save when objectCount ≥ 1</p>
-        </section>
+        </div>
       </div>
     </div>
     <Fragment slot="annotations">
@@ -92,26 +116,31 @@ const annotationFontSize = 0.1 * annotationScale;
 @use '@/scss/technical-drawing' as drawing;
 
 .wrapper {
-  width: min(drawing.$artwork-width * 1.55, 92cqw);
+  width: min(drawing.$artwork-width * 1.6, 94cqw);
   max-width: 100%;
   height: auto;
-  max-height: 80cqh;
+  max-height: 84cqh;
   aspect-ratio: 1.5 / 1;
   position: relative;
 }
 
-.panel {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0.55rem;
-  box-sizing: border-box;
+.diagram {
+  position: relative;
   width: 100%;
   height: 100%;
   min-height: 14rem;
-  padding: 0.7rem 0.8rem;
+}
+
+.panel {
+  position: absolute;
+  inset: 3%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
   border: 1px solid #333;
   border-radius: 0.35rem;
-  background: color-mix(in oklab, var(--blueprint, #dce8f5) 50%, #fff);
+  background: color-mix(in oklab, var(--blueprint, #dce8f5) 55%, #fff);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
   font-family: var(--font-poppins, system-ui, sans-serif);
   color: #1d241c;
@@ -133,11 +162,21 @@ const annotationFontSize = 0.1 * annotationScale;
   }
 }
 
+.stage {
+  min-height: 0;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(180deg, #2a2a2a 0%, #212121 100%);
+  border: 1px solid #444;
+  overflow: hidden;
+}
+
 .fork {
   display: grid;
   grid-template-columns: 1.35fr auto 1fr;
-  gap: 0.5rem;
+  gap: 0.45rem;
   align-items: stretch;
+  height: 100%;
   min-height: 0;
 }
 
@@ -169,11 +208,29 @@ const annotationFontSize = 0.1 * annotationScale;
 
 .vs {
   align-self: center;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #666;
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  color: #ced4da;
+
+  .vs-pill {
+    padding: 0.12rem 0.35rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, #89ab22 55%, #111);
+    color: #f4ffe8;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.48rem;
+  }
+
+  .vs-mark {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #adb5bd;
+  }
 }
 
 .flow {
@@ -300,11 +357,22 @@ const annotationFontSize = 0.1 * annotationScale;
     background: #5a4030;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
+
+  .build-label {
+    position: absolute;
+    left: 50%;
+    bottom: 0.35rem;
+    translate: -50% 0;
+    font-size: 0.5rem;
+    font-weight: 600;
+    color: #ced4da;
+    white-space: nowrap;
+  }
 }
 
 @container technical-drawing (orientation: portrait) {
   .wrapper {
-    width: min(92cqw, calc(76cqh * 1.15));
+    width: min(94cqw, calc(76cqh * 1.15));
     aspect-ratio: 1.1 / 1;
     max-height: 76cqh;
   }
@@ -315,6 +383,9 @@ const annotationFontSize = 0.1 * annotationScale;
 
   .vs {
     justify-self: center;
+    grid-auto-flow: column;
+    align-items: center;
+    gap: 0.45rem;
   }
 }
 </style>
