@@ -1,6 +1,6 @@
 import '../client-only';
 
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -20,13 +20,17 @@ import {
   type SpaceType,
 } from '@/store';
 
-import { MarkerEditor } from '../MarkerEditor';
 import { resolveMarkerSvgForSpace } from '../resolveMarkerSvgForSpace';
 
 import { InlineSVG } from './InlineSVG';
 import { SelectedMarkerPreview } from './SelectedMarkerPreview';
 
 import './MarkerSelector.scss';
+
+const MarkerEditor = lazy(async () => {
+  const mod = await import('../MarkerEditor');
+  return { default: mod.MarkerEditor };
+});
 
 type Position = { x: number; y: number };
 
@@ -53,17 +57,19 @@ export function MarkerSelector({
 
   if (editedMarkerId) {
     return (
-      <MarkerEditor
-        space={{ ...space, markerId: editedMarkerId }}
-        baseMarkerId={editedBaseMarkerId}
-        isNewMarker={isNewMarker}
-        portalHost={portalHost}
-        onClose={() => {
-          setEditedMarkerId(undefined);
-          setEditedBaseMarkerId(undefined);
-          setIsNewMarker(false);
-        }}
-      />
+      <Suspense fallback={null}>
+        <MarkerEditor
+          space={{ ...space, markerId: editedMarkerId }}
+          baseMarkerId={editedBaseMarkerId}
+          isNewMarker={isNewMarker}
+          portalHost={portalHost}
+          onClose={() => {
+            setEditedMarkerId(undefined);
+            setEditedBaseMarkerId(undefined);
+            setIsNewMarker(false);
+          }}
+        />
+      </Suspense>
     );
   }
 

@@ -579,11 +579,7 @@ onMounted(async () => {
 
   try {
     // Keep Three.js out of the Vue island chunk — load it only when mounting.
-    // Yield between parse and WebGL setup so the long task doesn't block input.
-    const [{ SpaceBuilderScene }, { AutoPlayController }] = await Promise.all([
-      import('./scene/SpaceBuilderScene'),
-      import('./AutoPlayController'),
-    ]);
+    const { SpaceBuilderScene } = await import('./scene/SpaceBuilderScene');
 
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => resolve());

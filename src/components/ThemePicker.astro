@@ -250,8 +250,11 @@ import { transformPath, pathDataToString } from '@/client/svg-utils';
 
 const STORAGE_KEY = 'cv-theme';
 
-if (!('getPathData' in SVGPathElement)) {
-  await import('path-data-polyfill');
+let pathDataPolyfill: Promise<void> | null = null;
+function ensurePathData() {
+  if ('getPathData' in SVGPathElement.prototype) return Promise.resolve();
+  pathDataPolyfill ??= import('path-data-polyfill').then(() => undefined);
+  return pathDataPolyfill;
 }
 
 const inputs = [...document.querySelectorAll<HTMLInputElement>('#theme-picker input')];
@@ -321,7 +324,9 @@ inputs.forEach((inputEl) => {
 
     const viewTransition = document.startViewTransition(updateThemeDom);
 
-    viewTransition.ready.then(() => {
+    viewTransition.ready.then(async () => {
+      await ensurePathData();
+
       const svg = inputEl.parentElement?.querySelector<SVGSVGElement>('svg.checked');
       if (!svg) {
         console.debug('[theme-transition] missing checked icon');
