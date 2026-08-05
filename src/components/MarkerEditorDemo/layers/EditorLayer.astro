@@ -78,7 +78,28 @@ const annotationFontSize = 0.1 * annotationScale;
     createRoot(mount).render(createElement(EditorLayerApp));
   }
 
-  bootEditorLayer();
+  function armBoot() {
+    const mount = document.querySelector<HTMLElement>('[data-editor-layer-island]');
+    if (!mount || mount.dataset.bootstrapped === 'true') return;
+
+    const page =
+      mount.closest<HTMLElement>('article.technical-drawing-stack > section')
+      ?? mount;
+    const stack = page.closest('article.technical-drawing-stack');
+
+    // Blueprint page only — boot when this carousel slide nears the stack viewport.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        observer.disconnect();
+        void bootEditorLayer();
+      },
+      { root: stack, rootMargin: '30% 0px', threshold: 0.05 },
+    );
+    observer.observe(page);
+  }
+
+  armBoot();
 </script>
 
 <style lang="scss">

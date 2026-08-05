@@ -184,7 +184,12 @@ export class SpaceBuilderScene {
     this.buildSelectArea();
     this.resize();
 
-    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver = new ResizeObserver(() => {
+      // Coalesce layout reads onto the next frame to avoid forced-reflow storms.
+      requestAnimationFrame(() => {
+        if (!this.disposed) this.resize();
+      });
+    });
     this.resizeObserver.observe(this.root);
     // Viewport can be 0×0 on the first paint; also watch the app shell so we
     // pick up the settled grid height and don't leave the canvas at 300×150.
@@ -968,9 +973,9 @@ export class SpaceBuilderScene {
   }
 
   private resize() {
-    const rect = this.root.getBoundingClientRect();
-    const width = Math.max(1, Math.floor(this.root.clientWidth || rect.width || 1));
-    const height = Math.max(1, Math.floor(this.root.clientHeight || rect.height || 1));
+    // Prefer clientWidth/Height — avoids an extra getBoundingClientRect forced reflow.
+    const width = Math.max(1, Math.floor(this.root.clientWidth || 1));
+    const height = Math.max(1, Math.floor(this.root.clientHeight || 1));
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);

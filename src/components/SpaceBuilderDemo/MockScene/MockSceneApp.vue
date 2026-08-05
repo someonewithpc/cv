@@ -193,6 +193,17 @@ function pushToast(payload: DemoToastPayload) {
   }, TOAST_VISIBLE_MS);
 }
 
+/** Map viewport client coords into the demo root so the cursor scrolls with the page. */
+function toRootPoint(clientX: number, clientY: number) {
+  const root = rootRef.value;
+  if (!root) return { x: clientX, y: clientY };
+  const rect = root.getBoundingClientRect();
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+  };
+}
+
 function applyCursor(step: DemoCursorStep) {
   cursorDragging.value = Boolean(step.dragging);
 
@@ -200,14 +211,16 @@ function applyCursor(step: DemoCursorStep) {
   scope.querySelectorAll('.is-demo-target').forEach((el) => el.classList.remove('is-demo-target'));
 
   if (step.client) {
-    cursorPos.x = step.client.x;
-    cursorPos.y = step.client.y;
+    const point = toRootPoint(step.client.x, step.client.y);
+    cursorPos.x = point.x;
+    cursorPos.y = point.y;
   } else if (step.target) {
     const el = scope.querySelector(`[data-demo-target="${CSS.escape(step.target)}"]`);
     if (el instanceof HTMLElement) {
       const rect = el.getBoundingClientRect();
-      cursorPos.x = rect.left + rect.width / 2;
-      cursorPos.y = rect.top + rect.height / 2;
+      const point = toRootPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      cursorPos.x = point.x;
+      cursorPos.y = point.y;
     }
   }
 
@@ -566,10 +579,15 @@ onMounted(async () => {
 
   try {
     // Keep Three.js out of the Vue island chunk — load it only when mounting.
+    // Yield between parse and WebGL setup so the long task doesn't block input.
     const [{ SpaceBuilderScene }, { AutoPlayController }] = await Promise.all([
       import('./scene/SpaceBuilderScene'),
       import('./AutoPlayController'),
     ]);
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
 
     const scene = new SpaceBuilderScene({
       canvas,
@@ -578,6 +596,8 @@ onMounted(async () => {
         snapshot.value = next;
       },
     });
+    // Stay paused until the carousel page is in view — avoids WebGL work during boot.
+    scene.pause();
     sceneRef.value = scene;
 
     if (reducedMotion.value) scene.pause();
@@ -1132,29 +1152,27 @@ onBeforeUnmount(() => {
       </footer>
     </aside>
 
-    <Teleport to="body">
-      <div
-        v-if="cursorPhase !== 'gone'"
-        class="space-builder-demo-cursor"
-        :class="[
-          `space-builder-demo-cursor--${cursorPhase}`,
-          { 'space-builder-demo-cursor--clicking': cursorClicking },
-          { 'space-builder-demo-cursor--dragging': cursorDragging },
-        ]"
-        :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
-        aria-hidden="true"
-      >
-        <svg viewBox="0 0 32 32" width="56" height="56">
-          <path
-            d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
-            fill="#fff"
-            stroke="#222"
-            stroke-width="1.6"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </div>
-    </Teleport>
+    <div
+      v-if="cursorPhase !== 'gone'"
+      class="space-builder-demo-cursor"
+      :class="[
+        `space-builder-demo-cursor--${cursorPhase}`,
+        { 'space-builder-demo-cursor--clicking': cursorClicking },
+        { 'space-builder-demo-cursor--dragging': cursorDragging },
+      ]"
+      :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 32 32" width="56" height="56">
+        <path
+          d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
+          fill="#fff"
+          stroke="#222"
+          stroke-width="1.6"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
   </div>
 </template>
 
@@ -1908,8 +1926,10 @@ $scene-bg: #212121;
 }
 
 .space-builder-demo-cursor {
-  position: fixed;
-  z-index: 10000;
+  // Absolute inside `.space-builder-app` so page/carousel scroll keeps the tip
+  // glued to targets (fixed + viewport client coords desync on scroll).
+  position: absolute;
+  z-index: 30;
   width: 56px;
   height: 56px;
   // Hotspot at the arrow tip (same idea as Marker Editor).

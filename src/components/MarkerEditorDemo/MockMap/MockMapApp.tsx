@@ -83,20 +83,32 @@ function overlayPoint(overlay: Element, nx: number, ny: number): CursorPos {
   };
 }
 
+/** Convert viewport client coords into a positioned host (carousel page). */
+function toHostPoint(host: Element | null | undefined, pos: CursorPos): CursorPos {
+  if (!host) return pos;
+  const rect = host.getBoundingClientRect();
+  return {
+    x: pos.x - rect.left,
+    y: pos.y - rect.top,
+  };
+}
+
 function DemoCursor({
   x,
   y,
   phase,
   clicking,
   dragging,
+  host,
 }: {
   x: number;
   y: number;
   phase: CursorPhase;
   clicking: boolean;
   dragging: boolean;
+  host: HTMLElement | null;
 }) {
-  if (phase === 'gone' || typeof document === 'undefined') return null;
+  if (phase === 'gone' || typeof document === 'undefined' || !host) return null;
 
   return createPortal(
     (
@@ -121,7 +133,7 @@ function DemoCursor({
         </svg>
       </div>
     ),
-    document.body,
+    host,
   );
 }
 
@@ -229,10 +241,14 @@ function MockMapOverlayInner() {
     clearDemoTargetHighlight();
     setCursorDragging(Boolean(step.dragging));
 
+    const place = (pos: CursorPos) => {
+      setCursorPos(toHostPoint(editorPortalHost, pos));
+    };
+
     if (step.client) {
-      setCursorPos(step.client);
+      place(step.client);
     } else if (step.target == null) {
-      setCursorPos(restCursorPos());
+      place(restCursorPos());
     } else {
       const overlay = containerRef.current;
       const el = (overlay?.querySelector(`[data-demo-target="${CSS.escape(step.target)}"]`)
@@ -245,11 +261,11 @@ function MockMapOverlayInner() {
           }, TARGET_RETRY_MS);
           return;
         }
-        setCursorPos(restCursorPos());
+        place(restCursorPos());
       } else {
         activeTargetRef.current = el;
         el.classList.add('is-demo-target');
-        setCursorPos(elementCenter(el));
+        place(elementCenter(el));
       }
     }
 
@@ -288,9 +304,12 @@ function MockMapOverlayInner() {
 
   useEffect(() => {
     const overlay = containerRef.current;
-    if (overlay) {
-      setCursorPos(overlayPoint(overlay, 0.42, 0.38));
-    }
+    if (!overlay || !editorPortalHost) return;
+    setCursorPos(toHostPoint(editorPortalHost, overlayPoint(overlay, 0.42, 0.38)));
+  }, [editorPortalHost]);
+
+  useEffect(() => {
+    const overlay = containerRef.current;
 
     // Attach to the carousel page so leaving the map slide pauses autoplay
     // (observing .mock-map-demo alone could still look "in view" mid-snap).
@@ -515,6 +534,7 @@ function MockMapOverlayInner() {
         phase={cursorPhase}
         clicking={cursorClicking}
         dragging={cursorDragging}
+        host={editorPortalHost}
       />
     </div>
   );
