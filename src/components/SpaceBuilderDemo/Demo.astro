@@ -5,7 +5,6 @@ import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
-import WipStamp from '@/components/WipStamp.astro';
 
 import MockScene from './MockScene/MockScene.astro';
 import PlaceLayer from './layers/PlaceLayer.astro';
@@ -40,9 +39,9 @@ const layers = {
   main: { name: null },
   place: { name: 'Place Area', pageStyle: 'blueprint' },
   parameters: { name: 'Edit Parameters', pageStyle: 'blueprint' },
-  layouts: { name: 'Layout Styles', pageStyle: 'blueprint wip' },
-  badge: { name: 'Capacity Badge', pageStyle: 'blueprint wip' },
-  dnd: { name: 'Drag & Drop', pageStyle: 'blueprint wip' },
+  layouts: { name: 'Layout Styles', pageStyle: 'blueprint' },
+  badge: { name: 'Capacity Badge', pageStyle: 'blueprint' },
+  dnd: { name: 'Drag & Drop', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -61,24 +60,9 @@ type Layer = keyof typeof layers;
       main: <MockScene />,
       place: <PlaceLayer />,
       parameters: <ParametersLayer />,
-      layouts: (
-        <>
-          <LayoutsLayer />
-          <WipStamp />
-        </>
-      ),
-      badge: (
-        <>
-          <BadgeLayer />
-          <WipStamp />
-        </>
-      ),
-      dnd: (
-        <>
-          <DnDLayer />
-          <WipStamp />
-        </>
-      ),
+      layouts: <LayoutsLayer />,
+      badge: <BadgeLayer />,
+      dnd: <DnDLayer />,
     }[layer])}
   </fragment>
 
@@ -105,20 +89,20 @@ type Layer = keyof typeof layers;
       ),
       layouts: (
         <PostIt background="#cfc" color="black">
-          Layout chips swap the inferrer without redrawing the area — handles stay put; only poses
-          recompute. Demo covers Grid, Offset, Hollow, Chevron, Circle, Semi-Circle, and U-Shape.
+          Layout chips only swap how chairs pack — the SelectArea and handles stay put. Grid,
+          Offset, Hollow, Chevron, Circle, Semi-Circle, and U-Shape.
         </PostIt>
       ),
       badge: (
         <PostIt background="#edf" color="black">
-          A <code>CSS2DObject</code> with a camera-relative offset pins capacity to the
-          screen-bottom edge of the SelectArea — not world −Z.
+          Capacity sits on the screen-bottom edge of the SelectArea. A world −Z offset sinks
+          under the box when you orbit; camera-relative CSS2D keeps it readable.
         </PostIt>
       ),
       dnd: (
         <PostIt background="#fed" color="black">
-          Catalog drag is the single-place path; Build is the area-fill path. One Add tool, two
-          paradigms.
+          Catalog drag places one chair; Build draws an area and fills it. One Add tool, two
+          outcomes.
         </PostIt>
       ),
     }[layer])}

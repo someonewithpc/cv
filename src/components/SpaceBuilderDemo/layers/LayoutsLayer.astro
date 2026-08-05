@@ -25,8 +25,12 @@ const circleDots = [
     <div class="diagram" slot="content" aria-hidden="true">
       <div class="panel">
         <header>
-          <span class="eyebrow">Arrange inferrers</span>
-          <strong>Same area · new poses</strong>
+          <span class="eyebrow">Layout styles</span>
+          <strong>Same SelectArea · new chair poses</strong>
+          <p class="lede">
+            Click a layout chip and only the arrangement changes. The drawn area and grab
+            handles stay put — Grid, Circle, Chevron, and the rest are swap-in strategies.
+          </p>
         </header>
 
         <div class="stage">
@@ -49,13 +53,13 @@ const circleDots = [
               </div>
             </figure>
             <p class="reflow-note">
-              Area + handles unchanged — chip click only swaps the inferrer.
+              Area + handles unchanged — the chip only swaps how seats are packed.
             </p>
           </div>
 
           <div class="layouts-layer">
             {LAYOUT_STYLES.map((style) => (
-              <figure class:list={['card', style, { active: style === 'grid' }]}>
+              <figure class:list={['style', style, { active: style === 'grid' }]}>
                 <figcaption>{LAYOUT_LABELS[style]}</figcaption>
                 <div class="layout-style-icons">
                   <img src={LAYOUT_ICONS[style]} alt="" width="56" height="56" />
@@ -69,11 +73,11 @@ const circleDots = [
     <Fragment slot="annotations">
       <ArrowAnnotation
         tipX={-0.72}
-        tipY={-0.55}
+        tipY={-0.52}
         angle={145}
         length={0.4}
         fontSize={annotationFontSize}
-        text="Active style · brand chip"
+        text="Active layout chip"
       />
       <ArrowAnnotation
         tipX={0.05}
@@ -89,7 +93,7 @@ const circleDots = [
         angle={20}
         length={0.4}
         fontSize={annotationFontSize}
-        text="Catalog category layouts"
+        text="Seven pack styles"
       />
     </Fragment>
   </Annotations>
@@ -119,8 +123,8 @@ const circleDots = [
   inset: 3%;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 0.5rem;
-  padding: 0.65rem 0.75rem;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem 0.7rem;
   border: 1px solid #333;
   border-radius: 0.35rem;
   background: color-mix(in oklab, var(--blueprint, #dce8f5) 55%, #fff);
@@ -130,7 +134,7 @@ const circleDots = [
 
   > header {
     display: grid;
-    gap: 0.1rem;
+    gap: 0.15rem;
 
     .eyebrow {
       font-size: 0.62rem;
@@ -141,6 +145,15 @@ const circleDots = [
 
     strong {
       font-size: 0.95rem;
+      line-height: 1.2;
+    }
+
+    .lede {
+      margin: 0.15rem 0 0;
+      max-width: 58ch;
+      font-size: 0.68rem;
+      line-height: 1.35;
+      color: #3d453a;
     }
   }
 }
@@ -226,7 +239,7 @@ const circleDots = [
   min-height: 0;
 }
 
-.card {
+.style {
   margin: 0;
   display: grid;
   gap: 0;
@@ -274,6 +287,10 @@ const circleDots = [
     width: min(94cqw, calc(76cqh * 1.2));
     aspect-ratio: 1.1 / 1;
     max-height: 76cqh;
+  }
+
+  .panel > header .lede {
+    font-size: 0.62rem;
   }
 
   .layouts-layer {

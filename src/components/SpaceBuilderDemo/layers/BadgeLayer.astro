@@ -11,8 +11,12 @@ const annotationFontSize = 0.1 * annotationScale;
     <div class="diagram" slot="content" aria-hidden="true">
       <div class="panel">
         <header>
-          <span class="eyebrow">CSS2D capacity tag</span>
-          <strong>Screen-bottom, not world-south</strong>
+          <span class="eyebrow">Capacity badge</span>
+          <strong>Pinned to the screen-bottom edge</strong>
+          <p class="lede">
+            A naive world −Z offset sinks under the SelectArea when you orbit. The shipped tag
+            tracks the camera so “48 seats” stays readable under the box.
+          </p>
         </header>
 
         <div class="stage">
@@ -56,8 +60,8 @@ const annotationFontSize = 0.1 * annotationScale;
                 </svg>
               </div>
               <p class="note">
-                <code>controls.change</code> → <code>updateTagPosition</code> keeps the label on
-                the screen-bottom edge of the selection.
+                On orbit, recompute the tag from the camera angle so it stays on the
+                screen-bottom silhouette of the area.
               </p>
             </figure>
           </div>
@@ -87,7 +91,7 @@ const annotationFontSize = 0.1 * annotationScale;
         angle={30}
         length={0.38}
         fontSize={annotationFontSize}
-        text="CSS2DObject · .tag-selection"
+        text="CSS2D label"
       />
     </Fragment>
   </Annotations>
@@ -139,6 +143,15 @@ const annotationFontSize = 0.1 * annotationScale;
 
     strong {
       font-size: 0.95rem;
+      line-height: 1.2;
+    }
+
+    .lede {
+      margin: 0.15rem 0 0;
+      max-width: 56ch;
+      font-size: 0.68rem;
+      line-height: 1.35;
+      color: #3d453a;
     }
   }
 }
