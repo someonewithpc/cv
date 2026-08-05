@@ -59,6 +59,13 @@ function setNativeInputValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+/** Per-keystroke timing for demo typing into Blocks of (must read as real typing). */
+const TYPE_FOCUS_MS = 450;
+const TYPE_CLEAR_MS = 320;
+const TYPE_CHAR_MS = 380;
+const TYPE_AFTER_CHAR_MS = 140;
+const TYPE_FIELD_GAP_MS = 520;
+
 /** Matches `.space-builder-demo-cursor` left/top transition duration. */
 const CURSOR_TRAVEL_MS = 560;
 const SIDEBAR_SCROLL_MS = 480;
@@ -71,8 +78,25 @@ function wait(ms: number) {
   });
 }
 
+function waitFrames(count = 1) {
+  return new Promise<void>((resolve) => {
+    const step = (left: number) => {
+      if (left <= 0) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(() => step(left - 1));
+    };
+    step(count);
+  });
+}
+
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function typingDelay(ms: number) {
+  return prefersReducedMotion() ? Math.max(40, Math.round(ms * 0.35)) : ms;
 }
 
 function targetCenter(el: Element) {
@@ -159,6 +183,7 @@ type Preset = {
   distanceX: number;
   distanceZ: number;
   aisle?: number;
+  /** Shown later via the Blocks of inputs — not applied with the initial layout. */
   blocks?: { width: number; height: number };
   angle?: number;
   offset?: number;
@@ -172,7 +197,7 @@ const PRESETS: Preset[] = [
     seats: 0,
     distanceX: 0.2,
     distanceZ: 0.35,
-    // 3×2 packs several blocks into the demo SelectArea so aisle gaps read clearly.
+    // Typed into Blocks of after a plain Grid fill so the aisle demo reads clearly.
     aisle: 0.95,
     blocks: { width: 3, height: 2 },
   },
@@ -183,6 +208,12 @@ const PRESETS: Preset[] = [
   { kind: 'build', style: 'circle', seats: 0, distanceX: 0.15, distanceZ: 0.4, innerDiameter: 1.2 },
   { kind: 'build', style: 'u_shape', seats: 0, distanceX: 0.22, distanceZ: 0.35 },
 ];
+
+function blocksDemoOf(preset: Preset) {
+  const blocks = preset.blocks;
+  if (!blocks || (blocks.width <= 0 && blocks.height <= 0)) return null;
+  return blocks;
+}
 
 export class AutoPlayController {
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -416,36 +447,78 @@ export class AutoPlayController {
     return client ? { client, ...extra } : this.offCanvasCursor();
   }
 
-  /** Type into the Blocks of width × height inputs (Vue @change). */
+  /** Type into the Blocks of width × height inputs (Vue @input / @change). */
   private async setBlocksOf(width: number, height: number) {
     const host = queryDemoTarget('param:blocks');
     const inputs = host instanceof HTMLElement
-      ? host.querySelectorAll('input[type="number"]')
+      ? host.querySelectorAll('input')
       : null;
     const widthInput = inputs?.[0];
     const heightInput = inputs?.[1];
 
     if (widthInput instanceof HTMLInputElement) {
-      this.stickCursorTo(widthInput, 'param:blocks', false);
-      setNativeInputValue(widthInput, width > 0 ? String(width) : '');
-      await wait(220);
+      await this.typeIntoInput(widthInput, width > 0 ? String(width) : '');
+      if (this.paused) return;
+      await wait(typingDelay(TYPE_FIELD_GAP_MS));
       if (this.paused) return;
     }
     if (heightInput instanceof HTMLInputElement) {
-      this.stickCursorTo(heightInput, 'param:blocks', false);
-      setNativeInputValue(heightInput, height > 0 ? String(height) : '');
-      await wait(180);
+      await this.typeIntoInput(heightInput, height > 0 ? String(height) : '');
       if (this.paused) return;
     }
     // Keep scene in sync if a synthetic change was ignored while disabled.
     this.scene.setOptions({ blocks: { width, height } });
   }
 
+  /** Focus, clear, then type `text` one character at a time with visible cadence. */
+  private async typeIntoInput(input: HTMLInputElement, text: string) {
+    if (input.disabled || this.paused) return;
+
+    const client = targetCenter(input);
+    this.stickCursorTo(input, 'param:blocks', false);
+    await this.waitForCursorTravel(client);
+    if (this.paused) return;
+
+    input.focus({ preventScroll: true });
+    this.onCursor({ client, target: 'param:blocks', click: true, dragging: false });
+    await wait(typingDelay(90));
+    if (this.paused) return;
+    this.onCursor({ client, target: 'param:blocks', click: false, dragging: false });
+
+    if (input.value !== '') {
+      setNativeInputValue(input, '');
+      await waitFrames(2);
+      await wait(typingDelay(TYPE_CLEAR_MS));
+      if (this.paused) return;
+    }
+
+    // Hold on the empty focused field so the caret/focus reads before digits land.
+    await wait(typingDelay(TYPE_FOCUS_MS));
+    if (this.paused) return;
+
+    let built = '';
+    for (const ch of text) {
+      built += ch;
+      this.onCursor({ client: targetCenter(input), target: 'param:blocks', click: true, dragging: false });
+      setNativeInputValue(input, built);
+      await waitFrames(2);
+      await wait(typingDelay(TYPE_CHAR_MS));
+      if (this.paused) return;
+      this.onCursor({ client: targetCenter(input), target: 'param:blocks', click: false, dragging: false });
+      await wait(typingDelay(TYPE_AFTER_CHAR_MS));
+      if (this.paused) return;
+    }
+  }
+
   /**
-   * Drag a range thumb from its current value to `toValue`, keeping the demo
-   * cursor glued to the thumb (same approach as Marker Editor autoplay).
+   * Drag a range thumb through one or more values in a single press — no release
+   * between waypoints (e.g. spacing down then back up).
    */
-  private async animateRangeInput(target: string, toValue: number, durationMs = 520) {
+  private async animateRangeInput(
+    target: string,
+    toValue: number | readonly number[],
+    durationMs = 520,
+  ) {
     const input = queryDemoTarget(target);
     if (!(input instanceof HTMLInputElement) || input.type !== 'range' || input.disabled || this.paused) {
       return;
@@ -455,8 +528,9 @@ export class AutoPlayController {
     const min = parseFloat(input.min || '0');
     const max = parseFloat(input.max || '1');
     const step = parseFloat(input.step) || 0.01;
-    const from = parseFloat(input.value);
-    const clampedTo = Math.min(max, Math.max(min, toValue));
+    const clamp = (value: number) => Math.min(max, Math.max(min, value));
+    const waypoints = (Array.isArray(toValue) ? toValue : [toValue]).map(clamp);
+    if (waypoints.length === 0) return;
 
     const thumbX = (value: number) => {
       const t = max === min ? 0 : (value - min) / (max - min);
@@ -465,69 +539,79 @@ export class AutoPlayController {
     };
     const thumbY = rect.top + rect.height / 2;
 
+    let from = parseFloat(input.value);
     // Settle on the current thumb before pressing — don't start mid-track.
     const startClient = { x: thumbX(from), y: thumbY };
     this.onCursor({ client: startClient, target, dragging: false });
     await this.waitForCursorTravel(startClient);
     if (this.paused) return;
 
-    await new Promise<void>((resolve) => {
-      const startedAt = performance.now();
-      let settled = false;
-      let curValue = from;
+    this.onCursor({ client: startClient, target, click: true, dragging: true });
 
-      const finish = (value: number) => {
-        if (settled) return;
-        settled = true;
-        if (this.dragCleanup === cleanup) {
-          this.dragCleanup = null;
-        }
-        if (this.dragRaf != null) {
-          cancelAnimationFrame(this.dragRaf);
+    for (const clampedTo of waypoints) {
+      if (this.paused) break;
+      await new Promise<void>((resolve) => {
+        const startedAt = performance.now();
+        let settled = false;
+        let curValue = from;
+        const segmentFrom = from;
+
+        const finish = (value: number) => {
+          if (settled) return;
+          settled = true;
+          if (this.dragCleanup === cleanup) {
+            this.dragCleanup = null;
+          }
+          if (this.dragRaf != null) {
+            cancelAnimationFrame(this.dragRaf);
+            this.dragRaf = null;
+          }
+          const snapped = Math.round(value / step) * step;
+          const finalValue = clamp(Number(snapped.toFixed(4)));
+          setNativeInputValue(input, String(finalValue));
+          from = finalValue;
+          const client = { x: thumbX(finalValue), y: thumbY };
+          this.lastCursorClient = client;
+          this.onCursor({ client, target, dragging: true });
+          resolve();
+        };
+
+        const cleanup = () => {
+          finish(curValue);
+        };
+        this.dragCleanup = cleanup;
+
+        const tick = (now: number) => {
+          if (settled || this.paused) {
+            this.dragRaf = null;
+            cleanup();
+            return;
+          }
+
+          const t = Math.min(1, (now - startedAt) / durationMs);
+          const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+          curValue = segmentFrom + (clampedTo - segmentFrom) * eased;
+          setNativeInputValue(input, String(curValue));
+          const client = { x: thumbX(curValue), y: thumbY };
+          this.lastCursorClient = client;
+          this.onCursor({ client, target, dragging: true });
+
+          if (t < 1) {
+            this.dragRaf = requestAnimationFrame(tick);
+            return;
+          }
+
           this.dragRaf = null;
-        }
-        const snapped = Math.round(value / step) * step;
-        const finalValue = Math.min(max, Math.max(min, Number(snapped.toFixed(4))));
-        setNativeInputValue(input, String(finalValue));
-        const client = { x: thumbX(finalValue), y: thumbY };
-        this.lastCursorClient = client;
-        this.onCursor({ client, target, dragging: false });
-        resolve();
-      };
+          finish(clampedTo);
+        };
 
-      const cleanup = () => {
-        finish(curValue);
-      };
-      this.dragCleanup = cleanup;
+        this.dragRaf = requestAnimationFrame(tick);
+      });
+    }
 
-      this.onCursor({ client: startClient, target, click: true, dragging: true });
-
-      const tick = (now: number) => {
-        if (settled || this.paused) {
-          this.dragRaf = null;
-          cleanup();
-          return;
-        }
-
-        const t = Math.min(1, (now - startedAt) / durationMs);
-        const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
-        curValue = from + (clampedTo - from) * eased;
-        setNativeInputValue(input, String(curValue));
-        const client = { x: thumbX(curValue), y: thumbY };
-        this.lastCursorClient = client;
-        this.onCursor({ client, target, dragging: true });
-
-        if (t < 1) {
-          this.dragRaf = requestAnimationFrame(tick);
-          return;
-        }
-
-        this.dragRaf = null;
-        finish(clampedTo);
-      };
-
-      this.dragRaf = requestAnimationFrame(tick);
-    });
+    const endClient = { x: thumbX(from), y: thumbY };
+    this.lastCursorClient = endClient;
+    this.onCursor({ client: endClient, target, dragging: false });
   }
 
   private steps(): Step[] {
@@ -536,9 +620,25 @@ export class AutoPlayController {
     return this.buildSteps(preset);
   }
 
+  /** Style + spacing only — Blocks of is typed in a later step when present. */
+  private applyPresetLayout(preset: Preset) {
+    this.scene.setOptions({
+      style: preset.style,
+      seats: preset.seats,
+      distanceX: preset.distanceX,
+      distanceZ: preset.distanceZ,
+      aisle: preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle,
+      offset: preset.offset ?? DEFAULT_LAYOUT_OPTIONS.offset,
+      angle: preset.angle ?? DEFAULT_LAYOUT_OPTIONS.angle,
+      innerDiameter: preset.innerDiameter ?? DEFAULT_LAYOUT_OPTIONS.innerDiameter,
+      blocks: { width: 0, height: 0 },
+    });
+  }
+
   private buildSteps(preset: Preset): Step[] {
     const start = { x: -3.2, z: -2.4 };
     const end = { x: 3.4, z: 3.0 };
+    const blocksDemo = blocksDemoOf(preset);
 
     return [
       {
@@ -582,17 +682,7 @@ export class AutoPlayController {
           // Save closes the sidebar; reopen Options before the layout/param tour so
           // chips and sliders are on-screen for every loop — not only the first.
           this.onUi({ panel: 'options', phase: 'build' });
-          this.scene.setOptions({
-            style: preset.style,
-            seats: preset.seats,
-            distanceX: preset.distanceX,
-            distanceZ: preset.distanceZ,
-            aisle: preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle,
-            offset: preset.offset ?? DEFAULT_LAYOUT_OPTIONS.offset,
-            angle: preset.angle ?? DEFAULT_LAYOUT_OPTIONS.angle,
-            innerDiameter: preset.innerDiameter ?? DEFAULT_LAYOUT_OPTIONS.innerDiameter,
-            blocks: preset.blocks ?? { width: 0, height: 0 },
-          });
+          this.applyPresetLayout(preset);
         },
       },
       // Scroll to layout chips — style already applied above; don't re-click it.
@@ -616,48 +706,25 @@ export class AutoPlayController {
         delay: 650,
         cursor: { target: `layout:${preset.style}` },
         domClick: true,
-        run: () => {
-          const showBlocks = Boolean(
-            preset.blocks && (preset.blocks.width > 0 || preset.blocks.height > 0),
-          );
-          // For Grid+Blocks, land on a plain fill first so the Blocks of step is visible.
-          this.scene.setOptions({
-            style: preset.style,
-            seats: preset.seats,
-            distanceX: preset.distanceX,
-            distanceZ: preset.distanceZ,
-            aisle: preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle,
-            offset: preset.offset ?? DEFAULT_LAYOUT_OPTIONS.offset,
-            angle: preset.angle ?? DEFAULT_LAYOUT_OPTIONS.angle,
-            innerDiameter: preset.innerDiameter ?? DEFAULT_LAYOUT_OPTIONS.innerDiameter,
-            blocks: showBlocks ? { width: 0, height: 0 } : (preset.blocks ?? { width: 0, height: 0 }),
-          });
-        },
+        run: () => this.applyPresetLayout(preset),
       },
       // Params after the style tour: drag spacing / aisle thumbs like a real user.
       {
         delay: 700,
         cursor: { target: 'param:spacing-x' },
         run: async () => {
-          const next = Math.max(0.05, preset.distanceX - 0.15);
-          await this.animateRangeInput('param:spacing-x', next);
+          const low = Math.max(0.05, preset.distanceX - 0.15);
+          await this.animateRangeInput('param:spacing-x', [low, preset.distanceX], 480);
         },
       },
-      {
-        delay: 380,
-        cursor: { target: 'param:spacing-x' },
-        run: async () => {
-          await this.animateRangeInput('param:spacing-x', preset.distanceX);
-        },
-      },
-      ...(preset.blocks && (preset.blocks.width > 0 || preset.blocks.height > 0)
+      ...(blocksDemo
         ? [
             {
               delay: 650,
               cursor: { target: 'param:blocks' as const },
               run: async () => {
                 this.onUi({ panel: 'options', phase: 'build' });
-                await this.setBlocksOf(preset.blocks!.width, preset.blocks!.height);
+                await this.setBlocksOf(blocksDemo.width, blocksDemo.height);
               },
             },
             {
@@ -665,12 +732,12 @@ export class AutoPlayController {
               cursor: { target: 'param:aisle' as const },
               run: async () => {
                 const aisle = preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle;
-                // Widen the aisles between blocks, then settle on the preset gap.
-                await this.animateRangeInput('param:aisle', Math.min(2, aisle + 0.5));
-                if (this.paused) return;
-                await wait(220);
-                if (this.paused) return;
-                await this.animateRangeInput('param:aisle', aisle);
+                // Widen the aisles between blocks, then settle — one continuous drag.
+                await this.animateRangeInput(
+                  'param:aisle',
+                  [Math.min(2, aisle + 0.5), aisle],
+                  480,
+                );
               },
             },
           ]
@@ -681,11 +748,11 @@ export class AutoPlayController {
                 cursor: { target: 'param:aisle' as const },
                 run: async () => {
                   const aisle = preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle;
-                  await this.animateRangeInput('param:aisle', Math.min(2, aisle + 0.35));
-                  if (this.paused) return;
-                  await wait(180);
-                  if (this.paused) return;
-                  await this.animateRangeInput('param:aisle', aisle);
+                  await this.animateRangeInput(
+                    'param:aisle',
+                    [Math.min(2, aisle + 0.35), aisle],
+                    480,
+                  );
                 },
               },
             ]

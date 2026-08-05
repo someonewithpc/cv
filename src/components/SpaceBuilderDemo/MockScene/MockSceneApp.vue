@@ -25,6 +25,15 @@ import {
   type LayoutStyle,
   type UiFieldId,
 } from './scene/layoutEngine';
+import {
+  applyWheelZoom,
+  beginPinch,
+  handleScreenSlop,
+  trySetPointerCapture,
+  updatePinch,
+  type PinchState,
+  type ScreenPoint,
+} from './scene/sceneViewportGestures';
 import type {
   SceneSnapshot,
   SpaceBuilderScene,
@@ -152,6 +161,8 @@ let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 let handoffTimer: ReturnType<typeof setTimeout> | null = null;
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 let observer: IntersectionObserver | null = null;
+const activePointers = new Map<number, ScreenPoint>();
+let pinch: PinchState | null = null;
 
 const seatsInvalid = computed(() => {
   const snap = snapshot.value;
@@ -320,6 +331,15 @@ function onPointerDown(event: PointerEvent) {
   const scene = sceneRef.value;
   if (!scene) return;
 
+  activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  trySetPointerCapture(event.currentTarget, event.pointerId);
+
+  if (activePointers.size >= 2) {
+    const [a, b] = activePointers.values();
+    if (a && b) pinch = beginPinch(scene, a, b);
+    return;
+  }
+
   // Shift/Ctrl+LMB or RMB pans the orbit target (same in every 3D SB view).
   if (event.button === 2 || (event.button === 0 && (event.shiftKey || event.ctrlKey || event.metaKey))) {
     scene.beginPan(event.clientX, event.clientY);
@@ -333,7 +353,9 @@ function onPointerDown(event: PointerEvent) {
   }
 
   // Handles always win; empty space orbits — even while Build / Add is active.
-  const handle = scene.pickHandle(event.clientX, event.clientY);
+  const handle = scene.pickHandle(event.clientX, event.clientY, {
+    screenSlop: handleScreenSlop(event),
+  });
   if (handle) {
     scene.beginHandleDrag(handle, event.clientX, event.clientY);
     return;
@@ -353,29 +375,51 @@ function onPointerMove(event: PointerEvent) {
   const scene = sceneRef.value;
   if (!scene) return;
 
+  if (activePointers.has(event.pointerId)) {
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  }
+
+  if (pinch && activePointers.size >= 2) {
+    const [a, b] = activePointers.values();
+    if (a && b) updatePinch(scene, pinch, a, b);
+    return;
+  }
+
   if (scene.isDraggingHandle()) {
-    scene.updateHandleDrag(event.clientX, event.clientY);
+    scene.updateHandleDrag(event.clientX, event.clientY, { snap: event.altKey });
     return;
   }
   if (phase.value === 'build' && scene.isDrawing()) {
     scene.updateAreaDraw(event.clientX, event.clientY);
     return;
   }
-  if (phase.value === 'placing' && event.buttons > 0) {
+  if (phase.value === 'placing' && (event.buttons > 0 || activePointers.has(event.pointerId))) {
     scene.setGhostAt(event.clientX, event.clientY);
     return;
   }
-  if (event.buttons > 0 && scene.isPanning()) {
+  // Drive from scene gesture flags — touch moves can report buttons === 0 without capture.
+  if (scene.isPanning()) {
     scene.pan(event.clientX, event.clientY);
     return;
   }
-  if (event.buttons > 0 && scene.isOrbiting()) {
+  if (scene.isOrbiting()) {
     scene.orbit(event.clientX, event.clientY);
   }
 }
 
 function onPointerUp(event: PointerEvent) {
   const scene = sceneRef.value;
+  activePointers.delete(event.pointerId);
+
+  if (pinch) {
+    if (activePointers.size < 2) {
+      pinch = null;
+      scene?.endPan();
+      scene?.endOrbit();
+    }
+    return;
+  }
+
   if (scene?.isDraggingHandle()) {
     scene.endHandleDrag();
     return;
@@ -393,6 +437,16 @@ function onPointerUp(event: PointerEvent) {
   }
   scene?.endPan();
   scene?.endOrbit();
+}
+
+function onWheel(event: WheelEvent) {
+  if (!event.isTrusted) return;
+  const target = event.target as HTMLElement | null;
+  if (target?.closest('.rail, .sidebar, .flash, .toasts, button, input, label, details')) return;
+  const scene = sceneRef.value;
+  if (!scene) return;
+  if (!userControl.value) yieldToUser();
+  applyWheelZoom(scene, event);
 }
 
 function onContextMenu(event: Event) {
@@ -684,9 +738,11 @@ onMounted(async () => {
     window.addEventListener('pointerdown', onTrustedPointer, { passive: true });
     root.addEventListener('pointermove', onPointerMove);
     root.addEventListener('pointerdown', onPointerDown);
+    root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
     root.addEventListener('keydown', onKeyDown);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
   } catch (error) {
     console.debug('Space Builder demo failed to start', error);
     loadError.value = true;
@@ -704,9 +760,11 @@ onBeforeUnmount(() => {
   window.removeEventListener('pointerdown', onTrustedPointer);
   rootRef.value?.removeEventListener('pointermove', onPointerMove);
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
+  rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
   rootRef.value?.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', onPointerUp);
 });
 </script>
 
@@ -914,20 +972,24 @@ onBeforeUnmount(() => {
               <span>Blocks of</span>
               <div class="blocks-of" data-demo-target="param:blocks">
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
                   placeholder="Chairs"
                   :value="snapshot?.options.blocks.width || ''"
                   :disabled="!fieldActive('blocks')"
+                  @input="onBlockWidth"
                   @change="onBlockWidth"
                 >
                 <span class="times" aria-hidden="true">×</span>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
                   placeholder="Rows"
                   :value="snapshot?.options.blocks.height || ''"
                   :disabled="!fieldActive('blocks')"
+                  @input="onBlockHeight"
                   @change="onBlockHeight"
                 >
               </div>
@@ -1309,7 +1371,11 @@ $scene-bg: #212121;
     }
 
     &.is-demo-target {
-      box-shadow: 0 0 0 2px $visrez-brand;
+      // Match `.active` — right rail accent only (a full ring looked like a stray
+      // horizontal green line across the top of the tool).
+      background: $nav-main-active-bg;
+      border-right-color: $visrez-brand;
+      color: #fff;
     }
   }
 
@@ -1345,6 +1411,7 @@ $scene-bg: #212121;
     min-height: 0;
     overflow: hidden;
     background: $scene-bg;
+    touch-action: none;
   }
 
   .scene-canvas {
@@ -1353,6 +1420,7 @@ $scene-bg: #212121;
     height: 100%;
     // Ensure the drawing buffer isn't left at the HTML default 300×150.
     max-width: none;
+    touch-action: none;
   }
 
   .label-host {
