@@ -3,7 +3,7 @@ import { Icon } from 'astro-icon/components';
 
 import TechIcon from '@/components/TechIcon.astro';
 
-import { resolveTechTags } from '@/server/tech-tags';
+import { resolveTechs } from '@/server/tech-icons';
 
 type Props = {
   title?: string | null;
@@ -14,7 +14,7 @@ type Props = {
   index?: number;
   layerCount?: number;
   pageStyle?: string;
-  /** Tech tag text(s) or icon suffix(es) in a square rowspan cell. */
+  /** Tech name(s) or icon suffix(es) in a square rowspan cell. */
   tech?: string | readonly string[];
 };
 
@@ -30,7 +30,7 @@ const {
   tech,
 } = Astro.props;
 
-const techTags = resolveTechTags(tech);
+const techs = resolveTechs(tech);
 ---
 
 <section class={pageStyle}>
@@ -45,11 +45,11 @@ const techTags = resolveTechTags(tech);
   <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`}>
     <tbody>
       <tr>
-        {techTags.length > 0 && (
+        {techs.length > 0 && (
           <td rowspan="2" class="title-tech" aria-hidden="true">
-            <div class="title-tech-stack" data-count={techTags.length}>
-              {techTags.map((tag) => (
-                <TechIcon tag={tag} decorative />
+            <div class="title-tech-stack" data-count={techs.length}>
+              {techs.map((entry) => (
+                <TechIcon tech={entry} decorative />
               ))}
             </div>
           </td>

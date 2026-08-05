@@ -1,16 +1,16 @@
 ---
 import TechIcon from '@/components/TechIcon.astro';
 
-import { TECH_TAGS } from '@/server/tech-tags';
+import { TECH_ICONS } from '@/server/tech-icons';
 ---
 
-<section aria-labelledby="tech-parts-label">
-  <p id="tech-parts-label" class="parts-label monospace">Bill of materials</p>
+<section aria-labelledby="tech-icon-cloud-label">
+  <p id="tech-icon-cloud-label" class="cloud-label monospace">Bill of materials</p>
   <ul>
-    {TECH_TAGS.map((tag) => (
+    {TECH_ICONS.map((tech) => (
       <li>
-        <TechIcon tag={tag} decorative />
-        <span>{tag.text}</span>
+        <TechIcon tech={tech} decorative />
+        <span>{tech.text}</span>
       </li>
     ))}
   </ul>
@@ -22,7 +22,7 @@ section {
   margin-inline: auto;
   margin-top: 1.5rem;
 
-  .parts-label {
+  .cloud-label {
     margin: 0 0 0.75rem;
     font-size: 0.625rem;
     letter-spacing: 0.14em;
@@ -44,6 +44,10 @@ section {
     display: inline-flex;
     gap: 0.75ch;
     align-items: center;
+    // Skip layout/paint for chips while the ~500KiB inline SVG cloud is still
+    // being parsed / while chips are off-screen — feels like a mid-list hang.
+    content-visibility: auto;
+    contain-intrinsic-size: auto 2.25rem;
 
     color: var(--ink);
     background-color: var(--surface-raised);

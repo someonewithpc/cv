@@ -1,10 +1,10 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import type { TechTag } from '@/server/tech-tags';
+import type { Tech } from '@/server/tech-icons';
 
 type Props = {
-  tag: TechTag;
+  tech: Tech;
   class?: string;
   /** When true, hide from AT (pair with visible text, or pure decoration). */
   decorative?: boolean;
@@ -27,20 +27,20 @@ const LOCK_COLOR_SCHEME_LIGHT = new Set([
   'vulkan',
 ]);
 
-const { tag, class: className, decorative = false } = Astro.props;
+const { tech, class: className, decorative = false } = Astro.props;
 ---
 
 <span
   class:list={['tech-icon', className]}
   aria-hidden={decorative ? 'true' : undefined}
   role={decorative ? undefined : 'img'}
-  aria-label={decorative ? undefined : tag.text}
+  aria-label={decorative ? undefined : tech.text}
 >
   <Icon
-    name={tag.icon}
+    name={tech.icon}
     is:inline
     aria-hidden="true"
-    style={LOCK_COLOR_SCHEME_LIGHT.has(tag.icon) ? 'color-scheme: only light' : undefined}
+    style={LOCK_COLOR_SCHEME_LIGHT.has(tech.icon) ? 'color-scheme: only light' : undefined}
   />
 </span>
 

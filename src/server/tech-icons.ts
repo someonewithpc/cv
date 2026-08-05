@@ -1,9 +1,9 @@
-export type TechTag = {
+export type Tech = {
   icon: string;
   text: string;
 };
 
-export const TECH_TAGS: TechTag[] = [
+export const TECH_ICONS: Tech[] = [
   { icon: 'javascript', text: 'JavaScript' },
   { icon: 'typescript', text: 'TypeScript' },
   { icon: 'c', text: 'C' },
@@ -62,38 +62,38 @@ export const iconSuffix = (iconId: string): string => {
   return colon === -1 ? iconId : iconId.slice(colon + 1);
 };
 
-const TECH_TAG_BY_TEXT = new Map(
-  TECH_TAGS.map((tag) => [tag.text.toLowerCase(), tag]),
+const TECH_BY_TEXT = new Map(
+  TECH_ICONS.map((tech) => [tech.text.toLowerCase(), tech]),
 );
 
-const TECH_TAG_BY_ICON_SUFFIX = new Map(
-  TECH_TAGS.map((tag) => [iconSuffix(tag.icon).toLowerCase(), tag]),
+const TECH_BY_ICON_SUFFIX = new Map(
+  TECH_ICONS.map((tech) => [iconSuffix(tech.icon).toLowerCase(), tech]),
 );
 
-export const resolveTechTag = (text: string | null | undefined): TechTag | null => {
+export const resolveTech = (text: string | null | undefined): Tech | null => {
   if (!text) {
     return null;
   }
 
   const key = text.toLowerCase();
 
-  return TECH_TAG_BY_TEXT.get(key) ?? TECH_TAG_BY_ICON_SUFFIX.get(key) ?? null;
+  return TECH_BY_TEXT.get(key) ?? TECH_BY_ICON_SUFFIX.get(key) ?? null;
 };
 
-export const resolveTechTagByIconSuffix = (suffix: string | null | undefined): TechTag | null => {
+export const resolveTechByIconSuffix = (suffix: string | null | undefined): Tech | null => {
   if (!suffix) {
     return null;
   }
 
-  return TECH_TAG_BY_ICON_SUFFIX.get(suffix.toLowerCase()) ?? null;
+  return TECH_BY_ICON_SUFFIX.get(suffix.toLowerCase()) ?? null;
 };
 
-export const resolveTechTags = (
+export const resolveTechs = (
   keys: string | readonly string[] | null | undefined,
-): TechTag[] => {
+): Tech[] => {
   const list = keys == null ? [] : Array.isArray(keys) ? keys : [keys];
 
   return list
-    .map((key) => (resolveTechTag(key)))
-    .filter((tag): tag is TechTag => (tag != null));
+    .map((key) => (resolveTech(key)))
+    .filter((tech): tech is Tech => (tech != null));
 };

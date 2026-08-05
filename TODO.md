@@ -6,9 +6,9 @@
   - [ ] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
   - [ ] Collapse after delay (prefers-reduced-motion)
   - [ ] Avoid transition to already active theme
-- [ ] Tags
+- [ ] Tech icon cloud
   - [x] SVG icon in light mode broken
-  - [ ] More langs and tools
+  - [ ] More tools
     - [x] Mold
     - [~] Better clang
     - [x] Make
