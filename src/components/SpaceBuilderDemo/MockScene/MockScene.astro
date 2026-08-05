@@ -16,65 +16,33 @@
     '/demos/space-builder/grass/displacement.webp',
   ] as const;
 
-  let warmed = false;
-  let chairWarm: Promise<Response | null> | null = null;
+  let assetsWarmed = false;
 
-  function preloadAsset(href: string, as: string) {
-    if (document.querySelector(`link[data-sb-preload="${href}"]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = as;
-    link.href = href;
-    link.dataset.sbPreload = href;
-    if (as === 'fetch') link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
-  }
-
-  /** Warm HTTP cache without decoding into GPU yet. */
-  function warmFetch(url: string) {
-    return fetch(url, { credentials: 'same-origin', priority: 'low' } as RequestInit).catch(() => null);
-  }
-
-  /** Pull Vue / Three / chair into cache before the island scrolls into view. */
-  function warmSpaceBuilder() {
-    if (warmed) return;
-    warmed = true;
-    preloadAsset(CHAIR_URL, 'fetch');
-    preloadAsset(GRASS_URLS[0], 'image');
-    chairWarm = warmFetch(CHAIR_URL);
-    void warmFetch(GRASS_URLS[0]);
-    // Secondary maps after color — keep first paint lighter.
-    queueMicrotask(() => {
-      for (const url of GRASS_URLS.slice(1)) {
-        preloadAsset(url, 'image');
-        void warmFetch(url);
-      }
-    });
-    void import('vue');
-    void import('./MockSceneApp.vue');
-    void import('./scene/SpaceBuilderScene');
-    // Warm meshopt WASM while the user is still scrolling to the demo.
-    void import('three/addons/libs/meshopt_decoder.module.js').then(async (mod) => {
-      const decoder = mod.MeshoptDecoder;
-      if (decoder?.ready) await decoder.ready;
-    });
+  /** Low-priority cache warm — never preload (that competes with LCP). */
+  function warmAssets() {
+    if (assetsWarmed) return;
+    assetsWarmed = true;
+    const opts = { credentials: 'same-origin', priority: 'low' } as RequestInit;
+    void fetch(CHAIR_URL, opts).catch(() => null);
+    void fetch(GRASS_URLS[0], opts).catch(() => null);
   }
 
   async function bootSpaceBuilder(mount: HTMLElement) {
     if (mount.dataset.mounted === 'true') return;
     mount.dataset.mounted = 'true';
-    warmSpaceBuilder();
+    warmAssets();
 
     try {
-      // Overlap Vue parse with any in-flight chair warm.
-      const boot = Promise.all([
+      // Yield so React/Marker Editor (if any) can finish a frame before Vue+Three parse.
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+
+      const [{ createApp }, { default: MockSceneApp }] = await Promise.all([
         import('vue'),
         import('./MockSceneApp.vue'),
-        chairWarm,
       ]);
-      const [{ createApp }, { default: MockSceneApp }] = await boot;
 
-      // Keep the dark placeholder until Vue paints its own boot cover (same bg).
       const app = createApp(MockSceneApp);
       app.mount(mount);
       mount.querySelector('.boot-placeholder')?.remove();
@@ -88,45 +56,17 @@
     const mount = document.querySelector<HTMLElement>('[data-space-builder-island]');
     if (!mount || mount.dataset.mounted === 'true') return;
 
-    const page =
-      mount.closest<HTMLElement>('article.technical-drawing-stack > section')
-      ?? mount;
-    const stack = page.closest('article.technical-drawing-stack');
-    const demos = document.querySelector('#demos') ?? page;
-
-    // Warm as soon as demos are near the viewport (page scroll), not only when
-    // the carousel page intersects the stack.
-    const warmObserver = new IntersectionObserver(
+    // Boot only when this demo frame nears the viewport — never on idle timeout.
+    // (Idle warm pulled Vue/Three into Lighthouse TBT ~1.5s after load.)
+    const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0]?.isIntersecting) return;
-        warmObserver.disconnect();
-        warmSpaceBuilder();
-      },
-      { root: null, rootMargin: '900px 0px', threshold: 0 },
-    );
-    warmObserver.observe(demos);
-
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => warmSpaceBuilder(), { timeout: 1500 });
-    } else {
-      setTimeout(warmSpaceBuilder, 800);
-    }
-
-    const bootObserver = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0]?.isIntersecting) return;
-        bootObserver.disconnect();
+        observer.disconnect();
         void bootSpaceBuilder(mount);
       },
-      {
-        root: stack,
-        threshold: 0.08,
-        // Start the Vue mount earlier so Three is already compiling when the
-        // page is fully on-screen.
-        rootMargin: '55% 0px',
-      },
+      { root: null, rootMargin: '120px 0px', threshold: 0.01 },
     );
-    bootObserver.observe(page);
+    observer.observe(mount);
   }
 
   armBoot();
