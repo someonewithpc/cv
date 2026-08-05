@@ -40,9 +40,9 @@ const layers = {
   main: { name: null },
   place: { name: 'Place Area', pageStyle: 'blueprint' },
   parameters: { name: 'Edit Parameters', pageStyle: 'blueprint wip' },
-  layouts: { name: 'Layout Styles', pageStyle: 'blueprint' },
-  badge: { name: 'Capacity Badge', pageStyle: 'blueprint' },
-  dnd: { name: 'Drag & Drop', pageStyle: 'blueprint' },
+  layouts: { name: 'Layout Styles', pageStyle: 'blueprint wip' },
+  badge: { name: 'Capacity Badge', pageStyle: 'blueprint wip' },
+  dnd: { name: 'Drag & Drop', pageStyle: 'blueprint wip' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -66,9 +66,24 @@ type Layer = keyof typeof layers;
           <WipStamp />
         </>
       ),
-      layouts: <LayoutsLayer />,
-      badge: <BadgeLayer />,
-      dnd: <DnDLayer />,
+      layouts: (
+        <>
+          <LayoutsLayer />
+          <WipStamp />
+        </>
+      ),
+      badge: (
+        <>
+          <BadgeLayer />
+          <WipStamp />
+        </>
+      ),
+      dnd: (
+        <>
+          <DnDLayer />
+          <WipStamp />
+        </>
+      ),
     }[layer])}
   </fragment>
 
