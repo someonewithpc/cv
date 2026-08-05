@@ -398,7 +398,7 @@ export function MarkerEditor({
                     <details
                       key={step}
                       name="marker-editor-step"
-                      className={cx({ disabled })}
+                      inert={disabled || undefined}
                       title={disabled ? "This step is disabled because it's not compatible with some selected options" : undefined}
                       open={state.step === step}
                       onClick={(e) => {

@@ -1,0 +1,270 @@
+---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+const annotationScale = 0.8;
+const annotationFontSize = 0.1 * annotationScale;
+---
+
+<div class="wrapper">
+  <Annotations scale={annotationScale}>
+    <div class="diagram" slot="content" aria-hidden="true">
+      <div class="panel">
+        <header>
+          <span class="eyebrow">CSS2D capacity tag</span>
+          <strong>Screen-bottom, not world-south</strong>
+        </header>
+
+        <div class="compare">
+          <figure class="card fail">
+            <figcaption>
+              <span class="badge bad">Failed</span>
+              World −Z offset
+            </figcaption>
+            <div class="viewport">
+              <div class="area rotated">
+                <span class="tag buried">48 seats</span>
+              </div>
+              <span class="cam">orbit →</span>
+            </div>
+            <p class="note">Tag stuck to world south — slides under the box when you yaw.</p>
+          </figure>
+
+          <figure class="card win">
+            <figcaption>
+              <span class="badge good">Shipped</span>
+              Camera-relative CSS2D
+            </figcaption>
+            <div class="viewport">
+              <div class="area">
+                <span class="tag">48 seats in blocks of 4 by 3</span>
+              </div>
+              <svg class="math" viewBox="0 0 120 80" aria-hidden="true">
+                <circle cx="60" cy="38" r="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2.5" />
+                <line x1="60" y1="38" x2="60" y2="68" stroke="currentColor" stroke-width="1.4" />
+                <polygon points="57,60 60,70 63,60" fill="currentColor" />
+                <text x="66" y="58" font-size="8">r + offset</text>
+              </svg>
+            </div>
+            <p class="note">
+              <code>controls.change</code> → <code>updateTagPosition</code> keeps the label on the
+              screen-bottom edge of the selection.
+            </p>
+          </figure>
+        </div>
+      </div>
+    </div>
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        tipX={-0.55}
+        tipY={0.2}
+        angle={-40}
+        length={0.42}
+        fontSize={annotationFontSize}
+        text="Buried under the box"
+      />
+      <ArrowAnnotation
+        tipX={0.35}
+        tipY={0.45}
+        angle={-55}
+        length={0.45}
+        fontSize={annotationFontSize}
+        text="Screen-bottom edge"
+      />
+      <ArrowAnnotation
+        tipX={0.7}
+        tipY={-0.35}
+        angle={30}
+        length={0.38}
+        fontSize={annotationFontSize}
+        text="CSS2DObject · .tag-selection"
+      />
+    </Fragment>
+  </Annotations>
+</div>
+
+<style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
+.wrapper {
+  width: min(drawing.$artwork-width * 1.55, 94cqw);
+  max-width: 100%;
+  max-height: 84cqh;
+  aspect-ratio: 1.5 / 1;
+  position: relative;
+}
+
+.diagram {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: stretch;
+  padding: 0.35rem;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.55rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #333;
+  border-radius: 0.35rem;
+  background: color-mix(in oklab, var(--blueprint, #dce8f5) 50%, #fff);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  font-family: var(--font-poppins, system-ui, sans-serif);
+  color: #1d241c;
+
+  > header {
+    display: grid;
+    gap: 0.1rem;
+
+    .eyebrow {
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    strong {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  min-height: 0;
+}
+
+.card {
+  margin: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 0.4rem;
+  padding: 0.55rem;
+  border: 1px solid #333;
+  border-radius: 0.3rem;
+  background: #f7f4ee;
+
+  figcaption {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+
+  .note {
+    margin: 0;
+    font-size: 0.6rem;
+    line-height: 1.4;
+    color: #444;
+
+    code {
+      font-size: 0.58rem;
+    }
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.2rem;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &.bad {
+    background: #f3c4c0;
+    color: #7a221c;
+  }
+
+  &.good {
+    background: #d7ebad;
+    color: #2f4510;
+  }
+}
+
+.viewport {
+  position: relative;
+  min-height: 7.5rem;
+  border-radius: 0.25rem;
+  background: #212121;
+  border: 1px solid #444;
+  overflow: hidden;
+}
+
+.area {
+  position: absolute;
+  left: 22%;
+  top: 22%;
+  width: 48%;
+  height: 44%;
+  background: color-mix(in oklab, #89ab22 40%, transparent);
+  border: 2px solid #6f8f1c;
+  border-radius: 0.15rem;
+
+  &.rotated {
+    rotate: -18deg;
+    left: 18%;
+    top: 28%;
+  }
+}
+
+.tag {
+  position: absolute;
+  left: 50%;
+  bottom: -1.45rem;
+  translate: -50% 0;
+  padding: 0 0.4rem;
+  border-radius: 10px;
+  border: 2px solid rgba(162, 206, 59, 0.85);
+  background: rgba(25, 41, 21, 0.85);
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  white-space: nowrap;
+  z-index: 2;
+
+  &.buried {
+    bottom: auto;
+    top: 55%;
+    opacity: 0.55;
+    filter: blur(0.3px);
+    z-index: 0;
+  }
+}
+
+.cam {
+  position: absolute;
+  right: 8%;
+  top: 12%;
+  font-size: 0.55rem;
+  color: #adb5bd;
+  letter-spacing: 0.04em;
+}
+
+.math {
+  position: absolute;
+  right: 4%;
+  top: 10%;
+  width: 42%;
+  color: color-mix(in oklab, #9ec5e8 80%, #fff);
+  opacity: 0.9;
+}
+
+@container technical-drawing (orientation: portrait) {
+  .wrapper {
+    width: min(92cqw, calc(78cqh * 1.1));
+    aspect-ratio: 1.05 / 1;
+    max-height: 78cqh;
+  }
+
+  .compare {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

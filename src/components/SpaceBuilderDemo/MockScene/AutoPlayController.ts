@@ -1,0 +1,759 @@
+import {
+  DEFAULT_LAYOUT_OPTIONS,
+  type LayoutStyle,
+} from './scene/layoutEngine';
+import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
+
+export type DemoCursorStep = {
+  target?: string | null;
+  client?: { x: number; y: number };
+  click?: boolean;
+  dragging?: boolean;
+};
+
+type Step = {
+  delay: number | (() => number);
+  cursor?: DemoCursorStep | (() => DemoCursorStep | undefined);
+  domClick?: boolean | (() => boolean);
+  /** Fire a real dblclick on the aimed demo target (catalog confirm → Build). */
+  domDblClick?: boolean | (() => boolean);
+  run?: () => void | Promise<void>;
+};
+
+export type DemoCursorHandler = (step: DemoCursorStep) => void;
+
+export type DemoToastPayload = {
+  action: string;
+};
+
+export type DemoToastHandler = (toast: DemoToastPayload) => void;
+
+export type DemoUiHandler = (patch: {
+  panel?: 'closed' | 'catalog' | 'options';
+  phase?: 'idle' | 'build' | 'placing';
+}) => void;
+
+export const autoplayStartedToast = (): DemoToastPayload => ({
+  action: 'Demo playing · move to take over',
+});
+
+export const autoplayPausedToast = (): DemoToastPayload => ({
+  action: 'Demo paused',
+});
+
+export const autoplayCompletedToast = (): DemoToastPayload => ({
+  action: 'Demo complete · looping again',
+});
+
+function queryDemoTarget(target: string) {
+  const scope = document.querySelector('.space-builder-app');
+  const root = scope ?? document;
+  return root.querySelector(`[data-demo-target="${CSS.escape(target)}"]`);
+}
+
+/** Set an input value the way a user would, so Vue `@input` / `@change` handlers fire. */
+function setNativeInputValue(input: HTMLInputElement, value: string) {
+  const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  proto?.set?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/** Matches `.space-builder-demo-cursor` left/top transition duration. */
+const CURSOR_TRAVEL_MS = 560;
+const SIDEBAR_SCROLL_MS = 480;
+/** Ignore sub-pixel / layout jitter when deciding whether the cursor actually moved. */
+const CURSOR_MOVE_EPS_PX = 8;
+
+function wait(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function targetCenter(el: Element) {
+  const rect = el.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+function isVisibleInScroller(el: HTMLElement, scroller: HTMLElement, pad = 12) {
+  const elRect = el.getBoundingClientRect();
+  const box = scroller.getBoundingClientRect();
+  return elRect.bottom > box.top + pad && elRect.top < box.bottom - pad;
+}
+
+/** Smoothly scroll a sidebar-body so `el` sits near its vertical center. */
+async function animateScrollerToElement(
+  scroller: HTMLElement,
+  el: HTMLElement,
+  onFrame?: (el: HTMLElement) => void,
+) {
+  const elRect = el.getBoundingClientRect();
+  const box = scroller.getBoundingClientRect();
+  const pad = 16;
+  const fullyVisible = elRect.top >= box.top + pad && elRect.bottom <= box.bottom - pad;
+  if (fullyVisible) return false;
+
+  const delta = (elRect.top + elRect.height / 2) - (box.top + box.height / 2);
+  const from = scroller.scrollTop;
+  const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+  const to = Math.max(0, Math.min(max, from + delta));
+  if (Math.abs(to - from) < 1) return false;
+
+  if (prefersReducedMotion()) {
+    scroller.scrollTop = to;
+    onFrame?.(el);
+    return true;
+  }
+
+  const duration = SIDEBAR_SCROLL_MS;
+  const t0 = performance.now();
+  await new Promise<void>((resolve) => {
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - t0) / duration);
+      const eased = t * t * (3 - 2 * t);
+      scroller.scrollTop = from + (to - from) * eased;
+      onFrame?.(el);
+      if (t < 1) requestAnimationFrame(tick);
+      else resolve();
+    };
+    requestAnimationFrame(tick);
+  });
+  return true;
+}
+
+/**
+ * Open ancestor <details> and animate the sidebar scroller so `target` is visible.
+ * `onScrollFrame` runs each scroll tick so the demo cursor can ride the control.
+ */
+async function revealDemoTarget(
+  target: string,
+  onScrollFrame?: (el: HTMLElement) => void,
+) {
+  const el = queryDemoTarget(target);
+  if (!(el instanceof HTMLElement)) return null;
+
+  const wasClosed = el.closest('details:not([open])');
+  wasClosed?.setAttribute('open', '');
+  if (wasClosed) {
+    // Let the open section lay out before measuring scroll.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+
+  const scroller = el.closest('.sidebar-body');
+  if (scroller instanceof HTMLElement) {
+    await animateScrollerToElement(scroller, el, onScrollFrame);
+  }
+
+  return el;
+}
+
+type Preset = {
+  kind: 'build' | 'dnd';
+  style: LayoutStyle;
+  seats: number;
+  distanceX: number;
+  distanceZ: number;
+  aisle?: number;
+  blocks?: { width: number; height: number };
+  angle?: number;
+  offset?: number;
+  innerDiameter?: number;
+};
+
+const PRESETS: Preset[] = [
+  {
+    kind: 'build',
+    style: 'grid',
+    seats: 0,
+    distanceX: 0.2,
+    distanceZ: 0.35,
+    aisle: 0.9,
+    blocks: { width: 0, height: 0 },
+  },
+  { kind: 'build', style: 'offset', seats: 0, distanceX: 0.2, distanceZ: 0.35, offset: 0.35 },
+  { kind: 'build', style: 'hollow', seats: 0, distanceX: 0.25, distanceZ: 0.4 },
+  { kind: 'dnd', style: 'grid', seats: 0, distanceX: 0.2, distanceZ: 0.35 },
+  { kind: 'build', style: 'chevron', seats: 0, distanceX: 0.18, distanceZ: 0.32, aisle: 1.1, angle: Math.PI / 7 },
+  { kind: 'build', style: 'circle', seats: 0, distanceX: 0.15, distanceZ: 0.4, innerDiameter: 1.2 },
+  { kind: 'build', style: 'u_shape', seats: 0, distanceX: 0.22, distanceZ: 0.35 },
+];
+
+export class AutoPlayController {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private stepIndex = 0;
+  private paused = false;
+  private presetIndex = 0;
+  /** Last aimed tip position — travel wait must key off pixels, not target ids. */
+  private lastCursorClient: { x: number; y: number } | null = null;
+  private dragRaf: number | null = null;
+  /** Release an in-flight slider drag so takeover doesn't leave a stuck rAF. */
+  private dragCleanup: (() => void) | null = null;
+  private readonly scene: SpaceBuilderScene;
+  private readonly onCursor: DemoCursorHandler;
+  private readonly onToast: DemoToastHandler;
+  private readonly onUi: DemoUiHandler;
+
+  constructor(
+    scene: SpaceBuilderScene,
+    onCursor: DemoCursorHandler,
+    onToast: DemoToastHandler,
+    onUi: DemoUiHandler,
+  ) {
+    this.scene = scene;
+    this.onCursor = onCursor;
+    this.onToast = onToast;
+    this.onUi = onUi;
+  }
+
+  start() {
+    this.pause();
+    this.paused = false;
+    this.scheduleNext();
+  }
+
+  pause() {
+    this.paused = true;
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    if (this.dragRaf != null) {
+      cancelAnimationFrame(this.dragRaf);
+      this.dragRaf = null;
+    }
+    const cleanup = this.dragCleanup;
+    this.dragCleanup = null;
+    cleanup?.();
+  }
+
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    this.scheduleNext();
+  }
+
+  destroy() {
+    this.pause();
+  }
+
+  private currentPreset() {
+    return PRESETS[this.presetIndex % PRESETS.length];
+  }
+
+  private scheduleNext() {
+    if (this.paused) return;
+    const steps = this.steps();
+    if (this.stepIndex >= steps.length) {
+      this.stepIndex = 0;
+      this.presetIndex += 1;
+      if (this.presetIndex % PRESETS.length === 0) {
+        this.onToast(autoplayCompletedToast());
+      }
+    }
+    const step = this.steps()[this.stepIndex];
+    const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
+    this.timer = setTimeout(() => {
+      void this.runStep(step);
+    }, delay);
+  }
+
+  /** CSS cursor travel is a fixed ~0.55s — wait the full duration whenever the tip actually moves. */
+  private async waitForCursorTravel(to: { x: number; y: number }) {
+    const from = this.lastCursorClient;
+    this.lastCursorClient = to;
+    if (prefersReducedMotion()) {
+      await wait(40);
+      return;
+    }
+    if (!from) {
+      await wait(CURSOR_TRAVEL_MS);
+      return;
+    }
+    const dist = Math.hypot(to.x - from.x, to.y - from.y);
+    await wait(dist < CURSOR_MOVE_EPS_PX ? 48 : CURSOR_TRAVEL_MS);
+  }
+
+  private stickCursorTo(el: HTMLElement, target: string, dragging: boolean) {
+    const client = targetCenter(el);
+    this.lastCursorClient = client;
+    this.onCursor({
+      client,
+      target,
+      dragging,
+      click: false,
+    });
+  }
+
+  private async runStep(step: Step) {
+    if (this.paused) return;
+    try {
+      const cursor = typeof step.cursor === 'function' ? step.cursor() : step.cursor;
+      const shouldClick = typeof step.domClick === 'function' ? step.domClick() : step.domClick;
+      const shouldDblClick = typeof step.domDblClick === 'function'
+        ? step.domDblClick()
+        : step.domDblClick;
+
+      if (cursor?.target) {
+        const target = cursor.target;
+        const preEl = queryDemoTarget(target);
+        if (preEl instanceof HTMLElement) {
+          const wasClosed = preEl.closest('details:not([open])');
+          wasClosed?.setAttribute('open', '');
+          if (wasClosed) {
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          }
+
+          const scroller = preEl.closest('.sidebar-body');
+          const alreadyVisible = !(scroller instanceof HTMLElement)
+            || isVisibleInScroller(preEl, scroller);
+
+          // Only fly to the control first when it is already on-screen. Aiming at an
+          // off-screen rect sends the cursor outside the sidebar before scrolling.
+          if (alreadyVisible) {
+            const pre = targetCenter(preEl);
+            this.onCursor({
+              client: pre,
+              target,
+              dragging: false,
+              click: false,
+            });
+            await this.waitForCursorTravel(pre);
+            if (this.paused) return;
+          }
+
+          await revealDemoTarget(target, (el) => {
+            const box = el.closest('.sidebar-body');
+            if (box instanceof HTMLElement && !isVisibleInScroller(el, box)) return;
+            // Disable CSS left/top transition so the tip stays glued during the scroll.
+            this.stickCursorTo(el, target, true);
+          });
+          if (this.paused) return;
+        } else {
+          await revealDemoTarget(target);
+          if (this.paused) return;
+        }
+      }
+
+      // Re-resolve after scroll so coords match the settled layout.
+      const aimed = typeof step.cursor === 'function' ? step.cursor() : cursor;
+
+      if (aimed) {
+        if (aimed.target) {
+          const el = queryDemoTarget(aimed.target);
+          const client = el ? targetCenter(el) : aimed.client;
+          if (client) {
+            this.onCursor({
+              client,
+              target: aimed.target,
+              dragging: aimed.dragging,
+              click: false,
+            });
+            await this.waitForCursorTravel(client);
+          }
+        } else if (aimed.client) {
+          this.onCursor({ ...aimed, click: false });
+          await this.waitForCursorTravel(aimed.client);
+        } else {
+          this.onCursor({ ...aimed, click: false });
+        }
+        if (this.paused) return;
+      }
+
+      if (shouldDblClick && aimed?.target) {
+        const el = queryDemoTarget(aimed.target);
+        if (el instanceof HTMLElement) {
+          const client = targetCenter(el);
+          this.lastCursorClient = client;
+          this.onCursor({
+            client,
+            target: aimed.target,
+            click: true,
+            dragging: aimed.dragging,
+          });
+          el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+        }
+      } else if (shouldClick && aimed?.target) {
+        const el = queryDemoTarget(aimed.target);
+        if (el instanceof HTMLElement) {
+          const client = targetCenter(el);
+          this.lastCursorClient = client;
+          // Final snap to the live rect so the pulse matches the click tip.
+          this.onCursor({
+            client,
+            target: aimed.target,
+            click: true,
+            dragging: aimed.dragging,
+          });
+          el.click();
+        }
+      } else if (aimed?.click) {
+        if (aimed.client) this.lastCursorClient = aimed.client;
+        this.onCursor({ ...aimed, click: true });
+      }
+
+      await step.run?.();
+    } catch (error) {
+      console.debug('Space Builder autoplay step failed', error);
+    }
+    this.stepIndex += 1;
+    this.scheduleNext();
+  }
+
+  private offCanvasCursor(): DemoCursorStep {
+    const canvas = this.scene.renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    return { client: { x: rect.left + rect.width * 0.9, y: rect.bottom + 40 } };
+  }
+
+  private groundCursor(x: number, z: number, extra: Partial<DemoCursorStep> = {}): DemoCursorStep {
+    const client = this.scene.groundToClient(x, z);
+    return client ? { client, ...extra } : this.offCanvasCursor();
+  }
+
+  /**
+   * Drag a range thumb from its current value to `toValue`, keeping the demo
+   * cursor glued to the thumb (same approach as Marker Editor autoplay).
+   */
+  private async animateRangeInput(target: string, toValue: number, durationMs = 520) {
+    const input = queryDemoTarget(target);
+    if (!(input instanceof HTMLInputElement) || input.type !== 'range' || input.disabled || this.paused) {
+      return;
+    }
+
+    const rect = input.getBoundingClientRect();
+    const min = parseFloat(input.min || '0');
+    const max = parseFloat(input.max || '1');
+    const step = parseFloat(input.step) || 0.01;
+    const from = parseFloat(input.value);
+    const clampedTo = Math.min(max, Math.max(min, toValue));
+
+    const thumbX = (value: number) => {
+      const t = max === min ? 0 : (value - min) / (max - min);
+      // Approximate thumb travel along the track (browser chrome varies slightly).
+      return rect.left + 8 + (rect.width - 16) * t;
+    };
+    const thumbY = rect.top + rect.height / 2;
+
+    // Settle on the current thumb before pressing — don't start mid-track.
+    const startClient = { x: thumbX(from), y: thumbY };
+    this.onCursor({ client: startClient, target, dragging: false });
+    await this.waitForCursorTravel(startClient);
+    if (this.paused) return;
+
+    await new Promise<void>((resolve) => {
+      const startedAt = performance.now();
+      let settled = false;
+      let curValue = from;
+
+      const finish = (value: number) => {
+        if (settled) return;
+        settled = true;
+        if (this.dragCleanup === cleanup) {
+          this.dragCleanup = null;
+        }
+        if (this.dragRaf != null) {
+          cancelAnimationFrame(this.dragRaf);
+          this.dragRaf = null;
+        }
+        const snapped = Math.round(value / step) * step;
+        const finalValue = Math.min(max, Math.max(min, Number(snapped.toFixed(4))));
+        setNativeInputValue(input, String(finalValue));
+        const client = { x: thumbX(finalValue), y: thumbY };
+        this.lastCursorClient = client;
+        this.onCursor({ client, target, dragging: false });
+        resolve();
+      };
+
+      const cleanup = () => {
+        finish(curValue);
+      };
+      this.dragCleanup = cleanup;
+
+      this.onCursor({ client: startClient, target, click: true, dragging: true });
+
+      const tick = (now: number) => {
+        if (settled || this.paused) {
+          this.dragRaf = null;
+          cleanup();
+          return;
+        }
+
+        const t = Math.min(1, (now - startedAt) / durationMs);
+        const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+        curValue = from + (clampedTo - from) * eased;
+        setNativeInputValue(input, String(curValue));
+        const client = { x: thumbX(curValue), y: thumbY };
+        this.lastCursorClient = client;
+        this.onCursor({ client, target, dragging: true });
+
+        if (t < 1) {
+          this.dragRaf = requestAnimationFrame(tick);
+          return;
+        }
+
+        this.dragRaf = null;
+        finish(clampedTo);
+      };
+
+      this.dragRaf = requestAnimationFrame(tick);
+    });
+  }
+
+  private steps(): Step[] {
+    const preset = this.currentPreset();
+    if (preset.kind === 'dnd') return this.dndSteps();
+    return this.buildSteps(preset);
+  }
+
+  private buildSteps(preset: Preset): Step[] {
+    const start = { x: -3.2, z: -2.4 };
+    const end = { x: 3.4, z: 3.0 };
+
+    return [
+      {
+        delay: 700,
+        cursor: { target: 'tool:add' },
+        run: () => {
+          this.scene.reset();
+          this.onUi({ panel: 'closed', phase: 'idle' });
+        },
+      },
+      {
+        delay: 550,
+        cursor: { target: 'tool:add', click: true },
+        domClick: true,
+      },
+      {
+        delay: 700,
+        cursor: { target: 'catalog:chair' },
+      },
+      {
+        delay: 550,
+        cursor: { target: 'catalog:chair', click: true },
+        // Space Builder advances on double-click; skip the separate Build button.
+        domDblClick: true,
+        run: () => {
+          // Ensure Options is open even if the synthetic dblclick misses (common after a loop).
+          this.onUi({ panel: 'options', phase: 'build' });
+        },
+      },
+      {
+        delay: 400,
+        cursor: () => this.groundCursor(start.x, start.z),
+      },
+      {
+        delay: 200,
+        cursor: () => this.groundCursor(start.x, start.z, { dragging: true }),
+        run: async () => {
+          await this.scene.drawAreaAnimated(start, end, 950, (point) => {
+            this.onCursor(this.groundCursor(point.x, point.z, { dragging: true }));
+          });
+          // Save closes the sidebar; reopen Options before the layout/param tour so
+          // chips and sliders are on-screen for every loop — not only the first.
+          this.onUi({ panel: 'options', phase: 'build' });
+          this.scene.setOptions({
+            style: preset.style,
+            seats: preset.seats,
+            distanceX: preset.distanceX,
+            distanceZ: preset.distanceZ,
+            aisle: preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle,
+            offset: preset.offset ?? DEFAULT_LAYOUT_OPTIONS.offset,
+            angle: preset.angle ?? DEFAULT_LAYOUT_OPTIONS.angle,
+            innerDiameter: preset.innerDiameter ?? DEFAULT_LAYOUT_OPTIONS.innerDiameter,
+            blocks: preset.blocks ?? { width: 0, height: 0 },
+          });
+        },
+      },
+      // Scroll to layout chips — style already applied above; don't re-click it.
+      {
+        delay: 700,
+        cursor: { target: `layout:${preset.style}` },
+        run: () => {
+          this.onUi({ panel: 'options', phase: 'build' });
+        },
+      },
+      // Layout tour: skip styles already selected so we never double-click Grid (etc.).
+      ...(['grid', 'offset', 'hollow', 'chevron', 'circle'] as const)
+        .filter((style) => style !== preset.style)
+        .map((style) => ({
+          delay: 550,
+          cursor: { target: `layout:${style}` as const },
+          domClick: true,
+          run: () => this.scene.setStyle(style),
+        })),
+      {
+        delay: 650,
+        cursor: { target: `layout:${preset.style}` },
+        domClick: true,
+        run: () => {
+          this.scene.setOptions({
+            style: preset.style,
+            seats: preset.seats,
+            distanceX: preset.distanceX,
+            distanceZ: preset.distanceZ,
+            aisle: preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle,
+            offset: preset.offset ?? DEFAULT_LAYOUT_OPTIONS.offset,
+            angle: preset.angle ?? DEFAULT_LAYOUT_OPTIONS.angle,
+            innerDiameter: preset.innerDiameter ?? DEFAULT_LAYOUT_OPTIONS.innerDiameter,
+            blocks: preset.blocks ?? { width: 0, height: 0 },
+          });
+        },
+      },
+      // Params after the style tour: drag spacing / aisle thumbs like a real user.
+      {
+        delay: 700,
+        cursor: { target: 'param:spacing-x' },
+        run: async () => {
+          const next = Math.max(0.05, preset.distanceX - 0.15);
+          await this.animateRangeInput('param:spacing-x', next);
+        },
+      },
+      {
+        delay: 380,
+        cursor: { target: 'param:spacing-x' },
+        run: async () => {
+          await this.animateRangeInput('param:spacing-x', preset.distanceX);
+        },
+      },
+      ...(preset.style === 'chevron' || (preset.blocks && (preset.blocks.width > 0 || preset.blocks.height > 0))
+        ? [
+            {
+              delay: 550,
+              cursor: { target: 'param:aisle' as const },
+              run: async () => {
+                const aisle = preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle;
+                // Nudge away then back so the thumb visibly travels.
+                await this.animateRangeInput('param:aisle', Math.min(2, aisle + 0.35));
+                if (this.paused) return;
+                await wait(180);
+                if (this.paused) return;
+                await this.animateRangeInput('param:aisle', aisle);
+              },
+            },
+          ]
+        : []),
+      {
+        delay: 700,
+        cursor: { target: 'param:seats' },
+        run: () => {
+          const snap = this.scene.getSnapshot();
+          const half = Math.max(1, Math.floor(snap.maxSeats / 2));
+          this.scene.setOptions({ seats: half });
+        },
+      },
+      {
+        delay: 800,
+        cursor: { target: 'param:seats' },
+        run: () => {
+          // Clear back to fill — the usual Space Builder empty-seats path.
+          this.scene.setOptions({ seats: 0 });
+        },
+      },
+      {
+        delay: 400,
+        cursor: () => {
+          const area = this.scene.getSnapshot().area;
+          if (!area) return this.offCanvasCursor();
+          return this.groundCursor(
+            area.x + area.width / 2,
+            area.z + area.depth / 2,
+            { dragging: true },
+          );
+        },
+        run: async () => {
+          const area = this.scene.getSnapshot().area;
+          if (!area) return;
+          // Grow the area only — rotating the SelectArea after a layout tour left
+          // handles/chairs looking broken (especially on chevron).
+          await this.scene.resizeAreaAnimated(
+            { width: area.width + 0.9, depth: area.depth + 0.55 },
+            750,
+            (point) => {
+              this.onCursor(this.groundCursor(point.x, point.z, { dragging: true }));
+            },
+          );
+        },
+      },
+      {
+        delay: 700,
+        cursor: { target: 'action:save' },
+      },
+      {
+        delay: 500,
+        cursor: { target: 'action:save', click: true },
+        domClick: true,
+        run: () => {
+          this.onToast({ action: 'Arrangement saved' });
+          this.onUi({ panel: 'closed', phase: 'idle' });
+        },
+      },
+      {
+        delay: 1100,
+        cursor: () => this.offCanvasCursor(),
+      },
+    ];
+  }
+
+  private dndSteps(): Step[] {
+    return [
+      {
+        delay: 700,
+        run: () => {
+          this.scene.reset();
+          this.onUi({ panel: 'closed', phase: 'idle' });
+        },
+      },
+      {
+        delay: 500,
+        cursor: { target: 'tool:add', click: true },
+        domClick: true,
+      },
+      {
+        delay: 650,
+        cursor: { target: 'catalog:chair' },
+      },
+      {
+        delay: 200,
+        cursor: { target: 'catalog:chair', dragging: true },
+        run: () => {
+          this.onUi({ panel: 'catalog', phase: 'placing' });
+          this.scene.setGhostVisible(true);
+        },
+      },
+      {
+        delay: 200,
+        cursor: () => this.groundCursor(0.2, 0.4, { dragging: true }),
+        run: () => {
+          const client = this.scene.groundToClient(0.2, 0.4);
+          if (client) this.scene.setGhostAt(client.x, client.y);
+        },
+      },
+      {
+        delay: 700,
+        cursor: () => this.groundCursor(1.2, -0.6, { dragging: true }),
+        run: () => {
+          const client = this.scene.groundToClient(1.2, -0.6);
+          if (client) this.scene.setGhostAt(client.x, client.y);
+        },
+      },
+      {
+        delay: 500,
+        cursor: () => this.groundCursor(1.2, -0.6, { click: true }),
+        run: () => {
+          this.scene.placeGhostAsSingle();
+          this.onToast({ action: 'Object placed' });
+          this.onUi({ panel: 'closed', phase: 'idle' });
+        },
+      },
+      {
+        delay: 1100,
+        cursor: () => this.offCanvasCursor(),
+      },
+    ];
+  }
+}

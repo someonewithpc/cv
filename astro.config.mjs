@@ -3,6 +3,7 @@ import path from "path";
 
 import cloudflare from '@astrojs/cloudflare';
 import react from '@astrojs/react';
+import vue from '@astrojs/vue';
 import { defineConfig } from 'astro/config';
 
 import icon from 'astro-icon';
@@ -16,6 +17,7 @@ export default defineConfig({
   compressHTML: true,
   integrations: [
     react(),
+    vue(),
     icon({
       include: {
         lucide: ['external-link', 'plus', 'upload', 'x'],
@@ -53,20 +55,41 @@ export default defineConfig({
         'classnames',
         'lodash-es',
         'lodash-es/chunk',
+        'lodash-es/startCase',
+        'lodash-es/partition',
+        'lodash-es/camelCase',
+        'lodash-es/snakeCase',
+        'lodash-es/throttle',
+        'lodash-es/clamp',
         'path-data-polyfill',
         '@fortawesome/react-fontawesome',
         '@fortawesome/fontawesome-svg-core',
         '@fortawesome/free-solid-svg-icons',
         '@fortawesome/free-regular-svg-icons',
         'svgo/browser',
+        'vue',
+        '@astrojs/vue/client.js',
+        'three',
+        // Deep three/addons imports — discover-on-demand leaves stale hashed
+        // entries in .vite/deps after HMR/re-optimize (browser keeps old ?v=).
+        'three/addons/loaders/GLTFLoader.js',
+        'three/addons/renderers/CSS2DRenderer.js',
+        'three/addons/libs/meshopt_decoder.module.js',
       ],
     },
     resolve: {
-      dedupe: ['react', 'react-dom'],
-      alias: {
-        lodash: 'lodash-es',
-        '@': path.resolve(import.meta.dirname, './src'),
-      },
+      dedupe: ['react', 'react-dom', 'vue'],
+      alias: [
+        // Deep paths (`lodash/startCase`) must rewrite too — a bare `lodash`
+        // alias only covers the package root.
+        { find: /^lodash$/, replacement: 'lodash-es' },
+        { find: /^lodash\/(.+)$/, replacement: 'lodash-es/$1' },
+        // Only `@/…` — a bare `@` would also match scoped pkgs like `@astrojs`.
+        {
+          find: /^@\//,
+          replacement: `${path.resolve(import.meta.dirname, './src')}/`,
+        },
+      ],
     },
   },
 });
