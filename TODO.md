@@ -16,6 +16,13 @@
     - [x] git
     - [x] Three.js
     - [x] Ruby on Rails
+    - [x] Cursor
+    - [x] Claude Code
+    - [x] Cloudflare
+    - [x] AWS
+    - [x] Kubernetes
+    - [x] Let's Encrypt
+    - [x] TreeSitter
   - [ ] Some icons not very visible in dark mode
   - [ ] Scroll horizontally? (prefers-reduced-motion)
   - [ ] Filter?
