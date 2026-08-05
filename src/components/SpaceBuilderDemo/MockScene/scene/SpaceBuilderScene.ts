@@ -120,12 +120,15 @@ export class SpaceBuilderScene {
   private flash: string | null = null;
   private flashTimer: ReturnType<typeof setTimeout> | null = null;
   private orbiting = false;
+  private panning = false;
   private drawing = false;
   private drawStart: Vector3 | null = null;
   private lastPointer = new Vector2();
   private draggingHandle: HandleKey | null = null;
   private handleAreaStart: AreaRect | null = null;
   private readonly handleDragOrigin = new Vector3();
+  private readonly panRight = new Vector3();
+  private readonly panForward = new Vector3();
   /** Bumped on user camera/area interaction so autoplay rAF tweens stop touching the scene. */
   private interactionEpoch = 0;
 
@@ -479,6 +482,7 @@ export class SpaceBuilderScene {
   beginOrbit(clientX: number, clientY: number) {
     this.interactionEpoch += 1;
     this.orbiting = true;
+    this.panning = false;
     this.drawing = false;
     this.draggingHandle = null;
     this.lastPointer.set(clientX, clientY);
@@ -505,6 +509,57 @@ export class SpaceBuilderScene {
 
   isOrbiting() {
     return this.orbiting;
+  }
+
+  /** Screen-space pan of the orbit target (Shift+drag or right-drag). */
+  beginPan(clientX: number, clientY: number) {
+    this.interactionEpoch += 1;
+    this.panning = true;
+    this.orbiting = false;
+    this.drawing = false;
+    this.draggingHandle = null;
+    this.lastPointer.set(clientX, clientY);
+  }
+
+  pan(clientX: number, clientY: number) {
+    if (!this.panning) return;
+    const dx = clientX - this.lastPointer.x;
+    const dy = clientY - this.lastPointer.y;
+    this.lastPointer.set(clientX, clientY);
+
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.height <= 0) return;
+
+    // Scale like OrbitControls screen-space panning: drag distance vs view height.
+    const fov = (this.camera.fov * Math.PI) / 180;
+    const targetDistance = this.spherical.radius * Math.tan(fov * 0.5) * 2;
+    const panX = (dx / rect.height) * targetDistance;
+    const panY = (dy / rect.height) * targetDistance;
+
+    this.camera.updateMatrixWorld();
+    this.panRight.setFromMatrixColumn(this.camera.matrixWorld, 0);
+    this.panRight.y = 0;
+    if (this.panRight.lengthSq() < 1e-8) return;
+    this.panRight.normalize();
+
+    this.panForward.setFromMatrixColumn(this.camera.matrixWorld, 2);
+    this.panForward.y = 0;
+    if (this.panForward.lengthSq() < 1e-8) return;
+    this.panForward.normalize();
+
+    // Drag right → world moves right under the cursor (target goes left).
+    this.cameraTarget.addScaledVector(this.panRight, -panX);
+    this.cameraTarget.addScaledVector(this.panForward, -panY);
+    this.updateCamera();
+    this.updateTagPosition();
+  }
+
+  endPan() {
+    this.panning = false;
+  }
+
+  isPanning() {
+    return this.panning;
   }
 
   hasArea() {
@@ -559,6 +614,7 @@ export class SpaceBuilderScene {
     this.interactionEpoch += 1;
     this.draggingHandle = key;
     this.orbiting = false;
+    this.panning = false;
     this.drawing = false;
     this.handleAreaStart = { ...this.area };
     this.handleDragOrigin.copy(point);
@@ -670,6 +726,7 @@ export class SpaceBuilderScene {
     this.interactionEpoch += 1;
     this.drawing = true;
     this.orbiting = false;
+    this.panning = false;
     this.draggingHandle = null;
     this.drawStart = point.clone();
     this.setAreaFromCorners(point, point);
