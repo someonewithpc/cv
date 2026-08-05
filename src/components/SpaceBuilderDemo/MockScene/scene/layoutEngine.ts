@@ -124,6 +124,24 @@ export function isAisleEnabled(style: LayoutStyle, options: LayoutOptions) {
   return options.blocks.width > 0 || options.blocks.height > 0;
 }
 
+/** Outer chair-ring radius used by Circle / Semi-Circle (mirrors Space Builder). */
+export function circleUseableRadius(area: AreaRect, options: LayoutOptions) {
+  const stepZ = CHAIR_FOOTPRINT.depth + options.distanceZ;
+  const maxR = Math.min(area.width, area.depth) / 2;
+  return Math.max(0, maxR - stepZ / 2);
+}
+
+/**
+ * Meaningful Inner Circle slider max for the current area — maps the full
+ * control travel onto “full fill → hollow → empty” instead of a dead 0–2m zone.
+ */
+export function maxInnerDiameter(area: AreaRect, options: LayoutOptions) {
+  const useable = circleUseableRadius(area, options);
+  if (useable <= 0) return 0.5;
+  // Slightly past 2×useable so the top of the slider can clear the outer ring.
+  return Number((useable * 2 + 0.05).toFixed(2));
+}
+
 export function layoutChairs(area: AreaRect, options: LayoutOptions): {
   poses: ChairPose[];
   seats: number;
@@ -400,24 +418,29 @@ function layoutChevron(area: AreaRect, options: LayoutOptions): ChairPose[] {
 function layoutCircle(area: AreaRect, options: LayoutOptions, arc: number): ChairPose[] {
   const stepX = CHAIR_FOOTPRINT.width + options.distanceX;
   const stepZ = CHAIR_FOOTPRINT.depth + options.distanceZ;
-  const maxR = Math.min(area.width, area.depth) / 2;
-  // Keep the outer chair footprint inside the area AABB.
-  const useable = maxR - Math.hypot(CHAIR_FOOTPRINT.width, CHAIR_FOOTPRINT.depth) / 2;
+  const useableRadius = circleUseableRadius(area, options);
   const { poses, pushLocal } = makePusher(area);
+  // Full circle starts at +X; semi-circle opens toward −Z (top of the SelectArea).
   const startAngle = arc < Math.PI * 2 - 0.01 ? -Math.PI / 2 - arc / 2 : 0;
 
-  if (useable <= 0) return poses;
+  if (useableRadius <= 0) return poses;
 
-  const rings = Math.max(0, Math.floor((useable - CHAIR_FOOTPRINT.depth / 2) / stepZ) + 1);
+  // Space Builder: ceil((useableRadius - sizeZ) / stepZ).
+  const rings = Math.max(
+    0,
+    Math.ceil((useableRadius - CHAIR_FOOTPRINT.depth) / stepZ),
+  );
+  const innerR = Math.max(0, options.innerDiameter / 2);
+
   for (let i = 0; i < rings; i += 1) {
-    const r = useable - i * stepZ;
-    if (r < options.innerDiameter / 2 || r <= 0) break;
+    const r = useableRadius - i * stepZ;
+    if (r < innerR || r <= 0) break;
+    // Space Builder: ceil((circumference - sizeX) / stepX).
     const circumference = arc * r;
-    const n = Math.max(0, Math.floor(circumference / stepX));
-    if (n < 3 && arc > Math.PI) break;
-    if (n < 2) break;
+    const n = Math.max(0, Math.ceil((circumference - CHAIR_FOOTPRINT.width) / stepX));
+    if (n === 0) break;
     for (let k = 0; k < n; k += 1) {
-      const theta = startAngle + (k + 0.5) * (arc / n);
+      const theta = startAngle + k * (arc / n);
       const lx = Math.cos(theta) * r;
       const lz = Math.sin(theta) * r;
       pushLocal(lx, lz, theta + Math.PI / 2);
