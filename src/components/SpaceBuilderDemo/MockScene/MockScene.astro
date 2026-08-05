@@ -9,6 +9,8 @@
 </div>
 
 <script>
+  import { bootWhenVisible } from '@/client/bootWhenVisible';
+
   const CHAIR_URL = '/demos/space-builder/chair.glb';
   const GRASS_URLS = [
     '/demos/space-builder/grass/color.webp',
@@ -33,7 +35,7 @@
     warmAssets();
 
     try {
-      // Yield so React/Marker Editor (if any) can finish a frame before Vue+Three parse.
+      // Yield so other work can finish a frame before Vue+Three parse.
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => resolve());
       });
@@ -56,17 +58,9 @@
     const mount = document.querySelector<HTMLElement>('[data-space-builder-island]');
     if (!mount || mount.dataset.mounted === 'true') return;
 
-    // Boot only when this demo frame nears the viewport — never on idle timeout.
-    // (Idle warm pulled Vue/Three into Lighthouse TBT ~1.5s after load.)
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0]?.isIntersecting) return;
-        observer.disconnect();
-        void bootSpaceBuilder(mount);
-      },
-      { root: null, rootMargin: '120px 0px', threshold: 0.01 },
-    );
-    observer.observe(mount);
+    bootWhenVisible(mount, () => {
+      void bootSpaceBuilder(mount);
+    });
   }
 
   armBoot();
