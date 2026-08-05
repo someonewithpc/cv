@@ -4,7 +4,7 @@ import { Icon } from 'astro-icon/components';
 import BacktickText from '@/components/OpenSourceContributions/BacktickText.astro';
 import TechIcon from '@/components/TechIcon.astro';
 
-import { resolveTechTagByIconSuffix } from '@/server/tech-tags';
+import { resolveTechByIconSuffix } from '@/server/tech-icons';
 
 type Props = {
   tags: string[];
@@ -41,11 +41,11 @@ const hasMeta = updatedAt || stats;
   <summary>
     <ul aria-label="Technologies">
       {tags.map((suffix) => {
-        const resolved = resolveTechTagByIconSuffix(suffix);
+        const resolved = resolveTechByIconSuffix(suffix);
 
         return resolved && (
           <li>
-            <TechIcon tag={resolved} />
+            <TechIcon tech={resolved} />
           </li>
         );
       })}

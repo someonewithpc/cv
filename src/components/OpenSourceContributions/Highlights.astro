@@ -1,7 +1,7 @@
 ---
 import TechIcon from '@/components/TechIcon.astro';
 
-import { resolveTechTagByIconSuffix } from '@/server/tech-tags';
+import { resolveTechByIconSuffix } from '@/server/tech-icons';
 
 type Link = {
   label: string;
@@ -31,11 +31,11 @@ const { highlights } = Astro.props;
   <article id={`highlight-${entry.title}`} aria-labelledby={`highlight-${entry.title}-heading`}>
     <ul aria-label="Technologies">
       {entry.tags.map((suffix) => {
-        const resolved = resolveTechTagByIconSuffix(suffix);
+        const resolved = resolveTechByIconSuffix(suffix);
 
         return resolved && (
           <li>
-            <TechIcon tag={resolved} />
+            <TechIcon tech={resolved} />
           </li>
         );
       })}
