@@ -25,6 +25,8 @@ import mapUrl from './map.svg?url';
 </script>
 
 <script>
+  import { bootWhenVisible } from '@/client/bootWhenVisible';
+
   async function bootMockMap() {
     const mount = document.querySelector<HTMLElement>('[data-mock-map-island]');
     if (!mount || mount.dataset.mounted === 'true') return;
@@ -44,18 +46,9 @@ import mapUrl from './map.svg?url';
     if (!mount || mount.dataset.mounted === 'true') return;
 
     const host = mount.closest<HTMLElement>('.mock-map-demo') ?? mount;
-
-    // Defer React/Redux until the Marker Editor frame nears the viewport.
-    // Eager boot was the main Lighthouse TBT cost on the homepage.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0]?.isIntersecting) return;
-        observer.disconnect();
-        void bootMockMap();
-      },
-      { root: null, rootMargin: '120px 0px', threshold: 0.01 },
-    );
-    observer.observe(host);
+    bootWhenVisible(host, () => {
+      void bootMockMap();
+    });
   }
 
   armBoot();
