@@ -1,9 +1,8 @@
 import { createElement, type ReactNode } from 'react';
-import { optimize, type XastChild, type XastRoot } from 'svgo/browser';
 import { camelCase } from 'lodash';
 import cx from 'classnames';
 
-function parseInlineStyle(rawStyle: string | undefined): Record<string, string> {
+function parseInlineStyle(rawStyle: string | null): Record<string, string> {
   if (!rawStyle) return {};
   return Object.fromEntries(
     rawStyle
@@ -21,78 +20,79 @@ function parseInlineStyle(rawStyle: string | undefined): Record<string, string> 
   );
 }
 
-function svgoAstToReactNode(
-  ast: XastRoot | XastChild,
-  { key, props }: { key: string; props?: React.SVGProps<SVGSVGElement> },
-): ReactNode {
-  if (ast.type === 'root') {
-    return ast.children
-      .map((child, i) => svgoAstToReactNode(child, { key: key + ast.type + i, props }));
-  } else if (ast.type === 'element') {
-    const { style: rawStyle, class: attributesClassName, ...rawAttributes } = ast.attributes;
-    const { style: propsStyle, className: propsClassName, ...otherProps } = props ?? { style: {}, className: '' };
-
-    const style = parseInlineStyle(rawStyle);
-
-    const attributes = Object.fromEntries(Object.entries(rawAttributes).map(([attrKey, value]) => [
-      camelCase(attrKey.replace(':', '-')),
-      value,
-    ]));
-
-    return createElement(
-      ast.name,
-      {
-        ...attributes,
-        ...otherProps,
-        key: key + ast.type,
-        style: { ...style, ...(propsStyle as object) },
-        className: cx(attributesClassName, propsClassName),
-      },
-      ast.children.map((child, i) => svgoAstToReactNode(child, { key: key + ast.type + i, props: undefined })),
-    );
-  } else if (ast.type === 'text') {
-    return ast.value;
-  } else {
-    throw new Error('Unsupported SVGO AST node');
-  }
+function attributeNameToProp(name: string) {
+  if (name === 'class') return 'className';
+  if (name === 'xlink:href') return 'xlinkHref';
+  return camelCase(name.replace(':', '-'));
 }
 
-export function optimizeAndParseSVG(svgData: string): XastRoot {
-  let ast: XastRoot | undefined;
+/** Trusted demo / store SVGs — DOMParser avoids shipping svgo/browser (~768KiB) in the editor chunk. */
+function domNodeToReact(
+  node: Node,
+  { key, props }: { key: string; props?: React.SVGProps<SVGSVGElement> },
+): ReactNode {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent;
+    return text?.trim() ? text : null;
+  }
 
-  optimize(svgData, {
-    floatPrecision: 3,
-    plugins: [
-      'removeScripts',
-      'removeComments',
-      'removeDoctype',
-      'removeXMLProcInst',
-      'removeMetadata',
-      'removeTitle',
-      'removeDesc',
-      'removeEditorsNSData',
-      'convertPathData',
-      'convertTransform',
-      'cleanupNumericValues',
-      {
-        name: 'captureAst',
-        fn: (root) => {
-          ast = root;
-          return null;
-        },
-      },
-    ],
-  });
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
 
-  if (!ast) {
+  const el = node as Element;
+  const { style: propsStyle, className: propsClassName, ...otherProps } = props ?? {};
+  const attributes: Record<string, unknown> = {};
+
+  for (const attr of Array.from(el.attributes)) {
+    if (attr.name === 'style') {
+      attributes.style = {
+        ...parseInlineStyle(attr.value),
+        ...(propsStyle as object),
+      };
+      continue;
+    }
+    if (attr.name === 'class') {
+      attributes.className = cx(attr.value, propsClassName);
+      continue;
+    }
+    attributes[attributeNameToProp(attr.name)] = attr.value;
+  }
+
+  if (propsStyle && !attributes.style) {
+    attributes.style = propsStyle;
+  }
+  if (propsClassName && !attributes.className) {
+    attributes.className = propsClassName;
+  }
+
+  const children = Array.from(el.childNodes)
+    .map((child, i) => domNodeToReact(child, { key: `${key}${el.tagName}${i}`, props: undefined }))
+    .filter((child) => child != null);
+
+  return createElement(
+    el.tagName,
+    {
+      ...attributes,
+      ...otherProps,
+      key: key + el.tagName,
+    },
+    children.length > 0 ? children : undefined,
+  );
+}
+
+export function parseSVGDocument(svgData: string): SVGSVGElement {
+  const parsed = new DOMParser().parseFromString(svgData, 'image/svg+xml');
+  const root = parsed.documentElement;
+
+  if (!(root instanceof SVGSVGElement) || root.querySelector('parsererror')) {
     throw new Error('Failed to parse SVG');
   }
 
-  return ast;
+  return root;
 }
 
-export function optimizeAndParseSVGToComponent(svgData: string, props: Record<string, any> = {}): ReactNode {
-  const ast = optimizeAndParseSVG(svgData);
-
-  return svgoAstToReactNode(ast, { key: '', props });
+export function optimizeAndParseSVGToComponent(
+  svgData: string,
+  props: Record<string, any> = {},
+): ReactNode {
+  return domNodeToReact(parseSVGDocument(svgData), { key: '', props });
 }

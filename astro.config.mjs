@@ -66,7 +66,6 @@ export default defineConfig({
         '@fortawesome/fontawesome-svg-core',
         '@fortawesome/free-solid-svg-icons',
         '@fortawesome/free-regular-svg-icons',
-        'svgo/browser',
         'vue',
         '@astrojs/vue/client.js',
         'three',
@@ -76,6 +75,11 @@ export default defineConfig({
         'three/addons/renderers/CSS2DRenderer.js',
         'three/addons/libs/meshopt_decoder.module.js',
       ],
+    },
+    build: {
+      // Space Builder ships Three.js (~600KiB min) behind an intersection-gated
+      // dynamic import — over the default 500KiB tip, but not on the critical path.
+      chunkSizeWarningLimit: 700,
     },
     resolve: {
       dedupe: ['react', 'react-dom', 'vue'],
