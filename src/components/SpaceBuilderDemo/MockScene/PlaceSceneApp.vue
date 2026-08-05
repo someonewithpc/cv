@@ -15,8 +15,14 @@ let observer: IntersectionObserver | null = null;
 function onPointerDown(event: PointerEvent) {
   const scene = sceneRef;
   const root = rootRef.value;
-  if (!scene || !root || event.button !== 0) return;
+  if (!scene || !root) return;
   if (event.target instanceof Element && event.target.closest('button, a, input')) return;
+
+  if (event.button === 2 || (event.button === 0 && event.shiftKey)) {
+    scene.beginPan(event.clientX, event.clientY);
+    return;
+  }
+  if (event.button !== 0) return;
 
   const handle = scene.pickHandle(event.clientX, event.clientY);
   if (handle) {
@@ -34,6 +40,10 @@ function onPointerMove(event: PointerEvent) {
     arrows?.sync();
     return;
   }
+  if (scene.isPanning() && event.buttons > 0) {
+    scene.pan(event.clientX, event.clientY);
+    return;
+  }
   if (scene.isOrbiting() && event.buttons > 0) {
     scene.orbit(event.clientX, event.clientY);
   }
@@ -47,7 +57,12 @@ function onPointerUp() {
     arrows?.sync();
     return;
   }
+  scene.endPan();
   scene.endOrbit();
+}
+
+function onContextMenu(event: Event) {
+  event.preventDefault();
 }
 
 onMounted(async () => {
@@ -154,6 +169,7 @@ onMounted(async () => {
     observer.observe(visibilityRoot);
 
     root.addEventListener('pointerdown', onPointerDown);
+    root.addEventListener('contextmenu', onContextMenu);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
   } catch (error) {
@@ -169,6 +185,7 @@ onBeforeUnmount(() => {
   sceneRef?.dispose();
   sceneRef = null;
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
+  rootRef.value?.removeEventListener('contextmenu', onContextMenu);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
 });
@@ -196,7 +213,7 @@ onBeforeUnmount(() => {
     </div>
 
     <p v-if="ready && !loadError" class="hint">
-      Drag blue / pink / green handles to edit · drag empty ground to orbit
+      Drag handles to edit · empty ground to orbit · Shift / right-drag to pan
     </p>
   </div>
 </template>
