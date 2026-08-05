@@ -172,8 +172,9 @@ const PRESETS: Preset[] = [
     seats: 0,
     distanceX: 0.2,
     distanceZ: 0.35,
-    aisle: 0.9,
-    blocks: { width: 0, height: 0 },
+    // 3×2 packs several blocks into the demo SelectArea so aisle gaps read clearly.
+    aisle: 0.95,
+    blocks: { width: 3, height: 2 },
   },
   { kind: 'build', style: 'offset', seats: 0, distanceX: 0.2, distanceZ: 0.35, offset: 0.35 },
   { kind: 'build', style: 'hollow', seats: 0, distanceX: 0.25, distanceZ: 0.4 },
@@ -415,6 +416,31 @@ export class AutoPlayController {
     return client ? { client, ...extra } : this.offCanvasCursor();
   }
 
+  /** Type into the Blocks of width × height inputs (Vue @change). */
+  private async setBlocksOf(width: number, height: number) {
+    const host = queryDemoTarget('param:blocks');
+    const inputs = host instanceof HTMLElement
+      ? host.querySelectorAll('input[type="number"]')
+      : null;
+    const widthInput = inputs?.[0];
+    const heightInput = inputs?.[1];
+
+    if (widthInput instanceof HTMLInputElement) {
+      this.stickCursorTo(widthInput, 'param:blocks', false);
+      setNativeInputValue(widthInput, width > 0 ? String(width) : '');
+      await wait(220);
+      if (this.paused) return;
+    }
+    if (heightInput instanceof HTMLInputElement) {
+      this.stickCursorTo(heightInput, 'param:blocks', false);
+      setNativeInputValue(heightInput, height > 0 ? String(height) : '');
+      await wait(180);
+      if (this.paused) return;
+    }
+    // Keep scene in sync if a synthetic change was ignored while disabled.
+    this.scene.setOptions({ blocks: { width, height } });
+  }
+
   /**
    * Drag a range thumb from its current value to `toValue`, keeping the demo
    * cursor glued to the thumb (same approach as Marker Editor autoplay).
@@ -591,6 +617,10 @@ export class AutoPlayController {
         cursor: { target: `layout:${preset.style}` },
         domClick: true,
         run: () => {
+          const showBlocks = Boolean(
+            preset.blocks && (preset.blocks.width > 0 || preset.blocks.height > 0),
+          );
+          // For Grid+Blocks, land on a plain fill first so the Blocks of step is visible.
           this.scene.setOptions({
             style: preset.style,
             seats: preset.seats,
@@ -600,7 +630,7 @@ export class AutoPlayController {
             offset: preset.offset ?? DEFAULT_LAYOUT_OPTIONS.offset,
             angle: preset.angle ?? DEFAULT_LAYOUT_OPTIONS.angle,
             innerDiameter: preset.innerDiameter ?? DEFAULT_LAYOUT_OPTIONS.innerDiameter,
-            blocks: preset.blocks ?? { width: 0, height: 0 },
+            blocks: showBlocks ? { width: 0, height: 0 } : (preset.blocks ?? { width: 0, height: 0 }),
           });
         },
       },
@@ -620,23 +650,46 @@ export class AutoPlayController {
           await this.animateRangeInput('param:spacing-x', preset.distanceX);
         },
       },
-      ...(preset.style === 'chevron' || (preset.blocks && (preset.blocks.width > 0 || preset.blocks.height > 0))
+      ...(preset.blocks && (preset.blocks.width > 0 || preset.blocks.height > 0)
         ? [
             {
-              delay: 550,
+              delay: 650,
+              cursor: { target: 'param:blocks' as const },
+              run: async () => {
+                this.onUi({ panel: 'options', phase: 'build' });
+                await this.setBlocksOf(preset.blocks!.width, preset.blocks!.height);
+              },
+            },
+            {
+              delay: 800,
               cursor: { target: 'param:aisle' as const },
               run: async () => {
                 const aisle = preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle;
-                // Nudge away then back so the thumb visibly travels.
-                await this.animateRangeInput('param:aisle', Math.min(2, aisle + 0.35));
+                // Widen the aisles between blocks, then settle on the preset gap.
+                await this.animateRangeInput('param:aisle', Math.min(2, aisle + 0.5));
                 if (this.paused) return;
-                await wait(180);
+                await wait(220);
                 if (this.paused) return;
                 await this.animateRangeInput('param:aisle', aisle);
               },
             },
           ]
-        : []),
+        : preset.style === 'chevron'
+          ? [
+              {
+                delay: 550,
+                cursor: { target: 'param:aisle' as const },
+                run: async () => {
+                  const aisle = preset.aisle ?? DEFAULT_LAYOUT_OPTIONS.aisle;
+                  await this.animateRangeInput('param:aisle', Math.min(2, aisle + 0.35));
+                  if (this.paused) return;
+                  await wait(180);
+                  if (this.paused) return;
+                  await this.animateRangeInput('param:aisle', aisle);
+                },
+              },
+            ]
+          : []),
       {
         delay: 700,
         cursor: { target: 'param:seats' },
