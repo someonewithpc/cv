@@ -47,6 +47,13 @@ export const TECH_TAGS: TechTag[] = [
   { icon: 'makefile', text: 'Make' },
   { icon: 'leaflet', text: 'Leaflet' },
   { icon: 'reactnative-wordmark', text: 'React Native' },
+  { icon: 'cursor', text: 'Cursor' },
+  { icon: 'claude-code', text: 'Claude Code' },
+  { icon: 'cloudflare', text: 'Cloudflare' },
+  { icon: 'aws', text: 'AWS' },
+  { icon: 'kubernetes', text: 'Kubernetes' },
+  { icon: 'letsencrypt', text: "Let's Encrypt" },
+  { icon: 'treesitter', text: 'TreeSitter' },
 ];
 
 export const iconSuffix = (iconId: string): string => {
