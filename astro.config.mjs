@@ -3,9 +3,11 @@ import path from "path";
 
 import cloudflare from '@astrojs/cloudflare';
 import react from '@astrojs/react';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import { defineConfig } from 'astro/config';
-
 import icon from 'astro-icon';
+
+import { httpToHttpsRedirect } from './plugins/httpToHttpsRedirect.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -14,6 +16,11 @@ export default defineConfig({
     prerenderEnvironment: 'node',
   }),
   compressHTML: true,
+  server: {
+    host: true,
+    // Dev-only: allow MagicDNS / Tailscale / LAN Host headers
+    allowedHosts: true,
+  },
   integrations: [
     react(),
     icon({
@@ -38,6 +45,7 @@ export default defineConfig({
   ],
 
   vite: {
+    plugins: [basicSsl(), httpToHttpsRedirect()],
     optimizeDeps: {
       include: [
         'react',
