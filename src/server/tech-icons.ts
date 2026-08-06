@@ -54,6 +54,10 @@ export const TECH_ICONS: Tech[] = [
   { icon: 'kubernetes', text: 'Kubernetes' },
   { icon: 'letsencrypt', text: "Let's Encrypt" },
   { icon: 'treesitter', text: 'TreeSitter' },
+  { icon: 'latex', text: 'LaTeX' },
+  { icon: 'openwrt', text: 'OpenWrt' },
+  { icon: 'tikz', text: 'TikZ' },
+  { icon: '8311', text: '8311 firmware' },
 ];
 
 export const iconSuffix = (iconId: string): string => {
