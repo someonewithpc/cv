@@ -16,7 +16,7 @@ const {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
@@ -74,12 +74,13 @@ ul, ol {
   position: fixed;
   inset: auto 0 0;
   z-index: 9;
-  padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.45rem 1rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
   text-align: center;
-  font: 0.78rem/1.35 var(--font-poppins);
-  color: var(--ink);
-  background: color-mix(in oklch, var(--surface-raised), var(--accent) 12%);
-  border-top: 1px solid var(--line-strong);
+  font: 0.72rem/1.35 var(--font-poppins);
+  color: var(--ink-muted);
+  background: color-mix(in oklch, var(--surface-raised), transparent 12%);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(8px);
 
   @media (max-width: 52rem) {
     display: block;
@@ -146,6 +147,13 @@ main {
     var(--full-width) [full-width-end];
   grid-template-rows: auto;
   align-content: start;
+  padding-bottom: 1.5rem;
+
+  @media (max-width: 52rem) {
+    --page-gap: clamp(0.75rem, 3.5vw, 1.25rem);
+    padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+    padding-inline-end: 0.25rem;
+  }
 
   /* Quiet drafting grid */
   background-image:

@@ -121,7 +121,8 @@
 }
 
 .all-together-layer {
-  width: drawing.$artwork-width;
+  width: min(#{drawing.$artwork-width}, 100%);
+  max-width: 100%;
   aspect-ratio: 1;
   display: grid;
   place-items: center;

@@ -39,7 +39,7 @@
 @use '@/scss/technical-drawing' as drawing;
 
 svg {
-  width: drawing.$artwork-width;
+  width: min(#{drawing.$artwork-width}, 100%);
   aspect-ratio: 1;
 }
 </style>

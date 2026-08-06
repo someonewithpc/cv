@@ -8,7 +8,7 @@
 aside {
   color-scheme: only light;
 
-  max-width: 16ch;
+  max-width: min(16ch, 100%);
   position: relative;
   padding: 0.75em 1em;
   border-radius: 0 0 0 2em/3em;
@@ -19,6 +19,12 @@ aside {
 
   line-height: 1.25rem;
   font-size: 1.2rem;
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: clamp(0.85rem, 3.8cqw, 1.1rem);
+    line-height: 1.2;
+    padding: 0.55em 0.7em;
+  }
 
   mask-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC');
 

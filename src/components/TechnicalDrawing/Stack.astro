@@ -45,22 +45,14 @@ const totalLayers = Object.keys(layers).length;
         </Fragment>
       </TechnicalDrawingPage>
     ))}
-
-      <!-- {Object.keys(layers).length > 1 && (
-    <nav class="layers">
-      <ol class="monospace">
-        {Object.entries(layers).map(([id, name], index) => (
-        <a href="#">
-                <li>
-                  <span>{index + 1}</span>
-                  <span>{name}</span>
-                </li>
-              </a>
-              ))}
-          </ol>
-        </nav>
-        )} -->
   </article>
+
+  {totalLayers > 1 && (
+    <div class="technical-drawing-nav" hidden>
+      <button type="button" data-dir="-1" aria-label="Previous drawing">⬅</button>
+      <button type="button" data-dir="1" aria-label="Next drawing">⮕</button>
+    </div>
+  )}
 </div>
 
 
@@ -72,7 +64,10 @@ const totalLayers = Object.keys(layers).length;
   // Allow the frame to shrink within the page grid instead of expanding it
   // to the carousel's intrinsic width (default min-width: auto).
   min-width: 0;
-  overflow: hidden;
+  // Firefox: overflow:hidden on this ancestor makes the nested carousel
+  // report scrollWidth but refuse scrollLeft / swipe. clip still contains
+  // the frame without breaking the child's scrollport.
+  overflow: clip;
 }
 
 article {
@@ -102,8 +97,8 @@ article {
   anchor-scope: --technical-drawing-stack;
 
   @container technical-drawing-width (max-width: 40em) {
-    --technical-drawing-aspect: 1 / 2;
-    max-height: 48rem;
+    --technical-drawing-aspect: 3 / 4;
+    max-height: min(36rem, 85svh);
   }
 
   > :global(*) {
@@ -132,36 +127,89 @@ article {
     outline-offset: 5px;
   }
 }
+
+.technical-drawing-nav {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+
+  button {
+    pointer-events: auto;
+    margin: 0.35rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.35rem 0.55rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.35rem;
+    background: color-mix(in oklch, var(--surface-raised), transparent 15%);
+    color: var(--ink);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in oklch, var(--surface-raised), var(--accent) 12%);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+}
 </style>
 
 <script>
-function init() {
-  [...document.querySelectorAll('article.technical-drawing-stack')].forEach((stack) => {
-    // Viewport root (not the stack): with root:stack the active slide was
-    // "intersecting" on load even when still below the fold. Stack overflow
-    // still clips off-screen carousel slides from the viewport intersection.
-    const observer = new IntersectionObserver((intersections) => {
-      [...intersections].forEach((entry) => {
-        const target = entry.target as HTMLElement;
+const supportsScrollButton = CSS.supports('selector(::scroll-button(right))');
 
-        target.getAnimations({ subtree: true }).forEach((animation) => {
-          if (!entry.isIntersecting && (animation.playState === 'running' || animation.playState === 'finished')) {
-            animation.cancel();
-            // Cancelled animations get removed, so start them, but pause immediately
-            animation.play();
-            animation.pause();
-          } else {
-            animation.play();
-          }
-        });
+function initStack(stack: HTMLElement) {
+  // Viewport root (not the stack): with root:stack the active slide was
+  // "intersecting" on load even when still below the fold. Stack overflow
+  // still clips off-screen carousel slides from the viewport intersection.
+  const observer = new IntersectionObserver((intersections) => {
+    [...intersections].forEach((entry) => {
+      const target = entry.target as HTMLElement;
 
-        target.style[
-          entry.isIntersecting ? 'removeProperty' : 'setProperty'
-        ]('animation-play-state', 'paused');
+      target.getAnimations({ subtree: true }).forEach((animation) => {
+        if (!entry.isIntersecting && (animation.playState === 'running' || animation.playState === 'finished')) {
+          animation.cancel();
+          // Cancelled animations get removed, so start them, but pause immediately
+          animation.play();
+          animation.pause();
+        } else {
+          animation.play();
+        }
       });
-    }, { threshold: 0.25, scrollMargin: '25%' });
-    [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
+
+      target.style[
+        entry.isIntersecting ? 'removeProperty' : 'setProperty'
+      ]('animation-play-state', 'paused');
+    });
+  }, { threshold: 0.25, scrollMargin: '25%' });
+  [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
+
+  if (supportsScrollButton) return;
+
+  const frame = stack.closest('.technical-drawing-frame');
+  const nav = frame?.querySelector<HTMLElement>('.technical-drawing-nav');
+  if (!nav) return;
+
+  nav.hidden = false;
+  nav.querySelectorAll<HTMLButtonElement>('button[data-dir]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const dir = Number(button.dataset.dir);
+      const delta = dir * stack.clientWidth;
+      stack.scrollTo({ left: stack.scrollLeft + delta, behavior: 'smooth' });
+    });
   });
+}
+
+function init() {
+  [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack')].forEach(initStack);
 }
 
 document.addEventListener('DOMContentLoaded', init);

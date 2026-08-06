@@ -98,7 +98,8 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 }
 
 .wrapper {
-  width: drawing.$artwork-width;
+  width: min(#{drawing.$artwork-width}, 100%);
+  max-width: 100%;
   aspect-ratio: 1;
 
   .path-layer {
