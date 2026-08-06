@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <style>
+    .stroke {
+      fill: none;
+      stroke: light-dark(#2c5aa0, #7eb3f0);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .fill-a { fill: light-dark(#2c5aa0, #7eb3f0); }
+    .fill-b { fill: light-dark(#c45c26, #f0a06a); }
+    .fill-c { fill: light-dark(#2a8f5b, #6fd4a0); }
+  </style>
+  <path class="stroke" d="M28 96C48 72 56 48 64 28c8 20 16 44 36 68"/>
+  <circle class="fill-a" cx="64" cy="28" r="10"/>
+  <path class="fill-b" d="M28 96l-12-20h24z"/>
+  <rect class="fill-c" x="88" y="84" width="24" height="24" rx="3"/>
+</svg>
