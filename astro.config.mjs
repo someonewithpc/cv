@@ -20,6 +20,8 @@ export default defineConfig({
     host: true,
     allowedHosts: true,
   },
+  // No Astro.session usage — drop session runtime + Cloudflare SESSION KV wiring
+  session: false,
   integrations: [
     react(),
     icon({
