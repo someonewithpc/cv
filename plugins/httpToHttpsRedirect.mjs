@@ -35,6 +35,12 @@ export const httpToHttpsRedirect = () => ({
         ? first.host
         : (typeof args[1] === 'string' ? args[1] : undefined);
 
+      // Vite resolves Local URLs on the httpServer 'listening' event via address().
+      // Defer those listeners until the public demux is bound, otherwise they capture
+      // the ephemeral loopback TLS port from originalListen({ port: 0 }).
+      const pendingListening = httpsServer.listeners('listening').slice();
+      httpsServer.removeAllListeners('listening');
+
       originalListen({ port: 0, host: '127.0.0.1' }, () => {
         const internal = originalAddress();
         const internalPort = typeof internal === 'object' && internal ? internal.port : null;
@@ -60,6 +66,10 @@ export const httpToHttpsRedirect = () => ({
 
         const onListening = () => {
           httpsServer.address = () => demux?.address() ?? null;
+          for (const listener of pendingListening) {
+            httpsServer.on('listening', listener);
+            listener.call(httpsServer);
+          }
           callback?.();
         };
 
