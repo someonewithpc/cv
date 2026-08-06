@@ -310,8 +310,9 @@ function MockMapOverlayInner() {
     );
     autoplayRef.current = controller;
 
-    // Only run the demo while this carousel page intersects the stack.
-    const stack = visibilityRoot.closest('article.technical-drawing-stack');
+    // Viewport root, not the stack — root:stack reads as "intersecting" once
+    // it's the active carousel slide, regardless of page scroll (same fix as
+    // TechnicalDrawing/Stack.astro's own visibility observer).
     const observer = new IntersectionObserver(
       ([entry]) => {
         const visible = entry.isIntersecting;
@@ -343,7 +344,7 @@ function MockMapOverlayInner() {
           }
         }
       },
-      { root: stack, threshold: 0.6 },
+      { threshold: 0.6 },
     );
     observer.observe(visibilityRoot);
 
