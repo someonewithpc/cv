@@ -72,16 +72,14 @@ ul, ol {
 .desktop-hint {
   display: none;
   position: fixed;
-  inset-inline: 0;
-  bottom: 0;
+  inset: auto 0 0;
   z-index: 9;
-  margin: 0;
   padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
   text-align: center;
-  font: 0.78rem/1.35 var(--font-poppins, system-ui, sans-serif);
-  color: color-mix(in oklch, var(--ink, #1d241c) 88%, transparent);
-  background: color-mix(in oklch, var(--surface-raised, #f4f0ea) 82%, var(--accent, #89ab24) 18%);
-  border-top: 1px solid color-mix(in oklch, var(--line-strong, #333) 55%, transparent);
+  font: 0.78rem/1.35 var(--font-poppins);
+  color: var(--ink);
+  background: color-mix(in oklch, var(--surface-raised), var(--accent) 12%);
+  border-top: 1px solid var(--line-strong);
 
   @media (max-width: 52rem) {
     display: block;
