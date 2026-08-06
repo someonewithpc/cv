@@ -124,19 +124,21 @@ details {
       min-width: 0;
       min-height: 1.5rem;
       padding-block: 0.125rem;
-      display: inline-flex;
-      align-items: center;
+      display: block;
       font-family: sans-serif;
       color: var(--ink);
       line-height: 1.4;
       text-decoration: none;
       text-underline-offset: 0.15em;
       overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: none;
 
       .external-link {
+        display: inline;
         width: 0.75em;
         height: 0.75em;
-        margin-inline-start: 1ch;
+        margin-inline-start: 0.5ch;
         vertical-align: -0.1em;
       }
 
@@ -194,13 +196,47 @@ details {
     }
   }
 
+  @container (max-width: 28rem) {
+    > summary {
+      grid-template-columns: 2.75rem minmax(0, 1fr);
+      grid-template-areas:
+        'tech repo'
+        'tech title';
+      row-gap: 0.35rem;
+      column-gap: 0.65rem;
+      align-items: start;
+      min-height: 0;
+      padding-block: 0.85rem;
+
+      ul {
+        grid-area: tech;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-self: center;
+
+        li {
+          min-height: 1.5rem;
+        }
+      }
+
+      cite {
+        grid-area: repo;
+        font-size: 0.75rem;
+      }
+
+      a {
+        grid-area: title;
+      }
+    }
+  }
+
   @container (max-width: 24rem) {
     > summary ul {
       flex-direction: column;
       flex-wrap: nowrap;
 
       li {
-        min-height: 1.75rem;
+        min-height: 1.5rem;
       }
     }
   }

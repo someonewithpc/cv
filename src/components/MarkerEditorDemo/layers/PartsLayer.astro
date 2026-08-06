@@ -129,7 +129,7 @@ $op-slot: 1.1em;
 .wrapper {
   box-sizing: border-box;
   width: max-content;
-  max-width: min(58cqw, 100%);
+  max-width: min(90cqw, 100%);
   margin-inline: auto;
   position: relative;
   display: grid;
@@ -408,7 +408,11 @@ header {
 
 @container technical-drawing (orientation: portrait) {
   .wrapper {
-    max-width: min(90cqw, 100%);
+    max-width: min(92cqw, 100%);
+  }
+
+  .parts-layer {
+    font-size: clamp(0.48rem, 2.15cqw, 0.78rem);
   }
 
   .serialize-flow {

@@ -36,6 +36,10 @@ section {
     justify-content: center;
     gap: 0.5em;
     flex-wrap: wrap;
+
+    @media (max-width: 52rem) {
+      gap: 0.4em;
+    }
   }
 
   li {
@@ -56,6 +60,12 @@ section {
     font-family: monospace, system-ui;
     font-size: 0.8125rem;
     letter-spacing: 0.02em;
+
+    @media (max-width: 52rem) {
+      padding: 0.3em 0.5em;
+      font-size: 0.75rem;
+      gap: 0.5ch;
+    }
   }
 }
 </style>

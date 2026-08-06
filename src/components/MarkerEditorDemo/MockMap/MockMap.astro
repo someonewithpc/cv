@@ -50,7 +50,7 @@ $mock-map-width: drawing.$artwork-width * 1.75;
 
 .mock-map-demo {
   position: relative;
-  width: $mock-map-width;
+  width: min(#{$mock-map-width}, 100%);
   max-width: 100%;
   aspect-ratio: 1;
   overflow: hidden;

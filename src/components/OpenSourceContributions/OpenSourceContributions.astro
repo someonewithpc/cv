@@ -50,6 +50,10 @@ const statistics = {
   margin-top: clamp(5rem, 12vw, 8rem);
   padding-bottom: 5rem;
 
+  @media (max-width: 52rem) {
+    padding-inline-end: 3rem;
+  }
+
   :global([lang='ja']) {
     display: block;
     font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
@@ -185,12 +189,16 @@ const statistics = {
         }
       }
 
-      @container (max-width: 24rem) {
-        --grid: 3rem repeat(2, minmax(0, 1fr));
+      @container (max-width: 28rem) {
+        --grid: 2.75rem minmax(0, 1fr);
 
         > header {
-          font-size: 0.625rem;
-          letter-spacing: 0.04em;
+          display: none;
+        }
+
+        > header,
+        :global(details > summary) {
+          column-gap: 0.65rem;
         }
       }
     }
