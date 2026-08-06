@@ -1,12 +1,7 @@
 import http from 'node:http';
 import net from 'node:net';
 
-/**
- * Vite HTTPS is TLS-only on its port, so plain `http://` gets an empty reply.
- * Listen publicly on that port, proxy TLS to Vite on loopback, 308 elsewhere.
- *
- * @returns {import('vite').Plugin}
- */
+/** Same-port HTTP→HTTPS for Vite: TLS is proxied to loopback; plain HTTP 308s. */
 export const httpToHttpsRedirect = () => ({
   name: 'http-to-https-redirect',
   apply: 'serve',
@@ -32,24 +27,13 @@ export const httpToHttpsRedirect = () => ({
       res.end();
     });
 
-    const parseListenArgs = (args) => {
-      if (typeof args[0] === 'object' && args[0] !== null) {
-        return {
-          port: args[0].port ?? 0,
-          host: args[0].host,
-          callback: typeof args[1] === 'function' ? args[1] : undefined,
-        };
-      }
-
-      const rest = [...args];
-      const callback = typeof rest.at(-1) === 'function' ? rest.pop() : undefined;
-      const port = typeof rest[0] === 'number' || typeof rest[0] === 'string' ? rest.shift() : 0;
-      const host = typeof rest[0] === 'string' ? rest.shift() : undefined;
-      return { port, host, callback };
-    };
-
     httpsServer.listen = (...args) => {
-      const { port, host, callback } = parseListenArgs(args);
+      const callback = typeof args.at(-1) === 'function' ? args.at(-1) : undefined;
+      const first = args[0];
+      const publicPort = typeof first === 'object' && first !== null ? (first.port ?? 0) : (first ?? 0);
+      const publicHost = typeof first === 'object' && first !== null
+        ? first.host
+        : (typeof args[1] === 'string' ? args[1] : undefined);
 
       originalListen({ port: 0, host: '127.0.0.1' }, () => {
         const internal = originalAddress();
@@ -79,8 +63,8 @@ export const httpToHttpsRedirect = () => ({
           callback?.();
         };
 
-        if (host !== undefined) demux.listen(port, host, onListening);
-        else demux.listen(port, onListening);
+        if (publicHost !== undefined) demux.listen(publicPort, publicHost, onListening);
+        else demux.listen(publicPort, onListening);
       });
 
       return httpsServer;

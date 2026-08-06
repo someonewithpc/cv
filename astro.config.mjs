@@ -18,7 +18,6 @@ export default defineConfig({
   compressHTML: true,
   server: {
     host: true,
-    // Dev-only: allow MagicDNS / Tailscale / LAN Host headers
     allowedHosts: true,
   },
   integrations: [
