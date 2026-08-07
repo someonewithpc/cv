@@ -1,469 +1,126 @@
 ---
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
-
-const annotationScale = 0.85;
-const annotationFontSize = 0.1 * annotationScale;
 ---
 
-<div class="wrapper">
-  <Annotations scale={annotationScale}>
-    <div class="diagram" slot="content" aria-hidden="true">
-      <div class="panel">
-        <header>
-          <span class="eyebrow">Options sidebar</span>
-          <strong>Same shell · fields from the active layout</strong>
-          <p class="lede">
-            Change layout and the Options form reshapes. Shared spacing stays; layout-only
-            controls (Blocks, Aisle, Inner Circle) appear or vanish with the chip.
-          </p>
-        </header>
-
-        <div class="stage">
-          <div class="panels">
-            <article class="options grid">
-              <header class="options-head">
-                <span class="layout-chip">Grid</span>
-                <span class="options-title">Options</span>
-              </header>
-
-              <section>
-                <h4>Seats</h4>
-                <label class="field invalid">
-                  <span>Seat Count</span>
-                  <input value="48" readonly tabindex="-1">
-                  <em class="feedback">Too many for this area (max 36)</em>
-                </label>
-                <label class="field present">
-                  <span>Blocks of</span>
-                  <div class="blocks">
-                    <input value="4" readonly tabindex="-1">
-                    <span>×</span>
-                    <input value="3" readonly tabindex="-1">
-                  </div>
-                </label>
-              </section>
-
-              <section>
-                <h4>Spacing</h4>
-                <label class="field range">
-                  <span>Side to Side <em>20 cm</em></span>
-                  <input type="range" min="0" max="100" value="35" disabled tabindex="-1">
-                </label>
-                <label class="field range">
-                  <span>Front to Back <em>35 cm</em></span>
-                  <input type="range" min="0" max="100" value="50" disabled tabindex="-1">
-                </label>
-                <label class="field range present">
-                  <span>Aisle Spacing <em>80 cm</em></span>
-                  <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
-                </label>
-              </section>
-
-              <footer>
-                <span class="action">Clear</span>
-                <span class="action">Reset</span>
-                <span class="action muted" title="Blocked while seat count is invalid">Save</span>
-              </footer>
-            </article>
-
-            <div class="swap" aria-hidden="true">
-              <span class="swap-label">Grid → Circle</span>
-              <span class="swap-arrow">→</span>
-              <p class="swap-note">
-                One Options chrome. Only the declared fields change.
-              </p>
-            </div>
-
-            <article class="options circle">
-              <header class="options-head">
-                <span class="layout-chip circle">Circle</span>
-                <span class="options-title">Options</span>
-              </header>
-
-              <section>
-                <h4>Seats</h4>
-                <label class="field">
-                  <span>Seat Count</span>
-                  <input value="" placeholder="Fill area" readonly tabindex="-1">
-                </label>
-                <label class="field absent">
-                  <span>Blocks of</span>
-                  <div class="blocks">
-                    <input value="" disabled tabindex="-1">
-                    <span>×</span>
-                    <input value="" disabled tabindex="-1">
-                  </div>
-                  <em class="gone">Not used by Circle</em>
-                </label>
-              </section>
-
-              <section>
-                <h4>Spacing</h4>
-                <label class="field range">
-                  <span>Side to Side <em>15 cm</em></span>
-                  <input type="range" min="0" max="100" value="25" disabled tabindex="-1">
-                </label>
-                <label class="field range">
-                  <span>Front to Back <em>40 cm</em></span>
-                  <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
-                </label>
-                <label class="field range absent">
-                  <span>Aisle Spacing</span>
-                  <input type="range" min="0" max="100" value="55" disabled tabindex="-1">
-                  <em class="gone">Not used by Circle</em>
-                </label>
-                <label class="field range present">
-                  <span>Inner Circle <em>120 cm</em></span>
-                  <input type="range" min="0" max="100" value="40" disabled tabindex="-1">
-                </label>
-              </section>
-
-              <footer>
-                <span class="action">Clear</span>
-                <span class="action">Reset</span>
-                <span class="action primary">Save</span>
-              </footer>
-            </article>
-          </div>
-        </div>
-      </div>
-    </div>
-    <Fragment slot="annotations">
-      <ArrowAnnotation
-        tipX={-0.72}
-        tipY={-0.22}
-        angle={155}
-        length={0.4}
-        fontSize={annotationFontSize}
-        text="Over capacity · Save blocked"
-      />
-      <ArrowAnnotation
-        tipX={0.02}
-        tipY={0.58}
-        angle={-70}
-        length={0.36}
-        fontSize={annotationFontSize}
-        text="Declared fields only"
-      />
-      <ArrowAnnotation
-        tipX={0.74}
-        tipY={0.12}
-        angle={20}
-        length={0.38}
-        fontSize={annotationFontSize}
-        text="Inner Circle for rings"
-      />
-    </Fragment>
-  </Annotations>
+<div class="parameters-scene-demo" data-parameters-scene-island tabindex="-1">
+  <div class="boot-placeholder" aria-hidden="true">
+    <span class="boot-spinner" />
+    <span>Loading Options…</span>
+  </div>
 </div>
 
-<style lang="scss">
-@use '@/scss/technical-drawing' as drawing;
+<script>
+  import { bootWhenVisible } from '@/client/bootWhenVisible';
 
-.wrapper {
-  width: min(drawing.$artwork-width * 1.72, 94cqw);
+  async function bootParametersScene(mount: HTMLElement) {
+    if (mount.dataset.mounted === 'true') return;
+    mount.dataset.mounted = 'true';
+
+    try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+
+      const [{ createApp }, { default: ParametersSceneApp }] = await Promise.all([
+        import('vue'),
+        import('../MockScene/ParametersSceneApp.vue'),
+      ]);
+
+      const app = createApp(ParametersSceneApp);
+      app.mount(mount);
+      mount.querySelector('.boot-placeholder')?.remove();
+    } catch (error) {
+      console.debug('Parameters scene failed to boot', error);
+      delete mount.dataset.mounted;
+    }
+  }
+
+  function armBoot() {
+    const mount = document.querySelector<HTMLElement>('[data-parameters-scene-island]');
+    if (!mount || mount.dataset.mounted === 'true') return;
+
+    bootWhenVisible(mount, () => {
+      void bootParametersScene(mount);
+    });
+  }
+
+  armBoot();
+</script>
+
+<style lang="scss">
+:global(article.technical-drawing-stack > section .content:has(.parameters-scene-demo)) {
+  place-self: stretch;
+  align-self: stretch;
+  justify-self: stretch;
+  width: auto;
   max-width: 100%;
   height: auto;
-  max-height: 84cqh;
-  aspect-ratio: 1.52 / 1;
-  position: relative;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: clamp(0.7rem, 3.2%, 1.35rem);
 }
 
-.diagram {
+.parameters-scene-demo {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 14rem;
-}
-
-.panel {
-  position: absolute;
-  inset: 3%;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0.45rem;
-  padding: 0.65rem 0.75rem 0.7rem;
-  border: 1px solid #333;
-  border-radius: 0.35rem;
-  background: color-mix(in oklab, var(--blueprint, #dce8f5) 55%, #fff);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-  font-family: var(--font-poppins, system-ui, sans-serif);
-  color: #1d241c;
-
-  > header {
-    display: grid;
-    gap: 0.15rem;
-
-    .eyebrow {
-      font-size: 0.62rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #666;
-    }
-
-    strong {
-      font-size: 0.95rem;
-      line-height: 1.2;
-    }
-
-    .lede {
-      margin: 0.15rem 0 0;
-      max-width: 62ch;
-      font-size: 0.68rem;
-      line-height: 1.35;
-      color: #3d453a;
-    }
-  }
-}
-
-.stage {
-  position: relative;
   min-height: 0;
-  border-radius: 0.25rem;
-  background: linear-gradient(180deg, #2a2a2a 0%, #212121 100%);
-  border: 1px solid #444;
   overflow: hidden;
-  padding: 0.55rem;
-}
+  border-radius: 0.4em;
+  outline: none;
+  color-scheme: only dark;
+  border: 1px solid color-mix(in oklab, #0e1012 70%, #6a6e6a 30%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, #fff 10%, transparent),
+    0 10px 28px color-mix(in oklab, #000 28%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, #000 45%, transparent);
+  background: #212121;
+  container-type: size;
 
-.panels {
-  display: grid;
-  grid-template-columns: 1fr minmax(4.5rem, 0.32fr) 1fr;
-  gap: 0.4rem;
-  align-items: stretch;
-  height: 100%;
-  min-height: 0;
-}
-
-.swap {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 0.3rem;
-  align-self: center;
-  color: #ced4da;
-  text-align: center;
-  padding: 0.2rem;
-
-  .swap-label {
-    padding: 0.14rem 0.4rem;
-    border-radius: 0.2rem;
-    background: color-mix(in oklab, #89ab22 55%, #111);
-    color: #f4ffe8;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    font-size: 0.5rem;
+  @container technical-drawing (orientation: portrait) {
+    min-height: min(52cqh, 100%);
   }
 
-  .swap-arrow {
-    font-size: 1.25rem;
-    color: #89ab22;
-    line-height: 1;
-    font-weight: 700;
+  &:focus-visible {
+    box-shadow:
+      0 1px 0 color-mix(in oklab, #fff 10%, transparent),
+      0 10px 28px color-mix(in oklab, #000 28%, transparent),
+      inset 0 0 0 1px color-mix(in oklab, #000 45%, transparent),
+      0 0 0 2px #89ab24;
   }
 
-  .swap-note {
-    margin: 0;
-    font-size: 0.5rem;
-    line-height: 1.35;
+  .boot-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    background: #212121;
     color: #adb5bd;
-    max-width: 7.5rem;
-  }
-}
-
-.options {
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 0.35rem;
-  padding: 0.5rem 0.55rem;
-  border: 1px solid #565656;
-  border-radius: 0.25rem;
-  background: #323232;
-  color: #f3f3f4;
-  font-size: 0.58rem;
-  min-height: 0;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
-
-  .options-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.35rem;
+    font: 0.85rem/1.3 system-ui, sans-serif;
   }
 
-  .layout-chip {
-    display: inline-grid;
-    place-items: center;
-    padding: 0.12rem 0.4rem;
-    border-radius: 0.2rem;
-    background: #89ab24;
-    color: #1a1f12;
-    font-size: 0.55rem;
-    font-weight: 800;
-    letter-spacing: 0.02em;
+  .boot-spinner {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 3px solid #89ab24;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: parameters-boot-spin 0.8s linear infinite;
 
-    &.circle {
-      background: #1ab394;
-      color: #041510;
-    }
-  }
-
-  .options-title {
-    font-weight: 700;
-    font-size: 0.72rem;
-    color: #e9ecef;
-  }
-
-  section {
-    display: grid;
-    gap: 0.28rem;
-    align-content: start;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid #565656;
-    min-height: 0;
-
-    h4 {
-      margin: 0;
-      font-size: 0.64rem;
-      font-weight: 600;
-      color: #e9ecef;
-      padding-bottom: 0.15rem;
-      border-bottom: 1px solid #444;
-    }
-  }
-
-  .field {
-    display: grid;
-    gap: 0.12rem;
-    color: #ced4da;
-
-    em {
-      float: right;
-      font-style: normal;
-      color: #adb5bd;
-    }
-
-    input:not([type='range']) {
-      width: 100%;
-      background: #151515;
-      border: 1px solid #565656;
-      border-radius: 0.25rem;
-      color: #f3f3f4;
-      padding: 0.18rem 0.28rem;
-      font: inherit;
-    }
-
-    input[type='range'] {
-      width: 100%;
-      accent-color: #1ab394;
-    }
-
-    &.invalid input {
-      border-color: #dc3545;
-    }
-
-    .feedback {
-      float: none;
-      color: #f1aeb5;
-      font-size: 0.5rem;
-    }
-
-    .gone {
-      float: none;
-      color: #f76d65;
-      font-size: 0.48rem;
-      font-weight: 600;
-    }
-
-    &.present > span {
-      color: #89ab24;
-      font-weight: 700;
-    }
-
-    &.absent {
-      opacity: 0.48;
-
-      input {
-        opacity: 0.7;
-      }
-    }
-  }
-
-  .blocks {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 0.2rem;
-    align-items: center;
-  }
-
-  footer {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  .action {
-    flex: 1;
-    text-align: center;
-    padding: 0.22rem;
-    border: 1px solid #6c757d;
-    border-radius: 3px;
-    background: #6c757d;
-    color: #fff;
-    font-size: 0.55rem;
-
-    &.primary {
-      background: #1ab394;
-      border-color: #1ab394;
-    }
-
-    &.muted {
-      opacity: 0.4;
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      border-color: #89ab24;
     }
   }
 }
 
-@container technical-drawing (orientation: portrait) {
-  .wrapper {
-    width: min(94cqw, calc(74cqh * 1.25));
-    aspect-ratio: 1.12 / 1;
-    max-height: 74cqh;
-  }
-
-  .panel > header .lede {
-    font-size: 0.62rem;
-  }
-
-  .panels {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    gap: 0.4rem;
-  }
-
-  .swap {
-    grid-auto-flow: column;
-    justify-content: center;
-    align-items: center;
-    gap: 0.55rem;
-    text-align: left;
-
-    .swap-note {
-      max-width: 14rem;
-      text-align: left;
-    }
-  }
-}
-
-@media (max-width: 36rem) {
-  .panels {
-    grid-template-columns: 1fr;
-  }
-
-  .swap {
-    grid-auto-flow: column;
-    justify-content: center;
-    gap: 0.5rem;
+@keyframes parameters-boot-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
