@@ -185,30 +185,30 @@ type Layer = keyof typeof layers;
 .badge-formula {
   max-width: min(28ch, 100%);
   padding: 0.55em 0.8em;
-  border: 1px solid rgba(0, 0, 0, 0.3);
+  // Themed via the blueprint sheet's own tokens (see _colors.scss) instead of
+  // fixed light-mode colors, so it stays legible — and reads as a recessed
+  // panel rather than a stray light patch — across every site theme.
+  border: 1px solid var(--line-strong);
   border-radius: 0.3em;
-  background: color-mix(in oklab, #fff 85%, transparent);
-  box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.15);
-  color: #1d241c;
+  background: var(--surface-sunken);
+  box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.35);
+  color: var(--ink);
 
   math {
     display: block;
-    font-size: 0.85rem;
   }
 }
 
 .badge-formula-title {
   margin: 0 0 0.3em;
-  font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #666;
+  color: var(--ink-muted);
 }
 
 .badge-formula-note {
   margin: 0.4em 0 0;
-  font-size: 0.6rem;
   line-height: 1.35;
-  color: #555;
+  color: var(--ink-muted);
 }
 </style>
