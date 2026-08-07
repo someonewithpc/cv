@@ -136,6 +136,9 @@ export class SpaceBuilderScene {
   private draggingHandle: HandleKey | null = null;
   private handleAreaStart: AreaRect | null = null;
   private readonly handleDragOrigin = new Vector3();
+  /** Local-space offset between the click point and the handle's own position at drag start —
+   * subtracted every move so resizing tracks the cursor instead of snapping the edge to it. */
+  private handleDragOffset = { x: 0, z: 0 };
   private readonly panRight = new Vector3();
   private readonly panForward = new Vector3();
   /** Bumped on user camera/area interaction so autoplay rAF tweens stop touching the scene. */
@@ -691,10 +694,26 @@ export class SpaceBuilderScene {
       if (best) return best;
     }
 
-    // Dragging the green fill moves the area (same as the center handle) — otherwise
-    // the pointer falls through to orbit and the camera nudges while you "drag the area".
-    const fillHits = this.raycaster.intersectObject(this.selectMesh, false);
-    return fillHits.length > 0 ? 'center' : null;
+    // The fill itself isn't a handle — clicking it falls through to orbit, same as
+    // empty ground. Only the pink center lollipop moves the area.
+    return null;
+  }
+
+  /** Where a resize handle sits in the area's local space (half-extents, ignoring 'center'/'rotate'). */
+  private handleLocalPosition(key: HandleKey, width: number, depth: number): { x: number; z: number } {
+    const hw = width / 2;
+    const hd = depth / 2;
+    switch (key) {
+      case 'topLeft': return { x: -hw, z: -hd };
+      case 'top': return { x: 0, z: -hd };
+      case 'topRight': return { x: hw, z: -hd };
+      case 'right': return { x: hw, z: 0 };
+      case 'bottomRight': return { x: hw, z: hd };
+      case 'bottom': return { x: 0, z: hd };
+      case 'bottomLeft': return { x: -hw, z: hd };
+      case 'left': return { x: -hw, z: 0 };
+      default: return { x: 0, z: 0 };
+    }
   }
 
   beginHandleDrag(key: HandleKey, clientX: number, clientY: number) {
@@ -708,7 +727,7 @@ export class SpaceBuilderScene {
     this.drawing = false;
     this.handleAreaStart = { ...this.area };
     this.handleDragOrigin.copy(point);
-    this.lastPointer.set(clientX, clientY);
+        this.lastPointer.set(clientX, clientY);
     return true;
   }
 
