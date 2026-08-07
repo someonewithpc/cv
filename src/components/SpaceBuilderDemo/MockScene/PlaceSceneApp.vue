@@ -197,6 +197,8 @@ onMounted(async () => {
       aisle: 0.9,
       blocks: { width: 0, height: 0 },
     });
+    // No chairs on this page — it's about the empty SelectArea and its handles.
+    scene.setTagSuppressed(true);
 
     ready.value = true;
     requestAnimationFrame(() => {
@@ -205,12 +207,6 @@ onMounted(async () => {
         scene.forceResize();
         arrows?.sync();
       });
-    });
-
-    void scene.loadChair().then(() => {
-      arrows?.sync();
-    }).catch((error) => {
-      console.debug('Place scene chair failed to load', error);
     });
 
     const visibilityRoot =
