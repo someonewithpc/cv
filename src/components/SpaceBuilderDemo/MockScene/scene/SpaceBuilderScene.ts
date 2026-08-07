@@ -41,6 +41,7 @@ import {
   maxInnerDiameter,
   tagContent,
   type AreaRect,
+  type ChairPose,
   type LayoutOptions,
   type LayoutStyle,
 } from './layoutEngine';
@@ -153,7 +154,11 @@ export class SpaceBuilderScene {
   private innerGuide!: Mesh;
   private tagObject!: CSS2DObject;
   private tagEl!: HTMLDivElement;
+  private tagMetrics: { theta: number; r: number; offset: number } | null = null;
+  private tagSuppressed = false;
   private chairs: InstancedMesh | null = null;
+  /** Individually drag-placed chairs (Add tool, no area) — accumulate, don't replace. */
+  private singlePoses: ChairPose[] = [];
   private chairGeometry: BufferGeometry | null = null;
   private chairMaterial: Material | null = null;
   private chairScale = 1;
@@ -305,7 +310,9 @@ export class SpaceBuilderScene {
     this.ghost.position.y = this.chairYOffset;
     this.ghost.visible = false;
     this.scene.add(this.ghost);
-    this.emitSnapshot();
+    // The area/options set before the (async) chair GLB resolved rendered zero
+    // chairs — reflow now so seats appear without needing a follow-up interaction.
+    this.reflow();
   }
 
   getSnapshot(): SceneSnapshot {
@@ -358,6 +365,7 @@ export class SpaceBuilderScene {
     this.area = null;
     this.selectGroup.visible = false;
     this.tagObject.visible = false;
+    this.singlePoses = [];
     this.clearChairs();
     this.emitSnapshot();
   }
@@ -371,6 +379,17 @@ export class SpaceBuilderScene {
     this.setGhostVisible(false);
     this.setFlash(null);
     this.emitSnapshot();
+  }
+
+  /** Hide the corner/edge/move/rotate lollipops without hiding the tinted fill plane. */
+  setHandlesVisible(visible: boolean) {
+    this.handles.visible = visible;
+  }
+
+  /** Hide the capacity tag regardless of seat count — for pages with no chairs loaded. */
+  setTagSuppressed(suppressed: boolean) {
+    this.tagSuppressed = suppressed;
+    this.updateTagPosition();
   }
 
   setArea(area: AreaRect) {
@@ -491,12 +510,12 @@ export class SpaceBuilderScene {
 
   placeGhostAsSingle() {
     if (!this.ghost?.visible) return;
-    const poses = [{
+    this.singlePoses.push({
       x: this.ghost.position.x,
       z: this.ghost.position.z,
       angle: 0,
-    }];
-    this.renderChairs(poses);
+    });
+    this.renderChairs(this.composedChairPoses());
     this.setGhostVisible(false);
     this.emitSnapshot();
   }
@@ -662,6 +681,11 @@ export class SpaceBuilderScene {
     return new Vector3(this.area.x, 0, this.area.z);
   }
 
+  /** Camera-relative tag placement math (see {@link updateTagPosition}), or null when not shown. */
+  getTagMetrics(): { theta: number; r: number; offset: number } | null {
+    return this.tagObject.visible ? this.tagMetrics : null;
+  }
+
   /** World position of a SelectArea-local XZ point (0,0 = center), for plane annotations. */
   getAreaLocalWorldPosition(localX: number, localZ: number): Vector3 | null {
     if (!this.area || !this.selectGroup.visible) return null;
@@ -746,7 +770,17 @@ export class SpaceBuilderScene {
     this.drawing = false;
     this.handleAreaStart = { ...this.area };
     this.handleDragOrigin.copy(point);
-        this.lastPointer.set(clientX, clientY);
+    this.lastPointer.set(clientX, clientY);
+
+    // Click point rarely lands exactly on the handle — remember the offset so the
+    // edge tracks the cursor's movement instead of snapping to it on the first move.
+    if (key === 'center' || key === 'rotate') {
+      this.handleDragOffset = { x: 0, z: 0 };
+    } else {
+      const local = this.worldToLocal(point.x, point.z, this.area);
+      const handlePos = this.handleLocalPosition(key, this.area.width, this.area.depth);
+      this.handleDragOffset = { x: local.x - handlePos.x, z: local.z - handlePos.z };
+    }
     return true;
   }
 
@@ -777,6 +811,8 @@ export class SpaceBuilderScene {
     }
 
     const local = this.worldToLocal(point.x, point.z, start);
+    local.x -= this.handleDragOffset.x;
+    local.z -= this.handleDragOffset.z;
     let minX = -start.width / 2;
     let maxX = start.width / 2;
     let minZ = -start.depth / 2;
@@ -1127,7 +1163,7 @@ export class SpaceBuilderScene {
   }
 
   private updateTagPosition() {
-    if (!this.area) {
+    if (!this.area || this.tagSuppressed) {
       this.tagObject.visible = false;
       return;
     }
@@ -1146,7 +1182,9 @@ export class SpaceBuilderScene {
       Math.abs(denomSin) > 1e-4 ? (w / 2) / Math.abs(denomSin) : Infinity,
     );
     // Extra pad past the silhouette so the capacity pill clears chairs / handles.
-    const offset = Number.isFinite(r) ? r + 0.95 : 1.5;
+    const pad = 0.95;
+    const offset = Number.isFinite(r) ? r + pad : 1.5;
+    this.tagMetrics = { theta: cameraAngle, r: Number.isFinite(r) ? r : 0, offset };
     this.tagObject.position.set(
       this.area.x + offset * Math.sin(cameraAngle),
       0.05,
@@ -1154,15 +1192,16 @@ export class SpaceBuilderScene {
     );
   }
 
-  private reflow() {
-    if (!this.area) {
-      this.clearChairs();
-      this.emitSnapshot();
-      return;
-    }
-    this.updateSelectVisual();
+  /** Area-packed poses (if any) plus every individually drag-placed chair. */
+  private composedChairPoses(): ChairPose[] {
+    if (!this.area) return this.singlePoses;
     const { poses } = layoutChairs(this.area, this.options);
-    this.renderChairs(poses);
+    return this.singlePoses.length ? [...poses, ...this.singlePoses] : poses;
+  }
+
+  private reflow() {
+    if (this.area) this.updateSelectVisual();
+    this.renderChairs(this.composedChairPoses());
     this.emitSnapshot();
   }
 
