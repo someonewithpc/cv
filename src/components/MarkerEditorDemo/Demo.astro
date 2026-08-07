@@ -78,14 +78,14 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: (
         <PostIt background="#e8e4dc" color="black">
-          Hover or focus to take over, then click a pin to open the marker picker. Ctrl/Cmd+Z undoes.
+          Hover or focus to take over, then click a pin to open the marker picker. Ctrl/Cmd+Z undoes
         </PostIt>
       ),
       selector: (
         <PostIt background="#cde" color="black">
           Pick or create a marker for a space. If the decoration is a space number or letter, the
           selector rewrites every thumbnail to that space’s label — one shared marker, Lobby A /
-          Cafe B / Plaza C.
+          Cafe B / Plaza C
         </PostIt>
       ),
       editor: (<EditorAside />),
@@ -93,20 +93,20 @@ type Layer = keyof typeof layers;
         <PostIt background="#dfd" color="black">
           H and V stripe layers were meant to stack into a cross grid, but each axis rounded stops
           alone and the columns drifted. A tiny SVG <code>+</code> tiled with{' '}
-          <code>background-repeat</code> keeps every cell coherent.
+          <code>background-repeat</code> keeps every cell coherent
         </PostIt>
       ),
       parts: (
         <PostIt background="#cfc" color="black">
           Shape, border, fill, and decoration stack into one marker. On save, each MarkerPart
           writes typed <code>data-*</code> attributes onto the SVG so load can rebuild the same
-          parts.
+          parts
         </PostIt>
       ),
       store: (
         <PostIt background="#edf" color="black">
           Marker and space mutations live under redux-undo. <code>groupedUndo.batch</code> wraps
-          multi-dispatch saves so Ctrl/Z undoes the whole edit as one step.
+          multi-dispatch saves so Ctrl/Z undoes the whole edit as one step
         </PostIt>
       ),
     }[layer])}
