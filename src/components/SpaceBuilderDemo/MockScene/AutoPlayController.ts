@@ -242,8 +242,11 @@ export class AutoPlayController {
     this.onUi = onUi;
   }
 
+  /** Fresh beginning — initial appear, or re-appearing after being scrolled out of view. */
   start() {
     this.pause();
+    this.stepIndex = 0;
+    this.presetIndex = 0;
     this.paused = false;
     this.scheduleNext();
   }
