@@ -7,6 +7,7 @@ import {
   beginPinch,
   handleScreenSlop,
   trySetPointerCapture,
+  updateHandleHoverCursor,
   updatePinch,
   type PinchState,
   type ScreenPoint,
@@ -18,6 +19,7 @@ const ready = ref(false);
 const loadError = ref(false);
 
 let sceneRef: SpaceBuilderScene | null = null;
+let canvasRef: HTMLCanvasElement | null = null;
 let arrows: SceneArrowAnnotations | null = null;
 let observer: IntersectionObserver | null = null;
 const activePointers = new Map<number, ScreenPoint>();
@@ -49,6 +51,7 @@ function onPointerDown(event: PointerEvent) {
   });
   if (handle) {
     scene.beginHandleDrag(handle, event.clientX, event.clientY);
+    if (canvasRef) canvasRef.style.cursor = 'grabbing';
     return;
   }
   scene.beginOrbit(event.clientX, event.clientY);
@@ -83,7 +86,9 @@ function onPointerMove(event: PointerEvent) {
   }
   if (scene.isOrbiting()) {
     scene.orbit(event.clientX, event.clientY);
+    return;
   }
+  if (canvasRef) updateHandleHoverCursor(scene, canvasRef, event.clientX, event.clientY, 'grab');
 }
 
 function onPointerUp(event: PointerEvent) {
@@ -104,6 +109,7 @@ function onPointerUp(event: PointerEvent) {
   if (scene.isDraggingHandle()) {
     scene.endHandleDrag();
     arrows?.sync();
+    if (canvasRef) updateHandleHoverCursor(scene, canvasRef, event.clientX, event.clientY, 'grab');
     return;
   }
   scene.endPan();
@@ -128,6 +134,7 @@ onMounted(async () => {
     loadError.value = true;
     return;
   }
+  canvasRef = canvas;
 
   try {
     const { SpaceBuilderScene } = await import('./scene/SpaceBuilderScene');
@@ -242,6 +249,7 @@ onBeforeUnmount(() => {
   arrows = null;
   sceneRef?.dispose();
   sceneRef = null;
+  canvasRef = null;
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
   rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
