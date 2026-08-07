@@ -1,6 +1,8 @@
 export type Tech = {
   icon: string;
   text: string;
+  /** CAD, electronics, and other physical/hands-on tools, as opposed to software. */
+  hardware?: boolean;
 };
 
 export const TECH_ICONS: Tech[] = [
@@ -27,13 +29,23 @@ export const TECH_ICONS: Tech[] = [
   { icon: 'nasm', text: 'Nasm' },
   { icon: 'cmake', text: 'CMake' },
   { icon: 'vulkan', text: 'Vulkan' },
-  { icon: 'blender', text: 'Blender' },
+  { icon: 'blender', text: 'Blender', hardware: true },
   { icon: 'threejs', text: 'Three.js' },
-  { icon: 'freecad', text: 'FreeCAD' },
+  { icon: 'freecad', text: 'FreeCAD', hardware: true },
   { icon: 'linux', text: 'Linux' },
   { icon: 'gcc', text: 'GCC' },
   { icon: 'llvm', text: 'Clang' },
-  { icon: 'kicad', text: 'KiCAD' },
+  { icon: 'kicad', text: 'KiCAD', hardware: true },
+  { icon: 'bambustudio', text: 'Bambu Studio', hardware: true },
+  { icon: '3d-printing', text: '3D Printing', hardware: true },
+  { icon: 'arduino', text: 'Arduino', hardware: true },
+  { icon: 'esp32', text: 'ESP32', hardware: true },
+  { icon: 'raspberrypi', text: 'Raspberry Pi', hardware: true },
+  { icon: 'oscilloscope', text: 'Oscilloscope', hardware: true },
+  { icon: 'multimeter', text: 'Multimeter', hardware: true },
+  { icon: 'home-server', text: 'Home Server', hardware: true },
+  { icon: 'mosquitto', text: 'Mosquitto MQTT', hardware: true },
+  { icon: 'ubiquiti', text: 'Ubiquiti', hardware: true },
   { icon: 'svg', text: 'SVG' },
   { icon: 'react', text: 'React' },
   { icon: 'redux', text: 'Redux' },
@@ -55,9 +67,9 @@ export const TECH_ICONS: Tech[] = [
   { icon: 'letsencrypt', text: "Let's Encrypt" },
   { icon: 'treesitter', text: 'TreeSitter' },
   { icon: 'latex', text: 'LaTeX' },
-  { icon: 'openwrt', text: 'OpenWrt' },
+  { icon: 'openwrt', text: 'OpenWrt', hardware: true },
   { icon: 'tikz', text: 'TikZ' },
-  { icon: '8311', text: '8311 firmware' },
+  { icon: '8311', text: '8311 firmware', hardware: true },
 ];
 
 export const iconSuffix = (iconId: string): string => {
