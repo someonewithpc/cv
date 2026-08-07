@@ -1,307 +1,126 @@
 ---
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
-
-const annotationScale = 0.85;
-const annotationFontSize = 0.1 * annotationScale;
 ---
 
-<div class="wrapper">
-  <Annotations scale={annotationScale}>
-    <div class="diagram" slot="content" aria-hidden="true">
-      <div class="panel">
-        <header>
-          <span class="eyebrow">Capacity badge</span>
-          <strong>Pinned to the screen-bottom edge</strong>
-          <p class="lede">
-            A naive world −Z offset sinks under the SelectArea when you orbit. The shipped tag
-            tracks the camera so “48 seats” stays readable under the box.
-          </p>
-        </header>
-
-        <div class="stage">
-          <div class="compare">
-            <figure class="card fail">
-              <figcaption>
-                <span class="badge bad">Failed</span>
-                World −Z offset
-              </figcaption>
-              <div class="viewport">
-                <div class="area rotated">
-                  <span class="tag buried">48 seats</span>
-                </div>
-                <span class="cam">orbit →</span>
-              </div>
-              <p class="note">Tag stuck to world south — slides under the box when you yaw.</p>
-            </figure>
-
-            <figure class="card win">
-              <figcaption>
-                <span class="badge good">Shipped</span>
-                Camera-relative CSS2D
-              </figcaption>
-              <div class="viewport">
-                <div class="area">
-                  <span class="tag">48 seats in blocks of 4 by 3</span>
-                </div>
-                <svg class="math" viewBox="0 0 120 80" aria-hidden="true">
-                  <circle
-                    cx="60"
-                    cy="38"
-                    r="22"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                    stroke-dasharray="2.5 2.5"
-                  />
-                  <line x1="60" y1="38" x2="60" y2="68" stroke="currentColor" stroke-width="1.4" />
-                  <polygon points="57,60 60,70 63,60" fill="currentColor" />
-                  <text x="66" y="58" font-size="8">r + offset</text>
-                </svg>
-              </div>
-              <p class="note">
-                On orbit, recompute the tag from the camera angle so it stays on the
-                screen-bottom silhouette of the area.
-              </p>
-            </figure>
-          </div>
-        </div>
-      </div>
-    </div>
-    <Fragment slot="annotations">
-      <ArrowAnnotation
-        tipX={-0.55}
-        tipY={0.15}
-        angle={-40}
-        length={0.42}
-        fontSize={annotationFontSize}
-        text="Buried under the box"
-      />
-      <ArrowAnnotation
-        tipX={0.35}
-        tipY={0.48}
-        angle={-55}
-        length={0.45}
-        fontSize={annotationFontSize}
-        text="Screen-bottom edge"
-      />
-      <ArrowAnnotation
-        tipX={0.72}
-        tipY={-0.4}
-        angle={30}
-        length={0.38}
-        fontSize={annotationFontSize}
-        text="CSS2D label"
-      />
-    </Fragment>
-  </Annotations>
+<div class="badge-scene-demo" data-badge-scene-island tabindex="-1">
+  <div class="boot-placeholder" aria-hidden="true">
+    <span class="boot-spinner" />
+    <span>Loading badge…</span>
+  </div>
 </div>
 
-<style lang="scss">
-@use '@/scss/technical-drawing' as drawing;
+<script>
+  import { bootWhenVisible } from '@/client/bootWhenVisible';
 
-.wrapper {
-  width: min(drawing.$artwork-width * 1.6, 94cqw);
+  async function bootBadgeScene(mount: HTMLElement) {
+    if (mount.dataset.mounted === 'true') return;
+    mount.dataset.mounted = 'true';
+
+    try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+
+      const [{ createApp }, { default: BadgeSceneApp }] = await Promise.all([
+        import('vue'),
+        import('../MockScene/BadgeSceneApp.vue'),
+      ]);
+
+      const app = createApp(BadgeSceneApp);
+      app.mount(mount);
+      mount.querySelector('.boot-placeholder')?.remove();
+    } catch (error) {
+      console.debug('Badge scene failed to boot', error);
+      delete mount.dataset.mounted;
+    }
+  }
+
+  function armBoot() {
+    const mount = document.querySelector<HTMLElement>('[data-badge-scene-island]');
+    if (!mount || mount.dataset.mounted === 'true') return;
+
+    bootWhenVisible(mount, () => {
+      void bootBadgeScene(mount);
+    });
+  }
+
+  armBoot();
+</script>
+
+<style lang="scss">
+:global(article.technical-drawing-stack > section .content:has(.badge-scene-demo)) {
+  place-self: stretch;
+  align-self: stretch;
+  justify-self: stretch;
+  width: auto;
   max-width: 100%;
   height: auto;
-  max-height: 84cqh;
-  aspect-ratio: 1.5 / 1;
-  position: relative;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: clamp(0.7rem, 3.2%, 1.35rem);
 }
 
-.diagram {
+.badge-scene-demo {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 14rem;
-}
-
-.panel {
-  position: absolute;
-  inset: 3%;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0.5rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid #333;
-  border-radius: 0.35rem;
-  background: color-mix(in oklab, var(--blueprint, #dce8f5) 55%, #fff);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-  font-family: var(--font-poppins, system-ui, sans-serif);
-  color: #1d241c;
-
-  > header {
-    display: grid;
-    gap: 0.1rem;
-
-    .eyebrow {
-      font-size: 0.62rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #666;
-    }
-
-    strong {
-      font-size: 0.95rem;
-      line-height: 1.2;
-    }
-
-    .lede {
-      margin: 0.15rem 0 0;
-      max-width: 56ch;
-      font-size: 0.68rem;
-      line-height: 1.35;
-      color: #3d453a;
-    }
-  }
-}
-
-.stage {
   min-height: 0;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  background: linear-gradient(180deg, #2a2a2a 0%, #212121 100%);
-  border: 1px solid #444;
   overflow: hidden;
-}
-
-.compare {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
-  height: 100%;
-  min-height: 0;
-}
-
-.card {
-  margin: 0;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 0.35rem;
-  padding: 0.5rem;
-  border: 1px solid #565656;
-  border-radius: 0.3rem;
-  background: #323232;
-  color: #f3f3f4;
-
-  figcaption {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.66rem;
-    font-weight: 600;
-  }
-
-  .note {
-    margin: 0;
-    font-size: 0.56rem;
-    line-height: 1.4;
-    color: #adb5bd;
-
-    code {
-      font-size: 0.54rem;
-      color: #ced4da;
-    }
-  }
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.05rem 0.35rem;
-  border-radius: 0.2rem;
-  font-size: 0.52rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-
-  &.bad {
-    background: color-mix(in oklab, #f76d65 75%, #111);
-    color: #fff5f4;
-  }
-
-  &.good {
-    background: color-mix(in oklab, #89ab22 70%, #111);
-    color: #f4ffe8;
-  }
-}
-
-.viewport {
-  position: relative;
-  min-height: 7rem;
-  border-radius: 0.25rem;
+  border-radius: 0.4em;
+  outline: none;
+  color-scheme: only dark;
+  border: 1px solid color-mix(in oklab, #0e1012 70%, #6a6e6a 30%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, #fff 10%, transparent),
+    0 10px 28px color-mix(in oklab, #000 28%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, #000 45%, transparent);
   background: #212121;
-  border: 1px solid #444;
-  overflow: hidden;
-}
+  container-type: size;
 
-.area {
-  position: absolute;
-  left: 22%;
-  top: 22%;
-  width: 48%;
-  height: 44%;
-  background: color-mix(in oklab, #89ab22 40%, transparent);
-  border: 2px solid #6f8f1c;
-  border-radius: 0.15rem;
+  @container technical-drawing (orientation: portrait) {
+    min-height: min(52cqh, 100%);
+  }
 
-  &.rotated {
-    rotate: -18deg;
-    left: 18%;
-    top: 28%;
+  &:focus-visible {
+    box-shadow:
+      0 1px 0 color-mix(in oklab, #fff 10%, transparent),
+      0 10px 28px color-mix(in oklab, #000 28%, transparent),
+      inset 0 0 0 1px color-mix(in oklab, #000 45%, transparent),
+      0 0 0 2px #89ab24;
+  }
+
+  .boot-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    background: #212121;
+    color: #adb5bd;
+    font: 0.85rem/1.3 system-ui, sans-serif;
+  }
+
+  .boot-spinner {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 3px solid #89ab24;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: badge-boot-spin 0.8s linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      border-color: #89ab24;
+    }
   }
 }
 
-.tag {
-  position: absolute;
-  left: 50%;
-  bottom: -1.45rem;
-  translate: -50% 0;
-  padding: 0 0.4rem;
-  border-radius: 10px;
-  border: 2px solid rgba(162, 206, 59, 0.85);
-  background: rgba(25, 41, 21, 0.85);
-  color: #fff;
-  font-size: 0.56rem;
-  font-weight: 800;
-  white-space: nowrap;
-  z-index: 2;
-
-  &.buried {
-    bottom: auto;
-    top: 55%;
-    opacity: 0.55;
-    filter: blur(0.3px);
-    z-index: 0;
-  }
-}
-
-.cam {
-  position: absolute;
-  right: 8%;
-  top: 12%;
-  font-size: 0.55rem;
-  color: #adb5bd;
-  letter-spacing: 0.04em;
-}
-
-.math {
-  position: absolute;
-  right: 4%;
-  top: 10%;
-  width: 42%;
-  color: color-mix(in oklab, #9ec5e8 80%, #fff);
-  opacity: 0.9;
-}
-
-@container technical-drawing (orientation: portrait) {
-  .wrapper {
-    width: min(94cqw, calc(76cqh * 1.15));
-    aspect-ratio: 1.1 / 1;
-    max-height: 76cqh;
-  }
-
-  .compare {
-    grid-template-columns: 1fr;
+@keyframes badge-boot-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
