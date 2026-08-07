@@ -297,11 +297,18 @@ async function pulseClick(token: number) {
   cursorClicking.value = false;
 }
 
-/** Incremental orbit so the drop reads as a real 3D scene, not a flat image. */
-function orbitTween(token: number, deltaTheta: number, ms: number) {
+/** Incremental orbit so the drop reads as a real 3D scene, not a flat image — the demo
+ * cursor drags horizontally in step with the rotation, as if it were the one causing it.
+ * `startClient` is where the drag left off; the horizontal travel is the inverse of
+ * `SpaceBuilderScene.orbit()`'s `theta -= dx * 0.005`, so the same eased curve that drives
+ * the camera also drives the cursor. */
+function orbitTween(token: number, deltaTheta: number, ms: number, startClient: { x: number; y: number }) {
   return new Promise<void>((resolve) => {
     const start = performance.now();
+    const totalDx = -deltaTheta / 0.005;
     let applied = 0;
+    cursorInstant.value = true;
+    cursorClicking.value = true;
     const step = (now: number) => {
       const scene = sceneRef.value;
       if (token !== autoplayToken || !scene) {
@@ -313,6 +320,7 @@ function orbitTween(token: number, deltaTheta: number, ms: number) {
       const target = deltaTheta * eased;
       scene.orbitBy(target - applied);
       applied = target;
+      moveCursorTo(startClient.x + totalDx * eased, startClient.y);
       if (t < 1) requestAnimationFrame(step);
       else resolve();
     };
@@ -355,7 +363,9 @@ async function placeAndOrbit(
   scene.placeGhostAsSingle();
   showToast('Chair placed');
 
-  await orbitTween(token, orbitDir * 0.4, 700);
+  await orbitTween(token, orbitDir * 0.4, 700, dropPoint);
+  cursorInstant.value = false;
+  cursorClicking.value = false;
   if (token !== autoplayToken) return false;
   await wait(700);
   return true;
