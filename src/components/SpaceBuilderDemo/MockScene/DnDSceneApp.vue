@@ -35,6 +35,9 @@ const demoPlaying = ref(false);
 const cursorVisible = ref(false);
 const cursorClicking = ref(false);
 const cursorPos = reactive({ x: 0, y: 0 });
+/** Catalog thumbnail shown while a drag is still over the sidebar — mirrors the browser's
+ * own drag-image for native HTML5 drag, which this pointer-based drag doesn't get for free. */
+const draggedThumb = ref<string | null>(null);
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let observer: IntersectionObserver | null = null;
@@ -63,6 +66,33 @@ function isChrome(target: EventTarget | null) {
   return target instanceof Element && target.closest('.sidebar, button, input, label, details');
 }
 
+function canvasRect() {
+  const canvas = rootRef.value?.querySelector('[data-scene-canvas]');
+  return canvas?.getBoundingClientRect() ?? null;
+}
+
+function withinRect(clientX: number, clientY: number, rect: DOMRect) {
+  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+}
+
+/**
+ * Show the catalog thumbnail while the drag point is still over the sidebar — matching
+ * native HTML5 drag, whose browser-drawn drag-image follows the cursor everywhere, including
+ * over the source panel. Once the point crosses into the viewport, swap to the real 3D ghost,
+ * same as `onViewportDragOver` does for the native-drag flow on the Main page.
+ */
+function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
+  const scene = sceneRef.value;
+  const rect = canvasRect();
+  if (rect && withinRect(clientX, clientY, rect)) {
+    draggedThumb.value = null;
+    scene?.setGhostAt(clientX, clientY);
+  } else {
+    draggedThumb.value = item.thumb;
+    scene?.setGhostVisible(false);
+  }
+}
+
 function selectItem(item: CatalogItem) {
   yieldToUser();
   selectedId.value = item.id;
@@ -84,21 +114,18 @@ function onItemPointerdown(event: PointerEvent, item: CatalogItem) {
   draggingItem = item;
   phase.value = 'placing';
   trySetPointerCapture(event.currentTarget, event.pointerId);
-  sceneRef.value?.setGhostVisible(true);
-  sceneRef.value?.setGhostAt(event.clientX, event.clientY);
+  updateDragVisual(item, event.clientX, event.clientY);
 }
 
 function endItemDrag(clientX: number, clientY: number) {
   const scene = sceneRef.value;
   draggingItem = null;
   phase.value = 'idle';
+  draggedThumb.value = null;
   if (!scene) return;
 
-  const canvas = rootRef.value?.querySelector('[data-scene-canvas]');
-  const rect = canvas?.getBoundingClientRect();
-  const overViewport = rect
-    && clientX >= rect.left && clientX <= rect.right
-    && clientY >= rect.top && clientY <= rect.bottom;
+  const rect = canvasRect();
+  const overViewport = rect && withinRect(clientX, clientY, rect);
 
   if (overViewport) {
     scene.setGhostAt(clientX, clientY);
@@ -138,7 +165,7 @@ function onPointerMove(event: PointerEvent) {
   if (!scene) return;
 
   if (draggingItem) {
-    scene.setGhostAt(event.clientX, event.clientY);
+    updateDragVisual(draggingItem, event.clientX, event.clientY);
     return;
   }
 
@@ -290,9 +317,10 @@ async function placeAndOrbit(
   fy: number,
   orbitDir: 1 | -1,
 ): Promise<boolean> {
+  const chairItem = CATALOG_ITEMS.find((item) => item.id === 'chair');
   const chairBtn = root.querySelector('[data-demo-target="catalog:chair"]');
   const chairPos = elementCenter(chairBtn);
-  if (!chairPos) return false;
+  if (!chairItem || !chairPos) return false;
 
   moveCursorTo(chairPos.x, chairPos.y);
   await wait(500);
@@ -301,15 +329,16 @@ async function placeAndOrbit(
   await pulseClick(token);
   if (token !== autoplayToken) return false;
   selectedId.value = 'chair';
-  scene.setGhostVisible(true);
-  scene.setGhostAt(chairPos.x, chairPos.y);
+  updateDragVisual(chairItem, chairPos.x, chairPos.y);
 
   const dropPoint = canvasPoint(fx, fy);
   await tweenPoint(token, chairPos, dropPoint, 900, (p) => {
     moveCursorTo(p.x, p.y);
-    scene.setGhostAt(p.x, p.y);
+    updateDragVisual(chairItem, p.x, p.y);
   });
   if (token !== autoplayToken) return false;
+  draggedThumb.value = null;
+  scene.setGhostAt(dropPoint.x, dropPoint.y);
   scene.placeGhostAsSingle();
   showToast('Chair placed');
 
@@ -355,6 +384,7 @@ function stopAutoplay() {
   autoplayToken += 1;
   demoPlaying.value = false;
   cursorVisible.value = false;
+  draggedThumb.value = null;
   if (draggingItem) {
     sceneRef.value?.setGhostVisible(false);
     draggingItem = null;
@@ -482,24 +512,6 @@ onBeforeUnmount(() => {
       <p v-if="ready && !loadError" class="hint">
         Drag Chair onto the ground · orbit to look around
       </p>
-
-      <div
-        v-if="cursorVisible"
-        class="demo-cursor"
-        :class="{ clicking: cursorClicking }"
-        :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
-        aria-hidden="true"
-      >
-        <svg viewBox="0 0 32 32" width="40" height="40">
-          <path
-            d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
-            fill="#fff"
-            stroke="#222"
-            stroke-width="1.6"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </div>
     </div>
 
     <aside class="sidebar" aria-label="Select an Object" @pointerdown="yieldToUser" @focusin="yieldToUser">
@@ -516,6 +528,33 @@ onBeforeUnmount(() => {
         />
       </div>
     </aside>
+
+    <div
+      v-if="draggedThumb"
+      class="demo-drag-thumb"
+      :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
+      aria-hidden="true"
+    >
+      <img :src="draggedThumb" alt="">
+    </div>
+
+    <div
+      v-if="cursorVisible"
+      class="demo-cursor"
+      :class="{ clicking: cursorClicking }"
+      :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 32 32" width="40" height="40">
+        <path
+          d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
+          fill="#fff"
+          stroke="#222"
+          stroke-width="1.6"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
   </div>
 </template>
 
@@ -654,7 +693,9 @@ $scene-bg: #212121;
 
 .demo-cursor {
   position: absolute;
-  z-index: 4;
+  // Above the sidebar (which has no z-index of its own) so it stays visible while the
+  // autoplaying drag passes over the catalog, instead of being painted underneath it.
+  z-index: 6;
   width: 40px;
   height: 40px;
   translate: -12% -8%;
@@ -669,6 +710,30 @@ $scene-bg: #212121;
   svg {
     display: block;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+  }
+}
+
+/** Stand-in for the browser's own drag-image — shown only while the simulated drag point
+ * is still over the sidebar, since the pointer-based drag (see onItemPointerdown) doesn't
+ * get one for free the way native HTML5 drag does. */
+.demo-drag-thumb {
+  position: absolute;
+  z-index: 5;
+  width: 4.2rem;
+  height: 3.1rem;
+  padding: 0.3rem;
+  border-radius: 0.3rem;
+  background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
+  box-shadow: 0 0.25rem 0.6rem rgba(0, 0, 0, 0.45);
+  translate: -50% -128%;
+  pointer-events: none;
+  transition: left 0.12s linear, top 0.12s linear;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 }
 
