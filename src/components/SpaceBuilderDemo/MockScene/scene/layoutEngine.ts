@@ -483,7 +483,8 @@ function layoutCircle(area: AreaRect, options: LayoutOptions, arc: number): Chai
       const theta = startAngle + k * (arc / n);
       const lx = Math.cos(theta) * r;
       const lz = Math.sin(theta) * r;
-      pushLocal(lx, lz, theta + Math.PI / 2);
+      // Face the center: opposite the outward radial direction.
+      pushLocal(lx, lz, theta - Math.PI / 2);
     }
   }
   return poses;
