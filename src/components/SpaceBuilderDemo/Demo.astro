@@ -113,49 +113,45 @@ type Layer = keyof typeof layers;
                   <mtd><mi>r</mi></mtd>
                   <mtd><mo>=</mo></mtd>
                   <mtd>
-                    <mrow>
-                      <mi>min</mi>
-                      <mo>⁡</mo>
+                    <mi>min</mi>
+                    <mo>⁡</mo>
+                    <mstyle displaystyle="true" scriptlevel="0">
                       <mrow>
                         <mo stretchy="true" fence="true" form="prefix">(</mo>
-                        <mstyle displaystyle="true" scriptlevel="0">
-                          <mfrac>
-                            <mi>h</mi>
+                        <mfrac>
+                          <mi>h</mi>
+                          <mrow>
+                            <mn>2</mn>
                             <mrow>
-                              <mn>2</mn>
+                              <mo stretchy="false" fence="true">|</mo>
                               <mrow>
-                                <mo stretchy="false" fence="true">|</mo>
-                                <mrow>
-                                  <mi>cos</mi>
-                                  <mo>⁡</mo>
-                                  <mi>φ</mi>
-                                </mrow>
-                                <mo stretchy="false" fence="true">|</mo>
+                                <mi>cos</mi>
+                                <mo>⁡</mo>
+                                <mi>φ</mi>
                               </mrow>
+                              <mo stretchy="false" fence="true">|</mo>
                             </mrow>
-                          </mfrac>
-                        </mstyle>
+                          </mrow>
+                        </mfrac>
                         <mo lspace="0.3em" rspace="0.3em">,</mo>
-                        <mstyle displaystyle="true" scriptlevel="0">
-                          <mfrac>
-                            <mi>w</mi>
+                        <mfrac>
+                          <mi>w</mi>
+                          <mrow>
+                            <mn>2</mn>
                             <mrow>
-                              <mn>2</mn>
+                              <mo stretchy="false" fence="true">|</mo>
                               <mrow>
-                                <mo stretchy="false" fence="true">|</mo>
-                                <mrow>
-                                  <mi>sin</mi>
-                                  <mo>⁡</mo>
-                                  <mi>φ</mi>
-                                </mrow>
-                                <mo stretchy="false" fence="true">|</mo>
+                                <mi>sin</mi>
+                                <mo>⁡</mo>
+                                <mi>φ</mi>
                               </mrow>
+                              <mo stretchy="false" fence="true">|</mo>
                             </mrow>
-                          </mfrac>
-                        </mstyle>
+                          </mrow>
+                        </mfrac>
                         <mo stretchy="true" fence="true" form="postfix">)</mo>
                       </mrow>
-                    </mrow>
+                    </mstyle>
                   </mtd>
                 </mtr>
                 <mtr>
@@ -245,20 +241,21 @@ type Layer = keyof typeof layers;
   }
 }
 
-.badge-formula-title {
-  margin: 0 0 0.45em;
+.badge-formula-title,
+.badge-formula-note {
   font-family: monospace, system-ui;
   font-size: 0.72em;
+  color: var(--ink-muted);
+}
+
+.badge-formula-title {
+  margin: 0 0 0.45em;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--ink-muted);
 }
 
 .badge-formula-note {
   margin: 0.55em 0 0;
-  font-family: monospace, system-ui;
-  font-size: 0.72em;
   line-height: 1.35;
-  color: var(--ink-muted);
 }
 </style>
