@@ -69,39 +69,38 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: (
         <PostIt background="#e8e4dc" color="black">
-          Hover or focus to take over. Add [A] opens the catalog — double-click an object (or
-          Build) fills a drawn area; drag drops a single chair. Same Vue + Three.js stack as Space
-          Builder.
+          Hover or focus to take over the auto-playing animation<br />
+          Drag a chair from the catalog to place one, or double click on it and draw a
+          rectangle to fill it
         </PostIt>
       ),
       place: (
         <PostIt background="#cde" color="black">
-          Same Three.js <code>SelectArea</code> as Add — blue corner/edge resize, pink move,
-          green rotate. Orbit the empty ground; no sidebars on this page.
+          Blue handles resize the area, pink moves it, green rotates. Click and drag elsewhere
+          to look around
         </PostIt>
       ),
       parameters: (
         <PostIt background="#dfd" color="black">
-          One Options shell; each layout picks its fields. Grid shows Blocks + Aisle; Circle
-          swaps those for Inner Circle. Seat Count over max keeps Save off.
+          Spacing, aisles, and seat count update as you drag the sliders. If the requested
+          seats don't fit the selected area, a warning appears
         </PostIt>
       ),
       layouts: (
         <PostIt background="#cfc" color="black">
-          Layout chips only swap how chairs pack — the SelectArea and handles stay put. Grid,
-          Offset, Hollow, Chevron, Circle, Semi-Circle, and U-Shape.
+          Pick Grid, Circle, Boardroom, or any of the others and the chairs rearrange without
+          redrawing the area
         </PostIt>
       ),
       badge: (
         <PostIt background="#edf" color="black">
-          Capacity sits on the screen-bottom edge of the SelectArea. A world −Z offset sinks
-          under the box when you orbit; camera-relative CSS2D keeps it readable.
-        </PostIt>
+            The seat count sticks to the bottom of the area on screen, without overlapping the
+            selected area
+          </PostIt>
       ),
       dnd: (
         <PostIt background="#fed" color="black">
-          Catalog drag places one chair; Build draws an area and fills it. One Add tool, two
-          outcomes.
+          Grab a chair from the catalog and drop it on the floor to place a single piece
         </PostIt>
       ),
     }[layer])}
