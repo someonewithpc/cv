@@ -552,6 +552,23 @@ export class SpaceBuilderScene {
     return this.orbiting;
   }
 
+  /** Scripted camera step (radians), for an auto-orbit loop rather than pointer drag. */
+  orbitBy(deltaTheta: number) {
+    this.spherical.theta += deltaTheta;
+    this.updateCamera();
+    this.updateTagPosition();
+  }
+
+  /** Absolute camera angle set (radians) — for initial framing, not pointer drag. */
+  setCameraAngles(theta?: number, phi?: number) {
+    if (theta !== undefined) this.spherical.theta = theta;
+    if (phi !== undefined) {
+      this.spherical.phi = Math.min(Math.max(phi, ORBIT_PHI_MIN), ORBIT_PHI_MAX);
+    }
+    this.updateCamera();
+    this.updateTagPosition();
+  }
+
   getOrbitRadius() {
     return this.spherical.radius;
   }
