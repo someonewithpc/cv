@@ -5,6 +5,7 @@ import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
+
 import MockScene from './MockScene/MockScene.astro';
 import PlaceLayer from './layers/PlaceLayer.astro';
 import ParametersLayer from './layers/ParametersLayer.astro';
@@ -46,6 +47,7 @@ const layers = {
 type Layer = keyof typeof layers;
 ---
 
+<div class="space-builder-demo">
 <TechnicalDrawingStack
   subtitle="Space Builder · Add Tool"
   scale="1:1"
@@ -93,10 +95,53 @@ type Layer = keyof typeof layers;
         </PostIt>
       ),
       badge: (
-        <PostIt background="#edf" color="black">
+        <div class="badge-aside">
+          <PostIt background="#edf" color="black">
             The seat count sticks to the bottom of the area on screen, without overlapping the
             selected area
           </PostIt>
+          <div class="badge-formula monospace">
+            <p class="badge-formula-title">Tag offset</p>
+            <math display="block">
+              <mtable>
+                <mtr>
+                  <mtd><mi>φ</mi></mtd>
+                  <mtd><mo>=</mo></mtd>
+                  <mtd><mi>θ</mi><mo>&#8722;</mo><mi>α</mi></mtd>
+                </mtr>
+                <mtr>
+                  <mtd><mi>r</mi></mtd>
+                  <mtd><mo>=</mo></mtd>
+                  <mtd>
+                    <mo>min</mo>
+                    <mrow>
+                      <mo>(</mo>
+                      <mfrac>
+                        <mi>h</mi>
+                        <mrow><mn>2</mn><mo>|</mo><mo>cos</mo><mi>φ</mi><mo>|</mo></mrow>
+                      </mfrac>
+                      <mo>,</mo>
+                      <mfrac>
+                        <mi>w</mi>
+                        <mrow><mn>2</mn><mo>|</mo><mo>sin</mo><mi>φ</mi><mo>|</mo></mrow>
+                      </mfrac>
+                      <mo>)</mo>
+                    </mrow>
+                  </mtd>
+                </mtr>
+                <mtr>
+                  <mtd><mtext>offset</mtext></mtd>
+                  <mtd><mo>=</mo></mtd>
+                  <mtd><mi>r</mi><mo>+</mo><mn>0.95</mn></mtd>
+                </mtr>
+              </mtable>
+            </math>
+            <p class="badge-formula-note">
+              φ is the camera's angle relative to the area; r is the distance from center to
+              the area's silhouette edge at that angle.
+            </p>
+          </div>
+        </div>
       ),
       dnd: (
         <PostIt background="#fed" color="black">
@@ -106,3 +151,64 @@ type Layer = keyof typeof layers;
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
+</div>
+
+<style lang="scss">
+// Regular (non-portrait) layout only — reserve a gutter next to the demo
+// content (where a wide page like the Add tool can otherwise butt right up
+// against it) and center the PostIt in whatever space is left. Portrait mode
+// already centers the aside below the content with its own margin, untouched.
+:global(.space-builder-demo article.technical-drawing-stack > section .aside) {
+  display: flex;
+  justify-content: center;
+  padding-left: 1.75em;
+  margin-inline: 0;
+}
+
+@container technical-drawing (orientation: portrait) {
+  :global(.space-builder-demo article.technical-drawing-stack > section .aside) {
+    display: block;
+    padding-left: 0;
+    margin-inline: auto;
+  }
+}
+
+// Badge page: the formula card sits below the PostIt, never overlapping it.
+.badge-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+  max-width: 100%;
+}
+
+.badge-formula {
+  max-width: min(28ch, 100%);
+  padding: 0.55em 0.8em;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 0.3em;
+  background: color-mix(in oklab, #fff 85%, transparent);
+  box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.15);
+  color: #1d241c;
+
+  math {
+    display: block;
+    font-size: 0.85rem;
+  }
+}
+
+.badge-formula-title {
+  margin: 0 0 0.3em;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.badge-formula-note {
+  margin: 0.4em 0 0;
+  font-size: 0.6rem;
+  line-height: 1.35;
+  color: #555;
+}
+</style>
