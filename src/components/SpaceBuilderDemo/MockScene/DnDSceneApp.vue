@@ -40,6 +40,11 @@ const toast = ref<string | null>(null);
 const demoPlaying = ref(false);
 const cursorVisible = ref(false);
 const cursorClicking = ref(false);
+/** True while a tween is driving cursorPos every frame — the JS easing already
+ * smooths motion, so the CSS position transition (meant for discrete jumps)
+ * only adds trailing lag here, most visibly right at the drop, where it makes
+ * the orbit look like it starts before the cursor visually finishes arriving. */
+const cursorInstant = ref(false);
 const cursorPos = reactive({ x: 0, y: 0 });
 /** Catalog thumbnail shown while a drag is still over the sidebar — mirrors the browser's
  * own drag-image for native HTML5 drag, which this pointer-based drag doesn't get for free. */
@@ -89,6 +94,7 @@ function withinRect(clientX: number, clientY: number, rect: DOMRect) {
  */
 function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
   const scene = sceneRef.value;
+  moveCursorTo(clientX, clientY);
   const rect = canvasRect();
   if (rect && withinRect(clientX, clientY, rect)) {
     draggedThumb.value = null;
@@ -338,10 +344,11 @@ async function placeAndOrbit(
   updateDragVisual(chairItem, chairPos.x, chairPos.y);
 
   const dropPoint = canvasPoint(fx, fy);
+  cursorInstant.value = true;
   await tweenPoint(token, chairPos, dropPoint, 900, (p) => {
-    moveCursorTo(p.x, p.y);
     updateDragVisual(chairItem, p.x, p.y);
   });
+  cursorInstant.value = false;
   if (token !== autoplayToken) return false;
   draggedThumb.value = null;
   scene.setGhostAt(dropPoint.x, dropPoint.y);
@@ -361,7 +368,9 @@ async function runAutoplay() {
   const scene = sceneRef.value;
   const root = rootRef.value;
   if (!scene || !root) {
-    demoPlaying.value = false;
+    // Only this run's own failure to start — a superseding run (newer token)
+    // already owns demoPlaying/cursorVisible and must not be clobbered here.
+    if (token === autoplayToken) demoPlaying.value = false;
     return;
   }
 
@@ -377,7 +386,9 @@ async function runAutoplay() {
     scene.clearArea();
     await wait(500);
   }
-  demoPlaying.value = false;
+  // A stale run reaching here (superseded mid-flight) must leave the current
+  // run's state alone — stopAutoplay() already did this run's own cleanup.
+  if (token === autoplayToken) demoPlaying.value = false;
 }
 
 function startAutoplay() {
@@ -541,6 +552,7 @@ onBeforeUnmount(() => {
     <div
       v-if="draggedThumb"
       class="demo-drag-thumb"
+      :class="{ instant: cursorInstant }"
       :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
       aria-hidden="true"
     >
@@ -550,7 +562,7 @@ onBeforeUnmount(() => {
     <div
       v-if="cursorVisible"
       class="demo-cursor"
-      :class="{ clicking: cursorClicking }"
+      :class="{ clicking: cursorClicking, instant: cursorInstant }"
       :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
       aria-hidden="true"
     >
@@ -712,6 +724,13 @@ $scene-bg: #212121;
   pointer-events: none;
   transition: left 0.12s linear, top 0.12s linear, scale 0.12s ease;
 
+  // While a tween is driving cursorPos every frame, its own easing already
+  // smooths the motion — this transition would only add trailing lag on top,
+  // most visibly right at the drop point.
+  &.instant {
+    transition: scale 0.12s ease;
+  }
+
   &.clicking {
     scale: 0.88;
   }
@@ -737,6 +756,10 @@ $scene-bg: #212121;
   translate: -50% -128%;
   pointer-events: none;
   transition: left 0.12s linear, top 0.12s linear;
+
+  &.instant {
+    transition: none;
+  }
 
   img {
     display: block;
