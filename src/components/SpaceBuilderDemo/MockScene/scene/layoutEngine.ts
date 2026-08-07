@@ -5,7 +5,8 @@ export type LayoutStyle =
   | 'chevron'
   | 'circle'
   | 'semi_circle'
-  | 'u_shape';
+  | 'u_shape'
+  | 'boardroom';
 
 export const LAYOUT_STYLES: LayoutStyle[] = [
   'grid',
@@ -15,6 +16,7 @@ export const LAYOUT_STYLES: LayoutStyle[] = [
   'circle',
   'semi_circle',
   'u_shape',
+  'boardroom',
 ];
 
 export const LAYOUT_LABELS: Record<LayoutStyle, string> = {
@@ -25,6 +27,7 @@ export const LAYOUT_LABELS: Record<LayoutStyle, string> = {
   circle: 'Circle',
   semi_circle: 'Semi-Circle',
   u_shape: 'U-Shape',
+  boardroom: 'Boardroom',
 };
 
 export type AreaRect = {
@@ -103,6 +106,7 @@ export function uiFieldsForStyle(style: LayoutStyle): Set<UiFieldId> {
       return new Set(['seats', 'distanceX', 'distanceZ', 'offset']);
     case 'hollow':
     case 'u_shape':
+    case 'boardroom':
       return new Set(['seats', 'distanceX', 'distanceZ']);
     case 'chevron':
       return new Set(['seats', 'distanceX', 'distanceZ', 'aisle', 'angle']);
@@ -216,6 +220,8 @@ function buildCandidates(area: AreaRect, options: LayoutOptions): ChairPose[] {
       return layoutCircle(area, options, Math.PI);
     case 'u_shape':
       return layoutUShape(area, options);
+    case 'boardroom':
+      return layoutBoardroom(area, options);
     case 'grid':
     default:
       return layoutGrid(area, options);
@@ -478,6 +484,35 @@ function layoutUShape(area: AreaRect, options: LayoutOptions): ChairPose[] {
     const lz = sideStartZ + r * stepZ;
     pushLocal(-area.width / 2 + sizeX / 2, lz, Math.PI / 2);
     pushLocal(area.width / 2 - sizeX / 2, lz, -Math.PI / 2);
+  }
+  return poses;
+}
+
+/**
+ * Two facing rows down the area's length (Space Builder Boardroom.arrangeObjects) —
+ * chairs turned 90° so their footprint axes swap: width spans the row-to-row
+ * stride, depth spans the center gap between the two facing rows.
+ */
+function layoutBoardroom(area: AreaRect, options: LayoutOptions): ChairPose[] {
+  const alongLength = CHAIR_FOOTPRINT.width;
+  const acrossGap = CHAIR_FOOTPRINT.depth;
+  const { distanceX, distanceZ } = options;
+
+  const requiredWidth = 2 * acrossGap + distanceX;
+  if (area.width < requiredWidth) return [];
+
+  const rows = countFit(area.depth, alongLength, distanceZ);
+  if (rows < 1) return [];
+
+  const { poses, pushLocal } = makePusher(area);
+  const originZ = -area.depth / 2 + alongLength / 2;
+  const stepZ = alongLength + distanceZ;
+  const colOffset = acrossGap / 2 + distanceX / 2;
+
+  for (let r = 0; r < rows; r += 1) {
+    const z = originZ + r * stepZ;
+    pushLocal(-colOffset, z, Math.PI / 2);
+    pushLocal(colOffset, z, -Math.PI / 2);
   }
   return poses;
 }
