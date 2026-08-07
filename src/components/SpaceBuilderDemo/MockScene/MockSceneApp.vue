@@ -8,7 +8,9 @@ import {
   type DemoCursorStep,
   type DemoToastPayload,
 } from './AutoPlayController';
-import { LAYOUT_ICONS } from './layoutIcons';
+import CatalogPanel from './CatalogPanel.vue';
+import { CATALOG_ITEMS, type CatalogItem } from './catalogItems';
+import OptionsPanel from './OptionsPanel.vue';
 import {
   RAIL_ARRANGE_TOOLS,
   RAIL_EDIT_TOOLS,
@@ -16,20 +18,13 @@ import {
   RAIL_TOOLS,
   type RailTool,
 } from './railTools';
-import {
-  DEFAULT_LAYOUT_OPTIONS,
-  LAYOUT_LABELS,
-  LAYOUT_STYLES,
-  isAisleEnabled,
-  uiFieldsForStyle,
-  type LayoutStyle,
-  type UiFieldId,
-} from './scene/layoutEngine';
+import { DEFAULT_LAYOUT_OPTIONS, type LayoutStyle } from './scene/layoutEngine';
 import {
   applyWheelZoom,
   beginPinch,
   handleScreenSlop,
   trySetPointerCapture,
+  updateHandleHoverCursor,
   updatePinch,
   type PinchState,
   type ScreenPoint,
@@ -48,58 +43,6 @@ const TOAST_EXIT_MS = 320;
 type CursorPhase = 'demo' | 'fading' | 'gone';
 type Panel = 'closed' | 'catalog' | 'options';
 type Phase = 'idle' | 'build' | 'placing';
-
-type CatalogItem = {
-  id: string;
-  name: string;
-  thumb: string;
-  /** Real demo object — drag / Build / dblclick work. */
-  real?: boolean;
-};
-
-const CATALOG_ITEMS: CatalogItem[] = [
-  {
-    id: 'chair',
-    name: 'Chair',
-    thumb: '/demos/space-builder/chair-thumb.webp',
-    real: true,
-  },
-  {
-    id: 'armchair',
-    name: 'Armchair',
-    thumb: '/demos/space-builder/catalog/armchair.svg',
-  },
-  {
-    id: 'barstool',
-    name: 'Bar Stool',
-    thumb: '/demos/space-builder/catalog/barstool.svg',
-  },
-  {
-    id: 'lounge',
-    name: 'Lounge',
-    thumb: '/demos/space-builder/catalog/lounge.svg',
-  },
-  {
-    id: 'table-round',
-    name: 'Round Table',
-    thumb: '/demos/space-builder/catalog/table-round.svg',
-  },
-  {
-    id: 'table-cocktail',
-    name: 'Cocktail Table',
-    thumb: '/demos/space-builder/catalog/table-cocktail.svg',
-  },
-  {
-    id: 'plant',
-    name: 'Planter',
-    thumb: '/demos/space-builder/catalog/plant.svg',
-  },
-  {
-    id: 'umbrella',
-    name: 'Umbrella',
-    thumb: '/demos/space-builder/catalog/umbrella.svg',
-  },
-];
 
 type DemoToast = DemoToastPayload & { id: number; leaving: boolean };
 
@@ -126,13 +69,8 @@ const controllerRef = shallowRef<AutoPlayController | null>(null);
 const ready = ref(false);
 const chairsReady = ref(false);
 const selectedCatalogId = ref('chair');
-const catalogSearch = ref('');
-
-const catalogItemsVisible = computed(() => {
-  const q = catalogSearch.value.trim().toLowerCase();
-  if (!q) return CATALOG_ITEMS;
-  return CATALOG_ITEMS.filter((item) => item.name.toLowerCase().includes(q));
-});
+// Bump to remount CatalogPanel (clears its internal search box) when Add reopens.
+const catalogPanelKey = ref(0);
 
 const selectedCatalogItem = computed(() => (
   CATALOG_ITEMS.find((item) => item.id === selectedCatalogId.value) ?? null
@@ -161,6 +99,7 @@ let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 let handoffTimer: ReturnType<typeof setTimeout> | null = null;
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 let observer: IntersectionObserver | null = null;
+let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
 
@@ -170,29 +109,6 @@ const seatsInvalid = computed(() => {
   return snap.options.seats > 0 && snap.options.seats > snap.maxSeats;
 });
 
-const layoutStyle = computed(() => snapshot.value?.options.style ?? 'grid');
-const activeFields = computed(() => uiFieldsForStyle(layoutStyle.value));
-const aisleEnabled = computed(() => {
-  if (!activeFields.value.has('aisle')) return false;
-  const opts = snapshot.value?.options ?? DEFAULT_LAYOUT_OPTIONS;
-  return isAisleEnabled(layoutStyle.value, opts);
-});
-
-function fieldActive(id: UiFieldId) {
-  return activeFields.value.has(id);
-}
-
-function formatDistance(meters: number) {
-  if (meters >= 1) {
-    const rounded = Math.round(meters * 10) / 10;
-    return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded}m`;
-  }
-  return `${Math.round(meters * 100)}cm`;
-}
-
-function formatAngle(radians: number) {
-  return `${Math.round((radians * 180) / Math.PI)}°`;
-}
 function pushToast(payload: DemoToastPayload) {
   const id = ++toastId;
   toasts.value = [...toasts.value.filter((t) => !t.leaving), { ...payload, id, leaving: false }];
@@ -358,6 +274,7 @@ function onPointerDown(event: PointerEvent) {
   });
   if (handle) {
     scene.beginHandleDrag(handle, event.clientX, event.clientY);
+    if (canvasRef) canvasRef.style.cursor = 'grabbing';
     return;
   }
 
@@ -404,7 +321,9 @@ function onPointerMove(event: PointerEvent) {
   }
   if (scene.isOrbiting()) {
     scene.orbit(event.clientX, event.clientY);
+    return;
   }
+  if (canvasRef) updateHandleHoverCursor(scene, canvasRef, event.clientX, event.clientY, 'grab');
 }
 
 function onPointerUp(event: PointerEvent) {
@@ -422,6 +341,7 @@ function onPointerUp(event: PointerEvent) {
 
   if (scene?.isDraggingHandle()) {
     scene.endHandleDrag();
+    if (canvasRef) updateHandleHoverCursor(scene, canvasRef, event.clientX, event.clientY, 'grab');
     return;
   }
   if (phase.value === 'build' && scene?.isDrawing()) {
@@ -461,7 +381,7 @@ function openAdd() {
   panel.value = 'catalog';
   phase.value = 'idle';
   selectedCatalogId.value = 'chair';
-  catalogSearch.value = '';
+  catalogPanelKey.value += 1;
 }
 
 function closePanel() {
@@ -508,50 +428,39 @@ function setStyle(style: LayoutStyle) {
   sceneRef.value?.setStyle(style);
 }
 
-function onSeatsInput(event: Event) {
-  const value = Number((event.target as HTMLInputElement).value);
-  sceneRef.value?.setOptions({ seats: Number.isFinite(value) ? value : 0 });
+function onSeatsInput(value: number) {
+  sceneRef.value?.setOptions({ seats: value });
 }
 
-function onBlockWidth(event: Event) {
-  const raw = (event.target as HTMLInputElement).value;
-  const value = raw === '' ? 0 : Number(raw);
-  sceneRef.value?.setOptions({ blocks: { width: Number.isFinite(value) ? value : 0 } });
+function onBlockWidth(value: number) {
+  sceneRef.value?.setOptions({ blocks: { width: value } });
 }
 
-function onBlockHeight(event: Event) {
-  const raw = (event.target as HTMLInputElement).value;
-  const value = raw === '' ? 0 : Number(raw);
-  sceneRef.value?.setOptions({ blocks: { height: Number.isFinite(value) ? value : 0 } });
+function onBlockHeight(value: number) {
+  sceneRef.value?.setOptions({ blocks: { height: value } });
 }
 
-function onDistanceX(event: Event) {
-  const value = Number((event.target as HTMLInputElement).value);
+function onDistanceX(value: number) {
   sceneRef.value?.setOptions({ distanceX: value });
 }
 
-function onDistanceZ(event: Event) {
-  const value = Number((event.target as HTMLInputElement).value);
+function onDistanceZ(value: number) {
   sceneRef.value?.setOptions({ distanceZ: value });
 }
 
-function onAisle(event: Event) {
-  const value = Number((event.target as HTMLInputElement).value);
+function onAisle(value: number) {
   sceneRef.value?.setOptions({ aisle: value });
 }
 
-function onOffset(event: Event) {
-  const value = Number((event.target as HTMLInputElement).value);
+function onOffset(value: number) {
   sceneRef.value?.setOptions({ offset: value });
 }
 
-function onAngle(event: Event) {
-  const value = Number((event.target as HTMLInputElement).value);
+function onAngle(value: number) {
   sceneRef.value?.setOptions({ angle: value });
 }
 
-function onInnerDiameter(event: Event) {
-  const value = Number((event.target as HTMLInputElement).value);
+function onInnerDiameter(value: number) {
   sceneRef.value?.setOptions({ innerDiameter: value });
 }
 
@@ -645,6 +554,7 @@ onMounted(async () => {
     loadError.value = true;
     return;
   }
+  canvasRef = canvas;
 
   try {
     // Keep Three.js out of the Vue island chunk — load it only when mounting.
@@ -753,6 +663,7 @@ onBeforeUnmount(() => {
   observer?.disconnect();
   controllerRef.value?.destroy();
   sceneRef.value?.dispose();
+  canvasRef = null;
   if (resumeTimer) clearTimeout(resumeTimer);
   if (handoffTimer) clearTimeout(handoffTimer);
   if (clickTimer) clearTimeout(clickTimer);
@@ -896,295 +807,32 @@ onBeforeUnmount(() => {
 
       <div class="sidebar-body">
         <template v-if="panel === 'catalog'">
-          <label class="catalog-search">
-            <span class="visually-hidden">Search by name</span>
-            <input
-              v-model="catalogSearch"
-              type="search"
-              placeholder="Search by name"
-              autocomplete="off"
-              @keydown.stop
-            >
-          </label>
-
-          <p v-if="catalogItemsVisible.length === 0" class="catalog-empty">
-            Search does not match any object.
-          </p>
-
-          <div v-else class="catalog-grid">
-            <button
-              v-for="item in catalogItemsVisible"
-              :key="item.id"
-              type="button"
-              class="option-item"
-              :class="{
-                active: selectedCatalogId === item.id,
-                placeholder: !item.real,
-              }"
-              :data-demo-target="item.real ? 'catalog:chair' : `catalog:${item.id}`"
-              :draggable="Boolean(item.real)"
-              :title="item.real ? `${item.name} · double-click to Build` : `${item.name} (placeholder)`"
-              @click="selectCatalogItem(item)"
-              @dblclick="confirmCatalogItem(item)"
-              @dragstart="onCatalogDragStart($event, item)"
-              @dragend="onCatalogDragEnd"
-            >
-              <div class="object-icons">
-                <img :src="item.thumb" alt="" width="120" height="90" />
-              </div>
-              <span class="item-label">
-                <span class="object-name">{{ item.name }}</span>
-              </span>
-            </button>
-          </div>
+          <CatalogPanel
+            :key="catalogPanelKey"
+            :items="CATALOG_ITEMS"
+            :selected-id="selectedCatalogId"
+            @select="selectCatalogItem"
+            @confirm="confirmCatalogItem"
+            @dragstart="onCatalogDragStart"
+            @dragend="onCatalogDragEnd"
+          />
         </template>
 
         <template v-else>
-          <details class="options-section" open>
-            <summary>
-              Seats
-              <svg viewBox="0 0 24 16" width="18" height="12" aria-hidden="true">
-                <rect x="2" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
-                <rect x="3" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
-                <rect x="14" y="6" width="8" height="3" rx="0.5" fill="currentColor" />
-                <rect x="15" y="2" width="6" height="5" rx="0.8" fill="currentColor" />
-              </svg>
-            </summary>
-            <label class="field" :class="{ invalid: seatsInvalid }">
-              <span>Seat Count</span>
-              <input
-                data-demo-target="param:seats"
-                type="number"
-                min="0"
-                :value="snapshot?.options.seats || ''"
-                placeholder="Enter a value or leave empty to fill the selected area"
-                :disabled="!fieldActive('seats')"
-                @change="onSeatsInput"
-              >
-              <span v-if="seatsInvalid" class="invalid-feedback">
-                Too many seats for this area (max {{ snapshot?.maxSeats ?? 0 }})
-              </span>
-            </label>
-            <label
-              class="field"
-              :title="fieldActive('blocks') ? undefined : 'Not used by this layout'"
-            >
-              <span>Blocks of</span>
-              <div class="blocks-of" data-demo-target="param:blocks">
-                <input
-                  type="text"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Chairs"
-                  :value="snapshot?.options.blocks.width || ''"
-                  :disabled="!fieldActive('blocks')"
-                  @input="onBlockWidth"
-                  @change="onBlockWidth"
-                >
-                <span class="times" aria-hidden="true">×</span>
-                <input
-                  type="text"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Rows"
-                  :value="snapshot?.options.blocks.height || ''"
-                  :disabled="!fieldActive('blocks')"
-                  @input="onBlockHeight"
-                  @change="onBlockHeight"
-                >
-              </div>
-            </label>
-          </details>
-
-          <details class="options-section" open>
-            <summary>
-              Spacing
-              <svg viewBox="0 0 24 16" width="18" height="12" aria-hidden="true">
-                <path
-                  d="M3 8h6M15 8h6M11 4v8"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </summary>
-            <label
-              class="field range-field"
-              :title="fieldActive('distanceX') ? undefined : 'Not used by this layout'"
-            >
-              <span class="range-label">
-                <span class="range-name">
-                  Side to Side
-                  <svg class="range-glyph" viewBox="0 0 48 20" aria-hidden="true">
-                    <rect x="2" y="8" width="10" height="8" rx="1" fill="currentColor" />
-                    <rect x="36" y="8" width="10" height="8" rx="1" fill="currentColor" />
-                    <path d="M14 12h20M16 9l-3 3 3 3M32 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" />
-                  </svg>
-                </span>
-                <span class="range-value">{{ formatDistance(snapshot?.options.distanceX ?? 0.2) }}</span>
-              </span>
-              <input
-                data-demo-target="param:spacing-x"
-                type="range"
-                min="0"
-                max="1.2"
-                step="0.05"
-                :value="snapshot?.options.distanceX ?? 0.2"
-                :disabled="!fieldActive('distanceX')"
-                @input="onDistanceX"
-              >
-            </label>
-            <label
-              class="field range-field"
-              :title="fieldActive('distanceZ') ? undefined : 'Not used by this layout'"
-            >
-              <span class="range-label">
-                <span class="range-name">
-                  Front to Back
-                  <svg class="range-glyph" viewBox="0 0 24 28" aria-hidden="true">
-                    <rect x="7" y="2" width="10" height="8" rx="1" fill="currentColor" />
-                    <rect x="7" y="18" width="10" height="8" rx="1" fill="currentColor" />
-                    <path d="M12 11v6M9 13l3-3 3 3M9 15l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" />
-                  </svg>
-                </span>
-                <span class="range-value">{{ formatDistance(snapshot?.options.distanceZ ?? 0.35) }}</span>
-              </span>
-              <input
-                data-demo-target="param:spacing-z"
-                type="range"
-                min="0"
-                max="1.2"
-                step="0.05"
-                :value="snapshot?.options.distanceZ ?? 0.35"
-                :disabled="!fieldActive('distanceZ')"
-                @input="onDistanceZ"
-              >
-            </label>
-            <label
-              class="field range-field"
-              :title="aisleEnabled
-                ? undefined
-                : (fieldActive('aisle')
-                  ? 'Set Blocks of to enable aisle spacing'
-                  : 'Not used by this layout')"
-            >
-              <span class="range-label">
-                <span class="range-name">
-                  Aisle Spacing
-                  <svg class="range-glyph" viewBox="0 0 48 20" aria-hidden="true">
-                    <rect x="2" y="6" width="8" height="7" rx="1" fill="currentColor" />
-                    <rect x="11" y="6" width="8" height="7" rx="1" fill="currentColor" />
-                    <rect x="29" y="6" width="8" height="7" rx="1" fill="currentColor" />
-                    <rect x="38" y="6" width="8" height="7" rx="1" fill="currentColor" />
-                    <path d="M20 10h8M22 7l-3 3 3 3M26 7l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.5" />
-                  </svg>
-                </span>
-                <span class="range-value">{{ formatDistance(snapshot?.options.aisle ?? 0.8) }}</span>
-              </span>
-              <input
-                data-demo-target="param:aisle"
-                type="range"
-                min="0"
-                max="2"
-                step="0.05"
-                :value="snapshot?.options.aisle ?? 0.8"
-                :disabled="!aisleEnabled"
-                @input="onAisle"
-              >
-            </label>
-            <label
-              class="field range-field"
-              :title="fieldActive('offset') ? undefined : 'Not used by this layout'"
-            >
-              <span class="range-label">
-                <span>Offset</span>
-                <span class="range-value">{{ formatDistance(snapshot?.options.offset ?? 0.3) }}</span>
-              </span>
-              <input
-                data-demo-target="param:offset"
-                type="range"
-                min="-0.8"
-                max="0.8"
-                step="0.05"
-                :value="snapshot?.options.offset ?? 0.3"
-                :disabled="!fieldActive('offset')"
-                @input="onOffset"
-              >
-            </label>
-            <label
-              class="field range-field"
-              :title="fieldActive('angle') ? undefined : 'Not used by this layout'"
-            >
-              <span class="range-label">
-                <span>Angle</span>
-                <span class="range-value">{{ formatAngle(snapshot?.options.angle ?? Math.PI / 8) }}</span>
-              </span>
-              <input
-                data-demo-target="param:angle"
-                type="range"
-                min="0"
-                :max="Math.PI / 4"
-                step="0.01"
-                :value="snapshot?.options.angle ?? Math.PI / 8"
-                :disabled="!fieldActive('angle')"
-                @input="onAngle"
-              >
-            </label>
-            <label
-              class="field range-field"
-              :title="fieldActive('innerDiameter') ? undefined : 'Not used by this layout'"
-            >
-              <span class="range-label">
-                <span>Inner Circle</span>
-                <span class="range-value">{{ formatDistance(snapshot?.options.innerDiameter ?? 0) }}</span>
-              </span>
-              <input
-                data-demo-target="param:inner"
-                type="range"
-                min="0"
-                :max="snapshot?.innerDiameterMax ?? 4"
-                step="0.05"
-                :value="Math.min(snapshot?.options.innerDiameter ?? 0, snapshot?.innerDiameterMax ?? 4)"
-                :disabled="!fieldActive('innerDiameter')"
-                @input="onInnerDiameter"
-              >
-            </label>
-          </details>
-
-          <details class="options-section" open>
-            <summary>
-              Layout Styles
-              <svg viewBox="0 0 24 16" width="18" height="12" aria-hidden="true">
-                <rect x="2" y="2" width="4" height="4" fill="currentColor" />
-                <rect x="10" y="2" width="4" height="4" fill="currentColor" />
-                <rect x="18" y="2" width="4" height="4" fill="currentColor" />
-                <rect x="2" y="10" width="4" height="4" fill="currentColor" />
-                <rect x="18" y="10" width="4" height="4" fill="currentColor" />
-              </svg>
-            </summary>
-            <div class="layouts" role="group" aria-label="Layout styles">
-              <button
-                v-for="style in LAYOUT_STYLES"
-                :key="style"
-                type="button"
-                class="layout-item"
-                :data-demo-target="`layout:${style}`"
-                :class="{ active: layoutStyle === style }"
-                @click="setStyle(style)"
-              >
-                <span class="item-label">{{ LAYOUT_LABELS[style] }}</span>
-                <div class="layout-style-icons" aria-hidden="true">
-                  <img
-                    :src="LAYOUT_ICONS[style]"
-                    alt=""
-                    width="56"
-                    height="56"
-                  >
-                </div>
-              </button>
-            </div>
-          </details>
+          <OptionsPanel
+            :snapshot="snapshot"
+            :seats-invalid="seatsInvalid"
+            @seats="onSeatsInput"
+            @block-width="onBlockWidth"
+            @block-height="onBlockHeight"
+            @distance-x="onDistanceX"
+            @distance-z="onDistanceZ"
+            @aisle="onAisle"
+            @offset="onOffset"
+            @angle="onAngle"
+            @inner-diameter="onInnerDiameter"
+            @style="setStyle"
+          />
         </template>
       </div>
 
@@ -1255,9 +903,7 @@ onBeforeUnmount(() => {
 $nav-main-bg: #323232;
 $nav-main-active-bg: #293846;
 $nav-sidebar-bg: #323232;
-$nav-second-bg: #151515;
 $visrez-brand: #89ab24;
-$navy: #1ab394;
 $buttons-ui: #6c757d;
 $light-grey: #565656;
 $scene-bg: #212121;
@@ -1569,339 +1215,6 @@ $scene-bg: #212121;
     overflow-y: auto;
     padding: 0.75rem;
     scrollbar-width: thin;
-  }
-
-  .catalog-search {
-    display: block;
-    margin-bottom: 0.75rem;
-
-    input {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 0.4rem 0.55rem;
-      border: 1px solid #495057;
-      border-radius: 0.25rem;
-      background: #212529;
-      color: #f3f3f4;
-      font: inherit;
-      font-size: 0.8rem;
-
-      &::placeholder {
-        color: #adb5bd;
-      }
-
-      &:focus {
-        outline: 0;
-        border-color: $navy;
-        box-shadow: 0 0 0 0.15rem rgba(26, 179, 148, 0.35);
-      }
-    }
-  }
-
-  .catalog-empty {
-    margin: 1rem 0 0;
-    font-size: 0.85rem;
-    color: #adb5bd;
-  }
-
-  .catalog-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    align-content: start;
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .option-item {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    padding: 0;
-    border: 1px solid #495057;
-    border-radius: 0.25rem;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    cursor: grab;
-    overflow: hidden;
-    user-select: none;
-
-    &.placeholder {
-      cursor: pointer;
-
-      .object-icons {
-        // Same tile chrome as real items — just mute the silhouette.
-        filter: grayscale(1);
-
-        img {
-          opacity: 0.45;
-        }
-      }
-
-      .item-label {
-        color: #868e96;
-        font-weight: 600;
-      }
-
-      &.active .item-label {
-        color: rgba(255, 255, 255, 0.85);
-      }
-    }
-
-    &:hover:not(.active) {
-      border-color: #adb5bd;
-    }
-
-    &.active {
-      box-shadow: 0 0 0 0.2rem rgba(26, 179, 148, 0.35);
-
-      .item-label {
-        background: $navy;
-        color: #fff;
-      }
-    }
-
-    &.is-demo-target {
-      box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.65);
-    }
-
-    .object-icons {
-      position: relative;
-      display: flex;
-      flex: 1 1 auto;
-      min-height: 5rem;
-      background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
-
-      img {
-        display: block;
-        width: 100%;
-        height: auto;
-        object-fit: contain;
-        padding: 0.5rem;
-      }
-    }
-
-    .item-label {
-      display: block;
-      margin: 0;
-      padding: 0.35rem 0.4rem;
-      background: #212529;
-      text-align: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-
-      .object-name {
-        display: block;
-        overflow: hidden;
-        max-height: 1.15em;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-    }
-  }
-
-  .options-section {
-    margin-bottom: 0.85rem;
-
-    summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.25rem 0.1rem 0.45rem;
-      margin-bottom: 0.55rem;
-      border-bottom: 1px solid $light-grey;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      list-style: none;
-      color: #e9ecef;
-
-      &::-webkit-details-marker {
-        display: none;
-      }
-
-      svg {
-        opacity: 0.85;
-      }
-    }
-  }
-
-  .field {
-    display: grid;
-    gap: 0.3rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.72rem;
-    color: #ced4da;
-
-    input[type='number'],
-    input[type='range'] {
-      width: 100%;
-    }
-
-    input[type='number'] {
-      padding: 0.4rem 0.5rem;
-      border: 1px solid $light-grey;
-      border-radius: 0.25rem;
-      background: $nav-second-bg;
-      color: #f3f3f4;
-      font: inherit;
-    }
-
-    input[type='range'] {
-      accent-color: $visrez-brand;
-    }
-
-    &.invalid {
-      input[type='number'] {
-        border-color: #dc3545;
-      }
-    }
-
-    &:has(:disabled) {
-      opacity: 0.45;
-
-      .range-name,
-      .range-value,
-      .range-glyph,
-      span {
-        color: #868e96;
-      }
-
-      input[type='number']:disabled {
-        border-color: #495057;
-        color: #868e96;
-        background: #2a2e33;
-      }
-
-      input[type='range']:disabled {
-        accent-color: #6c757d;
-      }
-    }
-  }
-
-  .range-field {
-    .range-label {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-
-    .range-name {
-      display: inline-flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.35rem 0.55rem;
-      font-weight: 600;
-      color: #e9ecef;
-    }
-
-    .range-glyph {
-      height: 1.1rem;
-      width: auto;
-      color: #ced4da;
-    }
-
-    .range-value {
-      color: #adb5bd;
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-      padding: 0.15rem 0.35rem;
-      border: 1px solid $light-grey;
-      border-radius: 0.2rem;
-      background: $nav-second-bg;
-      font-size: 0.68rem;
-    }
-  }
-
-  .blocks-of {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 0.35rem;
-    align-items: center;
-
-    .times {
-      color: #adb5bd;
-      font-weight: 700;
-    }
-  }
-
-  .invalid-feedback {
-    background: #dc3545;
-    color: #fff;
-    padding: 0.4rem 0.5rem;
-    border-radius: 0.5rem;
-    font-size: 0.68rem;
-    font-weight: 600;
-  }
-
-  .layouts {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-  }
-
-  .layout-item {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    border: 1px solid #495057;
-    border-radius: 0.25rem;
-    background: transparent;
-    color: #adb5bd;
-    cursor: pointer;
-    overflow: hidden;
-
-    .item-label {
-      display: block;
-      margin: 0;
-      padding: 0.3rem 0.25rem;
-      background: #212529;
-      text-align: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #f3f3f4;
-    }
-
-    .layout-style-icons {
-      display: grid;
-      place-items: center;
-      padding: 0.55rem 0.35rem 0.7rem;
-      background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
-      color: #151515;
-
-      img {
-        display: block;
-        width: 3.5rem;
-        height: 3.5rem;
-        object-fit: contain;
-      }
-    }
-
-    &.active {
-      border-color: $visrez-brand;
-      box-shadow: none;
-
-      .item-label {
-        background: $visrez-brand;
-        color: #fff;
-      }
-    }
-
-    &.is-demo-target {
-      box-shadow: 0 0 0 0.15rem rgba(137, 171, 36, 0.85);
-    }
   }
 
   .sidebar-footer {
