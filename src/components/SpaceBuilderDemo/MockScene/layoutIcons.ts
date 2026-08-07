@@ -13,4 +13,5 @@ export const LAYOUT_ICONS: Record<LayoutStyle, string> = {
   circle: '/demos/space-builder/layouts/circle.svg',
   semi_circle: '/demos/space-builder/layouts/semi_circle.svg',
   u_shape: '/demos/space-builder/layouts/u_shape.svg',
+  boardroom: '/demos/space-builder/layouts/boardroom.svg',
 };
