@@ -101,6 +101,9 @@ const DEFAULT_OPTIONS: LayoutOptions = {
 
 const ORBIT_RADIUS_MIN = 6;
 const ORBIT_RADIUS_MAX = 42;
+// Phi is measured from the +Y axis — near 0 looks straight down, PI/2 is eye-level.
+const ORBIT_PHI_MIN = Math.PI * 0.04;
+const ORBIT_PHI_MAX = Math.PI * 0.48;
 
 export class SpaceBuilderScene {
   readonly renderer: WebGLRenderer;
@@ -114,7 +117,6 @@ export class SpaceBuilderScene {
   private readonly pointer = new Vector2();
   private readonly hit = new Vector3();
   private readonly dummy = new Object3D();
-  // Keep a side-on orbit: low phi shows the skybox nadir (near-black) around the finite ground.
   private readonly spherical = new Spherical(18, Math.PI * 0.38, Math.PI * 0.28);
   private readonly cameraTarget = new Vector3(0, 0, 0);
 
@@ -535,8 +537,8 @@ export class SpaceBuilderScene {
     this.spherical.theta -= dx * 0.005;
     // Match OrbitControls: drag down decreases phi (more top-down).
     this.spherical.phi = Math.min(
-      Math.max(this.spherical.phi - dy * 0.004, Math.PI * 0.22),
-      Math.PI * 0.48,
+      Math.max(this.spherical.phi - dy * 0.004, ORBIT_PHI_MIN),
+      ORBIT_PHI_MAX,
     );
     this.updateCamera();
     this.updateTagPosition();
