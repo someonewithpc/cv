@@ -1,4 +1,5 @@
 import {
+  ACESFilmicToneMapping,
   AmbientLight,
   Color,
   CylinderGeometry,
@@ -11,6 +12,7 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
+  PCFShadowMap,
   PerspectiveCamera,
   Plane,
   PlaneGeometry,
@@ -171,6 +173,11 @@ export class SpaceBuilderScene {
     this.renderer.setClearColor(0x6e8fc4, 1);
     // Cap DPR — full retina + antialias made first WebGL frames noticeably late.
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = PCFShadowMap;
+    // Filmic response so the sunlit grass highlight rolls off instead of clipping flat.
+    this.renderer.toneMapping = ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.08;
 
     this.labelRenderer = new CSS2DRenderer();
     this.labelRenderer.domElement.className = 'space-builder-labels';
@@ -188,11 +195,29 @@ export class SpaceBuilderScene {
     this.skybox = createDemoSkybox(sunDir);
     this.scene.add(this.skybox);
 
-    this.scene.add(new AmbientLight(0xdde7ff, 0.45));
-    this.scene.add(new HemisphereLight(0x9eb7e0, 0x3f4a2e, 0.55));
-    const sun = new DirectionalLight(0xfff2d8, 1.35);
+    this.scene.add(new AmbientLight(0xdde7ff, 0.24));
+    this.scene.add(new HemisphereLight(0x9eb7e0, 0x3f4a2e, 0.42));
+
+    const sun = new DirectionalLight(0xfff2d8, 2.4);
     sun.position.copy(sunDir).multiplyScalar(24);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.bias = -0.0018;
+    sun.shadow.normalBias = 0.02;
+    const shadowSpan = GROUND_SIZE / 2 + 2;
+    sun.shadow.camera.left = -shadowSpan;
+    sun.shadow.camera.right = shadowSpan;
+    sun.shadow.camera.top = shadowSpan;
+    sun.shadow.camera.bottom = -shadowSpan;
+    sun.shadow.camera.near = 4;
+    sun.shadow.camera.far = 64;
     this.scene.add(sun);
+
+    // Cool, unshadowed fill from the opposite side — keeps shadow-side surfaces
+    // (chair backs, area edges) from going flat black under the single key light.
+    const fill = new DirectionalLight(0xcfe0ff, 0.55);
+    fill.position.set(-sunDir.x, sunDir.y * 0.6, -sunDir.z).multiplyScalar(20);
+    this.scene.add(fill);
 
     this.buildGround();
     this.buildSelectArea();
@@ -871,6 +896,7 @@ export class SpaceBuilderScene {
     grassGeo.rotateX(-Math.PI / 2);
     const grass = new Mesh(grassGeo, grassMat);
     grass.position.y = 0;
+    grass.receiveShadow = true;
     this.scene.add(grass);
 
     // Flat invisible plane for raycasts / chairs — displacement is visual only.
@@ -1111,6 +1137,8 @@ export class SpaceBuilderScene {
         this.chairMaterial,
         Math.max(poses.length, 1),
       );
+      this.chairs.castShadow = true;
+      this.chairs.receiveShadow = true;
       this.scene.add(this.chairs);
     }
     this.chairs.count = poses.length;
