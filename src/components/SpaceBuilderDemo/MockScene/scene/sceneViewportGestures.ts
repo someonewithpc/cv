@@ -75,3 +75,19 @@ export function trySetPointerCapture(target: EventTarget | null, pointerId: numb
     // Ignore NotFoundError when the pointer already ended.
   }
 }
+
+/**
+ * Hover feedback for SelectArea handles: 'grab' where dragging is wired up,
+ * 'not-allowed' where the handles are shown but only for reference (Parameters,
+ * Layout Styles). Call on idle pointermove only — not mid-gesture.
+ */
+export function updateHandleHoverCursor(
+  scene: SpaceBuilderScene,
+  element: HTMLElement,
+  clientX: number,
+  clientY: number,
+  mode: 'grab' | 'forbid',
+) {
+  const handle = scene.pickHandle(clientX, clientY);
+  element.style.cursor = handle ? (mode === 'forbid' ? 'not-allowed' : 'grab') : '';
+}
