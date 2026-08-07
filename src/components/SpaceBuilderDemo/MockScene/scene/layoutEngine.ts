@@ -343,7 +343,9 @@ function layoutHollow(area: AreaRect, options: LayoutOptions): ChairPose[] {
 /**
  * Theater herringbone (UI label "Chevron").
  * Port of HerringboneMixin infer + arrange: two aisle-split blocks, then pivot-rotate
- * each side. Trusts the infer counts — SB does not clip chairs that barely overhang.
+ * each side. The ported column-count estimate (dividing by cos(angle)) can overshoot
+ * near integer thresholds, so the fitted column count is verified against the actual
+ * rotated footprint and backed off until every chair clears the area's X bounds.
  */
 function layoutChevron(area: AreaRect, options: LayoutOptions): ChairPose[] {
   const angle = Math.min(Math.PI / 4, Math.max(0, options.angle));
@@ -363,23 +365,6 @@ function layoutChevron(area: AreaRect, options: LayoutOptions): ChairPose[] {
 
   const freeSizeX = (area.width - aisle) / 2 + distanceX;
   const rotatedFreeSizeX = ((area.width - aisle) / cosA) / 2 + distanceX;
-
-  const colsPerSide = Math.max(0, Math.floor(rotatedFreeSizeX / stepX));
-  if (colsPerSide < 1) return [];
-
-  const rowSizeX = stepX * colsPerSide - distanceX;
-  const rowOffsetZ = sizeZ * cosA + rowSizeX * sinA - sizeZ;
-  const offsetX = rowSizeX - freeSizeX + distanceX;
-  const rows = Math.max(
-    0,
-    Math.floor((area.depth - rowOffsetZ + distanceZ) / stepZ),
-  );
-  if (rows < 1) return [];
-
-  const { poses, pushLocal } = makePusher(area);
-  // Same origin as Grid/Blocks: rotated SelectArea min corner + half footprint.
-  const originX = -area.width / 2 + sizeX / 2;
-  const originZ = -area.depth / 2 + sizeZ / 2;
 
   type Pt = { x: number; z: number };
 
@@ -407,22 +392,62 @@ function layoutChevron(area: AreaRect, options: LayoutOptions): ChairPose[] {
     }
   };
 
-  for (let row = 0; row < rows; row += 1) {
-    const z = originZ + row * stepZ;
+  const originX = -area.width / 2 + sizeX / 2;
+  const originZ = -area.depth / 2 + sizeZ / 2;
+
+  /** Un-rotated chair centers for one row, split into the two herringbone sides. */
+  const buildSides = (cols: number, rowSizeX: number, offsetX: number, z: number) => {
     const left: Pt[] = [];
     const right: Pt[] = [];
-
     // Blocks.arrange with blocks.width = colsPerSide, arrangement.big = 2.
-    for (let i = 0; i < colsPerSide; i += 1) {
+    for (let i = 0; i < cols; i += 1) {
       left.push({ x: originX + i * stepX - offsetX, z });
-      const col = colsPerSide + i;
+      const col = cols + i;
       const aisleOffsetX = aisle - distanceX;
       right.push({ x: originX + col * stepX + aisleOffsetX - offsetX, z });
     }
-
     rotateSide(left, angle, rowSizeX / 2);
     rotateSide(right, -angle, -rowSizeX / 2);
+    return { left, right };
+  };
 
+  const halfWidth = area.width / 2;
+  const cornerXs = (cx: number, yaw: number) => {
+    const hw = sizeX / 2;
+    const hd = sizeZ / 2;
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    return [-hw, hw].flatMap((lx) => [-hd, hd].map((lz) => cx + lx * c - lz * s));
+  };
+  const sideFits = (points: Pt[], yaw: number) =>
+    points.every((p) => cornerXs(p.x, yaw).every((x) => Math.abs(x) <= halfWidth + 1e-9));
+
+  // Estimate colsPerSide, then back off until the rotated chair footprints actually
+  // clear the area's X bounds (the /cosA estimate above can overshoot by one column).
+  let colsPerSide = Math.max(0, Math.floor(rotatedFreeSizeX / stepX));
+  let rowSizeX = 0;
+  let offsetX = 0;
+  for (;;) {
+    if (colsPerSide < 1) return [];
+    rowSizeX = stepX * colsPerSide - distanceX;
+    offsetX = rowSizeX - freeSizeX + distanceX;
+    const { left, right } = buildSides(colsPerSide, rowSizeX, offsetX, 0);
+    if (sideFits(left, angle) && sideFits(right, -angle)) break;
+    colsPerSide -= 1;
+  }
+
+  const rowOffsetZ = sizeZ * cosA + rowSizeX * sinA - sizeZ;
+  const rows = Math.max(
+    0,
+    Math.floor((area.depth - rowOffsetZ + distanceZ) / stepZ),
+  );
+  if (rows < 1) return [];
+
+  const { poses, pushLocal } = makePusher(area);
+
+  for (let row = 0; row < rows; row += 1) {
+    const z = originZ + row * stepZ;
+    const { left, right } = buildSides(colsPerSide, rowSizeX, offsetX, z);
     for (const p of left) pushLocal(p.x, p.z, angle);
     for (const p of right) pushLocal(p.x, p.z, -angle);
   }
