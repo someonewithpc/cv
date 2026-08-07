@@ -1,0 +1,216 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+
+import type { CatalogItem } from './catalogItems';
+
+const props = withDefaults(defineProps<{
+  items: CatalogItem[];
+  selectedId: string;
+  /** Set the native `draggable` attribute + fire dragstart/dragend (desktop mouse only). */
+  nativeDrag?: boolean;
+}>(), {
+  nativeDrag: true,
+});
+
+const emit = defineEmits<{
+  select: [item: CatalogItem];
+  confirm: [item: CatalogItem];
+  dragstart: [event: DragEvent, item: CatalogItem];
+  dragend: [];
+  itemPointerdown: [event: PointerEvent, item: CatalogItem];
+}>();
+
+const search = ref('');
+
+const itemsVisible = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return props.items;
+  return props.items.filter((item) => item.name.toLowerCase().includes(q));
+});
+</script>
+
+<template>
+  <label class="catalog-search">
+    <span class="visually-hidden">Search by name</span>
+    <input
+      v-model="search"
+      type="search"
+      placeholder="Search by name"
+      autocomplete="off"
+      @keydown.stop
+    >
+  </label>
+
+  <p v-if="itemsVisible.length === 0" class="catalog-empty">
+    Search does not match any object.
+  </p>
+
+  <div v-else class="catalog-grid">
+    <button
+      v-for="item in itemsVisible"
+      :key="item.id"
+      type="button"
+      class="option-item"
+      :class="{ active: selectedId === item.id, placeholder: !item.real }"
+      :data-demo-target="item.real ? 'catalog:chair' : `catalog:${item.id}`"
+      :draggable="nativeDrag && Boolean(item.real)"
+      :title="item.real ? `${item.name} · double-click to Build` : `${item.name} (placeholder)`"
+      @click="emit('select', item)"
+      @dblclick="emit('confirm', item)"
+      @dragstart="emit('dragstart', $event, item)"
+      @dragend="emit('dragend')"
+      @pointerdown="emit('itemPointerdown', $event, item)"
+    >
+      <div class="object-icons">
+        <img :src="item.thumb" alt="" width="120" height="90">
+      </div>
+      <span class="item-label">
+        <span class="object-name">{{ item.name }}</span>
+      </span>
+    </button>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+$navy: #1ab394;
+
+.catalog-search {
+  display: block;
+  margin-bottom: 0.75rem;
+
+  input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #495057;
+    border-radius: 0.25rem;
+    background: #212529;
+    color: #f3f3f4;
+    font: inherit;
+    font-size: 0.8rem;
+
+    &::placeholder {
+      color: #adb5bd;
+    }
+
+    &:focus {
+      outline: 0;
+      border-color: $navy;
+      box-shadow: 0 0 0 0.15rem rgba(26, 179, 148, 0.35);
+    }
+  }
+}
+
+.catalog-empty {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: #adb5bd;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.option-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 1px solid #495057;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: grab;
+  overflow: hidden;
+  user-select: none;
+
+  &.placeholder {
+    cursor: pointer;
+
+    .object-icons {
+      // Same tile chrome as real items — just mute the silhouette.
+      filter: grayscale(1);
+
+      img {
+        opacity: 0.45;
+      }
+    }
+
+    .item-label {
+      color: #868e96;
+      font-weight: 600;
+    }
+
+    &.active .item-label {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  &:hover:not(.active) {
+    border-color: #adb5bd;
+  }
+
+  &.active {
+    box-shadow: 0 0 0 0.2rem rgba(26, 179, 148, 0.35);
+
+    .item-label {
+      background: $navy;
+      color: #fff;
+    }
+  }
+
+  &.is-demo-target {
+    box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.65);
+  }
+
+  .object-icons {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 5rem;
+    background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      padding: 0.5rem;
+    }
+  }
+
+  .item-label {
+    display: block;
+    margin: 0;
+    padding: 0.35rem 0.4rem;
+    background: #212529;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+
+    .object-name {
+      display: block;
+      overflow: hidden;
+      max-height: 1.15em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+</style>
