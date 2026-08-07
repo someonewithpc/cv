@@ -2,13 +2,36 @@
 import TechIcon from '@/components/TechIcon.astro';
 
 import { TECH_ICONS } from '@/server/tech-icons';
+
+const hardwareCount = TECH_ICONS.filter((tech) => tech.hardware).length;
+const softwareCount = TECH_ICONS.length - hardwareCount;
 ---
 
 <section aria-labelledby="tech-icon-cloud-label">
   <p id="tech-icon-cloud-label" class="cloud-label monospace">Bill of materials</p>
+
+  <div class="filter-bar">
+    <fieldset class="filter-toggle">
+      <legend class="sr-only">Filter by category</legend>
+      <div class="filter-toggle-track">
+        <input type="radio" name="tech-filter" id="tech-filter-all" checked>
+        <label for="tech-filter-all">All</label>
+        <input type="radio" name="tech-filter" id="tech-filter-software">
+        <label for="tech-filter-software">Software</label>
+        <input type="radio" name="tech-filter" id="tech-filter-hardware">
+        <label for="tech-filter-hardware">Hardware &amp; CAD</label>
+      </div>
+    </fieldset>
+    <p class="filter-count monospace" role="status">
+      <span class="count-all">{TECH_ICONS.length} skills</span>
+      <span class="count-software">{softwareCount} software</span>
+      <span class="count-hardware">{hardwareCount} hardware &amp; CAD</span>
+    </p>
+  </div>
+
   <ul>
     {TECH_ICONS.map((tech) => (
-      <li>
+      <li class:list={[{ hw: tech.hardware }]}>
         <TechIcon tech={tech} decorative />
         <span>{tech.text}</span>
       </li>
@@ -29,6 +52,109 @@ section {
     text-transform: uppercase;
     color: var(--ink-faint);
     text-align: center;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    margin: 0 0 1.1rem;
+  }
+
+  .filter-toggle {
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    border: none;
+
+    .filter-toggle-track {
+      $radius: 0.45rem;
+
+      display: inline-flex;
+      border: 1px solid var(--line-strong);
+      border-radius: $radius;
+      overflow: hidden;
+      font-size: 0.75rem;
+    }
+
+    input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    label {
+      cursor: pointer;
+      padding: 0.4em 0.85em;
+      font-family: monospace, system-ui;
+      letter-spacing: 0.03em;
+      color: var(--ink-faint);
+      background: var(--surface-raised);
+      user-select: none;
+
+      &:hover {
+        color: var(--ink);
+      }
+    }
+
+    input:not(:first-of-type) + label {
+      box-shadow: inset 1px 0 0 var(--line-strong);
+    }
+
+    input:checked + label {
+      color: var(--surface-page);
+      background: var(--blueprint);
+
+      &:hover {
+        color: var(--surface-page);
+      }
+    }
+
+    input:focus-visible + label {
+      // Checked option always owns focus in a radio group; --ink contrasts on --blueprint.
+      outline: 2px solid var(--ink);
+      outline-offset: -2px;
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .filter-count {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+
+    span {
+      display: none;
+    }
+  }
+
+  &:has(#tech-filter-all:checked) .filter-count .count-all {
+    display: inline;
+  }
+  &:has(#tech-filter-software:checked) .filter-count .count-software {
+    display: inline;
+  }
+  &:has(#tech-filter-hardware:checked) .filter-count .count-hardware {
+    display: inline;
   }
 
   ul {
@@ -61,10 +187,34 @@ section {
     font-size: 0.8125rem;
     letter-spacing: 0.02em;
 
+    transition: opacity 0.2s ease, filter 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+
     @media (max-width: 52rem) {
       padding: 0.3em 0.5em;
       font-size: 0.75rem;
       gap: 0.5ch;
+    }
+  }
+
+  &:has(#tech-filter-software:checked) li.hw {
+    opacity: 0.3;
+    filter: grayscale(70%);
+  }
+  &:has(#tech-filter-hardware:checked) li:not(.hw) {
+    opacity: 0.3;
+    filter: grayscale(70%);
+  }
+  &:has(#tech-filter-software:checked) li:not(.hw) {
+    border-color: color-mix(in oklch, var(--line-strong), var(--accent) 45%);
+  }
+  &:has(#tech-filter-hardware:checked) li.hw {
+    border-color: var(--blueprint);
+    background-color: color-mix(in oklch, var(--surface-raised), var(--blueprint) 10%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    li {
+      transition: none;
     }
   }
 }
