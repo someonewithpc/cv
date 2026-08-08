@@ -51,75 +51,63 @@
     display: grid;
     grid-template-areas: "content";
 
-    @supports not (order: sibling-index()) {
-      @for $i from 1 through 100 {
-        & > :global(*):nth-child(#{$i}) {
-          order: calc(-1 * #{$i});
-        }
-      }
-    }
-
-    @supports (order: sibling-index()) {
-      & > :global(*) {
-        order: calc(-1 * sibling-index());
-      }
-    }
-
+    $per-page-splay: 1.5deg;
     $border-radius: calc(0.5em + 1px);
 
-    & > :global(*) {
+    & > :global(> div) {
       grid-area: content;
       border-radius: $border-radius;
+      transform-origin: top left;
 
-      &:first-child {
+      order: calc(-1 * var(--page-index));
+      rotate: calc(#{$per-page-splay} * log(var(--page-index)));
+      // TODO transition rotate at startup isn't working
+      transition: rotate 250ms ease-in-out;
+
+      &:first-child > :global( > *) {
         clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
+
+        &:after {
+          content: '';
+          width: calc(var(--fold-x) + 1px);
+          height: calc(var(--fold-y) + 1px);
+
+          clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
+
+          border-top-left-radius: $border-radius;
+
+          $angle: atan2(var(--fold-y), var(--fold-x));
+          transform-origin: center;
+          transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(calc(#{$angle}));
+
+          background: inherit;
+          border: inherit;
+          filter: brightness(75%);
+
+          position: absolute;
+          right: 0;
+          bottom: 0;
+        }
+
+        animation:
+          250ms 500ms ease-in inital-fold-reveal 1 forwards,
+          7.5s 1.5s ease-in-out fold-reveal-pulse infinite both alternate
+        ;
+
+        &:hover {
+          animation-play-state: paused;
+        }
+
+        @keyframes inital-fold-reveal {
+          from { --fold-x: 0cm; --fold-y: 0cm; }
+          to { --fold-x: 2cm; --fold-y: 1cm; }
+        }
+
+        @keyframes fold-reveal-pulse {
+          from, 50% { --fold-x: 2cm; --fold-y: 1cm; }
+          90%, to { --fold-x: 3cm; --fold-y: 2cm; }
+        }
       }
-
-      &:not(:first-child):not(:nth-child(2)) {
-        /* TODO: FIX */
-        visibility: hidden;
-      }
-    }
-
-    &:after {
-      content: '';
-      width: calc(var(--fold-x) + 1px);
-      height: calc(var(--fold-y) + 1px);
-
-      clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
-
-      border-top-left-radius: $border-radius;
-
-      $angle: atan2(var(--fold-y), var(--fold-x));
-      transform-origin: center;
-      transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(#{$angle});
-
-      background: inherit;
-      border: inherit;
-
-      position-anchor: --technical-drawing-stack;
-      position: absolute;
-      right: calc(anchor(--technical-drawing-stack right));
-      bottom: calc(anchor(--technical-drawing-stack bottom));
-    }
-
-    animation:
-      250ms 500ms ease-in inital-fold-reveal 1 forwards,
-      7.5s 1.5s ease-in-out fold-reveal-pulse infinite both alternate
-    ;
-
-    &:hover {
-      animation-play-state: paused;
-    }
-
-    @keyframes inital-fold-reveal {
-      from { --fold-x: 0cm; --fold-y: 0cm; }
-      to { --fold-x: 2cm; --fold-y: 1cm; }
-    }
-
-    @keyframes fold-reveal-pulse {
-      from, 50% { --fold-x: 2cm; --fold-y: 1cm; }
-      90%, to { --fold-x: 3cm; --fold-y: 2cm; }
     }
   }
 }
@@ -141,9 +129,24 @@ function init() {
     });
   });
 
-  [...document.querySelectorAll('[data-paper-stack-root]')].forEach((stack) => {
+  CSS.registerProperty({
+    name: '--page-index',
+    syntax: '<number>',
+    inherits: true,
+    initialValue: '1',
+  });
+
+  ([...document.querySelectorAll('[data-paper-stack-root]')] as HTMLElement[]).forEach((stack) => {
     // Take over with the JS implementation, disabling the CSS-only carousel fallback
     stack.toggleAttribute('data-paper-stack', true);
+
+    const pages = ([...stack.children] as HTMLElement[]);
+    pages.forEach((page, index) => {
+      const div = document.createElement('div');
+      div.style.setProperty('--page-index', (index + 1).toString());
+      stack.appendChild(div);
+      div.moveBefore(page, null);
+    });
   });
 }
 
