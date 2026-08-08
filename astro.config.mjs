@@ -85,6 +85,21 @@ export default defineConfig({
         'three/addons/libs/meshopt_decoder.module.js',
       ],
     },
+    server: {
+      // Compile Space Builder islands before the carousel scroll hits them —
+      // first visit used to race Vite discovery and look like a full reload.
+      warmup: {
+        clientFiles: [
+          './src/components/SpaceBuilderDemo/MockScene/MockSceneApp.vue',
+          './src/components/SpaceBuilderDemo/MockScene/PlaceSceneApp.vue',
+          './src/components/SpaceBuilderDemo/MockScene/ParametersSceneApp.vue',
+          './src/components/SpaceBuilderDemo/MockScene/LayoutsSceneApp.vue',
+          './src/components/SpaceBuilderDemo/MockScene/BadgeSceneApp.vue',
+          './src/components/SpaceBuilderDemo/MockScene/DnDSceneApp.vue',
+          './src/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene.ts',
+        ],
+      },
+    },
     build: {
       // Space Builder ships Three.js (~600KiB min) behind an intersection-gated
       // dynamic import — over the default 500KiB tip, but not on the critical path.
