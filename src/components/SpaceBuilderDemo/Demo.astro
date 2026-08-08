@@ -100,32 +100,61 @@ type Layer = keyof typeof layers;
             The seat count sticks to the bottom of the area on screen, without overlapping the
             selected area
           </PostIt>
-          <div class="badge-formula monospace">
+          <div class="badge-formula">
             <p class="badge-formula-title">Tag offset</p>
             <math display="block">
-              <mtable>
+              <mtable columnalign="right center left" columnspacing="0.4em" rowspacing="0.75em">
                 <mtr>
                   <mtd><mi>φ</mi></mtd>
                   <mtd><mo>=</mo></mtd>
-                  <mtd><mi>θ</mi><mo>&#8722;</mo><mi>α</mi></mtd>
+                  <mtd><mi>θ</mi><mo>−</mo><mi>α</mi></mtd>
                 </mtr>
                 <mtr>
                   <mtd><mi>r</mi></mtd>
                   <mtd><mo>=</mo></mtd>
                   <mtd>
-                    <mi>min</mi>
                     <mrow>
-                      <mo>(</mo>
-                      <mfrac>
-                        <mi>h</mi>
-                        <mrow><mn>2</mn><mo>|</mo><mi>cos</mi><mspace width="0.17em" /><mi>φ</mi><mo>|</mo></mrow>
-                      </mfrac>
-                      <mo>,</mo>
-                      <mfrac>
-                        <mi>w</mi>
-                        <mrow><mn>2</mn><mo>|</mo><mi>sin</mi><mspace width="0.17em" /><mi>φ</mi><mo>|</mo></mrow>
-                      </mfrac>
-                      <mo>)</mo>
+                      <mi>min</mi>
+                      <mo>⁡</mo>
+                      <mrow>
+                        <mo stretchy="true" fence="true" form="prefix">(</mo>
+                        <mstyle displaystyle="true" scriptlevel="0">
+                          <mfrac>
+                            <mi>h</mi>
+                            <mrow>
+                              <mn>2</mn>
+                              <mrow>
+                                <mo stretchy="false" fence="true">|</mo>
+                                <mrow>
+                                  <mi>cos</mi>
+                                  <mo>⁡</mo>
+                                  <mi>φ</mi>
+                                </mrow>
+                                <mo stretchy="false" fence="true">|</mo>
+                              </mrow>
+                            </mrow>
+                          </mfrac>
+                        </mstyle>
+                        <mo lspace="0.3em" rspace="0.3em">,</mo>
+                        <mstyle displaystyle="true" scriptlevel="0">
+                          <mfrac>
+                            <mi>w</mi>
+                            <mrow>
+                              <mn>2</mn>
+                              <mrow>
+                                <mo stretchy="false" fence="true">|</mo>
+                                <mrow>
+                                  <mi>sin</mi>
+                                  <mo>⁡</mo>
+                                  <mi>φ</mi>
+                                </mrow>
+                                <mo stretchy="false" fence="true">|</mo>
+                              </mrow>
+                            </mrow>
+                          </mfrac>
+                        </mstyle>
+                        <mo stretchy="true" fence="true" form="postfix">)</mo>
+                      </mrow>
                     </mrow>
                   </mtd>
                 </mtr>
@@ -183,8 +212,8 @@ type Layer = keyof typeof layers;
 }
 
 .badge-formula {
-  max-width: min(28ch, 100%);
-  padding: 0.55em 0.8em;
+  max-width: min(44ch, 100%);
+  padding: 0.65em 0.9em;
   // Themed via the blueprint sheet's own tokens (see _colors.scss) instead of
   // fixed light-mode colors, so it stays legible — and reads as a recessed
   // panel rather than a stray light patch — across every site theme.
@@ -196,18 +225,39 @@ type Layer = keyof typeof layers;
 
   math {
     display: block;
+    font-size: 1.12em;
+    // Prefer a local math face so stretchy fences / operators actually stretch.
+    font-family: "DejaVu Math TeX Gyre", "Noto Sans Math", math, serif;
+  }
+
+  mfrac {
+    padding-block: 0.2em;
+  }
+
+  mtable {
+    // Keep rows from colliding once fractions get display-style height.
+    row-gap: 0.15em;
+  }
+
+  mtext {
+    font-style: normal;
+    font-family: inherit;
   }
 }
 
 .badge-formula-title {
-  margin: 0 0 0.3em;
+  margin: 0 0 0.45em;
+  font-family: monospace, system-ui;
+  font-size: 0.72em;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--ink-muted);
 }
 
 .badge-formula-note {
-  margin: 0.4em 0 0;
+  margin: 0.55em 0 0;
+  font-family: monospace, system-ui;
+  font-size: 0.72em;
   line-height: 1.35;
   color: var(--ink-muted);
 }
