@@ -24,7 +24,7 @@ const totalLayers = Object.keys(layers).length;
 ---
 
 <div class="technical-drawing-frame">
-  <article class="technical-drawing-stack">
+  <article class="technical-drawing-stack" data-paper-stack>
     {Object.entries(layers).map(([id, { name, size, pageStyle, tech }], index) => (
       <TechnicalDrawingPage
         title={name}
@@ -64,10 +64,6 @@ const totalLayers = Object.keys(layers).length;
   // Allow the frame to shrink within the page grid instead of expanding it
   // to the carousel's intrinsic width (default min-width: auto).
   min-width: 0;
-  // Firefox: overflow:hidden on this ancestor makes the nested carousel
-  // report scrollWidth but refuse scrollLeft / swipe. clip still contains
-  // the frame without breaking the child's scrollport.
-  overflow: clip;
 }
 
 article {
@@ -79,60 +75,118 @@ article {
 
   color: var(--ink);
 
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
-  scroll-behavior: smooth;
-
-  display: flex;
-  flex-direction: row;
-
-  position: relative;
-  container: technical-drawing / size;
   anchor-name: --technical-drawing-stack;
   anchor-scope: --technical-drawing-stack;
+
+  &:not([data-paper-stack]) {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+
+    display: flex;
+    flex-direction: row;
+    position: relative;
+
+    > :global(*) {
+      flex: 0 0 100%;
+      // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
+      // scrollWidth, leaving a permanent horizontal scrollbar on every page.
+      overflow: clip;
+      scroll-snap-align: center;
+    }
+
+    @supports selector(::scroll-button(right)) {
+      &::scroll-button(*) {
+        position-anchor: --technical-drawing-stack;
+        position: absolute;
+        top: anchor(top);
+      }
+
+      &::scroll-button(left) {
+        content: "⬅" / "Scroll Left";
+        left: anchor(left);
+      }
+
+      &::scroll-button(right) {
+        content: "⮕" / "Scroll Right";
+        right: anchor(right);
+      }
+
+      &::scroll-button(*):focus-visible {
+        outline-offset: 0.25rem;
+      }
+
+      // Prefer native scroll buttons; keep the JS fallback out of the way.
+      .technical-drawing-nav {
+        display: none;
+      }
+    }
+  }
+
+  &[data-paper-stack] {
+    display: grid;
+    grid-template-areas: "content";
+
+    @supports not (order: sibling-index()) {
+      @for $i from 1 through 100 {
+        & > :global(*):nth-child(#{$i}) {
+          order: calc(-1 * #{$i});
+        }
+      }
+    }
+
+    @supports (order: sibling-index()) {
+      & > :global(*) {
+        order: calc(-1 * sibling-index());
+      }
+    }
+
+    $fold-x: 16cm;
+    $fold-y: 9cm;
+
+    & > :global(*) {
+      grid-area: content;
+
+      &:first-child {
+        clip-path: polygon(0% 0%, 0% 100%, calc(100% - #{$fold-x}) 100%, 100% calc(100% - #{$fold-y}), 100% 0%);
+      }
+
+      &:not(:first-child):not(:nth-child(2)) {
+        /* TODO: FIX */
+        visibility: hidden;
+      }
+    }
+
+    &:after {
+      content: '';
+      width: calc($fold-x + 1px);
+      height: calc($fold-y + 1px);
+
+      clip-path: polygon(0% 0%, 0% 100%, calc(100% - #{$fold-x}) 100%, 100% calc(100% - #{$fold-y}), 100% 0%);
+
+      border: inherit;
+      border-top-left-radius: inherit;
+
+      $angle: atan2(#{$fold-y}, #{$fold-x});
+      transform-origin: center;
+      transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(#{$angle});
+
+      background: inherit;
+
+      position-anchor: --technical-drawing-stack;
+      position: absolute;
+      right: calc(anchor(--technical-drawing-stack right));
+      bottom: calc(anchor(--technical-drawing-stack bottom));
+    }
+  }
+
+  container: technical-drawing / size;
 
   @container technical-drawing-width (max-width: 40em) {
     --technical-drawing-aspect: 3 / 4;
     max-height: min(36rem, 85svh);
-  }
-
-  > :global(*) {
-    flex: 0 0 100%;
-    // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
-    // scrollWidth, leaving a permanent horizontal scrollbar on every page.
-    overflow: clip;
-    scroll-snap-align: center;
-  }
-}
-
-@supports selector(::scroll-button(right)) {
-  article {
-    &::scroll-button(*) {
-      position-anchor: --technical-drawing-stack;
-      position: absolute;
-      top: anchor(top);
-    }
-
-    &::scroll-button(left) {
-      content: "⬅" / "Scroll Left";
-      left: anchor(left);
-    }
-
-    &::scroll-button(right) {
-      content: "⮕" / "Scroll Right";
-      right: anchor(right);
-    }
-
-    &::scroll-button(*):focus-visible {
-      outline-offset: 0.25rem;
-    }
-  }
-
-  // Prefer native scroll buttons; keep the JS fallback out of the way.
-  .technical-drawing-nav {
-    display: none;
   }
 }
 
