@@ -1,0 +1,124 @@
+<slot />
+
+<style lang="scss">
+:global([data-paper-stack-root]) {
+  anchor-name: --technical-drawing-stack;
+  anchor-scope: --technical-drawing-stack;
+
+  &:not([data-paper-stack]) {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+
+    display: flex;
+    flex-direction: row;
+    position: relative;
+
+    > :global(*) {
+      flex: 0 0 100%;
+      // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
+      // scrollWidth, leaving a permanent horizontal scrollbar on every page.
+      overflow: clip;
+      scroll-snap-align: center;
+    }
+
+    @supports selector(::scroll-button(right)) {
+      &::scroll-button(*) {
+        position-anchor: --technical-drawing-stack;
+        position: absolute;
+        top: anchor(top);
+      }
+
+      &::scroll-button(left) {
+        content: "⬅" / "Scroll Left";
+        left: anchor(left);
+      }
+
+      &::scroll-button(right) {
+        content: "⮕" / "Scroll Right";
+        right: anchor(right);
+      }
+
+      &::scroll-button(*):focus-visible {
+        outline-offset: 0.25rem;
+      }
+    }
+  }
+
+  &[data-paper-stack] {
+    display: grid;
+    grid-template-areas: "content";
+
+    @supports not (order: sibling-index()) {
+      @for $i from 1 through 100 {
+        & > :global(*):nth-child(#{$i}) {
+          order: calc(-1 * #{$i});
+        }
+      }
+    }
+
+    @supports (order: sibling-index()) {
+      & > :global(*) {
+        order: calc(-1 * sibling-index());
+      }
+    }
+
+    $fold-x: 16cm;
+    $fold-y: 9cm;
+    $border-radius: calc(0.5em + 1px);
+
+    & > :global(*) {
+      grid-area: content;
+      border-radius: $border-radius;
+
+      &:first-child {
+        clip-path: polygon(0% 0%, 0% 100%, calc(100% - #{$fold-x}) 100%, 100% calc(100% - #{$fold-y}), 100% 0%);
+      }
+
+      &:not(:first-child):not(:nth-child(2)) {
+        /* TODO: FIX */
+        visibility: hidden;
+      }
+    }
+
+    &:after {
+      content: '';
+      width: calc($fold-x + 1px);
+      height: calc($fold-y + 1px);
+
+      clip-path: polygon(0% 0%, 0% 100%, calc(100% - #{$fold-x}) 100%, 100% calc(100% - #{$fold-y}), 100% 0%);
+
+      border-top-left-radius: $border-radius;
+
+      $angle: atan2(#{$fold-y}, #{$fold-x});
+      transform-origin: center;
+      transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(#{$angle});
+
+      background: inherit;
+
+      position-anchor: --technical-drawing-stack;
+      position: absolute;
+      right: calc(anchor(--technical-drawing-stack right));
+      bottom: calc(anchor(--technical-drawing-stack bottom));
+    }
+  }
+}
+</style>
+
+<script>
+var inited = false;
+
+function init() {
+  if (inited) return;
+  inited = true;
+
+  [...document.querySelectorAll('[data-paper-stack-root]')].forEach((stack) => {
+    console.debug(stack);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+if (document.readyState !== 'loading') { init(); }
+</script>
