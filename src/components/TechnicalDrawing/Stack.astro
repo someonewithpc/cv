@@ -23,50 +23,38 @@ const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
 
-<div class="technical-drawing-frame">
-  <article class="technical-drawing-stack" data-paper-stack>
-    {Object.entries(layers).map(([id, { name, size, pageStyle, tech }], index) => (
-      <TechnicalDrawingPage
-        title={name}
-        subtitle={Astro.props.subtitle}
-        scale={Astro.props.scale}
-        size={size ?? Astro.props.size}
-        date={Astro.props.date}
-        index={index + 1}
-        layerCount={totalLayers}
-        pageStyle={pageStyle}
-        tech={tech ?? stackTech}
-      >
-        <Fragment slot="content">
-          {Astro.slots.render('layers', [id])}
-        </Fragment>
-        <Fragment slot="aside">
-          {Astro.slots.render('aside', [id])}
-        </Fragment>
-      </TechnicalDrawingPage>
-    ))}
-  </article>
-
-  {totalLayers > 1 && (
-    <div class="technical-drawing-nav" hidden>
-      <button type="button" data-dir="-1" aria-label="Previous drawing">⬅</button>
-      <button type="button" data-dir="1" aria-label="Next drawing">⮕</button>
-    </div>
-  )}
-</div>
+<article class="technical-drawing-stack">
+  {Object.entries(layers).map(([id, { name, size, pageStyle, tech }], index) => (
+    <TechnicalDrawingPage
+      title={name}
+      subtitle={Astro.props.subtitle}
+      scale={Astro.props.scale}
+      size={size ?? Astro.props.size}
+      date={Astro.props.date}
+      index={index + 1}
+      layerCount={totalLayers}
+      pageStyle={pageStyle}
+      tech={tech ?? stackTech}
+    >
+      <Fragment slot="content">
+        {Astro.slots.render('layers', [id])}
+      </Fragment>
+      <Fragment slot="aside">
+        {Astro.slots.render('aside', [id])}
+      </Fragment>
+    </TechnicalDrawingPage>
+  ))}
+</article>
 
 
 <style lang="scss">
-.technical-drawing-frame {
-  container: technical-drawing-width / inline-size;
-  position: relative;
-  width: 100%;
-  // Allow the frame to shrink within the page grid instead of expanding it
-  // to the carousel's intrinsic width (default min-width: auto).
-  min-width: 0;
-}
-
 article {
+  container: technical-drawing-width / inline-size;
+  width: 100%;
+  /* Allow the frame to shrink within the page grid instead of expanding it */
+  /* to the carousel's intrinsic width (default min-width: auto). */
+  min-width: 0;
+
   --technical-drawing-aspect: 2 / 1;
 
   width: 100%;
@@ -116,11 +104,6 @@ article {
 
       &::scroll-button(*):focus-visible {
         outline-offset: 0.25rem;
-      }
-
-      // Prefer native scroll buttons; keep the JS fallback out of the way.
-      .technical-drawing-nav {
-        display: none;
       }
     }
   }
@@ -189,49 +172,9 @@ article {
     max-height: min(36rem, 85svh);
   }
 }
-
-.technical-drawing-nav {
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: 2;
-  justify-content: space-between;
-  pointer-events: none;
-
-  // Avoid `display` on the root so `[hidden]` is not overridden.
-  &:not([hidden]) {
-    display: flex;
-  }
-
-  button {
-    pointer-events: auto;
-    margin: 0.375rem;
-    min-width: 2.5rem;
-    min-height: 2.5rem;
-    padding: 0.375rem 0.5rem;
-    border: 1px solid var(--line-strong);
-    border-radius: 0.375rem;
-    background: color-mix(in oklch, var(--surface-raised), transparent 15%);
-    color: var(--ink);
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      background: color-mix(in oklch, var(--surface-raised), var(--accent) 12%);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 0.125rem;
-    }
-  }
-}
 </style>
 
 <script>
-const supportsScrollButton = CSS.supports('selector(::scroll-button(right))');
-
 function initStack(stack: HTMLElement) {
   // Viewport root (not the stack): with root:stack the active slide was
   // "intersecting" on load even when still below the fold. Stack overflow
@@ -257,21 +200,6 @@ function initStack(stack: HTMLElement) {
     });
   }, { threshold: 0.25, scrollMargin: '25%' });
   [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
-
-  if (supportsScrollButton) return;
-
-  const frame = stack.closest('.technical-drawing-frame');
-  const nav = frame?.querySelector<HTMLElement>('.technical-drawing-nav');
-  if (!nav) return;
-
-  nav.hidden = false;
-  nav.querySelectorAll<HTMLButtonElement>('button[data-dir]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const dir = Number(button.dataset.dir);
-      const delta = dir * stack.clientWidth;
-      stack.scrollTo({ left: stack.scrollLeft + delta, behavior: 'smooth' });
-    });
-  });
 }
 
 function init() {
