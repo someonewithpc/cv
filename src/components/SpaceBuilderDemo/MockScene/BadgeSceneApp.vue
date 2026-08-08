@@ -2,6 +2,12 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import {
+  claimSpaceBuilderGpu,
+  prepareSpaceBuilderGpu,
+  registerSpaceBuilderGpu,
+  releaseSpaceBuilderGpu,
+} from './scene/spaceBuilderGpu';
+import {
   applyWheelZoom,
   beginPinch,
   trySetPointerCapture,
@@ -182,8 +188,10 @@ onMounted(async () => {
       requestAnimationFrame(() => resolve());
     });
 
+    prepareSpaceBuilderGpu();
     const scene = new SpaceBuilderScene({ canvas, labelHost });
     scene.pause();
+    registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
 
     scene.setArea({ x: 0, z: 0, width: 8.6, depth: 6.8, angle: 0.18 });
@@ -219,11 +227,11 @@ onMounted(async () => {
         const visible = Boolean(entries[0]?.isIntersecting);
         inView = visible;
         if (!visible) {
-          scene.pause();
+          releaseSpaceBuilderGpu(scene);
           applyOrbitState();
           return;
         }
-        scene.resume();
+        claimSpaceBuilderGpu(scene);
         syncMetrics();
         applyOrbitState();
       },
@@ -246,6 +254,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   observer?.disconnect();
   stopOrbitLoop();
+  if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
   sceneRef.value = null;
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);

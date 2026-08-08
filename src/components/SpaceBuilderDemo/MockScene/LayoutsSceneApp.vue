@@ -5,6 +5,12 @@ import { autoplayStartedToast } from './AutoPlayController';
 import { LAYOUT_ICONS } from './layoutIcons';
 import { LAYOUT_LABELS, LAYOUT_STYLES, type LayoutOptions, type LayoutStyle } from './scene/layoutEngine';
 import {
+  claimSpaceBuilderGpu,
+  prepareSpaceBuilderGpu,
+  registerSpaceBuilderGpu,
+  releaseSpaceBuilderGpu,
+} from './scene/spaceBuilderGpu';
+import {
   applyWheelZoom,
   beginPinch,
   trySetPointerCapture,
@@ -188,6 +194,7 @@ onMounted(async () => {
       requestAnimationFrame(() => resolve());
     });
 
+    prepareSpaceBuilderGpu();
     const scene = new SpaceBuilderScene({
       canvas,
       labelHost,
@@ -196,6 +203,7 @@ onMounted(async () => {
       },
     });
     scene.pause();
+    registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
 
     scene.setArea({ x: 0, z: 0, width: 7.4, depth: 5.6, angle: 0 });
@@ -227,12 +235,12 @@ onMounted(async () => {
         const visible = Boolean(entries[0]?.isIntersecting);
         inView = visible;
         if (!visible) {
-          scene.pause();
+          releaseSpaceBuilderGpu(scene);
           autoplayToken += 1;
           demoPlaying.value = false;
           return;
         }
-        scene.resume();
+        claimSpaceBuilderGpu(scene);
         startAutoplay();
       },
       { root: stack, threshold: 0.45 },
@@ -255,6 +263,7 @@ onBeforeUnmount(() => {
   observer?.disconnect();
   autoplayToken += 1;
   if (resumeTimer) clearTimeout(resumeTimer);
+  if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
   sceneRef.value = null;
   canvasRef = null;

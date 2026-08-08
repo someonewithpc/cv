@@ -5,6 +5,12 @@ import { autoplayStartedToast } from './AutoPlayController';
 import OptionsPanel from './OptionsPanel.vue';
 import type { LayoutOptions, LayoutStyle } from './scene/layoutEngine';
 import {
+  claimSpaceBuilderGpu,
+  prepareSpaceBuilderGpu,
+  registerSpaceBuilderGpu,
+  releaseSpaceBuilderGpu,
+} from './scene/spaceBuilderGpu';
+import {
   applyWheelZoom,
   beginPinch,
   trySetPointerCapture,
@@ -303,6 +309,7 @@ onMounted(async () => {
       requestAnimationFrame(() => resolve());
     });
 
+    prepareSpaceBuilderGpu();
     const scene = new SpaceBuilderScene({
       canvas,
       labelHost,
@@ -312,6 +319,7 @@ onMounted(async () => {
       },
     });
     scene.pause();
+    registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
 
     scene.setArea({ x: 0, z: 0, width: 8.4, depth: 6.6, angle: -0.08 });
@@ -348,12 +356,12 @@ onMounted(async () => {
         const visible = Boolean(entries[0]?.isIntersecting);
         inView = visible;
         if (!visible) {
-          scene.pause();
+          releaseSpaceBuilderGpu(scene);
           autoplayToken += 1;
           demoPlaying.value = false;
           return;
         }
-        scene.resume();
+        claimSpaceBuilderGpu(scene);
         startAutoplay();
       },
       { root: stack, threshold: 0.45 },
@@ -377,6 +385,7 @@ onBeforeUnmount(() => {
   autoplayToken += 1;
   if (resumeTimer) clearTimeout(resumeTimer);
   if (savedTimer) clearTimeout(savedTimer);
+  if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
   sceneRef.value = null;
   canvasRef = null;

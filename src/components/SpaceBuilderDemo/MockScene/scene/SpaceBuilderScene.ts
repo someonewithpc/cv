@@ -107,12 +107,13 @@ const ORBIT_PHI_MIN = Math.PI * 0.04;
 const ORBIT_PHI_MAX = Math.PI * 0.48;
 
 export class SpaceBuilderScene {
-  readonly renderer: WebGLRenderer;
+  renderer: WebGLRenderer;
   readonly labelRenderer: CSS2DRenderer;
   readonly scene = new Scene();
   readonly camera: PerspectiveCamera;
   readonly interactionPlane = new Plane(new Vector3(0, 1, 0), 0);
 
+  private readonly canvas: HTMLCanvasElement;
   private readonly root: HTMLElement;
   private readonly raycaster = new Raycaster();
   private readonly pointer = new Vector2();
@@ -124,6 +125,8 @@ export class SpaceBuilderScene {
   private animationId = 0;
   private active = true;
   private disposed = false;
+  /** True after {@link releaseGpu} — renderer is dead until {@link attachGpu}. */
+  private gpuReleased = false;
   private area: AreaRect | null = null;
   private options: LayoutOptions = {
     ...DEFAULT_OPTIONS,
@@ -171,23 +174,11 @@ export class SpaceBuilderScene {
   private resizeObserver: ResizeObserver;
 
   constructor({ canvas, labelHost, onSnapshot }: SpaceBuilderSceneOptions) {
+    this.canvas = canvas;
     this.root = canvas.parentElement ?? labelHost;
     this.onSnapshot = onSnapshot;
 
-    this.renderer = new WebGLRenderer({
-      canvas,
-      antialias: false,
-      alpha: false,
-      powerPreference: 'high-performance',
-    });
-    this.renderer.setClearColor(0x6e8fc4, 1);
-    // Cap DPR — full retina + antialias made first WebGL frames noticeably late.
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFShadowMap;
-    // Filmic response so the sunlit grass highlight rolls off instead of clipping flat.
-    this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer = this.createRenderer();
 
     this.labelRenderer = new CSS2DRenderer();
     this.labelRenderer.domElement.className = 'space-builder-labels';
@@ -267,12 +258,50 @@ export class SpaceBuilderScene {
   }
 
   resume() {
-    if (this.disposed) return;
+    if (this.disposed || this.gpuReleased) return;
     this.active = true;
   }
 
   isActive() {
-    return this.active && !this.disposed;
+    return this.active && !this.disposed && !this.gpuReleased;
+  }
+
+  /**
+   * Free the WebGL context while this carousel page is off-screen.
+   * Scene graph / textures stay; {@link attachGpu} rebuilds the renderer on the same canvas.
+   */
+  releaseGpu() {
+    if (this.disposed || this.gpuReleased) return;
+    this.active = false;
+    this.gpuReleased = true;
+    // dispose() only — forceContextLoss() leaves the canvas unable to get a new context.
+    this.renderer.dispose();
+  }
+
+  /** Recreate the WebGL renderer after {@link releaseGpu}. */
+  attachGpu() {
+    if (this.disposed || !this.gpuReleased) return;
+    this.renderer = this.createRenderer();
+    this.gpuReleased = false;
+    this.resize();
+  }
+
+  private createRenderer() {
+    const renderer = new WebGLRenderer({
+      canvas: this.canvas,
+      antialias: false,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setClearColor(0x6e8fc4, 1);
+    // Cap DPR — full retina + antialias made first WebGL frames noticeably late.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = PCFShadowMap;
+    // Filmic response so the sunlit grass highlight rolls off instead of clipping flat.
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    return renderer;
   }
 
   async loadChair(url = '/demos/space-builder/chair.glb') {
@@ -950,7 +979,10 @@ export class SpaceBuilderScene {
       this.scene.remove(this.skybox);
       this.skybox = null;
     }
-    this.renderer.dispose();
+    if (!this.gpuReleased) {
+      this.renderer.dispose();
+      this.gpuReleased = true;
+    }
     this.labelRenderer.domElement.remove();
     this.clearChairs();
   }
@@ -986,7 +1018,9 @@ export class SpaceBuilderScene {
       texture.wrapS = RepeatWrapping;
       texture.wrapT = RepeatWrapping;
       texture.repeat.set(GRASS_REPEAT, GRASS_REPEAT);
-      texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+      texture.anisotropy = this.gpuReleased
+        ? 1
+        : Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
       if (srgb) texture.colorSpace = SRGBColorSpace;
       this.textures.push(texture);
       return texture;
@@ -1262,6 +1296,7 @@ export class SpaceBuilderScene {
   }
 
   private resize() {
+    if (this.disposed || this.gpuReleased) return;
     // Prefer clientWidth/Height — avoids an extra getBoundingClientRect forced reflow.
     const width = Math.max(1, Math.floor(this.root.clientWidth || 1));
     const height = Math.max(1, Math.floor(this.root.clientHeight || 1));
@@ -1270,7 +1305,7 @@ export class SpaceBuilderScene {
     this.renderer.setSize(width, height, false);
     this.labelRenderer.setSize(width, height);
     // Avoid a blank frame after sidebar open/close resizes the canvas.
-    if (this.active && !this.disposed) {
+    if (this.active) {
       this.renderer.render(this.scene, this.camera);
       this.labelRenderer.render(this.scene, this.camera);
     }
