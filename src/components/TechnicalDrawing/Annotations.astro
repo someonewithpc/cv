@@ -22,43 +22,48 @@ const radius = 0.5;
 const arrowPathD = roundedCorners(vertices, radius);
 ---
 
-<slot name="content" />
-<slot name="aside" />
-<svg
-  viewBox="-2 -2 4 4"
-  preserveAspectRatio={preserveAspectRatio}
-  style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px;`}
->
-  <defs>
-    <marker
-      id="annotation-rounded-arrow"
-      refX="0"
-      refY="0"
-      orient="auto-start-reverse"
-      markerUnits="strokeWidth"
-      markerWidth="4"
-      markerHeight="4"
-      preserveAspectRatio="xMidYMid"
-      viewBox="-1 -1 2 2"
-    >
-      <path
-        d={arrowPathD}
-        style="fill: context-stroke; fill-rule: evenodd; stroke:none;"
-      />
-    </marker>
-  </defs>
+<div class="content">
+  <slot name="content" />
+  <svg
+    viewBox="-2 -2 4 4"
+    preserveAspectRatio={preserveAspectRatio}
+    style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px;`}
+  >
+    <defs>
+      <marker
+        id="annotation-rounded-arrow"
+        refX="0"
+        refY="0"
+        orient="auto-start-reverse"
+        markerUnits="strokeWidth"
+        markerWidth="4"
+        markerHeight="4"
+        preserveAspectRatio="xMidYMid"
+        viewBox="-1 -1 2 2"
+      >
+        <path
+          d={arrowPathD}
+          style="fill: context-stroke; fill-rule: evenodd; stroke:none;"
+        />
+      </marker>
+    </defs>
 
-  <slot name="annotations" />
-</svg>
+    <slot name="annotations" />
+  </svg>
+</div>
+<slot name="aside" />
 
 <style lang="scss">
+// Shrink-wrap the artwork so the 200% overlay tracks the drawing, not the
+// page grid cell (Page .content is width: 100% for layout reasons).
 .content {
-  anchor-name: --annotation-target;
-  anchor-scope: --annotation-target;
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  height: fit-content;
 }
 
 svg {
-  position-anchor: --annotation-target;
   position: absolute;
   left: -50%;
   top: -50%;
