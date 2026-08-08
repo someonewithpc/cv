@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
+import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
+import {
+  claimSpaceBuilderGpu,
+  prepareSpaceBuilderGpu,
+  registerSpaceBuilderGpu,
+  releaseSpaceBuilderGpu,
+} from './scene/spaceBuilderGpu';
 import { SceneArrowAnnotations } from './scene/SceneArrowAnnotations';
 import {
   applyWheelZoom,
@@ -12,7 +19,6 @@ import {
   type PinchState,
   type ScreenPoint,
 } from './scene/sceneViewportGestures';
-import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
 
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
@@ -142,6 +148,7 @@ onMounted(async () => {
       requestAnimationFrame(() => resolve());
     });
 
+    prepareSpaceBuilderGpu();
     const scene = new SpaceBuilderScene({
       canvas,
       labelHost,
@@ -150,6 +157,7 @@ onMounted(async () => {
       },
     });
     scene.pause();
+    registerSpaceBuilderGpu(scene);
     sceneRef = scene;
 
     arrows = new SceneArrowAnnotations(scene);
@@ -217,10 +225,10 @@ onMounted(async () => {
       (entries) => {
         const visible = Boolean(entries[0]?.isIntersecting);
         if (!visible) {
-          scene.pause();
+          releaseSpaceBuilderGpu(scene);
           return;
         }
-        scene.resume();
+        claimSpaceBuilderGpu(scene);
         arrows?.sync();
       },
       { root: stack, threshold: 0.45 },
@@ -243,6 +251,7 @@ onBeforeUnmount(() => {
   observer?.disconnect();
   arrows?.dispose();
   arrows = null;
+  if (sceneRef) releaseSpaceBuilderGpu(sceneRef);
   sceneRef?.dispose();
   sceneRef = null;
   canvasRef = null;

@@ -5,6 +5,12 @@ import { autoplayStartedToast } from './AutoPlayController';
 import CatalogPanel from './CatalogPanel.vue';
 import { CATALOG_ITEMS, type CatalogItem } from './catalogItems';
 import {
+  claimSpaceBuilderGpu,
+  prepareSpaceBuilderGpu,
+  registerSpaceBuilderGpu,
+  releaseSpaceBuilderGpu,
+} from './scene/spaceBuilderGpu';
+import {
   applyWheelZoom,
   beginPinch,
   trySetPointerCapture,
@@ -419,8 +425,10 @@ onMounted(async () => {
       requestAnimationFrame(() => resolve());
     });
 
+    prepareSpaceBuilderGpu();
     const scene = new SpaceBuilderScene({ canvas, labelHost });
     scene.pause();
+    registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
 
     ready.value = true;
@@ -444,11 +452,11 @@ onMounted(async () => {
         const visible = Boolean(entries[0]?.isIntersecting);
         inView = visible;
         if (!visible) {
-          scene.pause();
+          releaseSpaceBuilderGpu(scene);
           stopAutoplay();
           return;
         }
-        scene.resume();
+        claimSpaceBuilderGpu(scene);
         startAutoplay();
       },
       { root: stack, threshold: 0.45 },
@@ -472,6 +480,7 @@ onBeforeUnmount(() => {
   autoplayToken += 1;
   if (resumeTimer) clearTimeout(resumeTimer);
   if (toastTimer) clearTimeout(toastTimer);
+  if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
   sceneRef.value = null;
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);

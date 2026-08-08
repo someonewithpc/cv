@@ -20,6 +20,12 @@ import {
 } from './railTools';
 import { DEFAULT_LAYOUT_OPTIONS, type LayoutStyle } from './scene/layoutEngine';
 import {
+  claimSpaceBuilderGpu,
+  prepareSpaceBuilderGpu,
+  registerSpaceBuilderGpu,
+  releaseSpaceBuilderGpu,
+} from './scene/spaceBuilderGpu';
+import {
   applyWheelZoom,
   beginPinch,
   handleScreenSlop,
@@ -564,6 +570,7 @@ onMounted(async () => {
       requestAnimationFrame(() => resolve());
     });
 
+    prepareSpaceBuilderGpu();
     const scene = new SpaceBuilderScene({
       canvas,
       labelHost,
@@ -573,6 +580,7 @@ onMounted(async () => {
     });
     // Stay paused until the carousel page is in view — avoids WebGL work during boot.
     scene.pause();
+    registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
 
     if (reducedMotion.value) scene.pause();
@@ -622,7 +630,7 @@ onMounted(async () => {
 
         if (!visible) {
           controller.pause();
-          scene.pause();
+          releaseSpaceBuilderGpu(scene);
           cursorPhase.value = 'gone';
           return;
         }
@@ -632,7 +640,7 @@ onMounted(async () => {
           return;
         }
 
-        scene.resume();
+        claimSpaceBuilderGpu(scene);
         if (visible && !wasVisible && !userControl.value) {
           startAutoplay(controller);
         } else if (visible && !userControl.value && chairsReady.value) {
@@ -662,6 +670,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   observer?.disconnect();
   controllerRef.value?.destroy();
+  if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
   canvasRef = null;
   if (resumeTimer) clearTimeout(resumeTimer);
