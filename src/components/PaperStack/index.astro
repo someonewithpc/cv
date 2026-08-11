@@ -1,11 +1,24 @@
-<slot />
+---
+export type Props = {
+  /** Tag name for the stack wrapper element. */
+  as?: string;
+  class?: string;
+  /** Number of pages; the default slot is called as a function once per index. */
+  pageCount: number;
+};
 
-<style lang="scss" is:global>
-[data-paper-stack-root] {
-  anchor-name: --technical-drawing-stack;
-  anchor-scope: --technical-drawing-stack;
+const { as: tagName = 'div', class: className, pageCount } = Astro.props;
+const Tag = tagName;
 
-  &:not([data-paper-stack]) {
+const pages = await Promise.all(
+  Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index])),
+);
+---
+
+<noscript>
+  <Tag data-paper-stack-root class={className} set:html={pages.join('')} />
+  <style lang="scss" is:global>
+  [data-paper-stack-root] {
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
@@ -46,6 +59,22 @@
       }
     }
   }
+  [data-paper-stack] {
+    display: none;
+  }
+  </style>
+</noscript>
+
+<Tag data-paper-stack-root data-paper-stack class={className}>
+  {pages.map((page, index) => (
+    <div style={`--page-index: ${index + 1}`} set:html={page} />
+  ))}
+</Tag>
+
+<style lang="scss" is:global>
+[data-paper-stack-root] {
+  anchor-name: --technical-drawing-stack;
+  anchor-scope: --technical-drawing-stack;
 
   &[data-paper-stack] {
     display: grid;
@@ -139,19 +168,6 @@ function init() {
     syntax: '<number>',
     inherits: true,
     initialValue: '1',
-  });
-
-  ([...document.querySelectorAll('[data-paper-stack-root]')] as HTMLElement[]).forEach((stack) => {
-    // Take over with the JS implementation, disabling the CSS-only carousel fallback
-    stack.toggleAttribute('data-paper-stack', true);
-
-    const pages = ([...stack.children] as HTMLElement[]);
-    pages.forEach((page, index) => {
-      const div = document.createElement('div');
-      div.style.setProperty('--page-index', (index + 1).toString());
-      stack.appendChild(div);
-      div.moveBefore(page, null);
-    });
   });
 }
 
