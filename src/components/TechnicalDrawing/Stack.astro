@@ -25,9 +25,10 @@ const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
 
-<PaperStack>
-  <article class="technical-drawing-stack" data-paper-stack-root>
-    {Object.entries(layers).map(([id, { name, size, pageStyle, tech }], index) => (
+<PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers}>
+  {(index: number) => {
+    const [id, { name, size, pageStyle, tech }] = Object.entries(layers)[index];
+    return (
       <TechnicalDrawingPage
         title={name}
         subtitle={Astro.props.subtitle}
@@ -46,12 +47,12 @@ const totalLayers = Object.keys(layers).length;
           {Astro.slots.render('aside', [id])}
         </Fragment>
       </TechnicalDrawingPage>
-    ))}
-  </article>
+    );
+  }}
 </PaperStack>
 
 <style lang="scss">
-article {
+:global(article.technical-drawing-stack) {
   container: technical-drawing-width / inline-size;
   width: 100%;
   /* Allow the frame to shrink within the page grid instead of expanding it */
