@@ -1,7 +1,7 @@
 <slot />
 
-<style lang="scss">
-:global([data-paper-stack-root]) {
+<style lang="scss" is:global>
+[data-paper-stack-root] {
   anchor-name: --technical-drawing-stack;
   anchor-scope: --technical-drawing-stack;
 
@@ -16,7 +16,7 @@
     flex-direction: row;
     position: relative;
 
-    > :global(*) {
+    > * {
       flex: 0 0 100%;
       // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
       // scrollWidth, leaving a permanent horizontal scrollbar on every page.
@@ -54,7 +54,7 @@
     $per-page-splay: 1.5deg;
     $border-radius: calc(0.5em + 1px);
 
-    & > :global(> div) {
+    & > div {
       grid-area: content;
       border-radius: $border-radius;
       transform-origin: top left;
@@ -64,7 +64,7 @@
       // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out;
 
-      &:first-child > :global( > *) {
+      &:first-child > * {
         clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
 
         &:after {
@@ -87,6 +87,11 @@
           position: absolute;
           right: 0;
           bottom: 0;
+
+          &:hover {
+            cursor: grab;
+            background: magenta;
+          }
         }
 
         animation:
