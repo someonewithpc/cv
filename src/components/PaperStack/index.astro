@@ -11,7 +11,7 @@ const { as: tagName = 'div', class: className, pageCount } = Astro.props;
 const Tag = tagName;
 
 const pages = await Promise.all(
-  Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index])),
+  Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index, '<div class="paper-fold"></div>'])),
 );
 ---
 
@@ -96,10 +96,9 @@ const pages = await Promise.all(
       &:first-child > * {
         clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
 
-        &:after {
-          content: '';
-          width: calc(var(--fold-x) + 1px);
-          height: calc(var(--fold-y) + 1px);
+        & > .paper-fold {
+          width: calc(var(--fold-x));
+          height: calc(var(--fold-y));
 
           clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
 
@@ -114,8 +113,8 @@ const pages = await Promise.all(
           filter: brightness(75%);
 
           position: absolute;
-          right: 0;
-          bottom: 0;
+          right: -1px;
+          bottom: -1px;
 
           &:hover {
             cursor: grab;
@@ -127,10 +126,6 @@ const pages = await Promise.all(
           250ms 500ms ease-in inital-fold-reveal 1 forwards,
           7.5s 1.5s ease-in-out fold-reveal-pulse infinite both alternate
         ;
-
-        &:hover {
-          animation-play-state: paused;
-        }
 
         @keyframes inital-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }
