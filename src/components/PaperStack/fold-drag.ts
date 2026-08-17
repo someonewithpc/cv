@@ -384,13 +384,24 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   return prev;
 };
 
-// A committed flip: glide the tip the rest of the way to the far side of the pin's reach circle
-// (the fullest fold a pinned sheet can make — 2·pin is the rim point farthest from the corner),
-// then send the page to the back of the stack.
+// A committed flip: glide the tip the rest of the way out to the pin's reach circle — radially
+// outward from the pin through wherever the tip is now, so the flip keeps going the way the
+// drag was headed (a corner dragged up over the top edge finishes flipping over the top, not
+// sideways) — then send the page to the back of the stack. Any rim point is a full fold: the
+// crease passes through the pin there.
 const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, clipInset: number): (() => void) => {
   const { width, height } = sheet.getBoundingClientRect();
   const pin = { x: clipInset - width, y: clipInset - height };
-  return glideFoldTip(sheet, section, fold, { x: 2 * pin.x, y: 2 * pin.y }, 300, () => sendToBack(sheet, section, fold));
+  const reach = Math.hypot(pin.x, pin.y);
+  const { x: fx, y: fy } = currentFoldSize(sheet);
+  const from = foldTipFromSize(fx, fy);
+  let dir = { x: from.x - pin.x, y: from.y - pin.y };
+  const length = Math.hypot(dir.x, dir.y);
+  // A tip at the pin itself has no direction to continue in — fall back to straight across
+  if (length < 1) dir = { x: pin.x, y: pin.y };
+  const scale = reach / Math.hypot(dir.x, dir.y);
+  const to = { x: pin.x + dir.x * scale, y: pin.y + dir.y * scale };
+  return glideFoldTip(sheet, section, fold, to, 300, () => sendToBack(sheet, section, fold));
 };
 
 const shouldFlip = (sheet: HTMLElement): boolean => {
