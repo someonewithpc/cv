@@ -1,18 +1,23 @@
 // Wires up the draggable "dog-ear" fold on each [data-paper-stack-root]'s front page — a drag
-// released with the page's center folded over flips the page onto the back of the stack — and
-// registers the CSS custom properties (--fold-x, --fold-y, --fold-back-x, --fold-back-y,
-// --fold-page-w, --fold-page-h, --fold-clip-inset, --page-index) the stack's styles (in
-// index.astro) key off of.
+// released with the page's center folded over flips the page onto the back of the stack, and
+// grabbing the folded-back top-left corner runs the same gesture in reverse to bring the
+// previous page back — and registers the CSS custom properties (--fold-x, --fold-y,
+// --fold-back-x, --fold-back-y, --fold-page-w, --fold-page-h, --fold-clip-inset, --page-index)
+// the stack's styles (in index.astro) key off of.
 
 type Vec = { x: number, y: number };
 
 type FoldGesture = {
   pointerId: number;
-  // Pointer minus tip at gesture start, in tip-local screen coordinates — rotates with the
-  // fold as it's dragged, see the note on onFoldDrag
+  // Scaled pointer minus tip at gesture start, in tip-local screen coordinates — rotates with
+  // the fold as it's dragged when the tip itself is grabbed, see the note on onFoldDrag
   offset: Vec;
   // atan2(fold-y, fold-x) at gesture start, needed to know how far that offset has rotated
   theta: number;
+  // Pointer-to-tip amplification. 1 when the tip corner itself is grabbed (the forward fold);
+  // 2 when the folded-back crease corner is (the back gesture) — moving a crease by d moves
+  // the corner reflected across it by 2d, so this is what keeps that drag feeling physical.
+  gain: number;
   // Set when the drag gives up (pointer strayed past the grace margin) — the release then
   // always settles back rather than considering a flip.
   canceled: boolean;
@@ -67,10 +72,10 @@ const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--
 
 const currentBackFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-back-x'), y: readLength(sheet, '--fold-back-y') });
 
-// The page content — the sibling whose clip-path cuts the holes (the flap, clip, and hint ride
-// above that cut, see index.astro).
+// The page content — the sibling whose clip-path cuts the holes (the flap, clip, grab handle,
+// and hint ride above that cut, see index.astro).
 const sectionOf = (sheet: HTMLElement): HTMLElement =>
-  sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-clip, .paper-flip-hint)')!;
+  sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-flip-hint)')!;
 
 // The flap paints the back of the sheet in the page's own color, but as a sibling of the page
 // content it can't see background definitions scoped inside it (e.g. a blueprint page
@@ -175,7 +180,10 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) =
   const { x: w, y: h } = currentFoldSize(sheet);
   const contentRect = sheet.getBoundingClientRect();
   const tip = foldTipFromSize(w, h);
-  gesture.offset = { x: e.clientX - (contentRect.right + tip.x), y: e.clientY - (contentRect.bottom + tip.y) };
+  gesture.offset = {
+    x: gesture.gain * e.clientX - (contentRect.right + tip.x),
+    y: gesture.gain * e.clientY - (contentRect.bottom + tip.y),
+  };
   gesture.theta = Math.atan2(h, w);
 };
 
@@ -185,7 +193,7 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) =
 // screen-space offset from the tip is rotated by 2(θ₀-θ) as θ moves from its grab-time value θ₀.
 // This frame's θ isn't known until after size is solved for below, so the last solved frame's θ
 // is used instead — a one-frame lag, invisible at drag sampling rates.
-const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, clipInset: number) => {
+const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, clipInset: number, captor: HTMLElement) => {
   // Idempotent — only the first move of a gesture actually needs this, but settleFold relies on
   // it having run at all (a grab that never moved leaves .paper-fold--active untouched, so it
   // knows there's nothing to hand back to the idle CSS rule).
@@ -197,11 +205,16 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 
   const contentRect = sheet.getBoundingClientRect();
   const { x: wPrev, y: hPrev } = currentFoldSize(sheet);
-  const offset = rotateVec(gesture.offset, 2 * (gesture.theta - Math.atan2(hPrev, wPrev)));
+  // The rotating offset keeps a point grabbed on the flap fixed to its surface — only
+  // meaningful when the tip itself was grabbed. A crease grab (gain > 1) isn't riding the flap,
+  // so its offset stays fixed and the scaled pointer drives the tip directly.
+  const offset = gesture.gain === 1
+    ? rotateVec(gesture.offset, 2 * (gesture.theta - Math.atan2(hPrev, wPrev)))
+    : gesture.offset;
 
   let tip = {
-    x: (e.clientX - offset.x) - contentRect.right,
-    y: (e.clientY - offset.y) - contentRect.bottom,
+    x: (gesture.gain * e.clientX - offset.x) - contentRect.right,
+    y: (gesture.gain * e.clientY - offset.y) - contentRect.bottom,
   };
 
   // Paper doesn't stretch: folding keeps the dragged corner within |corner - pin| of the paper
@@ -215,7 +228,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   const overshoot = Math.hypot(fromPin.x, fromPin.y) - reach;
   if (overshoot > FOLD_CANCEL_GRACE) {
     gesture.canceled = true;
-    fold.releasePointerCapture(e.pointerId);
+    captor.releasePointerCapture(e.pointerId);
     return;
   }
   if (overshoot > 0) {
@@ -274,6 +287,20 @@ const glideFoldTip = (
   return () => cancelAnimationFrame(frame);
 };
 
+const pageIndex = (page: HTMLElement): number => parseFloat(page.style.getPropertyValue('--page-index'));
+
+// [data-paper-flipped] means there is a previous page to go back to — equivalently, the stack
+// isn't in its original order (the originally-first page is always the first DOM child, since
+// flips only renumber --page-index, never reorder the DOM). It gates the folded-back top-left
+// corner and its grab handle.
+const updateFlippedState = (stack: HTMLElement): void => {
+  if (pageIndex(stack.children[0] as HTMLElement) === 1) {
+    delete stack.dataset.paperFlipped;
+  } else {
+    stack.dataset.paperFlipped = '';
+  }
+};
+
 // Glides back to the resting dog-ear, then hands rendering back to index.astro's idle CSS rules
 const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
   // Settling means no flip is coming, so the commit feedback drops immediately
@@ -294,6 +321,8 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
     sheet.style.animationName = 'none, none';
     void sheet.offsetWidth;
     sheet.style.animationName = 'none, fold-reveal-pulse';
+    // A settled back-drag may have restored the stack's original order
+    updateFlippedState(sheet.parentElement!);
   });
 };
 
@@ -306,6 +335,7 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   const stack = sheet.parentElement!;
   const pages = [...stack.children] as HTMLElement[];
   const clip = sheet.querySelector<HTMLElement>('.paper-clip')!;
+  const grab = sheet.querySelector<HTMLElement>('.paper-back-grab')!;
   const hint = sheet.querySelector<HTMLElement>('.paper-flip-hint')!;
 
   fold.classList.remove('paper-fold--active', 'paper-fold--will-flip');
@@ -318,7 +348,6 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   sheet.style.removeProperty('--paper-surface');
   sheet.style.animationName = '';
 
-  const pageIndex = (page: HTMLElement) => parseFloat(page.style.getPropertyValue('--page-index'));
   const next = pages.find((page) => pageIndex(page) === 2)!;
   for (const page of pages) {
     const index = pageIndex(page);
@@ -326,9 +355,33 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   }
   sheet.classList.remove('paper-front');
   next.classList.add('paper-front');
-  next.append(clip, fold, hint);
-  stack.dataset.paperFlipped = '';
+  next.append(clip, fold, grab, hint);
+  updateFlippedState(stack);
   syncPaperSurface(next, sectionOf(next));
+};
+
+// Inverse of sendToBack: promotes the page most recently sent to the back (the highest
+// --page-index) over the front, handing it the front-page role and companion elements. The
+// caller starts it fully folded — the state its flip left it in — so the back-drag gesture can
+// unfold it from there.
+const bringToFront = (stack: HTMLElement): HTMLElement => {
+  const pages = [...stack.children] as HTMLElement[];
+  const front = pages.find((page) => pageIndex(page) === 1)!;
+  const prev = pages.find((page) => pageIndex(page) === pages.length)!;
+  const clip = front.querySelector<HTMLElement>('.paper-clip')!;
+  const fold = front.querySelector<HTMLElement>('.paper-fold')!;
+  const grab = front.querySelector<HTMLElement>('.paper-back-grab')!;
+  const hint = front.querySelector<HTMLElement>('.paper-flip-hint')!;
+
+  for (const page of pages) {
+    const index = pageIndex(page);
+    page.style.setProperty('--page-index', `${index === pages.length ? 1 : index + 1}`);
+  }
+  front.classList.remove('paper-front');
+  prev.classList.add('paper-front');
+  prev.append(clip, fold, grab, hint);
+  syncPaperSurface(prev, sectionOf(prev));
+  return prev;
 };
 
 // A committed flip: glide the tip the rest of the way to the far side of the pin's reach circle
@@ -397,7 +450,7 @@ const attachBackFoldTease = (stack: HTMLElement, isDragging: () => boolean) => {
   return clearTease;
 };
 
-const attachFoldDrag = (fold: HTMLElement) => {
+const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // Re-derived on every grab: a completed flip moves the fold (and its companion elements) onto
   // the new front page, so the sheet and section they ride on change over time.
   let sheet = fold.parentElement!;
@@ -422,7 +475,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
 
     // Grabbing mid-settle freezes the fold where it is and takes over from there
     cancelSettle();
-    gesture = { pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, canceled: false };
+    gesture = { pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 1, canceled: false };
     onFoldGrab(sheet, gesture, e);
     try {
       fold.setPointerCapture(e.pointerId);
@@ -439,7 +492,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
       fold.releasePointerCapture(e.pointerId);
       return;
     }
-    onFoldDrag(sheet, section, fold, gesture, e, clipInset);
+    onFoldDrag(sheet, section, fold, gesture, e, clipInset, fold);
   });
 
   // Pointer capture is released — on pointerup *or* pointercancel — right before this fires, so
@@ -450,6 +503,63 @@ const attachFoldDrag = (fold: HTMLElement) => {
     const { canceled } = gesture;
     gesture = null;
     cancelSettle = releaseFold(sheet, section, fold, clipInset, canceled);
+  });
+
+  // Going back a page is the forward flip run in reverse: grabbing the folded-back corner
+  // promotes the previous page already fully folded — exactly where its flip ended — and the
+  // same drag machinery unfolds it from there. The same release threshold then decides both
+  // directions: still center-folded sends it back where it came from, unfolded past center
+  // settles it as the new front page.
+  grab.addEventListener('pointerdown', (e) => {
+    if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
+    const stack = fold.parentElement!.parentElement!;
+    if (!('paperFlipped' in stack.dataset)) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    cancelSettle();
+    clearTease();
+    sheet = bringToFront(stack);
+    section = sectionOf(sheet);
+    clipInset = readLength(sheet, '--fold-clip-inset');
+    sheet.getAnimations().forEach((animation) => animation.cancel());
+
+    const rect = sheet.getBoundingClientRect();
+    const pin = { x: clipInset - rect.width, y: clipInset - rect.height };
+    const tip = { x: 2 * pin.x, y: 2 * pin.y };
+    const size = foldSizeFromTip(tip.x, tip.y);
+    sheet.style.setProperty('--fold-x', `${size.x}px`);
+    sheet.style.setProperty('--fold-y', `${size.y}px`);
+    fold.classList.add('paper-fold--active');
+    renderFold(section, fold, rect.width, rect.height, tip, currentBackFoldSize(sheet));
+
+    gesture = { pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false };
+    onFoldGrab(sheet, gesture, e);
+    try {
+      grab.setPointerCapture(e.pointerId);
+    } catch {
+      gesture = null;
+      cancelSettle = releaseFold(sheet, section, fold, clipInset, false);
+    }
+  });
+
+  grab.addEventListener('pointermove', (e) => {
+    if (gesture === null || e.pointerId !== gesture.pointerId) return;
+    if (!grab.hasPointerCapture(e.pointerId)) return;
+    if (e.buttons === 0) {
+      grab.releasePointerCapture(e.pointerId);
+      return;
+    }
+    onFoldDrag(sheet, section, fold, gesture, e, clipInset, grab);
+  });
+
+  // Unlike the forward drag, a canceled back-drag shouldn't force a settle — straying past the
+  // grace margin lets go with the fold still near-fully folded, and the geometric threshold
+  // already resolves that to "return to the back", which is what canceling should mean here.
+  grab.addEventListener('lostpointercapture', (e) => {
+    if (gesture === null || e.pointerId !== gesture.pointerId) return;
+    gesture = null;
+    cancelSettle = releaseFold(sheet, section, fold, clipInset, false);
   });
 };
 
@@ -475,9 +585,10 @@ export function initPaperStackFold(): void {
     registerFoldProperties();
     for (const stack of document.querySelectorAll<HTMLElement>('[data-paper-stack-root]')) {
       const fold = stack.querySelector<HTMLElement>('.paper-fold');
-      if (!fold) continue;
+      const grab = stack.querySelector<HTMLElement>('.paper-back-grab');
+      if (!fold || !grab) continue;
       observeFoldPageSizes(stack);
-      attachFoldDrag(fold);
+      attachFoldDrag(fold, grab);
     }
   };
 
