@@ -183,7 +183,7 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   const from = foldTipFromSize(fx, fy);
   const to = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
-  const duration = Math.min(250 + distance / 3, 700);
+  const duration = Math.min(1000 + distance / 3, 1500);
 
   let frame = 0;
   const start = performance.now();
