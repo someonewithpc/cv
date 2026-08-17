@@ -16,6 +16,10 @@ type FoldGesture = {
 // Must match the "to" keyframe of initial-fold-reveal in index.astro
 const FOLD_REVEAL_END = { x: '2cm', y: '1cm' };
 
+// How far past the paper's reach (see the pin check in onFoldDrag) the pointer may stray while
+// the fold holds at its limit, before the drag lets go entirely.
+const FOLD_CANCEL_GRACE = 48;
+
 const rotateVec = (v: Vec, angle: number): Vec => {
   const c = Math.cos(angle), s = Math.sin(angle);
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
@@ -33,74 +37,75 @@ const foldTipFromSize = (w: number, h: number): Vec => {
 };
 
 // Closed-form inverse of foldTipFromSize, so tracking the pointer never depends on the previous
-// frame's fold-x/-y (that recursion would otherwise make dragging jittery).
+// frame's fold-x/-y (that recursion would otherwise make dragging jittery). A tip below the
+// bottom edge or right of the right edge yields a *negative* fold-y/-x — the crease's intercept
+// slides past the corner, i.e. the fold hangs off that edge — so only the near-zero
+// singularities need guarding, preserving sign continuity everywhere else.
 const foldSizeFromTip = (tx: number, ty: number): Vec => {
-  const ntx = Math.min(tx, -0.01);
-  const nty = Math.min(ty, -0.01);
+  const ntx = Math.abs(tx) < 0.01 ? -0.01 : tx;
+  const nty = Math.abs(ty) < 0.01 ? -0.01 : ty;
   const d2 = ntx * ntx + nty * nty;
   return { x: -d2 / (2 * ntx), y: -d2 / (2 * nty) };
 };
-
-const clampNum = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
 
 const readLength = (el: HTMLElement, name: string): number => parseFloat(getComputedStyle(el).getPropertyValue(name));
 
 const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-x'), y: readLength(sheet, '--fold-y') });
 
-// The crease is the line through (w-fold-x, h) and (w, h-fold-y), clipped to the page rectangle
-// [0,w]x[0,h] — same two points index.astro's clip-path uses. Which edges it actually crosses
-// depends on whether fold-x > w and/or fold-y > h; this closed form covers all four cases
-// continuously (see index.astro's comment on --crease1-x for the derivation). Keeping the
-// crease away from the clip point is capFoldSize's job, not this formula's.
-const computeCrease = (w: number, h: number, fx: number, fy: number): { crease1: Vec, crease2: Vec } => {
-  const excessX = Math.max(fx - w, 0);
-  const excessY = Math.max(fy - h, 0);
-  return {
-    crease1: { x: Math.max(w - fx, 0), y: clampNum(h - fy * (excessX / fx), 0, h) },
-    crease2: { x: clampNum(w - fx * (excessY / fy), 0, w), y: Math.max(h - fy, 0) },
-  };
+// The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
+// (given relative to that corner) — the unique line folding one onto the other. Splitting the
+// page rectangle against it (single-edge Sutherland-Hodgman, both sides in one pass) covers
+// every fold the tip can express, including creases that wrap page corners or hang off the
+// bottom/right edges, without the closed-form case analysis the idle CSS formula needs.
+const splitByCrease = (w: number, h: number, tip: Vec) => {
+  const length = Math.hypot(tip.x, tip.y);
+  const normal = { x: tip.x / length, y: tip.y / length };
+  const mid = { x: w + tip.x / 2, y: h + tip.y / 2 };
+  const signed = (p: Vec) => (p.x - mid.x) * normal.x + (p.y - mid.y) * normal.y;
+
+  const rect = [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }];
+  const kept: Vec[] = [];
+  const hole: Vec[] = [];
+  for (let i = 0; i < rect.length; i++) {
+    const cur = rect[i], next = rect[(i + 1) % rect.length];
+    const sCur = signed(cur), sNext = signed(next);
+    if (sCur >= 0) kept.push(cur);
+    if (sCur <= 0) hole.push(cur);
+    if ((sCur < 0) !== (sNext < 0) && sCur !== 0 && sNext !== 0) {
+      const t = sCur / (sCur - sNext);
+      const crossing = { x: cur.x + t * (next.x - cur.x), y: cur.y + t * (next.y - cur.y) };
+      kept.push(crossing);
+      hole.push(crossing);
+    }
+  }
+  return { kept, hole, mid, angle: Math.atan2(normal.x, -normal.y) };
 };
 
-// Cap fold-x/fold-y so the crease can approach the clip point (c,c) — as if a paper clip were
-// pinning the page there — but never cross it: given the drag's current ratio, this is the
-// closed-form fold-x at which the crease line passes exactly through (c,c), derived from the
-// crease's implicit line equation. Scales fold-x/fold-y down together (same direction) when
-// exceeded, so it's a no-op whenever the target is already within bounds.
-const capFoldSize = (w: number, h: number, fx: number, fy: number, c: number): Vec => {
-  if (fx <= 0 || fy <= 0) return { x: fx, y: fy };
-  const fxMax = (h - c) * (fx / fy) + (w - c);
-  if (fx <= fxMax) return { x: fx, y: fy };
-  const scale = fxMax / fx;
-  return { x: fx * scale, y: fy * scale };
-};
-
-// The region folded away (a mirror image of which is what .paper-fold needs to show) — same
-// crease points as the flat polygon in index.astro, going around the other way.
-const holePolygon = (w: number, h: number, crease1: Vec, crease2: Vec): Vec[] => [
-  { x: w, y: h },
-  { x: w, y: 0 },
-  crease2,
-  crease1,
-  { x: 0, y: h },
-];
-
-// Drives .paper-fold directly while dragging (and while settling back afterwards) instead of
-// index.astro's idle CSS rule, which only fits a fold tightly sized to fold-x/fold-y — no longer
-// enough once the crease can wrap around a corner. Clips the full-size flap to the hole polygon
-// (always inside the paintable box) and folds it over with a reflection across the crease line
-// itself: rotate(-θ) scaleY(-1) rotate(θ) about any point on the crease. (Not the idle rule's
+// Drives the page's clip-path and .paper-fold directly while dragging (and while settling back
+// afterwards) instead of index.astro's idle CSS rules, which only fit the simple
+// bottom-and-right-edge crease. The flap clips to the hole polygon (always inside its paintable
+// box) and folds over with a reflection across the crease line: rotate(α) scaleY(-1) rotate(-α)
+// about any point on the crease, α being the crease's direction angle. (Not the idle rule's
 // scaleX(-1) — that one reflects across the crease's perpendicular, which only lands right
 // because the idle box-clip trick feeds it the opposite triangle.)
-const updateActiveFlap = (fold: HTMLElement, w: number, h: number, fx: number, fy: number): void => {
-  const { crease1, crease2 } = computeCrease(w, h, fx, fy);
-  const hole = holePolygon(w, h, crease1, crease2);
-  const theta = Math.atan2(fy, fx);
-  // Midpoint of the crease line's two defining points (w-fx, h) and (w, h-fy)
-  const origin = { x: w - fx / 2, y: h - fy / 2 };
+const renderFold = (section: HTMLElement, fold: HTMLElement, w: number, h: number, tip: Vec): void => {
+  const poly = (pts: Vec[]) => `polygon(${pts.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+  const degenerate = Math.hypot(tip.x, tip.y) < 0.5;
+  const { kept, hole, mid, angle } = degenerate
+    ? { kept: [], hole: [], mid: { x: 0, y: 0 }, angle: 0 }
+    : splitByCrease(w, h, tip);
 
-  fold.style.clipPath = `polygon(${hole.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
-  fold.style.transformOrigin = `${origin.x}px ${origin.y}px`;
-  fold.style.transform = `rotate(${-theta}rad) scaleY(-1) rotate(${theta}rad)`;
+  if (degenerate || hole.length < 3) {
+    // Degenerate fold (tip at the corner, or crease off the page) — page whole, flap hidden
+    section.style.clipPath = '';
+    fold.style.clipPath = 'polygon(0px 0px, 0px 0px, 0px 0px)';
+    return;
+  }
+
+  section.style.clipPath = poly(kept);
+  fold.style.clipPath = poly(hole);
+  fold.style.transformOrigin = `${mid.x}px ${mid.y}px`;
+  fold.style.transform = `rotate(${angle}rad) scaleY(-1) rotate(${-angle}rad)`;
 };
 
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
@@ -117,7 +122,7 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) =
 // screen-space offset from the tip is rotated by 2(θ₀-θ) as θ moves from its grab-time value θ₀.
 // This frame's θ isn't known until after size is solved for below, so the last solved frame's θ
 // is used instead — a one-frame lag, invisible at drag sampling rates.
-const onFoldDrag = (sheet: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, clipInset: number) => {
+const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, clipInset: number) => {
   // Idempotent — only the first move of a gesture actually needs this, but settleFold relies on
   // it having run at all (a grab that never moved leaves .paper-fold--active untouched, so it
   // knows there's nothing to hand back to the idle CSS rule).
@@ -132,19 +137,37 @@ const onFoldDrag = (sheet: HTMLElement, fold: HTMLElement, gesture: FoldGesture,
   const { x: wPrev, y: hPrev } = currentFoldSize(sheet);
   const offset = rotateVec(gesture.offset, 2 * (gesture.theta - Math.atan2(hPrev, wPrev)));
 
-  const target = foldSizeFromTip(
-    (e.clientX - offset.x) - contentRect.right,
-    (e.clientY - offset.y) - contentRect.bottom,
-  );
+  let tip = {
+    x: (e.clientX - offset.x) - contentRect.right,
+    y: (e.clientY - offset.y) - contentRect.bottom,
+  };
 
-  const size = capFoldSize(contentRect.width, contentRect.height, target.x, target.y, clipInset);
+  // Paper doesn't stretch: folding keeps the dragged corner within |corner - pin| of the paper
+  // clip's pin (folding preserves the corner's distance to every point on the crease, and the
+  // crease can at most pass through the pin). Slightly past that rim the fold holds there — the
+  // crease pivoting around the pin as the pointer arcs — and past the grace margin the drag
+  // gives up and lets the fold settle.
+  const pin = { x: clipInset - contentRect.width, y: clipInset - contentRect.height };
+  const reach = Math.hypot(pin.x, pin.y);
+  const fromPin = { x: tip.x - pin.x, y: tip.y - pin.y };
+  const overshoot = Math.hypot(fromPin.x, fromPin.y) - reach;
+  if (overshoot > FOLD_CANCEL_GRACE) {
+    fold.releasePointerCapture(e.pointerId);
+    return;
+  }
+  if (overshoot > 0) {
+    const scale = reach / (reach + overshoot);
+    tip = { x: pin.x + fromPin.x * scale, y: pin.y + fromPin.y * scale };
+  }
+
+  const size = foldSizeFromTip(tip.x, tip.y);
   sheet.style.setProperty('--fold-x', `${size.x}px`);
   sheet.style.setProperty('--fold-y', `${size.y}px`);
 
-  updateActiveFlap(fold, contentRect.width, contentRect.height, size.x, size.y);
+  renderFold(section, fold, contentRect.width, contentRect.height, tip);
 };
 
-const settleFold = (sheet: HTMLElement, fold: HTMLElement) => {
+const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement) => {
   // A grab that never dragged left the animations alone, so there is nothing to hand back
   if (sheet.style.getPropertyValue('--fold-x') === '') return;
 
@@ -152,13 +175,14 @@ const settleFold = (sheet: HTMLElement, fold: HTMLElement) => {
   sheet.style.setProperty('--fold-x', FOLD_REVEAL_END.x);
   sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
 
-  // The CSS transition above animates --fold-x/-y directly; keep .paper-fold in step with it
-  // every frame until it finishes, then hand rendering back to index.astro's idle CSS rule.
+  // The CSS transition above animates --fold-x/-y directly; keep the page cut and .paper-fold in
+  // step with it every frame until it finishes, then hand rendering back to index.astro's idle
+  // CSS rules.
   let frame = 0;
   const step = () => {
     const rect = sheet.getBoundingClientRect();
     const { x, y } = currentFoldSize(sheet);
-    updateActiveFlap(fold, rect.width, rect.height, x, y);
+    renderFold(section, fold, rect.width, rect.height, foldTipFromSize(x, y));
     frame = requestAnimationFrame(step);
   };
   frame = requestAnimationFrame(step);
@@ -167,6 +191,7 @@ const settleFold = (sheet: HTMLElement, fold: HTMLElement) => {
   Promise.all(settling.map((transition) => transition.finished)).then(() => {
     cancelAnimationFrame(frame);
     fold.classList.remove('paper-fold--active');
+    section.style.clipPath = '';
     fold.style.clipPath = '';
     fold.style.transform = '';
     fold.style.transformOrigin = '';
@@ -196,6 +221,9 @@ const observeFoldPageSize = (sheet: HTMLElement): void => {
 
 const attachFoldDrag = (fold: HTMLElement) => {
   const sheet = fold.parentElement!;
+  // The page content — the sibling whose clip-path cuts the hole (the flap and clip themselves
+  // ride above that cut, see index.astro).
+  const section = sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold):not(.paper-clip)')!;
   // Static — set once in CSS, never animated — so it's cheap to read once up front rather than
   // on every pointermove.
   const clipInset = readLength(sheet, '--fold-clip-inset');
@@ -214,7 +242,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
       fold.setPointerCapture(e.pointerId);
     } catch {
       gesture = null;
-      settleFold(sheet, fold);
+      settleFold(sheet, section, fold);
     }
   });
 
@@ -225,7 +253,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
       fold.releasePointerCapture(e.pointerId);
       return;
     }
-    onFoldDrag(sheet, fold, gesture, e, clipInset);
+    onFoldDrag(sheet, section, fold, gesture, e, clipInset);
   });
 
   // Pointer capture is released — on pointerup *or* pointercancel — right before this fires, so
@@ -233,7 +261,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
   fold.addEventListener('lostpointercapture', (e) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
     gesture = null;
-    settleFold(sheet, fold);
+    settleFold(sheet, section, fold);
   });
 };
 
