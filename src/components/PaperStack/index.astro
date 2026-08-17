@@ -27,11 +27,14 @@ const paperClip = `<svg class="paper-clip" viewBox="0 0 24 40" fill="none" xmlns
   </defs>
 </svg>`;
 
+// The fold flap and paper clip are siblings of the page content, not children: the page's
+// crease clip-path (and the page's own overflow) clips descendants, and both elements must be
+// able to overhang the page — the flap when a large fold wraps past an edge, the clip because
+// it straddles the page's top edge.
+const foldFront = `<div class="paper-fold"></div>${paperClip}`;
+
 const pages = await Promise.all(
-  // Only the front page (index 0) shows the fold/clip — unlike the empty .paper-fold div, the
-  // clip is a real <svg> with an id-referenced gradient, so it can't be handed to every page the
-  // way .paper-fold is without leaving stray, unstyled copies (and duplicate ids) on the rest.
-  Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index, '<div class="paper-fold"></div>', index === 0 ? paperClip : ''])),
+  Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index])),
 );
 ---
 
@@ -87,7 +90,7 @@ const pages = await Promise.all(
 
 <Tag data-paper-stack-root data-paper-stack class={className}>
   {pages.map((page, index) => (
-    <div style={`--page-index: ${index + 1}`} set:html={page} />
+    <div style={`--page-index: ${index + 1}`} set:html={page + (index === 0 ? foldFront : '')} />
   ))}
 </Tag>
 
@@ -118,35 +121,40 @@ const pages = await Promise.all(
       transition: rotate 250ms ease-in-out;
 
       &:first-child {
-        > * {
+        // The page content, but not the fold flap / paper clip riding on top of it: clip-path
+        // clips descendants too, and both of those must be able to overhang the page.
+        > :not(.paper-fold, .paper-clip) {
           // --fold-page-w/-h (actual pixel size) are kept in sync by fold-drag.ts via
-          // ResizeObserver on this exact element — needed because the crease's excess/ratio
+          // ResizeObserver on this div — needed because the crease's excess/ratio
           // terms below mix lengths and can't be computed against a bare percentage
           // (percentages aren't real lengths until layout, so e.g. dividing by --fold-x
-          // wouldn't type-check against 100%). Declared here rather than on :first-child
-          // because custom properties only inherit downward, and that's where JS sets them.
+          // wouldn't type-check against 100%).
           //
           // The crease is the line through (--fold-page-w - fold-x, H) and (W, --fold-page-h -
           // fold-y) — same two points as before — clipped to the page rectangle. Which edges it
           // actually crosses (bottom+right / left+right / bottom+top / left+top) depends on
           // whether fold-x exceeds the page width and/or fold-y exceeds its height; crease1/
-          // crease2 below is a single closed form that covers all four cases continuously (and
-          // is clamped so the crease can't reach past the clip point), so the polygon further
-          // down never needs to branch on which case it's in.
+          // crease2 below is a single closed form that covers all four cases continuously, so
+          // the polygon further down never needs to branch on which case it's in. Keeping the
+          // crease away from the clip point is fold-drag.ts's job (capFoldSize), not this
+          // formula's — flooring these at the inset instead of 0 would bend the crease.
           --crease-excess-x: max(var(--fold-x) - var(--fold-page-w), 0px);
           --crease-excess-y: max(var(--fold-y) - var(--fold-page-h), 0px);
-          --crease1-x: max(var(--fold-page-w) - var(--fold-x), var(--fold-clip-inset));
+          --crease1-x: max(var(--fold-page-w) - var(--fold-x), 0px);
+          // max() on the divisors: at --fold-x/y 0 (before the reveal animation's delay ends)
+          // the ratio would be 0/0 → NaN, which censors into a polygon missing half the page.
+          // The floor only kicks in when the excess is 0 anyway, so it never changes the shape.
           --crease1-y: clamp(
-            var(--fold-clip-inset),
-            var(--fold-page-h) - var(--fold-y) * (var(--crease-excess-x) / var(--fold-x)),
+            0px,
+            var(--fold-page-h) - var(--fold-y) * (var(--crease-excess-x) / max(var(--fold-x), 1px)),
             var(--fold-page-h)
           );
           --crease2-x: clamp(
-            var(--fold-clip-inset),
-            var(--fold-page-w) - var(--fold-x) * (var(--crease-excess-y) / var(--fold-y)),
+            0px,
+            var(--fold-page-w) - var(--fold-x) * (var(--crease-excess-y) / max(var(--fold-y), 1px)),
             var(--fold-page-w)
           );
-          --crease2-y: max(var(--fold-page-h) - var(--fold-y), var(--fold-clip-inset));
+          --crease2-y: max(var(--fold-page-h) - var(--fold-y), 0px);
 
           // The two corners here (bottom-left, top-right) collapse to zero-area "spikes" when
           // the fold doesn't reach that far — see crease1/crease2 above — so this one polygon
@@ -158,58 +166,68 @@ const pages = await Promise.all(
             var(--crease2-x) var(--crease2-y),
             var(--fold-page-w) 0px
           );
+        }
 
-          & > .paper-fold {
-            width: calc(var(--fold-x));
-            height: calc(var(--fold-y));
+        & > .paper-fold {
+          width: calc(var(--fold-x));
+          height: calc(var(--fold-y));
 
-            clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
+          clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
 
-            border-top-left-radius: $border-radius;
+          border-top-left-radius: $border-radius;
 
-            $angle: atan2(var(--fold-y), var(--fold-x));
-            transform-origin: center;
-            transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(calc(#{$angle}));
+          $angle: atan2(var(--fold-y), var(--fold-x));
+          transform-origin: center;
+          transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(calc(#{$angle}));
 
-            background: inherit;
-            border: inherit;
-            filter: brightness(75%);
+          // The back of the sheet: plain paper, no page texture (this is a sibling of the page,
+          // so it couldn't inherit the page's background even if we wanted the front's texture).
+          background: var(--surface-sunken);
+          border: 1px solid var(--line-strong);
+          filter: brightness(75%);
 
-            position: absolute;
-            right: -1px;
-            bottom: -1px;
-            touch-action: none;
+          position: absolute;
+          right: -1px;
+          bottom: -1px;
+          touch-action: none;
 
-            // While dragging (and briefly during the release settle), fold-drag.ts switches to
-            // this full-size mode and drives clip-path/transform directly via inline styles —
-            // the crease can now wrap around either corner, so it no longer fits in a box
-            // tightly sized to fold-x/fold-y the way the idle state above does.
-            &.paper-fold--active {
-              width: auto;
-              height: auto;
-              inset: 0;
-            }
-
-            &:hover {
-              cursor: grab;
-              filter: brightness(95%);
-            }
-
-            &:active {
-              cursor: grabbing;
-            }
-          }
-
-          & > .paper-clip {
-            position: absolute;
-            left: var(--fold-clip-inset);
-            top: var(--fold-clip-inset);
-            translate: -50% -50%;
-            width: 1.75em;
+          // While dragging (and briefly during the release settle), fold-drag.ts switches to
+          // this full-size mode and drives clip-path/transform directly via inline styles —
+          // the crease can now wrap around either corner, so it no longer fits in a box
+          // tightly sized to fold-x/fold-y the way the idle state above does.
+          &.paper-fold--active {
+            width: auto;
             height: auto;
-            pointer-events: none;
-            filter: drop-shadow(0 1px 1px rgb(0 0 0 / 30%));
+            inset: 0;
+            // Full-size, so every box corner coincides with a page corner: rounding them all
+            // rounds whichever folded-over page corners the hole polygon includes (the clip
+            // vertices there are sharp, but they pass exactly through the box corners, so the
+            // rounded painting shows through).
+            border-radius: $border-radius;
           }
+
+          &:hover {
+            cursor: grab;
+            filter: brightness(95%);
+          }
+
+          &:active {
+            cursor: grabbing;
+          }
+        }
+
+        & > .paper-clip {
+          position: absolute;
+          left: var(--fold-clip-inset);
+          top: 0;
+          // Straddle the top edge at the pin point's x, the way a real clip slides over the
+          // sheet — its lower loops cover the (inset, inset) pivot the crease is capped at.
+          translate: -50% -40%;
+          rotate: -8deg;
+          width: 2.5em;
+          height: auto;
+          pointer-events: none;
+          filter: drop-shadow(0 1px 1px rgb(0 0 0 / 30%));
         }
 
         &:has(> .paper-fold:hover) {
