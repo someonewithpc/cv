@@ -212,64 +212,6 @@ const pages = await Promise.all(
           );
         }
 
-        & > .paper-fold {
-          width: calc(var(--fold-x));
-          height: calc(var(--fold-y));
-
-          clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
-
-          border-top-left-radius: $border-radius;
-
-          $angle: atan2(var(--fold-y), var(--fold-x));
-          transform-origin: center;
-          transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(calc(#{$angle}));
-
-          // The back of the sheet: plain paper, no page texture. --paper-surface is the page's
-          // own resolved background color, lifted onto the sheet by fold-drag.ts — as a sibling
-          // of the page this element can't see background definitions scoped inside it (e.g. a
-          // blueprint page redefining its surface).
-          background: var(--paper-surface, var(--surface-sunken));
-          border: 1px solid var(--line-strong);
-          filter: brightness(75%);
-          transition: filter 200ms ease-out;
-
-          position: absolute;
-          right: -1px;
-          bottom: -1px;
-          touch-action: none;
-
-          // While dragging (and briefly during the release settle), fold-drag.ts switches to
-          // this full-size mode and drives clip-path/transform directly via inline styles —
-          // the crease can now wrap around either corner, so it no longer fits in a box
-          // tightly sized to fold-x/fold-y the way the idle state above does.
-          &.paper-fold--active {
-            width: auto;
-            height: auto;
-            inset: 0;
-            // Full-size, so every box corner coincides with a page corner: rounding them all
-            // rounds whichever folded-over page corners the hole polygon includes (the clip
-            // vertices there are sharp, but they pass exactly through the box corners, so the
-            // rounded painting shows through).
-            border-radius: $border-radius;
-          }
-
-          &:hover {
-            cursor: grab;
-            filter: brightness(95%);
-          }
-
-          &:active {
-            cursor: grabbing;
-          }
-
-          // The drag has folded past the page's center — releasing here flips the page onto the
-          // back of the stack. Lift the flap's brightness (past the hover value, which applies
-          // throughout a drag) so crossing the threshold reads as a state change.
-          &.paper-fold--will-flip {
-            filter: brightness(115%) drop-shadow(0 0 0.5em rgb(0 0 0 / 35%));
-          }
-        }
-
         // Invisible handle over the folded-back top-left corner — grabbing it (once the stack
         // has flipped, see [data-paper-flipped] below) drags the previous page back over the
         // front.
@@ -366,6 +308,67 @@ const pages = await Promise.all(
       // sizes instead of popping when the attribute toggles.
       &:not(.paper-front) > * {
         clip-path: polygon(var(--fold-back-x) 0px, 0px var(--fold-back-y), 0px 100%, 100% 100%, 100% 0px);
+      }
+
+      // The fold flap. Styled at this level rather than under .paper-front: a committed flip
+      // restacks the pages at the fold's furthest reach, and the flap then rides the flipped
+      // sheet — no longer the front page — while it folds back down behind the stack.
+      & > .paper-fold {
+        width: calc(var(--fold-x));
+        height: calc(var(--fold-y));
+
+        clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
+
+        border-top-left-radius: $border-radius;
+
+        $angle: atan2(var(--fold-y), var(--fold-x));
+        transform-origin: center;
+        transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(calc(#{$angle}));
+
+        // The back of the sheet: plain paper, no page texture. --paper-surface is the page's
+        // own resolved background color, lifted onto the sheet by fold-drag.ts — as a sibling
+        // of the page this element can't see background definitions scoped inside it (e.g. a
+        // blueprint page redefining its surface).
+        background: var(--paper-surface, var(--surface-sunken));
+        border: 1px solid var(--line-strong);
+        filter: brightness(75%);
+        transition: filter 200ms ease-out;
+
+        position: absolute;
+        right: -1px;
+        bottom: -1px;
+        touch-action: none;
+
+        // While dragging (and briefly during the release settle), fold-drag.ts switches to
+        // this full-size mode and drives clip-path/transform directly via inline styles —
+        // the crease can now wrap around either corner, so it no longer fits in a box
+        // tightly sized to fold-x/fold-y the way the idle state above does.
+        &.paper-fold--active {
+          width: auto;
+          height: auto;
+          inset: 0;
+          // Full-size, so every box corner coincides with a page corner: rounding them all
+          // rounds whichever folded-over page corners the hole polygon includes (the clip
+          // vertices there are sharp, but they pass exactly through the box corners, so the
+          // rounded painting shows through).
+          border-radius: $border-radius;
+        }
+
+        &:hover {
+          cursor: grab;
+          filter: brightness(95%);
+        }
+
+        &:active {
+          cursor: grabbing;
+        }
+
+        // The drag has folded past the page's center — releasing here flips the page onto the
+        // back of the stack. Lift the flap's brightness (past the hover value, which applies
+        // throughout a drag) so crossing the threshold reads as a state change.
+        &.paper-fold--will-flip {
+          filter: brightness(115%) drop-shadow(0 0 0.5em rgb(0 0 0 / 35%));
+        }
       }
     }
 
