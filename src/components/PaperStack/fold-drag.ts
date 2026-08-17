@@ -67,14 +67,14 @@ const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--
 
 const currentBackFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-back-x'), y: readLength(sheet, '--fold-back-y') });
 
-// The page content — the sibling whose clip-path cuts the holes (the flaps, clip, and hint ride
+// The page content — the sibling whose clip-path cuts the holes (the flap, clip, and hint ride
 // above that cut, see index.astro).
 const sectionOf = (sheet: HTMLElement): HTMLElement =>
-  sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-fold-back, .paper-clip, .paper-flip-hint)')!;
+  sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-clip, .paper-flip-hint)')!;
 
-// The flaps paint the back of the sheet in the page's own color, but as siblings of the page
-// content they can't see background definitions scoped inside it (e.g. a blueprint page
-// redefining its surface variable), so the resolved color is lifted onto the sheet for them.
+// The flap paints the back of the sheet in the page's own color, but as a sibling of the page
+// content it can't see background definitions scoped inside it (e.g. a blueprint page
+// redefining its surface variable), so the resolved color is lifted onto the sheet for it.
 const syncPaperSurface = (sheet: HTMLElement, section: HTMLElement): void => {
   sheet.style.setProperty('--paper-surface', getComputedStyle(section).backgroundColor);
 };
@@ -305,7 +305,6 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
 const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
   const pages = [...stack.children] as HTMLElement[];
-  const back = sheet.querySelector<HTMLElement>('.paper-fold-back')!;
   const clip = sheet.querySelector<HTMLElement>('.paper-clip')!;
   const hint = sheet.querySelector<HTMLElement>('.paper-flip-hint')!;
 
@@ -327,7 +326,7 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   }
   sheet.classList.remove('paper-front');
   next.classList.add('paper-front');
-  next.append(back, clip, fold, hint);
+  next.append(clip, fold, hint);
   stack.dataset.paperFlipped = '';
   syncPaperSurface(next, sectionOf(next));
 };
@@ -371,28 +370,27 @@ const observeFoldPageSizes = (stack: HTMLElement): void => {
   for (const page of stack.children) observer.observe(page);
 };
 
-// Outside a drag, approaching the front page's top-left corner grows the back-fold corner
-// toward the pointer, teasing the drag-back gesture. Inline sizes override the CSS resting
-// values; clearing them lets the sheet's transition ease the corner back down.
+// Outside a drag, approaching the front page's top-left corner grows the folded-back corner
+// toward the pointer, teasing the drag-back gesture. Inline sizes on the stack override the
+// [data-paper-flipped] resting values; clearing them lets the stack's transition ease the
+// corner back down.
 const attachBackFoldTease = (stack: HTMLElement, isDragging: () => boolean) => {
   const clearTease = () => {
-    const front = stack.querySelector<HTMLElement>('.paper-front');
-    front?.style.removeProperty('--fold-back-x');
-    front?.style.removeProperty('--fold-back-y');
+    stack.style.removeProperty('--fold-back-x');
+    stack.style.removeProperty('--fold-back-y');
   };
 
   stack.addEventListener('pointermove', (e) => {
     if (!('paperFlipped' in stack.dataset) || isDragging()) return;
-    const front = stack.querySelector<HTMLElement>('.paper-front')!;
-    const corner = front.getBoundingClientRect();
+    const corner = stack.querySelector<HTMLElement>('.paper-front')!.getBoundingClientRect();
     const distance = Math.hypot(e.clientX - corner.left, e.clientY - corner.top);
     if (distance >= BACK_TEASE_RADIUS) {
       clearTease();
       return;
     }
     const grow = 1 + (BACK_TEASE_GROWTH - 1) * (1 - distance / BACK_TEASE_RADIUS);
-    front.style.setProperty('--fold-back-x', `${FOLD_REVEAL_END_PX.x * grow}px`);
-    front.style.setProperty('--fold-back-y', `${FOLD_REVEAL_END_PX.y * grow}px`);
+    stack.style.setProperty('--fold-back-x', `${FOLD_REVEAL_END_PX.x * grow}px`);
+    stack.style.setProperty('--fold-back-y', `${FOLD_REVEAL_END_PX.y * grow}px`);
   });
   stack.addEventListener('pointerleave', clearTease);
 
