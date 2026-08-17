@@ -91,7 +91,7 @@ const pages = await Promise.all(
 
 <Tag data-paper-stack-root data-paper-stack class={className}>
   {pages.map((page, index) => (
-    <div style={`--page-index: ${index + 1}`} set:html={page + (index === 0 ? foldFront : '')} />
+    <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={page + (index === 0 ? foldFront : '')} />
   ))}
 </Tag>
 
@@ -108,7 +108,7 @@ const pages = await Promise.all(
     $border-radius: calc(0.5em + 1px);
 
     // Where a paper clip would pin the page down — the splay pivots around it, and the
-    // fold's crease can approach it but never cross it (see &:first-child below).
+    // fold's crease can approach it but never cross it (see &.paper-front below).
     --fold-clip-inset: 1.5em;
 
     & > div {
@@ -121,7 +121,10 @@ const pages = await Promise.all(
       // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out;
 
-      &:first-child {
+      // The front page. A class rather than :first-child: fold-drag.ts hands it to the next
+      // page when a completed drag flips this one onto the back of the stack, without touching
+      // DOM order — so the rotate transition above can animate every page's re-splay.
+      &.paper-front {
         // The page content, but not the fold flap / paper clip riding on top of it: clip-path
         // clips descendants too, and both of those must be able to overhang the page.
         > :not(.paper-fold, .paper-clip) {
