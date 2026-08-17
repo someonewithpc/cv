@@ -32,13 +32,13 @@ const flipHint = `<svg class="paper-flip-hint" viewBox="0 0 24 24" fill="none" x
   <path d="M18.5 1.5 v4.5 h-4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
 </svg>`;
 
-// The fold flap, paper clip, and flip hint are siblings of the page content, not children: the
-// page's crease clip-path (and the page's own overflow) clips descendants, and these elements
-// must be able to overhang the page — the flap when a large fold wraps past an edge, the clip
-// because it straddles the page's top edge. Order matters: the flap comes after the clip so
-// the folded-over paper covers its wire when dragged across it, and the hint rides above
-// everything.
-const foldFront = `${paperClip}<div class="paper-fold"></div>${flipHint}`;
+// The fold flap, paper clip, back-grab handle, and flip hint are siblings of the page content,
+// not children: the page's crease clip-path (and the page's own overflow) clips descendants,
+// and these elements must be able to overhang the page — the flap when a large fold wraps past
+// an edge, the clip because it straddles the page's top edge. Order matters: the flap comes
+// after the clip so the folded-over paper covers its wire when dragged across it, and the hint
+// rides above everything.
+const foldFront = `${paperClip}<div class="paper-fold"></div><div class="paper-back-grab"></div>${flipHint}`;
 
 const pages = await Promise.all(
   Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index])),
@@ -136,9 +136,10 @@ const pages = await Promise.all(
       // page when a completed drag flips this one onto the back of the stack, without touching
       // DOM order — so the rotate transition above can animate every page's re-splay.
       &.paper-front {
-        // The page content, but not the fold flap / paper clip / flip hint riding on top of
-        // it: clip-path clips descendants too, and those must be able to overhang the page.
-        > :not(.paper-fold, .paper-clip, .paper-flip-hint) {
+        // The page content, but not the fold flap / paper clip / grab handle / flip hint riding
+        // on top of it: clip-path clips descendants too, and those must be able to overhang the
+        // page.
+        > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-flip-hint) {
           // --fold-page-w/-h (actual pixel size) are kept in sync by fold-drag.ts via
           // ResizeObserver on this div — needed because the crease's excess/ratio
           // terms below mix lengths and can't be computed against a bare percentage
@@ -244,6 +245,24 @@ const pages = await Promise.all(
           }
         }
 
+        // Invisible handle over the folded-back top-left corner — grabbing it (once the stack
+        // has flipped, see [data-paper-flipped] below) drags the previous page back over the
+        // front.
+        & > .paper-back-grab {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: calc(var(--fold-back-x) + 1em);
+          height: calc(var(--fold-back-y) + 1em);
+          touch-action: none;
+          cursor: grab;
+          display: none;
+
+          &:active {
+            cursor: grabbing;
+          }
+        }
+
         // Flip-commit feedback: fades in riding the flap (fold-drag.ts keeps left/top at the
         // flap's visual center every drag frame) while releasing would flip the page (see
         // .paper-fold--will-flip above).
@@ -309,10 +328,14 @@ const pages = await Promise.all(
     }
 
     // Once a page has been flipped to the back there is a previous page to go back to: the
-    // stack's top-left corner rests folded away behind.
+    // stack's top-left corner rests folded away behind, and the grab handle over it activates.
     &[data-paper-flipped] {
       --fold-back-x: 2cm;
       --fold-back-y: 1cm;
+
+      > .paper-front > .paper-back-grab {
+        display: block;
+      }
     }
   }
 }
