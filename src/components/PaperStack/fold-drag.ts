@@ -339,12 +339,12 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   });
 };
 
-// Moves the front page to the back of the stack: every page's --page-index shifts down one (the
-// splay rotation and paint order both follow it, with the rotate transition re-splaying the
-// pages around the shared pin), and the paper-front class plus the fold and clip elements move
-// to the new front page — handing the class over restarts its fold-reveal animations. The
-// flipped page's inline fold state is fully cleared so its next turn at the front starts fresh.
-const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
+// The first half of committing a flip: every page's --page-index shifts down one (the splay
+// rotation and paint order both follow it, with the rotate transition re-splaying the pages
+// around the shared pin), and the paper-front class plus the clip elements move to the new front
+// page — handing the class over restarts its fold-reveal animations. The fold itself stays
+// behind on the flipped page so finishFlip can fold it back down behind the stack.
+const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
   const pages = [...stack.children] as HTMLElement[];
   const under = sheet.querySelector<HTMLElement>('.paper-clip-under')!;
@@ -352,16 +352,7 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   const grab = sheet.querySelector<HTMLElement>('.paper-back-grab')!;
   const hint = sheet.querySelector<HTMLElement>('.paper-flip-hint')!;
 
-  fold.classList.remove('paper-fold--active', 'paper-fold--will-flip');
-  section.style.clipPath = '';
-  fold.style.clipPath = '';
-  fold.style.transform = '';
-  fold.style.transformOrigin = '';
-  sheet.style.removeProperty('--fold-x');
-  sheet.style.removeProperty('--fold-y');
-  sheet.style.removeProperty('--paper-surface');
-  sheet.style.animationName = '';
-
+  fold.classList.remove('paper-fold--will-flip');
   const next = pages.find((page) => pageIndex(page) === 2)!;
   for (const page of pages) {
     const index = pageIndex(page);
@@ -371,9 +362,26 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   next.classList.add('paper-front');
   // The clip's back bar goes before the page content so the page hides it (see index.astro)
   next.prepend(under);
-  next.append(clip, fold, grab, hint);
+  next.append(clip, grab, hint);
   updateFlippedState(stack);
   syncPaperSurface(next, sectionOf(next));
+};
+
+// The second half: the flipped page's inline fold state is fully cleared — so its next turn at
+// the front starts fresh — and the fold rejoins the new front page's companions.
+const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
+  const stack = sheet.parentElement!;
+  fold.classList.remove('paper-fold--active');
+  section.style.clipPath = '';
+  fold.style.clipPath = '';
+  fold.style.transform = '';
+  fold.style.transformOrigin = '';
+  sheet.style.removeProperty('--fold-x');
+  sheet.style.removeProperty('--fold-y');
+  sheet.style.removeProperty('--paper-surface');
+  sheet.style.animationName = '';
+  const front = stack.querySelector<HTMLElement>('.paper-front')!;
+  front.insertBefore(fold, front.querySelector('.paper-back-grab'));
 };
 
 // Inverse of a flip: promotes the page most recently sent to the back (the highest
@@ -405,8 +413,9 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
 // A committed flip: glide the tip the rest of the way out to the pin's reach circle — radially
 // outward from the pin through wherever the tip is now, so the flip keeps going the way the
 // drag was headed (a corner dragged up over the top edge finishes flipping over the top, not
-// sideways) — then send the page to the back of the stack. Any rim point is a full fold: the
-// crease passes through the pin there.
+// sideways). Any rim point is a full fold: the crease passes through the pin there. Restacking
+// happens at the rim, and then the flipped sheet — now behind the stack — visibly folds back
+// down, its tip gliding home to the page corner, before its fold state is cleared for good.
 const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
   const { width, height } = sheet.getBoundingClientRect();
   const pin = pinOf(sheet, width, height);
@@ -419,7 +428,20 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   if (length < 1) dir = { x: pin.x, y: pin.y };
   const scale = reach / Math.hypot(dir.x, dir.y);
   const to = { x: pin.x + dir.x * scale, y: pin.y + dir.y * scale };
-  return glideFoldTip(sheet, section, fold, to, 300, () => sendToBack(sheet, section, fold));
+  let settling = false;
+  let cancelGlide = glideFoldTip(sheet, section, fold, to, 300, () => {
+    restack(sheet, fold);
+    settling = true;
+    cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, () => {
+      settling = false;
+      finishFlip(sheet, section, fold);
+    });
+  });
+  // A re-grab mid-fold-back-down fast-forwards to the settled end state
+  return () => {
+    cancelGlide();
+    if (settling) finishFlip(sheet, section, fold);
+  };
 };
 
 const shouldFlip = (sheet: HTMLElement): boolean => {
@@ -502,13 +524,15 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // Grabbing mid-settle freezes the fold where it is and takes over from there — and a grab
+    // mid-fold-back-down fast-forwards that flip first, so the fold is back on the front page
+    // before the parent is read.
+    cancelSettle();
     sheet = fold.parentElement!;
     section = sectionOf(sheet);
     syncPaperSurface(sheet, section);
     clearTease();
 
-    // Grabbing mid-settle freezes the fold where it is and takes over from there
-    cancelSettle();
     gesture = { pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 1, canceled: false };
     onFoldGrab(sheet, gesture, e);
     try {
