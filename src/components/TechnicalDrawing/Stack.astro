@@ -26,7 +26,7 @@ const totalLayers = Object.keys(layers).length;
 ---
 
 <PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers}>
-  {(index: number, flap: string) => {
+  {(index: number, flap: string, clip: string) => {
     const [id, { name, size, pageStyle, tech }] = Object.entries(layers)[index];
     return (
       <TechnicalDrawingPage
@@ -46,7 +46,7 @@ const totalLayers = Object.keys(layers).length;
         <Fragment slot="aside">
           {Astro.slots.render('aside', [id])}
         </Fragment>
-        <Fragment slot="default" set:html={flap} />
+        <Fragment slot="default" set:html={flap + clip} />
       </TechnicalDrawingPage>
     );
   }}
