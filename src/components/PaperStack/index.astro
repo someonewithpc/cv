@@ -153,7 +153,10 @@ const pages = await Promise.all(
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
       order: calc(-1 * var(--page-index));
-      rotate: calc(#{$per-page-splay} * log(var(--page-index)));
+      // --flip-progress (0..1, set by fold-drag.ts while the front page folds over) unwinds
+      // the splay with the drag: each page eases toward the slot below as the flip advances,
+      // so by the time the stack renumbers there's no rotation left to pop.
+      rotate: calc(#{$per-page-splay} * log(max(var(--page-index) - var(--flip-progress), 1)));
       // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out;
 
