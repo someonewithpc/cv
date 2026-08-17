@@ -329,9 +329,12 @@ const pages = await Promise.all(
 
     // Once a page has been flipped to the back there is a previous page to go back to: the
     // stack's top-left corner rests folded away behind, and the grab handle over it activates.
+    // Pinned paper can only crease through the pin, so the resting cut's edge passes exactly
+    // through the clip's (inset, inset) pivot: intercepts (3c, 1.5c) satisfy c/3c + c/1.5c = 1.
+    // fold-drag.ts's tease keeps the crease in that pinned family, pivoting it around the pin.
     &[data-paper-flipped] {
-      --fold-back-x: 2cm;
-      --fold-back-y: 1cm;
+      --fold-back-x: calc(var(--fold-clip-inset) * 3);
+      --fold-back-y: calc(var(--fold-clip-inset) * 1.5);
 
       > .paper-front > .paper-back-grab {
         display: block;
