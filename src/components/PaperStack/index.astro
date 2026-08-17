@@ -10,11 +10,13 @@ export type Props = {
 const { as: tagName = 'div', class: className, pageCount } = Astro.props;
 const Tag = tagName;
 
-// One gem-clip wire, split at the top bend into its two physical layers. The page's top edge
-// crosses the wire exactly where the bend comes over it (viewBox y=14): everything the "under"
-// path draws below that is the back bar, hidden by the page itself (it renders beneath the page
-// content — see the template), so only the bend peeks over the edge, reading as a clip slid all
-// the way on. The "over" path is the front bar pressing on the page.
+// One gem-clip wire, split at the top bend into its two physical layers. The wire leans with
+// the resting fold-back crease — its outer-left edge runs along that crease, bottoming out at
+// the pin (see --fold-pin-x/-y below) — and the page's slanted top edge crosses it right where
+// the front bar begins: everything the "under" path draws below that is the back bar, hidden by
+// the page itself (it renders beneath the page content — see the template), so only the bend
+// peeks over the edge, reading as a clip slid all the way on. The "over" path is the front bar
+// pressing on the page.
 const clipGradient = (id: string) => `<defs>
     <linearGradient id="${id}" x1="0" y1="0" x2="28" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#f2f4f7" />
@@ -131,9 +133,14 @@ const pages = await Promise.all(
     $per-page-splay: 1.5deg;
     $border-radius: calc(0.5em + 1px);
 
-    // Where a paper clip would pin the page down — the splay pivots around it, and the
-    // fold's crease can approach it but never cross it (see &.paper-front below).
-    --fold-clip-inset: 1.5em;
+    // The folded-back corner's resting crease runs along the paper clip wire's outer-left
+    // edge: intercepts (2.25em, 4.5em), a 1-in-2 lean. The pin — where the wire's edge bottoms
+    // out on that crease, halfway down — is where the paper is held: the splay pivots around
+    // it, and the fold's crease can approach it but never cross it (see fold-drag.ts).
+    --fold-back-rest-x: 2.25em;
+    --fold-back-rest-y: 4.5em;
+    --fold-pin-x: calc(var(--fold-back-rest-x) / 2);
+    --fold-pin-y: calc(var(--fold-back-rest-y) / 2);
 
     // The folded-back top-left corner's size, inherited by every page's clip-path so the whole
     // stack's corner folds behind as one; transitioning it here is what eases the resting size
@@ -143,7 +150,7 @@ const pages = await Promise.all(
     & > div {
       grid-area: content;
       border-radius: $border-radius;
-      transform-origin: var(--fold-clip-inset) var(--fold-clip-inset);
+      transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
       order: calc(-1 * var(--page-index));
       rotate: calc(#{$per-page-splay} * log(var(--page-index)));
@@ -170,8 +177,8 @@ const pages = await Promise.all(
           // whether fold-x exceeds the page width and/or fold-y exceeds its height; crease1/
           // crease2 below is a single closed form that covers all four cases continuously, so
           // the polygon further down never needs to branch on which case it's in. Keeping the
-          // crease away from the clip point is fold-drag.ts's job (capFoldSize), not this
-          // formula's — flooring these at the inset instead of 0 would bend the crease.
+          // crease away from the pin is fold-drag.ts's job (the rim clamp in onFoldDrag), not
+          // this formula's — flooring these above 0 would bend the crease.
           --crease-excess-x: max(var(--fold-x) - var(--fold-page-w), 0px);
           --crease-excess-y: max(var(--fold-y) - var(--fold-page-h), 0px);
           --crease1-x: max(var(--fold-page-w) - var(--fold-x), 0px);
@@ -302,37 +309,29 @@ const pages = await Promise.all(
           scale: 1;
         }
 
-        // Both wire layers ride in full-page wrappers carrying the folded-back corner cut, so
-        // once the stack has flipped the fold edge crosses in front of the wire — the clip
-        // sits behind the fold, its bars vanishing under the cut's edge. The polygon keeps the
-        // strip above the page's top edge: nothing occludes the bend arcing over up there. At
-        // cut size 0 the notch vertices collapse and everything is visible.
+        // Both wire layers ride in full-page wrappers so the svg can position against the page
+        // box. No clipping: the folded-back cut's edge runs along the wire's outer-left edge
+        // (see --fold-back-rest-x/-y), so the cut never crosses the wire.
         & > .paper-clip,
         & > .paper-clip-under {
           position: absolute;
           inset: 0;
           pointer-events: none;
-          clip-path: polygon(
-            0px -3em,
-            100% -3em,
-            100% 100%,
-            0px 100%,
-            0px var(--fold-back-y),
-            var(--fold-back-x) 0px,
-            0px 0px
-          );
         }
 
         & > .paper-clip > svg,
         & > .paper-clip-under > svg {
           position: absolute;
-          left: var(--fold-clip-inset);
-          top: 0;
-          // Fully inserted: the page's top edge crosses the wire exactly at its top bend
-          // (viewBox y 14 of 64), so only the bend arcs over the edge. The wire's lower half
-          // covers the (inset, inset) pivot the crease is capped at.
-          translate: -50% -21.875%;
-          rotate: -6deg;
+          left: var(--fold-pin-x);
+          top: var(--fold-pin-y);
+          // The wire's outer-left edge lies on the resting fold-back crease: its bottom point
+          // (viewBox 3.5, 50 → 12.5%, 78.125% of the box) sits on the pin, and the lean
+          // matches the crease's 1-in-2 slope (atan(1/2) from vertical). Fully inserted: the
+          // page's cut top edge crosses the wire below its top bend, so only the bend arcs
+          // over the edge.
+          translate: -12.5% -78.125%;
+          transform-origin: 12.5% 78.125%;
+          rotate: 26.565deg;
           width: 2.25em;
           height: auto;
         }
@@ -372,12 +371,13 @@ const pages = await Promise.all(
 
     // Once a page has been flipped to the back there is a previous page to go back to: the
     // stack's top-left corner rests folded away behind, and the grab handle over it activates.
-    // Pinned paper can only crease through the pin, so the resting cut's edge passes exactly
-    // through the clip's (inset, inset) pivot: intercepts (3c, 1.5c) satisfy c/3c + c/1.5c = 1.
-    // fold-drag.ts's tease keeps the crease in that pinned family, pivoting it around the pin.
+    // The resting cut is the crease the paper clip pins: it runs along the wire's outer-left
+    // edge, passing through the pin (the pin sits halfway down it, so pin = rest/2 satisfies
+    // the crease equation exactly). fold-drag.ts's tease keeps the crease in that pinned
+    // family, pivoting it around the pin.
     &[data-paper-flipped] {
-      --fold-back-x: calc(var(--fold-clip-inset) * 3);
-      --fold-back-y: calc(var(--fold-clip-inset) * 1.5);
+      --fold-back-x: var(--fold-back-rest-x);
+      --fold-back-y: var(--fold-back-rest-y);
 
       > .paper-front > .paper-back-grab {
         display: block;
