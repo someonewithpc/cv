@@ -1,4 +1,6 @@
 ---
+import flipHint from './assets/flip-hint.svg?raw';
+
 export type Props = {
   /** Tag name for the stack wrapper element. */
   as?: string;
@@ -44,11 +46,6 @@ const paperClipOver = `<svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3
     stroke-linecap="round"
   />
   ${clipGradient('paper-clip-over-gradient')}
-</svg>`;
-
-const flipHint = `<svg class="paper-flip-hint" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M20.5 12 a8.5 8.5 0 1 1 -2.6 -6.1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-  <path d="M18.5 1.5 v4.5 h-4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
 </svg>`;
 
 // The fold flap, paper clip, back-grab handle, and flip hint are siblings of the page content,
