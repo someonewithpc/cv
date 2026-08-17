@@ -18,50 +18,50 @@ const pages = await Promise.all(
 <noscript>
   <Tag data-paper-stack-root class={className} set:html={pages.join('')} />
   <style lang="scss" is:global>
-  [data-paper-stack-root] {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: thin;
-    scroll-behavior: smooth;
+    [data-paper-stack-root] {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      scroll-behavior: smooth;
 
-    display: flex;
-    flex-direction: row;
-    position: relative;
+      display: flex;
+      flex-direction: row;
+      position: relative;
 
-    > * {
-      flex: 0 0 100%;
-      // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
-      // scrollWidth, leaving a permanent horizontal scrollbar on every page.
-      overflow: clip;
-      scroll-snap-align: center;
+      > * {
+        flex: 0 0 100%;
+        // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
+        // scrollWidth, leaving a permanent horizontal scrollbar on every page.
+        overflow: clip;
+        scroll-snap-align: center;
+      }
+
+      @supports selector(::scroll-button(right)) {
+        &::scroll-button(*) {
+          position-anchor: --technical-drawing-stack;
+          position: absolute;
+          top: anchor(top);
+        }
+
+        &::scroll-button(left) {
+          content: "⬅" / "Scroll Left";
+          left: anchor(left);
+        }
+
+        &::scroll-button(right) {
+          content: "⮕" / "Scroll Right";
+          right: anchor(right);
+        }
+
+        &::scroll-button(*):focus-visible {
+          outline-offset: 0.25rem;
+        }
+      }
     }
-
-    @supports selector(::scroll-button(right)) {
-      &::scroll-button(*) {
-        position-anchor: --technical-drawing-stack;
-        position: absolute;
-        top: anchor(top);
-      }
-
-      &::scroll-button(left) {
-        content: "⬅" / "Scroll Left";
-        left: anchor(left);
-      }
-
-      &::scroll-button(right) {
-        content: "⮕" / "Scroll Right";
-        right: anchor(right);
-      }
-
-      &::scroll-button(*):focus-visible {
-        outline-offset: 0.25rem;
-      }
+    [data-paper-stack] {
+      display: none;
     }
-  }
-  [data-paper-stack] {
-    display: none;
-  }
   </style>
 </noscript>
 
@@ -115,19 +115,28 @@ const pages = await Promise.all(
           position: absolute;
           right: -1px;
           bottom: -1px;
+          touch-action: none;
 
           &:hover {
             cursor: grab;
-            background: magenta;
+            filter: brightness(95%);
+          }
+
+          &:active {
+            cursor: grabbing;
           }
         }
 
+        &:has(> .paper-fold:hover) {
+          animation-play-state: paused;
+        }
+
         animation:
-          500ms 500ms ease-in-out inital-fold-reveal 1 forwards,
+          500ms 500ms ease-in-out initial-fold-reveal 1 forwards,
           7.5s 1.5s ease-in-out fold-reveal-pulse infinite alternate
         ;
 
-        @keyframes inital-fold-reveal {
+        @keyframes initial-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }
           to { --fold-x: 2cm; --fold-y: 1cm; }
         }
@@ -143,29 +152,6 @@ const pages = await Promise.all(
 </style>
 
 <script>
-var inited = false;
-
-function init() {
-  if (inited) return;
-  inited = true;
-
-  ['x', 'y'].forEach((name) => {
-    CSS.registerProperty({
-      name: '--fold-' + name,
-      syntax: '<length>',
-      inherits: true,
-      initialValue: '0px',
-    });
-  });
-
-  CSS.registerProperty({
-    name: '--page-index',
-    syntax: '<number>',
-    inherits: true,
-    initialValue: '1',
-  });
-}
-
-document.addEventListener('DOMContentLoaded', init);
-if (document.readyState !== 'loading') { init(); }
+  import { initPaperStackFold } from './fold-drag';
+  initPaperStackFold();
 </script>
