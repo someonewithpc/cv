@@ -77,7 +77,7 @@ const currentBackFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet,
 // The page content — the sibling whose clip-path cuts the holes (the flap, clip, grab handle,
 // and hint ride above that cut, see index.astro).
 const sectionOf = (sheet: HTMLElement): HTMLElement =>
-  sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-flip-hint)')!;
+  sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)')!;
 
 // The flap paints the back of the sheet in the page's own color, but as a sibling of the page
 // content it can't see background definitions scoped inside it (e.g. a blueprint page
@@ -336,6 +336,7 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
 const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
   const pages = [...stack.children] as HTMLElement[];
+  const under = sheet.querySelector<HTMLElement>('.paper-clip-under')!;
   const clip = sheet.querySelector<HTMLElement>('.paper-clip')!;
   const grab = sheet.querySelector<HTMLElement>('.paper-back-grab')!;
   const hint = sheet.querySelector<HTMLElement>('.paper-flip-hint')!;
@@ -357,6 +358,8 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   }
   sheet.classList.remove('paper-front');
   next.classList.add('paper-front');
+  // The clip's back bar goes before the page content so the page hides it (see index.astro)
+  next.prepend(under);
   next.append(clip, fold, grab, hint);
   updateFlippedState(stack);
   syncPaperSurface(next, sectionOf(next));
@@ -370,6 +373,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   const pages = [...stack.children] as HTMLElement[];
   const front = pages.find((page) => pageIndex(page) === 1)!;
   const prev = pages.find((page) => pageIndex(page) === pages.length)!;
+  const under = front.querySelector<HTMLElement>('.paper-clip-under')!;
   const clip = front.querySelector<HTMLElement>('.paper-clip')!;
   const fold = front.querySelector<HTMLElement>('.paper-fold')!;
   const grab = front.querySelector<HTMLElement>('.paper-back-grab')!;
@@ -381,6 +385,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   }
   front.classList.remove('paper-front');
   prev.classList.add('paper-front');
+  prev.prepend(under);
   prev.append(clip, fold, grab, hint);
   syncPaperSurface(prev, sectionOf(prev));
   return prev;
