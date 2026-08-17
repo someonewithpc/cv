@@ -58,6 +58,13 @@ const readLength = (el: HTMLElement, name: string): number => parseFloat(getComp
 
 const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-x'), y: readLength(sheet, '--fold-y') });
 
+// The flap paints the back of the sheet in the page's own color, but as a sibling of the page
+// content it can't see background definitions scoped inside it (e.g. a blueprint page
+// redefining its surface variable), so the resolved color is lifted onto the sheet for it.
+const syncPaperSurface = (sheet: HTMLElement, section: HTMLElement): void => {
+  sheet.style.setProperty('--paper-surface', getComputedStyle(section).backgroundColor);
+};
+
 // The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
 // (given relative to that corner) — the unique line folding one onto the other. Splitting the
 // page rectangle against it (single-edge Sutherland-Hodgman, both sides in one pass) covers
@@ -246,6 +253,7 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   fold.style.transformOrigin = '';
   sheet.style.removeProperty('--fold-x');
   sheet.style.removeProperty('--fold-y');
+  sheet.style.removeProperty('--paper-surface');
   sheet.style.animationName = '';
 
   const pageIndex = (page: HTMLElement) => parseFloat(page.style.getPropertyValue('--page-index'));
@@ -257,6 +265,7 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   sheet.classList.remove('paper-front');
   next.classList.add('paper-front');
   next.append(clip, fold);
+  syncPaperSurface(next, next.querySelector<HTMLElement>(':scope > :not(.paper-fold):not(.paper-clip)')!);
 };
 
 // A committed flip: glide the tip the rest of the way to the far side of the pin's reach circle
@@ -313,6 +322,8 @@ const attachFoldDrag = (fold: HTMLElement) => {
   let gesture: FoldGesture | null = null;
   let cancelSettle: () => void = () => {};
 
+  syncPaperSurface(sheet, section);
+
   fold.addEventListener('pointerdown', (e) => {
     if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
     e.preventDefault();
@@ -321,6 +332,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
     sheet = fold.parentElement!;
     section = sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold):not(.paper-clip)')!;
     clipInset = readLength(sheet, '--fold-clip-inset');
+    syncPaperSurface(sheet, section);
 
     // Grabbing mid-settle freezes the fold where it is and takes over from there
     cancelSettle();

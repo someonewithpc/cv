@@ -184,9 +184,11 @@ const pages = await Promise.all(
           transform-origin: center;
           transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(calc(#{$angle}));
 
-          // The back of the sheet: plain paper, no page texture (this is a sibling of the page,
-          // so it couldn't inherit the page's background even if we wanted the front's texture).
-          background: var(--surface-sunken);
+          // The back of the sheet: plain paper, no page texture. --paper-surface is the page's
+          // own resolved background color, lifted onto the sheet by fold-drag.ts — as a sibling
+          // of the page this element can't see background definitions scoped inside it (e.g. a
+          // blueprint page redefining its surface).
+          background: var(--paper-surface, var(--surface-sunken));
           border: 1px solid var(--line-strong);
           filter: brightness(75%);
 
