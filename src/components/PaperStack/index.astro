@@ -10,21 +10,38 @@ export type Props = {
 const { as: tagName = 'div', class: className, pageCount } = Astro.props;
 const Tag = tagName;
 
-const paperClip = `<svg class="paper-clip" viewBox="0 0 22 54" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path
-    d="M4 16 V44 a7 7 0 0 0 14 0 V12 a5.25 5.25 0 0 0 -10.5 0 V38 a3.5 3.5 0 0 0 7 0 V16"
-    stroke="url(#paper-clip-gradient)"
-    stroke-width="2.75"
-    stroke-linecap="round"
-  />
-  <defs>
-    <linearGradient id="paper-clip-gradient" x1="0" y1="0" x2="22" y2="54" gradientUnits="userSpaceOnUse">
+// One gem-clip wire, split at the top bend into its two physical layers. The page's top edge
+// crosses the wire exactly where the bend comes over it (viewBox y=14): everything the "under"
+// path draws below that is the back bar, hidden by the page itself (it renders beneath the page
+// content — see the template), so only the bend peeks over the edge, reading as a clip slid all
+// the way on. The "over" path is the front bar pressing on the page.
+const clipGradient = (id: string) => `<defs>
+    <linearGradient id="${id}" x1="0" y1="0" x2="28" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#f2f4f7" />
       <stop offset="40%" stop-color="#aeb4bd" />
       <stop offset="60%" stop-color="#7c828d" />
       <stop offset="100%" stop-color="#d8dbe0" />
     </linearGradient>
-  </defs>
+  </defs>`;
+
+const paperClipUnder = `<div class="paper-clip-under"><svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M5 22 V50 a9 9 0 0 0 18 0 V14 a6.25 6.25 0 0 0 -12.5 0"
+    stroke="url(#paper-clip-under-gradient)"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+  ${clipGradient('paper-clip-under-gradient')}
+</svg></div>`;
+
+const paperClipOver = `<svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M10.5 14 V44 a4 4 0 0 0 8 0 V22"
+    stroke="url(#paper-clip-over-gradient)"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+  ${clipGradient('paper-clip-over-gradient')}
 </svg>`;
 
 const flipHint = `<svg class="paper-flip-hint" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -35,10 +52,11 @@ const flipHint = `<svg class="paper-flip-hint" viewBox="0 0 24 24" fill="none" x
 // The fold flap, paper clip, back-grab handle, and flip hint are siblings of the page content,
 // not children: the page's crease clip-path (and the page's own overflow) clips descendants,
 // and these elements must be able to overhang the page — the flap when a large fold wraps past
-// an edge, the clip because it straddles the page's top edge. Order matters: the flap comes
-// after the clip so the folded-over paper covers its wire when dragged across it, and the hint
-// rides above everything.
-const foldFront = `${paperClip}<div class="paper-fold"></div><div class="paper-back-grab"></div>${flipHint}`;
+// an edge, the clip because its bend wraps over the page's top edge. Order matters: the flap
+// comes after the clip so the folded-over paper covers its wire when dragged across it, and the
+// hint rides above everything. (The wire's back bar is separate — prepended before the page
+// content in the template so the page itself hides it.)
+const foldFront = `<div class="paper-clip">${paperClipOver}</div><div class="paper-fold"></div><div class="paper-back-grab"></div>${flipHint}`;
 
 const pages = await Promise.all(
   Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index])),
@@ -97,7 +115,7 @@ const pages = await Promise.all(
 
 <Tag data-paper-stack-root data-paper-stack class={className}>
   {pages.map((page, index) => (
-    <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={page + (index === 0 ? foldFront : '')} />
+    <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={(index === 0 ? paperClipUnder : '') + page + (index === 0 ? foldFront : '')} />
   ))}
 </Tag>
 
@@ -137,9 +155,9 @@ const pages = await Promise.all(
       // DOM order — so the rotate transition above can animate every page's re-splay.
       &.paper-front {
         // The page content, but not the fold flap / paper clip / grab handle / flip hint riding
-        // on top of it: clip-path clips descendants too, and those must be able to overhang the
-        // page.
-        > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-flip-hint) {
+        // on top of it (or the clip's back bar riding under it): clip-path clips descendants
+        // too, and those must be able to overhang the page.
+        > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
           // --fold-page-w/-h (actual pixel size) are kept in sync by fold-drag.ts via
           // ResizeObserver on this div — needed because the crease's excess/ratio
           // terms below mix lengths and can't be computed against a bare percentage
@@ -284,17 +302,42 @@ const pages = await Promise.all(
           scale: 1;
         }
 
-        & > .paper-clip {
+        // Both wire layers ride in full-page wrappers carrying the folded-back corner cut, so
+        // once the stack has flipped the fold edge crosses in front of the wire — the clip
+        // sits behind the fold, its bars vanishing under the cut's edge. The polygon keeps the
+        // strip above the page's top edge: nothing occludes the bend arcing over up there. At
+        // cut size 0 the notch vertices collapse and everything is visible.
+        & > .paper-clip,
+        & > .paper-clip-under {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          clip-path: polygon(
+            0px -3em,
+            100% -3em,
+            100% 100%,
+            0px 100%,
+            0px var(--fold-back-y),
+            var(--fold-back-x) 0px,
+            0px 0px
+          );
+        }
+
+        & > .paper-clip > svg,
+        & > .paper-clip-under > svg {
           position: absolute;
           left: var(--fold-clip-inset);
           top: 0;
-          // Straddle the top edge at the pin point's x, the way a real clip slides over the
-          // sheet — its lower loops cover the (inset, inset) pivot the crease is capped at.
-          translate: -50% -40%;
-          rotate: -8deg;
-          width: 2em;
+          // Fully inserted: the page's top edge crosses the wire exactly at its top bend
+          // (viewBox y 14 of 64), so only the bend arcs over the edge. The wire's lower half
+          // covers the (inset, inset) pivot the crease is capped at.
+          translate: -50% -21.875%;
+          rotate: -6deg;
+          width: 2.25em;
           height: auto;
-          pointer-events: none;
+        }
+
+        & > .paper-clip > svg {
           filter: drop-shadow(0 1px 2px rgb(0 0 0 / 45%));
         }
 
