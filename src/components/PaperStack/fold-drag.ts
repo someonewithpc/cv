@@ -21,18 +21,6 @@ const rotateVec = (v: Vec, angle: number): Vec => {
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
 };
 
-// The fold's mirror transform is rotate(-θ) scaleX(-1) rotate(θ) — apply R(θ), then flip x,
-// then R(-θ). Self-inverse (T(T(p))=p), which onFoldDrag and updateActiveFlap both lean on.
-const mirrorAcross = (theta: number, v: Vec): Vec => {
-  const rotated = rotateVec(v, theta);
-  return rotateVec({ x: -rotated.x, y: rotated.y }, -theta);
-};
-
-const reflectPoint = (origin: Vec, theta: number, p: Vec): Vec => {
-  const m = mirrorAcross(theta, { x: p.x - origin.x, y: p.y - origin.y });
-  return { x: m.x + origin.x, y: m.y + origin.y };
-};
-
 // .paper-fold's transform carries the box's local (0,0) corner (the visible, grabbable tip)
 // away from its untransformed position, landing here instead (relative to the sheet's
 // bottom-right corner; both fold-x and fold-y grow negative from there):
@@ -62,14 +50,14 @@ const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--
 // The crease is the line through (w-fold-x, h) and (w, h-fold-y), clipped to the page rectangle
 // [0,w]x[0,h] — same two points index.astro's clip-path uses. Which edges it actually crosses
 // depends on whether fold-x > w and/or fold-y > h; this closed form covers all four cases
-// continuously (see index.astro's comment on --crease1-x for the derivation), and clamps so the
-// crease can't reach past the clip-point inset c.
-const computeCrease = (w: number, h: number, fx: number, fy: number, c: number): { crease1: Vec, crease2: Vec } => {
+// continuously (see index.astro's comment on --crease1-x for the derivation). Keeping the
+// crease away from the clip point is capFoldSize's job, not this formula's.
+const computeCrease = (w: number, h: number, fx: number, fy: number): { crease1: Vec, crease2: Vec } => {
   const excessX = Math.max(fx - w, 0);
   const excessY = Math.max(fy - h, 0);
   return {
-    crease1: { x: Math.max(w - fx, c), y: clampNum(h - fy * (excessX / fx), c, h) },
-    crease2: { x: clampNum(w - fx * (excessY / fy), c, w), y: Math.max(h - fy, c) },
+    crease1: { x: Math.max(w - fx, 0), y: clampNum(h - fy * (excessX / fx), 0, h) },
+    crease2: { x: clampNum(w - fx * (excessY / fy), 0, w), y: Math.max(h - fy, 0) },
   };
 };
 
@@ -98,19 +86,21 @@ const holePolygon = (w: number, h: number, crease1: Vec, crease2: Vec): Vec[] =>
 
 // Drives .paper-fold directly while dragging (and while settling back afterwards) instead of
 // index.astro's idle CSS rule, which only fits a fold tightly sized to fold-x/fold-y — no longer
-// enough once the crease can wrap around a corner. Sets a pre-transform clip-path that, after the
-// same mirror transform is applied, exactly fills holePolygon (reflection is self-inverse, so the
-// pre-image is just the hole reflected back).
-const updateActiveFlap = (fold: HTMLElement, w: number, h: number, fx: number, fy: number, c: number): void => {
-  const { crease1, crease2 } = computeCrease(w, h, fx, fy, c);
+// enough once the crease can wrap around a corner. Clips the full-size flap to the hole polygon
+// (always inside the paintable box) and folds it over with a reflection across the crease line
+// itself: rotate(-θ) scaleY(-1) rotate(θ) about any point on the crease. (Not the idle rule's
+// scaleX(-1) — that one reflects across the crease's perpendicular, which only lands right
+// because the idle box-clip trick feeds it the opposite triangle.)
+const updateActiveFlap = (fold: HTMLElement, w: number, h: number, fx: number, fy: number): void => {
+  const { crease1, crease2 } = computeCrease(w, h, fx, fy);
   const hole = holePolygon(w, h, crease1, crease2);
   const theta = Math.atan2(fy, fx);
+  // Midpoint of the crease line's two defining points (w-fx, h) and (w, h-fy)
   const origin = { x: w - fx / 2, y: h - fy / 2 };
-  const preClip = hole.map((p) => reflectPoint(origin, theta, p));
 
-  fold.style.clipPath = `polygon(${preClip.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+  fold.style.clipPath = `polygon(${hole.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
   fold.style.transformOrigin = `${origin.x}px ${origin.y}px`;
-  fold.style.transform = `rotate(${-theta}rad) scaleX(-1) rotate(${theta}rad)`;
+  fold.style.transform = `rotate(${-theta}rad) scaleY(-1) rotate(${theta}rad)`;
 };
 
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
@@ -151,10 +141,10 @@ const onFoldDrag = (sheet: HTMLElement, fold: HTMLElement, gesture: FoldGesture,
   sheet.style.setProperty('--fold-x', `${size.x}px`);
   sheet.style.setProperty('--fold-y', `${size.y}px`);
 
-  updateActiveFlap(fold, contentRect.width, contentRect.height, size.x, size.y, clipInset);
+  updateActiveFlap(fold, contentRect.width, contentRect.height, size.x, size.y);
 };
 
-const settleFold = (sheet: HTMLElement, fold: HTMLElement, clipInset: number) => {
+const settleFold = (sheet: HTMLElement, fold: HTMLElement) => {
   // A grab that never dragged left the animations alone, so there is nothing to hand back
   if (sheet.style.getPropertyValue('--fold-x') === '') return;
 
@@ -168,7 +158,7 @@ const settleFold = (sheet: HTMLElement, fold: HTMLElement, clipInset: number) =>
   const step = () => {
     const rect = sheet.getBoundingClientRect();
     const { x, y } = currentFoldSize(sheet);
-    updateActiveFlap(fold, rect.width, rect.height, x, y, clipInset);
+    updateActiveFlap(fold, rect.width, rect.height, x, y);
     frame = requestAnimationFrame(step);
   };
   frame = requestAnimationFrame(step);
@@ -224,7 +214,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
       fold.setPointerCapture(e.pointerId);
     } catch {
       gesture = null;
-      settleFold(sheet, fold, clipInset);
+      settleFold(sheet, fold);
     }
   });
 
@@ -243,7 +233,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
   fold.addEventListener('lostpointercapture', (e) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
     gesture = null;
-    settleFold(sheet, fold, clipInset);
+    settleFold(sheet, fold);
   });
 };
 
