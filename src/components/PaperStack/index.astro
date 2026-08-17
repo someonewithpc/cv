@@ -270,12 +270,12 @@ const pages = await Promise.all(
           cursor: grab;
         }
 
-        // Flip-commit feedback: fades in next to the paper clip while releasing would flip the
-        // page (see .paper-fold--will-flip above).
+        // Flip-commit feedback: fades in riding the flap (fold-drag.ts keeps left/top at the
+        // flap's visual center every drag frame) while releasing would flip the page (see
+        // .paper-fold--will-flip above).
         & > .paper-flip-hint {
           position: absolute;
-          left: calc(var(--fold-clip-inset) + 1em);
-          top: calc(var(--fold-clip-inset) + 1em);
+          translate: -50% -50%;
           width: 2.5em;
           height: 2.5em;
           color: var(--ink);

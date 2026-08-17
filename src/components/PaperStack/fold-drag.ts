@@ -79,6 +79,19 @@ const syncPaperSurface = (sheet: HTMLElement, section: HTMLElement): void => {
   sheet.style.setProperty('--paper-surface', getComputedStyle(section).backgroundColor);
 };
 
+const polygonCentroid = (pts: Vec[]): Vec => {
+  let doubleArea = 0, cx = 0, cy = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    const cross = a.x * b.y - b.x * a.y;
+    doubleArea += cross;
+    cx += (a.x + b.x) * cross;
+    cy += (a.y + b.y) * cross;
+  }
+  if (doubleArea === 0) return pts[0];
+  return { x: cx / (3 * doubleArea), y: cy / (3 * doubleArea) };
+};
+
 // The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
 // (given relative to that corner) — the unique line folding one onto the other. Splitting the
 // page rectangle against it (single-edge Sutherland-Hodgman, both sides in one pass) covers
@@ -144,6 +157,18 @@ const renderFold = (section: HTMLElement, fold: HTMLElement, w: number, h: numbe
   fold.style.clipPath = poly(hole);
   fold.style.transformOrigin = `${mid.x}px ${mid.y}px`;
   fold.style.transform = `rotate(${angle}rad) scaleY(-1) rotate(${-angle}rad)`;
+
+  // The flip hint rides at the flap's visual center: the hole's centroid pushed through the
+  // same reflection the flap paints with. It's a sheet sibling of the flap, not a child, so it
+  // stays unmirrored.
+  const hint = fold.parentElement!.querySelector<HTMLElement>(':scope > .paper-flip-hint');
+  if (hint) {
+    const centroid = polygonCentroid(hole);
+    const local = rotateVec({ x: centroid.x - mid.x, y: centroid.y - mid.y }, -angle);
+    const reflected = rotateVec({ x: local.x, y: -local.y }, angle);
+    hint.style.left = `${mid.x + reflected.x}px`;
+    hint.style.top = `${mid.y + reflected.y}px`;
+  }
 };
 
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
