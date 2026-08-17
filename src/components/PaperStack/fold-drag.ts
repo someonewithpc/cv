@@ -295,7 +295,6 @@ const glideFoldTip = (
 ): (() => void) => {
   const { width, height } = sheet.getBoundingClientRect();
   const { x: fx, y: fy } = currentFoldSize(sheet);
-  const back = currentBackFoldSize(sheet);
   const pin = pinOf(sheet, width, height);
   const from = foldTipFromSize(fx, fy);
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
@@ -311,7 +310,11 @@ const glideFoldTip = (
     sheet.style.setProperty('--fold-x', `${size.x}px`);
     sheet.style.setProperty('--fold-y', `${size.y}px`);
     if (trackProgress) setFlipProgress(sheet, width, height, pin, tip);
-    renderFold(section, fold, width, height, tip, back);
+    // Read every frame, not once at glide start: restack() begins the stack's own 300ms
+    // --fold-back-x/-y transition from 0 to rest, so a value captured up front would go stale
+    // mid-glide and paint this sheet's flap without the corner cut the front pages are growing,
+    // showing through as a flat grey square.
+    renderFold(section, fold, width, height, tip, currentBackFoldSize(sheet));
 
     if (t < 1) {
       frame = requestAnimationFrame(step);
