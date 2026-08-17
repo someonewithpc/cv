@@ -15,6 +15,8 @@ type FoldGesture = {
 
 // Must match the "to" keyframe of initial-fold-reveal in index.astro
 const FOLD_REVEAL_END = { x: '2cm', y: '1cm' };
+const PX_PER_CM = 96 / 2.54;
+const FOLD_REVEAL_END_PX = { x: 2 * PX_PER_CM, y: 1 * PX_PER_CM };
 
 // How far past the paper's reach (see the pin check in onFoldDrag) the pointer may stray while
 // the fold holds at its limit, before the drag lets go entirely.
@@ -128,9 +130,8 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // knows there's nothing to hand back to the idle CSS rule).
   fold.classList.add('paper-fold--active');
 
-  // Animations and transitions outrank inline styles in the cascade, so they have to be dropped
-  // outright rather than paused — a paused animation still forces its own value
-  sheet.style.transition = '';
+  // Animations outrank inline styles in the cascade, so they have to be dropped outright rather
+  // than paused — a paused animation still forces its own value
   sheet.getAnimations().forEach((animation) => animation.cancel());
 
   const contentRect = sheet.getBoundingClientRect();
@@ -167,36 +168,48 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   renderFold(section, fold, contentRect.width, contentRect.height, tip);
 };
 
-const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement) => {
+// Glides the fold back to its resting dog-ear along a straight tip-space path, easing out like
+// released tension, over a duration scaled to how far the tip has to travel — a cancelled
+// full-page flip takes visibly longer than a small fold nudged loose. Runs on its own rAF clock
+// (rather than a CSS transition on --fold-x/-y) so the path is the tip's, not the crease
+// intercepts' — those diverge wildly for large folds — and returns a cancel handle so a re-grab
+// mid-settle can take over cleanly.
+const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
   // A grab that never dragged left the animations alone, so there is nothing to hand back
-  if (sheet.style.getPropertyValue('--fold-x') === '') return;
+  if (sheet.style.getPropertyValue('--fold-x') === '') return () => {};
 
-  sheet.style.transition = '--fold-x 250ms ease-in-out, --fold-y 250ms ease-in-out';
-  sheet.style.setProperty('--fold-x', FOLD_REVEAL_END.x);
-  sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
+  const { width, height } = sheet.getBoundingClientRect();
+  const { x: fx, y: fy } = currentFoldSize(sheet);
+  const from = foldTipFromSize(fx, fy);
+  const to = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
+  const distance = Math.hypot(from.x - to.x, from.y - to.y);
+  const duration = Math.min(250 + distance / 3, 700);
 
-  // The CSS transition above animates --fold-x/-y directly; keep the page cut and .paper-fold in
-  // step with it every frame until it finishes, then hand rendering back to index.astro's idle
-  // CSS rules.
   let frame = 0;
-  const step = () => {
-    const rect = sheet.getBoundingClientRect();
-    const { x, y } = currentFoldSize(sheet);
-    renderFold(section, fold, rect.width, rect.height, foldTipFromSize(x, y));
-    frame = requestAnimationFrame(step);
-  };
-  frame = requestAnimationFrame(step);
+  const start = performance.now();
+  const step = (now: number) => {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - (1 - t) ** 3;
+    const tip = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
+    const size = foldSizeFromTip(tip.x, tip.y);
+    sheet.style.setProperty('--fold-x', `${size.x}px`);
+    sheet.style.setProperty('--fold-y', `${size.y}px`);
+    renderFold(section, fold, width, height, tip);
 
-  const settling = sheet.getAnimations().filter((animation) => animation instanceof CSSTransition);
-  Promise.all(settling.map((transition) => transition.finished)).then(() => {
-    cancelAnimationFrame(frame);
+    if (t < 1) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
+
+    // Done — hand rendering back to index.astro's idle CSS rules
     fold.classList.remove('paper-fold--active');
     section.style.clipPath = '';
     fold.style.clipPath = '';
     fold.style.transform = '';
     fold.style.transformOrigin = '';
 
-    sheet.style.transition = '';
+    sheet.style.setProperty('--fold-x', FOLD_REVEAL_END.x);
+    sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
     // The drag cancelled initial-fold-reveal, so its forwards-fill is gone for good — leaving
     // --fold-x/-y set here is what now holds FOLD_REVEAL_END during fold-reveal-pulse's own
     // delay. Only the pulse (2nd slot) gets a fresh run; the reveal (1st slot) stays retired,
@@ -204,7 +217,10 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
     sheet.style.animationName = 'none, none';
     void sheet.offsetWidth;
     sheet.style.animationName = 'none, fold-reveal-pulse';
-  }, () => {});
+  };
+  frame = requestAnimationFrame(step);
+
+  return () => cancelAnimationFrame(frame);
 };
 
 // Keeps --fold-page-w/-h in sync with the sheet's actual pixel size — the generalized clip-path
@@ -228,6 +244,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
   // on every pointermove.
   const clipInset = readLength(sheet, '--fold-clip-inset');
   let gesture: FoldGesture | null = null;
+  let cancelSettle: () => void = () => {};
 
   observeFoldPageSize(sheet);
 
@@ -236,13 +253,15 @@ const attachFoldDrag = (fold: HTMLElement) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // Grabbing mid-settle freezes the fold where it is and takes over from there
+    cancelSettle();
     gesture = { pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0 };
     onFoldGrab(sheet, gesture, e);
     try {
       fold.setPointerCapture(e.pointerId);
     } catch {
       gesture = null;
-      settleFold(sheet, section, fold);
+      cancelSettle = settleFold(sheet, section, fold);
     }
   });
 
@@ -261,7 +280,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
   fold.addEventListener('lostpointercapture', (e) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
     gesture = null;
-    settleFold(sheet, section, fold);
+    cancelSettle = settleFold(sheet, section, fold);
   });
 };
 
