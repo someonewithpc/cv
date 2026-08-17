@@ -1,6 +1,6 @@
 // Wires up the draggable "dog-ear" fold on each [data-paper-stack-root]'s front page, and
-// registers the CSS custom properties (--fold-x, --fold-y, --page-index) the stack's styles
-// (in index.astro) key off of.
+// registers the CSS custom properties (--fold-x, --fold-y, --fold-page-w, --fold-page-h,
+// --fold-clip-inset, --page-index) the stack's styles (in index.astro) key off of.
 
 type Vec = { x: number, y: number };
 
@@ -21,10 +21,21 @@ const rotateVec = (v: Vec, angle: number): Vec => {
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
 };
 
-// .paper-fold's transform is rotate(-θ) scaleX(-1) rotate(θ), θ = atan2(h, w) — a reflection,
-// not a rotation. It carries the box's local (0,0) corner (the visible, grabbable tip) away
-// from its untransformed position, landing here instead (relative to the sheet's bottom-right
-// corner; both fold-x and fold-y grow negative from there):
+// The fold's mirror transform is rotate(-θ) scaleX(-1) rotate(θ) — apply R(θ), then flip x,
+// then R(-θ). Self-inverse (T(T(p))=p), which onFoldDrag and updateActiveFlap both lean on.
+const mirrorAcross = (theta: number, v: Vec): Vec => {
+  const rotated = rotateVec(v, theta);
+  return rotateVec({ x: -rotated.x, y: rotated.y }, -theta);
+};
+
+const reflectPoint = (origin: Vec, theta: number, p: Vec): Vec => {
+  const m = mirrorAcross(theta, { x: p.x - origin.x, y: p.y - origin.y });
+  return { x: m.x + origin.x, y: m.y + origin.y };
+};
+
+// .paper-fold's transform carries the box's local (0,0) corner (the visible, grabbable tip)
+// away from its untransformed position, landing here instead (relative to the sheet's
+// bottom-right corner; both fold-x and fold-y grow negative from there):
 //   tipX = -2wh²/r²,  tipY = -2w²h/r²   (r² = w² + h²)
 // The two only coincide on the w=h diagonal.
 const foldTipFromSize = (w: number, h: number): Vec => {
@@ -42,9 +53,64 @@ const foldSizeFromTip = (tx: number, ty: number): Vec => {
   return { x: -d2 / (2 * ntx), y: -d2 / (2 * nty) };
 };
 
-const currentFoldSize = (sheet: HTMLElement): Vec => {
-  const style = getComputedStyle(sheet);
-  return { x: parseFloat(style.getPropertyValue('--fold-x')), y: parseFloat(style.getPropertyValue('--fold-y')) };
+const clampNum = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
+
+const readLength = (el: HTMLElement, name: string): number => parseFloat(getComputedStyle(el).getPropertyValue(name));
+
+const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-x'), y: readLength(sheet, '--fold-y') });
+
+// The crease is the line through (w-fold-x, h) and (w, h-fold-y), clipped to the page rectangle
+// [0,w]x[0,h] — same two points index.astro's clip-path uses. Which edges it actually crosses
+// depends on whether fold-x > w and/or fold-y > h; this closed form covers all four cases
+// continuously (see index.astro's comment on --crease1-x for the derivation), and clamps so the
+// crease can't reach past the clip-point inset c.
+const computeCrease = (w: number, h: number, fx: number, fy: number, c: number): { crease1: Vec, crease2: Vec } => {
+  const excessX = Math.max(fx - w, 0);
+  const excessY = Math.max(fy - h, 0);
+  return {
+    crease1: { x: Math.max(w - fx, c), y: clampNum(h - fy * (excessX / fx), c, h) },
+    crease2: { x: clampNum(w - fx * (excessY / fy), c, w), y: Math.max(h - fy, c) },
+  };
+};
+
+// Cap fold-x/fold-y so the crease can approach the clip point (c,c) — as if a paper clip were
+// pinning the page there — but never cross it: given the drag's current ratio, this is the
+// closed-form fold-x at which the crease line passes exactly through (c,c), derived from the
+// crease's implicit line equation. Scales fold-x/fold-y down together (same direction) when
+// exceeded, so it's a no-op whenever the target is already within bounds.
+const capFoldSize = (w: number, h: number, fx: number, fy: number, c: number): Vec => {
+  if (fx <= 0 || fy <= 0) return { x: fx, y: fy };
+  const fxMax = (h - c) * (fx / fy) + (w - c);
+  if (fx <= fxMax) return { x: fx, y: fy };
+  const scale = fxMax / fx;
+  return { x: fx * scale, y: fy * scale };
+};
+
+// The region folded away (a mirror image of which is what .paper-fold needs to show) — same
+// crease points as the flat polygon in index.astro, going around the other way.
+const holePolygon = (w: number, h: number, crease1: Vec, crease2: Vec): Vec[] => [
+  { x: w, y: h },
+  { x: w, y: 0 },
+  crease2,
+  crease1,
+  { x: 0, y: h },
+];
+
+// Drives .paper-fold directly while dragging (and while settling back afterwards) instead of
+// index.astro's idle CSS rule, which only fits a fold tightly sized to fold-x/fold-y — no longer
+// enough once the crease can wrap around a corner. Sets a pre-transform clip-path that, after the
+// same mirror transform is applied, exactly fills holePolygon (reflection is self-inverse, so the
+// pre-image is just the hole reflected back).
+const updateActiveFlap = (fold: HTMLElement, w: number, h: number, fx: number, fy: number, c: number): void => {
+  const { crease1, crease2 } = computeCrease(w, h, fx, fy, c);
+  const hole = holePolygon(w, h, crease1, crease2);
+  const theta = Math.atan2(fy, fx);
+  const origin = { x: w - fx / 2, y: h - fy / 2 };
+  const preClip = hole.map((p) => reflectPoint(origin, theta, p));
+
+  fold.style.clipPath = `polygon(${preClip.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+  fold.style.transformOrigin = `${origin.x}px ${origin.y}px`;
+  fold.style.transform = `rotate(${-theta}rad) scaleX(-1) rotate(${theta}rad)`;
 };
 
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
@@ -61,7 +127,12 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) =
 // screen-space offset from the tip is rotated by 2(θ₀-θ) as θ moves from its grab-time value θ₀.
 // This frame's θ isn't known until after size is solved for below, so the last solved frame's θ
 // is used instead — a one-frame lag, invisible at drag sampling rates.
-const onFoldDrag = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
+const onFoldDrag = (sheet: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, clipInset: number) => {
+  // Idempotent — only the first move of a gesture actually needs this, but settleFold relies on
+  // it having run at all (a grab that never moved leaves .paper-fold--active untouched, so it
+  // knows there's nothing to hand back to the idle CSS rule).
+  fold.classList.add('paper-fold--active');
+
   // Animations and transitions outrank inline styles in the cascade, so they have to be dropped
   // outright rather than paused — a paused animation still forces its own value
   sheet.style.transition = '';
@@ -71,15 +142,19 @@ const onFoldDrag = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) =
   const { x: wPrev, y: hPrev } = currentFoldSize(sheet);
   const offset = rotateVec(gesture.offset, 2 * (gesture.theta - Math.atan2(hPrev, wPrev)));
 
-  const size = foldSizeFromTip(
+  const target = foldSizeFromTip(
     (e.clientX - offset.x) - contentRect.right,
     (e.clientY - offset.y) - contentRect.bottom,
   );
+
+  const size = capFoldSize(contentRect.width, contentRect.height, target.x, target.y, clipInset);
   sheet.style.setProperty('--fold-x', `${size.x}px`);
   sheet.style.setProperty('--fold-y', `${size.y}px`);
+
+  updateActiveFlap(fold, contentRect.width, contentRect.height, size.x, size.y, clipInset);
 };
 
-const settleFold = (sheet: HTMLElement) => {
+const settleFold = (sheet: HTMLElement, fold: HTMLElement, clipInset: number) => {
   // A grab that never dragged left the animations alone, so there is nothing to hand back
   if (sheet.style.getPropertyValue('--fold-x') === '') return;
 
@@ -87,8 +162,25 @@ const settleFold = (sheet: HTMLElement) => {
   sheet.style.setProperty('--fold-x', FOLD_REVEAL_END.x);
   sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
 
+  // The CSS transition above animates --fold-x/-y directly; keep .paper-fold in step with it
+  // every frame until it finishes, then hand rendering back to index.astro's idle CSS rule.
+  let frame = 0;
+  const step = () => {
+    const rect = sheet.getBoundingClientRect();
+    const { x, y } = currentFoldSize(sheet);
+    updateActiveFlap(fold, rect.width, rect.height, x, y, clipInset);
+    frame = requestAnimationFrame(step);
+  };
+  frame = requestAnimationFrame(step);
+
   const settling = sheet.getAnimations().filter((animation) => animation instanceof CSSTransition);
   Promise.all(settling.map((transition) => transition.finished)).then(() => {
+    cancelAnimationFrame(frame);
+    fold.classList.remove('paper-fold--active');
+    fold.style.clipPath = '';
+    fold.style.transform = '';
+    fold.style.transformOrigin = '';
+
     sheet.style.transition = '';
     // The drag cancelled initial-fold-reveal, so its forwards-fill is gone for good — leaving
     // --fold-x/-y set here is what now holds FOLD_REVEAL_END during fold-reveal-pulse's own
@@ -100,9 +192,26 @@ const settleFold = (sheet: HTMLElement) => {
   }, () => {});
 };
 
+// Keeps --fold-page-w/-h in sync with the sheet's actual pixel size — the generalized clip-path
+// formula in index.astro needs a real length to divide by (percentages aren't real lengths until
+// layout, so they can't be used in that arithmetic).
+const observeFoldPageSize = (sheet: HTMLElement): void => {
+  const observer = new ResizeObserver(([entry]) => {
+    const { width, height } = entry.contentRect;
+    sheet.style.setProperty('--fold-page-w', `${width}px`);
+    sheet.style.setProperty('--fold-page-h', `${height}px`);
+  });
+  observer.observe(sheet);
+};
+
 const attachFoldDrag = (fold: HTMLElement) => {
   const sheet = fold.parentElement!;
+  // Static — set once in CSS, never animated — so it's cheap to read once up front rather than
+  // on every pointermove.
+  const clipInset = readLength(sheet, '--fold-clip-inset');
   let gesture: FoldGesture | null = null;
+
+  observeFoldPageSize(sheet);
 
   fold.addEventListener('pointerdown', (e) => {
     if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
@@ -115,7 +224,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
       fold.setPointerCapture(e.pointerId);
     } catch {
       gesture = null;
-      settleFold(sheet);
+      settleFold(sheet, fold, clipInset);
     }
   });
 
@@ -126,7 +235,7 @@ const attachFoldDrag = (fold: HTMLElement) => {
       fold.releasePointerCapture(e.pointerId);
       return;
     }
-    onFoldDrag(sheet, gesture, e);
+    onFoldDrag(sheet, fold, gesture, e, clipInset);
   });
 
   // Pointer capture is released — on pointerup *or* pointercancel — right before this fires, so
@@ -134,15 +243,25 @@ const attachFoldDrag = (fold: HTMLElement) => {
   fold.addEventListener('lostpointercapture', (e) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
     gesture = null;
-    settleFold(sheet);
+    settleFold(sheet, fold, clipInset);
   });
 };
 
-const registerFoldProperties = () => {
-  for (const name of ['--fold-x', '--fold-y']) {
-    CSS.registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
+// Re-registering a name throws — harmless in production (each property is only ever declared
+// once) but this guards against dev-time re-runs (e.g. Vite HMR re-executing this module).
+const registerProperty = (definition: PropertyDefinition) => {
+  try {
+    CSS.registerProperty(definition);
+  } catch {
+    // already registered
   }
-  CSS.registerProperty({ name: '--page-index', syntax: '<number>', inherits: true, initialValue: '1' });
+};
+
+const registerFoldProperties = () => {
+  for (const name of ['--fold-x', '--fold-y', '--fold-page-w', '--fold-page-h', '--fold-clip-inset']) {
+    registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
+  }
+  registerProperty({ name: '--page-index', syntax: '<number>', inherits: true, initialValue: '1' });
 };
 
 export function initPaperStackFold(): void {
