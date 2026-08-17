@@ -2,8 +2,9 @@
 // released with the page's center folded over flips the page onto the back of the stack, and
 // grabbing the folded-back top-left corner runs the same gesture in reverse to bring the
 // previous page back — and registers the CSS custom properties (--fold-x, --fold-y,
-// --fold-back-x, --fold-back-y, --fold-page-w, --fold-page-h, --fold-clip-inset, --page-index)
-// the stack's styles (in index.astro) key off of.
+// --fold-back-x, --fold-back-y, --fold-back-rest-x, --fold-back-rest-y, --fold-pin-x,
+// --fold-pin-y, --fold-page-w, --fold-page-h, --page-index) the stack's styles (in
+// index.astro) key off of.
 
 type Vec = { x: number, y: number };
 
@@ -34,11 +35,11 @@ const FOLD_CANCEL_GRACE = 48;
 
 // Outside a drag, a pointer within this range of the front page's top-left corner stirs the
 // folded-back corner — showcasing the drag-back-to-front gesture. Pinned paper can only crease
-// through the pin, so the tease pivots the crease around it: the y-intercept swings from its
-// resting 1.5·inset up by this much (in inset units), the x-intercept following the pinned
-// family a = c·b/(b − c).
+// through the pin, so the tease pivots the crease around it: the y-intercept swings up from
+// its resting size by this fraction of itself, the x-intercept following the pinned family
+// a = pin-x·b/(b − pin-y).
 const BACK_TEASE_RADIUS = 160;
-const BACK_TEASE_PIVOT = 0.75;
+const BACK_TEASE_PIVOT = 0.5;
 
 const rotateVec = (v: Vec, angle: number): Vec => {
   const c = Math.cos(angle), s = Math.sin(angle);
@@ -73,6 +74,17 @@ const readLength = (el: HTMLElement, name: string): number => parseFloat(getComp
 const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-x'), y: readLength(sheet, '--fold-y') });
 
 const currentBackFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-back-x'), y: readLength(sheet, '--fold-back-y') });
+
+// The folded-back corner's resting crease intercepts (the wire's outer-left edge runs along
+// that crease — see index.astro).
+const backRestSize = (el: HTMLElement): Vec => ({ x: readLength(el, '--fold-back-rest-x'), y: readLength(el, '--fold-back-rest-y') });
+
+// The paper clip's pin — the bottom end of the wire's outer-left edge, sitting on the resting
+// crease — in tip coordinates (relative to the page's bottom-right corner).
+const pinOf = (el: HTMLElement, width: number, height: number): Vec => ({
+  x: readLength(el, '--fold-pin-x') - width,
+  y: readLength(el, '--fold-pin-y') - height,
+});
 
 // The page content — the sibling whose clip-path cuts the holes (the flap, clip, grab handle,
 // and hint ride above that cut, see index.astro).
@@ -138,7 +150,6 @@ const centerFolded = (w: number, h: number, tip: Vec): boolean => {
   const mid = { x: w + tip.x / 2, y: h + tip.y / 2 };
   return (w / 2 - mid.x) * tip.x + (h / 2 - mid.y) * tip.y < 0;
 };
-
 // Drives the page's clip-path and .paper-fold directly while dragging (and while settling back
 // afterwards) instead of index.astro's idle CSS rules, which only fit the simple
 // bottom-and-right-edge crease. The flap clips to the hole polygon (always inside its paintable
@@ -195,7 +206,7 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) =
 // screen-space offset from the tip is rotated by 2(θ₀-θ) as θ moves from its grab-time value θ₀.
 // This frame's θ isn't known until after size is solved for below, so the last solved frame's θ
 // is used instead — a one-frame lag, invisible at drag sampling rates.
-const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, clipInset: number, captor: HTMLElement) => {
+const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, captor: HTMLElement) => {
   // Idempotent — only the first move of a gesture actually needs this, but settleFold relies on
   // it having run at all (a grab that never moved leaves .paper-fold--active untouched, so it
   // knows there's nothing to hand back to the idle CSS rule).
@@ -224,7 +235,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // crease can at most pass through the pin). Slightly past that rim the fold holds there — the
   // crease pivoting around the pin as the pointer arcs — and past the grace margin the drag
   // gives up and lets the fold settle.
-  const pin = { x: clipInset - contentRect.width, y: clipInset - contentRect.height };
+  const pin = pinOf(sheet, contentRect.width, contentRect.height);
   const reach = Math.hypot(pin.x, pin.y);
   const fromPin = { x: tip.x - pin.x, y: tip.y - pin.y };
   const overshoot = Math.hypot(fromPin.x, fromPin.y) - reach;
@@ -365,7 +376,7 @@ const sendToBack = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   syncPaperSurface(next, sectionOf(next));
 };
 
-// Inverse of sendToBack: promotes the page most recently sent to the back (the highest
+// Inverse of a flip: promotes the page most recently sent to the back (the highest
 // --page-index) over the front, handing it the front-page role and companion elements. The
 // caller starts it fully folded — the state its flip left it in — so the back-drag gesture can
 // unfold it from there.
@@ -396,9 +407,9 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
 // drag was headed (a corner dragged up over the top edge finishes flipping over the top, not
 // sideways) — then send the page to the back of the stack. Any rim point is a full fold: the
 // crease passes through the pin there.
-const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, clipInset: number): (() => void) => {
+const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
   const { width, height } = sheet.getBoundingClientRect();
-  const pin = { x: clipInset - width, y: clipInset - height };
+  const pin = pinOf(sheet, width, height);
   const reach = Math.hypot(pin.x, pin.y);
   const { x: fx, y: fy } = currentFoldSize(sheet);
   const from = foldTipFromSize(fx, fy);
@@ -417,12 +428,12 @@ const shouldFlip = (sheet: HTMLElement): boolean => {
   return centerFolded(width, height, foldTipFromSize(fx, fy));
 };
 
-const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, clipInset: number, canceled: boolean): (() => void) => {
+const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, canceled: boolean): (() => void) => {
   // A grab that never dragged left the animations alone, so there is nothing to hand back
   if (sheet.style.getPropertyValue('--fold-x') === '') return () => {};
 
   const hasBack = sheet.parentElement!.childElementCount > 1;
-  if (!canceled && hasBack && shouldFlip(sheet)) return flipFold(sheet, section, fold, clipInset);
+  if (!canceled && hasBack && shouldFlip(sheet)) return flipFold(sheet, section, fold);
   return settleFold(sheet, section, fold);
 };
 
@@ -459,12 +470,14 @@ const attachBackFoldTease = (stack: HTMLElement, isDragging: () => boolean) => {
       clearTease();
       return;
     }
-    // Pivot the crease around the pin (see BACK_TEASE_PIVOT); at t=0 this is exactly the CSS
-    // resting cut (b = 1.5c, a = 3c), so the handoff to the cleared inline values is seamless.
-    const c = readLength(stack, '--fold-clip-inset');
+    // Pivot the crease around the pin (see BACK_TEASE_PIVOT); at t=0 this is exactly the
+    // resting cut, so the handoff to the cleared inline values is seamless.
+    const rest = backRestSize(stack);
+    const pinX = readLength(stack, '--fold-pin-x');
+    const pinY = readLength(stack, '--fold-pin-y');
     const t = 1 - distance / BACK_TEASE_RADIUS;
-    const b = c * (1.5 + BACK_TEASE_PIVOT * t);
-    const a = c * b / (b - c);
+    const b = rest.y * (1 + BACK_TEASE_PIVOT * t);
+    const a = pinX * b / (b - pinY);
     stack.style.setProperty('--fold-back-x', `${a}px`);
     stack.style.setProperty('--fold-back-y', `${b}px`);
   });
@@ -478,7 +491,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // the new front page, so the sheet and section they ride on change over time.
   let sheet = fold.parentElement!;
   let section = sectionOf(sheet);
-  let clipInset = readLength(sheet, '--fold-clip-inset');
   let gesture: FoldGesture | null = null;
   let cancelSettle: () => void = () => {};
 
@@ -492,7 +504,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
     sheet = fold.parentElement!;
     section = sectionOf(sheet);
-    clipInset = readLength(sheet, '--fold-clip-inset');
     syncPaperSurface(sheet, section);
     clearTease();
 
@@ -504,7 +515,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       fold.setPointerCapture(e.pointerId);
     } catch {
       gesture = null;
-      cancelSettle = releaseFold(sheet, section, fold, clipInset, true);
+      cancelSettle = releaseFold(sheet, section, fold, true);
     }
   });
 
@@ -515,7 +526,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       fold.releasePointerCapture(e.pointerId);
       return;
     }
-    onFoldDrag(sheet, section, fold, gesture, e, clipInset, fold);
+    onFoldDrag(sheet, section, fold, gesture, e, fold);
   });
 
   // Pointer capture is released — on pointerup *or* pointercancel — right before this fires, so
@@ -525,7 +536,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
     const { canceled } = gesture;
     gesture = null;
-    cancelSettle = releaseFold(sheet, section, fold, clipInset, canceled);
+    cancelSettle = releaseFold(sheet, section, fold, canceled);
   });
 
   // Going back a page is the forward flip run in reverse: grabbing the folded-back corner
@@ -544,12 +555,16 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     clearTease();
     sheet = bringToFront(stack);
     section = sectionOf(sheet);
-    clipInset = readLength(sheet, '--fold-clip-inset');
     sheet.getAnimations().forEach((animation) => animation.cancel());
 
+    // The promoted page starts exactly where its flip ended: folded back down along the resting
+    // crease, i.e. its bottom-right corner reflected across that crease.
     const rect = sheet.getBoundingClientRect();
-    const pin = { x: clipInset - rect.width, y: clipInset - rect.height };
-    const tip = { x: 2 * pin.x, y: 2 * pin.y };
+    const restSize = backRestSize(sheet);
+    const nl = Math.hypot(restSize.x, restSize.y);
+    const nx = restSize.y / nl, ny = restSize.x / nl;
+    const dist = nx * rect.width + ny * rect.height - restSize.x * restSize.y / nl;
+    const tip = { x: -2 * dist * nx, y: -2 * dist * ny };
     const size = foldSizeFromTip(tip.x, tip.y);
     sheet.style.setProperty('--fold-x', `${size.x}px`);
     sheet.style.setProperty('--fold-y', `${size.y}px`);
@@ -562,7 +577,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       grab.setPointerCapture(e.pointerId);
     } catch {
       gesture = null;
-      cancelSettle = releaseFold(sheet, section, fold, clipInset, false);
+      cancelSettle = releaseFold(sheet, section, fold, false);
     }
   });
 
@@ -573,7 +588,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       grab.releasePointerCapture(e.pointerId);
       return;
     }
-    onFoldDrag(sheet, section, fold, gesture, e, clipInset, grab);
+    onFoldDrag(sheet, section, fold, gesture, e, grab);
   });
 
   // Unlike the forward drag, a canceled back-drag shouldn't force a settle — straying past the
@@ -582,7 +597,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   grab.addEventListener('lostpointercapture', (e) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
     gesture = null;
-    cancelSettle = releaseFold(sheet, section, fold, clipInset, false);
+    cancelSettle = releaseFold(sheet, section, fold, false);
   });
 };
 
@@ -597,7 +612,10 @@ const registerProperty = (definition: PropertyDefinition) => {
 };
 
 const registerFoldProperties = () => {
-  for (const name of ['--fold-x', '--fold-y', '--fold-back-x', '--fold-back-y', '--fold-page-w', '--fold-page-h', '--fold-clip-inset']) {
+  for (const name of [
+    '--fold-x', '--fold-y', '--fold-back-x', '--fold-back-y', '--fold-back-rest-x',
+    '--fold-back-rest-y', '--fold-pin-x', '--fold-pin-y', '--fold-page-w', '--fold-page-h',
+  ]) {
     registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
   }
   registerProperty({ name: '--page-index', syntax: '<number>', inherits: true, initialValue: '1' });
