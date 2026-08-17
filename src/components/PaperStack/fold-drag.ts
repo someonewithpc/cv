@@ -32,11 +32,13 @@ const FOLD_REVEAL_END_PX = { x: 2 * PX_PER_CM, y: 1 * PX_PER_CM };
 // the fold holds at its limit, before the drag lets go entirely.
 const FOLD_CANCEL_GRACE = 48;
 
-// Outside a drag, a pointer within this range of the front page's top-left corner peels the
-// back-fold corner up toward it — showcasing the drag-back-to-front gesture — growing the
-// resting size by up to this factor.
+// Outside a drag, a pointer within this range of the front page's top-left corner stirs the
+// folded-back corner — showcasing the drag-back-to-front gesture. Pinned paper can only crease
+// through the pin, so the tease pivots the crease around it: the y-intercept swings from its
+// resting 1.5·inset up by this much (in inset units), the x-intercept following the pinned
+// family a = c·b/(b − c).
 const BACK_TEASE_RADIUS = 160;
-const BACK_TEASE_GROWTH = 1.75;
+const BACK_TEASE_PIVOT = 0.75;
 
 const rotateVec = (v: Vec, angle: number): Vec => {
   const c = Math.cos(angle), s = Math.sin(angle);
@@ -452,9 +454,14 @@ const attachBackFoldTease = (stack: HTMLElement, isDragging: () => boolean) => {
       clearTease();
       return;
     }
-    const grow = 1 + (BACK_TEASE_GROWTH - 1) * (1 - distance / BACK_TEASE_RADIUS);
-    stack.style.setProperty('--fold-back-x', `${FOLD_REVEAL_END_PX.x * grow}px`);
-    stack.style.setProperty('--fold-back-y', `${FOLD_REVEAL_END_PX.y * grow}px`);
+    // Pivot the crease around the pin (see BACK_TEASE_PIVOT); at t=0 this is exactly the CSS
+    // resting cut (b = 1.5c, a = 3c), so the handoff to the cleared inline values is seamless.
+    const c = readLength(stack, '--fold-clip-inset');
+    const t = 1 - distance / BACK_TEASE_RADIUS;
+    const b = c * (1.5 + BACK_TEASE_PIVOT * t);
+    const a = c * b / (b - c);
+    stack.style.setProperty('--fold-back-x', `${a}px`);
+    stack.style.setProperty('--fold-back-y', `${b}px`);
   });
   stack.addEventListener('pointerleave', clearTease);
 
