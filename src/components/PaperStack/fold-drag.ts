@@ -117,6 +117,17 @@ const SCROLL_IDLE_GAPS = 4;
 const SCROLL_IDLE_MIN = 140;
 const SCROLL_IDLE_MAX = 800;
 
+// A wheel with detents hands its travel over in lumps, so the fold eases after the scrolling
+// rather than snapping to it (see followScroll), on a time constant taken from the same pace: a
+// fraction of the interval the events are arriving at. Where they are already close together —
+// a trackpad — that fraction is a frame or two and the easing can't be seen; where they arrive a
+// notch apart it spreads each lump across the wait for the next one, which is what turns a row
+// of steps back into a movement. Bounded either side so a frantic scroll still feels fastened to
+// the paper, and a very slow one doesn't leave the fold drifting long after the hand stopped.
+const SCROLL_SMOOTH_GAP = 0.6;
+const SCROLL_SMOOTH_MIN = 20;
+const SCROLL_SMOOTH_MAX = 150;
+
 // How far a finger has to run sideways before the swipe is taken as one: enough that a tap, or
 // the first waver of a scroll the browser is about to claim, doesn't start folding the page.
 const SWIPE_START = 8;
@@ -1258,7 +1269,22 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // travel, so taking the stack left sends the page away and right brings the last one back. The
   // gesture is given a pointer id no real pointer can have, so a stray pointer event can't be
   // mistaken for part of it.
-  let swipe: { at: Vec, dir: Vec, travel: number, idle: number, last: number } | null = null;
+  let swipe: {
+    at: Vec, dir: Vec,
+    // Where the scrolling has got to, and where the fold has eased to behind it (see
+    // followScroll). A finger keeps the two together; a wheel is what pulls them apart.
+    target: number, travel: number,
+    idle: number, last: number,
+    // The easing's rAF handle, the time of its last frame and the constant it closes the gap on,
+    // and the flag the idle wait sets to say the wheel has fallen quiet — the gesture then ends
+    // as soon as the fold has caught up with it.
+    frame: number, painted: number, ease: number, quiet: boolean,
+  } | null = null;
+
+  const restingSwipe = (at: Vec, dir: Vec) => ({
+    at, dir, target: 0, travel: 0, idle: 0, last: 0,
+    frame: 0, painted: 0, ease: SCROLL_SMOOTH_MAX, quiet: false,
+  });
 
   const beginSwipe = (forward: boolean, time: number): boolean => {
     cancelSettle();
@@ -1270,7 +1296,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       // Nothing behind the front page to come back to
       if (!started) return false;
       gesture = started;
-      swipe = { at, dir: started.back!.dir, travel: 0, idle: 0, last: 0 };
+      swipe = restingSwipe(at, started.back!.dir);
       return true;
     }
     sheet = fold.parentElement!;
@@ -1286,7 +1312,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       unfoldFrom: null, approach: null, back: null, trail: [],
     };
     onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: time });
-    swipe = { at, dir: { x: -box.width / diagonal, y: -box.height / diagonal }, travel: 0, idle: 0, last: 0 };
+    swipe = restingSwipe(at, { x: -box.width / diagonal, y: -box.height / diagonal });
     return true;
   };
 
@@ -1306,15 +1332,48 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     if (gesture!.canceled) {
       // A swipe can't stray off the fold the way a drag can — it only ever runs along the one
       // line — so carrying on past the paper's reach holds the fold at its rim instead of giving
-      // the gesture up, and the travel keeps the position it can still honour.
+      // the gesture up, and the travel keeps the position it can still honour. The scrolling is
+      // brought back to it too, so the easing isn't left chasing somewhere the paper can't go.
       gesture!.canceled = false;
       swipe!.travel = held;
+      swipe!.target = held;
     }
+  };
+
+  // A wheel with detents hands over its travel in lumps, a notch at a time, and a fold that
+  // snapped to each one moved in steps rather than moving. So the fold eases after the scrolling
+  // instead of matching it: every frame it closes the same fraction of whatever gap is left, on a
+  // constant taken from the scrolling's own pace (see SCROLL_SMOOTH_GAP). Where the events are
+  // already close together — a trackpad — that constant is a frame or two and the easing can't be
+  // seen; where they arrive a notch apart it spreads each lump across the wait for the next one,
+  // which is what turns a row of steps back into a movement. The wheel falling quiet doesn't end
+  // the gesture on its own: the fold has to have caught up first, so the release measures where
+  // the scrolling actually got to and not wherever the easing had reached.
+  const followScroll = (now: number) => {
+    const live = swipe;
+    if (!live) return;
+    // A frame that arrives after a long stall (a hidden tab) shouldn't close the whole gap at once
+    const span = Math.min(now - live.painted, 100);
+    live.painted = now;
+    const gap = live.target - live.travel;
+    if (Math.abs(gap) >= 0.5) {
+      swipeTo(live.travel + gap * (1 - Math.exp(-span / live.ease)), now);
+    } else {
+      if (live.travel !== live.target) swipeTo(live.target, now);
+      if (live.quiet) {
+        endSwipe(now);
+        return;
+      }
+    }
+    live.frame = requestAnimationFrame(followScroll);
   };
 
   const endSwipe = (time: number) => {
     const ended = gesture;
-    if (swipe) clearTimeout(swipe.idle);
+    if (swipe) {
+      clearTimeout(swipe.idle);
+      cancelAnimationFrame(swipe.frame);
+    }
     swipe = null;
     gesture = null;
     if (!ended) return;
@@ -1348,23 +1407,33 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // gesture still scrolls the page.
     if (Math.abs(sideways) >= upright) e.preventDefault();
 
-    // Each gesture counts the scroll running its own way as progress, so reversing the wheel
-    // walks the fold back the way it came rather than driving it further over.
-    swipeTo(swipe!.travel + (gesture!.back ? -sideways : sideways) * SCROLL_GAIN, e.timeStamp);
+    // The scroll moves its own target and the fold eases after it (followScroll), so a wheel's
+    // lump lands as a movement rather than a jump. Each gesture counts the scroll running its own
+    // way as progress, so reversing the wheel walks the fold back the way it came rather than
+    // driving it further over.
+    swipe!.target = Math.max(swipe!.target + (gesture!.back ? -sideways : sideways) * SCROLL_GAIN, 0);
 
-    // How long to wait before calling it over follows how this scroll is arriving (see
-    // SCROLL_IDLE_GAPS); until a second event there is no pace to read, so it waits the longest
-    // it ever would rather than cut off a scroll that merely started slowly.
+    // Both the easing's constant and how long to wait before calling the gesture over follow how
+    // this scroll is arriving (see SCROLL_SMOOTH_GAP and SCROLL_IDLE_GAPS); until a second event
+    // there is no pace to read, so it waits the longest it ever would rather than cut off a
+    // scroll that merely started slowly.
     const gap = swipe!.last === 0 ? SCROLL_IDLE_MAX : e.timeStamp - swipe!.last;
     swipe!.last = e.timeStamp;
+    swipe!.ease = Math.min(Math.max(gap * SCROLL_SMOOTH_GAP, SCROLL_SMOOTH_MIN), SCROLL_SMOOTH_MAX);
+    swipe!.quiet = false;
+    if (swipe!.painted === 0) {
+      swipe!.painted = e.timeStamp;
+      swipe!.frame = requestAnimationFrame(followScroll);
+    }
     clearTimeout(swipe!.idle);
-    // The release is timed from the quiet rather than from the last event, so the throw window
-    // has already closed on it and the commit is read where the scroll actually left the fold.
-    // That is the honest reading here: a flick's momentum arrives as scroll events of its own, so
-    // it is already in the travel, and coasting it again would spend it twice. (A finger has a
-    // real release, and its throw counts — see below.)
+    // Falling quiet doesn't release on its own — followScroll does, once the fold has caught up.
+    // Either way the release is timed from the quiet rather than from the last event, so the
+    // throw window has closed on the scrolling and the commit is read where it actually left the
+    // fold. That is the honest reading here: a flick's momentum arrives as scroll events of its
+    // own, so it is already in the travel, and coasting it again would spend it twice. (A finger
+    // has a real release, and its throw counts — see below.)
     swipe!.idle = window.setTimeout(
-      () => endSwipe(performance.now()),
+      () => { if (swipe) swipe.quiet = true; },
       Math.min(Math.max(gap * SCROLL_IDLE_GAPS, SCROLL_IDLE_MIN), SCROLL_IDLE_MAX),
     );
   }, { passive: false });
@@ -1397,8 +1466,11 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       } catch { /* the finger is gone already; the release below still tidies up */ }
     }
     e.preventDefault();
+    // A finger arrives already smooth, and standing where it puts the paper is the whole point of
+    // touching it — so it drives the fold outright and the easing has nothing to do.
     const along = (gesture!.back ? sideways : -sideways) - SWIPE_START;
-    swipeTo(along * SCROLL_GAIN, e.timeStamp);
+    swipe!.target = along * SCROLL_GAIN;
+    swipeTo(swipe!.target, e.timeStamp);
   });
 
   const liftTouch = (e: PointerEvent) => {
