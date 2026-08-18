@@ -238,6 +238,16 @@ export class AutoPlayController {
     this.scheduleNext();
   }
 
+  /** Jump back to the first preset's first step, as if a loop had just completed. */
+  restart() {
+    this.pause();
+    this.resetDemo(this.dispatch);
+    this.stepIndex = 0;
+    this.presetIndex = 0;
+    this.paused = false;
+    this.scheduleNext();
+  }
+
   destroy() {
     this.pause();
   }
