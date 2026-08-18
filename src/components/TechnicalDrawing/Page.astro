@@ -118,7 +118,7 @@ const sheetAnchor = `--${noteId}-sheet`;
           </div>
         </td>
 
-        <td>
+        <td class="title-proj">
           <div>
             <h3 class="monospace">
               <span aria-hidden="true">Proj.</span>
@@ -553,6 +553,25 @@ section {
 
       td {
         padding: 0.2em;
+      }
+
+      // Purely decorative on a phone sheet — drop it rather than squeeze the
+      // rest of the title block to make room for it.
+      .title-proj {
+        display: none;
+      }
+
+      // No longer has to stay square once the sheet can't spare the width —
+      // a shorter, wider strip still reads fine at this size.
+      .title-tech-stack {
+        width: 2.6em;
+        height: 2em;
+        aspect-ratio: auto;
+
+        :global(.tech-icon svg) {
+          width: 1.3em;
+          height: 1.3em;
+        }
       }
 
       td header {
