@@ -127,24 +127,14 @@ const polygonCentroid = (pts: Vec[]): Vec => {
   return { x: cx / (3 * doubleArea), y: cy / (3 * doubleArea) };
 };
 
-// The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
-// (given relative to that corner) — the unique line folding one onto the other. Splitting the
-// page rectangle against it (single-edge Sutherland-Hodgman, both sides in one pass) covers
-// every fold the tip can express, including creases that wrap page corners or hang off the
-// bottom/right edges, without the closed-form case analysis the idle CSS formula needs.
-const splitByCrease = (w: number, h: number, tip: Vec, back: Vec) => {
-  const length = Math.hypot(tip.x, tip.y);
-  const normal = { x: tip.x / length, y: tip.y / length };
-  const mid = { x: w + tip.x / 2, y: h + tip.y / 2 };
+// Single-edge Sutherland-Hodgman split (both sides in one pass) of a polygon by the line
+// through mid with the given unit normal: kept is the side the normal points to, hole the other.
+const splitPolygon = (points: Vec[], mid: Vec, normal: Vec) => {
   const signed = (p: Vec) => (p.x - mid.x) * normal.x + (p.y - mid.y) * normal.y;
-
-  // The page rectangle minus the back-fold's top-left corner cut (both cut vertices collapse to
-  // (0, 0) while the back-fold is 0, i.e. before any page has been flipped)
-  const rect = [{ x: back.x, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }, { x: 0, y: back.y }];
   const kept: Vec[] = [];
   const hole: Vec[] = [];
-  for (let i = 0; i < rect.length; i++) {
-    const cur = rect[i], next = rect[(i + 1) % rect.length];
+  for (let i = 0; i < points.length; i++) {
+    const cur = points[i], next = points[(i + 1) % points.length];
     const sCur = signed(cur), sNext = signed(next);
     if (sCur >= 0) kept.push(cur);
     if (sCur <= 0) hole.push(cur);
@@ -155,7 +145,29 @@ const splitByCrease = (w: number, h: number, tip: Vec, back: Vec) => {
       hole.push(crossing);
     }
   }
-  return { kept, hole, mid, angle: Math.atan2(normal.x, -normal.y) };
+  return { kept, hole };
+};
+
+// The page rectangle minus the back-fold's top-left corner cut (both cut vertices collapse to
+// (0, 0) while the back-fold is 0, i.e. before any page has been flipped).
+const pagePentagon = (w: number, h: number, back: Vec): Vec[] => [
+  { x: back.x, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }, { x: 0, y: back.y },
+];
+
+// The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
+// (given relative to that corner) — the unique line folding one onto the other. Splitting the
+// page against it covers every fold the tip can express, including creases that wrap page
+// corners or hang off the bottom/right edges, without the closed-form case analysis the idle
+// CSS formula needs.
+const splitByCrease = (w: number, h: number, tip: Vec, back: Vec) => {
+  const length = Math.hypot(tip.x, tip.y);
+  const normal = { x: tip.x / length, y: tip.y / length };
+  const mid = { x: w + tip.x / 2, y: h + tip.y / 2 };
+  return {
+    ...splitPolygon(pagePentagon(w, h, back), mid, normal),
+    mid,
+    angle: Math.atan2(normal.x, -normal.y),
+  };
 };
 
 // Whether the crease has folded the page's center over with the corner — the folded region is
@@ -200,10 +212,14 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
 // it, the pages fan with their printed sides showing, so a fold there doubles that same face
 // over and its back is again what rises — never the content mirrored, which a reflection of the
 // printed side would be (see flipFold and onBackApproach for the two folds that run back there).
+const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
+
+const polygonClip = (pts: Vec[]) => `polygon(${pts.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+
 const renderFold = (
   section: HTMLElement, fold: HTMLElement, w: number, h: number, tip: Vec, back: Vec,
 ): void => {
-  const poly = (pts: Vec[]) => `polygon(${pts.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+  const poly = polygonClip;
   const degenerate = Math.hypot(tip.x, tip.y) < 0.5;
   const { kept, hole, mid, angle } = degenerate
     ? { kept: [], hole: [], mid: { x: 0, y: 0 }, angle: 0 }
@@ -214,7 +230,7 @@ const renderFold = (
     section.style.clipPath = '';
     section.style.transform = '';
     section.style.transformOrigin = '';
-    fold.style.clipPath = 'polygon(0px 0px, 0px 0px, 0px 0px)';
+    fold.style.clipPath = HIDDEN_CLIP;
     return;
   }
 
