@@ -407,17 +407,18 @@ const glideFoldTip = (
 // travelling in to the base, never retracing the first fold. Two reflections across parallel
 // lines compose to a pure translation, so the folded-back material is the page's own printed
 // front — unmirrored, its animations still running — slid toward home by twice the crease's
-// remaining distance c: the front comes into view at the extreme and settles home behind the
-// stack as the crease arrives at the base. What the crease hasn't reached yet is the
+// remaining distance c, settling home behind the stack as the crease arrives at the base.
+// What the crease hasn't reached yet is the
 // still-doubled band between it and the base, blank back up, keeping the first fold's frozen
 // reflection and shrinking to nothing.
 //
-// The folded-back material lies over the band (it folded back on top of it) but under the
-// stack's pages (it's headed in behind them): the restacked sheet is already hindmost, so the
-// section only has to rise above its flap sibling for the duration (the z-index swap in
-// flipFold and the back-grab handler). The never-folded sliver beyond the resting crease drops
-// out of the section's clip entirely — behind the stack it sits exactly under the other pages'
-// paint, so it can't be seen until the cleared clip returns it at the end.
+// The folded-back material tucks in under the band — the page is sliding in beneath the stack,
+// so its returning front goes between the doubled packet and the desk, not on top — and under
+// the stack's pages (the restacked sheet is already hindmost). The flap paints after the
+// section, so the band covering the front is just their natural order. The never-folded sliver
+// beyond the resting crease drops out of the section's clip entirely — behind the stack it sits
+// exactly under the other pages' paint, so it can't be seen until the cleared clip returns it
+// at the end.
 //
 // Run in reverse (f falling from 1) this is also a back-drag's approach phase — the same crease
 // sweep retraced from the base out to the extreme, lifting the page back up into the fully
@@ -569,7 +570,6 @@ const clearFrontFold = (sheet: HTMLElement): void => {
 const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
   fold.classList.remove('paper-fold--active');
-  fold.style.zIndex = '';
   clearFoldRender(section, fold);
   clearFrontFold(sheet);
   // A back-drag's grab squares this sheet up with the front page; letting go of the inline
@@ -634,7 +634,6 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const size = foldSizeFromTip(approach.seed.x, approach.seed.y);
   sheet.style.setProperty('--fold-x', `${size.x}px`);
   sheet.style.setProperty('--fold-y', `${size.y}px`);
-  fold.style.zIndex = '';
   renderFold(section, fold, w, h, approach.seed, currentBackFoldSize(sheet));
   sheet.style.rotate = '';
   bringToFront(sheet.parentElement!);
@@ -663,9 +662,6 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   let settling = false;
   let cancelGlide = glideFoldTip(sheet, section, fold, to, 300, () => {
     restack(sheet, fold);
-    // The folded-back front rides over the still-doubled band, so the section rises above its
-    // flap sibling for the landing (both stay under the other pages — the sheet is hindmost)
-    fold.style.zIndex = '-1';
     settling = true;
     cancelGlide = glideLanding(sheet, section, fold, to, 0, 400, () => {
       settling = false;
@@ -850,9 +846,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     fold.classList.add('paper-fold--active');
     // Active mode sizes the flap to the whole page, and the idle clip-path it still carries fills
     // that box — a page-sized slab of flap colour on a sheet whose top-left corner shows through
-    // the front page's cut. Render the reverse landing's flat start now so it begins hidden, and
-    // drop the flap under the page content for the approach (see renderLanding's layering).
-    fold.style.zIndex = '-1';
+    // the front page's cut. Render the reverse landing's flat start now so it begins hidden.
     const seed = restSeed(sheet, w, h);
     renderLanding(section, fold, w, h, seed, currentBackFoldSize(sheet), 1);
     // The pull direction: the resting crease's normal, which the seed lies opposite along
