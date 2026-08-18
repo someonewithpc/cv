@@ -727,7 +727,10 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   const d1 = Math.hypot(to.x - from.x, to.y - from.y) / 2;
   const d2 = Math.hypot(to.x, to.y) / 2;
   const total = d1 + d2;
-  const duration = Math.min(300 + total / 3, 800);
+  // Weight the duration by the travel left at release: an early let-go, with most of the flip
+  // still ahead of it, takes proportionally longer instead of hitting a cap and launching at
+  // full tilt, so the ease-out's opening speed stays roughly the same wherever the hand lets go.
+  const duration = Math.min(300 + total / 2, 1400);
   const home = { x: width, y: height };
 
   let settling = false;
