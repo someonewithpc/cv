@@ -58,9 +58,7 @@ const hasMeta = updatedAt || stats;
       rel="noopener noreferrer"
       target="_blank"
     >
-      <BacktickText text={title} />
-      <span class="sr-only"> ({repository}), opens in a new tab</span>
-      <Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
+      <BacktickText text={title} /><span class="sr-only"> ({repository}), opens in a new tab</span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
     </a>
   </summary>
 
@@ -133,13 +131,13 @@ details {
       overflow-wrap: break-word;
       word-break: normal;
       hyphens: none;
+      text-wrap: pretty;
 
       .external-link {
         display: inline;
         width: 0.75em;
         height: 0.75em;
-        margin-inline-start: 0.5ch;
-        vertical-align: -0.1em;
+        vertical-align: -1px;
       }
 
       &:hover {
