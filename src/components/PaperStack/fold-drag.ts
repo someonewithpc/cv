@@ -641,11 +641,14 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
 };
 
 // A back-drag's approach phase: the landing run in reverse, driven by the pointer. Pull along
-// the resting crease's normal sets how far the fold has come (s); pull across it swings the
-// corner's target off the straight line, tilting the fold-back crease to follow the pointer's
-// actual direction — the fold folds the way it's dragged, not just as far. The lateral sway
-// tapers to nothing at both ends so the gesture still starts lying flat and completes fully
-// folded. The hindmost page's printed front slides out to the page's upper left and doubles
+// the resting crease's normal sets how far the fold has come (s); the pointer's own direction
+// steers where the corner heads — the delta's angle off the pull direction swings the corner's
+// travel off the seed line by that same angle, so the fold comes over the way it's dragged,
+// not just as far. The corner stays on the arc of radius s·|seed| around its home (never flung
+// beyond it — deflecting the direction rather than adding a scaled lateral offset is what keeps
+// an off-axis drag moving at the same speed as an on-axis one), and the swing eases out as s
+// completes so the gesture still ends exactly fully folded. The hindmost page's printed front
+// slides out to the page's upper left and doubles
 // over blank-back-up as the crease consumes it — exactly how the page went back there,
 // retraced. The sheet was squared up with the front page at the grab (see the grab handler),
 // so its folded-back corner tracks the front page's throughout. At s 1 the page lies fully
@@ -661,12 +664,11 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const along = delta.x * approach.dir.x + delta.y * approach.dir.y;
   const s = Math.min(Math.max(along / BACK_APPROACH_DISTANCE, 0), 1);
   const across = -delta.x * approach.dir.y + delta.y * approach.dir.x;
-  const length = Math.hypot(approach.seed.x, approach.seed.y);
-  const sway = across * (length / BACK_APPROACH_DISTANCE) * 4 * s * (1 - s);
-  const t = {
-    x: w + approach.seed.x * s - approach.dir.y * sway,
-    y: h + approach.seed.y * s + approach.dir.x * sway,
-  };
+  // The floor on along only matters while s is still ~0 (t pinned at home), where it keeps the
+  // angle from whipping through ±180° as the delta passes the perpendicular
+  const swing = -Math.atan2(across, Math.max(along, 1)) * (1 - s);
+  const swung = rotateVec(approach.seed, swing);
+  const t = { x: w + swung.x * s, y: h + swung.y * s };
   approach.s = s;
   approach.t = t;
   renderLanding(section, fold, w, h, approach.seed, currentBackFoldSize(sheet), t);
