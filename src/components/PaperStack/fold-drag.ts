@@ -22,6 +22,10 @@ type FoldGesture = {
   // Set when the drag gives up (pointer strayed past the grace margin) — the release then
   // always settles back rather than considering a flip.
   canceled: boolean;
+  // The direction the tip lies in while the page is folded over, fixed when a back-drag's
+  // approach hands the gesture on. The tip may run all the way back to the page corner along it
+  // but no further: paper unfolds flat, it doesn't keep going and fold the other way.
+  unfoldFrom: Vec | null;
   // Present while a back-drag is still in its approach phase — the previous page folding up
   // behind the stack, before it has come over the clip (see onBackApproach). Cleared when the
   // approach completes and the page is promoted.
@@ -284,6 +288,13 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     y: (gesture.gain * e.clientY - offset.y) - contentRect.bottom,
   };
 
+  // Unfolding stops at flat. Without this the tip sails on past the page corner, the crease
+  // crosses to the far side of it, and the fold inverts — so a back-drag pulled well past the
+  // bottom-right read as folded-over again and the release sent the page it had just brought
+  // over straight back behind the stack.
+  const { unfoldFrom } = gesture;
+  if (unfoldFrom && tip.x * unfoldFrom.x + tip.y * unfoldFrom.y < 0) tip = { x: 0, y: 0 };
+
   // Paper doesn't stretch: folding keeps the dragged corner within |corner - pin| of the paper
   // clip's pin (folding preserves the corner's distance to every point on the crease, and the
   // crease can at most pass through the pin). Slightly past that rim the fold holds there — the
@@ -521,6 +532,7 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   sheet.style.rotate = '';
   bringToFront(sheet.parentElement!);
   sheet.getAnimations().forEach((animation) => animation.cancel());
+  gesture.unfoldFrom = approach.seed;
   gesture.approach = null;
   onFoldGrab(sheet, gesture, e);
 };
@@ -648,7 +660,10 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     syncPaperSurface(sheet, section);
     clearTease();
 
-    gesture = { pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 1, canceled: false, approach: null };
+    gesture = {
+      pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 1, canceled: false,
+      unfoldFrom: null, approach: null,
+    };
     onFoldGrab(sheet, gesture, e);
     try {
       fold.setPointerCapture(e.pointerId);
@@ -746,6 +761,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
     gesture = {
       pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false,
+      unfoldFrom: null,
       approach: {
         seed: { x: -2 * dist * nx, y: -2 * dist * ny },
         origin: { x: e.clientX, y: e.clientY },
