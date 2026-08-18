@@ -9,7 +9,7 @@ const annotationFontSize = 0.1 * annotationScale;
 ---
 
 <div class="wrapper">
-  <Annotations scale={annotationScale}>
+  <Annotations scale={annotationScale} reach={1}>
     {/* inert: real MarkerEditor chrome, non-interactive diagram. */}
     <div class="editor-layer" slot="content" inert data-editor-layer-island></div>
 
@@ -103,22 +103,14 @@ const annotationFontSize = 0.1 * annotationScale;
 
 <style lang="scss">
 .wrapper {
-  // Slightly taller than the chrome so the tip isn't flush with the frame.
-  width: min(72cqw, calc(88cqh * 1.5));
-  aspect-ratio: 1.5 / 1;
-  height: auto;
-  max-height: 88cqh;
   position: relative;
   display: grid;
-  place-items: stretch;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
 
-  @container technical-drawing (orientation: portrait) {
-    width: min(92cqw, calc(72cqh * 1.3));
-    aspect-ratio: 1.3 / 1;
-    max-height: 72cqh;
-  }
-
-  > :global(svg) {
+  // The overlay is a child of the Annotations box, not of this wrapper.
+  :global(.content > svg) {
     z-index: 2;
     pointer-events: none;
     overflow: visible;
@@ -133,9 +125,19 @@ const annotationFontSize = 0.1 * annotationScale;
 }
 
 .editor-layer {
+  // Annotations shrink-wraps its slot, and the only child here is the
+  // absolutely positioned embed — so the artwork box has to be sized here or
+  // it collapses to nothing. Slightly taller than the chrome so the tip isn't
+  // flush with the frame.
+  width: min(72cqw, calc(88cqh * 1.5));
+  aspect-ratio: 1.5 / 1;
+  max-width: 100%;
+
+  @container technical-drawing (orientation: portrait) {
+    width: min(92cqw, calc(72cqh * 1.5));
+  }
+
   position: relative;
-  width: 100%;
-  height: 100%;
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
