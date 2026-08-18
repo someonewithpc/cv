@@ -191,10 +191,9 @@ type Layer = keyof typeof layers;
 }
 
 @container technical-drawing (orientation: portrait) {
+  /* Portrait centres the aside itself now; only the landscape gutter has to go. */
   :global(.space-builder-demo article.technical-drawing-stack > section .aside) {
-    display: block;
     padding-left: 0;
-    margin-inline: auto;
   }
 }
 
