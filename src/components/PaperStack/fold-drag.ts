@@ -359,7 +359,10 @@ const glideFoldTip = (
   let frame = 0;
   const start = performance.now();
   const step = (now: number) => {
-    const t = Math.min((now - start) / duration, 1);
+    // Clamped below zero too: a rAF timestamp is the frame's vsync time, which can precede the
+    // start captured above, and a negative t would extrapolate the glide backwards past its
+    // start.
+    const t = Math.min(Math.max((now - start) / duration, 0), 1);
     const eased = 1 - (1 - t) ** 3;
     const tip = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
     const size = foldSizeFromTip(tip.x, tip.y);
