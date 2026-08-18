@@ -8,7 +8,9 @@
 aside {
   color-scheme: only light;
 
-  max-width: min(16ch, 100%);
+  /* The open note dialog (TechnicalDrawing/Page.astro) hands down its own
+     measure and type size; anywhere else the narrow marker column applies. */
+  max-width: var(--note-width, min(16ch, 100%));
   position: relative;
   padding: 0.75em 1em;
   border-radius: 0 0 0 2em/3em;
@@ -18,11 +20,11 @@ aside {
   color: var(--color);
 
   line-height: 1.25rem;
-  font-size: 1.2rem;
+  font-size: var(--note-font-size, 1.2rem);
   text-wrap: pretty;
 
   @container technical-drawing (orientation: portrait) {
-    font-size: clamp(0.85rem, 3.8cqw, 1.1rem);
+    font-size: var(--note-font-size, clamp(0.85rem, 3.8cqw, 1.1rem));
     line-height: 1.2;
     /* Clears the peeled corner, which sits 1.5em tall in the bottom left and
        otherwise eats the start of the last line. */

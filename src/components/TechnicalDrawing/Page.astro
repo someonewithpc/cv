@@ -31,15 +31,43 @@ const {
 } = Astro.props;
 
 const techs = resolveTechs(tech);
+
+const noteId = `drawing-note-${crypto.randomUUID().slice(0, 8)}`;
+
+/* The fold is the note's own corner peeking out from under the sheet, so it
+   wears the note's paper color. The slot arrives pre-rendered (Stack.astro
+   renders it per layer), which lets the PostIt's inline custom properties be
+   read here instead of plumbing the color through every demo. */
+const asideHtml = (await Astro.slots.render('aside')) ?? '';
+const noteBackground = asideHtml.match(/--background:\s*([^;"]+)/)?.[1];
+const sheetAnchor = `--${noteId}-sheet`;
 ---
 
-<section class={pageStyle}>
+<section
+  class={pageStyle}
+  style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
+>
   <div class="content">
     <slot name="content" />
   </div>
 
-  <div class="aside">
-    <slot name="aside" />
+  <div class="aside" style={{ '--note-background': noteBackground }}>
+    <dialog class="drawing-note" id={noteId} aria-label={`Note for ${title ?? subtitle ?? 'this drawing'}`}>
+      <form method="dialog">
+        <button class="note-dismiss" type="submit">
+          <span class="sr-only">Close note</span>
+        </button>
+      </form>
+
+      <div class="note-card" tabindex="-1" autofocus>
+        <Fragment set:html={asideHtml} />
+      </div>
+    </dialog>
+
+    <button class="note-fold" type="button" command="show-modal" commandfor={noteId}>
+      <span class="note-fold-label monospace" aria-hidden="true">Note</span>
+      <span class="sr-only">Open this drawing's note</span>
+    </button>
   </div>
 
   <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`}>
@@ -201,6 +229,149 @@ section {
     margin-inline: auto;
   }
 
+  /* Wherever the note is shown in place, the dialog and its chrome are inert
+     scaffolding: they add no boxes of their own. */
+  .drawing-note:not(:modal),
+  .note-card,
+  .drawing-note form {
+    display: contents;
+  }
+
+  .note-dismiss,
+  .note-fold {
+    display: none;
+  }
+
+  /* Opened from the dog-ear. The dialog is in the top layer, so it is pinned
+     back onto its own sheet — the note belongs to the drawing, not to the
+     document around it — covering the whole sheet, title block included.
+     Anchoring only resolves for a box whose containing block is the viewport,
+     which is why the dialog itself carries it. */
+  .drawing-note:modal {
+    position: fixed;
+    position-anchor: var(--drawing-sheet-anchor);
+    inset: anchor(top) anchor(right) anchor(bottom) anchor(left);
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: calc(var(--sheet-margin) + 1.25em) 1.25em;
+    border: 0;
+    border-radius: 0.5em;
+    background: rgba(0, 0, 0, 0.45);
+    color: inherit;
+    overflow: clip;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+
+    &::backdrop {
+      background: none;
+    }
+
+    .note-dismiss {
+      display: block;
+      position: fixed;
+      inset: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+
+    .note-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6em;
+
+      position: relative;
+      max-height: 100%;
+      max-width: 100%;
+      overflow: auto;
+
+      /* The note is the whole point once opened — let it use the sheet. */
+      --note-width: min(34ch, 100%);
+      --note-font-size: 1rem;
+
+      transition: opacity 160ms ease, translate 160ms ease;
+
+      @starting-style {
+        opacity: 0;
+        translate: 0 0.75em;
+      }
+    }
+  }
+
+  /* Nothing under the note should keep moving while it is being read. */
+  &:has(.drawing-note:modal) {
+    .content,
+    .content :global(*) {
+      animation-play-state: paused;
+    }
+  }
+
+  /* The note's own corner peeking out from under the sheet, in the sheet's
+     bottom-left: it wears the note's paper hue — softened into the same
+     pastel range for every note, so a saturated postit does not shout from
+     the corner — and follows the page's rounded corner (the radius clips
+     the background before the triangle clip-path applies). */
+  .note-fold {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    z-index: 3;
+
+    width: 3.5em;
+    height: 3.5em;
+    padding: 0;
+    border: 0;
+    font: inherit;
+    color: oklch(from var(--note-background, #e8e4dc) 0.28 min(c, 0.06) h);
+    cursor: pointer;
+
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    background: oklch(from var(--note-background, #e8e4dc) clamp(0.78, l, 0.92) min(c, 0.09) h);
+    border-end-start-radius: 0.5em;
+    /* clip-path also clips box-shadow, so the lift has to be a filter. */
+    filter: drop-shadow(0.1em -0.1em 0.3em rgba(0, 0, 0, 0.45));
+    transform-origin: bottom left;
+    transition: scale 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      scale: 1.06;
+    }
+
+    &:focus-visible {
+      outline: none;
+      filter: drop-shadow(0 0 0.2em var(--accent)) drop-shadow(0.1em -0.1em 0.3em rgba(0, 0, 0, 0.45));
+    }
+  }
+
+  .note-fold-label {
+    position: absolute;
+    left: 33%;
+    top: 66%;
+    translate: -50% -50%;
+    rotate: 45deg;
+    font-size: 0.55em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* Nothing in the aside slot for this page — no corner to fold. */
+  .aside:not(:has(.note-card > *)) .note-fold {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drawing-note:modal .note-card { transition: none; }
+  }
+
   .layers {
     grid-column: 3;
     justify-self: center;
@@ -336,10 +507,9 @@ section {
     --sheet-margin: 0.625rem;
 
     grid-template-columns: minmax(0, 1fr);
-    /* Artwork, aside, title block — each in its own row. Floating the title
-       block over the sheet left the aside guessing a margin to clear it, and
-       the guess was wrong for every page that had something to say. */
-    grid-template-rows: minmax(0, 1fr) auto auto;
+    /* Artwork, then the title block. The note is tucked under the dog-eared
+       corner instead of taking a row of its own. */
+    grid-template-rows: minmax(0, 1fr) auto;
     align-items: stretch;
 
     .content {
@@ -355,24 +525,18 @@ section {
     }
 
     .aside {
-      grid-column: 1;
-      grid-row: 2;
-      align-self: end;
-      max-width: 100%;
-      height: auto;
-      /* The note is stacked under the artwork now instead of beside it, so it
-         has to give the drawing its share of the sheet back. */
-      font-size: min(1rem, 3.2cqw);
-      max-height: 58cqh;
-      margin-block: 0.5em;
-      overflow-y: auto;
-      z-index: 1;
+      /* Only the dog-ear lives here; the note itself is in the dialog, and the
+         fold positions itself against the sheet, so the wrapper adds no box. */
+      display: contents;
+      font-size: 1rem;
+    }
 
-      /* justify-self cannot centre this: the notes cap their width with a
-         percentage, which intrinsic sizing ignores, so the cell stretches. */
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .drawing-note:not(:modal) {
+      display: none;
+    }
+
+    .note-fold {
+      display: block;
     }
 
     .layers {
@@ -383,7 +547,7 @@ section {
     & > table {
       position: static;
       grid-column: 1;
-      grid-row: 3;
+      grid-row: 2;
       width: 100%;
       font-size: 0.7em;
 
