@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
+import { watchDrawingNote } from '@/client/drawingNote';
+
 import { autoplayStartedToast } from './AutoPlayController';
 import OptionsPanel from './OptionsPanel.vue';
 import type { LayoutOptions, LayoutStyle } from './scene/layoutEngine';
@@ -43,6 +45,7 @@ const demoPlaying = ref(false);
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let observer: IntersectionObserver | null = null;
+let stopNoteWatch: (() => void) | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
@@ -368,6 +371,18 @@ onMounted(async () => {
     );
     observer.observe(visibilityRoot);
 
+    // Hold the demo still while the note dialog covers this page.
+    stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
+      if (open) {
+        autoplayToken += 1;
+        demoPlaying.value = false;
+        scene.pause();
+      } else {
+        scene.resume();
+        startAutoplay();
+      }
+    });
+
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
@@ -382,6 +397,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
+  stopNoteWatch?.();
+  stopNoteWatch = null;
   autoplayToken += 1;
   if (resumeTimer) clearTimeout(resumeTimer);
   if (savedTimer) clearTimeout(savedTimer);

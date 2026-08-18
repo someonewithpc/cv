@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
+import { watchDrawingNote } from '@/client/drawingNote';
+
 import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
 import {
   claimSpaceBuilderGpu,
@@ -28,6 +30,7 @@ let sceneRef: SpaceBuilderScene | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 let arrows: SceneArrowAnnotations | null = null;
 let observer: IntersectionObserver | null = null;
+let stopNoteWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
 
@@ -235,6 +238,18 @@ onMounted(async () => {
     );
     observer.observe(visibilityRoot);
 
+    // Hold the demo still while the note dialog covers this page.
+    stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
+      const scene = sceneRef;
+      if (!scene) return;
+      if (open) {
+        scene.pause();
+      } else {
+        scene.resume();
+        arrows?.sync();
+      }
+    });
+
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
@@ -249,6 +264,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
+  stopNoteWatch?.();
+  stopNoteWatch = null;
   arrows?.dispose();
   arrows = null;
   if (sceneRef) releaseSpaceBuilderGpu(sceneRef);

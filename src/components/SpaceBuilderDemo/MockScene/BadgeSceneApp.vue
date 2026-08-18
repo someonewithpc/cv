@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
+import { watchDrawingNote } from '@/client/drawingNote';
+
 import {
   claimSpaceBuilderGpu,
   prepareSpaceBuilderGpu,
@@ -28,10 +30,12 @@ const metrics = ref<{ theta: number; r: number; offset: number } | null>(null);
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let observer: IntersectionObserver | null = null;
+let stopNoteWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
 
 let inView = false;
+let noteOpen = false;
 let reducedMotion = false;
 let orbitRaf = 0;
 let lastFrameTime: number | null = null;
@@ -64,7 +68,7 @@ function stopOrbitLoop() {
 }
 
 function applyOrbitState() {
-  if (playing.value && inView) startOrbitLoop();
+  if (playing.value && inView && !noteOpen) startOrbitLoop();
   else stopOrbitLoop();
 }
 
@@ -239,6 +243,14 @@ onMounted(async () => {
     );
     observer.observe(visibilityRoot);
 
+    // Hold the demo still while the note dialog covers this page.
+    stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
+      noteOpen = open;
+      applyOrbitState();
+      if (open) scene.pause();
+      else scene.resume();
+    });
+
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
@@ -253,6 +265,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
+  stopNoteWatch?.();
+  stopNoteWatch = null;
   stopOrbitLoop();
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
+import { watchDrawingNote } from '@/client/drawingNote';
+
 import {
   AutoPlayController,
   autoplayPausedToast,
@@ -105,6 +107,7 @@ let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 let handoffTimer: ReturnType<typeof setTimeout> | null = null;
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 let observer: IntersectionObserver | null = null;
+let stopNoteWatch: (() => void) | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
@@ -651,6 +654,17 @@ onMounted(async () => {
     );
     observer.observe(visibilityRoot);
 
+    // Hold the demo still while the note dialog covers this page.
+    stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
+      if (open) {
+        controller.pause();
+        scene.pause();
+      } else {
+        scene.resume();
+        if (inView.value && !userControl.value) controller.resume();
+      }
+    });
+
     // Marker Editor pattern: any trusted pointer over the page takes over.
     window.addEventListener('pointermove', onTrustedPointer, { passive: true });
     window.addEventListener('pointerdown', onTrustedPointer, { passive: true });
@@ -669,6 +683,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
+  stopNoteWatch?.();
+  stopNoteWatch = null;
   controllerRef.value?.destroy();
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
