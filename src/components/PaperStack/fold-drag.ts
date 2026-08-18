@@ -664,6 +664,14 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   prev.classList.add('paper-front');
   prev.prepend(under);
   prev.append(clip, fold, hint);
+  // Promoting the originally-first page puts the stack back in its own order, so the corner cut
+  // unfolds from here — the mirror of flipFold committing the flipped state as its glide sets
+  // off. The clip's wire lies on that corner and is swallowed with it, so leaving the state to
+  // the settle meant the clip only reappeared once the page had long since arrived; re-deriving
+  // it now runs the cuts' 300ms transition under the page as it comes over, uncovering the wire
+  // as the corner it pins flattens out. A release that sends the page back sets the flipped
+  // state again on its way (flipFold).
+  updateFlippedState(stack);
   syncPaperSurface(prev, sectionOf(prev));
   return prev;
 };
