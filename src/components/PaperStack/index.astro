@@ -295,11 +295,13 @@ const pages = await Promise.all(
           // The wire's outer-right edge lies on the resting fold-back crease: its bottom point
           // (viewBox 24.5, 50 → 87.5%, 78.125% of the box) sits on the pin, and the lean
           // matches the crease's 1-in-2 slope (atan(1/2) from vertical). The body extends from
-          // that edge toward the page corner — the side a flip folds behind the stack.
+          // that edge toward the page corner — the side a flip folds behind the stack — and
+          // the width is sized so it stays on the page: much wider and its left flank hangs
+          // off the page's left edge.
           translate: -87.5% -78.125%;
           transform-origin: 87.5% 78.125%;
           rotate: 26.565deg;
-          width: 2.25em;
+          width: 1.75em;
           height: auto;
         }
 
