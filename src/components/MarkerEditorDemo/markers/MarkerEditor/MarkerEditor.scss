@@ -9,6 +9,10 @@ $marker-editor-background: #333;
   z-index: 1000;
   font-family: var(--font-poppins);
 
+  // Widest thing in the chrome; a host too narrow for the em-based layout buys
+  // width back here instead of shrinking past the font-size floor.
+  --marker-editor-canvas: 32em;
+
   // Contained by the carousel page section (scrolls away with that page).
   position: absolute;
   inset: 0;
@@ -44,6 +48,14 @@ $marker-editor-background: #333;
 
   & > div.wrapper {
     pointer-events: auto;
+
+    // The chrome is ~53em wide against a font-size driven by cqmin, so any host
+    // squarer than about 5:4 wants more width than it has — and a phone-width
+    // host runs into the font-size floor besides. Both cases buy the width back
+    // from the canvas. Set from inside: the query has to see the editor root.
+    @container ((max-aspect-ratio: 5 / 4) or (max-width: 26rem)) {
+      --marker-editor-canvas: 17em;
+    }
 
     // Scale em-based chrome to the drawing frame.
     font-size: clamp(0.45rem, 2.35cqmin, 1rem);
@@ -146,8 +158,8 @@ $marker-editor-background: #333;
           linear-gradient($background-color);
 
         svg {
-          width: 32em;
-          height: 32em;
+          width: var(--marker-editor-canvas);
+          height: var(--marker-editor-canvas);
         }
       }
 
