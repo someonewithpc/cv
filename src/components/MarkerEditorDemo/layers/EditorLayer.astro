@@ -85,7 +85,7 @@ const annotationFontSize = 0.1 * annotationScale;
     if (!mount || mount.dataset.bootstrapped === 'true') return;
 
     const page =
-      mount.closest<HTMLElement>('article.technical-drawing-stack > section')
+      mount.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? mount;
     const stack = page.closest('article.technical-drawing-stack');
 
