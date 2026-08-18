@@ -75,11 +75,11 @@ const currentFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--
 
 const currentBackFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet, '--fold-back-x'), y: readLength(sheet, '--fold-back-y') });
 
-// The folded-back corner's resting crease intercepts (the wire's outer-left edge runs along
+// The folded-back corner's resting crease intercepts (the wire's outer-right edge runs along
 // that crease — see index.astro).
 const backRestSize = (el: HTMLElement): Vec => ({ x: readLength(el, '--fold-back-rest-x'), y: readLength(el, '--fold-back-rest-y') });
 
-// The paper clip's pin — the bottom end of the wire's outer-left edge, sitting on the resting
+// The paper clip's pin — the bottom end of the wire's outer-right edge, sitting on the resting
 // crease — in tip coordinates (relative to the page's bottom-right corner).
 const pinOf = (el: HTMLElement, width: number, height: number): Vec => ({
   x: readLength(el, '--fold-pin-x') - width,
