@@ -398,6 +398,77 @@ const glideFoldTip = (
   return () => cancelAnimationFrame(frame);
 };
 
+// The second half of a flip: the page lies folded fully over at the resting crease, blank back
+// up, and goes over to the back of the stack by folding back down — starting at the extreme
+// (the tip, where the page's bottom-right corner ended up) with the fold-back crease
+// travelling in to the base, never retracing the first fold. Two reflections across parallel
+// lines compose to a pure translation, so the folded-back material is the page's own printed
+// front — unmirrored, its animations still running — slid toward home by twice the crease's
+// remaining distance c: the front comes into view at the extreme and settles home behind the
+// stack as the crease arrives at the base. What the crease hasn't reached yet is the
+// still-doubled band between it and the base, blank back up, keeping the first fold's frozen
+// reflection and shrinking to nothing.
+//
+// The folded-back material lies over the band (it folded back on top of it) but under the
+// stack's pages (it's headed in behind them): the restacked sheet is already hindmost, so the
+// section only has to rise above its flap sibling for the duration (the z-index swap in
+// flipFold). The never-folded sliver beyond the resting crease drops out of the section's clip
+// entirely — behind the stack it sits exactly under the other pages' paint, so it can't be
+// seen until the cleared clip returns it at the end.
+const renderLanding = (
+  section: HTMLElement, fold: HTMLElement, w: number, h: number, rimTip: Vec, back: Vec, f: number,
+): void => {
+  const length = Math.hypot(rimTip.x, rimTip.y);
+  const n = { x: rimTip.x / length, y: rimTip.y / length };
+  const mid = { x: w + rimTip.x / 2, y: h + rimTip.y / 2 };
+  // The fold-back crease's remaining distance to the base; the farthest material (the page
+  // corner, at the tip) lies length/2 from the resting crease, so f 0 puts the crease at the
+  // extreme and f 1 at the base.
+  const c = (1 - f) * length / 2;
+  const sweepMid = { x: mid.x - n.x * c, y: mid.y - n.y * c };
+  const pentagon = pagePentagon(w, h, back);
+  const { hole: folded } = splitPolygon(pentagon, sweepMid, n);
+  const { hole: packet } = splitPolygon(pentagon, mid, n);
+  const band = packet.length < 3 ? [] : splitPolygon(packet, sweepMid, n).kept;
+
+  section.style.clipPath = folded.length < 3 ? HIDDEN_CLIP : polygonClip(folded);
+  section.style.transform = `translate(${2 * c * n.x}px, ${2 * c * n.y}px)`;
+  section.style.transformOrigin = '';
+  if (band.length < 3) {
+    fold.style.clipPath = HIDDEN_CLIP;
+    return;
+  }
+  const angle = Math.atan2(n.x, -n.y);
+  fold.style.clipPath = polygonClip(band);
+  fold.style.transformOrigin = `${mid.x}px ${mid.y}px`;
+  fold.style.transform = `rotate(${angle}rad) scaleY(-1) rotate(${-angle}rad)`;
+};
+
+// The landing's own glide: the fold-back crease easing in from the extreme to the base. The
+// back-fold corner cut is mid-transition while this runs (restack() starts the stack's 300ms
+// --fold-back-x/-y transition), so the pentagon is re-read every frame.
+const glideLanding = (
+  sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
+  rimTip: Vec, ms: number, onDone: () => void,
+): (() => void) => {
+  const width = readLength(sheet, '--fold-page-w');
+  const height = readLength(sheet, '--fold-page-h');
+  let frame = 0;
+  const start = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(Math.max((now - start) / ms, 0), 1);
+    const eased = 1 - (1 - t) ** 3;
+    renderLanding(section, fold, width, height, rimTip, currentBackFoldSize(sheet), eased);
+    if (t < 1) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
+    onDone();
+  };
+  frame = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(frame);
+};
+
 const pageIndex = (page: HTMLElement): number => parseFloat(page.style.getPropertyValue('--page-index'));
 
 // [data-paper-flipped] means there is a previous page to go back to — equivalently, the stack
@@ -487,6 +558,7 @@ const clearFrontFold = (sheet: HTMLElement): void => {
 const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
   fold.classList.remove('paper-fold--active');
+  fold.style.zIndex = '';
   clearFoldRender(section, fold);
   clearFrontFold(sheet);
   // A back-drag's grab squares this sheet up with the front page; letting go of the inline
@@ -563,8 +635,8 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
 // resting angle as the fold completes. Only that crease lets the page lie flat behind the
 // stack wearing the same folded-back corner as every flipped page; finishing on any other rim
 // crease would land it folded along a line the resting state contradicts. Restacking happens
-// there, and then the flipped sheet — now behind the stack — folds back down before its fold
-// state is cleared for good.
+// there, and from there the landing (renderLanding) folds the sheet back down from the
+// extreme, before its fold state is cleared for good.
 const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
   const width = readLength(sheet, '--fold-page-w');
   const height = readLength(sheet, '--fold-page-h');
@@ -572,8 +644,11 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   let settling = false;
   let cancelGlide = glideFoldTip(sheet, section, fold, to, 300, () => {
     restack(sheet, fold);
+    // The folded-back front rides over the still-doubled band, so the section rises above its
+    // flap sibling for the landing (both stay under the other pages — the sheet is hindmost)
+    fold.style.zIndex = '-1';
     settling = true;
-    cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, () => {
+    cancelGlide = glideLanding(sheet, section, fold, to, 400, () => {
       settling = false;
       finishFlip(sheet, section, fold);
     });
