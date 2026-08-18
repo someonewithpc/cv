@@ -329,21 +329,28 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     y: (gesture.gain * e.clientY - offset.y) - contentRect.bottom,
   };
 
-  // An unfold runs on one axis: the page arrived folded along the resting crease, and laying it
-  // flat only slides that crease home, never turns it — so the tip rides the seed line, as far
-  // along it as the pointer has pulled, between fully folded and flat (paper unfolds flat; it
-  // doesn't keep going and fold the other way, nor further over than it arrived). Tracking the
-  // raw pointer here instead let an off-axis drag carry the tip clear of that line, leaving the
-  // page folded along some other crease however far it was dragged. The axis is the resting
-  // crease's normal, which leans 1-in-2 whatever shape the page is: on a 2:1 page it happens to
-  // run down the page's own diagonal, so dragging toward the center unfolded it, but on a
-  // portrait page that drag is ~27° off the axis and the corner never came unfolded at all.
+  // An unfold splits the pointer two ways. How far the corner still stands off its home is read
+  // only along the unfold axis — the resting crease's normal, the line the page came over on —
+  // so any drag carrying some pull along it lays the page flat in the end, whatever its lean;
+  // taking that distance from the raw pointer instead left an off-axis drag stuck part-folded
+  // forever, since it never brought the tip home. The axis leans 1-in-2 whatever shape the page
+  // is: on a 2:1 page it happens to run down the page's own diagonal, so dragging toward the
+  // center unfolded it, but on a portrait page that drag is ~27° off and the corner never came
+  // unfolded at all. Which way the corner points, though, is the pointer's to say — the same
+  // freedom the forward fold has, and the approach phase before this one — so it rides the ray
+  // out to the pointer at whatever distance the pull has left it, swinging round as the hand
+  // arcs rather than sliding stiffly up and down one line. The two agree at the promotion, where
+  // the tip sits on the axis and the offset has just been re-derived, so the phases meet without
+  // a kink. Clamped at the seed: paper unfolds flat, it doesn't keep going and fold the other
+  // way, nor further over than it arrived.
   const { unfoldFrom } = gesture;
   if (unfoldFrom) {
     const span = Math.hypot(unfoldFrom.x, unfoldFrom.y);
     const axis = { x: unfoldFrom.x / span, y: unfoldFrom.y / span };
     const along = Math.min(Math.max(tip.x * axis.x + tip.y * axis.y, 0), span);
-    tip = { x: axis.x * along, y: axis.y * along };
+    const stand = Math.hypot(tip.x, tip.y);
+    const dir = stand > 0 ? { x: tip.x / stand, y: tip.y / stand } : axis;
+    tip = { x: dir.x * along, y: dir.y * along };
   }
 
   // Paper doesn't stretch: folding keeps the dragged corner within |corner - pin| of the paper
