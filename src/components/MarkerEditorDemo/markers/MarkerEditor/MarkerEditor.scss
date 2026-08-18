@@ -3,15 +3,23 @@
 $visrez-brand: #89ab24;
 $marker-editor-background: #333;
 
+// Marker-part chip grid; the narrow layout repacks it, so these are file-scope.
+$ul-width: 4em;
+$ul-columns: 4;
+
 #marker-editor,
 #marker-editor-embed,
 .marker-editor {
   z-index: 1000;
   font-family: var(--font-poppins);
 
-  // Widest thing in the chrome; a host too narrow for the em-based layout buys
-  // width back here instead of shrinking past the font-size floor.
+  // Tallest and widest thing in the chrome.
   --marker-editor-canvas: 32em;
+
+  // The chrome's footprint in em. The type scales so that footprint fits the
+  // host, so these have to follow whichever layout `article` is using.
+  --marker-editor-chrome-inline: 56;
+  --marker-editor-chrome-block: 35;
 
   // Contained by the carousel page section (scrolls away with that page).
   position: absolute;
@@ -49,16 +57,16 @@ $marker-editor-background: #333;
   & > div.wrapper {
     pointer-events: auto;
 
-    // The chrome is ~53em wide against a font-size driven by cqmin, so any host
-    // squarer than about 5:4 wants more width than it has — and a phone-width
-    // host runs into the font-size floor besides. Both cases buy the width back
-    // from the canvas. Set from inside: the query has to see the editor root.
-    @container ((max-aspect-ratio: 5 / 4) or (max-width: 26rem)) {
-      --marker-editor-canvas: 17em;
-    }
-
     // Scale em-based chrome to the drawing frame.
-    font-size: clamp(0.45rem, 2.35cqmin, 1rem);
+    font-size: clamp(
+      0.45rem,
+      min(
+        2.35cqmin,
+        calc((100cqh - 1.25rem) / var(--marker-editor-chrome-block)),
+        calc((100cqw - 1.25rem) / var(--marker-editor-chrome-inline))
+      ),
+      1rem
+    );
     max-width: calc(100% - 1.25rem);
     max-height: calc(100% - 1.25rem);
     overflow: auto;
@@ -211,9 +219,7 @@ $marker-editor-background: #333;
         }
 
         $svg-margin: 0.25em;
-        $ul-width: 4em;
         $ul-gap: 0.5em;
-        $ul-columns: 4;
 
         ul {
           padding: 0;
@@ -324,6 +330,37 @@ $marker-editor-background: #333;
         }
       }
     }
+
+    // Canvas beside sidebar needs 56em, and below about 27rem of host that
+    // only fits at a type size nobody can read. Stack them instead when the
+    // host is at least as tall as it is wide, so there is height to spend.
+    // Declared here, after the layout it overrides, and from inside the chrome
+    // so the query resolves against the root.
+    @container ((max-width: 27rem) and (max-aspect-ratio: 1 / 1)) {
+      // Stacked, the canvas is the tallest thing in the chrome and height is
+      // the scarce axis — so it gives some back.
+      --marker-editor-canvas: 28em;
+      --marker-editor-chrome-inline: 32;
+      --marker-editor-chrome-block: 60;
+
+      article {
+        grid-template-areas:
+          "navigation"
+          "content"
+          "sidebar";
+
+        hr.vr {
+          display: none;
+        }
+
+        // A full-width sidebar would strew the parts across the row; keep them
+        // packed the way they sit beside the canvas.
+        aside ul {
+          grid-template-columns: repeat(#{$ul-columns}, #{$ul-width});
+          justify-content: start;
+        }
+      }
+    }
   }
 }
 
@@ -336,7 +373,11 @@ $marker-editor-background: #333;
     // Leave a little slack so the tip / bottom padding isn't clipped.
     font-size: clamp(
       0.42rem,
-      min(2.85cqmin, calc((100cqh - 1.25rem) / 35), calc((100cqw - 1rem) / 56)),
+      min(
+        2.85cqmin,
+        calc((100cqh - 1.25rem) / var(--marker-editor-chrome-block)),
+        calc((100cqw - 1rem) / var(--marker-editor-chrome-inline))
+      ),
       1.05rem
     );
     width: max-content;
