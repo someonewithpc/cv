@@ -94,7 +94,9 @@ article {
   anchor-scope: --technical-drawing-stack;
 
   @container technical-drawing-width (max-width: 40em) {
-    --technical-drawing-aspect: 3 / 4;
+    /* Portrait has to stack artwork, note and title block where landscape put
+       them side by side, so take the height a phone actually has. */
+    --technical-drawing-aspect: 3 / 5;
     max-height: min(36rem, 85svh);
   }
 
