@@ -158,9 +158,10 @@ const pages = await Promise.all(
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
       order: calc(-1 * var(--page-index));
-      // --flip-progress (0..1, set by fold-drag.ts while the front page folds over) unwinds
-      // the splay with the drag: each page eases toward the slot below as the flip advances,
-      // so by the time the stack renumbers there's no rotation left to pop. --paper-peek
+      // --flip-progress (set to 1 by fold-drag.ts for the length of a drag) closes the fan by
+      // one page: the front page and the one behind it square up — so their folded-back corners
+      // stay flush instead of fanning a gap open at the top-left — and by the time a committed
+      // flip renumbers the stack there's no rotation left to pop. --paper-peek
       // (inline, set by the back-fold tease) swings the hindmost page a little further out of
       // the fan when the pointer nears the folded-back corner, showing the page a back-drag
       // would bring over; the rotate transition below eases both effects.
