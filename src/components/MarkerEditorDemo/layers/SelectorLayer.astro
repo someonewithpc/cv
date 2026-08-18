@@ -124,6 +124,13 @@ const squirclePath = [
   gap: 1.25em;
   width: 100%;
   font-size: 1.25em;
+
+  // The chip row is sized in em, so a phone sheet needs a smaller em or the
+  // panel ends up flush against the frame.
+  @container technical-drawing (orientation: portrait) {
+    font-size: 1.05em;
+  }
+
   color: var(--fg-700, #f4f0ea);
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
