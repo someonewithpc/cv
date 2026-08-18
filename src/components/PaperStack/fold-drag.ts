@@ -85,16 +85,18 @@ const BACK_TEASE_PEEK = 5;
 // portrait page feeling far heavier to bring back over than the same drag on a wide one.
 const BACK_APPROACH_PULL = 0.105;
 
-// What a back-drag has to be pulled to commit: the pointer a third of the way to the page's
+// What a back-drag has to be pulled to commit: the pointer a quarter of the way to the page's
 // opposite corner, measured from the grab along the pull. Reading it off the pointer's own travel
 // rather than off where the fold has got to is what makes the gesture answer to the hand — the
 // unfold moves the corner at twice the pointer, so a commit staked on the fold's geometry (the
 // crease receding past a point a third of the way in, as it was) took a drag half way to the
 // corner to satisfy, twice what it looks like it is asking for. As a share of the whole
-// gesture — the pull that brings the page over plus the unfold that lays it flat — a third of
-// the diagonal also puts it about where a forward drag's own commit sits in its, so the two
-// directions ask about the same of the hand.
-const BACK_COMMIT_REACH = 1 / 3;
+// gesture — the pull that brings the page over plus the unfold that lays it flat — a quarter of
+// the diagonal sits a little inside where a forward drag's own commit falls in its, so fetching a
+// page back asks slightly less of the hand than sending one away. It lands not far past the point
+// the page finishes coming over the clip (BACK_APPROACH_PULL), which leaves a short stretch — the
+// tail of the approach and the first of the unfold — for a drag to be taken back in.
+const BACK_COMMIT_REACH = 0.25;
 
 // A horizontal scroll works the fold the way a drag does, along the same line, so this is what a
 // scrolled pixel is worth against a dragged one — 1 keeps the paper level with the scroll, and a
@@ -493,7 +495,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // Live commit feedback: past the threshold the flap brightens and the hint appears, meaning the
   // same thing whichever way the page is going — let go now and the gesture goes through. Forward
   // that is the fold having carried the commit point over; on a back-drag it is the pull having
-  // come its third of the way, which is the release's own test (see BACK_COMMIT_REACH).
+  // come its quarter of the way, which is the release's own test (see BACK_COMMIT_REACH).
   const { back } = gesture;
   const along = back ? backAlong(back, at) : 0;
   const willCommit = back
@@ -1129,7 +1131,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // nothing snaps into place; dragging folds it progressively over the clip (onBackApproach).
   // The moment it has come fully over it is promoted, and the same drag machinery as the
   // forward fold unfolds it from there. Both phases are one pull though, and the release
-  // measures that: dragged its third of the way to the opposite corner (BACK_COMMIT_REACH) the
+  // measures that: dragged its quarter of the way to the opposite corner (BACK_COMMIT_REACH) the
   // page stays as the new front page, short of it it goes back where it came from — whether the
   // hand let go during the approach or after it.
   // Sets the stack up for a back-drag and returns the gesture it starts, ready for whatever is
