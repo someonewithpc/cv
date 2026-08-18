@@ -26,15 +26,17 @@ type FoldGesture = {
   // approach hands the gesture on. The tip may run all the way back to the page corner along it
   // but no further: paper unfolds flat, it doesn't keep going and fold the other way.
   unfoldFrom: Vec | null;
-  // Present while a back-drag is still in its approach phase — the previous page folding up
-  // behind the stack, before it has come over the clip (see onBackApproach). Cleared when the
-  // approach completes and the page is promoted.
+  // Present while a back-drag is still in its approach phase — the previous page rolling up
+  // over the clip from behind the stack (see onBackApproach). Cleared when the approach
+  // completes and the page is promoted.
   approach: {
     // The fully-folded tip: the page corner reflected across the resting crease
     seed: Vec;
     // Pointer position at grab, and the pull direction (the resting crease's normal)
     origin: Vec;
     dir: Vec;
+    // Pull progress, 0 (flat behind the stack) to 1 (folded fully over the clip)
+    s: number;
   } | null;
 };
 
@@ -127,19 +129,12 @@ const polygonCentroid = (pts: Vec[]): Vec => {
   return { x: cx / (3 * doubleArea), y: cy / (3 * doubleArea) };
 };
 
-// The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
-// (given relative to that corner) — the unique line folding one onto the other. Splitting the
-// page rectangle against it (single-edge Sutherland-Hodgman, both sides in one pass) covers
-// every fold the tip can express, including creases that wrap page corners or hang off the
-// bottom/right edges, without the closed-form case analysis the idle CSS formula needs.
-const splitByCrease = (w: number, h: number, tip: Vec, back: Vec) => {
-  const length = Math.hypot(tip.x, tip.y);
-  const normal = { x: tip.x / length, y: tip.y / length };
-  const mid = { x: w + tip.x / 2, y: h + tip.y / 2 };
+// Single-edge Sutherland-Hodgman split (both sides in one pass) of the page — the rectangle
+// minus the back-fold's top-left corner cut (both cut vertices collapse to (0, 0) while the
+// back-fold is 0, i.e. before any page has been flipped) — by the line through mid with the
+// given unit normal: kept is the side the normal points to, hole the other.
+const splitByLine = (w: number, h: number, back: Vec, mid: Vec, normal: Vec) => {
   const signed = (p: Vec) => (p.x - mid.x) * normal.x + (p.y - mid.y) * normal.y;
-
-  // The page rectangle minus the back-fold's top-left corner cut (both cut vertices collapse to
-  // (0, 0) while the back-fold is 0, i.e. before any page has been flipped)
   const rect = [{ x: back.x, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }, { x: 0, y: back.y }];
   const kept: Vec[] = [];
   const hole: Vec[] = [];
@@ -155,7 +150,19 @@ const splitByCrease = (w: number, h: number, tip: Vec, back: Vec) => {
       hole.push(crossing);
     }
   }
-  return { kept, hole, mid, angle: Math.atan2(normal.x, -normal.y) };
+  return { kept, hole };
+};
+
+// The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
+// (given relative to that corner) — the unique line folding one onto the other. Splitting the
+// page against it covers every fold the tip can express, including creases that wrap page
+// corners or hang off the bottom/right edges, without the closed-form case analysis the idle
+// CSS formula needs.
+const splitByCrease = (w: number, h: number, tip: Vec, back: Vec) => {
+  const length = Math.hypot(tip.x, tip.y);
+  const normal = { x: tip.x / length, y: tip.y / length };
+  const mid = { x: w + tip.x / 2, y: h + tip.y / 2 };
+  return { ...splitByLine(w, h, back, mid, normal), mid, angle: Math.atan2(normal.x, -normal.y) };
 };
 
 // Whether the crease has folded the page's center over with the corner — the folded region is
@@ -237,24 +244,79 @@ const renderFold = (
   }
 };
 
-// The second half of a flip, once the sheet has passed the clip. Going over and coming back
-// down is a full turn, so the material landing behind the stack lies printed side up, unmirrored
-// — the kept region growing out from the clip *is* the landing, the page's own front peeking out
-// behind the whole stack as it settles. The remainder still in the air faces the viewer with its
-// back, but it is falling away behind pages already at rest, so the flap stays retired rather
-// than sweeping a blank shape over them.
+// The second half of a flip: a second fold about the rim crease, running the same way as the
+// first. The crease doesn't stop at the pin and it doesn't retrace its path — it keeps
+// travelling, out through the doubled-over page, and everything it passes has now been folded
+// twice: back at its home position, printed side up, unmirrored, behind the whole stack. What's
+// still ahead of it is the shrinking remainder of the overhang, blank back showing, peeling away
+// from the clip as the page rolls over onto the back of the stack.
+//
+// rimTip is the fully-folded tip the first fold ended on; its crease (through the pin) is where
+// the second one starts. d is how far that second crease has travelled since — the sweep line is
+// the rim crease shifted d further into the page, because material within d of the rim crease
+// has a doubled position within d on the other side, and that's exactly what the sweep has
+// passed. The overhang keeps the *rim* reflection (the first fold's, frozen), clipped to what
+// the sweep hasn't reached.
 const renderLanding = (
-  section: HTMLElement, fold: HTMLElement, w: number, h: number, tip: Vec, back: Vec,
+  section: HTMLElement, fold: HTMLElement, w: number, h: number, rimTip: Vec, back: Vec, d: number,
 ): void => {
-  fold.style.clipPath = HIDDEN_CLIP;
+  const poly = (pts: Vec[]) => `polygon(${pts.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+  const length = Math.hypot(rimTip.x, rimTip.y);
+  const normal = { x: rimTip.x / length, y: rimTip.y / length };
+  const mid = { x: w + rimTip.x / 2, y: h + rimTip.y / 2 };
+  const sweep = { x: mid.x - normal.x * d, y: mid.y - normal.y * d };
+  const { kept, hole } = splitByLine(w, h, back, sweep, normal);
+
+  section.style.clipPath = kept.length < 3 ? HIDDEN_CLIP : poly(kept);
   section.style.transform = '';
   section.style.transformOrigin = '';
-  if (Math.hypot(tip.x, tip.y) < 0.5) {
-    section.style.clipPath = '';
+  if (hole.length < 3) {
+    fold.style.clipPath = HIDDEN_CLIP;
     return;
   }
-  const { kept } = splitByCrease(w, h, tip, back);
-  section.style.clipPath = `polygon(${kept.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+  const angle = Math.atan2(normal.x, -normal.y);
+  fold.style.clipPath = poly(hole);
+  fold.style.transformOrigin = `${mid.x}px ${mid.y}px`;
+  fold.style.transform = `rotate(${angle}rad) scaleY(-1) rotate(${-angle}rad)`;
+};
+
+// The approach's other half of the same trick: material within `lift` of the resting crease has
+// been pulled up over the clip — nearest the pin first, the way a pinned page actually comes
+// over — and shows as the overhang growing out of the folded-back corner, while the far side
+// still lies printed side up behind the stack. At lift 0 the doubled region is exactly the
+// folded-back corner the page already wears (the cut pentagon leaves nothing beyond the resting
+// crease), so the grab starts from what's already on screen.
+const renderLifting = (
+  section: HTMLElement, fold: HTMLElement, w: number, h: number, rimTip: Vec, back: Vec, lift: number,
+): void => {
+  const poly = (pts: Vec[]) => `polygon(${pts.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+  const length = Math.hypot(rimTip.x, rimTip.y);
+  const normal = { x: rimTip.x / length, y: rimTip.y / length };
+  const mid = { x: w + rimTip.x / 2, y: h + rimTip.y / 2 };
+  const sweep = { x: mid.x - normal.x * lift, y: mid.y - normal.y * lift };
+  const { kept, hole } = splitByLine(w, h, back, sweep, { x: -normal.x, y: -normal.y });
+
+  section.style.clipPath = kept.length < 3 ? HIDDEN_CLIP : poly(kept);
+  section.style.transform = '';
+  section.style.transformOrigin = '';
+  if (hole.length < 3) {
+    fold.style.clipPath = HIDDEN_CLIP;
+    return;
+  }
+  const angle = Math.atan2(normal.x, -normal.y);
+  fold.style.clipPath = poly(hole);
+  fold.style.transformOrigin = `${mid.x}px ${mid.y}px`;
+  fold.style.transform = `rotate(${angle}rad) scaleY(-1) rotate(${-angle}rad)`;
+};
+
+// How far the landing's sweep has to travel: the far side of the page, measured from the rim
+// crease along its normal.
+const landingReach = (w: number, h: number, back: Vec, rimTip: Vec): number => {
+  const length = Math.hypot(rimTip.x, rimTip.y);
+  const normal = { x: rimTip.x / length, y: rimTip.y / length };
+  const mid = { x: w + rimTip.x / 2, y: h + rimTip.y / 2 };
+  const rect = [{ x: back.x, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }, { x: 0, y: back.y }];
+  return Math.max(0, ...rect.map((p) => (mid.x - p.x) * normal.x + (mid.y - p.y) * normal.y));
 };
 
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
@@ -348,7 +410,6 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 const glideFoldTip = (
   sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   to: Vec, baseMs: number, onDone: () => void,
-  { landing = false }: { landing?: boolean } = {},
 ): (() => void) => {
   // The observed layout size, not getBoundingClientRect: a sheet gliding behind the stack
   // (a back-drag's approach released early) still carries its splay rotation, which would
@@ -371,8 +432,9 @@ const glideFoldTip = (
     sheet.style.setProperty('--fold-y', `${size.y}px`);
     // Read every frame, not once at glide start: restack() begins the stack's own 300ms
     // --fold-back-x/-y transition from 0 to rest, so a value captured up front would go stale
-    // mid-glide and paint this sheet without the corner cut the front pages are growing.
-    (landing ? renderLanding : renderFold)(section, fold, width, height, tip, currentBackFoldSize(sheet));
+    // mid-glide and paint this sheet's flap without the corner cut the front pages are growing,
+    // showing through as a flat grey square.
+    renderFold(section, fold, width, height, tip, currentBackFoldSize(sheet));
 
     if (t < 1) {
       frame = requestAnimationFrame(step);
@@ -382,6 +444,35 @@ const glideFoldTip = (
   };
   frame = requestAnimationFrame(step);
 
+  return () => cancelAnimationFrame(frame);
+};
+
+// The landing's own glide: the second fold's sweep, eased between two fractions of its full
+// reach. Fractions rather than distances, and the reach recomputed every frame, because the
+// back-fold corner cut is mid-transition while this runs (restack() starts the stack's 300ms
+// --fold-back-x/-y transition) and the pentagon it sweeps is shifting under it.
+const glideLanding = (
+  sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
+  rimTip: Vec, from: number, to: number, ms: number, onDone: () => void,
+  render: typeof renderLanding = renderLanding,
+): (() => void) => {
+  const width = readLength(sheet, '--fold-page-w');
+  const height = readLength(sheet, '--fold-page-h');
+  let frame = 0;
+  const start = performance.now();
+  const step = (now: number) => {
+    const t = Math.min((now - start) / ms, 1);
+    const eased = 1 - (1 - t) ** 3;
+    const back = currentBackFoldSize(sheet);
+    const d = (from + (to - from) * eased) * landingReach(width, height, back, rimTip);
+    render(section, fold, width, height, rimTip, back, d);
+    if (t < 1) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
+    onDone();
+  };
+  frame = requestAnimationFrame(step);
   return () => cancelAnimationFrame(frame);
 };
 
@@ -512,16 +603,14 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   return prev;
 };
 
-// A back-drag's approach phase: the hindmost page, still behind the stack, folds over in
-// proportion to how far the pointer has pulled along the resting crease's normal. The tip runs
-// the straight line from the flat corner to its reflection across that crease — a point that
-// lies exactly on the pin's reach circle. The sheet was squared up with the front page at the
-// grab (see the grab handler), so its folded-back corner tracks the front page's throughout.
-// What rises into view is the flap — the page's blank back doubling over its printed side, the
-// same face a fold in front of the stack shows. The completed fold's
-// crease coincides with the corner cut every page already wears, so promoting the page at that
-// exact moment changes nothing on screen: the ordinary unfold drag (onFoldDrag, gain 2) takes
-// over seamlessly, with the pointer offset re-derived for continuity.
+// A back-drag's approach phase: the hindmost page lies flat behind the stack and pulling rolls
+// it up over the clip, nearest material first (renderLifting) — the overhang, blank back
+// showing, growing out of the folded-back corner in proportion to how far the pointer has
+// travelled along the resting crease's normal, while the far side stays printed side up behind
+// the stack. Fully pulled over, the state coincides with a first fold across the resting crease
+// — the same rim the forward flip restacks at — so promoting the page there changes nothing on
+// screen: the ordinary unfold drag (onFoldDrag, gain 2) takes over seamlessly, with the pointer
+// offset re-derived for continuity.
 const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
   const approach = gesture.approach!;
   const w = readLength(sheet, '--fold-page-w');
@@ -529,14 +618,17 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const along = (e.clientX - approach.origin.x) * approach.dir.x
     + (e.clientY - approach.origin.y) * approach.dir.y;
   const s = Math.min(Math.max(along / BACK_APPROACH_DISTANCE, 0), 1);
-  const tip = { x: approach.seed.x * s, y: approach.seed.y * s };
-  const size = foldSizeFromTip(tip.x, tip.y);
-  sheet.style.setProperty('--fold-x', `${size.x}px`);
-  sheet.style.setProperty('--fold-y', `${size.y}px`);
-  renderFold(section, fold, w, h, tip, currentBackFoldSize(sheet));
+  approach.s = s;
+  const back = currentBackFoldSize(sheet);
+  renderLifting(section, fold, w, h, approach.seed, back, s * landingReach(w, h, back, approach.seed));
   if (s < 1) return;
 
-  // Fully over the clip — promote the page and hand the rest of the gesture to the unfold drag
+  // Fully over the clip — hand the sheet from the landing to the first fold that coincides with
+  // it there, promote the page, and let the unfold drag run the rest of the gesture.
+  const size = foldSizeFromTip(approach.seed.x, approach.seed.y);
+  sheet.style.setProperty('--fold-x', `${size.x}px`);
+  sheet.style.setProperty('--fold-y', `${size.y}px`);
+  renderFold(section, fold, w, h, approach.seed, back);
   sheet.style.rotate = '';
   bringToFront(sheet.parentElement!);
   sheet.getAnimations().forEach((animation) => animation.cancel());
@@ -549,9 +641,9 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
 // outward from the pin through wherever the tip is now, so the flip keeps going the way the
 // drag was headed (a corner dragged up over the top edge finishes flipping over the top, not
 // sideways). Any rim point is a full fold: the crease passes through the pin there. Restacking
-// happens at the rim — the overhang snapping over the clip — and then the sheet lands behind
-// the stack (renderLanding): its printed front grows out from the clip, the tip gliding home to
-// the page corner, before its fold state is cleared for good.
+// happens at the rim, and from there the landing (renderLanding) takes the sheet down: the
+// second fold's sweep runs on out through the overhang, the printed front growing out from the
+// clip behind the stack, before the sheet's fold state is cleared for good.
 const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
   const { width, height } = sheet.getBoundingClientRect();
   const pin = pinOf(sheet, width, height);
@@ -568,10 +660,10 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   let cancelGlide = glideFoldTip(sheet, section, fold, to, 300, () => {
     restack(sheet, fold);
     settling = true;
-    cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, () => {
+    cancelGlide = glideLanding(sheet, section, fold, to, 0, 1, 400, () => {
       settling = false;
       finishFlip(sheet, section, fold);
-    }, { landing: true });
+    });
   });
   // A re-grab mid-fold-back-down fast-forwards to the settled end state
   return () => {
@@ -698,10 +790,10 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     cancelSettle = releaseFold(sheet, section, fold, canceled);
   });
 
-  // A back-drag released before its approach completed: the previous page folds back down
-  // behind the stack and the front page gets its flap and resting dog-ear back, leaving the
-  // stack exactly as the grab found it.
-  const returnBehind = (): (() => void) => {
+  // A back-drag released before its approach completed: the previous page rolls back down flat
+  // behind the stack — the lift easing back to zero — and the front page gets its flap and
+  // resting dog-ear back, leaving the stack exactly as the grab found it.
+  const returnBehind = (approach: NonNullable<FoldGesture['approach']>): (() => void) => {
     let done = false;
     const front = sheet.parentElement!.querySelector<HTMLElement>('.paper-front')!;
     const finish = () => {
@@ -709,7 +801,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       finishFlip(sheet, section, fold);
       restIdleFold(front);
     };
-    const cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, finish);
+    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.s, 0, 250, finish, renderLifting);
     return () => {
       cancelGlide();
       if (!done) finish();
@@ -718,7 +810,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
   // Going back a page runs in two phases. First the approach: grabbing the folded-back corner
   // moves only the fold flap onto the hindmost page — which stays behind the stack — so
-  // nothing snaps into place; dragging folds it progressively over the clip (onBackApproach).
+  // nothing snaps into place; dragging rolls it progressively up over the clip (onBackApproach).
   // The moment it has come fully over it is promoted, and the same drag machinery as the
   // forward fold unfolds it from there. The shared release threshold then decides both
   // directions: still center-folded sends it back where it came from, unfolded past center
@@ -747,16 +839,19 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
     const w = readLength(sheet, '--fold-page-w');
     const h = readLength(sheet, '--fold-page-h');
-    sheet.append(fold);
-    fold.classList.add('paper-fold--active');
-    // Active mode sizes the flap to the whole page, and the idle clip-path it still carries fills
-    // that box at fold 0 — a page-sized slab of flap colour on a sheet whose top-left corner shows
-    // through the front page's cut. Render the degenerate fold now so it starts out hidden.
-    renderFold(section, fold, w, h, { x: 0, y: 0 }, currentBackFoldSize(sheet));
     const restSize = backRestSize(sheet);
     const nl = Math.hypot(restSize.x, restSize.y);
     const nx = restSize.y / nl, ny = restSize.x / nl;
     const dist = nx * w + ny * h - restSize.x * restSize.y / nl;
+    const seed = { x: -2 * dist * nx, y: -2 * dist * ny };
+
+    sheet.append(fold);
+    fold.classList.add('paper-fold--active');
+    // Start the lift at zero: the page whole and flat behind the stack, the overhang no more
+    // than the folded-back corner already on screen — so nothing moves until the pointer does.
+    // Without this the flap, page-sized in active mode, would paint a slab of its own colour
+    // through the front page's cut corner.
+    renderLifting(section, fold, w, h, seed, currentBackFoldSize(sheet), 0);
 
     // The arriving page squares up with the front one for the whole gesture (the rotate
     // transition eases it there), so their folded-back corners stay flush as it comes over —
@@ -767,17 +862,14 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     gesture = {
       pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false,
       unfoldFrom: null,
-      approach: {
-        seed: { x: -2 * dist * nx, y: -2 * dist * ny },
-        origin: { x: e.clientX, y: e.clientY },
-        dir: { x: nx, y: ny },
-      },
+      approach: { seed, origin: { x: e.clientX, y: e.clientY }, dir: { x: nx, y: ny }, s: 0 },
     };
     try {
       grab.setPointerCapture(e.pointerId);
     } catch {
+      const { approach } = gesture;
       gesture = null;
-      cancelSettle = returnBehind();
+      cancelSettle = returnBehind(approach!);
     }
   });
 
@@ -803,7 +895,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     const { approach } = gesture;
     gesture = null;
     if (approach) {
-      cancelSettle = returnBehind();
+      cancelSettle = returnBehind(approach);
       return;
     }
     // The grab handle sat out the promotion so the DOM move couldn't break its pointer
