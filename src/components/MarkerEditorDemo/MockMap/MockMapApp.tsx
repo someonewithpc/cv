@@ -429,6 +429,23 @@ function MockMapOverlayInner() {
     pushToastRef.current(autoplayStartedToast());
   };
 
+  const restartDemo = () => {
+    clearResumeTimer();
+    clearHandoffTimer();
+    clearTargetRetry();
+    clearDemoTargetHighlight();
+    clearClickTimer();
+    setCursorClicking(false);
+    setCursorDragging(false);
+    userControlRef.current = false;
+    setUserControl(false);
+    dispatch(setAutoplayPaused(false));
+    cursorPhaseRef.current = 'demo';
+    setCursorPhase('demo');
+    autoplayRef.current?.restart();
+    pushToastRef.current(autoplayStartedToast());
+  };
+
   // Never hide or teleport the real pointer — on trusted user movement, pause and
   // fade the demo cursor where it is, then resume after the user goes idle.
   const yieldToUser = () => {
@@ -512,6 +529,25 @@ function MockMapOverlayInner() {
           )}
         </div>
       </div>
+
+      <button
+        type="button"
+        className="mock-map-restart"
+        title="Restart the demo"
+        onClick={restartDemo}
+      >
+        <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
+          <path
+            d="M15.5 5.5A6.5 6.5 0 1 0 16.9 11M15.5 5.5V2M15.5 5.5H12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Restart
+      </button>
 
       {editingSpace && selectorOverlayPos && (
         <MarkerSelector

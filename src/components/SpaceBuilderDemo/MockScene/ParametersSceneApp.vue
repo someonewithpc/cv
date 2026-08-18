@@ -142,6 +142,13 @@ function startAutoplay() {
   void runAutoplay();
 }
 
+function restartDemo() {
+  if (resumeTimer) clearTimeout(resumeTimer);
+  resumeTimer = null;
+  userControl = false;
+  startAutoplay();
+}
+
 function yieldToUser() {
   if (resumeTimer) clearTimeout(resumeTimer);
   autoplayToken += 1;
@@ -439,9 +446,14 @@ onBeforeUnmount(() => {
 
       <p v-if="demoPlaying" class="flash" role="status">{{ autoplayStartedToast().action }}</p>
 
-      <p v-if="ready && !loadError" class="hint">
-        Orbit to look around · edit the sidebar to take over
-      </p>
+      <div v-if="ready && !loadError" class="controls">
+        <button type="button" class="restart-btn" @click="restartDemo">
+          Restart
+        </button>
+        <p class="hint">
+          Orbit to look around · edit the sidebar to take over
+        </p>
+      </div>
     </div>
 
     <aside class="sidebar" aria-label="Options" @pointerdown="yieldToUser" @focusin="yieldToUser">
@@ -590,12 +602,38 @@ $scene-bg: #212121;
   pointer-events: none;
 }
 
-.hint {
+.controls {
   position: absolute;
   left: 50%;
   bottom: 0.55rem;
   z-index: 2;
   translate: -50% 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  // Narrow frames can't fit the button + full hint on one line — wrap
+  // instead of letting the row force this centered box off both edges.
+  max-width: calc(100% - 1rem);
+}
+
+.restart-btn {
+  padding: 0.28rem 0.7rem;
+  border: 1px solid $visrez-brand;
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, $visrez-brand 25%, #171717);
+  color: #f4ffe8;
+  font: 700 0.68rem/1.3 var(--font-poppins, system-ui, sans-serif);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: color-mix(in oklab, $visrez-brand 40%, #171717);
+  }
+}
+
+.hint {
   margin: 0;
   padding: 0.25rem 0.55rem;
   border-radius: 0.25rem;
@@ -604,7 +642,7 @@ $scene-bg: #212121;
   font: 0.62rem/1.3 var(--font-poppins, system-ui, sans-serif);
   letter-spacing: 0.02em;
   pointer-events: none;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .sidebar {
@@ -618,7 +656,11 @@ $scene-bg: #212121;
   box-shadow: -4px 0 16px rgba(0, 0, 0, 0.4);
 
   @container technical-drawing (orientation: portrait) {
-    max-height: min(46cqh, 100%);
+    // Not min(46cqh, 100%): that 100% is a percentage of this item's own
+    // grid row, which the row's `auto` track derives from this max-height —
+    // a circular percentage Chrome resolves by dropping the clamp entirely,
+    // so the sidebar (and the space it left the 1fr viewport row) collapsed.
+    max-height: 46cqh;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
   }
 }
