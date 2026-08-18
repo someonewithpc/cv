@@ -122,10 +122,10 @@ const annotationFontSize = 0.1 * annotationScale;
       stroke-linejoin: round;
     }
 
-    // A phone sheet cannot spare gutters for the callouts and still leave the
-    // chrome legible — drop them and hand the room to the editor. The note
-    // says the same thing in prose.
-    @container technical-drawing (orientation: portrait) {
+    // The chrome only fits inside the callout gutters on a frame this wide.
+    // Under it the room is worth more than the callouts, whose type would be
+    // unreadable at that size anyway — the note says the same thing in prose.
+    @container technical-drawing-width (max-width: 56em) {
       display: none;
     }
   }
@@ -140,11 +140,12 @@ const annotationFontSize = 0.1 * annotationScale;
   aspect-ratio: 1.5 / 1;
   max-width: 100%;
 
-  // No callouts to make room for here, so the box goes as wide as the sheet
-  // allows and takes the height the chrome needs to stay above its font floor.
+  // The chrome stacks on a phone sheet, so the box turns upright with it: no
+  // callouts to leave gutters for, and the sheet's spare height is the whole
+  // reason the stacked layout beats the side-by-side one.
   @container technical-drawing (orientation: portrait) {
-    width: min(92cqw, calc(80cqh * 1.25));
-    aspect-ratio: 1.25 / 1;
+    width: min(92cqw, calc(80cqh * 0.68));
+    aspect-ratio: 0.68;
   }
 
   position: relative;
@@ -166,8 +167,9 @@ const annotationFontSize = 0.1 * annotationScale;
     width: auto;
     height: auto;
 
-    @container technical-drawing (orientation: portrait) {
-      inset: 4%;
+    // No callouts down here, so the chrome takes the gutters back.
+    @container technical-drawing-width (max-width: 56em) {
+      inset: 2%;
     }
   }
 }
