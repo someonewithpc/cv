@@ -13,12 +13,13 @@ const { as: tagName = 'div', class: className, pageCount } = Astro.props;
 const Tag = tagName;
 
 // One gem-clip wire, split at the top bend into its two physical layers. The wire leans with
-// the resting fold-back crease — its outer-left edge runs along that crease, bottoming out at
-// the pin (see --fold-pin-x/-y below) — and the page's slanted top edge crosses it right where
-// the front bar begins: everything the "under" path draws below that is the back bar, hidden by
-// the page itself (it renders beneath the page content — see the template), so only the bend
-// peeks over the edge, reading as a clip slid all the way on. The "over" path is the front bar
-// pressing on the page.
+// the resting fold-back crease — its outer-right edge runs along that crease, bottoming out at
+// the pin (see --fold-pin-x/-y below) — so the whole body sits inside the corner region a flip
+// folds behind the stack: the wrappers' crease cut (see their clip-path below) swallows the
+// wire together with the corner, the clip vanishing with the paper it sits on. The "under"
+// path's lower half is the back bar, hidden by the page itself (it renders beneath the page
+// content — see the template), so only the bend peeks over the top edge, reading as a clip
+// slid all the way on. The "over" path is the front bar pressing on the page.
 const clipGradient = (id: string) => `<defs>
     <linearGradient id="${id}" x1="0" y1="0" x2="28" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#f2f4f7" />
@@ -259,13 +260,28 @@ const pages = await Promise.all(
         }
 
         // Both wire layers ride in full-page wrappers so the svg can position against the page
-        // box. No clipping: the folded-back cut's edge runs along the wire's outer-left edge
-        // (see --fold-back-rest-x/-y), so the cut never crosses the wire.
+        // box. The wrappers repeat the pages' folded-back corner cut (their svg must overhang
+        // the page, so they can't just live under the page's own clip-path): the crease edge
+        // between the last two vertices runs through the cut's real intercepts, and the two
+        // extension vertices flanking them continue it past the page box at the resting lean,
+        // far enough to clear the wire's overhang. At --fold-back 0 the cut collapses to a
+        // line through the corner that the wire sits just clear of (its outer-right edge rides
+        // the resting crease, one wire-width away); at rest the crease edge coincides with
+        // that outer-right edge — the wire disappears in sync with the corner folding back.
         & > .paper-clip,
         & > .paper-clip-under {
           position: absolute;
           inset: 0;
           pointer-events: none;
+          clip-path: polygon(
+            calc(var(--fold-back-x) + var(--fold-back-rest-x)) calc(-1 * var(--fold-back-rest-y)),
+            calc(100% + 3em) calc(-1 * var(--fold-back-rest-y)),
+            calc(100% + 3em) calc(100% + 3em),
+            -3em calc(100% + 3em),
+            -3em calc(var(--fold-back-y) + 6em),
+            0px var(--fold-back-y),
+            var(--fold-back-x) 0px
+          );
         }
 
         & > .paper-clip > svg,
@@ -273,13 +289,12 @@ const pages = await Promise.all(
           position: absolute;
           left: var(--fold-pin-x);
           top: var(--fold-pin-y);
-          // The wire's outer-left edge lies on the resting fold-back crease: its bottom point
-          // (viewBox 3.5, 50 → 12.5%, 78.125% of the box) sits on the pin, and the lean
-          // matches the crease's 1-in-2 slope (atan(1/2) from vertical). Fully inserted: the
-          // page's cut top edge crosses the wire below its top bend, so only the bend arcs
-          // over the edge.
-          translate: -12.5% -78.125%;
-          transform-origin: 12.5% 78.125%;
+          // The wire's outer-right edge lies on the resting fold-back crease: its bottom point
+          // (viewBox 24.5, 50 → 87.5%, 78.125% of the box) sits on the pin, and the lean
+          // matches the crease's 1-in-2 slope (atan(1/2) from vertical). The body extends from
+          // that edge toward the page corner — the side a flip folds behind the stack.
+          translate: -87.5% -78.125%;
+          transform-origin: 87.5% 78.125%;
           rotate: 26.565deg;
           width: 2.25em;
           height: auto;
