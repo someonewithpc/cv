@@ -121,6 +121,13 @@ const annotationFontSize = 0.1 * annotationScale;
       paint-order: stroke fill;
       stroke-linejoin: round;
     }
+
+    // A phone sheet cannot spare gutters for the callouts and still leave the
+    // chrome legible — drop them and hand the room to the editor. The note
+    // says the same thing in prose.
+    @container technical-drawing (orientation: portrait) {
+      display: none;
+    }
   }
 }
 
@@ -133,8 +140,11 @@ const annotationFontSize = 0.1 * annotationScale;
   aspect-ratio: 1.5 / 1;
   max-width: 100%;
 
+  // No callouts to make room for here, so the box goes as wide as the sheet
+  // allows and takes the height the chrome needs to stay above its font floor.
   @container technical-drawing (orientation: portrait) {
-    width: min(92cqw, calc(72cqh * 1.5));
+    width: min(92cqw, calc(80cqh * 1.25));
+    aspect-ratio: 1.25 / 1;
   }
 
   position: relative;
@@ -155,6 +165,10 @@ const annotationFontSize = 0.1 * annotationScale;
     inset: 14% 16% 15%;
     width: auto;
     height: auto;
+
+    @container technical-drawing (orientation: portrait) {
+      inset: 4%;
+    }
   }
 }
 </style>
