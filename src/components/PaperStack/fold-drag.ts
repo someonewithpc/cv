@@ -187,14 +187,24 @@ const splitByCrease = (w: number, h: number, tip: Vec, back: Vec) => {
   };
 };
 
-// Whether the crease has folded the page's center over with the corner — the folded region is
+// Whether the crease has folded the given point over with the corner — the folded region is
 // the corner's side of the crease, so this is the same signed-side convention as splitByCrease,
-// negative meaning folded. Used both as live drag feedback and as the release's flip threshold.
-const centerFolded = (w: number, h: number, tip: Vec): boolean => {
+// negative meaning folded. Used both as live drag feedback and as the release's commit test.
+const pointFolded = (point: Vec, w: number, h: number, tip: Vec): boolean => {
   if (Math.hypot(tip.x, tip.y) < 0.5) return false;
   const mid = { x: w + tip.x / 2, y: h + tip.y / 2 };
-  return (w / 2 - mid.x) * tip.x + (h / 2 - mid.y) * tip.y < 0;
+  return (point.x - mid.x) * tip.x + (point.y - mid.y) * tip.y < 0;
 };
+
+// The point a release measures the fold against, one per direction. A forward drag commits its
+// flip once the fold has carried the point half way from the dragged corner in to the center; a
+// back-drag (whose unfold retreats the crease from the top-left back toward that corner) keeps
+// the page in front once the fold has receded past the point a third of the way from the
+// top-left corner to the center — so bringing a page over commits earlier than sending one
+// back, and neither gesture has to be hauled all the way past the middle.
+const commitPoint = (w: number, h: number, backward: boolean): Vec => backward
+  ? { x: w / 6, y: h / 6 }
+  : { x: w * 3 / 4, y: h * 3 / 4 };
 
 // Closes the fan by one page for the duration of a drag (--flip-progress on the stack, see
 // index.astro), squaring the front page and the one behind it up with each other. Every page
@@ -346,10 +356,12 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   sheet.style.setProperty('--fold-x', `${size.x}px`);
   sheet.style.setProperty('--fold-y', `${size.y}px`);
 
-  // Live flip-commit feedback: past the center-folded threshold (see releaseFold) the flap
-  // brightens and the flip hint appears
+  // Live flip-commit feedback: past the commit threshold (see releaseFold) the flap brightens
+  // and the flip hint appears — on a back-drag's unfold that reads as "letting go now still
+  // sends the page back", winking out once the unfold has committed it to the front
+  const commit = commitPoint(contentRect.width, contentRect.height, gesture.unfoldFrom !== null);
   const willFlip = sheet.parentElement!.childElementCount > 1
-    && centerFolded(contentRect.width, contentRect.height, tip);
+    && pointFolded(commit, contentRect.width, contentRect.height, tip);
   fold.classList.toggle('paper-fold--will-flip', willFlip);
 
   renderFold(section, fold, contentRect.width, contentRect.height, tip, currentBackFoldSize(sheet));
@@ -759,18 +771,18 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   };
 };
 
-const shouldFlip = (sheet: HTMLElement): boolean => {
+const shouldFlip = (sheet: HTMLElement, backward: boolean): boolean => {
   const { width, height } = sheet.getBoundingClientRect();
   const { x: fx, y: fy } = currentFoldSize(sheet);
-  return centerFolded(width, height, foldTipFromSize(fx, fy));
+  return pointFolded(commitPoint(width, height, backward), width, height, foldTipFromSize(fx, fy));
 };
 
-const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, canceled: boolean): (() => void) => {
+const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, canceled: boolean, backward: boolean): (() => void) => {
   // A grab that never dragged left the animations alone, so there is nothing to hand back
   if (sheet.style.getPropertyValue('--fold-x') === '') return () => {};
 
   const hasBack = sheet.parentElement!.childElementCount > 1;
-  if (!canceled && hasBack && shouldFlip(sheet)) return flipFold(sheet, section, fold);
+  if (!canceled && hasBack && shouldFlip(sheet, backward)) return flipFold(sheet, section, fold);
   return settleFold(sheet, section, fold);
 };
 
@@ -853,7 +865,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       fold.setPointerCapture(e.pointerId);
     } catch {
       gesture = null;
-      cancelSettle = releaseFold(sheet, section, fold, true);
+      cancelSettle = releaseFold(sheet, section, fold, true, false);
     }
   });
 
@@ -874,7 +886,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
     const { canceled } = gesture;
     gesture = null;
-    cancelSettle = releaseFold(sheet, section, fold, canceled);
+    cancelSettle = releaseFold(sheet, section, fold, canceled, false);
   });
 
   // A back-drag released before its approach completed: the landing resumes from where the
@@ -899,9 +911,9 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // moves only the fold flap onto the hindmost page — which stays behind the stack — so
   // nothing snaps into place; dragging folds it progressively over the clip (onBackApproach).
   // The moment it has come fully over it is promoted, and the same drag machinery as the
-  // forward fold unfolds it from there. The shared release threshold then decides both
-  // directions: still center-folded sends it back where it came from, unfolded past center
-  // settles it as the new front page.
+  // forward fold unfolds it from there. The release then measures the fold against this
+  // direction's commit point (see commitPoint): still covering it sends the page back where it
+  // came from, receded past it settles it as the new front page.
   grab.addEventListener('pointerdown', (e) => {
     if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
     const stack = grab.parentElement!.parentElement!;
@@ -985,7 +997,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // The grab handle sat out the promotion so the DOM move couldn't break its pointer
     // capture; with the gesture over it rejoins its sheet, back in canonical sibling order.
     sheet.insertBefore(grab, sheet.querySelector('.paper-flip-hint'));
-    cancelSettle = releaseFold(sheet, section, fold, false);
+    cancelSettle = releaseFold(sheet, section, fold, false, true);
   });
 };
 
