@@ -87,6 +87,7 @@ const squirclePath = [
     </div>
 
     <Fragment slot="annotations">
+      {/* Wide sheet: the five chips sit in one row, so + is the middle one. */}
       {/* Tip just outside the +, upper-right, aimed at its center. */}
       <ArrowAnnotation
         tipX={0.08}
@@ -94,6 +95,8 @@ const squirclePath = [
         angle={50}
         length={0.55}
         text="Create marker"
+        arrowClass="on-wide"
+        textClass="on-wide"
       />
       {/* Tip on Cafe (B) from the right; shaft and label stay off the center. */}
       <ArrowAnnotation
@@ -102,6 +105,31 @@ const squirclePath = [
         angle={-60}
         length={0.45}
         text="Same marker, matches the pin order    "
+        arrowClass="on-wide"
+        textClass="on-wide"
+      />
+
+      {/* Phone sheet: the chips wrap to three columns, which moves + to the
+          top-right and makes the artwork taller than it is wide. */}
+      <ArrowAnnotation
+        tipX={0.62}
+        tipY={-1.15}
+        angle={56}
+        length={0.33}
+        text="Create marker"
+        arrowClass="on-narrow"
+        textClass="on-narrow"
+      />
+      {/* Tip on the Cafe card's lower edge, under its marker — coming up from
+          below keeps the shaft off the cards. */}
+      <ArrowAnnotation
+        tipX={0}
+        tipY={1.25}
+        angle={201}
+        length={0.76}
+        text="Same marker, matches the pin order"
+        arrowClass="on-narrow"
+        textClass="on-narrow"
       />
     </Fragment>
   </Annotations>
@@ -116,6 +144,22 @@ const squirclePath = [
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+
+  // Wrapping the chips moves everything the callouts point at, so each
+  // orientation carries its own set and hides the other's.
+  :global(.on-narrow) {
+    display: none;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    :global(.on-wide) {
+      display: none;
+    }
+
+    :global(.on-narrow) {
+      display: revert;
+    }
+  }
 }
 
 .selector-layer {
@@ -124,13 +168,6 @@ const squirclePath = [
   gap: 1.25em;
   width: 100%;
   font-size: 1.25em;
-
-  // The chip row is sized in em, so a phone sheet needs a smaller em or the
-  // panel ends up flush against the frame.
-  @container technical-drawing (orientation: portrait) {
-    font-size: 1.05em;
-  }
-
   color: var(--fg-700, #f4f0ea);
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
@@ -152,6 +189,12 @@ const squirclePath = [
   // One row for the diagram so + / upload / × stay beside the markers.
   grid-template-columns: repeat(5, $item-size);
   gap: $gap;
+
+  // Five chips in a row is a panel as wide as a phone sheet. Wrap instead of
+  // shrinking the chips — the sheet has height to spare and they stay legible.
+  @container technical-drawing (orientation: portrait) {
+    grid-template-columns: repeat(3, $item-size);
+  }
   margin: 0;
   padding: 0;
   list-style: none;
