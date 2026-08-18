@@ -41,6 +41,9 @@ type FoldGesture = {
     s: number;
     // Where the page's corner currently lies (page coords) — the reverse landing's drag target
     t: Vec;
+    // The pull's own trail, the approach's counterpart to the tip trail below: this phase moves
+    // the corner along an arc the pointer only steers, so its throw is read off the pull instead
+    trail: { along: number, time: number }[];
   } | null;
   // The tip's recent positions, each with the event time that put it there, trimmed to the last
   // THROW_WINDOW_MS — what the release reads the hand's speed off (see coastTip).
@@ -225,38 +228,49 @@ const commitPoint = (w: number, h: number, backward: boolean): Vec => backward
   ? { x: w / 3, y: h / 3 }
   : { x: w * 3 / 4, y: h * 3 / 4 };
 
-// The tip as the drag actually rendered it — after the pointer gain, the unfold axis and the rim
-// clamp — so the throw is measured on the fold's own motion rather than the hand's: a drag held
-// against the rim has stopped moving the paper however hard it's still pushing, and lets go with
-// nothing to coast on.
-const trackTip = (gesture: FoldGesture, tip: Vec, time: number): void => {
-  gesture.trail.push({ tip, time });
-  while (gesture.trail.length > 1 && time - gesture.trail[0].time > THROW_WINDOW_MS) {
-    gesture.trail.shift();
-  }
+const track = <T extends { time: number }>(trail: T[], sample: T): void => {
+  trail.push(sample);
+  while (trail.length > 1 && sample.time - trail[0].time > THROW_WINDOW_MS) trail.shift();
 };
 
-// Where the release's speed would carry the tip. The window is measured back from the release,
-// not from the last move — a hand that drags fast, comes to a stop and then lets go has thrown
-// nothing, and its stale samples have to age out of the window even though no move event came to
-// trim them. Null when what's left can't express a speed (a gesture that never moved, or one that
-// held still), and the release then measures the tip where it stands, as it always did.
-const coastTip = (trail: FoldGesture['trail'], time: number): Vec | null => {
+// The stretch of the trail the throw is read off — everything within THROW_WINDOW_MS of the
+// release — with the multiplier turning its travel into the coast beyond it. The window is
+// measured back from the release, not from the last move: a hand that drags fast, comes to a
+// stop and then lets go has thrown nothing, and its stale samples have to age out even though no
+// move event came to trim them. Null when what's left can't express a speed (a gesture that never
+// moved, or one that held still), and the release then measures where things stand, as it always
+// did.
+const throwWindow = <T extends { time: number }>(trail: T[], time: number): { from: T, to: T, coast: number } | null => {
   const recent = trail.filter((sample) => time - sample.time <= THROW_WINDOW_MS);
   if (recent.length < 2) return null;
-  const first = recent[0];
-  const last = recent[recent.length - 1];
-  const span = last.time - first.time;
-  if (span <= 0) return null;
-  const coast = THROW_COAST_MS / span;
-  const to = {
-    x: last.tip.x + (last.tip.x - first.tip.x) * coast,
-    y: last.tip.y + (last.tip.y - first.tip.y) * coast,
+  const from = recent[0];
+  const to = recent[recent.length - 1];
+  const span = to.time - from.time;
+  return span > 0 ? { from, to, coast: THROW_COAST_MS / span } : null;
+};
+
+// Where the release's speed would carry the tip.
+const coastTip = (trail: FoldGesture['trail'], time: number): Vec | null => {
+  const thrown = throwWindow(trail, time);
+  if (!thrown) return null;
+  const { from, to, coast } = thrown;
+  const at = {
+    x: to.tip.x + (to.tip.x - from.tip.x) * coast,
+    y: to.tip.y + (to.tip.y - from.tip.y) * coast,
   };
   // Paper thrown at the corner stops flat there rather than folding up the other way, and the
   // commit test reads a tip past the corner as folded again — from the wrong side — so a coast
   // that would carry the tip through it lands on it instead.
-  return to.x * last.tip.x + to.y * last.tip.y <= 0 ? { x: 0, y: 0 } : to;
+  return at.x * to.tip.x + at.y * to.tip.y <= 0 ? { x: 0, y: 0 } : at;
+};
+
+// The same, along a back-drag's approach: how far down the pull the release's speed would carry
+// the pointer.
+const coastAlong = (trail: { along: number, time: number }[], time: number): number | null => {
+  const thrown = throwWindow(trail, time);
+  if (!thrown) return null;
+  const { from, to, coast } = thrown;
+  return to.along + (to.along - from.along) * coast;
 };
 
 // Closes the fan by one page for the duration of a drag (--flip-progress on the stack, see
@@ -434,7 +448,11 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     && pointFolded(commit, contentRect.width, contentRect.height, tip);
   fold.classList.toggle('paper-fold--will-flip', willFlip);
 
-  trackTip(gesture, tip, e.timeStamp);
+  // The tip as the drag actually rendered it — after the pointer gain, the unfold axis and the rim
+  // clamp — so the throw is measured on the fold's own motion rather than the hand's: a drag held
+  // against the rim has stopped moving the paper however hard it's still pushing, and lets go with
+  // nothing to coast on.
+  track(gesture.trail, { tip, time: e.timeStamp });
   renderFold(section, fold, contentRect.width, contentRect.height, tip, currentBackFoldSize(sheet));
 };
 
@@ -564,27 +582,27 @@ const renderLanding = (
   fold.style.clipPath = band.length < 3 ? HIDDEN_CLIP : polygonClip(band);
 };
 
-// The landing's own glide: the corner easing straight home from wherever it stands (the full
-// flight from the packet tip for a completed flip; partway back for a released approach). The
-// back-fold corner cut can be mid-transition while this runs (restack() starts the stack's
-// 300ms --fold-back-x/-y transition), so the pentagon is re-read every frame.
+// The landing's own glide: the corner easing straight from wherever it stands to where the
+// gesture leaves it — home for a completed flip or a released approach laying back down, on out
+// to the packet tip for an approach thrown the rest of the way over. The back-fold corner cut can
+// be mid-transition while this runs (restack() starts the stack's 300ms --fold-back-x/-y
+// transition), so the pentagon is re-read every frame.
 const glideLanding = (
   sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
-  seed: Vec, from: Vec, ms: number, onDone: () => void,
+  seed: Vec, from: Vec, to: Vec, ms: number, onDone: () => void,
 ): (() => void) => {
   const width = readLength(sheet, '--fold-page-w');
   const height = readLength(sheet, '--fold-page-h');
-  const home = { x: width, y: height };
   // Duration in proportion to the flight left to run, so a barely-started approach lays back
   // down quickly instead of crawling
-  const distance = Math.hypot(from.x - home.x, from.y - home.y);
+  const distance = Math.hypot(from.x - to.x, from.y - to.y);
   const duration = Math.max(ms * distance / Math.hypot(seed.x, seed.y), 100);
   let frame = 0;
   const start = performance.now();
   const step = (now: number) => {
     const tt = Math.min(Math.max((now - start) / duration, 0), 1);
     const eased = 1 - (1 - tt) ** 3;
-    const t = { x: from.x + (home.x - from.x) * eased, y: from.y + (home.y - from.y) * eased };
+    const t = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
     renderLanding(section, fold, width, height, seed, currentBackFoldSize(sheet), t);
     if (tt < 1) {
       frame = requestAnimationFrame(step);
@@ -731,6 +749,21 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   return prev;
 };
 
+// The handover at the end of a back-drag's approach, with the page lying fully folded over at the
+// resting crease: the fold state goes over to the first fold's own parameterization (the same
+// state on screen, since the two renderings agree there) and the page takes the front. Reached
+// either by dragging the approach out to the end, or by a release that threw it the rest of the
+// way (see throwFront).
+const promoteFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, seed: Vec): void => {
+  const size = foldSizeFromTip(seed.x, seed.y);
+  sheet.style.setProperty('--fold-x', `${size.x}px`);
+  sheet.style.setProperty('--fold-y', `${size.y}px`);
+  renderFold(section, fold, readLength(sheet, '--fold-page-w'), readLength(sheet, '--fold-page-h'), seed, currentBackFoldSize(sheet));
+  sheet.style.rotate = '';
+  bringToFront(sheet.parentElement!);
+  sheet.getAnimations().forEach((animation) => animation.cancel());
+};
+
 // A back-drag's approach phase: the landing run in reverse, driven by the pointer. Pull along
 // the resting crease's normal sets how far the fold has come (s); the pointer's own direction
 // steers where the corner heads — the delta's angle off the pull direction swings the corner's
@@ -762,25 +795,20 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const t = { x: w + swung.x * s, y: h + swung.y * s };
   approach.s = s;
   approach.t = t;
+  track(approach.trail, { along, time: e.timeStamp });
   renderLanding(section, fold, w, h, approach.seed, currentBackFoldSize(sheet), t);
   if (s < 1) return;
 
   // Fully folded over — promote the page and hand the rest of the gesture to the unfold drag,
   // which drives --fold-x/-y and the first fold's own render from here
-  const size = foldSizeFromTip(approach.seed.x, approach.seed.y);
-  sheet.style.setProperty('--fold-x', `${size.x}px`);
-  sheet.style.setProperty('--fold-y', `${size.y}px`);
-  renderFold(section, fold, w, h, approach.seed, currentBackFoldSize(sheet));
-  sheet.style.rotate = '';
-  bringToFront(sheet.parentElement!);
-  sheet.getAnimations().forEach((animation) => animation.cancel());
+  promoteFold(sheet, section, fold, approach.seed);
   gesture.unfoldFrom = approach.seed;
   gesture.approach = null;
   onFoldGrab(sheet, gesture, e);
   // The unfold takes over with the tip standing at the seed; seeding its trail from there means
   // the very next move already carries a speed, so a page flicked over and straight on out
   // doesn't have to wait for a second unfold sample before the throw counts.
-  trackTip(gesture, approach.seed, e.timeStamp);
+  track(gesture.trail, { tip: approach.seed, time: e.timeStamp });
 };
 
 // A committed flip: glide the tip the rest of the way out to the resting seed — the page
@@ -861,6 +889,28 @@ const shouldFlip = (sheet: HTMLElement, backward: boolean, coast: Vec | null): b
   const { width, height } = sheet.getBoundingClientRect();
   const { x: fx, y: fy } = currentFoldSize(sheet);
   return pointFolded(commitPoint(width, height, backward), width, height, coast ?? foldTipFromSize(fx, fy));
+};
+
+// A back-drag let go before the page has come over still has the throw's speed in it, and the
+// gesture it belongs to runs on past the promotion: the pull brings the page over the clip, and
+// the same drag carries on to unfold it flat in front. So the release reads the whole two-phase
+// gesture at where the coasted pointer would have taken it. Past the promotion the pointer drives
+// the unfold at gain 2, so every pixel of coast beyond the pull lays two pixels of the fold back
+// down, and what's left standing goes to the same commit point the unfold's own release measures
+// against. That keeps the throw needed to bring a page back about the throw needed to send one
+// away — both a shade under half the gesture — instead of making the page's arrival over the clip
+// a commit in itself, which is barely a fifth of the way through and would have a page coming
+// back on the lightest flick. Short of that the release lays the page back down behind the stack
+// exactly as before: the flight out and straight back is the same page returning, by a longer road.
+const thrownOverFront = (sheet: HTMLElement, approach: NonNullable<FoldGesture['approach']>, time: number): boolean => {
+  const along = coastAlong(approach.trail, time);
+  if (along === null || along <= approach.pull) return false;
+  const width = readLength(sheet, '--fold-page-w');
+  const height = readLength(sheet, '--fold-page-h');
+  const span = Math.hypot(approach.seed.x, approach.seed.y);
+  const left = Math.max(span - 2 * (along - approach.pull), 0) / span;
+  const tip = { x: approach.seed.x * left, y: approach.seed.y * left };
+  return !pointFolded(commitPoint(width, height, true), width, height, tip);
 };
 
 const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, canceled: boolean, backward: boolean, coast: Vec | null): (() => void) => {
@@ -981,15 +1031,43 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   const returnBehind = (approach: NonNullable<FoldGesture['approach']>): (() => void) => {
     let done = false;
     const front = sheet.parentElement!.querySelector<HTMLElement>('.paper-front')!;
+    const home = { x: readLength(sheet, '--fold-page-w'), y: readLength(sheet, '--fold-page-h') };
     const finish = () => {
       done = true;
       finishFlip(sheet, section, fold);
       restIdleFold(front);
     };
-    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.t, 400, finish);
+    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.t, home, 400, finish);
     return () => {
       cancelGlide();
       if (!done) finish();
+    };
+  };
+
+  // The other way a released approach can go: thrown hard enough (see thrownOverFront), the
+  // corner finishes its flight out to the fully-folded seed on the release's own momentum, and
+  // the page is promoted there and settles flat as the new front page — the gesture the hand
+  // started, carried out by the throw.
+  const throwFront = (approach: NonNullable<FoldGesture['approach']>): (() => void) => {
+    const tip = {
+      x: readLength(sheet, '--fold-page-w') + approach.seed.x,
+      y: readLength(sheet, '--fold-page-h') + approach.seed.y,
+    };
+    let done = false;
+    let cancelSettleFold: () => void = () => {};
+    const finish = () => {
+      done = true;
+      promoteFold(sheet, section, fold, approach.seed);
+      // Same hand-back as an unfold's own release: the grab handle sat out the promotion, and
+      // rejoins the sheet it now belongs to.
+      sheet.insertBefore(grab, sheet.querySelector('.paper-flip-hint'));
+      cancelSettleFold = settleFold(sheet, section, fold);
+    };
+    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.t, tip, 400, finish);
+    return () => {
+      cancelGlide();
+      if (!done) finish();
+      cancelSettleFold();
     };
   };
 
@@ -1046,7 +1124,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       unfoldFrom: null,
       approach: {
         seed, origin: { x: e.clientX, y: e.clientY }, dir, pull: seedLength * BACK_APPROACH_PULL,
-        s: 0, t: { x: w, y: h },
+        s: 0, t: { x: w, y: h }, trail: [],
       },
       trail: [],
     };
@@ -1081,7 +1159,9 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     const { approach, trail } = gesture;
     gesture = null;
     if (approach) {
-      cancelSettle = returnBehind(approach);
+      cancelSettle = thrownOverFront(sheet, approach, e.timeStamp)
+        ? throwFront(approach)
+        : returnBehind(approach);
       return;
     }
     // The grab handle sat out the promotion so the DOM move couldn't break its pointer
