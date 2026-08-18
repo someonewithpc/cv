@@ -25,40 +25,46 @@ const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 ---
 
-<PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers}>
-  {(index: number) => {
-    const [id, { name, size, pageStyle, tech }] = Object.entries(layers)[index];
-    return (
-      <TechnicalDrawingPage
-        title={name}
-        subtitle={Astro.props.subtitle}
-        scale={Astro.props.scale}
-        size={size ?? Astro.props.size}
-        date={Astro.props.date}
-        index={index + 1}
-        layerCount={totalLayers}
-        pageStyle={pageStyle}
-        tech={tech ?? stackTech}
-      >
-        <Fragment slot="content">
-          {Astro.slots.render('layers', [id])}
-        </Fragment>
-        <Fragment slot="aside">
-          {Astro.slots.render('aside', [id])}
-        </Fragment>
-      </TechnicalDrawingPage>
-    );
-  }}
-</PaperStack>
+<div class="technical-drawing-frame">
+  <PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers}>
+    {(index: number) => {
+      const [id, { name, size, pageStyle, tech }] = Object.entries(layers)[index];
+      return (
+        <TechnicalDrawingPage
+          title={name}
+          subtitle={Astro.props.subtitle}
+          scale={Astro.props.scale}
+          size={size ?? Astro.props.size}
+          date={Astro.props.date}
+          index={index + 1}
+          layerCount={totalLayers}
+          pageStyle={pageStyle}
+          tech={tech ?? stackTech}
+        >
+          <Fragment slot="content">
+            {Astro.slots.render('layers', [id])}
+          </Fragment>
+          <Fragment slot="aside">
+            {Astro.slots.render('aside', [id])}
+          </Fragment>
+        </TechnicalDrawingPage>
+      );
+    }}
+  </PaperStack>
+</div>
 
 <style lang="scss">
-:global(article.technical-drawing-stack) {
+// The width container has to be an ancestor of the stack, not the stack itself: the stack is
+// what the aspect query below styles, and an element never matches a container it declares
+// (its own `container: technical-drawing / size` would also overwrite a second name set here).
+.technical-drawing-frame {
   container: technical-drawing-width / inline-size;
-  width: 100%;
-  /* Allow the frame to shrink within the page grid instead of expanding it */
-  /* to the carousel's intrinsic width (default min-width: auto). */
+  // Allow the frame to shrink within the page grid instead of expanding it
+  // to the stack's intrinsic width (default min-width: auto).
   min-width: 0;
+}
 
+:global(article.technical-drawing-stack) {
   --technical-drawing-aspect: 2 / 1;
 
   width: 100%;
