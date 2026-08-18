@@ -453,16 +453,25 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   syncPaperSurface(next, sectionOf(next));
 };
 
+// Drops everything the front-page role leaves behind on a sheet, so its next turn at the front
+// starts from index.astro's own rules. animationName above all: restIdleFold pins it inline to
+// keep the reveal retired, and an inline name that never changes is a name the fold-reveal
+// animations can't be restarted under — the page would come back to the front with no dog-ear at
+// all, just the flap's 1px border.
+const clearFrontFold = (sheet: HTMLElement): void => {
+  sheet.style.removeProperty('--fold-x');
+  sheet.style.removeProperty('--fold-y');
+  sheet.style.removeProperty('--paper-surface');
+  sheet.style.animationName = '';
+};
+
 // The second half: the flipped page's inline fold state is fully cleared — so its next turn at
 // the front starts fresh — and the fold rejoins the new front page's companions.
 const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
   fold.classList.remove('paper-fold--active');
   clearFoldRender(section, fold);
-  sheet.style.removeProperty('--fold-x');
-  sheet.style.removeProperty('--fold-y');
-  sheet.style.removeProperty('--paper-surface');
-  sheet.style.animationName = '';
+  clearFrontFold(sheet);
   // A back-drag's approach phase drives the sheet's splay rotation inline (transition frozen);
   // clearing both here lets the restored transition ease the sheet back into the fan.
   sheet.style.rotate = '';
@@ -491,6 +500,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
     page.style.setProperty('--page-index', `${index === pages.length ? 1 : index + 1}`);
   }
   front.classList.remove('paper-front');
+  clearFrontFold(front);
   prev.classList.add('paper-front');
   prev.prepend(under);
   prev.append(clip, fold, hint);
