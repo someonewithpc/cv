@@ -95,6 +95,19 @@ const currentBackFoldSize = (sheet: HTMLElement): Vec => ({ x: readLength(sheet,
 // that crease — see index.astro).
 const backRestSize = (el: HTMLElement): Vec => ({ x: readLength(el, '--fold-back-rest-x'), y: readLength(el, '--fold-back-rest-y') });
 
+// The fully-folded tip: the page corner reflected across the resting crease — the farthest
+// point the fold can carry it, out past the paper clip to the page's upper left. The resting
+// crease passes through the pin, so this lies exactly on the pin's reach circle, and its fold's
+// crease coincides with the folded-back corner cut every flipped page wears — which makes it
+// both where a forward flip finishes folding and where a back-drag starts from.
+const restSeed = (sheet: HTMLElement, w: number, h: number): Vec => {
+  const restSize = backRestSize(sheet);
+  const nl = Math.hypot(restSize.x, restSize.y);
+  const nx = restSize.y / nl, ny = restSize.x / nl;
+  const dist = nx * w + ny * h - restSize.x * restSize.y / nl;
+  return { x: -2 * dist * nx, y: -2 * dist * ny };
+};
+
 // The paper clip's pin — the bottom end of the wire's outer-right edge, sitting on the resting
 // crease — in tip coordinates (relative to the page's bottom-right corner).
 const pinOf = (el: HTMLElement, width: number, height: number): Vec => ({
@@ -545,27 +558,17 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   onFoldGrab(sheet, gesture, e);
 };
 
-// A committed flip: glide the tip the rest of the way out to the pin's reach circle — radially
-// outward from the pin through wherever the tip is now, so the flip keeps going the way the
-// drag was headed (a corner dragged up over the top edge finishes flipping over the top, not
-// sideways). Any rim point is a full fold: the crease passes through the pin there. Restacking
-// happens at the rim, and then the flipped sheet — now behind the stack — visibly folds back
-// down, its tip gliding home to the page corner, before its fold state is cleared for good.
-// The flap keeps the reflection the whole way: its blank back is the face on show as the page
-// comes down, shrinking until the printed side lies flat — so the restack instant changes
-// nothing on screen, and no reflection of the printed side ever paints it mirrored.
+// A committed flip: glide the tip the rest of the way out to the resting seed — the page
+// flipped all the way over to its upper left, the crease pivoting around the pin to the
+// resting angle as the fold completes. Only that crease lets the page lie flat behind the
+// stack wearing the same folded-back corner as every flipped page; finishing on any other rim
+// crease would land it folded along a line the resting state contradicts. Restacking happens
+// there, and then the flipped sheet — now behind the stack — folds back down before its fold
+// state is cleared for good.
 const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
-  const { width, height } = sheet.getBoundingClientRect();
-  const pin = pinOf(sheet, width, height);
-  const reach = Math.hypot(pin.x, pin.y);
-  const { x: fx, y: fy } = currentFoldSize(sheet);
-  const from = foldTipFromSize(fx, fy);
-  let dir = { x: from.x - pin.x, y: from.y - pin.y };
-  const length = Math.hypot(dir.x, dir.y);
-  // A tip at the pin itself has no direction to continue in — fall back to straight across
-  if (length < 1) dir = { x: pin.x, y: pin.y };
-  const scale = reach / Math.hypot(dir.x, dir.y);
-  const to = { x: pin.x + dir.x * scale, y: pin.y + dir.y * scale };
+  const width = readLength(sheet, '--fold-page-w');
+  const height = readLength(sheet, '--fold-page-h');
+  const to = restSeed(sheet, width, height);
   let settling = false;
   let cancelGlide = glideFoldTip(sheet, section, fold, to, 300, () => {
     restack(sheet, fold);
@@ -755,10 +758,10 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // that box at fold 0 — a page-sized slab of flap colour on a sheet whose top-left corner shows
     // through the front page's cut. Render the degenerate fold now so it starts out hidden.
     renderFold(section, fold, w, h, { x: 0, y: 0 }, currentBackFoldSize(sheet));
-    const restSize = backRestSize(sheet);
-    const nl = Math.hypot(restSize.x, restSize.y);
-    const nx = restSize.y / nl, ny = restSize.x / nl;
-    const dist = nx * w + ny * h - restSize.x * restSize.y / nl;
+    const seed = restSeed(sheet, w, h);
+    // The pull direction: the resting crease's normal, which the seed lies opposite along
+    const seedLength = Math.hypot(seed.x, seed.y);
+    const dir = { x: -seed.x / seedLength, y: -seed.y / seedLength };
 
     // The arriving page squares up with the front one for the whole gesture (the rotate
     // transition eases it there), so their folded-back corners stay flush as it comes over —
@@ -769,11 +772,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     gesture = {
       pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false,
       unfoldFrom: null,
-      approach: {
-        seed: { x: -2 * dist * nx, y: -2 * dist * ny },
-        origin: { x: e.clientX, y: e.clientY },
-        dir: { x: nx, y: ny },
-      },
+      approach: { seed, origin: { x: e.clientX, y: e.clientY }, dir },
     };
     try {
       grab.setPointerCapture(e.pointerId);
