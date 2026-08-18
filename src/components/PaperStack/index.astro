@@ -242,9 +242,9 @@ const pages = await Promise.all(
           }
         }
 
-        // Flip-commit feedback: fades in riding the flap (fold-drag.ts keeps left/top at the
-        // flap's visual center every drag frame) while releasing would flip the page (see
-        // .paper-fold--will-flip above).
+        // Commit feedback: fades in riding the flap (fold-drag.ts keeps left/top at the flap's
+        // visual center every drag frame) while releasing would carry the gesture through (see
+        // .paper-fold--will-commit above).
         & > .paper-flip-hint {
           position: absolute;
           translate: -50% -50%;
@@ -258,7 +258,7 @@ const pages = await Promise.all(
           pointer-events: none;
         }
 
-        &:has(> .paper-fold--will-flip) > .paper-flip-hint {
+        &:has(> .paper-fold--will-commit) > .paper-flip-hint {
           opacity: 1;
           scale: 1;
         }
@@ -391,10 +391,11 @@ const pages = await Promise.all(
           cursor: grabbing;
         }
 
-        // The drag has folded past the page's center — releasing here flips the page onto the
-        // back of the stack. Lift the flap's brightness (past the hover value, which applies
-        // throughout a drag) so crossing the threshold reads as a state change.
-        &.paper-fold--will-flip {
+        // The drag is far enough along that releasing here carries it through — the page onto
+        // the back of the stack going forward, or the previous page landing in front coming
+        // back. Lift the flap's brightness (past the hover value, which applies throughout a
+        // drag) so crossing the threshold reads as a state change.
+        &.paper-fold--will-commit {
           filter: brightness(115%) drop-shadow(0 0 0.5em rgb(0 0 0 / 35%));
         }
       }
