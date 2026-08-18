@@ -704,18 +704,57 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   // while the landing folds material in behind it. A re-grab that settles instead re-derives
   // the flipped state from the page order (settleFold), shrinking the cuts back.
   sheet.parentElement!.dataset.paperFlipped = '';
+
+  // Both halves — folding out to the resting seed, then the landing back down behind the stack —
+  // run on one clock, measured in crease travel (the edge the eye follows: the first fold's
+  // crease rides half the tip's path out, the landing's sweeps half the seed back in), under a
+  // single ease-out. The crease keeps its speed straight through the restack instead of settling
+  // to a stop at the seed and setting off again, so the flip reads as one released motion.
+  const { x: fx, y: fy } = currentFoldSize(sheet);
+  const from = foldTipFromSize(fx, fy);
+  const d1 = Math.hypot(to.x - from.x, to.y - from.y) / 2;
+  const d2 = Math.hypot(to.x, to.y) / 2;
+  const total = d1 + d2;
+  const duration = Math.min(300 + total / 3, 800);
+  const home = { x: width, y: height };
+
   let settling = false;
-  let cancelGlide = glideFoldTip(sheet, section, fold, to, 300, () => {
-    restack(sheet, fold);
-    settling = true;
-    cancelGlide = glideLanding(sheet, section, fold, to, { x: width + to.x, y: height + to.y }, 400, () => {
-      settling = false;
-      finishFlip(sheet, section, fold);
-    });
-  });
-  // A re-grab mid-fold-back-down fast-forwards to the settled end state
+  let frame = 0;
+  const start = performance.now();
+  const step = (now: number) => {
+    const tt = Math.min(Math.max((now - start) / duration, 0), 1);
+    const p = (1 - (1 - tt) ** 3) * total;
+    if (p < d1) {
+      const k = p / d1;
+      const tip = { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
+      const size = foldSizeFromTip(tip.x, tip.y);
+      sheet.style.setProperty('--fold-x', `${size.x}px`);
+      sheet.style.setProperty('--fold-y', `${size.y}px`);
+      renderFold(section, fold, width, height, tip, currentBackFoldSize(sheet));
+    } else {
+      if (!settling) {
+        settling = true;
+        const size = foldSizeFromTip(to.x, to.y);
+        sheet.style.setProperty('--fold-x', `${size.x}px`);
+        sheet.style.setProperty('--fold-y', `${size.y}px`);
+        restack(sheet, fold);
+      }
+      const k = (p - d1) / d2;
+      const t = { x: home.x + to.x * (1 - k), y: home.y + to.y * (1 - k) };
+      renderLanding(section, fold, width, height, to, currentBackFoldSize(sheet), t);
+    }
+    if (tt < 1) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
+    finishFlip(sheet, section, fold);
+  };
+  frame = requestAnimationFrame(step);
+
+  // A re-grab mid-fold-back-down fast-forwards to the settled end state; before the restack the
+  // fold is still the front page's, and the grab simply takes it over where it stands.
   return () => {
-    cancelGlide();
+    cancelAnimationFrame(frame);
     if (settling) finishFlip(sheet, section, fold);
   };
 };
