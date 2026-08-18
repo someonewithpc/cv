@@ -8,6 +8,10 @@
 
 type Vec = { x: number, y: number };
 
+// What a release hands the glide that takes over: where the throw's speed would coast the fold's
+// tip to, and that speed (px per ms). See coastTip.
+type Throw = { at: Vec, speed: number };
+
 type FoldGesture = {
   pointerId: number;
   // Scaled pointer minus tip at gesture start, in tip-local screen coordinates — rotates with
@@ -249,8 +253,9 @@ const throwWindow = <T extends { time: number }>(trail: T[], time: number): { fr
   return span > 0 ? { from, to, coast: THROW_COAST_MS / span } : null;
 };
 
-// Where the release's speed would carry the tip.
-const coastTip = (trail: FoldGesture['trail'], time: number): Vec | null => {
+// The throw a release hands on: where its speed would carry the tip, and that speed itself (px
+// per ms), which the glide that takes over starts off at.
+const coastTip = (trail: FoldGesture['trail'], time: number): Throw | null => {
   const thrown = throwWindow(trail, time);
   if (!thrown) return null;
   const { from, to, coast } = thrown;
@@ -258,10 +263,11 @@ const coastTip = (trail: FoldGesture['trail'], time: number): Vec | null => {
     x: to.tip.x + (to.tip.x - from.tip.x) * coast,
     y: to.tip.y + (to.tip.y - from.tip.y) * coast,
   };
+  const speed = Math.hypot(at.x - to.tip.x, at.y - to.tip.y) / THROW_COAST_MS;
   // Paper thrown at the corner stops flat there rather than folding up the other way, and the
   // commit test reads a tip past the corner as folded again — from the wrong side — so a coast
   // that would carry the tip through it lands on it instead.
-  return at.x * to.tip.x + at.y * to.tip.y <= 0 ? { x: 0, y: 0 } : at;
+  return { at: at.x * to.tip.x + at.y * to.tip.y <= 0 ? { x: 0, y: 0 } : at, speed };
 };
 
 // The same, along a back-drag's approach: how far down the pull the release's speed would carry
@@ -456,14 +462,22 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   renderFold(section, fold, contentRect.width, contentRect.height, tip, currentBackFoldSize(sheet));
 };
 
+// The duration that sets an ease-out cubic off at exactly the speed the hand let go at: the ease
+// opens at three times its average speed, so that's 3·distance/speed. Used as a ceiling on the
+// unhurried glide rather than a replacement, so a throw only ever carries the paper away quicker —
+// a fold released mid-crawl still comes home at its own unhurried pace instead of being dragged
+// out to match a speed it never had.
+const coastMs = (distance: number, speed: number): number => (speed > 0 ? 3 * distance / speed : Infinity);
+
 // Glides the fold's tip to a target along a straight tip-space path, easing out like released
 // tension, over a duration scaled to how far the tip has to travel — a long glide takes visibly
-// longer than a small nudge. Runs on its own rAF clock (rather than a CSS transition on
-// --fold-x/-y) so the path is the tip's, not the crease intercepts' — those diverge wildly for
-// large folds — and returns a cancel handle so a re-grab mid-glide can take over cleanly.
+// longer than a small nudge — and no longer than the release's own speed would take to cover it.
+// Runs on its own rAF clock (rather than a CSS transition on --fold-x/-y) so the path is the
+// tip's, not the crease intercepts' — those diverge wildly for large folds — and returns a cancel
+// handle so a re-grab mid-glide can take over cleanly.
 const glideFoldTip = (
   sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
-  to: Vec, baseMs: number, onDone: () => void,
+  to: Vec, baseMs: number, thrown: number, onDone: () => void,
 ): (() => void) => {
   // The observed layout size, not getBoundingClientRect: a sheet gliding behind the stack
   // (a back-drag's approach released early) still carries its splay rotation, which would
@@ -473,7 +487,7 @@ const glideFoldTip = (
   const { x: fx, y: fy } = currentFoldSize(sheet);
   const from = foldTipFromSize(fx, fy);
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
-  const duration = Math.min(baseMs + distance / 3, baseMs + 500);
+  const duration = Math.max(Math.min(baseMs + distance / 3, baseMs + 500, coastMs(distance, thrown)), 120);
 
   let frame = 0;
   const start = performance.now();
@@ -643,10 +657,10 @@ const restIdleFold = (sheet: HTMLElement): void => {
 };
 
 // Glides back to the resting dog-ear, then hands rendering back to index.astro's idle CSS rules
-const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
+const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, thrown = 0): (() => void) => {
   // Settling means no flip is coming, so the commit feedback drops immediately
   fold.classList.remove('paper-fold--will-flip');
-  return glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, () => {
+  return glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, thrown, () => {
     fold.classList.remove('paper-fold--active');
     clearFoldRender(section, fold);
 
@@ -818,7 +832,7 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
 // crease would land it folded along a line the resting state contradicts. Restacking happens
 // there, and from there the landing (renderLanding) folds the sheet back down from the
 // extreme, before its fold state is cleared for good.
-const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
+const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, thrown: number): (() => void) => {
   const width = readLength(sheet, '--fold-page-w');
   const height = readLength(sheet, '--fold-page-h');
   const to = restSeed(sheet, width, height);
@@ -840,8 +854,10 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   const total = d1 + d2;
   // Weight the duration by the travel left at release: an early let-go, with most of the flip
   // still ahead of it, takes proportionally longer instead of hitting a cap and launching at
-  // full tilt, so the ease-out's opening speed stays roughly the same wherever the hand lets go.
-  const duration = Math.min(300 + total / 2, 1400);
+  // full tilt, so the ease-out's opening speed stays roughly the same wherever the hand lets go —
+  // unless the hand let go faster than that, in which case the flip sets off at the speed it was
+  // thrown at. The crease covers half the ground the tip does, so the throw reaches it halved.
+  const duration = Math.max(Math.min(300 + total / 2, 1400, coastMs(total, thrown / 2)), 200);
   const home = { x: width, y: height };
 
   let settling = false;
@@ -913,13 +929,14 @@ const thrownOverFront = (sheet: HTMLElement, approach: NonNullable<FoldGesture['
   return !pointFolded(commitPoint(width, height, true), width, height, tip);
 };
 
-const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, canceled: boolean, backward: boolean, coast: Vec | null): (() => void) => {
+const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, canceled: boolean, backward: boolean, thrown: Throw | null): (() => void) => {
   // A grab that never dragged left the animations alone, so there is nothing to hand back
   if (sheet.style.getPropertyValue('--fold-x') === '') return () => {};
 
+  const speed = thrown ? thrown.speed : 0;
   const hasBack = sheet.parentElement!.childElementCount > 1;
-  if (!canceled && hasBack && shouldFlip(sheet, backward, coast)) return flipFold(sheet, section, fold);
-  return settleFold(sheet, section, fold);
+  if (!canceled && hasBack && shouldFlip(sheet, backward, thrown?.at ?? null)) return flipFold(sheet, section, fold, speed);
+  return settleFold(sheet, section, fold, speed);
 };
 
 // Keeps --fold-page-w/-h in sync with each page's actual pixel size — the generalized clip-path
