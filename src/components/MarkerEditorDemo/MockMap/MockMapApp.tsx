@@ -15,6 +15,7 @@ import {
   type SpaceType,
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
+import { watchDrawingNote } from '@/client/drawingNote';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -367,8 +368,20 @@ function MockMapOverlayInner() {
     );
     observer.observe(visibilityRoot);
 
+    // Hold the demo still while the note dialog covers this page.
+    const stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
+      if (open) {
+        controller.pause();
+        setCursorPhase('gone');
+      } else if (inViewRef.current && !userControlRef.current) {
+        setCursorPhase('demo');
+        controller.resume();
+      }
+    });
+
     return () => {
       observer.disconnect();
+      stopNoteWatch();
       controller.destroy();
       autoplayStartedRef.current = false;
       clearResumeTimer();
