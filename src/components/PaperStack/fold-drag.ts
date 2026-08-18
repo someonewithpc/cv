@@ -195,11 +195,10 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
 // reflects across the crease's perpendicular, which only lands right because the idle box-clip
 // trick feeds it the opposite triangle.)
 //
-// The flap takes the reflection, painting the sheet's blank back, wherever the sheet is. In
-// front of the stack that's plainly right — a face-up page folded over shows its back. Behind
-// it, the pages fan with their printed sides showing, so a fold there doubles that same face
-// over and its back is again what rises — never the content mirrored, which a reflection of the
-// printed side would be (see flipFold and onBackApproach for the two folds that run back there).
+// The flap takes the reflection, painting the sheet's blank back — a face-up page folded over
+// shows its back, never the content mirrored, which a reflection of the printed side would be.
+const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
+
 const renderFold = (
   section: HTMLElement, fold: HTMLElement, w: number, h: number, tip: Vec, back: Vec,
 ): void => {
@@ -214,7 +213,7 @@ const renderFold = (
     section.style.clipPath = '';
     section.style.transform = '';
     section.style.transformOrigin = '';
-    fold.style.clipPath = 'polygon(0px 0px, 0px 0px, 0px 0px)';
+    fold.style.clipPath = HIDDEN_CLIP;
     return;
   }
 
@@ -236,6 +235,26 @@ const renderFold = (
     hint.style.left = `${mid.x + reflected.x}px`;
     hint.style.top = `${mid.y + reflected.y}px`;
   }
+};
+
+// The second half of a flip, once the sheet has passed the clip. Going over and coming back
+// down is a full turn, so the material landing behind the stack lies printed side up, unmirrored
+// — the kept region growing out from the clip *is* the landing, the page's own front peeking out
+// behind the whole stack as it settles. The remainder still in the air faces the viewer with its
+// back, but it is falling away behind pages already at rest, so the flap stays retired rather
+// than sweeping a blank shape over them.
+const renderLanding = (
+  section: HTMLElement, fold: HTMLElement, w: number, h: number, tip: Vec, back: Vec,
+): void => {
+  fold.style.clipPath = HIDDEN_CLIP;
+  section.style.transform = '';
+  section.style.transformOrigin = '';
+  if (Math.hypot(tip.x, tip.y) < 0.5) {
+    section.style.clipPath = '';
+    return;
+  }
+  const { kept } = splitByCrease(w, h, tip, back);
+  section.style.clipPath = `polygon(${kept.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
 };
 
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
@@ -329,6 +348,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 const glideFoldTip = (
   sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   to: Vec, baseMs: number, onDone: () => void,
+  { landing = false }: { landing?: boolean } = {},
 ): (() => void) => {
   // The observed layout size, not getBoundingClientRect: a sheet gliding behind the stack
   // (a back-drag's approach released early) still carries its splay rotation, which would
@@ -351,9 +371,8 @@ const glideFoldTip = (
     sheet.style.setProperty('--fold-y', `${size.y}px`);
     // Read every frame, not once at glide start: restack() begins the stack's own 300ms
     // --fold-back-x/-y transition from 0 to rest, so a value captured up front would go stale
-    // mid-glide and paint this sheet's flap without the corner cut the front pages are growing,
-    // showing through as a flat grey square.
-    renderFold(section, fold, width, height, tip, currentBackFoldSize(sheet));
+    // mid-glide and paint this sheet without the corner cut the front pages are growing.
+    (landing ? renderLanding : renderFold)(section, fold, width, height, tip, currentBackFoldSize(sheet));
 
     if (t < 1) {
       frame = requestAnimationFrame(step);
@@ -530,11 +549,9 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
 // outward from the pin through wherever the tip is now, so the flip keeps going the way the
 // drag was headed (a corner dragged up over the top edge finishes flipping over the top, not
 // sideways). Any rim point is a full fold: the crease passes through the pin there. Restacking
-// happens at the rim, and then the flipped sheet — now behind the stack — visibly folds back
-// down, its tip gliding home to the page corner, before its fold state is cleared for good.
-// The flap keeps the reflection the whole way: its blank back is the face on show as the page
-// comes down, shrinking until the printed side lies flat — so the restack instant changes
-// nothing on screen, and no reflection of the printed side ever paints it mirrored.
+// happens at the rim — the overhang snapping over the clip — and then the sheet lands behind
+// the stack (renderLanding): its printed front grows out from the clip, the tip gliding home to
+// the page corner, before its fold state is cleared for good.
 const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): (() => void) => {
   const { width, height } = sheet.getBoundingClientRect();
   const pin = pinOf(sheet, width, height);
@@ -554,7 +571,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
     cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, () => {
       settling = false;
       finishFlip(sheet, section, fold);
-    });
+    }, { landing: true });
   });
   // A re-grab mid-fold-back-down fast-forwards to the settled end state
   return () => {
