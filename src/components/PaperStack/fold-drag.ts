@@ -96,6 +96,17 @@ const BACK_APPROACH_PULL = 0.105;
 // directions ask about the same of the hand.
 const BACK_COMMIT_REACH = 1 / 3;
 
+// A horizontal scroll works the fold the way a drag does, along the same line, so this is what a
+// scrolled pixel is worth against a dragged one — 1 keeps the paper level with the scroll, and a
+// swipe that would carry a drag past its commit carries the scroll past it too.
+const SCROLL_GAIN = 1;
+
+// A scroll has no letting go to end on, so the gesture ends once the wheel has been quiet this
+// long. Trackpad momentum keeps events arriving after the fingers lift, and that is travel like
+// any other — a flick coasts the fold on past where the fingers left it and the release reads it
+// there, which is the same bargain the drag's own throw strikes.
+const SCROLL_IDLE_MS = 120;
+
 // Paper thrown at the stack keeps going after the hand lets go. The release measures the commit
 // against where the tip would coast to on the speed it was let go at — THROW_COAST_MS of travel
 // at the average speed of the drag's last THROW_WINDOW_MS — rather than where the tip stood at
@@ -1005,9 +1016,12 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   let section = sectionOf(sheet);
   let gesture: FoldGesture | null = null;
   let cancelSettle: () => void = () => {};
+  // The one thing that doesn't move: pages take turns at the front, but they are always its
+  // children.
+  const stack = sheet.parentElement!;
 
   syncPaperSurface(sheet, section);
-  const clearTease = attachBackFoldTease(sheet.parentElement!, () => gesture !== null);
+  const clearTease = attachBackFoldTease(stack, () => gesture !== null);
 
   fold.addEventListener('pointerdown', (e) => {
     if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
@@ -1221,6 +1235,95 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     gesture = null;
     cancelSettle = releaseBack(ended, e.timeStamp);
   });
+
+  // Scrolling the stack sideways turns its pages. The wheel's travel walks a point of its own
+  // along the line the matching drag would have taken — out from the fold's tip to take the page
+  // away, down the back-drag's pull to fetch the one behind it — and everything downstream is the
+  // drag's: the same fold under the same clamps, the same commit showing on the flap, the same
+  // release. Scrolling right sends the page away and left brings the last one back, which is the
+  // way the pages themselves travel. The gesture is given a pointer id no real pointer can have,
+  // so a stray pointer event can't be mistaken for part of it.
+  let scroll: { at: Vec, dir: Vec, travel: number, idle: number } | null = null;
+
+  const endScroll = (time: number) => {
+    const ended = gesture;
+    if (scroll) clearTimeout(scroll.idle);
+    scroll = null;
+    gesture = null;
+    if (!ended) return;
+    cancelSettle = ended.back
+      ? releaseBack(ended, time)
+      : releaseFold(sheet, section, fold, ended.canceled, coastTip(ended.trail, time));
+  };
+
+  stack.addEventListener('wheel', (e) => {
+    // A pointer already working the fold owns it until it lets go
+    if (gesture !== null && scroll === null) return;
+    // Lines and pages only reach here from wheels that report in them; a trackpad's own units are
+    // already the pixels the fold is measured in.
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sheet.clientHeight : 1;
+    const sideways = e.deltaX * unit;
+    if (Math.abs(sideways) <= Math.abs(e.deltaY * unit)) return;
+
+    if (scroll === null) {
+      cancelSettle();
+      clearTease();
+      if (sideways < 0) {
+        const box = grab.getBoundingClientRect();
+        const at = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+        const started = beginBack({ clientX: at.x, clientY: at.y, timeStamp: e.timeStamp }, -1);
+        // Nothing behind the front page to come back to — leave the scroll to the page
+        if (!started) return;
+        gesture = started;
+        scroll = { at, dir: started.back!.dir, travel: 0, idle: 0 };
+      } else {
+        sheet = fold.parentElement!;
+        section = sectionOf(sheet);
+        syncPaperSurface(sheet, section);
+        const box = sheet.getBoundingClientRect();
+        const { x: foldX, y: foldY } = currentFoldSize(sheet);
+        const tip = foldTipFromSize(foldX, foldY);
+        const at = { x: box.right + tip.x, y: box.bottom + tip.y };
+        const diagonal = Math.hypot(box.width, box.height);
+        gesture = {
+          pointerId: -1, offset: { x: 0, y: 0 }, theta: 0, gain: 1, canceled: false,
+          unfoldFrom: null, approach: null, back: null, trail: [],
+        };
+        onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: e.timeStamp });
+        scroll = { at, dir: { x: -box.width / diagonal, y: -box.height / diagonal }, travel: 0, idle: 0 };
+      }
+    }
+    e.preventDefault();
+
+    const held = scroll.travel;
+    // Each gesture counts the scroll running its own way as progress, so reversing the wheel
+    // walks the fold back the way it came rather than driving it further over.
+    scroll.travel = Math.max(held + (gesture!.back ? -sideways : sideways) * SCROLL_GAIN, 0);
+    const at = {
+      clientX: scroll.at.x + scroll.dir.x * scroll.travel,
+      clientY: scroll.at.y + scroll.dir.y * scroll.travel,
+      timeStamp: e.timeStamp,
+    };
+    if (gesture!.approach) {
+      onBackApproach(sheet, section, fold, gesture!, at);
+    } else {
+      onFoldDrag(sheet, section, fold, gesture!, at);
+    }
+    if (gesture!.canceled) {
+      // A scroll can't stray off the fold the way a hand can — it only ever runs along the one
+      // line — so scrolling on past the paper's reach holds the fold at its rim instead of giving
+      // the gesture up, and the travel keeps the position it can still honour.
+      gesture!.canceled = false;
+      scroll.travel = held;
+    }
+
+    clearTimeout(scroll.idle);
+    // The release is timed from when the wheel fell quiet, not from the last event, so the throw
+    // window has already closed on it and the commit is read where the scroll actually left the
+    // fold. That is the honest reading here: a flick's momentum arrives as scroll events of its
+    // own, so it is already in the travel, and coasting it again would spend it twice.
+    scroll.idle = window.setTimeout(() => endScroll(performance.now()), SCROLL_IDLE_MS);
+  }, { passive: false });
 };
 
 // Re-registering a name throws — harmless in production (each property is only ever declared
