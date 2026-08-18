@@ -40,10 +40,16 @@
   justify-content: flex-start;
   min-height: 0;
 
+  /* Portrait gives the title block a row of its own; spanning to -1 would put
+     the listing underneath it. */
+  @container technical-drawing (orientation: portrait) {
+    grid-row: 1;
+  }
+
   pre {
     flex: 1 1 auto;
     min-height: 0;
-    margin: 1em 1.25em 5.5em;
+    margin: 1em 1.25em;
     padding: 1em;
     max-width: 100%;
     overflow: auto;
@@ -51,6 +57,17 @@
     &, code {
       font-size: 0.875rem;
       line-height: 1.35;
+    }
+
+    /* Sideways scrolling inside a swipeable carousel is a trap, so shrink the
+       listing until its longest line fits the sheet instead. */
+    @container technical-drawing (orientation: portrait) {
+      margin: 0.5em;
+      padding: 0.5em;
+
+      &, code {
+        font-size: min(0.875rem, 1.95cqw);
+      }
     }
 
     & > code > .line {

@@ -10,17 +10,28 @@
 $width: drawing.$artwork-width * 0.5;
 
 figure {
+  --cube-size: #{$width};
+
   display: inline-grid;
   width: fit-content;
   height: fit-content;
-  padding: $width calc($width / 2);
+  padding: var(--cube-size) calc(var(--cube-size) / 2);
   margin: 0;
+
+  /* The padding is clearance for the spin, and it is what sets the figure's
+     min-content — em-sized it outgrew the portrait sheet. Half a side is
+     enough clearance, and cqw keeps it tied to the sheet. */
+  @container technical-drawing (orientation: portrait) {
+    --cube-size: 26cqw;
+
+    padding: calc(var(--cube-size) / 2);
+  }
 }
 
 .scene {
   transform-style: preserve-3d;
-  width: $width;
-  height: $width;
+  width: var(--cube-size);
+  height: var(--cube-size);
   display: grid;
 
   transform-origin: center center;
@@ -50,18 +61,18 @@ figure {
   .face {
     grid-area: 1 / 1;
     inset: 0;
-    width: $width;
-    height: $width;
+    width: var(--cube-size);
+    height: var(--cube-size);
     border: 0.125em solid var(--accent-800);
 
     transform-origin: center center 0;
 
-    &:nth-child(6) { transform: rotateX(-0.25turn) translateZ(calc($width / 2)); }
-    &:nth-child(5) { transform: rotateX( 0.25turn) translateZ(calc($width / 2)); }
-    &:nth-child(4) { transform: rotateY(-0.00turn) translateZ(calc($width / 2)); }
-    &:nth-child(3) { transform: rotateY(-0.25turn) translateZ(calc($width / 2)); }
-    &:nth-child(2) { transform: rotateY(-0.50turn) translateZ(calc($width / 2)); }
-    &:nth-child(1) { transform: rotateY(-0.75turn) translateZ(calc($width / 2)); }
+    &:nth-child(6) { transform: rotateX(-0.25turn) translateZ(calc(var(--cube-size) / 2)); }
+    &:nth-child(5) { transform: rotateX( 0.25turn) translateZ(calc(var(--cube-size) / 2)); }
+    &:nth-child(4) { transform: rotateY(-0.00turn) translateZ(calc(var(--cube-size) / 2)); }
+    &:nth-child(3) { transform: rotateY(-0.25turn) translateZ(calc(var(--cube-size) / 2)); }
+    &:nth-child(2) { transform: rotateY(-0.50turn) translateZ(calc(var(--cube-size) / 2)); }
+    &:nth-child(1) { transform: rotateY(-0.75turn) translateZ(calc(var(--cube-size) / 2)); }
   }
 }
 </style>
