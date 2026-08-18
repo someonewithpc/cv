@@ -7,6 +7,13 @@ type Props = {
   strokeWidth?: number;
   fontSize?: number;
   preserveAspectRatio?: string;
+  /**
+   * Furthest `|coordinate|` the callouts reach, in units of the artwork's half
+   * width — 1 keeps them over the artwork, 1.5 puts a label half an artwork
+   * outside it. Portrait shrinks the artwork by this so nothing runs off the
+   * sheet; landscape has the room and ignores it.
+   */
+  reach?: number;
 };
 
 const {
@@ -14,6 +21,7 @@ const {
   strokeWidth = 0.02 * scale,
   fontSize = 0.1 * scale,
   preserveAspectRatio = 'xMidYMid meet',
+  reach = 1.5,
 } = Astro.props as Props;
 
 const vertices = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
@@ -22,7 +30,7 @@ const radius = 0.5;
 const arrowPathD = roundedCorners(vertices, radius);
 ---
 
-<div class="content">
+<div class="content" style={`--annotation-reach: ${reach};`}>
   <slot name="content" />
   <svg
     viewBox="-2 -2 4 4"
@@ -61,6 +69,14 @@ const arrowPathD = roundedCorners(vertices, radius);
   width: fit-content;
   max-width: 100%;
   height: fit-content;
+
+  /* Callouts reaching `reach` half-widths from the centre need `reach` times
+     the artwork width of sheet. 92cqw is the sheet inside its mat; measuring
+     against the drawing container rather than this box keeps a wrapper that
+     already shrink-wraps the artwork from shrinking it twice. */
+  @container technical-drawing (orientation: portrait) {
+    max-width: min(100%, calc(92cqw / var(--annotation-reach, 1.5)));
+  }
 }
 
 svg {
