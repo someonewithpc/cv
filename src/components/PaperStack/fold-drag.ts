@@ -103,11 +103,19 @@ const BACK_COMMIT_REACH = 0.25;
 // swipe that would carry a drag past its commit carries the scroll past it too.
 const SCROLL_GAIN = 1;
 
-// A scroll has no letting go to end on, so the gesture ends once the wheel has been quiet this
-// long. Trackpad momentum keeps events arriving after the fingers lift, and that is travel like
-// any other — a flick coasts the fold on past where the fingers left it and the release reads it
-// there, which is the same bargain the drag's own throw strikes.
-const SCROLL_IDLE_MS = 120;
+// A scroll has no letting go to end on, so the gesture ends once the wheel has been quiet — but
+// how quiet counts as over depends on how the scrolling is being done. A flick lands events a
+// frame apart; two fingers moved slowly, or a wheel clicked round a notch at a time, can leave a
+// quarter-second between them. One fixed wait can't serve both: short enough to end a flick
+// promptly, it cut a slow scroll into a stutter of separate gestures, each folding the page a
+// little and letting it settle back. So the wait follows the scrolling itself — a few times the
+// gap between the events actually arriving, bounded either side. Trackpad momentum keeps events
+// coming after the fingers lift and that is travel like any other, so a flick coasts the fold on
+// past where the fingers left it and the release reads it there, which is the same bargain the
+// drag's own throw strikes.
+const SCROLL_IDLE_GAPS = 4;
+const SCROLL_IDLE_MIN = 140;
+const SCROLL_IDLE_MAX = 800;
 
 // How far a finger has to run sideways before the swipe is taken as one: enough that a tap, or
 // the first waver of a scroll the browser is about to claim, doesn't start folding the page.
@@ -1250,7 +1258,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // travel, so taking the stack left sends the page away and right brings the last one back. The
   // gesture is given a pointer id no real pointer can have, so a stray pointer event can't be
   // mistaken for part of it.
-  let swipe: { at: Vec, dir: Vec, travel: number, idle: number } | null = null;
+  let swipe: { at: Vec, dir: Vec, travel: number, idle: number, last: number } | null = null;
 
   const beginSwipe = (forward: boolean, time: number): boolean => {
     cancelSettle();
@@ -1262,7 +1270,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       // Nothing behind the front page to come back to
       if (!started) return false;
       gesture = started;
-      swipe = { at, dir: started.back!.dir, travel: 0, idle: 0 };
+      swipe = { at, dir: started.back!.dir, travel: 0, idle: 0, last: 0 };
       return true;
     }
     sheet = fold.parentElement!;
@@ -1278,7 +1286,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       unfoldFrom: null, approach: null, back: null, trail: [],
     };
     onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: time });
-    swipe = { at, dir: { x: -box.width / diagonal, y: -box.height / diagonal }, travel: 0, idle: 0 };
+    swipe = { at, dir: { x: -box.width / diagonal, y: -box.height / diagonal }, travel: 0, idle: 0, last: 0 };
     return true;
   };
 
@@ -1322,23 +1330,43 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // already the pixels the fold is measured in.
     const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sheet.clientHeight : 1;
     const sideways = e.deltaX * unit;
-    if (Math.abs(sideways) <= Math.abs(e.deltaY * unit)) return;
-    // Scrolling right takes the content left, which is the page leaving
-    if (swipe === null && !beginSwipe(sideways > 0, e.timeStamp)) return;
-    e.preventDefault();
+    const upright = Math.abs(e.deltaY * unit);
+    if (swipe === null) {
+      // Starting one takes a scroll that is mostly sideways. Scrolling right takes the content
+      // left, which is the way the page leaves.
+      if (Math.abs(sideways) <= upright) return;
+      if (!beginSwipe(sideways > 0, e.timeStamp)) return;
+    } else if (sideways === 0) {
+      // Nothing sideways in it at all — the page's own scrolling, which the gesture has no claim
+      // on and which doesn't keep it alive either
+      return;
+    }
+    // Once underway the gesture takes whatever sideways an event has in it, however much upright
+    // came along: scrolling slowly wobbles off the horizontal, and dropping those events on the
+    // ratio starved the gesture of the very travel it was being given. It only claims the event
+    // outright while sideways is what it is mostly made of, so a deliberate scroll down mid-
+    // gesture still scrolls the page.
+    if (Math.abs(sideways) >= upright) e.preventDefault();
 
     // Each gesture counts the scroll running its own way as progress, so reversing the wheel
     // walks the fold back the way it came rather than driving it further over.
     swipeTo(swipe!.travel + (gesture!.back ? -sideways : sideways) * SCROLL_GAIN, e.timeStamp);
 
+    // How long to wait before calling it over follows how this scroll is arriving (see
+    // SCROLL_IDLE_GAPS); until a second event there is no pace to read, so it waits the longest
+    // it ever would rather than cut off a scroll that merely started slowly.
+    const gap = swipe!.last === 0 ? SCROLL_IDLE_MAX : e.timeStamp - swipe!.last;
+    swipe!.last = e.timeStamp;
     clearTimeout(swipe!.idle);
-    // A scroll never lets go, so it ends when the wheel falls quiet — and the release is timed
-    // from the quiet rather than from the last event, so the throw window has already closed on
-    // it and the commit is read where the scroll actually left the fold. That is the honest
-    // reading here: a flick's momentum arrives as scroll events of its own, so it is already in
-    // the travel, and coasting it again would spend it twice. (A finger has a real release, and
-    // its throw counts — see below.)
-    swipe!.idle = window.setTimeout(() => endSwipe(performance.now()), SCROLL_IDLE_MS);
+    // The release is timed from the quiet rather than from the last event, so the throw window
+    // has already closed on it and the commit is read where the scroll actually left the fold.
+    // That is the honest reading here: a flick's momentum arrives as scroll events of its own, so
+    // it is already in the travel, and coasting it again would spend it twice. (A finger has a
+    // real release, and its throw counts — see below.)
+    swipe!.idle = window.setTimeout(
+      () => endSwipe(performance.now()),
+      Math.min(Math.max(gap * SCROLL_IDLE_GAPS, SCROLL_IDLE_MIN), SCROLL_IDLE_MAX),
+    );
   }, { passive: false });
 
   // A finger never reaches the wheel: swiping the stack scrolls without a scroll event, so it
