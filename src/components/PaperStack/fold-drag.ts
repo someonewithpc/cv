@@ -32,9 +32,11 @@ type FoldGesture = {
   approach: {
     // The fully-folded tip: the page corner reflected across the resting crease
     seed: Vec;
-    // Pointer position at grab, and the pull direction (the resting crease's normal)
+    // Pointer position at grab, the pull direction (the resting crease's normal), and the pull
+    // along it that folds the page fully over (see BACK_APPROACH_PULL)
     origin: Vec;
     dir: Vec;
+    pull: number;
     // How far the approach has come: 0 lying flat behind the stack, 1 fully folded over
     s: number;
     // Where the page's corner currently lies (page coords) — the reverse landing's drag target
@@ -58,8 +60,12 @@ const BACK_TEASE_RADIUS = 160;
 const BACK_TEASE_PEEK = 5;
 
 // Pointer travel, projected along the pull direction (the resting crease's normal), that folds
-// the previous page fully over the clip during a back-drag's approach phase.
-const BACK_APPROACH_DISTANCE = 220;
+// the previous page fully over the clip during a back-drag's approach phase — as a fraction of
+// the fold's own reach (the run out to the fully-folded tip), so the corner always travels the
+// same multiple of the pointer. A fixed pixel pull made that multiple a page's own business:
+// wide pages carried the corner nearly twice as far per pixel as portrait ones, leaving a
+// portrait page feeling far heavier to bring back over than the same drag on a wide one.
+const BACK_APPROACH_PULL = 0.105;
 
 const rotateVec = (v: Vec, angle: number): Vec => {
   const c = Math.cos(angle), s = Math.sin(angle);
@@ -684,7 +690,7 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const h = readLength(sheet, '--fold-page-h');
   const delta = { x: e.clientX - approach.origin.x, y: e.clientY - approach.origin.y };
   const along = delta.x * approach.dir.x + delta.y * approach.dir.y;
-  const s = Math.min(Math.max(along / BACK_APPROACH_DISTANCE, 0), 1);
+  const s = Math.min(Math.max(along / approach.pull, 0), 1);
   const across = -delta.x * approach.dir.y + delta.y * approach.dir.x;
   // The floor on along only matters while s is still ~0 (t pinned at home), where it keeps the
   // angle from whipping through ±180° as the delta passes the perpendicular
@@ -971,7 +977,10 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     gesture = {
       pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false,
       unfoldFrom: null,
-      approach: { seed, origin: { x: e.clientX, y: e.clientY }, dir, s: 0, t: { x: w, y: h } },
+      approach: {
+        seed, origin: { x: e.clientX, y: e.clientY }, dir, pull: seedLength * BACK_APPROACH_PULL,
+        s: 0, t: { x: w, y: h },
+      },
     };
     try {
       grab.setPointerCapture(e.pointerId);
