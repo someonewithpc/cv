@@ -112,6 +112,12 @@ $navy: #1ab394;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   align-content: start;
+
+  // Matches the rail-hide breakpoint in MockSceneApp.vue — below it the
+  // sidebar is too narrow for two columns of thumbnails to stay legible.
+  @container (max-width: 34rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .visually-hidden {

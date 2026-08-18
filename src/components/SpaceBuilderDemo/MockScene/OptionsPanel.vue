@@ -476,6 +476,11 @@ $nav-second-bg: #151515;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+
+  // Matches the narrow-frame breakpoint in MockSceneApp.vue / ParametersSceneApp.vue.
+  @container (max-width: 34rem) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .layout-item {

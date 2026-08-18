@@ -713,6 +713,7 @@ onBeforeUnmount(() => {
     aria-label="Space Builder Add tool demo"
     :data-ready="ready ? 'true' : 'false'"
     :data-user-control="userControl ? 'true' : 'false'"
+    :data-panel="panel"
     @focus="yieldToUser"
   >
     <aside class="rail" aria-label="Tools">
@@ -942,7 +943,11 @@ $scene-bg: #212121;
   min-height: 100%;
   min-width: 0;
   display: grid;
-  grid-template-columns: var(--sb-rail) minmax(0, 1fr) auto;
+  // The rail is an overlay (see .rail below), not a track — the viewport
+  // spans full width and renders underneath it, so toggling the rail on a
+  // narrow frame never resizes the WebGL canvas (a mid-transition resize
+  // every frame is what made the slide look janky).
+  grid-template-columns: minmax(0, 1fr) auto;
   // Bound the row so the Options sidebar scrolls instead of growing the app
   // (parent mock frame clips with overflow:hidden).
   grid-template-rows: minmax(0, 1fr);
@@ -958,20 +963,25 @@ $scene-bg: #212121;
   }
 
   .rail {
-    position: relative;
+    position: absolute;
+    inset: 0 auto 0 0;
     z-index: 4;
-    grid-column: 1;
-    grid-row: 1;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    width: var(--sb-rail);
+    width: 70px;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: none;
     background: $nav-main-bg;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.35);
+    transform: translateX(calc(var(--sb-rail) - 70px));
+    transition: transform 0.25s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
 
     &::-webkit-scrollbar {
       display: none;
@@ -1074,7 +1084,7 @@ $scene-bg: #212121;
 
   .viewport {
     position: relative;
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
     width: 100%;
     height: 100%;
@@ -1189,7 +1199,7 @@ $scene-bg: #212121;
   .sidebar {
     position: relative;
     z-index: 4;
-    grid-column: 3;
+    grid-column: 2;
     grid-row: 1;
     width: min(17.5rem, 46vw);
     min-height: 0;
@@ -1320,6 +1330,22 @@ $scene-bg: #212121;
     flex: 1.4;
     padding-block: 0.55rem;
     font-size: 0.9rem;
+  }
+
+  // Narrow frame (phone-portrait or a squeezed tablet window): the sidebar's
+  // vw-based width no longer tracks the shrunk frame, so switch it to the
+  // frame's own size and let it claim less of it. The rail stays visible
+  // while idle (it's the only way to reach Add on a touch device) but tucks
+  // away once the sidebar it opens needs the room back, then reappears when
+  // the sidebar closes.
+  @container (max-width: 34rem) {
+    .sidebar {
+      width: min(11rem, 68cqw);
+    }
+
+    &:not([data-panel="closed"]) {
+      --sb-rail: 0px;
+    }
   }
 }
 

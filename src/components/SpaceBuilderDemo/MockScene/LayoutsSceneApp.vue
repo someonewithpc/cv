@@ -370,6 +370,13 @@ $scene-bg: #212121;
     box-shadow: inset 0 0 0 2px $visrez-brand;
   }
 
+  // Narrow-but-landscape: the sidebar's vw-based width no longer tracks the
+  // shrunk frame. Declared before the portrait override below so portrait's
+  // full stacked layout still wins once the sheet flips orientation.
+  @container (max-width: 34rem) {
+    grid-template-columns: minmax(0, 1fr) min(11rem, 68cqw);
+  }
+
   @container technical-drawing (orientation: portrait) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
@@ -506,6 +513,10 @@ $scene-bg: #212121;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
+
+  @container (max-width: 34rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .style-chip {

@@ -197,6 +197,28 @@ type Layer = keyof typeof layers;
   }
 }
 
+// Narrow but still landscape (a squeezed window, short of the portrait
+// breakpoint): the interactive page's aside column reserves a full third of
+// the sheet for a note a few characters wide, starving the 3D viewport next
+// to it. Give that page a slim, fixed-width aside instead — the static
+// blueprint pages (which have their own class) keep the even three-column
+// split. Guarded above the portrait breakpoint so it never fights that
+// layout's own column collapse.
+@container technical-drawing-width (min-width: 40.0625em) and (max-width: 64em) {
+  :global(.space-builder-demo article.technical-drawing-stack > section:not(.blueprint)) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem);
+  }
+
+  :global(.space-builder-demo article.technical-drawing-stack > section:not(.blueprint) .content) {
+    grid-column: 1;
+  }
+
+  :global(.space-builder-demo article.technical-drawing-stack > section:not(.blueprint) .aside) {
+    grid-column: 2;
+    padding-left: 0.75em;
+  }
+}
+
 // Badge page: the formula card sits below the PostIt, never overlapping it.
 .badge-aside {
   display: flex;
