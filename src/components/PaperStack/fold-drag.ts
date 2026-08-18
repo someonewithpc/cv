@@ -107,6 +107,10 @@ const SCROLL_GAIN = 1;
 // there, which is the same bargain the drag's own throw strikes.
 const SCROLL_IDLE_MS = 120;
 
+// How far a finger has to run sideways before the swipe is taken as one: enough that a tap, or
+// the first waver of a scroll the browser is about to claim, doesn't start folding the page.
+const SWIPE_START = 8;
+
 // Paper thrown at the stack keeps going after the hand lets go. The release measures the commit
 // against where the tip would coast to on the speed it was let go at — THROW_COAST_MS of travel
 // at the average speed of the drag's last THROW_WINDOW_MS — rather than where the tip stood at
@@ -1236,19 +1240,72 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     cancelSettle = releaseBack(ended, e.timeStamp);
   });
 
-  // Scrolling the stack sideways turns its pages. The wheel's travel walks a point of its own
-  // along the line the matching drag would have taken — out from the fold's tip to take the page
-  // away, down the back-drag's pull to fetch the one behind it — and everything downstream is the
-  // drag's: the same fold under the same clamps, the same commit showing on the flap, the same
-  // release. Scrolling right sends the page away and left brings the last one back, which is the
-  // way the pages themselves travel. The gesture is given a pointer id no real pointer can have,
-  // so a stray pointer event can't be mistaken for part of it.
-  let scroll: { at: Vec, dir: Vec, travel: number, idle: number } | null = null;
+  // Taking the stack sideways turns its pages, whether that's a wheel, a trackpad or a finger.
+  // The travel walks a point of its own along the line the matching drag would have taken — out
+  // from the fold's tip to take the page away, down the back-drag's pull to fetch the one behind
+  // it — and everything downstream is the drag's: the same fold under the same clamps, the same
+  // commit showing on the flap, the same release. Sideways is the way the pages themselves
+  // travel, so taking the stack left sends the page away and right brings the last one back. The
+  // gesture is given a pointer id no real pointer can have, so a stray pointer event can't be
+  // mistaken for part of it.
+  let swipe: { at: Vec, dir: Vec, travel: number, idle: number } | null = null;
 
-  const endScroll = (time: number) => {
+  const beginSwipe = (forward: boolean, time: number): boolean => {
+    cancelSettle();
+    clearTease();
+    if (!forward) {
+      const box = grab.getBoundingClientRect();
+      const at = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+      const started = beginBack({ clientX: at.x, clientY: at.y, timeStamp: time }, -1);
+      // Nothing behind the front page to come back to
+      if (!started) return false;
+      gesture = started;
+      swipe = { at, dir: started.back!.dir, travel: 0, idle: 0 };
+      return true;
+    }
+    sheet = fold.parentElement!;
+    section = sectionOf(sheet);
+    syncPaperSurface(sheet, section);
+    const box = sheet.getBoundingClientRect();
+    const { x: foldX, y: foldY } = currentFoldSize(sheet);
+    const tip = foldTipFromSize(foldX, foldY);
+    const at = { x: box.right + tip.x, y: box.bottom + tip.y };
+    const diagonal = Math.hypot(box.width, box.height);
+    gesture = {
+      pointerId: -1, offset: { x: 0, y: 0 }, theta: 0, gain: 1, canceled: false,
+      unfoldFrom: null, approach: null, back: null, trail: [],
+    };
+    onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: time });
+    swipe = { at, dir: { x: -box.width / diagonal, y: -box.height / diagonal }, travel: 0, idle: 0 };
+    return true;
+  };
+
+  const swipeTo = (travel: number, time: number) => {
+    const held = swipe!.travel;
+    swipe!.travel = Math.max(travel, 0);
+    const at = {
+      clientX: swipe!.at.x + swipe!.dir.x * swipe!.travel,
+      clientY: swipe!.at.y + swipe!.dir.y * swipe!.travel,
+      timeStamp: time,
+    };
+    if (gesture!.approach) {
+      onBackApproach(sheet, section, fold, gesture!, at);
+    } else {
+      onFoldDrag(sheet, section, fold, gesture!, at);
+    }
+    if (gesture!.canceled) {
+      // A swipe can't stray off the fold the way a drag can — it only ever runs along the one
+      // line — so carrying on past the paper's reach holds the fold at its rim instead of giving
+      // the gesture up, and the travel keeps the position it can still honour.
+      gesture!.canceled = false;
+      swipe!.travel = held;
+    }
+  };
+
+  const endSwipe = (time: number) => {
     const ended = gesture;
-    if (scroll) clearTimeout(scroll.idle);
-    scroll = null;
+    if (swipe) clearTimeout(swipe.idle);
+    swipe = null;
     gesture = null;
     if (!ended) return;
     cancelSettle = ended.back
@@ -1258,72 +1315,69 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
   stack.addEventListener('wheel', (e) => {
     // A pointer already working the fold owns it until it lets go
-    if (gesture !== null && scroll === null) return;
+    if (gesture !== null && swipe === null) return;
     // Lines and pages only reach here from wheels that report in them; a trackpad's own units are
     // already the pixels the fold is measured in.
     const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sheet.clientHeight : 1;
     const sideways = e.deltaX * unit;
     if (Math.abs(sideways) <= Math.abs(e.deltaY * unit)) return;
-
-    if (scroll === null) {
-      cancelSettle();
-      clearTease();
-      if (sideways < 0) {
-        const box = grab.getBoundingClientRect();
-        const at = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
-        const started = beginBack({ clientX: at.x, clientY: at.y, timeStamp: e.timeStamp }, -1);
-        // Nothing behind the front page to come back to — leave the scroll to the page
-        if (!started) return;
-        gesture = started;
-        scroll = { at, dir: started.back!.dir, travel: 0, idle: 0 };
-      } else {
-        sheet = fold.parentElement!;
-        section = sectionOf(sheet);
-        syncPaperSurface(sheet, section);
-        const box = sheet.getBoundingClientRect();
-        const { x: foldX, y: foldY } = currentFoldSize(sheet);
-        const tip = foldTipFromSize(foldX, foldY);
-        const at = { x: box.right + tip.x, y: box.bottom + tip.y };
-        const diagonal = Math.hypot(box.width, box.height);
-        gesture = {
-          pointerId: -1, offset: { x: 0, y: 0 }, theta: 0, gain: 1, canceled: false,
-          unfoldFrom: null, approach: null, back: null, trail: [],
-        };
-        onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: e.timeStamp });
-        scroll = { at, dir: { x: -box.width / diagonal, y: -box.height / diagonal }, travel: 0, idle: 0 };
-      }
-    }
+    // Scrolling right takes the content left, which is the page leaving
+    if (swipe === null && !beginSwipe(sideways > 0, e.timeStamp)) return;
     e.preventDefault();
 
-    const held = scroll.travel;
     // Each gesture counts the scroll running its own way as progress, so reversing the wheel
     // walks the fold back the way it came rather than driving it further over.
-    scroll.travel = Math.max(held + (gesture!.back ? -sideways : sideways) * SCROLL_GAIN, 0);
-    const at = {
-      clientX: scroll.at.x + scroll.dir.x * scroll.travel,
-      clientY: scroll.at.y + scroll.dir.y * scroll.travel,
-      timeStamp: e.timeStamp,
-    };
-    if (gesture!.approach) {
-      onBackApproach(sheet, section, fold, gesture!, at);
-    } else {
-      onFoldDrag(sheet, section, fold, gesture!, at);
-    }
-    if (gesture!.canceled) {
-      // A scroll can't stray off the fold the way a hand can — it only ever runs along the one
-      // line — so scrolling on past the paper's reach holds the fold at its rim instead of giving
-      // the gesture up, and the travel keeps the position it can still honour.
-      gesture!.canceled = false;
-      scroll.travel = held;
-    }
+    swipeTo(swipe!.travel + (gesture!.back ? -sideways : sideways) * SCROLL_GAIN, e.timeStamp);
 
-    clearTimeout(scroll.idle);
-    // The release is timed from when the wheel fell quiet, not from the last event, so the throw
-    // window has already closed on it and the commit is read where the scroll actually left the
-    // fold. That is the honest reading here: a flick's momentum arrives as scroll events of its
-    // own, so it is already in the travel, and coasting it again would spend it twice.
-    scroll.idle = window.setTimeout(() => endScroll(performance.now()), SCROLL_IDLE_MS);
+    clearTimeout(swipe!.idle);
+    // A scroll never lets go, so it ends when the wheel falls quiet — and the release is timed
+    // from the quiet rather than from the last event, so the throw window has already closed on
+    // it and the commit is read where the scroll actually left the fold. That is the honest
+    // reading here: a flick's momentum arrives as scroll events of its own, so it is already in
+    // the travel, and coasting it again would spend it twice. (A finger has a real release, and
+    // its throw counts — see below.)
+    swipe!.idle = window.setTimeout(() => endSwipe(performance.now()), SCROLL_IDLE_MS);
   }, { passive: false });
+
+  // A finger never reaches the wheel: swiping the stack scrolls without a scroll event, so it
+  // drives the same gesture from the pointer directly, the swipe's own distance standing in for
+  // the wheel's travel. touch-action: pan-y (index.astro) leaves the page's own scrolling to the
+  // browser, which takes the gesture back — pointercancel — the moment it decides the finger
+  // meant to scroll after all. The first few pixels are spent deciding which way the swipe runs
+  // and aren't paid out to the fold, so it starts from rest rather than jumping.
+  let touch: { id: number, from: Vec } | null = null;
+
+  stack.addEventListener('pointerdown', (e) => {
+    if (gesture !== null || touch !== null || e.pointerType === 'mouse') return;
+    touch = { id: e.pointerId, from: { x: e.clientX, y: e.clientY } };
+  });
+
+  stack.addEventListener('pointermove', (e) => {
+    if (touch === null || e.pointerId !== touch.id) return;
+    const sideways = e.clientX - touch.from.x;
+    if (swipe === null) {
+      if (Math.abs(sideways) < SWIPE_START) return;
+      // Swiping left carries the page off to the left, the way it goes
+      if (!beginSwipe(sideways < 0, e.timeStamp)) {
+        touch = null;
+        return;
+      }
+      try {
+        stack.setPointerCapture(e.pointerId);
+      } catch { /* the finger is gone already; the release below still tidies up */ }
+    }
+    e.preventDefault();
+    const along = (gesture!.back ? sideways : -sideways) - SWIPE_START;
+    swipeTo(along * SCROLL_GAIN, e.timeStamp);
+  });
+
+  const liftTouch = (e: PointerEvent) => {
+    if (touch === null || e.pointerId !== touch.id) return;
+    touch = null;
+    if (swipe) endSwipe(e.timeStamp);
+  };
+  stack.addEventListener('pointerup', liftTouch);
+  stack.addEventListener('pointercancel', liftTouch);
 };
 
 // Re-registering a name throws — harmless in production (each property is only ever declared
