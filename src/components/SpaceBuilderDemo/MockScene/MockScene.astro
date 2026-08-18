@@ -69,7 +69,7 @@
 <style lang="scss">
 // Stretch the drawing content cell so the interactive frame can fill the sheet
 // (default .content is fit-content + centered, which left empty vertical space).
-:global(article.technical-drawing-stack > section .content:has(.mock-scene-demo)) {
+:global(article.technical-drawing-stack > * > section .content:has(.mock-scene-demo)) {
   place-self: stretch;
   align-self: stretch;
   justify-self: stretch;

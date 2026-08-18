@@ -183,7 +183,7 @@ type Layer = keyof typeof layers;
 // content (where a wide page like the Add tool can otherwise butt right up
 // against it) and center the PostIt in whatever space is left. Portrait mode
 // already centers the aside below the content with its own margin, untouched.
-:global(.space-builder-demo article.technical-drawing-stack > section .aside) {
+:global(.space-builder-demo article.technical-drawing-stack > * > section .aside) {
   display: flex;
   justify-content: center;
   padding-left: 1.75em;
@@ -191,7 +191,7 @@ type Layer = keyof typeof layers;
 }
 
 @container technical-drawing (orientation: portrait) {
-  :global(.space-builder-demo article.technical-drawing-stack > section .aside) {
+  :global(.space-builder-demo article.technical-drawing-stack > * > section .aside) {
     display: block;
     padding-left: 0;
     margin-inline: auto;
