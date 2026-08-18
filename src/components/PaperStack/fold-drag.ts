@@ -655,6 +655,11 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   const width = readLength(sheet, '--fold-page-w');
   const height = readLength(sheet, '--fold-page-h');
   const to = restSeed(sheet, width, height);
+  // The flip is committed, so a first flip grows every page's corner cut now — the glide out to
+  // the seed outlasts the cuts' 300ms transition, which would otherwise still be mid-growth
+  // while the landing folds material in behind it. A re-grab that settles instead re-derives
+  // the flipped state from the page order (settleFold), shrinking the cuts back.
+  sheet.parentElement!.dataset.paperFlipped = '';
   let settling = false;
   let cancelGlide = glideFoldTip(sheet, section, fold, to, 300, () => {
     restack(sheet, fold);
