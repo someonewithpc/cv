@@ -586,7 +586,9 @@ const attachBackFoldTease = (stack: HTMLElement, isDragging: () => boolean) => {
     const pages = [...stack.children] as HTMLElement[];
     const back = pages.find((page) => pageIndex(page) === pages.length)!;
     const t = 1 - distance / BACK_TEASE_RADIUS;
-    back.style.setProperty('--paper-peek', `${BACK_TEASE_PEEK * t}deg`);
+    // Counter-fan (negative): the page pivots up, rising above the stack's top edge — the
+    // direction the drag would bring it over — instead of sinking deeper into the fan.
+    back.style.setProperty('--paper-peek', `${-BACK_TEASE_PEEK * t}deg`);
   });
   stack.addEventListener('pointerleave', clearTease);
 
