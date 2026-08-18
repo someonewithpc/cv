@@ -36,7 +36,11 @@ import PostIt from '@/components/PostIt.astro';
 }
 
 .formula {
-  font-size: 1.5rem;
+  /* The open note dialog hands down its own type size; the equation cannot
+     wrap, so at full size its border ran off narrow sheets. */
+  font-size: var(--note-font-size, 1.5rem);
+  max-width: 100%;
+  overflow-x: auto;
   padding: 1em;
   border: 1px solid var(--fg-800);
   border-radius: 0.5em;
