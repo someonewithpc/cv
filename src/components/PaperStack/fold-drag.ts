@@ -200,10 +200,10 @@ const pointFolded = (point: Vec, w: number, h: number, tip: Vec): boolean => {
 // flip once the fold has carried the point half way from the dragged corner in to the center; a
 // back-drag (whose unfold retreats the crease from the top-left back toward that corner) keeps
 // the page in front once the fold has receded past the point a third of the way from the
-// top-left corner to the center — so bringing a page over commits earlier than sending one
-// back, and neither gesture has to be hauled all the way past the middle.
+// top-left corner to the opposite one — so neither gesture has to be hauled all the way past
+// the middle.
 const commitPoint = (w: number, h: number, backward: boolean): Vec => backward
-  ? { x: w / 6, y: h / 6 }
+  ? { x: w / 3, y: h / 3 }
   : { x: w * 3 / 4, y: h * 3 / 4 };
 
 // Closes the fan by one page for the duration of a drag (--flip-progress on the stack, see
