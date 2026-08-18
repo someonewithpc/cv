@@ -323,12 +323,22 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     y: (gesture.gain * e.clientY - offset.y) - contentRect.bottom,
   };
 
-  // Unfolding stops at flat. Without this the tip sails on past the page corner, the crease
-  // crosses to the far side of it, and the fold inverts — so a back-drag pulled well past the
-  // bottom-right read as folded-over again and the release sent the page it had just brought
-  // over straight back behind the stack.
+  // An unfold runs on one axis: the page arrived folded along the resting crease, and laying it
+  // flat only slides that crease home, never turns it — so the tip rides the seed line, as far
+  // along it as the pointer has pulled, between fully folded and flat (paper unfolds flat; it
+  // doesn't keep going and fold the other way, nor further over than it arrived). Tracking the
+  // raw pointer here instead let an off-axis drag carry the tip clear of that line, leaving the
+  // page folded along some other crease however far it was dragged. The axis is the resting
+  // crease's normal, which leans 1-in-2 whatever shape the page is: on a 2:1 page it happens to
+  // run down the page's own diagonal, so dragging toward the center unfolded it, but on a
+  // portrait page that drag is ~27° off the axis and the corner never came unfolded at all.
   const { unfoldFrom } = gesture;
-  if (unfoldFrom && tip.x * unfoldFrom.x + tip.y * unfoldFrom.y < 0) tip = { x: 0, y: 0 };
+  if (unfoldFrom) {
+    const span = Math.hypot(unfoldFrom.x, unfoldFrom.y);
+    const axis = { x: unfoldFrom.x / span, y: unfoldFrom.y / span };
+    const along = Math.min(Math.max(tip.x * axis.x + tip.y * axis.y, 0), span);
+    tip = { x: axis.x * along, y: axis.y * along };
+  }
 
   // Paper doesn't stretch: folding keeps the dragged corner within |corner - pin| of the paper
   // clip's pin (folding preserves the corner's distance to every point on the crease, and the
