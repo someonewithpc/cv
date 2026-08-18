@@ -12,6 +12,11 @@ type Vec = { x: number, y: number };
 // tip to, and that speed (px per ms). See coastTip.
 type Throw = { at: Vec, speed: number };
 
+// What drives a fold: somewhere the gesture is pulling towards, at the moment it got there. A
+// pointer is one (a PointerEvent satisfies this as it stands); a horizontal scroll walks a point
+// of its own along the fold's line (see attachScrollFlip), so both run the same machinery.
+type Pull = { clientX: number, clientY: number, timeStamp: number };
+
 type FoldGesture = {
   pointerId: number;
   // Scaled pointer minus tip at gesture start, in tip-local screen coordinates — rotates with
@@ -243,8 +248,8 @@ const pointFolded = (point: Vec, w: number, h: number, tip: Vec): boolean => {
 const commitPoint = (w: number, h: number): Vec => ({ x: w * 3 / 4, y: h * 3 / 4 });
 
 // A back-drag's progress: the pointer's travel from the grab, projected on the pull.
-const backAlong = (back: NonNullable<FoldGesture['back']>, e: PointerEvent): number =>
-  (e.clientX - back.origin.x) * back.dir.x + (e.clientY - back.origin.y) * back.dir.y;
+const backAlong = (back: NonNullable<FoldGesture['back']>, at: Pull): number =>
+  (at.clientX - back.origin.x) * back.dir.x + (at.clientY - back.origin.y) * back.dir.y;
 
 // The travel that commits it.
 const backReach = (sheet: HTMLElement): number =>
@@ -378,13 +383,13 @@ const renderFold = (
   }
 };
 
-const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
+const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
   const { x: w, y: h } = currentFoldSize(sheet);
   const contentRect = sheet.getBoundingClientRect();
   const tip = foldTipFromSize(w, h);
   gesture.offset = {
-    x: gesture.gain * e.clientX - (contentRect.right + tip.x),
-    y: gesture.gain * e.clientY - (contentRect.bottom + tip.y),
+    x: gesture.gain * at.clientX - (contentRect.right + tip.x),
+    y: gesture.gain * at.clientY - (contentRect.bottom + tip.y),
   };
   gesture.theta = Math.atan2(h, w);
 };
@@ -395,7 +400,7 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, e: PointerEvent) =
 // screen-space offset from the tip is rotated by 2(θ₀-θ) as θ moves from its grab-time value θ₀.
 // This frame's θ isn't known until after size is solved for below, so the last solved frame's θ
 // is used instead — a one-frame lag, invisible at drag sampling rates.
-const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent, captor: HTMLElement) => {
+const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, at: Pull) => {
   // Idempotent — only the first move of a gesture actually needs this, but settleFold relies on
   // it having run at all (a grab that never moved leaves .paper-fold--active untouched, so it
   // knows there's nothing to hand back to the idle CSS rule).
@@ -415,8 +420,8 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     : gesture.offset;
 
   let tip = {
-    x: (gesture.gain * e.clientX - offset.x) - contentRect.right,
-    y: (gesture.gain * e.clientY - offset.y) - contentRect.bottom,
+    x: (gesture.gain * at.clientX - offset.x) - contentRect.right,
+    y: (gesture.gain * at.clientY - offset.y) - contentRect.bottom,
   };
 
   // An unfold splits the pointer two ways. How far the corner still stands off its home is read
@@ -447,16 +452,17 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // clip's pin (folding preserves the corner's distance to every point on the crease, and the
   // crease can at most pass through the pin). Slightly past that rim the fold holds there — the
   // crease pivoting around the pin as the pointer arcs — and, on a forward drag, past the grace
-  // margin the drag gives up and lets the fold settle. A back-drag (gain > 1) never gives up:
-  // its pointer runs toward the bottom-right and leaves the rim by unfolding the page flat, which
-  // is the gesture succeeding, not straying — so it just holds there until the release.
+  // margin the drag gives up and lets the fold settle. Giving up is left for the caller to act
+  // on (releasing its pointer capture, ending its scroll), which is what ends the gesture. A
+  // back-drag (gain > 1) never gives up: its pointer runs toward the bottom-right and leaves the
+  // rim by unfolding the page flat, which is the gesture succeeding, not straying — so it just
+  // holds there until the release.
   const pin = pinOf(sheet, contentRect.width, contentRect.height);
   const reach = Math.hypot(pin.x, pin.y);
   const fromPin = { x: tip.x - pin.x, y: tip.y - pin.y };
   const overshoot = Math.hypot(fromPin.x, fromPin.y) - reach;
   if (gesture.gain === 1 && overshoot > FOLD_CANCEL_GRACE) {
     gesture.canceled = true;
-    captor.releasePointerCapture(e.pointerId);
     return;
   }
   if (overshoot > 0) {
@@ -474,20 +480,20 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // that is the fold having carried the commit point over; on a back-drag it is the pull having
   // come its third of the way, which is the release's own test (see BACK_COMMIT_REACH).
   const { back } = gesture;
-  const along = back ? backAlong(back, e) : 0;
+  const along = back ? backAlong(back, at) : 0;
   const willCommit = back
     ? along >= backReach(sheet)
     : sheet.parentElement!.childElementCount > 1
       && pointFolded(commitPoint(contentRect.width, contentRect.height), contentRect.width, contentRect.height, tip);
   fold.classList.toggle('paper-fold--will-commit', willCommit);
 
-  if (back) track(back.trail, { along, time: e.timeStamp });
+  if (back) track(back.trail, { along, time: at.timeStamp });
 
   // The tip as the drag actually rendered it — after the pointer gain, the unfold axis and the rim
   // clamp — so the throw is measured on the fold's own motion rather than the hand's: a drag held
   // against the rim has stopped moving the paper however hard it's still pushing, and lets go with
   // nothing to coast on.
-  track(gesture.trail, { tip, time: e.timeStamp });
+  track(gesture.trail, { tip, time: at.timeStamp });
   renderFold(section, fold, contentRect.width, contentRect.height, tip, currentBackFoldSize(sheet));
 };
 
@@ -823,12 +829,12 @@ const promoteFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement
 // coinciding with the corner cut every page already wears — so promoting it at that exact
 // moment changes nothing on screen: the ordinary unfold drag (onFoldDrag, gain 2) takes over
 // seamlessly, with the pointer offset re-derived for continuity.
-const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, e: PointerEvent) => {
+const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, at: Pull) => {
   const approach = gesture.approach!;
   const back = gesture.back!;
   const w = readLength(sheet, '--fold-page-w');
   const h = readLength(sheet, '--fold-page-h');
-  const delta = { x: e.clientX - back.origin.x, y: e.clientY - back.origin.y };
+  const delta = { x: at.clientX - back.origin.x, y: at.clientY - back.origin.y };
   const along = delta.x * back.dir.x + delta.y * back.dir.y;
   const s = Math.min(Math.max(along / approach.pull, 0), 1);
   const across = -delta.x * back.dir.y + delta.y * back.dir.x;
@@ -839,7 +845,7 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const t = { x: w + swung.x * s, y: h + swung.y * s };
   approach.s = s;
   approach.t = t;
-  track(back.trail, { along, time: e.timeStamp });
+  track(back.trail, { along, time: at.timeStamp });
   renderLanding(section, fold, w, h, approach.seed, currentBackFoldSize(sheet), t);
   if (s < 1) return;
 
@@ -848,11 +854,11 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   promoteFold(sheet, section, fold, approach.seed);
   gesture.unfoldFrom = approach.seed;
   gesture.approach = null;
-  onFoldGrab(sheet, gesture, e);
+  onFoldGrab(sheet, gesture, at);
   // The unfold takes over with the tip standing at the seed; seeding its trail from there means
   // the very next move already carries a speed, so a page flicked over and straight on out
   // doesn't have to wait for a second unfold sample before the throw counts.
-  track(gesture.trail, { tip: approach.seed, time: e.timeStamp });
+  track(gesture.trail, { tip: approach.seed, time: at.timeStamp });
 };
 
 // A committed flip: glide the tip the rest of the way out to the resting seed — the page
@@ -1031,13 +1037,17 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   });
 
   fold.addEventListener('pointermove', (e) => {
-    if (gesture === null || e.pointerId !== gesture.pointerId) return;
+    const active = gesture;
+    if (active === null || e.pointerId !== active.pointerId) return;
     if (!fold.hasPointerCapture(e.pointerId)) return;
     if (e.buttons === 0) {
       fold.releasePointerCapture(e.pointerId);
       return;
     }
-    onFoldDrag(sheet, section, fold, gesture, e, fold);
+    onFoldDrag(sheet, section, fold, active, e);
+    // The drag strayed too far past the fold's reach and gave up; dropping the capture is what
+    // ends it, and the release settles the fold back.
+    if (active.canceled) fold.releasePointerCapture(e.pointerId);
   });
 
   // Pointer capture is released — on pointerup *or* pointercancel — right before this fires, so
@@ -1104,12 +1114,12 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // measures that: dragged its third of the way to the opposite corner (BACK_COMMIT_REACH) the
   // page stays as the new front page, short of it it goes back where it came from — whether the
   // hand let go during the approach or after it.
-  grab.addEventListener('pointerdown', (e) => {
-    if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
+  // Sets the stack up for a back-drag and returns the gesture it starts, ready for whatever is
+  // driving it (a pointer on the grab handle, a horizontal scroll) to take over. Null when there
+  // is no previous page to go back to.
+  const beginBack = (at: Pull, pointerId: number): FoldGesture | null => {
     const stack = grab.parentElement!.parentElement!;
-    if (!('paperFlipped' in stack.dataset)) return;
-    e.preventDefault();
-    e.stopPropagation();
+    if (!('paperFlipped' in stack.dataset)) return null;
 
     cancelSettle();
     clearTease();
@@ -1145,13 +1155,40 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     sheet.style.rotate = '0deg';
     holdUnsplayed(sheet);
 
-    gesture = {
-      pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false,
+    return {
+      pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false,
       unfoldFrom: null,
       approach: { seed, pull: seedLength * BACK_APPROACH_PULL, s: 0, t: { x: w, y: h } },
-      back: { origin: { x: e.clientX, y: e.clientY }, dir, trail: [] },
+      back: { origin: { x: at.clientX, y: at.clientY }, dir, trail: [] },
       trail: [],
     };
+  };
+
+  // What a back-drag's release does, from either phase: committed (its pull thrown a third of the
+  // way to the opposite corner) the page stays in front — carried the rest of the way over first
+  // if it hasn't got there — and short of that it goes back where it came from.
+  const releaseBack = (ended: FoldGesture, time: number): (() => void) => {
+    const { approach, back, trail } = ended;
+    const committed = backThrow(back!, time) >= backReach(sheet);
+    if (approach) return committed ? throwFront(approach) : returnBehind(approach);
+    // The grab handle sat out the promotion so the DOM move couldn't break its pointer
+    // capture; with the gesture over it rejoins its sheet, back in canonical sibling order.
+    sheet.insertBefore(grab, sheet.querySelector('.paper-flip-hint'));
+    // The tip's own throw doesn't decide anything here, but it still carries the speed the glide
+    // that takes over sets off at.
+    const speed = coastTip(trail, time)?.speed ?? 0;
+    return committed
+      ? settleFold(sheet, section, fold, speed)
+      : flipFold(sheet, section, fold, speed);
+  };
+
+  grab.addEventListener('pointerdown', (e) => {
+    if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
+    const started = beginBack(e, e.pointerId);
+    if (!started) return;
+    e.preventDefault();
+    e.stopPropagation();
+    gesture = started;
     try {
       grab.setPointerCapture(e.pointerId);
     } catch {
@@ -1171,7 +1208,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     if (gesture.approach) {
       onBackApproach(sheet, section, fold, gesture, e);
     } else {
-      onFoldDrag(sheet, section, fold, gesture, e, grab);
+      onFoldDrag(sheet, section, fold, gesture, e);
     }
   });
 
@@ -1180,25 +1217,9 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // already resolves that to "return to the back", which is what canceling should mean here.
   grab.addEventListener('lostpointercapture', (e) => {
     if (gesture === null || e.pointerId !== gesture.pointerId) return;
-    const { approach, back, trail } = gesture;
+    const ended = gesture;
     gesture = null;
-    // One test for both phases: how far the pull was thrown, against the reach that commits it
-    const committed = backThrow(back!, e.timeStamp) >= backReach(sheet);
-    if (approach) {
-      // Committed from inside the approach means the throw has to carry the page over the clip
-      // first, which throwFront does before settling it in front
-      cancelSettle = committed ? throwFront(approach) : returnBehind(approach);
-      return;
-    }
-    // The grab handle sat out the promotion so the DOM move couldn't break its pointer
-    // capture; with the gesture over it rejoins its sheet, back in canonical sibling order.
-    sheet.insertBefore(grab, sheet.querySelector('.paper-flip-hint'));
-    // The tip's own throw doesn't decide anything here, but it still carries the speed the glide
-    // that takes over sets off at.
-    const speed = coastTip(trail, e.timeStamp)?.speed ?? 0;
-    cancelSettle = committed
-      ? settleFold(sheet, section, fold, speed)
-      : flipFold(sheet, section, fold, speed);
+    cancelSettle = releaseBack(ended, e.timeStamp);
   });
 };
 
