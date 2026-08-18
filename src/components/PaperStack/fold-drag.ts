@@ -166,10 +166,13 @@ const centerFolded = (w: number, h: number, tip: Vec): boolean => {
 };
 
 // How far along the flip the fold is, 0..1 — the same signed center-to-crease distance
-// centerFolded thresholds, but normalized between the resting dog-ear (0) and the deepest
-// possible fold, the crease through the pin (1). Written to --flip-progress on the stack so the
-// pages' splay can unwind with the drag (see index.astro).
-const flipProgress = (w: number, h: number, pin: Vec, tip: Vec): number => {
+// centerFolded thresholds, normalized between the resting dog-ear (0) and the crease reaching
+// the page's center (1). That upper end is exactly where releasing starts flipping the page, so
+// the splay this drives (--flip-progress on the stack, see index.astro) has already brought the
+// next page round to horizontal by the time the drop is on offer — rather than only settling
+// there once the flip animation has run and renumbered the stack. Folding deeper than that just
+// holds at 1.
+const flipProgress = (w: number, h: number, tip: Vec): number => {
   const centerDist = (t: Vec): number => {
     const len = Math.hypot(t.x, t.y);
     const mid = { x: w + t.x / 2, y: h + t.y / 2 };
@@ -177,12 +180,11 @@ const flipProgress = (w: number, h: number, pin: Vec, tip: Vec): number => {
   };
   if (Math.hypot(tip.x, tip.y) < 0.5) return 0;
   const rest = centerDist(foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y));
-  const full = -Math.hypot(w / 2 + pin.x, h / 2 + pin.y);
-  return Math.min(Math.max((rest - centerDist(tip)) / (rest - full), 0), 1);
+  return Math.min(Math.max(1 - centerDist(tip) / rest, 0), 1);
 };
 
-const setFlipProgress = (sheet: HTMLElement, w: number, h: number, pin: Vec, tip: Vec): void => {
-  sheet.parentElement!.style.setProperty('--flip-progress', `${flipProgress(w, h, pin, tip)}`);
+const setFlipProgress = (sheet: HTMLElement, w: number, h: number, tip: Vec): void => {
+  sheet.parentElement!.style.setProperty('--flip-progress', `${flipProgress(w, h, tip)}`);
 };
 
 // Drives the page's clip-path and .paper-fold directly while dragging (and while settling back
@@ -283,7 +285,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     const scale = reach / (reach + overshoot);
     tip = { x: pin.x + fromPin.x * scale, y: pin.y + fromPin.y * scale };
   }
-  setFlipProgress(sheet, contentRect.width, contentRect.height, pin, tip);
+  setFlipProgress(sheet, contentRect.width, contentRect.height, tip);
 
   const size = foldSizeFromTip(tip.x, tip.y);
   sheet.style.setProperty('--fold-x', `${size.x}px`);
@@ -313,7 +315,6 @@ const glideFoldTip = (
   const width = readLength(sheet, '--fold-page-w');
   const height = readLength(sheet, '--fold-page-h');
   const { x: fx, y: fy } = currentFoldSize(sheet);
-  const pin = pinOf(sheet, width, height);
   const from = foldTipFromSize(fx, fy);
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
   const duration = Math.min(baseMs + distance / 3, baseMs + 500);
@@ -327,7 +328,7 @@ const glideFoldTip = (
     const size = foldSizeFromTip(tip.x, tip.y);
     sheet.style.setProperty('--fold-x', `${size.x}px`);
     sheet.style.setProperty('--fold-y', `${size.y}px`);
-    if (trackProgress) setFlipProgress(sheet, width, height, pin, tip);
+    if (trackProgress) setFlipProgress(sheet, width, height, tip);
     // Read every frame, not once at glide start: restack() begins the stack's own 300ms
     // --fold-back-x/-y transition from 0 to rest, so a value captured up front would go stale
     // mid-glide and paint this sheet's flap without the corner cut the front pages are growing,
@@ -495,7 +496,7 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   sheet.style.rotate = '';
   sheet.style.transition = '';
   bringToFront(sheet.parentElement!);
-  setFlipProgress(sheet, w, h, pinOf(sheet, w, h), tip);
+  setFlipProgress(sheet, w, h, tip);
   sheet.getAnimations().forEach((animation) => animation.cancel());
   gesture.approach = null;
   onFoldGrab(sheet, gesture, e);
