@@ -302,13 +302,15 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // Paper doesn't stretch: folding keeps the dragged corner within |corner - pin| of the paper
   // clip's pin (folding preserves the corner's distance to every point on the crease, and the
   // crease can at most pass through the pin). Slightly past that rim the fold holds there — the
-  // crease pivoting around the pin as the pointer arcs — and past the grace margin the drag
-  // gives up and lets the fold settle.
+  // crease pivoting around the pin as the pointer arcs — and, on a forward drag, past the grace
+  // margin the drag gives up and lets the fold settle. A back-drag (gain > 1) never gives up:
+  // its pointer runs toward the bottom-right and leaves the rim by unfolding the page flat, which
+  // is the gesture succeeding, not straying — so it just holds there until the release.
   const pin = pinOf(sheet, contentRect.width, contentRect.height);
   const reach = Math.hypot(pin.x, pin.y);
   const fromPin = { x: tip.x - pin.x, y: tip.y - pin.y };
   const overshoot = Math.hypot(fromPin.x, fromPin.y) - reach;
-  if (overshoot > FOLD_CANCEL_GRACE) {
+  if (gesture.gain === 1 && overshoot > FOLD_CANCEL_GRACE) {
     gesture.canceled = true;
     captor.releasePointerCapture(e.pointerId);
     return;
