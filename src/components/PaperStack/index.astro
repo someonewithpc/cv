@@ -139,6 +139,13 @@ const pages = await Promise.all(
     --fold-pin-x: calc(var(--fold-back-rest-x) / 2);
     --fold-pin-y: calc(var(--fold-back-rest-y) / 2);
 
+    // Plain-CSS fallback for the first paint: until fold-drag.ts registers the typed custom
+    // properties, var(--flip-progress) is undefined, which invalidates the pages' rotate below
+    // at computed-value time. rotate: none doesn't just drop the splay — it stops each page
+    // from being the containing block for its absolutely-positioned clip wrappers, flashing
+    // the paper clip at the viewport's top-left corner while the page loads.
+    --flip-progress: 0;
+
     // The folded-back top-left corner's size, inherited by every page's clip-path so the whole
     // stack's corner folds behind as one; transitioning it here is what eases the resting size
     // and the proximity tease in and out.
