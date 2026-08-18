@@ -31,8 +31,6 @@ type FoldGesture = {
     // Pointer position at grab, and the pull direction (the resting crease's normal)
     origin: Vec;
     dir: Vec;
-    // The sheet's computed splay (plus any tease peek) at grab, unwound as the page comes over
-    startRotate: number;
   } | null;
 };
 
@@ -165,26 +163,13 @@ const centerFolded = (w: number, h: number, tip: Vec): boolean => {
   return (w / 2 - mid.x) * tip.x + (h / 2 - mid.y) * tip.y < 0;
 };
 
-// How far along the flip the fold is, 0..1 — the same signed center-to-crease distance
-// centerFolded thresholds, normalized between the resting dog-ear (0) and the crease reaching
-// the page's center (1). That upper end is exactly where releasing starts flipping the page, so
-// the splay this drives (--flip-progress on the stack, see index.astro) has already brought the
-// next page round to horizontal by the time the drop is on offer — rather than only settling
-// there once the flip animation has run and renumbered the stack. Folding deeper than that just
-// holds at 1.
-const flipProgress = (w: number, h: number, tip: Vec): number => {
-  const centerDist = (t: Vec): number => {
-    const len = Math.hypot(t.x, t.y);
-    const mid = { x: w + t.x / 2, y: h + t.y / 2 };
-    return ((w / 2 - mid.x) * t.x + (h / 2 - mid.y) * t.y) / len;
-  };
-  if (Math.hypot(tip.x, tip.y) < 0.5) return 0;
-  const rest = centerDist(foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y));
-  return Math.min(Math.max(1 - centerDist(tip) / rest, 0), 1);
-};
-
-const setFlipProgress = (sheet: HTMLElement, w: number, h: number, tip: Vec): void => {
-  sheet.parentElement!.style.setProperty('--flip-progress', `${flipProgress(w, h, tip)}`);
+// Closes the fan by one page for the duration of a drag (--flip-progress on the stack, see
+// index.astro), squaring the front page and the one behind it up with each other. Every page
+// wears the same folded-back top-left corner, so any splay between those two fans their two cuts
+// apart and opens a gap right where the drag has the eye. Easing this in with the fold instead
+// would leave the gap open for most of the gesture, which is exactly when it shows.
+const holdUnsplayed = (sheet: HTMLElement): void => {
+  sheet.parentElement!.style.setProperty('--flip-progress', '1');
 };
 
 // Hands the page and its flap back to index.astro's own rules, dropping everything renderFold
@@ -319,7 +304,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     const scale = reach / (reach + overshoot);
     tip = { x: pin.x + fromPin.x * scale, y: pin.y + fromPin.y * scale };
   }
-  setFlipProgress(sheet, contentRect.width, contentRect.height, tip);
+  holdUnsplayed(sheet);
 
   const size = foldSizeFromTip(tip.x, tip.y);
   sheet.style.setProperty('--fold-x', `${size.x}px`);
@@ -342,7 +327,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 const glideFoldTip = (
   sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   to: Vec, baseMs: number, onDone: () => void,
-  { trackProgress = true, frontOut = false }: { trackProgress?: boolean, frontOut?: boolean } = {},
+  { frontOut = false }: { frontOut?: boolean } = {},
 ): (() => void) => {
   // The observed layout size, not getBoundingClientRect: a sheet gliding behind the stack
   // (a back-drag's approach released early) still carries its splay rotation, which would
@@ -363,7 +348,6 @@ const glideFoldTip = (
     const size = foldSizeFromTip(tip.x, tip.y);
     sheet.style.setProperty('--fold-x', `${size.x}px`);
     sheet.style.setProperty('--fold-y', `${size.y}px`);
-    if (trackProgress) setFlipProgress(sheet, width, height, tip);
     // Read every frame, not once at glide start: restack() begins the stack's own 300ms
     // --fold-back-x/-y transition from 0 to rest, so a value captured up front would go stale
     // mid-glide and paint this sheet's flap without the corner cut the front pages are growing,
@@ -472,10 +456,10 @@ const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   fold.classList.remove('paper-fold--active');
   clearFoldRender(section, fold);
   clearFrontFold(sheet);
-  // A back-drag's approach phase drives the sheet's splay rotation inline (transition frozen);
-  // clearing both here lets the restored transition ease the sheet back into the fan.
+  // A back-drag's grab squares this sheet up with the front page; letting go of the inline
+  // rotation eases it back into the fan.
   sheet.style.rotate = '';
-  sheet.style.transition = '';
+  stack.style.removeProperty('--flip-progress');
   const front = stack.querySelector<HTMLElement>('.paper-front')!;
   front.insertBefore(fold, front.querySelector('.paper-back-grab'));
 };
@@ -511,11 +495,11 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
 // A back-drag's approach phase: the hindmost page, still behind the stack, folds over in
 // proportion to how far the pointer has pulled along the resting crease's normal. The tip runs
 // the straight line from the flat corner to its reflection across that crease — a point that
-// lies exactly on the pin's reach circle — while the sheet's splay unwinds in step, so the
-// page visibly rises and swings into alignment as it comes over the clip. It's still behind the
-// clip throughout, hence frontOut: what rises into view is the page's own content, which is
-// both what a face-down sheet folded over shows and the affordance the gesture needs — you can
-// see which page you're pulling back. The completed fold's
+// lies exactly on the pin's reach circle. The sheet was squared up with the front page at the
+// grab (see the grab handler), so its folded-back corner tracks the front page's throughout.
+// It's still behind the clip, hence frontOut: what rises into view is the page's own content,
+// which is both what a face-down sheet folded over shows and the affordance the gesture needs —
+// you can see which page you're pulling back. The completed fold's
 // crease coincides with the corner cut every page already wears, so promoting the page at that
 // exact moment changes nothing on screen: the ordinary unfold drag (onFoldDrag, gain 2) takes
 // over seamlessly, with the pointer offset re-derived for continuity.
@@ -530,15 +514,12 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const size = foldSizeFromTip(tip.x, tip.y);
   sheet.style.setProperty('--fold-x', `${size.x}px`);
   sheet.style.setProperty('--fold-y', `${size.y}px`);
-  sheet.style.rotate = `${approach.startRotate * (1 - s)}deg`;
   renderFold(section, fold, w, h, tip, currentBackFoldSize(sheet), true);
   if (s < 1) return;
 
   // Fully over the clip — promote the page and hand the rest of the gesture to the unfold drag
   sheet.style.rotate = '';
-  sheet.style.transition = '';
   bringToFront(sheet.parentElement!);
-  setFlipProgress(sheet, w, h, tip);
   sheet.getAnimations().forEach((animation) => animation.cancel());
   gesture.approach = null;
   onFoldGrab(sheet, gesture, e);
@@ -573,7 +554,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
     cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, () => {
       settling = false;
       finishFlip(sheet, section, fold);
-    }, { trackProgress: false, frontOut: true });
+    }, { frontOut: true });
   });
   // A re-grab mid-fold-back-down fast-forwards to the settled end state
   return () => {
@@ -708,7 +689,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       finishFlip(sheet, section, fold);
       restIdleFold(front);
     };
-    const cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, finish, { trackProgress: false, frontOut: true });
+    const cancelGlide = glideFoldTip(sheet, section, fold, { x: 0, y: 0 }, 250, finish, { frontOut: true });
     return () => {
       cancelGlide();
       if (!done) finish();
@@ -756,11 +737,12 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     const nl = Math.hypot(restSize.x, restSize.y);
     const nx = restSize.y / nl, ny = restSize.x / nl;
     const dist = nx * w + ny * h - restSize.x * restSize.y / nl;
-    const rotate = getComputedStyle(sheet).rotate;
 
-    // The approach drives this sheet's rotation by hand (unwinding the splay and any tease
-    // peek as the page comes over), so the splay transition is frozen out of the way.
-    sheet.style.transition = 'none';
+    // The arriving page squares up with the front one for the whole gesture (the rotate
+    // transition eases it there), so their folded-back corners stay flush as it comes over —
+    // the same reason holdUnsplayed closes the fan behind them.
+    sheet.style.rotate = '0deg';
+    holdUnsplayed(sheet);
 
     gesture = {
       pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, gain: 2, canceled: false,
@@ -768,7 +750,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
         seed: { x: -2 * dist * nx, y: -2 * dist * ny },
         origin: { x: e.clientX, y: e.clientY },
         dir: { x: nx, y: ny },
-        startRotate: rotate === 'none' ? 0 : parseFloat(rotate),
       },
     };
     try {
