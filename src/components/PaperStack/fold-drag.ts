@@ -731,11 +731,15 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     front.style.removeProperty('--fold-x');
     front.style.removeProperty('--fold-y');
     sectionOf(front).style.clipPath = '';
-    sheet.append(fold);
-    fold.classList.add('paper-fold--active');
 
     const w = readLength(sheet, '--fold-page-w');
     const h = readLength(sheet, '--fold-page-h');
+    sheet.append(fold);
+    fold.classList.add('paper-fold--active');
+    // Active mode sizes the flap to the whole page, and the idle clip-path it still carries fills
+    // that box at fold 0 — a page-sized slab of flap colour on a sheet whose top-left corner shows
+    // through the front page's cut. Render the degenerate fold now so it starts out hidden.
+    renderFold(section, fold, w, h, { x: 0, y: 0 }, currentBackFoldSize(sheet), true);
     const restSize = backRestSize(sheet);
     const nl = Math.hypot(restSize.x, restSize.y);
     const nx = restSize.y / nl, ny = restSize.x / nl;
