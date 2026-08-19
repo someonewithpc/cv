@@ -30,8 +30,12 @@ type Step = {
   run?: (dispatch: AppDispatch, getState: () => RootState) => void | Promise<void>;
 };
 
+/** Editor-canvas width (px) the presets' control-point drags were tuned on. */
+const DRAG_REFERENCE_CANVAS_PX = 450;
+
 type CpDrag = {
   cp: string;
+  /** Px at the reference canvas width — scaled to the live canvas when run. */
   dx: number;
   dy: number;
   /** Hold Shift while dragging so constrainSnap doesn't eat small moves. */
@@ -326,8 +330,13 @@ export class AutoPlayController {
       const rect = handle.getBoundingClientRect();
       const fromX = rect.left + rect.width / 2;
       const fromY = rect.top + rect.height / 2;
-      const toX = fromX + dx;
-      const toY = fromY + dy;
+      // The canvas maps its client rect onto a fixed viewBox, so a preset's px
+      // delta moves the point further in shape units the smaller the editor is.
+      // Scale deltas to the canvas the presets were tuned on, or a phone-sized
+      // editor blows the shape past the viewBox.
+      const dragScale = svg.getBoundingClientRect().width / DRAG_REFERENCE_CANVAS_PX;
+      const toX = fromX + dx * dragScale;
+      const toY = fromY + dy * dragScale;
       const durationMs = 620;
       const root = document.documentElement;
       let curX = fromX;
