@@ -309,6 +309,24 @@ function MockMapOverlayInner() {
     setCursorPos(toHostPoint(editorPortalHost, overlayPoint(overlay, 0.42, 0.38)));
   }, [editorPortalHost]);
 
+  // A step measures its target once, but accordion sections in the editor keep
+  // animating afterwards and carry the target away from the parked cursor (the
+  // stacked narrow layout shifts headers by whole sections). Re-glue the cursor
+  // to the highlighted target until the next step retargets it.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const el = activeTargetRef.current;
+      if (!el?.isConnected || userControlRef.current || cursorPhaseRef.current !== 'demo') {
+        return;
+      }
+      const next = toHostPoint(editorPortalHost, elementCenter(el));
+      setCursorPos((prev) => (
+        Math.abs(prev.x - next.x) < 0.5 && Math.abs(prev.y - next.y) < 0.5 ? prev : next
+      ));
+    }, 150);
+    return () => window.clearInterval(id);
+  }, [editorPortalHost]);
+
   useEffect(() => {
     const overlay = containerRef.current;
 
