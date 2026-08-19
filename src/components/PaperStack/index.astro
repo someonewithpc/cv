@@ -65,7 +65,14 @@ const pages = await Promise.all(
 
 <noscript>
   <Tag data-paper-stack-root class={className} set:html={pages.join('')} />
-  <style lang="scss" is:global>
+  <!--
+    Plain CSS, deliberately: a <style> nested in <noscript> is the one kind Astro leaves alone —
+    it isn't hoisted into the bundle (which is the point, these rules must not reach the
+    scripted stack) and so it isn't compiled either. `lang="scss"` would be an inert attribute
+    and, worse, `//` comments would reach the browser as parse errors that swallow the
+    declaration after them. Nesting below is native CSS nesting, which needs no compiler.
+  -->
+  <style>
     [data-paper-stack-root] {
       overflow-x: auto;
       overflow-y: hidden;
@@ -79,8 +86,8 @@ const pages = await Promise.all(
 
       > * {
         flex: 0 0 100%;
-        // Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
-        // scrollWidth, leaving a permanent horizontal scrollbar on every page.
+        /* Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
+           scrollWidth, leaving a permanent horizontal scrollbar on every page. */
         overflow: clip;
         scroll-snap-align: center;
       }
