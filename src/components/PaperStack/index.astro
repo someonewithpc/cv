@@ -120,7 +120,7 @@ const pages = await Promise.all(
   </style>
 </noscript>
 
-<Tag data-paper-stack-root data-paper-stack class={className}>
+<Tag data-paper-stack-root data-paper-stack class={className} style={`--page-count: ${pageCount}`}>
   {pages.map((page, index) => (
     <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={(index === 0 ? paperClipUnder : '') + page + (index === 0 ? foldFront : '')} />
   ))}
@@ -164,6 +164,18 @@ const pages = await Promise.all(
     // stack's corner folds behind as one; transitioning it here is what eases the resting size
     // and the proximity tease in and out.
     transition: --fold-back-x 300ms ease-out, --fold-back-y 300ms ease-out;
+
+    // The fan pivots every page about the pin near the top-left, so the hindmost sheet — turned
+    // the furthest, by the same $per-page-splay·log(n) the pages' rotate below uses — drops
+    // below the front page's bottom edge by its own width times the sine of that turn. A
+    // rotation is invisible to layout, so the stack's box stops at the front page and whatever
+    // follows rides up under the fan, however much gap it was given: at three demos a page wide,
+    // a 4em row-gap was showing as a few pixels. Reserve the drop here, where the splay is
+    // decided, so every stack pays for its own fan and the gap around one means what it says.
+    // 100cqw is the *frame's* width — an element never queries a container it declares itself,
+    // and the stack declares `technical-drawing` — which is the stack's own width, since it
+    // spans the frame.
+    margin-bottom: calc(100cqw * sin(#{$per-page-splay} * log(var(--page-count))));
 
     & > div {
       grid-area: content;
