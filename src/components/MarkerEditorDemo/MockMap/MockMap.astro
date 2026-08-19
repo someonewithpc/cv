@@ -66,6 +66,8 @@ $mock-map-width: drawing.$artwork-width * 1.75;
   max-width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
+  // Lets the marker selector switch to its docked layout on small maps.
+  container: mock-map / inline-size;
   border-radius: 0.35em;
   outline: none;
   color-scheme: only light;

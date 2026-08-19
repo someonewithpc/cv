@@ -1,6 +1,13 @@
 $visrez-brand: #89ab24;
 
 .marker-editing-overlay {
+  // Floats above the focused pin, which the zoom centers in the map.
+  position: absolute;
+  left: var(--selector-anchor-x, 50%);
+  top: var(--selector-anchor-y, 50%);
+  translate: -50% calc(-100% - 4rem);
+  z-index: 20;
+
   background: #333;
   border: 2px solid #666;
   border-radius: 0.5em;
@@ -9,18 +16,35 @@ $visrez-brand: #89ab24;
   padding: 0.85em;
   overflow: visible;
 
+  // A small map has no room above the pin (and the pin anchor caps the
+  // panel's width at half the map) — dock along the bottom edge instead,
+  // leaving the focused pin visible above.
+  @container mock-map (max-width: 520px) {
+    left: 0.625em;
+    right: 0.625em;
+    top: auto;
+    bottom: 0.625em;
+    translate: none;
+  }
+
+  // Chips at full size would drop to three columns and stack too tall.
+  @container mock-map (max-width: 420px) {
+    --marker-chip-artwork: 48px;
+  }
+
   & > [role=listbox] {
     padding: 0;
-    margin: 0;
+    margin: 0 auto;
 
     $padding: 0.25em;
-    $item-size: calc(64px + #{$padding} * 2);
+    $item-size: calc(var(--marker-chip-artwork, 64px) + #{$padding} * 2);
     $gap: 0.75em;
     display: grid;
 
     $max-column-count: 4;
-    max-width: calc($item-size * $max-column-count + $gap * ($max-column-count - 1));
-    grid-template-columns: repeat(auto-fit, $item-size);
+    max-width: calc(#{$item-size} * #{$max-column-count} + #{$gap} * #{$max-column-count - 1});
+    grid-template-columns: repeat(auto-fit, #{$item-size});
+    justify-content: center;
     gap: $gap;
 
     color-scheme: only light;
