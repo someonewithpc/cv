@@ -363,6 +363,10 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
   fold.style.transformOrigin = '';
 };
 
+const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
+
+const polygonClip = (pts: Vec[]) => `polygon(${pts.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
+
 // Drives the page's clip-path and .paper-fold directly while dragging (and while settling back
 // afterwards) instead of index.astro's idle CSS rules, which only fit the simple
 // bottom-and-right-edge crease. The folded-over region is the hole polygon pushed through a
@@ -377,14 +381,9 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
 // over and its back is again what rises — never the content mirrored, which a reflection of the
 // printed side would be (renderLanding's band, the one fold that runs back there, leans on the
 // same fact).
-const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
-
-const polygonClip = (pts: Vec[]) => `polygon(${pts.map((p) => `${p.x}px ${p.y}px`).join(', ')})`;
-
 const renderFold = (
   section: HTMLElement, fold: HTMLElement, w: number, h: number, tip: Vec, back: Vec,
 ): void => {
-  const poly = polygonClip;
   const degenerate = Math.hypot(tip.x, tip.y) < 0.5;
   const { kept, hole, mid, angle } = degenerate
     ? { kept: [], hole: [], mid: { x: 0, y: 0 }, angle: 0 }
@@ -399,10 +398,10 @@ const renderFold = (
     return;
   }
 
-  section.style.clipPath = poly(kept);
+  section.style.clipPath = polygonClip(kept);
   section.style.transform = '';
   section.style.transformOrigin = '';
-  fold.style.clipPath = poly(hole);
+  fold.style.clipPath = polygonClip(hole);
   fold.style.transformOrigin = `${mid.x}px ${mid.y}px`;
   fold.style.transform = `rotate(${angle}rad) scaleY(-1) rotate(${-angle}rad)`;
 
@@ -1157,7 +1156,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // driving it (a pointer on the grab handle, a horizontal scroll) to take over. Null when there
   // is no previous page to go back to.
   const beginBack = (at: Pull, pointerId: number): FoldGesture | null => {
-    const stack = grab.parentElement!.parentElement!;
     if (!('paperFlipped' in stack.dataset)) return null;
 
     cancelSettle();
