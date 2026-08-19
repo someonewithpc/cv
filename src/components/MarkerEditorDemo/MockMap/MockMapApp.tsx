@@ -297,7 +297,7 @@ function MockMapOverlayInner() {
     if (!overlay) return;
     // Attach to the carousel page (not the frame) so the editor scrolls off with it.
     setEditorPortalHost(
-      overlay.closest<HTMLElement>('article.technical-drawing-stack > section')
+      overlay.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? overlay.closest<HTMLElement>('.mock-map-demo')
       ?? overlay,
     );
@@ -315,7 +315,7 @@ function MockMapOverlayInner() {
     // Attach to the carousel page so leaving the map slide pauses autoplay
     // (observing .mock-map-demo alone could still look "in view" mid-snap).
     const visibilityRoot =
-      overlay?.closest<HTMLElement>('article.technical-drawing-stack > section')
+      overlay?.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? overlay?.closest<HTMLElement>('.mock-map-demo')
       ?? overlay?.closest<HTMLElement>('.technical-drawing-frame')
       ?? overlay;
