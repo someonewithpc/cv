@@ -5,7 +5,7 @@
  * (rAF loops, autoplay) subscribe here.
  */
 export function watchDrawingNote(root: Element, onToggle: (open: boolean) => void) {
-  const page = root.closest('article.technical-drawing-stack > section');
+  const page = root.closest('article.technical-drawing-stack > * > section');
   const dialog = page?.querySelector<HTMLDialogElement>('dialog.drawing-note');
   if (!dialog) return () => {};
 

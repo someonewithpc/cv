@@ -632,7 +632,7 @@ onMounted(async () => {
 
     // Pause when this carousel page leaves the stack (same pattern as Marker Editor).
     const visibilityRoot =
-      root.closest<HTMLElement>('article.technical-drawing-stack > section')
+      root.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? root.closest<HTMLElement>('.mock-scene-demo')
       ?? root;
     const stack = visibilityRoot.closest('article.technical-drawing-stack');
