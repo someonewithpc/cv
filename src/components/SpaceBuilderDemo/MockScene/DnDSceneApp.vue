@@ -478,7 +478,7 @@ onMounted(async () => {
     });
 
     const visibilityRoot =
-      root.closest<HTMLElement>('article.technical-drawing-stack > section') ?? root;
+      root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
     const stack = visibilityRoot.closest('article.technical-drawing-stack');
     observer = new IntersectionObserver(
       (entries) => {
