@@ -1,6 +1,6 @@
 import '../client-only';
 
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, type CSSProperties } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -78,12 +78,9 @@ export function MarkerSelector({
       <section
         className="marker-editing-overlay"
         style={{
-          position: 'absolute',
-          left: `${position.x}%`,
-          top: `${position.y}%`,
-          translate: '-50% calc(-100% - 4rem)',
-          zIndex: 20,
-        }}
+          '--selector-anchor-x': `${position.x}%`,
+          '--selector-anchor-y': `${position.y}%`,
+        } as CSSProperties}
       >
         <ul role="listbox" aria-label="Markers">
           {markers.map((marker) => {
