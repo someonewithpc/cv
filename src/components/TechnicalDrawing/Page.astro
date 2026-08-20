@@ -521,6 +521,12 @@ section {
     .note-fold {
       display: block;
     }
+
+    .content {
+      /* Em-sized artwork tracks the sheet down, as portrait does with 3.8cqw —
+         the landscape sheet is wider than tall, so the factor is smaller. */
+      font-size: min(1rem, 2cqw);
+    }
   }
 
   @container technical-drawing (orientation: portrait) {
