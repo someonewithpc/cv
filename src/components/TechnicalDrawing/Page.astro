@@ -502,6 +502,27 @@ section {
     }
   }
 
+  /* A sheet this narrow cannot host the note beside the artwork — landscape
+     included, where the sheet is half as tall as it is wide and the note runs
+     over the title block. Tuck it under the dog-eared corner instead; 56em is
+     the same threshold EditorLayer uses to hand the gutters to the chrome. */
+  @container technical-drawing-width (max-width: 56em) {
+    .aside {
+      /* Only the dog-ear lives here; the note itself is in the dialog, and the
+         fold positions itself against the sheet, so the wrapper adds no box. */
+      display: contents;
+      font-size: 1rem;
+    }
+
+    .drawing-note:not(:modal) {
+      display: none;
+    }
+
+    .note-fold {
+      display: block;
+    }
+  }
+
   @container technical-drawing (orientation: portrait) {
     /* A phone sheet cannot spare a 1rem mat on all four edges. */
     --sheet-margin: 0.625rem;
@@ -522,21 +543,6 @@ section {
       max-width: 100%;
       justify-self: stretch;
       align-self: center;
-    }
-
-    .aside {
-      /* Only the dog-ear lives here; the note itself is in the dialog, and the
-         fold positions itself against the sheet, so the wrapper adds no box. */
-      display: contents;
-      font-size: 1rem;
-    }
-
-    .drawing-note:not(:modal) {
-      display: none;
-    }
-
-    .note-fold {
-      display: block;
     }
 
     .layers {
