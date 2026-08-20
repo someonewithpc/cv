@@ -64,6 +64,13 @@ $mock-map-width: drawing.$artwork-width * 1.75;
   position: relative;
   width: min(#{$mock-map-width}, 100%);
   max-width: 100%;
+
+  // Square, so on a landscape sheet — half as tall as it is wide — the height
+  // cap has to be a width term, or the map runs off the mat and out from
+  // under the title block. Portrait has the height and skips it.
+  @container technical-drawing (orientation: landscape) {
+    width: min(#{$mock-map-width}, 100%, 88cqh);
+  }
   aspect-ratio: 1;
   overflow: hidden;
   // Lets the marker selector switch to its docked layout on small maps.

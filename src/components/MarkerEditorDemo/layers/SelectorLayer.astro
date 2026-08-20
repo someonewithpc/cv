@@ -141,6 +141,13 @@ const squirclePath = [
 .wrapper {
   width: min(#{drawing.$artwork-width * 1.25}, 100%);
   max-width: 100%;
+
+  // Square, so on a landscape sheet — half as tall as it is wide — the height
+  // cap has to be a width term, or the space row runs under the title block.
+  // Portrait has the height and skips it.
+  @container technical-drawing (orientation: landscape) {
+    width: min(#{drawing.$artwork-width * 1.25}, 100%, 88cqh);
+  }
   aspect-ratio: 1;
   display: grid;
   place-items: center;
