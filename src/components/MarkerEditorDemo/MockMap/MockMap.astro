@@ -71,6 +71,14 @@ $mock-map-width: drawing.$artwork-width * 1.75;
   @container technical-drawing (orientation: landscape) {
     width: min(#{$mock-map-width}, 100%, 88cqh);
   }
+
+  // On a sheet too narrow for callout gutters the title block still claims
+  // the bottom-right corner, and a centred square runs under it — sit at the
+  // datum edge instead, like a drawing view. Portrait maps span the sheet,
+  // so the auto margin resolves to zero there.
+  @container technical-drawing-width (max-width: 56em) {
+    margin-right: auto;
+  }
   aspect-ratio: 1;
   overflow: hidden;
   // Lets the marker selector switch to its docked layout on small maps.
