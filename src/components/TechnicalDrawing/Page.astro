@@ -528,10 +528,13 @@ section {
       font-size: min(1rem, 2cqw);
     }
 
-    /* The artwork keeps the sheet centre, so the corner block has to give
-       ground where the two would meet — same size portrait uses. */
+    /* The artwork keeps the sheet centre, so the corner block gives ground —
+       same size portrait uses — and wears the sheet like a real title block,
+       so a diagram running underneath is clipped by it instead of mixing
+       with its text. */
     & > table {
       font-size: 0.7em;
+      background: var(--surface-sunken);
 
       td {
         padding: 0.2em;
