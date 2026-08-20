@@ -527,6 +527,16 @@ section {
          the landscape sheet is wider than tall, so the factor is smaller. */
       font-size: min(1rem, 2cqw);
     }
+
+    /* The artwork keeps the sheet centre, so the corner block has to give
+       ground where the two would meet — same size portrait uses. */
+    & > table {
+      font-size: 0.7em;
+
+      td {
+        padding: 0.2em;
+      }
+    }
   }
 
   @container technical-drawing (orientation: portrait) {
