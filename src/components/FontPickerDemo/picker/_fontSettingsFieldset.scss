@@ -1,0 +1,168 @@
+// Ported from the Interactive Map's _fontSettingsFieldset.scss, light values only —
+// the demo panel reproduces the original #e9e9e9 sidebar, which never goes dark
+$visrez-brand: #89ab24;
+$sidebar-background: #e9e9e9;
+
+$font-settings-border-animation-duration: 1s;
+// Ease in, but will then become linear by JS. This bezier is such that at the three-quarters-way
+// of the animation it's essentially linear, so the swap won't cause a discontinuity
+$font-settings-border-animation-timing-function: cubic-bezier(0.75, 0.25, 0.2, 0.2);
+
+// Must match registerFontSettingsProperties.ts
+$idle-border-color: #bbb;
+
+@mixin font-settings-fieldset($background-color) {
+  margin-top: 0.5em;
+
+  border: 2px solid transparent;
+  border-radius: 0.5em;
+
+  animation:
+    $font-settings-border-animation-duration
+    $font-settings-border-animation-timing-function
+    1
+    both
+    font-settings-border-animation-placeholder;
+
+  --font-settings-border-colored-width: 0turn;
+  --font-settings-border-color: #{$idle-border-color};
+  --font-settings-border-start: 0turn;
+
+  &.idle {
+    @keyframes font-settings-border-idle {
+      from {
+        --font-settings-border-color: #{$idle-border-color};
+      }
+      to {
+        --font-settings-border-colored-width: 0turn;
+        --font-settings-border-color: #{$idle-border-color};
+      }
+    }
+
+    animation-name: font-settings-border-pending, font-settings-border-idle;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  &.pending {
+    @keyframes font-settings-border-pending {
+      from {
+        --font-settings-border-colored-width: 0.25turn;
+        --font-settings-border-color: #{$visrez-brand};
+      }
+      to {
+        --font-settings-border-start: 1turn;
+        --font-settings-border-colored-width: 0.25turn;
+        --font-settings-border-color: #{$visrez-brand};
+      }
+    }
+    animation-iteration-count: infinite;
+    animation-name: font-settings-border-pending;
+  }
+
+  &.success {
+    @keyframes font-settings-border-success {
+      to {
+        --font-settings-border-colored-width: 1turn;
+      }
+    }
+    // Preserve `--font-settings-border-start` wherever it stands, in the middle of the loading animation
+    animation-name: font-settings-border-pending, font-settings-border-success;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  &.error {
+    @keyframes font-settings-border-error {
+      to {
+        --font-settings-border-colored-width: 1turn;
+        --font-settings-border-color: #f44;
+      }
+    }
+    // Preserve `--font-settings-border-start` wherever it stands, in the middle of the loading animation
+    animation-name: font-settings-border-pending, font-settings-border-error;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  // Ensure that when `--font-settings-border-colored-width` is `1turn`, we don't overflow the range
+  $border-color-gradient-max-double-width: 10deg;
+  --font-settings-border-color-gradient-width: clamp(0deg, #{$border-color-gradient-max-double-width}, min(1turn - var(--font-settings-border-colored-width), var(--font-settings-border-colored-width)));
+
+  transition-property: --font-settings-border-color-gradient-width, --font-settings-border-color, --font-settings-border-colored-width, --font-settings-border-start;
+  transition-duration: 250ms;
+  transition-timing-function: ease-in-out;
+
+  background:
+    // The normal background. Single color gradients aren't yet widely supported
+    linear-gradient($background-color, $background-color) border-box padding-box,
+
+    // The border. A gradient 'around the center'. Each stop must have an absolute value, not relative
+    // to the previous one, so we have to progressively add the value of the previous stops
+    conic-gradient(
+      from var(--font-settings-border-start),
+      #{$idle-border-color} 0deg,
+      var(--font-settings-border-color) calc(var(--font-settings-border-color-gradient-width) / 2) calc(var(--font-settings-border-color-gradient-width) / 2 + var(--font-settings-border-colored-width)),
+      #{$idle-border-color} calc(var(--font-settings-border-color-gradient-width) / 2 + var(--font-settings-border-colored-width) + var(--font-settings-border-color-gradient-width) / 2),
+    ) border-box border-box;
+
+  padding: 0.75em;
+  color: black;
+
+  label {
+    color: black;
+  }
+
+  input {
+    background: white;
+    border: 1px solid #ddd;
+    color: black;
+    padding: 0.375em 0.5em;
+    border-radius: 0.25em;
+
+    &:focus {
+      outline: 2px solid #888;
+      outline-offset: 2px;
+    }
+  }
+
+  p {
+    color: #666;
+    margin-top: 0.5em;
+
+    &[role='alert'] {
+      color: #ffa500;
+      border-left-color: #ffa500;
+    }
+  }
+
+  select {
+    background: white;
+    border: 1px solid #ddd;
+    color: black;
+    appearance: base-select;
+    padding: 0.375em 0.5em;
+    border-radius: 0.25em;
+
+    &:open {
+      border-radius: 0;
+    }
+  }
+
+  option {
+    background: #eee;
+    color: black;
+
+    &:nth-of-type(even) {
+      background: #eee;
+    }
+
+    &:nth-of-type(odd) {
+      background: #ddd;
+    }
+
+    &:hover {
+      background: #ccc;
+    }
+  }
+}

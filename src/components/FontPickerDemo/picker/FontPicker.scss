@@ -1,0 +1,150 @@
+@use './fontSettingsFieldset' as *;
+
+// A lifted piece of the Interactive Map's edit sidebar: flat #e9e9e9, black text,
+// system defaults for the controls. It never follows the page theme — the original
+// sidebar doesn't either.
+.font-picker-panel {
+  --font-picker-panel-bg: #{$sidebar-background};
+
+  color-scheme: only light;
+
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75em 1em 1em;
+
+  background: $sidebar-background;
+  border: 1px solid #c6c6c6;
+  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 25%, transparent);
+
+  color: black;
+  font-family: var(--font-poppins, sans-serif);
+  font-size: 1em;
+  text-align: left;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+
+  h4 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 1.25em;
+    margin-block: 0.25em;
+  }
+
+  // Original sidebar buttons: `padding: 5px; border: 1px solid gray; border-radius: 5px`
+  .font-picker-reset {
+    font: inherit;
+    font-size: 0.6em;
+    padding: 5px;
+    border: 1px solid gray;
+    border-radius: 5px;
+    background: none;
+    color: black;
+    cursor: pointer;
+
+    &:hover {
+      background: #ddd;
+    }
+  }
+
+  .w-100 {
+    width: 100%;
+  }
+
+  select,
+  select::picker(select) {
+    appearance: base-select;
+  }
+
+  select {
+    font: inherit;
+
+    &:open {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+
+  select::picker(select),
+  option:last-of-type {
+    border-radius: 0 0 0.5em 0.5em;
+  }
+
+  option {
+    max-width: 100%;
+
+    &:nth-of-type(even) {
+      background: #eee;
+    }
+    &:nth-of-type(odd) {
+      background: #ddd;
+    }
+
+    &:hover {
+      background: #ccc;
+    }
+  }
+
+  .select-wrapper {
+    position: relative;
+
+    &.new-dot::before {
+      content: '';
+      background: #c33;
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 1ch;
+      height: 1ch;
+      translate: calc(50% - 1px) calc(-50% + 1px);
+      z-index: 2;
+
+      border-radius: 50%;
+    }
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    cursor: pointer;
+
+    &:has(input:disabled) {
+      color: gray;
+    }
+  }
+
+  svg[data-icon] {
+    cursor: pointer;
+  }
+
+  p {
+    margin-inline: 0;
+    font-size: 0.875em;
+    line-height: 1;
+  }
+
+  p[role='alert'] {
+    padding-inline-start: 1ch;
+    border-left: 3px solid orange;
+    line-height: 1.2;
+
+    svg {
+      color: orange;
+    }
+  }
+
+  a {
+    color: blue;
+  }
+
+  fieldset {
+    @include font-settings-fieldset($sidebar-background);
+
+    &.hidden {
+      display: none;
+    }
+  }
+}
