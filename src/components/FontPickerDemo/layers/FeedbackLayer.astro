@@ -1,0 +1,163 @@
+---
+const states = ['idle', 'pending', 'success', 'error'] as const;
+---
+
+<div class="wrapper">
+  <div class="feedback-layer">
+    <div class="panel">
+      <header aria-hidden="true">
+        <span class="eyebrow">ExternalFontSubForm</span>
+        <strong>The border is the loading indicator</strong>
+      </header>
+
+      <fieldset class="idle" data-border-demo>
+        <label for="border-demo-input">Font Family</label>
+        <input id="border-demo-input" type="text" placeholder="Simulated subform" readonly />
+        <p>A quarter-turn arc orbits while pending, then sweeps the full turn closed — green on success, red on error</p>
+      </fieldset>
+
+      <div class="controls" role="group" aria-label="Simulate a request state">
+        {states.map((state) => (
+          <button type="button" data-border-state={state} class:list={[{ active: state === 'idle' }]}>{state}</button>
+        ))}
+      </div>
+
+      <div class="chips" aria-hidden="true">
+        <span class="chip">3 registered <code>@property</code>s: start angle · arc width · color</span>
+        <span class="chip">bezier start, swapped to linear mid-flight where the curve already is</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{/* Wired up from Demo.astro — hoisted scripts inside the Stack's function
+    slots are dropped from the built page, so a layer cannot carry its own. */}
+
+<style lang="scss">
+@use '../picker/fontSettingsFieldset' as *;
+
+$panel-background: #333;
+
+.wrapper {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(90cqw, 100%);
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.feedback-layer {
+  width: max-content;
+  max-width: 100%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
+  color: #f4f0ea;
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: min(1.05rem, 2.4cqmin);
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(26em, 100%);
+  padding: 0.6em 0.65em;
+  background: $panel-background;
+  border: 2px solid #666;
+  border-radius: 0.5em;
+  display: grid;
+  gap: 0.45em;
+  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08em;
+
+  .eyebrow {
+    font-size: 0.72em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+}
+
+fieldset {
+  // The genuine article on its native background — a patch of the original
+  // #e9e9e9 sidebar mounted on the blueprint's dark panel
+  @include font-settings-fieldset($sidebar-background);
+  color-scheme: only light;
+
+  display: grid;
+  gap: 0.25em;
+
+  label {
+    font-size: 0.75em;
+  }
+
+  input {
+    font: inherit;
+    font-size: 0.8em;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.68em;
+    line-height: 1.3;
+  }
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+
+  button {
+    font: inherit;
+    font-size: 0.72em;
+    padding: 0.3em 0.75em;
+    border-radius: 1em;
+    border: 1px solid #555;
+    background: #2a2a28;
+    color: #f4f0ea;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #888;
+    }
+
+    &.active {
+      border-color: #c5e06a;
+      color: #c5e06a;
+    }
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+}
+
+.chip {
+  font-size: 0.68em;
+  line-height: 1.3;
+  padding: 0.3em 0.5em;
+  border-radius: 1em;
+  border: 1px solid #555;
+  background: #2a2a28;
+  opacity: 0.9;
+
+  code {
+    color: #c5e06a;
+  }
+}
+</style>

@@ -1,0 +1,102 @@
+---
+---
+
+<div class="picker-layer">
+  <figure class="specimen" aria-hidden="true">
+    <p class="specimen-display">Aa</p>
+    <p class="specimen-pangram">The quick brown fox jumps over the lazy dog</p>
+    <p class="specimen-glyphs">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br />abcdefghijklmnopqrstuvwxyz<br />0123456789 !?&amp;@%</p>
+    <figcaption class="monospace">Specimen — set in the page's current face</figcaption>
+  </figure>
+
+  <div class="picker-island" data-font-picker-island></div>
+</div>
+
+{/* Boot scripts live in Demo.astro — hoisted scripts inside the Stack's function
+    slots are dropped from the built page, so a layer cannot carry its own. */}
+
+<style lang="scss">
+.picker-layer {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: min(92cqw, 64em);
+  margin-inline: auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2em;
+
+  font-size: clamp(0.75rem, 2.2cqmin, 1rem);
+}
+
+.specimen {
+  flex: 1 1 18em;
+  min-width: 0;
+  max-width: 28em;
+  margin: 0;
+
+  display: grid;
+  gap: 0.5em;
+
+  color: var(--ink);
+  // Tracks the picker: the injected override rewrites --font-poppins for the whole page
+  font-family: var(--font-poppins, sans-serif);
+  text-align: left;
+
+  .specimen-display {
+    font-size: 5em;
+    line-height: 1;
+  }
+
+  .specimen-pangram {
+    font-size: 1.25em;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .specimen-glyphs {
+    font-size: 0.875em;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
+  }
+
+  figcaption {
+    font-size: 0.625em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--line);
+    padding-top: 0.75em;
+  }
+}
+
+.picker-island {
+  // Definite width: the panel's own `min(…, 100%)` cannot resolve against
+  // an auto-sized wrapper and collapses to intrinsic width without this.
+  flex: 0 1 17.5em;
+  width: 17.5em;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@container technical-drawing (orientation: portrait) {
+  .picker-layer {
+    gap: 1em;
+  }
+
+  .specimen {
+    .specimen-display {
+      font-size: 3em;
+    }
+
+    // The alphabet block is the first thing to give up room on a phone sheet
+    .specimen-glyphs {
+      display: none;
+    }
+  }
+}
+</style>
