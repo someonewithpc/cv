@@ -1,0 +1,208 @@
+---
+const faces = [
+  { label: 'Poppins 400', family: "'Poppins', sans-serif", weight: '400' },
+  { label: 'Poppins 700', family: "'Poppins', sans-serif", weight: '700' },
+  { label: 'Special Elite', family: "'Special Elite', monospace", weight: '400' },
+  { label: 'Permanent Marker', family: "'Permanent Marker', cursive", weight: '400' },
+] as const;
+---
+
+<div class="wrapper">
+  <div class="discovery-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">useFontFaces()</span>
+        <strong>The dropdown is the FontFaceSet</strong>
+      </header>
+
+      <div class="pipeline">
+        <div class="stage">
+          <code class="stage-title">document.fonts</code>
+          <p>Every face the browser knows of — each Unicode-range subset counts as its own <code>FontFace</code></p>
+        </div>
+
+        <span class="op">→</span>
+
+        <div class="stage">
+          <code class="stage-title">dedupe</code>
+          <p>Keyed by <code>family · weight · style</code>, collapsing the subsets back into one entry per face</p>
+        </div>
+
+        <span class="op">→</span>
+
+        <div class="stage options">
+          <span class="stage-title"><code>&lt;option&gt;</code>s</span>
+          <ul>
+            {faces.map((face) => (
+              <li style={{ fontFamily: face.family, fontWeight: face.weight }}>{face.label}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div class="chips">
+        <span class="chip"><code>loadingdone</code> event → re-enumerate, so new fonts pop in live</span>
+        <span class="chip">hover an option → page previews it · leave without picking → revert</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+$op-slot: 0.85em;
+
+.wrapper {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(90cqw, 100%);
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.discovery-layer {
+  width: max-content;
+  max-width: 100%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
+  color: #f4f0ea;
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: min(1.05rem, 2.4cqmin);
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.6em 0.65em;
+  background: #333;
+  border: 2px solid #666;
+  border-radius: 0.5em;
+  display: grid;
+  gap: 0.45em;
+  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08em;
+
+  .eyebrow {
+    font-size: 0.72em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: 1fr #{$op-slot} 1fr #{$op-slot} 1fr;
+  align-items: stretch;
+  column-gap: 0.25em;
+  max-width: 34em;
+}
+
+.stage {
+  display: grid;
+  gap: 0.25em;
+  align-content: start;
+  min-width: 0;
+  padding: 0.35em 0.45em;
+  border-radius: 0.3em;
+  border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
+  background: color-mix(in oklab, #000 22%, transparent);
+  box-sizing: border-box;
+
+  .stage-title {
+    font-size: 0.75em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #c5e06a;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.7em;
+    line-height: 1.3;
+    opacity: 0.85;
+
+    code {
+      color: #c5e06a;
+    }
+  }
+
+  &.options {
+    border-style: solid;
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.2em;
+    }
+
+    li {
+      font-size: 0.75em;
+      line-height: 1.2;
+      padding: 0.2em 0.3em;
+      border-radius: 0.2em;
+
+      &:nth-of-type(even) {
+        background: color-mix(in oklab, #fff 6%, transparent);
+      }
+      &:nth-of-type(odd) {
+        background: color-mix(in oklab, #fff 10%, transparent);
+      }
+    }
+  }
+}
+
+.op {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  opacity: 0.55;
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+}
+
+.chip {
+  font-size: 0.68em;
+  line-height: 1.3;
+  padding: 0.3em 0.5em;
+  border-radius: 1em;
+  border: 1px solid #555;
+  background: #2a2a28;
+  opacity: 0.9;
+
+  code {
+    color: #c5e06a;
+  }
+}
+
+@container technical-drawing (orientation: portrait) {
+  .pipeline {
+    grid-template-columns: 1fr;
+    row-gap: 0.25em;
+
+    .op {
+      transform: rotate(90deg);
+      justify-self: center;
+    }
+  }
+}
+</style>
