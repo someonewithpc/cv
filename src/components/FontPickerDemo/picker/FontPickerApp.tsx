@@ -51,9 +51,12 @@ function setAppFont(descriptor: { family: string, style?: string, size: string, 
   --font-poppins: ${stack};
 }
 
-body {
-  font-family: ${stack};
-  font-style: ${descriptor.style ?? 'normal'};
+/* Every proportional face on the page — prose, headings, mockups, notes — with
+   !important so component-scoped rules cannot shadow it. Monospace and code stay:
+   a proportional face there breaks alignment. Options keep their own preview face */
+body, body :not(.monospace, .monospace *, code, pre, kbd, samp, option) {
+  font-family: ${stack} !important;${descriptor.style && descriptor.style !== 'normal' ? `
+  font-style: ${descriptor.style} !important;` : ''}
 }`;
 
   setCustomCss(`${familyRules}
