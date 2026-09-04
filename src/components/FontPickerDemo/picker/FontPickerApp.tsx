@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { setCustomCss, useFontState } from './fontState';
 
@@ -11,11 +11,17 @@ import { FontWeight } from './FontWeight';
 
 import './FontPicker.scss';
 
-const DEFAULT_STACK = "'Poppins', system-ui, sans-serif";
+// The page's prose is plain sans-serif; Poppins only lives inside the product mockups.
+// It is not a FontFace, so it is offered as a synthetic entry that means "no override"
+export const PAGE_DEFAULT_FACE: FontFaceDescriptor = { family: 'sans-serif', weight: '400', style: 'normal' };
+
+function isPageDefault(descriptor: { family: string }) {
+  return descriptor.family === PAGE_DEFAULT_FACE.family;
+}
 
 function setAppFont(descriptor: { family: string, style?: string, size: string, weight: number }, registeredFontFaces: Record<string, string>) {
-  const family = descriptor.family;
-  const stack = family && family !== 'Poppins' ? `'${family}', ${DEFAULT_STACK}` : DEFAULT_STACK;
+  const { family } = descriptor;
+  const stack = `'${family}', ${PAGE_DEFAULT_FACE.family}`;
 
   const atFace = registeredFontFaces[family] || '';
 
@@ -37,12 +43,22 @@ function setAppFont(descriptor: { family: string, style?: string, size: string, 
     }).join('\n  ');
   }
 
-  setCustomCss(`${atFace}
+  const familyRules = isPageDefault(descriptor) ? '' : `${atFace}
 
 /* html AND body: the layout declares --font-poppins on both, and the body
    declaration would shadow an override that only reaches :root */
 :root, body {
   --font-poppins: ${stack};
+}
+
+body {
+  font-family: ${stack};
+  font-style: ${descriptor.style ?? 'normal'};
+}`;
+
+  setCustomCss(`${familyRules}
+
+:root, body {
   ${weightVars}
 }
 
@@ -51,9 +67,7 @@ function setAppFont(descriptor: { family: string, style?: string, size: string, 
 }
 
 body {
-  font-family: ${stack};
   font-weight: ${descriptor.weight};
-  font-style: ${descriptor.style ?? 'normal'};
 }
 
 b, strong {
@@ -64,26 +78,17 @@ b, strong {
 export default function FontPickerApp() {
   const { externalFontFaceDeclarations } = useFontState();
 
-  const { fontFaces, selectedFontFace } = useFontFaces();
+  const { fontFaces: documentFontFaces } = useFontFaces();
+  const fontFaces = useMemo(() => [PAGE_DEFAULT_FACE, ...documentFontFaces], [documentFontFaces]);
+
   const selectedFontSize = useFontSize();
   const selectedFontWeight = useFontWeight();
 
   const [size, setSize] = useState(selectedFontSize);
   const [weight, setWeight] = useState(Number.isNaN(selectedFontWeight) ? 400 : selectedFontWeight);
-  const [dropdownDescriptor, setDropdownDescriptor] = useState<FontFaceDescriptor | undefined>(
-    // The page's body copy is Poppins even though body itself never declares it,
-    // so the computed-style match can't see it — seed the dropdown explicitly
-    () => fontFaces.find((ff) => ff.family === 'Poppins' && ff.weight === '400') ?? selectedFontFace,
-  );
-
-  useEffect(() => {
-    if (dropdownDescriptor === undefined && fontFaces.length) {
-      setDropdownDescriptor(fontFaces.find((ff) => ff.family === 'Poppins' && ff.weight === '400') ?? selectedFontFace);
-    }
-  }, [fontFaces]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [dropdownDescriptor, setDropdownDescriptor] = useState<FontFaceDescriptor>(PAGE_DEFAULT_FACE);
 
   const updateFontSettingsCallback = useCallback((descriptor: { family?: string, style?: string, size?: string, weight?: number | string }) => {
-    if (!dropdownDescriptor) return;
     setAppFont(
       {
         family: dropdownDescriptor.family,
@@ -98,11 +103,9 @@ export default function FontPickerApp() {
   }, [externalFontFaceDeclarations, dropdownDescriptor, size, weight]);
 
   const enableWeightSlider = useMemo(
-    () => fontFaces.filter((ff) => ff.family === dropdownDescriptor?.family).map((ff) => ff.weight).length === 1,
+    () => fontFaces.filter((ff) => ff.family === dropdownDescriptor.family).length === 1,
     [fontFaces, dropdownDescriptor],
   );
-
-  if (!dropdownDescriptor) return;
 
   return (
     <div className="font-picker-panel font-settings">
@@ -115,7 +118,7 @@ export default function FontPickerApp() {
             setCustomCss('');
             setSize(1);
             setWeight(400);
-            setDropdownDescriptor(fontFaces.find((ff) => ff.family === 'Poppins' && ff.weight === '400') ?? fontFaces[0]);
+            setDropdownDescriptor(PAGE_DEFAULT_FACE);
           }}
         >
           Reset page
@@ -144,6 +147,7 @@ export default function FontPickerApp() {
       />
 
       <FontFamily
+        fontFaces={fontFaces}
         selectedFontFace={dropdownDescriptor}
         setFontDescriptor={(descriptor: FontFaceDescriptor) => {
           setDropdownDescriptor(descriptor);
