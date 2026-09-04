@@ -1,25 +1,24 @@
 @use './fontSettingsFieldset' as *;
 
-// A lifted piece of the Interactive Map's edit sidebar: flat #e9e9e9, black text,
-// system defaults for the controls. It never follows the page theme — the original
-// sidebar doesn't either.
+// The Interactive Map's edit sidebar, re-dressed in the page's theme tokens so it sits
+// on the sheet like the rest of the chrome instead of as a flat grey cut-out
 .font-picker-panel {
-  --font-picker-panel-bg: #{$sidebar-background};
-
-  color-scheme: only light;
+  --font-picker-panel-bg: var(--surface-raised);
 
   box-sizing: border-box;
   width: 100%;
   padding: 0.75em 1em 1em;
 
-  background: $sidebar-background;
-  border: 1px solid #c6c6c6;
-  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 25%, transparent);
+  background: var(--font-picker-panel-bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  box-shadow: 0 0.25rem 0.75rem color-mix(in oklch, var(--ink) 20%, transparent);
 
-  color: black;
+  color: var(--ink);
   font-family: var(--font-poppins, sans-serif);
   font-size: 1em;
   text-align: left;
+  accent-color: var(--accent);
 
   display: flex;
   flex-direction: column;
@@ -33,19 +32,18 @@
     margin-block: 0.25em;
   }
 
-  // Original sidebar buttons: `padding: 5px; border: 1px solid gray; border-radius: 5px`
   .font-picker-reset {
     font: inherit;
-    font-size: 0.6em;
-    padding: 5px;
-    border: 1px solid gray;
-    border-radius: 5px;
+    font-size: 0.625em;
+    padding: 0.375em 0.5em;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.375em;
     background: none;
-    color: black;
+    color: var(--ink);
     cursor: pointer;
 
     &:hover {
-      background: #ddd;
+      background: var(--surface-sunken);
     }
   }
 
@@ -60,6 +58,10 @@
 
   select {
     font: inherit;
+    color: var(--ink);
+    background: var(--surface-page);
+    border: 1px solid var(--line);
+    border-radius: 0.25em;
 
     &:open {
       border-bottom-left-radius: 0;
@@ -67,23 +69,25 @@
     }
   }
 
-  select::picker(select),
-  option:last-of-type {
+  select::picker(select) {
+    border: 1px solid var(--line);
     border-radius: 0 0 0.5em 0.5em;
+    background: var(--surface-page);
+    color: var(--ink);
   }
 
   option {
     max-width: 100%;
 
     &:nth-of-type(even) {
-      background: #eee;
+      background: var(--surface-page);
     }
     &:nth-of-type(odd) {
-      background: #ddd;
+      background: var(--surface-raised);
     }
 
     &:hover {
-      background: #ccc;
+      background: color-mix(in oklch, var(--surface-raised), var(--accent) 16%);
     }
   }
 
@@ -92,7 +96,7 @@
 
     &.new-dot::before {
       content: '';
-      background: #c33;
+      background: var(--accent);
       position: absolute;
       top: 0;
       right: 0;
@@ -112,7 +116,7 @@
     cursor: pointer;
 
     &:has(input:disabled) {
-      color: gray;
+      color: var(--ink-faint);
     }
   }
 
@@ -137,11 +141,37 @@
   }
 
   a {
-    color: blue;
+    color: var(--accent);
   }
 
   fieldset {
-    @include font-settings-fieldset($sidebar-background);
+    @include font-settings-fieldset(var(--font-picker-panel-bg));
+
+    // The mixin's colours are the original grey sidebar's, which the Reactive
+    // Feedback sheet still reproduces; here the page theme wins
+    color: var(--ink);
+
+    label {
+      color: var(--ink);
+    }
+
+    input {
+      background: var(--surface-page);
+      border-color: var(--line);
+      color: var(--ink);
+
+      &:focus {
+        outline-color: var(--accent);
+      }
+    }
+
+    p {
+      color: var(--ink-muted);
+
+      &[role='alert'] {
+        color: inherit;
+      }
+    }
 
     &.hidden {
       display: none;
