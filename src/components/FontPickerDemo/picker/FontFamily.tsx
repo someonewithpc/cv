@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import cx from 'classnames';
 
-import { type FontFaceDescriptor, useFontFaces } from './useFontFaces';
+import { type FontFaceDescriptor } from './useFontFaces';
 import { EmbedURL } from './EmbedURL';
 import { GoogleFont } from './GoogleFont';
 import { FixedElement } from './FixedElement';
@@ -22,14 +22,12 @@ function displayFontFace(ff: FontFaceDescriptor) {
 }
 
 export function FontFamily(
-  { selectedFontFace, setFontDescriptor }:
-  { selectedFontFace: FontFaceDescriptor, setFontDescriptor: (selectedFontFace: FontFaceDescriptor) => void }
+  { fontFaces, selectedFontFace, setFontDescriptor }:
+  { fontFaces: FontFaceDescriptor[], selectedFontFace: FontFaceDescriptor, setFontDescriptor: (selectedFontFace: FontFaceDescriptor) => void }
 ) {
   const [visibleSubForm, setVisibleSubForm] = useState<'embed' | 'google' | undefined>(undefined);
   const [isInteracting, setIsInteracting] = useState(false);
   const [selectedFontFaceBeforeHover, setSelectedFontFaceBeforeHover] = useState<FontFaceDescriptor | null>(null);
-
-  const { fontFaces } = useFontFaces();
 
   const [{ old: oldFontFaceCount, new: newFontFaceCount }, setFontFaceCount] = useState({ old: fontFaces.length, new: fontFaces.length });
   useEffect(() => {
