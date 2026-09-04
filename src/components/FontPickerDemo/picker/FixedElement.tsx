@@ -77,7 +77,7 @@ export function FixedElement(
           background: 'var(--font-picker-panel-bg)',
           position: pinnedRect ? 'fixed' : 'absolute',
           ...(pinnedRect ?? { inset: 0 }),
-          ...(isInteracting && { boxShadow: '0 0 25px 25px var(--font-picker-panel-bg)' }),
+          ...(isInteracting && { boxShadow: '0 0 0.75em 0.5em var(--font-picker-panel-bg)' }),
         }}
       >
         <div>
