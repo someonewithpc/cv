@@ -1,28 +1,29 @@
-import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useRef, useState } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-const PANEL_BACKGROUND = '#e9e9e9'; // $sidebar-background
+type Pin = { top: number, left: number, width: number, height: number, fontSize: string };
 
 /**
- * A component that facilitates having an element both in the regular
- * document flow (`position: static`) while changing it to `position: fixed`
- * while it's being interacted with. This allows us to change styling that would
- * affect the position of this element without it moving away from where the user
- * is interacting, such as when changing the `font-size` or `font-family`
+ * Keeps an element in the regular flow until the pointer reaches it, then pins it at the
+ * same screen position so the page can reflow underneath: the picker rewrites the root
+ * font size and family, which moves everything — including the control being dragged.
+ *
+ * The pin goes through the top layer rather than a plain `position: fixed`. The drawing
+ * sheets are rotated, so a fixed box inside one is laid out against the sheet, not the
+ * viewport, and lands somewhere else entirely.
  */
 export function FixedElement(
-  { children, isInteracting, setIsInteracting, backgroundColor = PANEL_BACKGROUND }:
-  { children: ReactNode, isInteracting: boolean, setIsInteracting: Dispatch<SetStateAction<boolean>>, backgroundColor?: string }
+  { children, isInteracting, setIsInteracting }:
+  { children: ReactNode, isInteracting: boolean, setIsInteracting: Dispatch<SetStateAction<boolean>> }
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pinnedRef = useRef<HTMLDivElement | null>(null);
   const spacerRef = useRef<HTMLDivElement | null>(null);
-  const [fixedPosition, setFixedPosition] = useState<{ top: number, left: number, right: number, bottom: number, width: number, height: number } | null>(null);
+  const [pinnedRect, setPinnedRect] = useState<Pin | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || !spacerRef.current) return;
 
-    const container = containerRef.current;
-    const contentWrapper = container.firstElementChild! as HTMLElement;
-    const content = contentWrapper.firstElementChild! as HTMLElement;
+    const content = containerRef.current.firstElementChild!.firstElementChild! as HTMLElement;
 
     const resizeCallback = (contentRect: DOMRect | DOMRectReadOnly) => {
       spacerRef.current!.style.setProperty('width', contentRect.width + 'px');
@@ -30,7 +31,6 @@ export function FixedElement(
     };
 
     const resizeObserver = new ResizeObserver(([{ contentRect }]) => {
-      if (content.style.getPropertyValue('position') === 'absolute') return;
       requestAnimationFrame(() => resizeCallback(contentRect));
     });
     resizeObserver.observe(content);
@@ -42,26 +42,42 @@ export function FixedElement(
     };
   }, []);
 
-  return (<>
+  // Before paint: a `popover` element is display:none until shown, and React has just
+  // set the attribute during commit
+  useLayoutEffect(() => {
+    if (pinnedRect) pinnedRef.current?.showPopover();
+  }, [pinnedRect]);
+
+  return (
     <div
       ref={containerRef}
-      style={{ isolation: 'isolate', position: 'relative', zIndex: isInteracting ? 10 : '' }}
+      style={{ position: 'relative' }}
       onMouseEnter={(e) => {
-        const { top, left, right, bottom, width, height } = e.currentTarget.getBoundingClientRect();
-        setFixedPosition({ top, left, right, bottom, width, height });
+        const { top, left, width, height } = e.currentTarget.getBoundingClientRect();
+        // Frozen in px: the panel is rem-sized, so it would grow under the pointer
+        // while the size slider rescales the page
+        const { fontSize } = getComputedStyle(e.currentTarget);
+        setPinnedRect({ top, left, width, height, fontSize });
       }}
       onMouseLeave={() => {
-        setFixedPosition(null);
+        setPinnedRect(null);
         setIsInteracting(false);
       }}
     >
       <div
+        ref={pinnedRef}
+        popover={pinnedRect ? 'manual' : undefined}
         style={{
-          zIndex: 1,
-          position: fixedPosition ? 'fixed' : 'absolute',
-          background: backgroundColor,
-          ...(fixedPosition ?? { inset: 0 }),
-          ...(isInteracting && { boxShadow: `0px 0px 25px 25px ${backgroundColor}` })
+          // The top layer applies its own margin, border, padding and colours
+          margin: 0,
+          border: 0,
+          padding: 0,
+          overflow: 'visible',
+          color: 'inherit',
+          background: 'var(--font-picker-panel-bg)',
+          position: pinnedRect ? 'fixed' : 'absolute',
+          ...(pinnedRect ?? { inset: 0 }),
+          ...(isInteracting && { boxShadow: '0 0 25px 25px var(--font-picker-panel-bg)' }),
         }}
       >
         <div>
@@ -70,5 +86,5 @@ export function FixedElement(
       </div>
       <div ref={spacerRef} />
     </div>
-  </>);
+  );
 }
