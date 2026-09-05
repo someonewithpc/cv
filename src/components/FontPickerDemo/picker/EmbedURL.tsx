@@ -25,7 +25,10 @@ function useEmbedQueryOptions(iframeURL: string) {
               return map;
             }),
           )
-        );
+        ).then((maps) => {
+          if (maps.every((map) => Object.keys(map).length === 0)) throw new Error('No web fonts found');
+          return maps;
+        });
       }),
   };
 }
