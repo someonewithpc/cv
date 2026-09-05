@@ -66,12 +66,11 @@ export function EmbedURLImpl({
         />
       </div>
       <p>
-        Enter a URL from which we will extract fonts. Try a page with distinctive typography
+        Borrow the faces of any page with distinctive typography
       </p>
       <p role="alert">
         <FontAwesomeIcon icon={faTriangleExclamation} />&nbsp;
-        Note: fonts extracted this way stay pinned to the file the page serves,
-        so if that page changes its fonts, the extracted face goes stale
+        Extracted faces stay pinned to the files that page serves today
       </p>
     </>
   );

@@ -2,18 +2,16 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { setCustomCss, useFontState } from './fontState';
 
-import { useFontFaces, type FontFaceDescriptor } from './useFontFaces';
+import { PAGE_DEFAULT_FACE, useFontFaces, type FontFaceDescriptor } from './useFontFaces';
 import { useFontSize, useFontWeight } from './useFontMetrics';
 
 import { FontSize } from './FontSize';
 import { FontFamily } from './FontFamily';
 import { FontWeight } from './FontWeight';
+import { GoogleFont } from './GoogleFont';
+import { EmbedURL } from './EmbedURL';
 
 import './FontPicker.scss';
-
-// The page's prose is plain sans-serif; Poppins only lives inside the product mockups.
-// It is not a FontFace, so it is offered as a synthetic entry that means "no override"
-export const PAGE_DEFAULT_FACE: FontFaceDescriptor = { family: 'sans-serif', weight: '400', style: 'normal' };
 
 function isPageDefault(descriptor: { family: string }) {
   return descriptor.family === PAGE_DEFAULT_FACE.family;
@@ -128,36 +126,47 @@ export default function FontPickerApp() {
         </button>
       </h4>
 
-      <FontSize
-        size={size}
-        setSize={(size: number) => {
-          setSize(size);
-          updateFontSettingsCallback({ size: size + 'em' });
-        }}
-      />
+      <div className="font-picker-columns">
+        <div className="font-picker-column">
+          <FontSize
+            size={size}
+            setSize={(size: number) => {
+              setSize(size);
+              updateFontSettingsCallback({ size: size + 'em' });
+            }}
+          />
 
-      <FontWeight
-        enabled={enableWeightSlider}
-        weight={weight}
-        setWeight={(weight: number) => {
-          setWeight(weight);
-          updateFontSettingsCallback({ weight });
+          <FontWeight
+            enabled={enableWeightSlider}
+            weight={weight}
+            setWeight={(weight: number) => {
+              setWeight(weight);
+              updateFontSettingsCallback({ weight });
 
-          if (fontFaces.find((ff) => ff.family === dropdownDescriptor.family && ff.weight?.toString() === weight.toString()) !== undefined) {
-            setDropdownDescriptor({ ...dropdownDescriptor, weight: weight.toString() });
-          }
-        }}
-      />
+              if (fontFaces.find((ff) => ff.family === dropdownDescriptor.family && ff.weight?.toString() === weight.toString()) !== undefined) {
+                setDropdownDescriptor({ ...dropdownDescriptor, weight: weight.toString() });
+              }
+            }}
+          />
 
-      <FontFamily
-        fontFaces={fontFaces}
-        selectedFontFace={dropdownDescriptor}
-        setFontDescriptor={(descriptor: FontFaceDescriptor) => {
-          setDropdownDescriptor(descriptor);
-          updateFontSettingsCallback(descriptor);
-          if (descriptor.weight) setWeight(+descriptor.weight);
-        }}
-      />
+          <FontFamily
+            fontFaces={fontFaces}
+            selectedFontFace={dropdownDescriptor}
+            setFontDescriptor={(descriptor: FontFaceDescriptor) => {
+              setDropdownDescriptor(descriptor);
+              updateFontSettingsCallback(descriptor);
+              if (descriptor.weight) setWeight(+descriptor.weight);
+            }}
+          />
+        </div>
+
+        {/* The two sources used to hide behind sentinel options at the bottom of the
+            dropdown; on a CV they are the part worth seeing, so they stay open */}
+        <div className="font-picker-column">
+          <GoogleFont visible />
+          <EmbedURL visible />
+        </div>
+      </div>
     </div>
   );
 }
