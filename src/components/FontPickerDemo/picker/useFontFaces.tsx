@@ -10,6 +10,10 @@ const FONTFACE_PROPERTIES = [
 
 export type FontFaceDescriptor = Record<(typeof FONTFACE_PROPERTIES)[number], string>;
 
+// The page's prose is plain sans-serif; Poppins only lives inside the product mockups.
+// It is not a FontFace, so the picker offers it as a synthetic entry meaning "no override"
+export const PAGE_DEFAULT_FACE: FontFaceDescriptor = { family: 'sans-serif', weight: '400', style: 'normal' };
+
 /*
  * A hook that handles the complexities of getting the font faces the browser is aware of, from
  * both the page's own stylesheets and any source the user loads through the picker's subforms.

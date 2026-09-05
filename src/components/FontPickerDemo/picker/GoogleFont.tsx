@@ -52,14 +52,15 @@ export function GoogleFontImpl(
 
   return (
     <>
-      <label>Font Family</label>
+      <label htmlFor="font-picker-google-font-input">Google Font</label>
       <input
+        id="font-picker-google-font-input"
         className="w-100"
         value={rawFontFamily}
         onChange={(e) => setFontFamily(e.currentTarget.value)}
       />
       <p>
-        Enter a name of a font that can be found on&nbsp;
+        Any family on&nbsp;
         <a
           href="https://fonts.google.com/"
           target="_blank"

@@ -24,6 +24,24 @@
   flex-direction: column;
   gap: 0.5em;
 
+  // Controls left, sources right; one column when the sheet cannot fit two
+  .font-picker-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+    gap: 0.5em 1em;
+  }
+
+  .font-picker-column {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+
+    > fieldset:first-child {
+      margin-top: 0;
+    }
+  }
+
   h4 {
     display: flex;
     align-items: baseline;
