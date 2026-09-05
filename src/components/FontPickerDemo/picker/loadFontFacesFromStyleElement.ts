@@ -23,7 +23,9 @@ export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement
     const src = rule.style.getPropertyValue('src');
     const fontFamily = rule.style.getPropertyValue('font-family');
 
-    if (!fontFamily || !src) return;
+    // local()-only rules are metric-override fallbacks, not web fonts, and reject
+    // when the named font is not installed
+    if (!fontFamily || !src || !/url\(/.test(src)) return;
 
     // Absolute URLs routed through our proxy, since webfont loads are CORS-gated
     const { transformed, relativeSources } = transformFontFaceSrcToProxiedAbsoluteURL(src, baseURL, proxyPrefix);
@@ -65,14 +67,17 @@ export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement
     }
   });
 
-  return Promise.all(
+  // One face failing (a 404, an unsupported format) must not discard the rest of the page
+  return Promise.allSettled(
     Object.values(toLoad).map(
       (ff) => ff.load().then((loaded) => {
         document.fonts.add(loaded);
         return loaded;
       })
     )
-  ).then((didLoad) => {
+  ).then((results) => {
+    const didLoad = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
+
     // @ts-ignore FontFaceSetLoadEvent isn't in every lib.dom yet
     document.fonts.dispatchEvent(new (window['FontFaceSetLoadEvent'] ?? Event)('loadingdone', { fontfaces: didLoad }));
 
