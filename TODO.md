@@ -36,6 +36,7 @@
       - [~] Visual parity (chrome + 3D look)
     - [ ] Grab some models like a classroom and a banquet set
     - [ ] Showcase the carousel? With the animated pips
+  - [x] Visrez library tagging tool
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
