@@ -8,6 +8,10 @@ const FONTFACE_PROPERTIES = [
   'style',
 ] as const;
 
+function unquote(family: string) {
+  return family.replace(/^ *\\?['"]?(.*?)\\?['"]? *$/, '$1');
+}
+
 export type FontFaceDescriptor = Record<(typeof FONTFACE_PROPERTIES)[number], string>;
 
 // The page's prose is plain sans-serif; Poppins only lives inside the product mockups.
@@ -32,7 +36,8 @@ export function useFontFaces() {
       (_fontFaces.filter(Boolean) as FontFace[])
         .map((ff) => {
           return [
-            JSON.stringify(Object.fromEntries(FONTFACE_PROPERTIES.map((prop) => [prop, ff[prop]]))),
+            // Quoted and bare spellings of one family are the same face
+            JSON.stringify(Object.fromEntries(FONTFACE_PROPERTIES.map((prop) => [prop, prop === 'family' ? unquote(ff.family) : ff[prop]]))),
             ff,
           ];
         }),
@@ -54,7 +59,7 @@ export function useFontFaces() {
   const simplifiedFontFaces = useMemo(
     () => fontFaces.map((ff) => Object.fromEntries(FONTFACE_PROPERTIES.map((prop) => {
       if (prop === 'family') {
-        return [prop, String(ff[prop]).replace(/^ *\\?['"]?(.*?)\\?['"]? *$/, '$1')]; // Remove surrounding space and quotes
+        return [prop, unquote(String(ff[prop]))];
       } else {
         return [prop, ff[prop]];
       }
