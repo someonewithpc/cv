@@ -1,0 +1,86 @@
+---
+import Grid from '../Grid.astro';
+---
+
+<div class="wrapper">
+  <div class="missing-layer" aria-hidden="true">
+    <Grid onlyMissing />
+
+    <dl class="legend">
+      <div>
+        <dt>Filter</dt>
+        <dd>Objects that already carry the property drop out, and a clique with nothing left to tag folds away with them</dd>
+      </div>
+      <div>
+        <dt>Cap</dt>
+        <dd>A page stops at 250 objects and says so, instead of quietly trimming the list</dd>
+      </div>
+      <div>
+        <dt>Save</dt>
+        <dd>Blur or tick writes one row per object; an emptied field deletes the row rather than storing <code>""</code></dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<style lang="scss">
+.wrapper {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: min(92cqw, 100%);
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.missing-layer {
+  width: 100%;
+  max-width: 40em;
+  display: grid;
+  gap: 0.625em;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 2.3cqmin, 1rem);
+  color: var(--ink);
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: min(1rem, 2.3cqmin);
+  }
+
+  :global(.tagging-tool) {
+    font-size: 0.875em;
+    pointer-events: none;
+  }
+}
+
+.legend {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625em;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+  }
+
+  dt {
+    font-family: monospace, system-ui;
+    font-size: 0.625em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+</style>

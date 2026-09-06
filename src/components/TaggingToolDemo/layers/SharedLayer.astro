@@ -1,0 +1,256 @@
+---
+const members = ['Gold', 'Silver', 'Clear', 'Black'];
+---
+
+<div class="wrapper">
+  <div class="shared-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">LibraryObjectPropertySchema</span>
+        <strong>shared_in_group → one input per clique</strong>
+      </header>
+
+      <div class="fan">
+        <div class="source">
+          <span class="caption">Chiavari · shared value</span>
+          <div class="field">
+            <span class="text">Gold Resin</span>
+            <span class="caret"></span>
+            <span class="tick">✓</span>
+          </div>
+          <span class="events"><code>keyup</code> · <code>focus</code> · <code>click</code></span>
+        </div>
+
+        <svg class="wires" viewBox="0 0 40 100" preserveAspectRatio="none">
+          <path d="M0 50 C 18 50, 22 12, 40 12" />
+          <path d="M0 50 C 18 50, 22 37, 40 37" />
+          <path d="M0 50 C 18 50, 22 63, 40 63" />
+          <path d="M0 50 C 18 50, 22 88, 40 88" />
+        </svg>
+
+        <ul class="targets">
+          {members.map((member) => (
+            <li>
+              <span class="member">{member}</span>
+              <span class="field mirrored">
+                <span class="text">Gold Resin</span>
+                <span class="caret"></span>
+              </span>
+              <code class="prop">--caret: 10</code>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Mirror</dt>
+          <dd>Every keystroke copies the value into each member's own <code>.in-place-input</code></dd>
+        </div>
+        <div>
+          <dt>Save</dt>
+          <dd>The tick submits every member form: one <code>find_or_create_by</code> per object, and a cleared value deletes the row</dd>
+        </div>
+        <div>
+          <dt>Refuse</dt>
+          <dd>Members that already disagree lock the shared input rather than overwrite anyone; the tooltip says why</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+.wrapper {
+  box-sizing: border-box;
+  width: 100%;
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.shared-layer {
+  box-sizing: border-box;
+  width: min(100%, 44em);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 2.3cqmin, 1rem);
+  color: var(--ink);
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: min(1rem, 2.3cqmin);
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  display: grid;
+  gap: 0.625em;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.875em;
+  }
+}
+
+.eyebrow {
+  font-family: monospace, system-ui;
+  font-size: 0.625em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.fan {
+  display: grid;
+  grid-template-columns: max-content 2.5em max-content;
+  align-items: center;
+}
+
+.source {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.caption,
+.member {
+  font-size: 0.625em;
+  color: var(--ink-muted);
+}
+
+.field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375em;
+  padding: 0.125em 0.5em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  font-family: monospace, system-ui;
+  font-size: 0.875em;
+
+  .text {
+    white-space: pre;
+  }
+
+  .caret {
+    position: absolute;
+    left: calc(0.5em + 1px + 10ch);
+    top: 50%;
+    width: 1px;
+    height: 1.125em;
+    translate: 0 -50%;
+    background: var(--ink);
+    animation: caret-blink 500ms infinite alternate both;
+  }
+
+  .tick {
+    margin-left: 0.25em;
+    color: var(--accent);
+  }
+
+  &.mirrored {
+    font-size: 0.75em;
+  }
+}
+
+.events {
+  font-size: 0.625em;
+  color: var(--ink-muted);
+}
+
+.wires {
+  width: 100%;
+  height: 100%;
+  min-height: 7em;
+  overflow: visible;
+
+  path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.targets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.375em;
+
+  li {
+    display: grid;
+    grid-template-columns: 3em max-content max-content;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  .prop {
+    font-size: 0.625em;
+    color: var(--ink-muted);
+  }
+}
+
+.rules {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--line);
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+  }
+
+  dt {
+    font-size: 0.625em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+
+@keyframes caret-blink {
+  from, 49% {
+    opacity: 0;
+  }
+
+  50%, to {
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field .caret {
+    animation: none;
+    opacity: 0.75;
+  }
+}
+</style>
