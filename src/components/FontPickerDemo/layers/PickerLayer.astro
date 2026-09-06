@@ -16,10 +16,14 @@
   place-items: center;
 
   font-size: clamp(0.625rem, 1.85cqmin, 1rem);
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: min(1rem, 3.8cqw);
+  }
 }
 
-// The product sidebar's own width: max(20cqw, 20em) of its container
+// Two columns of roughly the product sidebar's own width, not the whole cell
 .picker-island {
-  width: min(100%, 20em);
+  width: min(100%, 40em);
 }
 </style>
