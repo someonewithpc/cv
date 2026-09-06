@@ -1,0 +1,511 @@
+---
+import { Icon } from 'astro-icon/components';
+
+import Thumbnail from './Thumbnail.astro';
+import { groups, pageCap, property, sharedState, usedValues } from './objects';
+
+type Props = {
+  /** Wire the grid up to the client script and autoplay. */
+  live?: boolean;
+  /** Render with the "only missing" filter already applied. */
+  onlyMissing?: boolean;
+};
+
+const { live = false, onlyMissing = false } = Astro.props;
+
+const listId = `tagging-tool-values-${live ? 'live' : 'static'}`;
+const propertyId = `tagging-tool-property-${live ? 'live' : 'static'}`;
+
+const mismatchedTitle = 'This group has mismatched values, refusing to edit all of them';
+const sharedTitle = 'Edit all the values in this group';
+---
+
+<div
+  class="tagging-tool"
+  data-live={live ? '' : undefined}
+  data-only-missing={String(onlyMissing)}
+  tabindex={live ? -1 : undefined}
+>
+  <datalist id={listId}>
+    {usedValues().map((value) => <option value={value} />)}
+  </datalist>
+
+  <header class="toolbar">
+    <div class="property with-in-place-edit">
+      <span class="eyebrow">Property</span>
+      <span class="in-place-label" id={propertyId}>{property}</span>
+      <button type="button" class="in-place-pencil-btn icon-btn" title="Rename">
+        <Icon name="lucide:pencil" />
+      </button>
+      <form class="in-place-form" aria-label="Rename property">
+        <input class="in-place-input" type="text" value={property} aria-label="Property name" />
+        <button type="submit" class="in-place-submit-btn icon-btn" title="Save">
+          <Icon name="lucide:check" />
+        </button>
+        <button type="button" class="in-place-cancel-btn icon-btn" title="Cancel">
+          <Icon name="lucide:undo-2" />
+        </button>
+      </form>
+    </div>
+
+    <span class="pill on" title="Every object in a style group takes one value">
+      <Icon name="lucide:check" /> Shared in group
+    </span>
+
+    <label class="toggle">
+      <input type="checkbox" class="only-missing" checked={onlyMissing} />
+      <span>Only missing</span>
+    </label>
+
+    <label class="search">
+      <Icon name="lucide:search" />
+      <input type="search" list={listId} placeholder="Search values" aria-label="Search values" />
+    </label>
+  </header>
+
+  <div class="objects">
+    {groups.map((group) => {
+      const shared = sharedState(group);
+      return (
+        <section
+          class="grouped-objects"
+          data-group={group.id}
+          data-autoplay-target={live && group.autoplay ? '' : undefined}
+          aria-labelledby={`${listId}-${group.id}`}
+        >
+          <label class="shared-row" title={shared.mismatched ? mismatchedTitle : sharedTitle}>
+            <span class="group-name" id={`${listId}-${group.id}`}>{group.name}</span>
+            <input
+              class="shared-value"
+              type="text"
+              value={shared.value}
+              disabled={shared.mismatched}
+              list={listId}
+              placeholder={shared.mismatched ? 'mismatched' : 'Shared value'}
+              aria-label={`Shared ${property} for ${group.name}`}
+            />
+            <button type="button" class="shared-submit icon-btn" disabled={shared.mismatched} title="Set every member">
+              <Icon name="lucide:check" />
+            </button>
+          </label>
+
+          <div class="cards">
+            {group.objects.map((object) => (
+              <div
+                class="image-thumbnail"
+                data-missing={String(object.value === null)}
+                title={`${group.name} · ${object.style}`}
+              >
+                <div class="art">
+                  <Thumbnail art={group.art} hue={object.hue} />
+                </div>
+                <form class="in-place-form" style={{ '--caret': 0 }}>
+                  <input
+                    class="in-place-input"
+                    type="text"
+                    value={object.value ?? ''}
+                    list={listId}
+                    placeholder="—"
+                    aria-label={`${property} for ${group.name} ${object.style}`}
+                  />
+                  <button type="submit" class="in-place-submit-btn icon-btn" title="Update">
+                    <Icon name="lucide:check" />
+                  </button>
+                </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    })}
+  </div>
+
+  <footer class="cap-warning" role="status">
+    <Icon name="lucide:triangle-alert" />
+    <span>
+      Showing {pageCap.shown} of {pageCap.total} objects · results hidden, narrow the search
+    </span>
+  </footer>
+</div>
+
+<style lang="scss">
+.tagging-tool {
+  --tool-radius: 0.375em;
+  --field-inset: 0.375em;
+  --icon-btn: 1.5em;
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  scrollbar-width: thin;
+  outline: none;
+
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 2.6cqmin, 1.125rem);
+  color: var(--ink);
+
+  background: var(--surface-page);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.25);
+
+  display: flex;
+  flex-direction: column;
+
+  input,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  input[type='text'],
+  input[type='search'] {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 0.125em var(--field-inset);
+    border: 1px solid var(--line);
+    border-radius: var(--tool-radius);
+    background: var(--surface-raised);
+    color: var(--ink);
+
+    &::placeholder {
+      color: var(--ink-faint);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background: var(--surface-sunken);
+      color: var(--ink-faint);
+    }
+  }
+
+  input[type='search'] {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+}
+
+.icon-btn {
+  box-sizing: border-box;
+  flex: none;
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--tool-radius);
+  background: var(--surface-raised);
+  cursor: pointer;
+
+  :global(svg) {
+    width: 0.875em;
+    height: 0.875em;
+  }
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.eyebrow {
+  font-size: 0.625em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em 1em;
+  padding: 0.5em 0.75em;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-page);
+}
+
+.property {
+  display: flex;
+  align-items: center;
+  gap: 0.375em;
+
+  .in-place-label {
+    font-weight: 600;
+  }
+
+  .in-place-form {
+    display: none;
+    align-items: center;
+    gap: 0.25em;
+
+    .in-place-input {
+      width: 9em;
+    }
+  }
+
+  &.editing {
+    .in-place-label,
+    .in-place-pencil-btn {
+      display: none;
+    }
+
+    .in-place-form {
+      display: flex;
+    }
+  }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0.125em 0.625em;
+  border-radius: 1em;
+  font-size: 0.75em;
+  font-weight: 500;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+
+  :global(svg) {
+    width: 0.875em;
+    height: 0.875em;
+  }
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375em;
+  font-size: 0.875em;
+  cursor: pointer;
+
+  input {
+    margin: 0;
+    accent-color: var(--control-accent);
+  }
+}
+
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375em;
+  margin-left: auto;
+  color: var(--ink-muted);
+
+  :global(svg) {
+    flex: none;
+    width: 1em;
+    height: 1em;
+  }
+
+  input {
+    width: 11em;
+  }
+}
+
+.objects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20em, 100%), 1fr));
+  gap: 0.75em;
+  padding: 0.75em;
+}
+
+.grouped-objects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 0.5em;
+  border: 1px dotted var(--line-strong);
+  border-radius: var(--tool-radius);
+
+  &:nth-child(odd) {
+    background: var(--surface-raised);
+  }
+}
+
+.shared-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375em;
+
+  .group-name {
+    flex: none;
+    min-width: 5em;
+    font-weight: 600;
+    font-size: 0.875em;
+  }
+
+  .shared-value {
+    flex: 1;
+  }
+
+  &:has(.shared-value:disabled) {
+    cursor: not-allowed;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(9.5em, 100%), 1fr));
+  gap: 0.5em;
+}
+
+.image-thumbnail {
+  display: grid;
+  grid-template-columns: 2em minmax(0, 1fr);
+  gap: 0.375em;
+  align-items: center;
+  padding: 0.25em;
+  border: 1px solid var(--line);
+  border-radius: var(--tool-radius);
+  background: var(--surface-page);
+
+  .art {
+    box-sizing: border-box;
+    width: 2em;
+    height: 2em;
+    padding: 0.125em;
+    border-radius: var(--tool-radius);
+    background: var(--surface-sunken);
+  }
+
+  &[data-missing='true'] {
+    border-style: dashed;
+
+    .art {
+      opacity: 0.6;
+    }
+  }
+
+  &.saved {
+    animation: saved-flash 700ms ease-out;
+  }
+}
+
+@keyframes saved-flash {
+  from {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  to {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.image-thumbnail .in-place-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  min-width: 0;
+  /* Monospace so the caret's ch unit is one character, whatever was typed. */
+  font-family: monospace, system-ui;
+  font-size: 0.75em;
+
+  .in-place-input {
+    flex: 1;
+    width: 100%;
+  }
+}
+
+/* The mirrored inputs are real inputs that never take focus, so they never
+   get a caret. While the group's shared input has one, draw a caret on each
+   member from --caret (the shared input's selectionStart): one ch per
+   character, clamped to the input's far edge for values longer than it. */
+.grouped-objects:is(.autoplay, :has(> .shared-row > .shared-value:focus)) .image-thumbnail .in-place-form {
+  .in-place-input {
+    background: var(--accent-muted);
+    color: var(--ink);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    width: 1px;
+    height: 1.125em;
+    translate: 0 -50%;
+    background: var(--ink);
+    left: min(
+      calc(var(--field-inset) + 1px + var(--caret, 0) * 1ch),
+      calc(100% - var(--icon-btn) - 0.25em - var(--field-inset) - 1px)
+    );
+    animation: caret-blink 500ms infinite alternate both;
+  }
+}
+
+@keyframes caret-blink {
+  from, 49% {
+    opacity: 0;
+  }
+
+  50%, to {
+    opacity: 0.75;
+  }
+}
+
+.tagging-tool[data-only-missing='true'] {
+  .image-thumbnail[data-missing='false'] {
+    display: none;
+  }
+
+  .grouped-objects:not(:has(.image-thumbnail[data-missing='true'])) {
+    display: none;
+  }
+}
+
+.cap-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: auto;
+  padding: 0.375em 0.75em;
+  border-top: 1px solid var(--line);
+  font-size: 0.75em;
+  color: var(--ink-muted);
+  background: var(--surface-raised);
+
+  :global(svg) {
+    flex: none;
+    width: 1.125em;
+    height: 1.125em;
+    color: var(--accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grouped-objects:is(.autoplay, :has(> .shared-row > .shared-value:focus)) .image-thumbnail .in-place-form::before {
+    animation: none;
+    opacity: 0.75;
+  }
+
+  .image-thumbnail.saved {
+    animation: none;
+  }
+}
+</style>

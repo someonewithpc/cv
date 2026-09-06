@@ -1,0 +1,103 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import GridLayer from './layers/GridLayer.astro';
+import SharedLayer from './layers/SharedLayer.astro';
+import CaretLayer from './layers/CaretLayer.astro';
+import MissingLayer from './layers/MissingLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+const srcRoot = path.join(process.cwd(), 'src');
+const clientEntry = path.join(srcRoot, 'components/TaggingToolDemo/client/taggingTool.ts');
+
+const { outputFiles: [clientBundle] } = await esbuild.build({
+  entryPoints: [clientEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+});
+
+const clientSize = toKiB(clientBundle.text);
+
+const layers = {
+  grid: { name: null },
+  shared: { name: 'Shared Group Input', pageStyle: 'blueprint' },
+  caret: { name: 'Simulated Caret', pageStyle: 'blueprint' },
+  missing: { name: 'Missing Values', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Library Tagging Tool"
+  scale="1:1"
+  size={clientSize}
+  date="2025"
+  tech={['css3', 'javascript']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      grid: <GridLayer />,
+      shared: <SharedLayer />,
+      caret: <CaretLayer />,
+      missing: <MissingLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      grid: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over. Type into a group's shared value and it lands in every
+          member, caret and all
+        </PostIt>
+      ),
+      shared: (
+        <PostIt background="#cde" color="black">
+          One schema flag gives a whole style clique a single input. Members that already
+          disagree lock it instead of being overwritten
+        </PostIt>
+      ),
+      caret: (
+        <PostIt background="#fed" color="black">
+          The mirrored inputs never take focus, so they never get a caret. This one is drawn
+          from a custom property, one ch per character
+        </PostIt>
+      ),
+      missing: (
+        <PostIt background="#dfd" color="black">
+          Flip the toggle to hide everything already tagged. Past 250 objects the page says so
+          instead of trimming quietly
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
+
+<script>
+  import { initTaggingTool } from './client/taggingTool';
+
+  function init() {
+    document.querySelectorAll<HTMLElement>('.tagging-grid-demo').forEach((mount) => {
+      if (mount.dataset.mounted === 'true') return;
+      mount.dataset.mounted = 'true';
+
+      const root = mount.querySelector<HTMLElement>('.tagging-tool[data-live]');
+      if (root) initTaggingTool(root, mount.dataset.autoplayValue ?? '');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState !== 'loading') init();
+</script>
