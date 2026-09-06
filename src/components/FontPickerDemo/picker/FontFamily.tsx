@@ -1,90 +1,101 @@
 import { useState } from 'react';
 import cx from 'classnames';
 
-import { PAGE_DEFAULT_FACE, type FontFaceDescriptor } from './useFontFaces';
-import { useFontState } from './fontState';
-import { FixedElement } from './FixedElement';
+import type { FontFaceDescriptor } from './useFontFaces';
 
-function fontFaceToStyle(ff: FontFaceDescriptor) {
-  return Object.fromEntries(Object.entries(ff)
-    .map(([prop, value]) => [
-      `font${(prop[0].toUpperCase() + prop.slice(1))}`,
-      value,
-    ]));
+export type FaceOption = {
+  key: string;
+  label: string;
+  family: string | null;
+  weight: number | null;
+  style: string;
+};
+
+// The page's prose is plain sans-serif; Poppins only lives inside the product mockups.
+// It is not a FontFace, so the list gets a synthetic first entry meaning "no override"
+export const PAGE_DEFAULT: FaceOption = { key: 'page-default', label: 'Page default', family: null, weight: null, style: 'normal' };
+
+// A range ("100 1000") is a variable face, which the weight slider can drive
+function faceWeight(weight: string): number | null {
+  if (weight === 'normal') return 400;
+  if (weight === 'bold') return 700;
+  const numbers = weight.trim().split(/\s+/).map(Number);
+  return numbers.length === 1 && !Number.isNaN(numbers[0]) ? numbers[0] : null;
 }
 
-function displayFontFace(ff: FontFaceDescriptor) {
-  if (ff.family === PAGE_DEFAULT_FACE.family) return 'Page default · sans-serif';
-  return Object.values(ff).filter((val) => val !== 'normal').join(' ');
+export function toOption(face: FontFaceDescriptor): FaceOption {
+  return {
+    key: JSON.stringify(face),
+    label: [face.family, face.weight.replace(/^(\d+) (\d+)$/, '$1–$2'), face.style]
+      .filter((value) => value && value !== 'normal')
+      .join(' '),
+    family: face.family,
+    weight: faceWeight(face.weight),
+    style: face.style,
+  };
+}
+
+function faceStyle(option: FaceOption) {
+  return {
+    fontFamily: option.family ?? 'sans-serif',
+    fontWeight: option.weight ?? 400,
+    fontStyle: option.style,
+  };
 }
 
 export function FontFamily(
-  { fontFaces, selectedFontFace, setFontDescriptor }:
-  { fontFaces: FontFaceDescriptor[], selectedFontFace: FontFaceDescriptor, setFontDescriptor: (selectedFontFace: FontFaceDescriptor) => void }
+  { options, value, hasNew, onChange, onPreview, onPreviewEnd }:
+  {
+    options: FaceOption[],
+    value: string,
+    hasNew: boolean,
+    onChange: (key: string) => void,
+    onPreview: (key: string) => void,
+    onPreviewEnd: () => void,
+  }
 ) {
-  const [isInteracting, setIsInteracting] = useState(false);
-  const [selectedFontFaceBeforeHover, setSelectedFontFaceBeforeHover] = useState<FontFaceDescriptor | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const selected = options.find((option) => option.key === value) ?? PAGE_DEFAULT;
 
-  // The dot marks faces that arrived from a source form since the dropdown was last
-  // used — counted from the source registrations, so the page's own fonts finishing
-  // their load cannot trigger it
-  const externalFamilyCount = Object.keys(useFontState().externalFontFaceDeclarations).length;
-  const [seenExternalFamilyCount, setSeenExternalFamilyCount] = useState(externalFamilyCount);
-  const haveNewFontFaces = externalFamilyCount > seenExternalFamilyCount;
-
-  if (!fontFaces.length) return;
+  const stopPreviewing = () => {
+    if (!previewing) return;
+    setPreviewing(false);
+    onPreviewEnd();
+  };
 
   return (
-    <FixedElement
-      isInteracting={isInteracting}
-      setIsInteracting={setIsInteracting}
-    >
-      <label style={fontFaceToStyle(selectedFontFaceBeforeHover ?? selectedFontFace)}>
-        <span>Font Family</span>
-        <div
-          className={cx("select-wrapper", { 'new-dot': haveNewFontFaces })}
+    <label style={faceStyle(selected)}>
+      <span>Font Family</span>
+      <div className={cx('select-wrapper', { 'new-dot': hasNew })}>
+        <select
+          className="w-100"
+          value={value}
+          onChange={(e) => {
+            setPreviewing(false);
+            onChange(e.currentTarget.value);
+          }}
+          onBlur={stopPreviewing}
+          onToggle={(e) => {
+            if ((e.nativeEvent as ToggleEvent).newState === 'closed') stopPreviewing();
+          }}
         >
-          <select
-            className="w-100"
-            value={JSON.stringify(selectedFontFace)}
-            onChange={(e) => {
-              setSeenExternalFamilyCount(externalFamilyCount);
-              setSelectedFontFaceBeforeHover(null);
-              setIsInteracting(false);
-
-              const descriptor: FontFaceDescriptor = JSON.parse(e.currentTarget.value);
-              setFontDescriptor(descriptor);
-            }}
-            onFocus={() => {
-              setIsInteracting(true);
-            }}
-            onBlur={() => {
-              if (selectedFontFaceBeforeHover !== null) {
-                setFontDescriptor(selectedFontFaceBeforeHover);
-              }
-              setIsInteracting(false);
-            }}
-          >
-            {fontFaces.map((ff) => (
-              <option
-                key={JSON.stringify(ff)}
-                value={JSON.stringify(ff)}
-                onMouseEnter={(e) => {
-                  if (selectedFontFaceBeforeHover === null) {
-                    setSelectedFontFaceBeforeHover(selectedFontFace);
-                  }
-
-                  const descriptor: FontFaceDescriptor = JSON.parse(e.currentTarget.value);
-                  setFontDescriptor(descriptor);
-                }}
-                style={fontFaceToStyle(ff)}
-              >
-                {displayFontFace(ff)}
-              </option>
-            ))}
-          </select>
-        </div>
-      </label>
-    </FixedElement>
+          {options.map((option) => (
+            <option
+              key={option.key}
+              value={option.key}
+              style={faceStyle(option)}
+              // Hovering previews the face on the whole page; leaving without choosing
+              // puts the committed one back
+              onMouseEnter={() => {
+                setPreviewing(true);
+                onPreview(option.key);
+              }}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </label>
   );
 }

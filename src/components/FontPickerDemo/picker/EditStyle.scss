@@ -1,0 +1,249 @@
+@use './fontSettingsFieldset' as *;
+
+// The Interactive Map's settings sidebar, as far as the Style section: the same markup and
+// rules as the product, with its light-dark() option colours extended to the whole column
+// so it follows the page's colour scheme
+.sidebar {
+  --sidebar-background: light-dark(#{$sidebar-background}, #2b2b2b);
+  --sidebar-ink: light-dark(black, #e6e6e6);
+
+  box-sizing: border-box;
+  width: 100%;
+  // Scrolls inside the sheet like the real sidebar does inside the map
+  max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 1.5em);
+  overflow-y: auto;
+
+  background: var(--sidebar-background);
+  border: 1px solid light-dark(#c6c6c6, #1a1a1a);
+  color: var(--sidebar-ink);
+
+  font-family: 'Poppins', sans-serif;
+  font-size: 1em;
+  text-align: left;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  input,
+  button {
+    font-family: inherit;
+    max-width: 100%;
+  }
+
+  a {
+    text-decoration: none;
+    color: light-dark(#616161, #b0b0b0);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  p {
+    color: light-dark(#474747, #bdbdbd);
+  }
+
+  nav {
+    padding: 0.75em;
+  }
+
+  section.edit-settings {
+    display: flex;
+    flex-direction: column;
+
+    header {
+      margin-top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      h3 {
+        margin: 0.5em 0;
+        font-size: 1.17em;
+      }
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      li {
+        margin-bottom: 1em;
+
+        label {
+          display: flex;
+
+          input[type='range'] {
+            flex-basis: 100%;
+          }
+        }
+      }
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid light-dark(#bbb, #444);
+      margin: 0.5em 0 1em;
+    }
+
+    footer {
+      margin-top: auto;
+      margin-left: auto;
+      display: flex;
+
+      input[type='button'] {
+        margin: 5px;
+        padding: 5px;
+        border: 1px solid gray;
+        border-radius: 5px;
+        font-weight: 700;
+        min-width: 80px;
+        background: light-dark(#efefef, #3a3a3a);
+        color: inherit;
+        cursor: pointer;
+
+        &:hover {
+          background: light-dark(#e0e0e0, #474747);
+        }
+      }
+    }
+  }
+
+  .font-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+
+    h4 {
+      font-size: 1.25em;
+      margin-block: 0.25em;
+    }
+
+    .w-100 {
+      width: 100%;
+    }
+
+    select,
+    ::picker(select) {
+      appearance: base-select;
+    }
+
+    select {
+      font: inherit;
+      color: inherit;
+      background: light-dark(white, #1e1e1e);
+      border: 1px solid light-dark(#767676, #555);
+      border-radius: 0.25em;
+      padding: 0.25em 0.5em;
+    }
+
+    ::picker(select) {
+      border: 1px solid light-dark(#767676, #555);
+      padding: 0;
+    }
+
+    option {
+      max-width: 100%;
+      padding: 0.25em 0.5em;
+
+      &:nth-of-type(even) {
+        background: light-dark(#eee, #333);
+      }
+      &:nth-of-type(odd) {
+        background: light-dark(#ddd, #3a3a3a);
+      }
+
+      &:hover {
+        background: light-dark(#ccc, #444);
+      }
+    }
+
+    select:open {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    ::picker(select),
+    option:last-of-type {
+      border-radius: 0 0 0.5em 0.5em;
+    }
+
+    .select-wrapper {
+      position: relative;
+
+      &.new-dot::before {
+        content: '';
+        background: #c33;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 1ch;
+        height: 1ch;
+        translate: calc(50% - 1px) calc(-50% + 1px);
+        z-index: 1;
+
+        border-radius: 50%;
+      }
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25em;
+      cursor: pointer;
+
+      &:has(input:disabled) {
+        color: light-dark(gray, #8a8a8a);
+      }
+    }
+
+    svg[data-icon] {
+      cursor: pointer;
+    }
+
+    p {
+      margin-inline: 0;
+      font-size: 0.875em;
+      line-height: 1;
+    }
+
+    p[role='alert'] {
+      padding-inline-start: 1ch;
+      border-left: 3px solid orange;
+
+      svg {
+        color: orange;
+      }
+    }
+
+    fieldset {
+      @include font-settings-fieldset(var(--sidebar-background));
+
+      // The mixin's colours are the light sidebar's; the dark scheme needs its own
+      color: inherit;
+
+      label {
+        color: inherit;
+      }
+
+      input {
+        background: light-dark(white, #1e1e1e);
+        border-color: light-dark(#ddd, #444);
+        color: inherit;
+
+        &:focus {
+          outline-color: light-dark(#888, #aaa);
+        }
+      }
+
+      p {
+        color: light-dark(#666, #a8a8a8);
+
+        &[role='alert'] {
+          color: inherit;
+        }
+      }
+    }
+  }
+}
