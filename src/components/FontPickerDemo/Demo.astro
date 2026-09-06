@@ -19,7 +19,7 @@ function toKiB(text: string) {
 const srcRoot = path.join(process.cwd(), 'src');
 const fontPickerEntry = path.join(
   srcRoot,
-  'components/FontPickerDemo/picker/FontPickerApp.tsx',
+  'components/FontPickerDemo/picker/EditStyleApp.tsx',
 );
 
 const { outputFiles: [fontPickerBundle] } = await esbuild.build({
@@ -70,9 +70,8 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: (
         <PostIt background="#e8e4dc" color="black">
-          This one is live: pick a face and the whole page wears it. Hovering an
-          option previews it instantly; leaving without choosing puts everything
-          back
+          Pick a face and the whole page wears it. Hover an option to try it
+          on; a Google font name or a page URL adds its faces to the list
         </PostIt>
       ),
       discovery: (
@@ -124,13 +123,13 @@ type Layer = keyof typeof layers;
     if (!mount || mount.dataset.bootstrapped === 'true') return;
     mount.dataset.bootstrapped = 'true';
 
-    const [{ createElement }, { createRoot }, { default: FontPickerApp }] = await Promise.all([
+    const [{ createElement }, { createRoot }, { default: EditStyleApp }] = await Promise.all([
       import('react'),
       import('react-dom/client'),
-      import('./picker/FontPickerApp'),
+      import('./picker/EditStyleApp'),
     ]);
 
-    createRoot(mount).render(createElement(FontPickerApp));
+    createRoot(mount).render(createElement(EditStyleApp));
   }
 
   function armBoot() {
