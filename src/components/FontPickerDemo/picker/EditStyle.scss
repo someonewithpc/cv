@@ -1,28 +1,24 @@
 @use './fontSettingsFieldset' as *;
 
-// The Interactive Map's settings sidebar, as far as the Style section: the same markup and
-// rules as the product, with its light-dark() option colours extended to the whole column
-// so it follows the page's colour scheme
+// The Interactive Map's settings sidebar, from the Style section down: the product's own
+// markup, rules and light grey column, regardless of the page's colour scheme
 .sidebar {
-  --sidebar-background: light-dark(#{$sidebar-background}, #2b2b2b);
-  --sidebar-ink: light-dark(black, #e6e6e6);
-
   box-sizing: border-box;
   width: 100%;
   // Scrolls inside the sheet like the real sidebar does inside the map
   max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 1.5em);
   overflow-y: auto;
-  container-type: inline-size;
 
-  // A portrait sheet stacks the title block under the artwork, so leave it its row
+  // A portrait sheet stacks the specimen above and the title block below, so leave them their rows
   @container technical-drawing (orientation: portrait) {
-    max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 5.5rem);
+    max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 5.5rem - 7em);
   }
 
-  background: var(--sidebar-background);
-  border: 1px solid light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 14%));
+  background: $sidebar-background;
+  border: 1px solid rgb(0 0 0 / 12%);
   border-radius: 0.5em;
-  color: var(--sidebar-ink);
+  color: black;
+  color-scheme: only light;
 
   font-family: 'Poppins', sans-serif;
   font-size: 1em;
@@ -42,13 +38,8 @@
 
   a {
     text-decoration: none;
-    color: light-dark(#616161, #b0b0b0);
     font-size: 0.85rem;
     font-weight: 500;
-  }
-
-  p {
-    color: light-dark(#474747, #bdbdbd);
   }
 
   nav {
@@ -89,13 +80,7 @@
         border-radius: 5px;
         font-weight: 700;
         min-width: 80px;
-        background: light-dark(#efefef, #3a3a3a);
-        color: inherit;
         cursor: pointer;
-
-        &:hover {
-          background: light-dark(#e0e0e0, #474747);
-        }
       }
     }
   }
@@ -104,34 +89,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.5em;
-
-    // The grouping only exists for the wide layout; in the column it is invisible
-    .controls,
-    .sources {
-      display: contents;
-    }
-
-    // With room to spare, the sliders and dropdown sit beside the two fieldsets
-    @container (min-width: 32em) {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      column-gap: 1.5em;
-
-      h4 {
-        grid-column: 1 / -1;
-      }
-
-      .controls,
-      .sources {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5em;
-      }
-
-      .sources > fieldset:first-child {
-        margin-top: 0;
-      }
-    }
 
     .w-100 {
       width: 100%;
@@ -142,33 +99,18 @@
       appearance: base-select;
     }
 
-    select {
-      font: inherit;
-      color: inherit;
-      background: light-dark(white, #1e1e1e);
-      border: 1px solid light-dark(#767676, #555);
-      border-radius: 0.25em;
-      padding: 0.25em 0.5em;
-    }
-
-    ::picker(select) {
-      border: 1px solid light-dark(#767676, #555);
-      padding: 0;
-    }
-
     option {
       max-width: 100%;
-      padding: 0.25em 0.5em;
 
       &:nth-of-type(even) {
-        background: light-dark(#eee, #333);
+        background: #eee;
       }
       &:nth-of-type(odd) {
-        background: light-dark(#ddd, #3a3a3a);
+        background: #ddd;
       }
 
       &:hover {
-        background: light-dark(#ccc, #444);
+        background: #ccc;
       }
     }
 
@@ -206,7 +148,7 @@
       cursor: pointer;
 
       &:has(input:disabled) {
-        color: light-dark(gray, #8a8a8a);
+        color: gray;
       }
     }
 
@@ -230,35 +172,10 @@
     }
 
     fieldset {
-      @include font-settings-fieldset(var(--sidebar-background));
+      @include font-settings-fieldset($sidebar-background);
 
       &.hidden {
         display: none;
-      }
-
-      // The mixin's colours are the light sidebar's; the dark scheme needs its own
-      color: inherit;
-
-      label {
-        color: inherit;
-      }
-
-      input {
-        background: light-dark(white, #1e1e1e);
-        border-color: light-dark(#ddd, #444);
-        color: inherit;
-
-        &:focus {
-          outline-color: light-dark(#888, #aaa);
-        }
-      }
-
-      p {
-        color: light-dark(#666, #a8a8a8);
-
-        &[role='alert'] {
-          color: inherit;
-        }
       }
     }
   }

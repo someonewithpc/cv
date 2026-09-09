@@ -79,40 +79,36 @@ export default function EditStyleApp() {
           <section className="edit-settings">
             <ul>
               <li className="style font-settings">
-                <div className="controls">
-                  <FontSize
-                    size={committed.size}
-                    setSize={(size) => commitOverride({ size })}
-                  />
+                <FontSize
+                  size={committed.size}
+                  setSize={(size) => commitOverride({ size })}
+                />
 
-                  <FontWeight
-                    enabled={weightIsFree}
-                    weight={committed.weight ?? 400}
-                    setWeight={(weight) => {
-                      // Landing on a weight the family ships as its own face selects that face
-                      const face = options.find((o) => o.family === selected.family && o.weight === weight);
-                      if (face) setSelectedKey(face.key);
-                      commitOverride({ weight });
-                    }}
-                  />
+                <FontWeight
+                  enabled={weightIsFree}
+                  weight={committed.weight ?? 400}
+                  setWeight={(weight) => {
+                    // Landing on a weight the family ships as its own face selects that face
+                    const face = options.find((o) => o.family === selected.family && o.weight === weight);
+                    if (face) setSelectedKey(face.key);
+                    commitOverride({ weight });
+                  }}
+                />
 
-                  <FontFamily
-                    options={options}
-                    value={selectedKey}
-                    hasNew={externalCount > seenExternalCount}
-                    onChange={select}
-                    onPreview={(key) => {
-                      const option = options.find((o) => o.key === key);
-                      if (option) previewOverride(overrideFor(option, committed.weight));
-                    }}
-                    onPreviewEnd={endPreview}
-                  />
-                </div>
+                <FontFamily
+                  options={options}
+                  value={selectedKey}
+                  hasNew={externalCount > seenExternalCount}
+                  onChange={select}
+                  onPreview={(key) => {
+                    const option = options.find((o) => o.key === key);
+                    if (option) previewOverride(overrideFor(option, committed.weight));
+                  }}
+                  onPreviewEnd={endPreview}
+                />
 
-                <div className="sources">
-                  <GoogleFont visible={visibleSubForm === 'google'} onLoaded={adopt} />
-                  <EmbedURL visible={visibleSubForm === 'embed'} onLoaded={adopt} />
-                </div>
+                <GoogleFont visible={visibleSubForm === 'google'} onLoaded={adopt} />
+                <EmbedURL visible={visibleSubForm === 'embed'} onLoaded={adopt} />
               </li>
             </ul>
             <footer>
