@@ -1,10 +1,10 @@
 @use './fontSettingsFieldset' as *;
 
-// A specimen set on the sheet beside the product's own settings column
+// The product's settings column, with a specimen set on the sheet beside it
 .edit-style {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 32em);
+  grid-template-columns: minmax(0, 32em) minmax(0, 1fr);
   gap: 3em;
   align-items: center;
 
@@ -73,15 +73,26 @@
   }
 
   @container technical-drawing (orientation: portrait) {
-    gap: 0.25em;
+    // Above the sidebar on a phone sheet, and without the alphabet block; what is left has
+    // to fit the 11em the sidebar leaves it
+    order: -1;
+    gap: 0.125em;
 
     .specimen-display {
-      font-size: 3em;
+      font-size: 2.5em;
     }
 
-    // The alphabet block is the first thing to give up room on a phone sheet
+    .specimen-pangram {
+      font-size: 1.1em;
+    }
+
     .specimen-glyphs {
       display: none;
+    }
+
+    figcaption {
+      margin-top: 0;
+      padding-top: 0.375em;
     }
   }
 }
@@ -101,7 +112,7 @@
 
   // A portrait sheet stacks the specimen above and the title block below, so leave them their rows
   @container technical-drawing (orientation: portrait) {
-    max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 5.5rem - 7em);
+    max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 5.5rem - 11em);
   }
 
   background: var(--sidebar-background);
