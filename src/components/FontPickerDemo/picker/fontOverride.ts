@@ -7,6 +7,9 @@ export type FontOverride = {
   weight: number | null;
 };
 
+// What the demo wears with nothing chosen: the product's own face
+export const DEFAULT_FAMILY = 'Poppins';
+
 export const NO_OVERRIDE: FontOverride = { family: null, style: 'normal', size: 1, weight: null };
 
 type State = {
@@ -32,14 +35,19 @@ function styleElement() {
   return el;
 }
 
-// Every proportional face on the page. Monospace and code keep their alignment, and the
-// family dropdown's options keep the faces they preview
-const TARGET = 'body, body :not(.monospace, .monospace *, code, pre, kbd, samp, option)';
+// The demo alone wears the chosen face, sidebar and specimen both, the way the product's map
+// does. Monospace and code keep their alignment, and the family dropdown's options keep the
+// faces they preview
+const ROOT = '[data-font-picker-island] .edit-style';
+// The size goes on the two columns, not the grid: its tracks are in em too, and scaling them
+// with the type would squeeze the specimen for the sidebar's sake
+const SIZED = `${ROOT} > *`;
+const TARGET = `${ROOT}, ${ROOT} :not(.monospace, .monospace *, code, pre, kbd, samp, option)`;
 
 function render({ family, style, size, weight }: FontOverride, externalFaces: Record<string, string>) {
   const rules: string[] = [];
 
-  if (size !== 1) rules.push(`:root { font-size: ${size}em; }`);
+  if (size !== 1) rules.push(`${SIZED} { font-size: ${size}em; }`);
 
   if (family !== null) {
     if (externalFaces[family]) rules.push(externalFaces[family]);
@@ -49,8 +57,8 @@ function render({ family, style, size, weight }: FontOverride, externalFaces: Re
   }
 
   if (weight !== null) {
-    rules.push(`body { font-weight: ${weight}; }
-b, strong { font-weight: ${Math.min(1000, Math.round((weight * 7 / 4) / 50) * 50)}; }`);
+    rules.push(`${ROOT} { font-weight: ${weight}; }
+${ROOT} :is(b, strong) { font-weight: ${Math.min(1000, Math.round((weight * 7 / 4) / 50) * 50)}; }`);
   }
 
   return rules.join('\n\n');

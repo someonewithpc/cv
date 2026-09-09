@@ -21,8 +21,8 @@
   gap: 0.5em;
 
   color: var(--ink);
-  // The page's own face; the picker's page-wide override reaches it like any other text
-  font-family: sans-serif;
+  // The product's face, like the sidebar; the override reaches both alike
+  font-family: var(--font-poppins), sans-serif;
   text-align: left;
 
   p {
