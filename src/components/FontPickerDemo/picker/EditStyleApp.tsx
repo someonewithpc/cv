@@ -77,14 +77,8 @@ export default function EditStyleApp() {
       <aside className="sidebar">
         <nav>
           <section className="edit-settings">
-            <header>
-              <h3>Settings</h3>
-            </header>
             <ul>
-              <hr />
               <li className="style font-settings">
-                <h4>Style</h4>
-
                 <div className="controls">
                   <FontSize
                     size={committed.size}
