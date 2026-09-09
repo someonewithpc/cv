@@ -25,7 +25,7 @@ export function GoogleFont({ visible, onLoaded }: { visible: boolean, onLoaded: 
           href="https://fonts.google.com/"
           target="_blank"
           rel="noreferrer"
-          style={{ color: 'blue' }}
+          style={{ color: 'light-dark(blue, #8ab4f8)' }}
         >Google Fonts</a>
       </p>
     </SubForm>
