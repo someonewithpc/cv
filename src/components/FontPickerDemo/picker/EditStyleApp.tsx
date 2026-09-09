@@ -5,6 +5,7 @@ import { useFontFaces } from './useFontFaces';
 import type { LoadedFaces } from './sources';
 
 import { Pinned } from './Pinned';
+import { Specimen } from './Specimen';
 import { FontSize } from './FontSize';
 import { FontWeight } from './FontWeight';
 import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL, FontFamily, PAGE_DEFAULT, toOption, type FaceOption } from './FontFamily';
@@ -73,58 +74,62 @@ export default function EditStyleApp() {
   const weightIsFree = options.filter((o) => o.family === selected.family).length === 1;
 
   return (
-    <Pinned className="edit-style-host">
-      <aside className="sidebar">
-        <nav>
-          <section className="edit-settings">
-            <ul>
-              <li className="style font-settings">
-                <FontSize
-                  size={committed.size}
-                  setSize={(size) => commitOverride({ size })}
-                />
+    <div className="edit-style">
+      <Specimen />
 
-                <FontWeight
-                  enabled={weightIsFree}
-                  weight={committed.weight ?? 400}
-                  setWeight={(weight) => {
-                    // Landing on a weight the family ships as its own face selects that face
-                    const face = options.find((o) => o.family === selected.family && o.weight === weight);
-                    if (face) setSelectedKey(face.key);
-                    commitOverride({ weight });
+      <Pinned className="edit-style-host">
+        <aside className="sidebar">
+          <nav>
+            <section className="edit-settings">
+              <ul>
+                <li className="style font-settings">
+                  <FontSize
+                    size={committed.size}
+                    setSize={(size) => commitOverride({ size })}
+                  />
+
+                  <FontWeight
+                    enabled={weightIsFree}
+                    weight={committed.weight ?? 400}
+                    setWeight={(weight) => {
+                      // Landing on a weight the family ships as its own face selects that face
+                      const face = options.find((o) => o.family === selected.family && o.weight === weight);
+                      if (face) setSelectedKey(face.key);
+                      commitOverride({ weight });
+                    }}
+                  />
+
+                  <FontFamily
+                    options={options}
+                    value={selectedKey}
+                    hasNew={externalCount > seenExternalCount}
+                    onChange={select}
+                    onPreview={(key) => {
+                      const option = options.find((o) => o.key === key);
+                      if (option) previewOverride(overrideFor(option, committed.weight));
+                    }}
+                    onPreviewEnd={endPreview}
+                  />
+
+                  <GoogleFont visible={visibleSubForm === 'google'} onLoaded={adopt} />
+                  <EmbedURL visible={visibleSubForm === 'embed'} onLoaded={adopt} />
+                </li>
+              </ul>
+              <footer>
+                <input
+                  type="button"
+                  value="Reset"
+                  onClick={() => {
+                    resetOverride();
+                    setSelectedKey(PAGE_DEFAULT.key);
+                    setVisibleSubForm(null);
                   }}
                 />
-
-                <FontFamily
-                  options={options}
-                  value={selectedKey}
-                  hasNew={externalCount > seenExternalCount}
-                  onChange={select}
-                  onPreview={(key) => {
-                    const option = options.find((o) => o.key === key);
-                    if (option) previewOverride(overrideFor(option, committed.weight));
-                  }}
-                  onPreviewEnd={endPreview}
-                />
-
-                <GoogleFont visible={visibleSubForm === 'google'} onLoaded={adopt} />
-                <EmbedURL visible={visibleSubForm === 'embed'} onLoaded={adopt} />
-              </li>
-            </ul>
-            <footer>
-              <input
-                type="button"
-                value="Reset"
-                onClick={() => {
-                  resetOverride();
-                  setSelectedKey(PAGE_DEFAULT.key);
-                  setVisibleSubForm(null);
-                }}
-              />
-            </footer>
-          </section>
-        </nav>
-      </aside>
-    </Pinned>
+              </footer>
+            </section>
+          </nav>
+        </aside>
+      </Pinned>
+    </div>
   );
 }
