@@ -110,6 +110,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 1em;
   text-align: left;
+  transition: box-shadow 200ms ease;
 
   *,
   *::before,
@@ -266,4 +267,9 @@
       }
     }
   }
+}
+
+// Lifted while pinned in the top layer, so the hold reads as the card coming off the sheet
+.edit-style-host [popover] .sidebar {
+  box-shadow: 0 1em 2.5em color-mix(in oklab, #000 45%, transparent);
 }
