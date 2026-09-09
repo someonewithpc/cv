@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { DEFAULT_FAMILY, commitOverride, endPreview, previewOverride, registerExternalFaces, resetOverride, useFontOverride } from './fontOverride';
 import { useFontFaces } from './useFontFaces';
@@ -6,6 +6,7 @@ import type { LoadedFaces } from './sources';
 
 import { Pinned } from './Pinned';
 import { Specimen } from './Specimen';
+import { Autoplay } from './Autoplay';
 import { FontSize } from './FontSize';
 import { FontWeight } from './FontWeight';
 import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL, FontFamily, toOption, type FaceOption } from './FontFamily';
@@ -17,6 +18,7 @@ import './EditStyle.scss';
 type SubFormName = 'google' | 'embed' | null;
 
 export default function EditStyleApp() {
+  const rootRef = useRef<HTMLDivElement>(null);
   const { fontFaces } = useFontFaces();
   const { committed, externalFaces } = useFontOverride();
 
@@ -76,7 +78,7 @@ export default function EditStyleApp() {
   const weightIsFree = selected !== undefined && options.filter((o) => o.family === selected.family).length === 1;
 
   return (
-    <div className="edit-style">
+    <div className="edit-style" ref={rootRef}>
       <Pinned className="edit-style-host">
         <aside className="sidebar">
           <nav>
@@ -119,6 +121,7 @@ export default function EditStyleApp() {
                 <input
                   type="button"
                   value="Reset"
+                  data-demo-target="reset"
                   onClick={() => {
                     resetOverride();
                     setSelectedKey(null);
@@ -132,6 +135,8 @@ export default function EditStyleApp() {
       </Pinned>
 
       <Specimen />
+
+      <Autoplay root={rootRef} />
     </div>
   );
 }

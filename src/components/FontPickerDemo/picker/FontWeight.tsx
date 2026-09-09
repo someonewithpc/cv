@@ -24,6 +24,7 @@ export function FontWeight(
       <input
         disabled={!enabled}
         type="range"
+        data-demo-target="weight"
         min="100"
         max="1000"
         step={100}

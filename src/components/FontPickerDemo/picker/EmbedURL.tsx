@@ -16,6 +16,7 @@ export function EmbedURL({ visible, onLoaded }: { visible: boolean, onLoaded: (f
         <input
           id={id}
           className="w-100"
+          data-demo-target="embed"
           type="text"
           value={raw}
           spellCheck={false}

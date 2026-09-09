@@ -15,6 +15,7 @@ export function FontSize({ size, setSize }: { size: number, setSize: (size: numb
       </span>
       <input
         type="range"
+        data-demo-target="size"
         min="0.5"
         max="2.0"
         step={1 / 8}
