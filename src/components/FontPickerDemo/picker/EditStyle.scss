@@ -4,8 +4,8 @@
 .edit-style {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 24em);
-  gap: 2em;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 32em);
+  gap: 3em;
   align-items: center;
 
   @container technical-drawing (orientation: portrait) {
@@ -56,7 +56,6 @@
     margin-top: 0.25em;
     padding-top: 0.5em;
     border-top: 1px solid var(--line);
-    font-size: 1em;
 
     > span {
       display: flex;
@@ -134,7 +133,7 @@
   }
 
   nav {
-    padding: 0.75em;
+    padding: 1.25em;
   }
 
   section.edit-settings {
@@ -147,7 +146,7 @@
       padding: 0;
 
       li {
-        margin-bottom: 1em;
+        margin-bottom: 1.25em;
 
         label {
           display: flex;
@@ -185,7 +184,7 @@
   .font-settings {
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
+    gap: 1.25em;
 
     .w-100 {
       width: 100%;
@@ -202,7 +201,7 @@
       background: light-dark(white, #1e1e1e);
       border: 1px solid light-dark(#767676, #555);
       border-radius: 0.25em;
-      padding: 0.25em 0.5em;
+      padding: 0.375em 0.5em;
     }
 
     ::picker(select) {
@@ -212,6 +211,7 @@
 
     option {
       max-width: 100%;
+      padding: 0.375em 0.5em;
 
       &:nth-of-type(even) {
         background: light-dark(#eee, #333);
@@ -255,7 +255,7 @@
     label {
       display: flex;
       flex-direction: column;
-      gap: 0.25em;
+      gap: 0.375em;
       cursor: pointer;
 
       &:has(input:disabled) {
