@@ -1,11 +1,11 @@
-import { useFontOverride } from './fontOverride';
+import { DEFAULT_FAMILY, useFontOverride } from './fontOverride';
 
-// Set in whatever the page currently wears, including a face being previewed from the
-// dropdown: the page-wide override reaches it like any other text on the sheet
+// Set in whatever the demo currently wears, including a face being previewed from the
+// dropdown: the override reaches it like the sidebar beside it
 export function Specimen() {
   const { shown } = useFontOverride();
 
-  const family = [shown.family ?? 'Page default', shown.style !== 'normal' && shown.style]
+  const family = [shown.family ?? DEFAULT_FAMILY, shown.style !== 'normal' && shown.style]
     .filter(Boolean)
     .join(' ');
 
