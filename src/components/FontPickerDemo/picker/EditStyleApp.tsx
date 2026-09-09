@@ -7,11 +7,13 @@ import type { LoadedFaces } from './sources';
 import { Pinned } from './Pinned';
 import { FontSize } from './FontSize';
 import { FontWeight } from './FontWeight';
-import { FontFamily, PAGE_DEFAULT, toOption, type FaceOption } from './FontFamily';
+import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL, FontFamily, PAGE_DEFAULT, toOption, type FaceOption } from './FontFamily';
 import { GoogleFont } from './GoogleFont';
 import { EmbedURL } from './EmbedURL';
 
 import './EditStyle.scss';
+
+type SubFormName = 'google' | 'embed' | null;
 
 export default function EditStyleApp() {
   const { fontFaces } = useFontFaces();
@@ -21,6 +23,9 @@ export default function EditStyleApp() {
 
   const [selectedKey, setSelectedKey] = useState(PAGE_DEFAULT.key);
   const selected = options.find((option) => option.key === selectedKey) ?? PAGE_DEFAULT;
+
+  // The two subforms are behind the dropdown's last entries, as in the product
+  const [visibleSubForm, setVisibleSubForm] = useState<SubFormName>(null);
 
   // The dot on the dropdown marks faces that arrived from a subform since it was last used
   const externalCount = Object.keys(externalFaces).length;
@@ -34,10 +39,15 @@ export default function EditStyleApp() {
   });
 
   const select = (key: string) => {
+    setSeenExternalCount(externalCount);
+
+    if (key === ADD_GOOGLE_FONT) return setVisibleSubForm('google');
+    if (key === EXTRACT_FROM_URL) return setVisibleSubForm('embed');
+
     const option = options.find((o) => o.key === key);
     if (!option) return;
+    setVisibleSubForm(null);
     setSelectedKey(key);
-    setSeenExternalCount(externalCount);
     commitOverride(overrideFor(option, committed.weight));
   };
 
@@ -48,7 +58,8 @@ export default function EditStyleApp() {
     const option = options.find((o) => o.family === pendingFamily);
     if (!option) return;
     setPendingFamily(null);
-    select(option.key);
+    setSelectedKey(option.key);
+    commitOverride(overrideFor(option, committed.weight));
   }, [options, pendingFamily]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const adopt = (faces: LoadedFaces) => {
@@ -105,8 +116,8 @@ export default function EditStyleApp() {
                 </div>
 
                 <div className="sources">
-                  <GoogleFont onLoaded={adopt} />
-                  <EmbedURL onLoaded={adopt} />
+                  <GoogleFont visible={visibleSubForm === 'google'} onLoaded={adopt} />
+                  <EmbedURL visible={visibleSubForm === 'embed'} onLoaded={adopt} />
                 </div>
               </li>
             </ul>
@@ -117,6 +128,7 @@ export default function EditStyleApp() {
                 onClick={() => {
                   resetOverride();
                   setSelectedKey(PAGE_DEFAULT.key);
+                  setVisibleSubForm(null);
                 }}
               />
             </footer>

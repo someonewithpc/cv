@@ -255,6 +255,10 @@
     fieldset {
       @include font-settings-fieldset(var(--sidebar-background));
 
+      &.hidden {
+        display: none;
+      }
+
       // The mixin's colours are the light sidebar's; the dark scheme needs its own
       color: inherit;
 
