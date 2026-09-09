@@ -75,8 +75,6 @@ export default function EditStyleApp() {
 
   return (
     <div className="edit-style">
-      <Specimen />
-
       <Pinned className="edit-style-host">
         <aside className="sidebar">
           <nav>
@@ -130,6 +128,8 @@ export default function EditStyleApp() {
           </nav>
         </aside>
       </Pinned>
+
+      <Specimen />
     </div>
   );
 }
