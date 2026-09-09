@@ -87,9 +87,13 @@
   }
 }
 
-// The Interactive Map's settings sidebar, from the Style section down: the product's own
-// markup, rules and light grey column, regardless of the page's colour scheme
+// The Interactive Map's settings sidebar from the Style section down: the product's markup
+// and rules, with its light-dark() option colours extended to the whole column so it follows
+// the page's colour scheme
 .sidebar {
+  --sidebar-background: light-dark(#{$sidebar-background}, #2b2b2b);
+  --sidebar-ink: light-dark(black, #e6e6e6);
+
   box-sizing: border-box;
   width: 100%;
   // Scrolls inside the sheet like the real sidebar does inside the map
@@ -101,11 +105,10 @@
     max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 5.5rem - 7em);
   }
 
-  background: $sidebar-background;
-  border: 1px solid rgb(0 0 0 / 12%);
+  background: var(--sidebar-background);
+  border: 1px solid light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 14%));
   border-radius: 0.5em;
-  color: black;
-  color-scheme: only light;
+  color: var(--sidebar-ink);
 
   font-family: 'Poppins', sans-serif;
   font-size: 1em;
@@ -168,7 +171,13 @@
         border-radius: 5px;
         font-weight: 700;
         min-width: 80px;
+        background: light-dark(#efefef, #3a3a3a);
+        color: inherit;
         cursor: pointer;
+
+        &:hover {
+          background: light-dark(#e0e0e0, #474747);
+        }
       }
     }
   }
@@ -187,18 +196,32 @@
       appearance: base-select;
     }
 
+    select {
+      font: inherit;
+      color: inherit;
+      background: light-dark(white, #1e1e1e);
+      border: 1px solid light-dark(#767676, #555);
+      border-radius: 0.25em;
+      padding: 0.25em 0.5em;
+    }
+
+    ::picker(select) {
+      border: 1px solid light-dark(#767676, #555);
+      padding: 0;
+    }
+
     option {
       max-width: 100%;
 
       &:nth-of-type(even) {
-        background: #eee;
+        background: light-dark(#eee, #333);
       }
       &:nth-of-type(odd) {
-        background: #ddd;
+        background: light-dark(#ddd, #3a3a3a);
       }
 
       &:hover {
-        background: #ccc;
+        background: light-dark(#ccc, #444);
       }
     }
 
@@ -236,7 +259,7 @@
       cursor: pointer;
 
       &:has(input:disabled) {
-        color: gray;
+        color: light-dark(gray, #8a8a8a);
       }
     }
 
@@ -260,10 +283,35 @@
     }
 
     fieldset {
-      @include font-settings-fieldset($sidebar-background);
+      @include font-settings-fieldset(var(--sidebar-background));
+
+      // The mixin's colours are the light sidebar's; the dark scheme needs its own
+      color: inherit;
 
       &.hidden {
         display: none;
+      }
+
+      label {
+        color: inherit;
+      }
+
+      input {
+        background: light-dark(white, #1e1e1e);
+        border-color: light-dark(#ddd, #444);
+        color: inherit;
+
+        &:focus {
+          outline-color: light-dark(#888, #aaa);
+        }
+      }
+
+      p {
+        color: light-dark(#666, #a8a8a8);
+
+        &[role='alert'] {
+          color: inherit;
+        }
       }
     }
   }
