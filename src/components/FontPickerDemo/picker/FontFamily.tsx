@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import cx from 'classnames';
 
 import type { FontFaceDescriptor } from './useFontFaces';
+import { useDemoPicker } from './demoPicker';
 
 export type FaceOption = {
   key: string;
@@ -35,7 +37,7 @@ export function toOption(face: FontFaceDescriptor): FaceOption {
   };
 }
 
-function faceStyle(option: FaceOption | undefined) {
+function faceStyle(option: FaceOption | undefined): CSSProperties {
   if (!option) return {};
   return {
     fontFamily: option.family,
@@ -56,6 +58,7 @@ export function FontFamily(
     onPreviewEnd: () => void,
   }
 ) {
+  const selectRef = useRef<HTMLSelectElement>(null);
   const [previewing, setPreviewing] = useState(false);
   const selected = options.find((option) => option.key === value) ?? options[0];
 
@@ -65,12 +68,33 @@ export function FontFamily(
     onPreviewEnd();
   };
 
+  // The list as the auto-play draws it: the faces, then the two entries, in the select's order
+  const entries = [
+    ...options.map((option) => ({ key: option.key, label: option.label, style: faceStyle(option) })),
+    ...[ADD_GOOGLE_FONT, EXTRACT_FROM_URL].map((label) => ({ key: label, label, style: { ...faceStyle(selected), fontStyle: 'italic' as const } })),
+  ];
+
+  const picker = useDemoPicker();
+  useEffect(() => {
+    if (!picker.open) {
+      stopPreviewing();
+      return;
+    }
+    const entry = picker.hovered === null ? undefined : entries[picker.hovered];
+    if (entry && options.some((option) => option.key === entry.key)) {
+      setPreviewing(true);
+      onPreview(entry.key);
+    }
+  }, [picker.open, picker.hovered]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <label style={faceStyle(selected)}>
       <span>Font Family</span>
-      <div className={cx('select-wrapper', { 'new-dot': hasNew })}>
+      <div className={cx('select-wrapper', { 'new-dot': hasNew, 'is-demo-open': picker.open })}>
         <select
+          ref={selectRef}
           className="w-100"
+          data-demo-target="family"
           value={value}
           onChange={(e) => {
             setPreviewing(false);
@@ -103,6 +127,47 @@ export function FontFamily(
           ))}
         </select>
       </div>
+
+      {picker.open && selectRef.current && createPortal(
+        <DemoPickerList select={selectRef.current} entries={entries} hovered={picker.hovered} />,
+        sheetOf(selectRef.current),
+      )}
     </label>
+  );
+}
+
+// The carousel page the select sits on, which is positioned; the sidebar has a <section> of its own
+const sheetOf = (el: Element) => el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? document.body;
+
+// Drawn into the sheet beside the auto-play's cursor, so the cursor stays on top of it; the
+// sidebar's own overflow would clip a list left inside it. Opens upward when the sheet
+// below the select has no room for it
+function DemoPickerList(
+  { select, entries, hovered }:
+  { select: HTMLSelectElement, entries: { key: string, label: string, style: CSSProperties }[], hovered: number | null }
+) {
+  const rect = select.getBoundingClientRect();
+  const sheet = sheetOf(select).getBoundingClientRect();
+  const fontSize = parseFloat(getComputedStyle(select).fontSize);
+  const needed = entries.length * fontSize * 2;
+  const downward = sheet.bottom - rect.bottom >= needed;
+
+  return (
+    <ul
+      className={cx('font-picker-demo-picker', { 'is-upward': !downward })}
+      aria-hidden="true"
+      style={{
+        left: rect.left - sheet.left,
+        width: rect.width,
+        fontSize,
+        ...(downward ? { top: rect.bottom - sheet.top } : { bottom: sheet.bottom - rect.top }),
+      }}
+    >
+      {entries.map((entry, index) => (
+        <li key={entry.key} className={cx({ 'is-hovered': index === hovered })} style={entry.style}>
+          {entry.label}
+        </li>
+      ))}
+    </ul>
   );
 }
