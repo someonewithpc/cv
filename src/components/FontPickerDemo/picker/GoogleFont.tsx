@@ -13,6 +13,7 @@ export function GoogleFont({ visible, onLoaded }: { visible: boolean, onLoaded: 
       <input
         id={id}
         className="w-100"
+        data-demo-target="google"
         type="text"
         value={raw}
         spellCheck={false}
