@@ -381,6 +381,17 @@ section {
     display: none;
   }
 
+  /* No note at all: the note's column is the artwork's to use. */
+  &:not(:has(.note-card > *)) {
+    .content {
+      grid-column: 1 / -1;
+    }
+
+    .aside {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .drawing-note:modal .note-card { transition: none; }
   }
