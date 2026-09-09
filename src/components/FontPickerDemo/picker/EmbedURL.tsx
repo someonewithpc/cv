@@ -5,14 +5,14 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { loadPageFonts, type LoadedFaces } from './sources';
 import { SubForm, useSubFormInput } from './SubForm';
 
-export function EmbedURL({ onLoaded }: { onLoaded: (faces: LoadedFaces) => void }) {
+export function EmbedURL({ visible, onLoaded }: { visible: boolean, onLoaded: (faces: LoadedFaces) => void }) {
   const id = useId();
-  const { raw, setRaw, status } = useSubFormInput('embed', (url, signal) => loadPageFonts(url, signal).then(onLoaded));
+  const { raw, setRaw, notEmpty, status } = useSubFormInput('embed', (url, signal) => loadPageFonts(url, signal).then(onLoaded));
 
   return (
-    <SubForm status={status}>
-      <div title="The URL of a page whose fonts you want to use">
-        <label htmlFor={id}>Page URL</label>
+    <SubForm visible={visible} notEmpty={notEmpty} status={status}>
+      <div title="The URL of the page where the Interactive Map will be embedded, used to extract its fonts">
+        <label htmlFor={id}>Embed URL</label>
         <input
           id={id}
           className="w-100"
@@ -24,12 +24,13 @@ export function EmbedURL({ onLoaded }: { onLoaded: (faces: LoadedFaces) => void 
         />
       </div>
       <p>
-        Enter a URL from which we will extract fonts
+        Enter a URL from which we will extract fonts. Typically, the URL where the map will be shown
       </p>
       <p role="alert">
         <FontAwesomeIcon icon={faTriangleExclamation} />&nbsp;
-        Note: the extracted font file must stay available at the same location, so if that
-        page changes its fonts you may need to update it here too
+        Note: selecting a font this way requires that that font file extracted from the page remain
+        available in the same location, meaning that if the font used on that page changes, you may
+        need to update it here too
       </p>
     </SubForm>
   );

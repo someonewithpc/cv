@@ -15,6 +15,10 @@ export type FaceOption = {
 // It is not a FontFace, so the list gets a synthetic first entry meaning "no override"
 export const PAGE_DEFAULT: FaceOption = { key: 'page-default', label: 'Page default', family: null, weight: null, style: 'normal' };
 
+// The product's two last entries: choosing one opens the matching subform instead of a face
+export const ADD_GOOGLE_FONT = '-- Add new Google font --';
+export const EXTRACT_FROM_URL = '-- Extract fonts from URL --';
+
 // A range ("100 1000") is a variable face, which the weight slider can drive
 function faceWeight(weight: string): number | null {
   if (weight === 'normal') return 400;
@@ -49,6 +53,7 @@ export function FontFamily(
     options: FaceOption[],
     value: string,
     hasNew: boolean,
+    /** Receives an option key, or one of the two subform sentinels */
     onChange: (key: string) => void,
     onPreview: (key: string) => void,
     onPreviewEnd: () => void,
@@ -92,6 +97,11 @@ export function FontFamily(
               }}
             >
               {option.label}
+            </option>
+          ))}
+          {[ADD_GOOGLE_FONT, EXTRACT_FROM_URL].map((label) => (
+            <option key={label} value={label} style={{ ...faceStyle(selected), fontStyle: 'italic' }}>
+              {label}
             </option>
           ))}
         </select>
