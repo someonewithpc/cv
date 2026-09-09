@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { commitOverride, endPreview, previewOverride, registerExternalFaces, resetOverride, useFontOverride } from './fontOverride';
+import { DEFAULT_FAMILY, commitOverride, endPreview, previewOverride, registerExternalFaces, resetOverride, useFontOverride } from './fontOverride';
 import { useFontFaces } from './useFontFaces';
 import type { LoadedFaces } from './sources';
 
@@ -8,7 +8,7 @@ import { Pinned } from './Pinned';
 import { Specimen } from './Specimen';
 import { FontSize } from './FontSize';
 import { FontWeight } from './FontWeight';
-import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL, FontFamily, PAGE_DEFAULT, toOption, type FaceOption } from './FontFamily';
+import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL, FontFamily, toOption, type FaceOption } from './FontFamily';
 import { GoogleFont } from './GoogleFont';
 import { EmbedURL } from './EmbedURL';
 
@@ -20,10 +20,12 @@ export default function EditStyleApp() {
   const { fontFaces } = useFontFaces();
   const { committed, externalFaces } = useFontOverride();
 
-  const options = useMemo(() => [PAGE_DEFAULT, ...fontFaces.map(toOption)], [fontFaces]);
+  const options = useMemo(() => fontFaces.map(toOption), [fontFaces]);
 
-  const [selectedKey, setSelectedKey] = useState(PAGE_DEFAULT.key);
-  const selected = options.find((option) => option.key === selectedKey) ?? PAGE_DEFAULT;
+  // Opens on the face the demo already wears, as the product's does on the map's
+  const defaultKey = (options.find((o) => o.family === DEFAULT_FAMILY && o.weight === 400) ?? options[0])?.key ?? '';
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const selected = options.find((option) => option.key === (selectedKey ?? defaultKey)) ?? options[0];
 
   // The two subforms are behind the dropdown's last entries, as in the product
   const [visibleSubForm, setVisibleSubForm] = useState<SubFormName>(null);
@@ -52,7 +54,7 @@ export default function EditStyleApp() {
     commitOverride(overrideFor(option, committed.weight));
   };
 
-  // A subform's first loaded family goes on the page as soon as document.fonts lists it
+  // A subform's first loaded family goes on the demo as soon as document.fonts lists it
   const [pendingFamily, setPendingFamily] = useState<string | null>(null);
   useEffect(() => {
     if (pendingFamily === null) return;
@@ -71,7 +73,7 @@ export default function EditStyleApp() {
   };
 
   // The slider only means something when the family has one face to weigh
-  const weightIsFree = options.filter((o) => o.family === selected.family).length === 1;
+  const weightIsFree = selected !== undefined && options.filter((o) => o.family === selected.family).length === 1;
 
   return (
     <div className="edit-style">
@@ -91,7 +93,7 @@ export default function EditStyleApp() {
                     weight={committed.weight ?? 400}
                     setWeight={(weight) => {
                       // Landing on a weight the family ships as its own face selects that face
-                      const face = options.find((o) => o.family === selected.family && o.weight === weight);
+                      const face = selected && options.find((o) => o.family === selected.family && o.weight === weight);
                       if (face) setSelectedKey(face.key);
                       commitOverride({ weight });
                     }}
@@ -99,7 +101,7 @@ export default function EditStyleApp() {
 
                   <FontFamily
                     options={options}
-                    value={selectedKey}
+                    value={selected?.key ?? ''}
                     hasNew={externalCount > seenExternalCount}
                     onChange={select}
                     onPreview={(key) => {
@@ -119,7 +121,7 @@ export default function EditStyleApp() {
                   value="Reset"
                   onClick={() => {
                     resetOverride();
-                    setSelectedKey(PAGE_DEFAULT.key);
+                    setSelectedKey(null);
                     setVisibleSubForm(null);
                   }}
                 />

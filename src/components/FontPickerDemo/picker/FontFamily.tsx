@@ -6,14 +6,10 @@ import type { FontFaceDescriptor } from './useFontFaces';
 export type FaceOption = {
   key: string;
   label: string;
-  family: string | null;
+  family: string;
   weight: number | null;
   style: string;
 };
-
-// The page's prose is plain sans-serif; Poppins only lives inside the product mockups.
-// It is not a FontFace, so the list gets a synthetic first entry meaning "no override"
-export const PAGE_DEFAULT: FaceOption = { key: 'page-default', label: 'Page default', family: null, weight: null, style: 'normal' };
 
 // The product's two last entries: choosing one opens the matching subform instead of a face
 export const ADD_GOOGLE_FONT = '-- Add new Google font --';
@@ -39,9 +35,10 @@ export function toOption(face: FontFaceDescriptor): FaceOption {
   };
 }
 
-function faceStyle(option: FaceOption) {
+function faceStyle(option: FaceOption | undefined) {
+  if (!option) return {};
   return {
-    fontFamily: option.family ?? 'sans-serif',
+    fontFamily: option.family,
     fontWeight: option.weight ?? 400,
     fontStyle: option.style,
   };
@@ -60,7 +57,7 @@ export function FontFamily(
   }
 ) {
   const [previewing, setPreviewing] = useState(false);
-  const selected = options.find((option) => option.key === value) ?? PAGE_DEFAULT;
+  const selected = options.find((option) => option.key === value) ?? options[0];
 
   const stopPreviewing = () => {
     if (!previewing) return;
@@ -89,8 +86,8 @@ export function FontFamily(
               key={option.key}
               value={option.key}
               style={faceStyle(option)}
-              // Hovering previews the face on the whole page; leaving without choosing
-              // puts the committed one back
+              // Hovering previews the face on the demo; leaving without choosing puts the
+              // committed one back
               onMouseEnter={() => {
                 setPreviewing(true);
                 onPreview(option.key);
