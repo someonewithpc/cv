@@ -3,6 +3,8 @@
 // The product's settings column, with a specimen set on the sheet beside it
 .edit-style {
   width: 100%;
+  // The product's face; the chosen one replaces it here and reaches both columns
+  font-family: var(--font-poppins, 'Poppins'), sans-serif;
   display: grid;
   grid-template-columns: minmax(0, 32em) minmax(0, 1fr);
   gap: 3em;
@@ -21,8 +23,6 @@
   gap: 0.5em;
 
   color: var(--ink);
-  // The product's face, like the sidebar; the override reaches both alike
-  font-family: var(--font-poppins), sans-serif;
   text-align: left;
 
   p {
@@ -120,7 +120,6 @@
   border-radius: 0.5em;
   color: var(--sidebar-ink);
 
-  font-family: 'Poppins', sans-serif;
   font-size: 1em;
   text-align: left;
 
