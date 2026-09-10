@@ -35,14 +35,16 @@ function styleElement() {
   return el;
 }
 
-// The demo alone wears the chosen face, sidebar and specimen both, the way the product's map
-// does. Monospace and code keep their alignment, and the family dropdown's options keep the
-// faces they preview
+// The demo alone wears the settings, the way the product's map does: size and weight reach
+// the sidebar as well, but the face goes on the specimen only, since the product's sidebar
+// keeps its own and a face change under the open dropdown would move the list under the
+// pointer. Monospace and code keep their alignment
 const ROOT = '[data-font-picker-island] .edit-style';
 // The size goes on the two columns, not the grid: its tracks are in em too, and scaling them
 // with the type would squeeze the specimen for the sidebar's sake
 const SIZED = `${ROOT} > *`;
-const TARGET = `${ROOT}, ${ROOT} :not(.monospace, .monospace *, code, pre, kbd, samp, option)`;
+const FACED = `${ROOT} .specimen`;
+const TARGET = `${FACED}, ${FACED} :not(.monospace, .monospace *, code, pre, kbd, samp)`;
 
 function render({ family, style, size, weight }: FontOverride, externalFaces: Record<string, string>) {
   const rules: string[] = [];
