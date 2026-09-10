@@ -4,6 +4,7 @@ import cx from 'classnames';
 
 import type { FontFaceDescriptor } from './useFontFaces';
 import { useDemoPicker } from './demoPicker';
+import { Pinned } from './Pinned';
 
 export type FaceOption = {
   key: string;
@@ -60,6 +61,7 @@ export function FontFamily(
 ) {
   const selectRef = useRef<HTMLSelectElement>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [focused, setFocused] = useState(false);
   const selected = options.find((option) => option.key === value) ?? options[0];
 
   const stopPreviewing = () => {
@@ -88,51 +90,58 @@ export function FontFamily(
   }, [picker.open, picker.hovered]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <label style={faceStyle(selected)}>
-      <span>Font Family</span>
-      <div className={cx('select-wrapper', { 'new-dot': hasNew, 'is-demo-open': picker.open })}>
-        <select
-          ref={selectRef}
-          className="w-100"
-          data-demo-target="family"
-          value={value}
-          onChange={(e) => {
-            setPreviewing(false);
-            onChange(e.currentTarget.value);
-          }}
-          onBlur={stopPreviewing}
-          onToggle={(e) => {
-            if ((e.nativeEvent as ToggleEvent).newState === 'closed') stopPreviewing();
-          }}
-        >
-          {options.map((option) => (
-            <option
-              key={option.key}
-              value={option.key}
-              style={faceStyle(option)}
-              // Hovering previews the face on the demo; leaving without choosing puts the
-              // committed one back
-              onMouseEnter={() => {
-                setPreviewing(true);
-                onPreview(option.key);
-              }}
-            >
-              {option.label}
-            </option>
-          ))}
-          {[ADD_GOOGLE_FONT, EXTRACT_FROM_URL].map((label) => (
-            <option key={label} value={label} style={{ ...faceStyle(selected), fontStyle: 'italic' }}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </div>
+    <Pinned interacting={focused || picker.open} onLeave={() => setFocused(false)}>
+      <label style={faceStyle(selected)}>
+        <span>Font Family</span>
+        <div className={cx('select-wrapper', { 'new-dot': hasNew, 'is-demo-open': picker.open })}>
+          <select
+            ref={selectRef}
+            className="w-100"
+            data-demo-target="family"
+            value={value}
+            onChange={(e) => {
+              setPreviewing(false);
+              setFocused(false);
+              onChange(e.currentTarget.value);
+            }}
+            onFocus={() => setFocused(true)}
+            onBlur={() => {
+              setFocused(false);
+              stopPreviewing();
+            }}
+            onToggle={(e) => {
+              if ((e.nativeEvent as ToggleEvent).newState === 'closed') stopPreviewing();
+            }}
+          >
+            {options.map((option) => (
+              <option
+                key={option.key}
+                value={option.key}
+                style={faceStyle(option)}
+                // Hovering previews the face on the demo; leaving without choosing puts the
+                // committed one back
+                onMouseEnter={() => {
+                  setPreviewing(true);
+                  onPreview(option.key);
+                }}
+              >
+                {option.label}
+              </option>
+            ))}
+            {[ADD_GOOGLE_FONT, EXTRACT_FROM_URL].map((label) => (
+              <option key={label} value={label} style={{ ...faceStyle(selected), fontStyle: 'italic' }}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {picker.open && selectRef.current && createPortal(
-        <DemoPickerList select={selectRef.current} entries={entries} hovered={picker.hovered} />,
-        sheetOf(selectRef.current),
-      )}
-    </label>
+        {picker.open && selectRef.current && createPortal(
+          <DemoPickerList select={selectRef.current} entries={entries} hovered={picker.hovered} />,
+          sheetOf(selectRef.current),
+        )}
+      </label>
+    </Pinned>
   );
 }
 
@@ -164,7 +173,11 @@ function DemoPickerList(
       }}
     >
       {entries.map((entry, index) => (
-        <li key={entry.key} className={cx({ 'is-hovered': index === hovered })} style={entry.style}>
+        <li
+          key={entry.key}
+          className={cx({ 'is-hovered': index === hovered })}
+          style={entry.style}
+        >
           {entry.label}
         </li>
       ))}

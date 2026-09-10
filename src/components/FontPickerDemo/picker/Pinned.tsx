@@ -1,55 +1,62 @@
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import cx from 'classnames';
 
 type Pin = { top: number, left: number, width: number, height: number, fontSize: string };
 
 /**
- * Holds its content at the same screen position while the pointer or focus is inside it.
- * The tools rewrite the root font size, which reflows the whole page, this sheet
- * included; without this the slider would run away from the pointer dragging it.
+ * The product's FixedElement: a control that leaves the flow and holds its screen position
+ * while the pointer or focus is on it, so the reflow its own change causes cannot carry it
+ * away from the hand on it. While it is being worked (`interacting`) it also rises above its
+ * neighbours with a halo of the sidebar's colour, the way the product's does.
  *
- * The hold goes through the top layer rather than plain `position: fixed`: the drawing
- * sheets are rotated, so a fixed box inside one is laid out against the sheet, not the
- * viewport. The font size is frozen in px for the same reason the position is.
+ * The drawing sheet is rotated, so `position: fixed` inside it resolves against the sheet
+ * rather than the viewport; a probe finds that origin. The font size is frozen in px for the
+ * same reason the position is.
  */
-export function Pinned({ children, className }: { children: ReactNode, className?: string }) {
+export function Pinned(
+  { children, interacting, onLeave }:
+  { children: ReactNode, interacting: boolean, onLeave: () => void }
+) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const boxRef = useRef<HTMLDivElement | null>(null);
   const [pin, setPin] = useState<Pin | null>(null);
-
-  // Before paint: a popover is display:none until shown, and React has only just set
-  // the attribute
-  useLayoutEffect(() => {
-    if (pin) boxRef.current?.showPopover();
-  }, [pin]);
 
   // A page turned from under the pointer never sends a pointer-leave, and the pinned box would
   // stay floating over whatever came next. The paper stack turns a page by renumbering its
   // wrapper's --page-index (the front is 1) without moving it, so that attribute is what to
-  // watch. Nothing else may let go: a size drag reflows the whole page and can carry the host
-  // clean out of the viewport, and the pin is there precisely to hold through that
+  // watch. Nothing else may let go: a size drag reflows the whole sheet and can carry the host
+  // clean out of view, and the pin is there precisely to hold through that
   useEffect(() => {
     if (!pin) return;
     const page = hostRef.current?.closest<HTMLElement>('[data-paper-stack-root] > *');
     if (!page) return;
     const observer = new MutationObserver(() => {
-      if (page.style.getPropertyValue('--page-index').trim() !== '1') setPin(null);
+      if (page.style.getPropertyValue('--page-index').trim() !== '1') release();
     });
     observer.observe(page, { attributes: true, attributeFilter: ['style'] });
     return () => observer.disconnect();
-  }, [pin]);
+  }, [pin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const grab = () => {
-    if (pin || !hostRef.current) return;
-    const { top, left, width, height } = hostRef.current.getBoundingClientRect();
-    setPin({ top, left, width, height, fontSize: getComputedStyle(hostRef.current).fontSize });
+    const host = hostRef.current;
+    if (pin || !host) return;
+    const { top, left, width, height } = host.getBoundingClientRect();
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position: fixed; top: 0; left: 0; width: 0; height: 0; visibility: hidden';
+    host.append(probe);
+    const origin = probe.getBoundingClientRect();
+    probe.remove();
+    setPin({ top: top - origin.top, left: left - origin.left, width, height, fontSize: getComputedStyle(host).fontSize });
   };
 
-  const release = () => setPin(null);
+  const release = () => {
+    setPin(null);
+    onLeave();
+  };
 
   return (
     <div
       ref={hostRef}
-      className={className}
+      className={cx('pinned', { 'is-interacting': interacting })}
       style={pin ? { height: pin.height } : undefined}
       onPointerEnter={grab}
       onPointerLeave={release}
@@ -59,20 +66,8 @@ export function Pinned({ children, className }: { children: ReactNode, className
       }}
     >
       <div
-        ref={boxRef}
-        popover={pin ? 'manual' : undefined}
-        style={pin ? {
-          // The top layer brings its own margin, border, padding and colours
-          position: 'fixed',
-          inset: 'auto',
-          margin: 0,
-          border: 0,
-          padding: 0,
-          overflow: 'visible',
-          color: 'inherit',
-          background: 'none',
-          ...pin,
-        } : undefined}
+        className={cx('pinned-box', { 'is-held': pin !== null })}
+        style={pin ? { position: 'fixed', top: pin.top, left: pin.left, width: pin.width, fontSize: pin.fontSize } : undefined}
       >
         {children}
       </div>
