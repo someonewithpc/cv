@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { DEFAULT_FAMILY, commitOverride, endPreview, previewOverride, registerExternalFaces, resetOverride, useFontOverride } from './fontOverride';
 import { useFontFaces } from './useFontFaces';
@@ -55,23 +55,8 @@ export default function EditStyleApp() {
     commitOverride(overrideFor(option, committed.weight));
   };
 
-  // A subform's first loaded family goes on the demo as soon as document.fonts lists it
-  const [pendingFamily, setPendingFamily] = useState<string | null>(null);
-  useEffect(() => {
-    if (pendingFamily === null) return;
-    const option = options.find((o) => o.family === pendingFamily);
-    if (!option) return;
-    setPendingFamily(null);
-    setSelectedKey(option.key);
-    commitOverride(overrideFor(option, committed.weight));
-  }, [options, pendingFamily]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const adopt = (faces: LoadedFaces) => {
-    registerExternalFaces(faces);
-    const [first] = Object.keys(faces);
-    if (first) setPendingFamily(first);
-    return faces;
-  };
+  // A subform's faces only join the dropdown, under its dot; choosing one is the user's
+  const adopt = (faces: LoadedFaces) => registerExternalFaces(faces);
 
   // The slider only means something when the family has one face to weigh
   const weightIsFree = selected !== undefined && options.filter((o) => o.family === selected.family).length === 1;
