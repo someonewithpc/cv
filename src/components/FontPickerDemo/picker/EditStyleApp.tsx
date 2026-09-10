@@ -4,7 +4,6 @@ import { DEFAULT_FAMILY, commitOverride, endPreview, previewOverride, registerEx
 import { useFontFaces } from './useFontFaces';
 import type { LoadedFaces } from './sources';
 
-import { Pinned } from './Pinned';
 import { Specimen } from './Specimen';
 import { Autoplay } from './Autoplay';
 import { FontSize } from './FontSize';
@@ -79,60 +78,58 @@ export default function EditStyleApp() {
 
   return (
     <div className="edit-style" ref={rootRef}>
-      <Pinned className="edit-style-host">
-        <aside className="sidebar">
-          <nav>
-            <section className="edit-settings">
-              <ul>
-                <li className="style font-settings">
-                  <FontSize
-                    size={committed.size}
-                    setSize={(size) => commitOverride({ size })}
-                  />
+      <aside className="sidebar">
+        <nav>
+          <section className="edit-settings">
+            <ul>
+              <li className="style font-settings">
+                <FontSize
+                  size={committed.size}
+                  setSize={(size) => commitOverride({ size })}
+                />
 
-                  <FontWeight
-                    enabled={weightIsFree}
-                    weight={committed.weight ?? 400}
-                    setWeight={(weight) => {
-                      // Landing on a weight the family ships as its own face selects that face
-                      const face = selected && options.find((o) => o.family === selected.family && o.weight === weight);
-                      if (face) setSelectedKey(face.key);
-                      commitOverride({ weight });
-                    }}
-                  />
-
-                  <FontFamily
-                    options={options}
-                    value={selected?.key ?? ''}
-                    hasNew={externalCount > seenExternalCount}
-                    onChange={select}
-                    onPreview={(key) => {
-                      const option = options.find((o) => o.key === key);
-                      if (option) previewOverride(overrideFor(option, committed.weight));
-                    }}
-                    onPreviewEnd={endPreview}
-                  />
-
-                  <GoogleFont visible={visibleSubForm === 'google'} onLoaded={adopt} />
-                  <EmbedURL visible={visibleSubForm === 'embed'} onLoaded={adopt} />
-                </li>
-              </ul>
-              <footer>
-                <input
-                  type="button"
-                  value="Reset"
-                  data-demo-target="reset"
-                  onClick={() => {
-                    resetOverride();
-                    setSelectedKey(null);
-                    setVisibleSubForm(null);
+                <FontWeight
+                  enabled={weightIsFree}
+                  weight={committed.weight ?? 400}
+                  setWeight={(weight) => {
+                    // Landing on a weight the family ships as its own face selects that face
+                    const face = selected && options.find((o) => o.family === selected.family && o.weight === weight);
+                    if (face) setSelectedKey(face.key);
+                    commitOverride({ weight });
                   }}
                 />
-              </footer>
-            </section>
-          </nav>
-        </aside>
-      </Pinned>
+
+                <FontFamily
+                  options={options}
+                  value={selected?.key ?? ''}
+                  hasNew={externalCount > seenExternalCount}
+                  onChange={select}
+                  onPreview={(key) => {
+                    const option = options.find((o) => o.key === key);
+                    if (option) previewOverride(overrideFor(option, committed.weight));
+                  }}
+                  onPreviewEnd={endPreview}
+                />
+
+                <GoogleFont visible={visibleSubForm === 'google'} onLoaded={adopt} />
+                <EmbedURL visible={visibleSubForm === 'embed'} onLoaded={adopt} />
+              </li>
+            </ul>
+            <footer>
+              <input
+                type="button"
+                value="Reset"
+                data-demo-target="reset"
+                onClick={() => {
+                  resetOverride();
+                  setSelectedKey(null);
+                  setVisibleSubForm(null);
+                }}
+              />
+            </footer>
+          </section>
+        </nav>
+      </aside>
 
       <Specimen />
 
