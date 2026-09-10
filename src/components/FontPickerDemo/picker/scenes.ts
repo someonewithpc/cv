@@ -3,8 +3,11 @@ import { demoPicker } from './demoPicker';
 import { type Run, type Scene, setNativeValue } from './playthrough';
 
 const GOOGLE_FONT = 'Lobster';
-// A page without web fonts first, for the red ring, then one whose faces load
-const EMBED_URLS = ['news.ycombinator.com', 'astro.build'];
+// A well-known page without web fonts first, for the red ring, then one whose face could not
+// look less like Poppins
+const EMBED_URLS = ['news.ycombinator.com', 'rust-lang.org'];
+// The weight slider only tells on a variable face, and this page has one
+const VARIABLE_FONT_URL = 'astro.build';
 
 const target = <T extends HTMLElement>(root: HTMLElement, name: string) => {
   const el = root.querySelector<T>(`[data-demo-target="${name}"]`);
@@ -55,26 +58,32 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
   await run.wait(600);
 }
 
+async function extractFrom(run: Run, root: HTMLElement, url: string) {
+  const input = target<HTMLInputElement>(root, 'embed');
+  await run.type(input, url);
+  await run.until(verdict(input), 12000);
+  await run.wait(2200);
+}
+
 export function scenesFor(root: HTMLElement): Scene[] {
   return [
-    // Faces first: Poppins ships four, which leaves the weight slider disabled until a
-    // single-face family is on
+    // A page's own fonts first: that is the product's point, and the change is the largest
+    async (run) => {
+      await pickFromList(run, root, EXTRACT_FROM_URL);
+      for (const url of EMBED_URLS) await extractFrom(run, root, url);
+    },
+
+    async (run) => {
+      await run.slide(target<HTMLInputElement>(root, 'size'), [1.25, 1], 1100);
+      await run.wait(600);
+    },
+
     async (run) => {
       const select = target<HTMLSelectElement>(root, 'family');
       const face = optionFor(select, 'Permanent Marker') ?? select.options[0].value;
       const hover = ['Poppins 700', 'Special Elite'].map((family) => optionFor(select, family)).filter((v): v is string => v !== undefined);
       await pickFromList(run, root, face, hover);
       await run.wait(900);
-    },
-
-    async (run) => {
-      await run.slide(target<HTMLInputElement>(root, 'weight'), [700, 300, 400]);
-      await run.wait(600);
-    },
-
-    async (run) => {
-      await run.slide(target<HTMLInputElement>(root, 'size'), [1.25, 1], 1100);
-      await run.wait(600);
     },
 
     async (run) => {
@@ -85,14 +94,13 @@ export function scenesFor(root: HTMLElement): Scene[] {
       await run.wait(2200);
     },
 
+    // The weight slider last, once a variable face is on: a single-weight face like
+    // Permanent Marker would not move for it
     async (run) => {
       await pickFromList(run, root, EXTRACT_FROM_URL);
-      const input = target<HTMLInputElement>(root, 'embed');
-      for (const url of EMBED_URLS) {
-        await run.type(input, url);
-        await run.until(verdict(input), 12000);
-        await run.wait(2200);
-      }
+      await extractFrom(run, root, VARIABLE_FONT_URL);
+      await run.slide(target<HTMLInputElement>(root, 'weight'), [700, 300, 400]);
+      await run.wait(600);
     },
 
     async (run) => {
