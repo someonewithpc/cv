@@ -79,9 +79,12 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       if (why) toast(why);
     };
 
-    const yieldToUser = () => {
+    const yieldToUser = (handoff: Element | null) => {
       window.clearTimeout(resumeTimer);
-      hold('Demo paused');
+      if (controller.running) {
+        controller.pause(handoff);
+        toast('Demo paused');
+      }
       resumeTimer = window.setTimeout(play, RESUME_DELAY_MS);
     };
 
@@ -100,19 +103,20 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     // Only a real pointer, and only over the sheet: the scripted values never come through
     // pointer events, and a pointer elsewhere on the page is reading, not reaching in
     const onPointer = (e: PointerEvent) => {
-      if (e.isTrusted && inView) yieldToUser();
+      if (e.isTrusted && inView) yieldToUser(e.target instanceof Element ? e.target : null);
     };
     page.addEventListener('pointermove', onPointer, { passive: true });
     page.addEventListener('pointerdown', onPointer, { passive: true });
 
     // Focus in the form is the user picking: nothing resumes until it leaves
-    const onFocusIn = () => {
+    const onFocusIn = (e: FocusEvent) => {
+      if (!e.isTrusted) return;
       window.clearTimeout(resumeTimer);
       userControl = true;
       hold('Demo paused');
     };
     const onFocusOut = (e: FocusEvent) => {
-      if (e.relatedTarget instanceof Node && el.contains(e.relatedTarget)) return;
+      if (!e.isTrusted || (e.relatedTarget instanceof Node && el.contains(e.relatedTarget))) return;
       userControl = false;
       resumeTimer = window.setTimeout(play, RESUME_DELAY_MS);
     };
