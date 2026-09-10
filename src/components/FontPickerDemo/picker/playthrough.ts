@@ -2,7 +2,7 @@
 // and resumed between them. Everything a scene does goes through a Run bound to one token,
 // so a pause mid-scene unwinds it at the next await instead of leaving a half-typed field.
 
-export const CURSOR_TRAVEL_MS = 560; // Must match the cursor's CSS transition
+export const CURSOR_TRAVEL_MS = 560;
 const CLICK_MS = 180;
 const TYPE_CHAR_MS = 130;
 
@@ -15,6 +15,7 @@ export const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(re
 export const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);
+const easeOutQuint = (t: number) => 1 - (1 - t) ** 5;
 
 // React installs its own value descriptor on inputs, so the prototype's setter is what makes
 // the change visible to its onChange
@@ -39,8 +40,6 @@ const thumbPoint = (input: HTMLInputElement, value: number) => {
 };
 
 export class Run {
-  private last: { x: number; y: number } | null = null;
-
   constructor(private readonly controller: Playthrough, private readonly token: number) {}
 
   get cancelled() {
@@ -51,22 +50,44 @@ export class Run {
     if (this.cancelled) throw new Cancelled();
   }
 
+  // In short steps, re-reading what is under the cursor between them: the page changes under
+  // a still cursor too, as when the drawn list closes
   async wait(ms: number) {
-    await wait(ms);
-    this.check();
+    const end = performance.now() + ms;
+    for (;;) {
+      await wait(Math.max(0, Math.min(100, end - performance.now())));
+      this.check();
+      this.controller.refresh();
+      if (performance.now() >= end) return;
+    }
+  }
+
+  /** Take the cursor off whatever it is over before that goes away, so leaves still fire */
+  leave() {
+    this.controller.hover(null);
   }
 
   private cursor(pos: { x: number; y: number }, flags: Partial<CursorState> = {}) {
-    this.last = pos;
-    this.controller.cursor({ x: pos.x, y: pos.y, clicking: false, dragging: false, ...flags });
+    this.controller.place({ x: pos.x, y: pos.y, clicking: false, dragging: false, ...flags });
   }
 
   async moveTo(el: Element) {
     this.check();
     const to = center(el);
-    const moved = !this.last || Math.hypot(to.x - this.last.x, to.y - this.last.y) > 8;
-    this.cursor(to);
-    if (moved) await this.wait(CURSOR_TRAVEL_MS);
+    const from = this.controller.at;
+    if (!from || Math.hypot(to.x - from.x, to.y - from.y) <= 8) {
+      this.cursor(to);
+      return;
+    }
+    const start = performance.now();
+    for (;;) {
+      await nextFrame();
+      this.check();
+      const t = Math.min((performance.now() - start) / CURSOR_TRAVEL_MS, 1);
+      const eased = easeOutQuint(t);
+      this.cursor({ x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased });
+      if (t >= 1) return;
+    }
   }
 
   /** Move to an element and pulse the cursor there, without any DOM event */
@@ -114,8 +135,9 @@ export class Run {
     if (input.disabled) return;
     const step = Number(input.step) || 1;
     let value = Number(input.value);
+    await this.moveTo(input);
     this.cursor(thumbPoint(input, value));
-    await this.wait(CURSOR_TRAVEL_MS);
+    await this.wait(CLICK_MS);
     this.cursor(thumbPoint(input, value), { clicking: true });
     await this.wait(CLICK_MS);
 
@@ -151,14 +173,23 @@ export class Run {
 
 export type Scene = (run: Run) => Promise<void>;
 
+// The drawn cursor tells the page where it is the way a pointer would, so hover styles,
+// pins and the drawn list answer to it. The events are untrusted, which is how the
+// auto-play's own listeners tell them from a person's
+const dispatchPointer = (type: string, target: Element | null, relatedTarget: Element | null) => {
+  target?.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: 'mouse', relatedTarget }));
+};
+
 export class Playthrough {
   token = 0;
   running = false;
+  at: { x: number; y: number } | null = null;
+  private over: Element | null = null;
   private sceneIndex = 0;
 
   constructor(
     private readonly scenes: Scene[],
-    readonly cursor: CursorHook,
+    private readonly cursor: CursorHook,
     private readonly onLoop: () => void,
   ) {}
 
@@ -168,11 +199,32 @@ export class Playthrough {
     void this.loop(++this.token);
   }
 
-  pause() {
+  /** Stop, lifting the drawn cursor; `handoff` is what a real pointer is already over */
+  pause(handoff: Element | null = null) {
     if (!this.running) return;
     this.running = false;
     this.token += 1;
+    this.hover(handoff);
+    this.at = null;
     this.cursor(null);
+  }
+
+  place(state: CursorState) {
+    this.at = { x: state.x, y: state.y };
+    this.cursor(state);
+    this.refresh();
+  }
+
+  refresh() {
+    if (this.at) this.hover(document.elementFromPoint(this.at.x, this.at.y));
+  }
+
+  hover(el: Element | null) {
+    if (el === this.over) return;
+    const from = this.over;
+    this.over = el;
+    dispatchPointer('pointerout', from, el);
+    dispatchPointer('pointerover', el, from);
   }
 
   private async loop(token: number) {
