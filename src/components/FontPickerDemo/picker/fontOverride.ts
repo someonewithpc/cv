@@ -35,16 +35,14 @@ function styleElement() {
   return el;
 }
 
-// The demo alone wears the settings, the way the product's map does: size and weight reach
-// the sidebar as well, but the face goes on the specimen only, since the product's sidebar
-// keeps its own and a face change under the open dropdown would move the list under the
-// pointer. Monospace and code keep their alignment
+// The demo alone wears the settings, sidebar and specimen both, the way everything under
+// the product's wrapper does. The face is set on the root and inherited, not forced: what
+// declares a face of its own keeps it, which is the dropdown's rows and the family label
+// with the committed face, and the monospace readout
 const ROOT = '[data-font-picker-island] .edit-style';
 // The size goes on the two columns, not the grid: its tracks are in em too, and scaling them
 // with the type would squeeze the specimen for the sidebar's sake
 const SIZED = `${ROOT} > *`;
-const FACED = `${ROOT} .specimen`;
-const TARGET = `${FACED}, ${FACED} :not(.monospace, .monospace *, code, pre, kbd, samp)`;
 
 function render({ family, style, size, weight }: FontOverride, externalFaces: Record<string, string>) {
   const rules: string[] = [];
@@ -53,8 +51,8 @@ function render({ family, style, size, weight }: FontOverride, externalFaces: Re
 
   if (family !== null) {
     if (externalFaces[family]) rules.push(externalFaces[family]);
-    rules.push(`${TARGET} {
-  font-family: '${family}', sans-serif !important;${style !== 'normal' ? `\n  font-style: ${style} !important;` : ''}
+    rules.push(`${ROOT} {
+  font-family: '${family}', sans-serif;${style !== 'normal' ? `\n  font-style: ${style};` : ''}
 }`);
   }
 
