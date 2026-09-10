@@ -31,16 +31,23 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
   demoPicker.open();
   await run.wait(400);
 
+  // A row out of the list's scroll is wheeled into view first, as a hand would
+  const row = (index: number) => {
+    const item = items()[index];
+    item.scrollIntoView({ block: 'nearest' });
+    return item;
+  };
+
   for (const hovered of [...hoverFirst, value]) {
     const index = values.indexOf(hovered);
     if (index < 0) continue;
-    await run.moveTo(items()[index]);
+    await run.moveTo(row(index));
     await run.wait(hovered === value ? 500 : 1300);
   }
 
   const index = values.indexOf(value);
   if (index >= 0) {
-    await run.press(items()[index]);
+    await run.press(row(index));
     setNativeValue(select, value);
   }
   run.leave();

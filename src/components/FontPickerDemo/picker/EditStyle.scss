@@ -442,7 +442,8 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  overflow: hidden;
+  overflow: hidden auto;
+  scrollbar-width: thin;
   font-family: 'Poppins', sans-serif;
   border: 1px solid light-dark(#767676, #555);
   border-top: 0;
