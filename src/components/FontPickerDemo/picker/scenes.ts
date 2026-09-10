@@ -3,9 +3,8 @@ import { demoPicker } from './demoPicker';
 import { type Run, type Scene, setNativeValue } from './playthrough';
 
 const GOOGLE_FONT = 'Lobster';
-// A well-known page without web fonts first, for the red ring, then one whose face could not
-// look less like Poppins
-const EMBED_URLS = ['news.ycombinator.com', 'rust-lang.org'];
+// A well-known page whose face could not look less like Poppins
+const EMBED_URL = 'rust-lang.org';
 // The weight slider only tells on a variable face, and this page has one
 const VARIABLE_FONT_URL = 'astro.build';
 
@@ -64,8 +63,14 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
   await run.wait(600);
 }
 
+// A subform still showing, from an earlier entry, is typed into as it is
+async function reveal(run: Run, root: HTMLElement, entry: string, input: HTMLInputElement) {
+  if (input.closest('fieldset')?.classList.contains('hidden')) await pickFromList(run, root, entry);
+}
+
 async function extractFrom(run: Run, root: HTMLElement, url: string) {
   const input = target<HTMLInputElement>(root, 'embed');
+  await reveal(run, root, EXTRACT_FROM_URL, input);
   await run.type(input, url);
   // A page can bring a dozen files through the proxy, and the sliders mean nothing until
   // its face is on
@@ -77,8 +82,7 @@ export function scenesFor(root: HTMLElement): Scene[] {
   return [
     // A page's own fonts first: that is the product's point, and the change is the largest
     async (run) => {
-      await pickFromList(run, root, EXTRACT_FROM_URL);
-      for (const url of EMBED_URLS) await extractFrom(run, root, url);
+      await extractFrom(run, root, EMBED_URL);
     },
 
     async (run) => {
@@ -95,8 +99,8 @@ export function scenesFor(root: HTMLElement): Scene[] {
     },
 
     async (run) => {
-      await pickFromList(run, root, ADD_GOOGLE_FONT);
       const input = target<HTMLInputElement>(root, 'google');
+      await reveal(run, root, ADD_GOOGLE_FONT, input);
       await run.type(input, GOOGLE_FONT);
       await settle(run, input, 10000);
       await run.wait(2200);
@@ -105,7 +109,6 @@ export function scenesFor(root: HTMLElement): Scene[] {
     // The weight slider last, once a variable face is on: a single-weight face like
     // Permanent Marker would not move for it
     async (run) => {
-      await pickFromList(run, root, EXTRACT_FROM_URL);
       await extractFrom(run, root, VARIABLE_FONT_URL);
       await run.slide(target<HTMLInputElement>(root, 'weight'), [700, 300, 400]);
       await run.wait(600);
