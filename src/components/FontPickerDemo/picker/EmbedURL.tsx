@@ -7,7 +7,7 @@ import { SubForm, useSubFormInput } from './SubForm';
 
 export function EmbedURL({ visible, onLoaded }: { visible: boolean, onLoaded: (faces: LoadedFaces) => void }) {
   const id = useId();
-  const { raw, setRaw, notEmpty, status } = useSubFormInput('embed', (url, signal) => loadPageFonts(url, signal).then(onLoaded));
+  const { raw, setRaw, notEmpty, status } = useSubFormInput('embed', loadPageFonts, onLoaded);
 
   return (
     <SubForm visible={visible} notEmpty={notEmpty} status={status}>
