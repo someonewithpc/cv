@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { type CursorState, Playthrough } from './playthrough';
-import { scenesFor } from './scenes';
+import { entranceFor, scenesFor } from './scenes';
 import { demoPicker } from './demoPicker';
 
 const RESUME_DELAY_MS = 2500;
@@ -59,6 +59,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
         setCursor({ ...state, x: state.x - rect.left, y: state.y - rect.top, phase: 'demo' });
       },
       () => toast('Demo complete · looping again'),
+      entranceFor(el),
     );
 
     let inView = false;

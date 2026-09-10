@@ -71,9 +71,14 @@ export class Run {
     this.controller.place({ x: pos.x, y: pos.y, clicking: false, dragging: false, ...flags });
   }
 
-  async moveTo(el: Element) {
+  /** Show the cursor somewhere without travelling there */
+  appear(at: { x: number; y: number }) {
     this.check();
-    const to = center(el);
+    this.cursor(at);
+  }
+
+  async glide(to: { x: number; y: number }, ms = CURSOR_TRAVEL_MS) {
+    this.check();
     const from = this.controller.at;
     if (!from || Math.hypot(to.x - from.x, to.y - from.y) <= 8) {
       this.cursor(to);
@@ -83,11 +88,15 @@ export class Run {
     for (;;) {
       await nextFrame();
       this.check();
-      const t = Math.min((performance.now() - start) / CURSOR_TRAVEL_MS, 1);
+      const t = Math.min((performance.now() - start) / ms, 1);
       const eased = easeOutQuint(t);
       this.cursor({ x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased });
       if (t >= 1) return;
     }
+  }
+
+  async moveTo(el: Element) {
+    await this.glide(center(el));
   }
 
   /** Move to an element and pulse the cursor there, without any DOM event */
@@ -191,6 +200,8 @@ export class Playthrough {
     private readonly scenes: Scene[],
     private readonly cursor: CursorHook,
     private readonly onLoop: () => void,
+    /** Brings the cursor in whenever it is not on the page: at the start, and after a hand-over */
+    private readonly entrance?: Scene,
   ) {}
 
   start() {
@@ -230,6 +241,7 @@ export class Playthrough {
   private async loop(token: number) {
     while (this.token === token) {
       try {
+        if (this.at === null && this.entrance) await this.entrance(new Run(this, token));
         await this.scenes[this.sceneIndex](new Run(this, token));
       } catch (e) {
         if (e instanceof Cancelled) return;
