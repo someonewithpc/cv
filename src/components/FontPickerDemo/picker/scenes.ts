@@ -15,10 +15,16 @@ const target = <T extends HTMLElement>(root: HTMLElement, name: string) => {
   return el;
 };
 
-const verdict = (input: HTMLInputElement) => {
-  const fieldset = input.closest('fieldset');
-  return () => fieldset !== null && /\b(success|error)\b/.test(fieldset.className);
-};
+const status = (input: HTMLInputElement) => () => input.closest('fieldset')?.className.match(/\b(pending|success|error)\b/)?.[1];
+
+// The fieldset reports on the debounced query, so right after typing it still shows the
+// verdict on a half-typed value, and a host that does not exist fails fast. Wait for the
+// query the whole value starts, then for what it says
+async function settle(run: Run, input: HTMLInputElement, timeoutMs: number) {
+  const current = status(input);
+  await run.until(() => current() === 'pending', 1500);
+  await run.until(() => current() !== 'pending', timeoutMs);
+}
 
 // The option for a family, by the label's start: "Special Elite" finds "Special Elite 400"
 const optionFor = (select: HTMLSelectElement, family: string) =>
@@ -61,7 +67,9 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
 async function extractFrom(run: Run, root: HTMLElement, url: string) {
   const input = target<HTMLInputElement>(root, 'embed');
   await run.type(input, url);
-  await run.until(verdict(input), 12000);
+  // A page can bring a dozen files through the proxy, and the sliders mean nothing until
+  // its face is on
+  await settle(run, input, 25000);
   await run.wait(2200);
 }
 
@@ -90,7 +98,7 @@ export function scenesFor(root: HTMLElement): Scene[] {
       await pickFromList(run, root, ADD_GOOGLE_FONT);
       const input = target<HTMLInputElement>(root, 'google');
       await run.type(input, GOOGLE_FONT);
-      await run.until(verdict(input), 10000);
+      await settle(run, input, 10000);
       await run.wait(2200);
     },
 
