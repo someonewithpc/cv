@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import cx from 'classnames';
 
 import type { FontFaceDescriptor } from './useFontFaces';
-import { useDemoPicker } from './demoPicker';
+import { demoPicker, useDemoPicker } from './demoPicker';
 import { Pinned } from './Pinned';
 
 export type FaceOption = {
@@ -177,6 +177,7 @@ function DemoPickerList(
           key={entry.key}
           className={cx({ 'is-hovered': index === hovered })}
           style={entry.style}
+          onPointerEnter={() => demoPicker.hover(index)}
         >
           {entry.label}
         </li>

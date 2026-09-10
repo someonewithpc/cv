@@ -35,7 +35,6 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
     const index = values.indexOf(hovered);
     if (index < 0) continue;
     await run.moveTo(items()[index]);
-    demoPicker.hover(index);
     await run.wait(hovered === value ? 500 : 1300);
   }
 
@@ -44,6 +43,7 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
     await run.press(items()[index]);
     setNativeValue(select, value);
   }
+  run.leave();
   demoPicker.close();
   await run.wait(600);
 }
