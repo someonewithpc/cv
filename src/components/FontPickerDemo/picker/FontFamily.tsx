@@ -148,9 +148,19 @@ export function FontFamily(
 // The carousel page the select sits on, which is positioned; the sidebar has a <section> of its own
 const sheetOf = (el: Element) => el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? document.body;
 
+// The sheet's --sheet-margin in px: a custom property comes back as written, in rem
+function sheetMargin(sheet: HTMLElement) {
+  const raw = getComputedStyle(sheet).getPropertyValue('--sheet-margin').trim();
+  const value = parseFloat(raw);
+  if (Number.isNaN(value)) return 16;
+  if (raw.endsWith('rem')) return value * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  if (raw.endsWith('em')) return value * parseFloat(getComputedStyle(sheet).fontSize);
+  return value;
+}
+
 // Drawn into the sheet beside the auto-play's cursor, so the cursor stays on top of it; the
-// sidebar's own overflow would clip a list left inside it. Opens upward when the sheet
-// below the select has no room for it
+// sidebar's own overflow would clip a list left inside it. Like the native picker it opens
+// upward when the room above is the larger, and scrolls inside whatever room that is
 function DemoPickerList(
   { select, entries, hovered }:
   { select: HTMLSelectElement, entries: { key: string, label: string, style: CSSProperties }[], hovered: number | null }
@@ -158,8 +168,11 @@ function DemoPickerList(
   const rect = select.getBoundingClientRect();
   const sheet = sheetOf(select).getBoundingClientRect();
   const fontSize = parseFloat(getComputedStyle(select).fontSize);
-  const needed = entries.length * fontSize * 2;
-  const downward = sheet.bottom - rect.bottom >= needed;
+  // The frame line sits one sheet margin in; the list keeps another inside it
+  const inset = 2 * sheetMargin(sheetOf(select));
+  const below = sheet.bottom - rect.bottom - inset;
+  const above = rect.top - sheet.top - inset;
+  const downward = below >= entries.length * fontSize * 2 || below >= above;
 
   return (
     <ul
@@ -169,6 +182,7 @@ function DemoPickerList(
         left: rect.left - sheet.left,
         width: rect.width,
         fontSize,
+        maxHeight: downward ? below : above,
         ...(downward ? { top: rect.bottom - sheet.top } : { bottom: sheet.bottom - rect.top }),
       }}
     >
