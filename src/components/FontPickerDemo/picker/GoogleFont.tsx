@@ -5,7 +5,7 @@ import { SubForm, useSubFormInput } from './SubForm';
 
 export function GoogleFont({ visible, onLoaded }: { visible: boolean, onLoaded: (faces: LoadedFaces) => void }) {
   const id = useId();
-  const { raw, setRaw, notEmpty, status } = useSubFormInput('google', (family, signal) => loadGoogleFont(family, signal).then(onLoaded));
+  const { raw, setRaw, notEmpty, status } = useSubFormInput('google', loadGoogleFont, onLoaded);
 
   return (
     <SubForm visible={visible} notEmpty={notEmpty} status={status}>
