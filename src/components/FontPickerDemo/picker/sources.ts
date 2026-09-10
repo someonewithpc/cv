@@ -1,4 +1,4 @@
-import loadFontFacesFromStyleElement from './loadFontFacesFromStyleElement';
+import loadFontFacesFromStyleElement, { mergeFaces } from './loadFontFacesFromStyleElement';
 import manualIframe from './manualIframe';
 
 export type LoadedFaces = Record<string, string>;
@@ -22,7 +22,7 @@ export async function loadPageFonts(url: string, signal: AbortSignal): Promise<L
   const maps = await Promise.all(
     [...result.doc.querySelectorAll('style')].map((el) => loadFontFacesFromStyleElement(el, absolute)),
   );
-  const faces = Object.assign({}, ...maps) as LoadedFaces;
+  const faces: LoadedFaces = mergeFaces(maps);
 
   if (Object.keys(faces).length === 0) throw new Error('No web fonts found');
   return faces;
