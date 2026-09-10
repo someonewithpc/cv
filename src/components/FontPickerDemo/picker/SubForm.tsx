@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import cx from 'classnames';
 
 import { useDebounce } from './useDebounce';
@@ -9,15 +9,21 @@ const STATUS_BORDER_DURATION = 1000; // Must match $status-border-duration
 
 registerFontSettingsProperties();
 
-export function useSubFormInput(name: string, load: (value: string, signal: AbortSignal) => Promise<unknown>) {
+// `onLoaded` fires for the query's result, cached ones included, so entering a URL again
+// after a reset puts its faces back on
+export function useSubFormInput<T>(name: string, load: (value: string, signal: AbortSignal) => Promise<T>, onLoaded: (result: T) => void) {
   const [raw, setRaw] = useState('');
   const queryKey = useDebounce([name, raw.trim()], 250);
   const value = queryKey[1];
 
-  const { status } = useFontQuery({
+  const { status, data } = useFontQuery({
     queryKey,
-    queryFn: ({ signal }) => value === '' ? Promise.resolve(null) : load(value, signal),
+    queryFn: ({ signal }) => value === '' ? Promise.resolve(undefined) : load(value, signal),
   });
+
+  useEffect(() => {
+    if (data !== undefined) onLoaded(data);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const notEmpty = raw.trim() !== '';
   return { raw, setRaw, notEmpty, status: notEmpty ? status : 'idle' };

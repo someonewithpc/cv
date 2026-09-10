@@ -2,18 +2,18 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 export type QueryStatus = 'pending' | 'success' | 'error';
 
-export type QueryOptions = {
+export type QueryOptions<T> = {
   queryKey: unknown[];
-  queryFn: (context: { signal: AbortSignal }) => Promise<unknown>;
+  queryFn: (context: { signal: AbortSignal }) => Promise<T>;
   enabled?: boolean;
 };
 
-type Entry = { status: QueryStatus };
+type Entry<T> = { status: QueryStatus, data?: T };
 
-const entries = new Map<string, Entry>();
+const entries = new Map<string, Entry<unknown>>();
 const listeners = new Set<() => void>();
 
-function setEntry(key: string, entry: Entry) {
+function setEntry(key: string, entry: Entry<unknown>) {
   entries.set(key, entry);
   listeners.forEach((listener) => listener());
 }
@@ -26,11 +26,11 @@ function subscribe(callback: () => void) {
 }
 
 /**
- * The little slice of @tanstack/react-query the picker actually uses: a status shared
- * across every component holding the same (already debounced) key, fetched once by
+ * The little slice of @tanstack/react-query the picker actually uses: a status and result
+ * shared across every component holding the same (already debounced) key, fetched once by
  * whichever subscriber has `enabled` set, and aborted when the key changes under it.
  */
-export function useFontQuery({ queryKey, queryFn, enabled = true }: QueryOptions) {
+export function useFontQuery<T>({ queryKey, queryFn, enabled = true }: QueryOptions<T>) {
   const key = JSON.stringify(queryKey);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function useFontQuery({ queryKey, queryFn, enabled = true }: QueryOptions
     setEntry(key, { status: 'pending' });
 
     queryFn({ signal: controller.signal })
-      .then(() => setEntry(key, { status: 'success' }))
+      .then((data) => setEntry(key, { status: 'success', data }))
       .catch(() => {
         if (!controller.signal.aborted) setEntry(key, { status: 'error' });
       });
@@ -51,11 +51,11 @@ export function useFontQuery({ queryKey, queryFn, enabled = true }: QueryOptions
     };
   }, [key, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const status = useSyncExternalStore(
+  const entry = useSyncExternalStore(
     subscribe,
-    () => entries.get(key)?.status ?? 'pending',
-    (): QueryStatus => 'pending',
+    () => entries.get(key),
+    () => undefined,
   );
 
-  return { status };
+  return { status: entry?.status ?? 'pending', data: entry?.data as T | undefined };
 }
