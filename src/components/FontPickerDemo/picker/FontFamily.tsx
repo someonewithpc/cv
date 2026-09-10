@@ -100,7 +100,8 @@ export function FontFamily(
             data-demo-target="family"
             value={value}
             onChange={(e) => {
-              setPreviewing(false);
+              // A subform entry commits no face, so a preview left from the way down ends here
+              stopPreviewing();
               setFocused(false);
               onChange(e.currentTarget.value);
             }}
