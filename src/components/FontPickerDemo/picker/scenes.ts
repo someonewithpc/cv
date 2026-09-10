@@ -91,6 +91,20 @@ async function pickNewFamily(run: Run, root: HTMLElement, family: string) {
   await run.wait(900);
 }
 
+const ENTRANCE_MS = 1600;
+
+/** In from beyond the sheet's bottom edge, to rest beside the card before anything starts */
+export function entranceFor(root: HTMLElement): Scene {
+  return async (run) => {
+    const sheet = (root.closest('article.technical-drawing-stack > * > section') ?? root).getBoundingClientRect();
+    const card = (root.querySelector('.sidebar') ?? root).getBoundingClientRect();
+    run.appear({ x: sheet.right - sheet.width * 0.2, y: sheet.bottom + 80 });
+    await run.wait(300);
+    await run.glide({ x: card.right + 48, y: card.top + card.height * 0.6 }, ENTRANCE_MS);
+    await run.wait(700);
+  };
+}
+
 export function scenesFor(root: HTMLElement): Scene[] {
   return [
     // A page's own fonts first: that is the product's point, and the change is the largest
