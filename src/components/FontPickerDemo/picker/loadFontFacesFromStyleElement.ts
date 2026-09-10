@@ -11,11 +11,17 @@ function preconnectedHosts() {
   return preconnects;
 }
 
+type Candidate = { family: string, face: FontFace, rule: CSSFontFaceRule, finalSrc: string };
+
+/**
+ * Loads the page's @font-face rules and returns, per family, the CSS that re-embeds them.
+ * Every rule loads, not one per family: a family comes as one rule per weight and style,
+ * and often one per unicode-range subset on top, and keeping only the last would leave
+ * Latin text on the fallback whenever that last one is the Vietnamese subset.
+ */
 export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement, baseURL: string | undefined = undefined) {
   const rules = [...(el.sheet?.cssRules ?? [])];
-  const toLoad: Record<string, FontFace> = {};
-  const fontFaceRules: Record<keyof typeof toLoad, CSSFontFaceRule> = {};
-  const finalSrcs: Record<keyof typeof toLoad, string> = {};
+  const candidates: Candidate[] = [];
 
   rules.forEach((rule) => {
     if (!(rule instanceof CSSFontFaceRule)) return;
@@ -60,40 +66,37 @@ export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement
       return props.every((p) => current[p] === ff[p]);
     });
 
-    if (!haveFont) {
-      toLoad[unquotedFontFamily] = ff;
-      fontFaceRules[unquotedFontFamily] = rule;
-      finalSrcs[unquotedFontFamily] = finalSrc;
-    }
+    if (!haveFont) candidates.push({ family: unquotedFontFamily, face: ff, rule, finalSrc });
   });
 
   // One face failing (a 404, an unsupported format) must not discard the rest of the page
   return Promise.allSettled(
-    Object.values(toLoad).map(
-      (ff) => ff.load().then((loaded) => {
+    candidates.map(
+      (candidate) => candidate.face.load().then((loaded) => {
         document.fonts.add(loaded);
-        return loaded;
+        return candidate;
       })
     )
   ).then((results) => {
     const didLoad = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
 
     // @ts-ignore FontFaceSetLoadEvent isn't in every lib.dom yet
-    document.fonts.dispatchEvent(new (window['FontFaceSetLoadEvent'] ?? Event)('loadingdone', { fontfaces: didLoad }));
+    document.fonts.dispatchEvent(new (window['FontFaceSetLoadEvent'] ?? Event)('loadingdone', { fontfaces: didLoad.map(({ face }) => face) }));
 
-    return Object.fromEntries(
-      didLoad.map((ff) => {
-        const unquotedFontFamily = ff.family.replaceAll('"', '');
-        const rule = fontFaceRules[unquotedFontFamily];
-
-        const src = rule.style.getPropertyValue('src');
-
-        return [
-          unquotedFontFamily,
-          // Ensure the CSS we store for re-embedding keeps a loadable (absolute or proxied) URL
-          rule.cssText.replace(src, finalSrcs[unquotedFontFamily]),
-        ];
-      }),
-    );
+    return mergeFaces(didLoad.map(({ family, rule, finalSrc }) => ({
+      // Ensure the CSS we store for re-embedding keeps a loadable (absolute or proxied) URL
+      [family]: rule.cssText.replace(rule.style.getPropertyValue('src'), finalSrc),
+    })));
   });
+}
+
+/** Per-family CSS from several sources, a family's rules kept together */
+export function mergeFaces(maps: Record<string, string>[]) {
+  const merged: Record<string, string> = {};
+  for (const map of maps) {
+    for (const [family, css] of Object.entries(map)) {
+      merged[family] = merged[family] ? `${merged[family]}\n${css}` : css;
+    }
+  }
+  return merged;
 }
