@@ -519,9 +519,10 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // only along the unfold axis — the resting crease's normal, the line the page came over on —
   // so any drag carrying some pull along it lays the page flat in the end, whatever its lean;
   // taking that distance from the raw pointer instead left an off-axis drag stuck part-folded
-  // forever, since it never brought the tip home. The axis leans 1-in-2 whatever shape the page
-  // is: on a 2:1 page it happens to run down the page's own diagonal, so dragging toward the
-  // center unfolded it, but on a portrait page that drag is ~27° off and the corner never came
+  // forever, since it never brought the tip home. The axis follows the resting lean and not the
+  // page: at the landscape lean on a 2:1 page it happens to run down the page's own diagonal, so
+  // dragging toward the center unfolded it, but let either the lean or the page shape differ —
+  // a portrait page still on that lean puts the drag ~27° off — and the corner never came
   // unfolded at all. Which way the corner points, though, is the pointer's to say — the same
   // freedom the forward fold has, and the approach phase before this one — so it rides the ray
   // out to the pointer at whatever distance the pull has left it, swinging round as the hand
