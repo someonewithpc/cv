@@ -24,21 +24,28 @@ function EditorLayerInner() {
   const space = spaces.find((s) => s.id === 'space-cafe') ?? spaces[0];
   const [pageVisible, setPageVisible] = useState(false);
 
-  // Observe the carousel page — mount host alone can look "visible" while the
-  // slide is still off-screen horizontally.
+  // Once PaperStack's script takes over, every page shares the same grid cell (only the
+  // fold's clip-path says which one is drawn on top), so an IntersectionObserver — even
+  // rooted at the stack — reports all six as equally "visible" and this diagram would
+  // render (and steal the live editor's marker-part singletons) no matter which page a
+  // visitor is actually looking at. --page-index is what fold-drag.ts itself updates on a
+  // committed flip (front = "1"), so it's the one signal that actually tracks the front page.
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
-    const page = host.closest('section') ?? host;
-    const stack = page.closest('article.technical-drawing-stack');
-    const io = new IntersectionObserver(
-      ([entry]) => setPageVisible(Boolean(entry?.isIntersecting)),
-      // >50% so only one full-width carousel slide is "active" at a time.
-      { root: stack, threshold: 0.6 },
-    );
-    io.observe(page);
-    return () => io.disconnect();
+    const section = host.closest('section');
+    const wrapper = section?.parentElement;
+    if (!wrapper) return;
+
+    const checkFront = () => {
+      setPageVisible(getComputedStyle(wrapper).getPropertyValue('--page-index').trim() === '1');
+    };
+    checkFront();
+
+    const observer = new MutationObserver(checkFront);
+    observer.observe(wrapper, { attributes: true, attributeFilter: ['style'] });
+    return () => observer.disconnect();
   }, []);
 
   // While this slide is active, close the live map editor so its session
