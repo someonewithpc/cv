@@ -80,11 +80,22 @@ const totalLayers = Object.keys(layers).length;
        them side by side, so take the height a phone actually has. */
     --technical-drawing-aspect: 3 / 5;
     max-height: min(36rem, 85svh);
+
+    /* Transpose the paper clip with the page. The lean sets the resting crease,
+       and the crease is what a flip folds the sheet along, so on a page this
+       tall the landscape lean throws the corner sideways across two and a half
+       page widths before it lands. Swapping the intercepts lays the clip
+       flat — onto the left edge, which PaperStack derives from the same two
+       numbers — and sends the fold up the long axis instead. */
+    --paper-clip-lean-x: 4.5em;
+    --paper-clip-lean-y: 2.25em;
   }
 }
 </style>
 
 <script>
+import { armIslands } from '@/client/bootIsland';
+
 function initStack(stack: HTMLElement) {
   // Viewport root (not the stack): with root:stack the active slide was
   // "intersecting" on load even when still below the fold. Stack overflow

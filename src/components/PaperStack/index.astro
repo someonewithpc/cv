@@ -17,9 +17,10 @@ const Tag = tagName;
 // the pin (see --fold-pin-x/-y below) — so the whole body sits inside the corner region a flip
 // folds behind the stack: the wrappers' crease cut (see their clip-path below) swallows the
 // wire together with the corner, the clip vanishing with the paper it sits on. The "under"
-// path's lower half is the back bar, hidden by the page itself (it renders beneath the page
-// content — see the template), so only the bend peeks over the top edge, reading as a clip
-// slid all the way on. The "over" path is the front bar pressing on the page.
+// path's far half is the back bar, hidden by the page itself (it renders beneath the page
+// content — see the template), so only the bend peeks past the page edge the lean points it
+// at, reading as a clip slid all the way on. The "over" path is the front bar pressing on the
+// page.
 const clipGradient = (id: string) => `<defs>
     <linearGradient id="${id}" x1="0" y1="0" x2="28" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#f2f4f7" />
@@ -145,11 +146,19 @@ const pages = await Promise.all(
     $border-radius: calc(0.5em + 1px);
 
     // The folded-back corner's resting crease runs along the paper clip wire's outer-left
-    // edge: intercepts (2.25em, 4.5em), a 1-in-2 lean. The pin — where the wire's edge bottoms
-    // out on that crease, halfway down — is where the paper is held: the splay pivots around
-    // it, and the fold's crease can approach it but never cross it (see fold-drag.ts).
-    --fold-back-rest-x: 2.25em;
-    --fold-back-rest-y: 4.5em;
+    // edge: intercepts (2.25em, 4.5em) by default, a 1-in-2 lean. The pin — where the wire's
+    // edge bottoms out on that crease, halfway along — is where the paper is held: the splay
+    // pivots around it, and the fold's crease can approach it but never cross it (see
+    // fold-drag.ts).
+    //
+    // The lean is the one knob here, and everything downstream is derived from it rather than
+    // written out again: the pin below, the wire's own angle and which edge it slides on (see
+    // the svg rule), the corner cut every page wears, and — in fold-drag.ts, which reads these
+    // back — the fully-folded seed a flip lands on and the direction a back-drag pulls. A stack
+    // whose pages are tall can lay the clip flatter by swapping the two, which transposes the
+    // whole arrangement; the default suits a page wider than it is tall.
+    --fold-back-rest-x: var(--paper-clip-lean-x, 2.25em);
+    --fold-back-rest-y: var(--paper-clip-lean-y, 4.5em);
     --fold-pin-x: calc(var(--fold-back-rest-x) / 2);
     --fold-pin-y: calc(var(--fold-back-rest-y) / 2);
 
@@ -301,7 +310,11 @@ const pages = await Promise.all(
         // the page, so they can't just live under the page's own clip-path): the crease edge
         // between the last two vertices runs through the cut's real intercepts, and the two
         // extension vertices flanking them continue it past the page box at the resting lean,
-        // far enough to clear the wire's overhang. At --fold-back 0 the cut collapses to a
+        // far enough to clear the wire's overhang — one flanks the top intercept by a whole
+        // (rest-x, -rest-y) step, the other reaches 3em out past the left edge and drops
+        // whatever the lean makes that (hence the tan(atan2()) rise-over-run; a bare ratio is
+        // a division Firefox won't take, see the crease formula above). At --fold-back 0 the
+        // cut collapses to a
         // line through the corner that the wire sits just clear of (its outer-right edge rides
         // the resting crease, one wire-width away); at rest the crease edge coincides with
         // that outer-right edge — the wire disappears in sync with the corner folding back.
@@ -315,7 +328,7 @@ const pages = await Promise.all(
             calc(100% + 3em) calc(-1 * var(--fold-back-rest-y)),
             calc(100% + 3em) calc(100% + 3em),
             -3em calc(100% + 3em),
-            -3em calc(var(--fold-back-y) + 6em),
+            -3em calc(var(--fold-back-y) + 3em * tan(atan2(var(--fold-back-rest-y), var(--fold-back-rest-x)))),
             0px var(--fold-back-y),
             var(--fold-back-x) 0px
           );
@@ -328,13 +341,28 @@ const pages = await Promise.all(
           top: var(--fold-pin-y);
           // The wire's outer-right edge lies on the resting fold-back crease: its bottom point
           // (viewBox 24.5, 50 → 87.5%, 78.125% of the box) sits on the pin, and the lean
-          // matches the crease's 1-in-2 slope (atan(1/2) from vertical). The body extends from
-          // that edge toward the page corner — the side a flip folds behind the stack — and
-          // the width is sized so it stays on the page: much wider and its left flank hangs
-          // off the page's left edge.
+          // matches the crease's own slope, which is what the rotate reads off the intercepts
+          // (atan(1/2) from vertical at the default lean). The body extends from that edge
+          // toward the page corner — the side a flip folds behind the stack — and the width is
+          // sized against the crease's clearance from that corner, rest-x·rest-y/|rest|, which
+          // a swapped lean leaves untouched: much wider and the wire's flank crosses the corner
+          // and hangs off the page.
+          //
+          // The wire runs 3.125em from the pin one way and 0.875em the other, so the bend end
+          // always overshoots the crease's nearer intercept and pokes off the page there —
+          // which reads as a clip slid all the way onto that edge, and so has to be the edge
+          // the wire lies more along. Standing the box up (no flip) sends the bend to the top
+          // intercept, which is right while the crease is steeper than 45°; past that the wire
+          // is more horizontal than vertical and belongs on the left edge instead, so it turns
+          // end for end. scaleY is that turn — a reflection along the wire's own length, which
+          // moves the bend without taking the body off the corner side the way a half-turn
+          // would — and sign() picks it straight off the lean, so the edge can't fall out of
+          // step with the angle. (The two are only ambiguous at exactly 45°, where sign() is 0
+          // and the wire would collapse; a lean that square has no edge to prefer anyway.)
           translate: -87.5% -78.125%;
           transform-origin: 87.5% 78.125%;
-          rotate: 26.565deg;
+          rotate: atan2(var(--fold-back-rest-x), var(--fold-back-rest-y));
+          transform: scaleY(sign(var(--fold-back-rest-y) - var(--fold-back-rest-x)));
           width: 1.75em;
           height: auto;
         }
