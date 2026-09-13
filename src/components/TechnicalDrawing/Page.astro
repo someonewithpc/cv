@@ -219,6 +219,19 @@ section {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
+    /* Em-sized artwork tracks the sheet down once it is narrower than 50em;
+       wider sheets get the full 1rem. Sized from the stack's measured pixels
+       (Stack.astro's script) and keyed on its orientation attribute rather
+       than the width or orientation queries: a font-size that comes out of a
+       container query, on a subtree with grids this deep, costs Chrome half a
+       second per layout. */
+    font-size: min(1rem, 0.02 * var(--sheet-inline));
+
+    :global([data-sheet-orientation='portrait']) & {
+      /* Portrait gives the artwork the full sheet width, not a third of it. */
+      font-size: min(1rem, 0.038 * var(--sheet-inline));
+    }
   }
 
   .aside {
@@ -522,12 +535,6 @@ section {
       display: block;
     }
 
-    .content {
-      /* Em-sized artwork tracks the sheet down, as portrait does with 3.8cqw —
-         the landscape sheet is wider than tall, so the factor is smaller. */
-      font-size: min(1rem, 2cqw);
-    }
-
     /* The artwork keeps the sheet centre, so the corner block gives ground —
        same size portrait uses — and wears the sheet like a real title block,
        so a diagram running underneath is clipped by it instead of mixing
@@ -553,9 +560,6 @@ section {
     align-items: stretch;
 
     .content {
-      /* Portrait gives the artwork the full sheet width, not a third of it. */
-      font-size: min(1rem, 3.8cqw);
-
       grid-column: 1;
       grid-row: 1;
       width: 100%;
