@@ -32,3 +32,9 @@ pnpm-debug.log*
 
 # local scratch / source textures (processed assets live in public/)
 tmp/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
