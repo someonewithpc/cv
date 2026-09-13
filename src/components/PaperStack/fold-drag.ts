@@ -1056,12 +1056,18 @@ const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement
 // too, resizes being what moves them; each gesture's grab re-samples as well (onFoldGrab), for
 // anything that shifts the em-based pin without changing the page's pixel size.
 const observeFoldPageSizes = (stack: HTMLElement): void => {
+  // Every page's readings before any page's writes (see lengthsOf): interleaved, each write
+  // made the browser redo style before the next page's read, once per page per resize.
   const observer = new ResizeObserver((entries) => {
-    for (const entry of entries) {
+    const pages = entries.map((entry) => {
+      const page = entry.target as HTMLElement;
+      sampleMetrics(page, entry.contentRect);
       const { width, height } = entry.contentRect;
-      (entry.target as HTMLElement).style.setProperty('--fold-page-w', `${width}px`);
-      (entry.target as HTMLElement).style.setProperty('--fold-page-h', `${height}px`);
-      sampleMetrics(entry.target as HTMLElement, entry.contentRect);
+      return { page, width, height };
+    });
+    for (const { page, width, height } of pages) {
+      page.style.setProperty('--fold-page-w', `${width}px`);
+      page.style.setProperty('--fold-page-h', `${height}px`);
     }
   });
   for (const page of stack.children) observer.observe(page);
