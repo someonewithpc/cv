@@ -384,10 +384,14 @@ header {
     gap: 0.45em;
   }
 
-  /* The pipeline is the second telling of what the compare cards already show,
-     and it is the difference between fitting the sheet and running off it. */
-  .pipeline {
-    display: none;
-  }
+}
+
+/* The pipeline is the second telling of what the compare cards already show,
+   and it is the difference between fitting the sheet and running off it.
+   Keyed on the stack's attribute, not the orientation query: a query-driven
+   display toggle here cost a second on the way back to landscape (see
+   Stack.astro's script). */
+:global([data-sheet-orientation='portrait']) .pipeline {
+  display: none;
 }
 </style>
