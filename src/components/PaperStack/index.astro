@@ -219,17 +219,25 @@ const pages = await Promise.all(
           --crease-excess-x: max(var(--fold-x) - var(--fold-page-w), 0px);
           --crease-excess-y: max(var(--fold-y) - var(--fold-page-h), 0px);
           --crease1-x: max(var(--fold-page-w) - var(--fold-x), 0px);
-          // max() on the divisors: at --fold-x/y 0 (before the reveal animation's delay ends)
-          // the ratio would be 0/0 → NaN, which censors into a polygon missing half the page.
-          // The floor only kicks in when the excess is 0 anyway, so it never changes the shape.
+          // Each intercept below needs how far the crease has overrun the page as a fraction of
+          // its own reach — one length over another, written the obvious way as (a / b). Firefox
+          // won't type-check that division and throws the whole clip-path out as invalid, which
+          // leaves the front page uncut: no dog-ear, and no folded-back corner at the top left
+          // either. (A drag paints its own inline clip-path, so the corner would appear under the
+          // hand and vanish again the moment the CSS rule took back over.) tan(atan2(a, b)) is
+          // that same a/b as a plain number, out of trig functions every engine does have.
+          // max() on the divisors keeps atan2 off (0, 0), which is undefined: at --fold-x/y 0
+          // (before the reveal animation's delay ends) the ratio would otherwise be 0/0 → NaN,
+          // which censors into a polygon missing half the page. The floor only kicks in when the
+          // excess is 0 anyway, so it never changes the shape.
           --crease1-y: clamp(
             0px,
-            var(--fold-page-h) - var(--fold-y) * (var(--crease-excess-x) / max(var(--fold-x), 1px)),
+            var(--fold-page-h) - var(--fold-y) * tan(atan2(var(--crease-excess-x), max(var(--fold-x), 1px))),
             var(--fold-page-h)
           );
           --crease2-x: clamp(
             0px,
-            var(--fold-page-w) - var(--fold-x) * (var(--crease-excess-y) / max(var(--fold-y), 1px)),
+            var(--fold-page-w) - var(--fold-x) * tan(atan2(var(--crease-excess-y), max(var(--fold-y), 1px))),
             var(--fold-page-w)
           );
           --crease2-y: max(var(--fold-page-h) - var(--fold-y), 0px);
