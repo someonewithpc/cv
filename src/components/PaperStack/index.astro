@@ -139,7 +139,10 @@ const pages = await Promise.all(
     // A sideways swipe over the stack turns its pages (fold-drag.ts), so the browser mustn't
     // spend it panning. Vertical is left to the browser: the page still scrolls under a finger
     // that means to scroll, and it takes the gesture back the moment it decides that's what is
-    // happening.
+    // happening. Which is only half the bargain — this is settled the instant a finger lands,
+    // before anyone knows what the finger is for, so a finger that turns out to be working the
+    // paper would scroll the page out from under itself. fold-drag.ts cancels the touch moves of
+    // any finger a gesture has claimed, which is what actually holds the page still.
     touch-action: pan-y;
 
     $per-page-splay: 1.5deg;
