@@ -98,13 +98,14 @@ $op-slot: 0.85em;
   display: grid;
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
+  font-size: clamp(0.8rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
   color: #f4f0ea;
 
   /* The timeline runs down the sheet, and portrait stacks a note under it —
-     the 0.8rem floor is what pushed it off the top. */
-  @container technical-drawing (orientation: portrait) {
-    font-size: min(1.05rem, 2.4cqmin);
+     the 0.8rem floor is what pushed it off the top. Keyed on the stack's
+     attribute, not the orientation query: see Stack.astro's script. */
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1.05rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)));
   }
 }
 
