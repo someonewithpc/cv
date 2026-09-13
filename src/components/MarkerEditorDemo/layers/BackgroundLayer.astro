@@ -138,7 +138,7 @@ $cell-debug: 11.111%;
   display: grid;
   place-items: stretch;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.55rem, 2.4cqmin, 1rem);
+  font-size: clamp(0.55rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: #f4f0ea;
 }
 

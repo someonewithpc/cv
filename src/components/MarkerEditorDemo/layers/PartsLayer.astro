@@ -142,8 +142,13 @@ $op-slot: 1.1em;
   display: grid;
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
+  font-size: clamp(0.8rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
   color: #f4f0ea;
+
+  // Keyed on the stack's attribute, not the orientation query: see Stack.astro's script.
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.48rem, 0.0215 * var(--sheet-inline), 0.78rem);
+  }
 }
 
 .panel {
@@ -409,10 +414,6 @@ header {
 @container technical-drawing (orientation: portrait) {
   .wrapper {
     max-width: min(92cqw, 100%);
-  }
-
-  .parts-layer {
-    font-size: clamp(0.48rem, 2.15cqw, 0.78rem);
   }
 
   .serialize-flow {
