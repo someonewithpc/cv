@@ -111,6 +111,8 @@ function initStack(stack: HTMLElement) {
   }, { threshold: 0.25, scrollMargin: '25%' });
   [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
 
+  armIslands(stack);
+
   // The sheet's size and orientation, restated as plain pixels and a data attribute for the
   // artwork to scale its type by. The container queries and units say the same thing, but a
   // font-size that comes out of them — by unit, by rule, or by an inherited variable — inside
