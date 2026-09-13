@@ -1,70 +1,24 @@
 ---
 ---
 
-<div class="mock-scene-demo" data-space-builder-island tabindex="-1">
+<div
+  class="mock-scene-demo"
+  data-space-builder-island
+  data-boot-module="/src/components/SpaceBuilderDemo/MockScene/boot.ts"
+  tabindex="-1"
+>
   <div class="boot-placeholder" aria-hidden="true">
     <span class="boot-spinner" />
     <span>Loading Space Builder…</span>
   </div>
 </div>
 
-<script>
-  import { bootWhenVisible } from '@/client/bootWhenVisible';
-
-  const CHAIR_URL = '/demos/space-builder/chair.glb';
-  const GRASS_URLS = [
-    '/demos/space-builder/grass/color.webp',
-    '/demos/space-builder/grass/normal.webp',
-    '/demos/space-builder/grass/displacement.webp',
-  ] as const;
-
-  let assetsWarmed = false;
-
-  /** Low-priority cache warm — never preload (that competes with LCP). */
-  function warmAssets() {
-    if (assetsWarmed) return;
-    assetsWarmed = true;
-    const opts = { credentials: 'same-origin', priority: 'low' } as RequestInit;
-    void fetch(CHAIR_URL, opts).catch(() => null);
-    void fetch(GRASS_URLS[0], opts).catch(() => null);
-  }
-
-  async function bootSpaceBuilder(mount: HTMLElement) {
-    if (mount.dataset.mounted === 'true') return;
-    mount.dataset.mounted = 'true';
-    warmAssets();
-
-    try {
-      // Yield so other work can finish a frame before Vue+Three parse.
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => resolve());
-      });
-
-      const [{ createApp }, { default: MockSceneApp }] = await Promise.all([
-        import('vue'),
-        import('./MockSceneApp.vue'),
-      ]);
-
-      const app = createApp(MockSceneApp);
-      app.mount(mount);
-      mount.querySelector('.boot-placeholder')?.remove();
-    } catch (error) {
-      console.debug('Space Builder demo failed to boot', error);
-      delete mount.dataset.mounted;
-    }
-  }
-
-  function armBoot() {
-    const mount = document.querySelector<HTMLElement>('[data-space-builder-island]');
-    if (!mount || mount.dataset.mounted === 'true') return;
-
-    bootWhenVisible(mount, () => {
-      void bootSpaceBuilder(mount);
-    });
-  }
-
-  armBoot();
-</script>
+{/*
+  No <script> here — a component reached only through Stack.astro's per-layer
+  Astro.slots.render() call never gets its own hoisted script onto the page (see the
+  "dev-server-drops-demo-scripts" memory). boot.ts is armed instead by Stack.astro's own
+  script, which the pagination doesn't touch, via the data-boot-module attribute above.
+*/}
 
 <style lang="scss">
 // Stretch the drawing content cell so the interactive frame can fill the sheet
