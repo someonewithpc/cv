@@ -13,7 +13,8 @@
     "astro": "astro",
     "check": "astro check",
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",
-    "generate:chair-thumb": "node scripts/render-chair-thumb.mjs"
+    "generate:chair-thumb": "node scripts/render-chair-thumb.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.2",
@@ -43,6 +44,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@astrojs/cloudflare": "^14.2.1",
+    "@playwright/test": "^1.63.0",
     "@types/classnames": "^2.3.0",
     "@types/lodash": "^4.17.24",
     "@types/react": "^19.2.17",
