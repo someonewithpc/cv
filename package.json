@@ -9,7 +9,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "astro build && wrangler deploy",
+    "deploy": "npm run test:e2e && astro build && wrangler deploy",
     "astro": "astro",
     "check": "astro check",
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",
