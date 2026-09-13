@@ -110,7 +110,31 @@ function initStack(stack: HTMLElement) {
     });
   }, { threshold: 0.25, scrollMargin: '25%' });
   [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
+
+  // The sheet's size and orientation, restated as plain pixels and a data attribute for the
+  // artwork to scale its type by. The container queries and units say the same thing, but a
+  // font-size that comes out of them — by unit, by rule, or by an inherited variable — inside
+  // the deep grids of some layers makes every em in them depend on this container, and
+  // Chrome's layout of that runs seconds per pass: a resize, or docking DevTools, froze the
+  // page for twenty. The orientation is read back from the aspect the width query picked.
+  measure.observe(stack);
 }
+
+// One observer for every stack, so a resize is answered with all the reads before any of the
+// writes: a write to one stack followed by a read from the next would make the browser redo
+// style in between, once per stack.
+const measure = new ResizeObserver((entries) => {
+  const read = entries.map((entry) => {
+    const [{ inlineSize, blockSize }] = entry.contentBoxSize;
+    const [w, h] = getComputedStyle(entry.target).aspectRatio.split('/').map(Number);
+    return { stack: entry.target as HTMLElement, inlineSize, blockSize, portrait: h > w };
+  });
+  for (const { stack, inlineSize, blockSize, portrait } of read) {
+    stack.style.setProperty('--sheet-inline', `${inlineSize}px`);
+    stack.style.setProperty('--sheet-block', `${blockSize}px`);
+    stack.dataset.sheetOrientation = portrait ? 'portrait' : 'landscape';
+  }
+});
 
 function init() {
   [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack')].forEach(initStack);
