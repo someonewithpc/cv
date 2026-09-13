@@ -1524,7 +1524,20 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     if (touch === null || e.pointerId !== touch.id) return;
     const sideways = e.clientX - touch.from.x;
     if (swipe === null) {
-      if (Math.abs(sideways) < SWIPE_START) return;
+      const upright = e.clientY - touch.from.y;
+      // Whichever way the finger commits to first decides the gesture, so the choice is made on
+      // the first few pixels of travel in either direction rather than waiting for sideways ones
+      // that may never come.
+      if (Math.abs(sideways) < SWIPE_START && Math.abs(upright) < SWIPE_START) return;
+      // Gone further up or down than sideways, the finger means to scroll the page, and
+      // touch-action: pan-y (index.astro) has already let the browser start doing it — a scroll
+      // under way can't be called off (see the touchmove handler below, which only gets the
+      // chance while it is still cancelable). So the swipe stands down for the rest of this
+      // touch, rather than folding a page over underneath a scroll.
+      if (Math.abs(sideways) <= Math.abs(upright)) {
+        touch = null;
+        return;
+      }
       // Swiping left carries the page off to the left, the way it goes
       if (!beginSwipe(sideways < 0, e.timeStamp)) {
         touch = null;
@@ -1541,6 +1554,20 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     swipe!.target = along * SCROLL_GAIN;
     swipeTo(swipe!.target, e.timeStamp);
   });
+
+  // Pointer events have no say over scrolling — preventDefault on a pointermove is ignored, and
+  // touch-action can only be read at the moment the finger lands, which is before anyone knows
+  // what the finger is for. So the page is held still from the touch stream instead, which is
+  // where a scroll can still be called off: while any gesture owns the finger — the flap's drag,
+  // the back-drag's, or a swipe — every move it makes is cancelled here, and the page stays put
+  // for as long as the paper is being worked. Pointer events for a touch are dispatched ahead of
+  // the touch events they came from, so the gesture the pointermove handlers above start is
+  // already in place by the time the matching touchmove arrives. Once the browser has committed
+  // to a scroll of its own it stops asking (cancelable false) and there is nothing to do but let
+  // it have the gesture — which is why the swipe declines a finger that set off upright.
+  stack.addEventListener('touchmove', (e) => {
+    if (gesture !== null && e.cancelable) e.preventDefault();
+  }, { passive: false });
 
   const liftTouch = (e: PointerEvent) => {
     if (touch === null || e.pointerId !== touch.id) return;
