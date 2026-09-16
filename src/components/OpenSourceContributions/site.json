@@ -399,6 +399,56 @@
       "label": "Open",
       "items": [
         {
+          "repository": "NixOS/nixpkgs",
+          "title": "gtk4: 4.22.4 -> 4.22.5",
+          "description": "Bumped gtk4 to 4.22.5 for upstream's munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged.",
+          "url": "https://github.com/NixOS/nixpkgs/pull/561695",
+          "number": 561695,
+          "updatedAt": "2026-09-16T10:27:21Z",
+          "stats": {
+            "additions": 2,
+            "deletions": 11,
+            "changed_files": 1
+          },
+          "tags": [
+            "nixos",
+            "c"
+          ]
+        },
+        {
+          "repository": "Alexays/Waybar",
+          "title": "feat(modules): add on-enter and on-leave events",
+          "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignores GTK's inferior crossings and latches on a hover flag so each command runs once per hover, and mirrors the `on-click` guard that keeps built-in actions from also running as shell commands.",
+          "url": "https://github.com/Alexays/Waybar/pull/5312",
+          "number": 5312,
+          "updatedAt": "2026-09-08T17:01:02Z",
+          "stats": {
+            "additions": 312,
+            "deletions": 1,
+            "changed_files": 36
+          },
+          "tags": [
+            "cplusplus"
+          ]
+        },
+        {
+          "repository": "cheapestinference/claude-auto-retry",
+          "title": "Package as a Nix flake (NixOS + home-manager modules)",
+          "description": "Packaged claude-auto-retry as a Nix flake with NixOS and home-manager modules that build from source and manage the shell wrapper, reconcile timer, and `StopFailure` hook through real options instead of `npm i -g`. Also fixed the wrapper clobbering each tmux pane's `TERM`.",
+          "url": "https://github.com/cheapestinference/claude-auto-retry/pull/82",
+          "number": 82,
+          "updatedAt": "2026-09-08T13:00:47Z",
+          "stats": {
+            "additions": 404,
+            "deletions": 3,
+            "changed_files": 10
+          },
+          "tags": [
+            "nixos",
+            "claude-code"
+          ]
+        },
+        {
           "repository": "git/git",
           "title": "rebase: add `--[no-]edit` to `--continue`",
           "description": "Add `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening $EDITOR after resolving conflicts, with `--edit` to override the config for a single continue.",
