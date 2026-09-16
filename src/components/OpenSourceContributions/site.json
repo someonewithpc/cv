@@ -277,17 +277,6 @@
           ]
         },
         {
-          "repository": "somnambulist-tech/cte-builder",
-          "title": "Update to `Doctrine` 3 and `beberlei/assert` 3.3",
-          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3.",
-          "url": "https://github.com/somnambulist-tech/cte-builder/pull/3",
-          "number": 3,
-          "updatedAt": "2021-12-27T16:33:57Z",
-          "tags": [
-            "php"
-          ]
-        },
-        {
           "repository": "vivien/i3blocks-contrib",
           "title": "Add option to memory to allow not showing the percentage",
           "description": "Added an i3blocks memory option to hide the percentage label while keeping the usage bar.",
@@ -367,17 +356,6 @@
           "updatedAt": "2020-05-25T13:09:11Z",
           "tags": [
             "php"
-          ]
-        },
-        {
-          "repository": "melpa/melpa",
-          "title": "Add `php-align` recipe",
-          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules.",
-          "url": "https://github.com/melpa/melpa/pull/6759",
-          "number": 6759,
-          "updatedAt": "2020-03-25T03:53:14Z",
-          "tags": [
-            "emacs"
           ]
         },
         {
@@ -845,6 +823,17 @@
           ]
         },
         {
+          "repository": "somnambulist-tech/cte-builder",
+          "title": "Update to `Doctrine` 3 and `beberlei/assert` 3.3",
+          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3. Closed after the maintainer folded parts of it into 3.1.0, which supports DBAL 2 and 3 side by side",
+          "url": "https://github.com/somnambulist-tech/cte-builder/pull/3",
+          "number": 3,
+          "updatedAt": "2021-12-27T16:33:57Z",
+          "tags": [
+            "php"
+          ]
+        },
+        {
           "repository": "software-mansion/react-native-screens",
           "title": "Update Android Tools gralde version",
           "description": "Bumped Android Gradle tooling in react-native-screens to unblock gesture-handler builds.",
@@ -891,6 +880,17 @@
           "updatedAt": "2020-06-27T10:18:58Z",
           "tags": [
             "bash"
+          ]
+        },
+        {
+          "repository": "melpa/melpa",
+          "title": "Add `php-align` recipe",
+          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules. Closed once the thread led to `php-align.el` being merged into `php-mode` instead",
+          "url": "https://github.com/melpa/melpa/pull/6759",
+          "number": 6759,
+          "updatedAt": "2020-03-25T03:53:14Z",
+          "tags": [
+            "emacs"
           ]
         },
         {
