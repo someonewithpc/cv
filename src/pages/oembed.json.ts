@@ -17,7 +17,7 @@ const jsonResponse = (body: unknown, status = 200) =>
 // inside a tiny frame. OEMBED_CARD_HTML is OEmbedCard.astro's own rendered output, generated
 // at build time by scripts/render-oembed-card.mjs.
 const DEFAULT_WIDTH = 360;
-const DEFAULT_HEIGHT = 120;
+const DEFAULT_HEIGHT = 150;
 const MIN_SIZE = 60;
 
 const clamp = (requested: number | null, fallback: number) =>
@@ -45,7 +45,7 @@ export const GET: APIRoute = ({ url }) => {
   const width = clamp(Number(url.searchParams.get('maxwidth')) || null, DEFAULT_WIDTH);
   const height = clamp(Number(url.searchParams.get('maxheight')) || null, DEFAULT_HEIGHT);
 
-  const html = `<a href="${SITE_URL}" style="text-decoration:none;color:inherit">${OEMBED_CARD_HTML}</a>`;
+  const html = OEMBED_CARD_HTML;
 
   return jsonResponse({
     version: '1.0',
