@@ -73,11 +73,11 @@ const members = ['Gold', 'Silver', 'Clear', 'Black'];
   box-sizing: border-box;
   width: min(100%, 44em);
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.75rem, 2.3cqmin, 1rem);
+  font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
 
-  @container technical-drawing (orientation: portrait) {
-    font-size: min(1rem, 2.3cqmin);
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
   }
 }
 
