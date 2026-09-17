@@ -345,7 +345,11 @@ inputs.forEach((inputEl) => {
       persistTheme(id);
     };
 
-    if (prefersReducedMotion.matches || !document.startViewTransition) {
+    /* --theme-kind tracks whatever is on screen, including the OS default
+       nobody has picked yet, so it also catches the first click on it. */
+    const shown = getComputedStyle(document.documentElement).getPropertyValue('--theme-kind').trim();
+
+    if (prefersReducedMotion.matches || !document.startViewTransition || shown === id) {
       commitWithoutTransition();
       return;
     }
