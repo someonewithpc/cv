@@ -117,7 +117,7 @@
 @mixin blueprint-sheet-boundary {
   --sheet-canvas: var(--blueprint-9);
   --sheet-ink: color-mix(in oklch, white 88%, var(--theme-blueprint));
-  --sheet-ink-muted: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 32%);
+  --sheet-ink-muted: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 18%);
   --sheet-ink-faint: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 48%);
   --sheet-line: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 40%);
   --sheet-line-strong: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 22%);
