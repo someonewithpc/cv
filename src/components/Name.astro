@@ -144,7 +144,8 @@ header {
 
     audio {
       opacity: 0;
-      transition: opacity 250ms ease;
+      visibility: hidden;
+      transition: opacity 250ms ease, visibility 0s 250ms;
     }
 
     /* Match or beat the ruby hide rule specificity */
@@ -152,6 +153,11 @@ header {
       audio,
       h1 ruby :is(rp, rt) {
         opacity: 1;
+      }
+
+      audio {
+        visibility: visible;
+        transition-delay: 0s;
       }
     }
   }
