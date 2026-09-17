@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import OptionsPanel from './OptionsPanel.vue';
@@ -137,8 +138,13 @@ async function runAutoplay() {
 }
 
 function startAutoplay() {
-  if (reducedMotion || userControl || !chairsReady || !inView) return;
+  if (reducedMotion) {
+    reportAutoplayState(rootRef.value, 'off');
+    return;
+  }
+  if (userControl || !chairsReady || !inView) return;
   autoplayToken += 1;
+  reportAutoplayState(rootRef.value, 'playing');
   void runAutoplay();
 }
 
@@ -154,6 +160,7 @@ function yieldToUser() {
   autoplayToken += 1;
   demoPlaying.value = false;
   userControl = true;
+  reportAutoplayState(rootRef.value, 'user');
   resumeTimer = setTimeout(() => {
     resumeTimer = null;
     userControl = false;
@@ -390,6 +397,7 @@ onMounted(async () => {
       }
     });
 
+    onReplayRequest(root, restartDemo);
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);

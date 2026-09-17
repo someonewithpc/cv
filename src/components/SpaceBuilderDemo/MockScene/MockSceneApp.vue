@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchEffect } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { reportAutoplayState } from '@/client/autoplayStatus';
 
 import {
   AutoPlayController,
@@ -90,6 +91,14 @@ const loadError = ref(false);
 const inView = ref(false);
 const userControl = ref(false);
 const reducedMotion = ref(false);
+
+// Drives the sheet's status chip (TechnicalDrawing/Page.astro).
+watchEffect(() => {
+  reportAutoplayState(
+    rootRef.value,
+    reducedMotion.value ? 'off' : userControl.value ? 'user' : 'playing',
+  );
+});
 
 const panel = ref<Panel>('closed');
 const phase = ref<Phase>('idle');
@@ -727,6 +736,7 @@ onBeforeUnmount(() => {
     :data-user-control="userControl ? 'true' : 'false'"
     :data-panel="panel"
     @focus="yieldToUser"
+    @demo-replay="restartDemo"
   >
     <aside class="rail" aria-label="Tools">
       <div class="rail-logo" aria-hidden="true" title="Visrez">
