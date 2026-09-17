@@ -155,9 +155,18 @@ const pages = await Promise.all(
   anchor-scope: --technical-drawing-stack;
 
   &[data-paper-stack] {
+    // The stack's own box is an upright rectangle around the whole fan, including the
+    // margin reserved for the splay, so a ring on it misses the sheet the reader is
+    // looking at. Put it on the front page instead: that wrapper is the sheet's box, it
+    // carries the sheet's corner radius, it turns with the splay, and fold-drag.ts hands
+    // the class to the next page on a committed flip, so the ring follows the paper.
     &:focus-visible {
-      outline: 2px solid var(--ink);
-      outline-offset: 0.5rem;
+      outline: none;
+
+      > .paper-front {
+        outline: 2px solid var(--ink);
+        outline-offset: 0.125rem;
+      }
     }
 
     display: grid;
