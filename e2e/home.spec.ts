@@ -11,7 +11,7 @@ test('loads the homepage with no console errors and all four demos present', asy
   await expect(page.getByRole('heading', { name: 'Demos' })).toBeVisible();
 
   const stacks = page.locator('article.technical-drawing-stack');
-  await expect(stacks).toHaveCount(4);
+  await expect(stacks).toHaveCount(5);
 
   // Every page repeats the stack's subtitle as an <h3>, so scope to the front page's own
   // <h2> (title ?? subtitle) rather than matching all six pages' headings at once.
@@ -19,6 +19,7 @@ test('loads the homepage with no console errors and all four demos present', asy
   await expect(stacks.nth(1).locator('h2.typewriter').first()).toHaveText('Interactive Map Marker Editor');
   await expect(stacks.nth(2).locator('h2.typewriter').first()).toHaveText('Space Builder · Add Tool');
   await expect(stacks.nth(3).locator('h2.typewriter').first()).toHaveText('Space Builder · Object Variants');
+  await expect(stacks.nth(4).locator('h2.typewriter').first()).toHaveText('Library Tagging Tool');
 
   // Give every stack a chance to reach the viewport and boot its islands before checking
   // for errors — a mid-boot exception would otherwise land after this listener stopped
