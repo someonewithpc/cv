@@ -1,0 +1,9 @@
+---
+export const prerender = true;
+export const partial = true;
+
+import OEmbedCard from '@/components/OEmbedCard.astro';
+import { AUTHOR_NAME, SITE_TITLE } from '@/site';
+---
+
+<OEmbedCard title={SITE_TITLE} name={AUTHOR_NAME} />
