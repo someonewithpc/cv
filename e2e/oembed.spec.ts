@@ -28,12 +28,21 @@ test('oembed.json answers with a rich embed for the site url', async ({ request 
     title: SITE_TITLE,
     author_name: AUTHOR_NAME,
   });
-  expect(body.html).toContain(AUTHOR_NAME);
+
+  // The name must actually be in the rendered card, not just the JSON metadata field.
+  expect(body.html).toMatch(new RegExp(`class="name">${AUTHOR_NAME}<`));
 
   // The whole point of type: rich is that consumers render this snippet instead of
   // iframing the live page, so it must not drag in the actual page's content.
   expect(body.html).not.toContain('Full stack developer');
   expect(body.html).not.toContain('Demos');
+});
+
+test('the rendered oEmbed card fragment is not served on its own', async ({ request }) => {
+  // OEMBED_CARD_HTML is baked into oembed.json.ts at build time (see
+  // scripts/render-oembed-card.mjs); the page that produces it shouldn't be a live route.
+  expect((await request.get('/oembed-card.html/')).status()).toBe(404);
+  expect((await request.get('/oembed-card.html')).status()).toBe(404);
 });
 
 test('oembed.json 404s for a url outside this site', async ({ request }) => {
