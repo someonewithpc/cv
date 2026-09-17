@@ -18,7 +18,12 @@ const states = ['idle', 'pending', 'success', 'error'] as const;
 
       <div class="controls" role="group" aria-label="Simulate a request state">
         {states.map((state) => (
-          <button type="button" data-border-state={state} class:list={[{ active: state === 'idle' }]}>{state}</button>
+          <button
+            type="button"
+            data-border-state={state}
+            class:list={[{ active: state === 'idle' }]}
+            aria-pressed={state === 'idle' ? 'true' : 'false'}
+          >{state}</button>
         ))}
       </div>
 
