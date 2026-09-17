@@ -53,21 +53,22 @@ const hasMeta = updatedAt || stats;
 
     <cite>{repository}{number != null && `#${number}`}</cite>
 
-    <a
-      href={url}
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      <BacktickText text={title} /><span class="sr-only"> ({repository}), opens in a new tab</span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
-    </a>
+    <span class="title"><BacktickText text={title} /></span>
   </summary>
 
   {description && (
     <p><BacktickText text={description} /></p>
   )}
 
-  {hasMeta && (
-    <footer>
+  <footer>
+    <a
+      href={url}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      {number != null ? `Open #${number}` : 'Open thread'}<span class="sr-only"> ({repository}), opens in a new tab</span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
+    </a>
+    {hasMeta && ' · '}
       {updatedAt && (
         <time datetime={updatedAt}>{updatedAt.slice(0, 10)}</time>
       )}
@@ -81,8 +82,7 @@ const hasMeta = updatedAt || stats;
           <span class="files">{stats.changed_files} files</span>
         </span>
       )}
-    </footer>
-  )}
+  </footer>
 </details>
 
 <style lang="scss">
@@ -118,7 +118,7 @@ details {
       overflow-wrap: break-word;
     }
 
-    a {
+    .title {
       min-width: 0;
       min-height: 1.5rem;
       padding-block: 0.125rem;
@@ -126,24 +126,14 @@ details {
       font-family: sans-serif;
       color: var(--ink);
       line-height: 1.4;
-      text-decoration: none;
-      text-underline-offset: 0.15em;
       overflow-wrap: break-word;
       word-break: normal;
       hyphens: none;
       text-wrap: pretty;
+    }
 
-      .external-link {
-        display: inline;
-        width: 0.75em;
-        height: 0.75em;
-        vertical-align: -1px;
-      }
-
-      &:hover {
-        color: var(--accent);
-        text-decoration: underline;
-      }
+    &:hover .title {
+      color: var(--accent);
     }
   }
 
@@ -178,6 +168,25 @@ details {
     font-size: 0.75rem;
     line-height: 1.5;
     color: var(--ink-faint);
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      min-height: 1.5rem;
+      color: var(--accent);
+      text-underline-offset: 0.15em;
+
+      .external-link {
+        width: 0.75em;
+        height: 0.75em;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 0.125rem;
+      }
+    }
 
     .additions {
       font-weight: 600;
@@ -222,7 +231,7 @@ details {
         font-size: 0.75rem;
       }
 
-      a {
+      .title {
         grid-area: title;
       }
     }
