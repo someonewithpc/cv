@@ -8,6 +8,9 @@ type Props = {
   class?: string;
   /** When true, hide from AT (pair with visible text, or pure decoration). */
   decorative?: boolean;
+  /** Render the paths in place instead of a <use> of the shared symbol; only for an
+   *  instance whose paths a script or a stylesheet has to reach. */
+  inline?: boolean;
 };
 
 /** Icons whose fills must not be remapped when the page is in dark color-scheme.
@@ -27,7 +30,7 @@ const LOCK_COLOR_SCHEME_LIGHT = new Set([
   'vulkan',
 ]);
 
-const { tech, class: className, decorative = false } = Astro.props;
+const { tech, class: className, decorative = false, inline = false } = Astro.props;
 ---
 
 <span
@@ -38,7 +41,7 @@ const { tech, class: className, decorative = false } = Astro.props;
 >
   <Icon
     name={tech.icon}
-    is:inline
+    is:inline={inline}
     aria-hidden="true"
     style={LOCK_COLOR_SCHEME_LIGHT.has(tech.icon) ? 'color-scheme: only light' : undefined}
   />
