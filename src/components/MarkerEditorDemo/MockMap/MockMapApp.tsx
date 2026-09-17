@@ -16,6 +16,7 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
+import { watchPageActive } from '@/client/frontPage';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -348,43 +349,37 @@ function MockMapOverlayInner() {
     );
     autoplayRef.current = controller;
 
-    // Viewport root, not the stack — root:stack reads as "intersecting" once
-    // it's the active carousel slide, regardless of page scroll (same fix as
-    // TechnicalDrawing/Stack.astro's own visibility observer).
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        const visible = entry.isIntersecting;
-        inViewRef.current = visible;
-        setInView(visible);
-        if (visible) {
-          if (!autoplayStartedRef.current) {
-            autoplayStartedRef.current = true;
-            setCursorPhase('demo');
-            controller.start();
-            pushToastRef.current(autoplayStartedToast());
-          } else if (!userControlRef.current) {
-            setCursorPhase('demo');
-            controller.resume();
-            pushToastRef.current(autoplayStartedToast());
-          }
-        } else {
-          const wasPlaying = !userControlRef.current && autoplayStartedRef.current;
-          controller.pause();
-          clearResumeTimer();
-          clearTargetRetry();
-          clearDemoTargetHighlight();
-          clearClickTimer();
-          setCursorClicking(false);
-          setCursorDragging(false);
-          setCursorPhase('gone');
-          if (wasPlaying) {
-            pushToastRef.current(autoplayPausedToast());
-          }
+    // Every page of the stack shares one grid cell, so intersection alone would keep this
+    // autoplay running behind whichever page the visitor turned to.
+    const stopPageWatch = watchPageActive(visibilityRoot, (visible) => {
+      inViewRef.current = visible;
+      setInView(visible);
+      if (visible) {
+        if (!autoplayStartedRef.current) {
+          autoplayStartedRef.current = true;
+          setCursorPhase('demo');
+          controller.start();
+          pushToastRef.current(autoplayStartedToast());
+        } else if (!userControlRef.current) {
+          setCursorPhase('demo');
+          controller.resume();
+          pushToastRef.current(autoplayStartedToast());
         }
-      },
-      { threshold: 0.6 },
-    );
-    observer.observe(visibilityRoot);
+      } else {
+        const wasPlaying = !userControlRef.current && autoplayStartedRef.current;
+        controller.pause();
+        clearResumeTimer();
+        clearTargetRetry();
+        clearDemoTargetHighlight();
+        clearClickTimer();
+        setCursorClicking(false);
+        setCursorDragging(false);
+        setCursorPhase('gone');
+        if (wasPlaying) {
+          pushToastRef.current(autoplayPausedToast());
+        }
+      }
+    });
 
     // Hold the demo still while the note dialog covers this page.
     const stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
@@ -398,7 +393,7 @@ function MockMapOverlayInner() {
     });
 
     return () => {
-      observer.disconnect();
+      stopPageWatch();
       stopNoteWatch();
       controller.destroy();
       autoplayStartedRef.current = false;
