@@ -88,6 +88,31 @@ test('store page: static undoable-store illustration is reachable', async ({ pag
   await expect(front.locator('section')).toBeVisible();
 });
 
+test('status chip: auto-playing until the visitor takes over, then Replay hands it back', async ({ page }) => {
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await waitForIslandMounted(front);
+
+  const chip = front.locator('[data-demo-status]');
+  const replay = chip.locator('[data-demo-status-replay]');
+  await expect(chip).toHaveAttribute('data-state', 'playing', { timeout: 15_000 });
+  await expect(chip).toContainText('Auto-playing');
+  await expect(replay).toBeHidden();
+
+  await front.locator('.mock-map-overlay').focus();
+  await expect(chip).toHaveAttribute('data-state', 'user');
+  await expect(chip).toContainText("You're in control");
+  await expect(replay).toBeVisible();
+
+  // Focus is a deliberate takeover, so the idle resume (2s) must not fire.
+  await page.waitForTimeout(3000);
+  await expect(chip).toHaveAttribute('data-state', 'user');
+
+  await replay.click();
+  await expect(chip).toHaveAttribute('data-state', 'playing');
+});
+
 test('main page: the demo cursor leaves when its page is no longer in front', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
