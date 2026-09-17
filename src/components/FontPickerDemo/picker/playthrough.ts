@@ -119,7 +119,7 @@ export class Run {
     await this.wait(500);
   }
 
-  async type(input: HTMLInputElement, text: string) {
+  async type(input: HTMLInputElement, text: string, charMs = TYPE_CHAR_MS) {
     await this.press(input);
     if (input.value !== '') {
       setNativeValue(input, '');
@@ -129,7 +129,7 @@ export class Run {
     for (const char of text) {
       built += char;
       setNativeValue(input, built);
-      await this.wait(TYPE_CHAR_MS);
+      await this.wait(charMs);
     }
   }
 

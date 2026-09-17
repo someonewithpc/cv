@@ -74,10 +74,13 @@ async function reveal(run: Run, root: HTMLElement, entry: string, input: HTMLInp
   if (input.closest('fieldset')?.classList.contains('hidden')) await pickFromList(run, root, entry);
 }
 
+// A URL is read, not composed character by character, so typing it can move quicker
+const URL_TYPE_MS = 60;
+
 async function extractFrom(run: Run, root: HTMLElement, url: string) {
   const input = target<HTMLInputElement>(root, 'embed');
   await reveal(run, root, EXTRACT_FROM_URL, input);
-  await run.type(input, url);
+  await run.type(input, url, URL_TYPE_MS);
   // A page can bring a dozen files through the proxy, and nothing after this means
   // anything until its faces are in
   await settle(run, input, 25000);
