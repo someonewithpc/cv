@@ -962,11 +962,12 @@ onBeforeUnmount(() => {
         <path
           d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
           fill="#fff"
-          stroke="#222"
+          stroke="var(--accent, #222)"
           stroke-width="1.6"
           stroke-linejoin="round"
         />
       </svg>
+      <span class="demo-cursor-label monospace">demo</span>
     </div>
   </div>
 </template>
@@ -1477,6 +1478,21 @@ $scene-bg: #212121;
   svg {
     display: block;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  }
+
+  // Says out loud that this arrow is the walkthrough's, not the visitor's pointer.
+  .demo-cursor-label {
+    position: absolute;
+    left: 2.25em;
+    top: 2em;
+    padding: 0 0.25em;
+    border: 1px solid var(--accent, #222);
+    border-radius: 0.25em;
+    background: #fff;
+    color: #222;
+    font-size: 0.625rem;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
   }
 }
 </style>
