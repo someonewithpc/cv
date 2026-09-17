@@ -32,8 +32,6 @@ const DROP_POINTS: Array<[number, number]> = [
   [0.32, 0.66],
 ];
 
-const RESUME_DELAY_MS = 2500;
-
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
@@ -67,7 +65,6 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
-let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function showToast(message: string) {
   toast.value = message;
@@ -428,24 +425,18 @@ function stopAutoplay() {
 }
 
 function restartDemo() {
-  if (resumeTimer) clearTimeout(resumeTimer);
-  resumeTimer = null;
   stopAutoplay();
   userControl = false;
   sceneRef.value?.reset();
   startAutoplay();
 }
 
+// Every caller is a deliberate grab at the catalog or the scene, so the visitor keeps
+// control until they ask for the walkthrough back from the sheet's status chip.
 function yieldToUser() {
-  if (resumeTimer) clearTimeout(resumeTimer);
   if (demoPlaying.value) stopAutoplay();
   userControl = true;
   reportAutoplayState(rootRef.value, 'user');
-  resumeTimer = setTimeout(() => {
-    resumeTimer = null;
-    userControl = false;
-    startAutoplay();
-  }, RESUME_DELAY_MS);
 }
 
 onMounted(async () => {
@@ -532,7 +523,6 @@ onBeforeUnmount(() => {
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
-  if (resumeTimer) clearTimeout(resumeTimer);
   if (toastTimer) clearTimeout(toastTimer);
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();

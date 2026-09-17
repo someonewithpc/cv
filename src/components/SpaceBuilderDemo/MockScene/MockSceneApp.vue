@@ -185,8 +185,9 @@ function applyCursor(step: DemoCursorStep) {
   }
 }
 
-function yieldToUser() {
-  // Match Marker Editor: any trusted activity pauses autoplay and resets the idle timer.
+// Match Marker Editor: hovering pauses autoplay and resets the idle timer, while a
+// deliberate interaction keeps control until the visitor replays from the status chip.
+function yieldToUser(keepControl = false) {
   if (resumeTimer) clearTimeout(resumeTimer);
 
   if (cursorPhase.value === 'demo') {
@@ -205,6 +206,8 @@ function yieldToUser() {
     cursorPhase.value = 'gone';
     pushToast(autoplayPausedToast());
   }
+
+  if (keepControl) return;
 
   resumeTimer = setTimeout(() => {
     resumeTimer = null;
@@ -251,12 +254,12 @@ function onTrustedPointer(event: PointerEvent) {
     }
   }
 
-  yieldToUser();
+  yieldToUser(event.type === 'pointerdown');
 }
 
 function onPointerDown(event: PointerEvent) {
   if (!event.isTrusted) return;
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
 
   const target = event.target as HTMLElement | null;
   // UI chrome handles its own clicks — don't steal them for orbit/draw.
@@ -383,7 +386,7 @@ function onWheel(event: WheelEvent) {
   if (target?.closest('.rail, .sidebar, .flash, .toasts, button, input, label, details')) return;
   const scene = sceneRef.value;
   if (!scene) return;
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   applyWheelZoom(scene, event);
 }
 
@@ -506,7 +509,7 @@ function onCatalogDragStart(event: DragEvent, item: CatalogItem) {
     event.preventDefault();
     return;
   }
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   selectedCatalogId.value = item.id;
   phase.value = 'placing';
   panel.value = 'catalog';
@@ -525,14 +528,14 @@ function onCatalogDragEnd() {
 function onViewportDragOver(event: DragEvent) {
   if (phase.value !== 'placing' && !event.dataTransfer?.types.includes('text/plain')) return;
   event.preventDefault();
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   phase.value = 'placing';
   sceneRef.value?.setGhostAt(event.clientX, event.clientY);
 }
 
 function onViewportDrop(event: DragEvent) {
   event.preventDefault();
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   sceneRef.value?.setGhostAt(event.clientX, event.clientY);
   sceneRef.value?.placeGhostAsSingle();
   phase.value = 'idle';
@@ -543,7 +546,7 @@ function onViewportDrop(event: DragEvent) {
 function onKeyDown(event: KeyboardEvent) {
   if (event.key === 'a' || event.key === 'A') {
     event.preventDefault();
-    if (!userControl.value) yieldToUser();
+    if (!userControl.value) yieldToUser(true);
     openAdd();
   } else if (event.key === 'Escape') {
     if (panel.value !== 'closed') goBack();
@@ -735,7 +738,7 @@ onBeforeUnmount(() => {
     :data-ready="ready ? 'true' : 'false'"
     :data-user-control="userControl ? 'true' : 'false'"
     :data-panel="panel"
-    @focus="yieldToUser"
+    @focus="yieldToUser(true)"
     @demo-replay="restartDemo"
   >
     <aside class="rail" aria-label="Tools">

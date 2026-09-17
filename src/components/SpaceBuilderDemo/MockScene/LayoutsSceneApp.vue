@@ -37,8 +37,6 @@ const SEED_OPTIONS: LayoutOptions = {
 };
 
 const HOLD_MS = 1700;
-const RESUME_DELAY_MS = 2500;
-
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
@@ -57,7 +55,6 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
-let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 const activeStyle = computed(() => snapshot.value?.options.style ?? 'grid');
 
@@ -91,23 +88,17 @@ function startAutoplay() {
 }
 
 function restartDemo() {
-  if (resumeTimer) clearTimeout(resumeTimer);
-  resumeTimer = null;
   userControl = false;
   startAutoplay();
 }
 
+// Picking a style is deliberate, so the visitor keeps control until they ask for
+// the walkthrough back from the sheet's status chip.
 function yieldToUser() {
-  if (resumeTimer) clearTimeout(resumeTimer);
   autoplayToken += 1;
   demoPlaying.value = false;
   userControl = true;
   reportAutoplayState(rootRef.value, 'user');
-  resumeTimer = setTimeout(() => {
-    resumeTimer = null;
-    userControl = false;
-    startAutoplay();
-  }, RESUME_DELAY_MS);
 }
 
 function isChrome(target: EventTarget | null) {
@@ -294,7 +285,6 @@ onBeforeUnmount(() => {
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
-  if (resumeTimer) clearTimeout(resumeTimer);
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
   sceneRef.value = null;
