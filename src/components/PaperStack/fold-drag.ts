@@ -860,6 +860,12 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   }
   stack.style.removeProperty('--flip-progress');
   sheet.classList.remove('paper-front');
+  // index.astro holds the reveal back half a second so the dog-ear draws itself once the page
+  // has loaded, and restarting the animation here brought that wait along: the flip landed on a
+  // front page with a square corner, and the dog-ear only turned up once everything else had
+  // stopped moving. It has been introduced by now, so start it at once and let it curl up while
+  // the sheet it replaces folds away behind the stack. The pulse keeps its own gap after it.
+  next.style.animationDelay = '0s, 1s';
   next.classList.add('paper-front');
   // The clip's back bar goes before the page content so the page hides it (see index.astro)
   next.prepend(under);
@@ -879,6 +885,7 @@ const clearFrontFold = (sheet: HTMLElement): void => {
   sheet.style.removeProperty('--fold-y');
   sheet.style.removeProperty('--paper-surface');
   sheet.style.animationName = '';
+  sheet.style.animationDelay = '';
 };
 
 // The second half: the flipped page's inline fold state is fully cleared — so its next turn at
