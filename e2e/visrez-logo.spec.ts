@@ -63,3 +63,18 @@ test('all-together page: the combined face diagram is shown', async ({ page }) =
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('svg.face')).toBeVisible();
 });
+
+test('cube page: its diagram animation starts when the page is turned to', async ({ page }) => {
+  const stack = visrezStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Cube :)');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  // Every page of a stack sits in the same grid cell, so this finite intro animation used
+  // to run, and finish, while the page was still covered — a visitor turning here got the
+  // end state and never saw it move.
+  const running = () => front.locator('section').first().evaluate((section) => section
+    .getAnimations({ subtree: true })
+    .filter((animation) => animation.playState === 'running').length);
+  await expect.poll(running, { timeout: 15_000 }).toBeGreaterThan(0);
+});
