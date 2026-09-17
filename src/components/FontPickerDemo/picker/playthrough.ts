@@ -102,6 +102,8 @@ export class Run {
   /** Move to an element and pulse the cursor there, without any DOM event */
   async press(el: Element) {
     await this.moveTo(el);
+    // A press elsewhere takes the focus off a field the run was typing into, as a click would
+    if (document.activeElement !== el) this.controller.focus(null);
     this.cursor(center(el), { clicking: true });
     await this.wait(CLICK_MS);
     this.cursor(center(el));
@@ -121,6 +123,9 @@ export class Run {
 
   async type(input: HTMLInputElement, text: string, charMs = TYPE_CHAR_MS) {
     await this.press(input);
+    // Typing holds the field's focus, and a subform stays while it has that: cleared to
+    // make room for the next value, an unfocused one would fold away until the first key
+    this.controller.focus(input);
     if (input.value !== '') {
       setNativeValue(input, '');
       await this.wait(300);
@@ -193,7 +198,10 @@ export class Playthrough {
   token = 0;
   running = false;
   at: { x: number; y: number } | null = null;
+  /** True while a focus change below is the run's own, for listeners that watch for a person's */
+  scriptedFocus = false;
   private over: Element | null = null;
+  private focused: HTMLElement | null = null;
   private sceneIndex = 0;
 
   constructor(
@@ -216,8 +224,21 @@ export class Playthrough {
     this.running = false;
     this.token += 1;
     this.hover(handoff);
+    this.focus(null);
     this.at = null;
     this.cursor(null);
+  }
+
+  /** Put the run's focus on an element, or take it back off; the events fire as the browser's own */
+  focus(el: HTMLElement | null) {
+    this.scriptedFocus = true;
+    try {
+      if (el) el.focus({ preventScroll: true });
+      else if (this.focused && document.activeElement === this.focused) this.focused.blur();
+    } finally {
+      this.scriptedFocus = false;
+    }
+    this.focused = el;
   }
 
   place(state: CursorState) {
