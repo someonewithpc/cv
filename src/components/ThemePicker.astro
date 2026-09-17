@@ -349,7 +349,12 @@ inputs.forEach((inputEl) => {
        nobody has picked yet, so it also catches the first click on it. */
     const shown = getComputedStyle(document.documentElement).getPropertyValue('--theme-kind').trim();
 
-    if (prefersReducedMotion.matches || !document.startViewTransition || shown === id) {
+    /* A backgrounded tab gets no rendering opportunities, so a transition started
+       there never ends: it keeps the pseudo-element overlay up and swallows every
+       later click. Nobody can see it anyway. */
+    const hidden = () => document.visibilityState !== 'visible';
+
+    if (prefersReducedMotion.matches || !document.startViewTransition || shown === id || hidden()) {
       commitTheme();
       return;
     }
@@ -360,6 +365,11 @@ inputs.forEach((inputEl) => {
        must not cost the pick. `data-theme` and `.with-transition.checked` select
        the same variables, so they can be written together. */
     const viewTransition = document.startViewTransition(commitTheme);
+
+    const skipIfHidden = () => {
+      if (hidden()) viewTransition.skipTransition();
+    };
+    document.addEventListener('visibilitychange', skipIfHidden);
 
     viewTransition.ready.then(async () => {
       await ensurePathData();
@@ -431,6 +441,7 @@ inputs.forEach((inputEl) => {
     });
 
     viewTransition.finished.finally(() => {
+      document.removeEventListener('visibilitychange', skipIfHidden);
       document.documentElement.classList.remove('theme-transition');
     });
   }, { passive: true });
