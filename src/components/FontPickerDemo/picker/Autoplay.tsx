@@ -112,15 +112,17 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     page.addEventListener('pointermove', onPointer, { passive: true });
     page.addEventListener('pointerdown', onPointer, { passive: true });
 
-    // Focus in the form is the user picking: nothing resumes until it leaves
+    // Focus in the form is the user picking: nothing resumes until it leaves. The run's own
+    // focus, on a field it types into, fires the same trusted events and is told by its flag
     const onFocusIn = (e: FocusEvent) => {
-      if (!e.isTrusted) return;
+      if (!e.isTrusted || controller.scriptedFocus) return;
       window.clearTimeout(resumeTimer);
       userControl = true;
       hold('Demo paused');
     };
     const onFocusOut = (e: FocusEvent) => {
-      if (!e.isTrusted || (e.relatedTarget instanceof Node && el.contains(e.relatedTarget))) return;
+      if (!e.isTrusted || controller.scriptedFocus) return;
+      if (e.relatedTarget instanceof Node && el.contains(e.relatedTarget)) return;
       userControl = false;
       resumeTimer = window.setTimeout(play, RESUME_DELAY_MS);
     };
