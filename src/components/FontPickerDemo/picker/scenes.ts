@@ -48,16 +48,20 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
     return item;
   };
 
-  for (const hovered of [...hoverFirst, value]) {
+  // Farthest preview first, so each stop is closer to the pick than the last: the cursor
+  // never has to cross a row it already lingered on to get there
+  const targetIndex = values.indexOf(value);
+  const ordered = [...hoverFirst].sort((a, b) => Math.abs(values.indexOf(b) - targetIndex) - Math.abs(values.indexOf(a) - targetIndex));
+
+  for (const hovered of [...ordered, value]) {
     const index = values.indexOf(hovered);
     if (index < 0) continue;
     await run.moveTo(row(index));
-    await run.wait(hovered === value ? 500 : 1300);
+    await run.wait(hovered === value ? 550 : 650);
   }
 
-  const index = values.indexOf(value);
-  if (index >= 0) {
-    await run.press(row(index));
+  if (targetIndex >= 0) {
+    await run.press(row(targetIndex));
     setNativeValue(select, value);
   }
   run.leave();
