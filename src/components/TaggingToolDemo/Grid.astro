@@ -34,15 +34,15 @@ const sharedTitle = 'Edit all the values in this group';
     <div class="property with-in-place-edit">
       <span class="eyebrow">Property</span>
       <span class="in-place-label" id={propertyId}>{property}</span>
-      <button type="button" class="in-place-pencil-btn icon-btn" title="Rename">
+      <button type="button" class="in-place-pencil-btn icon-btn" title="Rename" aria-label="Rename property">
         <Icon name="lucide:pencil" />
       </button>
       <form class="in-place-form" aria-label="Rename property">
         <input class="in-place-input" type="text" value={property} aria-label="Property name" />
-        <button type="submit" class="in-place-submit-btn icon-btn" title="Save">
+        <button type="submit" class="in-place-submit-btn icon-btn" title="Save" aria-label="Save property name">
           <Icon name="lucide:check" />
         </button>
-        <button type="button" class="in-place-cancel-btn icon-btn" title="Cancel">
+        <button type="button" class="in-place-cancel-btn icon-btn" title="Cancel" aria-label="Cancel renaming the property">
           <Icon name="lucide:undo-2" />
         </button>
       </form>
@@ -84,7 +84,13 @@ const sharedTitle = 'Edit all the values in this group';
               placeholder={shared.mismatched ? 'mismatched' : 'Shared value'}
               aria-label={`Shared ${property} for ${group.name}`}
             />
-            <button type="button" class="shared-submit icon-btn" disabled={shared.mismatched} title="Set every member">
+            <button
+              type="button"
+              class="shared-submit icon-btn"
+              disabled={shared.mismatched}
+              title="Set every member"
+              aria-label={`Set every ${group.name} member to the shared value`}
+            >
               <Icon name="lucide:check" />
             </button>
           </label>
@@ -108,7 +114,12 @@ const sharedTitle = 'Edit all the values in this group';
                     placeholder="—"
                     aria-label={`${property} for ${group.name} ${object.style}`}
                   />
-                  <button type="submit" class="in-place-submit-btn icon-btn" title="Update">
+                  <button
+                    type="submit"
+                    class="in-place-submit-btn icon-btn"
+                    title="Update"
+                    aria-label={`Save ${property} for ${group.name} ${object.style}`}
+                  >
                     <Icon name="lucide:check" />
                   </button>
                 </form>

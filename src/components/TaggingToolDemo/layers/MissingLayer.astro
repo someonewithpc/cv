@@ -3,7 +3,10 @@ import Grid from '../Grid.astro';
 ---
 
 <div class="wrapper">
-  <div class="missing-layer" aria-hidden="true">
+  {/* inert: aria-hidden alone doesn't pull the embedded Grid's real inputs/buttons out
+      of the Tab order, so a keyboard user would land on illustration-only controls a
+      screen reader stays silent about. Same fix as EditorLayer.astro's inert embed. */}
+  <div class="missing-layer" aria-hidden="true" inert>
     <Grid onlyMissing />
 
     <dl class="legend">
