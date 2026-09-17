@@ -10,6 +10,7 @@ import PickerLayer from './layers/PickerLayer.astro';
 import DiscoveryLayer from './layers/DiscoveryLayer.astro';
 import SourcesLayer from './layers/SourcesLayer.astro';
 import FeedbackLayer from './layers/FeedbackLayer.astro';
+import PinnedLayer from './layers/PinnedLayer.astro';
 
 function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
@@ -44,6 +45,7 @@ const layers = {
   discovery: { name: 'Font Discovery', pageStyle: 'blueprint' },
   sources: { name: 'External Sources', pageStyle: 'blueprint' },
   feedback: { name: 'Reactive Feedback', pageStyle: 'blueprint' },
+  pinned: { name: 'Pinned Controls', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -63,6 +65,7 @@ type Layer = keyof typeof layers;
       discovery: <DiscoveryLayer />,
       sources: <SourcesLayer />,
       feedback: <FeedbackLayer />,
+      pinned: <PinnedLayer />,
     }[layer])}
   </fragment>
 
@@ -88,6 +91,13 @@ type Layer = keyof typeof layers;
           The fieldset border is one conic gradient driven by three registered
           custom properties. A quarter-turn arc orbits while a fetch is pending,
           then sweeps closed in the verdict's color
+        </PostIt>
+      ),
+      pinned: (
+        <PostIt background="#fed" color="black">
+          Change the size and the whole column reflows under your hand. A control being
+          worked goes <code>position: fixed</code> at the spot it had, so the slider stays
+          under the pointer
         </PostIt>
       ),
     }[layer])}
