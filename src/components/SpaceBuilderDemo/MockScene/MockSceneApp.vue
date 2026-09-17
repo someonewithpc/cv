@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { watchPageActive } from '@/client/frontPage';
 
 import {
   AutoPlayController,
@@ -106,7 +107,7 @@ let toastId = 0;
 let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 let handoffTimer: ReturnType<typeof setTimeout> | null = null;
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
-let observer: IntersectionObserver | null = null;
+let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
@@ -630,41 +631,34 @@ onMounted(async () => {
         console.debug('Space Builder demo chair failed to load', error);
       });
 
-    // Pause when this carousel page leaves the stack (same pattern as Marker Editor).
+    // Pause when this carousel page stops being the front one (same pattern as Marker Editor).
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? root.closest<HTMLElement>('.mock-scene-demo')
       ?? root;
-    const stack = visibilityRoot.closest('article.technical-drawing-stack');
-    observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        const visible = Boolean(entry?.isIntersecting);
-        const wasVisible = inView.value;
-        inView.value = visible;
+    stopPageWatch = watchPageActive(visibilityRoot, (active) => {
+      const wasActive = inView.value;
+      inView.value = active;
 
-        if (!visible) {
-          controller.pause();
-          releaseSpaceBuilderGpu(scene);
-          cursorPhase.value = 'gone';
-          return;
-        }
+      if (!active) {
+        controller.pause();
+        releaseSpaceBuilderGpu(scene);
+        cursorPhase.value = 'gone';
+        return;
+      }
 
-        if (reducedMotion.value) {
-          scene.pause();
-          return;
-        }
+      if (reducedMotion.value) {
+        scene.pause();
+        return;
+      }
 
-        claimSpaceBuilderGpu(scene);
-        if (visible && !wasVisible && !userControl.value) {
-          startAutoplay(controller);
-        } else if (visible && !userControl.value && chairsReady.value) {
-          controller.resume();
-        }
-      },
-      { root: stack, threshold: 0.55 },
-    );
-    observer.observe(visibilityRoot);
+      claimSpaceBuilderGpu(scene);
+      if (!wasActive && !userControl.value) {
+        startAutoplay(controller);
+      } else if (!userControl.value && chairsReady.value) {
+        controller.resume();
+      }
+    });
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
@@ -694,7 +688,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
+  stopPageWatch?.();
+  stopPageWatch = null;
   stopNoteWatch?.();
   stopNoteWatch = null;
   controllerRef.value?.destroy();
