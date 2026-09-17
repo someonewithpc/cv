@@ -3,13 +3,6 @@
 
 declare module 'path-data-polyfill';
 
-// Only the one binding this project reads at runtime.
-declare module 'cloudflare:workers' {
-  export const env: {
-    ASSETS: { fetch: typeof fetch };
-  };
-}
-
 declare module '/@react-refresh' {
   const runtime: {
     injectIntoGlobalHook: (env: Window) => void;
