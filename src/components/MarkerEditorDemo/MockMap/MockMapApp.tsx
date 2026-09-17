@@ -16,6 +16,7 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
+import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -162,6 +163,7 @@ function MockMapOverlayInner() {
   const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
   const [toasts, setToasts] = useState<DemoToast[]>([]);
   const userControlRef = useRef(false);
+  const restartRef = useRef<() => void>(() => {});
   const inViewRef = useRef(false);
   const autoplayStartedRef = useRef(false);
   const toastIdRef = useRef(0);
@@ -416,6 +418,14 @@ function MockMapOverlayInner() {
     return bindUndoRedoKeys(el, dispatch, (toast) => pushToastRef.current(toast));
   }, [dispatch]);
 
+  // Drives the sheet's status chip (TechnicalDrawing/Page.astro).
+  useEffect(() => {
+    if (!inView) return;
+    reportAutoplayState(containerRef.current, userControl ? 'user' : 'playing');
+  }, [inView, userControl]);
+
+  useEffect(() => onReplayRequest(containerRef.current, () => restartRef.current()), []);
+
   useEffect(() => {
     const demo = containerRef.current?.closest<HTMLElement>('.mock-map-demo');
     if (!demo) return;
@@ -463,6 +473,8 @@ function MockMapOverlayInner() {
     autoplayRef.current?.restart();
     pushToastRef.current(autoplayStartedToast());
   };
+
+  restartRef.current = restartDemo;
 
   // Never hide or teleport the real pointer — on trusted user movement, pause and
   // fade the demo cursor where it is, then resume after the user goes idle.
