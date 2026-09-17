@@ -55,6 +55,6 @@
 - [ ] Run W3C validator
   - [ ] Put CSS and JS out of line
 - [ ] Make demos more usable without JS
-- [ ] Contact section
+- [x] Contact section
 - [ ] Work History
 - [ ] Drawn arrows indicating paper turn, maybe only for reduced-motion?
