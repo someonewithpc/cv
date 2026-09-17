@@ -163,6 +163,8 @@ function MockMapOverlayInner() {
   const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
   const [toasts, setToasts] = useState<DemoToast[]>([]);
   const userControlRef = useRef(false);
+  /** The visitor took over deliberately; only Replay hands the walkthrough back. */
+  const heldRef = useRef(false);
   const restartRef = useRef<() => void>(() => {});
   const inViewRef = useRef(false);
   const autoplayStartedRef = useRef(false);
@@ -447,7 +449,7 @@ function MockMapOverlayInner() {
   };
 
   const resumeAutoplay = () => {
-    if (!inViewRef.current) return;
+    if (!inViewRef.current || heldRef.current) return;
     userControlRef.current = false;
     cursorPhaseRef.current = 'demo';
     setUserControl(false);
@@ -465,6 +467,7 @@ function MockMapOverlayInner() {
     clearClickTimer();
     setCursorClicking(false);
     setCursorDragging(false);
+    heldRef.current = false;
     userControlRef.current = false;
     setUserControl(false);
     dispatch(setAutoplayPaused(false));
@@ -478,7 +481,9 @@ function MockMapOverlayInner() {
 
   // Never hide or teleport the real pointer — on trusted user movement, pause and
   // fade the demo cursor where it is, then resume after the user goes idle.
-  const yieldToUser = () => {
+  // A deliberate interaction (click, tap, focus) keeps control instead, until the
+  // visitor asks for the walkthrough back from the sheet's status chip.
+  const yieldToUser = (keepControl = false) => {
     clearResumeTimer();
     if (cursorPhaseRef.current === 'demo') {
       clearHandoffTimer();
@@ -498,6 +503,11 @@ function MockMapOverlayInner() {
       pushToastRef.current(autoplayPausedToast());
     }
 
+    if (keepControl) {
+      heldRef.current = true;
+      return;
+    }
+
     resumeTimerRef.current = setTimeout(() => {
       resumeTimerRef.current = null;
       resumeAutoplay();
@@ -509,7 +519,7 @@ function MockMapOverlayInner() {
 
     const onTrustedPointer = (e: PointerEvent) => {
       if (!e.isTrusted) return;
-      yieldToUser();
+      yieldToUser(e.type === 'pointerdown');
     };
 
     window.addEventListener('pointermove', onTrustedPointer, { passive: true });
@@ -542,7 +552,7 @@ function MockMapOverlayInner() {
       className="mock-map-overlay"
       tabIndex={0}
       onFocus={() => {
-        yieldToUser();
+        yieldToUser(true);
       }}
     >
       <div className="mock-map-scene">
