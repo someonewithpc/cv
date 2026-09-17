@@ -97,8 +97,9 @@ const { tech, class: className, decorative = false } = Astro.props;
 </style>
 
 <style is:global>
-/* SVGO drops paint-order from the SVG; without it the contrast stroke paints over the fill. */
-svg[data-icon='postgresql'] path {
+/* SVGO drops paint-order from the SVG; without it the contrast stroke paints over the fill.
+   Set on the host: it inherits, so it reaches the paths a <use> instantiates too. */
+svg[data-icon='postgresql'] {
   paint-order: stroke fill;
 }
 </style>
