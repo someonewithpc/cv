@@ -3,6 +3,9 @@
 // so a pause mid-scene unwinds it at the next await instead of leaving a half-typed field.
 
 export const CURSOR_TRAVEL_MS = 560;
+// The first glide after the cursor appears brings it in from beyond the sheet: a longer way,
+// taken unhurried, straight to whatever the scene reaches for first
+const ARRIVAL_MS = 2000;
 const CLICK_MS = 180;
 const TYPE_CHAR_MS = 130;
 
@@ -14,7 +17,7 @@ export class Cancelled extends Error {}
 export const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 export const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-export const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);
+const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);
 const easeOutQuint = (t: number) => 1 - (1 - t) ** 5;
 
 // React installs its own value descriptor on inputs, so the prototype's setter is what makes
@@ -83,6 +86,11 @@ export class Run {
     if (!from || Math.hypot(to.x - from.x, to.y - from.y) <= 8) {
       this.cursor(to);
       return;
+    }
+    if (this.controller.arriving) {
+      this.controller.arriving = false;
+      ms = ARRIVAL_MS;
+      ease = easeInOutQuad;
     }
     const start = performance.now();
     for (;;) {
@@ -200,6 +208,8 @@ export class Playthrough {
   at: { x: number; y: number } | null = null;
   /** True while a focus change below is the run's own, for listeners that watch for a person's */
   scriptedFocus = false;
+  /** Set once the entrance has placed the cursor: the next glide is the way in */
+  arriving = false;
   private over: Element | null = null;
   private focused: HTMLElement | null = null;
   private sceneIndex = 0;
@@ -208,7 +218,8 @@ export class Playthrough {
     private readonly scenes: Scene[],
     private readonly cursor: CursorHook,
     private readonly onLoop: () => void,
-    /** Brings the cursor in whenever it is not on the page: at the start, and after a hand-over */
+    /** Places the cursor whenever it is not on the page, at the start and after a hand-over; the
+     *  scene's first glide then brings it in */
     private readonly entrance?: Scene,
   ) {}
 
@@ -226,6 +237,7 @@ export class Playthrough {
     this.hover(handoff);
     this.focus(null);
     this.at = null;
+    this.arriving = false;
     this.cursor(null);
   }
 
@@ -262,7 +274,10 @@ export class Playthrough {
   private async loop(token: number) {
     while (this.token === token) {
       try {
-        if (this.at === null && this.entrance) await this.entrance(new Run(this, token));
+        if (this.at === null && this.entrance) {
+          await this.entrance(new Run(this, token));
+          this.arriving = true;
+        }
         await this.scenes[this.sceneIndex](new Run(this, token));
       } catch (e) {
         if (e instanceof Cancelled) return;
