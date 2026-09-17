@@ -78,7 +78,7 @@ const { highlights } = Astro.props;
     <p>{entry.description}</p>
 
     {entry.links?.length > 0 && (
-      <nav aria-label="Project links">
+      <nav aria-label={`${entry.title} links`}>
         {entry.links.map(({ label, url }) => (
           <a
             href={url}
