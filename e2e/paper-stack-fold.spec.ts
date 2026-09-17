@@ -39,6 +39,16 @@ const DEMOS = [
       'Drag & Drop',
     ],
   },
+  {
+    label: 'Tagging tool',
+    stackIndex: 3,
+    pages: [
+      'Library Tagging Tool',
+      'Shared Group Input',
+      'Simulated Caret',
+      'Missing Values',
+    ],
+  },
 ];
 
 test.beforeEach(async ({ page }) => {
