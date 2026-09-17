@@ -120,11 +120,11 @@ section {
     }
 
     input:checked + label {
-      color: var(--surface-page);
-      background: var(--blueprint);
+      color: color-mix(in oklch, white 90%, var(--blueprint));
+      background: color-mix(in oklch, var(--blueprint), black 18%);
 
       &:hover {
-        color: var(--surface-page);
+        color: white;
       }
     }
 
