@@ -127,7 +127,7 @@ const DEFAULT_MOBILE_MODE: 'compact' | 'autohide' | 'collapse' = 'compact';
     const settings = THEMES[id];
     return (
       <label class="bypass-contrast-check">
-        <input tabindex="0" type="radio" name="theme" value={id} class="sr-only" />
+        <input type="radio" name="theme" value={id} class="sr-only" />
         <Icon name={settings.icons.unchecked} class="unchecked" aria-hidden="true" />
         <Icon name={settings.icons.checked} class="checked" data-theme-transition-scale-factor={settings.transitionScaleFactor} aria-hidden="true" />
         <span>{settings.name}</span>
@@ -169,6 +169,7 @@ aside {
     display: flex;
     align-items: center;
     gap: 1ch;
+    min-height: 1.5rem;
     font-family: monospace, system-ui;
     font-size: 0.8125rem;
 
