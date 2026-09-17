@@ -95,6 +95,7 @@ const totalLayers = Object.keys(layers).length;
 
 <script>
 import { armIslands } from '@/client/bootIsland';
+import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 
 function initStack(stack: HTMLElement) {
@@ -135,6 +136,10 @@ function initStack(stack: HTMLElement) {
     observer.observe(page);
     watchFrontPage(page, () => apply(page));
   });
+
+  // Before the islands mount, so the first state a demo reports is already heard.
+  [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
+    .forEach((page) => initAutoplayStatus(page));
 
   armIslands(stack);
 

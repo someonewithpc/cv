@@ -47,6 +47,16 @@ const sheetAnchor = `--${noteId}-sheet`;
   class={pageStyle}
   style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
 >
+  <!-- Filled in and revealed by src/client/autoplayStatus.ts once a demo on this
+       sheet reports that it is playing by itself. -->
+  <div class="demo-status" data-demo-status hidden>
+    <span class="demo-status-dot" aria-hidden="true"></span>
+    <span class="demo-status-text monospace" data-demo-status-text role="status"></span>
+    <button class="demo-status-replay monospace" type="button" data-demo-status-replay hidden>
+      Replay
+    </button>
+  </div>
+
   <div class="content">
     <slot name="content" />
   </div>
@@ -243,6 +253,87 @@ section {
       /* Portrait gives the artwork the full sheet width, not a third of it. */
       font-size: min(1rem, 0.038 * var(--sheet-inline));
     }
+  }
+
+  /* Straddles the top frame line like a label stamped on the sheet, so it reads
+     as the drawing's own note about itself rather than part of the demo's UI. */
+  .demo-status {
+    position: absolute;
+    top: calc(var(--sheet-margin) - 0.375em);
+    left: 50%;
+    translate: -50% 0;
+    /* Over the demos' own chrome and over their drawn cursor (z-index 1100 in
+       MockMapOverlay.scss), which otherwise covers the Replay button. */
+    z-index: 1200;
+
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    max-width: calc(100% - 2 * var(--sheet-margin) - 1em);
+
+    padding: 0.125em 0.625em;
+    border: $border;
+    border-radius: 0.25em;
+    background: var(--surface-sunken);
+    color: var(--ink);
+    font-size: 0.75rem;
+    line-height: 1.75;
+    /* The sheet under it stays hoverable, so the chip never blocks a takeover. */
+    pointer-events: none;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .demo-status-dot {
+    width: 0.5em;
+    height: 0.5em;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--accent);
+    animation: demo-status-blink 1.5s ease-in-out infinite;
+
+    .demo-status[data-state='user'] &,
+    .demo-status[data-state='off'] & {
+      background: none;
+      animation: none;
+    }
+  }
+
+  @keyframes demo-status-blink {
+    50% { opacity: 0.25; }
+  }
+
+  .demo-status-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .demo-status-replay {
+    padding: 0 0.375em;
+    border: $border;
+    border-radius: 0.25em;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+
+    &[hidden] {
+      display: none;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .demo-status-dot { animation: none; }
   }
 
   .aside {
@@ -575,6 +666,10 @@ section {
        corner instead of taking a row of its own. */
     grid-template-rows: minmax(0, 1fr) auto;
     align-items: stretch;
+
+    .demo-status {
+      font-size: 0.625rem;
+    }
 
     .content {
       grid-column: 1;
