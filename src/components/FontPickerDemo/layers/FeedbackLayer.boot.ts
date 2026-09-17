@@ -26,7 +26,10 @@ export function boot(host: HTMLElement) {
     button.addEventListener('click', () => {
       fieldset.classList.remove('idle', 'pending', 'success', 'error');
       fieldset.classList.add(button.dataset.borderState!);
-      buttons.forEach((b) => b.classList.toggle('active', b === button));
+      buttons.forEach((b) => {
+        b.classList.toggle('active', b === button);
+        b.setAttribute('aria-pressed', String(b === button));
+      });
     });
   });
 }
