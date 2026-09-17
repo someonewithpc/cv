@@ -10,6 +10,9 @@ type Props = {
 const { title = SITE_TITLE, description = SITE_DESCRIPTION } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, SITE_URL);
+const oembedUrl = new URL('/oembed.json', SITE_URL);
+oembedUrl.searchParams.set('url', canonical.toString());
+oembedUrl.searchParams.set('format', 'json');
 ---
 
 <!doctype html>
@@ -30,6 +33,7 @@ const canonical = new URL(Astro.url.pathname, SITE_URL);
     <meta property="profile:first_name" content="Hugo" />
     <meta property="profile:last_name" content="Sales" />
     <meta name="twitter:card" content="summary" />
+    <link rel="alternate" type="application/json+oembed" href={oembedUrl} title={title} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
