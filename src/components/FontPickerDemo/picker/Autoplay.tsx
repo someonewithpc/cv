@@ -1,6 +1,8 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { watchDrawingNote } from '@/client/drawingNote';
+
 import { type CursorState, Playthrough } from './playthrough';
 import { entranceFor, scenesFor } from './scenes';
 import { demoPicker } from './demoPicker';
@@ -64,11 +66,12 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
 
     let inView = false;
     let userControl = false;
+    let noteOpen = false;
     let everPlayed = false;
     let resumeTimer = 0;
 
     const play = () => {
-      if (!inView || userControl || controller.running) return;
+      if (!inView || userControl || noteOpen || controller.running) return;
       controller.start();
       toast(everPlayed ? 'Demo resumed' : 'Demo playing · move to take over');
       everPlayed = true;
@@ -124,7 +127,16 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     el.addEventListener('focusin', onFocusIn);
     el.addEventListener('focusout', onFocusOut);
 
+    // The sheet's note covers the picker while it is open: nothing to watch until it folds away
+    const unwatchNote = watchDrawingNote(el, (open) => {
+      noteOpen = open;
+      window.clearTimeout(resumeTimer);
+      if (open) hold();
+      else play();
+    });
+
     return () => {
+      unwatchNote();
       observer.disconnect();
       page.removeEventListener('pointermove', onPointer);
       page.removeEventListener('pointerdown', onPointer);
