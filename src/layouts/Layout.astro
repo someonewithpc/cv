@@ -66,6 +66,7 @@ const canonical = new URL(Astro.url.pathname, 'https://hsal.es');
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <ThemePicker />
     <slot />
     <footer class="desktop-hint">
@@ -200,12 +201,34 @@ image, svg, img, picture {
 <style is:global>
 .sr-only {
   position: absolute;
-  top: auto;
   width: 1px;
   height: 1px;
-  border: none;
-  outline: none;
+  margin: -1px;
+  padding: 0;
+  border: 0;
   overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 20;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25rem;
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: 0.875rem/1.25 var(--font-poppins);
+  translate: 0 -200%;
+
+  &:focus-visible {
+    translate: 0 0;
+    outline: 2px solid var(--ink);
+    outline-offset: 0.125rem;
+  }
 }
 
 .bypass-contrast-check {
