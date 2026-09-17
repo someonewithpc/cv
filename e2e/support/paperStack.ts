@@ -70,3 +70,50 @@ export async function waitForIslandMounted(page: Locator, selector = '[data-boot
   await expect(island).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
   return island;
 }
+
+type CountedCanvas = HTMLCanvasElement & { __draws?: number };
+
+/**
+ * Counts WebGL draw calls per canvas and reloads so the counter is in place before the
+ * demos boot. A Space Builder page can be mounted, `data-ready` and still never draw a
+ * frame — only one page of a stack owns the WebGL context at a time — so "the canvas is
+ * visible" says nothing about whether the visitor sees a live scene.
+ */
+export async function armDrawCounter(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext as (
+      this: HTMLCanvasElement,
+      ...args: unknown[]
+    ) => unknown;
+
+    HTMLCanvasElement.prototype.getContext = function counted(this: HTMLCanvasElement, ...args: unknown[]) {
+      const context = getContext.apply(this, args) as Record<string, unknown> | null;
+      const type = args[0];
+      if (!context || typeof type !== 'string' || !type.startsWith('webgl') || context.__counted) {
+        return context;
+      }
+      context.__counted = true;
+      const canvas = this as CountedCanvas;
+      canvas.__draws = 0;
+      ['drawArrays', 'drawElements', 'drawArraysInstanced', 'drawElementsInstanced'].forEach((name) => {
+        const draw = context[name];
+        if (typeof draw !== 'function') return;
+        context[name] = function drew(this: unknown, ...drawArgs: unknown[]) {
+          canvas.__draws = (canvas.__draws ?? 0) + 1;
+          return (draw as (...a: unknown[]) => unknown).apply(this, drawArgs);
+        };
+      });
+      return context;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+  });
+  await page.reload();
+}
+
+/** Draw calls the first canvas under `scope` has made since the page loaded. */
+export function sceneDraws(scope: Locator): Promise<number> {
+  return scope
+    .locator('canvas')
+    .first()
+    .evaluate((canvas) => (canvas as CountedCanvas).__draws ?? 0);
+}
