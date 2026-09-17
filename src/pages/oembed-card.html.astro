@@ -3,7 +3,7 @@ export const prerender = true;
 export const partial = true;
 
 import OEmbedCard from '@/components/OEmbedCard.astro';
-import { AUTHOR_NAME, SITE_TITLE } from '@/site';
+import { AUTHOR_NAME, CONTACT, SITE_TITLE, SITE_URL } from '@/site';
 ---
 
-<OEmbedCard title={SITE_TITLE} name={AUTHOR_NAME} />
+<OEmbedCard title={SITE_TITLE} name={AUTHOR_NAME} href={SITE_URL} email={CONTACT.email} profiles={CONTACT.profiles} />

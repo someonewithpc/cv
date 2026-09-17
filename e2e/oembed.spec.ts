@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { AUTHOR_NAME, SITE_TITLE, SITE_URL } from '../src/site';
+import { AUTHOR_NAME, CONTACT, SITE_TITLE, SITE_URL } from '../src/site';
 
 // oembed.json only answers for the real hsal.es origin (see src/site.ts), never the
 // localhost address this suite serves the build from, so every request below targets
@@ -29,8 +29,15 @@ test('oembed.json answers with a rich embed for the site url', async ({ request 
     author_name: AUTHOR_NAME,
   });
 
-  // The name must actually be in the rendered card, not just the JSON metadata field.
-  expect(body.html).toMatch(new RegExp(`class="name">${AUTHOR_NAME}<`));
+  // The name must actually be in the rendered card, not just the JSON metadata field,
+  // and it is the link back to the site.
+  expect(body.html).toMatch(new RegExp(`class="name"><a href="${SITE_URL}">${AUTHOR_NAME}</a>`));
+
+  // The contact row carries the same links as the title block.
+  expect(body.html).toContain(`href="mailto:${CONTACT.email}"`);
+  for (const { href } of CONTACT.profiles) {
+    expect(body.html).toContain(`href="${href}"`);
+  }
 
   // The whole point of type: rich is that consumers render this snippet instead of
   // iframing the live page, so it must not drag in the actual page's content.
