@@ -1463,6 +1463,19 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       : releaseFold(sheet, section, fold, ended.canceled, coastTip(ended.trail, time));
   };
 
+  // Ends a gesture nothing is going to let go of, by committing it where it stands and leaving
+  // the release's own glide to play the whole turn out.
+  const commitSwipe = (time: number) => {
+    const { approach } = gesture!;
+    // Arming the forward fold without moving it: a drag's first move is what hands the page's
+    // rendering to the flap and retires the resting dog-ear's animations, so the flip glides on
+    // from the dog-ear rather than jumping. A back-drag's grab (beginBack) has already done that.
+    if (!approach) swipeTo(0, time);
+    gesture = null;
+    swipe = null;
+    cancelSettle = approach ? throwFront(approach) : flipFold(sheet, section, fold, 0);
+  };
+
   stack.addEventListener('wheel', (e) => {
     // A pointer already working the fold owns it until it lets go
     if (gesture !== null && swipe === null) return;
@@ -1519,19 +1532,18 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     );
   }, { passive: false });
 
-  // Arrow keys turn the page as a swipe handed all its travel at once: the same gesture, eased
-  // by followScroll and released by the same commit test. Only the stack itself listens, so
-  // arrows inside a demo's own controls stay theirs.
+  // Arrow keys turn the page as the same gesture a swipe drives, committed on the spot: a key
+  // press has no hand still on the paper to wait for, and what it asks for is settled the moment
+  // it lands. Handing the gesture a swipe's worth of travel to ease in first (as this did) left
+  // the fold standing there for a second with the turn already decided. Only the stack itself
+  // listens, so arrows inside a demo's own controls stay theirs, and a lone page has nowhere to
+  // turn to.
   stack.addEventListener('keydown', (e) => {
     if (e.target !== stack || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
-    if (gesture !== null) return;
+    if (gesture !== null || stack.childElementCount < 2) return;
     if (!beginSwipe(e.key === 'ArrowRight', e.timeStamp)) return;
     e.preventDefault();
-    const box = stack.getBoundingClientRect();
-    swipe!.target = Math.hypot(box.width, box.height);
-    swipe!.quiet = true;
-    swipe!.painted = e.timeStamp;
-    swipe!.frame = requestAnimationFrame(followScroll);
+    commitSwipe(e.timeStamp);
   });
 
   // A finger never reaches the wheel: swiping the stack scrolls without a scroll event, so it
