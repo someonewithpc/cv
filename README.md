@@ -1,2 +1,2 @@
-# Hugo Sales's CV amd Portfolio
+# Hugo Sales's CV and Portfolio
 
