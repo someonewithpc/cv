@@ -3,10 +3,22 @@ import Grid from '../Grid.astro';
 import { autoplayValue } from '../objects';
 ---
 
-<div class="tagging-grid-demo" data-autoplay-value={autoplayValue}>
+<div
+  class="tagging-grid-demo"
+  data-autoplay-value={autoplayValue}
+  data-boot-module="/src/components/TaggingToolDemo/client/boot.ts"
+>
   <Grid live />
 </div>
 
+{/*
+  No <script> here — a component reached only through Stack.astro's per-layer
+  Astro.slots.render() call never gets its own hoisted script onto the page (see the
+  "dev-server-drops-demo-scripts" memory). boot.ts is armed instead by Stack.astro's own
+  script, which the pagination doesn't touch, via the data-boot-module attribute above —
+  this also defers loading and running taggingTool.ts until the stack scrolls into view,
+  same as every other demo's island.
+*/}
 
 <style lang="scss">
 :global(article.technical-drawing-stack > * > section .content:has(.tagging-grid-demo)) {

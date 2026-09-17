@@ -84,20 +84,3 @@ type Layer = keyof typeof layers;
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
-
-<script>
-  import { initTaggingTool } from './client/taggingTool';
-
-  function init() {
-    document.querySelectorAll<HTMLElement>('.tagging-grid-demo').forEach((mount) => {
-      if (mount.dataset.mounted === 'true') return;
-      mount.dataset.mounted = 'true';
-
-      const root = mount.querySelector<HTMLElement>('.tagging-tool[data-live]');
-      if (root) initTaggingTool(root, mount.dataset.autoplayValue ?? '');
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
-  if (document.readyState !== 'loading') init();
-</script>
