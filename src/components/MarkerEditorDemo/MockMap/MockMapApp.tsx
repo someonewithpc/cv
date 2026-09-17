@@ -42,6 +42,17 @@ const TARGET_RETRY_ATTEMPTS = 20;
 const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
+/**
+ * Controls whose popup the browser draws outside the document: the colour picker the
+ * editor uses for fills and borders, a select's dropdown, a file chooser. While one is
+ * open the pointer is over the popup, so the sheet sees no activity at all.
+ */
+const NATIVE_POPUP_SELECTOR = 'input[type="color"], input[type="file"], select';
+
+function isNativePopupControl(node: EventTarget | null): boolean {
+  return node instanceof Element && node.matches(NATIVE_POPUP_SELECTOR);
+}
+
 type CursorPhase = 'demo' | 'fading' | 'gone';
 type CursorPos = { x: number; y: number };
 type DemoToast = DemoToastPayload & { id: number; leaving: boolean };
@@ -152,6 +163,8 @@ function MockMapOverlayInner() {
   const targetRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeTargetRef = useRef<Element | null>(null);
   const cursorPhaseRef = useRef<CursorPhase>('gone');
+  /** A native popup is up in front of the sheet, so nothing here may start moving. */
+  const nativePopupRef = useRef(false);
 
   const [userControl, setUserControl] = useState(false);
   const [inView, setInView] = useState(false);
@@ -432,7 +445,7 @@ function MockMapOverlayInner() {
   };
 
   const resumeAutoplay = () => {
-    if (!inViewRef.current) return;
+    if (!inViewRef.current || nativePopupRef.current) return;
     userControlRef.current = false;
     cursorPhaseRef.current = 'demo';
     setUserControl(false);
@@ -492,6 +505,8 @@ function MockMapOverlayInner() {
 
     const onTrustedPointer = (e: PointerEvent) => {
       if (!e.isTrusted) return;
+      // The page only gets pointer events again once a native popup has closed.
+      nativePopupRef.current = false;
       yieldToUser();
     };
 
@@ -504,6 +519,36 @@ function MockMapOverlayInner() {
   // yieldToUser closes over stable refs / setters; rebind when visibility changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inView, dispatch]);
+
+  // Opening a native popup takes the pointer off the sheet, so the idle timer used to hand
+  // the demo back while the picker was still open and the walkthrough edited the marker
+  // underneath it. Hold from the moment such a control takes focus until it gives it up.
+  // The editor is portaled onto the carousel page, hence document rather than the overlay.
+  useEffect(() => {
+    const onFocusIn = (event: FocusEvent) => {
+      if (!isNativePopupControl(event.target)) return;
+      nativePopupRef.current = true;
+      yieldToUser();
+      clearResumeTimer();
+    };
+
+    // Focus landing on another element is the visitor moving on. Focus going nowhere is
+    // what opening the popup itself looks like in some browsers, so that one holds.
+    const onFocusOut = (event: FocusEvent) => {
+      if (!isNativePopupControl(event.target) || event.relatedTarget === null) return;
+      nativePopupRef.current = false;
+      yieldToUser();
+    };
+
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+    };
+  // Same stable refs / setters as the pointer handoff above.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selectSpace = (selected: SpaceType) => {
     setEditingSpaceId(selected.id);
