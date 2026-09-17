@@ -50,6 +50,9 @@
   max-width: min(90cqw, 100%);
   margin-inline: auto;
   display: grid;
+  // An auto track would take the panel's max-content width, code lines and all, and centre
+  // the clamped panel in that: off the sheet's content column and under the note
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
 }
 
@@ -57,6 +60,7 @@
   width: max-content;
   max-width: 100%;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
