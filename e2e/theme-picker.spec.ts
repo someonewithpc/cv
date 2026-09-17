@@ -72,6 +72,37 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
   await expect(page.locator('#theme-picker input[value="light"]')).toBeChecked();
 });
 
+test('a transition that never finishes still applies and persists the pick', async ({ page }) => {
+  await instrument(page);
+  // Chrome hands a backgrounded tab no rendering opportunities, so a transition
+  // started there never settles. The pick has to survive that.
+  await page.addInitScript(() => {
+    const startViewTransition = document.startViewTransition.bind(document);
+    document.startViewTransition = (callback) => ({
+      ...startViewTransition(callback),
+      ready: new Promise<void>(() => {}),
+      finished: new Promise<void>(() => {}),
+    }) as ViewTransition;
+  });
+  await page.goto('/');
+
+  await pick(page, 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await page.evaluate(() => localStorage.getItem('cv-theme'))).toBe('dark');
+});
+
+test('a hidden page skips the transition', async ({ page }) => {
+  await instrument(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(document, 'visibilityState', { get: () => 'hidden' });
+  });
+  await page.goto('/');
+
+  await pick(page, 'dark');
+  expect(await page.evaluate(() => window.__viewTransitions)).toBe(0);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
 test('picking the theme already on screen does not start a transition', async ({ page }) => {
   await instrument(page);
   await page.emulateMedia({ colorScheme: 'dark' });
