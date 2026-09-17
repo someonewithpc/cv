@@ -1,17 +1,15 @@
 ---
 import ThemePicker from '@/components/ThemePicker.astro';
+import { AUTHOR_NAME, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/site';
 
 type Props = {
   title?: string;
   description?: string;
 };
 
-const {
-  title = "Hugo Sales' CV",
-  description = 'CV of Hugo Sales — software engineer with upstream contributions to React, Astro, {fmt}, Git, and co-maintainership of GNU social v3.',
-} = Astro.props;
+const { title = SITE_TITLE, description = SITE_DESCRIPTION } = Astro.props;
 
-const canonical = new URL(Astro.url.pathname, 'https://hsal.es');
+const canonical = new URL(Astro.url.pathname, SITE_URL);
 ---
 
 <!doctype html>
@@ -28,7 +26,7 @@ const canonical = new URL(Astro.url.pathname, 'https://hsal.es');
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="Hugo Sales" />
+    <meta property="og:site_name" content={AUTHOR_NAME} />
     <meta property="profile:first_name" content="Hugo" />
     <meta property="profile:last_name" content="Sales" />
     <meta name="twitter:card" content="summary" />
