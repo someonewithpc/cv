@@ -141,11 +141,8 @@ const pages = await Promise.all(
   data-paper-stack
   class={className}
   style={`--page-count: ${pageCount}`}
-  tabindex="0"
   role="region"
-  aria-roledescription="paper stack"
   aria-label={label}
-  aria-description="The left and right arrow keys turn the pages"
 >
   {pages.map((page, index) => (
     <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={(index === 0 ? paperClipUnder : '') + page + (index === 0 ? foldFront : '')} />
