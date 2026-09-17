@@ -157,8 +157,8 @@ export class Run {
     if (input.disabled) return;
     const step = Number(input.step) || 1;
     let value = Number(input.value);
-    await this.moveTo(input);
-    this.cursor(thumbPoint(input, value));
+    // To the thumb itself, not the track's middle: the two differ by wherever the value sits
+    await this.glide(thumbPoint(input, value));
     await this.wait(CLICK_MS);
     this.cursor(thumbPoint(input, value), { clicking: true });
     await this.wait(CLICK_MS);
