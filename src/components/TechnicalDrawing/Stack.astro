@@ -26,7 +26,7 @@ const totalLayers = Object.keys(layers).length;
 ---
 
 <div class="technical-drawing-frame">
-  <PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers}>
+  <PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers} label={Astro.props.subtitle}>
     {(index: number) => {
       const [id, { name, size, pageStyle, tech }] = Object.entries(layers)[index];
       return (
