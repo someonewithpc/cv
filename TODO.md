@@ -1,18 +1,18 @@
 # TODOS
 
 - [ ] Themes
-  - [ ] Cave dark theme
-  - [ ] Forrest light theme
-  - [ ] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
+  - [x] Cave dark theme
+  - [x] Forrest light theme
+  - [x] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
   - [ ] Collapse after delay (prefers-reduced-motion)
   - [ ] Avoid transition to already active theme
-- [ ] Tech icon cloud
+- [x] Tech icon cloud
   - [x] SVG icon in light mode broken
   - [x] More tools (Cursor, Claude Code, Cloudflare, AWS, K8s, LE, TreeSitter, …)
   - [~] Better clang icon
-  - [ ] Some icons not very visible in dark mode
-  - [ ] Scroll horizontally? (prefers-reduced-motion)
-  - [ ] Filter?
+  - [x] Some icons not very visible in dark mode
+  - [-] Scroll horizontally? (prefers-reduced-motion)
+  - [x] Filter?
 - [ ] Access Keys
 - [ ] ARIA roles
 - [ ] Demos
@@ -39,15 +39,22 @@
 - [ ] TechnicalDrawing
   - [ ] Paper texture
   - [ ] CSS Houdini grid border?
-  - [ ] Page flip animation
-    - [ ] Look through Turn.js
-  - [ ] Carousel
-    - [~] CSS-only when supported?
-    - [ ] Fallback when CSS-only unsupported?
-    - [ ] Turned paper corners/dogear
-    - [ ] Navigation
-    - [ ] Page indicator
+  - [x] Page flip animation
+    - [x] Look through Turn.js
+  - [x] Carousel
+    - [x] CSS-only when supported?
+    - [x] Fallback when CSS-only unsupported?
+    - [x] Turned paper corners/dogear
+    - [x] Navigation
+    - [-] Page indicator
   - [ ] Anotations
+    - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
 - [ ] Scroll animation stacking demos
-- [ ] Section divider with ripper paper effect
+- [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
+- [ ] Run W3C validator
+  - [ ] Put CSS and JS out of line
+- [ ] Make demos more usable without JS
+- [ ] Contact section
+- [ ] Work History
+- [ ] Drawn arrows indicating paper turn, maybe only for reduced-motion?
