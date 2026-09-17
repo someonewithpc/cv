@@ -92,38 +92,38 @@ const sheetAnchor = `--${noteId}-sheet`;
       <tr>
         <td>
           <div>
-            <h3 class="monospace">Drawing No.</h3>
+            <span class="title-label monospace">Drawing No.</span>
             <span class="typewriter">{index} / {layerCount}</span>
           </div>
         </td>
 
         <td>
           <div>
-            <h3 class="monospace">Scale</h3>
+            <span class="title-label monospace">Scale</span>
             <span class="typewriter">{scale ?? '3:1'}</span>
           </div>
         </td>
 
         <td>
           <div>
-            <h3 class="monospace">Weight</h3>
+            <span class="title-label monospace">Weight</span>
             <span class="typewriter">{size ?? '-'}</span>
           </div>
         </td>
 
         <td>
           <div>
-            <h3 class="monospace">Date</h3>
+            <span class="title-label monospace">Date</span>
             <span class="typewriter"><time datetime={date}>{date ?? '-'}</time></span>
           </div>
         </td>
 
         <td class="title-proj">
           <div>
-            <h3 class="monospace">
+            <span class="title-label monospace">
               <span aria-hidden="true">Proj.</span>
               <span class="sr-only">Projection</span>
-            </h3>
+            </span>
             <Icon name="first-angle-projection" aria-hidden="true" />
           </div>
         </td>
@@ -499,7 +499,7 @@ section {
         justify-content: space-between;
         gap: 0.25rem;
 
-        h3 {
+        .title-label {
           font-size: 0.625rem;
         }
 
