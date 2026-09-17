@@ -1,0 +1,48 @@
+---
+type Props = {
+  title: string;
+  name: string;
+};
+
+const { title, name } = Astro.props;
+---
+
+<div class="oembed-card">
+  <p class="meta">{title}</p>
+  <p class="name">{name}</p>
+</div>
+
+<style is:inline>
+.oembed-card {
+  --canvas: oklch(0.2 0.035 265);
+  --ink: oklch(0.92 0.02 250);
+  --accent: oklch(0.78 0.1 75);
+
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  box-sizing: border-box;
+  padding: 1rem 1.5rem;
+  border: 1px solid color-mix(in oklch, var(--canvas), var(--ink) 64%);
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--canvas), var(--ink) 9%);
+  color: var(--ink);
+  text-align: center;
+}
+
+.oembed-card .meta {
+  margin: 0;
+  font: 0.625rem/1.4 ui-monospace, monospace, system-ui;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--canvas), var(--ink) 73%);
+}
+
+.oembed-card .name {
+  margin: 0;
+  font: 1.75rem/1.15 Georgia, "Times New Roman", serif;
+  text-decoration: underline dotted color-mix(in oklch, var(--accent), var(--canvas) 20%);
+  text-underline-offset: 4px;
+}
+</style>
