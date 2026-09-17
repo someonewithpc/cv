@@ -95,6 +95,7 @@ const totalLayers = Object.keys(layers).length;
 
 <script>
 import { armIslands } from '@/client/bootIsland';
+import { initAutoplayStatus } from '@/client/autoplayStatus';
 
 function initStack(stack: HTMLElement) {
   // Viewport root (not the stack): with root:stack the active slide was
@@ -121,6 +122,10 @@ function initStack(stack: HTMLElement) {
     });
   }, { threshold: 0.25, scrollMargin: '25%' });
   [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
+
+  // Before the islands mount, so the first state a demo reports is already heard.
+  [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
+    .forEach((page) => initAutoplayStatus(page));
 
   armIslands(stack);
 
