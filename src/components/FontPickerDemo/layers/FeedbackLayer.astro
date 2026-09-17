@@ -3,7 +3,7 @@ const states = ['idle', 'pending', 'success', 'error'] as const;
 ---
 
 <div class="wrapper">
-  <div class="feedback-layer">
+  <div class="feedback-layer" data-boot-module="/src/components/FontPickerDemo/layers/FeedbackLayer.boot.ts">
     <div class="panel">
       <header aria-hidden="true">
         <span class="eyebrow">ExternalFontSubForm</span>
@@ -30,8 +30,12 @@ const states = ['idle', 'pending', 'success', 'error'] as const;
   </div>
 </div>
 
-{/* Wired up from Demo.astro — hoisted scripts inside the Stack's function
-    slots are dropped from the built page, so a layer cannot carry its own. */}
+{/*
+  No <script> here — a component reached only through Stack.astro's per-layer
+  Astro.slots.render() call never gets its own hoisted script onto the page (see the
+  "dev-server-drops-demo-scripts" memory). FeedbackLayer.boot.ts is armed instead by
+  Stack.astro's own script, which the pagination doesn't touch, via data-boot-module.
+*/}
 
 <style lang="scss">
 @use '../picker/fontSettingsFieldset' as *;
