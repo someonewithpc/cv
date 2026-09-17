@@ -939,6 +939,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   // Where index.astro puts the flap: after the clip, so paper dragged over the wire covers it
   next.insertBefore(standInFold(), grab);
   updateFlippedState(stack);
+  stack.dataset.paperTurned = '';
   syncPaperSurface(next, sectionOf(next));
   syncInert(stack);
 };
@@ -1001,6 +1002,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   prev.classList.add('paper-front');
   prev.prepend(under);
   prev.append(clip, fold, hint);
+  stack.dataset.paperTurned = '';
   syncInert(stack);
   // Promoting the originally-first page puts the stack back in its own order, so the corner cut
   // unfolds from here — the mirror of flipFold committing the flipped state as its glide sets
