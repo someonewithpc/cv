@@ -14,7 +14,7 @@ export class Cancelled extends Error {}
 export const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 export const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);
+export const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);
 const easeOutQuint = (t: number) => 1 - (1 - t) ** 5;
 
 // React installs its own value descriptor on inputs, so the prototype's setter is what makes
@@ -77,7 +77,7 @@ export class Run {
     this.cursor(at);
   }
 
-  async glide(to: { x: number; y: number }, ms = CURSOR_TRAVEL_MS) {
+  async glide(to: { x: number; y: number }, ms = CURSOR_TRAVEL_MS, ease = easeOutQuint) {
     this.check();
     const from = this.controller.at;
     if (!from || Math.hypot(to.x - from.x, to.y - from.y) <= 8) {
@@ -89,7 +89,7 @@ export class Run {
       await nextFrame();
       this.check();
       const t = Math.min((performance.now() - start) / ms, 1);
-      const eased = easeOutQuint(t);
+      const eased = ease(t);
       this.cursor({ x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased });
       if (t >= 1) return;
     }
