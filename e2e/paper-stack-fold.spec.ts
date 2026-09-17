@@ -115,3 +115,42 @@ test('marker editor: a forward swipe then a backward swipe returns to the start'
   await swipeStack(page, stack, false);
   expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
 });
+
+test('visrez logo: the dog-ear is drawn while the flip is still landing', async ({ page }) => {
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+
+  // Watch from inside the page: the flip renumbers --page-index halfway through, and the new
+  // front page has to grow its dog-ear from there rather than after everything has stopped.
+  const watch = stack.evaluate((el) => new Promise<{ after: number, landing: boolean }>((resolve, reject) => {
+    const pages = [...el.children] as HTMLElement[];
+    const fold = el.querySelector<HTMLElement>('.paper-fold')!;
+    const frontPage = () => pages.find((p) => p.style.getPropertyValue('--page-index').trim() === '1')!;
+    const started = frontPage();
+    const deadline = performance.now() + 10_000;
+    let restacked = 0;
+    const tick = () => {
+      const front = frontPage();
+      if (!restacked && front !== started) restacked = performance.now();
+      if (restacked && parseFloat(getComputedStyle(front).getPropertyValue('--fold-x')) > 0) {
+        resolve({ after: performance.now() - restacked, landing: fold.classList.contains('paper-fold--active') });
+        return;
+      }
+      if (performance.now() > deadline) {
+        reject(new Error(restacked ? 'the dog-ear never came back' : 'the stack never turned a page'));
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }));
+
+  await stack.focus();
+  await page.keyboard.press('ArrowRight');
+  const seen = await watch;
+
+  // Half a second was the reveal delay the flip used to restart; anything near it is the bug back.
+  expect(seen.after).toBeLessThan(300);
+  expect(seen.landing, 'the flipped sheet is still folding away').toBe(true);
+});
