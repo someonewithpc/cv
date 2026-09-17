@@ -1,0 +1,314 @@
+---
+// The settings column after a size drag, twice: once left in the flow, once with the
+// dragged row held where the pointer found it
+const rows = ['Font Size', 'Font Weight', 'Font Family'] as const;
+---
+
+<div class="wrapper">
+  <div class="pinned-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">FixedElement</span>
+        <strong>A control being worked holds its spot</strong>
+      </header>
+
+      <div class="lanes">
+        <div class="lane">
+          <span class="lane-title">Left in the flow</span>
+          <div class="column">
+            {rows.map((row, index) => (
+              <div class:list={['row', { grown: index === 0, slid: index === 1 }]}>
+                <span class="label">{row}</span>
+                {index < 2 ? <span class="track"><span class="thumb" /></span> : <span class="select">Poppins</span>}
+              </div>
+            ))}
+            <span class="ghost" />
+            <span class="pointer" />
+          </div>
+          <p>Drag the size up and the row above grows: the weight slider slides out from under the pointer</p>
+        </div>
+
+        <div class="lane">
+          <span class="lane-title">Pinned while worked</span>
+          <div class="column">
+            {rows.map((row, index) => (
+              <div class:list={['row', { grown: index === 0, held: index === 1 }]}>
+                <span class="label">{row}</span>
+                {index < 2 ? <span class="track"><span class="thumb" /></span> : <span class="select">Poppins</span>}
+              </div>
+            ))}
+            <span class="spacer" />
+            <span class="pointer" />
+          </div>
+          <p>The hovered row goes <code>position: fixed</code> at the spot it had, a spacer keeping its room, until the pointer leaves</p>
+        </div>
+      </div>
+
+      <div class="chips">
+        <span class="chip">the sheet is rotated, so <code>fixed</code> resolves against it: a zero-size probe finds that origin</span>
+        <span class="chip">font size frozen in px along with the position</span>
+        <span class="chip">a halo of the column's colour lifts the row over its neighbours</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+.wrapper {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(90cqw, 100%);
+  margin-inline: auto;
+  display: grid;
+  // An auto track would take the panel's max-content width and centre the clamped panel
+  // in that: off the sheet's content column and under the note
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+}
+
+.pinned-layer {
+  width: max-content;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
+  color: #f4f0ea;
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: min(1.05rem, 2.4cqmin);
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(36em, 100%);
+  padding: 0.6em 0.65em;
+  background: #333;
+  border: 2px solid #666;
+  border-radius: 0.5em;
+  display: grid;
+  gap: 0.45em;
+  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08em;
+
+  .eyebrow {
+    font-size: 0.72em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+}
+
+.lanes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35em;
+}
+
+.lane {
+  display: grid;
+  gap: 0.3em;
+  align-content: start;
+  min-width: 0;
+  padding: 0.35em 0.45em;
+  border-radius: 0.3em;
+  border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
+  background: color-mix(in oklab, #000 22%, transparent);
+  box-sizing: border-box;
+
+  p {
+    margin: 0;
+    font-size: 0.7em;
+    line-height: 1.3;
+    opacity: 0.85;
+  }
+}
+
+.lane-title {
+  font-size: 0.75em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #c5e06a;
+}
+
+code {
+  color: #c5e06a;
+  overflow-wrap: anywhere;
+}
+
+// The sidebar in miniature, on its own light background; --held is the row's height and
+// --step where it sits, so the ghost, spacer and pointer line up with the rows
+.column {
+  --row: 2.1em;
+  --gap: 0.35em;
+  --pad: 0.45em;
+  // More than a row, so the slider ends up wholly below where the pointer found it
+  --grow: 2.4em;
+  --held-top: calc(var(--pad) + var(--row) + var(--gap));
+
+  position: relative;
+  display: grid;
+  gap: var(--gap);
+  padding: var(--pad);
+  border-radius: 0.3em;
+  background: #e9e9e9;
+  color: #222;
+  color-scheme: only light;
+  font-size: 0.78em;
+  // Leaves the height alone when a row is pulled out of the flow
+  min-height: calc(2 * var(--pad) + 3 * var(--row) + 2 * var(--gap) + var(--grow));
+  box-sizing: border-box;
+}
+
+.row {
+  display: grid;
+  gap: 0.2em;
+  height: var(--row);
+  box-sizing: border-box;
+  padding-inline: 0.2em;
+  border-radius: 0.2em;
+  background: #e9e9e9;
+
+  .label {
+    font-size: 0.85em;
+    line-height: 1;
+  }
+
+  .track {
+    position: relative;
+    height: 2px;
+    margin-top: 0.35em;
+    background: #999;
+    border-radius: 1px;
+  }
+
+  .thumb {
+    position: absolute;
+    top: 50%;
+    left: 55%;
+    width: 0.7em;
+    height: 0.7em;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #777;
+  }
+
+  .select {
+    font-size: 0.85em;
+    line-height: 1.3;
+    padding-inline: 0.3em;
+    border: 1px solid #999;
+    border-radius: 0.2em;
+    background: #fff;
+    width: fit-content;
+    min-width: 6em;
+  }
+
+  // The dragged size row, taller now
+  &.grown {
+    height: calc(var(--row) + var(--grow));
+
+    .label {
+      font-size: 1.9em;
+    }
+
+    .track {
+      margin-top: 1.2em;
+    }
+
+    .thumb {
+      width: 1em;
+      height: 1em;
+    }
+
+    .thumb {
+      left: 80%;
+    }
+  }
+
+  // Pushed down by the row above it, away from the pointer
+  &.slid {
+    outline: 1px solid #c33;
+    outline-offset: 1px;
+  }
+
+  // Out of the flow at the spot it had, raised over the rest behind a halo
+  &.held {
+    position: absolute;
+    top: var(--held-top);
+    left: var(--pad);
+    right: var(--pad);
+    z-index: 1;
+    box-shadow: 0 0 0.9em 0.6em #e9e9e9;
+    outline: 1px solid #89ab24;
+    outline-offset: 1px;
+  }
+}
+
+// Where the weight row was before the size row grew: the pointer is still there
+.ghost,
+.spacer {
+  position: absolute;
+  left: var(--pad);
+  right: var(--pad);
+  height: var(--row);
+  border-radius: 0.2em;
+  box-sizing: border-box;
+}
+
+.ghost {
+  top: var(--held-top);
+  border: 1px dashed #c33;
+  opacity: 0.6;
+}
+
+// The room the held row keeps in the flow, below the grown one
+.spacer {
+  top: calc(var(--held-top) + var(--grow));
+  border: 1px dashed #777;
+  opacity: 0.5;
+}
+
+.pointer {
+  position: absolute;
+  top: calc(var(--held-top) + var(--row) * 0.55);
+  left: 55%;
+  width: 1.4em;
+  height: 1.4em;
+  z-index: 2;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z' fill='%23fff' stroke='%23222' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 40%));
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+}
+
+.chip {
+  font-size: 0.68em;
+  line-height: 1.3;
+  padding: 0.3em 0.5em;
+  border-radius: 1em;
+  border: 1px solid #555;
+  background: #2a2a28;
+  opacity: 0.9;
+}
+
+@container technical-drawing (orientation: portrait) {
+  .lanes {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
