@@ -19,10 +19,21 @@ type Props = {
   date?: string;
   /** Default tech icon(s) for every page (tag text or icon suffix). */
   tech?: string | readonly string[];
+  /** Words next to the arrow that points at the fold. */
+  hint?: string;
+  /** Which of the hand-drawn arrows to use. */
+  hintArrow?: 0 | 1 | 2;
 };
 
-const { layers = {}, tech: stackTech } = Astro.props;
+const { layers = {}, tech: stackTech, hintArrow = 0 } = Astro.props;
 const totalLayers = Object.keys(layers).length;
+const hint = Astro.props.hint ?? `${totalLayers - 1} more sheets, peel this corner`;
+
+const arrows = [
+  "M6 42 C 14 40, 28 34, 39 13 M31 17 L40 11 L38 22",
+  "M5 41 C 20 45, 16 22, 41 9 M33 10 L42 8 L40 18",
+  "M6 43 C 17 43, 11 25, 26 18 C 33 15, 38 13, 41 9 M33 8 L42 7 L39 17",
+];
 ---
 
 <div class="technical-drawing-frame">
@@ -51,6 +62,13 @@ const totalLayers = Object.keys(layers).length;
       );
     }}
   </PaperStack>
+
+  <p class="flip-hint marker-font" aria-hidden="true" hidden>
+    <span>{hint}</span>
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d={arrows[hintArrow]} />
+    </svg>
+  </p>
 </div>
 
 <style lang="scss">
@@ -58,6 +76,7 @@ const totalLayers = Object.keys(layers).length;
 // what the aspect query below styles, and an element never matches a container it declares
 // (its own `container: technical-drawing / size` would also overwrite a second name set here).
 .technical-drawing-frame {
+  position: relative;
   container: technical-drawing-width / inline-size;
   // Allow the frame to shrink within the page grid instead of expanding it
   // to the stack's intrinsic width (default min-width: auto).
@@ -100,6 +119,51 @@ const totalLayers = Object.keys(layers).length;
     --paper-clip-lean-x: var(--paper-clip-reach);
     --paper-clip-lean-y: calc(var(--paper-clip-reach) / 2);
   }
+}
+
+// Sits under the sheet's bottom-right corner, in the room the fan reserve leaves, and points
+// back up at the resting fold. Gone once a page has been turned: whoever did that knows.
+.flip-hint {
+  position: absolute;
+  right: 0.5em;
+  top: 100%;
+  translate: 0 -1.25em;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25em;
+  margin: 0;
+  max-width: 24em;
+  font-size: 1rem;
+  line-height: 1.2;
+  text-align: right;
+  color: var(--accent-text);
+  pointer-events: none;
+  transition: opacity 400ms ease;
+
+  span {
+    padding-top: 1.25em;
+  }
+
+  svg {
+    flex: none;
+    width: 3.5em;
+    height: 3.5em;
+  }
+
+  // The class sets display, so the attribute alone no longer hides anything: without this
+  // the hint is on screen before the script arms it, and stays on a page that has no JS.
+  &[hidden] {
+    display: none;
+  }
+
+  @container technical-drawing-width (max-width: 40em) {
+    translate: 0 -0.75em;
+    font-size: 0.8125rem;
+  }
+}
+
+.technical-drawing-frame:has([data-paper-turned]) .flip-hint {
+  opacity: 0;
 }
 </style>
 
@@ -154,6 +218,7 @@ function initStack(stack: HTMLElement) {
     .forEach((page) => initAutoplayStatus(page));
 
   positionAnnotations(stack);
+  stack.parentElement?.querySelector('.flip-hint')?.removeAttribute('hidden');
 
   // The sheet's size and orientation, restated as plain pixels and a data attribute for the
   // artwork to scale its type by. The container queries and units say the same thing, but a
