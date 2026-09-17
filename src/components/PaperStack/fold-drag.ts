@@ -1667,6 +1667,10 @@ export function initPaperStackFold(): void {
       const hint = stack.querySelector<HTMLElement>('.paper-flip-hint');
       if (!fold || !grab) continue;
       if (hint) hintOf.set(fold, hint);
+      // Only the scripted stack turns pages by keyboard; without JS it is a scroll row.
+      stack.tabIndex = 0;
+      stack.setAttribute('aria-roledescription', 'paper stack');
+      stack.setAttribute('aria-description', 'The left and right arrow keys turn the pages');
       observeFoldPageSizes(stack);
       attachFoldDrag(fold, grab);
       syncInert(stack);
