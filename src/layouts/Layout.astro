@@ -10,6 +10,8 @@ const {
   title = "Hugo Sales' CV",
   description = 'CV of Hugo Sales — software engineer with upstream contributions to React, Astro, {fmt}, Git, and co-maintainership of GNU social v3.',
 } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, 'https://hsal.es');
 ---
 
 <!doctype html>
@@ -21,6 +23,15 @@ const {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <title>{title}</title>
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Hugo Sales" />
+    <meta property="profile:first_name" content="Hugo" />
+    <meta property="profile:last_name" content="Sales" />
+    <meta name="twitter:card" content="summary" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
