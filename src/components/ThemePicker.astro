@@ -340,7 +340,7 @@ inputs.forEach((inputEl) => {
   inputEl.addEventListener('input', () => {
     const id = inputEl.value;
 
-    const commitWithoutTransition = () => {
+    const commitTheme = () => {
       syncRadios(id);
       persistTheme(id);
     };
@@ -350,22 +350,16 @@ inputs.forEach((inputEl) => {
     const shown = getComputedStyle(document.documentElement).getPropertyValue('--theme-kind').trim();
 
     if (prefersReducedMotion.matches || !document.startViewTransition || shown === id) {
-      commitWithoutTransition();
+      commitTheme();
       return;
     }
 
-    /* Match the pre-data-theme contract: during the VT, theme CSS must follow
-       only `.with-transition.checked`. Do not write `data-theme` until finished. */
-    const updateThemeDom = () => {
-      document.documentElement.removeAttribute('data-theme');
-      inputs.forEach((input) => {
-        input.classList.toggle('checked', input.value === id);
-      });
-    };
-
     document.documentElement.classList.add('theme-transition');
 
-    const viewTransition = document.startViewTransition(updateThemeDom);
+    /* Commit inside the callback, not after `finished`: a transition that stalls
+       must not cost the pick. `data-theme` and `.with-transition.checked` select
+       the same variables, so they can be written together. */
+    const viewTransition = document.startViewTransition(commitTheme);
 
     viewTransition.ready.then(async () => {
       await ensurePathData();
@@ -438,8 +432,6 @@ inputs.forEach((inputEl) => {
 
     viewTransition.finished.finally(() => {
       document.documentElement.classList.remove('theme-transition');
-      syncRadios(id);
-      persistTheme(id);
     });
   }, { passive: true });
 });
