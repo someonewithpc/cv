@@ -1,0 +1,2199 @@
+<title>SH-DEMOS Rev. C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --paper: #efece2;
+  --sheet: #f8f6ef;
+  --sheet-2: #e7e4d8;
+  --ink: #171b1d;
+  --ink-2: #4c5356;
+  --ink-3: #767d80;
+  --rule: #cbc7b9;
+  --rule-2: #a8a397;
+  --blue: #1d5b86;
+  --blue-wash: #e0e9f0;
+  --red: #a5372a;
+  --green: #3c6f43;
+  --amber: #85610f;
+  --code-bg: #e9e6da;
+  --lift: 0 1px 0 rgba(30, 26, 12, .05), 0 10px 24px -18px rgba(30, 26, 12, .55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e1417;
+    --sheet: #151c20;
+    --sheet-2: #1c252a;
+    --ink: #dee4e3;
+    --ink-2: #a4aeb0;
+    --ink-3: #7e888b;
+    --rule: #2c383e;
+    --rule-2: #3f4d54;
+    --blue: #6fb3e0;
+    --blue-wash: #15242d;
+    --red: #e08a78;
+    --green: #87b98d;
+    --amber: #d3ab5c;
+    --code-bg: #0d1417;
+    --lift: 0 1px 0 rgba(0, 0, 0, .4), 0 10px 24px -18px rgba(0, 0, 0, .9);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #0e1417;
+  --sheet: #151c20;
+  --sheet-2: #1c252a;
+  --ink: #dee4e3;
+  --ink-2: #a4aeb0;
+  --ink-3: #7e888b;
+  --rule: #2c383e;
+  --rule-2: #3f4d54;
+  --blue: #6fb3e0;
+  --blue-wash: #15242d;
+  --red: #e08a78;
+  --green: #87b98d;
+  --amber: #d3ab5c;
+  --code-bg: #0d1417;
+  --lift: 0 1px 0 rgba(0, 0, 0, .4), 0 10px 24px -18px rgba(0, 0, 0, .9);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap {
+  max-width: 74rem;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3.25rem;
+}
+
+/* ---------- lettering ---------- */
+
+h1, h2, h3, .lettering {
+  font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.mono, code, pre, .field-key, .sheet-no, .chip, .idx th, .idx td.k {
+  font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+.eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .72rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  display: grid;
+  gap: 1.1rem;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 1.6rem;
+}
+
+.masthead h1 {
+  font-size: clamp(2.15rem, 6vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: .015em;
+  text-transform: uppercase;
+  line-height: 1.02;
+}
+
+.masthead .jp {
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+  letter-spacing: .14em;
+  color: var(--ink-3);
+  font-size: .95rem;
+  display: block;
+}
+
+.standfirst {
+  max-width: 66ch;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 1.06rem;
+}
+
+.masthead-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1.5rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .72rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---------- index ---------- */
+
+section.block { display: grid; gap: 1.1rem; }
+
+h2.block-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+}
+
+h2.block-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.scroller { overflow-x: auto; }
+
+table.idx {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .84rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 44rem;
+}
+
+table.idx th {
+  text-align: left;
+  font-weight: 500;
+  font-size: .68rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule-2);
+  padding: 0 .8rem .5rem 0;
+}
+
+table.idx td {
+  padding: .55rem .8rem .55rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+table.idx td.subject {
+  font-family: "Archivo Narrow", "Arial Narrow", sans-serif;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+table.idx td.k { color: var(--ink-2); font-size: .78rem; }
+
+.chip {
+  display: inline-block;
+  font-size: .64rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .15rem .45rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.chip.build { color: var(--green); }
+.chip.maybe { color: var(--amber); }
+.chip.write { color: var(--blue); }
+
+/* ---------- sheets ---------- */
+
+.sheets { display: grid; gap: 2.5rem; }
+
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule-2);
+  box-shadow: var(--lift);
+  display: grid;
+}
+
+.sheet > * { padding: 1.25rem 1.5rem; }
+
+.sheet-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: .5rem 1.1rem;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: .9rem;
+}
+
+.sheet-no {
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--sheet);
+  background: var(--ink);
+  padding: .2rem .5rem;
+  align-self: center;
+}
+
+.sheet-head h2 {
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+
+.origin {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sheet-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 1.6rem 2.2rem;
+  align-items: start;
+}
+
+@media (max-width: 60rem) {
+  .sheet-body { grid-template-columns: minmax(0, 1fr); }
+}
+
+.prose { display: grid; gap: .9rem; min-width: 0; }
+.prose p { margin: 0; max-width: 64ch; }
+.prose > h3, .rail > h3 {
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-top: .35rem;
+}
+
+.prose ul { margin: 0; padding-left: 1.1rem; max-width: 64ch; }
+.prose li { margin-bottom: .35rem; }
+
+.rail { display: grid; gap: 1rem; min-width: 0; }
+
+code {
+  font-size: .85em;
+  background: var(--code-bg);
+  padding: .08em .3em;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+pre {
+  margin: 0;
+  background: var(--code-bg);
+  border-left: 2px solid var(--blue);
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .74rem;
+  line-height: 1.55;
+}
+
+pre code { background: none; padding: 0; }
+
+.tok-c { color: var(--ink-3); font-style: italic; }
+.tok-k { color: var(--blue); }
+.tok-s { color: var(--green); }
+
+/* red-pencil margin note */
+.markup {
+  border-left: 2px solid var(--red);
+  padding: .1rem 0 .1rem .9rem;
+  color: var(--ink-2);
+  font-size: .93rem;
+  max-width: 62ch;
+}
+
+.markup strong {
+  color: var(--red);
+  font-family: "Archivo Narrow", "Arial Narrow", sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-size: .74rem;
+  display: block;
+}
+
+/* ---------- wireframes ---------- */
+
+figure.wf { margin: 0; display: grid; gap: .4rem; }
+
+figure.wf svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--blue-wash);
+  border: 1px solid var(--rule-2);
+}
+
+figure.wf figcaption {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .66rem;
+  letter-spacing: .07em;
+  color: var(--ink-3);
+}
+
+.wf .ln { stroke: var(--blue); fill: none; stroke-width: 1; }
+.wf .ln-2 { stroke: var(--blue); fill: none; stroke-width: 1; opacity: .45; }
+.wf .fill { fill: var(--blue); opacity: .16; }
+.wf .fill-s { fill: var(--blue); opacity: .5; }
+.wf .hot { stroke: var(--red); fill: none; stroke-width: 1.4; }
+.wf .hot-f { fill: var(--red); opacity: .8; }
+.wf text {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 6px;
+  fill: var(--blue);
+  letter-spacing: .04em;
+}
+.wf text.dim { opacity: .55; }
+.wf text.red { fill: var(--red); }
+
+/* ---------- title block ---------- */
+
+.titleblock {
+  border-top: 1px solid var(--ink);
+  background: var(--sheet-2);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0;
+  padding: 0;
+}
+
+.field {
+  padding: .6rem .9rem .7rem;
+  border-right: 1px solid var(--rule);
+  min-width: 0;
+}
+
+.field:last-child { border-right: 0; }
+
+.field-key {
+  display: block;
+  font-size: .6rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: .2rem;
+}
+
+.field-val {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .72rem;
+  line-height: 1.5;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+/* ---------- bench ---------- */
+
+.bench { display: grid; gap: 0; border-top: 1px solid var(--rule-2); }
+
+.bench-row {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) auto;
+  gap: .3rem 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: start;
+}
+
+@media (max-width: 52rem) {
+  .bench-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+.bench-row h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.bench-row .src {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .68rem;
+  color: var(--ink-3);
+  display: block;
+  margin-top: .15rem;
+}
+
+.bench-row p { margin: 0; font-size: .95rem; color: var(--ink-2); max-width: 62ch; }
+
+/* ---------- questions ---------- */
+
+.questions { display: grid; gap: .9rem; counter-reset: q; }
+
+.question {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .2rem .9rem;
+  padding-bottom: .9rem;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.question::before {
+  counter-increment: q;
+  content: "Q" counter(q);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .68rem;
+  letter-spacing: .1em;
+  color: var(--red);
+  padding-top: .28rem;
+}
+
+.question p { margin: 0; max-width: 64ch; }
+.question p + p { color: var(--ink-2); font-size: .93rem; margin-top: .25rem; }
+
+footer.colophon {
+  border-top: 2px solid var(--ink);
+  padding-top: 1rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .68rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem 1.5rem;
+}
+
+a { color: var(--blue); text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Sheet series SH-DEMOS &middot; Revision C &middot; for review</p>
+  <h1>SH-DEMOS Rev.&nbsp;C<span class="jp">&#x30C7;&#x30E2;&#x5019;&#x88DC;</span></h1>
+  <p class="standfirst">
+    Nine candidates for new demos on the CV: five from the Visrez platform and GNU social (Rev.&nbsp;B), four more from your own tooling and upstream patches (Rev.&nbsp;C),
+    plus a bench of things that are worth a line of prose but not a drawing. Revision&nbsp;A is what
+    ships today: SH-01 Visrez logo, SH-02 Marker Editor, SH-03 Space Builder. Every sheet below is
+    written so another agent can pick it up cold &mdash; source paths, the mechanism worth showing,
+    a proposed <code>TechnicalDrawingStack</code> layer map, and a wireframe.
+  </p>
+  <div class="masthead-meta">
+    <span>Drawn 2026-09-04</span>
+    <span>Sheets 9</span>
+    <span>Bench items 13</span>
+    <span>Status: awaiting review</span>
+  </div>
+</header>
+
+<section class="block">
+  <h2 class="block-title">Index</h2>
+  <div class="scroller">
+    <table class="idx">
+      <thead>
+        <tr>
+          <th>Sheet</th><th>Subject</th><th>Source</th><th>Effort</th><th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="k">SH-04</td>
+          <td class="subject">Library Search &amp; Relevance</td>
+          <td class="k">visrez/platform &middot; hs-1946-arel</td>
+          <td class="k">M</td>
+          <td><span class="chip build">Build</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-05</td>
+          <td class="subject">Synthetic Properties</td>
+          <td class="k">visrez/platform &middot; hs-1946-arel</td>
+          <td class="k">M</td>
+          <td><span class="chip build">Build</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-06</td>
+          <td class="subject">Library Tagging Tool</td>
+          <td class="k">visrez/platform &middot; hs-1946-arel</td>
+          <td class="k">S</td>
+          <td><span class="chip build">Build first</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-07</td>
+          <td class="subject">Event Dispatch &amp; Module Discovery</td>
+          <td class="k">gnu-social &middot; src/Core</td>
+          <td class="k">M</td>
+          <td><span class="chip build">Build</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-08</td>
+          <td class="subject">schemaDef &rarr; Doctrine Metadata</td>
+          <td class="k">gnu-social &middot; src/DependencyInjection</td>
+          <td class="k">S</td>
+          <td><span class="chip build">Build</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-09</td>
+          <td class="subject">Fediverse Playground</td>
+          <td class="k">fediverse-playground &middot; src/compose, src/worktrees</td>
+          <td class="k">M</td>
+          <td><span class="chip build">Build</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-10</td>
+          <td class="subject">Offline-first Votes: patched player &rarr; D1</td>
+          <td class="k">morphe/mxplayer-patches + gallery-manager/server</td>
+          <td class="k">M&ndash;L</td>
+          <td><span class="chip maybe">Build, if approved</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-11</td>
+          <td class="subject">web-ts-mode</td>
+          <td class="k">web-ts-mode &middot; web-ts-treesit.el, web-ts-hosts/</td>
+          <td class="k">S</td>
+          <td><span class="chip build">Build</span></td>
+        </tr>
+        <tr>
+          <td class="k">SH-12</td>
+          <td class="subject">:global() with a leading combinator</td>
+          <td class="k">compiler-rs &middot; global-combinator-broken</td>
+          <td class="k">S</td>
+          <td><span class="chip maybe">Maybe</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="block">
+  <h2 class="block-title">Sheets</h2>
+  <div class="sheets">
+
+    <!-- ============ SH-04 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-04</span>
+        <h2>Library Search &amp; Relevance</h2>
+        <span class="origin">Visrez platform &middot; Rails</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            Every property of a library object &mdash; the ones a librarian typed and the ones the
+            database derives &mdash; is flattened by triggers into a single FULLTEXT-indexed string per
+            object, in <code>library_object_properties_concatenated.values</code>. Search runs
+            <code>MATCH(&hellip;) AGAINST(? IN BOOLEAN MODE)</code> against that column.
+          </p>
+          <p>
+            The interesting part is that the same SQL fragment is reused three times: as the
+            <code>WHERE</code> predicate, as a selected column (which is where the match score comes
+            from), and as the first <code>ORDER BY</code> term. Scores are then normalised to 0&ndash;1
+            against the maximum for that query &mdash; and because <code>MAX()</code> is an aggregate
+            that would collapse the result set, the maximum is pulled from a re-<code>select</code>ed
+            copy of the same relation used as a scalar subquery. Selecting a computed column alongside
+            the entity needs <code>objects_query.arel.projections</code>, because Rails' own
+            <code>#select</code> loses the entity columns once a <code>MATCH</code> expression is in play.
+          </p>
+          <p>
+            Query text gets massaged before it ever reaches MySQL: bare numbers are wrapped in quotes so
+            <code>8</code> stops matching <code>81</code>, and a trailing <code>seats</code> /
+            <code>pax</code> / <code>size</code> is folded into the same quoted phrase. Getting one- and
+            two-character terms to index at all needed <code>innodb_ft_min_token_size = 1</code> on the
+            server, which is documented in the repo's README.
+          </p>
+          <p>
+            The front end searches on every keystroke without hammering the server: in-flight requests
+            are held in a map keyed by the serialised form, an identical query is dropped outright, a
+            superseded one is <code>abort()</code>ed, and the survivor goes out behind a 50&nbsp;ms
+            leading-edge throttle.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            It is the one piece of backend work on the CV that has an obvious picture: type, and watch
+            relevance bars sort themselves. The demo can show the SQL alongside the result, which is the
+            part a reader cannot otherwise see.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/LibrarySearchDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  search:    { name: <span class="tok-k">null</span> },
+  relevance: { name: <span class="tok-s">'Relevance Scoring'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+  filters:   { name: <span class="tok-s">'Property Filters'</span>,  pageStyle: <span class="tok-s">'blueprint'</span> },
+  sql:       { name: <span class="tok-s">'Generated SQL'</span>,     pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            No backend. Ship ~40 mock library objects as JSON and implement a small boolean-mode
+            stand-in in TypeScript (token overlap &rarr; score) so the relevance bars are computed
+            rather than hard-coded. The <em>Generated SQL</em> layer prints the real query template with
+            the live query interpolated and highlights the three places the match fragment is reused as
+            the user types &mdash; that reuse is the point of the sheet.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            If the SQL layer ends up as a static code block it adds nothing. It has to move with the
+            input. Also keep the query-mangling rule visible: showing <code>8</code> become
+            <code>"8&nbsp;seats"</code> explains more than a paragraph would.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: a search field over a list of results with relevance bars, and a property filter panel">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+              <rect x="16" y="16" width="140" height="14" class="ln"/>
+              <text x="21" y="26">chair 8 seats|</text>
+              <rect x="160" y="16" width="84" height="14" class="ln-2"/>
+              <text x="165" y="26" class="dim">filters (2)</text>
+
+              <rect x="16" y="38" width="18" height="18" class="fill"/>
+              <rect x="16" y="38" width="18" height="18" class="ln"/>
+              <text x="40" y="45">Banquet Chair</text>
+              <rect x="40" y="48" width="98" height="5" class="fill-s"/>
+              <text x="142" y="53" class="dim">1.00</text>
+
+              <rect x="16" y="62" width="18" height="18" class="fill"/>
+              <rect x="16" y="62" width="18" height="18" class="ln"/>
+              <text x="40" y="69">Chiavari Chair</text>
+              <rect x="40" y="72" width="72" height="5" class="fill-s"/>
+              <text x="142" y="77" class="dim">0.73</text>
+
+              <rect x="16" y="86" width="18" height="18" class="fill"/>
+              <rect x="16" y="86" width="18" height="18" class="ln"/>
+              <text x="40" y="93">Round Table 8p</text>
+              <rect x="40" y="96" width="41" height="5" class="fill-s"/>
+              <text x="142" y="101" class="dim">0.41</text>
+
+              <rect x="16" y="110" width="18" height="18" class="fill"/>
+              <rect x="16" y="110" width="18" height="18" class="ln"/>
+              <text x="40" y="117">Folding Chair</text>
+              <rect x="40" y="120" width="24" height="5" class="fill-s"/>
+              <text x="142" y="125" class="dim">0.22</text>
+
+              <rect x="160" y="38" width="84" height="90" class="ln-2"/>
+              <text x="165" y="48" class="dim">Colour</text>
+              <rect x="165" y="52" width="74" height="10" class="ln-2"/>
+              <text x="169" y="60" class="dim">gold</text>
+              <text x="165" y="76" class="dim">Size (feet-inches)</text>
+              <rect x="165" y="80" width="74" height="10" class="ln-2"/>
+              <text x="169" y="88" class="dim">1ft6in by 1ft4in</text>
+              <rect x="165" y="98" width="74" height="10" class="ln-2"/>
+              <text x="169" y="106" class="dim">+ add filter</text>
+
+              <text x="16" y="146" class="red">MATCH(values) AGAINST(? IN BOOLEAN MODE)</text>
+              <line x1="16" y1="150" x2="244" y2="150" class="hot"/>
+            </svg>
+            <figcaption>SH-04 &middot; main layer, relevance normalised to the top hit</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">visrez/platform/repository<br>branch hs-1946-arel<br>163 commits ahead of development</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">app/controllers/library/<br>&nbsp;&nbsp;object_properties_controller.rb<br>app/assets/javascripts/<br>&nbsp;&nbsp;library_object_search.js<br>app/views/library/object_properties/<br>&nbsp;&nbsp;_search.html.haml</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">rails, ruby, mysql</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">M &middot; 4 layers<br>mock data + score fn</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ SH-05 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-05</span>
+        <h2>Synthetic Properties</h2>
+        <span class="origin">Visrez platform &middot; Arel</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            A library object stores its size as one string: <code>160x80x74</code>. Nobody searches for
+            that. People search for <em>5ft3in</em>, or <em>1.6m</em>, or <em>63"</em>. So the schema
+            grows a table of <em>synthetic</em> properties &mdash; rows the database derives and
+            maintains itself &mdash; and those rows feed the same FULLTEXT column SH-04 searches.
+          </p>
+          <p>
+            <code>LibraryObject.size_synthetic_property_select_sql</code> builds it with a recursive CTE
+            named <code>split_sizes</code>: <code>SUBSTRING_INDEX</code> takes the head, a
+            <code>CASE</code> expression keeps the remainder, and the CTE recurses until nothing is left,
+            producing one row per dimension. Six projections then render that set six ways &mdash;
+            <code>Size (centimeters)</code>, <code>Size (meters)</code>, <code>Size (in")</code>,
+            <code>Size (inches)</code>, <code>Size (ft'in")</code>, <code>Size (feet-inches)</code>
+            &mdash; each <code>GROUP_CONCAT</code>ed back together with <code>SEPARATOR ' by '</code>, and
+            union-alled. Seat counts get the same treatment with two aliases, <code>Pax</code> and
+            <code>Seats</code>, so either word finds them.
+          </p>
+          <p>
+            The part worth putting on a sheet: those same Arel builders are also the <em>body</em> of the
+            <code>after_insert</code> / <code>after_update</code> / <code>after_delete</code> triggers.
+            One Ruby definition produces both the backfill query and the trigger SQL, so the two cannot
+            drift. A second trigger layer, on the synthetic table itself, re-concatenates every property
+            of the touched object into the searchable string with an
+            <code>ON DUPLICATE KEY UPDATE</code> upsert. Writes stay ordinary Rails writes; the
+            search index maintains itself.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            It is a data-flow story, and data flow draws well. It also pairs with SH-04: this sheet
+            explains where the searchable text comes from, that one explains what happens to it.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/SyntheticPropertiesDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  split:   { name: <span class="tok-k">null</span> },
+  render:  { name: <span class="tok-s">'Six Renderings'</span>,  pageStyle: <span class="tok-s">'blueprint'</span> },
+  trigger: { name: <span class="tok-s">'Trigger Bodies'</span>,  pageStyle: <span class="tok-s">'blueprint'</span> },
+  index:   { name: <span class="tok-s">'Searchable Text'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            Main layer is a live input holding <code>160x80x74</code>. Edit it and the pipeline animates:
+            split into chips, each chip fans into six unit strings, the strings collapse into one
+            concatenated blob, and a search box below shows which queries now hit. The unit maths is
+            about twenty lines of TypeScript &mdash; port the rounding exactly, including the
+            feet-and-inches carry, so the numbers on screen are the numbers the SQL produces.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            Six renderings at once will overflow a sheet. Show three by default and let hover or focus
+            reveal the rest, or stagger them &mdash; the point is the fan-out, not reading all six.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: a size string splits into dimensions, fans out into six unit renderings, and collapses into one searchable string">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+
+              <rect x="16" y="18" width="56" height="14" class="ln"/>
+              <text x="21" y="28">160x80x74</text>
+              <text x="16" y="42" class="dim">recursive CTE split_sizes</text>
+
+              <rect x="16" y="48" width="22" height="12" class="fill"/>
+              <rect x="16" y="48" width="22" height="12" class="ln"/>
+              <text x="21" y="57">160</text>
+              <rect x="42" y="48" width="22" height="12" class="fill"/>
+              <rect x="42" y="48" width="22" height="12" class="ln"/>
+              <text x="48" y="57">80</text>
+              <rect x="68" y="48" width="22" height="12" class="fill"/>
+              <rect x="68" y="48" width="22" height="12" class="ln"/>
+              <text x="74" y="57">74</text>
+
+              <line x1="53" y1="62" x2="53" y2="72" class="ln"/>
+              <line x1="53" y1="72" x2="112" y2="72" class="ln"/>
+              <line x1="112" y1="72" x2="112" y2="80" class="ln"/>
+
+              <rect x="16" y="80" width="112" height="10" class="ln-2"/>
+              <text x="20" y="88" class="dim">160cm by 80cm by 74cm</text>
+              <rect x="16" y="93" width="112" height="10" class="ln-2"/>
+              <text x="20" y="101" class="dim">1.6m by 0.8m by 0.74m</text>
+              <rect x="16" y="106" width="112" height="10" class="ln-2"/>
+              <text x="20" y="114" class="dim">5ft3in by 2ft8in ...</text>
+              <text x="20" y="126" class="dim">+ 3 more renderings</text>
+
+              <rect x="140" y="80" width="104" height="46" class="ln"/>
+              <text x="145" y="90">values</text>
+              <text x="145" y="100" class="dim">160cm ... Size (cm)</text>
+              <text x="145" y="109" class="dim">5ft3in ... Size (ft'in")</text>
+              <text x="145" y="118" class="dim">8 Pax  8 Seats</text>
+              <line x1="128" y1="100" x2="140" y2="100" class="ln"/>
+
+              <text x="16" y="142" class="red">AFTER INSERT / UPDATE / DELETE &mdash; same Arel builder</text>
+              <line x1="16" y1="146" x2="244" y2="146" class="hot"/>
+            </svg>
+            <figcaption>SH-05 &middot; main layer, one string becomes many searchable ones</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">visrez/platform/repository<br>branch hs-1946-arel</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">app/models/library_object.rb<br>&nbsp;&nbsp;(size/pax _synthetic_property_select_sql)<br>app/models/<br>&nbsp;&nbsp;library_object_synthetic_property.rb<br>db/migrate/&hellip;_create_triggers_<br>&nbsp;&nbsp;multiple_tables.rb (432 lines)</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">ruby, rails, mysql</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">M &middot; 4 layers<br>port the unit maths exactly</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ SH-06 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-06</span>
+        <h2>Library Tagging Tool</h2>
+        <span class="origin">Visrez platform &middot; progressive HTML</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            A screen for putting values on hundreds of library objects quickly. Objects are grouped by
+            subcategory and by style clique. A property schema can be marked <em>shared in group</em>,
+            which means every object in the clique takes one value &mdash; so the tool gives the group a
+            single input, and mirrors what you type into each member's own field as you type it.
+          </p>
+          <p>
+            The mirrored fields are real inputs, but they are not focused, so they get no caret. The tool
+            draws one: each form carries a <code>--caret</code> custom property set from the shared
+            input's <code>selectionStart</code>, and CSS positions a blinking pseudo-element from it. The
+            index is clamped to <code>lastIndexOf(' ', selectionStart)</code>, because the advance metric
+            counts spaces twice and the fake caret would otherwise drift right of the real one.
+          </p>
+          <p>
+            Around that: in-place editing everywhere (label, pencil, input, tick, undo &mdash;
+            <code>.with-in-place-edit</code> / <code>.in-place-edit-always</code>),
+            <code>&lt;datalist&gt;</code> autocomplete built from values already used for that schema, a
+            tab order that walks the grid, a toggle that shows only the objects still missing the
+            property, and a hard 250-object page cap with an explicit "results hidden" warning rather
+            than a silent truncation. Saving is one <code>find_or_create_by</code>, and clearing the
+            field deletes the row instead of storing an empty string.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            Of the five, this is the one that is already a picture, needs no backend at all, and shows
+            interaction-design judgement rather than SQL. Build it first. The simulated caret is the kind
+            of detail that reads as care.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/TaggingToolDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  grid:     { name: <span class="tok-k">null</span> },
+  shared:   { name: <span class="tok-s">'Shared Group Input'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+  caret:    { name: <span class="tok-s">'Simulated Caret'</span>,   pageStyle: <span class="tok-s">'blueprint'</span> },
+  missing:  { name: <span class="tok-s">'Missing Values'</span>,    pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            Pure HTML, CSS and a few lines of vanilla JS &mdash; no island, no React. Keep the original
+            <code>--caret</code> technique verbatim; it is the thing being demonstrated. The
+            <em>Simulated Caret</em> blueprint layer should show the clamp with a worked example
+            (a value with two spaces, the raw index, the clamped one). The <em>Missing Values</em> layer
+            can reuse the same grid with the filter applied.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            The caret blink must sit behind <code>prefers-reduced-motion</code>, matching the rest of the
+            site. Object thumbnails need placeholder art rather than anything from the real library
+            &mdash; the CV is public and the library is not.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: a shared group input at the top mirrored into four object cards, each showing a simulated caret in the same position">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+
+              <text x="16" y="22" class="dim">Chiavari &middot; shared in group</text>
+              <rect x="16" y="26" width="150" height="14" class="hot"/>
+              <text x="21" y="36">Gold Resin</text>
+              <line x1="72" y1="29" x2="72" y2="38" class="hot"/>
+              <rect x="170" y="26" width="16" height="14" class="ln"/>
+              <text x="174" y="36">OK</text>
+
+              <rect x="16" y="50" width="52" height="52" class="fill"/>
+              <rect x="16" y="50" width="52" height="52" class="ln"/>
+              <rect x="20" y="86" width="44" height="11" class="ln-2"/>
+              <text x="23" y="94" class="dim">Gold Resin</text>
+              <line x1="58" y1="88" x2="58" y2="95" class="hot"/>
+
+              <rect x="76" y="50" width="52" height="52" class="fill"/>
+              <rect x="76" y="50" width="52" height="52" class="ln"/>
+              <rect x="80" y="86" width="44" height="11" class="ln-2"/>
+              <text x="83" y="94" class="dim">Gold Resin</text>
+              <line x1="118" y1="88" x2="118" y2="95" class="hot"/>
+
+              <rect x="136" y="50" width="52" height="52" class="fill"/>
+              <rect x="136" y="50" width="52" height="52" class="ln"/>
+              <rect x="140" y="86" width="44" height="11" class="ln-2"/>
+              <text x="143" y="94" class="dim">Gold Resin</text>
+              <line x1="178" y1="88" x2="178" y2="95" class="hot"/>
+
+              <rect x="196" y="50" width="48" height="52" class="ln-2"/>
+              <text x="201" y="76" class="dim">+ 12</text>
+
+              <rect x="16" y="112" width="90" height="12" class="ln-2"/>
+              <text x="20" y="121" class="dim">only missing values</text>
+              <rect x="112" y="112" width="76" height="12" class="ln-2"/>
+              <text x="116" y="121" class="dim">datalist: Gold&hellip;</text>
+
+              <text x="16" y="142" class="red">--caret: max(selectionStart, lastIndexOf(' '))</text>
+              <line x1="16" y1="146" x2="244" y2="146" class="hot"/>
+            </svg>
+            <figcaption>SH-06 &middot; main layer, one input driving a whole clique</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">visrez/platform/repository<br>branch hs-1946-arel<br>(UI polish also on<br>&nbsp;hs-1946-library-object-tags)</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">app/assets/javascripts/<br>&nbsp;&nbsp;library_object_properties.js<br>app/assets/stylesheets/components/<br>&nbsp;&nbsp;library_object_properties.scss<br>app/views/library/object_properties/<br>&nbsp;&nbsp;_edit.html.haml</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">css3, javascript, rails</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">S &middot; 4 layers<br>no island, no data</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ SH-07 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-07</span>
+        <h2>Event Dispatch &amp; Module Discovery</h2>
+        <span class="origin">GNU social v3 &middot; Symfony</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            GNU social v3 is built out of 19 components and 34 plugins that never call each other. They
+            talk through events. <code>App\Core\Event</code> is a thin wrapper over Symfony's dispatcher
+            that keeps the older, terser GNU social API &mdash;
+            <code>Event::handle('Name', [&amp;$arg])</code> &mdash; while the dispatcher underneath does
+            the priority ordering.
+          </p>
+          <p>
+            A module never registers a listener by hand. Any class in <code>components/*/</code> or
+            <code>plugins/*/</code> is a module, and every public method on it named
+            <code>on&lt;EventName&gt;</code> becomes a listener for that event. That discovery happens in
+            a compiler pass, at container build time, by reflection &mdash; so the wiring costs nothing
+            at request time and appears in the compiled container.
+          </p>
+          <p>
+            The same pass is where the safety net sits. It reads each handler's declared return type and
+            throws <code>BugFoundException</code> if it is not <code>EventResult</code>, so a plugin with
+            the wrong signature fails the build rather than a request. <code>EventResult</code> is a
+            three-case enum: <code>next</code> keeps the chain going, <code>stop</code> halts propagation
+            and tells the emitter someone claimed the job, <code>unhandled</code> says so explicitly.
+            That third value is what lets emitters write a default branch:
+            <code>if (Event::handle('X', $args) !== Event::stop) { &hellip; }</code>. A runtime check
+            catches handlers that return nothing at all and names the offending file.
+          </p>
+          <p>
+            Twig gets the same mechanism through a <code>handle_event()</code> function, so a core
+            template can accumulate blocks contributed by plugins &mdash; that is how attachment
+            rendering is extended without core knowing which encoders exist.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            GNU social is the largest thing on the CV and has nothing visual on the page. Dispatch is
+            genuinely animatable, and toggling plugins on and off shows why the architecture was chosen
+            far faster than the paragraph above does.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/EventBusDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  bus:       { name: <span class="tok-k">null</span> },
+  stop:      { name: <span class="tok-s">'EventResult'</span>,       pageStyle: <span class="tok-s">'blueprint'</span> },
+  discovery: { name: <span class="tok-s">'Module Discovery'</span>,  pageStyle: <span class="tok-s">'blueprint'</span> },
+  guard:     { name: <span class="tok-s">'Build-Time Guard'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <ul>
+            <li>
+              <strong>bus</strong> &mdash; an event token travels along a rail through
+              priority-ordered listener chips. Plugin chips can be toggled off; the chain re-sorts and
+              the token re-runs. Autoplays, hover or focus takes over, same as the Space Builder demo.
+            </li>
+            <li>
+              <strong>stop</strong> &mdash; the same rail with one listener returning
+              <code>Event::stop</code>: propagation halts, the remaining chips grey out, and the
+              emitter's fallback branch is shown not taken.
+            </li>
+            <li>
+              <strong>discovery</strong> &mdash; a plugin class on the left, the derived listener table
+              on the right, with <code>onViewAttachmentImage</code> &rarr;
+              <code>ViewAttachmentImage</code> drawn as the mapping it is.
+            </li>
+            <li>
+              <strong>guard</strong> &mdash; a handler with <code>: bool</code> instead of
+              <code>: EventResult</code>, and the build failing with the real exception text.
+            </li>
+          </ul>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            Use real event and plugin names from the codebase &mdash; <code>ViewAttachmentImage</code>,
+            <code>ResizerAvailable</code>, <code>ImageEncoder</code>, <code>VideoEncoder</code>,
+            <code>ActivityPub</code>. Invented ones would make it look like a teaching diagram rather
+            than a system that shipped.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: an event travelling along a dispatch rail through listener chips, one of which stops propagation">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+
+              <rect x="16" y="18" width="66" height="14" class="ln"/>
+              <text x="20" y="28">Event::handle</text>
+              <text x="20" y="42" class="dim">ViewAttachmentImage</text>
+
+              <line x1="16" y1="86" x2="244" y2="86" class="ln"/>
+              <rect x="20" y="80" width="10" height="12" class="hot-f"/>
+
+              <rect x="46" y="58" width="46" height="22" class="fill"/>
+              <rect x="46" y="58" width="46" height="22" class="ln"/>
+              <text x="50" y="68">ImageEnc</text>
+              <text x="50" y="76" class="dim">prio 0</text>
+              <line x1="69" y1="80" x2="69" y2="86" class="ln"/>
+
+              <rect x="102" y="58" width="46" height="22" class="fill"/>
+              <rect x="102" y="58" width="46" height="22" class="hot"/>
+              <text x="106" y="68">Embed</text>
+              <text x="106" y="76" class="red">stop</text>
+              <line x1="125" y1="80" x2="125" y2="86" class="hot"/>
+
+              <rect x="158" y="58" width="46" height="22" class="ln-2"/>
+              <text x="162" y="68" class="dim">VideoEnc</text>
+              <text x="162" y="76" class="dim">skipped</text>
+
+              <rect x="46" y="92" width="46" height="20" class="ln-2"/>
+              <text x="50" y="105" class="dim">next</text>
+              <rect x="102" y="92" width="46" height="20" class="ln-2"/>
+              <text x="106" y="105" class="red">stop</text>
+              <rect x="158" y="92" width="46" height="20" class="ln-2"/>
+              <text x="162" y="105" class="dim">&mdash;</text>
+
+              <text x="16" y="130" class="dim">emitter: if (result !== stop) { default }</text>
+              <text x="16" y="145" class="red">return type checked at container build time</text>
+              <line x1="16" y1="149" x2="244" y2="149" class="hot"/>
+            </svg>
+            <figcaption>SH-07 &middot; main layer, one handler claims the event</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">gnu-social (Codeberg)<br>~1200 commits, 2021&ndash;2022<br>NLnet / NGI0 Discovery</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">src/Core/Event.php<br>src/Core/Event/EventResult.php<br>src/Core/Event/GSEvent.php<br>src/Core/ModuleManager.php<br>&nbsp;&nbsp;(preRegisterEvents)<br>docs/developer/src/events.md</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Scale</span>
+          <span class="field-val">19 components + 34 plugins<br>~96 on* listeners<br>~90 distinct event names<br>13 templates emit events</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">M &middot; 4 layers<br>timeline + toggles</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ SH-08 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-08</span>
+        <h2>schemaDef &rarr; Doctrine Metadata</h2>
+        <span class="origin">GNU social v3 &middot; Doctrine</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            Doctrine wants schemas as attributes, XML or YAML. GNU social v2 described tables as plain
+            PHP arrays, and that format is better to read and to diff, so v3 kept it: every entity
+            implements <code>abstract public static function schemaDef(): array</code>, returning table
+            name, description, fields, primary key, indexes, unique keys and fulltext indexes.
+          </p>
+          <p>
+            <code>SchemaDefDriver</code> makes Doctrine accept it. It extends
+            <code>StaticPHPDriver</code>, is attached to
+            <code>doctrine.orm.default_metadata_driver</code> by a compiler pass, and redefines
+            <code>isTransient()</code> to mean "has no <code>schemaDef</code> method" &mdash; so being an
+            entity is a property of the class, not of a registration list.
+            <code>loadMetadataForClass</code> then translates the v2 vocabulary into Doctrine's:
+            <code>varchar</code>&rarr;<code>string</code>, <code>serial</code>&rarr;<code>integer</code>
+            with an auto generator, <code>tinyint</code>&rarr;<code>smallint</code>,
+            <code>numeric</code>&rarr;<code>decimal</code>; <code>size</code> is folded into the type
+            name, <code>not null</code> is inverted into <code>nullable</code>, <code>char</code> becomes
+            a fixed-width string, per-field <code>description</code> is hoisted into the column comment
+            so the documentation lands in the database itself, and
+            <code>['idx_name' =&gt; [cols]]</code> maps are reshaped into the
+            <code>[['name' =&gt; &hellip;, 'columns' =&gt; &hellip;]]</code> form Doctrine expects.
+          </p>
+          <p>
+            Because plugins are discovered by the same compiler pass, a plugin that ships an
+            <code>Entity/</code> directory gets its own tables registered against the same driver
+            &mdash; a plugin extends the schema by existing. And a PHPStan extension closes the loop on
+            the query side: <code>DB::find('actor', &hellip;)</code> takes a table name as a
+            <em>string</em>, and the extension boots the real kernel during analysis so static analysis
+            still types that call as <code>Actor|null</code>.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            It is a transform, and transforms are the easiest thing to show honestly: input on the left,
+            output on the right, one rule at a time. It also pairs with SH-07 &mdash; same compiler pass,
+            same "modules extend the core by existing" idea, seen from the data side.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/SchemaDefDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  transform: { name: <span class="tok-k">null</span> },
+  typemap:   { name: <span class="tok-s">'Type Vocabulary'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+  plugins:   { name: <span class="tok-s">'Plugin Entities'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+  phpstan:   { name: <span class="tok-s">'Static Analysis'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            Main layer is two panes on one sheet: <code>Actor::schemaDef()</code> as it really is on the
+            left, the generated <code>CREATE TABLE</code> on the right, and a highlight that walks field
+            by field &mdash; hover a line on either side and its counterpart lights up. Use the real
+            Actor entity; <code>lat</code>/<code>lon</code> as
+            <code>numeric(10,7)</code> and the fulltext index over nickname, fullname, location, bio and
+            homepage are the kind of specifics that make it read as a real schema.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            Two synchronised code panes are a legibility problem at small widths. Fall back to stacked
+            panes with the highlight preserved before the portrait breakpoint, rather than shrinking the
+            type.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: a schemaDef PHP array on the left mapped line by line to a generated CREATE TABLE statement on the right">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+
+              <text x="16" y="22" class="dim">Actor::schemaDef()</text>
+              <rect x="16" y="26" width="104" height="94" class="ln"/>
+              <text x="20" y="36">'name' =&gt; 'actor'</text>
+              <text x="20" y="48">'id' =&gt; serial</text>
+              <text x="20" y="60">'nickname' =&gt;</text>
+              <text x="24" y="69" class="dim">varchar(64)</text>
+              <text x="24" y="78" class="dim">not null</text>
+              <text x="20" y="92">'lat' =&gt; numeric</text>
+              <text x="24" y="101" class="dim">precision 10</text>
+              <text x="24" y="110" class="dim">scale 7</text>
+
+              <text x="140" y="22" class="dim">Doctrine metadata</text>
+              <rect x="140" y="26" width="104" height="94" class="ln"/>
+              <text x="144" y="36">CREATE TABLE actor</text>
+              <text x="144" y="48">id INT AUTO_INC</text>
+              <text x="144" y="60">nickname</text>
+              <text x="148" y="69" class="dim">VARCHAR(64)</text>
+              <text x="148" y="78" class="dim">NOT NULL</text>
+              <text x="144" y="92">lat</text>
+              <text x="148" y="101" class="dim">DECIMAL(10,7)</text>
+              <text x="148" y="110" class="dim">COMMENT 'latitude'</text>
+
+              <line x1="120" y1="45" x2="140" y2="45" class="ln-2"/>
+              <line x1="120" y1="70" x2="140" y2="70" class="hot"/>
+              <line x1="120" y1="100" x2="140" y2="100" class="ln-2"/>
+
+              <text x="16" y="136" class="dim">isTransient() = has no schemaDef()</text>
+              <text x="16" y="148" class="red">plugins register their own Entity/ dir</text>
+              <line x1="16" y1="152" x2="244" y2="152" class="hot"/>
+            </svg>
+            <figcaption>SH-08 &middot; main layer, one array becomes one table</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">gnu-social (Codeberg)<br>src/ &middot; 2021&ndash;2022</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">src/DependencyInjection/Compiler/<br>&nbsp;&nbsp;SchemaDefDriver.php<br>src/Core/Entity.php<br>src/Entity/Actor.php<br>src/PHPStan/ClassFromTableName&hellip;.php</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">php, symfony, mysql</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">S &middot; 4 layers<br>mostly static, one highlight</span>
+        </div>
+      </div>
+    </article>
+
+
+    <!-- ============ SH-09 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-09</span>
+        <h2>Fediverse Playground</h2>
+        <span class="origin">Own tool &middot; Bun + TypeScript &middot; GPL-3.0</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            A CLI that turns one YAML file into a working fediverse on a laptop: several GNU social nodes
+            (v3 and v2), each on its own hostname and TLS certificate, all federating with each other
+            through one nginx. It exists because testing federation needs at least two servers that
+            believe they are different sites, and the Python/whiptail tool it replaced could not do that.
+            51 commits, all yours, on a public repository.
+          </p>
+          <p>
+            Three mechanisms do the work. <em>Worktrees:</em> one bare mirror per software under
+            <code>mirrors/</code>, one git worktree per instance, so Alice can run branch <code>v3</code>
+            while Bob runs <code>main</code> of the same repo; if a branch is already checked out by
+            another instance the manager creates <code>&lt;branch&gt;-&lt;instance&gt;</code> instead,
+            falling through local branch, remote-tracking branch, new branch.
+            <em>Recipes:</em> each software declares its dependencies (<code>web</code>, <code>db</code>,
+            <code>redis</code>, <code>mariadb</code>) with a <code>shared</code> flag and a
+            <code>buildContribution()</code> that returns services; the builder emits shared services
+            once, deep-merges contributions with array concatenation, collects the web volumes and web
+            <code>depends_on</code>, and refuses to write a compose file whose <code>depends_on</code>
+            names a service that does not exist. <em>Hostnames:</em> every <code>*.localhost</code> name
+            gains a <code>*.fediverse</code> alias, and the resolved list is written both as an
+            <code>/etc/hosts</code> snippet and as <code>files/hosts.nix</code>, which the flake exports
+            as a NixOS module setting <code>networking.hosts</code>.
+          </p>
+          <p>
+            Each instance is two containers: a one-shot <code>&lt;id&gt;-install</code> that waits for
+            Postgres to be healthy, runs composer, creates the schema, and seeds an admin by booting the
+            real Symfony kernel and calling <code>DB::persistWithSameId</code>; and the app container,
+            which <code>depends_on</code> the installer with
+            <code>service_completed_successfully</code>. The nginx server block is not hand-written: the
+            recipe rewrites the repository's own <code>docker/nginx/nginx.conf</code> with a handful of
+            regexes, and the certificate is minted with <code>openssl -addext subjectAltName</code> over
+            every hostname the instance answers to.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            It is the infrastructure behind the GNU social work, it is public, and it is a graph problem
+            that draws itself: config on the left, the generated service graph on the right, shared
+            services appearing exactly once no matter how many instances you add. Systems breadth in
+            one picture &mdash; git plumbing, Compose, nginx, OpenSSL, Nix &mdash; without a single
+            screenshot of a web page.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/FediversePlaygroundDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  topology:  { name: <span class="tok-k">null</span> },
+  worktrees: { name: <span class="tok-s">'Mirrors &amp; Worktrees'</span>,   pageStyle: <span class="tok-s">'blueprint'</span> },
+  install:   { name: <span class="tok-s">'One-shot Installers'</span>,   pageStyle: <span class="tok-s">'blueprint'</span> },
+  hosts:     { name: <span class="tok-s">'Hostnames &rarr; /etc/hosts'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            The live layer is three toggles &mdash; Alice (v3), Bob (v3), a v2 node &mdash; and the
+            generated graph beside them. The compose builder is pure TypeScript once the filesystem
+            calls are stubbed, so port the merge logic rather than faking it: shared services dedupe,
+            install &rarr; app gating, web depending on every app. Show the YAML that would be written in
+            a collapsible pane. The <em>Worktrees</em> layer draws the branch-collision rename; the
+            <em>Installers</em> layer is a short sequence diagram (db healthy &rarr; installer completes
+            &rarr; app starts); the <em>Hostnames</em> layer fans one name out to the snippet, the
+            <code>hosts.nix</code> attribute set, and the module.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            The README says other recipes "can be added"; the demo must not imply Mastodon or Lemmy run
+            today. The Postgres password in the compose file is a dev default and can be shown as such.
+            The archived Visrez deployment tool (see bench) is the same idea, earlier and private &mdash;
+            mention the lineage in the subtitle, do not show it.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: a YAML config panel on the left with three instance toggles; on the right a generated service graph where web, db and redis appear once and each instance has an install container gating its app container">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+
+              <rect x="14" y="14" width="86" height="140" class="fill"/>
+              <rect x="14" y="14" width="86" height="140" class="ln"/>
+              <text x="19" y="24" class="dim">playground.config</text>
+              <rect x="19" y="30" width="8" height="8" class="hot"/>
+              <text x="31" y="37">alice &middot; social-v3</text>
+              <rect x="19" y="44" width="8" height="8" class="hot"/>
+              <text x="31" y="51">bob &middot; social-v3</text>
+              <rect x="19" y="58" width="8" height="8" class="ln"/>
+              <text x="31" y="65" class="dim">v2 &middot; social-v2</text>
+              <text x="19" y="84" class="dim">defaults:</text>
+              <text x="19" y="92" class="dim">&nbsp;tld: fediverse</text>
+              <text x="19" y="110" class="dim">alice.localhost</text>
+              <text x="19" y="118" class="dim">alice.fediverse</text>
+              <text x="19" y="126" class="dim">bob.localhost</text>
+              <text x="19" y="134" class="dim">bob.fediverse</text>
+
+              <rect x="112" y="16" width="40" height="14" class="hot"/>
+              <text x="126" y="25">web</text>
+              <rect x="160" y="16" width="36" height="14" class="hot"/>
+              <text x="172" y="25">db</text>
+              <rect x="204" y="16" width="40" height="14" class="hot"/>
+              <text x="214" y="25">redis</text>
+              <text x="112" y="40" class="red">shared &middot; emitted once</text>
+
+              <rect x="112" y="56" width="58" height="14" class="ln-2"/>
+              <text x="116" y="65" class="dim">alice-install</text>
+              <rect x="186" y="56" width="58" height="14" class="ln"/>
+              <text x="200" y="65">alice</text>
+              <line x1="170" y1="63" x2="186" y2="63" class="ln"/>
+
+              <rect x="112" y="80" width="58" height="14" class="ln-2"/>
+              <text x="116" y="89" class="dim">bob-install</text>
+              <rect x="186" y="80" width="58" height="14" class="ln"/>
+              <text x="203" y="89">bob</text>
+              <line x1="170" y1="87" x2="186" y2="87" class="ln"/>
+
+              <line x1="132" y1="30" x2="215" y2="56" class="ln-2"/>
+              <line x1="132" y1="30" x2="215" y2="80" class="ln-2"/>
+              <line x1="178" y1="30" x2="141" y2="56" class="ln-2"/>
+              <line x1="178" y1="30" x2="141" y2="80" class="ln-2"/>
+
+              <rect x="112" y="108" width="132" height="40" class="ln-2"/>
+              <text x="116" y="118" class="dim">services: web, db, redis,</text>
+              <text x="116" y="126" class="dim">&nbsp;alice-install, alice,</text>
+              <text x="116" y="134" class="dim">&nbsp;bob-install, bob</text>
+              <text x="116" y="143" class="dim">depends_on validated</text>
+            </svg>
+            <figcaption>SH-09 &middot; main layer, toggles on the left driving the service graph</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">~/projects/fediverse-playground<br>github.com/someonewithpc/<br>&nbsp;fediverse-playground<br>branch main &middot; public</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">src/compose/builder.ts<br>src/worktrees/manager.ts<br>src/recipes/gnu-social.ts<br>src/compose/hosts.ts<br>nix/hosts-module.nix<br>install/social-v3.sh</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">typescript, docker, nixos,<br>postgresql, git, bash</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">M &middot; 4 layers<br>one small island (graph)</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ SH-10 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-10</span>
+        <h2>Offline-first Votes: patched player &rarr; D1</h2>
+        <span class="origin">Own tool &middot; Kotlin + Java + Astro/Workers</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            A full pipeline from a modified Android video player to a Cloudflare D1 database, built so a
+            personal video library could be rated and its watch time measured with no server assumed to
+            be reachable. Two repositories: fourteen bytecode patches for MX Player 3.1.1 (public, GPL-3),
+            and a small Astro + Workers API with a D1 schema.
+          </p>
+          <p>
+            <em>Patching.</em> The patches run on Morphe, a ReVanced-lineage patcher. Fingerprints are
+            anchored on string constants unique to the method (<code>"#EXTMXOPT:autogen=true,&hellip;"</code>)
+            rather than on obfuscated names like <code>E6</code>, which do not survive a build. Options such
+            as the server URL are baked in at patch time by rewriting a method body to
+            <code>const-string v0 / return-object v0</code>; icon ids are read at runtime with
+            <code>sget</code> from the app's own generated resource class. One commit message records the
+            trap worth a diagram: the click dispatcher declares 21 locals, so <code>p0</code>/<code>p1</code>
+            are out of range for <code>iget-object</code> and <code>invoke-static</code>; naming them
+            directly gets the instruction silently dropped and a <code>VerifyError</code> at runtime, so they
+            are copied down with the <code>/from16</code> forms first.
+          </p>
+          <p>
+            <em>Client.</em> A Java extension keeps a SQLite queue. Vote rows are inserted <em>held</em>:
+            one revocable vote per watch session, invisible to the sync worker until playback moves on,
+            released on next start if the process dies. Each row carries a client-generated UUID. A sync
+            pass posts a batch, and only rows the server confirms are deleted. Watch time is sampled every
+            two seconds by a lifecycle-bound timer, reading position and duration reflectively off the
+            obfuscated player; if the members cannot be resolved the feature switches itself off. Segments
+            are recorded as ordered <code>[start, end]</code> pairs with overlaps preserved.
+          </p>
+          <p>
+            <em>Server.</em> <code>/api/sync</code> takes up to 500 events, processes each independently,
+            and is idempotent on the UUID primary key of <code>vote_events</code> and
+            <code>watch_events</code>. Identity is resolved down a ladder: <code>file_hash</code>
+            (SHA-1 of the first 2&nbsp;MB plus last 256&nbsp;KB, the same scheme the local catalogue used
+            to match 1101 renamed files back to their originals), then <code>source_url</code> with the
+            query string stripped, then name plus duration within &plusmn;2&nbsp;s, then name alone.
+            <code>watch_segments</code> are deliberately not merged on write &mdash; a section watched
+            three times reads as three &mdash; because coverage can be collapsed later and repetition
+            cannot be recovered. The same repository also holds the diagnosis of why the player could not
+            open a playlist file at all: ffmpeg's HLS demuxer claims any file starting
+            <code>#EXTM3U</code> and plays the entries as segments of one stream, which explains the dead
+            seek bar, the wrong title and next-track walking the folder in one stroke.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            Nothing else in the directory spans reverse engineering, Dalvik bytecode, an offline-first
+            client, and a serverless backend with a real idempotency story. The demo is a state machine,
+            and state machines animate well: vote, go offline, watch the queue grow, come back, replay the
+            batch, and the counts do not move.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/OfflineVotesDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  sync:        { name: <span class="tok-k">null</span> },
+  fingerprint: { name: <span class="tok-s">'Fingerprints &amp; Smali'</span>,        pageStyle: <span class="tok-s">'blueprint'</span> },
+  held:        { name: <span class="tok-s">'Held &rarr; Released &rarr; Confirmed'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+  identity:    { name: <span class="tok-s">'Identity Ladder'</span>,             pageStyle: <span class="tok-s">'blueprint'</span> },
+  segments:    { name: <span class="tok-s">'Watched Segments'</span>,            pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            The live layer is three columns: a phone panel with up/down buttons, a "next video" button and
+            an offline switch; the local queue with held rows dimmed and sendable rows solid; the server
+            table with counts. All state lives in one TypeScript reducer, no network. A "replay last
+            batch" button is the payoff. The <em>Held</em> layer is the state diagram; the
+            <em>Identity</em> layer draws the ladder with which key each mock event matched on; the
+            <em>Segments</em> layer is a timeline with overlapping bars and the plays-per-slice histogram
+            beneath it.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            The library this was built for is personal. Nothing from it &mdash; file names, tags, playlist
+            names, the deployed Worker URL, the token &mdash; goes anywhere near the demo; mock titles are
+            invented and neutral, and the source is described only as "a personal video library". The
+            patch set is pinned to one player build and hardcodes native byte offsets; say so rather than
+            implying general applicability. <code>kotlin</code>, <code>android</code> and
+            <code>sqlite</code> are not in <code>tech-icons.ts</code> yet and would need adding.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: a phone panel with vote buttons and an offline switch, a local queue of held and sendable events, and a server column whose counts stay the same after a replayed batch">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+
+              <rect x="14" y="14" width="64" height="140" class="fill"/>
+              <rect x="14" y="14" width="64" height="140" class="ln"/>
+              <rect x="20" y="20" width="52" height="30" class="ln-2"/>
+              <text x="24" y="37" class="dim">video 07</text>
+              <rect x="20" y="58" width="22" height="14" class="hot"/>
+              <text x="27" y="68">&#x25B2;</text>
+              <rect x="50" y="58" width="22" height="14" class="ln"/>
+              <text x="57" y="68">&#x25BC;</text>
+              <rect x="20" y="82" width="52" height="12" class="ln-2"/>
+              <text x="24" y="91" class="dim">next video</text>
+              <rect x="20" y="104" width="52" height="12" class="ln-2"/>
+              <text x="24" y="113" class="dim">offline: on</text>
+              <text x="20" y="140" class="dim">2s sampler</text>
+              <text x="20" y="148" class="dim">seg 0:12&ndash;1:40</text>
+
+              <text x="90" y="24" class="dim">local queue</text>
+              <rect x="90" y="30" width="72" height="12" class="ln-2"/>
+              <text x="94" y="39" class="dim">vote up &middot; held</text>
+              <rect x="90" y="46" width="72" height="12" class="ln"/>
+              <text x="94" y="55">vote down &middot; 8f2c&hellip;</text>
+              <rect x="90" y="62" width="72" height="12" class="ln"/>
+              <text x="94" y="71">watch 88s &middot; 1a90&hellip;</text>
+              <rect x="90" y="78" width="72" height="12" class="ln"/>
+              <text x="94" y="87">watch 41s &middot; c07d&hellip;</text>
+              <text x="90" y="116" class="dim">deleted only when</text>
+              <text x="90" y="124" class="dim">the server confirms</text>
+
+              <line x1="162" y1="66" x2="184" y2="66" class="hot"/>
+              <text x="90" y="102" class="red">&rarr; POST /api/sync, batched</text>
+
+              <text x="184" y="24" class="dim">D1 &middot; videos</text>
+              <rect x="184" y="30" width="60" height="42" class="ln"/>
+              <text x="188" y="40">video 07</text>
+              <text x="188" y="49" class="dim">up 3 &middot; down 1</text>
+              <text x="188" y="58" class="dim">watch 412s</text>
+              <text x="188" y="67" class="dim">plays 5</text>
+              <rect x="184" y="82" width="60" height="12" class="hot"/>
+              <text x="188" y="91" class="red">replay batch</text>
+              <text x="184" y="106" class="dim">up 3 &middot; down 1</text>
+              <text x="184" y="114" class="red">unchanged</text>
+
+              <text x="90" y="142" class="dim">file_hash &rarr; source_url &rarr; name+dur &rarr; name</text>
+              <line x1="90" y1="146" x2="244" y2="146" class="ln-2"/>
+            </svg>
+            <figcaption>SH-10 &middot; main layer, offline queue on the left, idempotent server on the right</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">~/projects/morphe/mxplayer-patches<br>github.com/someonewithpc/<br>&nbsp;mxplayer-patches &middot; public<br>~/projects/gallery-manager/server<br>&nbsp;(no remote, private)</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">patches/&hellip;/votes/VoteButtonsPatch.kt<br>patches/&hellip;/playlist/Fingerprints.kt<br>extensions/votes/&hellip;/VoteStore.java<br>extensions/votes/&hellip;/WatchHook.java<br>server/src/pages/api/sync.ts<br>server/src/lib/videos.ts<br>server/migrations/*.sql</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">java, typescript, cloudflare<br>(+ kotlin, android, sqlite<br>&nbsp;to be added)</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">M&ndash;L &middot; 5 layers<br>one island (reducer + 3 panes)</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ SH-11 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-11</span>
+        <h2>web-ts-mode</h2>
+        <span class="origin">Own tool &middot; Emacs Lisp &middot; tree-sitter</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            One Emacs major mode for every nested web language you actually edit: HTML, JS, TS, JSX, TSX,
+            CSS, SCSS, XML, SVG, Astro and Vue. About 3,700 lines of Lisp across the core and seven host
+            files, 50 ERT tests plus a perf suite, a Nix flake, and a <code>bin/web-ts</code> CLI with
+            <code>grammars</code>, <code>doctor</code>, <code>test</code>, <code>compile</code> and
+            <code>bench</code>. 47 commits, all yours, public.
+          </p>
+          <p>
+            The interesting part is how the nesting is done. Each host uses native
+            <code>treesit-range-rules</code> with <code>:local t</code>, so every embedded region gets its
+            own parser instance. For Astro, a whole <code>html_interpolation</code> minus its braces
+            (<code>:offset '(1 . -1)</code>) is handed to the TSX parser as one program, so an object
+            literal followed by JSX parses correctly instead of splitting at the first tag; interpolations
+            nested inside another are excluded by a parent-until check, and <code>lang="scss"</code> on a
+            style tag selects the SCSS grammar rather than CSS. Comment syntax follows
+            <code>treesit-language-at</code> &mdash; markup, C-like, or block &mdash; through
+            <code>comment-setup-function</code> on Emacs&nbsp;31 with a post-command fallback.
+          </p>
+          <p>
+            Selectors are painted by depth: a recursive walker over combinator chains and the arguments
+            of <code>:not()</code> / <code>:has()</code> assigns each leaf a nesting level, and a face is
+            generated per level by moving the hue from a base toward an end hue with clamped lightness,
+            cached per depth. <code>a &gt; b &gt; c</code> deepens left to right; comma branches share a
+            depth. Eglot is the default client with whole-file servers only; a missing grammar degrades
+            the buffer rather than killing it; <code>M-x web-ts-doctor</code> reports Emacs version,
+            grammars found, and language servers on <code>PATH</code>.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            Syntax highlighting is already a picture, and the multi-parser story is invisible everywhere
+            except in a diagram. It also says something the other sheets do not: you build your own
+            tools when the existing one (web-mode, 2014-era regex fontification) is not good enough, and
+            you finish them &mdash; tests, doctor, bench, packaging.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/WebTsModeDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  buffer: { name: <span class="tok-k">null</span> },
+  ranges: { name: <span class="tok-s">'Parser Ranges'</span>,      pageStyle: <span class="tok-s">'blueprint'</span> },
+  depth:  { name: <span class="tok-s">'Selector Depth Hue'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+  doctor: { name: <span class="tok-s">'web-ts doctor'</span>,      pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            No island. The live layer is a pre-fontified <code>.astro</code> file rendered as HTML
+            &mdash; use one of the CV's own components as the sample, so the content is real &mdash; with
+            a "show parser ranges" toggle that outlines each region and labels it <code>astro</code>,
+            <code>tsx</code> or <code>scss</code>; hovering a token highlights the range that owns it. The
+            <em>Ranges</em> layer draws the offset trick: braces excluded, one TSX program, nested
+            interpolation skipped. The <em>Depth</em> layer is the hue scale against a nested SCSS
+            snippet. The <em>Doctor</em> layer is a mock report, formatted like the real one.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            Do not run tree-sitter in the browser. Capture the fontification once and label it as a
+            captured buffer, not a live parser. Depth hues must be derived from the CV's own tokens so
+            they survive both themes. The Volar&nbsp;3 limitation (needs lsp-mode) is documented in the
+            README; do not present Vue support as complete under Eglot.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: an editor buffer showing an Astro file with four outlined parser regions, frontmatter and interpolation owned by TSX, template by Astro, style block by SCSS, with a depth hue legend below">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+              <rect x="14" y="14" width="176" height="140" class="fill"/>
+              <rect x="14" y="14" width="176" height="140" class="ln"/>
+
+              <rect x="18" y="18" width="168" height="26" class="ln-2"/>
+              <text x="22" y="27">---</text>
+              <text x="22" y="35">const items = await load();</text>
+              <text x="22" y="43">---</text>
+              <text x="150" y="27" class="dim">tsx</text>
+
+              <text x="22" y="56">&lt;ul class="list"&gt;</text>
+              <rect x="30" y="60" width="150" height="12" class="hot"/>
+              <text x="34" y="69">{items.map(i =&gt; &lt;li&gt;{i}&lt;/li&gt;)}</text>
+              <text x="118" y="80" class="red">tsx &middot; (1 . -1)</text>
+              <text x="22" y="80">&lt;/ul&gt;</text>
+
+              <rect x="18" y="86" width="168" height="62" class="ln-2"/>
+              <text x="22" y="95">&lt;style lang="scss"&gt;</text>
+              <text x="150" y="95" class="dim">scss</text>
+              <text x="26" y="106">.list {</text>
+              <text x="32" y="115">&gt; li {</text>
+              <text x="38" y="124">&amp;:not(.done) a { }</text>
+              <text x="32" y="133">}</text>
+              <text x="26" y="142">}</text>
+
+              <text x="198" y="24" class="dim">depth hue</text>
+              <rect x="198" y="30" width="10" height="10" class="fill-s"/>
+              <text x="212" y="38">0 .list</text>
+              <rect x="198" y="44" width="10" height="10" class="fill-s" opacity=".7"/>
+              <text x="212" y="52">1 &gt; li</text>
+              <rect x="198" y="58" width="10" height="10" class="hot-f" opacity=".6"/>
+              <text x="212" y="66">2 :not()</text>
+              <rect x="198" y="72" width="10" height="10" class="hot-f"/>
+              <text x="212" y="80">3 a</text>
+
+              <rect x="198" y="100" width="46" height="12" class="ln-2"/>
+              <text x="201" y="109" class="dim">show ranges</text>
+              <text x="198" y="128" class="dim">astro &middot; tsx</text>
+              <text x="198" y="136" class="dim">scss &middot; local</text>
+            </svg>
+            <figcaption>SH-11 &middot; main layer, captured buffer with parser ranges outlined</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">~/projects/web-ts-mode<br>github.com/someonewithpc/<br>&nbsp;web-ts-mode &middot; public<br>PLAN.html holds the design log</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">web-ts-hosts/astro.el (range rules)<br>web-ts-treesit.el<br>&nbsp;&nbsp;(selector depth faces, ~l.388&ndash;520)<br>web-ts-doctor.el<br>bin/web-ts</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">emacs, lisp, typescript, css3</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">S &middot; 4 layers<br>no island, static capture</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ SH-12 ============ -->
+    <article class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-no">SH-12</span>
+        <h2>:global() with a leading combinator</h2>
+        <span class="origin">Astro compiler-rs &middot; Rust &middot; fork branch</span>
+      </div>
+
+      <div class="sheet-body">
+        <div class="prose">
+          <h3>What is actually there</h3>
+          <p>
+            A fix to Astro's Rust compiler for scoped styles. With CSS-modules mode off, lightningcss
+            parses <code>:global()</code> as an opaque <code>CustomFunction</code> with a token list, and
+            the scoper silently ignored it whenever the argument started with a combinator &mdash; so
+            <code>.a :global(&gt; .b)</code> scoped <code>.b</code> as if it were local. The change adds a
+            visitor that re-reads the argument text out of the source, splits off a leading combinator,
+            parses the rest into a real <code>Selector</code>, normalises it to
+            <code>PseudoClass::Global</code> recursively, and hoists the combinator out before scoping
+            runs. 640 lines in <code>css_scoping.rs</code>, a changeset, and two new test files. A
+            sibling commit fixing JSX inside object literals (#58) is already on upstream
+            <code>main</code>; this one is still on your fork.
+          </p>
+
+          <h3>Why it earns a sheet</h3>
+          <p>
+            It is the only Rust in the directory, and the CV is built on Astro. A selector going in and
+            the scoped selector coming out is a two-line demo that anyone who has written a scoped style
+            understands instantly. Verdict is <em>maybe</em> only because it may sit better as an inline
+            example inside the contributions section than as a full sheet.
+          </p>
+
+          <h3>Proposed implementation</h3>
+          <pre><code><span class="tok-c">// src/components/GlobalScopingDemo/Demo.astro</span>
+<span class="tok-k">const</span> layers = {
+  scoping: { name: <span class="tok-k">null</span> },
+  hoist:   { name: <span class="tok-s">'Hoisting the Combinator'</span>, pageStyle: <span class="tok-s">'blueprint'</span> },
+  visitor: { name: <span class="tok-s">'Visitor Shape'</span>,           pageStyle: <span class="tok-s">'blueprint'</span> },
+} <span class="tok-k">as const</span>;</code></pre>
+          <p>
+            A selector input with a short list of presets, and two outputs: before the fix (struck
+            through) and after. Port only the scoping rule to TypeScript for a curated set of cases; do
+            not attempt a CSS parser. The <em>Hoist</em> layer is a token strip with the combinator lifted
+            out of the parentheses; the <em>Visitor</em> layer shows the Rust shape at a glance.
+          </p>
+
+          <div class="markup">
+            <strong>Watch out</strong>
+            Confirm whether the fix was submitted upstream before the sheet says "contributed". The
+            "before" output must be taken from the real old compiler on the archived repro
+            (<code>archive/astro-global-combinator-repro</code>), not guessed.
+          </div>
+        </div>
+
+        <div class="rail">
+          <figure class="wf">
+            <svg viewBox="0 0 260 168" role="img" aria-label="Wireframe: a selector input reading .a :global(> .b), a struck-through wrong output beneath it and the correct scoped output below that, with a token strip showing the combinator hoisted out of the parentheses">
+              <rect x="8" y="8" width="244" height="152" class="ln"/>
+
+              <text x="16" y="24" class="dim">selector</text>
+              <rect x="16" y="28" width="228" height="16" class="hot"/>
+              <text x="22" y="39">.a :global(&gt; .b)</text>
+
+              <text x="16" y="62" class="dim">before</text>
+              <rect x="16" y="66" width="228" height="14" class="ln-2"/>
+              <text x="22" y="76" class="dim">.a[data-astro-cid] .b[data-astro-cid]</text>
+              <line x1="20" y1="73" x2="180" y2="73" class="hot"/>
+
+              <text x="16" y="96" class="dim">after</text>
+              <rect x="16" y="100" width="228" height="14" class="ln"/>
+              <text x="22" y="110">.a[data-astro-cid] &gt; .b</text>
+
+              <rect x="16" y="134" width="18" height="12" class="fill"/>
+              <text x="20" y="143">.a</text>
+              <rect x="40" y="134" width="42" height="12" class="fill"/>
+              <text x="44" y="143">:global(</text>
+              <rect x="88" y="134" width="12" height="12" class="hot"/>
+              <text x="91" y="143" class="red">&gt;</text>
+              <rect x="106" y="134" width="18" height="12" class="fill"/>
+              <text x="110" y="143">.b</text>
+              <rect x="130" y="134" width="10" height="12" class="fill"/>
+              <text x="133" y="143">)</text>
+              <line x1="94" y1="134" x2="94" y2="126" class="hot"/>
+              <line x1="94" y1="126" x2="38" y2="126" class="hot"/>
+              <text x="40" y="123" class="red">hoisted before scoping</text>
+
+              <text x="16" y="157" class="dim">presets: :global(.x) &middot; :global(&gt; .x) &middot; :global(~ .x .y)</text>
+            </svg>
+            <figcaption>SH-12 &middot; main layer, selector in, scoped selector out</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="titleblock">
+        <div class="field">
+          <span class="field-key">Source</span>
+          <span class="field-val">~/projects/compiler-rs<br>branch global-combinator-broken<br>commit f79592f<br>fork: github.com/someonewithpc/compiler-rs</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Key files</span>
+          <span class="field-val">crates/astro_codegen/src/css_scoping.rs<br>packages/compiler/test/styles/<br>&nbsp;&nbsp;global-immediate-child.ts<br>&nbsp;&nbsp;global-immediate-child-complex.ts<br>archive/astro-global-combinator-repro</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Tech tags</span>
+          <span class="field-val">rust, css3</span>
+        </div>
+        <div class="field">
+          <span class="field-key">Effort</span>
+          <span class="field-val">S &middot; 3 layers<br>tiny island or none</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="block">
+  <h2 class="block-title">Bench</h2>
+  <p class="standfirst">
+    Real work, but either not visual enough to carry a sheet or better spent as a line in an existing
+    section. Listed so nobody has to re-survey the directory.
+  </p>
+  <div class="bench">
+
+    <div class="bench-row">
+      <div>
+        <h3>Performance Watchdog</h3>
+        <span class="src">visrez/space-builder &middot; src/three/helpers/PerformanceWatchdog.js</span>
+      </div>
+      <p>
+        Adaptive shadow quality driven by a vote: every frame-rate sample votes increase, maintain or
+        decrease, ten matching votes apply the change, a sample below half the decrease threshold votes
+        twice, and an extra threshold grows each time quality oscillates so it settles instead of
+        flip-flopping. The user's manual override is persisted. Fully client-side and honestly demoable
+        &mdash; a live frame-time trace with a vote gauge and a load slider &mdash; but it would need a
+        real Three.js scene to be worth watching, and the Space Builder demo already carries that
+        weight. Revisit if the Space Builder sheet gains a layer.
+      </p>
+      <span class="chip maybe">Later</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>Signed Asset Proxy</h3>
+        <span class="src">visrez/platform &middot; issue #2008</span>
+      </div>
+      <p>
+        A proxy so interactive maps can pull fonts and assets past CORS, with the SSRF work done
+        properly: hosts are resolved and private addresses refused with 403, requests are signed,
+        non-http schemes are rejected, cache-control is forwarded, and content types are treated as
+        UTF-8 or binary by an explicit rule rather than a guess. Security judgement reads badly as a
+        demo and well as a sentence. Put it in the experience prose.
+      </p>
+      <span class="chip write">Prose</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>paper-turn</h3>
+        <span class="src">~/projects/paper-turn</span>
+      </div>
+      <p>
+        A jQuery-free TypeScript port of turn.js with core, React and Vue packages. TODO.md already
+        wants a page-flip for the PaperStack carousel and already names turn.js as the thing to read.
+        These are the same job: make the CV's own paper stack flip using paper-turn, and the demo is the
+        site itself rather than a new sheet.
+      </p>
+      <span class="chip maybe">Fold in</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>jstan</h3>
+        <span class="src">~/projects/jstan</span>
+      </div>
+      <p>
+        SIMD JavaScript and TypeScript static analysis, aiming at disk speed. A benchmark chart would be
+        honest and cheap; a live tokeniser trace would need a WASM build and is a project of its own.
+        Worth a sheet later if the WASM build happens, a chart card sooner if not.
+      </p>
+      <span class="chip maybe">Later</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>android-media-backup</h3>
+        <span class="src">~/projects/android-media-backup</span>
+      </div>
+      <p>
+        The finding is that ADB throughput is capped per transport, not per connection, and the README
+        already has the measured table to prove it. That is a small, good data-visualisation card, not a
+        demo &mdash; three bars and a caption.
+      </p>
+      <span class="chip write">Card</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>GNU social platform work</h3>
+        <span class="src">gnu-social &middot; src/Core, src/Util, tools</span>
+      </div>
+      <p>
+        Queue, cache and HTTP client wrappers; the <code>TemporaryFile</code> critical section; raising
+        PHPStan from level 0 to 6 and fixing the bugs that surfaced on the way; hardening that disables
+        unused stream wrappers. All real, none visual. These belong in the GNU social highlight text,
+        which currently stops at "integrated PHPStan and dependency-hygiene tooling".
+      </p>
+      <span class="chip write">Prose</span>
+    </div>
+
+
+    <div class="bench-row">
+      <div>
+        <h3>Upstream patch series</h3>
+        <span class="src">git, libinput, Hyprland, t3code, claude-auto-retry &middot; local branches</span>
+      </div>
+      <p>
+        Five patches to other people's projects, each complete with docs and tests: <code>git rebase
+        --continue --no-edit</code> plus a <code>rebase.noEdit</code> config (C, four new tests in
+        t3436, pushed to your fork); an independent horizontal-only scroll inversion API in libinput
+        (+176 lines across eight files, a new <code>LIBINPUT_1.32</code> symbol node) paired with a
+        Hyprland <code>input:touchpad:invert_horizontal_scroll</code> option that no-ops on stock
+        libinput; keybinding profiles and an Emacs editing engine with a shared kill ring for T3 Code;
+        a Nix flake with NixOS and home-manager modules for claude-auto-retry. Only the compiler-rs JSX
+        fix is confirmed on an upstream <code>main</code>. These are contributions-section entries, and
+        the wording depends on which were submitted &mdash; see Q6.
+      </p>
+      <span class="chip write">Prose</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>Visrez deployment tool</h3>
+        <span class="src">archive/visrez-sandbox &middot; bin/visrez.js &middot; 150 commits</span>
+      </div>
+      <p>
+        The ancestor of SH-09: a <code>deployment.yaml</code> expanded into a compose file from
+        per-component fragments, several instances of one component, env files merged with
+        <code>.local</code> overrides, a generated CA and certificates, dependency validation, and a
+        containerised ora2pg pipeline that moved the platform from MariaDB to PostgreSQL. Private and
+        superseded; give SH-09 a subtitle that credits the lineage and leave it there.
+      </p>
+      <span class="chip maybe">Fold in</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>ProCam lens study</h3>
+        <span class="src">spectaria-hardware/Pro Cam &middot; Lens Exploration, CAD/ProCam.FCStd</span>
+      </div>
+      <p>
+        A FreeCAD document with 32 camera-and-lens pairings, each a group holding the field solid, camera
+        shell, lens barrel and its footprint on the wall, against the projector's 100" frustum taken from
+        the datasheet row (2214 &times; 1245&nbsp;mm, throw ratio 0.496); a ceiling-mount hole pattern
+        rebuilt from a 2D DXF because no 3D model of the part exists anywhere; and a SOURCES.md that
+        records provenance for every vendor file. The <code>freecad</code> icon already exists with
+        <code>hardware: true</code>. Client work: check what is shareable. A single rendered frustum
+        image with a caption would carry it.
+      </p>
+      <span class="chip maybe">Later</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>Revelo VM</h3>
+        <span class="src">Revelo/VM &middot; flake.nix, modules/</span>
+      </div>
+      <p>
+        A disposable NixOS guest for contract work: a qcow base image booted under a throwaway
+        copy-on-write overlay, a live ISO from the same modules as fallback, opt-in 9p share and
+        clipboard, <code>.vsix</code> files baked into the image, and Jest built from a pinned lockfile
+        because nixpkgs does not carry it. One sentence of Nix competence in the experience prose.
+      </p>
+      <span class="chip write">Prose</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>Minimal reproductions</h3>
+        <span class="src">vt-clippath-chrome-bug, archive/astro-*-repro</span>
+      </div>
+      <p>
+        Four self-contained bug reports: a WAAPI-animated <code>clip-path</code> on
+        <code>::view-transition-new</code> that Chrome does not composite in one direction, with
+        diagnostic toggles that isolate it to the composited WAAPI path; a Vite alias that works on
+        Astro&nbsp;6 and breaks on 7; JSX inside object literals; and the <code>:global</code> case that
+        became SH-12. Filing good repros is a signal worth a line, with links if the repos are public.
+      </p>
+      <span class="chip write">Prose</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>leaflet-perspective</h3>
+        <span class="src">archive/leaflet-perspective &middot; src/main.ts, Matrix4.ts</span>
+      </div>
+      <p>
+        A Leaflet map pushed through a 4&times;4 perspective matrix by wrapping the CRS, projection and
+        transformation with a prototype-preserving <code>extended()</code> helper. One day of commits
+        and unfinished; would be a striking visual if the projection round-trip were completed.
+      </p>
+      <span class="chip maybe">Later</span>
+    </div>
+
+    <div class="bench-row">
+      <div>
+        <h3>MX Player playlist diagnosis</h3>
+        <span class="src">morphe/MXPLAYER-PLAYLIST-NOTES.md, mxplayer-patches &middot; playlist/</span>
+      </div>
+      <p>
+        The write-up that explains four symptoms with one cause &mdash; ffmpeg's HLS demuxer claiming
+        any <code>#EXTM3U</code> file &mdash; and the patch that routes files through the app's own
+        autogen playlist branch instead. Already told inside SH-10; if SH-10 is not approved, this is the
+        publishable half of it on its own.
+      </p>
+      <span class="chip maybe">Fold in</span>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <h2 class="block-title">House rules for whoever builds these</h2>
+  <div class="prose">
+    <p>
+      Every existing demo has the same shape, and these should too. Copy
+      <code>src/components/SpaceBuilderDemo/Demo.astro</code> as the reference rather than inventing a
+      structure.
+    </p>
+    <ul>
+      <li>
+        One directory per demo under <code>src/components/</code>, with <code>Demo.astro</code> at its
+        root and a <code>layers/</code> subdirectory of one <code>.astro</code> file per layer.
+      </li>
+      <li>
+        <code>Demo.astro</code> declares a <code>layers</code> map (<code>as const</code>), passes it to
+        <code>TechnicalDrawingStack</code> along with <code>subtitle</code>, <code>scale</code>,
+        <code>size</code>, <code>date</code> and <code>tech</code>, and fills the <code>layers</code> and
+        <code>aside</code> slots with a function keyed by layer id.
+      </li>
+      <li>
+        The first layer is the live one and takes <code>name: null</code>; supporting layers take
+        <code>pageStyle: 'blueprint'</code>.
+      </li>
+      <li>
+        Each layer gets a <code>PostIt</code> in the <code>aside</code> slot saying what to do with it,
+        in the second person, one or two lines. The sheet's fold picks up the note's colour
+        automatically, so the colour is a real choice.
+      </li>
+      <li>
+        <code>tech</code> names come from <code>src/server/tech-icons.ts</code>. All of
+        <code>rails</code>, <code>ruby</code>, <code>mysql</code>, <code>php</code>,
+        <code>symfony</code>, <code>css3</code> and <code>javascript</code> already exist &mdash; no new
+        icons needed for any of these five.
+      </li>
+      <li>
+        Anything heavy mounts through <code>bootWhenVisible</code> from
+        <code>src/client/bootWhenVisible.ts</code>: after DOMContentLoaded, on an idle callback, when the
+        island scrolls into view. SH-06 and SH-08 should need no island at all.
+      </li>
+      <li>
+        Autoplay yields to the visitor on hover or focus, and everything animated respects
+        <code>prefers-reduced-motion</code>.
+      </li>
+      <li>
+        Colours come from the tokens in <code>src/scss/_colors.scss</code> &mdash; <code>--ink</code>,
+        <code>--line-strong</code>, <code>--surface-sunken</code>, <code>--blueprint</code> &mdash; never
+        literals, because every theme has to keep working.
+      </li>
+      <li>
+        Register the demo by importing it in <code>src/pages/index.astro</code> inside
+        <code>#demos</code>, and tick the matching line in <code>TODO.md</code>.
+      </li>
+    </ul>
+    <p>
+      Source repositories are local: <code>~/projects/visrez/platform/repository</code> (branch
+      <code>hs-1946-arel</code> for all three Visrez sheets) and <code>~/projects/gnu-social</code>.
+      Neither is public in the state these sheets describe, so demos must be rebuilt from mock data,
+      not lifted.
+    </p>
+  </div>
+</section>
+
+<section class="block">
+  <h2 class="block-title">For review</h2>
+  <div class="questions">
+    <div class="question">
+      <p>Eight demos is a lot of page. Should SH-04 and SH-05 be one sheet?</p>
+      <p>
+        They are two halves of one pipeline &mdash; SH-05 makes the text, SH-04 searches it &mdash; and
+        merging them would give one six-layer stack instead of two four-layer ones. Splitting keeps each
+        stack short; merging tells a better story.
+      </p>
+    </div>
+    <div class="question">
+      <p>Do the two GNU social sheets sit in Demos, or somewhere new?</p>
+      <p>
+        They are diagrams about architecture, not interactive products, and the existing three demos are
+        all products. A separate section, or an architecture-flavoured sheet style, might frame them
+        better than dropping them in the same run.
+      </p>
+    </div>
+    <div class="question">
+      <p>How much Visrez internal detail is publishable?</p>
+      <p>
+        The sheets as drawn name table and column names and show query shapes. Nothing proprietary about
+        the object library itself is exposed, and thumbnails would be placeholders &mdash; but that is a
+        call to make before building, not after.
+      </p>
+    </div>
+    <div class="question">
+      <p>Build order?</p>
+      <p>
+        Suggested: SH-06 first (no backend, immediately visual, proves the tagging story), then SH-08
+        (mostly static, cheap), then SH-04 and SH-05 together, then SH-07 &mdash; the animated bus is the
+        most design work of the five.
+      </p>
+    </div>
+    <div class="question">
+      <p>Is SH-10 something you want on the CV at all?</p>
+      <p>
+        The patch repository is public under your handle and the engineering is the strongest
+        full-stack story in the directory, but the library it serves is personal. The sheet is drawn so
+        that nothing from the library appears, and the source is described only as "a personal video
+        library". Approve, approve with a different framing, or drop it.
+      </p>
+    </div>
+    <div class="question">
+      <p>Which of the upstream patches were actually submitted?</p>
+      <p>
+        The git patch is on your fork; libinput, Hyprland, t3code and claude-auto-retry exist only on
+        local branches; the compiler-rs JSX fix is on upstream <code>main</code> and the
+        <code>:global</code> fix is not. "Contributed", "proposed" and "carried locally" are different
+        sentences in the contributions section.
+      </p>
+    </div>
+    <div class="question">
+      <p>Do the tooling sheets form a second run?</p>
+      <p>
+        SH-09, SH-10, SH-11 and SH-12 are tools you built for yourself or fixes to tools you use; SH-01
+        to SH-06 are products. Twelve demos in one run is a lot of page. A second run titled along the
+        lines of "Tooling" would let the two GNU social architecture sheets (Q2) sit with them.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer class="colophon">
+  <span>SH-DEMOS Rev. C</span>
+  <span>Drawn 2026-09-04</span>
+  <span>Sources: visrez/platform@hs-1946-arel, gnu-social@main, fediverse-playground, mxplayer-patches, gallery-manager, web-ts-mode, compiler-rs</span>
+  <span>Status: awaiting review</span>
+</footer>
+
+</div>
