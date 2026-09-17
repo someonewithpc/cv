@@ -385,10 +385,12 @@ inputs.forEach((inputEl) => {
         return;
       }
 
+      /* astro-icon puts the viewBox on the outer <svg> and leaves the sprite
+         <symbol> without one; older output had it the other way round. */
       const symbol = svg.querySelector<SVGSymbolElement>('symbol');
-      const viewBox = symbol?.viewBox.baseVal ?? svg.viewBox?.baseVal;
-      if (!viewBox || viewBox.width === 0) {
-        console.debug('[theme-transition] invalid viewBox', viewBox);
+      const viewBox = [symbol?.viewBox.baseVal, svg.viewBox?.baseVal].find((box) => box && box.width > 0);
+      if (!viewBox) {
+        console.debug('[theme-transition] invalid viewBox');
         return;
       }
 
