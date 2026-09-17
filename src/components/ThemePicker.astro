@@ -85,6 +85,7 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-accent: ${settings.accent};
       --theme-blueprint: ${settings.blueprint};
       --theme-mode: ${settings.follows};
+      --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
 `;
 
 /* Theme application mirrors the original radio/.checked contract so view
