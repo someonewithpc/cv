@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { watchPageActive } from '@/client/frontPage';
 
 import {
   claimSpaceBuilderGpu,
@@ -29,7 +30,7 @@ const playing = ref(false);
 const metrics = ref<{ theta: number; r: number; offset: number } | null>(null);
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
-let observer: IntersectionObserver | null = null;
+let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
@@ -225,23 +226,17 @@ onMounted(async () => {
 
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
-    const stack = visibilityRoot.closest('article.technical-drawing-stack');
-    observer = new IntersectionObserver(
-      (entries) => {
-        const visible = Boolean(entries[0]?.isIntersecting);
-        inView = visible;
-        if (!visible) {
-          releaseSpaceBuilderGpu(scene);
-          applyOrbitState();
-          return;
-        }
-        claimSpaceBuilderGpu(scene);
-        syncMetrics();
+    stopPageWatch = watchPageActive(visibilityRoot, (active) => {
+      inView = active;
+      if (!active) {
+        releaseSpaceBuilderGpu(scene);
         applyOrbitState();
-      },
-      { root: stack, threshold: 0.45 },
-    );
-    observer.observe(visibilityRoot);
+        return;
+      }
+      claimSpaceBuilderGpu(scene);
+      syncMetrics();
+      applyOrbitState();
+    });
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
@@ -264,7 +259,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
+  stopPageWatch?.();
+  stopPageWatch = null;
   stopNoteWatch?.();
   stopNoteWatch = null;
   stopOrbitLoop();
