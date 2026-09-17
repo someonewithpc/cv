@@ -7,9 +7,11 @@ export type Props = {
   class?: string;
   /** Number of pages; the default slot is called as a function once per index. */
   pageCount: number;
+  /** Accessible name of the stack. */
+  label?: string;
 };
 
-const { as: tagName = 'div', class: className, pageCount } = Astro.props;
+const { as: tagName = 'div', class: className, pageCount, label } = Astro.props;
 const Tag = tagName;
 
 // One gem-clip wire, split at the top bend into its two physical layers. The wire leans with
@@ -121,7 +123,17 @@ const pages = await Promise.all(
   </style>
 </noscript>
 
-<Tag data-paper-stack-root data-paper-stack class={className} style={`--page-count: ${pageCount}`}>
+<Tag
+  data-paper-stack-root
+  data-paper-stack
+  class={className}
+  style={`--page-count: ${pageCount}`}
+  tabindex="0"
+  role="region"
+  aria-roledescription="paper stack"
+  aria-label={label}
+  aria-description="The left and right arrow keys turn the pages"
+>
   {pages.map((page, index) => (
     <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={(index === 0 ? paperClipUnder : '') + page + (index === 0 ? foldFront : '')} />
   ))}
@@ -133,6 +145,11 @@ const pages = await Promise.all(
   anchor-scope: --technical-drawing-stack;
 
   &[data-paper-stack] {
+    &:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 0.5rem;
+    }
+
     display: grid;
     grid-template-areas: "content";
 
@@ -382,6 +399,10 @@ const pages = await Promise.all(
           500ms 500ms ease-in-out initial-fold-reveal 1 forwards,
           7.5s 1.5s ease-in-out fold-reveal-pulse infinite alternate
         ;
+
+        @media (prefers-reduced-motion: reduce) {
+          animation-iteration-count: 1, 0;
+        }
 
         @keyframes initial-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }

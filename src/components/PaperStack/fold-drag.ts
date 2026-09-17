@@ -244,9 +244,6 @@ const restSeed = ({ w, h, rest }: SheetMetrics): Vec => {
 const sectionOf = (sheet: HTMLElement): HTMLElement =>
   sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)')!;
 
-// The flap paints the back of the sheet in the page's own color, but as a sibling of the page
-// content it can't see background definitions scoped inside it (e.g. a blueprint page
-// redefining its surface variable), so the resolved color is lifted onto the sheet for it.
 const syncPaperSurface = (sheet: HTMLElement, section: HTMLElement): void => {
   sheet.style.setProperty('--paper-surface', getComputedStyle(section).backgroundColor);
 };
@@ -757,6 +754,19 @@ const glideLanding = (
 
 const pageIndex = (page: HTMLElement): number => parseFloat(page.style.getPropertyValue('--page-index'));
 
+// Covered pages leave the tab order and the accessibility tree. The page content is what goes
+// inert, not the wrapper: the fold chrome stays a sibling of it and keeps its pointer capture.
+const syncInert = (stack: HTMLElement): void => {
+  for (const page of stack.children as HTMLCollectionOf<HTMLElement>) {
+    sectionOf(page).inert = pageIndex(page) !== 1;
+  }
+  stack.dispatchEvent(new CustomEvent('paper-flip'));
+};
+
+// The flap paints the back of the sheet in the page's own color, but as a sibling of the page
+// content it can't see background definitions scoped inside it (e.g. a blueprint page
+// redefining its surface variable), so the resolved color is lifted onto the sheet for it.
+
 // [data-paper-flipped] means there is a previous page to go back to — equivalently, the stack
 // isn't in its original order (the originally-first page is always the first DOM child, since
 // flips only renumber --page-index, never reorder the DOM). It gates the folded-back top-left
@@ -825,6 +835,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   next.append(clip, grab, hint);
   updateFlippedState(stack);
   syncPaperSurface(next, sectionOf(next));
+  syncInert(stack);
 };
 
 // Drops everything the front-page role leaves behind on a sheet, so its next turn at the front
@@ -878,6 +889,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   prev.classList.add('paper-front');
   prev.prepend(under);
   prev.append(clip, fold, hint);
+  syncInert(stack);
   // Promoting the originally-first page puts the stack back in its own order, so the corner cut
   // unfolds from here — the mirror of flipFold committing the flipped state as its glide sets
   // off. The clip's wire lies on that corner and is swallowed with it, so leaving the state to
@@ -1507,6 +1519,21 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     );
   }, { passive: false });
 
+  // Arrow keys turn the page as a swipe handed all its travel at once: the same gesture, eased
+  // by followScroll and released by the same commit test. Only the stack itself listens, so
+  // arrows inside a demo's own controls stay theirs.
+  stack.addEventListener('keydown', (e) => {
+    if (e.target !== stack || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+    if (gesture !== null) return;
+    if (!beginSwipe(e.key === 'ArrowRight', e.timeStamp)) return;
+    e.preventDefault();
+    const box = stack.getBoundingClientRect();
+    swipe!.target = Math.hypot(box.width, box.height);
+    swipe!.quiet = true;
+    swipe!.painted = e.timeStamp;
+    swipe!.frame = requestAnimationFrame(followScroll);
+  });
+
   // A finger never reaches the wheel: swiping the stack scrolls without a scroll event, so it
   // drives the same gesture from the pointer directly, the swipe's own distance standing in for
   // the wheel's travel. touch-action: pan-y (index.astro) leaves the page's own scrolling to the
@@ -1610,6 +1637,7 @@ export function initPaperStackFold(): void {
       if (hint) hintOf.set(fold, hint);
       observeFoldPageSizes(stack);
       attachFoldDrag(fold, grab);
+      syncInert(stack);
     }
   };
 
