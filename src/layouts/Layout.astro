@@ -68,9 +68,9 @@ const canonical = new URL(Astro.url.pathname, 'https://hsal.es');
   <body>
     <ThemePicker />
     <slot />
-    <p class="desktop-hint" role="note">
-      This page works best when viewed on a desktop.
-    </p>
+    <footer class="desktop-hint">
+      <p>This page works best when viewed on a desktop.</p>
+    </footer>
   </body>
 </html>
 
