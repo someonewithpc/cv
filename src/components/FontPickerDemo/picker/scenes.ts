@@ -1,6 +1,6 @@
 import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL } from './FontFamily';
 import { demoPicker } from './demoPicker';
-import { type Run, type Scene, easeInOutQuad, setNativeValue } from './playthrough';
+import { type Run, type Scene, setNativeValue } from './playthrough';
 
 const GOOGLE_FONT = 'Lobster';
 // A well-known page whose face could not look less like Poppins
@@ -102,18 +102,12 @@ async function pickNewFamily(run: Run, root: HTMLElement, family: string) {
   await run.wait(900);
 }
 
-const ENTRANCE_MS = 1600;
-
-/** In from beyond the sheet's bottom edge, to beside the card, where the first scene takes over */
+/** Appears beyond the sheet's bottom edge; the scene's first glide brings it in from there */
 export function entranceFor(root: HTMLElement): Scene {
   return async (run) => {
     const sheet = (root.closest('article.technical-drawing-stack > * > section') ?? root).getBoundingClientRect();
-    const card = (root.querySelector('.sidebar') ?? root).getBoundingClientRect();
     run.appear({ x: sheet.right - sheet.width * 0.2, y: sheet.bottom + 80 });
     await run.wait(300);
-    // The usual ease-out would have the cursor all but parked for the back half of the trip,
-    // which reads as a pause before the scene; in and out, it arrives as the scene starts
-    await run.glide({ x: card.right + 48, y: card.top + card.height * 0.6 }, ENTRANCE_MS, easeInOutQuad);
   };
 }
 
