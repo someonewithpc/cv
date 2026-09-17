@@ -40,6 +40,9 @@
 
   --accent: var(--accent-9);
   --accent-muted: var(--accent-7);
+  // Accent as running text: the light themes drop its lightness (hue and chroma kept) until it
+  // clears 4.5:1 on --surface-raised; the dark themes use the plain accent (see ThemePicker).
+  --accent-text: oklch(from var(--theme-accent) 0.42 c h);
   --accent-contrast: var(--theme-canvas);
   --control-accent: var(--accent-9);
 
@@ -135,6 +138,7 @@
   --line-strong: var(--sheet-line-strong);
   --accent: var(--sheet-accent);
   --accent-muted: var(--sheet-accent-muted);
+  --accent-text: var(--sheet-ink);
   --accent-contrast: var(--sheet-canvas);
   --control-accent: var(--sheet-accent);
   --blueprint: var(--sheet-canvas);
