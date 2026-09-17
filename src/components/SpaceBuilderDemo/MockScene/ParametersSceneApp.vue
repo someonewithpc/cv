@@ -37,8 +37,6 @@ const SEED_OPTIONS: LayoutOptions = {
   innerDiameter: 0,
 };
 
-const RESUME_DELAY_MS = 2500;
-
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
@@ -58,7 +56,6 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
-let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function updateSeatsInvalid(snap: SceneSnapshot | null) {
   seatsInvalid.value = Boolean(
@@ -150,23 +147,17 @@ function startAutoplay() {
 }
 
 function restartDemo() {
-  if (resumeTimer) clearTimeout(resumeTimer);
-  resumeTimer = null;
   userControl = false;
   startAutoplay();
 }
 
+// Every caller is a deliberate edit in the Options sidebar, so the visitor keeps
+// control until they ask for the walkthrough back from the sheet's status chip.
 function yieldToUser() {
-  if (resumeTimer) clearTimeout(resumeTimer);
   autoplayToken += 1;
   demoPlaying.value = false;
   userControl = true;
   reportAutoplayState(rootRef.value, 'user');
-  resumeTimer = setTimeout(() => {
-    resumeTimer = null;
-    userControl = false;
-    startAutoplay();
-  }, RESUME_DELAY_MS);
 }
 
 function isChrome(target: EventTarget | null) {
@@ -411,7 +402,6 @@ onBeforeUnmount(() => {
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
-  if (resumeTimer) clearTimeout(resumeTimer);
   if (savedTimer) clearTimeout(savedTimer);
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
