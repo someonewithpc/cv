@@ -95,32 +95,46 @@ const totalLayers = Object.keys(layers).length;
 
 <script>
 import { armIslands } from '@/client/bootIsland';
+import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 
 function initStack(stack: HTMLElement) {
+  const onScreen = new WeakMap<HTMLElement, boolean>();
+
+  // Being on screen is only half of it: every page of the stack shares one grid cell, so
+  // intersection says nothing about which one is drawn on top. Without the --page-index
+  // half, a page's intro animation ran (and finished) while it was still covered, and the
+  // visitor who turned to it got the end state instead of the animation.
+  const apply = (page: HTMLElement) => {
+    const active = Boolean(onScreen.get(page)) && isFrontPage(page);
+
+    page.getAnimations({ subtree: true }).forEach((animation) => {
+      if (!active && (animation.playState === 'running' || animation.playState === 'finished')) {
+        animation.cancel();
+        // Cancelled animations get removed, so start them, but pause immediately
+        animation.play();
+        animation.pause();
+      } else {
+        animation.play();
+      }
+    });
+
+    page.style[active ? 'removeProperty' : 'setProperty']('animation-play-state', 'paused');
+  };
+
   // Viewport root (not the stack): with root:stack the active slide was
   // "intersecting" on load even when still below the fold. Stack overflow
   // still clips off-screen carousel slides from the viewport intersection.
   const observer = new IntersectionObserver((intersections) => {
     [...intersections].forEach((entry) => {
-      const target = entry.target as HTMLElement;
-
-      target.getAnimations({ subtree: true }).forEach((animation) => {
-        if (!entry.isIntersecting && (animation.playState === 'running' || animation.playState === 'finished')) {
-          animation.cancel();
-          // Cancelled animations get removed, so start them, but pause immediately
-          animation.play();
-          animation.pause();
-        } else {
-          animation.play();
-        }
-      });
-
-      target.style[
-        entry.isIntersecting ? 'removeProperty' : 'setProperty'
-      ]('animation-play-state', 'paused');
+      const page = entry.target as HTMLElement;
+      onScreen.set(page, entry.isIntersecting);
+      apply(page);
     });
   }, { threshold: 0.25, scrollMargin: '25%' });
-  [...stack.querySelectorAll('section')].forEach((page) => observer.observe(page));
+  [...stack.querySelectorAll('section')].forEach((page) => {
+    observer.observe(page);
+    watchFrontPage(page, () => apply(page));
+  });
 
   armIslands(stack);
 
