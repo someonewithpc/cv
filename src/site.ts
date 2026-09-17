@@ -6,6 +6,7 @@ export const AUTHOR_NAME = 'Hugo Sales';
 
 export const CONTACT = {
   email: 'hugo@hsal.es',
+  username: 'someonewithpc',
   profiles: [
     { label: 'GitHub', href: 'https://github.com/someonewithpc' },
     { label: 'Codeberg', href: 'https://codeberg.org/someonewithpc' },
