@@ -16,6 +16,7 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
+import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -138,11 +139,12 @@ function DemoCursor({
           <path
             d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
             fill="var(--bg-900, #fff)"
-            stroke="var(--fg-850, #222)"
+            stroke="var(--accent, #222)"
             strokeWidth="1.6"
             strokeLinejoin="round"
           />
         </svg>
+        <span className="mock-map-demo-cursor__label monospace">demo</span>
       </div>
     ),
     host,
@@ -175,6 +177,9 @@ function MockMapOverlayInner() {
   const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
   const [toasts, setToasts] = useState<DemoToast[]>([]);
   const userControlRef = useRef(false);
+  /** The visitor took over deliberately; only Replay hands the walkthrough back. */
+  const heldRef = useRef(false);
+  const restartRef = useRef<() => void>(() => {});
   const inViewRef = useRef(false);
   const autoplayStartedRef = useRef(false);
   const toastIdRef = useRef(0);
@@ -429,6 +434,14 @@ function MockMapOverlayInner() {
     return bindUndoRedoKeys(el, dispatch, (toast) => pushToastRef.current(toast));
   }, [dispatch]);
 
+  // Drives the sheet's status chip (TechnicalDrawing/Page.astro).
+  useEffect(() => {
+    if (!inView) return;
+    reportAutoplayState(containerRef.current, userControl ? 'user' : 'playing');
+  }, [inView, userControl]);
+
+  useEffect(() => onReplayRequest(containerRef.current, () => restartRef.current()), []);
+
   useEffect(() => {
     const demo = containerRef.current?.closest<HTMLElement>('.mock-map-demo');
     if (!demo) return;
@@ -450,7 +463,7 @@ function MockMapOverlayInner() {
   };
 
   const resumeAutoplay = () => {
-    if (!inViewRef.current || nativePopupRef.current) return;
+    if (!inViewRef.current || heldRef.current || nativePopupRef.current) return;
     userControlRef.current = false;
     cursorPhaseRef.current = 'demo';
     setUserControl(false);
@@ -468,6 +481,8 @@ function MockMapOverlayInner() {
     clearClickTimer();
     setCursorClicking(false);
     setCursorDragging(false);
+    heldRef.current = false;
+    nativePopupRef.current = false;
     userControlRef.current = false;
     setUserControl(false);
     dispatch(setAutoplayPaused(false));
@@ -477,9 +492,13 @@ function MockMapOverlayInner() {
     pushToastRef.current(autoplayStartedToast());
   };
 
+  restartRef.current = restartDemo;
+
   // Never hide or teleport the real pointer — on trusted user movement, pause and
   // fade the demo cursor where it is, then resume after the user goes idle.
-  const yieldToUser = () => {
+  // A deliberate interaction (click, tap, focus) keeps control instead, until the
+  // visitor asks for the walkthrough back from the sheet's status chip.
+  const yieldToUser = (keepControl = false) => {
     clearResumeTimer();
     if (cursorPhaseRef.current === 'demo') {
       clearHandoffTimer();
@@ -499,6 +518,11 @@ function MockMapOverlayInner() {
       pushToastRef.current(autoplayPausedToast());
     }
 
+    if (keepControl) {
+      heldRef.current = true;
+      return;
+    }
+
     resumeTimerRef.current = setTimeout(() => {
       resumeTimerRef.current = null;
       resumeAutoplay();
@@ -512,7 +536,7 @@ function MockMapOverlayInner() {
       if (!e.isTrusted) return;
       // The page only gets pointer events again once a native popup has closed.
       nativePopupRef.current = false;
-      yieldToUser();
+      yieldToUser(e.type === 'pointerdown');
     };
 
     window.addEventListener('pointermove', onTrustedPointer, { passive: true });
@@ -527,13 +551,14 @@ function MockMapOverlayInner() {
 
   // Opening a native popup takes the pointer off the sheet, so the idle timer used to hand
   // the demo back while the picker was still open and the walkthrough edited the marker
-  // underneath it. Hold from the moment such a control takes focus until it gives it up.
+  // underneath it. Hold from the moment such a control takes focus: a deliberate takeover,
+  // so the sheet's chip reads "You're in control" for as long as the popup is up.
   // The editor is portaled onto the carousel page, hence document rather than the overlay.
   useEffect(() => {
     const onFocusIn = (event: FocusEvent) => {
       if (!isNativePopupControl(event.target)) return;
       nativePopupRef.current = true;
-      yieldToUser();
+      yieldToUser(true);
       clearResumeTimer();
     };
 
@@ -542,7 +567,6 @@ function MockMapOverlayInner() {
     const onFocusOut = (event: FocusEvent) => {
       if (!isNativePopupControl(event.target) || event.relatedTarget === null) return;
       nativePopupRef.current = false;
-      yieldToUser();
     };
 
     document.addEventListener('focusin', onFocusIn);
@@ -575,7 +599,7 @@ function MockMapOverlayInner() {
       className="mock-map-overlay"
       tabIndex={0}
       onFocus={() => {
-        yieldToUser();
+        yieldToUser(true);
       }}
     >
       <div className="mock-map-scene">

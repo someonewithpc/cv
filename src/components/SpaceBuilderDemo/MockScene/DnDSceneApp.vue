@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import CatalogPanel from './CatalogPanel.vue';
@@ -30,8 +31,6 @@ const DROP_POINTS: Array<[number, number]> = [
   [0.62, 0.58],
   [0.32, 0.66],
 ];
-
-const RESUME_DELAY_MS = 2500;
 
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
@@ -66,7 +65,6 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
-let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function showToast(message: string) {
   toast.value = message;
@@ -405,8 +403,13 @@ async function runAutoplay() {
 }
 
 function startAutoplay() {
-  if (reducedMotion || userControl || !chairsReady || !inView) return;
+  if (reducedMotion) {
+    reportAutoplayState(rootRef.value, 'off');
+    return;
+  }
+  if (userControl || !chairsReady || !inView) return;
   autoplayToken += 1;
+  reportAutoplayState(rootRef.value, 'playing');
   void runAutoplay();
 }
 
@@ -422,23 +425,18 @@ function stopAutoplay() {
 }
 
 function restartDemo() {
-  if (resumeTimer) clearTimeout(resumeTimer);
-  resumeTimer = null;
   stopAutoplay();
   userControl = false;
   sceneRef.value?.reset();
   startAutoplay();
 }
 
+// Every caller is a deliberate grab at the catalog or the scene, so the visitor keeps
+// control until they ask for the walkthrough back from the sheet's status chip.
 function yieldToUser() {
-  if (resumeTimer) clearTimeout(resumeTimer);
   if (demoPlaying.value) stopAutoplay();
   userControl = true;
-  resumeTimer = setTimeout(() => {
-    resumeTimer = null;
-    userControl = false;
-    startAutoplay();
-  }, RESUME_DELAY_MS);
+  reportAutoplayState(rootRef.value, 'user');
 }
 
 onMounted(async () => {
@@ -507,6 +505,7 @@ onMounted(async () => {
       }
     });
 
+    onReplayRequest(root, restartDemo);
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
@@ -524,7 +523,6 @@ onBeforeUnmount(() => {
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
-  if (resumeTimer) clearTimeout(resumeTimer);
   if (toastTimer) clearTimeout(toastTimer);
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
@@ -610,11 +608,12 @@ onBeforeUnmount(() => {
         <path
           d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
           fill="#fff"
-          stroke="#222"
+          stroke="var(--accent, #222)"
           stroke-width="1.6"
           stroke-linejoin="round"
         />
       </svg>
+      <span class="demo-cursor-label">demo</span>
     </div>
   </div>
 </template>
@@ -811,6 +810,20 @@ $scene-bg: #212121;
   svg {
     display: block;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+  }
+
+  // Says out loud that this arrow is the walkthrough's, not the visitor's pointer.
+  .demo-cursor-label {
+    position: absolute;
+    left: 1.75em;
+    top: 1.5em;
+    padding: 0 0.25em;
+    border: 1px solid var(--accent, #222);
+    border-radius: 0.25em;
+    background: #fff;
+    color: #222;
+    font: 0.625rem/1.5 monospace;
+    letter-spacing: 0.08em;
   }
 }
 

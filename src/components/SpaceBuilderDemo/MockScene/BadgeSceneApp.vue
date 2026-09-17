@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
 
 import {
   claimSpaceBuilderGpu,
@@ -70,6 +71,8 @@ function stopOrbitLoop() {
 function applyOrbitState() {
   if (playing.value && inView && !noteOpen) startOrbitLoop();
   else stopOrbitLoop();
+  // Drives the sheet's status chip (TechnicalDrawing/Page.astro).
+  reportAutoplayState(rootRef.value, reducedMotion ? 'off' : playing.value ? 'playing' : 'user');
 }
 
 function togglePlay() {
@@ -251,6 +254,9 @@ onMounted(async () => {
       else scene.resume();
     });
 
+    onReplayRequest(root, () => {
+      if (!playing.value) togglePlay();
+    });
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);

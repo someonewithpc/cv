@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import OptionsPanel from './OptionsPanel.vue';
@@ -35,8 +36,6 @@ const SEED_OPTIONS: LayoutOptions = {
   innerDiameter: 0,
 };
 
-const RESUME_DELAY_MS = 2500;
-
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
@@ -56,7 +55,6 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
-let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function updateSeatsInvalid(snap: SceneSnapshot | null) {
   seatsInvalid.value = Boolean(
@@ -137,28 +135,28 @@ async function runAutoplay() {
 }
 
 function startAutoplay() {
-  if (reducedMotion || userControl || !chairsReady || !inView) return;
+  if (reducedMotion) {
+    reportAutoplayState(rootRef.value, 'off');
+    return;
+  }
+  if (userControl || !chairsReady || !inView) return;
   autoplayToken += 1;
+  reportAutoplayState(rootRef.value, 'playing');
   void runAutoplay();
 }
 
 function restartDemo() {
-  if (resumeTimer) clearTimeout(resumeTimer);
-  resumeTimer = null;
   userControl = false;
   startAutoplay();
 }
 
+// Every caller is a deliberate edit in the Options sidebar, so the visitor keeps
+// control until they ask for the walkthrough back from the sheet's status chip.
 function yieldToUser() {
-  if (resumeTimer) clearTimeout(resumeTimer);
   autoplayToken += 1;
   demoPlaying.value = false;
   userControl = true;
-  resumeTimer = setTimeout(() => {
-    resumeTimer = null;
-    userControl = false;
-    startAutoplay();
-  }, RESUME_DELAY_MS);
+  reportAutoplayState(rootRef.value, 'user');
 }
 
 function isChrome(target: EventTarget | null) {
@@ -390,6 +388,7 @@ onMounted(async () => {
       }
     });
 
+    onReplayRequest(root, restartDemo);
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
@@ -407,7 +406,6 @@ onBeforeUnmount(() => {
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
-  if (resumeTimer) clearTimeout(resumeTimer);
   if (savedTimer) clearTimeout(savedTimer);
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
