@@ -1,3 +1,7 @@
+---
+import { CONTACT } from '@/site';
+---
+
 <header>
   <figure class="title-block">
     <p class="sheet-meta monospace" aria-hidden="true">
@@ -13,6 +17,19 @@
     </h1>
 
     <p class="sheet-role monospace">Full stack developer / FOSS contributor</p>
+
+    <address class="contact monospace">
+      <ul>
+        <li><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></li>
+        {CONTACT.profiles.map(({ label, href }) => (
+          <li>
+            <a href={href} rel="me noopener noreferrer" target="_blank">
+              {label}<span class="sr-only">, opens in a new tab</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </address>
 
     <label class="bypass-contrast-check note-row">
       <input type="checkbox">
@@ -129,6 +146,58 @@ header {
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--ink-muted);
+    }
+
+    .contact {
+      margin: 0.125rem 0 0;
+      font-style: normal;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+
+      ul {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0 0.5ch;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      li {
+        display: inline-flex;
+        align-items: center;
+      }
+
+      li + li::before {
+        content: "·";
+        margin-inline-end: 0.5ch;
+        color: var(--ink-faint);
+      }
+
+      a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.5rem;
+        color: var(--ink-muted);
+        text-decoration: underline dotted;
+        text-decoration-color: var(--accent-muted);
+        text-underline-offset: 0.25em;
+
+        &:hover,
+        &:focus-visible {
+          color: var(--accent-text);
+          text-decoration-style: solid;
+          text-decoration-color: currentColor;
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 0.125rem;
+          border-radius: 0.125rem;
+        }
+      }
     }
 
     .note-row {
