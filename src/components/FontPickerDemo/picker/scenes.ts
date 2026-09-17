@@ -37,8 +37,12 @@ async function pickFromList(run: Run, root: HTMLElement, value: string, hoverFir
   const values = [...select.options].map((option) => option.value);
   const items = () => [...document.querySelectorAll<HTMLLIElement>('.font-picker-demo-picker li')];
 
+  // Landing on a subform entry commits no face, so rows swept over on the way there
+  // shouldn't preview either
+  const isSubformEntry = value === ADD_GOOGLE_FONT || value === EXTRACT_FROM_URL;
+
   await run.press(select);
-  demoPicker.open();
+  demoPicker.open(!isSubformEntry);
   await run.wait(400);
 
   // A row out of the list's scroll is wheeled into view first, as a hand would

@@ -83,7 +83,7 @@ export function FontFamily(
       return;
     }
     const entry = picker.hovered === null ? undefined : entries[picker.hovered];
-    if (entry && options.some((option) => option.key === entry.key)) {
+    if (picker.previewable && entry && options.some((option) => option.key === entry.key)) {
       setPreviewing(true);
       onPreview(entry.key);
     }
