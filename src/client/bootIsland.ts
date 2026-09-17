@@ -20,11 +20,15 @@ const modules = import.meta.glob<BootModule>('/src/components/**/*boot.ts');
  * function, invoked from Stack.astro's own script (which the pagination doesn't touch), sidesteps
  * that — every interactive layer just needs a `boot.ts` and a `data-boot-module` pointing at it.
  *
- * The visibility root is `scope` itself (each stack, not the viewport): every page of a
- * PaperStack shares the same grid cell, so a viewport-rooted observer would (modulo the fold's
- * own clip-path also gating intersection) consider every layer visible at once rather than just
- * the one currently on top.
+ * Every page of a PaperStack shares one grid cell, so the viewport observer sees all of them at
+ * once when the stack scrolls in. Which one is on top is read from --page-index instead, and a
+ * covered island waits for the stack's paper-flip events until its page comes to the front.
  */
+const onFrontPage = (host: HTMLElement): boolean => {
+  const page = host.closest<HTMLElement>('[data-paper-stack-root] > *');
+  return page === null || page.style.getPropertyValue('--page-index') === '1';
+};
+
 export function armIslands(scope: HTMLElement) {
   scope.querySelectorAll<HTMLElement>('[data-boot-module]').forEach((host) => {
     if (host.dataset.mounted === 'true') return;
@@ -32,20 +36,30 @@ export function armIslands(scope: HTMLElement) {
     const load = path ? modules[path] : undefined;
     if (!load) return;
 
-    bootWhenVisible(
-      host,
-      async () => {
-        if (host.dataset.mounted === 'true') return;
-        host.dataset.mounted = 'true';
-        try {
-          const { boot } = await load();
-          await boot(host);
-        } catch (error) {
-          console.debug('Island failed to boot', path, error);
-          delete host.dataset.mounted;
-        }
-      },
-      { root: scope },
-    );
+    const mount = async () => {
+      if (host.dataset.mounted === 'true') return;
+      host.dataset.mounted = 'true';
+      try {
+        const { boot } = await load();
+        await boot(host);
+      } catch (error) {
+        console.debug('Island failed to boot', path, error);
+        delete host.dataset.mounted;
+      }
+    };
+
+    bootWhenVisible(host, () => {
+      if (onFrontPage(host)) {
+        mount();
+        return;
+      }
+      const stack = host.closest<HTMLElement>('[data-paper-stack-root]')!;
+      const onFlip = () => {
+        if (!onFrontPage(host)) return;
+        stack.removeEventListener('paper-flip', onFlip);
+        mount();
+      };
+      stack.addEventListener('paper-flip', onFlip);
+    });
   });
 }
