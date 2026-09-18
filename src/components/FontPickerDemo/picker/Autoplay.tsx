@@ -2,6 +2,7 @@ import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { watchPageActive } from '@/client/frontPage';
 
 import { type CursorState, Playthrough } from './playthrough';
 import { entranceFor, scenesFor } from './scenes';
@@ -19,9 +20,9 @@ type Toast = { id: number; text: string; leaving: boolean };
 const GONE: Cursor = { x: 0, y: 0, clicking: false, dragging: false, phase: 'gone' };
 
 /**
- * Plays the picker by itself while its sheet is in view, with a drawn cursor, and hands over
- * the moment a real pointer moves over the sheet or focus lands in the form. It comes back
- * after a pause with nothing going on.
+ * Plays the picker by itself while its sheet is the one in front, with a drawn cursor, and
+ * hands over the moment a real pointer moves over the sheet or focus lands in the form. It
+ * comes back after a pause with nothing going on.
  */
 export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
   const [cursor, setCursor] = useState<Cursor>(GONE);
@@ -64,14 +65,14 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       entranceFor(el),
     );
 
-    let inView = false;
+    let pageActive = false;
     let userControl = false;
     let noteOpen = false;
     let everPlayed = false;
     let resumeTimer = 0;
 
     const play = () => {
-      if (!inView || userControl || noteOpen || controller.running) return;
+      if (!pageActive || userControl || noteOpen || controller.running) return;
       controller.start();
       toast(everPlayed ? 'Demo resumed' : 'Demo playing · move to take over');
       everPlayed = true;
@@ -92,22 +93,21 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       resumeTimer = window.setTimeout(play, RESUME_DELAY_MS);
     };
 
-    // Viewport-rooted: against the stack, the front page reads as in view wherever the
-    // document is scrolled
-    const observer = new IntersectionObserver(([entry]) => {
-      inView = entry.isIntersecting;
-      if (inView) play();
+    // Every page of the stack shares one grid cell, so intersection alone would keep the
+    // walkthrough running behind whichever page the visitor turned to
+    const stopPageWatch = watchPageActive(el, (active) => {
+      pageActive = active;
+      if (active) play();
       else {
         window.clearTimeout(resumeTimer);
         hold();
       }
-    }, { threshold: 0.6 });
-    observer.observe(page);
+    });
 
     // Only a real pointer, and only over the sheet: the scripted values never come through
     // pointer events, and a pointer elsewhere on the page is reading, not reaching in
     const onPointer = (e: PointerEvent) => {
-      if (e.isTrusted && inView) yieldToUser(e.target instanceof Element ? e.target : null);
+      if (e.isTrusted && pageActive) yieldToUser(e.target instanceof Element ? e.target : null);
     };
     page.addEventListener('pointermove', onPointer, { passive: true });
     page.addEventListener('pointerdown', onPointer, { passive: true });
@@ -139,7 +139,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
 
     return () => {
       unwatchNote();
-      observer.disconnect();
+      stopPageWatch();
       page.removeEventListener('pointermove', onPointer);
       page.removeEventListener('pointerdown', onPointer);
       el.removeEventListener('focusin', onFocusIn);
