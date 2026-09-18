@@ -53,7 +53,7 @@ const hasMeta = updatedAt || stats;
 
     <cite>{repository}{number != null && `#${number}`}</cite>
 
-    <span class="title"><BacktickText text={title} /></span>
+    <span class="title"><BacktickText text={title} /><Icon name="lucide:external-link" class="external-link" aria-hidden="true" /></span>
   </summary>
 
   {description && (
@@ -130,6 +130,15 @@ details {
       word-break: normal;
       hyphens: none;
       text-wrap: pretty;
+
+      /* No margin: the markup butts the icon against the last word, which is
+         what keeps it from wrapping onto a line of its own. */
+      .external-link {
+        display: inline;
+        width: 0.75em;
+        height: 0.75em;
+        vertical-align: -1px;
+      }
     }
 
     &:hover .title {
