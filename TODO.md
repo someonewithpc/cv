@@ -53,6 +53,7 @@
       - [x] Dogear doesn't appear until next page animation finished (#6)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
+      - [x] Keyboard paper turn waits too long before commit (#11)
     - [-] Page indicator
   - [ ] Anotations
     - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
