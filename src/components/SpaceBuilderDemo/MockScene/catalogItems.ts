@@ -55,6 +55,8 @@ export function variantOf(item: CatalogItem, variantId: string | undefined): Cat
   return variants.find((variant) => variant.id === variantId) ?? variants[0];
 }
 
+const BANQUET_WIDE = '2.43m x 1.21m';
+const BANQUET_NARROW = '1.82m x 76cm';
 const CHAIR_SIZE = '42cm x 50cm x 95cm';
 
 /** The Space Builder catalog — Chair, Side Chair and Banquet Table are real, loaded objects. */
@@ -125,8 +127,45 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     name: 'Banquet Table',
     thumb: '/demos/space-builder/table-thumb.webp',
     real: true,
-    modelUrl: '/demos/space-builder/banquet-table.glb',
-    size: '2.6m x 2.1m x 95cm',
+    modelUrl: '/demos/space-builder/banquet-8pax-243x121.glb',
+    size: BANQUET_WIDE,
+    // The library stores each seat count and table size as its own object, so these are
+    // four real models. 182x76 only goes up to six seats, which is why the picker greys
+    // eight and four out once it is chosen.
+    variants: [
+      {
+        id: 'table-8-243',
+        style: 'Chiavari Chairs',
+        thumb: '/demos/space-builder/table-thumb.webp',
+        modelUrl: '/demos/space-builder/banquet-8pax-243x121.glb',
+        pax: 8,
+        size: BANQUET_WIDE,
+      },
+      {
+        id: 'table-6-243',
+        style: 'Chiavari Chairs',
+        thumb: '/demos/space-builder/table-6-thumb.webp',
+        modelUrl: '/demos/space-builder/banquet-6pax-243x121.glb',
+        pax: 6,
+        size: BANQUET_WIDE,
+      },
+      {
+        id: 'table-4-243',
+        style: 'Chiavari Chairs',
+        thumb: '/demos/space-builder/table-4-thumb.webp',
+        modelUrl: '/demos/space-builder/banquet-4pax-243x121.glb',
+        pax: 4,
+        size: BANQUET_WIDE,
+      },
+      {
+        id: 'table-6-182',
+        style: 'Chiavari Chairs',
+        thumb: '/demos/space-builder/table-6-narrow-thumb.webp',
+        modelUrl: '/demos/space-builder/banquet-6pax-182x76.glb',
+        pax: 6,
+        size: BANQUET_NARROW,
+      },
+    ],
   },
   { id: 'table-cocktail', name: 'Cocktail Table', thumb: '/demos/space-builder/catalog/table-cocktail.svg' },
   { id: 'plant', name: 'Planter', thumb: '/demos/space-builder/catalog/plant.svg' },
