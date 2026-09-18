@@ -36,7 +36,15 @@ const DEMOS = [
       'Edit Parameters',
       'Layout Styles',
       'Capacity Badge',
-      'Drag & Drop',
+    ],
+  },
+  {
+    label: 'Drag and drop',
+    stackIndex: 6,
+    pages: [
+      'Space Builder · Drag & Drop',
+      'Two Ways In',
+      'Drop Before Load',
     ],
   },
 ];
