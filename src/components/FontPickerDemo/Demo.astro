@@ -7,7 +7,6 @@ import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
 
 import PickerLayer from './layers/PickerLayer.astro';
-import DiscoveryLayer from './layers/DiscoveryLayer.astro';
 import SourcesLayer from './layers/SourcesLayer.astro';
 import FeedbackLayer from './layers/FeedbackLayer.astro';
 import PinnedLayer from './layers/PinnedLayer.astro';
@@ -42,7 +41,6 @@ const fontPickerSize = toKiB(fontPickerBundle.text);
 
 const layers = {
   main: { name: null },
-  discovery: { name: 'Font Discovery', pageStyle: 'blueprint' },
   sources: { name: 'External Sources', pageStyle: 'blueprint' },
   feedback: { name: 'Reactive Feedback', pageStyle: 'blueprint' },
   pinned: { name: 'Pinned Controls', pageStyle: 'blueprint' },
@@ -62,7 +60,6 @@ type Layer = keyof typeof layers;
   <fragment slot="layers">
     {(layer: Layer) => ({
       main: <PickerLayer />,
-      discovery: <DiscoveryLayer />,
       sources: <SourcesLayer />,
       feedback: <FeedbackLayer />,
       pinned: <PinnedLayer />,
@@ -71,35 +68,16 @@ type Layer = keyof typeof layers;
 
   <fragment slot="aside">
     {(layer: Layer) => ({
-      main: null,
-      discovery: (
+      main: (
         <PostIt background="#cde" color="black">
-          Nothing is hardcoded. The dropdown reads <code>document.fonts</code>, so
-          every face the page has loaded is in it, with each family's Unicode subsets
-          folded into one entry
+          The dropdown is <code>document.fonts</code>: every face this page has
+          loaded, its Unicode subsets folded back into one entry per face. Nothing
+          in it is hardcoded, so a font loaded below is in the list a moment later
         </PostIt>
       ),
-      sources: (
-        <PostIt background="#dfd" color="black">
-          Pages that set <code>X-Frame-Options</code> can't be iframed, so the
-          extractor fetches the HTML through a proxy and assembles the document
-          by hand — stylesheets, <code>@import</code>s and all
-        </PostIt>
-      ),
-      feedback: (
-        <PostIt background="#edf" color="black">
-          The fieldset border is one conic gradient driven by three registered
-          custom properties. A quarter-turn arc orbits while a fetch is pending,
-          then sweeps closed in the verdict's color
-        </PostIt>
-      ),
-      pinned: (
-        <PostIt background="#fed" color="black">
-          Change the size and the whole column reflows under your hand. A control being
-          worked goes <code>position: fixed</code> at the spot it had, so the slider stays
-          under the pointer
-        </PostIt>
-      ),
+      sources: null,
+      feedback: null,
+      pinned: null,
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
