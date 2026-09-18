@@ -1306,7 +1306,10 @@ $scene-bg: #212121;
     z-index: 4;
     grid-column: 2;
     grid-row: 1;
-    width: min(17.5rem, 46vw);
+    // Space Builder gives the Add sidebar 780px of a 1440px window, three catalog cards
+    // across at 178px each. This frame is about half as wide, so take a comparable share
+    // and keep the cards near the product's size instead of shrinking them to fit.
+    width: min(22rem, 52vw);
     min-height: 0;
     max-height: 100%;
     display: flex;
