@@ -83,6 +83,54 @@ const backArrows = [
         <span>{hintBack}</span>
       </p>
     </div>
+
+    <div class="hint-variant" data-variant="2">
+      <svg class="flip-hint flip-hint--fwd hint-ghost" viewBox="0 0 100 100">
+        <path class="ghost" d="M28 100 L56 48 L100 54" />
+        <path class="crease" d="M28 100 L100 54" />
+        <path class="motion" d="M92 94 C 82 83, 73 73, 67 62 M60 69 L65 57 L75 63" />
+      </svg>
+      <svg class="flip-hint flip-hint--back hint-ghost" viewBox="0 0 100 100">
+        <path class="ghost" d="M28 100 L56 48 L100 54" />
+        <path class="crease" d="M28 100 L100 54" />
+        <path class="motion" d="M92 94 C 82 83, 73 73, 67 62 M60 69 L65 57 L75 63" />
+      </svg>
+    </div>
+
+    <div class="hint-variant" data-variant="3">
+      <p class="flip-hint flip-hint--fwd hint-callout typewriter">
+        <span>turn the page</span>
+        <svg class="hint-leader" viewBox="0 0 72 72"><path d="M2 64 L28 64 L62 16" /><circle cx="63" cy="14" r="3.5" /></svg>
+      </p>
+      <p class="flip-hint flip-hint--back hint-callout typewriter">
+        <svg class="hint-leader" viewBox="0 0 72 72"><path d="M70 8 L44 8 L10 56" /><circle cx="9" cy="58" r="3.5" /></svg>
+        <span>and back again</span>
+      </p>
+    </div>
+
+    <div class="hint-variant" data-variant="4">
+      <svg class="flip-hint flip-hint--fwd hint-hand" viewBox="0 0 64 64">
+        <path d="M13 11 L23 21" />
+        <path d="M20 18 C 25 13, 32 16, 31 23 C 35 20, 40 23, 39 28 C 43 26, 47 30, 45 35 L43 44 C 41 52, 33 57, 25 54 L17 50 C 10 47, 8 39, 13 33 Z" />
+        <path class="ticks" d="M7 14 L1 11 M9 6 L7 1 M16 4 L18 0" />
+      </svg>
+      <svg class="flip-hint flip-hint--back hint-hand" viewBox="0 0 64 64">
+        <path d="M13 11 L23 21" />
+        <path d="M20 18 C 25 13, 32 16, 31 23 C 35 20, 40 23, 39 28 C 43 26, 47 30, 45 35 L43 44 C 41 52, 33 57, 25 54 L17 50 C 10 47, 8 39, 13 33 Z" />
+        <path class="ticks" d="M7 14 L1 11 M9 6 L7 1 M16 4 L18 0" />
+      </svg>
+    </div>
+
+    <div class="hint-variant" data-variant="5">
+      <p class="flip-hint flip-hint--fwd hint-note typewriter">
+        <span><b>1</b> fold this corner to turn the page</span>
+        <svg class="hint-balloon" viewBox="0 0 72 72"><path d="M2 64 L28 64 L54 26" /><circle class="balloon" cx="57" cy="19" r="12" /><text x="57" y="24">1</text></svg>
+      </p>
+      <p class="flip-hint flip-hint--back hint-note typewriter">
+        <svg class="hint-balloon" viewBox="0 0 72 72"><path d="M70 8 L44 8 L18 46" /><circle class="balloon" cx="15" cy="53" r="12" /><text x="15" y="58">2</text></svg>
+        <span><b>2</b> pull this corner back</span>
+      </p>
+    </div>
   </div>
 </div>
 
@@ -126,9 +174,10 @@ const backArrows = [
   }
 }
 
-// Two sentences drawn on the sheet: this corner turns the page, and that corner brings it
-// back. The script decides which stacks show them, so nothing paints until it runs, which
-// also keeps all of this off a page without JS.
+// Five drawings of the same two sentences: this corner turns the page, and that corner brings
+// it back. Only one is on screen; the script picks it from ?hint= and decides which stacks get
+// it. Nothing shows until it does, which also keeps all of this off a page without JS.
+// Review scaffolding: four of the five come out once one wins.
 .flip-hints {
   position: absolute;
   inset: 0;
@@ -146,8 +195,10 @@ const backArrows = [
   display: none;
 }
 
-.technical-drawing-frame[data-hint-variant="1"] .hint-variant[data-variant="1"] {
-  display: block;
+@for $variant from 1 through 5 {
+  .technical-drawing-frame[data-hint-variant="#{$variant}"] .hint-variant[data-variant="#{$variant}"] {
+    display: block;
+  }
 }
 
 .flip-hint {
@@ -220,6 +271,144 @@ const backArrows = [
   text-align: left;
 
   span { padding-top: 0.5em; }
+}
+
+// 2 — the corner drawn already lifted, dashed, with the line it travels on.
+.hint-ghost {
+  width: 8em;
+  height: 8em;
+  stroke-width: 2.5px;
+
+  .ghost { stroke-dasharray: 6 5; }
+  .crease { stroke-dasharray: 2 4; opacity: 0.55; }
+  .motion { stroke-width: 3px; }
+
+  @container technical-drawing-width (max-width: 40em) {
+    width: 5em;
+    height: 5em;
+  }
+}
+
+.flip-hint--fwd.hint-ghost {
+  top: var(--stack-block, 100%);
+  right: 0;
+  translate: 0 -100%;
+}
+
+.flip-hint--back.hint-ghost {
+  top: 0;
+  left: 0;
+  rotate: 180deg;
+}
+
+// 3 — a drawing callout: dot on the corner, leader out to a word on its shoulder.
+.hint-callout {
+  display: flex;
+  gap: 0.25em;
+  font-size: 0.9375rem;
+  letter-spacing: 0.02em;
+
+  .hint-leader {
+    flex: none;
+    width: 5em;
+    height: 5em;
+    stroke-width: 2px;
+
+    circle { fill: currentColor; stroke: none; }
+  }
+}
+
+.flip-hint--fwd.hint-callout {
+  top: 100%;
+  right: 0.25em;
+  translate: 0 -100%;
+  align-items: flex-end;
+
+  span { padding-bottom: 0.25em; }
+}
+
+.flip-hint--back.hint-callout {
+  top: 0;
+  left: 0.25em;
+  translate: 0 -100%;
+  align-items: flex-start;
+
+  span { padding-top: 0.25em; }
+}
+
+// 4 — a sketched hand with its finger on the corner.
+.hint-hand {
+  width: 5em;
+  height: 5em;
+  stroke-width: 2px;
+
+  .ticks { stroke-width: 1.5px; }
+
+  @container technical-drawing-width (max-width: 40em) {
+    width: 3.75em;
+    height: 3.75em;
+  }
+}
+
+.flip-hint--fwd.hint-hand {
+  top: var(--stack-block, 100%);
+  right: 0;
+  translate: 0.5em -0.75em;
+}
+
+.flip-hint--back.hint-hand {
+  top: 0;
+  left: 0;
+  rotate: 180deg;
+  translate: -0.5em -4.25em;
+}
+
+// 5 — the title block's own language: a numbered balloon on the corner and a boxed note.
+.hint-note {
+  display: flex;
+  gap: 0.375em;
+  font-size: 0.8125rem;
+
+  span {
+    border: 1px solid currentColor;
+    padding: 0.25em 0.5em;
+    background: var(--theme-canvas);
+  }
+
+  b { font-weight: 400; }
+
+  .hint-balloon {
+    flex: none;
+    width: 5em;
+    height: 5em;
+    stroke-width: 1.5px;
+
+    text {
+      fill: currentColor;
+      stroke: none;
+      font-family: inherit;
+      font-size: 17px;
+      text-anchor: middle;
+    }
+  }
+}
+
+.flip-hint--fwd.hint-note {
+  top: 100%;
+  right: 0.25em;
+  translate: 0 -100%;
+  align-items: flex-end;
+
+  span { margin-bottom: 0.25em; }
+}
+
+.flip-hint--back.hint-note {
+  top: 0;
+  left: 0.25em;
+  translate: 0 -100%;
+  align-items: flex-start;
+
+  span { margin-top: 0.25em; }
 }
 </style>
 
@@ -296,13 +485,17 @@ const measure = new ResizeObserver((entries) => {
   }
 });
 
-// One hint on the page is a nudge; one on every stack is wallpaper, so only the top stack
-// gets it. &all=1 puts it on all of them for a side-by-side look.
+// Review scaffolding: ?hint=1 to ?hint=5 pick which of the five drawings runs, and &all=1 puts
+// it on every stack instead of the top one. Read once, here, so nothing reacts to a later
+// history change. Remove with the four drawings that lose.
 function armHints() {
-  const everywhere = new URLSearchParams(location.search).has('all');
+  const params = new URLSearchParams(location.search);
+  const asked = Math.trunc(Number(params.get('hint')));
+  const variant = asked >= 1 && asked <= 5 ? asked : 1;
+  const everywhere = params.has('all');
 
   [...document.querySelectorAll<HTMLElement>('.technical-drawing-frame')].forEach((frame, index) => {
-    frame.dataset.hintVariant = '1';
+    frame.dataset.hintVariant = String(variant);
     if (everywhere || index === 0) frame.dataset.hintShow = '';
   });
 }
