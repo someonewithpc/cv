@@ -7,11 +7,13 @@
   // The product's face; the chosen one replaces it here and reaches both columns
   font-family: var(--font-poppins, 'Poppins'), sans-serif;
   display: grid;
-  grid-template-columns: minmax(0, 32em) minmax(0, 1fr);
-  gap: 3em;
+  // The product's column and the specimen beside it share whatever the sheet gives them, so a
+  // narrow sheet takes width off both instead of squeezing the specimen to a few characters
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 2em;
   align-items: center;
 
-  @container technical-drawing (orientation: portrait) {
+  [data-sheet-orientation='portrait'] & {
     grid-template-columns: minmax(0, 1fr);
     gap: 1em;
   }
@@ -73,7 +75,7 @@
     }
   }
 
-  @container technical-drawing (orientation: portrait) {
+  [data-sheet-orientation='portrait'] & {
     // Above the sidebar on a phone sheet, and without the alphabet block; what is left has
     // to fit the 11em the sidebar leaves it
     order: -1;
@@ -107,13 +109,14 @@
 
   box-sizing: border-box;
   width: 100%;
-  // Scrolls inside the sheet like the real sidebar does inside the map
-  max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 1.5em);
+  // Scrolls inside the sheet like the real sidebar does inside the map. Measured pixels
+  // rather than a container unit, as everything else on these sheets is sized
+  max-height: calc(var(--sheet-block, 30em) - 2 * var(--sheet-margin, 1rem) - 1.5em);
   overflow-y: auto;
 
   // A portrait sheet stacks the specimen above and the title block below, so leave them their rows
-  @container technical-drawing (orientation: portrait) {
-    max-height: calc(100cqh - 2 * var(--sheet-margin, 1rem) - 5.5rem - 11em);
+  [data-sheet-orientation='portrait'] & {
+    max-height: calc(var(--sheet-block, 30em) - 2 * var(--sheet-margin, 1rem) - 5.5rem - 11em);
   }
 
   background: var(--sidebar-background);

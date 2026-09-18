@@ -28,15 +28,28 @@
   display: grid;
   place-items: center;
 
-  font-size: clamp(0.75rem, 2.2cqmin, 1.125rem);
+  // Sized from the stack's measured pixels, never a container unit: see Stack.astro's script.
+  // A landscape sheet is twice as wide as it is tall, so its height runs out first and the
+  // specimen shrinks with it rather than running off the foot.
+  font-size: clamp(0.625rem, 0.027 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
 
-  @container technical-drawing (orientation: portrait) {
-    font-size: min(1rem, 3.8cqw);
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, 0.036 * var(--sheet-inline));
   }
 }
 
 .picker-island {
   width: min(100%, 72em);
+}
+
+/* Below 56em Page.astro tucks the note under the dog-eared corner, and the column it kept for
+   it stands empty. The picker takes that column, and gives the title block back the height of
+   its own corner so nothing reads through it. */
+@container technical-drawing-width (max-width: 56em) {
+  :global(article.technical-drawing-stack > * > section > .content:has(.picker-layer)) {
+    grid-column: 1 / -1;
+    margin-bottom: 3.5em;
+  }
 }
 
 .boot-placeholder {
