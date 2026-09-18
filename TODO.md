@@ -60,7 +60,7 @@
 - [x] Remove LightningCSS? - annoying
 - [ ] Run W3C validator
   - [ ] Put CSS and JS out of line
-- [ ] Make demos more usable without JS
+- [x] Make demos more usable without JS (#19)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
 - [ ] Work History
