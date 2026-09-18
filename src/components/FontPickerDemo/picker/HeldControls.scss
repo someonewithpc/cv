@@ -13,7 +13,7 @@
   // Sized from the stack's measured pixels, never a container unit: see Stack.astro's
   // script. The drag makes a column two thirds taller than it starts, so the type comes off
   // the sheet's height, which on a 2:1 sheet is what runs out first
-  font-size: clamp(0.5rem, 0.025 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
+  font-size: clamp(0.5rem, 0.0225 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
 
   [data-sheet-orientation='portrait'] & {
     grid-template-columns: minmax(0, 1fr);
