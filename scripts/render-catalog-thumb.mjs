@@ -57,6 +57,7 @@ function renderHtml() {
 </script>
 <script type="module">
 import {
+  ACESFilmicToneMapping,
   AmbientLight,
   Box3,
   DirectionalLight,
@@ -91,13 +92,23 @@ renderer.setSize(SIZE, SIZE, false);
 renderer.setClearColor(0x000000, 0);
 document.body.appendChild(renderer.domElement);
 
-// The product lights catalog objects with one ambient and one soft directional, which
-// reads almost shadowless. A strong key made the demo's chairs look nothing like it.
-scene.add(new HemisphereLight(0xf4f6fa, 0x9aa0a6, 1.5));
-scene.add(new AmbientLight(0xffffff, 0.9));
-const key = new DirectionalLight(0xffffff, 0.75);
-key.position.set(1.6, 3.4, 2.2);
-scene.add(key);
+// Space Builder renders a catalog thumbnail by pointing a second camera at the live
+// editor scene (utils/three/render/ImageRender.js hijacks the running renderer), so the
+// card shows the object under the same light as the floor plan. Copy the demo scene's
+// rig from SpaceBuilderScene.ts: a warm sun, a cool fill, and filmic tone mapping. With
+// neutral white lights instead, the chair's two greys came out flat white on the card
+// while the scene showed a light wood frame and a white seat.
+const sunDir = new Vector3(0.42, 0.78, 0.28).normalize();
+scene.add(new AmbientLight(0xdde7ff, 0.24));
+scene.add(new HemisphereLight(0x9eb7e0, 0x3f4a2e, 0.42));
+const sun = new DirectionalLight(0xfff2d8, 2.4);
+sun.position.copy(sunDir).multiplyScalar(24);
+scene.add(sun);
+const fill = new DirectionalLight(0xcfe0ff, 0.55);
+fill.position.set(-sunDir.x, sunDir.y * 0.6, -sunDir.z).multiplyScalar(20);
+scene.add(fill);
+renderer.toneMapping = ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
 scene.background = null;
 
 async function post(payload) {
