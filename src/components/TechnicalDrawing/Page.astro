@@ -554,6 +554,34 @@ section {
     }
   }
 
+  /* Shape 3: nothing moves at all. The band keeps the height a sheet without a demo
+     has, which caps the keys at 14px, and the instruction pays for that by saying its
+     piece once and then getting out of the way. */
+  :global(html[data-deck='3']) & {
+    --sheet-band: var(--sheet-margin);
+
+    .demo-key svg {
+      height: 0.875rem;
+    }
+
+    .demo-transport[data-phase='intro'] {
+      .demo-caption {
+        display: none;
+      }
+
+      .demo-hint {
+        display: block;
+        padding-inline-start: 0;
+        border-inline-start: 0;
+        color: var(--ink);
+      }
+    }
+
+    .demo-transport[data-phase='settled'] .demo-hint {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .demo-led { animation: none; }
   }
@@ -903,6 +931,11 @@ section {
 
     .demo-hint {
       display: none;
+    }
+
+    /* Shape 3 leaves the band at 10px here, so the keys have to come down with it. */
+    :global(html[data-deck='3']) & .demo-key svg {
+      height: 0.625rem;
     }
 
     /* A phone's title block is a full-width strip in the flow, so shape 2's cell goes

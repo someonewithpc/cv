@@ -45,6 +45,9 @@ const TOUCH_HINT = 'tap the sheet to take over';
 const DECK_SHAPES = ['1', '2', '3'];
 const DEFAULT_DECK_SHAPE = '1';
 
+/** How long shape 3 shows the instruction before the readout settles on the state. */
+const INTRO_MS = 6000;
+
 function applyDeckShape() {
   const asked = new URLSearchParams(window.location.search).get('deck');
   document.documentElement.dataset.deck = asked && DECK_SHAPES.includes(asked)
@@ -88,6 +91,7 @@ export function initAutoplayStatus(page: HTMLElement) {
 
   const touch = window.matchMedia('(hover: none)').matches;
   let source: Element | null = null;
+  let settle: ReturnType<typeof setTimeout> | undefined;
 
   const show = (root: Element, state: string | null) => {
     if (state !== 'playing' && state !== 'user' && state !== 'off') return;
@@ -97,6 +101,12 @@ export function initAutoplayStatus(page: HTMLElement) {
     caption.textContent = CAPTION[state];
     value.textContent = VALUE[state];
     hint.textContent = state === 'playing' && touch ? TOUCH_HINT : HINT[state];
+
+    // Shape 3 leads with the instruction and then settles on the state. Taking over
+    // settles it at once: whoever just did it does not need telling how.
+    if (state === 'playing') settle ??= setTimeout(() => { deck.dataset.phase = 'settled'; }, INTRO_MS);
+    else deck.dataset.phase = 'settled';
+
     keys.forEach((key) => {
       const pressed = (key.dataset.demoKey === 'play' && state === 'playing')
         || (key.dataset.demoKey === 'pause' && state === 'user');
