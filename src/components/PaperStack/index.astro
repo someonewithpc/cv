@@ -268,6 +268,12 @@ const pages = await Promise.all(
     $turn-drift: 0.125em;
     $turn-under: 0.75em;
 
+    // How far the whole pile reaches out of the stack: the furthest page's own rise and drift,
+    // worked out from the count rather than from a page, because the folded-back corner that
+    // has to cover the pile is painted by the front page (see .paper-front::before).
+    --pile-rise: calc(#{$turn-lift} * log(1 + var(--pages-turned)) / log(2));
+    --pile-drift: calc(#{$turn-drift} * var(--pages-turned));
+
     & > div {
       grid-area: content;
       border-radius: $border-radius;
@@ -313,6 +319,45 @@ const pages = await Promise.all(
       // page when a completed drag flips this one onto the back of the stack, without touching
       // DOM order — so the rotate transition above can animate every page's re-splay.
       &.paper-front {
+        // The stack's top-left corner, folded away behind the clip. As a bare cut it is a hole,
+        // and with pages standing in the pile behind the stack their edges show through it. This
+        // is the paper that went round the back, painted the way the dog-ear paints the same
+        // fold: the sheet's own colour, darkened, carrying the sheet's hairline edge. It is cut
+        // to the crease and sized to the whole pile, not to this page, so every turned page's
+        // corner is tucked under it. It paints before the page's own children, so the clip's
+        // wire still lies over it.
+        &::before {
+          content: "";
+          position: absolute;
+          // The hairline of slack on the left is the pile's own lean: a sheet turned on the pin
+          // carries its top-left corner a fraction further out than its drift alone.
+          left: calc(-1 * var(--pile-drift) - 1px);
+          top: calc(-1 * var(--pile-rise));
+          // The crease runs from (--fold-back-x, 0) to (0, --fold-back-y); these carry it out to
+          // where the furthest page of the pile stands, so the whole pile falls behind the one
+          // straight fold. (tan(atan2()) is again one length over another as a plain number, a
+          // division Firefox won't take; see the crease formula below.)
+          width: calc(
+            var(--fold-back-x) * (1 + tan(atan2(var(--pile-rise), var(--fold-back-rest-y))))
+            + var(--pile-drift) + 1px
+          );
+          height: calc(
+            var(--fold-back-y) * (1 + tan(atan2(var(--pile-drift), var(--fold-back-rest-x))))
+            + var(--pile-rise)
+          );
+          clip-path: polygon(0px 0px, 100% 0px, 0px 100%);
+          background: var(--paper-surface, var(--surface-sunken));
+          border: 1px solid var(--line-strong);
+          border-top-left-radius: $border-radius;
+          filter: brightness(75%);
+          // Nothing is folded until a page has been turned, and at that point the box is down to
+          // its own border.
+          opacity: clamp(0, var(--pages-turned), 1);
+          pointer-events: none;
+          transition: left 250ms ease-in-out, top 250ms ease-in-out,
+            width 250ms ease-in-out, height 250ms ease-in-out;
+        }
+
         // The page content, but not the fold flap / paper clip / grab handle / flip hint riding
         // on top of it (or the clip's back bar riding under it): clip-path clips descendants
         // too, and those must be able to overhang the page.
@@ -594,17 +639,8 @@ const pages = await Promise.all(
       position: absolute;
       inset: 0 0 auto;
       height: calc(var(--turned-rise) + #{$turn-under});
-      // The left end carries the same folded-back corner as the sheet it belongs to: the cut's
-      // own crease, continued up through the band, so the pile's ends step along the diagonal
-      // rather than stopping against a wall of their own. (tan(atan2()) is the band's height
-      // over the crease's drop as a plain number — a bare division of two lengths is one
-      // Firefox throws the whole clip-path out for; see the front page's crease above.)
-      clip-path: polygon(
-        var(--fold-back-rest-x) 0px,
-        100% 0px,
-        100% 100%,
-        calc(var(--fold-back-rest-x) * (1 - tan(atan2(var(--turned-rise) + #{$turn-under}, var(--fold-back-rest-y))))) 100%
-      );
+      // The left end needs no cut of its own: the folded corner on the front page is drawn to
+      // the whole pile's reach and lies over every band's end (see .paper-front::before).
       background: var(--paper-surface, var(--surface-sunken));
       border: 1px solid var(--line-strong);
       border-top-right-radius: $border-radius;
