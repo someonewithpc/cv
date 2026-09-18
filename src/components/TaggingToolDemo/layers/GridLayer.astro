@@ -10,6 +10,19 @@ import { walkthrough } from '../objects';
 >
   <Grid live />
 
+  {/* The walkthrough's stand-in pointer. It sits outside the tool, which clips its
+      own overflow, so the tip still reads at a field on the panel's edge. */}
+  <div class="tagging-cursor" aria-hidden="true" hidden>
+    <svg viewBox="0 0 32 32" width="32" height="32">
+      <path
+        d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
+        fill="#fff"
+        stroke="#222"
+        stroke-width="1.6"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
 </div>
 
 {/*
@@ -35,6 +48,7 @@ import { walkthrough } from '../objects';
 }
 
 .tagging-grid-demo {
+  position: relative;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
@@ -56,4 +70,40 @@ import { walkthrough } from '../objects';
   }
 }
 
+.tagging-cursor {
+  position: absolute;
+  z-index: 3;
+  width: 2em;
+  height: 2em;
+  /* Hotspot at the arrow tip, and the click pulse scales around it so the tip
+     stays on the aimed point. */
+  translate: -12% -8%;
+  transform-origin: 12% 8%;
+  pointer-events: none;
+  transition:
+    left 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    scale 0.12s ease;
+
+  &[hidden] {
+    display: none;
+  }
+
+  &.clicking {
+    scale: 0.85;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tagging-cursor {
+    transition: none;
+  }
+}
 </style>
