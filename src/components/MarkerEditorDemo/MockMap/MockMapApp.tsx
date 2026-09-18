@@ -16,7 +16,7 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
+import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
@@ -167,7 +167,7 @@ function MockMapOverlayInner() {
   const userControlRef = useRef(false);
   /** The visitor took over deliberately; only Replay hands the walkthrough back. */
   const heldRef = useRef(false);
-  const restartRef = useRef<() => void>(() => {});
+  const commandRef = useRef<(command: 'play' | 'pause' | 'reset') => void>(() => {});
   const inViewRef = useRef(false);
   const autoplayStartedRef = useRef(false);
   const toastIdRef = useRef(0);
@@ -416,13 +416,13 @@ function MockMapOverlayInner() {
     return bindUndoRedoKeys(el, dispatch, (toast) => pushToastRef.current(toast));
   }, [dispatch]);
 
-  // Drives the sheet's status chip (TechnicalDrawing/Page.astro).
+  // Drives the sheet's transport deck (TechnicalDrawing/Page.astro).
   useEffect(() => {
     if (!inView) return;
     reportAutoplayState(containerRef.current, userControl ? 'user' : 'playing');
   }, [inView, userControl]);
 
-  useEffect(() => onReplayRequest(containerRef.current, () => restartRef.current()), []);
+  useEffect(() => onAutoplayCommand(containerRef.current, (command) => commandRef.current(command)), []);
 
   useEffect(() => {
     const demo = containerRef.current?.closest<HTMLElement>('.mock-map-demo');
@@ -444,8 +444,10 @@ function MockMapOverlayInner() {
     setCursorDragging(false);
   };
 
-  const resumeAutoplay = () => {
-    if (!inViewRef.current || heldRef.current) return;
+  // `pressed` comes from the deck, whose keys are on the sheet itself: the visitor is
+  // looking right at it, so the in-view gate that guards the idle timer does not apply.
+  const resumeAutoplay = (pressed = false) => {
+    if ((!inViewRef.current && !pressed) || heldRef.current) return;
     userControlRef.current = false;
     cursorPhaseRef.current = 'demo';
     setUserControl(false);
@@ -473,7 +475,22 @@ function MockMapOverlayInner() {
     pushToastRef.current(autoplayStartedToast());
   };
 
-  restartRef.current = restartDemo;
+  // The deck's keys: play hands the walkthrough back, pause is an explicit take-over
+  // (the one that works without a pointer), reset starts the walkthrough again. A key
+  // press answers on the deck straight away rather than waiting for the state effect,
+  // which only reports while the page counts as active.
+  commandRef.current = (command) => {
+    if (command === 'pause') {
+      yieldToUser(true);
+      reportAutoplayState(containerRef.current, 'user');
+      return;
+    }
+    clearResumeTimer();
+    heldRef.current = false;
+    if (command === 'reset') restartDemo();
+    else resumeAutoplay(true);
+    reportAutoplayState(containerRef.current, 'playing');
+  };
 
   // Never hide or teleport the real pointer — on trusted user movement, pause and
   // fade the demo cursor where it is, then resume after the user goes idle.
@@ -515,6 +532,8 @@ function MockMapOverlayInner() {
 
     const onTrustedPointer = (e: PointerEvent) => {
       if (!e.isTrusted) return;
+      // Reaching for the deck's own keys is not taking the demo over.
+      if (isTransportControl(e.target)) return;
       yieldToUser(e.type === 'pointerdown');
     };
 
