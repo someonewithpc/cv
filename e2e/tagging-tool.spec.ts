@@ -10,7 +10,7 @@ function taggingToolStack(page: import('@playwright/test').Page) {
   return page.locator('article.technical-drawing-stack').nth(3);
 }
 
-test('main page: typing a shared value mirrors it onto every member and submitting tags them all', async ({ page }) => {
+async function mountedTool(page: import('@playwright/test').Page) {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
@@ -18,53 +18,63 @@ test('main page: typing a shared value mirrors it onto every member and submitti
   const mount = front.locator('.tagging-grid-demo');
   await expect(mount).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
   const tool = front.locator('.tagging-tool[data-live]');
-
-  const chiavari = tool.locator('.grouped-objects[data-group="chiavari"]');
-  const shared = chiavari.locator('.shared-value');
-  const members = chiavari.locator('.image-thumbnail .in-place-input');
-
-  // Clicking the shared input is how a real visitor takes the group over from its
-  // auto-play loop (taggingTool.ts's pointerenter/focusin -> stop), same handoff the
-  // other demos require before asserting on typed input.
-  await shared.click();
-  await shared.fill('Bright Gold');
-  await expect(members.first()).toHaveValue('Bright Gold');
-
-  await chiavari.locator('.shared-submit').click();
-
-  const count = await members.count();
-  for (let i = 0; i < count; i += 1) {
-    await expect(members.nth(i)).toHaveValue('Bright Gold');
-  }
-  await expect(chiavari.locator('.image-thumbnail[data-missing="true"]')).toHaveCount(0);
-});
-
-test('main page: the only-missing filter hides groups that are already fully tagged', async ({ page }) => {
-  const stack = taggingToolStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const front = frontPage(stack, await frontPageIndex(stack));
-
-  const mount = front.locator('.tagging-grid-demo');
-  await expect(mount).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
-  const tool = front.locator('.tagging-tool[data-live]');
-  // Hovering the tool hands control over from the auto-playing Chiavari group so its
-  // data-missing flag settles before the assertions below read it.
+  // Hovering the tool is how a real visitor takes it over from the auto-play loop
+  // (taggingTool.ts's pointerenter/focusin -> stop); without it the Chiavari group keeps
+  // typing, saving and leaving the list on its own.
   await tool.hover();
+  return { stack, front, tool };
+}
 
-  const banquet = tool.locator('.grouped-objects[data-group="banquet"]');
-  const chiavari = tool.locator('.grouped-objects[data-group="chiavari"]');
-  await expect(banquet).toBeVisible();
-  await expect(chiavari).toBeVisible();
+test('main page: the shared value mirrors onto the base and every style, and Enter saves them all', async ({ page }) => {
+  const { tool } = await mountedTool(page);
 
-  await tool.locator('.only-missing').check();
-  await expect(tool).toHaveAttribute('data-only-missing', 'true');
+  const silver = tool.locator('.grouped-objects[data-group="silver"]');
+  const shared = silver.locator('.shared-value');
+  const objects = silver.locator('.object-value');
 
-  // Banquet's members already carry a value; Chiavari's start untagged.
-  await expect(banquet).toBeHidden();
-  await expect(chiavari).toBeVisible();
+  await shared.click();
+  await shared.fill('bright gold');
+  await expect(objects.first()).toHaveValue('bright gold');
+
+  // auto_submit_form: Enter blurs the field and the change submits with update_styles.
+  await shared.press('Enter');
+
+  const count = await objects.count();
+  for (let i = 0; i < count; i += 1) {
+    await expect(objects.nth(i)).toHaveValue('Bright Gold');
+  }
+  // Its last gap is filled, so the object leaves the list the way set.js.erb drops it.
+  await expect(silver).toBeHidden();
+  await expect(tool.locator('.demo-note')).toBeVisible();
 });
 
-test('shared group input page: the mirroring blueprint diagram is shown', async ({ page }) => {
+test('main page: differing style values keep the shared input open and flag the overrides', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+
+  const gold = tool.locator('.grouped-objects[data-group="gold"]');
+  const form = gold.locator('.shared-form');
+  await expect(form).toHaveAttribute('data-shared', 'false');
+  await expect(gold.locator('.shared-value')).toBeEnabled();
+  await expect(gold.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: White and Beige');
+});
+
+test('main page: searching a value lists every object carrying it, tagged or not', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+
+  const round = tool.locator('.grouped-objects[data-group="round"]');
+  const long = tool.locator('.grouped-objects[data-group="long"]');
+  await expect(round).toBeVisible();
+  await expect(long).toBeVisible();
+
+  await tool.locator('.search-form select').selectOption('White');
+  await expect(long).toBeVisible();
+  await expect(round).toBeHidden();
+
+  await tool.locator('.search-form select').selectOption('');
+  await expect(round).toBeVisible();
+});
+
+test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
   await swipeToPage(page, stack, 'Shared Group Input');
@@ -80,13 +90,13 @@ test('simulated caret page: the caret-math blueprint diagram is shown', async ({
   await expect(front.locator('section.blueprint')).toBeVisible();
 });
 
-test('missing values page: the filtered-grid blueprint diagram is shown', async ({ page }) => {
+test('completed objects page: the leaving-the-list blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Missing Values');
+  await swipeToPage(page, stack, 'Completed Objects');
   const front = frontPage(stack, await frontPageIndex(stack));
   // This page also embeds a non-live Grid for illustration, which has its own
-  // .grouped-objects <section> per group — scope to the page's own blueprint section
-  // so the locator isn't ambiguous between the two.
+  // .grouped-objects blocks; scope to the page's own blueprint section.
   await expect(front.locator('section.blueprint')).toBeVisible();
+  await expect(front.locator('.grouped-objects.completing')).toHaveCount(1);
 });
