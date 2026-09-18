@@ -50,6 +50,7 @@
     - [x] Fallback when CSS-only unsupported?
     - [x] Turned paper corners/dogear
       - [x] Dogear doesn't follow theme (#5)
+      - [x] Dogear doesn't appear until next page animation finished (#6)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
     - [-] Page indicator
