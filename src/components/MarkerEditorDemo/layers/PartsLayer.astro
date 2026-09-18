@@ -145,6 +145,13 @@ $op-slot: 1.1em;
   font-size: clamp(0.8rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
   color: #f4f0ea;
 
+  // A wide sheet has room this coefficient left empty: the card stopped just past half
+  // the artwork area while the pages either side of it filled theirs. Below the
+  // breakpoint the title block sits far enough left that a bigger card runs under it.
+  @container technical-drawing-width (min-width: 56em) {
+    font-size: clamp(0.8rem, 0.03 * min(var(--sheet-inline), var(--sheet-block)), 1.375rem);
+  }
+
   // Keyed on the stack's attribute, not the orientation query: see Stack.astro's script.
   :global([data-sheet-orientation='portrait']) & {
     font-size: clamp(0.48rem, 0.0215 * var(--sheet-inline), 0.78rem);
