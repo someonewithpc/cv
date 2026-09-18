@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, swipeToPage, waitForIslandMounted } from './support/paperStack';
+import { frontPage, frontPageIndex, swipeStack, swipeToPage, waitForIslandMounted } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -53,12 +53,36 @@ test('main page: the size slider scales the specimen', async ({ page }) => {
   await expect.poll(() => pangram.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(before);
 });
 
-test('discovery page: static FontFaceSet illustration is reachable', async ({ page }) => {
+test('main page: the drawn cursor leaves when its page is no longer in front', async ({ page }) => {
+  const stack = fontPickerStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const cursor = page.locator('.font-picker-cursor');
+  await expect(cursor).toBeVisible({ timeout: 20_000 });
+
+  // The picker's page keeps its grid cell behind the one turned to, so it still intersects
+  // the viewport; only --page-index says it is covered.
+  await swipeStack(page, stack, true);
+  // The fold takes the page out of the viewport on its way, and coming back into it must
+  // not start the walkthrough again.
+  await page.waitForTimeout(3_000);
+  expect(await cursor.count()).toBe(0);
+
+  await swipeStack(page, stack, false);
+  await expect(cursor).toBeVisible({ timeout: 20_000 });
+});
+
+test('discovery page: the dropdown illustration is reachable', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
   await swipeToPage(page, stack, 'Font Discovery');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section')).toBeVisible();
+
+  // Every face the page carries is drawn in its own face, under the two subform entries
+  const rows = front.locator('.list li');
+  await expect(rows).toHaveCount(6);
+  await expect(rows.last()).toHaveText('-- Extract fonts from URL --');
+  await expect(front.locator('.sample')).toHaveCSS('font-family', /Special Elite/);
 });
 
 test('sources page: static font-sources illustration is reachable', async ({ page }) => {
