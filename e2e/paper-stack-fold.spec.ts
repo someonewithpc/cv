@@ -80,6 +80,30 @@ test('marker editor: backward swipe is clamped at the first page', async ({ page
   expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
 });
 
+test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }) => {
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+
+  // The flap paints the back of the sheet in the page's own colour, lifted off it by JS, so a
+  // theme switch has to be picked up there as well as in the stylesheet.
+  for (const theme of ['dark', 'arctic', 'dark-forest', 'light']) {
+    await page.locator(`#theme-picker input[value="${theme}"]`).click({ force: true });
+    // The picker writes data-theme back once its view transition has finished
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+    const paint = await stack.evaluate((el) => {
+      const fold = el.querySelector<HTMLElement>('.paper-fold')!;
+      const sheet = fold.parentElement!;
+      const section = sheet.querySelector<HTMLElement>(
+        ':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)',
+      )!;
+      return { fold: getComputedStyle(fold).backgroundColor, page: getComputedStyle(section).backgroundColor };
+    });
+    expect(paint.fold, `dog-ear under the ${theme} theme`).toBe(paint.page);
+  }
+});
+
 test('marker editor: a forward swipe then a backward swipe returns to the start', async ({ page }) => {
   const stack = page.locator('article.technical-drawing-stack').nth(1);
   await stack.scrollIntoViewIfNeeded();
