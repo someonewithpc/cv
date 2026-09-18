@@ -227,6 +227,10 @@ const pages = await Promise.all(
     // the paper clip at the viewport's top-left corner while the page loads.
     --flip-progress: 0;
 
+    // How many pages have been turned, counted onto the stack by fold-drag.ts. Same reason for
+    // the fallback as above: every page's rotate reads it.
+    --pages-turned: 0;
+
     // The folded-back top-left corner's size, inherited by every page's clip-path so the whole
     // stack's corner folds behind as one; transitioning it here is what eases the resting size
     // and the proximity tease in and out.
@@ -244,12 +248,39 @@ const pages = await Promise.all(
     // spans the frame.
     margin-bottom: calc(100cqw * sin(#{$per-page-splay} * log(var(--page-count))));
 
+    // The pile of pages already turned. The pages still to come fan out below the front one,
+    // which is what says there is more underneath; the ones already turned had nothing saying
+    // they were still there, since a flip drops them into that same fan, at the back of it. So
+    // they leave it: a turned page rises out of the stack's top edge instead, the way it went
+    // over the clip, one step further for each page turned before it. What is left to read
+    // stands below, what has been read stands above, and the two piles never share an edge — the
+    // top edge is also the one side free of the dog-ear, the clip and the title block.
+    //
+    // $turn-lift is how far each turned page rises and $turn-splay how far it swings on the pin;
+    // the cues below use one, the other, or both. $turn-under is how far the band of sheet back
+    // reaches down behind the front page, so it never ends in mid-air.
+    $turn-lift: 0.375em;
+    $turn-splay: 1.25deg;
+    $turn-under: 0.75em;
+
     & > div {
       grid-area: content;
       border-radius: $border-radius;
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
-      order: calc(-1 * var(--page-index));
+      // The turned pages are the last --pages-turned of the order — a flip sends the front page
+      // to --page-count and shifts the rest down — so this is 1 on a page that has been turned
+      // and 0 on one still to come, and the rank counts 1 for the page turned most recently up
+      // to --pages-turned for the first one turned, which is the one furthest out.
+      --turned: clamp(0, var(--page-index) - var(--page-count) + var(--pages-turned), 1);
+      --turned-rank: calc(var(--page-count) - var(--page-index) + 1);
+
+      // Paint order. Back to front by --page-index, except that the turned pages take theirs the
+      // other way round: the page turned most recently lies nearest the stack and has to paint
+      // over the ones turned before it, or the pile above shows only its furthest sheet and the
+      // rest hide behind that one's back. The shift (past --page-count, by twice the page's own
+      // distance from it) keeps the whole pile behind every page still to come.
+      order: calc(-1 * (var(--page-index) + var(--turned) * (2 * (var(--page-count) - var(--page-index)) + 1)));
       // --flip-progress (set to 1 by fold-drag.ts for the length of a drag) closes the fan by
       // one page: the front page and the one behind it square up — so their folded-back corners
       // stay flush instead of fanning a gap open at the top-left — and by the time a committed
@@ -257,9 +288,16 @@ const pages = await Promise.all(
       // (inline, set by the back-fold tease) swings the hindmost page a little further out of
       // the fan when the pointer nears the folded-back corner, showing the page a back-drag
       // would bring over; the rotate transition below eases both effects.
-      rotate: calc(#{$per-page-splay} * log(max(var(--page-index) - var(--flip-progress), 1)) + var(--paper-peek, 0deg));
+      // A turned page leaves the fan below and takes the cue's own swing instead, so the fan
+      // always counts the pages still to come.
+      rotate: calc(
+        (1 - var(--turned)) * #{$per-page-splay} * log(max(var(--page-index) - var(--flip-progress), 1))
+        + var(--turned) * var(--turned-swing, 0deg)
+        + var(--paper-peek, 0deg)
+      );
+      translate: 0 calc(-1 * var(--turned) * var(--turned-rise, 0px));
       // TODO transition rotate at startup isn't working
-      transition: rotate 250ms ease-in-out;
+      transition: rotate 250ms ease-in-out, translate 250ms ease-in-out;
 
       // The front page. A class rather than :first-child: fold-drag.ts hands it to the next
       // page when a completed drag flips this one onto the back of the stack, without touching
@@ -531,6 +569,60 @@ const pages = await Promise.all(
           pointer-events: none;
         }
       }
+    }
+
+    // Cue 1, the swing. The turned pages stay bare and lean back over the clip on the same pin
+    // the fan turns on, so what stands above the stack is each sheet's own top edge: a wedge
+    // per page, widening away from the clip, mirroring the fan below.
+    &[data-stack-cue="1"] > div {
+      --turned-swing: calc(-1 * #{$turn-splay} * log(1 + var(--turned-rank)));
+    }
+
+    // Cue 2, the backs. Each turned page rises square out of the top edge and paints the blank
+    // back of its own sheet, so the pile is face-down paper and the number of edges in it is
+    // the number of pages read.
+    &[data-stack-cue="2"] > div {
+      --turned-rise: calc(#{$turn-lift} * var(--turned-rank));
+    }
+
+    // Cue 3, the leaning backs. The same sheet backs, closer together and fanned on the pin, so
+    // the pile leans the way the pages went instead of standing square to the stack.
+    &[data-stack-cue="3"] > div {
+      --turned-rise: calc(0.25em * var(--turned-rank));
+      --turned-swing: calc(-1 * 0.375deg * var(--turned-rank));
+    }
+
+    // The band of sheet back a risen page shows above the front one: the page's own colour,
+    // which fold-drag.ts lifts onto it because a background defined inside the page can't be
+    // seen from out here, darkened exactly as the fold flap darkens the same paper, with the
+    // sheet's hairline edge and its corner. It runs $turn-under behind the front page, so the
+    // bottom of the band is never in view and what shows is exactly how far the sheet has
+    // risen. ::after, not ::before: the page content would paint over it. The opacity is not
+    // transitioned on purpose — a page coming back is the front page the moment it is promoted,
+    // and a band fading out over it would wipe across the top of the sheet.
+    &[data-stack-cue="2"] > div::after,
+    &[data-stack-cue="3"] > div::after {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: calc(var(--turned-rise, 0px) + #{$turn-under});
+      // The left end carries the same folded-back corner as the sheet it belongs to: the cut's
+      // own crease, continued up through the band, so the pile's ends step along the diagonal
+      // rather than stopping against a wall of their own. (tan(atan2()) is the band's height
+      // over the crease's drop as a plain number — a bare division of two lengths is one
+      // Firefox throws the whole clip-path out for; see the front page's crease above.)
+      clip-path: polygon(
+        var(--fold-back-rest-x) 0px,
+        100% 0px,
+        100% 100%,
+        calc(var(--fold-back-rest-x) * (1 - tan(atan2(var(--turned-rise, 0px) + #{$turn-under}, var(--fold-back-rest-y))))) 100%
+      );
+      background: var(--paper-surface, var(--surface-sunken));
+      border: 1px solid var(--line-strong);
+      border-top-right-radius: $border-radius;
+      filter: brightness(94%);
+      opacity: var(--turned);
+      pointer-events: none;
     }
 
     // Once a page has been flipped to the back there is a previous page to go back to: the
