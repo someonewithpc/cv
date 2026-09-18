@@ -1,4 +1,5 @@
 import { mountInlineColorPicker } from "./inlineColorPicker";
+import { markColorEvent } from "./perfReadout";
 
 /**
  * The colour control both solid parts show: a native `<input type="color">` with the
@@ -35,6 +36,7 @@ export function ColorField({ id, demoTarget, color, onInput, onChange }: {
             if (!input) return;
             input.value = color;
             input.addEventListener('input', onInput);
+            input.addEventListener('input', markColorEvent);
             input.addEventListener('change', onChange);
           }}
         />
