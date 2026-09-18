@@ -157,15 +157,23 @@ const pages = await Promise.all(
   &[data-paper-stack] {
     // The stack's own box is an upright rectangle around the whole fan, including the
     // margin reserved for the splay, so a ring on it misses the sheet the reader is
-    // looking at. Put it on the front page instead: that wrapper is the sheet's box, it
-    // carries the sheet's corner radius, it turns with the splay, and fold-drag.ts hands
-    // the class to the next page on a committed flip, so the ring follows the paper.
+    // looking at. Put it on the front sheet instead: it turns with the splay, and
+    // fold-drag.ts hands the paper-front class to the next page on a committed flip,
+    // so the ring follows the paper.
+    //
+    // The sheet rather than its wrapper, and inside its edge rather than outside it,
+    // because the sheet is what wears the crease clip-path: an outline drawn within
+    // the clipped box is cut by that same path, so the ring bends around the folded
+    // corner instead of crossing it, and it keeps doing that through a drag for free,
+    // frame by frame, with no second element and no filter. The exceptions are the
+    // clip-path rule's own: the flap, clip, grab handle and hint ride on top of the
+    // page rather than being the page.
     &:focus-visible {
       outline: none;
 
-      > .paper-front {
+      > .paper-front > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
         outline: 2px solid var(--ink);
-        outline-offset: 0.125rem;
+        outline-offset: -0.125rem;
       }
     }
 
