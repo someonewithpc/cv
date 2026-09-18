@@ -109,6 +109,17 @@ const BACK_COMMIT_REACH = 0.25;
 // swipe that would carry a drag past its commit carries the scroll past it too.
 const SCROLL_GAIN = 1;
 
+// What a swipe sending the page away is worth against one fetching the last page back. A swipe
+// walks a point along the gesture's line and the gesture takes it from there at its own gain (see
+// FoldGesture's gain): the forward fold moves its tip with the point, while a back-drag pushes a
+// crease and the corner reflected across it moves at twice that. Both commit once the paper has
+// carried its corner half the page's diagonal, so at equal gains the same swipe turned a page back
+// on half the travel it took to send one away — a quarter of the diagonal against a half. A
+// trackpad flick that fetched a page back would not send the next one away at all. So the forward
+// swipe is walked out at the back-drag's gain and a swiped pixel buys the same page turn either
+// way. A pointer on the flap is unaffected: it holds the corner it grabbed, at its own gain.
+const SWIPE_AWAY_GAIN = 2;
+
 // A scroll has no letting go to end on, so the gesture ends once the wheel has been quiet — but
 // how quiet counts as over depends on how the scrolling is being done. A flick lands events a
 // frame apart; two fingers moved slowly, or a wheel clicked round a notch at a time, can leave a
@@ -1471,9 +1482,10 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   const swipeTo = (travel: number, time: number) => {
     const held = swipe!.travel;
     swipe!.travel = Math.max(travel, 0);
+    const reach = swipe!.travel * (gesture!.back ? 1 : SWIPE_AWAY_GAIN);
     const at = {
-      clientX: swipe!.at.x + swipe!.dir.x * swipe!.travel,
-      clientY: swipe!.at.y + swipe!.dir.y * swipe!.travel,
+      clientX: swipe!.at.x + swipe!.dir.x * reach,
+      clientY: swipe!.at.y + swipe!.dir.y * reach,
       timeStamp: time,
     };
     if (gesture!.approach) {

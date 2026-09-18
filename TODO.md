@@ -46,6 +46,7 @@
     - [x] Fallback when CSS-only unsupported?
     - [x] Turned paper corners/dogear
     - [x] Navigation
+      - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
     - [-] Page indicator
   - [ ] Anotations
     - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
