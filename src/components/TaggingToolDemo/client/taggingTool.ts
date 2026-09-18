@@ -231,6 +231,38 @@ function wait(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
+/** Matches the cursor's left/top transition in GridLayer.astro. */
+const TRAVEL_MS = 520;
+
+type Cursor = {
+  el: HTMLElement;
+  host: HTMLElement;
+  at: { x: number; y: number } | null;
+};
+
+/** Moves the drawn cursor into `target`: a text field is aimed near its left edge, the
+    way a hand clicks before typing, anything else at its middle. */
+async function aim(cursor: Cursor, target: HTMLElement, atText = false) {
+  const box = target.getBoundingClientRect();
+  const host = cursor.host.getBoundingClientRect();
+  const to = {
+    x: box.left - host.left + (atText ? Math.min(box.width * 0.25, 28) : box.width / 2),
+    y: box.top - host.top + box.height / 2,
+  };
+  const from = cursor.at;
+  cursor.at = to;
+  cursor.el.hidden = false;
+  cursor.el.style.left = `${to.x}px`;
+  cursor.el.style.top = `${to.y}px`;
+  await wait(!from || Math.hypot(to.x - from.x, to.y - from.y) > 6 ? TRAVEL_MS : 60);
+}
+
+async function press(cursor: Cursor) {
+  cursor.el.classList.add('clicking');
+  await wait(140);
+  cursor.el.classList.remove('clicking');
+}
+
 /**
  * The walkthrough: tag a whole object through the shared field, switch to a property
  * that already has values so every field fills on the way in, then override one style
@@ -241,14 +273,16 @@ function wait(ms: number) {
  * one grid cell. `data-autoplay` on the tool is the whole state, as `playing`, `user` or
  * `off`, so a sheet-level transport deck can read or report it without new plumbing.
  */
-async function autoplay(tool: Tool, group: Group, script: Walkthrough) {
+async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Walkthrough) {
   const { root } = tool;
+  const cursorEl = host.querySelector<HTMLElement>('.tagging-cursor');
 
-  if (reducedMotion.matches) {
+  if (reducedMotion.matches || !cursorEl) {
     root.dataset.autoplay = 'off';
     return;
   }
 
+  const cursor: Cursor = { el: cursorEl, host, at: null };
   let stopped = false;
   let active = false;
 
@@ -259,6 +293,7 @@ async function autoplay(tool: Tool, group: Group, script: Walkthrough) {
   const stop = () => {
     stopped = true;
     stopPageWatch();
+    cursorEl.hidden = true;
     group.root.classList.remove('autoplay', 'completing');
     root.dataset.autoplay = 'user';
   };
@@ -289,6 +324,9 @@ async function autoplay(tool: Tool, group: Group, script: Walkthrough) {
 
     // One value in the shared field tags the base object and every style at once.
     group.root.classList.add('autoplay');
+    await aim(cursor, group.shared, true);
+    if (stopped) break;
+    await press(cursor);
     await type(group.shared, script.value, () => mirror(group));
     await pause(700);
     if (stopped) break;
@@ -301,12 +339,18 @@ async function autoplay(tool: Tool, group: Group, script: Walkthrough) {
 
     // A property that already has values fills every field on the way in.
     group.root.classList.remove('completing');
+    await aim(cursor, tool.select);
+    if (stopped) break;
+    await press(cursor);
     showProperty(tool, script.storedProperty);
     await pause(1400);
     if (stopped) break;
 
     // One style disagrees, so it is changed on its own card.
     const card = group.cards[script.overrideIndex] ?? group.cards[0];
+    await aim(cursor, card.input, true);
+    if (stopped) break;
+    await press(cursor);
     card.input.value = '';
     await pause(260);
     await type(card.input, script.overrideValue, () => {});
@@ -342,5 +386,5 @@ export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
 
   const target = tool.groups.find((group) => group.root.hasAttribute('data-autoplay-target'));
   const script = host.dataset.walkthrough;
-  if (target && script) void autoplay(tool, target, JSON.parse(script) as Walkthrough);
+  if (target && script) void autoplay(tool, host, target, JSON.parse(script) as Walkthrough);
 }
