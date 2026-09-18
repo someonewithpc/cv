@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { frontPage, frontPageIndex, frontPageName, swipeStack, swipeToPage } from './support/paperStack';
 
-const PAGES = ['Library Tagging Tool', 'Shared Group Input', 'Simulated Caret', 'Completed Objects'];
+const PAGES = ['Library Tagging Tool', 'Shared Value', 'Simulated Caret', 'Completed Objects'];
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -21,7 +21,7 @@ async function mountedTool(page: import('@playwright/test').Page) {
   await expect(mount).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
   const tool = front.locator('.tagging-tool[data-live]');
   // Hovering the tool is how a real visitor takes it over from the auto-play loop
-  // (taggingTool.ts's pointerenter/focusin -> stop); without it the Chiavari group keeps
+  // (taggingTool.ts's pointerenter/focusin -> stop); without it the first row keeps
   // typing, saving and leaving the list on its own.
   await tool.hover();
   return { stack, front, tool };
@@ -96,7 +96,7 @@ test('main page: searching a value lists every object carrying it, tagged or not
 test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Shared Group Input');
+  await swipeToPage(page, stack, 'Shared Value');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
 });
