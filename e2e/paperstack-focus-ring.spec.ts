@@ -32,6 +32,13 @@ test('visrez logo animation: the keyboard focus ring sits on the front sheet and
   // The cut the ring follows is on this element, not on the wrapper.
   expect(await sheet.evaluate((el) => getComputedStyle(el).clipPath)).toContain('polygon');
 
+  // The dog-ear is clipped paper too, so it wears the same ring along its folded edges.
+  const flap = front.locator(':scope > .paper-fold');
+  await expect(flap).toHaveCSS('outline-style', 'solid');
+  await expect(flap).toHaveCSS('outline-width', '2px');
+  // The paper clip only rides over the paper, so it keeps out of the ring.
+  await expect(front.locator(':scope > .paper-clip')).toHaveCSS('outline-style', 'none');
+
   const firstName = await frontPageName(stack);
   await page.keyboard.press('ArrowRight');
   await expect.poll(async () => frontPageName(stack), { timeout: 15_000 }).not.toBe(firstName);
