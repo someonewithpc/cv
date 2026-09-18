@@ -171,3 +171,41 @@ test('drag & drop page: dragging the chair onto the ground places it in a live s
   const drawnOnDrop = await sceneDraws(app);
   await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnDrop);
 });
+
+for (const { name, viewport } of [
+  { name: 'desktop', viewport: { width: 1440, height: 900 } },
+  { name: 'phone', viewport: { width: 390, height: 844 } },
+]) {
+  test.describe(`transport deck at ${name} width`, () => {
+    test.use({ viewport });
+
+    test('is stamped in the border band, clear of the drawing', async ({ page }) => {
+      const stack = spaceBuilderStack(page);
+      await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const front = frontPage(stack, await frontPageIndex(stack));
+      await waitForSceneReady(front);
+
+      const deck = front.locator('[data-demo-transport]');
+      await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
+
+      const placement = await deck.evaluate((el) => {
+        const section = el.closest('section')!;
+        const sheet = section.getBoundingClientRect();
+        const box = el.getBoundingClientRect();
+        const band = parseFloat(getComputedStyle(section).paddingBottom);
+        const clearOf = (other: Element | null) => {
+          if (!other) return false;
+          const b = other.getBoundingClientRect();
+          return box.right <= b.left + 1 || box.left >= b.right - 1
+            || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
+        };
+        return {
+          insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
+          clearOfDrawing: clearOf(section.querySelector('.content')),
+          clearOfTitleBlock: clearOf(section.querySelector('table')),
+        };
+      });
+      expect(placement).toEqual({ insideBand: true, clearOfDrawing: true, clearOfTitleBlock: true });
+    });
+  });
+}
