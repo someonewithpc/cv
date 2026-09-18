@@ -61,6 +61,7 @@
 - [ ] Run W3C validator
   - [ ] Put CSS and JS out of line
 - [x] Make demos more usable without JS (#19)
+- [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
 - [ ] Work History
