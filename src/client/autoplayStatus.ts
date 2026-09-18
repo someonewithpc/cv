@@ -1,6 +1,6 @@
 /**
- * The transport deck in a sheet's top margin: which demo is driving itself, and the keys a
- * visitor presses to take the walkthrough over or hand it back.
+ * The transport deck in a sheet's bottom margin: which demo is driving itself, and the keys
+ * a visitor presses to take the walkthrough over or hand it back.
  *
  * A demo app calls `reportAutoplayState` on its own root whenever the walkthrough starts,
  * hands over, or is switched off, and answers the keys through `onAutoplayCommand`. The deck
@@ -29,6 +29,22 @@ const HINT: Record<AutoplayState, string> = {
 /** No pointer to hover with, so say the half of it a phone can act on. */
 const TOUCH_HINT = 'tap the sheet to take over';
 
+/**
+ * Three shapes for the same deck, so the preview can show all of them: `?deck=1` fills a
+ * widened bottom band, `?deck=2` stamps the deck onto the title block, `?deck=3` keeps the
+ * band flush. The shape lands on <html>, which is where Page.astro's styles read it. Once
+ * one shape is chosen, the other two and this switch go.
+ */
+const DECK_SHAPES = ['1', '2', '3'];
+const DEFAULT_DECK_SHAPE = '1';
+
+function applyDeckShape() {
+  const asked = new URLSearchParams(window.location.search).get('deck');
+  document.documentElement.dataset.deck = asked && DECK_SHAPES.includes(asked)
+    ? asked
+    : DEFAULT_DECK_SHAPE;
+}
+
 export function reportAutoplayState(root: Element | null | undefined, state: AutoplayState) {
   if (!root || root.getAttribute(AUTOPLAY_STATE_ATTRIBUTE) === state) return;
   root.setAttribute(AUTOPLAY_STATE_ATTRIBUTE, state);
@@ -54,6 +70,8 @@ export function isTransportControl(node: EventTarget | null): boolean {
 }
 
 export function initAutoplayStatus(page: HTMLElement) {
+  applyDeckShape();
+
   const deck = page.querySelector<HTMLElement>('[data-demo-transport]');
   const caption = deck?.querySelector<HTMLElement>('[data-demo-caption]');
   const hint = deck?.querySelector<HTMLElement>('[data-demo-hint]');
