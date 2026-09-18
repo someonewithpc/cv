@@ -82,7 +82,7 @@ const sheetAnchor = `--${noteId}-sheet`;
             </div>
           </td>
         )}
-        <td colspan="5">
+        <td colspan="5" class="title-name">
           <header>
             <h2 class="typewriter">{title ?? subtitle}</h2>
             {title && subtitle && (<h3 class="typewriter">{subtitle}</h3>)}
@@ -90,28 +90,28 @@ const sheetAnchor = `--${noteId}-sheet`;
         </td>
       </tr>
       <tr>
-        <td>
+        <td class="title-no">
           <div>
             <span class="title-label monospace">Drawing No.</span>
             <span class="typewriter">{index} / {layerCount}</span>
           </div>
         </td>
 
-        <td>
+        <td class="title-scale">
           <div>
             <span class="title-label monospace">Scale</span>
             <span class="typewriter">{scale ?? '3:1'}</span>
           </div>
         </td>
 
-        <td>
+        <td class="title-weight">
           <div>
             <span class="title-label monospace">Weight</span>
             <span class="typewriter">{size ?? '-'}</span>
           </div>
         </td>
 
-        <td>
+        <td class="title-date">
           <div>
             <span class="title-label monospace">Date</span>
             <span class="typewriter"><time datetime={date}>{date ?? '-'}</time></span>
@@ -525,6 +525,79 @@ section {
       }
     }
   }
+
+  /* The block gives up its parts, in this order, as the room at the sheet's
+     bottom-right runs out. Each step includes the ones before it. Written once
+     so both ways of choosing a step — sheet width, or measured overlap — style
+     the same thing. */
+  @mixin title-fit-1 {
+    & > table .title-proj { display: none; }
+  }
+
+  @mixin title-fit-2 {
+    @include title-fit-1;
+    & > table .title-scale { display: none; }
+  }
+
+  @mixin title-fit-3 {
+    @include title-fit-2;
+    & > table .title-weight { display: none; }
+  }
+
+  @mixin title-fit-4 {
+    @include title-fit-3;
+
+    /* The cells stop being a table so the logo cell can drop under the title
+       instead of standing a column beside it. Each cell keeps its hairline, and
+       the negative margins do what border-collapse did. */
+    & > table {
+      display: flex;
+      flex-wrap: wrap;
+
+      tbody,
+      tr { display: contents; }
+
+      td {
+        display: block;
+        margin: 0 -1px -1px 0;
+      }
+
+      .title-name {
+        order: -1;
+        flex: 1 0 100%;
+      }
+
+      .title-tech .title-tech-stack {
+        width: 2.625em;
+        height: 2em;
+        aspect-ratio: auto;
+
+        :global(.tech-icon svg) {
+          width: 1.25em;
+          height: 1.25em;
+        }
+      }
+
+      .title-no,
+      .title-date { order: 1; }
+    }
+  }
+
+  @mixin title-fit-5 {
+    @include title-fit-4;
+    /* Narrow enough that the title has to take a second line. 11rem is what clears
+       the artwork cell on a 60em sheet, which is as wide as a sheet gets. */
+    & > table { max-width: 11rem; }
+  }
+
+  /* Pick the step from the sheet's own width. The lower bound keeps the ladder out
+     of the portrait layout below, which gives the block its own row and has no
+     room problem to solve. */
+  @container technical-drawing-width (40em < width <= 62em) { @include title-fit-1; }
+  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-2; }
+  @container technical-drawing-width (40em < width <= 46em) { @include title-fit-3; }
+  @container technical-drawing-width (40em < width <= 43em) { @include title-fit-4; }
+  @container technical-drawing-width (40em < width <= 41em) { @include title-fit-5; }
 
   /* A sheet this narrow cannot host the note beside the artwork — landscape
      included, where the sheet is half as tall as it is wide and the note runs
