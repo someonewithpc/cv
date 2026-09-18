@@ -1,0 +1,130 @@
+---
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import Stage from './Stage.astro';
+import GroupsLayer from './layers/GroupsLayer.astro';
+import PickerLayer from './layers/PickerLayer.astro';
+import SwapLayer from './layers/SwapLayer.astro';
+import MissingLayer from './layers/MissingLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+// The picker's own source, the three components the card is made of. A Vue SFC cannot go
+// through esbuild the way the other demos bundle their entry, so this is source size.
+const catalogRoot = path.join(
+  process.cwd(),
+  'src/components/SpaceBuilderDemo/MockScene/catalog',
+);
+const pickerSources = await Promise.all(
+  ['CatalogObjectCard.vue', 'VariationCarousel.vue', 'HoverSelect.vue']
+    .map((file) => readFile(path.join(catalogRoot, file), 'utf8')),
+);
+
+const cardSize = toKiB(pickerSources.join(''));
+
+const layers = {
+  main: { name: null },
+  groups: { name: 'Variant Groups', pageStyle: 'blueprint' },
+  picker: { name: 'Group Picker', pageStyle: 'blueprint' },
+  swap: { name: 'Model Swap', pageStyle: 'blueprint' },
+  missing: { name: 'Missing Variants', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<div class="variants-demo">
+<TechnicalDrawingStack
+  subtitle="Space Builder · Object Variants"
+  scale="1:1"
+  size={cardSize}
+  date="2024"
+  tech={['vuejs', 'threejs']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      main: <Stage />,
+      groups: <GroupsLayer />,
+      picker: <PickerLayer />,
+      swap: <SwapLayer />,
+      missing: <MissingLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      main: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over the auto-playing demo<br />
+          Step a chair through its finishes, or open the banquet set's seats and size
+        </PostIt>
+      ),
+      groups: (
+        <PostIt background="#cde" color="black">
+          One catalog card stands for every library object under it. Seats and size cut that
+          group into cells, and a cell's contents are its styles
+        </PostIt>
+      ),
+      picker: (
+        <PostIt background="#dfd" color="black">
+          The carousel walks the styles of one cell. The dropdowns move between cells, and
+          hovering one shows the object without committing to it
+        </PostIt>
+      ),
+      swap: (
+        <PostIt background="#fed" color="black">
+          Replace builds the new model where the old one stood, down to the rotation, and
+          leaves it selected
+        </PostIt>
+      ),
+      missing: (
+        <PostIt background="#edf" color="black">
+          Not every seat count comes in every size. The missing pairs stay on the list, go
+          grey, and fall back to the nearest object that exists
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
+</div>
+
+<style lang="scss">
+// Match the Space Builder stack: reserve a gutter next to the interactive page's content
+// and centre the note in what is left.
+:global(.variants-demo article.technical-drawing-stack > * > section .aside) {
+  display: flex;
+  justify-content: center;
+  padding-left: 1.75em;
+  margin-inline: 0;
+}
+
+@container technical-drawing (orientation: portrait) {
+  :global(.variants-demo article.technical-drawing-stack > * > section .aside) {
+    padding-left: 0;
+  }
+}
+
+// Narrow but still landscape: give the interactive page a slim aside instead of a full
+// third of the sheet, so the 3D view and the sidebar both keep a usable width.
+@container technical-drawing-width (min-width: 40.0625em) and (max-width: 64em) {
+  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint)) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem);
+  }
+
+  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
+    grid-column: 1;
+  }
+
+  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
+    grid-column: 2;
+    padding-left: 0.75em;
+  }
+}
+</style>

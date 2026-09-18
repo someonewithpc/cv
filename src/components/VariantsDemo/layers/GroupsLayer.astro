@@ -1,0 +1,206 @@
+---
+import { CHAIR_CARD, BANQUET_CARD } from '../variantsCatalog';
+
+const variants = BANQUET_CARD.variants ?? [];
+const seats = [...new Set(variants.map((variant) => variant.pax ?? 0))].sort((a, b) => b - a);
+const diameters = [...new Set(variants.map((variant) => variant.size ?? ''))];
+
+function stylesAt(pax: number, size: string) {
+  return variants.filter((variant) => variant.pax === pax && variant.size === size);
+}
+
+const total = variants.length;
+
+const finishes = CHAIR_CARD.variants ?? [];
+const shown = finishes[0];
+---
+
+<div class="wrapper">
+  <div class="sheet" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">CatalogObjectField.vue</span>
+        <strong>One card stands for a whole group of library objects</strong>
+      </header>
+
+      <div class="body">
+        <div class="card">
+          <div class="thumb">
+            <span class="count">{finishes.length}</span>
+            <span class="silhouette"></span>
+          </div>
+          <div class="label">
+            <span class="name">{CHAIR_CARD.name}</span>
+            <span class="row static">{shown.style}</span>
+            <span class="row static">{shown.size}</span>
+          </div>
+          <p class="note">Five finishes at one seat count and one size. They land in the same cell, so the thumbnail becomes a carousel and the badge counts them.</p>
+        </div>
+
+        <div class="matrix">
+          <div class="matrix-grid" style={`--cols: ${diameters.length}`}>
+            <span></span>
+            {diameters.map((diameter) => <span class="axis">{diameter}</span>)}
+            {seats.map((count) => (
+              <>
+                <span class="axis">{count} seats</span>
+                {diameters.map((diameter) => {
+                  const styles = stylesAt(count, diameter);
+                  return (
+                    <span class:list={['cell', { empty: styles.length === 0 }]}>
+                      {styles.length === 0
+                        ? <span class="hole">none</span>
+                        : styles.map((style) => <span class="style">{style.style}</span>)}
+                    </span>
+                  );
+                })}
+              </>
+            ))}
+          </div>
+          <p class="note">
+            The Banquet Table group, cut by seats and size. {total} objects, and the pairs the
+            library never made stay empty.
+          </p>
+        </div>
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Group</dt>
+          <dd>Every library object that shares the catalog entry, however many that is</dd>
+        </div>
+        <div>
+          <dt>Axes</dt>
+          <dd><code>pax</code> is the seat count, <code>size</code> the stored <code>WxHxD</code> in centimetres</dd>
+        </div>
+        <div>
+          <dt>Styles</dt>
+          <dd>The objects with the same <code>pax</code> and <code>size</code> as the one on show</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use './sheet' as *;
+
+@include sheet-chrome(46em);
+
+.body {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 1em;
+  align-items: start;
+}
+
+.card {
+  display: grid;
+  gap: 0.375em;
+  width: 9em;
+}
+
+.thumb {
+  position: relative;
+  height: 5.25em;
+  border: 1px solid var(--line-strong);
+  border-bottom: none;
+  border-radius: 0.375em 0.375em 0 0;
+  background: linear-gradient(59deg, var(--surface-sunken) 0, var(--line) 100%);
+  display: grid;
+  place-items: center;
+}
+
+.count {
+  position: absolute;
+  top: 0.375em;
+  right: 0.375em;
+  width: 1.75em;
+  height: 1.75em;
+  display: grid;
+  place-items: center;
+  border-radius: 100%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  font-size: 0.625em;
+}
+
+.silhouette {
+  width: 3.5em;
+  height: 1.75em;
+  border: 1.5px solid var(--ink-muted);
+  border-radius: 100%;
+  box-shadow:
+    0 -0.5em 0 -0.4em var(--ink-muted),
+    0 0.5em 0 -0.4em var(--ink-muted);
+}
+
+.label {
+  display: grid;
+  gap: 0.125em;
+  padding: 0.25em 0.375em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0 0 0.375em 0.375em;
+  background: var(--surface-sunken);
+  text-align: center;
+  font-size: 0.6875em;
+
+  .name {
+    font-weight: 700;
+  }
+
+  .row:not(.static)::after {
+    content: '▾';
+    margin-left: 0.5ch;
+    color: var(--ink-muted);
+  }
+}
+
+.matrix {
+  display: grid;
+  gap: 0.375em;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: max-content repeat(var(--cols), minmax(0, 1fr));
+  gap: 0.25em;
+  align-items: stretch;
+}
+
+.axis {
+  align-self: center;
+  font-size: 0.625em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25em;
+  padding: 0.25em;
+  border: 1px solid var(--line);
+  border-radius: 0.25em;
+  background: var(--surface-sunken);
+
+  &.empty {
+    border-style: dashed;
+    background: none;
+  }
+}
+
+.style {
+  padding: 0.0625em 0.375em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75em;
+  font-size: 0.625em;
+}
+
+.hole {
+  font-size: 0.625em;
+  color: var(--ink-muted);
+}
+
+</style>
