@@ -7,20 +7,20 @@ import Grid from '../Grid.astro';
       of the Tab order, so a keyboard user would land on illustration-only controls a
       screen reader stays silent about. Same fix as EditorLayer.astro's inert embed. */}
   <div class="missing-layer" aria-hidden="true" inert>
-    <Grid onlyMissing />
+    <Grid completing="round" />
 
     <dl class="legend">
       <div>
-        <dt>Filter</dt>
-        <dd>Objects that already carry the property drop out, and a clique with nothing left to tag folds away with them</dd>
+        <dt>List</dt>
+        <dd>The page lists only objects still missing the property, base or any style, thirty at a time with more on scroll</dd>
       </div>
       <div>
-        <dt>Cap</dt>
-        <dd>A page stops at 250 objects and says so, instead of quietly trimming the list</dd>
+        <dt>Leave</dt>
+        <dd>Filling an object's last gap removes it from the page. The row above is halfway out</dd>
       </div>
       <div>
         <dt>Save</dt>
-        <dd>Blur or tick writes one row per object; an emptied field deletes the row rather than storing <code>""</code></dd>
+        <dd>Change or Enter writes one row per object, <code>find_or_initialize_by</code> then <code>save!</code>. An emptied field destroys the row instead of keeping <code>""</code></dd>
       </div>
     </dl>
   </div>
@@ -38,7 +38,7 @@ import Grid from '../Grid.astro';
 
 .missing-layer {
   width: 100%;
-  max-width: 40em;
+  max-width: 44em;
   display: grid;
   gap: 0.625em;
   font-family: var(--font-poppins), system-ui, sans-serif;
@@ -50,7 +50,8 @@ import Grid from '../Grid.astro';
   }
 
   :global(.tagging-tool) {
-    font-size: 0.875em;
+    font-size: 0.75em;
+    max-height: 22em;
     pointer-events: none;
   }
 }
