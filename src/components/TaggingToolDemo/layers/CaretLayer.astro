@@ -56,10 +56,13 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
 <style lang="scss">
 .wrapper {
   box-sizing: border-box;
-  width: max-content;
+  width: 100%;
   max-width: min(92cqw, 100%);
   margin-inline: auto;
   display: grid;
+  /* An auto track takes the panel's max-content width and overflows the sheet on a
+     portrait page; 1fr pins it to the wrapper so the panel's own max-width bites. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
 }
 
