@@ -1,0 +1,105 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import DragDropScene from './MockScene/DragDropScene.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+// The same scene the Space Builder stack runs — this demo imports it rather than
+// carrying its own copy, so the title block quotes the same number.
+const srcRoot = path.join(process.cwd(), 'src');
+const sceneEntry = path.join(
+  srcRoot,
+  'components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene.ts',
+);
+
+const { outputFiles: [sceneBundle] } = await esbuild.build({
+  entryPoints: [sceneEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  packages: 'external',
+  alias: { '@': srcRoot },
+});
+
+const sceneSize = toKiB(sceneBundle.text);
+
+const layers = {
+  main: { name: null },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<div class="drag-drop-demo">
+<TechnicalDrawingStack
+  subtitle="Space Builder · Drag & Drop"
+  scale="1:1"
+  size={sceneSize}
+  date="2023"
+  tech={['vuejs', 'threejs']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      main: <DragDropScene />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      main: (
+        <PostIt background="#fed" color="black">
+          Hover or focus to take over the auto-playing animation<br />
+          Grab a chair from the catalog and drop it on the floor to place a single piece
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
+</div>
+
+<style lang="scss">
+// Regular (non-portrait) layout only — reserve a gutter next to the demo content and
+// centre the PostIt in whatever space is left, the same way the Space Builder stack does.
+:global(.drag-drop-demo article.technical-drawing-stack > * > section .aside) {
+  display: flex;
+  justify-content: center;
+  padding-left: 1.75em;
+  margin-inline: 0;
+}
+
+@container technical-drawing (orientation: portrait) {
+  /* Portrait centres the aside itself; only the landscape gutter has to go. */
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section .aside) {
+    padding-left: 0;
+  }
+}
+
+// Narrow but still landscape (a squeezed window, short of the portrait breakpoint): the
+// interactive page's aside column would otherwise reserve a third of the sheet for a note
+// a few characters wide, starving the 3D viewport next to it. The static blueprint pages
+// keep the even three-column split.
+@container technical-drawing-width (min-width: 40.0625em) and (max-width: 64em) {
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint)) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem);
+  }
+
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
+    grid-column: 1;
+  }
+
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
+    grid-column: 2;
+    padding-left: 0.75em;
+  }
+}
+</style>
