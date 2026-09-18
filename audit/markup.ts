@@ -76,8 +76,10 @@ const documentsIn = (html: string): string[] => {
   return [scripted, ...fallbacks];
 };
 
+// A comment explains the <style> element it sits next to, quoting the tag as it goes,
+// and this match is not a parser. Drop the comments before looking for the real ones.
 const styleSheetsIn = (html: string): string[] =>
-  [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1]);
+  [...html.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1]);
 
 export const markupTests = (): void => {
   // Both checks read the production build the web server put there; a reused server
