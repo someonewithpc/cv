@@ -8,7 +8,7 @@ const PORT = 4310;
 // dynamic libs outside a nix-shell/`--with-deps` apt install, neither of which applies
 // here). The system already has a working, nix-packaged Chrome — point at that instead
 // of downloading a browser Playwright can't launch.
-function systemChrome(): string {
+export function systemChrome(): string {
   for (const name of ['google-chrome-stable', 'google-chrome', 'chromium']) {
     try {
       return execFileSync('which', [name], { encoding: 'utf8' }).trim();
