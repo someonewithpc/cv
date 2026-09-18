@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 
-import { type CursorState, Playthrough } from './playthrough';
+import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
+import { Playthrough } from './playthrough';
 import { entranceFor, scenesFor } from './scenes';
 import { demoPicker } from './demoPicker';
 
@@ -13,11 +14,7 @@ const CURSOR_FADE_MS = 320;
 const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
-type Phase = 'demo' | 'fading' | 'gone';
-type Cursor = CursorState & { phase: Phase };
 type Toast = { id: number; text: string; leaving: boolean };
-
-const GONE: Cursor = { x: 0, y: 0, clicking: false, dragging: false, phase: 'gone' };
 
 /**
  * Plays the picker by itself while its sheet is the one in front, with a drawn cursor, and
@@ -25,7 +22,7 @@ const GONE: Cursor = { x: 0, y: 0, clicking: false, dragging: false, phase: 'gon
  * comes back after a pause with nothing going on.
  */
 export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
-  const [cursor, setCursor] = useState<Cursor>(GONE);
+  const [cursor, setCursor] = useState<DrawnCursorState>(CURSOR_GONE);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [host, setHost] = useState<HTMLElement | null>(null);
   const toastId = useRef(0);
@@ -54,7 +51,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
         if (state === null) {
           demoPicker.close();
           setCursor((prev) => (prev.phase === 'gone' ? prev : { ...prev, phase: 'fading' }));
-          fadeTimer = window.setTimeout(() => setCursor(GONE), CURSOR_FADE_MS);
+          fadeTimer = window.setTimeout(() => setCursor(CURSOR_GONE), CURSOR_FADE_MS);
           return;
         }
         window.clearTimeout(fadeTimer);
@@ -154,28 +151,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
 
   return createPortal(
     <>
-      {cursor.phase !== 'gone' && (
-        <div
-          className={[
-            'font-picker-cursor',
-            `font-picker-cursor--${cursor.phase}`,
-            cursor.clicking ? 'font-picker-cursor--clicking' : '',
-            cursor.dragging ? 'font-picker-cursor--dragging' : '',
-          ].filter(Boolean).join(' ')}
-          style={{ left: cursor.x, top: cursor.y }}
-          aria-hidden="true"
-        >
-          <svg viewBox="0 0 32 32" width="56" height="56">
-            <path
-              d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
-              fill="var(--bg-900, #fff)"
-              stroke="var(--fg-850, #222)"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-      )}
+      <DrawnCursor cursor={cursor} />
       <div className="font-picker-toasts" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={['font-picker-toast', t.leaving ? 'is-leaving' : ''].filter(Boolean).join(' ')}>
