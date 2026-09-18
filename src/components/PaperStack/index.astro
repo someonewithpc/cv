@@ -265,19 +265,18 @@ const pages = await Promise.all(
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
       // The turned pages are the last --pages-turned of the order — a flip sends the front page
-      // to --page-count and shifts the rest down — so this is 1 on a page that has been turned
-      // and 0 on one still to come, and the rank counts 1 for the page turned most recently up
-      // to --pages-turned for the first one turned, which is the one furthest out.
-      --turned: clamp(0, var(--page-index) - var(--page-count) + var(--pages-turned), 1);
-      --turned-rank: calc(var(--page-count) - var(--page-index) + 1);
-      --turned-rise: calc(#{$turn-lift} * var(--turned-rank));
+      // to --page-count and shifts the rest down — so the rank is 1 on the page turned first,
+      // which now lies nearest the pages still to come, and --pages-turned on the one turned
+      // most recently, which a flip sent under the whole stack and which therefore stands
+      // furthest out. Everything still to come ranks 0 or less.
+      --turned-rank: calc(var(--page-index) - var(--page-count) + var(--pages-turned));
+      --turned: clamp(0, var(--turned-rank), 1);
+      --turned-rise: calc(#{$turn-lift} * max(var(--turned-rank), 0));
 
-      // Paint order. Back to front by --page-index, except that the turned pages take theirs the
-      // other way round: the page turned most recently lies nearest the stack and has to paint
-      // over the ones turned before it, or the pile above shows only its furthest sheet and the
-      // rest hide behind that one's back. The shift (past --page-count, by twice the page's own
-      // distance from it) keeps the whole pile behind every page still to come.
-      order: calc(-1 * (var(--page-index) + var(--turned) * (2 * (var(--page-count) - var(--page-index)) + 1)));
+      // Paint order: back to front by --page-index, which already reads the pile the right way
+      // round. A turned page carries the highest indices, so it paints behind the bottom page of
+      // the stack, and within the pile the page turned most recently paints behind the rest.
+      order: calc(-1 * var(--page-index));
       // --flip-progress (set to 1 by fold-drag.ts for the length of a drag) closes the fan by
       // one page: the front page and the one behind it square up — so their folded-back corners
       // stay flush instead of fanning a gap open at the top-left — and by the time a committed
@@ -289,10 +288,10 @@ const pages = await Promise.all(
       // counts the pages still to come.
       rotate: calc(
         (1 - var(--turned)) * #{$per-page-splay} * log(max(var(--page-index) - var(--flip-progress), 1))
-        - var(--turned) * #{$turn-splay} * var(--turned-rank)
+        - #{$turn-splay} * max(var(--turned-rank), 0)
         + var(--paper-peek, 0deg)
       );
-      translate: 0 calc(-1 * var(--turned) * var(--turned-rise));
+      translate: 0 calc(-1 * var(--turned-rise));
       // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out, translate 250ms ease-in-out;
 
