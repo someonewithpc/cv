@@ -1,6 +1,7 @@
 import {
   ACESFilmicToneMapping,
   AmbientLight,
+  BufferAttribute,
   Color,
   CylinderGeometry,
   DirectionalLight,
@@ -34,6 +35,7 @@ import {
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 import {
   DEFAULT_LAYOUT_OPTIONS,
@@ -163,7 +165,7 @@ export class SpaceBuilderScene {
   /** Individually drag-placed chairs (Add tool, no area) — accumulate, don't replace. */
   private singlePoses: ChairPose[] = [];
   private chairGeometry: BufferGeometry | null = null;
-  private chairMaterial: Material | null = null;
+  private chairMaterial: Material | Material[] | null = null;
   private chairScale = 1;
   private chairYOffset = 0;
   private chairReady: Promise<void> | null = null;
@@ -315,24 +317,17 @@ export class SpaceBuilderScene {
   }
 
   private async loadChairInternal(url: string) {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-    if (MeshoptDecoder.ready) {
-      await MeshoptDecoder.ready;
-    }
-    const gltf = await loader.loadAsync(url);
+    const { geometry, material } = await this.loadModelAsMergedMesh(url);
     if (this.disposed) return;
-    const mesh = this.findFirstMesh(gltf.scene);
-    if (!mesh) throw new Error('Chair mesh missing');
 
-    mesh.geometry.computeBoundingBox();
-    const box = mesh.geometry.boundingBox!;
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox!;
     const height = box.max.y - box.min.y;
     this.chairScale = CHAIR_TARGET_HEIGHT / height;
     this.chairYOffset = -box.min.y * this.chairScale;
 
-    this.chairGeometry = mesh.geometry;
-    this.chairMaterial = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    this.chairGeometry = geometry;
+    this.chairMaterial = material;
 
     this.ghost = new Mesh(this.chairGeometry, this.chairMaterial);
     this.ghost.scale.setScalar(this.chairScale);
@@ -342,6 +337,50 @@ export class SpaceBuilderScene {
     // The area/options set before the (async) chair GLB resolved rendered zero
     // chairs — reflow now so seats appear without needing a follow-up interaction.
     this.reflow();
+  }
+
+  /**
+   * Load a GLB and flatten every primitive (glTF splits one mesh into a
+   * primitive per material) into a single BufferGeometry with per-primitive
+   * groups, so the result works as one InstancedMesh/Mesh draw call — even
+   * when the source model has more than one material (e.g. a chair frame +
+   * cushion). World transforms are baked in so nested nodes merge correctly.
+   */
+  private async loadModelAsMergedMesh(url: string): Promise<{ geometry: BufferGeometry; material: Material | Material[] }> {
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    if (MeshoptDecoder.ready) {
+      await MeshoptDecoder.ready;
+    }
+    const gltf = await loader.loadAsync(url);
+    const root = gltf.scene;
+    root.updateMatrixWorld(true);
+
+    const geometries: BufferGeometry[] = [];
+    const materials: Material[] = [];
+    root.traverse((obj) => {
+      if (!(obj as Mesh).isMesh) return;
+      const mesh = obj as Mesh;
+      const geom = mesh.geometry.clone();
+      geom.applyMatrix4(mesh.matrixWorld);
+      // Keep only the attributes every primitive shares — extras like vertex
+      // tangents/colour aren't needed for MeshStandardMaterial and would make
+      // mergeGeometries reject a set that isn't identical across primitives.
+      for (const name of Object.keys(geom.attributes)) {
+        if (!['position', 'normal', 'uv'].includes(name)) geom.deleteAttribute(name);
+      }
+      if (!geom.getAttribute('uv')) {
+        geom.setAttribute('uv', new BufferAttribute(new Float32Array(geom.attributes.position.count * 2), 2));
+      }
+      geometries.push(geom);
+      materials.push(Array.isArray(mesh.material) ? mesh.material[0] : mesh.material);
+    });
+    if (!geometries.length) throw new Error(`Model has no mesh: ${url}`);
+
+    const geometry = geometries.length > 1 ? mergeGeometries(geometries, true) : geometries[0];
+    if (!geometry) throw new Error(`Failed to merge model geometry: ${url}`);
+
+    return { geometry, material: materials.length > 1 ? materials : materials[0] };
   }
 
   getSnapshot(): SceneSnapshot {
@@ -1270,14 +1309,6 @@ export class SpaceBuilderScene {
       this.chairs.dispose();
       this.chairs = null;
     }
-  }
-
-  private findFirstMesh(root: Object3D): Mesh | null {
-    let found: Mesh | null = null;
-    root.traverse((obj) => {
-      if (!found && (obj as Mesh).isMesh) found = obj as Mesh;
-    });
-    return found;
   }
 
   private updateCamera() {
