@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
@@ -500,7 +500,10 @@ onMounted(async () => {
       }
     });
 
-    onReplayRequest(root, restartDemo);
+    onAutoplayCommand(root, (command) => {
+      if (command === 'pause') yieldToUser();
+      else restartDemo();
+    });
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);

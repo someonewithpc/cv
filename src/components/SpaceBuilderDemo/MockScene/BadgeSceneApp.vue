@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import {
@@ -249,8 +249,9 @@ onMounted(async () => {
       else scene.resume();
     });
 
-    onReplayRequest(root, () => {
-      if (!playing.value) togglePlay();
+    onAutoplayCommand(root, (command) => {
+      if (command === 'pause') pauseForManualControl();
+      else if (!playing.value) togglePlay();
     });
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
