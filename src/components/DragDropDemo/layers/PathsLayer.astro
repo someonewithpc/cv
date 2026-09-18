@@ -1,0 +1,294 @@
+---
+const paths = [
+  {
+    id: 'click',
+    title: 'Click',
+    steps: [
+      'Click a card in the catalog',
+      'The object rides the pointer',
+      'Click the floor and one lands',
+      'It is still on the pointer, so click again',
+      'Esc puts it down',
+    ],
+    verdict: 'as many as you keep clicking',
+  },
+  {
+    id: 'drag',
+    title: 'Drag',
+    steps: [
+      'Press a card and move away',
+      'The thumbnail follows over the panel',
+      'Over the floor the object takes over',
+      'Let go and one lands',
+      'The drag is done',
+    ],
+    verdict: 'exactly one',
+  },
+] as const;
+---
+
+<div class="wrapper">
+  <div class="paths-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">Add tool</span>
+        <strong>Catalog to floor</strong>
+      </header>
+
+      <div class="paths">
+        {paths.map((path) => (
+          <figure class:list={['path', path.id]}>
+            <figcaption>{path.title}</figcaption>
+            <ol>
+              {path.steps.map((step) => <li>{step}</li>)}
+            </ol>
+            <p class="verdict">{path.verdict}</p>
+          </figure>
+        ))}
+      </div>
+
+      <div class="shared">
+        <span class="shared-label">Same last two steps</span>
+        <div class="shared-pipeline">
+          <code class="step-chip">ray to floor y = 0</code>
+          <span class="op" aria-hidden="true">→</span>
+          <code class="step-chip">placeGhostAsSingle()</code>
+          <span class="op" aria-hidden="true">→</span>
+          <span class="result-badge">toast</span>
+        </div>
+        <p class="shared-note">
+          The pointer casts a ray. Where it meets the floor is where the object's feet go, so
+          the drop point is the floor under the pointer, not the pixel it is over.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+$accent: #89ab24;
+$op-slot: 0.85em;
+
+.wrapper {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(90cqw, 100%);
+  margin-inline: auto;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.paths-layer {
+  width: max-content;
+  max-width: 100%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.8rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
+  color: #f4f0ea;
+
+  /* Portrait stacks the lanes and puts a note under them, so the floor that keeps
+     landscape legible is what pushes this off the top. Keyed on the stack's
+     attribute, not the orientation query: see Stack.astro's script. */
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1.05rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)));
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.6em 0.65em;
+  background: #333;
+  border: 2px solid #666;
+  border-radius: 0.5em;
+  display: grid;
+  gap: 0.45em;
+  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08em;
+
+  .eyebrow {
+    font-size: 0.72em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+}
+
+$lane: 13.5em;
+
+.paths {
+  display: grid;
+  grid-template-columns: repeat(2, $lane);
+  column-gap: 0.5em;
+  align-items: stretch;
+  width: max-content;
+}
+
+.path {
+  margin: 0;
+  display: grid;
+  gap: 0.25em;
+  align-content: start;
+  width: 100%;
+  min-width: 0;
+  padding: 0.3em 0.4em;
+  border-radius: 0.3em;
+  border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
+  background: color-mix(in oklab, #000 22%, transparent);
+  box-sizing: border-box;
+
+  figcaption {
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    text-align: center;
+  }
+
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+    display: grid;
+    gap: 0.25em;
+    font-size: 0.75em;
+    line-height: 1.25;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 1.4em minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.2em;
+    padding: 0.25em 0.35em;
+    border-radius: 0.22em;
+    background: color-mix(in oklab, #fff 6%, transparent);
+    counter-increment: step;
+
+    &::before {
+      content: counter(step);
+      font-weight: 700;
+      opacity: 0.55;
+    }
+  }
+
+  &.click {
+    border-style: solid;
+    border-color: $accent;
+    border-width: 2px;
+    background: color-mix(in oklab, $accent 14%, transparent);
+
+    figcaption {
+      color: #e8f5b8;
+      opacity: 1;
+    }
+  }
+}
+
+.verdict {
+  margin: 0.1em 0 0;
+  padding: 0.25em 0.35em;
+  border-radius: 0.22em;
+  background: color-mix(in oklab, #000 24%, transparent);
+  font-size: 0.72em;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.02em;
+  color: #e8e4dc;
+}
+
+.op {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  opacity: 0.55;
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.shared {
+  // Stay inside the lanes' intrinsic width, don't widen the panel.
+  width: 0;
+  min-width: 100%;
+  display: grid;
+  gap: 0.3em;
+  padding: 0.4em 0.45em;
+  border-radius: 0.3em;
+  border: 1px solid #555;
+  background: #2a2a28;
+  box-sizing: border-box;
+}
+
+.shared-label {
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $accent;
+}
+
+.shared-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25em;
+}
+
+.step-chip {
+  display: inline-grid;
+  place-items: center;
+  padding: 0.3em 0.4em;
+  border-radius: 0.22em;
+  border: 1px solid #555;
+  background: color-mix(in oklab, #000 22%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72em;
+  line-height: 1.2;
+  color: #e8e4dc;
+}
+
+.result-badge {
+  display: inline-grid;
+  place-items: center;
+  padding: 0.3em 0.45em;
+  border-radius: 0.22em;
+  background: color-mix(in oklab, $accent 40%, #333);
+  color: #e8f5b8;
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.shared-note {
+  margin: 0;
+  font-size: 0.75em;
+  opacity: 0.8;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+@container technical-drawing (orientation: portrait) {
+  .wrapper {
+    max-width: min(90cqw, 100%);
+  }
+
+  .paths {
+    grid-template-columns: 1fr;
+    width: 100%;
+    row-gap: 0.35em;
+  }
+}
+</style>
