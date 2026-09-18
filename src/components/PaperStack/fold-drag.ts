@@ -1003,6 +1003,8 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   prev.prepend(under);
   prev.append(clip, fold, hint);
   stack.dataset.paperTurned = '';
+  // Coming back is the harder half to find, so it is marked apart from having turned at all.
+  stack.dataset.paperReturned = '';
   syncInert(stack);
   // Promoting the originally-first page puts the stack back in its own order, so the corner cut
   // unfolds from here — the mirror of flipFold committing the flipped state as its glide sets
