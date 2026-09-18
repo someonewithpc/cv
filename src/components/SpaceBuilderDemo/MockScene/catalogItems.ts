@@ -1,3 +1,29 @@
+/**
+ * One style of a catalog object. Space Builder's library keeps every finish, seat count
+ * and size as its own object and groups them under one card; these mirror that group.
+ */
+export type CatalogVariant = {
+  /** Unique across the catalog: the scene keys its loaded model by this. */
+  id: string;
+  /** Finish name, as the product labels a style. */
+  style: string;
+  thumb: string;
+  /** GLB to load. Finishes of one model share a URL and differ only by `tint`. */
+  modelUrl?: string;
+  /**
+   * Base colour per material slot, applied after load, so one GLB can serve several
+   * finishes. `null` leaves that slot alone; slots follow the GLB's material order.
+   */
+  tint?: (string | null)[];
+  /** Seats the object takes; 1 for a single chair, 8 for an eight-seat banquet set. */
+  pax?: number;
+  /**
+   * Width x depth x height, printed the way Space Builder prints it
+   * (utils/unitTranslation.js: x, z, then y; centimetres under a metre).
+   */
+  size?: string;
+};
+
 export type CatalogItem = {
   id: string;
   name: string;
@@ -8,12 +34,26 @@ export type CatalogItem = {
   layoutable?: boolean;
   /** GLB to load for a real, non-layoutable item (Chair loads its own via SpaceBuilderScene). */
   modelUrl?: string;
-  /**
-   * Width x depth x height, printed the way Space Builder prints it
-   * (utils/unitTranslation.js: x, z, then y; centimetres under a metre).
-   */
   size?: string;
+  /** Every style the library carries under this card. The first one is the default. */
+  variants?: CatalogVariant[];
 };
+
+/** The card's styles, with single-style objects read as a group of one. */
+export function variantsOf(item: CatalogItem): CatalogVariant[] {
+  return item.variants ?? [{
+    id: item.id,
+    style: item.name,
+    thumb: item.thumb,
+    modelUrl: item.modelUrl,
+    size: item.size,
+  }];
+}
+
+export function variantOf(item: CatalogItem, variantId: string | undefined): CatalogVariant {
+  const variants = variantsOf(item);
+  return variants.find((variant) => variant.id === variantId) ?? variants[0];
+}
 
 /** The Space Builder catalog — Chair, Side Chair and Banquet Table are real, loaded objects. */
 export const CATALOG_ITEMS: CatalogItem[] = [
