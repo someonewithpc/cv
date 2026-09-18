@@ -11,7 +11,6 @@ import PlaceLayer from './layers/PlaceLayer.astro';
 import ParametersLayer from './layers/ParametersLayer.astro';
 import LayoutsLayer from './layers/LayoutsLayer.astro';
 import BadgeLayer from './layers/BadgeLayer.astro';
-import DnDLayer from './layers/DnDLayer.astro';
 
 function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
@@ -41,7 +40,6 @@ const layers = {
   parameters: { name: 'Edit Parameters', pageStyle: 'blueprint' },
   layouts: { name: 'Layout Styles', pageStyle: 'blueprint' },
   badge: { name: 'Capacity Badge', pageStyle: 'blueprint' },
-  dnd: { name: 'Drag & Drop', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -63,7 +61,6 @@ type Layer = keyof typeof layers;
       parameters: <ParametersLayer />,
       layouts: <LayoutsLayer />,
       badge: <BadgeLayer />,
-      dnd: <DnDLayer />,
     }[layer])}
   </fragment>
 
@@ -167,11 +164,6 @@ type Layer = keyof typeof layers;
             </p>
           </div>
         </div>
-      ),
-      dnd: (
-        <PostIt background="#fed" color="black">
-          Grab a chair from the catalog and drop it on the floor to place a single piece
-        </PostIt>
       ),
     }[layer])}
   </fragment>
