@@ -18,6 +18,7 @@
 - [ ] ARIA roles
 - [ ] Demos
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
+  - [x] Autoplay is not very intuitive (#7)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
   - [x] Space builder add tool
