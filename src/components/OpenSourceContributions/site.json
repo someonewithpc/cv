@@ -254,6 +254,22 @@
           ]
         },
         {
+          "repository": "pybluez/pybluez",
+          "title": "Update README",
+          "description": "Named the Debian package that carries the BlueZ headers in the PyBluez build requirements, so the README says what to install rather than what is needed.",
+          "url": "https://github.com/pybluez/pybluez/pull/119",
+          "number": 119,
+          "updatedAt": "2016-04-17T10:22:13Z",
+          "stats": {
+            "additions": 1,
+            "deletions": 1,
+            "changed_files": 1
+          },
+          "tags": [
+            "python"
+          ]
+        },
+        {
           "repository": "DefinitelyTyped/DefinitelyTyped",
           "title": "Update Leaflet declaration to include missing methods, as of version 1.8",
           "description": "Filled in missing Leaflet methods in the DefinitelyTyped declarations for v1.8.",
@@ -376,6 +392,23 @@
       "id": "open",
       "label": "Open",
       "items": [
+        {
+          "repository": "wispr-flow-linux/helper",
+          "title": "feat: omit listed VK codes from the global key monitor",
+          "description": "Added `WISPR_CAPTURE_IGNORE_VK`, a list of virtual-key codes the Linux helper leaves out of its global key monitor, so a push-to-talk bind on Right Ctrl stops firing on Left Ctrl as well. Skipped keys do not take a sequence index, so the app never sees a gap, and paste injection is untouched.",
+          "url": "https://github.com/wispr-flow-linux/helper/pull/15",
+          "number": 15,
+          "updatedAt": "2026-09-17T17:19:05Z",
+          "stats": {
+            "additions": 114,
+            "deletions": 0,
+            "changed_files": 2
+          },
+          "tags": [
+            "rust",
+            "linux"
+          ]
+        },
         {
           "repository": "NixOS/nixpkgs",
           "title": "gtk4: 4.22.4 -> 4.22.5",
@@ -702,6 +735,23 @@
           ]
         },
         {
+          "repository": "symfony/polyfill",
+          "title": "Only define classes if they don't exist",
+          "description": "Wrapped every Intl stub class in a `class_exists` guard, so loading the polyfill next to a real `intl` extension stops fataling with \"Cannot declare class Normalizer, because the name is already in use\".",
+          "url": "https://github.com/symfony/polyfill/pull/277",
+          "number": 277,
+          "updatedAt": "2020-07-22T08:38:01Z",
+          "stats": {
+            "additions": 190,
+            "deletions": 156,
+            "changed_files": 17
+          },
+          "tags": [
+            "symfony",
+            "php"
+          ]
+        },
+        {
           "repository": "PaulLeCam/react-leaflet",
           "title": "Allow customizing which class gets used for `LayersControl`",
           "description": "Let React Leaflet's `LayersControl` instantiate a custom `L.Control` subclass—needed for image-based layer toggles.",
@@ -716,6 +766,23 @@
           "tags": [
             "react",
             "leaflet",
+            "typescript"
+          ]
+        },
+        {
+          "repository": "bootstrap-vue-next/bootstrap-vue-next",
+          "title": "feat(BDropdown): add prop for max height and width for the dropdown menu",
+          "description": "Added `max-height` and `max-width` props to `BDropdown` so a menu can override the size `@floating-ui/vue` works out for it, with an example in the docs.",
+          "url": "https://github.com/bootstrap-vue-next/bootstrap-vue-next/pull/1925",
+          "number": 1925,
+          "updatedAt": "2024-05-30T21:34:20Z",
+          "stats": {
+            "additions": 85,
+            "deletions": 2,
+            "changed_files": 4
+          },
+          "tags": [
+            "vuejs",
             "typescript"
           ]
         },
@@ -797,6 +864,39 @@
           },
           "tags": [
             "react",
+            "typescript"
+          ]
+        },
+        {
+          "repository": "unplugin/unplugin-vue-components",
+          "title": "feat(bootstrap-vue-next): allow specifying component aliases",
+          "description": "Let `BootstrapVueNextResolver` take a map of component aliases, so a project moving off bootstrap-vue can keep auto-importing the names it already uses.",
+          "url": "https://github.com/unplugin/unplugin-vue-components/pull/757",
+          "number": 757,
+          "updatedAt": "2024-06-01T15:16:37Z",
+          "stats": {
+            "additions": 7,
+            "deletions": 3,
+            "changed_files": 1
+          },
+          "tags": [
+            "vuejs",
+            "typescript"
+          ]
+        },
+        {
+          "repository": "retejs/history-plugin",
+          "title": "Fix `event clear does not exist`",
+          "description": "Bound the missing `clear` event when the Rete.js history plugin installs, so clearing the history no longer throws (retejs/history-plugin#16).",
+          "url": "https://github.com/retejs/history-plugin/pull/17",
+          "number": 17,
+          "updatedAt": "2023-01-28T18:38:02Z",
+          "stats": {
+            "additions": 1,
+            "deletions": 0,
+            "changed_files": 1
+          },
+          "tags": [
             "typescript"
           ]
         },
