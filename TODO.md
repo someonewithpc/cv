@@ -20,6 +20,8 @@
   - [x] Visrez animated icon
   - [x] Visrez marker editor
   - [x] Space builder add tool
+    - [x] Layouts page demo doesn't work (#14)
+    - [x] Drag and drop furniture doesn't work (#14)
     - [x] Place area
     - [x] Edit parameters
     - [x] Different layouts
@@ -42,6 +44,7 @@
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
+      - [x] Animations on some pages don't start (#14)
   - [x] Carousel
     - [x] CSS-only when supported?
     - [x] Fallback when CSS-only unsupported?
