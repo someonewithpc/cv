@@ -1,18 +1,21 @@
 /**
- * Prerender public/demos/space-builder/chair.glb → chair-thumb.webp
+ * Prerender a Space Builder catalog GLB to its catalog thumbnail webp.
  * Uses headless Chrome + Three.js (meshopt) so the catalog matches the live model.
  *
- * Usage: npm run generate:chair-thumb
+ * Usage: npm run generate:catalog-thumb
+ *        node scripts/render-catalog-thumb.mjs <site-path.glb> <out.webp>
  */
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
-const outPath = path.join(root, 'public/demos/space-builder/chair-thumb.webp');
+const modelPath = process.argv[2] ?? '/demos/space-builder/chair.glb';
+const outPath = path.resolve(root, process.argv[3] ?? 'public/demos/space-builder/chair-thumb.webp');
 const SIZE = 512;
 
 const MIME = {
@@ -66,6 +69,8 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const SIZE = ${SIZE};
 const scene = new Scene();
+// far is re-set below, once the model's real extent is known: library GLBs are authored
+// in centimetres, so the fixed 100-unit far plane clipped anything bigger than a chair.
 const camera = new PerspectiveCamera(32, 1, 0.01, 100);
 const renderer = new WebGLRenderer({
   antialias: true,
@@ -101,7 +106,7 @@ try {
   if (MeshoptDecoder.ready) await MeshoptDecoder.ready;
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await loader.loadAsync('/demos/space-builder/chair.glb');
+  const gltf = await loader.loadAsync('${modelPath}');
   const rootObj = gltf.scene;
   scene.add(rootObj);
 
@@ -110,7 +115,7 @@ try {
   const center = box.getCenter(new Vector3());
   rootObj.position.sub(center);
 
-  // Fit the full chair with padding (length*0.55 framed only the seat).
+  // Fit the whole model with padding (length*0.55 framed only the chair's seat).
   const fit = Math.max(size.x, size.y, size.z);
   const radius = fit * 2.15;
   const elev = Math.PI / 5.5;
@@ -121,6 +126,7 @@ try {
     radius * Math.cos(elev) * Math.cos(azim),
   );
   camera.lookAt(0, -size.y * 0.05, 0);
+  camera.far = radius * 3;
   camera.updateProjectionMatrix();
 
   renderer.render(scene, camera);
@@ -189,11 +195,15 @@ async function main() {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address();
 
+  // Its own profile, so rendering a thumbnail never touches (or fails against) the
+  // browser the author already has open.
+  const profile = await mkdtemp(path.join(os.tmpdir(), 'catalog-thumb-'));
   const chrome = spawn(chromePath(), [
     '--headless=new',
     '--disable-gpu',
     '--no-first-run',
     '--no-default-browser-check',
+    `--user-data-dir=${profile}`,
     `--window-size=${SIZE},${SIZE}`,
     `http://127.0.0.1:${port}/render`,
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -212,6 +222,7 @@ async function main() {
 
   chrome.kill('SIGKILL');
   await new Promise((resolve) => server.close(resolve));
+  await rm(profile, { recursive: true, force: true });
 
   if (result.error) throw new Error(result.error);
   if (!result.dataUrl?.startsWith('data:image/webp;base64,')) {
