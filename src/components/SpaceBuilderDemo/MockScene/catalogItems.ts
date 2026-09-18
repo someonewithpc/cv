@@ -55,6 +55,8 @@ export function variantOf(item: CatalogItem, variantId: string | undefined): Cat
   return variants.find((variant) => variant.id === variantId) ?? variants[0];
 }
 
+const CHAIR_SIZE = '42cm x 50cm x 95cm';
+
 /** The Space Builder catalog — Chair, Side Chair and Banquet Table are real, loaded objects. */
 export const CATALOG_ITEMS: CatalogItem[] = [
   {
@@ -63,7 +65,50 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     thumb: '/demos/space-builder/chair-thumb.webp',
     real: true,
     layoutable: true,
-    size: '42cm x 50cm x 95cm',
+    size: CHAIR_SIZE,
+    // The library stocks the 2800 Chiavari in fifteen finishes, each its own object. The
+    // demo ships one mesh and takes each finish's frame and pad colours from its object.
+    variants: [
+      {
+        id: 'chair',
+        style: 'Natural',
+        thumb: '/demos/space-builder/chair-thumb.webp',
+        pax: 1,
+        size: CHAIR_SIZE,
+      },
+      {
+        id: 'chair-gold',
+        style: 'Gold',
+        thumb: '/demos/space-builder/chair-gold-thumb.webp',
+        tint: ['#caa470', '#f0f0f0'],
+        pax: 1,
+        size: CHAIR_SIZE,
+      },
+      {
+        id: 'chair-silver',
+        style: 'Silver',
+        thumb: '/demos/space-builder/chair-silver-thumb.webp',
+        tint: ['#969fa7', '#ffffff'],
+        pax: 1,
+        size: CHAIR_SIZE,
+      },
+      {
+        id: 'chair-white',
+        style: 'White',
+        thumb: '/demos/space-builder/chair-white-thumb.webp',
+        tint: ['#fdfdfd', '#fdfdfd'],
+        pax: 1,
+        size: CHAIR_SIZE,
+      },
+      {
+        id: 'chair-black',
+        style: 'Black',
+        thumb: '/demos/space-builder/chair-black-thumb.webp',
+        tint: ['#0d0d0d', '#0d0d0d'],
+        pax: 1,
+        size: CHAIR_SIZE,
+      },
+    ],
   },
   {
     id: 'armchair',

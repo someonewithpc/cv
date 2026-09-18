@@ -50,6 +50,26 @@ import {
 } from './layoutEngine';
 import { createDemoSkybox } from './demoSkybox';
 
+/** The part of a catalog variant the scene needs to draw it. */
+export type CatalogGhostVariant = {
+  id: string;
+  modelUrl?: string;
+  tint?: (string | null)[];
+};
+
+/** Repaint a loaded model's materials, slot by slot, in the GLB's own material order. */
+function applyTint(root: Object3D, tint: (string | null)[]) {
+  let slot = 0;
+  root.traverse((obj) => {
+    if (!(obj as Mesh).isMesh) return;
+    for (const material of [(obj as Mesh).material].flat()) {
+      const hex = tint[slot];
+      slot += 1;
+      if (hex) (material as MeshStandardMaterial).color.set(hex);
+    }
+  });
+}
+
 const GROUND_SIZE = 28;
 const GRASS_REPEAT = 5;
 /** Subdivisions for MeshStandardMaterial displacement (visible grass only). */
@@ -167,6 +187,8 @@ export class SpaceBuilderScene {
   private singlePoses: ChairPose[] = [];
   private chairGeometry: BufferGeometry | null = null;
   private chairMaterial: Material | Material[] | null = null;
+  /** The GLB's own colours, so a finish can be swapped for another or cleared. */
+  private chairBaseColors: Color[] = [];
   private chairScale = 1;
   private chairYOffset = 0;
   private chairReady: Promise<void> | null = null;
@@ -330,28 +352,49 @@ export class SpaceBuilderScene {
    * Switch the Add tool's ghost to a non-chair real catalog item (or back to
    * the chair). Loads its GLB the first time it's selected.
    */
-  activateCatalogItem(id: string, url?: string) {
-    this.activeCatalogId = id;
+  activateCatalogItem(id: string, variant?: CatalogGhostVariant) {
+    this.activeCatalogId = variant?.id ?? id;
     if (this.extraGhost) {
       this.scene.remove(this.extraGhost);
       this.extraGhost = null;
     }
-    if (id === 'chair') return;
-    if (url) this.ensureExtraLoaded(id, url);
+    if (id === 'chair') {
+      this.activeCatalogId = 'chair';
+      this.setChairTint(variant?.tint);
+      return;
+    }
+    if (variant?.modelUrl) this.ensureExtraLoaded(this.activeCatalogId, variant);
     this.applyActiveGhostTemplate();
   }
 
-  private ensureExtraLoaded(id: string, url: string) {
+  /**
+   * Recolour the chair in place. Space Builder's library keeps every finish as its own
+   * object; the demo ships one GLB whose frame and seat are flat colours, so a finish is
+   * a base colour per material slot.
+   */
+  private setChairTint(tint?: (string | null)[]) {
+    const materials = [this.chairMaterial].flat().filter(Boolean) as MeshStandardMaterial[];
+    materials.forEach((material, slot) => {
+      const base = this.chairBaseColors[slot];
+      if (!base) return;
+      const hex = tint?.[slot];
+      material.color.copy(base);
+      if (hex) material.color.set(hex);
+    });
+  }
+
+  private ensureExtraLoaded(id: string, variant: CatalogGhostVariant) {
     if (this.extraTemplates.has(id) || this.extraLoading.has(id)) return;
     this.extraLoading.set(
       id,
-      this.loadExtraInternal(id, url).catch((error) => {
+      this.loadExtraInternal(id, variant).catch((error) => {
         console.debug('Space Builder extra prop failed to load', id, error);
       }),
     );
   }
 
-  private async loadExtraInternal(id: string, url: string) {
+  private async loadExtraInternal(id: string, variant: CatalogGhostVariant) {
+    const url = variant.modelUrl!;
     // Library GLBs share one export pipeline's arbitrary unit — wait for the
     // primary chair's own raw-height measurement so every extra converts to
     // real meters by the same factor, instead of guessing per model.
@@ -364,6 +407,7 @@ export class SpaceBuilderScene {
     const gltf = await loader.loadAsync(url);
     if (this.disposed) return;
     const root = gltf.scene;
+    if (variant.tint) applyTint(root, variant.tint);
     root.updateMatrixWorld(true);
 
     const box = new Box3().setFromObject(root);
@@ -411,6 +455,9 @@ export class SpaceBuilderScene {
 
     this.chairGeometry = geometry;
     this.chairMaterial = material;
+    this.chairBaseColors = [material].flat().map(
+      (slot) => (slot as MeshStandardMaterial).color.clone(),
+    );
 
     this.ghost = new Mesh(this.chairGeometry, this.chairMaterial);
     this.ghost.scale.setScalar(this.chairScale);

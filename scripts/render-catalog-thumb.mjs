@@ -16,6 +16,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const modelPath = process.argv[2] ?? '/demos/space-builder/chair.glb';
 const outPath = path.resolve(root, process.argv[3] ?? 'public/demos/space-builder/chair-thumb.webp');
+// Optional per-material base colour, as the catalog variants declare it: a JSON array of
+// hex strings (or nulls) in the GLB's material order.
+const tint = process.argv[4] ? JSON.parse(process.argv[4]) : null;
 // Space Builder stores catalog thumbnails at 600px square (Upload/Preview.vue renders 300
 // and the platform keeps a 2x original).
 const SIZE = 600;
@@ -71,6 +74,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const SIZE = ${SIZE};
+const TINT = ${JSON.stringify(tint)};
 // Space Builder's own catalog renderer (utils/three/render/ObjectImageRender.js): a
 // 0.8-radian camera at polar 60 degrees and azimuth 60, one bounding-box diagonal and a
 // quarter away, looking at the model's centre. far is re-set once that distance is known,
@@ -125,6 +129,17 @@ try {
   loader.setMeshoptDecoder(MeshoptDecoder);
   const gltf = await loader.loadAsync('${modelPath}');
   const rootObj = gltf.scene;
+  if (TINT) {
+    let slot = 0;
+    rootObj.traverse((obj) => {
+      if (!obj.isMesh) return;
+      for (const material of [obj.material].flat()) {
+        const hex = TINT[slot];
+        slot += 1;
+        if (hex) material.color.set(hex);
+      }
+    });
+  }
   scene.add(rootObj);
 
   const box = new Box3().setFromObject(rootObj);
