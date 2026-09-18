@@ -1,6 +1,7 @@
 import {
   ACESFilmicToneMapping,
   AmbientLight,
+  Box3,
   BufferAttribute,
   Color,
   CylinderGeometry,
@@ -170,6 +171,15 @@ export class SpaceBuilderScene {
   private chairYOffset = 0;
   private chairReady: Promise<void> | null = null;
   private ghost: Mesh | null = null;
+  /** Non-chair catalog id currently selected in the Add tool ('chair' uses {@link ghost} instead). */
+  private activeCatalogId = 'chair';
+  /** Hidden, pre-scaled Object3D per real non-chair catalog id — cloned on each placement. */
+  private extraTemplates = new Map<string, Object3D>();
+  private extraLoading = new Map<string, Promise<void>>();
+  /** Clone of the active extra template, positioned like {@link ghost} while placing. */
+  private extraGhost: Object3D | null = null;
+  /** Individually placed non-chair objects — cleared with the rest of the scene on reset/Clear. */
+  private placedExtras: Object3D[] = [];
   private textures: Texture[] = [];
   private skybox: Mesh | null = null;
   private onSnapshot?: (snapshot: SceneSnapshot) => void;
@@ -316,6 +326,79 @@ export class SpaceBuilderScene {
     return this.chairReady ?? Promise.resolve();
   }
 
+  /**
+   * Switch the Add tool's ghost to a non-chair real catalog item (or back to
+   * the chair). Loads its GLB the first time it's selected.
+   */
+  activateCatalogItem(id: string, url?: string) {
+    this.activeCatalogId = id;
+    if (this.extraGhost) {
+      this.scene.remove(this.extraGhost);
+      this.extraGhost = null;
+    }
+    if (id === 'chair') return;
+    if (url) this.ensureExtraLoaded(id, url);
+    this.applyActiveGhostTemplate();
+  }
+
+  private ensureExtraLoaded(id: string, url: string) {
+    if (this.extraTemplates.has(id) || this.extraLoading.has(id)) return;
+    this.extraLoading.set(
+      id,
+      this.loadExtraInternal(id, url).catch((error) => {
+        console.debug('Space Builder extra prop failed to load', id, error);
+      }),
+    );
+  }
+
+  private async loadExtraInternal(id: string, url: string) {
+    // Library GLBs share one export pipeline's arbitrary unit — wait for the
+    // primary chair's own raw-height measurement so every extra converts to
+    // real meters by the same factor, instead of guessing per model.
+    await this.whenChairReady();
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    if (MeshoptDecoder.ready) {
+      await MeshoptDecoder.ready;
+    }
+    const gltf = await loader.loadAsync(url);
+    if (this.disposed) return;
+    const root = gltf.scene;
+    root.updateMatrixWorld(true);
+
+    const box = new Box3().setFromObject(root);
+    const scale = this.chairScale;
+    const center = box.getCenter(new Vector3());
+    root.scale.setScalar(scale);
+    root.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
+    root.traverse((obj) => {
+      if ((obj as Mesh).isMesh) {
+        const mesh = obj as Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
+    });
+
+    const pivot = new Group();
+    pivot.add(root);
+    this.extraTemplates.set(id, pivot);
+    if (this.activeCatalogId === id) this.applyActiveGhostTemplate();
+  }
+
+  private applyActiveGhostTemplate() {
+    if (this.activeCatalogId === 'chair') return;
+    const template = this.extraTemplates.get(this.activeCatalogId);
+    if (!template) return;
+    this.extraGhost = template.clone(true);
+    this.extraGhost.visible = false;
+    this.scene.add(this.extraGhost);
+  }
+
+  private clearExtras() {
+    for (const object of this.placedExtras) this.scene.remove(object);
+    this.placedExtras = [];
+  }
+
   private async loadChairInternal(url: string) {
     const { geometry, material } = await this.loadModelAsMergedMesh(url);
     if (this.disposed) return;
@@ -435,6 +518,7 @@ export class SpaceBuilderScene {
     this.tagObject.visible = false;
     this.singlePoses = [];
     this.clearChairs();
+    this.clearExtras();
     this.emitSnapshot();
   }
 
@@ -562,30 +646,43 @@ export class SpaceBuilderScene {
     this.setArea({ ...this.area, angle });
   }
 
+  private activeGhost(): Object3D | null {
+    return this.activeCatalogId === 'chair' ? this.ghost : this.extraGhost;
+  }
+
   setGhostVisible(visible: boolean) {
-    if (this.ghost) this.ghost.visible = visible;
+    const ghost = this.activeGhost();
+    if (ghost) ghost.visible = visible;
   }
 
   setGhostAt(clientX: number, clientY: number) {
-    if (!this.ghost) return;
+    const ghost = this.activeGhost();
+    if (!ghost) return;
     const point = this.clientToGround(clientX, clientY);
     if (!point) return;
-    this.ghost.position.x = point.x;
-    this.ghost.position.z = point.z;
-    this.ghost.position.y = this.chairYOffset;
-    this.ghost.visible = true;
+    ghost.position.x = point.x;
+    ghost.position.z = point.z;
+    if (this.activeCatalogId === 'chair') ghost.position.y = this.chairYOffset;
+    ghost.visible = true;
   }
 
-  placeGhostAsSingle() {
-    if (!this.ghost?.visible) return;
-    this.singlePoses.push({
-      x: this.ghost.position.x,
-      z: this.ghost.position.z,
-      angle: 0,
-    });
-    this.renderChairs(this.composedChairPoses());
+  /** False when the selected item's GLB is still in flight, so nothing was placed. */
+  placeGhostAsSingle(): boolean {
+    const ghost = this.activeGhost();
+    if (!ghost?.visible) return false;
+
+    if (this.activeCatalogId === 'chair') {
+      this.singlePoses.push({ x: ghost.position.x, z: ghost.position.z, angle: 0 });
+      this.renderChairs(this.composedChairPoses());
+    } else {
+      const placed = ghost.clone(true);
+      placed.visible = true;
+      this.scene.add(placed);
+      this.placedExtras.push(placed);
+    }
     this.setGhostVisible(false);
     this.emitSnapshot();
+    return true;
   }
 
   clientToGround(clientX: number, clientY: number): Vector3 | null {
@@ -1024,6 +1121,12 @@ export class SpaceBuilderScene {
     }
     this.labelRenderer.domElement.remove();
     this.clearChairs();
+    this.clearExtras();
+    if (this.extraGhost) {
+      this.scene.remove(this.extraGhost);
+      this.extraGhost = null;
+    }
+    this.extraTemplates.clear();
   }
 
   private buildGround() {
