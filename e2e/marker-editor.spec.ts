@@ -89,7 +89,7 @@ test('store page: static undoable-store illustration is reachable', async ({ pag
 });
 
 const VIEWPORTS = [
-  { name: 'desktop', viewport: { width: 1280, height: 720 } },
+  { name: 'desktop', viewport: { width: 1440, height: 900 } },
   { name: 'phone', viewport: { width: 390, height: 844 } },
 ];
 
@@ -112,6 +112,27 @@ for (const { name, viewport } of VIEWPORTS) {
 
       await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
       await expect(deck).toContainText('AUTO PLAYING');
+
+      // It is a stamp in the border band: inside the paper margin under the frame
+      // line, clear of the drawing and of the title block.
+      const placement = await deck.evaluate((el) => {
+        const section = el.closest('section')!;
+        const sheet = section.getBoundingClientRect();
+        const box = el.getBoundingClientRect();
+        const band = parseFloat(getComputedStyle(section).paddingBottom);
+        const clearOf = (other: Element | null) => {
+          if (!other) return false;
+          const b = other.getBoundingClientRect();
+          return box.right <= b.left + 1 || box.left >= b.right - 1
+            || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
+        };
+        return {
+          insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
+          clearOfDrawing: clearOf(section.querySelector('.content')),
+          clearOfTitleBlock: clearOf(section.querySelector('table')),
+        };
+      });
+      expect(placement).toEqual({ insideBand: true, clearOfDrawing: true, clearOfTitleBlock: true });
       await expect(play).toHaveAttribute('aria-pressed', 'true');
       await expect(pause).toHaveAttribute('aria-pressed', 'false');
 
