@@ -34,6 +34,17 @@ import Grid from '../Grid.astro';
   margin-inline: auto;
   display: grid;
   place-items: center;
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* The title block claims the bottom-right corner on a narrow sheet, and the
+       legend's last column was running under it. The wrapper centres what it holds,
+       so this has to cover the corner twice over. */
+    padding-bottom: 5em;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    padding-bottom: 0;
+  }
 }
 
 .missing-layer {
@@ -42,37 +53,64 @@ import Grid from '../Grid.astro';
   display: grid;
   gap: 0.625em;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  /* A short landscape sheet has to hold the grid, the legend and the title block's
+     corner, so the floor goes down to where all three still fit. */
+  font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
     font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
-
-    :global(.shared-properties) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .legend {
-      grid-template-columns: minmax(0, 1fr);
-    }
   }
 
   :global(.tagging-tool) {
     font-size: 0.75em;
     pointer-events: none;
+
+    @container technical-drawing-width (max-width: 56em) {
+      /* Two cards across cost the height four across saved, and this sheet has none
+         to give: the grid pays the difference so the legend clears the title block. */
+      font-size: 0.6875em;
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      font-size: 0.75em;
+    }
+  }
+
+  /* The live page hands the tool a sheet's worth of height to divide up; here the grid
+     is an illustration under a legend, so it takes what the card gives it. */
+  :global(.thumbnail-image-container) {
+    min-height: 0;
+
+    @container technical-drawing-width (max-width: 56em) {
+      /* A short landscape sheet has no height to spare: cap the picture so the legend
+         below it stays on the paper. */
+      max-height: 5.5em;
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      max-height: none;
+    }
   }
 
   /* A fixed run, not the live grid's auto-fill: one base object and its three variants
-     read as one row here, rather than wrapping a lone card onto a second line. */
+     read as one row here, rather than wrapping a lone card onto a second line. Four
+     across only survives a wide sheet; below that a card is too narrow to hold the
+     value it is meant to show. */
   :global(.shared-properties) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    @container technical-drawing-width (max-width: 56em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 }
 
 .legend {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Three across while each column still holds a line of prose, then two, then one. */
+  grid-template-columns: repeat(auto-fit, minmax(11em, 1fr));
   gap: 0.625em;
 
   div {
