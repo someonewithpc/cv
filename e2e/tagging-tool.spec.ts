@@ -73,7 +73,7 @@ test('main page: the walkthrough types with a drawn cursor and hands over on hov
   expect(await round.locator('.shared-value').inputValue()).toBe(settled);
 });
 
-test('main page: the shared value mirrors onto the base and every style, and Enter saves them all', async ({ page }) => {
+test('main page: the shared value mirrors onto the base and every variant, and Enter saves them all', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
@@ -96,7 +96,7 @@ test('main page: the shared value mirrors onto the base and every style, and Ent
   await expect(tool.locator('.demo-note')).toBeVisible();
 });
 
-test('main page: differing style values keep the shared input open and flag the overrides', async ({ page }) => {
+test('main page: differing variant values keep the shared input open and flag the overrides', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
@@ -114,7 +114,7 @@ test('main page: picking another property brings up the values already stored fo
   await expect(round.locator('.object-value').first()).toHaveValue('Ivory Satin');
   await expect(round.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: Ivory Satin');
 
-  // The last style has no linen value, which is why the object is still listed.
+  // The last variant has no linen value, which is why the object is still listed.
   await expect(round.locator('.object-value').last()).toHaveValue('');
 });
 

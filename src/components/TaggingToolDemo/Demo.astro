@@ -60,13 +60,13 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       grid: (
         <PostIt background="#e8e4dc" color="black">
-          Hover or focus to take over. One shared value tags the base object and every style,
+          Hover or focus to take over. One shared value tags the base object and every variant,
           caret and all. Switch property and what is already stored comes back
         </PostIt>
       ),
       shared: (
         <PostIt background="#cde" color="black">
-          One input tags a base object and all of its styles at once. Styles that already
+          One input tags a base object and all of its variants at once. Variants that already
           disagree keep their values; the input shows a warning and lists the overrides in
           its placeholder
         </PostIt>

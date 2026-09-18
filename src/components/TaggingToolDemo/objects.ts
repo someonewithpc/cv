@@ -22,7 +22,7 @@ export type BaseObject = {
   id: string;
   autoplay?: boolean;
   base: LibraryObject;
-  styles: readonly LibraryObject[];
+  variants: readonly LibraryObject[];
 };
 
 export type Property = { id: string; name: string };
@@ -37,7 +37,7 @@ export const properties: readonly Property[] = [
 export const defaultProperty = properties[0].id;
 
 /** The walkthrough's script: tag a whole object through the shared field, switch to a
-    property that already has values, then override one style by hand. */
+    property that already has values, then override one variant by hand. */
 export const walkthrough = {
   value: 'Champagne',
   storedProperty: 'linen',
@@ -59,7 +59,7 @@ export const baseObjects: readonly BaseObject[] = [
       image: round10,
       values: { 'table color': null, linen: 'Ivory Satin', chair: null },
     },
-    styles: [
+    variants: [
       {
         id: 'round-4',
         name: 'Banquet Set',
@@ -92,7 +92,7 @@ export const baseObjects: readonly BaseObject[] = [
       image: gold40,
       values: { 'table color': 'White and Beige', linen: 'Blush', chair: null },
     },
-    styles: [
+    variants: [
       {
         id: 'gold-20',
         name: 'Banquet Set',
@@ -119,7 +119,7 @@ export const baseObjects: readonly BaseObject[] = [
 ];
 
 export function objectsOf(group: BaseObject) {
-  return [group.base, ...group.styles];
+  return [group.base, ...group.variants];
 }
 
 /** Mirrors _object.html.haml: shared when nothing is set, or when every object agrees. */

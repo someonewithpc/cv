@@ -12,7 +12,7 @@ import Grid from '../Grid.astro';
     <dl class="legend">
       <div>
         <dt>List</dt>
-        <dd>The page lists only objects still missing the property, base or any style, thirty at a time with more on scroll</dd>
+        <dd>The page lists only objects still missing the property, base or any variant, thirty at a time with more on scroll</dd>
       </div>
       <div>
         <dt>Leave</dt>
@@ -62,7 +62,7 @@ import Grid from '../Grid.astro';
     pointer-events: none;
   }
 
-  /* A fixed run, not the live grid's auto-fill: one base object and its three styles
+  /* A fixed run, not the live grid's auto-fill: one base object and its three variants
      read as one row here, rather than wrapping a lone card onto a second line. */
   :global(.shared-properties) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
