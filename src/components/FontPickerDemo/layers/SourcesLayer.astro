@@ -334,8 +334,13 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   }
 
   :global([data-sheet-orientation='portrait']) & {
+    // The arrow turns, not the row it sits in: rotating a full-width row left a box as tall
+    // as the sheet is wide, standing over the steps on either side of it
     padding: 0.375em 0;
-    rotate: 90deg;
+
+    .arrow {
+      rotate: 90deg;
+    }
 
     .hop-note {
       display: none;
@@ -378,6 +383,9 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   }
 
   :global([data-sheet-orientation='portrait']) & {
+    // The span goes with the flow: left at 1 / 6 on a one-column sheet it opened five
+    // implicit columns in the parent grid, and the four steps flowed across them
+    grid-column: 1;
     grid-template-columns: minmax(0, 1fr);
     margin-top: 0.5em;
     padding-top: 0.5em;
