@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, swipeToPage, waitForIslandMounted } from './support/paperStack';
+import {
+  frontPage,
+  frontPageIndex,
+  swipeStack,
+  swipeToPage,
+  waitForIslandMounted,
+} from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -105,6 +111,21 @@ test('status chip: auto-playing until the visitor takes over, then Replay hands 
 
   await replay.click();
   await expect(chip).toHaveAttribute('data-state', 'playing');
+});
+
+test('main page: the demo cursor leaves when its page is no longer in front', async ({ page }) => {
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const cursor = page.locator('.mock-map-demo-cursor');
+  await expect(cursor).toBeVisible({ timeout: 20_000 });
+
+  // The map page stays in the same grid cell once it is behind the front page, so an
+  // intersection-only check kept its autoplay running out of sight.
+  await swipeStack(page, stack, true);
+  // Let the fold settle: the page briefly leaves the viewport mid-flip, and it was coming
+  // back and restarting itself once it landed back in the shared grid cell.
+  await page.waitForTimeout(3_000);
+  expect(await cursor.count()).toBe(0);
 });
 
 test('main page: the walkthrough holds still while a native colour picker has focus', async ({ page }) => {

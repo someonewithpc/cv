@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
+import { watchPageActive } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import OptionsPanel from './OptionsPanel.vue';
@@ -43,7 +44,7 @@ const snapshot = ref<SceneSnapshot | null>(null);
 const demoPlaying = ref(false);
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
-let observer: IntersectionObserver | null = null;
+let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
@@ -358,23 +359,17 @@ onMounted(async () => {
 
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
-    const stack = visibilityRoot.closest('article.technical-drawing-stack');
-    observer = new IntersectionObserver(
-      (entries) => {
-        const visible = Boolean(entries[0]?.isIntersecting);
-        inView = visible;
-        if (!visible) {
-          releaseSpaceBuilderGpu(scene);
-          autoplayToken += 1;
-          demoPlaying.value = false;
-          return;
-        }
-        claimSpaceBuilderGpu(scene);
-        startAutoplay();
-      },
-      { root: stack, threshold: 0.45 },
-    );
-    observer.observe(visibilityRoot);
+    stopPageWatch = watchPageActive(visibilityRoot, (active) => {
+      inView = active;
+      if (!active) {
+        releaseSpaceBuilderGpu(scene);
+        autoplayToken += 1;
+        demoPlaying.value = false;
+        return;
+      }
+      claimSpaceBuilderGpu(scene);
+      startAutoplay();
+    });
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
@@ -402,7 +397,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
+  stopPageWatch?.();
+  stopPageWatch = null;
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
