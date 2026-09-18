@@ -1,0 +1,90 @@
+---
+---
+
+<div
+  class="variants-stage"
+  data-variants-island
+  data-boot-module="/src/components/VariantsDemo/boot.ts"
+  tabindex="-1"
+>
+  <div class="boot-placeholder" aria-hidden="true">
+    <span class="boot-spinner" />
+    <span>Loading Space Builder…</span>
+  </div>
+</div>
+
+{/*
+  No <script> here — a component reached only through Stack.astro's per-layer
+  Astro.slots.render() call never gets its own hoisted script onto the page (see the
+  "dev-server-drops-demo-scripts" memory). boot.ts is armed instead by Stack.astro's own
+  script, via the data-boot-module attribute above.
+*/}
+
+<style lang="scss">
+:global(article.technical-drawing-stack > * > section .content:has(.variants-stage)) {
+  place-self: stretch;
+  align-self: stretch;
+  justify-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  // The sheet's inner border line sits at the cell's edge (Page.astro's inset box-shadow),
+  // so a frame filling the cell would paint over it.
+  box-sizing: border-box;
+  padding: 2px;
+}
+
+.variants-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0.35em;
+  outline: none;
+  color-scheme: only dark;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, #000 35%, transparent);
+  background: #212121;
+  container-type: size;
+
+  @container technical-drawing (orientation: portrait) {
+    min-height: min(52cqh, 100%);
+  }
+
+  .boot-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    background: #212121;
+    color: #adb5bd;
+    font: 0.85rem/1.3 system-ui, sans-serif;
+  }
+
+  .boot-spinner {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 3px solid #89ab24;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: variants-boot-spin 0.8s linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      border-color: #89ab24;
+    }
+  }
+}
+
+@keyframes variants-boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

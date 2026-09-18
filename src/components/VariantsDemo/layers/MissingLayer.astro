@@ -1,0 +1,159 @@
+---
+import { BANQUET_CARD } from '../variantsCatalog';
+
+const variants = BANQUET_CARD.variants ?? [];
+/** The reading the dropdown is opened against: the smallest table the group carries. */
+const held = [...new Set(variants.map((variant) => variant.size ?? ''))].at(-1) ?? '';
+const current = variants.find((variant) => variant.size === held)?.pax;
+
+const seatOptions = [...new Set(variants.map((variant) => variant.pax ?? 0))]
+  .sort((a, b) => b - a)
+  .map((pax) => ({
+    label: `${pax} seats`,
+    available: variants.some((variant) => variant.pax === pax && variant.size === held),
+    current: pax === current,
+  }))
+  .sort((a, b) => Number(b.available) - Number(a.available));
+---
+
+<div class="wrapper">
+  <div class="sheet" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">CatalogObjectFooter.vue · isAvailablePax</span>
+        <strong>What happens when the combination does not exist</strong>
+      </header>
+
+      <div class="body">
+        <div class="select">
+          <span class="held">{held} held</span>
+          <ul>
+            {seatOptions.map((option) => (
+              <li class:list={['option', { out: !option.available, current: option.current }]}>
+                {option.label}
+              </li>
+            ))}
+          </ul>
+          <p class="note">
+            Every value in the group stays on the list. The ones with no object at the diameter
+            you are holding go grey, and a dashed rule marks where they start.
+          </p>
+        </div>
+
+        <ol class="fallback">
+          <li>
+            <span class="head">Try the pair</span>
+            <span>Same seat count, and the diameter already showing</span>
+          </li>
+          <li>
+            <span class="head">Else take the seat count</span>
+            <span>The first object with that many seats, whatever its diameter</span>
+          </li>
+          <li>
+            <span class="head">Both readings move</span>
+            <span>The diameter under the list changes to match what was found</span>
+          </li>
+        </ol>
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Never disabled</dt>
+          <dd>A greyed option is still clickable. Grey says the other axis will move, not that the pick is refused</dd>
+        </div>
+        <div>
+          <dt>Sorted</dt>
+          <dd>Available values first, then the rest, each run in descending order</dd>
+        </div>
+        <div>
+          <dt>Nothing selected</dt>
+          <dd>With no object picked yet, every value counts as available</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use './sheet' as *;
+
+@include sheet-chrome(44em);
+
+.body {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 1em;
+  align-items: start;
+}
+
+.select {
+  display: grid;
+  gap: 0.375em;
+  width: 10em;
+}
+
+.held {
+  font-size: 0.625em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.select ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  background: var(--surface-sunken);
+  text-align: center;
+  font-size: 0.6875em;
+  overflow: hidden;
+}
+
+.option {
+  padding: 0.125em 0.5em;
+
+  & + .option {
+    border-top: 1px solid var(--line);
+  }
+
+  &.current {
+    background: color-mix(in oklab, var(--accent) 22%, transparent);
+    font-weight: 700;
+  }
+
+  &.out {
+    color: var(--ink-muted);
+  }
+
+  &.out:not(.out + .out) {
+    border-top: 1.5px dashed color-mix(in oklab, var(--ink-muted) 70%, transparent);
+  }
+}
+
+.fallback {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: hop;
+  display: grid;
+  gap: 0.375em;
+
+  li {
+    counter-increment: hop;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.5em;
+    align-items: baseline;
+    padding: 0.25em 0.375em;
+    border-left: 2px solid var(--accent);
+    background: var(--surface-sunken);
+    font-size: 0.6875em;
+  }
+
+  .head {
+    font-weight: 700;
+  }
+}
+</style>
