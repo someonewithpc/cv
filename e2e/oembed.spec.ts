@@ -33,8 +33,10 @@ test('oembed.json answers with a rich embed for the site url', async ({ request 
   // and it is the link back to the site.
   expect(body.html).toMatch(new RegExp(`class="name"><a href="${SITE_URL}">${AUTHOR_NAME}</a>`));
 
-  // The contact row carries the same links as the title block.
-  expect(body.html).toContain(`href="mailto:${CONTACT.email}"`);
+  // The contact row carries the same links as the title block. The mail link is written
+  // as character references, so decode before looking for it.
+  const decoded = body.html.replace(/&#(\d+);/g, (_: string, n: string) => String.fromCodePoint(Number(n)));
+  expect(decoded).toContain(`href="mailto:${CONTACT.email}"`);
   for (const { href } of CONTACT.profiles) {
     expect(body.html).toContain(`href="${href}"`);
   }
