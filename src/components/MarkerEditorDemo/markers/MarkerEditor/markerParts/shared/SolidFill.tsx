@@ -5,6 +5,7 @@ import { type DebouncedFunc, debounce } from "lodash";
 import type { SpaceType } from '@/store';
 
 import { MarkerPart } from "./";
+import { ColorField } from "./ColorField";
 import { CONTROL_COMMIT_MS, LiveStyleRule, keepReactOut } from "./liveStyleRule";
 
 export class SolidFill extends MarkerPart {
@@ -77,28 +78,14 @@ export class SolidFill extends MarkerPart {
   }
 
   Configuration() {
-    const inputId = `marker-fill-color-${this.fillClassName}`;
     return (
-      <>
-        <label htmlFor={inputId}>Color</label>
-        <input
-          id={inputId}
-          type="color"
-          data-demo-target={`editor:fill-color:${this.fillClassName}`}
-          // No value, defaultValue or onChange. React answers an input event on a field it
-          // owns by writing the value back onto the element, and that write restyles the
-          // whole page: 1917 ms of style recalculation over a two second drag against
-          // 154 ms for the same colours applied from a listener of our own. The value is
-          // seeded here and on every render instead, which is also what keeps the open
-          // picker's own selection from being pulled backwards mid drag.
-          ref={(input) => {
-            if (!input) return;
-            input.value = this.reactiveState.color;
-            input.addEventListener('input', this.paintColor);
-            input.addEventListener('change', this.flushColor);
-          }}
-        />
-      </>
+      <ColorField
+        id={`marker-fill-color-${this.fillClassName}`}
+        demoTarget={`editor:fill-color:${this.fillClassName}`}
+        color={this.reactiveState.color}
+        onInput={this.paintColor}
+        onChange={this.flushColor}
+      />
     );
   }
 
