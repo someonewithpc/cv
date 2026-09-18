@@ -143,8 +143,13 @@ const backArrows = [
   position: absolute;
   inset: 0;
   z-index: 3;
+  display: none;
   color: var(--accent-text);
   pointer-events: none;
+}
+
+.technical-drawing-frame[data-hint-show] .flip-hints {
+  display: block;
 }
 
 .hint-variant {
@@ -308,10 +313,14 @@ const measure = new ResizeObserver((entries) => {
   }
 });
 
-// Nothing paints until this runs, which is also what keeps the hints off a page without JS.
+// One hint on the page is a nudge; one on every stack is wallpaper, so only the top stack
+// gets it. &all=1 puts it on all of them for a side-by-side look.
 function armHints() {
-  [...document.querySelectorAll<HTMLElement>('.technical-drawing-frame')].forEach((frame) => {
+  const everywhere = new URLSearchParams(location.search).has('all');
+
+  [...document.querySelectorAll<HTMLElement>('.technical-drawing-frame')].forEach((frame, index) => {
     frame.dataset.hintVariant = '1';
+    if (everywhere || index === 0) frame.dataset.hintShow = '';
   });
 }
 
