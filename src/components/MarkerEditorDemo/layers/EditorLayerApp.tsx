@@ -9,11 +9,30 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 
+import { watchDrawingNote } from '@/client/drawingNote';
+
 import { MarkerEditor } from '../markers/MarkerEditor';
 import { useLiveMarkerEditorSessionCount } from '../markers/liveMarkerEditorSession';
 
 /** Dedicated id so the diagram never mutates the live demo's default marker. */
 const DIAGRAM_MARKER_ID = 'editor-layer-diagram';
+
+/** Sidebar entries the embed clicks through, in order, so the drawing keeps changing. */
+const AUTOPLAY_TARGETS = [
+  'editor:step:shape',
+  'editor:shape:circle',
+  'editor:shape:squircle',
+  'editor:shape:pin',
+  'editor:shape:teardrop',
+  'editor:step:decoration',
+  'editor:decoration:upperSpaceLetter',
+  'editor:decoration:spaceNumber',
+  'editor:step:shapeBorder',
+  'editor:shapeBorder:dashed',
+  'editor:shapeBorder:solid',
+];
+
+const AUTOPLAY_STEP_MS = 1400;
 
 function EditorLayerInner() {
   const dispatch = useAppDispatch();
@@ -60,6 +79,31 @@ function EditorLayerInner() {
     && !editingSpaceId
     && liveSessions === 0
     && Boolean(space);
+
+  // The embed is inert, so nobody can drive it; play the sidebar back instead.
+  // Scoped to this host so the live map editor's own targets are never touched.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!ready || !host) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let index = 0;
+    let held = false;
+
+    const id = window.setInterval(() => {
+      if (held) return;
+      const target = AUTOPLAY_TARGETS[index % AUTOPLAY_TARGETS.length];
+      index += 1;
+      host.querySelector<HTMLElement>(`[data-demo-target="${target}"]`)?.click();
+    }, AUTOPLAY_STEP_MS);
+
+    const stopNoteWatch = watchDrawingNote(host, (open) => { held = open; });
+
+    return () => {
+      window.clearInterval(id);
+      stopNoteWatch();
+    };
+  }, [ready]);
 
   return (
     <div ref={hostRef} className="editor-layer-host">
