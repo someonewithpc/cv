@@ -5,6 +5,7 @@ import { type DebouncedFunc, debounce } from "lodash";
 import type { SpaceType } from '@/store';
 
 import { MarkerPart } from "./";
+import { ColorField } from "./ColorField";
 import { CONTROL_COMMIT_MS, LiveStyleRule, keepReactOut } from "./liveStyleRule";
 
 export class SolidBorderColor extends MarkerPart {
@@ -75,25 +76,14 @@ export class SolidBorderColor extends MarkerPart {
   }
 
   Configuration() {
-    const inputId = `marker-border-color-${this.borderClassName}`;
     return (
-      <>
-        <label htmlFor={inputId}>Color</label>
-        <input
-          id={inputId}
-          type="color"
-          data-demo-target={`editor:border-color:${this.borderClassName}`}
-          // No value, defaultValue or onChange, for the reason spelled out in SolidFill:
-          // React answers an input event on a field it owns by writing the value back onto
-          // the element, and that write restyles the whole page.
-          ref={(input) => {
-            if (!input) return;
-            input.value = this.reactiveState.color;
-            input.addEventListener('input', this.paintColor);
-            input.addEventListener('change', this.flushColor);
-          }}
-        />
-      </>
+      <ColorField
+        id={`marker-border-color-${this.borderClassName}`}
+        demoTarget={`editor:border-color:${this.borderClassName}`}
+        color={this.reactiveState.color}
+        onInput={this.paintColor}
+        onChange={this.flushColor}
+      />
     );
   }
 
