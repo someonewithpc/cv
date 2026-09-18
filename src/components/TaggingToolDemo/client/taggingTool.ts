@@ -2,14 +2,39 @@ import { watchPageActive } from '@/client/frontPage';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-type Card = { root: HTMLElement; form: HTMLFormElement; input: HTMLInputElement };
+type Values = Record<string, string | null>;
+
+type Card = {
+  root: HTMLElement;
+  form: HTMLFormElement;
+  input: HTMLInputElement;
+  values: Values;
+  initial: Values;
+};
 
 type Group = {
   root: HTMLElement;
   sharedForm: HTMLFormElement;
   shared: HTMLInputElement;
   cards: Card[];
-  initial: string[];
+};
+
+type Tool = {
+  root: HTMLElement;
+  select: HTMLSelectElement;
+  list: HTMLDataListElement;
+  groups: Group[];
+  property: string;
+  initialProperty: string;
+  note: HTMLElement | null;
+};
+
+/** The script the walkthrough plays, handed over from objects.ts by GridLayer.astro. */
+type Walkthrough = {
+  value: string;
+  storedProperty: string;
+  overrideValue: string;
+  overrideIndex: number;
 };
 
 const SHARED_TITLE = 'Update Base + Styles';
@@ -37,98 +62,125 @@ function mirror(group: Group, eventType = 'keyup') {
   });
 }
 
-function setValue(card: Card, raw: string) {
-  const value = raw.trim() === '' ? '' : titleize(raw);
-  card.input.value = value;
-  card.input.scrollLeft = 0;
-  card.root.dataset.missing = String(value === '');
+function flash(card: Card) {
   card.root.classList.remove('saved');
   void card.root.offsetWidth;
   card.root.classList.add('saved');
 }
 
+function showValue(tool: Tool, card: Card) {
+  const value = card.values[tool.property] ?? '';
+  card.input.value = value;
+  card.input.scrollLeft = 0;
+  card.root.dataset.missing = String(value === '');
+}
+
+function setValue(tool: Tool, card: Card, raw: string) {
+  card.values[tool.property] = raw.trim() === '' ? null : titleize(raw);
+  showValue(tool, card);
+  flash(card);
+}
+
 /** _object.html.haml's shared_value: nothing set, or every object set to one value. */
-function refreshShared(group: Group) {
-  const values = group.cards.map((card) => card.input.value).filter((value) => value !== '');
-  const distinct = [...new Set(values)];
-  const shared = values.length === 0 || (values.length === group.cards.length && distinct.length === 1);
+function refreshShared(tool: Tool, group: Group) {
+  const stored = group.cards
+    .map((card) => card.values[tool.property])
+    .filter((value): value is string => value != null);
+  const distinct = [...new Set(stored)];
+  const shared = stored.length === 0 || (stored.length === group.cards.length && distinct.length === 1);
   const placeholder = shared ? SHARED_TITLE : `Overrides: ${distinct.join(', ')}`;
 
   group.sharedForm.dataset.shared = String(shared);
   group.sharedForm.title = shared ? SHARED_TITLE : `${SHARED_TITLE}\n${placeholder}`;
   group.shared.placeholder = placeholder;
-  group.shared.value = shared ? distinct[0] ?? '' : '';
-  group.root.dataset.complete = String(values.length === group.cards.length);
+  group.shared.value = shared ? (distinct[0] ?? '') : '';
+  group.root.dataset.complete = String(stored.length === group.cards.length);
 }
 
-function refreshDatalist(root: HTMLElement) {
-  const list = root.querySelector<HTMLDataListElement>('datalist')!;
-  const select = root.querySelector<HTMLSelectElement>('.search-form select')!;
-  const values = new Set(
-    [...root.querySelectorAll<HTMLInputElement>('.object-value')].map((input) => input.value).filter(Boolean),
+function refreshDatalist(tool: Tool) {
+  const values = new Set<string>();
+  tool.groups.forEach((group) => {
+    group.cards.forEach((card) => {
+      const value = card.values[tool.property];
+      if (value) values.add(value);
+    });
+  });
+  tool.list.replaceChildren(
+    ...[...values].sort().map((value) => Object.assign(document.createElement('option'), { value })),
   );
-  const sorted = [...values].sort();
-
-  list.replaceChildren(...sorted.map((value) => Object.assign(document.createElement('option'), { value })));
-  const current = select.value;
-  select.replaceChildren(
-    Object.assign(document.createElement('option'), { value: '' }),
-    ...sorted.map((value) => Object.assign(document.createElement('option'), { value, textContent: value })),
-  );
-  select.value = sorted.includes(current) ? current : '';
 }
 
-type Tool = {
-  root: HTMLElement;
-  groups: Group[];
-  search: string;
-  note: HTMLElement | null;
-};
-
-/** The controller lists only objects still missing the property, unless a
-    search is on; set.js.erb drops an object from the page once its last
-    value lands. */
+/** The page lists only objects still missing the property; set.js.erb drops one from
+    the page once its last value lands. */
 function applyVisibility(tool: Tool) {
   let hidden = 0;
   tool.groups.forEach((group) => {
     const complete = group.root.dataset.complete === 'true';
-    const matches = tool.search === '' || group.cards.some((card) => card.input.value === tool.search);
-    const show = tool.search === '' ? !complete : matches;
-    group.root.hidden = !show;
-    if (!show && tool.search === '') hidden += 1;
+    group.root.hidden = complete;
+    if (complete) hidden += 1;
   });
 
   if (tool.note) {
     tool.note.hidden = hidden === 0;
     tool.note.querySelector('.hidden-count')!.textContent =
-      hidden === 1 ? '1 object left the list once it was fully tagged.' : `${hidden} objects left the list once they were fully tagged.`;
+      hidden === 1
+        ? '1 object left the list once it was fully tagged.'
+        : `${hidden} objects left the list once they were fully tagged.`;
   }
 }
 
-function afterSave(tool: Tool, group: Group) {
-  refreshShared(group);
-  refreshDatalist(tool.root);
+function afterSave(tool: Tool, group: Group, hide = true) {
+  refreshShared(tool, group);
+  refreshDatalist(tool);
+  if (hide) applyVisibility(tool);
+}
+
+function submitShared(tool: Tool, group: Group, hide = true) {
+  group.cards.forEach((card) => setValue(tool, card, group.shared.value));
+  afterSave(tool, group, hide);
+}
+
+/** Redraw every row for the property the picker is on. */
+function showProperty(tool: Tool, property: string) {
+  tool.property = property;
+  tool.root.dataset.property = property;
+  tool.select.value = property;
+  tool.groups.forEach((group) => {
+    group.cards.forEach((card) => showValue(tool, card));
+    refreshShared(tool, group);
+  });
+  refreshDatalist(tool);
   applyVisibility(tool);
 }
 
-function submitShared(tool: Tool, group: Group) {
-  group.cards.forEach((card) => setValue(card, group.shared.value));
-  afterSave(tool, group);
+function restore(tool: Tool) {
+  tool.groups.forEach((group) => {
+    group.cards.forEach((card) => {
+      card.values = { ...card.initial };
+      card.root.classList.remove('saved');
+    });
+    group.root.classList.remove('autoplay', 'completing');
+  });
+  showProperty(tool, tool.initialProperty);
 }
 
 function initGroup(tool: Tool, section: HTMLElement): Group {
-  const cards = [...section.querySelectorAll<HTMLElement>('.image-thumbnail')].map((root) => ({
-    root,
-    form: root.querySelector<HTMLFormElement>('.object-form')!,
-    input: root.querySelector<HTMLInputElement>('.object-value')!,
-  }));
+  const cards = [...section.querySelectorAll<HTMLElement>('.image-thumbnail')].map((root) => {
+    const values = JSON.parse(root.dataset.values ?? '{}') as Values;
+    return {
+      root,
+      form: root.querySelector<HTMLFormElement>('.object-form')!,
+      input: root.querySelector<HTMLInputElement>('.object-value')!,
+      values,
+      initial: { ...values },
+    };
+  });
 
   const group: Group = {
     root: section,
     sharedForm: section.querySelector('.shared-form')!,
     shared: section.querySelector('.shared-value')!,
     cards,
-    initial: cards.map((card) => card.input.value),
   };
 
   // Product: keyup/focus/click/blur. `input` too, so pasted or filled text mirrors as well.
@@ -157,12 +209,12 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
       }
     });
     card.input.addEventListener('change', () => {
-      setValue(card, card.input.value);
+      setValue(tool, card, card.input.value);
       afterSave(tool, group);
     });
     card.form.addEventListener('submit', (event) => {
       event.preventDefault();
-      setValue(card, card.input.value);
+      setValue(tool, card, card.input.value);
       afterSave(tool, group);
     });
   });
@@ -170,53 +222,9 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
   return group;
 }
 
-function restore(group: Group) {
-  group.cards.forEach((card, index) => {
-    card.input.value = group.initial[index];
-    card.root.dataset.missing = String(group.initial[index] === '');
-    card.root.classList.remove('saved');
-  });
-  refreshShared(group);
-}
-
 function initHeader(tool: Tool) {
-  const propertyForm = tool.root.querySelector<HTMLFormElement>('.property-form')!;
-  const propertyInput = propertyForm.querySelector<HTMLInputElement>('input')!;
-  let propertyName = propertyInput.value;
-  propertyInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      propertyInput.blur();
-    }
-  });
-  const saveProperty = () => {
-    const value = propertyInput.value.trim().toLowerCase();
-    propertyName = value || propertyName;
-    propertyInput.value = propertyName;
-  };
-  propertyInput.addEventListener('change', saveProperty);
-  propertyForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    saveProperty();
-  });
-
-  const searchForm = tool.root.querySelector<HTMLFormElement>('.search-form')!;
-  const select = searchForm.querySelector<HTMLSelectElement>('select')!;
-  const search = () => {
-    tool.search = select.value;
-    applyVisibility(tool);
-  };
-  select.addEventListener('change', search);
-  searchForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    search();
-  });
-
-  tool.note?.querySelector('.demo-reset')?.addEventListener('click', () => {
-    tool.groups.forEach((group) => restore(group));
-    refreshDatalist(tool.root);
-    applyVisibility(tool);
-  });
+  tool.select.addEventListener('change', () => showProperty(tool, tool.select.value));
+  tool.note?.querySelector('.demo-reset')?.addEventListener('click', () => restore(tool));
 }
 
 function wait(ms: number) {
@@ -224,14 +232,16 @@ function wait(ms: number) {
 }
 
 /**
- * The walkthrough: type the value, save it, watch the object leave the list, put it back.
+ * The walkthrough: tag a whole object through the shared field, switch to a property
+ * that already has values so every field fills on the way in, then override one style
+ * by hand.
  *
  * It only runs while the sheet is on screen and its page is the one drawn on top, which
  * `--page-index` answers and an IntersectionObserver cannot: every page of a stack shares
  * one grid cell. `data-autoplay` on the tool is the whole state, as `playing`, `user` or
  * `off`, so a sheet-level transport deck can read or report it without new plumbing.
  */
-async function autoplay(tool: Tool, group: Group, value: string) {
+async function autoplay(tool: Tool, group: Group, script: Walkthrough) {
   const { root } = tool;
 
   if (reducedMotion.matches) {
@@ -260,12 +270,12 @@ async function autoplay(tool: Tool, group: Group, value: string) {
     while (!stopped && (!active || document.hidden)) await wait(250);
   };
 
-  const type = async (text: string) => {
-    for (let i = 1; i <= text.length && !stopped; i++) {
-      group.shared.value = text.slice(0, i);
-      group.shared.setSelectionRange(i, i);
-      mirror(group);
-      await pause(text[i - 1] === ' ' ? 220 : 90 + Math.random() * 70);
+  const type = async (input: HTMLInputElement, text: string, onKey: () => void) => {
+    for (let i = 1; i <= text.length && !stopped; i += 1) {
+      input.value = text.slice(0, i);
+      input.setSelectionRange(i, i);
+      onKey();
+      await pause(text[i - 1] === ' ' ? 200 : 85 + Math.random() * 60);
     }
   };
 
@@ -273,36 +283,54 @@ async function autoplay(tool: Tool, group: Group, value: string) {
   await pause(1200);
 
   while (!stopped) {
-    group.root.classList.add('autoplay');
+    restore(tool);
     await pause(500);
-    await type(value);
-    await pause(900);
     if (stopped) break;
 
-    // Enter: the field blurs, the form submits, the object is complete and leaves the list.
-    submitShared(tool, group);
-    group.root.classList.remove('autoplay');
-    group.root.hidden = false;
-    group.root.classList.add('completing');
+    // One value in the shared field tags the base object and every style at once.
+    group.root.classList.add('autoplay');
+    await type(group.shared, script.value, () => mirror(group));
     await pause(700);
     if (stopped) break;
-    group.root.classList.remove('completing');
-    applyVisibility(tool);
-    await pause(2600);
+
+    submitShared(tool, group, false);
+    group.root.classList.remove('autoplay');
+    group.root.classList.add('completing');
+    await pause(1100);
     if (stopped) break;
 
-    restore(group);
-    refreshDatalist(root);
-    applyVisibility(tool);
-    await pause(1600);
+    // A property that already has values fills every field on the way in.
+    group.root.classList.remove('completing');
+    showProperty(tool, script.storedProperty);
+    await pause(1400);
+    if (stopped) break;
+
+    // One style disagrees, so it is changed on its own card.
+    const card = group.cards[script.overrideIndex] ?? group.cards[0];
+    card.input.value = '';
+    await pause(260);
+    await type(card.input, script.overrideValue, () => {});
+    await pause(600);
+    if (stopped) break;
+
+    setValue(tool, card, card.input.value);
+    afterSave(tool, group, false);
+    await pause(2600);
   }
 }
 
-export function initTaggingTool(root: HTMLElement, autoplayValue: string) {
+export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
+  const select = root.querySelector<HTMLSelectElement>('.property-select');
+  const list = root.querySelector<HTMLDataListElement>('datalist');
+  if (!select || !list) return;
+
   const tool: Tool = {
     root,
+    select,
+    list,
     groups: [],
-    search: '',
+    property: root.dataset.property ?? select.value,
+    initialProperty: root.dataset.property ?? select.value,
     note: root.querySelector<HTMLElement>('.demo-note'),
   };
   tool.groups = [...root.querySelectorAll<HTMLElement>('.grouped-objects')].map((section) =>
@@ -313,5 +341,6 @@ export function initTaggingTool(root: HTMLElement, autoplayValue: string) {
   applyVisibility(tool);
 
   const target = tool.groups.find((group) => group.root.hasAttribute('data-autoplay-target'));
-  if (target) void autoplay(tool, target, autoplayValue);
+  const script = host.dataset.walkthrough;
+  if (target && script) void autoplay(tool, target, JSON.parse(script) as Walkthrough);
 }

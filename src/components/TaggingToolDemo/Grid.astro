@@ -1,59 +1,57 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import { autoplayValue, baseObjects, isComplete, objectsOf, property, sharedState, usedValues } from './objects';
+import {
+  baseObjects,
+  defaultProperty,
+  isComplete,
+  objectsOf,
+  properties,
+  sharedState,
+  usedValues,
+  walkthrough,
+} from './objects';
 
 type Props = {
-  /** Wire the grid up to the client script and autoplay. */
+  /** Wire the grid up to the client script and the walkthrough. */
   live?: boolean;
   /** Render this object mid-fade, as it looks the moment it gets its last value. */
   completing?: string;
   /** Render only these objects, for the blueprint pages that quote a row or two. */
   only?: readonly string[];
+  /** Which property schema the page is showing. */
+  property?: string;
 };
 
-const { live = false, completing, only } = Astro.props;
-const rows = only ? baseObjects.filter((group) => only.includes(group.id)) : baseObjects;
+const { live = false, completing, only, property = defaultProperty } = Astro.props;
 
 const scope = live ? 'live' : 'static';
 const listId = `tagging-tool-values-${scope}`;
 const sharedTitle = 'Update Base + Styles';
+const rows = only ? baseObjects.filter((group) => only.includes(group.id)) : baseObjects;
+const propertyName = properties.find((entry) => entry.id === property)?.name ?? property;
 ---
 
-<div class="tagging-tool" data-live={live ? '' : undefined} tabindex={live ? -1 : undefined}>
+<div
+  class="tagging-tool"
+  data-live={live ? '' : undefined}
+  data-property={property}
+  tabindex={live ? -1 : undefined}
+>
   <datalist id={listId}>
-    {usedValues().map((value) => <option value={value} />)}
+    {usedValues(property).map((value) => <option value={value} />)}
   </datalist>
 
   <div class="panel-actions-heading">
     <label>
       Property
-      <form class="property-form" aria-label="Rename property">
-        <input
-          class="form-control"
-          type="text"
-          value={property}
-          aria-label="Property name"
-        />
-        <button type="submit" class="btn btn-sm btn-success" title="Save">
-          <Icon name="lucide:check" />
-          <span class="sr-only">Save property name</span>
-        </button>
-      </form>
-    </label>
-
-    <label>
-      Search
-      <form class="search-form" aria-label="Search by value">
-        <select class="form-control" aria-label="Value to search for">
-          <option value=""></option>
-          {usedValues().map((value) => <option value={value}>{value}</option>)}
-        </select>
-        <button type="submit" class="btn btn-sm btn-success" title="Search">
-          <Icon name="lucide:search" />
-          <span class="sr-only">Search</span>
-        </button>
-      </form>
+      {/* Demo-only: the product renames the schema here. A picker is what makes the page
+          worth showing on its own, since the stored values change with the schema. */}
+      <select class="form-control property-select" aria-label="Property schema">
+        {properties.map((entry) => (
+          <option value={entry.id} selected={entry.id === property}>{entry.name}</option>
+        ))}
+      </select>
     </label>
   </div>
 
@@ -61,15 +59,17 @@ const sharedTitle = 'Update Base + Styles';
     {rows.map((group, index) => {
       // The fading row has just been saved, so it reads as fully tagged on its way out.
       const filling = completing === group.id;
-      const shared = filling ? { shared: true, value: autoplayValue, overrides: [autoplayValue] } : sharedState(group);
+      const shared = filling
+        ? { shared: true, value: walkthrough.value, overrides: [walkthrough.value] }
+        : sharedState(group, property);
       const placeholder = shared.shared ? sharedTitle : `Overrides: ${shared.overrides.join(', ')}`;
       const title = shared.shared ? sharedTitle : `${sharedTitle}\n${placeholder}`;
       const sharedId = `${listId}-${group.id}-shared`;
       return (
         <div
-          class:list={['grouped-objects', index % 2 ? 'even' : 'odd', { completing: completing === group.id }]}
+          class:list={['grouped-objects', index % 2 ? 'even' : 'odd', { completing: filling }]}
           data-group={group.id}
-          data-complete={String(filling || isComplete(group))}
+          data-complete={String(filling || isComplete(group, property))}
           data-autoplay-target={live && group.autoplay ? '' : undefined}
           aria-label={group.base.name}
         >
@@ -82,45 +82,53 @@ const sharedTitle = 'Update Base + Styles';
               value={shared.value}
               list={listId}
               placeholder={placeholder}
-              aria-label={`Shared ${property} for ${group.base.name}`}
+              aria-label={`Shared value for ${group.base.name}`}
             />
             <button type="submit" title={sharedTitle}>
               <Icon name="lucide:check" class="when-shared" />
               <Icon name="lucide:triangle-alert" class="when-overrides" />
-              <span class="sr-only">{`Set ${property} on ${group.base.name} and every style`}</span>
+              <span class="sr-only">{`Set ${propertyName} on ${group.base.name} and every style`}</span>
             </button>
           </form>
 
           <div class="shared-properties">
-            {objectsOf(group).map((object) => (
-              <div class="image-thumbnail" data-object={object.id} data-missing={String(!filling && object.value === null)}>
+            {objectsOf(group).map((object) => {
+              const value = filling ? walkthrough.value : object.values[property] ?? '';
+              return (
                 <div
-                  class="panel-preview-library-object"
-                  title={[object.name, object.details].filter(Boolean).join(', ')}
+                  class="image-thumbnail"
+                  data-object={object.id}
+                  data-values={JSON.stringify(object.values)}
+                  data-missing={String(value === '')}
                 >
-                  <div class="heading">
-                    <form class="object-form">
-                      <input
-                        class="object-value"
-                        type="text"
-                        value={filling ? autoplayValue : object.value ?? ''}
-                        list={listId}
-                        aria-label={`${property} for ${[object.name, object.details].filter(Boolean).join(' ')}`}
-                      />
-                      <button type="submit" title="Update">
-                        <Icon name="lucide:check" />
-                        <span class="sr-only">{`Save ${property} for ${[object.name, object.details].filter(Boolean).join(' ')}`}</span>
-                      </button>
-                    </form>
-                  </div>
-                  <div class="body">
-                    <div class="thumbnail-image-container">
-                      <img src={object.image} alt="" width="156" height="100" draggable="false" loading="lazy" />
+                  <div
+                    class="panel-preview-library-object"
+                    title={[object.name, object.details].filter(Boolean).join(', ')}
+                  >
+                    <div class="heading">
+                      <form class="object-form">
+                        <input
+                          class="object-value"
+                          type="text"
+                          value={value}
+                          list={listId}
+                          aria-label={`Value for ${[object.name, object.details].filter(Boolean).join(' ')}`}
+                        />
+                        <button type="submit" title="Update">
+                          <Icon name="lucide:check" />
+                          <span class="sr-only">{`Save ${[object.name, object.details].filter(Boolean).join(' ')}`}</span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="body">
+                      <div class="thumbnail-image-container">
+                        <img src={object.image} alt="" width="156" height="100" draggable="false" loading="lazy" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
@@ -190,10 +198,6 @@ const sharedTitle = 'Update Base + Styles';
   color: var(--ink);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
-  &::placeholder {
-    color: var(--ink-faint);
-  }
-
   &:focus {
     outline: none;
     border-color: var(--accent);
@@ -201,43 +205,7 @@ const sharedTitle = 'Update Base + Styles';
   }
 }
 
-.btn {
-  box-sizing: border-box;
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  padding: 0.357em 0.714em; /* 5px 10px */
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-control);
-  background: var(--accent);
-  color: var(--accent-contrast);
-  font-size: 0.857em;
-  font-weight: 500;
-  line-height: 1.5;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  :global(svg) {
-    width: 1em;
-    height: 1em;
-  }
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
-  }
-
-  &:active {
-    transform: none;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-/* The product's sticky panel header: two labelled inline forms, left-aligned. */
+/* The product's panel header: one labelled inline control, left-aligned. */
 .panel-actions-heading {
   position: sticky;
   top: 0;
@@ -256,19 +224,9 @@ const sharedTitle = 'Update Base + Styles';
     font-weight: 700;
   }
 
-  form {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25em;
-    font-weight: 400;
-  }
-
-  .property-form .form-control {
-    width: 11em;
-  }
-
-  .search-form .form-control {
+  .property-select {
     width: 12em;
+    font-weight: 400;
   }
 }
 
@@ -363,7 +321,8 @@ const sharedTitle = 'Update Base + Styles';
   }
 }
 
-/* Bootstrap's .row of .col-lg-3.col-md-4.col-sm-6 cards, as an auto-fill grid. */
+/* Bootstrap's .row of .col-lg-3 cards: four across, the way the product lays a
+   base object and its styles out on a wide screen. */
 .shared-properties {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(13em, 100%), 1fr));
@@ -480,10 +439,6 @@ const sharedTitle = 'Update Base + Styles';
   }
 }
 
-.image-thumbnail[data-missing='true'] .object-value::placeholder {
-  color: var(--ink-faint);
-}
-
 .image-thumbnail.saved .panel-preview-library-object {
   animation: saved-flash 700ms ease-out;
 }
@@ -564,8 +519,7 @@ const sharedTitle = 'Update Base + Styles';
 
   .image-thumbnail.saved .panel-preview-library-object,
   .grouped-objects,
-  .panel-preview-library-object,
-  .btn {
+  .panel-preview-library-object {
     animation: none;
     transition: none;
   }

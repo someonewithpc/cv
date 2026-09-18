@@ -1,14 +1,15 @@
 ---
 import Grid from '../Grid.astro';
-import { autoplayValue } from '../objects';
+import { walkthrough } from '../objects';
 ---
 
 <div
   class="tagging-grid-demo"
-  data-autoplay-value={autoplayValue}
+  data-walkthrough={JSON.stringify(walkthrough)}
   data-boot-module="/src/components/TaggingToolDemo/client/boot.ts"
 >
   <Grid live />
+
 </div>
 
 {/*
@@ -54,4 +55,5 @@ import { autoplayValue } from '../objects';
     padding-bottom: 0;
   }
 }
+
 </style>

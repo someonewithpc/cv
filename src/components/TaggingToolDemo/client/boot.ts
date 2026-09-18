@@ -3,5 +3,5 @@ export async function boot(host: HTMLElement) {
   if (!root) return;
 
   const { initTaggingTool } = await import('./taggingTool');
-  initTaggingTool(root, host.dataset.autoplayValue ?? '');
+  initTaggingTool(host, root);
 }
