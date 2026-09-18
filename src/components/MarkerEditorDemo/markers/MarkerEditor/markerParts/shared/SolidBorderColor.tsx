@@ -5,7 +5,7 @@ import { type DebouncedFunc, debounce } from "lodash";
 import type { SpaceType } from '@/store';
 
 import { MarkerPart } from "./";
-import { COLOR_COMMIT_MS, LiveStyleRule } from "./liveStyleRule";
+import { COLOR_COMMIT_MS, LiveStyleRule, keepReactOut } from "./liveStyleRule";
 
 export class SolidBorderColor extends MarkerPart {
   protected get borderClassName(): string {
@@ -14,8 +14,14 @@ export class SolidBorderColor extends MarkerPart {
 
   commitColor: DebouncedFunc<(color: string) => void>;
 
+  paintColor = (event: Event) => {
+    keepReactOut(event);
+    this.setColor((event.target as HTMLInputElement).value);
+  };
+
   /** The picker fires `change` when it closes; don't make the drag's last colour wait. */
-  flushColor = () => {
+  flushColor = (event: Event) => {
+    keepReactOut(event);
     this.commitColor.flush();
   };
 
@@ -77,17 +83,14 @@ export class SolidBorderColor extends MarkerPart {
           id={inputId}
           type="color"
           data-demo-target={`editor:border-color:${this.borderClassName}`}
-          // Uncontrolled, and synced on render instead: React restores a controlled value
-          // to the last rendered colour after every event, which pulls the open picker's
-          // own selection backwards mid-drag.
-          defaultValue={this.reactiveState.color}
+          // No value, defaultValue or onChange, for the reason spelled out in SolidFill:
+          // React answers an input event on a field it owns by writing the value back onto
+          // the element, and that write restyles the whole page.
           ref={(input) => {
             if (!input) return;
             input.value = this.reactiveState.color;
+            input.addEventListener('input', this.paintColor);
             input.addEventListener('change', this.flushColor);
-          }}
-          onChange={(e) => {
-            this.setColor(e.target.value);
           }}
         />
       </>
