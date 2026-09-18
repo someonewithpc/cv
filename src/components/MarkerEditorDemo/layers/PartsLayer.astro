@@ -206,11 +206,13 @@ header {
 .captions,
 .samples {
   display: grid;
+  // "Decoration" is wider than a 3.6em sample at every size, so its own column
+  // carries the word and the one after it keeps its distance.
   grid-template-columns:
     #{$sample} #{$op-slot}
     #{$sample} #{$op-slot}
     #{$sample} #{$op-slot}
-    #{$sample} #{$op-slot}
+    calc(#{$sample} * 1.35) #{$op-slot}
     calc(#{$sample} * 1.15);
   align-items: center;
   justify-items: center;
