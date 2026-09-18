@@ -195,6 +195,15 @@ const pages = await Promise.all(
     $per-page-splay: 1.5deg;
     $border-radius: calc(0.5em + 1px);
 
+    // How big the dog-ear sits when nothing is touching it: where the opening reveal lands and
+    // where the pulse starts and returns (see the keyframes below). Published as custom
+    // properties because the crease it draws — from (100% - x, 100%) to (100%, 100% - y) on the
+    // front page — is what anything pointing at the fold from outside the stack has to aim at.
+    $fold-rest-x: 2cm;
+    $fold-rest-y: 1cm;
+    --fold-rest-x: #{$fold-rest-x};
+    --fold-rest-y: #{$fold-rest-y};
+
     // The folded-back corner's resting crease runs along the paper clip wire's outer-left
     // edge: intercepts (2.25em, 4.5em) by default, a 1-in-2 lean. The pin — where the wire's
     // edge bottoms out on that crease, halfway along — is where the paper is held: the splay
@@ -436,11 +445,11 @@ const pages = await Promise.all(
 
         @keyframes initial-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }
-          to { --fold-x: 2cm; --fold-y: 1cm; }
+          to { --fold-x: #{$fold-rest-x}; --fold-y: #{$fold-rest-y}; }
         }
 
         @keyframes fold-reveal-pulse {
-          from, 50% { --fold-x: 2cm; --fold-y: 1cm; }
+          from, 50% { --fold-x: #{$fold-rest-x}; --fold-y: #{$fold-rest-y}; }
           90%, to { --fold-x: 3cm; --fold-y: 2cm; }
         }
       }
