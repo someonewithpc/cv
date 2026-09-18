@@ -1,20 +1,38 @@
 ---
 const states = ['idle', 'pending', 'success', 'error'] as const;
+
+// The border's own easing, drawn from the numbers the stylesheet animates with
+// (_statusBorder.scss). Sampling the curve keeps the plot honest: it is the function itself,
+// not a picture of one
+const CONTROL = [0.75, 0.25, 0.2, 0.2] as const;
+const SWAP_AT = 0.75;
+
+function bezier(u: number, p1: number, p2: number) {
+  const v = 1 - u;
+  return 3 * v * v * u * p1 + 3 * v * u * u * p2 + u * u * u;
+}
+
+const samples = Array.from({ length: 65 }, (_, i) => {
+  const u = i / 64;
+  return { x: bezier(u, CONTROL[0], CONTROL[2]), y: bezier(u, CONTROL[1], CONTROL[3]) };
+});
+
+const plot = (x: number, y: number) => `${(x * 100).toFixed(2)} ${(100 - y * 100).toFixed(2)}`;
+const curve = `M ${samples.map(({ x, y }) => plot(x, y)).join(' L ')}`;
+const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(best.x - SWAP_AT) ? s : best));
+
 ---
 
 <div class="wrapper">
-  <div class="feedback-layer" data-boot-module="/src/components/FontPickerDemo/layers/FeedbackLayer.boot.ts">
-    <div class="panel">
-      <header aria-hidden="true">
-        <span class="eyebrow">ExternalFontSubForm</span>
-        <strong>The border is the loading indicator</strong>
-      </header>
-
-      <fieldset class="idle" data-border-demo>
-        <label for="border-demo-input">Font Family</label>
-        <input id="border-demo-input" type="text" placeholder="Simulated subform" readonly />
-        <p>A quarter-turn arc orbits while pending, then sweeps the full turn closed — green on success, red on error</p>
-      </fieldset>
+  <div class="indicator" data-boot-module="/src/components/FontPickerDemo/layers/FeedbackLayer.boot.ts">
+    <div class="live">
+      <div class="sample">
+        <fieldset class="idle" data-border-demo>
+          <label for="border-demo-input">Font Family</label>
+          <input id="border-demo-input" type="text" value="Lobster" readonly />
+          <p>Enter a name of a font that can be found on Google Fonts</p>
+        </fieldset>
+      </div>
 
       <div class="controls" role="group" aria-label="Simulate a request state">
         {states.map((state) => (
@@ -27,10 +45,62 @@ const states = ['idle', 'pending', 'success', 'error'] as const;
         ))}
       </div>
 
-      <div class="chips" aria-hidden="true">
-        <span class="chip">3 registered <code>@property</code>s: start angle · arc width · color</span>
-        <span class="chip">bezier start, swapped to linear mid-flight where the curve already is</span>
-      </div>
+      <p class="caption">
+        The field's own border reports the fetch. A quarter turn orbits while the request is
+        out, then the ring closes from wherever the orbit had got to, green for a font that
+        exists and red for one that does not
+      </p>
+      <figure class="plate timing">
+        <svg viewBox="-20 -12 136 130" role="presentation">
+          <g class="axes">
+            <path d="M0 0 V100 H100" />
+            <text x="-4" y="4" class="tick">1 turn</text>
+            <text x="-4" y="100" class="tick">0</text>
+            <text x="100" y="112" class="tick end">1s</text>
+          </g>
+          <path class="curve" d={curve} />
+          <path class="linear" d={`M ${plot(swap.x, swap.y)} L ${plot(1, 1)}`} />
+          <path class="swap" d={`M ${plot(SWAP_AT, 0)} L ${plot(SWAP_AT, 1.06)}`} />
+          <circle class="knot" cx={swap.x * 100} cy={100 - swap.y * 100} r="2.5" />
+          <text class="swap-label" x={SWAP_AT * 100 + 4} y="-2">750ms: go linear</text>
+        </svg>
+        <figcaption>
+          <code>cubic-bezier(0.75, 0.25, 0.2, 0.2)</code> gives the orbit a push and lets it
+          settle. Kept for every turn it stutters at each restart, so at 750ms the script swaps
+          the timing function for <code>linear</code> at the point the curve has already
+          reached. The seam goes, the first turn keeps its kick
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="study" aria-hidden="true">
+      <figure class="plate exploded">
+        <svg viewBox="0 0 300 118" role="presentation">
+          <g class="layer">
+            <rect x="14" y="4" width="120" height="26" rx="8" />
+            <rect x="14" y="4" width="120" height="26" rx="8" class="arc" />
+            <text x="146" y="21">conic-gradient, on the border box</text>
+          </g>
+          <g class="layer">
+            <rect x="14" y="44" width="120" height="26" rx="8" class="fill" />
+            <text x="146" y="61">the field's own colour, on the padding box</text>
+          </g>
+          <g class="layer">
+            <rect x="14" y="84" width="120" height="26" rx="8" class="dashed" />
+            <text x="146" y="101">2px of transparent border, which lets it through</text>
+          </g>
+          <path class="centre" d="M74 0 V118" />
+        </svg>
+        <figcaption>
+          One element, two backgrounds. The gradient is painted on the border box and the
+          field's own colour covers the padding box over it, so the only part left showing is
+          the border. Three custom properties move it: where the arc starts, how much of the
+          turn is coloured, and the colour. <code>@property</code> types them as angles and a
+          colour, which is what makes them animatable at all
+        </figcaption>
+      </figure>
+
+
     </div>
   </div>
 </div>
@@ -45,105 +115,101 @@ const states = ['idle', 'pending', 'success', 'error'] as const;
 <style lang="scss">
 @use '../picker/fontSettingsFieldset' as *;
 
-$panel-background: #333;
-
 .wrapper {
   box-sizing: border-box;
-  width: max-content;
-  max-width: min(90cqw, 100%);
-  margin-inline: auto;
+  width: 100%;
   display: grid;
-  // An auto track would take the panel's max-content width and centre the clamped panel
-  // in that: off the sheet's content column and under the note
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
 }
 
-.feedback-layer {
-  width: max-content;
-  max-width: 100%;
+.indicator {
   display: grid;
-  place-items: center;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 2em;
+  align-items: start;
+  // The title block owns the sheet's bottom right corner, so the drawing keeps to a measure
+  // that clears it
+  width: min(100%, 60em);
+  color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
-  color: #f4f0ea;
+  // Sized from the stack's measured width, never a container unit: see Stack.astro's script
+  font-size: clamp(0.75rem, 0.0125 * var(--sheet-inline), 1.0625rem);
 
-  @container technical-drawing (orientation: portrait) {
-    font-size: min(1.05rem, 2.4cqmin);
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75em;
+    font-size: clamp(0.625rem, 0.026 * var(--sheet-inline), 0.9375rem);
+
+    // A phone sheet keeps the running indicator and the curve; the exploded stack is the
+    // one thing here that a reader can do without
+    .exploded {
+      display: none;
+    }
+
+    .sample {
+      font-size: 1.125em;
+    }
   }
 }
 
-.panel {
-  box-sizing: border-box;
-  width: max-content;
-  max-width: min(26em, 100%);
-  padding: 0.6em 0.65em;
-  background: $panel-background;
-  border: 2px solid #666;
-  border-radius: 0.5em;
+.live {
   display: grid;
-  gap: 0.45em;
-  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+  justify-items: center;
+  gap: 0.875em;
+  min-width: 0;
 }
 
-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.08em;
-
-  .eyebrow {
-    font-size: 0.72em;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    opacity: 0.7;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-}
-
-fieldset {
-  // The genuine article on its native background — a patch of the original
-  // #e9e9e9 sidebar mounted on the blueprint's dark panel
-  @include font-settings-fieldset($sidebar-background);
+// The subform as the product draws it, larger than it ships, so the ring is what you look at
+.sample {
+  width: min(20em, 100%);
   color-scheme: only light;
+  font-size: 1.375em;
 
-  display: grid;
-  gap: 0.25em;
-
-  label {
-    font-size: 0.75em;
-  }
-
-  input {
-    font: inherit;
-    font-size: 0.8em;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  p {
+  fieldset {
+    @include font-settings-fieldset(#e9e9e9);
+    display: grid;
+    gap: 0.375em;
     margin: 0;
-    font-size: 0.68em;
-    line-height: 1.3;
+
+    label {
+      font-size: 0.875em;
+    }
+
+    input {
+      font: inherit;
+      font-size: 0.9375em;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.75em;
+      line-height: 1.3;
+    }
   }
 }
 
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3em;
+  justify-content: center;
+  gap: 0.375em;
 
   button {
     font: inherit;
-    font-size: 0.72em;
-    padding: 0.3em 0.75em;
+    font-size: 0.8125em;
+    padding: 0.25em 0.875em;
     border-radius: 1em;
-    border: 1px solid #555;
-    background: #2a2a28;
-    color: #f4f0ea;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--ink-muted);
     cursor: pointer;
 
     &:hover {
-      border-color: #888;
+      border-color: var(--ink);
+      color: var(--ink);
     }
 
     &.active {
@@ -153,23 +219,151 @@ fieldset {
   }
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3em;
+.caption {
+  margin: 0;
+  max-width: 34em;
+  font-size: 0.8125em;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  text-wrap: pretty;
 }
 
-.chip {
-  font-size: 0.68em;
-  line-height: 1.3;
-  padding: 0.3em 0.5em;
-  border-radius: 1em;
-  border: 1px solid #555;
-  background: #2a2a28;
-  opacity: 0.9;
+.study {
+  display: grid;
+  gap: 1em;
+  align-self: center;
+  min-width: 0;
+  max-width: 26em;
 
-  code {
-    color: #c5e06a;
+  :global([data-sheet-orientation='portrait']) & {
+    gap: 0.75em;
   }
 }
+
+.plate {
+  margin: 0;
+  display: grid;
+  gap: 0.5em;
+  min-width: 0;
+
+  figcaption,
+  .note {
+    margin: 0;
+    max-width: 36em;
+    font-size: 0.75em;
+    line-height: 1.35;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    color: var(--ink);
+  }
+}
+
+.exploded {
+  svg {
+    width: min(22em, 100%);
+    height: auto;
+    overflow: visible;
+  }
+
+  rect {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+
+    &.fill {
+      fill: color-mix(in oklab, var(--ink) 14%, transparent);
+    }
+
+    &.dashed {
+      stroke-dasharray: 5 4;
+    }
+
+    // A quarter of the ring's way round, in the colour a pending fetch wears
+    &.arc {
+      stroke: #c5e06a;
+      stroke-width: 3;
+      stroke-dasharray: 72 216;
+      stroke-dashoffset: -18;
+    }
+  }
+
+  text {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    font-size: 10px;
+    fill: var(--ink-muted);
+    text-anchor: start;
+  }
+
+  // The assembly line an exploded view is read along
+  .centre {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-dasharray: 8 3 2 3;
+  }
+}
+
+.timing {
+  justify-items: center;
+
+  svg {
+    width: min(14em, 100%);
+    height: auto;
+    overflow: visible;
+  }
+
+  .axes path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+  }
+
+  .tick {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 7px;
+    fill: var(--ink-muted);
+    text-anchor: end;
+
+    &.end {
+      text-anchor: middle;
+    }
+  }
+
+  .curve {
+    fill: none;
+    stroke: #c5e06a;
+    stroke-width: 2;
+  }
+
+  .linear {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+  }
+
+  .swap {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-dasharray: 6 2 1 2;
+  }
+
+  .knot {
+    fill: var(--ink);
+  }
+
+  .swap-label {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    font-size: 8px;
+    fill: var(--ink);
+    text-anchor: end;
+  }
+}
+
 </style>
