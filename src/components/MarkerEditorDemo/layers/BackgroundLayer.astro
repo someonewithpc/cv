@@ -32,8 +32,8 @@ const annotationFontSize = 0.1 * annotationScale;
             </figcaption>
             <div class="sample fail-both debug odd-width"></div>
             <p class="note">
-              H + V stripe layers stack into a grid — but each axis rounds stops alone, so columns
-              drift.
+              H + V stripe layers stack into a grid, but each axis rounds its stops alone, so the
+              columns drift.
             </p>
           </figure>
 
@@ -44,7 +44,7 @@ const annotationFontSize = 0.1 * annotationScale;
             </figcaption>
             <div class="sample shipped" style={`--cross-tile: ${crossTileUrl}`}></div>
             <p class="note">
-              One tiny SVG draws a centered <code>+</code> — two short strokes in a
+              One tiny SVG draws a centered <code>+</code> from two short strokes in a
               <code>viewBox="-1 -1 2 2"</code>. <code>background-repeat</code> tiles that cell so
               every cross stays coherent.
             </p>
@@ -55,13 +55,13 @@ const annotationFontSize = 0.1 * annotationScale;
           <figure class="mini">
             <figcaption>H stripes</figcaption>
             <div class="sample fail-h debug"></div>
-            <p class="mini-note"></p>
+            <p class="mini-note">Rows, no columns</p>
           </figure>
           <span class="op" aria-hidden="true">+</span>
           <figure class="mini">
             <figcaption>V stripes</figcaption>
             <div class="sample fail-v debug"></div>
-            <p class="mini-note"></p>
+            <p class="mini-note">Columns, no rows</p>
           </figure>
           <span class="op" aria-hidden="true">→</span>
           <figure class="mini intent">
