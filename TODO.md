@@ -20,6 +20,7 @@
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
+    - [x] Colour picker lags while dragging (#17)
   - [x] Space builder add tool
     - [x] Layouts page demo doesn't work (#14)
     - [x] Drag and drop furniture doesn't work (#14)
