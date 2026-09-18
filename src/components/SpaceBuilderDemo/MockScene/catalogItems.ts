@@ -10,13 +10,25 @@ export type CatalogItem = {
   modelUrl?: string;
 };
 
-/** The Space Builder catalog — only Chair is a real, loaded object. */
+/** The Space Builder catalog — Chair, Side Chair and Banquet Table are real, loaded objects. */
 export const CATALOG_ITEMS: CatalogItem[] = [
   { id: 'chair', name: 'Chair', thumb: '/demos/space-builder/chair-thumb.webp', real: true, layoutable: true },
-  { id: 'armchair', name: 'Armchair', thumb: '/demos/space-builder/catalog/armchair.svg' },
+  {
+    id: 'armchair',
+    name: 'Side Chair',
+    thumb: '/demos/space-builder/armchair-thumb.webp',
+    real: true,
+    modelUrl: '/demos/space-builder/armchair.glb',
+  },
   { id: 'barstool', name: 'Bar Stool', thumb: '/demos/space-builder/catalog/barstool.svg' },
   { id: 'lounge', name: 'Lounge', thumb: '/demos/space-builder/catalog/lounge.svg' },
-  { id: 'table-round', name: 'Round Table', thumb: '/demos/space-builder/catalog/table-round.svg' },
+  {
+    id: 'table-round',
+    name: 'Banquet Table',
+    thumb: '/demos/space-builder/table-thumb.webp',
+    real: true,
+    modelUrl: '/demos/space-builder/banquet-table.glb',
+  },
   { id: 'table-cocktail', name: 'Cocktail Table', thumb: '/demos/space-builder/catalog/table-cocktail.svg' },
   { id: 'plant', name: 'Planter', thumb: '/demos/space-builder/catalog/plant.svg' },
   { id: 'umbrella', name: 'Umbrella', thumb: '/demos/space-builder/catalog/umbrella.svg' },
