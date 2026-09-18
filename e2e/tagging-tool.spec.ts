@@ -73,6 +73,59 @@ test('main page: the walkthrough types with a drawn cursor and hands over on hov
   expect(await round.locator('.shared-value').inputValue()).toBe(settled);
 });
 
+test('main page: the walkthrough puts its pointer on the tick before the row saves', async ({ page }) => {
+  const stack = taggingToolStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await expect(front.locator('.tagging-grid-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
+  await expect(front.locator('.tagging-tool[data-live]')).toHaveAttribute('data-autoplay', 'playing');
+
+  // Sample where the drawn cursor is until the row commits. A save the visitor cannot see
+  // coming is the bug: the pointer has to reach the tick first.
+  const seen = await front.evaluate(async (root: HTMLElement) => {
+    const cursor = root.querySelector<HTMLElement>('.tagging-cursor')!;
+    const group = root.querySelector<HTMLElement>('.grouped-objects[data-group="round"]')!;
+    const save = group.querySelector<HTMLElement>('.shared-form button')!;
+    let onTick = false;
+
+    for (let i = 0; i < 1_200; i += 1) {
+      const box = cursor.getBoundingClientRect();
+      const tick = save.getBoundingClientRect();
+      // GridLayer.astro puts the arrow's tip 12% / 8% into the cursor's own box.
+      const x = box.left + box.width * 0.12;
+      const y = box.top + box.height * 0.08;
+      if (!cursor.hidden && x >= tick.left && x <= tick.right && y >= tick.top && y <= tick.bottom) {
+        onTick = true;
+      }
+      if (group.classList.contains('completing')) return { onTick, committed: true };
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    return { onTick, committed: false };
+  });
+
+  expect(seen.committed).toBe(true);
+  expect(seen.onTick).toBe(true);
+});
+
+test('main page: a narrow sheet scrolls the list rather than squashing the thumbnails', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.reload();
+  const { tool } = await mountedTool(page);
+
+  const heights = await tool
+    .locator('.thumbnail-image-container img')
+    .evaluateAll((images) => images.map((image) => image.getBoundingClientRect().height));
+  expect(heights).toHaveLength(8);
+  expect(Math.min(...heights)).toBeGreaterThan(24);
+
+  // The rows no longer fit, so the list scrolls; nothing is hidden and nothing is squashed.
+  const list = await tool.evaluate((root) => {
+    const body = root.querySelector<HTMLElement>(':scope > .body')!;
+    return { scroll: body.scrollHeight, client: body.clientHeight };
+  });
+  expect(list.scroll).toBeGreaterThan(list.client);
+});
+
 test('main page: the shared value mirrors onto the base and every variant, and Enter saves them all', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
@@ -103,6 +156,11 @@ test('main page: differing variant values keep the shared input open and flag th
   await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
   await expect(gold.locator('.shared-value')).toBeEnabled();
   await expect(gold.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: White and Beige');
+
+  // Hovering the warning sign has to say what it is warning about.
+  const title = await gold.locator('.shared-form button').getAttribute('title');
+  expect(title).toContain('do not all have the same value');
+  expect(title).toContain('overwrites the variants with the base value');
 });
 
 test('main page: picking another property brings up the values already stored for it', async ({ page }) => {
