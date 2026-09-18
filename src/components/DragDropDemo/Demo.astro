@@ -8,6 +8,7 @@ import PostIt from '@/components/PostIt.astro';
 
 import DragDropScene from './MockScene/DragDropScene.astro';
 import PathsLayer from './layers/PathsLayer.astro';
+import RaceLayer from './layers/RaceLayer.astro';
 
 function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
@@ -36,6 +37,7 @@ const sceneSize = toKiB(sceneBundle.text);
 const layers = {
   main: { name: null },
   paths: { name: 'Two Ways In', pageStyle: 'blueprint' },
+  race: { name: 'Drop Before Load', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -54,6 +56,7 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: <DragDropScene />,
       paths: <PathsLayer />,
+      race: <RaceLayer />,
     }[layer])}
   </fragment>
 
@@ -70,6 +73,12 @@ type Layer = keyof typeof layers;
         <PostIt background="#cde" color="black">
           Both routes end in the same call. What differs is how many objects you get and
           when the pointer lets go
+        </PostIt>
+      ),
+      race: (
+        <PostIt background="#fee" color="black">
+          What follows the pointer is the model itself. Drop it before its file arrives and
+          the call reports nothing placed
         </PostIt>
       ),
     }[layer])}
