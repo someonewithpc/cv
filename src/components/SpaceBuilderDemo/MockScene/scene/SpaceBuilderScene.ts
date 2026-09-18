@@ -34,6 +34,7 @@ import {
   type Texture,
 } from 'three';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -68,6 +69,21 @@ function applyTint(root: Object3D, tint: (string | null)[]) {
       if (hex) (material as MeshStandardMaterial).color.set(hex);
     }
   });
+}
+
+/**
+ * The banquet sets ship Draco-compressed, which is what keeps a dressed table with eight
+ * chairs under half a megabyte. The decoder only fetches its wasm once a Draco mesh
+ * actually turns up, so the chair, which is not compressed, never pays for it.
+ */
+let dracoLoader: DRACOLoader | null = null;
+
+function makeGltfLoader() {
+  dracoLoader ??= new DRACOLoader().setDecoderPath('/demos/space-builder/draco/');
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  loader.setDRACOLoader(dracoLoader);
+  return loader;
 }
 
 const GROUND_SIZE = 28;
@@ -399,8 +415,7 @@ export class SpaceBuilderScene {
     // primary chair's own raw-height measurement so every extra converts to
     // real meters by the same factor, instead of guessing per model.
     await this.whenChairReady();
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
+    const loader = makeGltfLoader();
     if (MeshoptDecoder.ready) {
       await MeshoptDecoder.ready;
     }
@@ -477,8 +492,7 @@ export class SpaceBuilderScene {
    * cushion). World transforms are baked in so nested nodes merge correctly.
    */
   private async loadModelAsMergedMesh(url: string): Promise<{ geometry: BufferGeometry; material: Material | Material[] }> {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
+    const loader = makeGltfLoader();
     if (MeshoptDecoder.ready) {
       await MeshoptDecoder.ready;
     }
