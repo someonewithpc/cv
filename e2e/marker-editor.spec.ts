@@ -64,6 +64,53 @@ test('editor page: live marker-editor diagram mounts', async ({ page }) => {
   await expect(front.locator('.marker-editor--embed')).toBeVisible({ timeout: 15_000 });
 });
 
+// Reduced motion parks the walkthrough, which otherwise drives the same colour inputs
+// through its own `data-demo-target` hooks and would race this test's writes.
+test.describe('colour picker', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('editor page: a picker event paints the preview before React renders', async ({ page }) => {
+    const stack = markerEditorStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await swipeToPage(page, stack, 'Marker Editor');
+    const front = frontPage(stack, await frontPageIndex(stack));
+
+    await waitForIslandMounted(front);
+    await expect(front.locator('.marker-editor--embed')).toBeVisible({ timeout: 15_000 });
+
+    const dragged = await page.evaluate(() => {
+      const editor = document.querySelector('.marker-editor--embed');
+      const input = editor?.querySelector<HTMLInputElement>('#marker-fill-color-marker-shape');
+      const style = editor?.querySelector('#marker-content-shapeFill style') as SVGStyleElement | null;
+      if (!input || !style) throw new Error('Marker editor shape fill controls not found');
+
+      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      setValue.call(input, '#123456');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // Read back in the same task: anything that routes the drag through React state
+      // cannot have reached the preview or kept the input's own value by now.
+      return {
+        fill: (style.sheet?.cssRules[0] as CSSStyleRule | undefined)?.style.getPropertyValue('fill'),
+        value: input.value,
+      };
+    });
+
+    expect(dragged).toEqual({ fill: 'rgb(18, 52, 86)', value: '#123456' });
+
+    // And the colour still reaches React, which is what the saved marker serializes from.
+    await expect
+      .poll(
+        () => page.evaluate(() => (
+          document.querySelector('.marker-editor--embed #marker-content-shapeFill style')?.textContent ?? ''
+        )),
+        { timeout: 5_000 },
+      )
+      .toContain('#123456');
+  });
+});
+
 test('background page: static preview-background illustration is reachable', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
