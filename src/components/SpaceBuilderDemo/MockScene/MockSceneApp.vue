@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchEffect } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { reportAutoplayState } from '@/client/autoplayStatus';
+import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import {
@@ -255,6 +255,7 @@ function onTrustedPointer(event: PointerEvent) {
     }
   }
 
+  if (isTransportControl(event.target)) return;
   yieldToUser(event.type === 'pointerdown');
 }
 
@@ -683,6 +684,19 @@ onMounted(async () => {
       }
     });
 
+    onAutoplayCommand(root, (command) => {
+      if (command === 'reset') {
+        restartDemo();
+        return;
+      }
+      if (command === 'play') {
+        userControl.value = false;
+        startAutoplay(controller);
+        return;
+      }
+      yieldToUser(true);
+    });
+
     // Marker Editor pattern: any trusted pointer over the page takes over.
     window.addEventListener('pointermove', onTrustedPointer, { passive: true });
     window.addEventListener('pointerdown', onTrustedPointer, { passive: true });
@@ -734,7 +748,6 @@ onBeforeUnmount(() => {
     :data-user-control="userControl ? 'true' : 'false'"
     :data-panel="panel"
     @focus="yieldToUser(true)"
-    @demo-replay="restartDemo"
   >
     <aside class="rail" aria-label="Tools">
       <div class="rail-logo" aria-hidden="true" title="Visrez">

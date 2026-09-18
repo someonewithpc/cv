@@ -47,14 +47,40 @@ const sheetAnchor = `--${noteId}-sheet`;
   class={pageStyle}
   style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
 >
-  <!-- Filled in and revealed by src/client/autoplayStatus.ts once a demo on this
-       sheet reports that it is playing by itself. -->
-  <div class="demo-status" data-demo-status hidden>
-    <span class="demo-status-dot" aria-hidden="true"></span>
-    <span class="demo-status-text monospace" data-demo-status-text role="status"></span>
-    <button class="demo-status-replay monospace" type="button" data-demo-status-replay hidden>
-      Replay
-    </button>
+  <!-- Transport deck, filled in and revealed by src/client/autoplayStatus.ts once a demo
+       on this sheet reports that it is playing by itself. It lives in the sheet's top
+       margin, where it widens the paper band instead of covering the drawing. -->
+  <div class="demo-transport" data-demo-transport hidden>
+    <span class="demo-keys">
+      <button class="demo-key" type="button" data-demo-key="reset" title="Reset the walkthrough">
+        <span class="sr-only">Reset the walkthrough</span>
+        <svg viewBox="0 0 16 12" width="16" height="12" aria-hidden="true">
+          <path d="M3 1.5v9" />
+          <path d="M13.5 1.6 7 6l6.5 4.4z" />
+          <path d="M8 1.6 4.2 6 8 10.4z" />
+        </svg>
+      </button>
+      <button class="demo-key" type="button" data-demo-key="play" title="Play the walkthrough" aria-pressed="false">
+        <span class="sr-only">Play the walkthrough</span>
+        <svg viewBox="0 0 16 12" width="16" height="12" aria-hidden="true">
+          <path d="M4 1.4 13 6l-9 4.6z" />
+        </svg>
+      </button>
+      <button class="demo-key" type="button" data-demo-key="pause" title="Take over" aria-pressed="false">
+        <span class="sr-only">Take over</span>
+        <svg viewBox="0 0 16 12" width="16" height="12" aria-hidden="true">
+          <path d="M4.5 1.5h2.2v9H4.5z" />
+          <path d="M9.3 1.5h2.2v9H9.3z" />
+        </svg>
+      </button>
+    </span>
+
+    <span class="demo-led" aria-hidden="true"></span>
+
+    <span class="demo-readout">
+      <span class="demo-caption monospace" data-demo-caption role="status"></span>
+      <span class="demo-hint monospace" data-demo-hint></span>
+    </span>
   </div>
 
   <div class="content">
@@ -151,6 +177,9 @@ section {
   /* rem, not em: the title block sets its own font-size, and an em offset there
      resolved smaller than the mat and pushed the block across the frame line. */
   --sheet-margin: 1rem;
+  /* Height of the transport deck's strip, added to the top margin when a demo
+     on this sheet has one. */
+  --deck-height: 1.875rem;
 
   /* The note tab's size, and how far it reaches past the mat over the artwork.
      rem for the same reason: the tab sits in the sheet's corner, not in anyone's
@@ -255,85 +284,152 @@ section {
     }
   }
 
-  /* Straddles the top frame line like a label stamped on the sheet, so it reads
-     as the drawing's own note about itself rather than part of the demo's UI. */
-  .demo-status {
+  /* The sheet's own transport deck, in the paper margin above the frame line.
+     It widens the top band of the mat rather than sitting over the drawing: the
+     strip paints the sheet's own colour across the old frame line and draws the
+     line again along its own bottom edge, and the section pads the content down
+     by the same amount (see the :has rule below). */
+  .demo-transport {
     position: absolute;
-    top: calc(var(--sheet-margin) - 0.375em);
-    left: 50%;
-    translate: -50% 0;
-    /* Over the demos' own chrome and over their drawn cursor (z-index 1100 in
-       MockMapOverlay.scss), which otherwise covers the Replay button. */
+    top: var(--sheet-margin);
+    left: var(--sheet-margin);
+    right: var(--sheet-margin);
+    height: var(--deck-height);
+    /* Above the demos own chrome and their drawn cursor (z-index 1100 in
+       MockMapOverlay.scss), so the keys always take the click. */
     z-index: 1200;
 
     display: flex;
     align-items: center;
-    gap: 0.5em;
-    max-width: calc(100% - 2 * var(--sheet-margin) - 1em);
+    gap: 0.5rem;
+    /* Clears the paper clip, which hangs over this corner of the sheet. */
+    padding-inline: 1.875rem 0.375rem;
+    box-sizing: border-box;
 
-    padding: 0.125em 0.625em;
-    border: $border;
-    border-radius: 0.25em;
     background: var(--surface-sunken);
+    border-bottom: $border;
     color: var(--ink);
-    font-size: 0.75rem;
-    line-height: 1.75;
-    /* The sheet under it stays hoverable, so the chip never blocks a takeover. */
-    pointer-events: none;
 
     &[hidden] {
       display: none;
     }
-  }
 
-  .demo-status-dot {
-    width: 0.5em;
-    height: 0.5em;
-    border: 1px solid var(--accent);
-    border-radius: 50%;
-    background: var(--accent);
-    animation: demo-status-blink 1.5s ease-in-out infinite;
-
-    .demo-status[data-state='user'] &,
-    .demo-status[data-state='off'] & {
-      background: none;
-      animation: none;
+    /* Nested here, not under .demo-led: an `&` there carries the whole
+       `section .demo-led` chain and the compiled selector never matches. */
+    &[data-state='playing'] .demo-led {
+      border-color: var(--accent);
+      background: var(--accent);
+      box-shadow: 0 0 0.25rem var(--accent);
+      animation: demo-led-blink 1.5s ease-in-out infinite;
     }
   }
 
-  @keyframes demo-status-blink {
-    50% { opacity: 0.25; }
+  /* Keys, LED and readout are the deck; the sheet underneath stays hoverable. */
+  .demo-keys {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
-  .demo-status-text {
+  /* Cassette-deck key: a chunky plastic cap with a lit top bevel and a lip that
+     it sinks into when pressed. */
+  .demo-key {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.375rem;
+    padding: 0;
+    border: $border;
+    border-radius: 0.1875rem;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--surface-raised) 88%, white 12%),
+      var(--surface-raised)
+    );
+    color: var(--ink);
+    box-shadow:
+      inset 0 0.0625rem 0 color-mix(in oklab, white 55%, transparent),
+      0 0.125rem 0 var(--line-strong);
+    cursor: pointer;
+    transition: translate 80ms ease, box-shadow 80ms ease;
+
+    svg {
+      display: block;
+      fill: currentColor;
+      stroke: none;
+    }
+
+    &:hover:not(:disabled) {
+      color: var(--accent);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 0.125rem;
+    }
+
+    /* Held down, the way a deck's play key stays in while the tape runs. */
+    &[aria-pressed='true'] {
+      translate: 0 0.125rem;
+      background: color-mix(in oklab, var(--surface-raised) 82%, var(--ink) 18%);
+      box-shadow: inset 0 0.0625rem 0.1875rem color-mix(in oklab, black 45%, transparent);
+      color: var(--accent);
+    }
+
+    &:active:not(:disabled) {
+      translate: 0 0.125rem;
+      box-shadow: inset 0 0.0625rem 0.1875rem color-mix(in oklab, black 45%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+  }
+
+  .demo-led {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 1px solid color-mix(in oklab, var(--ink) 45%, transparent);
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--ink) 18%, transparent);
+  }
+
+  @keyframes demo-led-blink {
+    50% { opacity: 0.3; }
+  }
+
+  .demo-readout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  .demo-caption {
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+  }
+
+  .demo-hint {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--ink-muted);
+    font-size: 0.5rem;
+    letter-spacing: 0.02em;
   }
 
-  .demo-status-replay {
-    padding: 0 0.375em;
-    border: $border;
-    border-radius: 0.25em;
-    background: none;
-    color: var(--ink);
-    font: inherit;
-    cursor: pointer;
-    pointer-events: auto;
-
-    &[hidden] {
-      display: none;
-    }
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+  /* The band eats its own height out of the drawing area, so nothing is covered. */
+  &:has(.demo-transport:not([hidden])) {
+    padding-top: calc(var(--sheet-margin) + var(--deck-height));
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .demo-status-dot { animation: none; }
+    .demo-led { animation: none; }
+    .demo-key { transition: none; }
   }
 
   .aside {
@@ -667,8 +763,17 @@ section {
     grid-template-rows: minmax(0, 1fr) auto;
     align-items: stretch;
 
-    .demo-status {
-      font-size: 0.625rem;
+    /* A phone sheet keeps the same keys, in a slightly shallower band. */
+    --deck-height: 1.625rem;
+
+    .demo-transport {
+      gap: 0.375rem;
+      padding-inline: 1.5rem 0.25rem;
+    }
+
+    .demo-key {
+      width: 1.5rem;
+      height: 1.125rem;
     }
 
     .content {
