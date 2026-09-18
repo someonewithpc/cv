@@ -41,6 +41,7 @@
   - [ ] Ball loader animation (~/project/playground)
 - [ ] TechnicalDrawing
   - [ ] Paper texture
+  - [x] Tucked note tab collides with the sheet content and toolbar (#16)
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
