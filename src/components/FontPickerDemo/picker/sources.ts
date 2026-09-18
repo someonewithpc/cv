@@ -9,7 +9,12 @@ export type LoadedFaces = Record<string, string>;
 // both come back readable, so a name in progress fails as an error the subform can show instead
 // of a CORS failure in the console
 export async function loadGoogleFont(family: string, signal: AbortSignal): Promise<LoadedFaces> {
-  const res = await proxiedFetch(`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}`, { signal });
+  const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}`;
+  // A static copy of the site, like the branch previews, carries no endpoint to answer. The
+  // name that works still works when asked directly, and only the ones on the way to it lose
+  // their error to CORS
+  let res = await proxiedFetch(url, { signal });
+  if (res.status === 404) res = await fetch(url, { signal });
   if (!res.ok || res.headers.get('content-type')?.startsWith('text/css') !== true) throw new Error('Not a Google font');
 
   // A detached <style> has no sheet, so the CSS gets a document of its own
