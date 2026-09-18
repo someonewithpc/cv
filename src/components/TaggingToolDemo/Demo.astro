@@ -32,7 +32,7 @@ const layers = {
   grid: { name: null },
   shared: { name: 'Shared Group Input', pageStyle: 'blueprint' },
   caret: { name: 'Simulated Caret', pageStyle: 'blueprint' },
-  missing: { name: 'Missing Values', pageStyle: 'blueprint' },
+  missing: { name: 'Completed Objects', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -59,26 +59,27 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       grid: (
         <PostIt background="#e8e4dc" color="black">
-          Hover or focus to take over. Type into a group's shared value and it lands in every
-          member, caret and all
+          Hover or focus to take over. Type into an object's shared value and it lands on the
+          base and every style, caret and all. Enter saves
         </PostIt>
       ),
       shared: (
         <PostIt background="#cde" color="black">
-          One schema flag gives a whole style clique a single input. Members that already
-          disagree lock it instead of being overwritten
+          One input tags a base object and all of its styles at once. Styles that already
+          disagree keep their values; the input shows a warning and lists the overrides in
+          its placeholder
         </PostIt>
       ),
       caret: (
         <PostIt background="#fed" color="black">
-          The mirrored inputs never take focus, so they never get a caret. This one is drawn
+          The mirrored inputs never take focus, so they never get a caret. Each draws a bar
           from a custom property, one ch per character
         </PostIt>
       ),
       missing: (
         <PostIt background="#dfd" color="black">
-          Flip the toggle to hide everything already tagged. Past 250 objects the page says so
-          instead of trimming quietly
+          The list only holds objects still missing the property. The save that fills the last
+          gap takes the object off the page
         </PostIt>
       ),
     }[layer])}
