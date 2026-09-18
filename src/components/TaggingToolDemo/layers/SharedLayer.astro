@@ -6,8 +6,8 @@ const members = ['Gold', 'Silver', 'Clear', 'Black'];
   <div class="shared-layer" aria-hidden="true">
     <div class="panel">
       <header>
-        <span class="eyebrow">LibraryObjectPropertySchema</span>
-        <strong>shared_in_group → one input per clique</strong>
+        <span class="eyebrow">_object.html.haml</span>
+        <strong>One "Shared value" input for the base object and every style</strong>
       </header>
 
       <div class="fan">
@@ -18,7 +18,7 @@ const members = ['Gold', 'Silver', 'Clear', 'Black'];
             <span class="caret"></span>
             <span class="tick">✓</span>
           </div>
-          <span class="events"><code>keyup</code> · <code>focus</code> · <code>click</code></span>
+          <span class="events"><code>keyup</code> · <code>focus</code> · <code>click</code> · <code>blur</code></span>
         </div>
 
         <svg class="wires" viewBox="0 0 40 100" preserveAspectRatio="none">
@@ -45,15 +45,15 @@ const members = ['Gold', 'Silver', 'Clear', 'Black'];
       <dl class="rules">
         <div>
           <dt>Mirror</dt>
-          <dd>Every keystroke copies the value into each member's own <code>.in-place-input</code></dd>
+          <dd>Every keystroke copies the value into each style card's own input, scrolled to its end so the tail stays in view</dd>
         </div>
         <div>
           <dt>Save</dt>
-          <dd>The tick submits every member form: one <code>find_or_create_by</code> per object, and a cleared value deletes the row</dd>
+          <dd>Change or Enter submits with <code>update_styles</code>: one row per object, titleized, and a cleared value destroys the rows</dd>
         </div>
         <div>
-          <dt>Refuse</dt>
-          <dd>Members that already disagree lock the shared input rather than overwrite anyone; the tooltip says why</dd>
+          <dt>Warn</dt>
+          <dd>Styles that already disagree keep the input open but empty; the placeholder lists the overrides and the tick becomes a warning sign</dd>
         </div>
       </dl>
     </div>
