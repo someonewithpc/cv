@@ -17,6 +17,9 @@ export default defineConfig({
     prerenderEnvironment: 'node',
   }),
   compressHTML: true,
+  build: {
+    inlineStylesheets: 'never',
+  },
   server: {
     host: true,
     allowedHosts: true,

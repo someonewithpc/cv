@@ -61,8 +61,8 @@
 - [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
 - [x] Run W3C validator (#28)
-  - [ ] Put CSS and JS out of line
-- [ ] Make demos more usable without JS
+  - [x] Put CSS and JS out of line (#22)
+- [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
