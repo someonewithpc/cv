@@ -29,6 +29,7 @@ const MIME = {
   '.mjs': 'text/javascript; charset=utf-8',
   '.glb': 'model/gltf-binary',
   '.wasm': 'application/wasm',
+  '.webp': 'image/webp',
 };
 
 function contentType(filePath) {
@@ -70,6 +71,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
@@ -127,6 +129,7 @@ try {
   if (MeshoptDecoder.ready) await MeshoptDecoder.ready;
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
+  loader.setDRACOLoader(new DRACOLoader().setDecoderPath('/demos/space-builder/draco/'));
   const gltf = await loader.loadAsync('${modelPath}');
   const rootObj = gltf.scene;
   if (TINT) {
