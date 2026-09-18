@@ -7,6 +7,7 @@ import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
 
 import DragDropScene from './MockScene/DragDropScene.astro';
+import PathsLayer from './layers/PathsLayer.astro';
 
 function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
@@ -34,6 +35,7 @@ const sceneSize = toKiB(sceneBundle.text);
 
 const layers = {
   main: { name: null },
+  paths: { name: 'Two Ways In', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -51,6 +53,7 @@ type Layer = keyof typeof layers;
   <fragment slot="layers">
     {(layer: Layer) => ({
       main: <DragDropScene />,
+      paths: <PathsLayer />,
     }[layer])}
   </fragment>
 
@@ -61,6 +64,12 @@ type Layer = keyof typeof layers;
           Hover or focus to take over the auto-playing animation<br />
           Click an object, then click the floor as many times as you like. Drag one in
           instead and you get exactly one
+        </PostIt>
+      ),
+      paths: (
+        <PostIt background="#cde" color="black">
+          Both routes end in the same call. What differs is how many objects you get and
+          when the pointer lets go
         </PostIt>
       ),
     }[layer])}
