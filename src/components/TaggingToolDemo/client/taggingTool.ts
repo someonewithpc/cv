@@ -18,6 +18,9 @@ type Group = {
   sharedForm: HTMLFormElement;
   shared: HTMLInputElement;
   sharedSave: HTMLButtonElement;
+  sharedSaveName: HTMLElement;
+  /** The save button's accessible name while base and variants agree, rendered server side. */
+  setLabel: string;
   cards: Card[];
 };
 
@@ -40,6 +43,8 @@ type Walkthrough = {
 };
 
 const SHARED_TITLE = 'Update base + variants';
+const OVERRIDE_NOTE =
+  'The objects in this group do not all have the same value. Saving here overwrites the variants with the base value.';
 
 /** Rails' String#titleize, as far as the values here go. */
 function titleize(text: string) {
@@ -92,8 +97,12 @@ function refreshShared(tool: Tool, group: Group) {
   const shared = stored.length === 0 || (stored.length === group.cards.length && distinct.length === 1);
   const placeholder = shared ? SHARED_TITLE : `Overrides: ${distinct.join(', ')}`;
 
+  const title = shared ? SHARED_TITLE : `${SHARED_TITLE}\n${placeholder}\n${OVERRIDE_NOTE}`;
+
   group.sharedForm.dataset.shared = String(shared);
-  group.sharedForm.title = shared ? SHARED_TITLE : `${SHARED_TITLE}\n${placeholder}`;
+  group.sharedForm.title = title;
+  group.sharedSave.title = title;
+  group.sharedSaveName.textContent = shared ? group.setLabel : `${group.setLabel}. ${OVERRIDE_NOTE}`;
   group.shared.placeholder = placeholder;
   group.shared.value = shared ? (distinct[0] ?? '') : '';
   group.root.dataset.complete = String(stored.length === group.cards.length);
@@ -179,11 +188,14 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
     };
   });
 
+  const sharedSave = section.querySelector<HTMLButtonElement>('.shared-form button')!;
   const group: Group = {
     root: section,
     sharedForm: section.querySelector('.shared-form')!,
     shared: section.querySelector('.shared-value')!,
-    sharedSave: section.querySelector('.shared-form button')!,
+    sharedSave,
+    sharedSaveName: sharedSave.querySelector<HTMLElement>('.sr-only')!,
+    setLabel: sharedSave.dataset.label ?? '',
     cards,
   };
 
