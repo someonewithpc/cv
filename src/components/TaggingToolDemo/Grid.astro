@@ -155,9 +155,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
-  /* The page is a list that fills its panel. The rows share whatever height is left
-     under the heading, so the sheet never ends in a band of empty paper with a
-     scrollbar beside it. */
   height: 100%;
   min-height: 0;
   display: grid;
@@ -231,21 +228,26 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   }
 }
 
-.body {
+/* The list of rows. Rows stretch into any spare height, but never below what a row
+   needs to stay readable: the thumbnail is the point of the page, so the list scrolls
+   before a card gives its picture up. */
+.tagging-tool > .body {
   min-height: 0;
   padding: var(--gutter);
   display: grid;
-  grid-auto-rows: minmax(0, 1fr);
+  grid-auto-rows: minmax(min-content, 1fr);
   gap: var(--gutter);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 /* _library_object_properties.scss's .grouped-objects, minus the negative
    margins it uses to escape Bootstrap's column padding. */
 .grouped-objects {
-  min-height: 0;
   padding: 0.357em 0.571em 0.571em;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(min-content, 1fr);
   outline: 1px dotted var(--line-strong);
   transition: opacity 0.4s ease, translate 0.4s ease;
 
@@ -331,7 +333,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 /* Bootstrap's .row of .col-lg-3 cards: four across, the way the product lays a
    base object and its styles out on a wide screen. */
 .shared-properties {
-  min-height: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--gutter);
@@ -344,7 +345,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 
 .image-thumbnail {
   min-width: 0;
-  min-height: 0;
   transition: opacity 0.1s ease;
 }
 
@@ -354,7 +354,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   position: relative;
   top: 0;
   height: 100%;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
@@ -379,7 +378,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 
   .body {
     flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -395,7 +393,9 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
     align-items: center;
     width: 100%;
     height: 100%;
-    min-height: 0;
+    /* The floor the list scrolls to protect: below this a thumbnail stops reading as
+       the object it names. */
+    min-height: 5em;
     padding: 0.5em;
 
     img {
