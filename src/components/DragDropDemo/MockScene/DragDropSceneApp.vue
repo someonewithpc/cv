@@ -4,15 +4,18 @@ import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 
-import { autoplayStartedToast } from './AutoPlayController';
-import CatalogPanel from './CatalogPanel.vue';
-import { CATALOG_ITEMS, type CatalogItem } from './catalogItems';
+import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
+import CatalogPanel from '@/components/SpaceBuilderDemo/MockScene/CatalogPanel.vue';
+import {
+  CATALOG_ITEMS,
+  type CatalogItem,
+} from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 import {
   claimSpaceBuilderGpu,
   prepareSpaceBuilderGpu,
   registerSpaceBuilderGpu,
   releaseSpaceBuilderGpu,
-} from './scene/spaceBuilderGpu';
+} from '@/components/SpaceBuilderDemo/MockScene/scene/spaceBuilderGpu';
 import {
   applyWheelZoom,
   beginPinch,
@@ -20,8 +23,8 @@ import {
   updatePinch,
   type PinchState,
   type ScreenPoint,
-} from './scene/sceneViewportGestures';
-import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
+} from '@/components/SpaceBuilderDemo/MockScene/scene/sceneViewportGestures';
+import type { SpaceBuilderScene } from '@/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene';
 
 type Phase = 'idle' | 'placing';
 
@@ -94,7 +97,7 @@ function withinRect(clientX: number, clientY: number, rect: DOMRect) {
  * Show the catalog thumbnail while the drag point is still over the sidebar — matching
  * native HTML5 drag, whose browser-drawn drag-image follows the cursor everywhere, including
  * over the source panel. Once the point crosses into the viewport, swap to the real 3D ghost,
- * same as `onViewportDragOver` does for the native-drag flow on the Main page.
+ * same as `onViewportDragOver` does for the Main page native-drag flow.
  */
 function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
   const scene = sceneRef.value;
@@ -458,7 +461,9 @@ onMounted(async () => {
   }
 
   try {
-    const { SpaceBuilderScene } = await import('./scene/SpaceBuilderScene');
+    const { SpaceBuilderScene } = await import(
+      '@/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene'
+    );
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => resolve());
     });
@@ -479,7 +484,7 @@ onMounted(async () => {
       chairsReady = true;
       if (inView) startAutoplay();
     }).catch((error) => {
-      console.debug('DnD scene chair failed to load', error);
+      console.debug('Drag and drop scene chair failed to load', error);
     });
 
     const visibilityRoot =
@@ -513,7 +518,7 @@ onMounted(async () => {
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
   } catch (error) {
-    console.debug('DnD scene failed to start', error);
+    console.debug('Drag and drop scene failed to start', error);
     loadError.value = true;
   }
 });
@@ -541,10 +546,10 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="rootRef"
-    class="dnd-scene-app"
+    class="drag-drop-scene-app"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
-    aria-label="Drag and Drop demo — autoplaying the Add tool; drag Chair onto the ground or take over"
+    aria-label="Drag and drop demo, autoplaying the Add tool; drag Chair onto the floor or take over"
   >
     <div class="viewport">
       <canvas data-scene-canvas class="scene-canvas" aria-label="Ground for placing or filling with chairs" />
@@ -625,7 +630,7 @@ $light-grey: #565656;
 $nav-sidebar-bg: #323232;
 $scene-bg: #212121;
 
-.dnd-scene-app {
+.drag-drop-scene-app {
   position: relative;
   width: 100%;
   height: 100%;
@@ -701,7 +706,7 @@ $scene-bg: #212121;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: dnd-spin 0.8s linear infinite;
+  animation: drag-drop-spin 0.8s linear infinite;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
