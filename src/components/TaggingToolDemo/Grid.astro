@@ -28,6 +28,8 @@ const { live = false, completing, only, property = defaultProperty } = Astro.pro
 const scope = live ? 'live' : 'static';
 const listId = `tagging-tool-values-${scope}`;
 const sharedTitle = 'Update base + variants';
+const overrideNote =
+  'The objects in this group do not all have the same value. Saving here overwrites the variants with the base value.';
 const rows = only ? baseObjects.filter((group) => only.includes(group.id)) : baseObjects;
 const propertyName = properties.find((entry) => entry.id === property)?.name ?? property;
 ---
@@ -63,7 +65,8 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
         ? { shared: true, value: walkthrough.value, overrides: [walkthrough.value] }
         : sharedState(group, property);
       const placeholder = shared.shared ? sharedTitle : `Overrides: ${shared.overrides.join(', ')}`;
-      const title = shared.shared ? sharedTitle : `${sharedTitle}\n${placeholder}`;
+      const title = shared.shared ? sharedTitle : `${sharedTitle}\n${placeholder}\n${overrideNote}`;
+      const setLabel = `Set ${propertyName} on ${group.base.name} and every variant`;
       const sharedId = `${listId}-${group.id}-shared`;
       return (
         <div
@@ -84,10 +87,12 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
               placeholder={placeholder}
               aria-label={`Shared value for ${group.base.name}`}
             />
-            <button type="submit" title={sharedTitle}>
+            <button type="submit" title={title} data-label={setLabel}>
               <Icon name="lucide:check" class="when-shared" />
               <Icon name="lucide:triangle-alert" class="when-overrides" />
-              <span class="sr-only">{`Set ${propertyName} on ${group.base.name} and every variant`}</span>
+              <span class="sr-only">
+                {shared.shared ? setLabel : `${setLabel}. ${overrideNote}`}
+              </span>
             </button>
           </form>
 
