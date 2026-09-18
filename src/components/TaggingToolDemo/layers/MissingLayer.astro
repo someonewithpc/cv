@@ -7,7 +7,7 @@ import Grid from '../Grid.astro';
       of the Tab order, so a keyboard user would land on illustration-only controls a
       screen reader stays silent about. Same fix as EditorLayer.astro's inert embed. */}
   <div class="missing-layer" aria-hidden="true" inert>
-    <Grid completing="round" />
+    <Grid completing="round" only={['round']} />
 
     <dl class="legend">
       <div>
@@ -16,7 +16,7 @@ import Grid from '../Grid.astro';
       </div>
       <div>
         <dt>Leave</dt>
-        <dd>Filling an object's last gap removes it from the page. The row above is halfway out</dd>
+        <dd>Filling an object's last gap removes it from the page. This row is halfway out</dd>
       </div>
       <div>
         <dt>Save</dt>
@@ -47,12 +47,25 @@ import Grid from '../Grid.astro';
 
   :global([data-sheet-orientation='portrait']) & {
     font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+
+    :global(.shared-properties) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .legend {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   :global(.tagging-tool) {
     font-size: 0.75em;
-    max-height: 22em;
     pointer-events: none;
+  }
+
+  /* A fixed run, not the live grid's auto-fill: one base object and its three styles
+     read as one row here, rather than wrapping a lone card onto a second line. */
+  :global(.shared-properties) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
