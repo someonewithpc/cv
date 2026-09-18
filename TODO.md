@@ -16,6 +16,7 @@
 - [ ] Access Keys
 - [ ] ARIA roles
 - [ ] Demos
+  - [x] Autoplay is not very intuitive (#7)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
   - [x] Space builder add tool
