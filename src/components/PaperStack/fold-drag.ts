@@ -844,6 +844,21 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 // around the shared pin), and the paper-front class plus the clip elements move to the new front
 // page — handing the class over restarts its fold-reveal animations. The fold itself stays
 // behind on the flipped page so finishFlip can fold it back down behind the stack.
+
+// A stack has one flap, and a committed flip keeps it on the outgoing sheet to the very end,
+// painting that sheet folding away behind the stack. So the page taking the front got its corner
+// cut on time but had nothing folded over the cut — a notch showing the page below rather than a
+// dog-ear — until finishFlip handed the flap over, a second or so later. This stands in for it
+// meanwhile: same element and so the same idle rules, sized by the reveal like any resting
+// dog-ear, and swapped back out for the real flap the moment the flip lets go of it.
+const STAND_IN = 'paper-fold--stand-in';
+
+const standInFold = (): HTMLElement => {
+  const standIn = document.createElement('div');
+  standIn.className = `paper-fold ${STAND_IN}`;
+  return standIn;
+};
+
 const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
   const pages = [...stack.children] as HTMLElement[];
@@ -870,6 +885,8 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   // The clip's back bar goes before the page content so the page hides it (see index.astro)
   next.prepend(under);
   next.append(clip, grab, hint);
+  // Where index.astro puts the flap: after the clip, so paper dragged over the wire covers it
+  next.insertBefore(standInFold(), grab);
   updateFlippedState(stack);
   syncPaperSurface(next, sectionOf(next));
   syncInert(stack);
@@ -900,7 +917,12 @@ const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   sheet.style.rotate = '';
   stack.style.removeProperty('--flip-progress');
   const front = stack.querySelector<HTMLElement>('.paper-front')!;
-  front.insertBefore(fold, front.querySelector('.paper-back-grab'));
+  // Straight swap when a restack left a stand-in holding the dog-ear, so nothing changes on
+  // screen as the real flap arrives. A back-drag laid back down never restacked, and its front
+  // page is waiting for its flap where index.astro left it.
+  const standIn = front.querySelector<HTMLElement>(`.${STAND_IN}`);
+  if (standIn) standIn.replaceWith(fold);
+  else front.insertBefore(fold, front.querySelector('.paper-back-grab'));
 };
 
 // Inverse of a flip's restack: promotes the page most recently sent to the back (the highest
@@ -915,7 +937,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   const prev = pages.find((page) => pageIndex(page) === pages.length)!;
   const under = front.querySelector<HTMLElement>('.paper-clip-under')!;
   const clip = front.querySelector<HTMLElement>('.paper-clip')!;
-  const fold = stack.querySelector<HTMLElement>('.paper-fold')!;
+  const fold = stack.querySelector<HTMLElement>(`.paper-fold:not(.${STAND_IN})`)!;
   const hint = front.querySelector<HTMLElement>('.paper-flip-hint')!;
 
   for (const page of pages) {
