@@ -26,9 +26,11 @@ watch(() => props.index, (value) => {
   target.value = value;
 });
 
-watch(() => props.variants, () => {
-  shown.value = 0;
-  target.value = 0;
+// Key off the styles themselves: the parent rebuilds the array on every pick, and
+// resetting on a new array identity would snap the carousel back to the first style.
+watch(() => props.variants.map((variant) => variant.id).join(), () => {
+  shown.value = props.index;
+  target.value = props.index;
 });
 
 const hasPrevious = computed(() => shown.value > 0);
