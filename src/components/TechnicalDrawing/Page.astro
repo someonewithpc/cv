@@ -41,65 +41,56 @@ const noteId = `drawing-note-${crypto.randomUUID().slice(0, 8)}`;
 const asideHtml = (await Astro.slots.render('aside')) ?? '';
 const noteBackground = asideHtml.match(/--background:\s*([^;"]+)/)?.[1];
 const sheetAnchor = `--${noteId}-sheet`;
+
+/* One chassis, three glyphs: a cassette key drawn from the top left, so its cap has a
+   front and a side face to drop onto when it is held down. Each glyph sits in the cap's
+   own box (x 1 to 18, y 1 to 13), cut wide enough to still read at a 12px key. */
+const transportKeys = [
+  {
+    id: 'reset',
+    label: 'Reset the walkthrough',
+    glyph: '<path d="M5 3.2v7.6" /><path d="M10 3.2 6.2 7 10 10.8Z" /><path d="M14.2 3.2 10.4 7l3.8 3.8Z" />',
+  },
+  {
+    id: 'play',
+    label: 'Play the walkthrough',
+    glyph: '<path d="M6.6 2.9 13.9 7l-7.3 4.1Z" />',
+  },
+  {
+    id: 'pause',
+    label: 'Take over',
+    glyph: '<path d="M6.6 3.2h2.3v7.6H6.6z" /><path d="M10.6 3.2h2.3v7.6h-2.3z" />',
+  },
+];
 ---
 
 <section
   class={pageStyle}
   style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
 >
-  <!-- Transport deck: a stamp in the sheet's bottom border band, left of the title
-       block. Filled in and revealed by src/client/autoplayStatus.ts once a demo on
-       this sheet reports that it is playing by itself. -->
-  <div class="demo-transport" data-demo-transport hidden>
+  <!-- Transport deck: cassette keys, a lamp and a readout, filled in and revealed by
+       src/client/autoplayStatus.ts once a demo on this sheet reports that it is playing
+       by itself. Where it is drawn depends on the deck shape (see the styles below). -->
+  <div class="demo-transport" data-demo-transport data-phase="intro" hidden>
     <span class="demo-keys">
-      <button class="demo-key" type="button" data-demo-key="reset" title="Reset the walkthrough" aria-pressed="false">
-        <span class="sr-only">Reset the walkthrough</span>
-        <svg viewBox="0 0 18 16" aria-hidden="true">
-          <path class="key-bevel" d="M1.5 12.5 3 14.5h13.5L15 12.5Z" />
-          <path class="key-bevel" d="M15 2 16.5 4v10.5L15 12.5Z" />
-          <g class="key-cap">
-            <rect class="key-face" x="1.5" y="2" width="13.5" height="10.5" rx="1.5" />
-            <g class="key-hatch">
-              <path d="M3.4 11 7 4.2" />
-              <path d="M7 11 10.6 4.2" />
-              <path d="M10.6 11 14.2 4.2" />
+      {transportKeys.map(({ id, label, glyph }) => (
+        <button class="demo-key" type="button" data-demo-key={id} title={label} aria-pressed="false">
+          <span class="sr-only">{label}</span>
+          <svg viewBox="0 0 21 18" aria-hidden="true">
+            <path class="key-bevel" d="M1 13 2.5 16.5h17L18 13Z" />
+            <path class="key-bevel" d="M18 1 19.5 4.5v12L18 13Z" />
+            <g class="key-cap">
+              <rect class="key-face" x="1" y="1" width="17" height="12" rx="1.5" />
+              <g class="key-hatch">
+                <path d="M3 12 7 2" />
+                <path d="M8 12 12 2" />
+                <path d="M13 12 17 2" />
+              </g>
+              <g class="key-glyph" set:html={glyph} />
             </g>
-            <g class="key-glyph"><path d="M5 4.6v7.3" /><path d="M13 4.6 9.6 8.25 13 11.9Z" /><path d="M9.4 4.6 6 8.25 9.4 11.9Z" /></g>
-          </g>
-        </svg>
-      </button>
-      <button class="demo-key" type="button" data-demo-key="play" title="Play the walkthrough" aria-pressed="false">
-        <span class="sr-only">Play the walkthrough</span>
-        <svg viewBox="0 0 18 16" aria-hidden="true">
-          <path class="key-bevel" d="M1.5 12.5 3 14.5h13.5L15 12.5Z" />
-          <path class="key-bevel" d="M15 2 16.5 4v10.5L15 12.5Z" />
-          <g class="key-cap">
-            <rect class="key-face" x="1.5" y="2" width="13.5" height="10.5" rx="1.5" />
-            <g class="key-hatch">
-              <path d="M3.4 11 7 4.2" />
-              <path d="M7 11 10.6 4.2" />
-              <path d="M10.6 11 14.2 4.2" />
-            </g>
-            <g class="key-glyph"><path d="M6.2 4.4 12.4 8.25 6.2 12.1Z" /></g>
-          </g>
-        </svg>
-      </button>
-      <button class="demo-key" type="button" data-demo-key="pause" title="Take over" aria-pressed="false">
-        <span class="sr-only">Take over</span>
-        <svg viewBox="0 0 18 16" aria-hidden="true">
-          <path class="key-bevel" d="M1.5 12.5 3 14.5h13.5L15 12.5Z" />
-          <path class="key-bevel" d="M15 2 16.5 4v10.5L15 12.5Z" />
-          <g class="key-cap">
-            <rect class="key-face" x="1.5" y="2" width="13.5" height="10.5" rx="1.5" />
-            <g class="key-hatch">
-              <path d="M3.4 11 7 4.2" />
-              <path d="M7 11 10.6 4.2" />
-              <path d="M10.6 11 14.2 4.2" />
-            </g>
-            <g class="key-glyph"><path d="M6 4.6h1.7v7H6z" /><path d="M10 4.6h1.7v7H10z" /></g>
-          </g>
-        </svg>
-      </button>
+          </svg>
+        </button>
+      ))}
     </span>
 
     <span class="demo-led" aria-hidden="true"></span>
@@ -364,21 +355,22 @@ section {
     .key-face {
       fill: var(--surface-raised);
       stroke: var(--line-strong);
-      stroke-width: 0.75;
+      stroke-width: 0.9;
     }
 
     .key-bevel {
-      fill: color-mix(in oklab, var(--ink) 14%, var(--surface-raised));
+      fill: color-mix(in oklab, var(--ink) 18%, var(--surface-raised));
       stroke: var(--line-strong);
-      stroke-width: 0.75;
+      stroke-width: 0.9;
       stroke-linejoin: round;
     }
 
     .key-glyph {
       fill: var(--ink);
       stroke: var(--ink);
-      stroke-width: 0.9;
+      stroke-width: 1.4;
       stroke-linejoin: round;
+      stroke-linecap: square;
     }
 
     .key-hatch {
@@ -399,10 +391,10 @@ section {
       outline-offset: 0.125em;
     }
 
-    /* Held down: the cap drops onto its bevel, which disappears under it. */
+    /* Held down: the cap drops the full depth of its bevel, which disappears under it. */
     &[aria-pressed='true'] {
       .key-cap {
-        translate: 1.5px 2px;
+        translate: 1.5px 3.5px;
       }
 
       .key-bevel {
@@ -415,7 +407,7 @@ section {
     }
 
     &:active .key-cap {
-      translate: 1.5px 2px;
+      translate: 1.5px 3.5px;
     }
 
     &:disabled {
