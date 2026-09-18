@@ -5,7 +5,7 @@
   - [x] Forrest light theme
   - [x] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
   - [ ] Collapse after delay (prefers-reduced-motion)
-  - [ ] Avoid transition to already active theme
+  - [x] Avoid transition to already active theme (#4)
 - [x] Tech icon cloud
   - [x] SVG icon in light mode broken
   - [x] More tools (Cursor, Claude Code, Cloudflare, AWS, K8s, LE, TreeSitter, …)
@@ -61,16 +61,16 @@
 
 # Issues
 
- - [ ] Dogear doens't follow theme
- - [ ] Demo too wide on regular screen (max should be 100ch)
- - [ ] Autoplay is not very intuitive
- - [ ] Animations on some pages don't start
- - [ ] On space builder demo the 4th page layout page demo doesn't work
- - [ ] Drag and drop furniture doesn't work
- - [ ] Theme Picker animation switching doesn't work
- - [ ] Contributions link icon missing
- - [ ] Dogear doesn't appear until next page animation finished
- - [ ] Paper turn horizontal scroll only works backwards, not forwards
- - [ ] Keyboard paper turn waits too long before commit
- - [ ] PaperStack focus ring should follow page border
- - [ ] Autoplay demos don't pause while color picker is open, resuming, confusingly 
+ - [x] Dogear doens't follow theme (#5)
+ - [x] Demo too wide on regular screen (max should be 100ch) (#8)
+ - [x] Autoplay is not very intuitive (#7)
+ - [x] Animations on some pages don't start (#14)
+ - [x] On space builder demo the 4th page layout page demo doesn't work (#14)
+ - [x] Drag and drop furniture doesn't work (#14)
+ - [x] Theme Picker animation switching doesn't work (#4)
+ - [x] Contributions link icon missing (#10)
+ - [x] Dogear doesn't appear until next page animation finished (#6)
+ - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
+ - [x] Keyboard paper turn waits too long before commit (#11)
+ - [x] PaperStack focus ring should follow page border (#12)
+ - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13) 
