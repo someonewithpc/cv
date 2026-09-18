@@ -43,6 +43,14 @@
   width: min(100%, 52em);
 }
 
+/* The drag makes a column taller, and a centred artwork answers by sliding the whole thing up,
+   so the row the pointer is on ends up above where it was grabbed. That is the reverse of what
+   this sheet is about. Hang the columns from the top and the growth runs downwards, as it does
+   in the product's own sidebar. */
+:global(article.technical-drawing-stack > * > section > .content:has(.held-controls)) {
+  align-self: start;
+}
+
 .sheet-note {
   @include sheet-prose;
 
