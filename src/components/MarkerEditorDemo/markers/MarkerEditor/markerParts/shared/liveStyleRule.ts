@@ -6,6 +6,19 @@
 export const COLOR_COMMIT_MS = 250;
 
 /**
+ * Keeps a picker event off React's root listener.
+ *
+ * React answers an input or change event on a field it rendered by writing the value back
+ * onto the element, whatever its props say, and that attribute write invalidates far more
+ * style than the colour does: 1917 ms of style recalculation over a two second drag against
+ * 154 ms once React stops seeing the events. Nothing else listens for these; the handlers
+ * read the colour off the element itself.
+ */
+export function keepReactOut(event: Event) {
+  event.stopPropagation();
+}
+
+/**
  * The CSS rule a marker part's `Content` rendered into the live preview.
  *
  * Re-rendering the `<style>` invalidates the style of every element on the page, and the
