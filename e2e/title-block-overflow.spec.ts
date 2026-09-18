@@ -1,0 +1,108 @@
+import { expect, type Page, test } from '@playwright/test';
+
+/** Prose and code: what a page puts in its artwork cell and never moves again. */
+const PROSE = 'p, li, h3, h4, dd, dt, figcaption';
+
+/** Buttons, links and fields, which a walkthrough may also park off-frame. */
+const CONTROLS = 'a[href], button, input, select, textarea, [role="button"], [role="slider"]';
+
+/**
+ * Landscape sheets, from a narrow laptop to wider than the 60em the page content caps at.
+ * Below 40em the sheet turns portrait and gives the title block a row of its own, which has
+ * no room problem to solve.
+ */
+const WIDTHS = [760, 1024, 1440];
+
+/**
+ * Pages whose artwork asks for more room than the column it was given, so it runs under the
+ * block wherever the block is. Nothing about the sheet's own width says so, which is why the
+ * sheet-width ladder cannot answer them. Space Builder's cover page hands its scene the whole
+ * sheet; the Visrez listing is a full-width code block.
+ */
+const OVERRUNS_ITS_COLUMN = ['Space Builder · Add Tool', 'Path Data'];
+
+/** Of those, the one no amount of shedding can clear: the artwork is the full sheet width. */
+const FULL_WIDTH_ARTWORK = ['Path Data'];
+
+// The walkthroughs move panels around while they play; a still page is what can be measured.
+test.use({ reducedMotion: 'reduce' });
+
+type Sheet = { title: string; intrudes: number; buried: string[] };
+
+/**
+ * Every page of every stack. Once a stack's script runs, all of its pages share one grid cell
+ * and only the fold clip-path says which is in front, so every page's boxes are live and can
+ * be measured without turning to it.
+ */
+async function sheets(page: Page, selector: string): Promise<Sheet[]> {
+  const stacks = page.locator('article.technical-drawing-stack');
+  const count = await stacks.count();
+  expect(count).toBeGreaterThan(0);
+
+  const all: Sheet[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const stack = stacks.nth(index);
+    await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await page.waitForTimeout(2500);
+
+    const found = await stack.evaluate((el, what) =>
+      [...el.querySelectorAll('section')].map((section) => {
+        const block = section.querySelector(':scope > table');
+        const cell = section.querySelector(':scope > .content');
+        if (!block || !cell) return null;
+
+        const box = block.getBoundingClientRect();
+        const artwork = cell.getBoundingClientRect();
+        const over = (rect: DOMRect) => rect.right > box.left && rect.left < box.right
+          && rect.bottom > box.top && rect.top < box.bottom;
+
+        const buried = [...cell.querySelectorAll(what)]
+          .map((node) => ({ node, rect: node.getBoundingClientRect() }))
+          .filter(({ rect }) => rect.width > 0 && rect.height > 0)
+          // The artwork itself can be focusable: a scene takes arrow keys, a map takes over
+          // on focus. Anything that large is the backdrop, not something being buried.
+          .filter(({ rect }) => rect.width * rect.height < artwork.width * artwork.height * 0.4)
+          // A pin or a panel that hangs out of its own cell is that demo's overflow to
+          // answer; the block can only be asked to stay out of the cell it was given.
+          .filter(({ rect }) => rect.left >= artwork.left - 1 && rect.right <= artwork.right + 1)
+          .filter(({ rect }) => over(rect))
+          .map(({ node }) => node.textContent?.trim().replace(/\s+/g, ' ').slice(0, 24)
+            || node.tagName.toLowerCase());
+
+        return {
+          title: section.querySelector('h2')?.textContent?.trim() ?? '?',
+          // How far the block reaches into the artwork column, 0 when it clears it.
+          intrudes: over(artwork) ? Math.round(artwork.right - box.left) : 0,
+          buried: [...new Set(buried)],
+        };
+      }).filter(Boolean), selector);
+
+    all.push(...(found as Sheet[]));
+  }
+  return all;
+}
+
+const under = (all: Sheet[], except: string[] = []) => Object.fromEntries(
+  all.filter((sheet) => sheet.buried.length > 0 && !except.includes(sheet.title))
+    .map((sheet) => [sheet.title, sheet.buried]),
+);
+
+for (const width of WIDTHS) {
+  test(`the title block buries no text at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+
+    expect(under(await sheets(page, PROSE), OVERRUNS_ITS_COLUMN)).toEqual({});
+  });
+}
+
+test('measuring the overlap also clears the pages whose artwork overruns its column', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/?titleblock=js');
+
+  const all = await sheets(page, `${CONTROLS}, ${PROSE}`);
+  expect(under(all)).toEqual({});
+  // Where the artwork is not the whole sheet, the block leaves its column entirely.
+  expect(all.filter((sheet) => sheet.intrudes > 24 && !FULL_WIDTH_ARTWORK.includes(sheet.title))
+    .map((sheet) => sheet.title)).toEqual([]);
+});
