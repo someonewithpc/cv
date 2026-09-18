@@ -299,6 +299,8 @@ function ensurePathData() {
 const inputs = [...document.querySelectorAll<HTMLInputElement>('#theme-picker input')];
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+let activeTransition: ViewTransition | null = null;
+
 const syncRadios = (id: string) => {
   inputs.forEach((input) => {
     const active = input.value === id;
@@ -359,12 +361,14 @@ inputs.forEach((inputEl) => {
       return;
     }
 
+    activeTransition?.skipTransition();
     document.documentElement.classList.add('theme-transition');
 
     /* Commit inside the callback, not after `finished`: a transition that stalls
        must not cost the pick. `data-theme` and `.with-transition.checked` select
        the same variables, so they can be written together. */
     const viewTransition = document.startViewTransition(commitTheme);
+    activeTransition = viewTransition;
 
     const skipIfHidden = () => {
       if (hidden()) viewTransition.skipTransition();
@@ -442,9 +446,28 @@ inputs.forEach((inputEl) => {
 
     viewTransition.finished.finally(() => {
       document.removeEventListener('visibilitychange', skipIfHidden);
+      /* A newer pick owns the page by now; its own cleanup will run. */
+      if (activeTransition !== viewTransition) return;
+      activeTransition = null;
       document.documentElement.classList.remove('theme-transition');
     });
   }, { passive: true });
+});
+
+/* The wipe captures <html>, so while it runs every point in the viewport hit-tests to
+   the root and a click on the picker never reaches it. Resolve the point ourselves. */
+document.addEventListener('pointerdown', (event) => {
+  if (!activeTransition) return;
+
+  const covers = (rect: DOMRect) => event.clientX >= rect.left && event.clientX <= rect.right
+    && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  /* The sr-only radio sits a hair outside its label, so test both boxes. */
+  const picked = inputs.find((input) => covers(input.parentElement!.getBoundingClientRect())
+    || covers(input.getBoundingClientRect()));
+  if (!picked || picked.checked) return;
+
+  picked.checked = true;
+  picked.dispatchEvent(new Event('input', { bubbles: true }));
 });
 </script>
 
