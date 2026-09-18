@@ -80,4 +80,4 @@
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
 - [ ] Work History
-- [ ] Drawn arrows indicating paper turn, maybe only for reduced-motion?
+- [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
