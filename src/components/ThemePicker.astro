@@ -299,6 +299,8 @@ function ensurePathData() {
 const inputs = [...document.querySelectorAll<HTMLInputElement>('#theme-picker input')];
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+let activeTransition: ViewTransition | null = null;
+
 const syncRadios = (id: string) => {
   inputs.forEach((input) => {
     const active = input.value === id;
@@ -340,28 +342,38 @@ inputs.forEach((inputEl) => {
   inputEl.addEventListener('input', () => {
     const id = inputEl.value;
 
-    const commitWithoutTransition = () => {
+    const commitTheme = () => {
       syncRadios(id);
       persistTheme(id);
     };
 
-    if (prefersReducedMotion.matches || !document.startViewTransition) {
-      commitWithoutTransition();
+    /* --theme-kind tracks whatever is on screen, including the OS default
+       nobody has picked yet, so it also catches the first click on it. */
+    const shown = getComputedStyle(document.documentElement).getPropertyValue('--theme-kind').trim();
+
+    /* A backgrounded tab gets no rendering opportunities, so a transition started
+       there never ends: it keeps the pseudo-element overlay up and swallows every
+       later click. Nobody can see it anyway. */
+    const hidden = () => document.visibilityState !== 'visible';
+
+    if (prefersReducedMotion.matches || !document.startViewTransition || shown === id || hidden()) {
+      commitTheme();
       return;
     }
 
-    /* Match the pre-data-theme contract: during the VT, theme CSS must follow
-       only `.with-transition.checked`. Do not write `data-theme` until finished. */
-    const updateThemeDom = () => {
-      document.documentElement.removeAttribute('data-theme');
-      inputs.forEach((input) => {
-        input.classList.toggle('checked', input.value === id);
-      });
-    };
-
+    activeTransition?.skipTransition();
     document.documentElement.classList.add('theme-transition');
 
-    const viewTransition = document.startViewTransition(updateThemeDom);
+    /* Commit inside the callback, not after `finished`: a transition that stalls
+       must not cost the pick. `data-theme` and `.with-transition.checked` select
+       the same variables, so they can be written together. */
+    const viewTransition = document.startViewTransition(commitTheme);
+    activeTransition = viewTransition;
+
+    const skipIfHidden = () => {
+      if (hidden()) viewTransition.skipTransition();
+    };
+    document.addEventListener('visibilitychange', skipIfHidden);
 
     viewTransition.ready.then(async () => {
       await ensurePathData();
@@ -385,10 +397,12 @@ inputs.forEach((inputEl) => {
         return;
       }
 
+      /* astro-icon puts the viewBox on the outer <svg> and leaves the sprite
+         <symbol> without one; older output had it the other way round. */
       const symbol = svg.querySelector<SVGSymbolElement>('symbol');
-      const viewBox = symbol?.viewBox.baseVal ?? svg.viewBox?.baseVal;
-      if (!viewBox || viewBox.width === 0) {
-        console.debug('[theme-transition] invalid viewBox', viewBox);
+      const viewBox = [symbol?.viewBox.baseVal, svg.viewBox?.baseVal].find((box) => box && box.width > 0);
+      if (!viewBox) {
+        console.debug('[theme-transition] invalid viewBox');
         return;
       }
 
@@ -431,11 +445,29 @@ inputs.forEach((inputEl) => {
     });
 
     viewTransition.finished.finally(() => {
+      document.removeEventListener('visibilitychange', skipIfHidden);
+      /* A newer pick owns the page by now; its own cleanup will run. */
+      if (activeTransition !== viewTransition) return;
+      activeTransition = null;
       document.documentElement.classList.remove('theme-transition');
-      syncRadios(id);
-      persistTheme(id);
     });
   }, { passive: true });
+});
+
+/* The wipe captures <html>, so while it runs every point in the viewport hit-tests to
+   the root and a click on the picker never reaches it. Resolve the point ourselves. */
+document.addEventListener('pointerdown', (event) => {
+  if (!activeTransition) return;
+
+  const covers = (rect: DOMRect) => event.clientX >= rect.left && event.clientX <= rect.right
+    && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  /* The sr-only radio sits a hair outside its label, so test both boxes. */
+  const picked = inputs.find((input) => covers(input.parentElement!.getBoundingClientRect())
+    || covers(input.getBoundingClientRect()));
+  if (!picked || picked.checked) return;
+
+  picked.checked = true;
+  picked.dispatchEvent(new Event('input', { bubbles: true }));
 });
 </script>
 

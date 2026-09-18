@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, swipeToPage, waitForIslandMounted } from './support/paperStack';
+import {
+  armDrawCounter,
+  frontPage,
+  frontPageIndex,
+  sceneDraws,
+  swipeToPage,
+  waitForIslandMounted,
+} from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -84,6 +91,25 @@ test('layouts page: picking a different layout style selects it', async ({ page 
   await expect(circle).toHaveClass(/active/);
 });
 
+test('layouts page: the scene draws and autoplay cycles the styles after the page turn', async ({ page }) => {
+  await armDrawCounter(page);
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Layout Styles');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  const app = await waitForSceneReady(front);
+
+  // A mounted, ready scene on a page that never became the front one draws nothing: the
+  // pages of a stack share one grid cell, and only one of them owns the WebGL context.
+  const drawnOnArrival = await sceneDraws(app);
+  await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnArrival);
+
+  const activeStyle = () => app.locator('.style-chip.active .style-label').textContent();
+  const styleOnArrival = await activeStyle();
+  await expect.poll(activeStyle, { timeout: 20_000 }).not.toBe(styleOnArrival);
+});
+
 test('badge page: capacity-badge scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
@@ -107,4 +133,41 @@ test('drag & drop page: catalog has a draggable chair', async ({ page }) => {
   const chair = app.locator('[data-demo-target="catalog:chair"]');
   await expect(chair).toBeVisible();
   await expect(chair).toHaveAttribute('draggable', 'false');
+});
+
+test('drag & drop page: dragging the chair onto the ground places it in a live scene', async ({ page }) => {
+  await armDrawCounter(page);
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Drag & Drop');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  const app = await waitForSceneReady(front);
+  const chair = app.locator('[data-demo-target="catalog:chair"]');
+  const canvas = app.locator('canvas[data-scene-canvas]');
+  const from = await chair.boundingBox();
+  const to = await canvas.boundingBox();
+  if (!from || !to) throw new Error('Catalog item or scene canvas has no layout box');
+
+  // A real pointer sequence with intermediate moves: this page runs its own pointer drag
+  // rather than native HTML5 drag, so `dragTo`'s drag events would never reach it.
+  const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+  const drop = { x: to.x + to.width * 0.45, y: to.y + to.height * 0.55 };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  for (let step = 1; step <= 10; step += 1) {
+    await page.mouse.move(
+      start.x + ((drop.x - start.x) * step) / 10,
+      start.y + ((drop.y - start.y) * step) / 10,
+    );
+    await page.waitForTimeout(40);
+  }
+  await page.mouse.up();
+
+  await expect(app.getByText('Chair placed')).toBeVisible();
+
+  // The chair used to land in a scene whose renderer had been handed to the page behind
+  // this one, so the drop was real but nothing was ever drawn.
+  const drawnOnDrop = await sceneDraws(app);
+  await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnDrop);
 });
