@@ -36,7 +36,7 @@
       - [x] Blueprint pages (Place / Parameters / Layouts / Badge / DnD)
       - [~] Faster first paint / load
       - [~] Visual parity (chrome + 3D look)
-    - [ ] Grab some models like a classroom and a banquet set
+    - [~] Grab some models like a classroom and a banquet set (#24)
     - [ ] Showcase the carousel? With the animated pips
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
