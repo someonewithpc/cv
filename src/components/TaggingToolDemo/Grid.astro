@@ -150,15 +150,19 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   --radius-panel: 0.714em;   /* 10px */
   --radius-control: 0.571em; /* 8px */
   --gutter: 1.071em;         /* 15px, half a Bootstrap gutter */
-  --card-height: 15em;       /* product: 280px; shortened so a base and its styles fit one sheet */
   --highlight: color-mix(in oklch, var(--surface-raised), var(--ink) 5%);
 
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
-  max-height: 100%;
-  overflow: auto;
-  scrollbar-width: thin;
+  /* The page is a list that fills its panel. The rows share whatever height is left
+     under the heading, so the sheet never ends in a band of empty paper with a
+     scrollbar beside it. */
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
   outline: none;
 
   font-family: var(--font-poppins), system-ui, sans-serif;
@@ -169,13 +173,13 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
+}
 
-  input,
-  select,
-  button {
-    font: inherit;
-    color: inherit;
-  }
+.tagging-tool :global(input),
+.tagging-tool :global(select),
+.tagging-tool :global(button) {
+  font: inherit;
+  color: inherit;
 }
 
 .sr-only {
@@ -207,13 +211,10 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 
 /* The product's panel header: one labelled inline control, left-aligned. */
 .panel-actions-heading {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 1.5em;
-  padding: var(--gutter);
+  padding: 0.714em var(--gutter);
   background: var(--surface-raised);
   border-bottom: 1px solid var(--line);
 
@@ -231,14 +232,20 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 }
 
 .body {
+  min-height: 0;
   padding: var(--gutter);
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: var(--gutter);
 }
 
 /* _library_object_properties.scss's .grouped-objects, minus the negative
    margins it uses to escape Bootstrap's column padding. */
 .grouped-objects {
-  padding: 0.357em 0.571em 0;
-  margin-bottom: 1.429em;
+  min-height: 0;
+  padding: 0.357em 0.571em 0.571em;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   outline: 1px dotted var(--line-strong);
   transition: opacity 0.4s ease, translate 0.4s ease;
 
@@ -324,14 +331,20 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 /* Bootstrap's .row of .col-lg-3 cards: four across, the way the product lays a
    base object and its styles out on a wide screen. */
 .shared-properties {
+  min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(13em, 100%), 1fr));
-  column-gap: calc(var(--gutter) * 2);
-  padding-block: 0.25em 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gutter);
+
+  :global([data-sheet-orientation='portrait']) & {
+    /* A portrait sheet reads a row as a 2x2 block instead of four slivers. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .image-thumbnail {
   min-width: 0;
+  min-height: 0;
   transition: opacity 0.1s ease;
 }
 
@@ -340,17 +353,17 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 .panel-preview-library-object {
   position: relative;
   top: 0;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: var(--card-height);
-  margin-bottom: var(--gutter);
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   background: var(--surface-raised);
   transition: top 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 
   &:hover {
-    top: -4px;
+    top: -2px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
     border-color: var(--accent);
   }
@@ -366,6 +379,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 
   .body {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -375,17 +389,20 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   }
 
   .thumbnail-image-container {
+    box-sizing: border-box;
     display: flex;
     place-content: center;
     align-items: center;
     width: 100%;
     height: 100%;
+    min-height: 0;
+    padding: 0.5em;
 
     img {
       width: auto;
       height: auto;
       max-width: 90%;
-      max-height: 9em;
+      max-height: 100%;
       object-fit: contain;
     }
   }
@@ -486,8 +503,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 /* Demo-only: the product drops a fully tagged object from the list; this
    footer offers it back so the sheet doesn't end up empty. */
 .demo-note {
-  position: sticky;
-  bottom: 0;
   margin: 0;
   padding: 0.5em var(--gutter);
   border-top: 1px dashed var(--line-strong);
