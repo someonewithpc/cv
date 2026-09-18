@@ -35,6 +35,13 @@ const serializableConstructors: Record<string, new (data: string) => any> = {
   Json,
 };
 
+/** The bundler renames classes, so read the name back off the table that deserializes it. */
+function serializableConstructorName(value: object): string {
+  const entry = Object.entries(serializableConstructors)
+    .find(([, constructor]) => value.constructor === constructor);
+  return entry?.[0] ?? value.constructor.name;
+}
+
 export function serializeKeyValue(property: string, name: string, value: any): [string, string] {
   // We need to store the properties without uppercase letters, as that's technically not allowed by
   // the HTML spect and thus React warns us about it. See https://react.dev/warnings/unknown-prop
@@ -45,7 +52,7 @@ export function serializeKeyValue(property: string, name: string, value: any): [
   } else if (typeof value === 'number') {
     return [key, `Number:${value.toFixed(3)}`];
   } else if ('serialize' in value) {
-    return [key, `${value.constructor.name}:${value.serialize()}`];
+    return [key, `${serializableConstructorName(value)}:${value.serialize()}`];
   } else if (value instanceof Object && value !== null) {
     return [key, `Json:${JSON.stringify(value)}`];
   } else {
@@ -140,7 +147,7 @@ export function deserializeMarker(storeMarker: MarkerType | undefined) {
       Object.entries(markers)
         .forEach(([step, options]) => {
           const found = Object.entries(options)
-            .find(([, part]) => part.constructor.name === className);
+            .find(([, part]) => part.kind === className);
 
           if (!found) return;
 
