@@ -41,7 +41,7 @@
       - [~] Visual parity (chrome + 3D look)
     - [~] Grab some models like a classroom and a banquet set (#24)
     - [ ] Showcase the carousel? With the animated pips
-  - [x] Visrez library tagging tool
+  - [x] Visrez library tagging tool (#21)
   - [x] Slotted components carry their own scripts; boot island removed
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
