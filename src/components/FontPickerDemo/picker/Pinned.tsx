@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import cx from 'classnames';
 
+import { watchFrontPage } from '@/client/frontPage';
+
 type Pin = { top: number, left: number, width: number, height: number, fontSize: string };
 
 /**
@@ -21,19 +23,15 @@ export function Pinned(
   const [pin, setPin] = useState<Pin | null>(null);
 
   // A page turned from under the pointer never sends a pointer-leave, and the pinned box would
-  // stay floating over whatever came next. The paper stack turns a page by renumbering its
-  // wrapper's --page-index (the front is 1) without moving it, so that attribute is what to
-  // watch. Nothing else may let go: a size drag reflows the whole sheet and can carry the host
-  // clean out of view, and the pin is there precisely to hold through that
+  // stay floating over whatever came next. Nothing else may let go: a size drag reflows the
+  // whole sheet and can carry the host clean out of view, and the pin is there precisely to
+  // hold through that
   useEffect(() => {
-    if (!pin) return;
-    const page = hostRef.current?.closest<HTMLElement>('[data-paper-stack-root] > *');
-    if (!page) return;
-    const observer = new MutationObserver(() => {
-      if (page.style.getPropertyValue('--page-index').trim() !== '1') release();
+    const host = hostRef.current;
+    if (!pin || !host) return;
+    return watchFrontPage(host, (front) => {
+      if (!front) release();
     });
-    observer.observe(page, { attributes: true, attributeFilter: ['style'] });
-    return () => observer.disconnect();
   }, [pin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const grab = () => {
