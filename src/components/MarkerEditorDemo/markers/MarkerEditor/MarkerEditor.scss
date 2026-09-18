@@ -301,6 +301,60 @@ $ul-columns: 4;
               color-scheme: dark;
             }
 
+            // The on-page picker: a saturation/value field over a hue strip, the shape
+            // `vanilla-picker` gives the product's space builder. `touch-action: none` is
+            // what lets a finger drag it at all; without it the carousel takes the gesture.
+            .marker-color-field {
+              display: grid;
+              gap: 0.25em;
+              touch-action: none;
+            }
+
+            .marker-color-picker {
+              --picker-hue: 0;
+              --picker-color: #fff;
+
+              display: grid;
+              gap: 0.25em;
+            }
+
+            .marker-color-picker__area,
+            .marker-color-picker__hue {
+              position: relative;
+              border: 1px solid #aaa7;
+              border-radius: 0.125em;
+              cursor: crosshair;
+            }
+
+            .marker-color-picker__area {
+              height: 5.5em;
+              background:
+                linear-gradient(to top, #000, #0000),
+                linear-gradient(to right, #fff, #fff0),
+                hsl(var(--picker-hue) 100% 50%);
+            }
+
+            .marker-color-picker__hue {
+              height: 1em;
+              background: linear-gradient(
+                to right,
+                #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%
+              );
+            }
+
+            .marker-color-picker__knob {
+              position: absolute;
+              top: 50%;
+              width: 0.875em;
+              height: 0.875em;
+              margin: -0.4375em 0 0 -0.4375em;
+              border: 2px solid #fff;
+              border-radius: 50%;
+              box-shadow: 0 0 0 1px #0009;
+              background: var(--picker-color);
+              pointer-events: none;
+            }
+
             select, ::picker(select) {
               appearance: base-select;
               line-height: normal;
