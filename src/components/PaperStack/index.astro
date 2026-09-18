@@ -165,13 +165,16 @@ const pages = await Promise.all(
     // because the sheet is what wears the crease clip-path: an outline drawn within
     // the clipped box is cut by that same path, so the ring bends around the folded
     // corner instead of crossing it, and it keeps doing that through a drag for free,
-    // frame by frame, with no second element and no filter. The exceptions are the
-    // clip-path rule's own: the flap, clip, grab handle and hint ride on top of the
-    // page rather than being the page.
+    // frame by frame, with no second element and no filter.
+    //
+    // The fold flap is in for the same reason: it is clipped to the folded-over corner,
+    // so the ring runs along the dog-ear's own two edges and stops at the crease, and
+    // the paper ends up ringed the way it is drawn. The clip, grab handle and hint stay
+    // out: they ride on top of the page rather than being the page.
     &:focus-visible {
       outline: none;
 
-      > .paper-front > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
+      > .paper-front > :not(.paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
         outline: 2px solid var(--ink);
         outline-offset: -0.125rem;
       }
