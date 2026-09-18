@@ -109,6 +109,17 @@ const BACK_COMMIT_REACH = 0.25;
 // swipe that would carry a drag past its commit carries the scroll past it too.
 const SCROLL_GAIN = 1;
 
+// What a swipe sending the page away is worth against one fetching the last page back. A swipe
+// walks a point along the gesture's line and the gesture takes it from there at its own gain (see
+// FoldGesture's gain): the forward fold moves its tip with the point, while a back-drag pushes a
+// crease and the corner reflected across it moves at twice that. Both commit once the paper has
+// carried its corner half the page's diagonal, so at equal gains the same swipe turned a page back
+// on half the travel it took to send one away — a quarter of the diagonal against a half. A
+// trackpad flick that fetched a page back would not send the next one away at all. So the forward
+// swipe is walked out at the back-drag's gain and a swiped pixel buys the same page turn either
+// way. A pointer on the flap is unaffected: it holds the corner it grabbed, at its own gain.
+const SWIPE_AWAY_GAIN = 2;
+
 // A scroll has no letting go to end on, so the gesture ends once the wheel has been quiet — but
 // how quiet counts as over depends on how the scrolling is being done. A flick lands events a
 // frame apart; two fingers moved slowly, or a wheel clicked round a notch at a time, can leave a
@@ -793,18 +804,24 @@ const restIdleFold = (sheet: HTMLElement): void => {
   sheet.style.animationName = 'none, fold-reveal-pulse';
 };
 
+// What a page that has come to rest at the front hands back: index.astro's own rules take the
+// rendering again, with the resting dog-ear running on it.
+const restFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
+  fold.classList.remove('paper-fold--active');
+  clearFoldRender(section, fold);
+
+  restIdleFold(sheet);
+  sheet.parentElement!.style.removeProperty('--flip-progress');
+  // A settled back-drag may have restored the stack's original order
+  updateFlippedState(sheet.parentElement!);
+};
+
 // Glides back to the resting dog-ear, then hands rendering back to index.astro's idle CSS rules
 const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, thrown = 0): (() => void) => {
   // Settling means no flip is coming, so the commit feedback drops immediately
   fold.classList.remove('paper-fold--will-commit');
   return glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, thrown, () => {
-    fold.classList.remove('paper-fold--active');
-    clearFoldRender(section, fold);
-
-    restIdleFold(sheet);
-    sheet.parentElement!.style.removeProperty('--flip-progress');
-    // A settled back-drag may have restored the stack's original order
-    updateFlippedState(sheet.parentElement!);
+    restFold(sheet, section, fold);
   });
 };
 
@@ -1043,6 +1060,71 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   return () => {
     cancelAnimationFrame(frame);
     if (settling) finishFlip(sheet, section, fold);
+  };
+};
+
+// The mirror of flipFold, for a page fetched back by a gesture with nothing left to let go of:
+// the previous page comes over the clip and then unfolds flat in front. Both halves run on one
+// clock under a single ease-out, measured in crease travel the way flipFold's are, so the edge
+// the eye follows keeps its speed straight through the promotion. Run as two glides instead (an
+// approach easing out to a stop, then a settle setting off again from it) the page visibly halts
+// half way through the turn. A release still goes that way, since the hand decides there how far
+// it had got and how fast; a key press has decided everything already.
+const bringFold = (
+  sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
+  approach: NonNullable<FoldGesture['approach']>, onPromoted: () => void,
+): (() => void) => {
+  const { w, h } = metricsOf(sheet);
+  const { seed } = approach;
+  const over = { x: w + seed.x, y: h + seed.y };
+  const rest = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
+  const from = approach.t;
+  const d1 = Math.hypot(over.x - from.x, over.y - from.y) / 2;
+  const d2 = Math.hypot(seed.x - rest.x, seed.y - rest.y) / 2;
+  const total = d1 + d2;
+  const duration = Math.max(Math.min(300 + total / 2, 1400), 200);
+
+  let promoted = false;
+  const promote = () => {
+    promoted = true;
+    promoteFold(sheet, section, fold, seed);
+    onPromoted();
+  };
+
+  let frame = 0;
+  const start = performance.now();
+  const step = (now: number) => {
+    const tt = Math.min(Math.max((now - start) / duration, 0), 1);
+    const p = (1 - (1 - tt) ** 3) * total;
+    const backCut = currentBackFoldSize(sheet);
+    if (p < d1) {
+      const k = p / d1;
+      const t = { x: from.x + (over.x - from.x) * k, y: from.y + (over.y - from.y) * k };
+      renderLanding(section, fold, w, h, seed, backCut, t);
+    } else {
+      if (!promoted) promote();
+      const k = (p - d1) / d2;
+      const tip = { x: seed.x + (rest.x - seed.x) * k, y: seed.y + (rest.y - seed.y) * k };
+      const size = foldSizeFromTip(tip.x, tip.y);
+      sheet.style.setProperty('--fold-x', `${size.x}px`);
+      sheet.style.setProperty('--fold-y', `${size.y}px`);
+      renderFold(section, fold, w, h, tip, backCut);
+    }
+    if (tt < 1) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
+    restFold(sheet, section, fold);
+  };
+  frame = requestAnimationFrame(step);
+
+  // The turn was committed when the key landed, so a re-grab mid-flight takes the page as
+  // arrived rather than undoing it: fast-forward to the end state and let the new gesture start
+  // from a stack at rest.
+  return () => {
+    cancelAnimationFrame(frame);
+    if (!promoted) promote();
+    restFold(sheet, section, fold);
   };
 };
 
@@ -1400,9 +1482,10 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   const swipeTo = (travel: number, time: number) => {
     const held = swipe!.travel;
     swipe!.travel = Math.max(travel, 0);
+    const reach = swipe!.travel * (gesture!.back ? 1 : SWIPE_AWAY_GAIN);
     const at = {
-      clientX: swipe!.at.x + swipe!.dir.x * swipe!.travel,
-      clientY: swipe!.at.y + swipe!.dir.y * swipe!.travel,
+      clientX: swipe!.at.x + swipe!.dir.x * reach,
+      clientY: swipe!.at.y + swipe!.dir.y * reach,
       timeStamp: time,
     };
     if (gesture!.approach) {
@@ -1463,6 +1546,25 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       : releaseFold(sheet, section, fold, ended.canceled, coastTip(ended.trail, time));
   };
 
+  // Ends a gesture nothing is going to let go of, by committing it where it stands and leaving
+  // the release's own glide to play the whole turn out.
+  const commitSwipe = (time: number) => {
+    const { approach } = gesture!;
+    // Arming the forward fold without moving it: a drag's first move is what hands the page's
+    // rendering to the flap and retires the resting dog-ear's animations, so the flip glides on
+    // from the dog-ear rather than jumping. A back-drag's grab (beginBack) has already done that.
+    if (!approach) swipeTo(0, time);
+    gesture = null;
+    swipe = null;
+    cancelSettle = approach
+      // The grab handle sits out the promotion the way it does under a pointer, and rejoins the
+      // sheet it now belongs to.
+      ? bringFold(sheet, section, fold, approach, () => {
+        sheet.insertBefore(grab, sheet.querySelector('.paper-flip-hint'));
+      })
+      : flipFold(sheet, section, fold, 0);
+  };
+
   stack.addEventListener('wheel', (e) => {
     // A pointer already working the fold owns it until it lets go
     if (gesture !== null && swipe === null) return;
@@ -1519,19 +1621,18 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     );
   }, { passive: false });
 
-  // Arrow keys turn the page as a swipe handed all its travel at once: the same gesture, eased
-  // by followScroll and released by the same commit test. Only the stack itself listens, so
-  // arrows inside a demo's own controls stay theirs.
+  // Arrow keys turn the page as the same gesture a swipe drives, committed on the spot: a key
+  // press has no hand still on the paper to wait for, and what it asks for is settled the moment
+  // it lands. Handing the gesture a swipe's worth of travel to ease in first (as this did) left
+  // the fold standing there for a second with the turn already decided. Only the stack itself
+  // listens, so arrows inside a demo's own controls stay theirs, and a lone page has nowhere to
+  // turn to.
   stack.addEventListener('keydown', (e) => {
     if (e.target !== stack || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
-    if (gesture !== null) return;
+    if (gesture !== null || stack.childElementCount < 2) return;
     if (!beginSwipe(e.key === 'ArrowRight', e.timeStamp)) return;
     e.preventDefault();
-    const box = stack.getBoundingClientRect();
-    swipe!.target = Math.hypot(box.width, box.height);
-    swipe!.quiet = true;
-    swipe!.painted = e.timeStamp;
-    swipe!.frame = requestAnimationFrame(followScroll);
+    commitSwipe(e.timeStamp);
   });
 
   // A finger never reaches the wheel: swiping the stack scrolls without a scroll event, so it

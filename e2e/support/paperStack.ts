@@ -26,17 +26,20 @@ export async function frontPageName(stack: Locator): Promise<string> {
 /**
  * Turns the stack one page via a wheel swipe, the same gesture fold-drag.ts's own
  * `stack.addEventListener('wheel', ...)` drives real trackpad/mouse-wheel input through
- * (see BACK_COMMIT_REACH: a swipe has to cover a quarter of the page's diagonal to commit).
- * `forward` leaves the front page and reveals the next; `!forward` brings the previous one
- * back — clamped at the first page, since there is nothing behind it to bring back.
+ * (see BACK_COMMIT_REACH: a swipe has to cover a quarter of the page's diagonal to commit,
+ * whichever way it runs). `fraction` is how much of that diagonal this swipe covers, kept to
+ * what a trackpad flick actually hands over rather than a sweep no hand would make: a swipe
+ * long enough to turn a page one way has to turn it the other way too. `forward` leaves the
+ * front page and reveals the next; `!forward` brings the previous one back — clamped at the
+ * first page, since there is nothing behind it to bring back.
  */
-export async function swipeStack(page: Page, stack: Locator, forward: boolean): Promise<void> {
+export async function swipeStack(page: Page, stack: Locator, forward: boolean, fraction = 0.4): Promise<void> {
   const box = await stack.boundingBox();
   if (!box) throw new Error('PaperStack has no layout box to swipe');
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
   const diagonal = Math.hypot(box.width, box.height);
-  const totalDeltaX = diagonal * 0.6 * (forward ? 1 : -1);
+  const totalDeltaX = diagonal * fraction * (forward ? 1 : -1);
   const steps = 8;
   for (let i = 0; i < steps; i += 1) {
     await page.mouse.wheel(totalDeltaX / steps, 0);
