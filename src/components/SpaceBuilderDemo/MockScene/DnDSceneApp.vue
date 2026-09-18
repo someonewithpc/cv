@@ -6,7 +6,7 @@ import { watchPageActive } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import CatalogPanel from './CatalogPanel.vue';
-import { CATALOG_ITEMS, type CatalogItem } from './catalogItems';
+import { CATALOG_ITEMS, variantOf, type CatalogItem, type CatalogVariant } from './catalogItems';
 import {
   claimSpaceBuilderGpu,
   prepareSpaceBuilderGpu,
@@ -61,6 +61,7 @@ let pinch: PinchState | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 /** Catalog item mid-drag via pointer (not native HTML5 DnD — see onItemPointerdown). */
 let draggingItem: CatalogItem | null = null;
+let draggingVariant: CatalogVariant | null = null;
 
 let inView = false;
 let userControl = false;
@@ -104,15 +105,15 @@ function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
     draggedThumb.value = null;
     scene?.setGhostAt(clientX, clientY);
   } else {
-    draggedThumb.value = item.thumb;
+    draggedThumb.value = draggingVariant?.thumb ?? item.thumb;
     scene?.setGhostVisible(false);
   }
 }
 
-function selectItem(item: CatalogItem) {
+function selectItem(item: CatalogItem, variant: CatalogVariant = variantOf(item, undefined)) {
   yieldToUser();
   selectedId.value = item.id;
-  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
+  sceneRef.value?.activateCatalogItem(item.id, variant);
   if (!item.real) {
     showToast('Placeholder — use Chair for the demo');
   }
@@ -123,13 +124,14 @@ function selectItem(item: CatalogItem) {
  * drag occasionally tripped Chrome's tab-tear-off / Snap Layouts gesture near
  * the top of the window. This is also the only way to support touch drag.
  */
-function onItemPointerdown(event: PointerEvent, item: CatalogItem) {
+function onItemPointerdown(event: PointerEvent, item: CatalogItem, variant: CatalogVariant) {
   if (!item.real) return;
   yieldToUser();
   event.preventDefault();
   selectedId.value = item.id;
-  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
+  sceneRef.value?.activateCatalogItem(item.id, variant);
   draggingItem = item;
+  draggingVariant = variant;
   phase.value = 'placing';
   trySetPointerCapture(event.currentTarget, event.pointerId);
   updateDragVisual(item, event.clientX, event.clientY);
@@ -139,6 +141,7 @@ function endItemDrag(clientX: number, clientY: number) {
   const scene = sceneRef.value;
   const dropped = draggingItem;
   draggingItem = null;
+  draggingVariant = null;
   phase.value = 'idle';
   draggedThumb.value = null;
   if (!scene) return;

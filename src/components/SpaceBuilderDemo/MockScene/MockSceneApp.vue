@@ -12,7 +12,7 @@ import {
   type DemoToastPayload,
 } from './AutoPlayController';
 import CatalogPanel from './CatalogPanel.vue';
-import { CATALOG_ITEMS, type CatalogItem } from './catalogItems';
+import { CATALOG_ITEMS, variantOf, type CatalogItem, type CatalogVariant } from './catalogItems';
 import OptionsPanel from './OptionsPanel.vue';
 import {
   RAIL_ARRANGE_TOOLS,
@@ -411,14 +411,14 @@ function goBack() {
   closePanel();
 }
 
-function selectCatalogItem(item: CatalogItem) {
+function selectCatalogItem(item: CatalogItem, variant: CatalogVariant = variantOf(item, undefined)) {
   selectedCatalogId.value = item.id;
-  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
+  sceneRef.value?.activateCatalogItem(item.id, variant);
   panel.value = 'catalog';
 }
 
-function confirmCatalogItem(item: CatalogItem) {
-  selectCatalogItem(item);
+function confirmCatalogItem(item: CatalogItem, variant?: CatalogVariant) {
+  selectCatalogItem(item, variant ?? variantOf(item, undefined));
   if (!item.real) {
     pushToast({ action: 'Placeholder · use Chair for the demo' });
     return;
@@ -500,14 +500,14 @@ function saveArrangement() {
   phase.value = 'idle';
 }
 
-function onCatalogDragStart(event: DragEvent, item: CatalogItem) {
+function onCatalogDragStart(event: DragEvent, item: CatalogItem, variant: CatalogVariant) {
   if (!item.real) {
     event.preventDefault();
     return;
   }
   if (!userControl.value) yieldToUser();
   selectedCatalogId.value = item.id;
-  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
+  sceneRef.value?.activateCatalogItem(item.id, variant);
   phase.value = 'placing';
   panel.value = 'catalog';
   sceneRef.value?.setGhostVisible(true);
