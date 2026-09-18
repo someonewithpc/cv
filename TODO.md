@@ -58,5 +58,6 @@
   - [ ] Put CSS and JS out of line
 - [ ] Make demos more usable without JS
 - [x] Contact section
+- [x] Contributions link icon missing (#10)
 - [ ] Work History
 - [ ] Drawn arrows indicating paper turn, maybe only for reduced-motion?
