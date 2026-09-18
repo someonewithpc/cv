@@ -6,8 +6,12 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
+// By name, not by position: each demo added to the page moves the index, and the tagging
+// tool's spec already holds nth(3)
 function fontPickerStack(page: import('@playwright/test').Page) {
-  return page.locator('article.technical-drawing-stack').nth(3);
+  return page
+    .locator('article.technical-drawing-stack')
+    .filter({ has: page.getByRole('heading', { name: 'Interactive Map Font Picker' }) });
 }
 
 test('main page: the picker mounts and a chosen face reaches the specimen', async ({ page }) => {

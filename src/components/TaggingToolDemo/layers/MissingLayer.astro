@@ -1,0 +1,103 @@
+---
+import Grid from '../Grid.astro';
+---
+
+<div class="wrapper">
+  {/* inert: aria-hidden alone doesn't pull the embedded Grid's real inputs/buttons out
+      of the Tab order, so a keyboard user would land on illustration-only controls a
+      screen reader stays silent about. Same fix as EditorLayer.astro's inert embed. */}
+  <div class="missing-layer" aria-hidden="true" inert>
+    <Grid completing="round" only={['round']} />
+
+    <dl class="legend">
+      <div>
+        <dt>List</dt>
+        <dd>The page lists only objects still missing the property, base or any style, thirty at a time with more on scroll</dd>
+      </div>
+      <div>
+        <dt>Leave</dt>
+        <dd>Filling an object's last gap removes it from the page. This row is halfway out</dd>
+      </div>
+      <div>
+        <dt>Save</dt>
+        <dd>Change or Enter writes one row per object, <code>find_or_initialize_by</code> then <code>save!</code>. An emptied field destroys the row instead of keeping <code>""</code></dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<style lang="scss">
+.wrapper {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: min(92cqw, 100%);
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.missing-layer {
+  width: 100%;
+  max-width: 44em;
+  display: grid;
+  gap: 0.625em;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+
+    :global(.shared-properties) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .legend {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  :global(.tagging-tool) {
+    font-size: 0.75em;
+    pointer-events: none;
+  }
+
+  /* A fixed run, not the live grid's auto-fill: one base object and its three styles
+     read as one row here, rather than wrapping a lone card onto a second line. */
+  :global(.shared-properties) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.legend {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625em;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+  }
+
+  dt {
+    font-family: monospace, system-ui;
+    font-size: 0.625em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+</style>

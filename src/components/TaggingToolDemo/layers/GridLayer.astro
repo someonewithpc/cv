@@ -1,0 +1,57 @@
+---
+import Grid from '../Grid.astro';
+import { autoplayValue } from '../objects';
+---
+
+<div
+  class="tagging-grid-demo"
+  data-autoplay-value={autoplayValue}
+  data-boot-module="/src/components/TaggingToolDemo/client/boot.ts"
+>
+  <Grid live />
+</div>
+
+{/*
+  No <script> here — a component reached only through Stack.astro's per-layer
+  Astro.slots.render() call never gets its own hoisted script onto the page (see the
+  "dev-server-drops-demo-scripts" memory). boot.ts is armed instead by Stack.astro's own
+  script, which the pagination doesn't touch, via the data-boot-module attribute above —
+  this also defers loading and running taggingTool.ts until the stack scrolls into view,
+  same as every other demo's island.
+*/}
+
+<style lang="scss">
+:global(article.technical-drawing-stack > * > section .content:has(.tagging-grid-demo)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding-block: 0.5em;
+}
+
+.tagging-grid-demo {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  /* A definite height, so the tool's max-height resolves and it scrolls
+     inside the sheet instead of running out from under the title block. */
+  height: 100%;
+  min-height: 0;
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* The title block claims the bottom-right corner on a narrow sheet. */
+    padding-bottom: 3.5em;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    /* Portrait gives the title block its own row. */
+    padding-bottom: 0;
+  }
+}
+</style>
