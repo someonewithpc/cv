@@ -46,6 +46,7 @@
     - [x] CSS-only when supported?
     - [x] Fallback when CSS-only unsupported?
     - [x] Turned paper corners/dogear
+      - [x] Dogear doesn't follow theme (#5)
     - [x] Navigation
     - [-] Page indicator
   - [ ] Anotations
