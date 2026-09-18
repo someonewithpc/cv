@@ -142,6 +142,13 @@ section {
      resolved smaller than the mat and pushed the block across the frame line. */
   --sheet-margin: 1rem;
 
+  /* The note tab's size, and how far it reaches past the mat over the artwork.
+     rem for the same reason: the tab sits in the sheet's corner, not in anyone's
+     text. The reach is 0 until the tab appears, so a demo can keep its controls
+     off that corner with one unconditional rule (see the tucked block below). */
+  --note-fold-size: 3.5rem;
+  --note-fold-reach: 0px;
+
   contain: size style;
   overflow: clip;
 
@@ -203,6 +210,10 @@ section {
     grid-column: 1 / 3;
     place-self: center;
     position: relative;
+    /* A scene stacks its own chrome inside this cell (Space Builder's rail and
+       panels run to z-index 30), which used to outrank the note tab in the
+       sheet's own stacking order and paint over it. Keep that ordering here. */
+    isolation: isolate;
     // Fill the grid area so children with width:min(…, 100%) resolve against
     // the page cell — not a fit-content box that collapses under min-width:0.
     width: 100%;
@@ -338,8 +349,8 @@ section {
     bottom: 0;
     z-index: 3;
 
-    width: 3.5em;
-    height: 3.5em;
+    width: var(--note-fold-size);
+    height: var(--note-fold-size);
     padding: 0;
     border: 0;
     font: inherit;
@@ -534,6 +545,12 @@ section {
     .note-fold {
       display: block;
     }
+
+    /* The tab lies on the artwork, the way a note tucked under a sheet would.
+       What it must not do is cover a control or hide behind one, so it paints
+       over the cell (see .content's isolation) and every demo keeps its own
+       controls off this much of the bottom-left corner. */
+    --note-fold-reach: calc(var(--note-fold-size) - var(--sheet-margin));
 
     /* The artwork keeps the sheet centre, so the corner block gives ground —
        same size portrait uses — and wears the sheet like a real title block,

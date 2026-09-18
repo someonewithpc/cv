@@ -17,6 +17,7 @@
 - [ ] Access Keys
 - [ ] ARIA roles
 - [ ] Demos
+  - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
   - [x] Space builder add tool
@@ -42,6 +43,7 @@
   - [ ] Ball loader animation (~/project/playground)
 - [ ] TechnicalDrawing
   - [ ] Paper texture
+  - [x] Tucked note tab collides with the sheet content and toolbar (#16)
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
@@ -51,8 +53,11 @@
     - [x] Fallback when CSS-only unsupported?
     - [x] Turned paper corners/dogear
       - [x] Dogear doesn't follow theme (#5)
+      - [x] Dogear doesn't appear until next page animation finished (#6)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
+      - [x] Keyboard paper turn waits too long before commit (#11)
+      - [x] PaperStack focus ring should follow page border (#12)
     - [-] Page indicator
   - [ ] Anotations
     - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
@@ -60,8 +65,9 @@
 - [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
 - [ ] Run W3C validator
-  - [ ] Put CSS and JS out of line
-- [ ] Make demos more usable without JS
+  - [x] Put CSS and JS out of line (#22)
+- [x] Make demos more usable without JS (#19)
+- [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
 - [ ] Work History
