@@ -259,6 +259,26 @@ const syncPaperSurface = (sheet: HTMLElement, section: HTMLElement): void => {
   sheet.style.setProperty('--paper-surface', getComputedStyle(section).backgroundColor);
 };
 
+// The colour above is a snapshot, taken when a gesture starts or a flip hands the flap on, so a
+// theme switch in between leaves the dog-ear painted in the theme the page loaded under. Re-lift
+// it whenever the theme moves: the picker's explicit choice (data-theme, which it also drops and
+// restores around its view transition) or, with no choice stored, the OS preference the page
+// falls back to. The flap is the only thing that reads --paper-surface, so it is enough to
+// resync the sheet each one currently rides.
+const watchThemePaperSurface = (): void => {
+  const resync = () => {
+    for (const fold of document.querySelectorAll<HTMLElement>('.paper-fold')) {
+      const sheet = fold.parentElement as HTMLElement;
+      syncPaperSurface(sheet, sectionOf(sheet));
+    }
+  };
+  new MutationObserver(resync).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', resync);
+};
+
 const polygonCentroid = (pts: Vec[]): Vec => {
   let doubleArea = 0, cx = 0, cy = 0;
   for (let i = 0; i < pts.length; i++) {
@@ -1740,6 +1760,7 @@ export function initPaperStackFold(): void {
       attachFoldDrag(fold, grab);
       syncInert(stack);
     }
+    watchThemePaperSurface();
   };
 
   if (document.readyState === 'loading') {

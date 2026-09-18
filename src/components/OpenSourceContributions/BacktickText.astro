@@ -16,15 +16,16 @@ const MIN_BREAKABLE_CODE_LENGTH = 12;
 const splitAfterCodePunctuation = (code: string) => (
   code.length < MIN_BREAKABLE_CODE_LENGTH ? [code] : code.split(/(?<=[{}()[\]<>,.:;\/\\|_-])/).filter((piece) => piece.length > 0)
 );
+
+/* The fragment below is written on one line on purpose: a newline inside it renders
+   as a space before and after the text, and the row title's underline draws over it. */
 ---
 
-<>
-  {segments.map((segment) => (
-    segment.startsWith('`') && segment.endsWith('`')
-      ? <span class="backtick">{splitAfterCodePunctuation(segment.slice(1, -1)).map((piece, index) => (index > 0 ? [<wbr />, piece] : piece))}</span>
-      : segment
-  ))}
-</>
+<>{segments.map((segment) => (
+  segment.startsWith('`') && segment.endsWith('`')
+    ? <span class="backtick">{splitAfterCodePunctuation(segment.slice(1, -1)).map((piece, index) => (index > 0 ? [<wbr />, piece] : piece))}</span>
+    : segment
+))}</>
 
 <style lang="scss">
 .backtick {
