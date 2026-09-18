@@ -53,6 +53,9 @@ $panel-background: #333;
   max-width: min(90cqw, 100%);
   margin-inline: auto;
   display: grid;
+  // An auto track would take the panel's max-content width and centre the clamped panel
+  // in that: off the sheet's content column and under the note
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
 }
 
