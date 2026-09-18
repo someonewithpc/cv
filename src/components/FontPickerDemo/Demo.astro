@@ -74,9 +74,9 @@ type Layer = keyof typeof layers;
       main: null,
       discovery: (
         <PostIt background="#cde" color="black">
-          No hardcoded font list — the dropdown is <code>document.fonts</code>,
-          deduplicated by family, weight and style, since every Unicode-range
-          subset registers as its own face
+          Nothing is hardcoded. The dropdown reads <code>document.fonts</code>, so
+          every face the page has loaded is in it, with each family's Unicode subsets
+          folded into one entry
         </PostIt>
       ),
       sources: (
