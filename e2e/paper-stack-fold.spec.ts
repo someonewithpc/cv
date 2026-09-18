@@ -121,21 +121,35 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
-  // Watch from inside the page: the flip renumbers --page-index halfway through, and the new
-  // front page has to grow its dog-ear from there rather than after everything has stopped.
-  const watch = stack.evaluate((el) => new Promise<{ after: number, landing: boolean }>((resolve, reject) => {
+  // Watch from inside the page. A flip renumbers --page-index halfway through and only hands the
+  // flap over at the very end, so what matters is the paper: from the renumber on, the page at
+  // the front must have a flap of its own, and it must be drawn well before the flip lands.
+  // The flap's width is --fold-x, so its painted size measures the reveal too.
+  const watch = stack.evaluate((el) => new Promise<{
+    bareFrames: number, drawnAfter: number, landing: boolean, flapCount: number,
+  }>((resolve, reject) => {
     const pages = [...el.children] as HTMLElement[];
-    const fold = el.querySelector<HTMLElement>('.paper-fold')!;
     const frontPage = () => pages.find((p) => p.style.getPropertyValue('--page-index').trim() === '1')!;
     const started = frontPage();
     const deadline = performance.now() + 10_000;
     let restacked = 0;
+    let bareFrames = 0;
     const tick = () => {
       const front = frontPage();
       if (!restacked && front !== started) restacked = performance.now();
-      if (restacked && parseFloat(getComputedStyle(front).getPropertyValue('--fold-x')) > 0) {
-        resolve({ after: performance.now() - restacked, landing: fold.classList.contains('paper-fold--active') });
-        return;
+      if (restacked) {
+        const flap = front.querySelector<HTMLElement>('.paper-fold');
+        if (!flap) bareFrames += 1;
+        // 2cm is the resting dog-ear, so a fifth of that is unmistakably paper, not a hairline
+        if (flap && flap.getBoundingClientRect().width > 20) {
+          resolve({
+            bareFrames,
+            drawnAfter: performance.now() - restacked,
+            landing: !!el.querySelector('.paper-fold--active'),
+            flapCount: el.querySelectorAll('.paper-fold').length,
+          });
+          return;
+        }
       }
       if (performance.now() > deadline) {
         reject(new Error(restacked ? 'the dog-ear never came back' : 'the stack never turned a page'));
@@ -150,7 +164,15 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
   await page.keyboard.press('ArrowRight');
   const seen = await watch;
 
-  // Half a second was the reveal delay the flip used to restart; anything near it is the bug back.
-  expect(seen.after).toBeLessThan(300);
+  expect(seen.bareFrames, 'frames where the front page had no flap at all').toBe(0);
+  expect(seen.drawnAfter, 'ms from the renumber to a drawn dog-ear').toBeLessThan(400);
   expect(seen.landing, 'the flipped sheet is still folding away').toBe(true);
+  // One flap is the real one finishing the flip, the other the stand-in holding the new front
+  // page's dog-ear until it is free.
+  expect(seen.flapCount).toBe(2);
+
+  // And the stand-in gives way rather than piling up.
+  await page.waitForTimeout(2500);
+  expect(await stack.locator('.paper-fold').count()).toBe(1);
+  expect(await stack.locator('.paper-fold--stand-in').count()).toBe(0);
 });
