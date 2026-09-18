@@ -72,6 +72,26 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
   await expect(page.locator('#theme-picker input[value="light"]')).toBeChecked();
 });
 
+test('a second pick during the wipe wins', async ({ page }) => {
+  await instrument(page);
+  await page.goto('/');
+
+  await page.locator('#theme-picker input[value="dark"]').click({ force: true });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // The wipe captures <html>, so every point hit-tests to the root while it runs and
+  // this click has to be resolved against the labels instead.
+  await expect(page.locator('html')).toHaveClass(/theme-transition/);
+  await page.locator('#theme-picker input[value="arctic"]').click({ force: true });
+
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
+  await expect(page.locator('#theme-picker input[value="arctic"]')).toBeChecked();
+  expect(await page.evaluate(() => localStorage.getItem('cv-theme'))).toBe('arctic');
+
+  // The first transition's cleanup must not strip the class from the second one.
+  await expect(page.locator('html')).toHaveClass('');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
+});
+
 test('a transition that never finishes still applies and persists the pick', async ({ page }) => {
   await instrument(page);
   // Chrome hands a backgrounded tab no rendering opportunities, so a transition
