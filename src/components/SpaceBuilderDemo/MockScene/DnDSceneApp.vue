@@ -110,6 +110,7 @@ function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
 function selectItem(item: CatalogItem) {
   yieldToUser();
   selectedId.value = item.id;
+  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
   if (!item.real) {
     showToast('Placeholder — use Chair for the demo');
   }
@@ -125,6 +126,7 @@ function onItemPointerdown(event: PointerEvent, item: CatalogItem) {
   yieldToUser();
   event.preventDefault();
   selectedId.value = item.id;
+  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
   draggingItem = item;
   phase.value = 'placing';
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -133,6 +135,7 @@ function onItemPointerdown(event: PointerEvent, item: CatalogItem) {
 
 function endItemDrag(clientX: number, clientY: number) {
   const scene = sceneRef.value;
+  const dropped = draggingItem;
   draggingItem = null;
   phase.value = 'idle';
   draggedThumb.value = null;
@@ -143,8 +146,8 @@ function endItemDrag(clientX: number, clientY: number) {
 
   if (overViewport) {
     scene.setGhostAt(clientX, clientY);
-    scene.placeGhostAsSingle();
-    showToast('Chair placed');
+    const placed = scene.placeGhostAsSingle();
+    showToast(placed ? `${dropped?.name ?? 'Chair'} placed` : 'Still loading — drag again');
   } else {
     scene.setGhostVisible(false);
   }
@@ -351,6 +354,7 @@ async function placeAndOrbit(
   await pulseClick(token);
   if (token !== autoplayToken) return false;
   selectedId.value = 'chair';
+  scene.activateCatalogItem('chair');
   updateDragVisual(chairItem, chairPos.x, chairPos.y);
 
   const dropPoint = canvasPoint(fx, fy);
