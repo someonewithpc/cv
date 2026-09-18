@@ -13,7 +13,7 @@
     "astro": "astro",
     "check": "astro check",
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",
-    "generate:chair-thumb": "node scripts/render-chair-thumb.mjs",
+    "generate:catalog-thumb": "node scripts/render-catalog-thumb.mjs",
     "test:e2e": "playwright test",
     "test:audit": "playwright test --config playwright.audit.config.ts"
   },

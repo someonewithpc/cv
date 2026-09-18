@@ -84,7 +84,7 @@ export type UiFieldId =
   | 'innerDiameter';
 
 /** Scaled chair AABB from `chair.glb` (height normalized to 0.95m). */
-export const CHAIR_FOOTPRINT = { width: 0.616, depth: 0.585 };
+export const CHAIR_FOOTPRINT = { width: 0.421, depth: 0.499 };
 
 export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   style: 'grid',

@@ -85,7 +85,7 @@ const selectedCatalogItem = computed(() => (
   CATALOG_ITEMS.find((item) => item.id === selectedCatalogId.value) ?? null
 ));
 
-const canBuildSelected = computed(() => Boolean(selectedCatalogItem.value?.real));
+const canBuildSelected = computed(() => Boolean(selectedCatalogItem.value?.layoutable));
 
 const loadError = ref(false);
 const inView = ref(false);
@@ -391,6 +391,7 @@ function openAdd() {
   panel.value = 'catalog';
   phase.value = 'idle';
   selectedCatalogId.value = 'chair';
+  sceneRef.value?.activateCatalogItem('chair');
   catalogPanelKey.value += 1;
 }
 
@@ -412,6 +413,7 @@ function goBack() {
 
 function selectCatalogItem(item: CatalogItem) {
   selectedCatalogId.value = item.id;
+  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
   panel.value = 'catalog';
 }
 
@@ -421,6 +423,10 @@ function confirmCatalogItem(item: CatalogItem) {
     pushToast({ action: 'Placeholder · use Chair for the demo' });
     return;
   }
+  if (!item.layoutable) {
+    pushToast({ action: 'Drag onto the floor to place' });
+    return;
+  }
   // Match Space Builder: double-click advances past the catalog (Build path).
   startBuild();
 }
@@ -428,6 +434,7 @@ function confirmCatalogItem(item: CatalogItem) {
 function startBuild() {
   if (!canBuildSelected.value) {
     selectedCatalogId.value = 'chair';
+    sceneRef.value?.activateCatalogItem('chair');
   }
   phase.value = 'build';
   panel.value = 'options';
@@ -500,6 +507,7 @@ function onCatalogDragStart(event: DragEvent, item: CatalogItem) {
   }
   if (!userControl.value) yieldToUser();
   selectedCatalogId.value = item.id;
+  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
   phase.value = 'placing';
   panel.value = 'catalog';
   sceneRef.value?.setGhostVisible(true);
@@ -526,10 +534,12 @@ function onViewportDrop(event: DragEvent) {
   event.preventDefault();
   if (!userControl.value) yieldToUser();
   sceneRef.value?.setGhostAt(event.clientX, event.clientY);
-  sceneRef.value?.placeGhostAsSingle();
+  const placed = sceneRef.value?.placeGhostAsSingle() ?? false;
   phase.value = 'idle';
-  panel.value = 'closed';
-  pushToast({ action: 'Object placed' });
+  // A drop that beat the model's own download placed nothing — leave the catalog open
+  // so the next drag lands, rather than claiming an object that isn't there.
+  if (placed) panel.value = 'closed';
+  pushToast({ action: placed ? 'Object placed' : 'Still loading · drag again' });
 }
 
 function onKeyDown(event: KeyboardEvent) {
@@ -1256,7 +1266,10 @@ $scene-bg: #212121;
     z-index: 4;
     grid-column: 2;
     grid-row: 1;
-    width: min(17.5rem, 46vw);
+    // Space Builder gives the Add sidebar 780px of a 1440px window, three catalog cards
+    // across at 178px each. This frame is about half as wide, so take a comparable share
+    // and keep the cards near the product's size instead of shrinking them to fit.
+    width: min(22rem, 52vw);
     min-height: 0;
     max-height: 100%;
     display: flex;

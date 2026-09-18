@@ -1,19 +1,24 @@
 /**
- * Prerender public/demos/space-builder/chair.glb → chair-thumb.webp
+ * Prerender a Space Builder catalog GLB to its catalog thumbnail webp.
  * Uses headless Chrome + Three.js (meshopt) so the catalog matches the live model.
  *
- * Usage: npm run generate:chair-thumb
+ * Usage: npm run generate:catalog-thumb
+ *        node scripts/render-catalog-thumb.mjs <site-path.glb> <out.webp>
  */
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
-const outPath = path.join(root, 'public/demos/space-builder/chair-thumb.webp');
-const SIZE = 512;
+const modelPath = process.argv[2] ?? '/demos/space-builder/chair.glb';
+const outPath = path.resolve(root, process.argv[3] ?? 'public/demos/space-builder/chair-thumb.webp');
+// Space Builder stores catalog thumbnails at 600px square (Upload/Preview.vue renders 300
+// and the platform keeps a 2x original).
+const SIZE = 600;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -65,8 +70,16 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const SIZE = ${SIZE};
+// Space Builder's own catalog renderer (utils/three/render/ObjectImageRender.js): a
+// 0.8-radian camera at polar 60 degrees and azimuth 60, one bounding-box diagonal and a
+// quarter away, looking at the model's centre. far is re-set once that distance is known,
+// because library GLBs are authored in centimetres.
+const FOV = (0.8 * 180) / Math.PI;
+const INCLINATION = (60 * Math.PI) / 180;
+const AZIMUTH = (60 * Math.PI) / 180;
+
 const scene = new Scene();
-const camera = new PerspectiveCamera(32, 1, 0.01, 100);
+const camera = new PerspectiveCamera(FOV, 1, 0.01, 100);
 const renderer = new WebGLRenderer({
   antialias: true,
   alpha: true,
@@ -74,20 +87,18 @@ const renderer = new WebGLRenderer({
 });
 renderer.setPixelRatio(1);
 renderer.setSize(SIZE, SIZE, false);
-renderer.setClearColor(0xb7bec6, 1);
+// Transparent, like the product's stored PNGs: the card paints the gradient behind it.
+renderer.setClearColor(0x000000, 0);
 document.body.appendChild(renderer.domElement);
 
-scene.add(new HemisphereLight(0xf0f4ff, 0x6a7068, 1.05));
-scene.add(new AmbientLight(0xffffff, 0.45));
-const key = new DirectionalLight(0xffffff, 1.2);
-key.position.set(2.4, 4.2, 2.8);
+// The product lights catalog objects with one ambient and one soft directional, which
+// reads almost shadowless. A strong key made the demo's chairs look nothing like it.
+scene.add(new HemisphereLight(0xf4f6fa, 0x9aa0a6, 1.5));
+scene.add(new AmbientLight(0xffffff, 0.9));
+const key = new DirectionalLight(0xffffff, 0.75);
+key.position.set(1.6, 3.4, 2.2);
 scene.add(key);
-const fill = new DirectionalLight(0xdde7ff, 0.55);
-fill.position.set(-2.2, 1.6, -1.4);
-scene.add(fill);
-// Match catalog card gradient midpoint so the thumb sits cleanly on the tile.
 scene.background = null;
-renderer.setClearColor(0xb7bec6, 1);
 
 async function post(payload) {
   await fetch('/thumb', {
@@ -101,7 +112,7 @@ try {
   if (MeshoptDecoder.ready) await MeshoptDecoder.ready;
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await loader.loadAsync('/demos/space-builder/chair.glb');
+  const gltf = await loader.loadAsync('${modelPath}');
   const rootObj = gltf.scene;
   scene.add(rootObj);
 
@@ -110,17 +121,14 @@ try {
   const center = box.getCenter(new Vector3());
   rootObj.position.sub(center);
 
-  // Fit the full chair with padding (length*0.55 framed only the seat).
-  const fit = Math.max(size.x, size.y, size.z);
-  const radius = fit * 2.15;
-  const elev = Math.PI / 5.5;
-  const azim = Math.PI / 3.4;
+  const radius = size.length() * 1.25;
   camera.position.set(
-    radius * Math.cos(elev) * Math.sin(azim),
-    radius * Math.sin(elev) + size.y * 0.05,
-    radius * Math.cos(elev) * Math.cos(azim),
+    radius * Math.sin(INCLINATION) * Math.cos(AZIMUTH),
+    radius * Math.cos(INCLINATION),
+    radius * Math.sin(INCLINATION) * Math.sin(AZIMUTH),
   );
-  camera.lookAt(0, -size.y * 0.05, 0);
+  camera.lookAt(0, 0, 0);
+  camera.far = radius * 3;
   camera.updateProjectionMatrix();
 
   renderer.render(scene, camera);
@@ -189,11 +197,15 @@ async function main() {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address();
 
+  // Its own profile, so rendering a thumbnail never touches (or fails against) the
+  // browser the author already has open.
+  const profile = await mkdtemp(path.join(os.tmpdir(), 'catalog-thumb-'));
   const chrome = spawn(chromePath(), [
     '--headless=new',
     '--disable-gpu',
     '--no-first-run',
     '--no-default-browser-check',
+    `--user-data-dir=${profile}`,
     `--window-size=${SIZE},${SIZE}`,
     `http://127.0.0.1:${port}/render`,
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -212,6 +224,7 @@ async function main() {
 
   chrome.kill('SIGKILL');
   await new Promise((resolve) => server.close(resolve));
+  await rm(profile, { recursive: true, force: true });
 
   if (result.error) throw new Error(result.error);
   if (!result.dataUrl?.startsWith('data:image/webp;base64,')) {

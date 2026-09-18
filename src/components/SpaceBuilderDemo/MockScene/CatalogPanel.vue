@@ -52,9 +52,9 @@ const itemsVisible = computed(() => {
       type="button"
       class="option-item"
       :class="{ active: selectedId === item.id, placeholder: !item.real }"
-      :data-demo-target="item.real ? 'catalog:chair' : `catalog:${item.id}`"
+      :data-demo-target="`catalog:${item.id}`"
       :draggable="nativeDrag && Boolean(item.real)"
-      :title="item.real ? `${item.name} · double-click to Build` : `${item.name} (placeholder)`"
+      :title="!item.real ? `${item.name} (placeholder)` : item.layoutable ? `${item.name} · double-click to Build` : `${item.name} · drag to place`"
       @click="emit('select', item)"
       @dblclick="emit('confirm', item)"
       @dragstart="emit('dragstart', $event, item)"
@@ -62,17 +62,31 @@ const itemsVisible = computed(() => {
       @pointerdown="emit('itemPointerdown', $event, item)"
     >
       <div class="object-icons">
-        <img :src="item.thumb" alt="" width="120" height="90">
+        <img :src="item.thumb" alt="" width="600" height="600">
       </div>
       <span class="item-label">
         <span class="object-name">{{ item.name }}</span>
+        <span v-if="item.size" class="object-size">
+          <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
+            <path
+              d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          {{ item.size }}
+        </span>
       </span>
     </button>
   </div>
 </template>
 
 <style lang="scss" scoped>
-$navy: #1ab394;
+// Space Builder's own accent (ui/main.scss `$visrez-brand`), which the rest of the demo
+// already uses; the catalog was the one panel still on Inspinia's default teal.
+$brand: #89ab24;
 
 .catalog-search {
   display: block;
@@ -95,8 +109,8 @@ $navy: #1ab394;
 
     &:focus {
       outline: 0;
-      border-color: $navy;
-      box-shadow: 0 0 0 0.15rem rgba(26, 179, 148, 0.35);
+      border-color: $brand;
+      box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
     }
   }
 }
@@ -109,9 +123,12 @@ $navy: #1ab394;
 
 .catalog-grid {
   display: grid;
+  // Space Builder lays the catalog out three across in a 780px sidebar; this one is a
+  // third of that, so keep its card size and let as many columns fit as will.
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 1rem;
   align-content: start;
+  grid-auto-rows: 1fr;
 
   // Matches the rail-hide breakpoint in MockSceneApp.vue — below it the
   // sidebar is too narrow for two columns of thumbnails to stay legible.
@@ -137,7 +154,8 @@ $navy: #1ab394;
   flex-direction: column;
   width: 100%;
   padding: 0;
-  border: 1px solid #495057;
+  // darken($secondary, 20%) in _catalog_object_field.scss.
+  border: 1px solid #3d4246;
   border-radius: 0.25rem;
   background: transparent;
   color: inherit;
@@ -169,14 +187,14 @@ $navy: #1ab394;
   }
 
   &:hover:not(.active) {
-    border-color: #adb5bd;
+    border-color: #6c757d;
   }
 
   &.active {
-    box-shadow: 0 0 0 0.2rem rgba(26, 179, 148, 0.35);
+    box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
 
     .item-label {
-      background: $navy;
+      background: $brand;
       color: #fff;
     }
   }
@@ -189,13 +207,15 @@ $navy: #1ab394;
     position: relative;
     display: flex;
     flex: 1 1 auto;
-    min-height: 5rem;
+    // Square tile with the model floating on the gradient — the thumbnails are
+    // transparent, as the product's are.
+    aspect-ratio: 1;
     background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
 
     img {
       display: block;
       width: 100%;
-      height: auto;
+      height: 100%;
       object-fit: contain;
       padding: 0.5rem;
     }
@@ -204,18 +224,35 @@ $navy: #1ab394;
   .item-label {
     display: block;
     margin: 0;
-    padding: 0.35rem 0.4rem;
+    padding: 0.25rem 0.375rem;
     background: #212529;
     text-align: center;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
+    line-height: 1.5;
 
     .object-name {
       display: block;
       overflow: hidden;
-      max-height: 1.15em;
+      max-height: 1.5em;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .object-size {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      overflow: hidden;
+      font-size: 0.6875rem;
+      font-weight: 400;
+      white-space: nowrap;
+      color: #ced4da;
+
+      svg {
+        flex: 0 0 auto;
+      }
     }
   }
 }
