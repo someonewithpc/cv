@@ -27,7 +27,7 @@ const { live = false, completing, only, property = defaultProperty } = Astro.pro
 
 const scope = live ? 'live' : 'static';
 const listId = `tagging-tool-values-${scope}`;
-const sharedTitle = 'Update Base + Styles';
+const sharedTitle = 'Update base + variants';
 const rows = only ? baseObjects.filter((group) => only.includes(group.id)) : baseObjects;
 const propertyName = properties.find((entry) => entry.id === property)?.name ?? property;
 ---
@@ -87,7 +87,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
             <button type="submit" title={sharedTitle}>
               <Icon name="lucide:check" class="when-shared" />
               <Icon name="lucide:triangle-alert" class="when-overrides" />
-              <span class="sr-only">{`Set ${propertyName} on ${group.base.name} and every style`}</span>
+              <span class="sr-only">{`Set ${propertyName} on ${group.base.name} and every variant`}</span>
             </button>
           </form>
 
@@ -331,7 +331,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 }
 
 /* Bootstrap's .row of .col-lg-3 cards: four across, the way the product lays a
-   base object and its styles out on a wide screen. */
+   base object and its variants out on a wide screen. */
 .shared-properties {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -470,7 +470,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   }
 }
 
-/* While the shared input has the caret, every style form draws one of its own:
+/* While the shared input has the caret, every variant form draws one of its own:
    a literal bar in monospace at the shared input's selectionStart, clamped to
    the input's far edge (the product's ::before rule, verbatim in em). */
 .grouped-objects:is(.autoplay, :has(> .shared-form > .shared-value:focus)) .object-form {

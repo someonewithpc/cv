@@ -39,7 +39,7 @@ type Walkthrough = {
   overrideIndex: number;
 };
 
-const SHARED_TITLE = 'Update Base + Styles';
+const SHARED_TITLE = 'Update base + variants';
 
 /** Rails' String#titleize, as far as the values here go. */
 function titleize(text: string) {
@@ -49,7 +49,7 @@ function titleize(text: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-/** The product's shared_inputs.js handler: copy the value into every style form
+/** The product's shared_inputs.js handler: copy the value into every variant form
     and tell its ::before caret where the shared input's caret is. */
 function mirror(group: Group, eventType = 'keyup') {
   const { shared } = group;
@@ -269,7 +269,7 @@ async function press(cursor: Cursor) {
 
 /**
  * The walkthrough: tag a whole object through the shared field, switch to a property
- * that already has values so every field fills on the way in, then override one style
+ * that already has values so every field fills on the way in, then override one variant
  * by hand.
  *
  * It only runs while the sheet is on screen and its page is the one drawn on top, which
@@ -326,7 +326,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(500);
     if (stopped) break;
 
-    // One value in the shared field tags the base object and every style at once.
+    // One value in the shared field tags the base object and every variant at once.
     group.root.classList.add('autoplay');
     await aim(cursor, group.shared, true);
     if (stopped) break;
@@ -355,7 +355,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(1400);
     if (stopped) break;
 
-    // One style disagrees, so it is changed on its own card.
+    // One variant disagrees, so it is changed on its own card.
     const card = group.cards[script.overrideIndex] ?? group.cards[0];
     await aim(cursor, card.input, true);
     if (stopped) break;
