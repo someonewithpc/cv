@@ -9,7 +9,6 @@ import PostIt from '@/components/PostIt.astro';
 import MockMap from './MockMap/MockMap.astro';
 import SelectorLayer from './layers/SelectorLayer.astro';
 import EditorLayer from './layers/EditorLayer.astro';
-import EditorAside from './layers/EditorAside.astro';
 import BackgroundLayer from './layers/BackgroundLayer.astro';
 import PartsLayer from './layers/PartsLayer.astro';
 import StoreLayer from './layers/StoreLayer.astro';
@@ -88,7 +87,12 @@ type Layer = keyof typeof layers;
           Cafe B / Plaza C
         </PostIt>
       ),
-      editor: (<EditorAside />),
+      editor: (
+        <PostIt background="#fec" color="black">
+          The control points are the only thing that moves outside React. Everything else in the
+          editor still re-renders the ordinary way, once its own store says so
+        </PostIt>
+      ),
       background: (
         <PostIt background="#dfd" color="black">
           H and V stripe layers were meant to stack into a cross grid, but each axis rounded stops
