@@ -107,6 +107,11 @@ const hovered = rows.find((row) => row.hovered)!;
     :global(.on-narrow) {
       display: revert;
     }
+
+    // Nothing left in it to draw, and the overlay reaches half an artwork past the sheet's foot
+    :global(.content > svg) {
+      display: none;
+    }
   }
 }
 
