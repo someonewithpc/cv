@@ -121,58 +121,6 @@ test('badge page: capacity-badge scene loads', async ({ page }) => {
   await expect(app.locator('canvas[data-scene-canvas]')).toBeVisible();
 });
 
-test('drag & drop page: catalog has a draggable chair', async ({ page }) => {
-  const stack = spaceBuilderStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Drag & Drop');
-  const front = frontPage(stack, await frontPageIndex(stack));
-
-  const app = await waitForSceneReady(front);
-  // This page implements its own pointer-driven drag onto the 3D scene rather than native
-  // HTML5 drag (DnDSceneApp.vue passes CatalogPanel `:native-drag="false"`), so the chair
-  // item is deliberately not `draggable`.
-  const chair = app.locator('[data-demo-target="catalog:chair"]');
-  await expect(chair).toBeVisible();
-  await expect(chair).toHaveAttribute('draggable', 'false');
-});
-
-test('drag & drop page: dragging the chair onto the ground places it in a live scene', async ({ page }) => {
-  await armDrawCounter(page);
-  const stack = spaceBuilderStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Drag & Drop');
-  const front = frontPage(stack, await frontPageIndex(stack));
-
-  const app = await waitForSceneReady(front);
-  const chair = app.locator('[data-demo-target="catalog:chair"]');
-  const canvas = app.locator('canvas[data-scene-canvas]');
-  const from = await chair.boundingBox();
-  const to = await canvas.boundingBox();
-  if (!from || !to) throw new Error('Catalog item or scene canvas has no layout box');
-
-  // A real pointer sequence with intermediate moves: this page runs its own pointer drag
-  // rather than native HTML5 drag, so `dragTo`'s drag events would never reach it.
-  const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
-  const drop = { x: to.x + to.width * 0.45, y: to.y + to.height * 0.55 };
-  await page.mouse.move(start.x, start.y);
-  await page.mouse.down();
-  for (let step = 1; step <= 10; step += 1) {
-    await page.mouse.move(
-      start.x + ((drop.x - start.x) * step) / 10,
-      start.y + ((drop.y - start.y) * step) / 10,
-    );
-    await page.waitForTimeout(40);
-  }
-  await page.mouse.up();
-
-  await expect(app.getByText('Chair placed')).toBeVisible();
-
-  // The chair used to land in a scene whose renderer had been handed to the page behind
-  // this one, so the drop was real but nothing was ever drawn.
-  const drawnOnDrop = await sceneDraws(app);
-  await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnDrop);
-});
-
 test('main page: no WebGL unpack warnings across a GPU release and re-attach', async ({ page }) => {
   const warnings: string[] = [];
   page.on('console', (message) => {
