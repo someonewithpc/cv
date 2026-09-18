@@ -145,8 +145,12 @@ body {
 
 main {
   --page-gap: clamp(1rem, 4vw, 2.5rem);
-  --content-max: 120ch;
-  --breakout-max: 90rem;
+  /* em, not ch: the cap is a page width, and ch pins it to whatever font this
+     element inherits. 60em is 960px, which also keeps the demo sheets above the
+     56em mark where TechnicalDrawing/Page.astro tucks the note behind the fold. */
+  --content-max: 60em;
+  /* The demo stacks sit in the breakout column, so this is what caps them. */
+  --breakout-max: var(--content-max);
 
   --full-width: minmax(var(--page-gap), 1fr);
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
