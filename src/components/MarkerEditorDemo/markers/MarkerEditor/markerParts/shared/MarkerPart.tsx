@@ -5,7 +5,18 @@ import { serializeKeyValue } from './serialization';
 
 import { Point, type PointLiteral } from './Point';
 
+const partKinds = new WeakMap<Function, string>();
+
 export class MarkerPart {
+  /** Saved markers carry `data-kind`, and the bundler renames `constructor.name`. */
+  static registerKinds(classes: Record<string, Function>) {
+    Object.entries(classes).forEach(([kind, cls]) => partKinds.set(cls, kind));
+  }
+
+  get kind(): string {
+    return partKinds.get(this.constructor) ?? this.constructor.name;
+  }
+
   get default() { return {}; }
   get defaultReactiveState() { return {}; }
   get reactiveStateStoreHandler() { return {}; }
@@ -141,7 +152,7 @@ export class MarkerPart {
 
   get serializedState(): Record<string, string> {
     return {
-      'data-kind': this.constructor.name,
+      'data-kind': this.kind,
       ...Object.fromEntries(
         Object.entries({
           state: this.state,
