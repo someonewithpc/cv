@@ -24,6 +24,7 @@ const { outputFiles: [clientBundle] } = await esbuild.build({
   minify: true,
   write: false,
   format: 'esm',
+  alias: { '@': srcRoot },
 });
 
 const clientSize = toKiB(clientBundle.text);
