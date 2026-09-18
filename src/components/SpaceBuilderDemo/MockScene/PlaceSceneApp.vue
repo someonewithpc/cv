@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { watchPageActive } from '@/client/frontPage';
 
 import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
 import {
@@ -29,7 +30,7 @@ const loadError = ref(false);
 let sceneRef: SpaceBuilderScene | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 let arrows: SceneArrowAnnotations | null = null;
-let observer: IntersectionObserver | null = null;
+let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
@@ -223,20 +224,14 @@ onMounted(async () => {
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? root;
-    const stack = visibilityRoot.closest('article.technical-drawing-stack');
-    observer = new IntersectionObserver(
-      (entries) => {
-        const visible = Boolean(entries[0]?.isIntersecting);
-        if (!visible) {
-          releaseSpaceBuilderGpu(scene);
-          return;
-        }
-        claimSpaceBuilderGpu(scene);
-        arrows?.sync();
-      },
-      { root: stack, threshold: 0.45 },
-    );
-    observer.observe(visibilityRoot);
+    stopPageWatch = watchPageActive(visibilityRoot, (active) => {
+      if (!active) {
+        releaseSpaceBuilderGpu(scene);
+        return;
+      }
+      claimSpaceBuilderGpu(scene);
+      arrows?.sync();
+    });
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
@@ -263,7 +258,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
+  stopPageWatch?.();
+  stopPageWatch = null;
   stopNoteWatch?.();
   stopNoteWatch = null;
   arrows?.dispose();

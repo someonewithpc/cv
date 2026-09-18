@@ -1,4 +1,5 @@
 import { bootWhenVisible } from './bootWhenVisible';
+import { isFrontPage } from './frontPage';
 
 type BootModule = { boot: (host: HTMLElement) => void | Promise<void> };
 
@@ -24,11 +25,6 @@ const modules = import.meta.glob<BootModule>('/src/components/**/*boot.ts');
  * once when the stack scrolls in. Which one is on top is read from --page-index instead, and a
  * covered island waits for the stack's paper-flip events until its page comes to the front.
  */
-const onFrontPage = (host: HTMLElement): boolean => {
-  const page = host.closest<HTMLElement>('[data-paper-stack-root] > *');
-  return page === null || page.style.getPropertyValue('--page-index') === '1';
-};
-
 export function armIslands(scope: HTMLElement) {
   scope.querySelectorAll<HTMLElement>('[data-boot-module]').forEach((host) => {
     if (host.dataset.mounted === 'true') return;
@@ -49,13 +45,13 @@ export function armIslands(scope: HTMLElement) {
     };
 
     bootWhenVisible(host, () => {
-      if (onFrontPage(host)) {
+      if (isFrontPage(host)) {
         mount();
         return;
       }
       const stack = host.closest<HTMLElement>('[data-paper-stack-root]')!;
       const onFlip = () => {
-        if (!onFrontPage(host)) return;
+        if (!isFrontPage(host)) return;
         stack.removeEventListener('paper-flip', onFlip);
         mount();
       };

@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onReplayRequest, reportAutoplayState } from '@/client/autoplayStatus';
+import { watchPageActive } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import CatalogPanel from './CatalogPanel.vue';
@@ -52,7 +53,7 @@ const cursorPos = reactive({ x: 0, y: 0 });
 const draggedThumb = ref<string | null>(null);
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
-let observer: IntersectionObserver | null = null;
+let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
@@ -477,22 +478,16 @@ onMounted(async () => {
 
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
-    const stack = visibilityRoot.closest('article.technical-drawing-stack');
-    observer = new IntersectionObserver(
-      (entries) => {
-        const visible = Boolean(entries[0]?.isIntersecting);
-        inView = visible;
-        if (!visible) {
-          releaseSpaceBuilderGpu(scene);
-          stopAutoplay();
-          return;
-        }
-        claimSpaceBuilderGpu(scene);
-        startAutoplay();
-      },
-      { root: stack, threshold: 0.45 },
-    );
-    observer.observe(visibilityRoot);
+    stopPageWatch = watchPageActive(visibilityRoot, (active) => {
+      inView = active;
+      if (!active) {
+        releaseSpaceBuilderGpu(scene);
+        stopAutoplay();
+        return;
+      }
+      claimSpaceBuilderGpu(scene);
+      startAutoplay();
+    });
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
@@ -519,7 +514,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
+  stopPageWatch?.();
+  stopPageWatch = null;
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
