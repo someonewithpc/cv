@@ -20,6 +20,13 @@ const CAPTION: Record<AutoplayState, string> = {
   off: 'AUTO PLAY OFF',
 };
 
+/** Shape 2 reads as a title block cell, so the state is a value under a label. */
+const VALUE: Record<AutoplayState, string> = {
+  playing: 'Playing',
+  user: 'Paused',
+  off: 'Off',
+};
+
 const HINT: Record<AutoplayState, string> = {
   playing: 'hover or tap the sheet to take over',
   user: 'press play to hand back',
@@ -75,8 +82,9 @@ export function initAutoplayStatus(page: HTMLElement) {
   const deck = page.querySelector<HTMLElement>('[data-demo-transport]');
   const caption = deck?.querySelector<HTMLElement>('[data-demo-caption]');
   const hint = deck?.querySelector<HTMLElement>('[data-demo-hint]');
+  const value = deck?.querySelector<HTMLElement>('[data-demo-value]');
   const keys = [...(deck?.querySelectorAll<HTMLButtonElement>('[data-demo-key]') ?? [])];
-  if (!deck || !caption || !hint || keys.length === 0) return () => {};
+  if (!deck || !caption || !hint || !value || keys.length === 0) return () => {};
 
   const touch = window.matchMedia('(hover: none)').matches;
   let source: Element | null = null;
@@ -87,6 +95,7 @@ export function initAutoplayStatus(page: HTMLElement) {
     deck.hidden = false;
     deck.dataset.state = state;
     caption.textContent = CAPTION[state];
+    value.textContent = VALUE[state];
     hint.textContent = state === 'playing' && touch ? TOUCH_HINT : HINT[state];
     keys.forEach((key) => {
       const pressed = (key.dataset.demoKey === 'play' && state === 'playing')
