@@ -56,6 +56,7 @@
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
+      - [x] PaperStack focus ring should follow page border (#12)
     - [-] Page indicator
   - [ ] Anotations
     - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
