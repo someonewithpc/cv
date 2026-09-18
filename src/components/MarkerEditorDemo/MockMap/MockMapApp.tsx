@@ -177,6 +177,8 @@ function MockMapOverlayInner() {
   const [cursorDragging, setCursorDragging] = useState(false);
   const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
   const [toasts, setToasts] = useState<DemoToast[]>([]);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const reducedMotionRef = useRef(false);
   const userControlRef = useRef(false);
   /** The visitor took over deliberately; only Replay hands the walkthrough back. */
   const heldRef = useRef(false);
@@ -373,6 +375,10 @@ function MockMapOverlayInner() {
       inViewRef.current = visible;
       setInView(visible);
       if (visible) {
+        if (reducedMotionRef.current) {
+          setCursorPhase('gone');
+          return;
+        }
         if (!autoplayStartedRef.current) {
           autoplayStartedRef.current = true;
           setCursorPhase('demo');
@@ -404,7 +410,7 @@ function MockMapOverlayInner() {
       if (open) {
         controller.pause();
         setCursorPhase('gone');
-      } else if (inViewRef.current && !userControlRef.current) {
+      } else if (inViewRef.current && !userControlRef.current && !reducedMotionRef.current) {
         setCursorPhase('demo');
         controller.resume();
       }
@@ -432,8 +438,12 @@ function MockMapOverlayInner() {
   // Drives the sheet's transport deck (TechnicalDrawing/Page.astro).
   useEffect(() => {
     if (!inView) return;
+    if (reducedMotion) {
+      reportAutoplayState(containerRef.current, 'off');
+      return;
+    }
     reportAutoplayState(containerRef.current, userControl ? 'user' : 'playing');
-  }, [inView, userControl]);
+  }, [inView, userControl, reducedMotion]);
 
   useEffect(() => onAutoplayCommand(containerRef.current, (command) => commandRef.current(command)), []);
 
@@ -460,7 +470,12 @@ function MockMapOverlayInner() {
   // `pressed` comes from the deck, whose keys are on the sheet itself: the visitor is
   // looking right at it, so the in-view gate that guards the idle timer does not apply.
   const resumeAutoplay = (pressed = false) => {
-    if ((!inViewRef.current && !pressed) || heldRef.current || nativePopupRef.current) return;
+    if (
+      (!inViewRef.current && !pressed)
+      || heldRef.current
+      || nativePopupRef.current
+      || reducedMotionRef.current
+    ) return;
     userControlRef.current = false;
     cursorPhaseRef.current = 'demo';
     setUserControl(false);
@@ -541,6 +556,39 @@ function MockMapOverlayInner() {
       resumeAutoplay();
     }, RESUME_DELAY_MS);
   };
+
+  // The Space Builder scenes have always parked themselves under reduced motion; the map
+  // walkthrough never checked, so the sheet's deck would read AUTO PLAY OFF over a demo
+  // that was still moving. The query is watched, not read once: the setting can change
+  // while the page is open.
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const park = () => {
+      autoplayRef.current?.pause();
+      clearResumeTimer();
+      clearTargetRetry();
+      clearDemoTargetHighlight();
+      clearClickTimer();
+      setCursorClicking(false);
+      setCursorDragging(false);
+      cursorPhaseRef.current = 'gone';
+      setCursorPhase('gone');
+    };
+
+    const apply = () => {
+      reducedMotionRef.current = query.matches;
+      setReducedMotion(query.matches);
+      if (query.matches) park();
+      else if (inViewRef.current && !userControlRef.current) resumeAutoplay();
+    };
+
+    apply();
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
+  // Stable refs / setters only, same as the pointer handoff below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!inView) return;
