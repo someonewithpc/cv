@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, swipeToPage } from './support/paperStack';
+import { frontPage, frontPageIndex, frontPageName, swipeStack, swipeToPage } from './support/paperStack';
+
+const PAGES = ['Library Tagging Tool', 'Shared Group Input', 'Simulated Caret', 'Completed Objects'];
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -24,6 +26,23 @@ async function mountedTool(page: import('@playwright/test').Page) {
   await tool.hover();
   return { stack, front, tool };
 }
+
+test('tagging tool: forward swipes visit every page in order, then wrap', async ({ page }) => {
+  const stack = taggingToolStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+
+  expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
+  expect(await frontPageName(stack)).toBe(PAGES[0]);
+
+  for (let i = 1; i < PAGES.length; i += 1) {
+    await swipeStack(page, stack, true);
+    expect(await frontPageName(stack), `page ${i} after ${i} forward swipe(s)`).toBe(PAGES[i]);
+  }
+
+  await swipeStack(page, stack, true);
+  expect(await frontPageName(stack)).toBe(PAGES[0]);
+});
 
 test('main page: the shared value mirrors onto the base and every style, and Enter saves them all', async ({ page }) => {
   const { tool } = await mountedTool(page);
