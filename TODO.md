@@ -5,7 +5,8 @@
   - [x] Forrest light theme
   - [x] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
   - [ ] Collapse after delay (prefers-reduced-motion)
-  - [ ] Avoid transition to already active theme
+  - [x] Avoid transition to already active theme (#4)
+  - [x] Theme Picker animation switching doesn't work (#4)
 - [x] Tech icon cloud
   - [x] SVG icon in light mode broken
   - [x] More tools (Cursor, Claude Code, Cloudflare, AWS, K8s, LE, TreeSitter, …)
@@ -19,6 +20,8 @@
   - [x] Visrez animated icon
   - [x] Visrez marker editor
   - [x] Space builder add tool
+    - [x] Layouts page demo doesn't work (#14)
+    - [x] Drag and drop furniture doesn't work (#14)
     - [x] Place area
     - [x] Edit parameters
     - [x] Different layouts
@@ -41,10 +44,12 @@
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
+      - [x] Animations on some pages don't start (#14)
   - [x] Carousel
     - [x] CSS-only when supported?
     - [x] Fallback when CSS-only unsupported?
     - [x] Turned paper corners/dogear
+      - [x] Dogear doesn't follow theme (#5)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
@@ -59,5 +64,6 @@
   - [ ] Put CSS and JS out of line
 - [ ] Make demos more usable without JS
 - [x] Contact section
+- [x] Contributions link icon missing (#10)
 - [ ] Work History
 - [ ] Drawn arrows indicating paper turn, maybe only for reduced-motion?
