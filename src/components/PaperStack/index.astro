@@ -252,11 +252,16 @@ const pages = await Promise.all(
     // stands below, what has been read stands above, and the two piles never share an edge — the
     // top edge is also the one side free of the dog-ear, the clip and the title block.
     //
-    // $turn-lift is how far each turned page rises and $turn-splay how far it leans on the pin.
-    // $turn-under is how far the band of sheet back reaches down behind the front page, so it
-    // never ends in mid-air.
-    $turn-lift: 0.25em;
-    $turn-splay: 0.375deg;
+    // The pile steps out on the same law the fan below splays on: a log of the rank, so each
+    // page adds less than the one before and the corners bend over instead of running off in a
+    // straight line. $turn-lift is how far the first page turned rises, $turn-splay how far it
+    // leans on the pin, and $turn-drift how far it slides back towards the clip. The drift is
+    // the one term that stays even with the rank, which is what bows the corner column: the
+    // pages spread sideways at a steady rate while their rise closes up. $turn-under is how far
+    // the band of sheet back reaches down behind the front page, so it never ends in mid-air.
+    $turn-lift: 0.5em;
+    $turn-splay: 0.5deg;
+    $turn-drift: 0.125em;
     $turn-under: 0.75em;
 
     & > div {
@@ -271,7 +276,12 @@ const pages = await Promise.all(
       // furthest out. Everything still to come ranks 0 or less.
       --turned-rank: calc(var(--page-index) - var(--page-count) + var(--pages-turned));
       --turned: clamp(0, var(--turned-rank), 1);
-      --turned-rise: calc(#{$turn-lift} * max(var(--turned-rank), 0));
+      // log base 2 of one past the rank: 1 for the first page turned, then 1.58, 2, 2.32, and
+      // 0 for everything still to come. Written as a ratio of natural logs because that is the
+      // form the fan above uses.
+      --turned-arc: calc(log(1 + max(var(--turned-rank), 0)) / log(2));
+      --turned-rise: calc(#{$turn-lift} * var(--turned-arc));
+      --turned-drift: calc(#{$turn-drift} * max(var(--turned-rank), 0));
 
       // Paint order: back to front by --page-index, which already reads the pile the right way
       // round. A turned page carries the highest indices, so it paints behind the bottom page of
@@ -288,10 +298,10 @@ const pages = await Promise.all(
       // counts the pages still to come.
       rotate: calc(
         (1 - var(--turned)) * #{$per-page-splay} * log(max(var(--page-index) - var(--flip-progress), 1))
-        - #{$turn-splay} * max(var(--turned-rank), 0)
+        - #{$turn-splay} * var(--turned-arc)
         + var(--paper-peek, 0deg)
       );
-      translate: 0 calc(-1 * var(--turned-rise));
+      translate: calc(-1 * var(--turned-drift)) calc(-1 * var(--turned-rise));
       // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out, translate 250ms ease-in-out;
 
