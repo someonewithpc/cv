@@ -1,5 +1,12 @@
 ---
-const members = ['Gold', 'Silver', 'Clear', 'Black'];
+import { autoplayValue, baseObjects, objectsOf } from '../objects';
+
+const group = baseObjects.find((object) => object.autoplay) ?? baseObjects[0];
+const members = objectsOf(group).map((object, index) => {
+  const seats = object.details.split(',')[0];
+  return index === 0 ? `${seats} · base` : seats;
+});
+const caret = autoplayValue.length;
 ---
 
 <div class="wrapper">
@@ -12,9 +19,9 @@ const members = ['Gold', 'Silver', 'Clear', 'Black'];
 
       <div class="fan">
         <div class="source">
-          <span class="caption">Chiavari · shared value</span>
+          <span class="caption">{group.base.name} · shared value</span>
           <div class="field">
-            <span class="text">Gold Resin</span>
+            <span class="text">{autoplayValue}</span>
             <span class="caret"></span>
             <span class="tick">✓</span>
           </div>
@@ -33,10 +40,10 @@ const members = ['Gold', 'Silver', 'Clear', 'Black'];
             <li>
               <span class="member">{member}</span>
               <span class="field mirrored">
-                <span class="text">Gold Resin</span>
+                <span class="text">{autoplayValue}</span>
                 <span class="caret"></span>
               </span>
-              <code class="prop">--caret: 10</code>
+              <code class="prop">--caret: {caret}</code>
             </li>
           ))}
         </ul>
