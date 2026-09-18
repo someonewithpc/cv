@@ -35,151 +35,221 @@ const {
 } = Astro.props;
 
 const hasMeta = updatedAt || stats;
+
+const rowLabel = `${repository}${number == null ? '' : `#${number}`}: ${title.replaceAll('`', '')}`;
 ---
 
-<details data-status={status}>
-  <summary>
-    <ul aria-label="Technologies">
-      {tags.map((suffix) => {
-        const resolved = resolveTechByIconSuffix(suffix);
+<div class="row" data-status={status}>
+  <ul aria-label="Technologies">
+    {tags.map((suffix) => {
+      const resolved = resolveTechByIconSuffix(suffix);
 
-        return resolved && (
-          <li>
-            <TechIcon tech={resolved} />
-          </li>
-        );
-      })}
-    </ul>
+      return resolved && (
+        <li>
+          <TechIcon tech={resolved} />
+        </li>
+      );
+    })}
+  </ul>
 
+  <div class="meta">
     <cite>{repository}{number != null && `#${number}`}</cite>
 
-    <span class="title"><span class="title-text"><BacktickText text={title} /></span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" /></span>
-  </summary>
+    <a class="title" href={url} rel="noopener noreferrer" target="_blank"><span class="title-text"><BacktickText text={title} /></span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" /><span class="sr-only"> ({repository}), opens in a new tab</span></a>
+  </div>
 
-  {description && (
-    <p><BacktickText text={description} /></p>
-  )}
+  {/* The summary is the row: it lies under the technologies, the repository and
+      the title, and only the title link is raised above it. Keeping the link out
+      of the summary keeps one control from nesting inside another. */}
+  <details>
+    <summary aria-label={rowLabel}></summary>
 
-  <footer>
-    <a
-      href={url}
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      {number != null ? `Open #${number}` : 'Open thread'}<span class="sr-only"> ({repository}), opens in a new tab</span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
-    </a>
-    {hasMeta && ' · '}
-      {updatedAt && (
-        <time datetime={updatedAt}>{updatedAt.slice(0, 10)}</time>
+    <div class="body">
+      {description && (
+        <p><BacktickText text={description} /></p>
       )}
-      {stats && (
-        <span class="diff-stats">
-          {updatedAt && ' · '}
-          <span class="additions">+{stats.additions}</span>
-          {' '}
-          <span class="deletions">−{stats.deletions}</span>
-          {' · '}
-          <span class="files">{stats.changed_files} files</span>
-        </span>
+
+      {hasMeta && (
+        <footer>
+          {updatedAt && (
+            <time datetime={updatedAt}>{updatedAt.slice(0, 10)}</time>
+          )}
+          {stats && (
+            <span class="diff-stats">
+              {updatedAt && ' · '}
+              <span class="additions">+{stats.additions}</span>
+              {' '}
+              <span class="deletions">−{stats.deletions}</span>
+              {' · '}
+              <span class="files">{stats.changed_files} files</span>
+            </span>
+          )}
+        </footer>
       )}
-  </footer>
-</details>
+    </div>
+  </details>
+</div>
 
 <style lang="scss">
-details {
-  > summary {
-    ul {
+.row {
+  > ul {
+    grid-area: 1 / 1;
+    position: relative;
+    z-index: 1;
+    /* The summary underneath is the toggle; only the title link takes clicks. */
+    pointer-events: none;
+    padding-block: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    list-style: none;
+
+    li {
       display: flex;
-      flex-wrap: wrap;
+      line-height: 0;
+      min-height: 3rem;
       align-items: center;
       justify-content: center;
-      gap: 0.375rem;
-      list-style: none;
 
-      li {
-        display: flex;
-        line-height: 0;
-        min-height: 3rem;
-        align-items: center;
-        justify-content: center;
-
-        :global(svg) {
-          width: 1.375rem;
-          height: 1.375rem;
-        }
+      :global(svg) {
+        width: 1.375rem;
+        height: 1.375rem;
       }
-    }
-
-    cite {
-      font-family: monospace, system-ui;
-      font-style: normal;
-      color: var(--ink-muted);
-      line-height: 1.4;
-      overflow-wrap: break-word;
-    }
-
-    .title {
-      min-width: 0;
-      min-height: 1.5rem;
-      padding-block: 0.125rem;
-      display: block;
-      font-family: sans-serif;
-      color: var(--ink);
-      line-height: 1.4;
-      overflow-wrap: break-word;
-      word-break: normal;
-      hyphens: none;
-      text-wrap: pretty;
-
-      /* The rule sits on the text, not on .title: an underline inherited from
-         the wrapper would run under the mark as well in engines that paint it
-         across a replaced inline. */
-      .title-text {
-        text-decoration: underline;
-        text-underline-offset: 0.15em;
-      }
-
-      /* A margin rather than a space in the markup: a space would take the
-         underline with it, and would let the mark wrap onto a line of its own. */
-      .external-link {
-        display: inline;
-        width: 0.75em;
-        height: 0.75em;
-        margin-inline-start: 0.25em;
-        vertical-align: -1px;
-      }
-    }
-
-    &:hover .title,
-    &:focus-visible .title {
-      color: var(--accent-text);
     }
   }
 
-  &[open] > summary {
+  .meta {
+    display: contents;
+  }
+
+  cite {
+    grid-area: 1 / 2;
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    padding-block: 0.75rem;
+    font-family: monospace, system-ui;
+    font-style: normal;
+    color: var(--ink-muted);
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+
+  .title {
+    grid-area: 1 / 3;
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    min-height: 1.5rem;
+    padding-block: 0.125rem;
+    /* A margin, not padding: the head keeps its breathing room without growing
+       the link box the focus ring and the hover colour are drawn on. */
+    margin-block: 0.625rem;
+    display: block;
+    width: fit-content;
+    font-family: sans-serif;
+    color: var(--ink);
+    line-height: 1.4;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
+    text-wrap: pretty;
+
+    /* The rule sits on the text, not on .title: an underline inherited from
+       the wrapper would run under the mark as well in engines that paint it
+       across a replaced inline. */
+    .title-text {
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
+
+    /* A margin rather than a space in the markup: a space would take the
+       underline with it, and would let the mark wrap onto a line of its own. */
+    .external-link {
+      display: inline;
+      width: 0.75em;
+      height: 0.75em;
+      margin-inline-start: 0.25em;
+      vertical-align: -1px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 0.125rem;
+      border-radius: 0.125rem;
+    }
+  }
+
+  &:hover .title,
+  &:has(> details > summary:focus-visible) .title,
+  .title:hover {
+    color: var(--accent-text);
+  }
+
+  > details {
+    grid-column: 1 / -1;
+    grid-row: 1 / 3;
+    align-self: stretch;
+    /* Back out of the row padding so the summary and the body run the full
+       width of the row, as they did when the summary was the row. */
+    margin-inline: calc(-1 * var(--cell-x));
+    display: grid;
+    /* Row 1 is the row head, row 2 the disclosed body: borrowing the row's own
+       tracks keeps the summary exactly as tall as the head it covers. */
+    grid-template-rows: subgrid;
+    min-width: 0;
+
+    > summary {
+      grid-row: 1;
+      list-style: none;
+      cursor: pointer;
+      transition: background 150ms ease;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+      }
+    }
+
+    &[open] > summary {
+      background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 10%);
+    }
+  }
+
+  &:hover > details > summary {
     background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 10%);
   }
 
-  > p,
-  > footer {
+  .body {
+    min-width: 0;
+  }
+
+  .body > p,
+  .body > footer {
     padding: 0 var(--cell-x) 1rem;
     background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 8%);
     font-family: sans-serif;
   }
 
-  > :not(summary):first-of-type {
+  .body > :first-child {
     padding-top: 0.875rem;
     box-shadow: inset 0 1px 0 var(--line);
   }
 
-  > p {
+  .body > p {
     margin: 0;
     line-height: 1.65;
     color: var(--ink-muted);
     overflow-wrap: break-word;
   }
 
-  > footer {
+  .body > footer {
     margin-top: 0.625rem;
     padding-top: 0.625rem;
     border-top: 1px solid color-mix(in oklch, var(--line), transparent 40%);
@@ -187,25 +257,6 @@ details {
     font-size: 0.75rem;
     line-height: 1.5;
     color: var(--ink-faint);
-
-    a {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      min-height: 1.5rem;
-      color: var(--accent-text);
-      text-underline-offset: 0.15em;
-
-      .external-link {
-        width: 0.75em;
-        height: 0.75em;
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 0.125rem;
-      }
-    }
 
     .additions {
       font-weight: 600;
@@ -223,41 +274,56 @@ details {
   }
 
   @container (max-width: 28rem) {
-    > summary {
-      grid-template-columns: 1.75rem minmax(0, 1fr);
-      grid-template-areas:
-        'tech repo'
-        'tech title';
-      row-gap: 0.35rem;
-      column-gap: 0.65rem;
-      align-items: start;
-      min-height: 0;
+    column-gap: 0.65rem;
+    align-items: start;
+    min-height: 0;
+
+    > ul {
       padding-block: 0.85rem;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-self: center;
 
-      ul {
-        grid-area: tech;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        align-self: center;
-
-        li {
-          min-height: 1.375rem;
-        }
+      li {
+        min-height: 1.375rem;
       }
+    }
 
-      cite {
-        grid-area: repo;
-        font-size: 0.75rem;
-      }
+    .meta {
+      grid-area: 1 / 2;
+      position: relative;
+      z-index: 1;
+      pointer-events: none;
+      padding-block: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      row-gap: 0.35rem;
+      min-width: 0;
+    }
 
-      .title {
-        grid-area: title;
-      }
+    cite,
+    .title {
+      grid-area: auto;
+      position: static;
+      z-index: auto;
+      padding-block: 0;
+      margin-block: 0;
+    }
+
+    cite {
+      font-size: 0.75rem;
+    }
+
+    .title {
+      /* The meta column ignores the pointer so the summary under it toggles;
+         the link itself takes clicks back. */
+      pointer-events: auto;
+      padding-block: 0.125rem;
     }
   }
 
   @container (max-width: 24rem) {
-    > summary ul {
+    > ul {
       flex-direction: column;
       flex-wrap: nowrap;
 
