@@ -8,11 +8,12 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 <div class="wrapper">
   <div class="pipeline" aria-hidden="true">
     <div class="step" style="--seq: 1">
+      <p class="step-title">Type a URL</p>
       <div class="paper field">
         <span class="field-label">Embed URL</span>
         <span class="field-input">rust-lang.org</span>
       </div>
-      <p class="caption">A URL, typed into the subform</p>
+      <p class="caption">A page the visitor names in the Embed URL subform</p>
     </div>
 
     <div class="hop">
@@ -20,6 +21,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     </div>
 
     <div class="step" style="--seq: 2">
+      <p class="step-title">Fetch the page</p>
       <div class="draft">
         <span class="route denied">
           <span class="route-label">iframe</span>
@@ -30,7 +32,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
           <span class="route-reason">one origin, so the HTML can be read</span>
         </span>
       </div>
-      <p class="caption">The page will not be framed, so a worker fetches it instead</p>
+      <p class="caption">rust-lang.org refuses to be framed, so a worker on this origin fetches the HTML</p>
     </div>
 
     <div class="hop">
@@ -38,6 +40,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     </div>
 
     <div class="step" style="--seq: 3">
+      <p class="step-title">Read the stylesheets</p>
       <div class="draft listing">
         <code class="line"><span class="tag">&lt;base href=</span>"https://rust-lang.org/"<span class="tag">&gt;</span></code>
         <code class="line"><span class="tag">&lt;link href=</span>"/static/styles.css"<span class="tag">&gt;</span></code>
@@ -46,9 +49,9 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
         <code class="line rule indent">src: url(<span class="rewritten">{PROXIED_SRC}</span>)</code>
       </div>
       <p class="caption">
-        Stylesheets and their imports, fetched and stood up as a document. Every
-        <code>src</code> is made absolute and sent back through the proxy, because a webfont
-        load is CORS-gated too
+        The worker follows every <code>link</code> and <code>@import</code>. Each
+        <code>src</code> is made absolute and sent back through the proxy, because loading a
+        webfont is CORS-checked too
       </p>
     </div>
 
@@ -58,6 +61,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     </div>
 
     <div class="step" style="--seq: 4">
+      <p class="step-title">Show the new face</p>
       <div class="paper select">
         <span class="select-value">Poppins 400<span class="dot"></span></span>
         <span class="select-row new">Alfa Slab One 400</span>
@@ -70,7 +74,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 
     <div class="branch">
       <p class="caption">
-        A Google font skips the first two hops. <code>fonts.googleapis.com/css2?family=Lobster</code>
+        A Google font skips the first two steps. <code>fonts.googleapis.com/css2?family=Lobster</code>
         answers with the same kind of stylesheet, and joins the flow here
       </p>
       <svg viewBox="0 0 120 44" class="arrow branch-arrow">
@@ -138,6 +142,22 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     border-radius: 50%;
     font-size: 0.875em;
     line-height: 1;
+  }
+
+  // The steps name themselves on that rule, the way a drawing labels a section
+  .step-title {
+    // Over the rule below, which is a later pseudo-element and would otherwise cross it
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 1.75em;
+    margin: 0;
+    padding-right: 0.5em;
+    background: var(--surface-sunken);
+    font-size: 0.875em;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
   }
 
   // A rule from the number across the step, the way a drafted caption is underscored
