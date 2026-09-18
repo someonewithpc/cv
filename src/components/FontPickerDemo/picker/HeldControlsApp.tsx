@@ -7,7 +7,7 @@ import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
 import { Pinned } from './Pinned';
-import { Playthrough, type Run, setNativeValue } from './playthrough';
+import { type CursorState, Playthrough, type Run, setNativeValue } from './playthrough';
 
 import './EditStyle.scss';
 import './HeldControls.scss';
@@ -124,14 +124,21 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
     };
 
-    // A hand holds still while the layout moves under it, which is the whole point of the
-    // comparison: the cursor stays at the point it grabbed, and only the value changes
+    // A drag runs along the track while the hand keeps the height it grabbed at, which is the
+    // whole point of the comparison: the pointer follows the thumb across, holds its line down
+    // the sheet, and the plain column's row is the thing that leaves it
     const dragHolding = async (run: Run, side: Side) => {
       const input = slider(side);
       if (!input) return;
-      const at = thumb(input);
-      await run.glide(at);
+      await run.glide(thumb(input));
       await run.wait(500);
+
+      // Kept against the sheet, not the viewport: a page that scrolls under the walkthrough
+      // would otherwise slide the hand up the column
+      const holdY = thumb(input).y - page.getBoundingClientRect().top;
+      const ride = (flags: Partial<CursorState> = { dragging: true }) => {
+        run.appear({ x: thumb(input).x, y: page.getBoundingClientRect().top + holdY }, flags);
+      };
 
       // The line the drag started on, left on the sheet while it runs, and a dimension from it
       // to where the slider is now: the plain column walks away from it, the held one does not
@@ -140,7 +147,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
         const sheet = page.getBoundingClientRect();
         const box = column.getBoundingClientRect();
         setGrab({
-          top: at.y - sheet.top,
+          top: holdY,
           left: box.left - sheet.left,
           width: box.width,
           thumb: thumb(input).y - sheet.top,
@@ -148,6 +155,8 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
         });
       };
       mark();
+      ride({ clicking: true });
+      await run.wait(220);
 
       const stack = page.closest<HTMLElement>('article.technical-drawing-stack');
       const to = stack?.dataset.sheetOrientation === 'portrait' ? DRAG_TO_PORTRAIT : DRAG_TO;
@@ -155,7 +164,9 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
         setNativeValue(input, value.toFixed(3));
         await run.wait(DRAG_STEP_MS);
         mark();
+        ride();
       }
+      ride({});
       await run.wait(1800);
       setGrab(null);
       setNativeValue(input, '1');

@@ -75,9 +75,9 @@ export class Run {
   }
 
   /** Show the cursor somewhere without travelling there */
-  appear(at: { x: number; y: number }) {
+  appear(at: { x: number; y: number }, flags: Partial<CursorState> = {}) {
     this.check();
-    this.cursor(at);
+    this.cursor(at, flags);
   }
 
   async glide(to: { x: number; y: number }, ms = CURSOR_TRAVEL_MS, ease = easeOutQuint) {
