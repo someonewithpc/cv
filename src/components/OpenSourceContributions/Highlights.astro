@@ -1,4 +1,6 @@
 ---
+import { Icon } from 'astro-icon/components';
+
 import TechIcon from '@/components/TechIcon.astro';
 
 import { resolveTechByIconSuffix } from '@/server/tech-icons';
@@ -84,9 +86,9 @@ const { highlights } = Astro.props;
             href={url}
             rel="noopener noreferrer"
             target="_blank"
-            aria-label={`${label} (${entry.title})`}
+            aria-label={`${label} (${entry.title}), opens in a new tab`}
           >
-            {label}
+            {label}<Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
           </a>
         ))}
       </nav>
@@ -211,9 +213,15 @@ article {
       min-height: 3rem;
       display: inline-flex;
       align-items: center;
+      gap: 0.25rem;
       color: var(--accent-text);
       text-underline-offset: 0.15em;
       overflow-wrap: break-word;
+
+      .external-link {
+        width: 0.75em;
+        height: 0.75em;
+      }
 
       & + a::before {
         content: none;
