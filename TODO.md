@@ -18,6 +18,7 @@
 - [ ] Demos
   - [x] Visrez animated icon
   - [x] Visrez marker editor
+    - [x] Colour picker lags while dragging (#17)
   - [x] Space builder add tool
     - [x] Place area
     - [x] Edit parameters
