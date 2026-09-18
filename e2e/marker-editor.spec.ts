@@ -88,30 +88,58 @@ test('store page: static undoable-store illustration is reachable', async ({ pag
   await expect(front.locator('section')).toBeVisible();
 });
 
-test('status chip: auto-playing until the visitor takes over, then Replay hands it back', async ({ page }) => {
-  const stack = markerEditorStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await waitForIslandMounted(front);
+const VIEWPORTS = [
+  { name: 'desktop', viewport: { width: 1280, height: 720 } },
+  { name: 'phone', viewport: { width: 390, height: 844 } },
+];
 
-  const chip = front.locator('[data-demo-status]');
-  const replay = chip.locator('[data-demo-status-replay]');
-  await expect(chip).toHaveAttribute('data-state', 'playing', { timeout: 15_000 });
-  await expect(chip).toContainText('Auto-playing');
-  await expect(replay).toBeHidden();
+for (const { name, viewport } of VIEWPORTS) {
+  test.describe(`transport deck at ${name} width`, () => {
+    test.use({ viewport });
 
-  await front.locator('.mock-map-overlay').focus();
-  await expect(chip).toHaveAttribute('data-state', 'user');
-  await expect(chip).toContainText("You're in control");
-  await expect(replay).toBeVisible();
+    test('follows hover, the pause key and reset', async ({ page }) => {
+      const stack = markerEditorStack(page);
+      // Centred, not just nudged into view: the demo only drives itself (and so only
+      // reports to the deck) while its page counts as active.
+      await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const front = frontPage(stack, await frontPageIndex(stack));
+      await waitForIslandMounted(front);
 
-  // Focus is a deliberate takeover, so the idle resume (2s) must not fire.
-  await page.waitForTimeout(3000);
-  await expect(chip).toHaveAttribute('data-state', 'user');
+      const deck = front.locator('[data-demo-transport]');
+      const play = deck.locator('[data-demo-key="play"]');
+      const pause = deck.locator('[data-demo-key="pause"]');
+      const reset = deck.locator('[data-demo-key="reset"]');
 
-  await replay.click();
-  await expect(chip).toHaveAttribute('data-state', 'playing');
-});
+      await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
+      await expect(deck).toContainText('AUTO PLAYING');
+      await expect(play).toHaveAttribute('aria-pressed', 'true');
+      await expect(pause).toHaveAttribute('aria-pressed', 'false');
+
+      // Hovering the sheet is the takeover the deck's hint promises.
+      const box = (await stack.boundingBox())!;
+      await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.6);
+      await page.mouse.move(box.x + box.width * 0.42, box.y + box.height * 0.62);
+      await expect(deck).toHaveAttribute('data-state', 'user');
+      await expect(deck).toContainText('MANUAL CONTROL');
+      await expect(pause).toHaveAttribute('aria-pressed', 'true');
+      await expect(play).toHaveAttribute('aria-pressed', 'false');
+
+      // Play hands the walkthrough back.
+      await play.click();
+      await expect(deck).toHaveAttribute('data-state', 'playing');
+
+      // Pause is the explicit takeover, and it holds past the idle resume (2s).
+      await pause.click();
+      await expect(deck).toHaveAttribute('data-state', 'user');
+      await page.waitForTimeout(3000);
+      await expect(deck).toHaveAttribute('data-state', 'user');
+
+      // Reset starts the walkthrough again.
+      await reset.click();
+      await expect(deck).toHaveAttribute('data-state', 'playing');
+    });
+  });
+}
 
 test('main page: the demo cursor leaves when its page is no longer in front', async ({ page }) => {
   const stack = markerEditorStack(page);
