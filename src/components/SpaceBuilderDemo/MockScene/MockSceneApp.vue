@@ -1013,6 +1013,13 @@ $scene-bg: #212121;
     overflow-y: auto;
     scrollbar-width: none;
     background: $nav-main-bg;
+    // On a narrow sheet the drawing folds its note out of the bottom-left corner
+    // and the tab lands on this column. The panel can wear it; a tool button
+    // cannot. A border in the panel's own colour ends the scrollport above the
+    // tab while the column still runs to the sheet's corner — padding would not,
+    // since it only moves the last button once the rail is scrolled to its end.
+    // Page.astro sets --note-fold-reach, and it is 0 wherever there is no tab.
+    border-block-end: var(--note-fold-reach, 0px) solid $nav-main-bg;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.35);
     transform: translateX(calc(var(--sb-rail) - 70px));
     transition: transform 0.25s ease;

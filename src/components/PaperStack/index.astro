@@ -67,25 +67,29 @@ const pages = await Promise.all(
 ---
 
 <noscript>
-  <Tag data-paper-stack-root class={className} set:html={pages.join('')} />
   <!--
-    Plain CSS, deliberately: a <style> nested in <noscript> is the one kind Astro leaves alone —
-    it isn't hoisted into the bundle (which is the point, these rules must not reach the
-    scripted stack) and so it isn't compiled either. `lang="scss"` would be an inert attribute
-    and, worse, `//` comments would reach the browser as parse errors that swallow the
-    declaration after them. Nesting below is native CSS nesting, which needs no compiler.
+    Without JS the one stack below is the reader's copy too: these rules turn it into a plain
+    scroll-snap row and switch off everything only fold-drag.ts gives meaning to. Plain CSS,
+    deliberately: a <style> nested in <noscript> is the one kind Astro leaves alone — it isn't
+    hoisted into the bundle (which is the point, these rules must not reach the scripted stack)
+    and so it isn't compiled either. `lang="scss"` would be an inert attribute and, worse, `//`
+    comments would reach the browser as parse errors that swallow the declaration after them.
+    Nesting below is native CSS nesting, which needs no compiler. The !importants outrank the
+    scripted sheet's own compound selectors; nothing else ever competes with them.
   -->
   <style>
-    [data-paper-stack-root] {
+    [data-paper-stack-root][data-paper-stack] {
+      display: flex !important;
+      flex-direction: row;
+      position: relative;
       overflow-x: auto;
       overflow-y: hidden;
       scroll-snap-type: x mandatory;
       scrollbar-width: thin;
       scroll-behavior: smooth;
-
-      display: flex;
-      flex-direction: row;
-      position: relative;
+      touch-action: auto !important;
+      margin-bottom: 0 !important;
+      transition: none !important;
 
       > * {
         flex: 0 0 100%;
@@ -93,6 +97,18 @@ const pages = await Promise.all(
            scrollWidth, leaving a permanent horizontal scrollbar on every page. */
         overflow: clip;
         scroll-snap-align: center;
+        order: 0 !important;
+        rotate: none !important;
+        animation: none !important;
+        transition: none !important;
+
+        > * {
+          clip-path: none !important;
+        }
+
+        > :is(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
+          display: none !important;
+        }
       }
 
       @supports selector(::scroll-button(right)) {
@@ -117,9 +133,6 @@ const pages = await Promise.all(
         }
       }
     }
-    [data-paper-stack] {
-      display: none;
-    }
   </style>
 </noscript>
 
@@ -128,11 +141,8 @@ const pages = await Promise.all(
   data-paper-stack
   class={className}
   style={`--page-count: ${pageCount}`}
-  tabindex="0"
   role="region"
-  aria-roledescription="paper stack"
   aria-label={label}
-  aria-description="The left and right arrow keys turn the pages"
 >
   {pages.map((page, index) => (
     <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={(index === 0 ? paperClipUnder : '') + page + (index === 0 ? foldFront : '')} />
@@ -482,6 +492,15 @@ const pages = await Promise.all(
         // drag) so crossing the threshold reads as a state change.
         &.paper-fold--will-commit {
           filter: brightness(115%) drop-shadow(0 0 0.5em rgb(0 0 0 / 35%));
+        }
+
+        // A committed flip keeps this flap on the outgoing sheet until it has folded away behind
+        // the stack, so fold-drag.ts stands a second one in on the page taking the front, which
+        // would otherwise wear a bare corner cut until the flip ended. It only paints the resting
+        // dog-ear: the hand still finds the real flap, which takes this one's place the moment the
+        // flip is done with it.
+        &.paper-fold--stand-in {
+          pointer-events: none;
         }
       }
     }
