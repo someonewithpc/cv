@@ -824,18 +824,24 @@ const restIdleFold = (sheet: HTMLElement): void => {
   sheet.style.animationName = 'none, fold-reveal-pulse';
 };
 
+// What a page that has come to rest at the front hands back: index.astro's own rules take the
+// rendering again, with the resting dog-ear running on it.
+const restFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
+  fold.classList.remove('paper-fold--active');
+  clearFoldRender(section, fold);
+
+  restIdleFold(sheet);
+  sheet.parentElement!.style.removeProperty('--flip-progress');
+  // A settled back-drag may have restored the stack's original order
+  updateFlippedState(sheet.parentElement!);
+};
+
 // Glides back to the resting dog-ear, then hands rendering back to index.astro's idle CSS rules
 const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, thrown = 0): (() => void) => {
   // Settling means no flip is coming, so the commit feedback drops immediately
   fold.classList.remove('paper-fold--will-commit');
   return glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, thrown, () => {
-    fold.classList.remove('paper-fold--active');
-    clearFoldRender(section, fold);
-
-    restIdleFold(sheet);
-    sheet.parentElement!.style.removeProperty('--flip-progress');
-    // A settled back-drag may have restored the stack's original order
-    updateFlippedState(sheet.parentElement!);
+    restFold(sheet, section, fold);
   });
 };
 
@@ -1103,6 +1109,71 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   return () => {
     cancelAnimationFrame(frame);
     if (settling) finishFlip(sheet, section, fold);
+  };
+};
+
+// The mirror of flipFold, for a page fetched back by a gesture with nothing left to let go of:
+// the previous page comes over the clip and then unfolds flat in front. Both halves run on one
+// clock under a single ease-out, measured in crease travel the way flipFold's are, so the edge
+// the eye follows keeps its speed straight through the promotion. Run as two glides instead (an
+// approach easing out to a stop, then a settle setting off again from it) the page visibly halts
+// half way through the turn. A release still goes that way, since the hand decides there how far
+// it had got and how fast; a key press has decided everything already.
+const bringFold = (
+  sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
+  approach: NonNullable<FoldGesture['approach']>, onPromoted: () => void,
+): (() => void) => {
+  const { w, h } = metricsOf(sheet);
+  const { seed } = approach;
+  const over = { x: w + seed.x, y: h + seed.y };
+  const rest = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
+  const from = approach.t;
+  const d1 = Math.hypot(over.x - from.x, over.y - from.y) / 2;
+  const d2 = Math.hypot(seed.x - rest.x, seed.y - rest.y) / 2;
+  const total = d1 + d2;
+  const duration = Math.max(Math.min(300 + total / 2, 1400), 200);
+
+  let promoted = false;
+  const promote = () => {
+    promoted = true;
+    promoteFold(sheet, section, fold, seed);
+    onPromoted();
+  };
+
+  let frame = 0;
+  const start = performance.now();
+  const step = (now: number) => {
+    const tt = Math.min(Math.max((now - start) / duration, 0), 1);
+    const p = (1 - (1 - tt) ** 3) * total;
+    const backCut = currentBackFoldSize(sheet);
+    if (p < d1) {
+      const k = p / d1;
+      const t = { x: from.x + (over.x - from.x) * k, y: from.y + (over.y - from.y) * k };
+      renderLanding(section, fold, w, h, seed, backCut, t);
+    } else {
+      if (!promoted) promote();
+      const k = (p - d1) / d2;
+      const tip = { x: seed.x + (rest.x - seed.x) * k, y: seed.y + (rest.y - seed.y) * k };
+      const size = foldSizeFromTip(tip.x, tip.y);
+      sheet.style.setProperty('--fold-x', `${size.x}px`);
+      sheet.style.setProperty('--fold-y', `${size.y}px`);
+      renderFold(section, fold, w, h, tip, backCut);
+    }
+    if (tt < 1) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
+    restFold(sheet, section, fold);
+  };
+  frame = requestAnimationFrame(step);
+
+  // The turn was committed when the key landed, so a re-grab mid-flight takes the page as
+  // arrived rather than undoing it: fast-forward to the end state and let the new gesture start
+  // from a stack at rest.
+  return () => {
+    cancelAnimationFrame(frame);
+    if (!promoted) promote();
+    restFold(sheet, section, fold);
   };
 };
 
@@ -1534,7 +1605,13 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     if (!approach) swipeTo(0, time);
     gesture = null;
     swipe = null;
-    cancelSettle = approach ? throwFront(approach) : flipFold(sheet, section, fold, 0);
+    cancelSettle = approach
+      // The grab handle sits out the promotion the way it does under a pointer, and rejoins the
+      // sheet it now belongs to.
+      ? bringFold(sheet, section, fold, approach, () => {
+        sheet.insertBefore(grab, sheet.querySelector('.paper-flip-hint'));
+      })
+      : flipFold(sheet, section, fold, 0);
   };
 
   stack.addEventListener('wheel', (e) => {
