@@ -644,6 +644,7 @@ onMounted(async () => {
       (patch) => {
         if (patch.panel) panel.value = patch.panel;
         if (patch.phase) phase.value = patch.phase;
+        if (patch.catalogId) selectedCatalogId.value = patch.catalogId;
       },
       (step, total) => reportAutoplayProgress(rootRef.value, step, total),
     );
