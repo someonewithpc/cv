@@ -1808,9 +1808,6 @@ export function initPaperStackFold(): void {
       attachFoldDrag(fold, grab);
       syncStackSurfaces(stack);
       syncInert(stack);
-      // Which cue the turned pages show is a review knob for now, one stack cue per value
-      // (see index.astro); the query is how to compare them without a rebuild.
-      stack.dataset.stackCue = new URLSearchParams(location.search).get('stackcue') ?? '2';
     }
     watchThemePaperSurface();
   };
