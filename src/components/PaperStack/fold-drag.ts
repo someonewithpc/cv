@@ -259,17 +259,24 @@ const syncPaperSurface = (sheet: HTMLElement, section: HTMLElement): void => {
   sheet.style.setProperty('--paper-surface', getComputedStyle(section).backgroundColor);
 };
 
+// Every page carries its own resolved colour, not just the one the flap rides: a turned page
+// paints the back of its sheet in the pile behind the stack (see index.astro), and it is no
+// longer at the front to be asked when it does.
+const syncStackSurfaces = (stack: HTMLElement): void => {
+  for (const page of stack.children as HTMLCollectionOf<HTMLElement>) {
+    syncPaperSurface(page, sectionOf(page));
+  }
+};
+
 // The colour above is a snapshot, taken when a gesture starts or a flip hands the flap on, so a
 // theme switch in between leaves the dog-ear painted in the theme the page loaded under. Re-lift
 // it whenever the theme moves: the picker's explicit choice (data-theme, which it also drops and
 // restores around its view transition) or, with no choice stored, the OS preference the page
-// falls back to. The flap is the only thing that reads --paper-surface, so it is enough to
-// resync the sheet each one currently rides.
+// falls back to.
 const watchThemePaperSurface = (): void => {
   const resync = () => {
-    for (const fold of document.querySelectorAll<HTMLElement>('.paper-fold')) {
-      const sheet = fold.parentElement as HTMLElement;
-      syncPaperSurface(sheet, sectionOf(sheet));
+    for (const stack of document.querySelectorAll<HTMLElement>('[data-paper-stack]')) {
+      syncStackSurfaces(stack);
     }
   };
   new MutationObserver(resync).observe(document.documentElement, {
@@ -803,11 +810,18 @@ const syncInert = (stack: HTMLElement): void => {
 // flips only renumber --page-index, never reorder the DOM). It gates the folded-back top-left
 // corner and its grab handle.
 const updateFlippedState = (stack: HTMLElement): void => {
-  if (pageIndex(stack.children[0] as HTMLElement) === 1) {
+  const first = pageIndex(stack.children[0] as HTMLElement);
+  if (first === 1) {
     delete stack.dataset.paperFlipped;
   } else {
     stack.dataset.paperFlipped = '';
   }
+  // How many pages have been turned, which is what the stack's own styles show as a pile behind
+  // it (see index.astro). The originally-first page counts them on its own: a flip sends the
+  // front page to the back and shifts every other page down one, so that page's distance from
+  // the back is how many turns it has sat through. Back at 1 it is the front page again and the
+  // stack has come full circle, which is no pages turned rather than all of them.
+  stack.style.setProperty('--pages-turned', `${first === 1 ? 0 : stack.children.length - first + 1}`);
 };
 
 // Puts a front page's fold back in its resting idle state: the dog-ear held at the reveal size
@@ -906,7 +920,8 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
 const clearFrontFold = (sheet: HTMLElement): void => {
   sheet.style.removeProperty('--fold-x');
   sheet.style.removeProperty('--fold-y');
-  sheet.style.removeProperty('--paper-surface');
+  // --paper-surface stays: the sheet paints its own back with it in the pile of turned pages,
+  // which is exactly where a page leaving the front goes.
   sheet.style.animationName = '';
   sheet.style.animationDelay = '';
 };
@@ -1791,7 +1806,11 @@ export function initPaperStackFold(): void {
       stack.setAttribute('aria-description', 'The left and right arrow keys turn the pages');
       observeFoldPageSizes(stack);
       attachFoldDrag(fold, grab);
+      syncStackSurfaces(stack);
       syncInert(stack);
+      // Which cue the turned pages show is a review knob for now, one stack cue per value
+      // (see index.astro); the query is how to compare them without a rebuild.
+      stack.dataset.stackCue = new URLSearchParams(location.search).get('stackcue') ?? '2';
     }
     watchThemePaperSurface();
   };
