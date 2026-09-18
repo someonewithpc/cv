@@ -56,6 +56,8 @@ const classes = {
   DecorationFont,
 };
 
+MarkerPart.registerKinds(classes);
+
 export const svgRef = createRef<SVGSVGElement>();
 
 export const markers = {
@@ -297,7 +299,7 @@ if (typeof module !== 'undefined' && (module as any).hot) {
     (paths: string[]) => {
       paths.forEach((path) => {
         const [, step, partName] = path.match(/.*\/markerParts\/([^/]+)\/([^/]+).tsx?/) as [any, keyof typeof markers, string];
-        const [name, previousPart] = Object.entries(markers[step]).find(([, part]) => part.constructor.name === partName) as [string, MarkerPart];
+        const [name, previousPart] = Object.entries(markers[step]).find(([, part]) => part.kind === partName) as [string, MarkerPart];
 
         const newPart = new classes[partName as keyof typeof classes](svgRef);
 
