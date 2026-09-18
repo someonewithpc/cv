@@ -1,3 +1,5 @@
+@use '../layers/sheetProse' as *;
+
 // The held-controls sheet: the product's settings column twice, side by side, with the sheet's
 // own labels around it. The column itself is styled by EditStyle.scss, as the picker's is
 .held-controls {
@@ -47,6 +49,8 @@
 }
 
 .column-title {
+  @include sheet-prose;
+
   margin: 0;
   padding-bottom: 0.25em;
   border-bottom: 1px solid var(--line);
@@ -54,6 +58,8 @@
 }
 
 .column-caption {
+  @include sheet-prose;
+
   margin: 0;
   font-size: 0.8125em;
   line-height: 1.35;

@@ -114,6 +114,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 
 <style lang="scss">
 @use '../picker/fontSettingsFieldset' as *;
+@use './sheetProse' as *;
 
 .wrapper {
   box-sizing: border-box;
@@ -220,6 +221,8 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 }
 
 .caption {
+  @include sheet-prose;
+
   margin: 0;
   max-width: 34em;
   font-size: 0.8125em;
@@ -248,6 +251,8 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 
   figcaption,
   .note {
+    @include sheet-prose;
+
     margin: 0;
     max-width: 36em;
     font-size: 0.75em;
@@ -293,6 +298,8 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   }
 
   text {
+    @include sheet-prose-svg;
+
     font-family: var(--font-poppins), system-ui, sans-serif;
     font-size: 10px;
     fill: var(--ink-muted);
@@ -324,6 +331,8 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   }
 
   .tick {
+    @include sheet-prose-svg(2px);
+
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 7px;
     fill: var(--ink-muted);
@@ -359,6 +368,8 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   }
 
   .swap-label {
+    @include sheet-prose-svg(2.5px);
+
     font-family: var(--font-poppins), system-ui, sans-serif;
     font-size: 8px;
     fill: var(--ink);
