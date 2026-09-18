@@ -1,208 +1,286 @@
 ---
-const faces = [
-  { label: 'Poppins 400', family: "'Poppins', sans-serif", weight: '400' },
-  { label: 'Poppins 700', family: "'Poppins', sans-serif", weight: '700' },
-  { label: 'Special Elite', family: "'Special Elite', monospace", weight: '400' },
-  { label: 'Permanent Marker', family: "'Permanent Marker', cursive", weight: '400' },
-] as const;
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+type Row = { label: string; family?: string; weight?: number; hovered?: boolean };
+
+// The list as the page fills it: the site's own faces, each row set in its face, then the
+// product's two entries. One row is under the pointer, and the specimen wears that face
+const rows: Row[] = [
+  { label: 'Poppins 400', family: "'Poppins', sans-serif", weight: 400 },
+  { label: 'Poppins 700', family: "'Poppins', sans-serif", weight: 700 },
+  { label: 'Special Elite 400', family: "'Special Elite', monospace", weight: 400, hovered: true },
+  { label: 'Permanent Marker 400', family: "'Permanent Marker', cursive", weight: 400 },
+  { label: '-- Add new Google font --' },
+  { label: '-- Extract fonts from URL --' },
+];
+
+const hovered = rows.find((row) => row.hovered)!;
 ---
 
 <div class="wrapper">
-  <div class="discovery-layer" aria-hidden="true">
-    <div class="panel">
-      <header>
-        <span class="eyebrow">useFontFaces()</span>
-        <strong>The dropdown is the FontFaceSet</strong>
-      </header>
-
-      <div class="pipeline">
-        <div class="stage">
-          <code class="stage-title">document.fonts</code>
-          <p>Every face the browser knows of — each Unicode-range subset counts as its own <code>FontFace</code></p>
+  <Annotations reach={1.4}>
+    <div class="discovery-layer" slot="content" aria-hidden="true">
+      <div class="sidebar">
+        <span class="label">Font Family</span>
+        <div class="select">
+          <span>Poppins 400</span>
+          <span class="chevron">▾</span>
         </div>
-
-        <span class="op">→</span>
-
-        <div class="stage">
-          <code class="stage-title">dedupe</code>
-          <p>Keyed by <code>family · weight · style</code>, collapsing the subsets back into one entry per face</p>
-        </div>
-
-        <span class="op">→</span>
-
-        <div class="stage options">
-          <span class="stage-title"><code>&lt;option&gt;</code>s</span>
-          <ul>
-            {faces.map((face) => (
-              <li style={{ fontFamily: face.family, fontWeight: face.weight }}>{face.label}</li>
-            ))}
-          </ul>
-        </div>
+        <ul class="list">
+          {rows.map((row) => (
+            <li
+              class:list={[{ 'is-hovered': row.hovered, entry: !row.family }]}
+              style={row.family ? `font-family: ${row.family}; font-weight: ${row.weight}` : undefined}
+            >
+              {row.label}
+            </li>
+          ))}
+        </ul>
+        <p class="caption on-narrow">Every face the page has loaded. New ones land under the dot</p>
       </div>
 
-      <div class="chips">
-        <span class="chip"><code>loadingdone</code> event → re-enumerate, so new fonts pop in live</span>
-        <span class="chip">hover an option → page previews it · leave without picking → revert</span>
-      </div>
+      <figure class="sample" style={`font-family: ${hovered.family}`}>
+        <p class="display">Aa</p>
+        <p class="pangram">The quick brown fox jumps over the lazy dog</p>
+        <figcaption>
+          <span><span class="mono">Family</span> Special Elite</span>
+          <span><span class="mono">Weight</span> 400</span>
+        </figcaption>
+        <p class="caption on-narrow">The hovered face, tried on before it is chosen</p>
+      </figure>
     </div>
-  </div>
+
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        tipX={-0.08}
+        tipY={-0.8}
+        angle={120}
+        length={0.32}
+        text="New faces land under the dot"
+        arrowClass="on-wide"
+        textClass="on-wide"
+      />
+      <ArrowAnnotation
+        tipX={-0.5}
+        tipY={1.03}
+        angle={-90}
+        length={0.3}
+        text="Every face the page has loaded"
+        arrowClass="on-wide"
+        textClass="on-wide"
+      />
+      <ArrowAnnotation
+        tipX={0.5}
+        tipY={0.38}
+        angle={-100}
+        length={0.4}
+        text="Hovered face, tried on"
+        arrowClass="on-wide"
+        textClass="on-wide"
+      />
+    </Fragment>
+  </Annotations>
 </div>
 
 <style lang="scss">
-$op-slot: 0.85em;
-
 .wrapper {
   box-sizing: border-box;
   width: max-content;
-  max-width: min(90cqw, 100%);
+  max-width: 100%;
   margin-inline: auto;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
+
+  // The callouts sit in the wide sheet's gutters. A tall sheet stacks the artwork and
+  // says the same under each block instead
+  :global(.on-narrow) {
+    display: none;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    :global(.on-wide) {
+      display: none;
+    }
+
+    :global(.on-narrow) {
+      display: revert;
+    }
+  }
 }
 
 .discovery-layer {
-  width: max-content;
-  max-width: 100%;
   display: grid;
-  place-items: center;
+  grid-template-columns: 14.5em 13em;
+  gap: 1.6em;
+  align-items: start;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
-  color: #f4f0ea;
+  // Sized from the stack's measured width, not a container unit: see Stack.astro's script
+  font-size: clamp(0.8rem, 0.019 * var(--sheet-inline), 1.3rem);
+  color: #222;
 
-  @container technical-drawing (orientation: portrait) {
-    font-size: min(1.05rem, 2.4cqmin);
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 16em);
+    max-width: 100%;
+    gap: 0.8em;
+    font-size: clamp(0.7rem, 0.03 * var(--sheet-inline), 1rem);
   }
 }
 
-.panel {
-  box-sizing: border-box;
-  width: max-content;
-  max-width: 100%;
-  padding: 0.6em 0.65em;
-  background: #333;
-  border: 2px solid #666;
+// The product's settings column, down to the family row
+.sidebar {
+  display: grid;
+  gap: 0.35em;
+  padding: 0.7em 0.8em;
   border-radius: 0.5em;
-  display: grid;
-  gap: 0.45em;
+  background: #e9e9e9;
+  color-scheme: only light;
   box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+
+  .label {
+    font-size: 0.85em;
+    line-height: 1.2;
+  }
 }
 
-header {
+.select {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 0.08em;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding: 0.375em 0.5em;
+  font-size: 0.9em;
+  background: #fff;
+  border: 1px solid #767676;
+  border-radius: 0.25em 0.25em 0 0;
 
-  .eyebrow {
-    font-size: 0.72em;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    opacity: 0.7;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  .chevron {
+    font-size: 0.8em;
+  }
+
+  // The dot a new source lights, as the product draws it
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0.6em;
+    height: 0.6em;
+    translate: calc(50% - 1px) calc(-50% + 1px);
+    z-index: 1;
+    background: #c33;
+    border-radius: 50%;
   }
 }
 
-.pipeline {
-  display: grid;
-  grid-template-columns: 1fr #{$op-slot} 1fr #{$op-slot} 1fr;
-  align-items: stretch;
-  column-gap: 0.25em;
-  max-width: 34em;
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85em;
+  border: 1px solid #767676;
+  border-top: 0;
+  border-radius: 0 0 0.5em 0.5em;
+  overflow: hidden;
+  box-shadow: 0 0.5em 1.5em color-mix(in oklab, #000 35%, transparent);
+
+  li {
+    padding: 0.35em 0.5em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #eee;
+
+    &:nth-child(odd) {
+      background: #ddd;
+    }
+
+    &.is-hovered {
+      background: #ccc;
+    }
+
+    &.entry {
+      font-style: italic;
+    }
+  }
 }
 
-.stage {
+// The page beside the column, set in the face under the pointer. Not `.specimen`: the
+// picker's own stylesheet is global and lays that class out for the front sheet
+.sample {
+  margin: 0;
   display: grid;
-  gap: 0.25em;
-  align-content: start;
-  min-width: 0;
-  padding: 0.35em 0.45em;
-  border-radius: 0.3em;
-  border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
-  background: color-mix(in oklab, #000 22%, transparent);
-  box-sizing: border-box;
-
-  .stage-title {
-    font-size: 0.75em;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: #c5e06a;
-  }
+  gap: 0.3em;
+  padding: 0.7em 0.8em;
+  border-radius: 0.5em;
+  background: #e6e4dc;
+  color-scheme: only light;
+  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
 
   p {
     margin: 0;
-    font-size: 0.7em;
+  }
+
+  .display {
+    font-size: 3.2em;
+    line-height: 1;
+
+    // The stacked sheet is short on height, and the pangram already shows the face
+    :global([data-sheet-orientation='portrait']) & {
+      font-size: 2.4em;
+    }
+  }
+
+  .pangram {
+    font-size: 0.95em;
     line-height: 1.3;
-    opacity: 0.85;
-
-    code {
-      color: #c5e06a;
-    }
+    text-wrap: balance;
   }
 
-  &.options {
-    border-style: solid;
+  figcaption {
+    display: flex;
+    gap: 1.2em;
+    margin-top: 0.2em;
+    padding-top: 0.4em;
+    border-top: 1px solid #999;
+    font-size: 0.8em;
 
-    ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: grid;
-      gap: 0.2em;
+    > span {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1em;
     }
 
-    li {
-      font-size: 0.75em;
-      line-height: 1.2;
-      padding: 0.2em 0.3em;
-      border-radius: 0.2em;
-
-      &:nth-of-type(even) {
-        background: color-mix(in oklab, #fff 6%, transparent);
-      }
-      &:nth-of-type(odd) {
-        background: color-mix(in oklab, #fff 10%, transparent);
-      }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.65em;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.7;
     }
   }
 }
 
-.op {
-  display: grid;
-  place-items: center;
-  align-self: center;
-  opacity: 0.55;
-  font-size: 0.95em;
-  line-height: 1;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3em;
-}
-
-.chip {
-  font-size: 0.68em;
+.caption {
+  margin: 0.2em 0 0;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: 0.72em;
   line-height: 1.3;
-  padding: 0.3em 0.5em;
-  border-radius: 1em;
-  border: 1px solid #555;
-  background: #2a2a28;
-  opacity: 0.9;
-
-  code {
-    color: #c5e06a;
-  }
+  opacity: 0.8;
 }
 
-@container technical-drawing (orientation: portrait) {
-  .pipeline {
-    grid-template-columns: 1fr;
-    row-gap: 0.25em;
+// The callouts are the drawing's ink, lifted off the blueprint like the marker sheets' ones
+.wrapper :global(.content > svg) {
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
 
-    .op {
-      transform: rotate(90deg);
-      justify-self: center;
-    }
+  :global(text) {
+    stroke: var(--blueprint-900);
+    stroke-width: 0.004px;
+    paint-order: stroke fill;
+    stroke-linejoin: round;
   }
 }
 </style>
