@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
-import type { CatalogItem } from './catalogItems';
+import CatalogObjectCard from './catalog/CatalogObjectCard.vue';
+import type { CatalogItem, CatalogVariant } from './catalogItems';
 
 const props = withDefaults(defineProps<{
   items: CatalogItem[];
@@ -13,14 +14,15 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  select: [item: CatalogItem];
-  confirm: [item: CatalogItem];
-  dragstart: [event: DragEvent, item: CatalogItem];
+  select: [item: CatalogItem, variant: CatalogVariant];
+  confirm: [item: CatalogItem, variant: CatalogVariant];
+  dragstart: [event: DragEvent, item: CatalogItem, variant: CatalogVariant];
   dragend: [];
-  itemPointerdown: [event: PointerEvent, item: CatalogItem];
+  itemPointerdown: [event: PointerEvent, item: CatalogItem, variant: CatalogVariant];
 }>();
 
 const search = ref('');
+const variantIds = reactive<Record<string, string>>({});
 
 const itemsVisible = computed(() => {
   const q = search.value.trim().toLowerCase();
@@ -46,40 +48,19 @@ const itemsVisible = computed(() => {
   </p>
 
   <div v-else class="catalog-grid">
-    <button
+    <CatalogObjectCard
       v-for="item in itemsVisible"
       :key="item.id"
-      type="button"
-      class="option-item"
-      :class="{ active: selectedId === item.id, placeholder: !item.real }"
-      :data-demo-target="`catalog:${item.id}`"
-      :draggable="nativeDrag && Boolean(item.real)"
-      :title="!item.real ? `${item.name} (placeholder)` : item.layoutable ? `${item.name} · double-click to Build` : `${item.name} · drag to place`"
-      @click="emit('select', item)"
-      @dblclick="emit('confirm', item)"
-      @dragstart="emit('dragstart', $event, item)"
+      v-model:variant-id="variantIds[item.id]"
+      :item="item"
+      :active="selectedId === item.id"
+      :native-drag="nativeDrag"
+      @select="(...args) => emit('select', ...args)"
+      @confirm="(...args) => emit('confirm', ...args)"
+      @dragstart="(...args) => emit('dragstart', ...args)"
       @dragend="emit('dragend')"
-      @pointerdown="emit('itemPointerdown', $event, item)"
-    >
-      <div class="object-icons">
-        <img :src="item.thumb" alt="" width="600" height="600">
-      </div>
-      <span class="item-label">
-        <span class="object-name">{{ item.name }}</span>
-        <span v-if="item.size" class="object-size">
-          <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
-            <path
-              d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-          {{ item.size }}
-        </span>
-      </span>
-    </button>
+      @item-pointerdown="(...args) => emit('itemPointerdown', ...args)"
+    />
   </div>
 </template>
 
@@ -147,113 +128,5 @@ $brand: #89ab24;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-.option-item {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 0;
-  // darken($secondary, 20%) in _catalog_object_field.scss.
-  border: 1px solid #3d4246;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: grab;
-  overflow: hidden;
-  user-select: none;
-
-  &.placeholder {
-    cursor: pointer;
-
-    .object-icons {
-      // Same tile chrome as real items — just mute the silhouette.
-      filter: grayscale(1);
-
-      img {
-        opacity: 0.45;
-      }
-    }
-
-    .item-label {
-      color: #868e96;
-      font-weight: 600;
-    }
-
-    &.active .item-label {
-      color: rgba(255, 255, 255, 0.85);
-    }
-  }
-
-  &:hover:not(.active) {
-    border-color: #6c757d;
-  }
-
-  &.active {
-    box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
-
-    .item-label {
-      background: $brand;
-      color: #fff;
-    }
-  }
-
-  &.is-demo-target {
-    box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.65);
-  }
-
-  .object-icons {
-    position: relative;
-    display: flex;
-    flex: 1 1 auto;
-    // Square tile with the model floating on the gradient — the thumbnails are
-    // transparent, as the product's are.
-    aspect-ratio: 1;
-    background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
-
-    img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      padding: 0.5rem;
-    }
-  }
-
-  .item-label {
-    display: block;
-    margin: 0;
-    padding: 0.25rem 0.375rem;
-    background: #212529;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    line-height: 1.5;
-
-    .object-name {
-      display: block;
-      overflow: hidden;
-      max-height: 1.5em;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .object-size {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.25rem;
-      overflow: hidden;
-      font-size: 0.6875rem;
-      font-weight: 400;
-      white-space: nowrap;
-      color: #ced4da;
-
-      svg {
-        flex: 0 0 auto;
-      }
-    }
-  }
 }
 </style>
