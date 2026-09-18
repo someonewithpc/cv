@@ -64,21 +64,19 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: (
         <PostIt background="#fed" color="black">
-          Hover or focus to take over the auto-playing animation<br />
-          Click an object, then click the floor as many times as you like. Drag one in
-          instead and you get exactly one
+          Hover or focus to take over the auto-play<br />
+          Click an object then the floor, again and again. Drag one in for exactly one
         </PostIt>
       ),
       paths: (
         <PostIt background="#cde" color="black">
-          Both routes end in the same call. What differs is how many objects you get and
-          when the pointer lets go
+          Both routes end in the same call. What differs is how many objects you get
         </PostIt>
       ),
       race: (
         <PostIt background="#fee" color="black">
-          What follows the pointer is the model itself. Drop it before its file arrives and
-          the call reports nothing placed
+          What follows the pointer is the model itself. Drop it before its file lands and
+          nothing is placed
         </PostIt>
       ),
     }[layer])}
