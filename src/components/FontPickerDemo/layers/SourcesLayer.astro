@@ -1,44 +1,82 @@
 ---
+// The route a face takes from a URL a visitor types to a row in the dropdown, drawn as the
+// four hops it makes. The data on the sheet is the real thing: the URL the walkthrough
+// types, one of the rules that comes back, and the row it ends up as
+const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlfaSlabOne.woff2';
 ---
 
 <div class="wrapper">
-  <div class="sources-layer" aria-hidden="true">
-    <div class="panel">
-      <header>
-        <span class="eyebrow">GoogleFont · EmbedURL</span>
-        <strong>Two roads into document.fonts</strong>
-      </header>
-
-      <div class="lanes">
-        <div class="lane">
-          <span class="lane-title">Google font by name</span>
-          <ol>
-            <li><code>fetch fonts.googleapis.com/css2?family=…</code></li>
-            <li>CSS into a detached <code>DOMParser</code> document — a bare <code>&lt;style&gt;</code> outside a document never parses its rules</li>
-          </ol>
-        </div>
-
-        <div class="lane">
-          <span class="lane-title">Extract from a URL</span>
-          <ol>
-            <li><code>/api/font-proxy</code> fetches the page — <code>X-Frame-Options</code> pages can't be iframed</li>
-            <li>Assemble a "manual iframe": <code>&lt;base href&gt;</code>, linked stylesheets, <code>@import</code>s, recursively</li>
-          </ol>
-        </div>
+  <div class="pipeline" aria-hidden="true">
+    <div class="step" style="--seq: 1">
+      <div class="paper field">
+        <span class="field-label">Embed URL</span>
+        <span class="field-input">rust-lang.org</span>
       </div>
+      <p class="caption">A URL, typed into the subform</p>
+    </div>
 
-      <div class="tail">
-        <span class="op">⇣</span>
-        <div class="tail-box">
-          <span class="lane-title">Shared tail</span>
-          <p>
-            Walk each sheet's <code>CSSFontFaceRule</code>s → absolutize + proxy the
-            <code>src</code> URLs (webfont loads are CORS-gated) → <code>new FontFace(…).load()</code>
-            → <code>document.fonts.add()</code> → dispatch <code>loadingdone</code>, and the dropdown
-            already knows
-          </p>
-        </div>
+    <div class="hop">
+      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+    </div>
+
+    <div class="step" style="--seq: 2">
+      <div class="draft">
+        <span class="route denied">
+          <span class="route-label">iframe</span>
+          <span class="route-reason">x-frame-options: deny</span>
+        </span>
+        <span class="route allowed">
+          <span class="route-label">/api/font-proxy</span>
+          <span class="route-reason">one origin, so the HTML can be read</span>
+        </span>
       </div>
+      <p class="caption">The page will not be framed, so a worker fetches it instead</p>
+    </div>
+
+    <div class="hop">
+      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+    </div>
+
+    <div class="step" style="--seq: 3">
+      <div class="draft listing">
+        <code class="line"><span class="tag">&lt;base href=</span>"https://rust-lang.org/"<span class="tag">&gt;</span></code>
+        <code class="line"><span class="tag">&lt;link href=</span>"/static/styles.css"<span class="tag">&gt;</span></code>
+        <code class="line indent">@import url("fonts.css")</code>
+        <code class="line rule">@font-face &#123; font-family: "Alfa Slab One";</code>
+        <code class="line rule indent">src: url(<span class="rewritten">{PROXIED_SRC}</span>)</code>
+      </div>
+      <p class="caption">
+        Stylesheets and their imports, fetched and stood up as a document. Every
+        <code>src</code> is made absolute and sent back through the proxy, because a webfont
+        load is CORS-gated too
+      </p>
+    </div>
+
+    <div class="hop">
+      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+      <span class="hop-note">new FontFace().load()<br />document.fonts.add()</span>
+    </div>
+
+    <div class="step" style="--seq: 4">
+      <div class="paper select">
+        <span class="select-value">Poppins 400<span class="dot"></span></span>
+        <span class="select-row new">Alfa Slab One 400</span>
+      </div>
+      <p class="caption">
+        The dropdown re-reads <code>document.fonts</code> on <code>loadingdone</code>. The dot
+        marks what the last source brought
+      </p>
+    </div>
+
+    <div class="branch">
+      <p class="caption">
+        A Google font skips the first two hops. <code>fonts.googleapis.com/css2?family=Lobster</code>
+        answers with the same kind of stylesheet, and joins the flow here
+      </p>
+      <svg viewBox="0 0 120 44" class="arrow branch-arrow">
+        <path d="M0 36 H106 Q114 36 114 28 V14" />
+        <path d="M110 18 L114 6 L118 18 z" class="head" />
+      </svg>
     </div>
   </div>
 </div>
@@ -46,131 +84,289 @@
 <style lang="scss">
 .wrapper {
   box-sizing: border-box;
-  width: max-content;
-  max-width: min(90cqw, 100%);
-  margin-inline: auto;
-  display: grid;
-  // An auto track would take the panel's max-content width, code lines and all, and centre
-  // the clamped panel in that: off the sheet's content column and under the note
-  grid-template-columns: minmax(0, 1fr);
-  place-items: center;
-}
-
-.sources-layer {
-  width: max-content;
+  width: 100%;
   max-width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
-  font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.8rem, 2.4cqmin, 1.05rem);
-  color: #f4f0ea;
-
-  @container technical-drawing (orientation: portrait) {
-    font-size: min(1.05rem, 2.4cqmin);
-  }
 }
 
-.panel {
-  box-sizing: border-box;
-  width: max-content;
-  max-width: min(36em, 100%);
-  padding: 0.6em 0.65em;
-  background: #333;
-  border: 2px solid #666;
-  border-radius: 0.5em;
+.pipeline {
   display: grid;
-  gap: 0.45em;
-  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
-}
-
-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.08em;
-
-  .eyebrow {
-    font-size: 0.72em;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    opacity: 0.7;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-}
-
-.lanes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.35em;
-}
-
-.lane {
-  display: grid;
-  gap: 0.25em;
-  align-content: start;
-  min-width: 0;
-  padding: 0.35em 0.45em;
-  border-radius: 0.3em;
-  border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
-  background: color-mix(in oklab, #000 22%, transparent);
-  box-sizing: border-box;
-
-  ol {
-    margin: 0;
-    padding-left: 1.1em;
-    display: grid;
-    gap: 0.25em;
-    font-size: 0.7em;
-    line-height: 1.3;
-    opacity: 0.85;
-  }
-}
-
-.lane-title {
-  font-size: 0.75em;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #c5e06a;
-}
-
-code {
-  color: #c5e06a;
-  overflow-wrap: anywhere;
-}
-
-.tail {
-  display: grid;
-  gap: 0.15em;
-  justify-items: center;
-}
-
-.op {
-  opacity: 0.55;
-  font-size: 0.95em;
-  line-height: 1;
-}
-
-.tail-box {
-  display: grid;
-  gap: 0.25em;
-  padding: 0.35em 0.45em;
-  border-radius: 0.3em;
-  border: 1px solid #89ab24;
-  background: color-mix(in oklab, #89ab24 14%, transparent);
-  box-sizing: border-box;
+  // Four steps with a hop drawn between them, so the flow reads as one line
+  grid-template-columns: repeat(3, minmax(0, 1fr) auto) minmax(0, 1fr);
+  grid-auto-rows: min-content;
+  align-items: start;
+  gap: 0 0.5em;
   width: 100%;
+  color: var(--ink);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  // Sized from the stack's measured width, never a container unit: see Stack.astro's script
+  font-size: clamp(0.75rem, 0.0125 * var(--sheet-inline), 1.0625rem);
 
-  p {
-    margin: 0;
-    font-size: 0.7em;
-    line-height: 1.35;
-    opacity: 0.9;
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    font-size: clamp(0.625rem, 0.026 * var(--sheet-inline), 0.9375rem);
   }
 }
 
-@container technical-drawing (orientation: portrait) {
-  .lanes {
-    grid-template-columns: 1fr;
+.step {
+  position: relative;
+  display: grid;
+  gap: 0.5em;
+  align-content: start;
+  padding-top: 1.75em;
+  min-width: 0;
+
+  // The hop's number, drafted in a circle at the head of each step
+  &::before {
+    content: counter(step-seq);
+    counter-reset: step-seq var(--seq);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 1.5em;
+    height: 1.5em;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+    font-size: 0.875em;
+    line-height: 1;
+  }
+
+  // A rule from the number across the step, the way a drafted caption is underscored
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0.75em;
+    left: 1.75em;
+    right: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+.caption {
+  margin: 0;
+  font-size: 0.8125em;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+}
+
+// The product's own material, quoted at 1:1: a light control on the blueprint
+.paper {
+  color-scheme: only light;
+  display: grid;
+  gap: 0.375em;
+  padding: 0.625em 0.75em;
+  background: #e9e9e9;
+  color: #111;
+  border-radius: 0.5em;
+  box-shadow: 0 0.25em 0.75em color-mix(in oklab, #000 30%, transparent);
+}
+
+.field {
+  .field-label {
+    font-size: 0.8125em;
+  }
+
+  .field-input {
+    padding: 0.375em 0.5em;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0.25em;
+    font-size: 0.9375em;
+  }
+}
+
+.select {
+  .select-value {
+    position: relative;
+    padding: 0.375em 0.5em;
+    background: #fff;
+    border: 1px solid #767676;
+    border-radius: 0.25em;
+    font-size: 0.9375em;
+  }
+
+  .dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0.5em;
+    height: 0.5em;
+    translate: 50% -50%;
+    background: #c33;
+    border-radius: 50%;
+  }
+
+  .select-row {
+    padding: 0.375em 0.5em;
+    background: #ddd;
+    border-radius: 0.25em;
+    font-size: 0.9375em;
+
+    &.new {
+      background: #cfe0b4;
+      box-shadow: inset 0 0 0 1px #89ab24;
+    }
+  }
+}
+
+// What is not the product is drawn rather than built: hairline boxes on the blueprint
+.draft {
+  display: grid;
+  gap: 0.5em;
+  padding: 0.625em 0.75em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125em;
+  line-height: 1.4;
+}
+
+.route {
+  display: grid;
+  gap: 0.125em;
+
+  .route-label {
+    justify-self: start;
+    padding: 0.125em 0.375em;
+    border: 1px solid var(--ink);
+    border-radius: 0.25em;
+  }
+
+  .route-reason {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    font-size: 0.875em;
+    color: var(--ink-muted);
+  }
+
+  // The refused route, struck out the way a drawing cancels a dimension
+  &.denied .route-label {
+    color: var(--ink-muted);
+    border-color: var(--ink-muted);
+    border-style: dashed;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
+  &.allowed .route-label {
+    border-width: 2px;
+  }
+}
+
+.listing {
+  gap: 0.125em;
+  overflow-wrap: anywhere;
+
+  .line {
+    display: block;
+  }
+
+  .indent {
+    padding-left: 1.25em;
+  }
+
+  .tag,
+  .rule {
+    color: var(--ink-muted);
+  }
+
+  .rewritten {
+    color: #c5e06a;
+    text-decoration: underline;
+    text-underline-offset: 0.125em;
+  }
+}
+
+.hop {
+  display: grid;
+  justify-items: center;
+  gap: 0.25em;
+  padding-top: 3.25em;
+
+  .hop-note {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.6875em;
+    line-height: 1.3;
+    text-align: center;
+    color: var(--ink-muted);
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    padding: 0.375em 0;
+    rotate: 90deg;
+
+    .hop-note {
+      display: none;
+    }
+  }
+}
+
+.arrow {
+  width: 3em;
+  height: 0.75em;
+  overflow: visible;
+
+  path {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  .head {
+    fill: var(--ink);
+    stroke: none;
+  }
+}
+
+// The Google branch runs under the flow and joins it where the two paths meet
+.branch {
+  // Stops under step 3, which is where this path rejoins the flow
+  grid-column: 1 / 6;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75em;
+  margin-top: 0.75em;
+  padding-top: 0.75em;
+  border-top: 1px dashed var(--line);
+
+  .branch-arrow {
+    width: 7.5em;
+    height: 2.5em;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 0.5em;
+    padding-top: 0.5em;
+
+    .branch-arrow {
+      display: none;
+    }
+  }
+}
+
+// A phone sheet runs the flow down instead of across, and the listing keeps what fits
+:global([data-sheet-orientation='portrait']) .pipeline {
+  .step {
+    padding-top: 1.5em;
+  }
+
+  .listing .line:nth-child(2),
+  .listing .line:nth-child(3) {
+    display: none;
   }
 }
 </style>
