@@ -1,31 +1,57 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
-import { type DebouncedFunc, throttle } from "lodash";
+import { type DebouncedFunc, debounce } from "lodash";
 
 import type { SpaceType } from '@/store';
 
 import { MarkerPart } from "./";
+import { COLOR_COMMIT_MS, LiveStyleRule } from "./liveStyleRule";
 
 export class SolidBorderColor extends MarkerPart {
   protected get borderClassName(): string {
     return 'marker-border';
   }
 
-  throttledSetColor: DebouncedFunc<(color: string) => void>;
+  commitColor: DebouncedFunc<(color: string) => void>;
+
+  /** The picker fires `change` when it closes; don't make the drag's last colour wait. */
+  flushColor = () => {
+    this.commitColor.flush();
+  };
+
+  private liveRule: LiveStyleRule;
 
   constructor(...args: any[]) {
     // @ts-ignore
     super(...args);
 
-    this.throttledSetColor = throttle((color: string) => {
+    this.liveRule = new LiveStyleRule(this.container, `.${this.borderClassName}`, '--border-color');
+    this.commitColor = debounce((color: string) => {
       this.reactiveState.color = color;
-    }, 25);
+    }, COLOR_COMMIT_MS);
   }
 
   get defaultReactiveState() {
     return {
       color: '#89ab24', // $visrez-brand
     };
+  }
+
+  /**
+   * Paint the drag straight onto the live rule and notify subscribers only once it settles.
+   * Writing `internal` keeps the input's value and the serialized marker current meanwhile,
+   * without a re-render.
+   */
+  protected setColor(color: string) {
+    const rule = this.liveRule.get();
+    if (!rule) {
+      this.reactiveState.color = color;
+      return;
+    }
+
+    rule.style.setProperty('--border-color', color);
+    this.reactiveState.internal.color = color;
+    this.commitColor(color);
   }
 
   Content({ space, extraProps }: { space: SpaceType, extraProps: Record<string, string> }) {
@@ -51,9 +77,17 @@ export class SolidBorderColor extends MarkerPart {
           id={inputId}
           type="color"
           data-demo-target={`editor:border-color:${this.borderClassName}`}
-          value={this.reactiveState.color}
+          // Uncontrolled, and synced on render instead: React restores a controlled value
+          // to the last rendered colour after every event, which pulls the open picker's
+          // own selection backwards mid-drag.
+          defaultValue={this.reactiveState.color}
+          ref={(input) => {
+            if (!input) return;
+            input.value = this.reactiveState.color;
+            input.addEventListener('change', this.flushColor);
+          }}
           onChange={(e) => {
-            this.throttledSetColor(e.target.value);
+            this.setColor(e.target.value);
           }}
         />
       </>
