@@ -492,6 +492,15 @@ const pages = await Promise.all(
         &.paper-fold--will-commit {
           filter: brightness(115%) drop-shadow(0 0 0.5em rgb(0 0 0 / 35%));
         }
+
+        // A committed flip keeps this flap on the outgoing sheet until it has folded away behind
+        // the stack, so fold-drag.ts stands a second one in on the page taking the front, which
+        // would otherwise wear a bare corner cut until the flip ended. It only paints the resting
+        // dog-ear: the hand still finds the real flap, which takes this one's place the moment the
+        // flip is done with it.
+        &.paper-fold--stand-in {
+          pointer-events: none;
+        }
       }
     }
 
