@@ -110,13 +110,12 @@ const statistics = {
       overflow: hidden;
 
       > header,
-      :global(details > summary) {
+      :global(.row) {
         display: grid;
         grid-template-columns: var(--grid);
         column-gap: 1.25rem;
         align-items: center;
         min-height: var(--row-height);
-        padding-block: 0.75rem;
         padding-inline: var(--cell-x);
         box-sizing: border-box;
 
@@ -126,6 +125,7 @@ const statistics = {
       }
 
       > header {
+        padding-block: 0.75rem;
         border-bottom: 1px solid var(--line);
         background: var(--surface-raised);
         font-family: monospace, system-ui;
@@ -144,29 +144,15 @@ const statistics = {
         }
       }
 
-      :global(details) {
+      :global(.row) {
+        grid-template-rows: auto auto;
         min-width: 0;
-        background: var(--surface-raised);
-      }
-
-      :global(details > summary) {
         border-top: 1px solid var(--line);
         background: var(--surface-raised);
-        cursor: pointer;
-        list-style: none;
-        transition: background 150ms ease;
 
         ul {
           justify-self: center;
         }
-
-        &:hover {
-          background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 10%);
-        }
-      }
-
-      :global(details > :not(summary)) {
-        min-width: 0;
       }
 
       @container (max-width: 50rem) {
@@ -175,7 +161,7 @@ const statistics = {
         --grid: minmax(3rem, 4rem) repeat(2, minmax(0, 1fr));
 
         > header,
-        :global(details > summary) {
+        :global(.row) {
           column-gap: 0.75rem;
         }
 
@@ -193,7 +179,7 @@ const statistics = {
         }
 
         > header,
-        :global(details > summary) {
+        :global(.row) {
           column-gap: 0.65rem;
         }
       }
