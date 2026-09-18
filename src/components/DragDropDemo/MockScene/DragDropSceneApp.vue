@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
-
 import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
 import CatalogPanel from '@/components/SpaceBuilderDemo/MockScene/CatalogPanel.vue';
 import {
@@ -26,14 +25,20 @@ import {
 } from '@/components/SpaceBuilderDemo/MockScene/scene/sceneViewportGestures';
 import type { SpaceBuilderScene } from '@/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene';
 
-type Phase = 'idle' | 'placing';
+type Phase = 'idle' | 'armed' | 'dragging';
 
-/** Fractions of the canvas rect — autoplay cycles the drop point between these. */
-const DROP_POINTS: Array<[number, number]> = [
-  [0.4, 0.42],
-  [0.62, 0.58],
-  [0.32, 0.66],
+/** Fractions of the canvas rect — the click run drops one object at each in turn. */
+const CLICK_POINTS: Array<[number, number]> = [
+  [0.36, 0.44],
+  [0.56, 0.38],
+  [0.46, 0.62],
 ];
+
+/** Where the autoplaying drag lets go. */
+const DRAG_POINT: [number, number] = [0.68, 0.6];
+
+/** How far a pointer has to travel off a catalog card before it counts as a drag. */
+const DRAG_SLOP_PX = 6;
 
 const RESUME_DELAY_MS = 2500;
 
@@ -42,6 +47,7 @@ const ready = ref(false);
 const loadError = ref(false);
 const phase = ref<Phase>('idle');
 const selectedId = ref('chair');
+const armedName = ref<string | null>(null);
 const toast = ref<string | null>(null);
 const demoPlaying = ref(false);
 const cursorVisible = ref(false);
@@ -56,14 +62,24 @@ const cursorPos = reactive({ x: 0, y: 0 });
  * own drag-image for native HTML5 drag, which this pointer-based drag doesn't get for free. */
 const draggedThumb = ref<string | null>(null);
 
+const hint = computed(() =>
+  armedName.value
+    ? `${armedName.value} is on the pointer · click the floor · Esc to stop`
+    : 'Click an object then the floor · or drag one in',
+);
+
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
+/** Catalog item riding the pointer after a click, waiting for a click on the floor. */
+let armedItem: CatalogItem | null = null;
 /** Catalog item mid-drag via pointer (not native HTML5 DnD — see onItemPointerdown). */
 let draggingItem: CatalogItem | null = null;
+/** A pointer held down on a catalog card that has not travelled far enough to be a drag. */
+let pendingDrag: { item: CatalogItem; x: number; y: number } | null = null;
 
 let inView = false;
 let userControl = false;
@@ -93,17 +109,21 @@ function withinRect(clientX: number, clientY: number, rect: DOMRect) {
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
 
+function overCanvas(clientX: number, clientY: number) {
+  const rect = canvasRect();
+  return Boolean(rect && withinRect(clientX, clientY, rect));
+}
+
 /**
  * Show the catalog thumbnail while the drag point is still over the sidebar — matching
  * native HTML5 drag, whose browser-drawn drag-image follows the cursor everywhere, including
  * over the source panel. Once the point crosses into the viewport, swap to the real 3D ghost,
- * same as `onViewportDragOver` does for the Main page native-drag flow.
+ * same as the Main page's native-drag flow does.
  */
 function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
   const scene = sceneRef.value;
   moveCursorTo(clientX, clientY);
-  const rect = canvasRect();
-  if (rect && withinRect(clientX, clientY, rect)) {
+  if (overCanvas(clientX, clientY)) {
     draggedThumb.value = null;
     scene?.setGhostAt(clientX, clientY);
   } else {
@@ -112,30 +132,60 @@ function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
   }
 }
 
+/** Put an item on the pointer, the way clicking a catalog card does in Space Builder. */
+function armItem(item: CatalogItem) {
+  armedItem = item;
+  armedName.value = item.name;
+  phase.value = 'armed';
+  selectedId.value = item.id;
+  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
+}
+
+function disarm() {
+  armedItem = null;
+  armedName.value = null;
+  if (phase.value === 'armed') phase.value = 'idle';
+  sceneRef.value?.setGhostVisible(false);
+}
+
 function selectItem(item: CatalogItem) {
   yieldToUser();
   selectedId.value = item.id;
-  sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
   if (!item.real) {
-    showToast('Placeholder — use Chair for the demo');
+    disarm();
+    showToast('Placeholder · pick Chair, Side Chair or Banquet Table');
+    return;
   }
+  if (armedItem?.id === item.id) {
+    disarm();
+    return;
+  }
+  armItem(item);
 }
 
 /**
  * Pointer-driven drag instead of native HTML5 Drag and Drop — a long native
  * drag occasionally tripped Chrome's tab-tear-off / Snap Layouts gesture near
  * the top of the window. This is also the only way to support touch drag.
+ *
+ * Nothing starts here: a press that never travels is a click, and the card's own
+ * click handler puts the item on the pointer instead (see onPointerMove).
  */
 function onItemPointerdown(event: PointerEvent, item: CatalogItem) {
   if (!item.real) return;
   yieldToUser();
   event.preventDefault();
+  pendingDrag = { item, x: event.clientX, y: event.clientY };
+}
+
+function startItemDrag(item: CatalogItem, clientX: number, clientY: number) {
+  armedItem = null;
+  armedName.value = null;
+  draggingItem = item;
+  phase.value = 'dragging';
   selectedId.value = item.id;
   sceneRef.value?.activateCatalogItem(item.id, item.modelUrl);
-  draggingItem = item;
-  phase.value = 'placing';
-  trySetPointerCapture(event.currentTarget, event.pointerId);
-  updateDragVisual(item, event.clientX, event.clientY);
+  updateDragVisual(item, clientX, clientY);
 }
 
 function endItemDrag(clientX: number, clientY: number) {
@@ -146,13 +196,10 @@ function endItemDrag(clientX: number, clientY: number) {
   draggedThumb.value = null;
   if (!scene) return;
 
-  const rect = canvasRect();
-  const overViewport = rect && withinRect(clientX, clientY, rect);
-
-  if (overViewport) {
+  if (overCanvas(clientX, clientY)) {
     scene.setGhostAt(clientX, clientY);
     const placed = scene.placeGhostAsSingle();
-    showToast(placed ? `${dropped?.name ?? 'Chair'} placed` : 'Still loading — drag again');
+    showToast(placed ? `${dropped?.name ?? 'Object'} placed` : 'Still loading · drag again');
   } else {
     scene.setGhostVisible(false);
   }
@@ -163,6 +210,15 @@ function onPointerDown(event: PointerEvent) {
   const root = rootRef.value;
   if (!scene || !root || isChrome(event.target)) return;
   yieldToUser();
+
+  // An armed item drops where it is clicked and stays on the pointer, so a second
+  // click adds a second object without going back to the catalog.
+  if (armedItem && event.button === 0) {
+    scene.setGhostAt(event.clientX, event.clientY);
+    const placed = scene.placeGhostAsSingle();
+    showToast(placed ? `${armedItem.name} placed` : 'Still loading · click again');
+    return;
+  }
 
   activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -186,8 +242,23 @@ function onPointerMove(event: PointerEvent) {
   const scene = sceneRef.value;
   if (!scene) return;
 
+  if (pendingDrag) {
+    const travelled = Math.hypot(event.clientX - pendingDrag.x, event.clientY - pendingDrag.y);
+    if (travelled < DRAG_SLOP_PX) return;
+    const { item } = pendingDrag;
+    pendingDrag = null;
+    startItemDrag(item, event.clientX, event.clientY);
+    return;
+  }
+
   if (draggingItem) {
     updateDragVisual(draggingItem, event.clientX, event.clientY);
+    return;
+  }
+
+  if (armedItem) {
+    if (overCanvas(event.clientX, event.clientY)) scene.setGhostAt(event.clientX, event.clientY);
+    else scene.setGhostVisible(false);
     return;
   }
 
@@ -214,6 +285,11 @@ function onPointerUp(event: PointerEvent) {
   const scene = sceneRef.value;
   activePointers.delete(event.pointerId);
 
+  // A press that never travelled is a click; the card's click handler arms the item.
+  if (pendingDrag) {
+    pendingDrag = null;
+    return;
+  }
   if (draggingItem) {
     endItemDrag(event.clientX, event.clientY);
     return;
@@ -239,11 +315,18 @@ function onWheel(event: WheelEvent) {
   applyWheelZoom(scene, event);
 }
 
+function onKeyDown(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || !armedItem) return;
+  event.preventDefault();
+  yieldToUser();
+  disarm();
+}
+
 function onContextMenu(event: Event) {
   event.preventDefault();
 }
 
-// --- Autoplay: a demo cursor drives the same scene calls a real drag would. ---
+// --- Autoplay: a demo cursor drives the same scene calls a real click or drag would. ---
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -264,8 +347,7 @@ function moveCursorTo(clientX: number, clientY: number) {
 
 /** Fraction of the canvas rect → client coords, so targets scale with viewport size. */
 function canvasPoint(fx: number, fy: number) {
-  const canvas = rootRef.value?.querySelector('[data-scene-canvas]');
-  const rect = canvas?.getBoundingClientRect();
+  const rect = canvasRect();
   if (!rect) return { x: 0, y: 0 };
   return { x: rect.left + rect.width * fx, y: rect.top + rect.height * fy };
 }
@@ -338,48 +420,84 @@ function orbitTween(token: number, deltaTheta: number, ms: number, startClient: 
   });
 }
 
-/** Drag one chair from the catalog to (fx, fy) and orbit briefly. False once the token goes stale. */
-async function placeAndOrbit(
-  token: number,
-  scene: SpaceBuilderScene,
-  root: HTMLElement,
-  fx: number,
-  fy: number,
-  orbitDir: 1 | -1,
-): Promise<boolean> {
-  const chairItem = CATALOG_ITEMS.find((item) => item.id === 'chair');
-  const chairBtn = root.querySelector('[data-demo-target="catalog:chair"]');
-  const chairPos = elementCenter(chairBtn);
-  if (!chairItem || !chairPos) return false;
+function demoChair(root: HTMLElement) {
+  const item = CATALOG_ITEMS.find((entry) => entry.id === 'chair');
+  const card = elementCenter(root.querySelector('[data-demo-target="catalog:chair"]'));
+  return item && card ? { item, card } : null;
+}
 
-  moveCursorTo(chairPos.x, chairPos.y);
+/** Click the card, then click the floor once per CLICK_POINTS. False once the token goes stale. */
+async function runClickPath(token: number, scene: SpaceBuilderScene, root: HTMLElement) {
+  const target = demoChair(root);
+  if (!target) return false;
+
+  cursorInstant.value = false;
+  moveCursorTo(target.card.x, target.card.y);
   await wait(500);
   if (token !== autoplayToken) return false;
 
   await pulseClick(token);
   if (token !== autoplayToken) return false;
-  selectedId.value = 'chair';
-  scene.activateCatalogItem('chair');
-  updateDragVisual(chairItem, chairPos.x, chairPos.y);
+  armItem(target.item);
 
-  const dropPoint = canvasPoint(fx, fy);
-  cursorInstant.value = true;
-  await tweenPoint(token, chairPos, dropPoint, 900, (p) => {
-    updateDragVisual(chairItem, p.x, p.y);
-  });
+  let from = target.card;
+  for (const [fx, fy] of CLICK_POINTS) {
+    const to = canvasPoint(fx, fy);
+    cursorInstant.value = true;
+    await tweenPoint(token, from, to, 620, (p) => {
+      moveCursorTo(p.x, p.y);
+      scene.setGhostAt(p.x, p.y);
+    });
+    cursorInstant.value = false;
+    if (token !== autoplayToken) return false;
+
+    await pulseClick(token);
+    if (token !== autoplayToken) return false;
+    scene.setGhostAt(to.x, to.y);
+    scene.placeGhostAsSingle();
+    showToast(`${target.item.name} placed`);
+    from = to;
+    await wait(320);
+    if (token !== autoplayToken) return false;
+  }
+
+  disarm();
+  return true;
+}
+
+/** Drag the card onto the floor: one object, and the drag is over. */
+async function runDragPath(token: number, scene: SpaceBuilderScene, root: HTMLElement) {
+  const target = demoChair(root);
+  if (!target) return false;
+
   cursorInstant.value = false;
+  moveCursorTo(target.card.x, target.card.y);
+  await wait(450);
   if (token !== autoplayToken) return false;
-  draggedThumb.value = null;
-  scene.setGhostAt(dropPoint.x, dropPoint.y);
-  scene.placeGhostAsSingle();
-  showToast('Chair placed');
 
-  await orbitTween(token, orbitDir * 0.4, 700, dropPoint);
+  cursorClicking.value = true;
+  selectedId.value = target.item.id;
+  phase.value = 'dragging';
+  scene.activateCatalogItem(target.item.id, target.item.modelUrl);
+  updateDragVisual(target.item, target.card.x, target.card.y);
+
+  const drop = canvasPoint(DRAG_POINT[0], DRAG_POINT[1]);
+  cursorInstant.value = true;
+  await tweenPoint(token, target.card, drop, 900, (p) => {
+    updateDragVisual(target.item, p.x, p.y);
+  });
+  if (token !== autoplayToken) return false;
+
+  draggedThumb.value = null;
+  phase.value = 'idle';
+  scene.setGhostAt(drop.x, drop.y);
+  scene.placeGhostAsSingle();
+  showToast(`${target.item.name} placed`);
+
+  await orbitTween(token, 0.4, 700, drop);
   cursorInstant.value = false;
   cursorClicking.value = false;
-  if (token !== autoplayToken) return false;
-  await wait(700);
-  return true;
+  return token === autoplayToken;
 }
 
 async function runAutoplay() {
@@ -395,14 +513,13 @@ async function runAutoplay() {
     return;
   }
 
-  outer: while (token === autoplayToken) {
-    for (let i = 0; i < DROP_POINTS.length; i += 1) {
-      const [fx, fy] = DROP_POINTS[i];
-      const ok = await placeAndOrbit(token, scene, root, fx, fy, i % 2 === 0 ? 1 : -1);
-      if (!ok) break outer;
-    }
-    // Hold the fully-built scene a beat, then clear for the next lap.
-    await wait(900);
+  while (token === autoplayToken) {
+    if (!(await runClickPath(token, scene, root))) break;
+    await wait(500);
+    if (token !== autoplayToken) break;
+    if (!(await runDragPath(token, scene, root))) break;
+    // Hold the finished floor a beat, then clear for the next lap.
+    await wait(1100);
     if (token !== autoplayToken) break;
     scene.clearArea();
     await wait(500);
@@ -423,10 +540,13 @@ function stopAutoplay() {
   demoPlaying.value = false;
   cursorVisible.value = false;
   draggedThumb.value = null;
+  pendingDrag = null;
   if (draggingItem) {
-    sceneRef.value?.setGhostVisible(false);
     draggingItem = null;
+    phase.value = 'idle';
+    sceneRef.value?.setGhostVisible(false);
   }
+  disarm();
 }
 
 function restartDemo() {
@@ -514,6 +634,7 @@ onMounted(async () => {
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
+    root.addEventListener('keydown', onKeyDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
@@ -537,6 +658,7 @@ onBeforeUnmount(() => {
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
   rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
+  rootRef.value?.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
   window.removeEventListener('pointercancel', onPointerUp);
@@ -549,10 +671,11 @@ onBeforeUnmount(() => {
     class="drag-drop-scene-app"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
-    aria-label="Drag and drop demo, autoplaying the Add tool; drag Chair onto the floor or take over"
+    :data-phase="phase"
+    aria-label="Drag and drop demo, autoplaying the Add tool; click an object then the floor, or drag one in"
   >
     <div class="viewport">
-      <canvas data-scene-canvas class="scene-canvas" aria-label="Ground for placing or filling with chairs" />
+      <canvas data-scene-canvas class="scene-canvas" aria-label="Floor for placing objects" />
       <div data-label-host class="label-host" />
 
       <div
@@ -574,7 +697,7 @@ onBeforeUnmount(() => {
           Restart
         </button>
         <p class="hint">
-          Drag Chair onto the ground · orbit to look around
+          {{ hint }}
         </p>
       </div>
     </div>
