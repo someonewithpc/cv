@@ -1,5 +1,6 @@
 ---
 import { CONTACT } from '@/site';
+import { mailLink } from '../mailLink';
 ---
 
 <header>
@@ -20,7 +21,7 @@ import { CONTACT } from '@/site';
 
     <address class="contact monospace">
       <ul>
-        <li><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></li>
+        <li><Fragment set:html={mailLink(CONTACT.email)} /></li>
         {CONTACT.profiles.map(({ label, href }) => (
           <li>
             <a href={href} rel="me noopener noreferrer" target="_blank">
