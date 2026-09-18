@@ -152,6 +152,11 @@ section {
      resolved smaller than the mat and pushed the block across the frame line. */
   --sheet-margin: 1rem;
 
+  /* The note tab, and how far it reaches past the mat into the sheet. rem for
+     the same reason: the tab sits in the sheet's corner, not in anyone's text. */
+  --note-fold-size: 3.5rem;
+  --note-fold-reach: calc(var(--note-fold-size) - var(--sheet-margin));
+
   contain: size style;
   overflow: clip;
 
@@ -429,8 +434,8 @@ section {
     bottom: 0;
     z-index: 3;
 
-    width: 3.5em;
-    height: 3.5em;
+    width: var(--note-fold-size);
+    height: var(--note-fold-size);
     padding: 0;
     border: 0;
     font: inherit;
@@ -624,6 +629,17 @@ section {
 
     .note-fold {
       display: block;
+    }
+
+    /* Landscape only: the artwork runs the full height of the sheet here, so it
+       reaches into the corner the tab is folded out of, and a scene's own
+       chrome (Space Builder's rail, say) lands under it. Inset the grid by what
+       the tab reaches past the mat, so the corner is the tab's alone. On the
+       section rather than on .content: a demo can stretch that cell and float
+       its own chrome at the cell's edge, but nothing escapes the grid's inset.
+       Portrait already ends the artwork above the title block row. */
+    @container technical-drawing (orientation: landscape) {
+      padding-inline-start: calc(var(--sheet-margin) + var(--note-fold-reach));
     }
 
     /* The artwork keeps the sheet centre, so the corner block gives ground —
