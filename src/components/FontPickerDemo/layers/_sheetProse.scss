@@ -1,0 +1,18 @@
+// Explanatory text on the picker's blueprint sheets. Pale ink over pale grid lines is hard to
+// read, so a run of prose lays the sheet's own fill under itself and the grid stops there. On a
+// `.blueprint` page --surface-sunken is that fill (Page.astro sets it after the mixin), so the
+// band has no edge of its own. The spread comes from a shadow rather than padding: it reaches
+// past the text box without moving anything around it.
+@mixin sheet-prose($spread: 0.25em) {
+  background: var(--surface-sunken);
+  box-shadow: 0 0 0 $spread var(--surface-sunken);
+  border-radius: 0.125em;
+}
+
+// The same, for labels drawn inside an SVG, where there is no box to fill.
+@mixin sheet-prose-svg($width: 3px) {
+  paint-order: stroke;
+  stroke: var(--surface-sunken);
+  stroke-width: $width;
+  stroke-linejoin: round;
+}

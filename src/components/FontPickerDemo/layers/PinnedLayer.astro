@@ -28,6 +28,8 @@
 */}
 
 <style lang="scss">
+@use "./sheetProse" as *;
+
 .wrapper {
   box-sizing: border-box;
   width: 100%;
@@ -42,6 +44,8 @@
 }
 
 .sheet-note {
+  @include sheet-prose;
+
   margin: 0;
   // A phone sheet needs its height for the two columns, and each one says this in its own
   // caption anyway

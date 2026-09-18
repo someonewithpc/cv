@@ -82,6 +82,8 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 </div>
 
 <style lang="scss">
+@use "./sheetProse" as *;
+
 .wrapper {
   box-sizing: border-box;
   width: 100%;
@@ -148,6 +150,8 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 }
 
 .caption {
+  @include sheet-prose;
+
   margin: 0;
   font-size: 0.8125em;
   line-height: 1.35;
@@ -229,6 +233,8 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   padding: 0.625em 0.75em;
   border: 1px solid var(--line-strong);
   border-radius: 0.25em;
+  // The grid stops at the frame, so a listing this dense is read off a flat ground
+  background: var(--surface-sunken);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.8125em;
   line-height: 1.4;
@@ -296,6 +302,8 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   padding-top: 3.25em;
 
   .hop-note {
+    @include sheet-prose;
+
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.6875em;
     line-height: 1.3;
