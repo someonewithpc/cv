@@ -1,11 +1,15 @@
 import loadFontFacesFromStyleElement, { mergeFaces } from './loadFontFacesFromStyleElement';
 import manualIframe from './manualIframe';
+import { proxiedFetch } from './proxiedFetch';
 
 export type LoadedFaces = Record<string, string>;
 
-// fonts.googleapis.com sends `access-control-allow-origin: *`, so no proxy needed here
+// fonts.googleapis.com allows a cross-origin read of the CSS it serves, but not of the 400 it
+// answers an unknown family with, and every half-typed name is one of those. Through the proxy
+// both come back readable, so a name in progress fails as an error the subform can show instead
+// of a CORS failure in the console
 export async function loadGoogleFont(family: string, signal: AbortSignal): Promise<LoadedFaces> {
-  const res = await fetch(`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}`, { signal });
+  const res = await proxiedFetch(`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}`, { signal });
   if (!res.ok || res.headers.get('content-type')?.startsWith('text/css') !== true) throw new Error('Not a Google font');
 
   // A detached <style> has no sheet, so the CSS gets a document of its own
