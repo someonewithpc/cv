@@ -1,3 +1,5 @@
+import { watchPageActive } from '@/client/frontPage';
+
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 type Card = { root: HTMLElement; form: HTMLFormElement; input: HTMLInputElement };
@@ -221,28 +223,41 @@ function wait(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * The walkthrough: type the value, save it, watch the object leave the list, put it back.
+ *
+ * It only runs while the sheet is on screen and its page is the one drawn on top, which
+ * `--page-index` answers and an IntersectionObserver cannot: every page of a stack shares
+ * one grid cell. `data-autoplay` on the tool is the whole state, as `playing`, `user` or
+ * `off`, so a sheet-level transport deck can read or report it without new plumbing.
+ */
 async function autoplay(tool: Tool, group: Group, value: string) {
-  if (reducedMotion.matches) return;
-
   const { root } = tool;
+
+  if (reducedMotion.matches) {
+    root.dataset.autoplay = 'off';
+    return;
+  }
+
   let stopped = false;
-  let visible = false;
+  let active = false;
+
+  const stopPageWatch = watchPageActive(root, (next) => {
+    active = next;
+  });
 
   const stop = () => {
     stopped = true;
+    stopPageWatch();
     group.root.classList.remove('autoplay', 'completing');
-    root.dataset.autoplay = 'off';
+    root.dataset.autoplay = 'user';
   };
   root.addEventListener('pointerenter', stop, { once: true });
   root.addEventListener('focusin', stop, { once: true });
 
-  new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
-  }, { threshold: 0.25 }).observe(root);
-
   const pause = async (ms: number) => {
     await wait(ms);
-    while (!stopped && (!visible || document.hidden)) await wait(250);
+    while (!stopped && (!active || document.hidden)) await wait(250);
   };
 
   const type = async (text: string) => {
@@ -254,7 +269,7 @@ async function autoplay(tool: Tool, group: Group, value: string) {
     }
   };
 
-  root.dataset.autoplay = 'on';
+  root.dataset.autoplay = 'playing';
   await pause(1200);
 
   while (!stopped) {
