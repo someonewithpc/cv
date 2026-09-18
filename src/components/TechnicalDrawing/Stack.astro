@@ -28,11 +28,20 @@ type Props = {
 const { layers = {}, tech: stackTech, hintArrow = 0 } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 const hint = Astro.props.hint ?? `${totalLayers - 1} more sheets, peel this corner`;
+const hintBack = 'this corner drags the page back';
 
 const arrows = [
   "M6 42 C 14 40, 28 34, 39 13 M31 17 L40 11 L38 22",
   "M5 41 C 20 45, 16 22, 41 9 M33 10 L42 8 L40 18",
   "M6 43 C 17 43, 11 25, 26 18 C 33 15, 38 13, 41 9 M33 8 L42 7 L39 17",
+];
+
+// The same three hands, turned around: up from the bottom-right of the words to the folded-back
+// corner above them, where the back-drag grab sits.
+const backArrows = [
+  "M42 6 C 34 8, 20 14, 9 35 M17 31 L8 37 L10 26",
+  "M43 7 C 28 3, 32 26, 7 39 M15 38 L6 40 L8 30",
+  "M42 5 C 31 5, 37 23, 22 30 C 15 33, 10 35, 7 39 M15 40 L6 41 L9 32",
 ];
 ---
 
@@ -63,12 +72,18 @@ const arrows = [
     }}
   </PaperStack>
 
-  <p class="flip-hint marker-font" aria-hidden="true" hidden>
-    <span>{hint}</span>
-    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d={arrows[hintArrow]} />
-    </svg>
-  </p>
+  <div class="flip-hints" aria-hidden="true">
+    <div class="hint-variant" data-variant="1">
+      <p class="flip-hint flip-hint--fwd hint-marker marker-font">
+        <span>{hint}</span>
+        <svg class="hint-arrow" viewBox="0 0 48 48"><path d={arrows[hintArrow]} /></svg>
+      </p>
+      <p class="flip-hint flip-hint--back hint-marker marker-font">
+        <svg class="hint-arrow" viewBox="0 0 48 48"><path d={backArrows[hintArrow]} /></svg>
+        <span>{hintBack}</span>
+      </p>
+    </div>
+  </div>
 </div>
 
 <style lang="scss">
@@ -111,49 +126,95 @@ const arrows = [
   }
 }
 
-// Sits under the sheet's bottom-right corner, in the room the fan reserve leaves, and points
-// back up at the resting fold. Gone once a page has been turned: whoever did that knows.
+// Two sentences drawn on the sheet: this corner turns the page, and that corner brings it
+// back. The script decides which stacks show them, so nothing paints until it runs, which
+// also keeps all of this off a page without JS.
+.flip-hints {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  color: var(--accent-text);
+  pointer-events: none;
+}
+
+.hint-variant {
+  display: none;
+}
+
+.technical-drawing-frame[data-hint-variant="1"] .hint-variant[data-variant="1"] {
+  display: block;
+}
+
 .flip-hint {
   position: absolute;
-  right: 0.5em;
-  top: 100%;
-  translate: 0 -1.25em;
+  margin: 0;
+  line-height: 1.2;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+
+// Descendant, not nested under .flip-hint: in two of the five the hint is the svg itself.
+.flip-hints svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+// The way back only makes sense once there is a page behind you, and only until you find it.
+.flip-hint--back {
+  opacity: 0;
+}
+
+.technical-drawing-frame:has([data-paper-turned]) {
+  .flip-hint--fwd { opacity: 0; }
+  .flip-hint--back { opacity: 1; }
+}
+
+.technical-drawing-frame:has([data-paper-returned]) .flip-hint--back {
+  opacity: 0;
+}
+
+// 1 — a marker line with a hand-drawn arrow, clear of the sheet in the fan's room.
+.hint-marker {
   display: flex;
   align-items: flex-start;
   gap: 0.25em;
-  margin: 0;
   max-width: 24em;
   font-size: 1rem;
-  line-height: 1.2;
-  text-align: right;
-  color: var(--accent-text);
-  pointer-events: none;
-  transition: opacity 400ms ease;
 
-  span {
-    padding-top: 1.25em;
-  }
-
-  svg {
+  .hint-arrow {
     flex: none;
     width: 3.5em;
     height: 3.5em;
-  }
-
-  // The class sets display, so the attribute alone no longer hides anything: without this
-  // the hint is on screen before the script arms it, and stays on a page that has no JS.
-  &[hidden] {
-    display: none;
+    stroke-width: 2.5px;
   }
 
   @container technical-drawing-width (max-width: 40em) {
-    translate: 0 -0.75em;
     font-size: 0.8125rem;
   }
 }
 
-.technical-drawing-frame:has([data-paper-turned]) .flip-hint {
-  opacity: 0;
+.flip-hint--fwd.hint-marker {
+  top: 100%;
+  right: 0.5em;
+  translate: 0 -1.25em;
+  text-align: right;
+
+  span { padding-top: 1.25em; }
+
+  @container technical-drawing-width (max-width: 40em) {
+    translate: 0 -0.75em;
+  }
+}
+
+.flip-hint--back.hint-marker {
+  top: 0;
+  left: 0.5em;
+  translate: 0 -100%;
+  text-align: left;
+
+  span { padding-top: 0.5em; }
 }
 </style>
 
@@ -201,7 +262,6 @@ function initStack(stack: HTMLElement) {
   });
 
   armIslands(stack);
-  stack.parentElement?.querySelector('.flip-hint')?.removeAttribute('hidden');
 
   // The sheet's size and orientation, restated as plain pixels and a data attribute for the
   // artwork to scale its type by. The container queries and units say the same thing, but a
@@ -225,11 +285,22 @@ const measure = new ResizeObserver((entries) => {
     stack.style.setProperty('--sheet-inline', `${inlineSize}px`);
     stack.style.setProperty('--sheet-block', `${blockSize}px`);
     stack.dataset.sheetOrientation = portrait ? 'portrait' : 'landscape';
+    // The frame is taller than the sheet by the fan's reserve, so a hint that belongs on the
+    // sheet's own bottom edge cannot be placed from the frame's box alone.
+    (stack.parentElement as HTMLElement | null)?.style.setProperty('--stack-block', `${blockSize}px`);
   }
 });
 
+// Nothing paints until this runs, which is also what keeps the hints off a page without JS.
+function armHints() {
+  [...document.querySelectorAll<HTMLElement>('.technical-drawing-frame')].forEach((frame) => {
+    frame.dataset.hintVariant = '1';
+  });
+}
+
 function init() {
   [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack')].forEach(initStack);
+  armHints();
 }
 
 document.addEventListener('DOMContentLoaded', init);
