@@ -8,6 +8,7 @@ type Card = {
   root: HTMLElement;
   form: HTMLFormElement;
   input: HTMLInputElement;
+  save: HTMLButtonElement;
   values: Values;
   initial: Values;
 };
@@ -16,6 +17,7 @@ type Group = {
   root: HTMLElement;
   sharedForm: HTMLFormElement;
   shared: HTMLInputElement;
+  sharedSave: HTMLButtonElement;
   cards: Card[];
 };
 
@@ -171,6 +173,7 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
       root,
       form: root.querySelector<HTMLFormElement>('.object-form')!,
       input: root.querySelector<HTMLInputElement>('.object-value')!,
+      save: root.querySelector<HTMLButtonElement>('.object-form button')!,
       values,
       initial: { ...values },
     };
@@ -180,6 +183,7 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
     root: section,
     sharedForm: section.querySelector('.shared-form')!,
     shared: section.querySelector('.shared-value')!,
+    sharedSave: section.querySelector('.shared-form button')!,
     cards,
   };
 
@@ -331,6 +335,11 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(700);
     if (stopped) break;
 
+    // The save is a click on the row's tick, not a silent commit: without the pointer
+    // landing on the button, the values just change and nothing says why.
+    await aim(cursor, group.sharedSave);
+    if (stopped) break;
+    await press(cursor);
     submitShared(tool, group, false);
     group.root.classList.remove('autoplay');
     group.root.classList.add('completing');
@@ -357,6 +366,9 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(600);
     if (stopped) break;
 
+    await aim(cursor, card.save);
+    if (stopped) break;
+    await press(cursor);
     setValue(tool, card, card.input.value);
     afterSave(tool, group, false);
     await pause(2600);
