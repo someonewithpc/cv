@@ -17,6 +17,7 @@
 - [ ] Access Keys
 - [ ] ARIA roles
 - [ ] Demos
+  - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
   - [x] Space builder add tool
@@ -41,6 +42,7 @@
   - [ ] Ball loader animation (~/project/playground)
 - [ ] TechnicalDrawing
   - [ ] Paper texture
+  - [x] Tucked note tab collides with the sheet content and toolbar (#16)
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
@@ -62,8 +64,8 @@
 - [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
 - [ ] Run W3C validator
-  - [ ] Put CSS and JS out of line
-- [ ] Make demos more usable without JS
+  - [x] Put CSS and JS out of line (#22)
+- [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
