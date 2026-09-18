@@ -51,6 +51,7 @@
     - [x] Turned paper corners/dogear
       - [x] Dogear doesn't follow theme (#5)
     - [x] Navigation
+      - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
     - [-] Page indicator
   - [ ] Anotations
     - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
