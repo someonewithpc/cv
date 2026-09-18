@@ -1,9 +1,10 @@
 /**
- * How long a colour has to hold still before React is told about it. Only the thumbnail and
- * the step list wait that long: the preview, the input and the serialized marker are all
- * current from the first event, and the picker's own `change` flushes this early.
+ * How long a dragged value has to hold still before React is told about it. Only the
+ * thumbnail and the step list wait that long: the preview, the control and the serialized
+ * marker are all current from the first event, and the control's own `change` flushes this
+ * early.
  */
-export const COLOR_COMMIT_MS = 250;
+export const CONTROL_COMMIT_MS = 250;
 
 /**
  * Keeps a picker event off React's root listener.

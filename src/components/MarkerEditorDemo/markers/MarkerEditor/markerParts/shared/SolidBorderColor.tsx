@@ -5,7 +5,7 @@ import { type DebouncedFunc, debounce } from "lodash";
 import type { SpaceType } from '@/store';
 
 import { MarkerPart } from "./";
-import { COLOR_COMMIT_MS, LiveStyleRule, keepReactOut } from "./liveStyleRule";
+import { CONTROL_COMMIT_MS, LiveStyleRule, keepReactOut } from "./liveStyleRule";
 
 export class SolidBorderColor extends MarkerPart {
   protected get borderClassName(): string {
@@ -34,7 +34,7 @@ export class SolidBorderColor extends MarkerPart {
     this.liveRule = new LiveStyleRule(this.container, `.${this.borderClassName}`, '--border-color');
     this.commitColor = debounce((color: string) => {
       this.reactiveState.color = color;
-    }, COLOR_COMMIT_MS);
+    }, CONTROL_COMMIT_MS);
   }
 
   get defaultReactiveState() {
