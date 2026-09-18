@@ -134,8 +134,10 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   width: min(100%, 60em);
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
-  // Sized from the stack's measured width, never a container unit: see Stack.astro's script
-  font-size: clamp(0.75rem, 0.0125 * var(--sheet-inline), 1.0625rem);
+  // Sized from the stack's measured pixels, never a container unit: see Stack.astro's
+  // script. A landscape sheet is twice as wide as it is tall, so its height is what runs
+  // out first and the drawing comes off that
+  font-size: clamp(0.5rem, 0.025 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
 
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
