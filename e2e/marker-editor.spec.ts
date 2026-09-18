@@ -161,7 +161,8 @@ test('main page: the walkthrough holds still while a native colour picker has fo
   test.setTimeout(90_000);
 
   const stack = markerEditorStack(page);
-  await stack.scrollIntoViewIfNeeded();
+  // Centred, so the page counts as active and the demo keeps reporting to the deck.
+  await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   const front = frontPage(stack, await frontPageIndex(stack));
   await waitForIslandMounted(front);
 
@@ -175,5 +176,7 @@ test('main page: the walkthrough holds still while a native colour picker has fo
 
   await expect(swatch).toBeFocused();
   await expect(front.locator('.mock-map-demo-cursor')).toHaveCount(0);
-  await expect(front.locator('[data-demo-status]')).toHaveAttribute('data-state', 'user');
+  // The deck keeps saying who is driving for as long as the popup is up.
+  await expect(front.locator('[data-demo-transport]')).toHaveAttribute('data-state', 'user');
+  await expect(front.locator('[data-demo-transport]')).toContainText('MANUAL CONTROL');
 });
