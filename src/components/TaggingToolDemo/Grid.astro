@@ -1,16 +1,19 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import { baseObjects, isComplete, objectsOf, property, sharedState, usedValues } from './objects';
+import { autoplayValue, baseObjects, isComplete, objectsOf, property, sharedState, usedValues } from './objects';
 
 type Props = {
   /** Wire the grid up to the client script and autoplay. */
   live?: boolean;
-  /** Render this group mid-fade, as it looks the moment it gets its last value. */
+  /** Render this object mid-fade, as it looks the moment it gets its last value. */
   completing?: string;
+  /** Render only these objects, for the blueprint pages that quote a row or two. */
+  only?: readonly string[];
 };
 
-const { live = false, completing } = Astro.props;
+const { live = false, completing, only } = Astro.props;
+const rows = only ? baseObjects.filter((group) => only.includes(group.id)) : baseObjects;
 
 const scope = live ? 'live' : 'static';
 const listId = `tagging-tool-values-${scope}`;
@@ -55,8 +58,10 @@ const sharedTitle = 'Update Base + Styles';
   </div>
 
   <div class="body">
-    {baseObjects.map((group, index) => {
-      const shared = sharedState(group);
+    {rows.map((group, index) => {
+      // The fading row has just been saved, so it reads as fully tagged on its way out.
+      const filling = completing === group.id;
+      const shared = filling ? { shared: true, value: autoplayValue, overrides: [autoplayValue] } : sharedState(group);
       const placeholder = shared.shared ? sharedTitle : `Overrides: ${shared.overrides.join(', ')}`;
       const title = shared.shared ? sharedTitle : `${sharedTitle}\n${placeholder}`;
       const sharedId = `${listId}-${group.id}-shared`;
@@ -64,7 +69,7 @@ const sharedTitle = 'Update Base + Styles';
         <div
           class:list={['grouped-objects', index % 2 ? 'even' : 'odd', { completing: completing === group.id }]}
           data-group={group.id}
-          data-complete={String(isComplete(group))}
+          data-complete={String(filling || isComplete(group))}
           data-autoplay-target={live && group.autoplay ? '' : undefined}
           aria-label={group.base.name}
         >
@@ -88,7 +93,7 @@ const sharedTitle = 'Update Base + Styles';
 
           <div class="shared-properties">
             {objectsOf(group).map((object) => (
-              <div class="image-thumbnail" data-object={object.id} data-missing={String(object.value === null)}>
+              <div class="image-thumbnail" data-object={object.id} data-missing={String(!filling && object.value === null)}>
                 <div
                   class="panel-preview-library-object"
                   title={[object.name, object.details].filter(Boolean).join(', ')}
@@ -98,7 +103,7 @@ const sharedTitle = 'Update Base + Styles';
                       <input
                         class="object-value"
                         type="text"
-                        value={object.value ?? ''}
+                        value={filling ? autoplayValue : object.value ?? ''}
                         list={listId}
                         aria-label={`${property} for ${[object.name, object.details].filter(Boolean).join(' ')}`}
                       />
