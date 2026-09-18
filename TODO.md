@@ -58,3 +58,19 @@
 - [x] Contact section
 - [ ] Work History
 - [ ] Drawn arrows indicating paper turn, maybe only for reduced-motion?
+
+# Issues
+
+ - [ ] Dogear doens't follow theme
+ - [ ] Demo too wide on regular screen (max should be 100ch)
+ - [ ] Autoplay is not very intuitive
+ - [ ] Animations on some pages don't start
+ - [ ] On space builder demo the 4th page layout page demo doesn't work
+ - [ ] Drag and drop furniture doesn't work
+ - [ ] Theme Picker animation switching doesn't work
+ - [ ] Contributions link icon missing
+ - [ ] Dogear doesn't appear until next page animation finished
+ - [ ] Paper turn horizontal scroll only works backwards, not forwards
+ - [ ] Keyboard paper turn waits too long before commit
+ - [ ] PaperStack focus ring should follow page border
+ - [ ] Autoplay demos don't pause while color picker is open, resuming, confusingly 
