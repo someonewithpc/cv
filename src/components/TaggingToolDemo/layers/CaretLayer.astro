@@ -8,7 +8,6 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
   <div class="caret-layer" aria-hidden="true">
     <div class="panel">
       <header>
-        <span class="eyebrow">.shared-properties form::before</span>
         <strong>A caret for inputs that never have focus</strong>
       </header>
 
@@ -97,14 +96,6 @@ header {
   strong {
     font-size: 0.875em;
   }
-}
-
-.eyebrow {
-  font-family: monospace, system-ui;
-  font-size: 0.625em;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
 }
 
 .ruler {
