@@ -75,47 +75,59 @@ test('main page: the drawn cursor leaves when its page is no longer in front', a
   await expect(cursor).toBeVisible({ timeout: 20_000 });
 });
 
-test('discovery page: the dropdown illustration is reachable', async ({ page }) => {
+test('extraction page: the pipeline is drawn from the URL to the new row', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Font Discovery');
+  await swipeToPage(page, stack, 'Font Extraction');
   const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section')).toBeVisible();
 
-  // Every face the page carries is drawn in its own face, under the two subform entries
-  const rows = front.locator('.list li');
-  await expect(rows).toHaveCount(6);
-  await expect(rows.last()).toHaveText('-- Extract fonts from URL --');
-  await expect(front.locator('.sample')).toHaveCSS('font-family', /Special Elite/);
+  // Four hops, in order, with the URL the walkthrough types at one end and the row it becomes
+  // at the other
+  await expect(front.locator('.step')).toHaveCount(4);
+  await expect(front.locator('.field-input')).toHaveText('rust-lang.org');
+  await expect(front.locator('.listing .rewritten')).toContainText('/api/font-proxy');
+  await expect(front.locator('.select-row.new')).toHaveText('Alfa Slab One 400');
 });
 
-test('sources page: static font-sources illustration is reachable', async ({ page }) => {
+test('indicator page: the border runs by itself and the buttons take it over', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'External Sources');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section')).toBeVisible();
-});
-
-test('pinned page: static held-control illustration is reachable', async ({ page }) => {
-  const stack = fontPickerStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Pinned Controls');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section')).toBeVisible();
-});
-
-test('feedback page: the sample border follows the state buttons', async ({ page }) => {
-  const stack = fontPickerStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Reactive Feedback');
+  await swipeToPage(page, stack, 'Loading Indicator');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   await waitForIslandMounted(front);
   const fieldset = front.locator('[data-border-demo]');
-  await expect(fieldset).toHaveClass(/idle/);
-  await front.getByRole('button', { name: 'pending' }).click();
-  await expect(fieldset).toHaveClass(/pending/);
-  await front.getByRole('button', { name: 'success' }).click();
-  await expect(fieldset).toHaveClass(/success/);
+  // It plays the request on its own once the page is the one in front
+  await expect(fieldset).toHaveClass(/pending|success|error/, { timeout: 15_000 });
+
+  // A press is the visitor taking it over, and it stays where they put it
+  await front.getByRole('button', { name: 'error' }).click();
+  await expect(fieldset).toHaveClass(/error/);
+  await page.waitForTimeout(4_000);
+  await expect(fieldset).toHaveClass(/error/);
+
+  // The easing is plotted from the same numbers the stylesheet animates with
+  await expect(front.locator('.timing figcaption')).toContainText('cubic-bezier(0.75, 0.25, 0.2, 0.2)');
+});
+
+test('held controls page: the drag leaves the plain column and holds the pinned one', async ({ page }) => {
+  const stack = fontPickerStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Held Controls');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  await waitForIslandMounted(front);
+  const plain = front.locator('[data-demo-target="size-plain"]');
+  const held = front.locator('[data-demo-target="size-held"]');
+  await expect(plain).toBeVisible({ timeout: 15_000 });
+
+  // The walkthrough drags each column's size slider in turn
+  await expect.poll(() => plain.inputValue(), { timeout: 30_000 }).not.toBe('1');
+  // It measures how far the control has travelled from where the drag began
+  await expect(front.locator('.grab-measure')).toBeVisible();
+
+  // Hovering the sheet hands over, and the held column pins the row under the pointer
+  await held.hover();
+  await expect(page.getByText('Demo paused')).toBeVisible();
+  await expect(front.locator('.pinned-box.is-held')).toBeVisible();
 });
