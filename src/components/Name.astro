@@ -43,144 +43,118 @@ import { mailLink } from '../mailLink';
 
 <style lang="scss">
 header {
-  display: flex;
-  justify-content: center;
-  margin-block: 1.25rem 0.25rem;
+  display: block;
 
-  @media (max-width: 52rem) {
-    margin-block: 3.25rem 0.25rem;
-  }
-
+  /* The CV's own title block, set like a magazine masthead: the name on the left, the
+     contact block squared up on the right like a drawing's title block. */
   .title-block {
-    $radius: 1rem;
-    $accent-length: $radius + 0.4rem;
-    $frame-width: 1px;
-    $accent-width: 3px;
-    $accent-outset: ($accent-width - $frame-width) * 0.5;
-
-    position: relative;
-    padding: 2.5rem 1.5rem 1.5rem;
-    max-width: 42rem;
-    width: min(100%, 42rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "meta meta"
+      "name contact"
+      "role contact"
+      "note contact"
+      "audio audio";
+    column-gap: 3rem;
+    row-gap: 0.75rem;
+    align-items: end;
+    text-align: left;
 
     @media (max-width: 52rem) {
-      padding: 1.75rem 1rem 1.15rem;
-    }
-
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    text-align: center;
-
-    border-radius: $radius;
-    background: color-mix(in oklch, var(--surface-raised), transparent 35%);
-
-    /* Frame + corner accents share one rounded path; accent is wider and
-       outset so its stroke stays centered on the frame. */
-    &::before,
-    &::after {
-      content: '';
-      position: absolute;
-      border-style: solid;
-      pointer-events: none;
-    }
-
-    &::before {
-      inset: 0;
-      border-width: $frame-width;
-      border-color: var(--line-strong);
-      border-radius: inherit;
-    }
-
-    &::after {
-      top: -$accent-outset;
-      right: -$accent-outset;
-      bottom: -$accent-outset + 0.5px;
-      left: -$accent-outset;
-      border-width: $accent-width;
-      border-color: var(--accent);
-      border-radius: calc(#{$radius} + #{$accent-outset});
-      mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
-      mask-size: $accent-length $accent-length;
-      mask-position: 0 0, 100% 100%;
-      mask-repeat: no-repeat;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "meta"
+        "name"
+        "role"
+        "contact"
+        "note"
+        "audio";
+      row-gap: 0.625rem;
     }
 
     .sheet-meta {
+      grid-area: meta;
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
       gap: 0.5ch 0.75ch;
-      margin: 0;
+      margin: 0 0 1.5rem;
       font-size: 0.625rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--ink-faint);
+      color: var(--accent-text);
     }
 
     h1 {
+      grid-area: name;
       margin: 0;
-      font-size: clamp(2rem, 9vw, 3.25rem);
-      line-height: 1.15;
+      font-family: "Special Elite", monospace, system-ui;
+      font-weight: 400;
+      font-size: clamp(2.75rem, 8vw, 5.5rem);
+      line-height: 1.1;
       color: var(--ink);
 
       span {
         text-decoration: underline dotted;
         text-decoration-color: var(--accent-muted);
-        text-underline-offset: 4px;
+        text-underline-offset: 0.125em;
       }
 
       ruby {
-        letter-spacing: 3px;
+        letter-spacing: 0.02em;
 
         :is(rp, rt) {
           opacity: 0;
           transition: opacity 250ms ease;
         }
+
+        rt {
+          font-family: var(--font-poppins);
+          font-size: 0.25em;
+          letter-spacing: 0.04em;
+          color: var(--ink-muted);
+        }
       }
     }
 
     .sheet-role {
+      grid-area: role;
       margin: 0;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--ink-muted);
     }
 
     .contact {
-      margin: 0.125rem 0 0;
+      grid-area: contact;
+      margin: 0.5rem 0 0;
       font-style: normal;
-      font-size: 0.75rem;
-      letter-spacing: 0.06em;
+      font-size: 0.8125rem;
+      letter-spacing: 0.04em;
 
       ul {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        gap: 0 0.5ch;
+        display: grid;
         margin: 0;
         padding: 0;
         list-style: none;
+        border: 1px solid var(--line-strong);
+        background: color-mix(in oklch, var(--surface-raised), transparent 25%);
       }
 
       li {
-        display: inline-flex;
-        align-items: center;
+        display: block;
       }
 
-      li + li::before {
-        content: "·";
-        margin-inline-end: 0.5ch;
-        color: var(--ink-faint);
+      li + li {
+        border-top: 1px solid var(--line);
       }
 
       a {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        min-height: 1.5rem;
+        min-height: 2.25rem;
+        padding: 0.25rem 1rem;
         color: var(--ink-muted);
         text-decoration: underline dotted;
         text-decoration-color: var(--accent-muted);
@@ -195,22 +169,24 @@ header {
 
         &:focus-visible {
           outline: 2px solid var(--accent);
-          outline-offset: 0.125rem;
-          border-radius: 0.125rem;
+          outline-offset: -0.25rem;
         }
       }
     }
 
     .note-row {
-      color: var(--ink-faint);
+      grid-area: note;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 0.5ch;
       width: fit-content;
+      margin-top: 0.5rem;
+      color: var(--ink-faint);
     }
 
     audio {
+      grid-area: audio;
+      justify-self: start;
       opacity: 0;
       visibility: hidden;
       transition: opacity 250ms ease, visibility 0s 250ms;
