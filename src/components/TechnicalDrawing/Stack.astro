@@ -200,6 +200,9 @@ $portrait-lean-y: 2.25em;
 .hint-words {
   max-width: 24em;
   font-size: 1rem;
+  // One line, whatever face lands: the room under the fan is about a line deep on a phone, and
+  // a second line would run into the next stack's sheet.
+  white-space: nowrap;
 
   @container technical-drawing-width (max-width: 40em) {
     font-size: 0.8125rem;
