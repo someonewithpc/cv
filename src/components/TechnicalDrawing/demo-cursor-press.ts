@@ -5,7 +5,9 @@
 // `isTrusted === false`, which is how a walkthrough's press is told from the visitor's own.
 //
 // Walkthroughs should press through `demoPress()`, which sends the down, lets the pulse show,
-// and only then sends the up and the click, so the cursor moves before the widget reacts.
+// and only then sends the up and the click, so the cursor moves before the widget reacts. A
+// drag is the same press pulled apart: `demoPressDown()`, the walkthrough's own moves, then
+// `demoRelease()`.
 import './demo-cursor-press.css';
 
 /** How long the cursor stays pressed before the widget hears the release and the click. */
@@ -48,19 +50,36 @@ function mouse(type: string, point: { x: number; y: number }, buttons: number) {
 }
 
 /**
- * Press `target` at `point` (viewport coordinates, the drawn cursor's hot spot) the way a
- * walkthrough should: mousedown, a hold long enough for the pulse and flare to show, then
- * mouseup and the click. Resolves once the click has been dispatched.
+ * The first half of a press: mousedown on `target` at `point` (viewport coordinates, the
+ * drawn cursor's hot spot), then a hold long enough for the pulse and flare to show. A drag
+ * sends its moves once this resolves and ends with `demoRelease()`.
+ */
+export async function demoPressDown(
+  target: Element,
+  point: { x: number; y: number },
+  hold = PRESS_HOLD_MS,
+): Promise<void> {
+  target.dispatchEvent(mouse('mousedown', point, 1));
+  const wait = reducedMotion() ? 0 : hold;
+  if (wait > 0) await new Promise((resolve) => window.setTimeout(resolve, wait));
+}
+
+/** The mouseup that ends a press or a drag, at the point where the cursor let go. */
+export function demoRelease(target: Element, point: { x: number; y: number }): void {
+  target.dispatchEvent(mouse('mouseup', point, 0));
+}
+
+/**
+ * Press `target` at `point` the way a walkthrough should: mousedown, the hold, then mouseup
+ * and the click. Resolves once the click has been dispatched.
  */
 export async function demoPress(
   target: Element,
   point: { x: number; y: number },
   { hold = PRESS_HOLD_MS, click = true, dblclick = false }: DemoPressOptions = {},
 ): Promise<void> {
-  target.dispatchEvent(mouse('mousedown', point, 1));
-  const wait = reducedMotion() ? 0 : hold;
-  if (wait > 0) await new Promise((resolve) => window.setTimeout(resolve, wait));
-  target.dispatchEvent(mouse('mouseup', point, 0));
+  await demoPressDown(target, point, hold);
+  demoRelease(target, point);
   if (click) {
     if (target instanceof HTMLElement) target.click();
     else target.dispatchEvent(mouse('click', point, 0));
