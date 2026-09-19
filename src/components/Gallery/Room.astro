@@ -1,0 +1,253 @@
+---
+/**
+ * One room of the gallery: a full-bleed wall in its own colour, a floor band
+ * along the bottom, and a light. The piece goes in the default slot, the wall
+ * label in `label`, and anything that spans the whole room (a wing heading)
+ * in `lintel`.
+ */
+type Props = {
+  id: string;
+  /** Which --wall-* token in Layout.astro paints this room. */
+  wall: string;
+  /** Which side of the piece the wall label hangs on, once there is room beside it. */
+  label?: 'start' | 'end';
+  /** Hung pieces cast a shadow on the wall; plinth pieces stand on a block on the floor. */
+  display?: 'hung' | 'plinth' | 'open';
+  light?: 'skylight' | 'spot-start' | 'spot-end' | 'downlight' | 'case' | 'even';
+  ariaLabelledby?: string;
+  ariaLabel?: string;
+  class?: string;
+};
+
+const {
+  id,
+  wall,
+  label = 'end',
+  display = 'open',
+  light = 'even',
+  ariaLabelledby,
+  ariaLabel,
+  class: className,
+} = Astro.props;
+
+const hasLintel = Astro.slots.has('lintel');
+const hasLabel = Astro.slots.has('label');
+---
+
+<section
+  id={id}
+  class:list={['room', 'full-width', className]}
+  data-room={id}
+  data-label={label}
+  data-display={display}
+  data-light={light}
+  style={{ '--wall': `var(--wall-${wall})` }}
+  aria-labelledby={ariaLabelledby}
+  aria-label={ariaLabel}
+>
+  {hasLintel && (
+    <div class="room-lintel">
+      <slot name="lintel" />
+    </div>
+  )}
+  <div class="room-piece">
+    <slot />
+    {display === 'plinth' && <div class="plinth" aria-hidden="true"></div>}
+  </div>
+  {hasLabel && (
+    <div class="room-label">
+      <slot name="label" />
+    </div>
+  )}
+  <div class="room-floor" aria-hidden="true"></div>
+</section>
+
+<style lang="scss">
+.room {
+  --room-top: 4rem;
+  --room-gap: 2.5rem;
+  --floor: 2.5rem;
+  --floor-colour: light-dark(
+    color-mix(in oklch, var(--wall), var(--theme-ink) 14%),
+    color-mix(in oklch, var(--wall), black 32%)
+  );
+  --label-width: 14rem;
+
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(var(--page-gap), 1fr)
+    [content-start piece-start label-start] minmax(0, var(--content-max))
+    [piece-end label-end content-end] minmax(var(--page-gap), 1fr)
+    [full-end];
+  column-gap: 1.5rem;
+  row-gap: var(--room-gap);
+  align-items: start;
+  padding-top: var(--room-top);
+  color: var(--ink);
+  background-color: var(--wall);
+  /* Plaster: a tiled noise so the walls are not flat fills. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* Doorway: the previous room's floor ends and this wall begins on one line. */
+  border-top: 1px solid var(--wall-shade);
+  scroll-margin-top: 0;
+
+  > * {
+    min-width: 0;
+  }
+
+  /* The room's light, painted over the wall and under everything in it. */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--room-light, none);
+  }
+
+  &[data-light='skylight'] {
+    --room-light: radial-gradient(60% 55% at 50% 0%, var(--wall-light), transparent 70%);
+  }
+
+  &[data-light='case'] {
+    --room-light: radial-gradient(35% 60% at 50% 0%, var(--wall-light), transparent 70%);
+  }
+
+  &[data-light='spot-end'] {
+    --room-light: radial-gradient(50% 70% at 85% 0%, var(--wall-light), transparent 65%);
+  }
+
+  &[data-light='spot-start'] {
+    --room-light: radial-gradient(50% 70% at 15% 0%, var(--wall-light), transparent 65%);
+  }
+
+  &[data-light='downlight'] {
+    --room-light:
+      radial-gradient(45% 45% at 50% 100%, var(--wall-light), transparent 70%),
+      linear-gradient(to bottom, var(--wall-shade), transparent 40%);
+  }
+
+  &[data-light='even'] {
+    --room-light: radial-gradient(90% 90% at 50% 40%, transparent 55%, var(--wall-shade));
+  }
+
+  .room-lintel {
+    grid-column: content;
+  }
+
+  .room-piece {
+    grid-column: piece;
+    position: relative;
+  }
+
+  .room-label {
+    grid-column: label;
+    justify-self: end;
+    max-width: var(--label-width);
+  }
+
+  &[data-label='start'] .room-label {
+    justify-self: start;
+  }
+
+  .room-floor {
+    grid-column: full;
+    position: relative;
+    z-index: -2;
+    height: var(--floor);
+    margin-top: calc(var(--floor) * 0.5);
+    background: var(--floor-colour);
+    /* Skirting: a hairline where the wall meets the floor. */
+    box-shadow: inset 0 1px 0 var(--wall-shade);
+  }
+
+  /* Hung: the sheet lifts off the wall and throws its shadow down and to the right. */
+  &[data-display='hung'] .room-piece :global(article.technical-drawing-stack) {
+    box-shadow:
+      0.125rem 0.375rem 0.75rem rgb(0 0 0 / 0.18),
+      0.5rem 1.5rem 2.5rem -0.5rem rgb(0 0 0 / 0.3);
+  }
+
+  /* Plinth: the stack rests on a block, and the block stands on the floor. The
+     stack's fanned sheets already reserve their own drop below the front page
+     (PaperStack's margin-bottom), so the block starts where the fan ends. */
+  &[data-display='plinth'] {
+    .room-piece :global(article.technical-drawing-stack) {
+      box-shadow:
+        0 0.375rem 0.75rem rgb(0 0 0 / 0.2),
+        0 1.5rem 2rem -0.75rem rgb(0 0 0 / 0.35);
+    }
+
+    .plinth {
+      position: relative;
+      z-index: -1;
+      height: 4rem;
+      margin-inline: -0.5rem;
+      /* Sinks into the floor band: stands on it, not beside it. */
+      margin-bottom: calc(var(--floor) * -0.75);
+      background:
+        linear-gradient(
+          to bottom,
+          light-dark(rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.12)) 0,
+          transparent 0.375rem
+        ),
+        light-dark(
+          color-mix(in oklch, var(--wall), var(--theme-ink) 22%),
+          color-mix(in oklch, var(--wall), black 18%)
+        );
+      box-shadow:
+        inset 0 -0.75rem 0.75rem -0.75rem rgb(0 0 0 / 0.35),
+        0 0.5rem 1rem rgb(0 0 0 / 0.25);
+    }
+
+    .room-floor {
+      margin-top: 0;
+    }
+  }
+
+  @media (max-width: 52rem) {
+    --room-top: 2.5rem;
+    --room-gap: 1.5rem;
+    --floor: 1.5rem;
+    column-gap: 1rem;
+  }
+
+  /* Wide enough for the label to hang beside the piece at eye level. */
+  @media (min-width: 90rem) {
+    /* Dense: a label-start room lists the piece first in the DOM, and the label
+       must still fill the column beside it rather than the row below. */
+    grid-auto-flow: row dense;
+    grid-template-columns:
+      [full-start] minmax(var(--page-gap), 1fr)
+      [content-start piece-start] minmax(0, var(--content-max))
+      [piece-end label-start] var(--label-width)
+      [label-end content-end] minmax(var(--page-gap), 1fr)
+      [full-end];
+
+    &[data-label='start'] {
+      grid-template-columns:
+        [full-start] minmax(var(--page-gap), 1fr)
+        [content-start label-start] var(--label-width)
+        [label-end piece-start] minmax(0, var(--content-max))
+        [piece-end content-end] minmax(var(--page-gap), 1fr)
+        [full-end];
+    }
+
+    .room-label {
+      justify-self: stretch;
+      align-self: start;
+      /* Eye level: a museum label sits a little below the top of the piece. */
+      margin-top: 3rem;
+    }
+
+    &[data-display='plinth'] .room-label {
+      align-self: end;
+      margin-top: 0;
+      margin-bottom: 4rem;
+    }
+  }
+}
+</style>

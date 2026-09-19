@@ -1,0 +1,64 @@
+---
+/**
+ * The card a museum hangs beside a piece: title, medium, year, one sentence.
+ */
+type Props = {
+  headingId: string;
+  title: string;
+  medium: string;
+  year: string;
+};
+
+const { headingId, title, medium, year } = Astro.props;
+---
+
+<div class="wall-label">
+  <h3 id={headingId} class="wall-label-title typewriter">{title}</h3>
+  <p class="wall-label-medium monospace">{medium}</p>
+  <p class="wall-label-year monospace">{year}</p>
+  <p class="wall-label-text"><slot /></p>
+</div>
+
+<style lang="scss">
+.wall-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 1rem;
+  width: 100%;
+  padding: 0.875rem 1rem 1rem;
+  font-family: var(--font-poppins);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: light-dark(
+    color-mix(in oklch, var(--wall), white 70%),
+    color-mix(in oklch, var(--wall), white 10%)
+  );
+  border: 1px solid light-dark(rgb(0 0 0 / 0.16), rgb(255 255 255 / 0.16));
+  /* Foam board on a pin: a thin edge and a shadow no larger than the board. */
+  box-shadow:
+    0 1px 0 light-dark(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.06)) inset,
+    0.125rem 0.25rem 0.5rem rgb(0 0 0 / 0.2);
+  text-wrap: pretty;
+}
+
+.wall-label-title {
+  grid-column: 1 / -1;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+}
+
+.wall-label-medium,
+.wall-label-year {
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.wall-label-text {
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+  color: var(--ink-muted);
+}
+</style>

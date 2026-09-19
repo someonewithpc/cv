@@ -1,0 +1,310 @@
+---
+/**
+ * The gallery's floor plan, pinned to the top-left corner: every room is a link
+ * to its section, and the room on screen is filled in. Without JS the fill
+ * follows the URL fragment instead, so the plan still says where a click went.
+ * Below the wide breakpoint the plan folds into a tile that opens on tap.
+ */
+export type PlanRoom = {
+  id: string;
+  name: string;
+  /** Footprint in plan units (the SVG viewBox is 120 by 100). */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+type Props = {
+  rooms: PlanRoom[];
+};
+
+const { rooms } = Astro.props;
+
+/* Doorways between consecutive rooms, drawn the way a plan draws them: a gap in
+   the wall and the arc of the swing, in plan units. */
+const DOORS = [
+  { gap: 'M 14 4 h 8', arc: 'M 22 4 A 8 8 0 0 1 14 12' },
+  { gap: 'M 44 12 v 8', arc: 'M 44 20 A 8 8 0 0 0 52 12' },
+  { gap: 'M 80 30 h 8', arc: 'M 88 30 A 8 8 0 0 1 80 38' },
+  { gap: 'M 56 40 v 8', arc: 'M 56 48 A 8 8 0 0 1 48 40' },
+  { gap: 'M 20 60 h 8', arc: 'M 28 60 A 8 8 0 0 1 20 68' },
+  { gap: 'M 56 74 v 8', arc: 'M 56 82 A 8 8 0 0 0 64 74' },
+];
+
+/* Without JS the URL fragment is the only record of where the reader went. */
+const targetCss = rooms
+  .map(({ id }) => `:root:has(#${id}:target) .floor-plan:not([data-live]) [data-plan-room="${id}"] { --plan-room-fill: var(--plan-here); --plan-key-ink: var(--ink); --plan-key-weight: 700; }`)
+  .join('\n');
+---
+
+<details class="floor-plan">
+  <summary>
+    <span class="sr-only">Floor plan</span>
+    <svg class="floor-plan-glyph" viewBox="0 0 120 100" aria-hidden="true" focusable="false">
+      {rooms.map((room) => (
+        <rect data-plan-room={room.id} x={room.x} y={room.y} width={room.w} height={room.h} />
+      ))}
+    </svg>
+  </summary>
+
+  <nav class="floor-plan-nav" aria-label="Rooms">
+    <svg class="floor-plan-drawing" viewBox="0 0 120 100">
+      {rooms.map((room, index) => (
+        <a
+          href={`#${room.id}`}
+          aria-label={`${room.name}, room ${index + 1}`}
+          data-plan-room={room.id}
+        >
+          <rect x={room.x} y={room.y} width={room.w} height={room.h} />
+          <text x={room.x + room.w / 2} y={room.y + room.h / 2}>{index + 1}</text>
+        </a>
+      ))}
+      <g class="floor-plan-doors" aria-hidden="true">
+        {DOORS.map(({ gap, arc }) => (
+          <>
+            <path class="door-gap" d={gap} />
+            <path class="door-arc" d={arc} />
+          </>
+        ))}
+      </g>
+    </svg>
+    <ol class="floor-plan-key">
+      {rooms.map((room, index) => (
+        <li data-plan-room={room.id}>
+          <span class="key-number">{index + 1}</span>
+          {room.name}
+        </li>
+      ))}
+    </ol>
+  </nav>
+</details>
+
+<style is:global set:html={targetCss} />
+
+<style lang="scss">
+.floor-plan {
+  --plan-paper: var(--surface-raised);
+  --plan-wall: var(--ink);
+  --plan-here: var(--accent);
+  --plan-room-fill: transparent;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  font-family: monospace, system-ui;
+  color: var(--ink-faint);
+  background: var(--plan-paper);
+  border-right: 2px solid var(--accent-muted);
+  border-bottom: 2px solid var(--accent-muted);
+  border-bottom-right-radius: 1em;
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    min-height: 1.875rem;
+    padding: 0.25rem 0.375rem;
+    list-style: none;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: -2px;
+    }
+  }
+
+  .floor-plan-glyph {
+    width: 1.75rem;
+    height: auto;
+    fill: var(--plan-room-fill);
+    stroke: var(--plan-wall);
+    stroke-width: 4;
+    stroke-linejoin: miter;
+
+    rect {
+      fill: var(--plan-room-fill);
+    }
+  }
+
+  .floor-plan-nav {
+    width: 10rem;
+    padding: 0.5rem 0.75rem 0.625rem;
+  }
+
+  .floor-plan-drawing {
+    display: block;
+    width: 100%;
+    height: auto;
+    stroke: var(--plan-wall);
+    stroke-linejoin: miter;
+    stroke-linecap: butt;
+
+    a {
+      cursor: pointer;
+      color: var(--ink);
+
+      rect {
+        fill: var(--plan-room-fill);
+        stroke: var(--plan-wall);
+        stroke-width: 1.75;
+        transition: fill 150ms ease;
+      }
+
+      text {
+        font-size: 9px;
+        fill: currentColor;
+        stroke: none;
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+      }
+
+      &:hover rect {
+        fill: color-mix(in oklch, var(--plan-here), transparent 65%);
+      }
+
+      &:focus-visible {
+        outline: none;
+
+        rect {
+          stroke: var(--accent);
+          stroke-width: 3;
+        }
+      }
+
+      &[aria-current='true'] {
+        --plan-room-fill: var(--plan-here);
+        color: var(--accent-contrast);
+      }
+    }
+  }
+
+  .floor-plan-doors {
+    pointer-events: none;
+
+    .door-gap {
+      stroke: var(--plan-paper);
+      stroke-width: 2.5;
+    }
+
+    .door-arc {
+      fill: none;
+      stroke-width: 0.75;
+    }
+  }
+
+  .floor-plan-key {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    gap: 0.125rem 0.75rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    font-size: 0.625rem;
+    line-height: 1.5;
+    letter-spacing: 0.03em;
+    list-style: none;
+    color: var(--ink-faint);
+
+    li {
+      display: flex;
+      gap: 0.375rem;
+      color: var(--plan-key-ink, var(--ink-faint));
+      font-weight: var(--plan-key-weight, 400);
+    }
+
+    .key-number {
+      flex: 0 0 0.75rem;
+      text-align: right;
+    }
+
+    li[aria-current='true'] {
+      --plan-key-ink: var(--ink);
+      --plan-key-weight: 700;
+    }
+  }
+
+  [data-plan-room][aria-current='true'] {
+    --plan-room-fill: var(--plan-here);
+  }
+
+  /* Open and unfolded once the wall has the width for it; the summary is then
+     a tile with nothing to toggle. */
+  @media (min-width: 64rem) {
+    summary {
+      display: none;
+    }
+
+    &::details-content {
+      content-visibility: visible;
+      display: block;
+    }
+  }
+
+  @media (max-width: 64rem) {
+    &[open] .floor-plan-nav {
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  @media (max-width: 52rem) {
+    border-width: 1px;
+    border-bottom-right-radius: 0.7em;
+    background: color-mix(in oklch, var(--surface-raised), transparent 18%);
+    backdrop-filter: blur(6px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .floor-plan-drawing a rect {
+      transition: none;
+    }
+  }
+}
+</style>
+
+<script>
+const plan = document.querySelector<HTMLDetailsElement>('.floor-plan');
+const wide = window.matchMedia('(min-width: 64rem)');
+
+function initPlan(plan: HTMLDetailsElement) {
+  const marks = [...plan.querySelectorAll<HTMLElement | SVGElement>('[data-plan-room]')];
+  const rooms = marks
+    .map((mark) => document.getElementById(mark.dataset.planRoom ?? ''))
+    .filter((room): room is HTMLElement => room !== null)
+    .filter((room, index, all) => all.indexOf(room) === index);
+
+  const setCurrent = (id: string) => {
+    plan.dataset.live = '';
+    marks.forEach((mark) => {
+      if (mark.dataset.planRoom === id) mark.setAttribute('aria-current', 'true');
+      else mark.removeAttribute('aria-current');
+    });
+  };
+
+  /* The room under the middle of the viewport is the one the reader is in. */
+  const observer = new IntersectionObserver((entries) => {
+    const entered = entries.filter((entry) => entry.isIntersecting).at(-1);
+    if (entered) setCurrent(entered.target.id);
+  }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+  rooms.forEach((room) => observer.observe(room));
+
+  const fit = () => { plan.open = wide.matches; };
+  fit();
+  wide.addEventListener('change', fit);
+
+  /* On a phone the plan covers the page; a pick closes it again. */
+  plan.addEventListener('click', (event) => {
+    if (!wide.matches && (event.target as Element).closest('a[href^="#"]')) plan.open = false;
+  });
+}
+
+if (plan) initPlan(plan);
+</script>

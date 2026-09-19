@@ -1,0 +1,72 @@
+---
+/**
+ * A glass display case on a cabinet base. Whatever is slotted in lies on the
+ * felt under the glass.
+ */
+---
+
+<div class="vitrine">
+  <div class="vitrine-case">
+    <slot />
+  </div>
+  <div class="vitrine-base" aria-hidden="true"></div>
+</div>
+
+<style lang="scss">
+.vitrine {
+  --felt: light-dark(
+    color-mix(in oklch, var(--wall), var(--theme-ink) 4%),
+    color-mix(in oklch, var(--wall), black 20%)
+  );
+  --cabinet: light-dark(
+    color-mix(in oklch, var(--wall), var(--theme-ink) 34%),
+    color-mix(in oklch, var(--wall), black 40%)
+  );
+
+  display: grid;
+  justify-items: stretch;
+}
+
+.vitrine-case {
+  position: relative;
+  padding: 1.5rem clamp(1rem, 3vw, 2rem) 1.75rem;
+  background: var(--felt);
+  border: 1px solid light-dark(rgb(0 0 0 / 0.2), rgb(255 255 255 / 0.2));
+  border-bottom: 0;
+  /* The glass: a pane's edge along the top and a reflection across the front. */
+  box-shadow:
+    inset 0 0.125rem 0 light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.18)),
+    inset 0 0 2rem rgb(0 0 0 / 0.12);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      112deg,
+      light-dark(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.14)) 0%,
+      light-dark(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.04)) 32%,
+      transparent 48%,
+      transparent 78%,
+      light-dark(rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.07)) 100%
+    );
+  }
+}
+
+.vitrine-base {
+  height: 2.5rem;
+  margin-inline: -0.375rem;
+  background:
+    linear-gradient(to bottom, light-dark(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.1)) 0, transparent 0.25rem),
+    var(--cabinet);
+  box-shadow:
+    inset 0 -0.5rem 0.5rem -0.5rem rgb(0 0 0 / 0.4),
+    0 0.75rem 1.5rem -0.5rem rgb(0 0 0 / 0.4);
+
+  @media (max-width: 52rem) {
+    height: 1.5rem;
+  }
+}
+</style>
