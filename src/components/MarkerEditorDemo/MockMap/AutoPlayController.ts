@@ -1,5 +1,6 @@
 import { ActionCreators } from 'redux-undo';
 
+import { hexToHsv } from '@/components/MarkerEditorDemo/markers/MarkerEditor/markerParts/shared/inlineColorPicker';
 import {
   demoPress,
   demoPressDown,
@@ -348,34 +349,27 @@ export class AutoPlayController {
     dispatch(ActionCreators.clearHistory());
   }
 
-  private animateCpDrag(
-    target: string,
-    dx: number,
-    dy: number,
-    disableSnap = false,
+  /**
+   * A drag from `from` to `to` (viewport points): the down on `handle` with its hold, eased
+   * moves on `surface`, then the release, the drawn cursor following throughout. Pausing
+   * the demo mid-drag releases where the cursor is.
+   */
+  private animateDrag(
+    handle: Element,
+    surface: Element,
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+    { durationMs = 620, disableSnap = false }: { durationMs?: number; disableSnap?: boolean } = {},
   ): Promise<void> {
     return new Promise((resolve) => {
-      const handle = queryDemoTarget(target);
-      const svg = handle?.closest('svg');
-      if (!(handle instanceof Element) || !svg || this.paused) {
+      if (this.paused) {
         resolve();
         return;
       }
 
-      const rect = handle.getBoundingClientRect();
-      const fromX = rect.left + rect.width / 2;
-      const fromY = rect.top + rect.height / 2;
-      // The canvas maps its client rect onto a fixed viewBox, so a preset's px
-      // delta moves the point further in shape units the smaller the editor is.
-      // Scale deltas to the canvas the presets were tuned on, or a phone-sized
-      // editor blows the shape past the viewBox.
-      const dragScale = svg.getBoundingClientRect().width / DRAG_REFERENCE_CANVAS_PX;
-      const toX = fromX + dx * dragScale;
-      const toY = fromY + dy * dragScale;
-      const durationMs = 620;
       const root = document.documentElement;
-      let curX = fromX;
-      let curY = fromY;
+      let curX = from.x;
+      let curY = from.y;
       let settled = false;
       let shiftHeld = false;
 
@@ -399,7 +393,7 @@ export class AutoPlayController {
           cancelAnimationFrame(this.dragRaf);
           this.dragRaf = null;
         }
-        demoRelease(svg, { x, y });
+        demoRelease(surface, { x, y });
         if (shiftHeld) {
           shiftEvent('keyup', false);
           shiftHeld = false;
@@ -414,8 +408,8 @@ export class AutoPlayController {
       this.dragCleanup = cleanup;
 
       // The hold before the first move is also when React commits draggedControlPoint.
-      const held = demoPressDown(handle, { x: fromX, y: fromY });
-      this.onCursor({ client: { x: fromX, y: fromY }, dragging: true, click: true });
+      const held = demoPressDown(handle, from);
+      this.onCursor({ client: from, dragging: true, click: true });
 
       // Then optional Shift (snap off), and the moves.
       void held.then(() => {
@@ -446,11 +440,11 @@ export class AutoPlayController {
 
             const t = Math.min(1, (now - startedAt) / durationMs);
             const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
-            curX = fromX + (toX - fromX) * eased;
-            curY = fromY + (toY - fromY) * eased;
+            curX = from.x + (to.x - from.x) * eased;
+            curY = from.y + (to.y - from.y) * eased;
 
             this.onCursor({ client: { x: curX, y: curY }, dragging: true });
-            svg.dispatchEvent(mouseEvent('mousemove', curX, curY, 1));
+            surface.dispatchEvent(mouseEvent('mousemove', curX, curY, 1));
 
             if (t < 1) {
               this.dragRaf = requestAnimationFrame(tick);
@@ -458,13 +452,85 @@ export class AutoPlayController {
             }
 
             this.dragRaf = null;
-            finish(toX, toY);
+            finish(to.x, to.y);
           };
 
           this.dragRaf = requestAnimationFrame(tick);
         }, disableSnap ? 40 : 0);
       });
     });
+  }
+
+  private animateCpDrag(
+    target: string,
+    dx: number,
+    dy: number,
+    disableSnap = false,
+  ): Promise<void> {
+    const handle = queryDemoTarget(target);
+    const svg = handle?.closest('svg');
+    if (!handle || !svg) return Promise.resolve();
+
+    const from = elementCentre(handle);
+    // The canvas maps its client rect onto a fixed viewBox, so a preset's px
+    // delta moves the point further in shape units the smaller the editor is.
+    // Scale deltas to the canvas the presets were tuned on, or a phone-sized
+    // editor blows the shape past the viewBox.
+    const dragScale = svg.getBoundingClientRect().width / DRAG_REFERENCE_CANVAS_PX;
+    const to = { x: from.x + dx * dragScale, y: from.y + dy * dragScale };
+    return this.animateDrag(handle, svg, from, to, { disableSnap });
+  }
+
+  /** A pause in a run; the caller checks `this.paused` afterwards. */
+  private wait(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, ms);
+    });
+  }
+
+  /**
+   * Pick `hex` in the on-page picker the press on the swatch just opened: slide the hue
+   * bar when the hue changes, drag the saturation and value area to the colour, then press
+   * the swatch to close. The preview follows through the picker's own input events, as it
+   * does under a finger.
+   */
+  private async pickColor(target: string, hex: string): Promise<void> {
+    const input = queryDemoTarget(target);
+    const host = input?.nextElementSibling;
+    if (!(input instanceof HTMLInputElement) || !(host instanceof HTMLElement) || host.hidden) return;
+    const hue = host.querySelector('.marker-color-picker__hue');
+    const area = host.querySelector('.marker-color-picker__area');
+    if (!hue || !area) return;
+
+    const from = hexToHsv(input.value);
+    const to = hexToHsv(hex);
+
+    await this.wait(260);
+    if (this.paused) return;
+
+    if (Math.abs(to.h - from.h) > 1) {
+      const bar = hue.getBoundingClientRect();
+      const at = (h: number) => ({ x: bar.left + bar.width * (h / 360), y: bar.top + bar.height / 2 });
+      await this.animateDrag(hue, hue, at(from.h), at(to.h), { durationMs: 380 });
+      if (this.paused) return;
+      await this.wait(120);
+      if (this.paused) return;
+    }
+
+    const box = area.getBoundingClientRect();
+    const at = (c: { s: number; v: number }) => ({
+      x: box.left + box.width * c.s,
+      y: box.top + box.height * (1 - c.v),
+    });
+    await this.animateDrag(area, area, at(from), at(to));
+    if (this.paused) return;
+
+    // Back to the swatch (the cursor takes 0.55 s to get there), then press it closed.
+    this.onCursor({ target });
+    await this.wait(560);
+    if (this.paused || host.hidden) return;
+    this.onCursor({ target, click: true });
+    await press(input, false);
   }
 
   private dragSteps(drags: CpDrag[]): Step[] {
@@ -756,12 +822,7 @@ export class AutoPlayController {
       {
         delay: 280,
         cursor: { target: 'editor:fill-color:marker-shape', click: true },
-        run: () => {
-          const input = queryDemoTarget('editor:fill-color:marker-shape');
-          if (input instanceof HTMLInputElement) {
-            setNativeInputValue(input, preset().fill);
-          }
-        },
+        run: () => this.pickColor('editor:fill-color:marker-shape', preset().fill),
       },
       ...this.shapeBorderSteps(),
       {
@@ -780,12 +841,7 @@ export class AutoPlayController {
       {
         delay: 280,
         cursor: { target: 'editor:border-color:marker-shape', click: true },
-        run: () => {
-          const input = queryDemoTarget('editor:border-color:marker-shape');
-          if (input instanceof HTMLInputElement) {
-            setNativeInputValue(input, preset().border);
-          }
-        },
+        run: () => this.pickColor('editor:border-color:marker-shape', preset().border),
       },
       {
         delay: () => (preset().textColor != null ? 480 : 40),
@@ -822,10 +878,7 @@ export class AutoPlayController {
         run: () => {
           const color = preset().textColor;
           if (color == null) return;
-          const input = queryDemoTarget('editor:fill-color:marker-decoration');
-          if (input instanceof HTMLInputElement) {
-            setNativeInputValue(input, color);
-          }
+          return this.pickColor('editor:fill-color:marker-decoration', color);
         },
       },
       {
