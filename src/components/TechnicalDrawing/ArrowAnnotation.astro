@@ -6,8 +6,13 @@
  *
  * With `target`, annotations-position.ts moves the tip onto that element (a selector
  * scoped to the layer's artwork; several matches are boxed together) at `anchor`, a
- * named point of its box or an "fx fy" fraction pair, and mirrors the whole callout when
- * the label would run off the sheet or over the target. The authored tip is the
+ * named point of its box, an "fx fy" fraction pair, or "segment x1 y1 x2 y2", a stroke
+ * of the target in its own SVG user space whose midpoint is the anchor. With a segment,
+ * `angle` may be "normal": the arrow then leaves the segment at a right angle, on the
+ * outer side of a segment traced clockwise around its shape. `gap` stops the tip short
+ * of the anchor, along the shaft, by that fraction of the target's shorter side. The
+ * script mirrors a callout (or, for a normal, swaps its label side) when the label would
+ * run off the sheet or over the target. The authored tip is the
  * no-script placement, so keep it close to where the anchor lands.
  */
 type Anchor =
@@ -20,16 +25,18 @@ type Anchor =
   | 'top-right'
   | 'bottom-left'
   | 'bottom-right'
-  | `${number} ${number}`;
+  | `${number} ${number}`
+  | `segment ${number} ${number} ${number} ${number}`;
 
 type Props = {
   tipX: number;
   tipY: number;
-  angle: number;
+  angle: number | 'normal';
   length: number;
   text: string;
   target?: string;
   anchor?: Anchor;
+  gap?: number;
   labelSide?: 'left' | 'right';
   /** Renders on one sheet orientation only, for layers whose artwork re-flows. */
   only?: 'landscape' | 'portrait';
@@ -49,6 +56,7 @@ const {
   text,
   target,
   anchor = 'center',
+  gap,
   labelSide,
   only,
   fontSize = 0.1,
@@ -69,9 +77,20 @@ const ANCHORS: Record<string, [number, number]> = {
   'bottom-left': [0, 1],
   'bottom-right': [1, 1],
 };
-const anchorPoint = ANCHORS[anchor] ?? anchor.split(/\s+/).map(Number);
+const segment = anchor.startsWith('segment') ? anchor.split(/\s+/).slice(1).map(Number) : undefined;
+const anchorAttr = segment ? `segment ${segment.join(' ')}` : (ANCHORS[anchor] ?? anchor.split(/\s+/).map(Number)).join(' ');
 
-const angleRad = angle * Math.PI / 180;
+if (angle === 'normal' && !segment) {
+  throw new Error(`ArrowAnnotation "${text}": a normal angle needs a segment anchor`);
+}
+// The segment's outer normal, in a y-down space; the CSS fallback keeps the same angle
+// since the target's SVG preserves its aspect.
+const fallbackAngle = segment
+  ? Math.atan2(segment[2] - segment[0], segment[3] - segment[1]) * 180 / Math.PI
+  : 0;
+const drawnAngle = angle === 'normal' ? fallbackAngle : angle;
+
+const angleRad = drawnAngle * Math.PI / 180;
 const endX = tipX + length * Math.cos(angleRad);
 const endY = tipY - length * Math.sin(angleRad);
 const side = labelSide ?? (Math.cos(angleRad) < 0 && Math.sin(angleRad) < 0 ? 'left' : 'right');
@@ -80,13 +99,15 @@ const underline = text.length * underlinePerChar;
 const offsetX = lengthOffset?.x ?? 0;
 const offsetY = -fontSize * 0.5 + (lengthOffset?.y ?? 0);
 const onlyClass = only && `on-${only}`;
+const textX = endX + sign * offsetX;
 ---
 <g
   data-tip={`${tipX} ${tipY}`}
   data-target={target}
-  data-anchor={target && anchorPoint.join(' ')}
+  data-anchor={target && anchorAttr}
   data-angle={angle}
   data-length={length}
+  data-gap={gap}
   data-side={labelSide}
   data-label-offset={`${offsetX} ${offsetY}`}
   class={onlyClass}
@@ -97,7 +118,7 @@ const onlyClass = only && `on-${only}`;
     class={arrowClass}
   />
   <text
-    x={endX + sign * offsetX}
+    x={textX}
     y={endY + offsetY}
     text-anchor={side === 'left' ? 'end' : undefined}
     class={textClass}

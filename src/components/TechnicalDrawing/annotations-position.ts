@@ -10,8 +10,11 @@
  * moved instead. A `[data-tip="x y"]` group is translated so its tip lands at
  * (x · half width, y · half height) of the artwork. A group with `data-target` is redrawn
  * from its authored angle and length so its tip lands on the `data-anchor` point of that
- * element's box, and is mirrored across the tip's vertical axis when the label would leave
- * the sheet's drawing cell or lie over the target and the mirror image would not.
+ * element's box, or on the midpoint of a `segment` of the target's own SVG user space,
+ * mapped through the target's screen matrix; a `normal` angle is that segment's outer
+ * normal. The callout is mirrored across the tip's vertical axis (a normal one keeps its
+ * geometry and swaps the label's side) when the label would leave the sheet's drawing
+ * cell or lie over the target and the mirror image would not.
  *
  * The overlay itself is re-sized to that square around the artwork rather than around the
  * wrapping `.content`, which can be a line box taller than an inline artwork.
@@ -32,11 +35,14 @@ type Callout = {
   path: SVGPathElement;
   text: SVGTextElement;
   angle: number;
+  normal: boolean;
   length: number;
+  gap: number;
   side?: 1 | -1;
   offset: Point;
   target: Element[];
   anchor: Point;
+  segment?: [number, number, number, number];
   /** Filled by read(): the drawing, in overlay units. */
   tip: Point;
   end: Point;
@@ -87,6 +93,23 @@ function toOverlay(rect: DOMRect, centre: Point, unit: number, rot: { cos: numbe
   return { left: x - width / 2, top: y - height / 2, right: x + width / 2, bottom: y + height / 2 };
 }
 
+/** A client point, in overlay units around `centre`, turned back by the page's rotation. */
+function toOverlayPoint(point: Point, centre: Point, unit: number, rot: { cos: number; sin: number }): Point {
+  const dx = point.x - centre.x;
+  const dy = point.y - centre.y;
+  return { x: (dx * rot.cos + dy * rot.sin) / unit, y: (-dx * rot.sin + dy * rot.cos) / unit };
+}
+
+/** A segment of the target's user space as overlay points, or nothing without a matrix. */
+function segmentOf(callout: Callout, centre: Point, unit: number, rot: { cos: number; sin: number }): [Point, Point] | undefined {
+  const [target] = callout.target;
+  const ctm = callout.segment && target instanceof SVGGraphicsElement ? target.getScreenCTM() : null;
+  if (!ctm || !callout.segment) return;
+  const [x1, y1, x2, y2] = callout.segment;
+  const map = (x: number, y: number) => toOverlayPoint(new DOMPoint(x, y).matrixTransform(ctm), centre, unit, rot);
+  return [map(x1, y1), map(x2, y2)];
+}
+
 function union(rects: DOMRect[]): DOMRect {
   const left = Math.min(...rects.map((r) => r.left));
   const top = Math.min(...rects.map((r) => r.top));
@@ -116,21 +139,32 @@ function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: 
   const width = callout.text.getComputedTextLength() || bbox.width;
   const authoredY = Number(callout.text.getAttribute('y')) || 0;
   const metrics = { width, ascent: authoredY - bbox.y, descent: bbox.y + bbox.height - authoredY };
-  const rad = (callout.angle * Math.PI) / 180;
+  const segment = segmentOf(callout, centre, unit, rot);
+  const fixed = Boolean(segment && callout.normal);
+  let rad = (callout.angle * Math.PI) / 180;
+  if (segment && fixed) {
+    // The outer normal of a segment traced clockwise on screen, as a y-up angle.
+    rad = Math.atan2(segment[1].x - segment[0].x, segment[1].y - segment[0].y);
+  }
   const defaultSign: 1 | -1 = Math.cos(rad) < 0 && Math.sin(rad) < 0 ? -1 : 1;
+  const short = Math.min(targetBox.right - targetBox.left, targetBox.bottom - targetBox.top);
 
   const place = (mirror: boolean) => {
-    const fx = mirror ? 1 - callout.anchor.x : callout.anchor.x;
-    const tip = {
-      x: targetBox.left + fx * (targetBox.right - targetBox.left),
-      y: targetBox.top + callout.anchor.y * (targetBox.bottom - targetBox.top),
-    };
-    const cos = (mirror ? -1 : 1) * Math.cos(rad);
-    const end = { x: tip.x + callout.length * cos, y: tip.y - callout.length * Math.sin(rad) };
+    const flip = mirror && !fixed ? -1 : 1;
+    const fx = flip < 0 ? 1 - callout.anchor.x : callout.anchor.x;
+    const anchor = segment
+      ? { x: (segment[0].x + segment[1].x) / 2, y: (segment[0].y + segment[1].y) / 2 }
+      : {
+          x: targetBox.left + fx * (targetBox.right - targetBox.left),
+          y: targetBox.top + callout.anchor.y * (targetBox.bottom - targetBox.top),
+        };
+    const cos = flip * Math.cos(rad);
+    const sin = Math.sin(rad);
+    const tip = { x: anchor.x + callout.gap * short * cos, y: anchor.y - callout.gap * short * sin };
+    const end = { x: tip.x + callout.length * cos, y: tip.y - callout.length * sin };
     const sign = ((mirror ? -1 : 1) * (callout.side ?? defaultSign)) as 1 | -1;
     const label = labelBox(callout, end, sign, metrics);
-    const fits =
-      label.left >= cell.left && label.right <= cell.right && within(label, sheet) && !intersects(label, targetBox);
+    const fits = label.left >= cell.left && label.right <= cell.right && within(label, sheet) && !intersects(label, targetBox);
     return { tip, end, sign, fits };
   };
 
@@ -198,7 +232,8 @@ function write(overlay: Overlay) {
     const f = (n: number) => n.toFixed(5);
     callout.group.removeAttribute('transform');
     callout.path.setAttribute('d', `M ${f(tip.x)} ${f(tip.y)} l ${f(end.x - tip.x)} ${f(end.y - tip.y)} l ${f(sign * underline)} 0`);
-    callout.text.setAttribute('x', f(end.x + sign * callout.offset.x));
+    const x = f(end.x + sign * callout.offset.x);
+    callout.text.setAttribute('x', x);
     callout.text.setAttribute('y', f(end.y + callout.offset.y));
     if (sign < 0) callout.text.setAttribute('text-anchor', 'end');
     else callout.text.removeAttribute('text-anchor');
@@ -235,19 +270,26 @@ function calloutOf(group: SVGGElement, artwork: Element): Callout | undefined {
   if (!path || !text || !selector) return;
   const target = artwork.matches(selector) ? [artwork] : [...artwork.querySelectorAll(selector)];
   if (!target.length) return;
-  const [ax = 0.5, ay = 0.5] = numbers(group.dataset.anchor);
+  const anchor = group.dataset.anchor ?? '';
+  const segment = anchor.startsWith('segment') ? numbers(anchor.slice('segment'.length)) : undefined;
+  const [ax = 0.5, ay = 0.5] = segment ? [] : numbers(anchor);
   const [ox = 0, oy = 0] = numbers(group.dataset.labelOffset);
   const side = group.dataset.side === 'left' ? -1 : group.dataset.side === 'right' ? 1 : undefined;
+  const normal = group.dataset.angle === 'normal';
+  if (segment?.length !== 4 && (segment || normal)) return;
   return {
     group,
     path,
     text,
-    angle: Number(group.dataset.angle) || 0,
+    angle: normal ? 0 : Number(group.dataset.angle) || 0,
+    normal,
     length: Number(group.dataset.length) || 0,
+    gap: Number(group.dataset.gap) || 0,
     side,
     offset: { x: ox, y: oy },
     target,
     anchor: { x: ax, y: ay },
+    segment: segment as [number, number, number, number] | undefined,
     tip: { x: 0, y: 0 },
     end: { x: 0, y: 0 },
     sign: 1,
