@@ -143,6 +143,29 @@ body {
   --font-poppins: "Poppins", system-ui, sans-serif;
 }
 
+/* The binder's materials. Every colour is derived from the theme's canvas so the
+   four themes get the same set without four copies: the desk is the canvas
+   taken down a step, the back cover board two steps, and each index tab keeps
+   its own hue at a lightness that sits mid-way in either mode (a light canvas
+   gives a pastel tab, a dark one a deep tab). A divider's stock is the sheet
+   tinted a little toward its own tab, so tab and sheet read as one section. */
+body {
+  --desk: oklch(from var(--theme-canvas) calc(l - 0.06) c h);
+  --board: oklch(from var(--theme-canvas) calc(l - 0.11) calc(c * 1.5) h);
+
+  --tab-cover: oklch(from var(--theme-canvas) calc(0.4 + 0.43 * l) 0.1 80);
+  --tab-materials: oklch(from var(--theme-canvas) calc(0.4 + 0.43 * l) 0.1 250);
+  --tab-demos: oklch(from var(--theme-canvas) calc(0.4 + 0.43 * l) 0.1 25);
+  --tab-oss: oklch(from var(--theme-canvas) calc(0.4 + 0.43 * l) 0.1 150);
+
+  --stock-cover: color-mix(in oklch, var(--surface-page), var(--tab-cover) 16%);
+  --stock-materials: color-mix(in oklch, var(--surface-page), var(--tab-materials) 8%);
+  --stock-demos: color-mix(in oklch, var(--surface-page), var(--tab-demos) 8%);
+  --stock-oss: color-mix(in oklch, var(--surface-page), var(--tab-oss) 12%);
+
+  --rule: color-mix(in oklch, var(--ink), transparent 88%);
+}
+
 main {
   --page-gap: clamp(1rem, 4vw, 2.5rem);
   /* em, not ch: the cap is a page width, and ch pins it to whatever font this
@@ -152,35 +175,54 @@ main {
   /* The demo stacks sit in the breakout column, so this is what caps them. */
   --breakout-max: var(--content-max);
 
-  --full-width: minmax(var(--page-gap), 1fr);
+  /* The desk either side of the sheet. On a wide screen the rings pass through
+     the left one and the index tabs hang off the right one, so it grows past
+     the page gap there. */
+  --rail: var(--page-gap);
+  /* The sheet's own margin: punched on the left, tabs on the right. */
+  --sheet-pad: 0.75rem;
+  --sheet-pad-block: 2rem;
+  /* Desk showing between one divider and the next; the peeking edges of the
+     dividers below live in it. */
+  --sheet-gap: 1.25rem;
+  /* One per divider in index.astro; the rails span them all so they can stick. */
+  --divider-count: 4;
+  /* Below 64rem the tabs are a strip fixed to the top of the screen. */
+  --tab-strip: 2.5rem;
+
+  --full-width: minmax(var(--rail), 1fr);
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
-  --content: min(100% - var(--page-gap) * 2, var(--content-max));
+  --content: min(100% - (var(--rail) + var(--sheet-pad)) * 2, var(--content-max));
 
   position: relative;
   display: grid;
   grid-template-columns:
     [full-width-start] var(--full-width)
+    [sheet-start] var(--sheet-pad)
     [breakout-start] var(--breakout)
     [content-start] var(--content) [content-end]
     var(--breakout) [breakout-end]
+    var(--sheet-pad) [sheet-end]
     var(--full-width) [full-width-end];
   grid-template-rows: auto;
   align-content: start;
-  padding-bottom: 1.5rem;
+  padding-block: calc(var(--tab-strip) + 1rem) 1.5rem;
 
   @media (max-width: 52rem) {
     --page-gap: clamp(0.75rem, 3.5vw, 1.25rem);
+    --sheet-pad-block: 1.5rem;
     padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Quiet drafting grid */
-  background-image:
-    linear-gradient(to right, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px);
-  background-size: 2.5rem 2.5rem;
-  background-attachment: local;
+  @media (min-width: 64rem) {
+    --rail: 3.5rem;
+    --sheet-pad: 2.5rem;
+    --sheet-pad-block: 3rem;
+    --sheet-gap: 1.5rem;
+    --tab-strip: 0rem;
+  }
 
-  > :not(.full-width, .breakout) {
+  > :not(.full-width, .breakout, .divider, .binder-tabs, .binder-rings) {
     grid-column: content;
     min-width: 0;
   }
