@@ -31,6 +31,7 @@ import {
   autoplayPausedToast,
   autoplayStartedToast,
   bindUndoRedoKeys,
+  REST_CURSOR_FRACTION,
   type DemoCursorStep,
   type DemoToastPayload,
 } from './AutoPlayController';
@@ -254,7 +255,7 @@ function MockMapOverlayInner() {
     if (!overlay) {
       return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     }
-    return overlayPoint(overlay, 0.48, 0.44);
+    return overlayPoint(overlay, REST_CURSOR_FRACTION.x, REST_CURSOR_FRACTION.y);
   };
 
   const applyCursorStepRef = useRef<(step: DemoCursorStep, attempt?: number) => void>(() => {});

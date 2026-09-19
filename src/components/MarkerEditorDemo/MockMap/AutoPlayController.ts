@@ -1,6 +1,10 @@
 import { ActionCreators } from 'redux-undo';
 
-import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
+import {
+  demoPress,
+  demoPressDown,
+  demoRelease,
+} from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
   markersSelector,
@@ -26,14 +30,22 @@ export type DemoCursorStep = {
 
 type Step = {
   delay: number | (() => number);
+  /**
+   * Where the cursor goes. With `click`, the step presses there before `run`: the target
+   * element, or the map at the cursor's rest point when there is no target. A step whose
+   * `run` drags leaves `click` unset and presses inside the drag instead.
+   */
   cursor?: DemoCursorStep | (() => DemoCursorStep | undefined);
-  /** Fire a real click on the cursor target element. */
+  /** Let the press end in a real click on the cursor target element. */
   domClick?: boolean | (() => boolean);
   run?: (dispatch: AppDispatch, getState: () => RootState) => void | Promise<void>;
 };
 
 /** Editor-canvas width (px) the presets' control-point drags were tuned on. */
 const DRAG_REFERENCE_CANVAS_PX = 450;
+
+/** Where the cursor rests on the map between targets, as a fraction of the overlay. */
+export const REST_CURSOR_FRACTION = { x: 0.48, y: 0.44 };
 
 type CpDrag = {
   cp: string;
@@ -139,10 +151,14 @@ function setNativeInputValue(input: HTMLInputElement | HTMLTextAreaElement, valu
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-/** A press at the element centre, where the drawn cursor rests, then the click itself. */
-function press(el: HTMLElement) {
+function elementCentre(el: Element) {
   const rect = el.getBoundingClientRect();
-  return demoPress(el, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+/** A press at the element centre, where the drawn cursor rests, ending in a click or not. */
+function press(el: Element, click: boolean) {
+  return demoPress(el, elementCentre(el), { click });
 }
 
 function mouseEvent(type: string, clientX: number, clientY: number, buttons: number) {
@@ -309,6 +325,17 @@ export class AutoPlayController {
     return { client: { x: window.innerWidth - 48, y: window.innerHeight - 48 } };
   }
 
+  /** A press on the map itself, where the cursor rests when a step has no target. */
+  private pressMap() {
+    const overlay = document.querySelector('.mock-map-overlay');
+    if (!overlay) return Promise.resolve();
+    const rect = overlay.getBoundingClientRect();
+    return demoPress(overlay, {
+      x: rect.left + rect.width * REST_CURSOR_FRACTION.x,
+      y: rect.top + rect.height * REST_CURSOR_FRACTION.y,
+    }, { click: false });
+  }
+
   /** Close UI and restore the map to the default markers so the demo can loop cleanly. */
   private resetDemo(dispatch: AppDispatch) {
     this.onEditingChange(null);
@@ -378,7 +405,7 @@ export class AutoPlayController {
           cancelAnimationFrame(this.dragRaf);
           this.dragRaf = null;
         }
-        svg.dispatchEvent(mouseEvent('mouseup', x, y, 0));
+        demoRelease(svg, { x, y });
         if (shiftHeld) {
           shiftEvent('keyup', false);
           shiftHeld = false;
@@ -392,11 +419,12 @@ export class AutoPlayController {
       };
       this.dragCleanup = cleanup;
 
-      handle.dispatchEvent(mouseEvent('mousedown', fromX, fromY, 1));
+      // The hold before the first move is also when React commits draggedControlPoint.
+      const held = demoPressDown(handle, { x: fromX, y: fromY });
       this.onCursor({ client: { x: fromX, y: fromY }, dragging: true, click: true });
 
-      // Wait for React to commit draggedControlPoint, then optional Shift (snap off).
-      window.setTimeout(() => {
+      // Then optional Shift (snap off), and the moves.
+      void held.then(() => {
         if (settled || this.paused) {
           cleanup();
           return;
@@ -441,7 +469,7 @@ export class AutoPlayController {
 
           this.dragRaf = requestAnimationFrame(tick);
         }, disableSnap ? 40 : 0);
-      }, 50);
+      });
     });
   }
 
@@ -459,7 +487,7 @@ export class AutoPlayController {
         delay: () => (this.sessionIsCreate ? 160 : 40),
         cursor: () => (
           this.sessionIsCreate
-            ? { target: `editor:cp:${drag.cp}`, click: true }
+            ? { target: `editor:cp:${drag.cp}` }
             : undefined
         ),
         run: async () => {
@@ -488,15 +516,14 @@ export class AutoPlayController {
       const max = parseFloat(input.max || '1');
       const from = parseFloat(input.value);
       const durationMs = 420;
-      const startedAt = performance.now();
+      let startedAt = 0;
       let settled = false;
       let curValue = from;
 
-      const thumbX = (value: number) => {
+      const thumb = (value: number) => {
         const t = max === min ? 0 : (value - min) / (max - min);
-        return rect.left + rect.width * t;
+        return { x: rect.left + rect.width * t, y: rect.top + rect.height / 2 };
       };
-      const thumbY = rect.top + rect.height / 2;
 
       const finish = (value: number) => {
         if (settled) return;
@@ -509,7 +536,8 @@ export class AutoPlayController {
           this.dragRaf = null;
         }
         setNativeInputValue(input, String(value));
-        this.onCursor({ client: { x: thumbX(value), y: thumbY }, dragging: false });
+        demoRelease(input, thumb(value));
+        this.onCursor({ client: thumb(value), dragging: false });
         resolve();
       };
 
@@ -518,7 +546,8 @@ export class AutoPlayController {
       };
       this.dragCleanup = cleanup;
 
-      this.onCursor({ client: { x: thumbX(from), y: thumbY }, click: true });
+      const held = demoPressDown(input, thumb(from));
+      this.onCursor({ client: thumb(from), click: true });
 
       const tick = (now: number) => {
         if (settled || this.paused) {
@@ -531,7 +560,7 @@ export class AutoPlayController {
         const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
         curValue = from + (toValue - from) * eased;
         setNativeInputValue(input, String(curValue));
-        this.onCursor({ client: { x: thumbX(curValue), y: thumbY }, dragging: true });
+        this.onCursor({ client: thumb(curValue), dragging: true });
 
         if (t < 1) {
           this.dragRaf = requestAnimationFrame(tick);
@@ -542,7 +571,14 @@ export class AutoPlayController {
         finish(toValue);
       };
 
-      this.dragRaf = requestAnimationFrame(tick);
+      void held.then(() => {
+        if (settled || this.paused) {
+          cleanup();
+          return;
+        }
+        startedAt = performance.now();
+        this.dragRaf = requestAnimationFrame(tick);
+      });
     });
   }
 
@@ -583,7 +619,7 @@ export class AutoPlayController {
       },
       {
         delay: () => (hasWidth() ? 160 : 40),
-        cursor: () => (hasWidth() ? { target: 'editor:border-width', click: true } : undefined),
+        cursor: () => (hasWidth() ? { target: 'editor:border-width' } : undefined),
         run: async () => {
           const width = this.currentPreset().borderWidth;
           if (width == null) return;
@@ -596,7 +632,7 @@ export class AutoPlayController {
       },
       {
         delay: () => (hasDash() ? 160 : 40),
-        cursor: () => (hasDash() ? { target: 'editor:dash-length', click: true } : undefined),
+        cursor: () => (hasDash() ? { target: 'editor:dash-length' } : undefined),
         run: async () => {
           const dash = this.currentPreset().dashLength;
           if (dash == null) return;
@@ -609,7 +645,7 @@ export class AutoPlayController {
       },
       {
         delay: () => (hasGap() ? 160 : 40),
-        cursor: () => (hasGap() ? { target: 'editor:gap-length', click: true } : undefined),
+        cursor: () => (hasGap() ? { target: 'editor:gap-length' } : undefined),
         run: async () => {
           const gap = this.currentPreset().gapLength;
           if (gap == null) return;
@@ -925,11 +961,13 @@ export class AutoPlayController {
     if (cursor) {
       this.onCursor(cursor);
     }
-    const shouldClick = typeof step.domClick === 'function' ? step.domClick() : step.domClick;
-    if (shouldClick && cursor?.target) {
-      const el = queryDemoTarget(cursor.target);
-      if (el instanceof HTMLElement) {
-        await press(el);
+    if (cursor?.click) {
+      const click = Boolean(typeof step.domClick === 'function' ? step.domClick() : step.domClick);
+      if (cursor.target == null) {
+        await this.pressMap();
+      } else {
+        const el = queryDemoTarget(cursor.target);
+        if (el) await press(el, click);
       }
     }
     await step.run?.(this.dispatch, this.getState);
