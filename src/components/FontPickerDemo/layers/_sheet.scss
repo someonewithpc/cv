@@ -11,16 +11,24 @@ $sheet-margin: 0.75em;
 // the type runs out of; a portrait sheet gives it the full width. The picker sets the scale
 // and the blueprint sheets read at the same size; a sheet that cannot fit its drawing at
 // the portrait scale passes a smaller factor.
-@mixin sheet-type($portrait: 0.036) {
-  font-size: clamp(0.625rem, 0.027 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+//
+// The landscape factor is the picker's, chosen for its widget. A blueprint sheet is prose
+// and drawings and reads at the larger one; a widget it carries scales itself back down.
+$prose-landscape: 0.031;
+// 0.027 / 0.031 would hold a widget at the picker's scale exactly; a shade under leaves the
+// held-controls drag its room over the frame line at the top of its travel
+$widget-scale: 0.83;
+
+@mixin sheet-type($portrait: 0.036, $landscape: 0.027) {
+  font-size: clamp(0.625rem, $landscape * min(var(--sheet-inline), var(--sheet-block)), 1rem);
 
   :global([data-sheet-orientation='portrait']) & {
     font-size: min(1rem, $portrait * var(--sheet-inline));
   }
 }
 
-@mixin sheet-content($portrait: 0.036) {
-  @include sheet-type($portrait);
+@mixin sheet-content($portrait: 0.036, $landscape: 0.027) {
+  @include sheet-type($portrait, $landscape);
 
   box-sizing: border-box;
   width: 100%;
