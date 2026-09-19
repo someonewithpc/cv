@@ -49,6 +49,20 @@
   --blueprint: var(--blueprint-9);
   --blueprint-line: var(--blueprint-11);
   --blueprint-grid: color-mix(in oklch, var(--blueprint-9), var(--theme-canvas) 38%);
+
+  // The page is a run of full-bleed bands, each a material off the drafting desk. Relative
+  // colours rather than light-dark(): the picked theme, not the OS scheme, decides the mode.
+  --band-desk: var(--theme-canvas);
+  --band-desk-grid: color-mix(in oklch, var(--blueprint-grid), transparent 78%);
+  --band-kraft: color-mix(in oklch, var(--theme-canvas), var(--theme-accent) 12%);
+  --band-mat: color-mix(in oklch, var(--theme-canvas), var(--theme-blueprint) 28%);
+  --band-mat-line: oklch(from var(--band-mat) calc(l + 0.05) c h);
+  --band-mat-line-strong: oklch(from var(--band-mat) calc(l + 0.11) c h);
+  --band-vellum: oklch(from var(--theme-canvas) calc(l + 0.03) c h);
+  --band-ledger: oklch(from var(--theme-canvas) calc(l - 0.025) c h);
+  --band-ledger-rule: color-mix(in oklch, var(--theme-blueprint), transparent 82%);
+  --band-edge: color-mix(in oklch, var(--theme-ink), transparent 68%);
+  --band-bevel: oklch(from var(--theme-canvas) calc(l + 0.12) c h / 0.6);
 }
 
 // Transitional aliases — do not use in new chrome; remove when consumers are gone.
