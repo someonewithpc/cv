@@ -38,6 +38,12 @@
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   gap: 1em;
+
+  // A portrait sheet drops the note, so the first column's title lands in the corner the
+  // paper clip sits over. Leave the clip its room.
+  :global([data-sheet-orientation='portrait']) & {
+    margin-top: 1.25em;
+  }
 }
 
 .held-island {
