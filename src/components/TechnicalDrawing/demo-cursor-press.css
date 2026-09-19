@@ -1,0 +1,53 @@
+[data-demo-cursor][data-pressed] {
+  scale: 0.84;
+}
+
+.demo-cursor-flares {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.demo-cursor-flare {
+  position: absolute;
+  width: 2.5em;
+  height: 2.5em;
+  margin: -1.25em 0 0 -1.25em;
+  border: 0.125em solid var(--ink, currentColor);
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: demo-cursor-flare 300ms ease-out forwards;
+}
+
+.demo-cursor-flare--up {
+  opacity: 0.35;
+}
+
+@keyframes demo-cursor-flare {
+  from {
+    scale: 0.3;
+  }
+
+  to {
+    scale: 1;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-cursor][data-pressed] {
+    scale: none;
+  }
+
+  .demo-cursor-flare {
+    animation: demo-cursor-fade 300ms ease-out forwards;
+  }
+
+  @keyframes demo-cursor-fade {
+    to {
+      opacity: 0;
+    }
+  }
+}
