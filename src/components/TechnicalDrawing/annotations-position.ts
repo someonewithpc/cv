@@ -34,6 +34,7 @@ type Callout = {
   group: SVGGElement;
   path: SVGPathElement;
   text: SVGTextElement;
+  spans: SVGTSpanElement[];
   angle: number;
   normal: boolean;
   length: number;
@@ -136,7 +137,7 @@ function labelBox(callout: Callout, end: Point, sign: 1 | -1, metrics: { width: 
 function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: number; sin: number }, cell: Box, sheet: Box) {
   const targetBox = toOverlay(union(callout.target.map((el) => el.getBoundingClientRect())), centre, unit, rot);
   const bbox = callout.text.getBBox();
-  const width = callout.text.getComputedTextLength() || bbox.width;
+  const width = bbox.width;
   const authoredY = Number(callout.text.getAttribute('y')) || 0;
   const metrics = { width, ascent: authoredY - bbox.y, descent: bbox.y + bbox.height - authoredY };
   const segment = segmentOf(callout, centre, unit, rot);
@@ -235,6 +236,7 @@ function write(overlay: Overlay) {
     const x = f(end.x + sign * callout.offset.x);
     callout.text.setAttribute('x', x);
     callout.text.setAttribute('y', f(end.y + callout.offset.y));
+    for (const span of callout.spans) span.setAttribute('x', x);
     if (sign < 0) callout.text.setAttribute('text-anchor', 'end');
     else callout.text.removeAttribute('text-anchor');
   }
@@ -281,6 +283,7 @@ function calloutOf(group: SVGGElement, artwork: Element): Callout | undefined {
     group,
     path,
     text,
+    spans: [...text.querySelectorAll<SVGTSpanElement>('tspan[x]')],
     angle: normal ? 0 : Number(group.dataset.angle) || 0,
     normal,
     length: Number(group.dataset.length) || 0,
