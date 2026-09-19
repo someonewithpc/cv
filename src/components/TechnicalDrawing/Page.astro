@@ -109,6 +109,7 @@ const transportKeys = [
             <h2 class="typewriter">{title ?? subtitle}</h2>
             {title && subtitle && (<h3 class="typewriter">{subtitle}</h3>)}
           </header>
+          <Icon name="first-angle-projection" class="title-proj-mark" aria-hidden="true" />
         </td>
       </tr>
       <tr>
@@ -1291,6 +1292,22 @@ section {
         }
       }
 
+      /* The projection symbol, kept as a mark in the name cell's corner for the
+         sheets that shed the Proj. cell. Hidden while that cell is drawn. */
+      &.title-name {
+        position: relative;
+
+        :global(.title-proj-mark) {
+          display: none;
+          position: absolute;
+          top: 0.375em;
+          right: 0.375em;
+          width: 1.25em;
+          height: 0.625em;
+          color: var(--ink-muted);
+        }
+      }
+
       header {
         display: inline-block;
         rotate: calc(var(--random1) * 0.75deg);
@@ -1327,8 +1344,19 @@ section {
 
   /* The block gives up its parts, in this order, as the room at the sheet's
      bottom-right runs out. Each step includes the ones before it. */
+  /* Drop the Proj. cell and leave its symbol as a mark in the name cell's
+     corner, with the title padded clear of it. */
+  @mixin proj-as-mark {
+    .title-proj { display: none; }
+
+    td.title-name {
+      padding-inline-end: 1.875em;
+      :global(.title-proj-mark) { display: block; }
+    }
+  }
+
   @mixin title-fit-1 {
-    & > table .title-proj { display: none; }
+    & > table { @include proj-as-mark; }
   }
 
   @mixin title-fit-2 {
@@ -1542,11 +1570,9 @@ section {
         padding: 0.2em;
       }
 
-      // Purely decorative on a phone sheet — drop it rather than squeeze the
-      // rest of the title block to make room for it.
-      .title-proj {
-        display: none;
-      }
+      // Purely decorative on a phone sheet — drop the cell rather than squeeze
+      // the rest of the title block to make room for it, and keep the mark.
+      @include proj-as-mark;
 
       // No longer has to stay square once the sheet can't spare the width —
       // a shorter, wider strip still reads fine at this size.
