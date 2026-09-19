@@ -62,7 +62,7 @@
       - [x] PaperStack focus ring should follow page border (#12)
     - [-] Page indicator
   - [ ] Anotations
-    - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
+    - [x] JS to make sure the placement is correct, when JS available, as progressive enhancement
 - [ ] Scroll animation stacking demos
 - [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
