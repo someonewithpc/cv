@@ -37,13 +37,19 @@
   @include sheet-content(0.028);
 
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  // The note beside the columns, not over them: the title block takes the sheet's bottom
+  // right corner, and a note on top pushed the held column's foot into it once a drag had
+  // grown the column
+  grid-template-columns: minmax(10em, 15em) minmax(0, 1fr);
+  align-items: start;
   justify-items: center;
-  gap: 1em;
+  gap: 1.5em;
 
   // A portrait sheet drops the note, so the first column's title lands in the corner the
   // paper clip sits over. Leave the clip its room.
   :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1em;
     margin-top: 1.25em;
   }
 }
@@ -70,11 +76,9 @@
     display: none;
   }
 
-  max-width: 44em;
   color: var(--ink-muted);
   font-family: var(--font-poppins), system-ui, sans-serif;
   line-height: 1.35;
-  text-align: center;
   text-wrap: pretty;
 }
 
