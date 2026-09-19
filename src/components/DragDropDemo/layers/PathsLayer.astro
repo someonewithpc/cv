@@ -2,27 +2,27 @@
 const paths = [
   {
     id: 'click',
-    title: 'Click',
+    title: 'Double-click',
     steps: [
-      'Click a card in the catalog',
+      'Double-click a card',
+      'A spinner holds while its model downloads',
       'The object rides the pointer',
-      'Click the floor and one lands',
-      'It is still on the pointer, so click again',
-      'Esc puts it down',
+      'Click the floor and it lands',
+      'Esc drops it instead',
     ],
-    verdict: 'as many as you keep clicking',
+    verdict: 'one object, then pick again',
   },
   {
     id: 'drag',
     title: 'Drag',
     steps: [
       'Press a card and move away',
-      'The thumbnail follows over the panel',
-      'Over the floor the object takes over',
-      'Let go and one lands',
-      'The drag is done',
+      'A thumbnail follows over the panel',
+      'Over the floor the model takes over',
+      'Let go and it lands',
+      'Let go outside and nothing lands',
     ],
-    verdict: 'exactly one',
+    verdict: 'one object, then pick again',
   },
 ] as const;
 ---
@@ -48,17 +48,22 @@ const paths = [
       </div>
 
       <div class="shared">
-        <span class="shared-label">Same last two steps</span>
+        <span class="shared-label">Same ending, either way</span>
         <div class="shared-pipeline">
           <code class="step-chip">ray to floor y = 0</code>
           <span class="op" aria-hidden="true">→</span>
           <code class="step-chip">placeGhostAsSingle()</code>
           <span class="op" aria-hidden="true">→</span>
-          <span class="result-badge">toast</span>
+          <span class="result-badge">back to view</span>
         </div>
         <p class="shared-note">
           The pointer casts a ray. Where it meets the floor is where the object's feet go, so
-          the drop point is the floor under the pointer, not the pixel it is over.
+          the drop point is the floor under the pointer, not the pixel it is over. Height is
+          the only thing that snaps.
+        </p>
+        <p class="shared-note">
+          Neither route places a second object. To fill a floor, the Add tool has Build: draw
+          an area and it arranges the objects inside it. That is the Space Builder stack.
         </p>
       </div>
     </div>
@@ -182,7 +187,7 @@ $lane: 13.5em;
     }
   }
 
-  &.click {
+  &.drag {
     border-style: solid;
     border-color: $accent;
     border-width: 2px;
