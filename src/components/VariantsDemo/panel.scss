@@ -102,36 +102,6 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
     }
   }
 
-  .toasts {
-    position: absolute;
-    bottom: 0.5rem;
-    left: 50%;
-    translate: -50% 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  .toast {
-    padding: 0.45rem 0.85rem;
-    border-radius: 0.25rem;
-    background: rgba(26, 179, 148, 0.92);
-    color: #fff;
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-align: center;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: opacity 0.3s ease, translate 0.3s ease;
-
-    &.leaving {
-      opacity: 0;
-      translate: 0 0.35rem;
-    }
-  }
-
   .demo-cursor {
     position: absolute;
     z-index: 30;
