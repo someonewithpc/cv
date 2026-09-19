@@ -121,7 +121,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 .wrapper {
   // A portrait sheet has the height for the sample, the buttons and the curve at this, not
   // at the picker's scale
-  @include sheet-content(0.03);
+  @include sheet-content(0.03, $prose-landscape);
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);

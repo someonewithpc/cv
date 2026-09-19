@@ -1,3 +1,4 @@
+@use '../layers/sheet' as *;
 @use '../layers/sheetProse' as *;
 
 // The held-controls sheet: the product's settings column twice, side by side, with the sheet's
@@ -28,6 +29,12 @@
     // Both columns start level, so the drag is the only thing that moves either of them
     max-height: none;
     overflow: visible;
+
+    // The sheet's prose reads at the blueprint scale; the product's column stays near the
+    // picker's, and a drag to the top of the slider clears the frame line
+    [data-sheet-orientation='landscape'] & {
+      font-size: $widget-scale * 1em;
+    }
   }
 
   // A row left in the flow, drawn with the same box the pinned one has so the two columns

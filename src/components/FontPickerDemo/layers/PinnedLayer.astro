@@ -35,7 +35,7 @@
 .wrapper {
   // A portrait sheet sets the two columns side by side at this scale, half the picker's width
   // each, and has the height for the drag to grow them
-  @include sheet-content(0.03);
+  @include sheet-content(0.03, $prose-landscape);
 
   display: grid;
   // The columns on the left and the note on the right, not over them: the title block takes
@@ -55,8 +55,9 @@
 
 .held-island {
   grid-area: 1 / 1;
-  // Two of the product's 20em sidebars, kept left of the title block on every landscape sheet
-  width: min(100%, 42em);
+  // Two of the product's 20em sidebars at the widget's scale, kept left of the title block
+  // on every landscape sheet
+  width: min(100%, $widget-scale * 42em);
 }
 
 .sheet-note {
