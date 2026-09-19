@@ -9,6 +9,8 @@
  */
 import { variantsOf, type CatalogItem, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 
+import { formatSize } from './units';
+
 type Props = {
   item: CatalogItem;
   /** Variant on show; the first one when left out. */
@@ -105,11 +107,11 @@ const styleName = (v: CatalogVariant) => v.style;
 
     {showSize ? (
       <details class="hover-select object-size">
-        <summary class="hover-select-current" aria-label={`Size, ${visible.size}`}>
+        <summary class="hover-select-current" aria-label={`Size, ${formatSize(visible.size ?? '', 'metric')}`}>
           <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
             <path d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
           </svg>
-          <span class="option-text">{visible.size}</span>
+          <span class="option-text">{formatSize(visible.size ?? '', 'metric')}</span>
           <svg class="caret" viewBox="0 0 320 512" width="8" height="8" aria-hidden="true">
             <path fill="currentColor" d="M31 175h258c18 0 27 21 14 34L174 338a20 20 0 0 1-28 0L17 209c-13-13-4-34 14-34z" />
           </svg>
@@ -121,7 +123,7 @@ const styleName = (v: CatalogVariant) => v.style;
                 <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
                   <path d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>
-                <span class="option-text">{size}</span>
+                <span class="option-text">{formatSize(size, 'metric')}</span>
               </button>
             </li>
           ))}
@@ -132,7 +134,7 @@ const styleName = (v: CatalogVariant) => v.style;
         <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
           <path d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
         </svg>
-        <span class="option-text">{visible.size}</span>
+        <span class="option-text">{formatSize(visible.size ?? '', 'metric')}</span>
       </span>
     )}
   </div>

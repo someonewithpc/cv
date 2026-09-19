@@ -329,13 +329,14 @@ $pip: 1.125rem;
       color: #ced4da;
     }
 
+    // The product clips this line to one row; a narrow card lets it wrap instead.
     .object-size.static {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      gap: 0.25rem;
-      overflow: hidden;
-      white-space: nowrap;
+      gap: 0 0.25rem;
+      text-wrap: balance;
 
       svg {
         flex: 0 0 auto;
