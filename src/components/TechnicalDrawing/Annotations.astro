@@ -28,6 +28,10 @@ const vertices = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
 const radius = 0.5;
 
 const arrowPathD = roundedCorners(vertices, radius);
+
+// One marker per layer: the same id on every annotated sheet would be a duplicate,
+// and every arrow would draw the first sheet's marker.
+const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
 ---
 
 <div class="content" style={`--annotation-reach: ${reach};`}>
@@ -35,11 +39,11 @@ const arrowPathD = roundedCorners(vertices, radius);
   <svg
     viewBox="-2 -2 4 4"
     preserveAspectRatio={preserveAspectRatio}
-    style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px;`}
+    style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px; --annotation-marker: url(#${arrowId});`}
   >
     <defs>
       <marker
-        id="annotation-rounded-arrow"
+        id={arrowId}
         refX="0"
         refY="0"
         orient="auto-start-reverse"
@@ -87,7 +91,7 @@ svg {
   width: 200%;
 
   :global(path) {
-    marker-start: url('#annotation-rounded-arrow');
+    marker-start: var(--annotation-marker);
     stroke: var(--ink);
     stroke-width: var(--annotation-stroke-width, 0.02);
     fill: none;
