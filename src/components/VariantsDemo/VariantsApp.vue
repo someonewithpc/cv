@@ -4,7 +4,7 @@ import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 import CatalogObjectCard from '@/components/SpaceBuilderDemo/MockScene/catalog/CatalogObjectCard.vue';
-import { variantOf, type CatalogItem, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
+import { variantOf, variantsOf, type CatalogItem, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 import { RAIL_TOOLS } from '@/components/SpaceBuilderDemo/MockScene/railTools';
 import type { SpaceBuilderScene } from '@/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene';
 
@@ -197,6 +197,12 @@ onMounted(async () => {
     // Extras convert to metres by the chair's own measured height, so the chair has to load
     // even on a page that never places one.
     await scene.loadChair();
+    // Read every style's GLB up front. A pick clears the floor and builds it again, so a
+    // model still being parsed would show as a hole where the object was.
+    for (const card of VARIANT_CARDS) {
+      for (const variant of variantsOf(card)) scene.activateCatalogItem(card.id, variant);
+    }
+
     scene.setTagSuppressed(true);
     scene.setHandlesVisible(false);
     scene.setCameraAngles(Math.PI * 0.26, Math.PI * 0.36);
