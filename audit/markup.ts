@@ -83,6 +83,18 @@ const NU_IGNORED: { message: RegExp; because: string }[] = [
   },
 ];
 
+// Hugo's rule, and it outranks any linter: never downgrade or remove a progressive
+// enhancement because a tool says it is not valid. If one of these rules ever flags
+// something this site uses on purpose, switch the rule off here and write down why.
+// Do not change the CSS.
+//
+// stylelint 17.15 (September 2026) reads properties and values through css-tree 3.2 and
+// mdn-data 2.27, patched by @csstools/css-syntax-patches-for-csstree. Measured against
+// this site's build it flags none of anchor(), sign(), ::scroll-marker, @container,
+// @property, :has(), text-wrap: balance, light-dark(), @starting-style, overflow: clip,
+// relative colours, nesting, field-sizing, view transitions or scroll-driven animations,
+// and it still catches misspelt properties, bad units and invalid hex. So the list-driven
+// rules stay on, with the two exceptions below.
 const cssConfig = {
   extends: ['stylelint-config-recommended'],
   rules: {
@@ -92,9 +104,10 @@ const cssConfig = {
     'no-duplicate-selectors': null,
     // clip: rect(0, 0, 0, 0) is the visually-hidden idiom.
     'property-no-deprecated': [true, { ignoreProperties: ['clip'] }],
-    // stylelint's selector parser does not know ::scroll-button() yet and reads its
-    // left/right arguments as element names.
-    'selector-type-no-unknown': [true, { ignoreTypes: ['left', 'right'] }],
+    // Off, not narrowed: stylelint's selector parser reads ::scroll-button(right) as an
+    // element called right. An ignoreTypes list would have to grow with every new
+    // pseudo-element argument, and it would hide a real unknown element on the way.
+    'selector-type-no-unknown': null,
   },
 };
 
