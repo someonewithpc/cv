@@ -55,7 +55,7 @@
   --band-desk: var(--theme-canvas);
   --band-desk-grid: color-mix(in oklch, var(--blueprint-grid), transparent 78%);
   --band-kraft: color-mix(in oklch, var(--theme-canvas), var(--theme-accent) 12%);
-  --band-mat: color-mix(in oklch, var(--theme-canvas), var(--theme-blueprint) 28%);
+  --band-mat: var(--theme-mat);
   --band-mat-line: oklch(from var(--band-mat) calc(l + 0.05) c h);
   --band-mat-line-strong: oklch(from var(--band-mat) calc(l + 0.11) c h);
   --band-vellum: oklch(from var(--theme-canvas) calc(l + 0.03) c h);
