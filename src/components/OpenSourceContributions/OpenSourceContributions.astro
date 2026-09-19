@@ -26,12 +26,15 @@ const statistics = {
 
 <section id="open-source" class="full-width" aria-labelledby="open-source-heading">
   <Band number={4} material="vellum">
-    <SectionHeader statistics={statistics} />
+    <div class="sheet">
+      <SectionHeader statistics={statistics} />
 
-    <Highlights highlights={highlights} />
+      <Highlights highlights={highlights} />
+    </div>
   </Band>
 
   <Band number={5} material="ledger">
+  <div class="sheet">
   {groups.map(({ id, label, items }) => {
     const pull = largestChange(items);
 
@@ -69,6 +72,7 @@ const statistics = {
     </section>
     );
   })}
+  </div>
   </Band>
 </section>
 
@@ -80,7 +84,12 @@ const statistics = {
 
   display: grid;
   grid-template-columns: subgrid;
-  container-type: inline-size;
+
+  /* The container the header, highlights and rows query. Not the section itself: a size
+     container cannot be a subgrid, and the bands need the section to be one. */
+  .sheet {
+    container-type: inline-size;
+  }
 
   :global([lang='ja']) {
     display: block;
@@ -91,7 +100,7 @@ const statistics = {
     margin-inline-start: -0.125rem;
   }
 
-  :global(.band) > section {
+  .sheet > section {
     &[data-group='merged'] {
       --row-accent: hsl(145 42% 38%);
     }
