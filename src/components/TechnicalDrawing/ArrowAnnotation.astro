@@ -34,6 +34,8 @@ type Props = {
   angle: number | 'normal';
   length: number;
   text: string;
+  /** Lines of a label that wraps, as SVG text markup; `text` still names it. */
+  lines?: string[];
   target?: string;
   anchor?: Anchor;
   gap?: number;
@@ -54,6 +56,7 @@ const {
   angle,
   length,
   text,
+  lines,
   target,
   anchor = 'center',
   gap,
@@ -90,14 +93,17 @@ const fallbackAngle = segment
   : 0;
 const drawnAngle = angle === 'normal' ? fallbackAngle : angle;
 
+const LINE_HEIGHT = 1.15;
 const angleRad = drawnAngle * Math.PI / 180;
 const endX = tipX + length * Math.cos(angleRad);
 const endY = tipY - length * Math.sin(angleRad);
 const side = labelSide ?? (Math.cos(angleRad) < 0 && Math.sin(angleRad) < 0 ? 'left' : 'right');
 const sign = side === 'left' ? -1 : 1;
-const underline = text.length * underlinePerChar;
+const plain = (line: string) => line.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, '.');
+const longest = lines ? Math.max(...lines.map((line) => plain(line).length)) : text.length;
+const underline = longest * underlinePerChar;
 const offsetX = lengthOffset?.x ?? 0;
-const offsetY = -fontSize * 0.5 + (lengthOffset?.y ?? 0);
+const offsetY = -fontSize * 0.5 - (lines ? (lines.length - 1) * LINE_HEIGHT * fontSize : 0) + (lengthOffset?.y ?? 0);
 const onlyClass = only && `on-${only}`;
 const textX = endX + sign * offsetX;
 ---
@@ -123,6 +129,8 @@ const textX = endX + sign * offsetX;
     text-anchor={side === 'left' ? 'end' : undefined}
     class={textClass}
   >
-    <slot>{text}</slot>
+    <slot>
+      {lines ? lines.map((line, i) => (<tspan x={textX} dy={i ? `${LINE_HEIGHT}em` : undefined} set:html={line} />)) : text}
+    </slot>
   </text>
 </g>
