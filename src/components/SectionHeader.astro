@@ -3,56 +3,49 @@ type Props = {
   headingId: string;
   titleJp: string;
   title: string;
-  sheetCode?: string;
 };
 
-const { headingId, titleJp, title, sheetCode = 'SH' } = Astro.props;
+const { headingId, titleJp, title } = Astro.props;
 ---
 
 <header>
-  <p class="sheet-code monospace" aria-hidden="true">
-    <span>{sheetCode}</span>
-    <span>/</span>
-    <span>REV A</span>
-  </p>
-  <h2 id={headingId}>
+  <h2 id={headingId} class="tape">
     <small lang="ja">{titleJp}</small>
-    <span class="typewriter">{title}</span>
+    <span class="marker-font">{title}</span>
   </h2>
 </header>
 
-<style lang="scss">
-header {
-  margin-bottom: 2.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid color-mix(in oklch, var(--line), transparent 25%);
+<style lang="scss" is:global>
+/* A strip of masking tape stuck to the desk, the section's name written on it
+   in marker. Global because the open-source header re-uses the same strip. */
+.tape {
+  --tape-ink: oklch(0.24 0.03 260);
 
-  .sheet-code {
-    display: flex;
-    gap: 0.5ch;
-    margin: 0 0 0.35rem;
-    font-size: 0.625rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--accent-text);
+  position: relative;
+  display: inline-grid;
+  gap: 0;
+  width: fit-content;
+  padding: 0.375rem 1.75rem 0.5rem;
+  rotate: -1.5deg;
+  color: var(--tape-ink);
+  background: var(--theme-tape);
+  box-shadow: 0 0.125rem 0.375rem rgb(0 0 0 / 0.28);
+  clip-path: polygon(
+    0.5% 0, 99.4% 4%, 100% 32%, 99.1% 58%, 100% 82%, 99.4% 100%,
+    0.9% 96%, 0 74%, 0.7% 48%, 0 18%
+  );
+
+  [lang='ja'] {
+    display: block;
+    margin-inline-start: 0.125rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: color-mix(in oklch, var(--tape-ink), transparent 15%);
   }
 
-  h2 {
-    display: grid;
-    justify-items: start;
-    gap: 0.125rem;
-
-    [lang='ja'] {
-      font-size: 0.6875rem;
-    }
-
-    .typewriter {
-      font-size: clamp(2.25rem, 5.5vw, 3.25rem);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      line-height: 1.05;
-      color: var(--ink);
-    }
+  .marker-font {
+    font-size: clamp(1.75rem, 4.5vw, 2.5rem);
+    line-height: 1.1;
   }
 }
 </style>
