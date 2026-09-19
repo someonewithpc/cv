@@ -427,6 +427,21 @@ $pip: 1.125rem;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
   }
+
+  // A pick on the other row moved this one. The font picker's dot, copied as is.
+  .hover-select.new-dot::before {
+    content: '';
+    background: #c33;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1ch;
+    height: 1ch;
+    translate: calc(50% - 1px) calc(-50% + 1px);
+    z-index: 1;
+
+    border-radius: 50%;
+  }
 }
 
 @keyframes variants-active-pip {

@@ -45,6 +45,11 @@ export const AUTOPLAY_STEPS: AutoplayStep[] = [
   { aim: `${SET} .object-pax li:nth-child(3) button`, delay: 700, act: 'hover' },
   { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 900, act: 'hover' },
   { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 1000, act: 'click' },
+
+  // No eight-seat small table: the size moved back on its own and carries the red dot.
+  // Opening the size row reads it, and the dot goes.
+  { aim: `${SET} .object-size .hover-select-current`, delay: 2600, act: 'click' },
+  { aim: `${SET} .object-size .hover-select-current`, delay: 1400, act: 'click' },
   // The fourth finish is the one on show after three steps; clicking it picks the chair
   // again, so the highlight is seen moving back.
   { aim: `${CHAIR} .style:nth-child(4) img`, delay: 2600, act: 'click' },
