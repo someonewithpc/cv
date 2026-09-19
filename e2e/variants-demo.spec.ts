@@ -47,6 +47,13 @@ async function clickNextArrow(page: Page, styles: Locator) {
   await page.mouse.click(box.x + box.width - 14, box.y + box.height / 2);
 }
 
+/** Take the pointer out of the card sideways, in a few moves. */
+async function leaveCard(page: Page, card: Locator) {
+  const box = await card.boundingBox();
+  if (!box) throw new Error('The card has no layout box');
+  await page.mouse.move(box.x + box.width + 60, box.y + box.height / 2, { steps: 6 });
+}
+
 /** The scroll marker's fill: transparent until the slide is the current one. */
 function markerBackground(slide: Locator) {
   return slide.evaluate((el) => getComputedStyle(el, '::scroll-marker').backgroundColor);
@@ -123,6 +130,9 @@ test.describe('metric locale', () => {
     const seats = set.locator('.object-pax');
     const size = set.locator('.object-size');
     await expect(seats.locator('.hover-select-current')).toContainText('8 seats');
+    // Options grey against the selected object, so the set has to be the pick first.
+    await set.locator('.object-icons').click();
+    await expect(set).toHaveClass(/active/);
 
     await size.locator('.hover-select-current').click();
     const smaller = size.locator('.hover-select-options li').nth(1);
@@ -133,6 +143,123 @@ test.describe('metric locale', () => {
     await expect(size.locator('.hover-select-current')).toContainText('1.8m x 76cm');
     await expect(seats.locator('.hover-select-current')).toContainText('6 seats');
     await expect(set).toHaveAttribute('data-variant', 'table-6-182');
+  });
+
+  test('one card is selected at a time', async ({ page }) => {
+    const app = await openDemo(page);
+    const chair = card(app, 'chair');
+    const set = card(app, 'table-round');
+
+    await expect(chair).toHaveClass(/active/);
+    await expect(set).not.toHaveClass(/active/);
+
+    await set.locator('.object-icons').click();
+    await expect(set).toHaveClass(/active/);
+    await expect(chair).not.toHaveClass(/active/);
+
+    // Hovering another option on the selected card lifts the highlight until the pointer
+    // leaves; the pick stays where it was.
+    await set.locator('.object-pax .hover-select-current').click();
+    await set.locator('.object-pax .hover-select-options li').nth(1).hover();
+    await expect(set).not.toHaveClass(/active/);
+    await leaveCard(page, set);
+    await expect(set).toHaveClass(/active/);
+    await expect(set).toHaveAttribute('data-variant', 'table-8-243');
+
+    await chair.locator('.style').first().locator('img').click();
+    await expect(chair).toHaveClass(/active/);
+    await expect(set).not.toHaveClass(/active/);
+  });
+
+  test('the hover preview follows the pointer and comes back on leave', async ({ page }) => {
+    const app = await openDemo(page);
+    const set = card(app, 'table-round');
+    const thumb = set.locator('.object-icons > img');
+    const label = set.locator('.object-pax .hover-select-current .option-text');
+    const rows = set.locator('.object-pax .hover-select-options li');
+
+    await set.locator('.object-pax .hover-select-current').click();
+    await expect(rows).toHaveCount(3);
+    const seen: string[] = [];
+    for (const [index, expected] of [[0, '8 seats'], [1, '6 seats'], [2, '4 seats']] as const) {
+      const box = await rows.nth(index).boundingBox();
+      if (!box) throw new Error('The option has no layout box');
+      // Down into the row in a few small moves, as a hand would.
+      for (let step = 1; step <= 4; step += 1) {
+        await page.mouse.move(box.x + box.width / 2, box.y + (box.height * step) / 5);
+      }
+      await expect(label).toHaveText(expected);
+      const src = await thumb.getAttribute('src');
+      expect(seen).not.toContain(src);
+      seen.push(src ?? '');
+    }
+
+    await leaveCard(page, set);
+    await expect(set.locator('.object-pax')).not.toHaveAttribute('open', '');
+    await expect(label).toHaveText('8 seats');
+    await expect(thumb).toHaveAttribute('src', seen[0]);
+  });
+
+  test('a pick that moves the other row leaves a red dot until that row is read', async ({ page }) => {
+    const app = await openDemo(page);
+    const set = card(app, 'table-round');
+    const seats = set.locator('.object-pax');
+    const size = set.locator('.object-size');
+    await set.locator('.object-icons').click();
+
+    // Eight seats has no small table: picking the small table moves the seat count.
+    await size.locator('.hover-select-current').click();
+    await size.locator('.hover-select-options li').nth(1).locator('button').click();
+    await expect(seats.locator('.hover-select-current')).toContainText('6 seats');
+    await expect(seats).toHaveClass(/new-dot/);
+    await expect(size).not.toHaveClass(/new-dot/);
+    expect(await seats.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe('rgb(204, 51, 51)');
+
+    // Moving the pointer over the row reads it.
+    const box = await seats.boundingBox();
+    if (!box) throw new Error('The seats row has no layout box');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
+    await expect(seats).not.toHaveClass(/new-dot/);
+
+    // And the other way: eight seats at the small table falls back to the wide one.
+    await seats.locator('.hover-select-current').click();
+    await seats.locator('.hover-select-options li').nth(0).locator('button').click();
+    await expect(size.locator('.hover-select-current')).toContainText('2.4m x 1.2m');
+    await expect(size).toHaveClass(/new-dot/);
+    await size.locator('.hover-select-current').click();
+    await expect(size).toHaveAttribute('open', '');
+    await expect(size).not.toHaveClass(/new-dot/);
+  });
+
+  test('the trail strings out behind the dot while it slides', async ({ page }) => {
+    const app = await openDemo(page);
+    const chair = card(app, 'chair');
+    const styles = chair.locator('ul.styles');
+    await expect(chair.locator('.pip-track > .pip-trail')).toHaveCount(5);
+
+    // Sample every frame from inside the page: the slide is over in a few frames.
+    const sampling = chair.locator('.pip-track').evaluate((track) => new Promise<number[][]>((resolve) => {
+      const parts = [...track.children] as HTMLElement[];
+      const read = () => parts.map((part) => parseFloat(getComputedStyle(part).translate));
+      const frames: number[][] = [];
+      const t0 = performance.now();
+      const tick = (now: number) => {
+        frames.push(read());
+        if (now - t0 < 900) requestAnimationFrame(tick);
+        else resolve(frames);
+      };
+      requestAnimationFrame(tick);
+    }));
+    await clickNextArrow(page, styles);
+    const frames = await sampling;
+
+    const dot = (frame: number[]) => frame[frame.length - 1];
+    const tail = (frame: number[]) => frame[4];
+    // The dot moved a pip; at some point the last part lagged it, and at the end all sit together.
+    expect(Math.max(...frames.map(dot))).toBeCloseTo(18, 0);
+    expect(Math.max(...frames.map((frame) => dot(frame) - tail(frame)))).toBeGreaterThan(2);
+    const last = frames[frames.length - 1];
+    last.forEach((value) => expect(value).toBeCloseTo(dot(last), 0));
   });
 
   test('the sheets draw the real card and are three pages in all', async ({ page }) => {
