@@ -132,3 +132,78 @@ test('held controls page: the drag leaves the plain column and holds the pinned 
   await expect(page.getByText('Demo paused')).toBeVisible();
   await expect(front.locator('.pinned-box.is-held')).toBeVisible();
 });
+
+test.describe('on a landscape phone', () => {
+  test.use({ viewport: { width: 844, height: 390 } });
+
+  test('main page: the sample is sized from the sheet and stays on it', async ({ page }) => {
+    const stack = fontPickerStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const front = frontPage(stack, await frontPageIndex(stack));
+    const island = await waitForIslandMounted(front);
+    await expect(island.locator('.specimen-pangram')).toBeVisible({ timeout: 15_000 });
+
+    // Every part of the picker is on the sheet: no overflow, nothing past an edge
+    const fit = await front.evaluate((wrapper) => {
+      const section = wrapper.querySelector('section')!;
+      const content = section.querySelector('.content')!;
+      const sheet = section.getBoundingClientRect();
+      const outside = [...section.querySelectorAll('.picker-layer *')].filter((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) return false;
+        return r.right > sheet.right + 1 || r.bottom > sheet.bottom + 1
+          || r.left < sheet.left - 1 || r.top < sheet.top - 1;
+      }).length;
+      return {
+        outside,
+        overflowX: content.scrollWidth - content.clientWidth,
+        overflowY: content.scrollHeight - content.clientHeight,
+        pangram: parseFloat(getComputedStyle(section.querySelector('.specimen-pangram')!).fontSize),
+      };
+    });
+    expect(fit.outside).toBe(0);
+    expect(fit.overflowX).toBeLessThanOrEqual(2);
+    expect(fit.overflowY).toBeLessThanOrEqual(2);
+
+    // The sample reads off the sheet's own pixels, so a wide sheet sets it larger than this one
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect
+      .poll(() => front.locator('.specimen-pangram').evaluate((el) => parseFloat(getComputedStyle(el).fontSize)))
+      .toBeGreaterThan(fit.pangram);
+  });
+});
+
+test('held controls page: the drawn cursor rides each slider it drags', async ({ page }) => {
+  const stack = fontPickerStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Held Controls');
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await waitForIslandMounted(front);
+
+  // The closest the cursor's own tip gets to the thumb while that side is being dragged: the
+  // drag moves the value and places the cursor from it on the same frame, so it stays on it
+  const closest = { plain: Infinity, held: Infinity };
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline && (closest.plain > 16 || closest.held > 16)) {
+    const sample = await page.evaluate(() => {
+      const drawn = document.querySelector('.font-picker-cursor');
+      if (!drawn || !drawn.className.includes('--dragging')) return null;
+      const c = drawn.getBoundingClientRect();
+      return [...document.querySelectorAll<HTMLInputElement>('[data-demo-target^="size-"]')]
+        .filter((el) => Number(el.value) > 1)
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          const t = (Number(el.value) - Number(el.min)) / (Number(el.max) - Number(el.min));
+          // The arrow's tip, not the box the SVG is drawn in
+          return { side: el.dataset.demoTarget!.replace('size-', ''), d: Math.abs(r.left + 8 + (r.width - 16) * t - (c.left + 7)) };
+        });
+    });
+    for (const { side, d } of sample ?? []) {
+      closest[side as 'plain' | 'held'] = Math.min(closest[side as 'plain' | 'held'], d);
+    }
+    await page.waitForTimeout(80);
+  }
+
+  expect(closest.plain).toBeLessThanOrEqual(16);
+  expect(closest.held).toBeLessThanOrEqual(16);
+});
