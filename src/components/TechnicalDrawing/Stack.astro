@@ -94,7 +94,6 @@ const totalLayers = Object.keys(layers).length;
 </style>
 
 <script>
-import { armIslands } from '@/client/bootIsland';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 import './demo-cursor-press';
 
@@ -139,7 +138,6 @@ function initStack(stack: HTMLElement) {
     watchFrontPage(page, () => apply(page));
   });
 
-  armIslands(stack);
   positionAnnotations(stack);
 
   // The sheet's size and orientation, restated as plain pixels and a data attribute for the
