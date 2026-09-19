@@ -27,17 +27,24 @@ export const AUTOPLAY_STEPS: AutoplayStep[] = [
   { aim: `${CHAIR} ul.styles`, at: NEXT_ARROW, delay: 2200, act: 'next' },
   { aim: `${CHAIR} ul.styles`, at: NEXT_ARROW, delay: 2200, act: 'next' },
 
+  // The pointer walks down the open list and back up, so the card is seen showing each
+  // row it passes before the click picks one.
   { aim: `${SET} .object-pax .hover-select-current`, delay: 2000, act: 'click' },
+  { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 700, act: 'hover' },
   { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 900, act: 'hover' },
-  { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 1200, act: 'click' },
+  { aim: `${SET} .object-pax li:nth-child(3) button`, delay: 900, act: 'hover' },
+  { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 1000, act: 'hover' },
+  { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 1000, act: 'click' },
 
   { aim: `${SET} .object-size .hover-select-current`, delay: 2200, act: 'click' },
+  { aim: `${SET} .object-size li:nth-child(1) button`, delay: 700, act: 'hover' },
   { aim: `${SET} .object-size li:nth-child(2) button`, delay: 900, act: 'hover' },
-  { aim: `${SET} .object-size li:nth-child(2) button`, delay: 900, act: 'click' },
+  { aim: `${SET} .object-size li:nth-child(2) button`, delay: 1000, act: 'click' },
 
   { aim: `${SET} .object-pax .hover-select-current`, delay: 2200, act: 'click' },
+  { aim: `${SET} .object-pax li:nth-child(3) button`, delay: 700, act: 'hover' },
   { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 900, act: 'hover' },
-  { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 900, act: 'click' },
+  { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 1000, act: 'click' },
   // The fourth finish is the one on show after three steps; clicking it picks the chair
   // again, so the highlight is seen moving back.
   { aim: `${CHAIR} .style:nth-child(4) img`, delay: 2600, act: 'click' },
