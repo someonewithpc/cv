@@ -56,6 +56,28 @@ function placement(deck: Locator) {
   });
 }
 
+/**
+ * On a phone the deck is a row of its own above the title block, out of reach of the
+ * dog-eared corner that the note folds out of. Measured as boxes: the corner's box may
+ * not cross the deck's, and the title block sits below the deck, either sharing its rule
+ * (shape 2) or ruled off by clear paper.
+ */
+function phoneRow(deck: Locator) {
+  return deck.evaluate((el) => {
+    const section = el.closest('section')!;
+    const box = el.getBoundingClientRect();
+    const fold = section.querySelector('.note-fold')!.getBoundingClientRect();
+    const title = section.querySelector('table')!.getBoundingClientRect();
+    return {
+      foldVisible: fold.width > 0 && fold.height > 0,
+      clearOfFold: box.right <= fold.left || box.left >= fold.right
+        || box.bottom <= fold.top || box.top >= fold.bottom,
+      gapToTitleBlock: Math.round(title.top - box.bottom),
+      spansSheet: Math.round(box.width) >= Math.round(title.width),
+    };
+  });
+}
+
 test('the deck shape follows ?deck, and an unknown one falls back to the first', async ({ page }) => {
   for (const shape of SHAPES) {
     await page.goto(`/?deck=${shape}`);
@@ -82,12 +104,30 @@ for (const shape of SHAPES) {
             expect(await placement(deck)).toEqual({
               insideSheet: true,
               // Shapes 1 and 3 fill the bottom band; shape 2 sits on the title block instead.
-              insideBand: shape !== '2',
+              // A phone draws every shape as a row above the title block (see below).
+              insideBand: name === 'desktop' && shape !== '2',
               clearOfDrawing: true,
               clearOfTitleBlock: true,
             });
           }
         });
+
+        if (name === 'phone') {
+          test('takes a row above the title block, clear of the dog-eared corner', async ({ page }) => {
+            await page.goto(`/?deck=${shape}`);
+
+            for (const stack of [markerEditorStack(page), spaceBuilderStack(page)]) {
+              const row = await phoneRow(await playingDeck(stack));
+              expect(row).toMatchObject({ foldVisible: true, clearOfFold: true, spansSheet: true });
+              if (shape === '2') {
+                // Its cell shares the block's top rule.
+                expect(Math.abs(row.gapToTitleBlock)).toBeLessThanOrEqual(1);
+              } else {
+                expect(row.gapToTitleBlock).toBeGreaterThanOrEqual(4);
+              }
+            }
+          });
+        }
       });
     }
 
