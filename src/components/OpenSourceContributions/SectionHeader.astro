@@ -3,19 +3,12 @@ const { statistics } = Astro.props;
 ---
 
 <header>
-  <div class="title">
-    <p class="sheet-code monospace" aria-hidden="true">
-      <span>SH-OSS</span>
-      <span>/</span>
-      <span>REV A</span>
-    </p>
-    <h2 id="open-source-heading">
-      <small lang="ja">オープンソース</small>
-      <span class="typewriter">Open Source</span>
-    </h2>
-  </div>
+  <h2 id="open-source-heading" class="tape">
+    <small lang="ja">オープンソース</small>
+    <span class="marker-font">Open Source</span>
+  </h2>
 
-  <dl>
+  <dl class="tally">
     <div>
       <dt>
         <small lang="ja">マージ</small>
@@ -42,63 +35,44 @@ const { statistics } = Astro.props;
 
 <style lang="scss">
 header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 2rem 3rem;
-  align-items: end;
-  margin-bottom: 2.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem 3rem;
+  margin-bottom: 3rem;
 
-  .sheet-code {
-    display: flex;
-    gap: 0.5ch;
-    margin: 0 0 0.5rem;
-    font-size: 0.625rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--accent-text);
-  }
+  /* The count, typed on a slip of paper dropped beside the label. */
+  .tally {
+    --surface-raised: var(--theme-paper);
 
-  h2 {
-    display: grid;
-    justify-items: start;
-    gap: 0.125rem;
-
-    [lang='ja'] {
-      font-size: 0.6875rem;
-    }
-
-    .typewriter {
-      font-size: clamp(2.25rem, 5.5vw, 3.25rem);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      line-height: 1.05;
-      color: var(--ink);
-    }
-  }
-
-  dl {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem 2.5rem;
-    padding-top: 0.25rem;
+    gap: 0.75rem 1.75rem;
+    padding: 0.625rem 1rem 0.75rem;
+    rotate: 1deg;
+    color: var(--ink);
+    background: var(--theme-paper);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.12),
+      0 1px 2px rgb(0 0 0 / 0.25),
+      0 0.5rem 1rem -0.5rem rgb(0 0 0 / 0.45);
 
     div {
       display: grid;
-      gap: 0.35rem;
-      min-width: 4.5rem;
+      gap: 0.25rem;
+      min-width: 4rem;
     }
 
     dt {
       display: grid;
       justify-items: start;
-      gap: 0.1rem;
+      gap: 0.125rem;
       font-family: monospace, system-ui;
       font-size: 0.625rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--ink-faint);
+      color: var(--ink-muted);
 
       [lang='ja'] {
         font-size: 0.5625rem;
@@ -107,22 +81,20 @@ header {
     }
 
     dd {
-      font-family: monospace, system-ui;
+      font-family: "Special Elite", monospace, system-ui;
       font-size: 1.5rem;
-      font-weight: 600;
       line-height: 1;
       color: var(--accent-text);
-      border-bottom: 1px dashed var(--line);
-      padding-bottom: 0.15rem;
+      border-bottom: 1px dashed var(--line-strong);
+      padding-bottom: 0.125rem;
     }
   }
 
   @container (max-width: 50rem) {
-    grid-template-columns: 1fr;
     gap: 1.5rem;
 
-    dl {
-      gap: 1.25rem 2rem;
+    .tally {
+      gap: 0.75rem 1.5rem;
     }
   }
 }
