@@ -8,7 +8,8 @@ import { expect, test } from '@playwright/test';
  * would take a swipe each), and the artwork's box is its layout box, read through a
  * ResizeObserver so a `scale` on the artwork (the original Visrez logo carries one) does
  * not leak into it. Targets are read from their client rects, which is where the visitor
- * sees them.
+ * sees them; a segment anchor is mapped from the target's SVG through its root's client
+ * rect and viewBox, not the screen matrix the script uses.
  */
 
 const VIEWPORTS = [
@@ -20,6 +21,7 @@ const VIEWPORTS = [
 
 const TOLERANCE = 1;
 const TARGET_TOLERANCE = 2;
+const NORMAL_TOLERANCE = 3;
 
 type Box = { left: number; top: number; right: number; bottom: number };
 
@@ -32,6 +34,8 @@ type Reading = {
     label: string;
     target: string;
     error: number;
+    /** Degrees off the segment's normal, for a callout drawn along one. */
+    offNormal: number | null;
     labelOverTarget: boolean;
     shaftOverLabel: boolean;
     inSheet: boolean;
@@ -57,6 +61,17 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
       bottom: Math.max(...rects.map((r) => r.bottom)),
     });
     const intersects = (a: Box, b: Box) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    // A segment anchor, from the target's root svg: its viewBox meets its client rect.
+    const segmentPoint = (el: Element, x: number, y: number) => {
+      const root = (el instanceof SVGSVGElement ? el : (el as SVGElement).ownerSVGElement)!;
+      const rect = root.getBoundingClientRect();
+      const vb = root.viewBox.baseVal;
+      const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
+      return {
+        x: rect.left + (rect.width - vb.width * scale) / 2 + (x - vb.x) * scale,
+        y: rect.top + (rect.height - vb.height * scale) / 2 + (y - vb.y) * scale,
+      };
+    };
     const contains = (a: Box, b: Box) => b.left >= a.left && b.right <= a.right && b.top >= a.top && b.bottom <= a.bottom;
     // Segment against box, by clipping the segment's parameter to each slab.
     const segmentCrosses = (p: DOMPoint, q: DOMPoint, b: Box) => {
@@ -101,7 +116,8 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
         return [point.x - target.x, point.y - target.y];
       };
 
-      const sheet = box(svg.closest('section')!.getBoundingClientRect());
+      const section = svg.closest('section')!;
+      const sheet = box(section.getBoundingClientRect());
       const tips: Reading['tips'] = [];
       const targets: Reading['targets'] = [];
       for (const callout of svg.querySelectorAll<SVGGElement>('[data-tip]')) {
@@ -118,22 +134,41 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
         }
         const elements = artwork.matches(selector) ? [artwork] : [...artwork.querySelectorAll(selector)];
         const targetBox = union(elements.map((el) => el.getBoundingClientRect()));
-        const [fx, fy] = (callout.dataset.anchor ?? '0.5 0.5').split(/\s+/).map(Number);
-        const anchor = {
-          x: targetBox.left + fx * (targetBox.right - targetBox.left),
-          y: targetBox.top + fy * (targetBox.bottom - targetBox.top),
-        };
+        const anchorAttr = callout.dataset.anchor ?? '0.5 0.5';
+        const segment = anchorAttr.startsWith('segment')
+          ? anchorAttr.slice('segment'.length).trim().split(/\s+/).map(Number)
+          : null;
+        const [fx, fy] = segment ? [] : anchorAttr.split(/\s+/).map(Number);
+        const ends = segment && [segmentPoint(elements[0], segment[0], segment[1]), segmentPoint(elements[0], segment[2], segment[3])];
+        const anchor = ends
+          ? { x: (ends[0].x + ends[1].x) / 2, y: (ends[0].y + ends[1].y) / 2 }
+          : {
+              x: targetBox.left + fx * (targetBox.right - targetBox.left),
+              y: targetBox.top + fy * (targetBox.bottom - targetBox.top),
+            };
         const pathCtm = path.getScreenCTM()!;
         const d = path.getAttribute('d')!.match(/-?[\d.]+(?:e-?\d+)?/g)!.map(Number);
         const tip = new DOMPoint(d[0], d[1]).matrixTransform(pathCtm);
         const end = new DOMPoint(d[0] + d[2], d[1] + d[3]).matrixTransform(pathCtm);
+        const shaft = Math.hypot(end.x - tip.x, end.y - tip.y);
+        const dir = { x: (end.x - tip.x) / shaft, y: (end.y - tip.y) / shaft };
+        // The tip stops short of the anchor along the shaft by the gap.
+        const gap = (Number(callout.dataset.gap) || 0) * Math.min(targetBox.right - targetBox.left, targetBox.bottom - targetBox.top);
+        const expectedTip = { x: anchor.x + gap * dir.x, y: anchor.y + gap * dir.y };
+        let offNormal: number | null = null;
+        if (ends && callout.dataset.angle === 'normal') {
+          const length = Math.hypot(ends[1].x - ends[0].x, ends[1].y - ends[0].y);
+          const normal = { x: (ends[1].y - ends[0].y) / length, y: -(ends[1].x - ends[0].x) / length };
+          offNormal = (Math.acos(Math.min(1, Math.max(-1, normal.x * dir.x + normal.y * dir.y))) * 180) / Math.PI;
+        }
         const labelBox = box(text.getBoundingClientRect());
         // A shaft may start at the label's corner; only a run through the glyphs counts.
         const glyphs = { left: labelBox.left + 1, top: labelBox.top + 1, right: labelBox.right - 1, bottom: labelBox.bottom - 1 };
         targets.push({
           label: text.textContent?.trim() ?? '',
           target: selector,
-          error: Math.hypot(tip.x - anchor.x, tip.y - anchor.y),
+          error: Math.hypot(tip.x - expectedTip.x, tip.y - expectedTip.y),
+          offNormal,
           labelOverTarget: intersects(labelBox, targetBox),
           shaftOverLabel: segmentCrosses(tip, end, glyphs),
           inSheet: contains(sheet, labelBox) && contains(sheet, { left: tip.x, top: tip.y, right: tip.x, bottom: tip.y }),
@@ -185,6 +220,9 @@ for (const viewport of VIEWPORTS) {
         expect(callout.labelOverTarget, `${name} label over target`).toBe(false);
         expect(callout.shaftOverLabel, `${name} shaft over label`).toBe(false);
         expect(callout.inSheet, `${name} outside the sheet`).toBe(true);
+        if (callout.offNormal !== null) {
+          expect(callout.offNormal, `${name} off the edge's normal`).toBeLessThanOrEqual(NORMAL_TOLERANCE);
+        }
       }
     }
   });
