@@ -17,6 +17,7 @@
 - [ ] Access Keys
 - [ ] ARIA roles
 - [ ] Demos
+  - [x] Drawn cursor pulses and flares on press and release, shared by every demo
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Autoplay is not very intuitive (#7)
   - [x] Visrez animated icon
