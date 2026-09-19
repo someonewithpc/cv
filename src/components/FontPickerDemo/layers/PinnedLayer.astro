@@ -33,29 +33,46 @@
 @use "./sheetProse" as *;
 
 .wrapper {
-  // A portrait sheet stacks the two columns, and has the height for them at this scale
-  @include sheet-content(0.028);
+  // A portrait sheet sets the two columns side by side at this scale, half the picker's width
+  // each, and has the height for the drag to grow them
+  @include sheet-content(0.03);
 
   display: grid;
-  // The note beside the columns, not over them: the title block takes the sheet's bottom
-  // right corner, and a note on top pushed the held column's foot into it once a drag had
-  // grown the column
-  grid-template-columns: minmax(10em, 15em) minmax(0, 1fr);
+  // The columns on the left and the note on the right, not over them: the title block takes
+  // the sheet's bottom right corner, and a column that starts above it runs into it once a
+  // drag has grown it. Kept to the left of the block, the growth runs into clear sheet, and
+  // the note sits in the room above it
+  grid-template-columns: minmax(0, 1fr) minmax(11em, 15em);
   align-items: start;
-  justify-items: center;
   gap: 1.5em;
 
   // A portrait sheet drops the note, so the first column's title lands in the corner the
   // paper clip sits over. Leave the clip its room.
   :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1em;
     margin-top: 1.25em;
   }
 }
 
 .held-island {
-  width: min(100%, 52em);
+  grid-area: 1 / 1;
+  // Two of the product's 20em sidebars, kept left of the title block on every landscape sheet
+  width: min(100%, 42em);
+}
+
+.sheet-note {
+  grid-area: 1 / 2;
+}
+
+// A sheet under 56em drops the note, and each column says what it shows in its own caption
+@container technical-drawing-width (max-width: 56em) {
+  .wrapper {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1em;
+  }
+
+  .sheet-note {
+    display: none;
+  }
 }
 
 /* The drag makes a column taller, and a centred artwork answers by sliding the whole thing up,
@@ -70,12 +87,6 @@
   @include sheet-prose;
 
   margin: 0;
-  // A phone sheet needs its height for the two columns, and each one says this in its own
-  // caption anyway
-  :global([data-sheet-orientation='portrait']) & {
-    display: none;
-  }
-
   color: var(--ink-muted);
   font-family: var(--font-poppins), system-ui, sans-serif;
   line-height: 1.35;

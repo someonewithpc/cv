@@ -11,11 +11,10 @@
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
 
-  [data-sheet-orientation='portrait'] & {
-    grid-template-columns: minmax(0, 1fr);
+  // The product pads its sidebar for a desktop map; a phone sheet has no room for that
+  @container technical-drawing-width (max-width: 56em) {
     gap: 0.75em;
 
-    // The product pads its sidebar for a desktop map; a phone sheet has no room for that
     nav {
       padding: 0.75em;
     }
@@ -40,7 +39,9 @@
 
 .column {
   display: grid;
-  gap: 0.5em;
+  // Close: a drag to the top of the size slider grows the column by three quarters, and the
+  // foot of it has to clear the frame line
+  gap: 0.25em;
   align-content: start;
   min-width: 0;
 }
@@ -59,7 +60,7 @@
 
   margin: 0;
   font-size: 0.8125em;
-  line-height: 1.35;
+  line-height: 1.3;
   color: var(--ink-muted);
   text-wrap: pretty;
 }
