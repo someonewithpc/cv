@@ -75,6 +75,16 @@ const totalLayers = Object.keys(layers).length;
 
   container: technical-drawing / size;
 
+  /* How far the resting crease reaches along the sheet's long side. The crease is what a flip
+     folds the sheet along and what the folded-back corner is cut on, so this one number is the
+     size of the dog-ear at the top left. A fixed em made it a fifth of the way across a
+     phone-width sheet and a twentieth on a desktop one, so it is a fraction of the sheet
+     instead, floored so the paper clip still has a corner to sit in and capped at what a
+     desktop sheet already had. 100cqw is the frame's width, which is the stack's own. */
+  --paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
+  --paper-clip-lean-x: calc(var(--paper-clip-reach) / 2);
+  --paper-clip-lean-y: var(--paper-clip-reach);
+
   @container technical-drawing-width (max-width: 40em) {
     /* Portrait has to stack artwork, note and title block where landscape put
        them side by side, so take the height a phone actually has. */
@@ -87,8 +97,8 @@ const totalLayers = Object.keys(layers).length;
        page widths before it lands. Swapping the intercepts lays the clip
        flat — onto the left edge, which PaperStack derives from the same two
        numbers — and sends the fold up the long axis instead. */
-    --paper-clip-lean-x: 4.5em;
-    --paper-clip-lean-y: 2.25em;
+    --paper-clip-lean-x: var(--paper-clip-reach);
+    --paper-clip-lean-y: calc(var(--paper-clip-reach) / 2);
   }
 }
 </style>
