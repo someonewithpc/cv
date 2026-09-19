@@ -476,8 +476,9 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 }
 
 /* While the shared input has the caret, every variant form draws one of its own:
-   a literal bar in monospace at the shared input's selectionStart, clamped to
-   the input's far edge (the product's ::before rule, verbatim in em). */
+   a literal bar in monospace at the shared input's selectionStart, less however
+   far mirror() scrolled the input to keep it in view, clamped to the input's far
+   edge (the product's ::before rule, in em, with the scroll taken off). */
 .grouped-objects:is(.autoplay, :has(> .shared-form > .shared-value:focus)) .object-form {
   font-family: monospace, system-ui;
 
@@ -486,7 +487,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
     position: absolute;
     z-index: 1;
     top: 0.143em;
-    left: calc(min(var(--caret, 0) * 1ch, var(--input-width, 100%) - 1ch) + 0.5ch);
+    left: calc(min(var(--caret, 0) * 1ch - var(--scroll, 0px), var(--input-width, 100%) - 1ch) + 0.5ch);
     animation: blink 500ms infinite alternate both;
   }
 

@@ -149,6 +149,69 @@ test('main page: the shared value mirrors onto the base and every variant, and E
   await expect(tool.locator('.demo-note')).toBeVisible();
 });
 
+test('main page: typing mid-value keeps the shared caret put and scrolls each card to it, not to the end', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+
+  const gold = tool.locator('.grouped-objects[data-group="gold"]');
+  const shared = gold.locator('.shared-value');
+  const forms = gold.locator('.object-form');
+
+  // Longer than a variant card's input at any sheet width this suite runs at.
+  const value = 'Champagne With Gold Trim And Piping';
+  await shared.click();
+  await shared.fill(value);
+  await shared.press('Home');
+  for (let i = 0; i < 6; i += 1) await shared.press('ArrowRight');
+  await shared.type('X');
+
+  expect(await shared.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toEqual([7, 7]);
+
+  // Where the scroll ought to sit for the caret the shared input reports: mirror() scrolls
+  // just far enough to keep that caret and one character past it in view, and never to
+  // the input's end the way the product does.
+  const state = (form: import('@playwright/test').Locator) =>
+    form.evaluate((el) => {
+      const input = el.querySelector('input')!;
+      const style = getComputedStyle(input);
+      const ruler = document.createElement('canvas').getContext('2d')!;
+      ruler.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const ch = ruler.measureText('0').width;
+      const textWidth = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const caret = Number(el.style.getPropertyValue('--caret'));
+      return {
+        value: input.value,
+        caret,
+        scrollLeft: input.scrollLeft,
+        scrollEnd: input.scrollWidth - input.clientWidth,
+        expected: Math.max(0, (caret + 1) * ch - textWidth),
+        scrollVar: el.style.getPropertyValue('--scroll'),
+      };
+    });
+
+  const count = await forms.count();
+  for (let i = 0; i < count; i += 1) {
+    const card = await state(forms.nth(i));
+    expect(card.value).toBe('ChampaXgne With Gold Trim And Piping');
+    expect(card.caret).toBe(7);
+    expect(card.scrollEnd).toBeGreaterThan(0);
+    expect(card.scrollLeft).toBe(0);
+  }
+
+  // Caret near the end but not at it: the input scrolls to that caret and stops short of
+  // its end, and the drawn caret is told how far.
+  const at = value.length + 1 - 4;
+  await shared.evaluate((el: HTMLInputElement, index) => el.setSelectionRange(index, index), at);
+  await shared.press('Shift');
+  for (let i = 0; i < count; i += 1) {
+    const card = await state(forms.nth(i));
+    expect(card.caret).toBe(at);
+    expect(card.expected).toBeGreaterThan(0);
+    expect(Math.abs(card.scrollLeft - card.expected)).toBeLessThanOrEqual(1);
+    expect(card.scrollLeft).toBeLessThan(card.scrollEnd - 1);
+    expect(parseFloat(card.scrollVar)).toBeCloseTo(card.scrollLeft, 0);
+  }
+});
+
 test('main page: differing variant values keep the shared input open and flag the overrides', async ({ page }) => {
   const { tool } = await mountedTool(page);
 

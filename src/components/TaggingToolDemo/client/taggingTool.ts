@@ -54,8 +54,21 @@ function titleize(text: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+const ruler = document.createElement('canvas').getContext('2d');
+
+/** One character of the input's font, in px: what its ::before caret means by 1ch. */
+function chWidth(input: HTMLInputElement) {
+  if (!ruler) return parseFloat(getComputedStyle(input).fontSize) * 0.6;
+  const { fontStyle, fontWeight, fontSize, fontFamily } = getComputedStyle(input);
+  ruler.font = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
+  return ruler.measureText('0').width;
+}
+
 /** The product's shared_inputs.js handler: copy the value into every variant form
-    and tell its ::before caret where the shared input's caret is. */
+    and tell its ::before caret where the shared input's caret is. The product then
+    scrolls each input to its end, which on a card too narrow for the value shows its
+    tail with the caret clamped to the far edge; this scrolls only as far as it takes to
+    keep the caret in view, and tells the ::before how far that was. */
 function mirror(group: Group, eventType = 'keyup') {
   const { shared } = group;
   const selectionStart = shared.selectionStart ?? shared.value.length;
@@ -64,7 +77,11 @@ function mirror(group: Group, eventType = 'keyup') {
   group.cards.forEach(({ form, input }) => {
     form.style.setProperty('--caret', String(caret));
     input.value = shared.value;
-    input.scrollLeft = eventType === 'blur' ? 0 : input.scrollWidth;
+    const ch = chWidth(input);
+    const style = getComputedStyle(input);
+    const textWidth = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    input.scrollLeft = eventType === 'blur' ? 0 : Math.max(0, (caret + 1) * ch - textWidth);
+    form.style.setProperty('--scroll', `${input.scrollLeft}px`);
     form.style.setProperty('--input-width', `${input.offsetWidth}px`);
   });
 }
