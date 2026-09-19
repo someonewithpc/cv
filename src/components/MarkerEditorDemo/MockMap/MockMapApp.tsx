@@ -134,6 +134,7 @@ function DemoCursor({
         ].filter(Boolean).join(' ')}
         style={{ left: x, top: y }}
         aria-hidden="true"
+        data-demo-cursor=""
       >
         <svg viewBox="0 0 32 32" width="56" height="56">
           <path
