@@ -10,8 +10,6 @@ export type AutoplayStep = {
   delay: number;
   /** `next` scrolls the carousel one style on, where the arrow is a CSS scroll button. */
   act?: 'click' | 'hover' | 'next';
-  /** Caption for the toast strip, if this step deserves one. */
-  say?: string;
 };
 
 const CHAIR = `[data-catalog-item="${CHAIR_CARD.id}"]`;
@@ -25,26 +23,21 @@ const NEXT_ARROW = { x: 0.92, y: 0.5 };
  */
 export const AUTOPLAY_STEPS: AutoplayStep[] = [
   { aim: `${CHAIR} .object-icons`, delay: 1400 },
-  { aim: `${CHAIR} ul.styles`, at: NEXT_ARROW, delay: 700, act: 'next', say: 'Chair · next finish' },
+  { aim: `${CHAIR} ul.styles`, at: NEXT_ARROW, delay: 700, act: 'next' },
   { aim: `${CHAIR} ul.styles`, at: NEXT_ARROW, delay: 2200, act: 'next' },
   { aim: `${CHAIR} ul.styles`, at: NEXT_ARROW, delay: 2200, act: 'next' },
 
-  { aim: `${SET} .object-pax .hover-select-current`, delay: 2000, act: 'click', say: 'Banquet Table · seats' },
-  { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 900, act: 'hover', say: 'Hover shows the object' },
-  { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 1200, act: 'click', say: 'A click commits it' },
+  { aim: `${SET} .object-pax .hover-select-current`, delay: 2000, act: 'click' },
+  { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 900, act: 'hover' },
+  { aim: `${SET} .object-pax li:nth-child(2) button`, delay: 1200, act: 'click' },
 
-  { aim: `${SET} .object-size .hover-select-current`, delay: 2200, act: 'click', say: 'Banquet Table · table size' },
+  { aim: `${SET} .object-size .hover-select-current`, delay: 2200, act: 'click' },
   { aim: `${SET} .object-size li:nth-child(2) button`, delay: 900, act: 'hover' },
   { aim: `${SET} .object-size li:nth-child(2) button`, delay: 900, act: 'click' },
 
   { aim: `${SET} .object-pax .hover-select-current`, delay: 2200, act: 'click' },
   { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 900, act: 'hover' },
-  {
-    aim: `${SET} .object-pax li:nth-child(1) button`,
-    delay: 900,
-    act: 'click',
-    say: 'No eight-seat small table · the size moves back',
-  },
+  { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 900, act: 'click' },
   { aim: `${SET} .object-icons`, delay: 2600 },
 ];
 
@@ -52,8 +45,6 @@ const CURSOR_TRAVEL_MS = 560;
 const CURSOR_CLICK_MS = 260;
 const CURSOR_FADE_MS = 420;
 const RESUME_DELAY_MS = 6000;
-const TOAST_VISIBLE_MS = 2200;
-const TOAST_EXIT_MS = 320;
 
 function reducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -66,12 +57,11 @@ function runStep(el: HTMLElement, act: AutoplayStep['act']) {
 }
 
 /**
- * The demo's own hand: a drawn cursor that works the cards through AUTOPLAY_STEPS and a
- * toast strip that says what it is doing. A trusted pointer or focus inside the host
- * hands the cards over to the visitor; the loop resumes after a quiet spell.
+ * The demo's own hand: a drawn cursor that works the cards through AUTOPLAY_STEPS. A
+ * trusted pointer or focus inside the host hands the cards over to the visitor; the loop
+ * resumes after a quiet spell.
  */
 export function createPlayer(host: HTMLElement) {
-  const toasts = host.querySelector<HTMLElement>('.toasts');
   const cursor = document.createElement('span');
   cursor.className = 'demo-cursor';
   cursor.setAttribute('aria-hidden', 'true');
@@ -92,19 +82,6 @@ export function createPlayer(host: HTMLElement) {
     host.dataset.userControl = value ? 'true' : 'false';
   };
   setUserControl(false);
-
-  function pushToast(text: string) {
-    if (!toasts) return;
-    toasts.querySelectorAll('.toast.leaving').forEach((toast) => toast.remove());
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = text;
-    toasts.append(toast);
-    setTimeout(() => {
-      toast.classList.add('leaving');
-      setTimeout(() => toast.remove(), TOAST_EXIT_MS);
-    }, TOAST_VISIBLE_MS);
-  }
 
   function showCursor() {
     if (fadeTimer) clearTimeout(fadeTimer);
@@ -173,7 +150,6 @@ export function createPlayer(host: HTMLElement) {
       if (aimCursor(el, step.at)) await wait(CURSOR_TRAVEL_MS, token);
       if (token !== playToken) return;
       if (step.act === 'click' || step.act === 'next') flashClick();
-      if (step.say) pushToast(step.say);
       runStep(el, step.act);
     }
   }
@@ -192,7 +168,6 @@ export function createPlayer(host: HTMLElement) {
       resumeTimer = null;
       if (!active || noteOpen || reducedMotion()) return;
       setUserControl(false);
-      pushToast('Demo playing · move to take over');
       void play();
     }, RESUME_DELAY_MS);
   }
@@ -204,7 +179,6 @@ export function createPlayer(host: HTMLElement) {
     }
     setUserControl(true);
     stopPlaying();
-    pushToast('Demo paused');
     hideCursor(true);
     restartIdleTimer();
   }
