@@ -134,10 +134,6 @@ async function foldAndPile(stack: Locator) {
 
     return {
       opacity: fold.opacity,
-      left: Number.parseFloat(fold.left),
-      top: Number.parseFloat(fold.top),
-      width: Number.parseFloat(fold.width),
-      height: Number.parseFloat(fold.height),
       cutWidth: Number.parseFloat(grab.width) - em,
       cutHeight: Number.parseFloat(grab.height) - em,
       // The sheet's own long side, to read the fold's reach against.
@@ -166,13 +162,72 @@ async function foldAndPile(stack: Locator) {
         .filter((page) => getComputedStyle(page, '::after').opacity === '1')
         .map((page) => {
           const drift = Number.parseFloat(getComputedStyle(page, '::after').left);
-          const creaseBottom = place(page, drift, Number.parseFloat(fold.height));
+          const creaseBottom = place(page, drift, Number.parseFloat(grab.height) - em);
           const foot = place(page, drift, base.height);
           return Math.round((base.left - Math.min(creaseBottom, foot)) * 100) / 100;
         }),
     };
   });
 }
+
+type Point = { x: number, y: number };
+
+/**
+ * The strip of sheet back the front page paints behind its folded-back corner, and the two
+ * creases it should join: the front page's own (`near`), and the same crease on the page
+ * furthest out in the pile (`far`). The far crease is read off that page by planting a point at
+ * each end of its cut and letting the browser carry it through the page's own translate and
+ * rotate, so the strip is checked against where the page really stands, not against the
+ * arithmetic the strip itself uses. Everything is in viewport pixels.
+ */
+async function strip(stack: Locator) {
+  return stack.evaluate((el) => {
+    const pages = [...el.children] as HTMLElement[];
+    const index = (page: HTMLElement) => Number(page.style.getPropertyValue('--page-index'));
+    const front = pages.find((page) => index(page) === 1)!;
+    const furthest = pages.reduce((a, b) => (index(b) > index(a) ? b : a));
+    const own = getComputedStyle(el);
+    const foldX = Number.parseFloat(own.getPropertyValue('--fold-back-x'));
+    const foldY = Number.parseFloat(own.getPropertyValue('--fold-back-y'));
+    const base = front.getBoundingClientRect();
+
+    // The polygon is in the pseudo-element's own box, which the front page places by left/top.
+    const back = getComputedStyle(front, '::before');
+    const origin = { x: base.left + Number.parseFloat(back.left), y: base.top + Number.parseFloat(back.top) };
+    const vertices = back.clipPath
+      .replace(/^polygon\(|\)$/g, '')
+      .split(',')
+      .map((pair) => {
+        const [x, y] = pair.trim().split(/\s+/).map(Number.parseFloat);
+        return { x: origin.x + x, y: origin.y + y };
+      });
+
+    // A turned page's cut stands over by its drift, which its band's left inset reports.
+    const drift = Number.parseFloat(getComputedStyle(furthest, '::after').left);
+    const carry = (x: number, y: number) => {
+      const dot = document.createElement('i');
+      dot.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:0;height:0`;
+      furthest.append(dot);
+      const rect = dot.getBoundingClientRect();
+      dot.remove();
+      return { x: rect.left, y: rect.top };
+    };
+
+    return {
+      vertices,
+      near: [{ x: base.left + foldX, y: base.top }, { x: base.left, y: base.top + foldY }],
+      far: [carry(foldX + drift, 0), carry(drift, foldY)],
+      background: back.backgroundColor,
+      flap: getComputedStyle(front.querySelector('.paper-fold')!).backgroundColor,
+    };
+  });
+}
+
+const apart = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+
+/** How far a point stands off the line through two others. */
+const offLine = (p: Point, [a, b]: Point[]) =>
+  Math.abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / apart(a, b);
 
 // A phone puts the stack in portrait, which transposes the crease, and a desktop leaves it
 // landscape; the fold used to be a fixed em, so the same corner was a twentieth of a desktop
@@ -204,19 +259,27 @@ for (const width of [390, 1440]) {
         expect(seen.opacity).toBe('1');
         expect(seen.spill).toHaveLength(depth);
 
-        // The fold is the corner cut it fills and nothing else: it sits on the page's own corner
-        // and measures the cut plus the hairline of slack that closes the seam, at any depth.
-        expect(seen.left).toBe(0);
-        expect(seen.top).toBe(0);
-        expect(seen.width).toBeCloseTo(seen.cutWidth + 1, 1);
-        expect(seen.height).toBeCloseTo(seen.cutHeight + 1, 1);
+        // The corner cut keeps the size a folded corner has instead of growing with the pile.
         first ??= seen;
-        expect(seen.width).toBeCloseTo(first.width, 1);
-        expect(seen.height).toBeCloseTo(first.height, 1);
+        expect(seen.cutWidth).toBeCloseTo(first.cutWidth, 1);
+        expect(seen.cutHeight).toBeCloseTo(first.cutHeight, 1);
 
-        // And it reaches the same small way along the sheet whatever size the sheet is, so it
-        // reads as a dog-ear on a phone as well as on a desktop.
-        const reach = Math.max(seen.width, seen.height) / seen.sheet;
+        // The strip of sheet back behind the cut is a quadrilateral: its near edge lies on the
+        // front page's crease (with the hairline of slack that closes the seam), and its far
+        // edge sits on the same crease of the page furthest out in the pile, where that page
+        // actually stands after its rise, drift and lean. Painted in the paper's own colour,
+        // as the fold flap paints the back of the same sheet.
+        const back = await strip(stack);
+        expect(back.vertices).toHaveLength(4);
+        expect(offLine(back.vertices[0], back.near)).toBeLessThan(1.5);
+        expect(offLine(back.vertices[3], back.near)).toBeLessThan(1.5);
+        expect(apart(back.vertices[1], back.far[0])).toBeLessThan(1);
+        expect(apart(back.vertices[2], back.far[1])).toBeLessThan(1);
+        expect(back.background).toBe(back.flap);
+
+        // And the cut reaches the same small way along the sheet whatever size the sheet is, so
+        // it reads as a dog-ear on a phone as well as on a desktop.
+        const reach = Math.max(seen.cutWidth, seen.cutHeight) / seen.sheet;
         expect(reach).toBeGreaterThan(0.05);
         expect(reach).toBeLessThan(0.1);
 
