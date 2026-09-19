@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
@@ -28,7 +28,12 @@ import {
 } from '@/components/SpaceBuilderDemo/MockScene/scene/sceneViewportGestures';
 import type { SpaceBuilderScene } from '@/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene';
 
-type Phase = 'idle' | 'placing';
+/**
+ * `armed` is Space Builder's `editor.action === 'create'`: the object rides the pointer and
+ * the next click on the floor puts it down. `dragging` is the same ghost carried by a held
+ * pointer. Both end in one object and a return to `idle` — neither stays armed afterwards.
+ */
+type Phase = 'idle' | 'armed' | 'dragging';
 
 /** Fractions of the canvas rect — autoplay cycles the drop point between these. */
 const DROP_POINTS: Array<[number, number]> = [
@@ -37,6 +42,9 @@ const DROP_POINTS: Array<[number, number]> = [
   [0.32, 0.66],
 ];
 
+/** The non-layoutable real item autoplay arms by double-click; the Chair is Build's, not Single's. */
+const CLICK_ROUTE_ID = 'table-round';
+
 const RESUME_DELAY_MS = 2500;
 
 const rootRef = ref<HTMLElement | null>(null);
@@ -44,10 +52,14 @@ const ready = ref(false);
 const loadError = ref(false);
 const phase = ref<Phase>('idle');
 const selectedId = ref('chair');
+/** Style picked per card, so a drag, an arm and autoplay all place the one on show. */
+const chosenVariantIds = reactive<Record<string, string>>({});
 const toast = ref<string | null>(null);
 const demoPlaying = ref(false);
 const cursorVisible = ref(false);
 const cursorClicking = ref(false);
+/** Waiting on the double-clicked object's GLB, with the page held the way the product holds it. */
+const arming = ref(false);
 /** True while a tween is driving cursorPos every frame — the JS easing already
  * smooths motion, so the CSS position transition (meant for discrete jumps)
  * only adds trailing lag here, most visibly right at the drop, where it makes
@@ -67,6 +79,17 @@ let toastTimer: ReturnType<typeof setTimeout> | null = null;
 /** Catalog item mid-drag via pointer (not native HTML5 DnD — see onItemPointerdown). */
 let draggingItem: CatalogItem | null = null;
 let draggingVariant: CatalogVariant | null = null;
+/** Item riding the pointer after a double-click, waiting for the floor click that puts it down. */
+const armedItem = ref<CatalogItem | null>(null);
+/** Pressed card waiting to see whether the pointer moves far enough to be a drag. */
+let pendingDrag: {
+  item: CatalogItem;
+  variant: CatalogVariant;
+  pointerId: number;
+  origin: ScreenPoint;
+  target: EventTarget | null;
+} | null = null;
+const DRAG_THRESHOLD_PX = 5;
 
 let inView = false;
 let userControl = false;
@@ -115,13 +138,66 @@ function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
   }
 }
 
-function selectItem(item: CatalogItem, variant: CatalogVariant = variantOf(item, undefined)) {
+function variantFor(item: CatalogItem) {
+  return variantOf(item, chosenVariantIds[item.id]);
+}
+
+/** A single click only highlights a card and swaps the live ghost, the way the product does. */
+function selectItem(item: CatalogItem, variant: CatalogVariant = variantFor(item)) {
   yieldToUser();
+  chosenVariantIds[item.id] = variant.id;
   selectedId.value = item.id;
   sceneRef.value?.activateCatalogItem(item.id, variant);
-  if (!item.real) {
-    showToast('Placeholder — use Chair for the demo');
+  if (!item.real) showToast('Placeholder · use Chair, Side Chair or Banquet Table');
+}
+
+/**
+ * Double-click is what arms Space Builder's Add tool. Objects the library files under a
+ * seating category go to Build instead (draw an area, fill it), which is the Space Builder
+ * stack's walkthrough, so the Chair only says where that lives.
+ */
+function confirmItem(item: CatalogItem, variant: CatalogVariant = variantFor(item)) {
+  selectItem(item, variant);
+  if (!item.real) return;
+  if (item.layoutable) {
+    showToast('Chair fills an area with Build · see the Space Builder stack');
+    return;
   }
+  void armItem(item, variant);
+}
+
+/**
+ * Space Builder holds a full-page spinner over this route until the GLB is in, which is why
+ * only a drag can lose the race on page three. Wait the same way before arming.
+ */
+async function armItem(item: CatalogItem, variant: CatalogVariant) {
+  const scene = sceneRef.value;
+  if (!scene) return;
+  scene.activateCatalogItem(item.id, variant);
+  arming.value = true;
+  await scene.whenCatalogItemReady(variant.id);
+  arming.value = false;
+  if (sceneRef.value !== scene || phase.value === 'dragging') return;
+  armedItem.value = item;
+  phase.value = 'armed';
+  draggedThumb.value = null;
+}
+
+/** Esc, or a placement, puts the object down and returns the tool to view. */
+function disarm() {
+  if (phase.value !== 'armed') return;
+  armedItem.value = null;
+  phase.value = 'idle';
+  sceneRef.value?.setGhostVisible(false);
+}
+
+/** The one call both routes end in: one object lands, or nothing did because the GLB is late. */
+function dropOne(item: CatalogItem | null, clientX: number, clientY: number) {
+  const scene = sceneRef.value;
+  if (!scene) return;
+  scene.setGhostAt(clientX, clientY);
+  const placed = scene.placeGhostAsSingle();
+  showToast(placed ? `${item?.name ?? 'Object'} placed` : 'Still loading · pick it again');
 }
 
 /**
@@ -129,17 +205,41 @@ function selectItem(item: CatalogItem, variant: CatalogVariant = variantOf(item,
  * drag occasionally tripped Chrome's tab-tear-off / Snap Layouts gesture near
  * the top of the window. This is also the only way to support touch drag.
  */
+/**
+ * The press only arms a pending drag: `preventDefault()` here would swallow the card's own
+ * click and double-click, which are the other route in. The drag starts on the first move
+ * past the threshold, the way a real drag does.
+ */
 function onItemPointerdown(event: PointerEvent, item: CatalogItem, variant: CatalogVariant) {
-  if (!item.real) return;
+  if (!item.real || event.button !== 0) return;
   yieldToUser();
-  event.preventDefault();
+  chosenVariantIds[item.id] = variant.id;
+  pendingDrag = {
+    item,
+    variant,
+    pointerId: event.pointerId,
+    origin: { x: event.clientX, y: event.clientY },
+    target: event.currentTarget,
+  };
+}
+
+function startItemDrag(clientX: number, clientY: number) {
+  if (!pendingDrag) return;
+  const { item, variant, pointerId, target } = pendingDrag;
+  pendingDrag = null;
   selectedId.value = item.id;
+  armedItem.value = null;
   sceneRef.value?.activateCatalogItem(item.id, variant);
   draggingItem = item;
   draggingVariant = variant;
-  phase.value = 'placing';
-  trySetPointerCapture(event.currentTarget, event.pointerId);
-  updateDragVisual(item, event.clientX, event.clientY);
+  phase.value = 'dragging';
+  trySetPointerCapture(target, pointerId);
+  updateDragVisual(item, clientX, clientY);
+}
+
+/** The catalog thumbnail is a plain `<img>`, so a press on it still offers the browser's image drag. */
+function onItemDragStart(event: DragEvent) {
+  event.preventDefault();
 }
 
 function endItemDrag(clientX: number, clientY: number) {
@@ -152,15 +252,8 @@ function endItemDrag(clientX: number, clientY: number) {
   if (!scene) return;
 
   const rect = canvasRect();
-  const overViewport = rect && withinRect(clientX, clientY, rect);
-
-  if (overViewport) {
-    scene.setGhostAt(clientX, clientY);
-    const placed = scene.placeGhostAsSingle();
-    showToast(placed ? `${dropped?.name ?? 'Chair'} placed` : 'Still loading — drag again');
-  } else {
-    scene.setGhostVisible(false);
-  }
+  if (rect && withinRect(clientX, clientY, rect)) dropOne(dropped, clientX, clientY);
+  else scene.setGhostVisible(false);
 }
 
 function onPointerDown(event: PointerEvent) {
@@ -168,6 +261,15 @@ function onPointerDown(event: PointerEvent) {
   const root = rootRef.value;
   if (!scene || !root || isChrome(event.target)) return;
   yieldToUser();
+
+  // An armed object goes down on the next plain left click, and the tool returns to view —
+  // it does not stay armed for a second click.
+  if (phase.value === 'armed' && event.button === 0 && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+    const item = armedItem.value;
+    disarm();
+    dropOne(item, event.clientX, event.clientY);
+    return;
+  }
 
   activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -191,8 +293,26 @@ function onPointerMove(event: PointerEvent) {
   const scene = sceneRef.value;
   if (!scene) return;
 
+  if (pendingDrag && event.pointerId === pendingDrag.pointerId) {
+    const { origin } = pendingDrag;
+    if (Math.hypot(event.clientX - origin.x, event.clientY - origin.y) >= DRAG_THRESHOLD_PX) {
+      startItemDrag(event.clientX, event.clientY);
+    }
+    return;
+  }
+
   if (draggingItem) {
     updateDragVisual(draggingItem, event.clientX, event.clientY);
+    return;
+  }
+
+  if (phase.value === 'armed') {
+    const rect = canvasRect();
+    if (rect && withinRect(event.clientX, event.clientY, rect)) {
+      scene.setGhostAt(event.clientX, event.clientY);
+    } else {
+      scene.setGhostVisible(false);
+    }
     return;
   }
 
@@ -218,6 +338,8 @@ function onPointerMove(event: PointerEvent) {
 function onPointerUp(event: PointerEvent) {
   const scene = sceneRef.value;
   activePointers.delete(event.pointerId);
+
+  if (pendingDrag?.pointerId === event.pointerId) pendingDrag = null;
 
   if (draggingItem) {
     endItemDrag(event.clientX, event.clientY);
@@ -247,6 +369,16 @@ function onWheel(event: WheelEvent) {
 function onContextMenu(event: Event) {
   event.preventDefault();
 }
+
+function onKeyDown(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || phase.value !== 'armed') return;
+  yieldToUser();
+  disarm();
+}
+
+const hint = computed(() => (phase.value === 'armed'
+  ? `${armedItem.value?.name ?? 'Object'} on the pointer · click to place, Esc to cancel`
+  : 'Drag a card in, or double-click one · orbit to look around'));
 
 // --- Autoplay: a demo cursor drives the same scene calls a real drag would. ---
 
@@ -343,41 +475,49 @@ function orbitTween(token: number, deltaTheta: number, ms: number, startClient: 
   });
 }
 
-/** Drag one chair from the catalog to (fx, fy) and orbit briefly. False once the token goes stale. */
-async function placeAndOrbit(
+function catalogButton(root: HTMLElement, id: string) {
+  const item = CATALOG_ITEMS.find((entry) => entry.id === id);
+  const pos = elementCenter(root.querySelector(`[data-demo-target="catalog:${id}"]`));
+  return item && pos ? { item, pos } : null;
+}
+
+/** Drag one object from the catalog to (fx, fy) and orbit briefly. False once the token goes stale. */
+async function dragAndOrbit(
   token: number,
   scene: SpaceBuilderScene,
   root: HTMLElement,
+  id: string,
   fx: number,
   fy: number,
   orbitDir: 1 | -1,
 ): Promise<boolean> {
-  const chairItem = CATALOG_ITEMS.find((item) => item.id === 'chair');
-  const chairBtn = root.querySelector('[data-demo-target="catalog:chair"]');
-  const chairPos = elementCenter(chairBtn);
-  if (!chairItem || !chairPos) return false;
+  const target = catalogButton(root, id);
+  if (!target) return false;
+  const { item, pos } = target;
+  const variant = variantFor(item);
 
-  moveCursorTo(chairPos.x, chairPos.y);
+  moveCursorTo(pos.x, pos.y);
   await wait(500);
   if (token !== autoplayToken) return false;
 
   await pulseClick(token);
   if (token !== autoplayToken) return false;
-  selectedId.value = 'chair';
-  scene.activateCatalogItem('chair');
-  updateDragVisual(chairItem, chairPos.x, chairPos.y);
+  selectedId.value = item.id;
+  phase.value = 'dragging';
+  scene.activateCatalogItem(item.id, variant);
+  updateDragVisual(item, pos.x, pos.y);
 
   const dropPoint = canvasPoint(fx, fy);
   cursorInstant.value = true;
-  await tweenPoint(token, chairPos, dropPoint, 900, (p) => {
-    updateDragVisual(chairItem, p.x, p.y);
+  await tweenPoint(token, pos, dropPoint, 900, (p) => {
+    updateDragVisual(item, p.x, p.y);
   });
   cursorInstant.value = false;
   if (token !== autoplayToken) return false;
   draggedThumb.value = null;
-  scene.setGhostAt(dropPoint.x, dropPoint.y);
-  scene.placeGhostAsSingle();
-  showToast('Chair placed');
+  // Letting go is the whole drag: one object lands and the tool is back to idle.
+  phase.value = 'idle';
+  dropOne(item, dropPoint.x, dropPoint.y);
 
   await orbitTween(token, orbitDir * 0.4, 700, dropPoint);
   cursorInstant.value = false;
@@ -385,6 +525,58 @@ async function placeAndOrbit(
   if (token !== autoplayToken) return false;
   await wait(700);
   return true;
+}
+
+/** The other route: double-click a card, carry the object on the pointer, click the floor once. */
+async function armAndClick(
+  token: number,
+  scene: SpaceBuilderScene,
+  root: HTMLElement,
+  id: string,
+  fx: number,
+  fy: number,
+): Promise<boolean> {
+  const target = catalogButton(root, id);
+  if (!target) return false;
+  const { item, pos } = target;
+  const variant = variantFor(item);
+
+  moveCursorTo(pos.x, pos.y);
+  await wait(450);
+  if (token !== autoplayToken) return false;
+
+  await pulseClick(token);
+  await wait(120);
+  await pulseClick(token);
+  if (token !== autoplayToken) return false;
+
+  selectedId.value = item.id;
+  scene.activateCatalogItem(item.id, variant);
+  // The product blocks behind a spinner until the GLB is in, so its click route cannot
+  // lose the race the drag route can (page three).
+  await scene.whenCatalogItemReady(variant.id);
+  if (token !== autoplayToken) return false;
+  armedItem.value = item;
+  phase.value = 'armed';
+
+  const dropPoint = canvasPoint(fx, fy);
+  cursorInstant.value = true;
+  await tweenPoint(token, pos, dropPoint, 900, (p) => {
+    moveCursorTo(p.x, p.y);
+    const rect = canvasRect();
+    if (rect && withinRect(p.x, p.y, rect)) scene.setGhostAt(p.x, p.y);
+    else scene.setGhostVisible(false);
+  });
+  cursorInstant.value = false;
+  if (token !== autoplayToken) return false;
+
+  await pulseClick(token);
+  if (token !== autoplayToken) return false;
+  phase.value = 'idle';
+  armedItem.value = null;
+  dropOne(item, dropPoint.x, dropPoint.y);
+  await wait(900);
+  return token === autoplayToken;
 }
 
 async function runAutoplay() {
@@ -401,11 +593,15 @@ async function runAutoplay() {
   }
 
   outer: while (token === autoplayToken) {
-    for (let i = 0; i < DROP_POINTS.length; i += 1) {
+    // Two drags, then the double-click route, so a lap shows both ways in and that each
+    // one leaves exactly one object behind.
+    for (let i = 0; i < DROP_POINTS.length - 1; i += 1) {
       const [fx, fy] = DROP_POINTS[i];
-      const ok = await placeAndOrbit(token, scene, root, fx, fy, i % 2 === 0 ? 1 : -1);
+      const ok = await dragAndOrbit(token, scene, root, 'chair', fx, fy, i % 2 === 0 ? 1 : -1);
       if (!ok) break outer;
     }
+    const [lastX, lastY] = DROP_POINTS[DROP_POINTS.length - 1];
+    if (!await armAndClick(token, scene, root, CLICK_ROUTE_ID, lastX, lastY)) break outer;
     // Hold the fully-built scene a beat, then clear for the next lap.
     await wait(900);
     if (token !== autoplayToken) break;
@@ -418,7 +614,9 @@ async function runAutoplay() {
 }
 
 function startAutoplay() {
-  if (reducedMotion || userControl || !chairsReady || !inView) return;
+  // An object the visitor is still carrying is theirs to put down; taking the scene back
+  // mid-placement would drop it for them.
+  if (reducedMotion || userControl || !chairsReady || !inView || phase.value !== 'idle') return;
   autoplayToken += 1;
   void runAutoplay();
 }
@@ -428,9 +626,12 @@ function stopAutoplay() {
   demoPlaying.value = false;
   cursorVisible.value = false;
   draggedThumb.value = null;
-  if (draggingItem) {
+  pendingDrag = null;
+  if (draggingItem || phase.value !== 'idle') {
     sceneRef.value?.setGhostVisible(false);
     draggingItem = null;
+    armedItem.value = null;
+    phase.value = 'idle';
   }
 }
 
@@ -554,7 +755,9 @@ onBeforeUnmount(() => {
     class="drag-drop-scene-app"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
-    aria-label="Drag and drop demo, autoplaying the Add tool; drag Chair onto the floor or take over"
+    :data-phase="phase"
+    aria-label="Drag and drop demo, autoplaying the Add tool; drag a catalog card onto the floor, or double-click one and click where it goes"
+    @keydown="onKeyDown"
   >
     <div class="viewport">
       <canvas data-scene-canvas class="scene-canvas" aria-label="Ground for placing or filling with chairs" />
@@ -570,6 +773,11 @@ onBeforeUnmount(() => {
         <span>{{ loadError ? '3D scene unavailable' : 'Loading catalog…' }}</span>
       </div>
 
+      <div v-if="arming" class="arming-cover" role="status">
+        <span class="spinner" aria-hidden="true" />
+        <span>Loading the model…</span>
+      </div>
+
       <p v-if="demoPlaying" class="demo-flash" role="status">{{ autoplayStartedToast().action }}</p>
 
       <div v-if="toast" class="toast" aria-live="polite">{{ toast }}</div>
@@ -578,9 +786,7 @@ onBeforeUnmount(() => {
         <button type="button" class="restart-btn" @click="restartDemo">
           Restart
         </button>
-        <p class="hint">
-          Drag Chair onto the ground · orbit to look around
-        </p>
+        <p class="hint">{{ hint }}</p>
       </div>
     </div>
 
@@ -594,6 +800,8 @@ onBeforeUnmount(() => {
           :selected-id="selectedId"
           :native-drag="false"
           @select="selectItem"
+          @confirm="confirmItem"
+          @dragstart="onItemDragStart"
           @item-pointerdown="onItemPointerdown"
         />
       </div>
@@ -717,6 +925,21 @@ $scene-bg: #212121;
     animation: none;
     border-color: $visrez-brand;
   }
+}
+
+// Space Builder covers the page with `.cover-spin` on this route, so a click cannot land
+// before the model does.
+.arming-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  background: color-mix(in oklab, $scene-bg 72%, transparent);
+  color: #e8e4dc;
+  font: 0.8rem/1.3 var(--font-poppins, system-ui, sans-serif);
 }
 
 .demo-flash {
