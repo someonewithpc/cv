@@ -137,6 +137,16 @@ function setNativeInputValue(input: HTMLInputElement | HTMLTextAreaElement, valu
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+/** A press at the element centre, where the drawn cursor rests, then the click itself. */
+function press(el: HTMLElement) {
+  const rect = el.getBoundingClientRect();
+  const x = rect.left + rect.width / 2;
+  const y = rect.top + rect.height / 2;
+  el.dispatchEvent(mouseEvent('mousedown', x, y, 1));
+  el.dispatchEvent(mouseEvent('mouseup', x, y, 0));
+  el.click();
+}
+
 function mouseEvent(type: string, clientX: number, clientY: number, buttons: number) {
   const event = new MouseEvent(type, {
     bubbles: true,
@@ -913,7 +923,7 @@ export class AutoPlayController {
     if (shouldClick && cursor?.target) {
       const el = queryDemoTarget(cursor.target);
       if (el instanceof HTMLElement) {
-        el.click();
+        press(el);
       }
     }
     await step.run?.(this.dispatch, this.getState);
