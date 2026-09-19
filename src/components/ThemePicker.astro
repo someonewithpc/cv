@@ -88,12 +88,19 @@ const themeVars = (settings: ThemeSettings) => `
       --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
 `;
 
+/* Match the radios by id. Naming an attribute inside :has() puts every input in the
+   document into the invalidation set for :root, so any `value` or `name` write
+   anywhere restyled the whole page. */
+const themeInputId = (id: string) => `theme-${id}`;
+const themeChecked = (id: string) => `#${themeInputId(id)}:is(:not(.with-transition):checked, .with-transition.checked)`;
+const ANY_THEME_CHECKED = Object.keys(THEMES).map(themeChecked).join(', ');
+
 /* Theme application mirrors the original radio/.checked contract so view
    transitions keep working; data-theme is an extra early-paint / persistence path. */
 const THEMES_CSS = `
 ${Object.entries(OS_THEMES).map(([id, settings]) => (
   `  @media (prefers-color-scheme: ${id}) {
-    :root:not([data-theme]):not(:has(#theme-picker input[name="theme"]:is(:not(.with-transition):checked, .with-transition.checked))) {
+    :root:not([data-theme]):not(:has(${ANY_THEME_CHECKED})) {
 ${themeVars(settings)}
       --theme-kind: ${id};
     }
@@ -101,7 +108,7 @@ ${themeVars(settings)}
 )).join('\n\n')}
 ${Object.entries(THEMES).map(([id, settings]) => `
   :root[data-theme="${id}"],
-  :root:has(#theme-picker input[name="theme"][value="${id}"]:is(:not(.with-transition):checked, .with-transition.checked)) {
+  :root:has(${themeChecked(id)}) {
     --theme-kind: ${id};
 ${themeVars(settings)}
 
@@ -127,7 +134,7 @@ const DEFAULT_MOBILE_MODE: 'compact' | 'autohide' | 'collapse' = 'compact';
     const settings = THEMES[id];
     return (
       <label class="bypass-contrast-check">
-        <input type="radio" name="theme" value={id} class="sr-only" />
+        <input type="radio" id={themeInputId(id)} name="theme" value={id} class="sr-only" />
         <Icon name={settings.icons.unchecked} class="unchecked" aria-hidden="true" />
         <Icon name={settings.icons.checked} class="checked" data-theme-transition-scale-factor={settings.transitionScaleFactor} aria-hidden="true" />
         <span>{settings.name}</span>
@@ -184,11 +191,12 @@ aside {
       flex-shrink: 0;
     }
 
-    &:has(input[name="theme"]:checked) svg.checked {
+    /* The radio is the only input in a picker label, so it needs no qualifier. */
+    &:has(input:checked) svg.checked {
       display: revert;
     }
 
-    &:has(input[name="theme"]:not(:checked)) svg.unchecked {
+    &:has(input:not(:checked)) svg.unchecked {
       display: revert;
     }
   }

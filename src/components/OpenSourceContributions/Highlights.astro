@@ -27,10 +27,13 @@ type Props = {
 };
 
 const { highlights } = Astro.props;
+
+// Titles read like "GNU social v3", and an id may not carry whitespace.
+const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 ---
 
 {highlights.map((entry) => (
-  <article id={`highlight-${entry.title}`} aria-labelledby={`highlight-${entry.title}-heading`}>
+  <article id={`highlight-${slug(entry.title)}`} aria-labelledby={`highlight-${slug(entry.title)}-heading`}>
     <ul aria-label="Technologies">
       {entry.tags.map((suffix) => {
         const resolved = resolveTechByIconSuffix(suffix);
@@ -53,7 +56,7 @@ const { highlights } = Astro.props;
         </p>
       )}
 
-      <h3 id={`highlight-${entry.title}-heading`}>
+      <h3 id={`highlight-${slug(entry.title)}-heading`}>
         <span class="typewriter">{entry.title}</span>
       </h3>
 

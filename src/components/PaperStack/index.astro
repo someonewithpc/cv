@@ -14,6 +14,10 @@ export type Props = {
 const { as: tagName = 'div', class: className, pageCount, label } = Astro.props;
 const Tag = tagName;
 
+// One pair of gradients per stack: a page carries its clip wherever the stack goes, and a
+// shared id would leave every clip painted from the first stack's gradient.
+const clipId = crypto.randomUUID().slice(0, 8);
+
 // One gem-clip wire, split at the top bend into its two physical layers. The wire leans with
 // the resting fold-back crease — its outer-right edge runs along that crease, bottoming out at
 // the pin (see --fold-pin-x/-y below) — so the whole body sits inside the corner region a flip
@@ -35,21 +39,21 @@ const clipGradient = (id: string) => `<defs>
 const paperClipUnder = `<div class="paper-clip-under"><svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path
     d="M5 22 V50 a9 9 0 0 0 18 0 V14 a6.25 6.25 0 0 0 -12.5 0"
-    stroke="url(#paper-clip-under-gradient)"
+    stroke="url(#paper-clip-under-gradient-${clipId})"
     stroke-width="3"
     stroke-linecap="round"
   />
-  ${clipGradient('paper-clip-under-gradient')}
+  ${clipGradient(`paper-clip-under-gradient-${clipId}`)}
 </svg></div>`;
 
 const paperClipOver = `<svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path
     d="M10.5 14 V44 a4 4 0 0 0 8 0 V22"
-    stroke="url(#paper-clip-over-gradient)"
+    stroke="url(#paper-clip-over-gradient-${clipId})"
     stroke-width="3"
     stroke-linecap="round"
   />
-  ${clipGradient('paper-clip-over-gradient')}
+  ${clipGradient(`paper-clip-over-gradient-${clipId}`)}
 </svg>`;
 
 // The fold flap, paper clip, back-grab handle, and flip hint are siblings of the page content,
