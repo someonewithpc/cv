@@ -1,6 +1,10 @@
 import { variantsOf, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 
+import { formatSize, unitsFor } from './units';
 import { VARIANT_CARDS } from './variantsCatalog';
+
+// Server output is metric; a US-region visitor gets the same sizes in feet and inches.
+const UNITS = unitsFor(navigator.language);
 
 /**
  * What the script adds to a server-rendered card: hovering a dropdown option shows that
@@ -14,6 +18,7 @@ export function enhanceCard(card: HTMLElement) {
   const variantById = (id: string | undefined) => variants.find((v) => v.id === id) ?? variants[0];
 
   let committed = variantById(card.dataset.variant);
+  render(card, variants, committed);
 
   const styles = card.querySelector<HTMLElement>('ul.styles');
   if (styles) enhanceCarousel(card, styles, (variant) => {
@@ -108,9 +113,12 @@ export function render(card: HTMLElement, variants: CatalogVariant[], visible: C
 
   const size = card.querySelector<HTMLElement>('.object-size');
   if (size && visible.size) {
-    setText(size, visible.size, `Size, ${visible.size}`);
+    const text = formatSize(visible.size, UNITS);
+    setText(size, text, `Size, ${text}`);
     size.querySelectorAll<HTMLElement>('.hover-select-options li').forEach((option) => {
-      const value = option.dataset.value;
+      const value = option.dataset.value ?? '';
+      const label = option.querySelector<HTMLElement>('.option-text');
+      if (label && label.textContent !== formatSize(value, UNITS)) label.textContent = formatSize(value, UNITS);
       const available = variants.some((v) => v.size === value && v.pax === visible.pax);
       option.classList.toggle('unavailable', !available);
     });
