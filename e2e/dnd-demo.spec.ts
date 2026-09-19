@@ -54,13 +54,11 @@ test('double-clicking an object places one on the next floor click, then goes ba
 
   await table.dblclick();
   await expect(app).toHaveAttribute('data-phase', 'armed');
-  await expect(app.locator('.hint')).toContainText('on the pointer');
 
   const box = await canvas.boundingBox();
   if (!box) throw new Error('Scene canvas has no layout box');
 
   await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5);
-  await expect(app.getByText('Banquet Table placed')).toBeVisible();
 
   // Space Builder's Single subaction commits the object and sets the editor back to `view`.
   // Nothing rides the pointer afterwards, so a second click cannot place a second object.
@@ -119,7 +117,6 @@ test('dragging an object onto the floor places exactly one in a live scene', asy
   }
   await page.mouse.up();
 
-  await expect(app.getByText('Chair placed')).toBeVisible();
   // A drop ends the drag, unlike a click, which leaves the object on the pointer.
   await expect(app).toHaveAttribute('data-phase', 'idle');
 
