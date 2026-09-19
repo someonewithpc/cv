@@ -49,11 +49,19 @@ oembedUrl.searchParams.set('format', 'json');
       media="print"
       onload="this.setAttribute('media', 'all')"
     />
+    <!-- Capitals and digits only: the stencil sets sheet numbers and section openers, 3 KB. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&text=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ%20&display=swap"
+      media="print"
+      onload="this.setAttribute('media', 'all')"
+    />
     <noscript>
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Poppins:wght@400;500;600;700&family=Special+Elite&display=swap"
       />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&text=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ%20&display=swap" />
     </noscript>
     <script is:inline>
       (() => {
@@ -141,6 +149,7 @@ body {
   height: 100%;
   view-transition-name: none;
   --font-poppins: "Poppins", system-ui, sans-serif;
+  --font-stencil: "Allerta Stencil", "Impact", "Arial Black", system-ui, sans-serif;
 
   --type-small: 0.75rem;
   --type-caption: 0.875rem;
