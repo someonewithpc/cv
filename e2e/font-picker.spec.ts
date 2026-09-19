@@ -262,7 +262,28 @@ function clearSheet(front: import('@playwright/test').Locator) {
     const toPieces = Math.min(...boxes.flatMap((r) => pieces.map((p) => Math.max(
       p.left - r.right, r.left - p.right, p.top - r.bottom, r.top - p.bottom,
     ))));
-    return { margin, boxes: boxes.length, toFrame, toPieces };
+
+    // Every run of the layer's text, wherever it is drawn from: the walkthrough's drag
+    // readout is portalled into the section, past the root the boxes above come from. The
+    // section's own furniture (title block, note tab, the screen-reader labels) is not the
+    // layer's
+    const outside: string[] = [];
+    const furniture = '.sr-only, table, .aside, .note-fold, [data-demo-cursor], .font-picker-toasts';
+    const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent!.trim();
+      if (!text || node.parentElement?.closest(furniture)) continue;
+      range.selectNodeContents(node);
+      for (const r of range.getClientRects()) {
+        if (r.width === 0 || r.height === 0) continue;
+        if (r.left < frame.left || r.right > frame.right || r.top < frame.top || r.bottom > frame.bottom) {
+          outside.push(text);
+          break;
+        }
+      }
+    }
+    return { margin, boxes: boxes.length, toFrame, toPieces, outside };
   }, SHEET_MARGIN_EM);
 }
 
@@ -286,6 +307,7 @@ for (const viewport of VIEWPORTS) {
           const where = `${name ?? 'picker'}${when}`;
           expect.soft(gaps.toFrame, `${where}: to the frame line`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
           expect.soft(gaps.toPieces, `${where}: to the title block`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+          expect.soft(gaps.outside, `${where}: text past the frame line`).toEqual([]);
         };
         await check('');
 
