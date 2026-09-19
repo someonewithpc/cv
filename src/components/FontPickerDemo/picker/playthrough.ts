@@ -42,6 +42,21 @@ const thumbPoint = (input: HTMLInputElement, value: number) => {
   return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
 };
 
+// A press and its release, as the mouse events a real one raises, at the drawn cursor's hot
+// spot: the contract a shared effect answers to when it marks a click on the sheet. They are
+// untrusted, like the pointer events below, which is how the auto-play's own listeners tell
+// them from a person's. Every press sends both, and its mousedown comes before any click.
+const mouse = (type: 'mousedown' | 'mouseup', target: Element, at: { x: number; y: number }) => {
+  target.dispatchEvent(new MouseEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    clientX: at.x,
+    clientY: at.y,
+    button: 0,
+    buttons: type === 'mousedown' ? 1 : 0,
+  }));
+};
+
 export class Run {
   constructor(private readonly controller: Playthrough, private readonly token: number) {}
 
@@ -107,14 +122,22 @@ export class Run {
     await this.glide(center(el));
   }
 
-  /** Move to an element and pulse the cursor there, without any DOM event */
+  /** Move to an element and press it there: the cursor pulses and the element gets the
+      mouse events of the press, but no click of its own */
   async press(el: Element) {
     await this.moveTo(el);
     // A press elsewhere takes the focus off a field the run was typing into, as a click would
     if (document.activeElement !== el) this.controller.focus(null);
-    this.cursor(center(el), { clicking: true });
-    await this.wait(CLICK_MS);
-    this.cursor(center(el));
+    const at = center(el);
+    this.cursor(at, { clicking: true });
+    mouse('mousedown', el, at);
+    try {
+      await this.wait(CLICK_MS);
+    } finally {
+      // Released even when the run is cancelled mid-press, so no press is left half made
+      mouse('mouseup', el, at);
+    }
+    this.cursor(at);
   }
 
   async click(el: HTMLElement) {
@@ -161,8 +184,17 @@ export class Run {
     await this.glide(thumbPoint(input, value));
     await this.wait(CLICK_MS);
     this.cursor(thumbPoint(input, value), { clicking: true });
-    await this.wait(CLICK_MS);
+    mouse('mousedown', input, thumbPoint(input, value));
+    try {
+      await this.wait(CLICK_MS);
+      await this.drag(input, waypoints, msPerLeg, value, step);
+    } finally {
+      mouse('mouseup', input, thumbPoint(input, Number(input.value)));
+    }
+    this.cursor(thumbPoint(input, Number(input.value)));
+  }
 
+  private async drag(input: HTMLInputElement, waypoints: number[], msPerLeg: number, value: number, step: number) {
     for (const target of waypoints) {
       const from = value;
       const start = performance.now();
@@ -183,7 +215,6 @@ export class Run {
       await this.wait(500);
       this.cursor(thumbPoint(input, value), { dragging: true });
     }
-    this.cursor(thumbPoint(input, value));
   }
 
   /** Poll until the predicate holds, or give up after the timeout */

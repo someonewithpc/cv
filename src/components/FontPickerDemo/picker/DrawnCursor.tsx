@@ -18,6 +18,7 @@ export function DrawnCursor({ cursor }: { cursor: DrawnCursorState }) {
         cursor.dragging ? 'font-picker-cursor--dragging' : '',
       ].filter(Boolean).join(' ')}
       style={{ left: cursor.x, top: cursor.y }}
+      data-demo-cursor=""
       aria-hidden="true"
     >
       <svg viewBox="0 0 32 32" width="56" height="56">
