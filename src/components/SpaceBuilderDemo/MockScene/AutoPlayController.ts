@@ -1,3 +1,5 @@
+import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
+
 import {
   DEFAULT_LAYOUT_OPTIONS,
   type LayoutStyle,
@@ -108,20 +110,6 @@ function typingDelay(ms: number) {
 function targetCenter(el: Element) {
   const rect = el.getBoundingClientRect();
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-}
-
-/** Down and up at the point the drawn cursor aims at, so the press layer draws them. */
-function pressAt(el: Element, client: { x: number; y: number }) {
-  for (const [type, buttons] of [['mousedown', 1], ['mouseup', 0]] as const) {
-    el.dispatchEvent(new MouseEvent(type, {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-      clientX: client.x,
-      clientY: client.y,
-      buttons,
-    }));
-  }
 }
 
 function isVisibleInScroller(el: HTMLElement, scroller: HTMLElement, pad = 12) {
@@ -437,8 +425,7 @@ export class AutoPlayController {
             click: true,
             dragging: aimed.dragging,
           });
-          pressAt(el, client);
-          el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+          await demoPress(el, client, { click: false, dblclick: true });
         }
       } else if (shouldClick && aimed?.target) {
         const el = queryDemoTarget(aimed.target);
@@ -452,8 +439,7 @@ export class AutoPlayController {
             click: true,
             dragging: aimed.dragging,
           });
-          pressAt(el, client);
-          el.click();
+          await demoPress(el, client);
         }
       } else if (aimed?.click) {
         if (aimed.client) this.lastCursorClient = aimed.client;
