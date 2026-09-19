@@ -65,6 +65,10 @@ const paperClipOver = `<svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3
 // content in the template so the page itself hides it.)
 const foldFront = `<div class="paper-clip">${paperClipOver}</div><div class="paper-fold"></div><div class="paper-back-grab"></div>${flipHint}`;
 
+// Each page stays the SlotString the render returned. Its hoisted scripts ride in a property
+// of that object, replayed only when it reaches the output whole; a concatenation or template
+// literal keeps the markup and drops the scripts, which is how every slotted component lost
+// its <script> for a while.
 const pages = await Promise.all(
   Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index])),
 );
@@ -149,7 +153,7 @@ const pages = await Promise.all(
   aria-label={label}
 >
   {pages.map((page, index) => (
-    <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={(index === 0 ? paperClipUnder : '') + page + (index === 0 ? foldFront : '')} />
+    <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`}>{index === 0 && <Fragment set:html={paperClipUnder} />}{page}{index === 0 && <Fragment set:html={foldFront} />}</div>
   ))}
 </Tag>
 
