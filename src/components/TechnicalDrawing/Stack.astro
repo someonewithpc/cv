@@ -145,10 +145,6 @@ function initStack(stack: HTMLElement) {
 
   positionAnnotations(stack);
 
-  // The artwork cell is what the title block has to clear, and it resizes on its own (a
-  // scene sizes its canvas after boot), so watch the cell, not only the stack.
-  [...stack.querySelectorAll<HTMLElement>('section > .content')].forEach((cell) => fitTitle?.observe(cell));
-
   // The sheet's size and orientation, restated as plain pixels and a data attribute for the
   // artwork to scale its type by. The container queries and units say the same thing, but a
   // font-size that comes out of them — by unit, by rule, or by an inherited variable — inside
@@ -173,49 +169,6 @@ const measure = new ResizeObserver((entries) => {
     stack.dataset.sheetOrientation = portrait ? 'portrait' : 'landscape';
   }
 });
-
-/* Two ways to keep the title block off the artwork, side by side so they can be compared in
-   one build: `?titleblock=css` (the default) lets Page.astro's container queries pick a step
-   from the sheet's width alone, and `?titleblock=js` picks it from the overlap measured here.
-   With JS off the page is always in the CSS variant, whatever the query says. */
-const fitByMeasure = new URLSearchParams(location.search).get('titleblock') === 'js';
-if (fitByMeasure) { document.documentElement.dataset.titleBlock = 'js'; }
-
-const FIT_STEPS = 5;
-
-// Give up one part of the block at a time until it stops reaching into the artwork cell. The
-// section is `contain: size`, so each re-measure re-lays out the sheet, not the page.
-function fitTitleBlock(section: HTMLElement) {
-  const table = section.querySelector<HTMLElement>(':scope > table');
-  const cell = section.querySelector<HTMLElement>(':scope > .content');
-  if (!table || !cell) return;
-
-  delete section.dataset.titleFit;
-  // The block is pinned to the sheet's right margin, so what is left over beside the artwork
-  // is the same whatever step it is on. The last step caps the block at that, rather than at
-  // the blind 11rem the no-JS ladder has to use.
-  section.style.setProperty(
-    '--title-fit-room',
-    `${Math.max(table.getBoundingClientRect().right - cell.getBoundingClientRect().right, 0)}px`,
-  );
-
-  for (let step = 1; step <= FIT_STEPS; step += 1) {
-    const block = table.getBoundingClientRect();
-    const artwork = cell.getBoundingClientRect();
-    // Portrait gives the block its own row below the artwork: nothing to give up.
-    if (block.left >= artwork.right || block.top >= artwork.bottom) break;
-    section.dataset.titleFit = String(step);
-  }
-}
-
-const fitTitle = fitByMeasure
-  ? new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const section = (entry.target as HTMLElement).closest('section');
-        if (section) fitTitleBlock(section);
-      }
-    })
-  : null;
 
 function init() {
   [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack')].forEach(initStack);

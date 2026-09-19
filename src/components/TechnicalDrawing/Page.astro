@@ -1326,9 +1326,7 @@ section {
   }
 
   /* The block gives up its parts, in this order, as the room at the sheet's
-     bottom-right runs out. Each step includes the ones before it. Written once
-     so both ways of choosing a step — sheet width, or measured overlap — style
-     the same thing. */
+     bottom-right runs out. Each step includes the ones before it. */
   @mixin title-fit-1 {
     & > table .title-proj { display: none; }
   }
@@ -1384,29 +1382,19 @@ section {
 
   @mixin title-fit-5 {
     @include title-fit-4;
-    /* Narrow enough that the title has to take a second line. 11rem clears the
-       artwork cell on a 60em sheet, which is as wide as a sheet gets; when
-       something has measured the room that is left, use that instead. */
-    & > table { max-width: max(11rem, var(--title-fit-room, 0px)); }
+    /* Narrow enough that the title has to take a second line. 11rem is what clears
+       the artwork cell on a 60em sheet, which is as wide as a sheet gets. */
+    & > table { max-width: 11rem; }
   }
 
-  /* No JS: pick the step from the sheet's own width. The lower bound keeps the
-     ladder out of the portrait layout below, which gives the block its own row
-     and has no room problem to solve. */
-  :global(html:not([data-title-block='js'])) & {
-    @container technical-drawing-width (40em < width <= 62em) { @include title-fit-1; }
-    @container technical-drawing-width (40em < width <= 50em) { @include title-fit-2; }
-    @container technical-drawing-width (40em < width <= 46em) { @include title-fit-3; }
-    @container technical-drawing-width (40em < width <= 43em) { @include title-fit-4; }
-    @container technical-drawing-width (40em < width <= 41em) { @include title-fit-5; }
-  }
-
-  /* `?titleblock=js`: the step comes from Stack.astro measuring the real overlap. */
-  &[data-title-fit='1'] { @include title-fit-1; }
-  &[data-title-fit='2'] { @include title-fit-2; }
-  &[data-title-fit='3'] { @include title-fit-3; }
-  &[data-title-fit='4'] { @include title-fit-4; }
-  &[data-title-fit='5'] { @include title-fit-5; }
+  /* Pick the step from the sheet's own width. The lower bound keeps the ladder out
+     of the portrait layout below, which gives the block its own row and has no
+     room problem to solve. */
+  @container technical-drawing-width (40em < width <= 62em) { @include title-fit-1; }
+  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-2; }
+  @container technical-drawing-width (40em < width <= 46em) { @include title-fit-3; }
+  @container technical-drawing-width (40em < width <= 43em) { @include title-fit-4; }
+  @container technical-drawing-width (40em < width <= 41em) { @include title-fit-5; }
 
   /* A sheet this narrow cannot host the note beside the artwork — landscape
      included, where the sheet is half as tall as it is wide and the note runs

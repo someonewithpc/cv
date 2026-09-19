@@ -3,9 +3,6 @@ import { expect, type Page, test } from '@playwright/test';
 /** Prose and code: what a page puts in its artwork cell and never moves again. */
 const PROSE = 'p, li, h3, h4, dd, dt, figcaption';
 
-/** Buttons, links and fields, which a walkthrough may also park off-frame. */
-const CONTROLS = 'a[href], button, input, select, textarea, [role="button"], [role="slider"]';
-
 /**
  * Landscape sheets, from a narrow laptop to wider than the 60em the page content caps at.
  * Below 40em the sheet turns portrait and gives the title block a row of its own, which has
@@ -21,13 +18,10 @@ const WIDTHS = [760, 1024, 1440];
  */
 const OVERRUNS_ITS_COLUMN = ['Space Builder · Add Tool', 'Path Data'];
 
-/** Of those, the one no amount of shedding can clear: the artwork is the full sheet width. */
-const FULL_WIDTH_ARTWORK = ['Path Data'];
-
 // The walkthroughs move panels around while they play; a still page is what can be measured.
 test.use({ reducedMotion: 'reduce' });
 
-type Sheet = { title: string; intrudes: number; buried: string[] };
+type Sheet = { title: string; buried: string[] };
 
 /**
  * Every page of every stack. Once a stack's script runs, all of its pages share one grid cell
@@ -71,8 +65,6 @@ async function sheets(page: Page, selector: string): Promise<Sheet[]> {
 
         return {
           title: section.querySelector('h2')?.textContent?.trim() ?? '?',
-          // How far the block reaches into the artwork column, 0 when it clears it.
-          intrudes: over(artwork) ? Math.round(artwork.right - box.left) : 0,
           buried: [...new Set(buried)],
         };
       }).filter(Boolean), selector);
@@ -95,14 +87,3 @@ for (const width of WIDTHS) {
     expect(under(await sheets(page, PROSE), OVERRUNS_ITS_COLUMN)).toEqual({});
   });
 }
-
-test('measuring the overlap also clears the pages whose artwork overruns its column', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?titleblock=js');
-
-  const all = await sheets(page, `${CONTROLS}, ${PROSE}`);
-  expect(under(all)).toEqual({});
-  // Where the artwork is not the whole sheet, the block leaves its column entirely.
-  expect(all.filter((sheet) => sheet.intrudes > 24 && !FULL_WIDTH_ARTWORK.includes(sheet.title))
-    .map((sheet) => sheet.title)).toEqual([]);
-});
