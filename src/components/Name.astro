@@ -4,13 +4,28 @@ import { mailLink } from '../mailLink';
 ---
 
 <header>
-  <figure class="title-block">
-    <p class="sheet-meta monospace" aria-hidden="true">
-      <span>DWG</span>
-      <span>·</span>
+  <figure class="letterhead">
+    <svg class="clip" viewBox="0 0 48 64" aria-hidden="true">
+      <defs>
+        <linearGradient id="letterhead-clip-body" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5b6068" />
+          <stop offset="0.35" stop-color="#2a2d33" />
+          <stop offset="1" stop-color="#3b3f46" />
+        </linearGradient>
+        <linearGradient id="letterhead-clip-wire" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f1f3f6" />
+          <stop offset="0.5" stop-color="#a9afb8" />
+          <stop offset="1" stop-color="#6f757e" />
+        </linearGradient>
+      </defs>
+      <path class="clip-wire" d="M15 22 V49 a9 9 0 0 0 18 0 V22" />
+      <path class="clip-body" d="M3 0 H45 L41 24 H7 Z" />
+      <path class="clip-ridge" d="M8 4 H40" />
+    </svg>
+
+    <p class="sheet-meta typewriter" aria-hidden="true">
       <span>CV-001</span>
-      <span>·</span>
-      <span>REV A</span>
+      <span>Rev. A</span>
     </p>
 
     <h1 lang="pt-PT">
@@ -45,191 +60,214 @@ import { mailLink } from '../mailLink';
 header {
   display: flex;
   justify-content: center;
-  margin-block: 1.25rem 0.25rem;
+  margin-block: 3.5rem 0;
 
   @media (max-width: 52rem) {
-    margin-block: 3.25rem 0.25rem;
+    margin-block: 4.25rem 0;
   }
 
-  .title-block {
-    $radius: 1rem;
-    $accent-length: $radius + 0.4rem;
-    $frame-width: 1px;
-    $accent-width: 3px;
-    $accent-outset: ($accent-width - $frame-width) * 0.5;
-
+  /* A letterhead sheet, laid a hair off square and held by a clip. */
+  .letterhead {
     position: relative;
-    padding: 2.5rem 1.5rem 1.5rem;
-    max-width: 42rem;
     width: min(100%, 42rem);
+    margin: 0;
+    padding: 3rem 2.5rem 4.5rem;
+    rotate: -0.75deg;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    text-align: left;
+
+    color: var(--ink);
+    background: var(--theme-paper);
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--theme-paper), black 14%),
+      0 1px 2px rgb(0 0 0 / 0.25),
+      0 1rem 2rem -0.75rem rgb(0 0 0 / 0.45);
 
     @media (max-width: 52rem) {
-      padding: 1.75rem 1rem 1.15rem;
+      padding: 2.5rem 1.25rem 4rem;
+      rotate: -0.5deg;
+    }
+  }
+
+  /* A binder clip on the top edge, seen from above: the black body straddles
+     the edge and one wire handle lies folded down onto the sheet. */
+  .clip {
+    position: absolute;
+    top: -0.875rem;
+    left: 50%;
+    width: 3rem;
+    height: 4rem;
+    translate: -50%;
+    overflow: visible;
+
+    .clip-body {
+      fill: url(#letterhead-clip-body);
+      filter: drop-shadow(0 0.125rem 0.25rem rgb(0 0 0 / 0.5));
     }
 
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    text-align: center;
-
-    border-radius: $radius;
-    background: color-mix(in oklch, var(--surface-raised), transparent 35%);
-
-    /* Frame + corner accents share one rounded path; accent is wider and
-       outset so its stroke stays centered on the frame. */
-    &::before,
-    &::after {
-      content: '';
-      position: absolute;
-      border-style: solid;
-      pointer-events: none;
+    .clip-ridge {
+      fill: none;
+      stroke: rgb(255 255 255 / 0.22);
+      stroke-width: 1.5;
+      stroke-linecap: round;
     }
 
-    &::before {
-      inset: 0;
-      border-width: $frame-width;
-      border-color: var(--line-strong);
-      border-radius: inherit;
+    .clip-wire {
+      fill: none;
+      stroke: url(#letterhead-clip-wire);
+      stroke-width: 3;
+      stroke-linecap: round;
+      filter: drop-shadow(0.0625rem 0.125rem 0.125rem rgb(0 0 0 / 0.35));
+    }
+  }
+
+  .sheet-meta {
+    position: absolute;
+    top: 0.875rem;
+    right: 1.125rem;
+
+    /* The theme picker sits over the top-right corner on a phone. */
+    @media (max-width: 52rem) {
+      right: auto;
+      left: 1.25rem;
     }
 
-    &::after {
-      top: -$accent-outset;
-      right: -$accent-outset;
-      bottom: -$accent-outset + 0.5px;
-      left: -$accent-outset;
-      border-width: $accent-width;
-      border-color: var(--accent);
-      border-radius: calc(#{$radius} + #{$accent-outset});
-      mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
-      mask-size: $accent-length $accent-length;
-      mask-position: 0 0, 100% 100%;
-      mask-repeat: no-repeat;
+    display: flex;
+    gap: 0.75ch;
+    margin: 0;
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+
+    span + span::before {
+      content: "/";
+      margin-inline-end: 0.75ch;
+    }
+  }
+
+  h1 {
+    margin: 0;
+    font-family: "Special Elite", monospace, system-ui;
+    font-weight: 400;
+    font-size: clamp(2.125rem, 8vw, 3.5rem);
+    line-height: 1.1;
+    color: var(--ink);
+
+    span {
+      text-decoration: underline dotted;
+      text-decoration-color: var(--accent-muted);
+      text-underline-offset: 0.125em;
     }
 
-    .sheet-meta {
+    ruby {
+      letter-spacing: 0.04em;
+
+      :is(rp, rt) {
+        opacity: 0;
+        transition: opacity 250ms ease;
+      }
+    }
+  }
+
+  .sheet-role {
+    margin: 0;
+    font-size: 0.8125rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+  }
+
+  /* The letterhead rule: a double line the way a printed sheet carries one. */
+  .contact {
+    width: 100%;
+    margin: 0.75rem 0 0;
+    padding-top: 0.625rem;
+    border-top: 1px solid var(--ink);
+    box-shadow: 0 -0.25rem 0 -0.1875rem var(--line-strong);
+    font-style: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+
+    ul {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.5ch 0.75ch;
+      align-items: center;
+      gap: 0 1.5ch;
       margin: 0;
-      font-size: 0.625rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--ink-faint);
+      padding: 0;
+      list-style: none;
     }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(2rem, 9vw, 3.25rem);
-      line-height: 1.15;
-      color: var(--ink);
-
-      span {
-        text-decoration: underline dotted;
-        text-decoration-color: var(--accent-muted);
-        text-underline-offset: 4px;
-      }
-
-      ruby {
-        letter-spacing: 3px;
-
-        :is(rp, rt) {
-          opacity: 0;
-          transition: opacity 250ms ease;
-        }
-      }
-    }
-
-    .sheet-role {
-      margin: 0;
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-    }
-
-    .contact {
-      margin: 0.125rem 0 0;
-      font-style: normal;
-      font-size: 0.75rem;
-      letter-spacing: 0.06em;
-
-      ul {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        gap: 0 0.5ch;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      li {
-        display: inline-flex;
-        align-items: center;
-      }
-
-      li + li::before {
-        content: "·";
-        margin-inline-end: 0.5ch;
-        color: var(--ink-faint);
-      }
-
-      a {
-        display: inline-flex;
-        align-items: center;
-        min-height: 1.5rem;
-        color: var(--ink-muted);
-        text-decoration: underline dotted;
-        text-decoration-color: var(--accent-muted);
-        text-underline-offset: 0.25em;
-
-        &:hover,
-        &:focus-visible {
-          color: var(--accent-text);
-          text-decoration-style: solid;
-          text-decoration-color: currentColor;
-        }
-
-        &:focus-visible {
-          outline: 2px solid var(--accent);
-          outline-offset: 0.125rem;
-          border-radius: 0.125rem;
-        }
-      }
-    }
-
-    .note-row {
-      color: var(--ink-faint);
+    li {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5ch;
-      width: fit-content;
     }
 
-    audio {
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 250ms ease, visibility 0s 250ms;
-    }
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.5rem;
+      color: var(--ink-muted);
+      text-decoration: underline dotted;
+      text-decoration-color: var(--accent-muted);
+      text-underline-offset: 0.25em;
 
-    /* Match or beat the ruby hide rule specificity */
-    &:is(:hover, :focus-within, :has(input:checked)) {
-      audio,
-      h1 ruby :is(rp, rt) {
-        opacity: 1;
+      &:hover,
+      &:focus-visible {
+        color: var(--accent-text);
+        text-decoration-style: solid;
+        text-decoration-color: currentColor;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 0.125rem;
+        border-radius: 0.125rem;
       }
     }
+  }
 
-    /* Not on focus-within: the player is only reachable once asked for, or the keyboard would
-       walk its controls on the way past the name. */
-    &:is(:hover, :has(input:checked)) audio {
-      visibility: visible;
-      transition-delay: 0s;
+  .note-row {
+    color: var(--ink-faint);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5ch;
+    width: fit-content;
+    font-size: 0.8125rem;
+  }
+
+  audio {
+    position: absolute;
+    left: 2.5rem;
+    right: 2.5rem;
+    bottom: 0.75rem;
+    width: auto;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 250ms ease, visibility 0s 250ms;
+
+    @media (max-width: 52rem) {
+      left: 1.25rem;
+      right: 1.25rem;
     }
+  }
+
+  /* Match or beat the ruby hide rule specificity */
+  .letterhead:is(:hover, :focus-within, :has(input:checked)) {
+    audio,
+    h1 ruby :is(rp, rt) {
+      opacity: 1;
+    }
+  }
+
+  /* Not on focus-within: the player is only reachable once asked for, or the keyboard would
+     walk its controls on the way past the name. */
+  .letterhead:is(:hover, :has(input:checked)) audio {
+    visibility: visible;
+    transition-delay: 0s;
   }
 }
 </style>
