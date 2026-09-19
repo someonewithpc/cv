@@ -4,7 +4,6 @@
 <div
   class="mock-scene-demo"
   data-space-builder-island
-  data-boot-module="/src/components/SpaceBuilderDemo/MockScene/boot.ts"
   tabindex="-1"
 >
   <div class="boot-placeholder" aria-hidden="true">
@@ -13,12 +12,12 @@
   </div>
 </div>
 
-{/*
-  No <script> here — a component reached only through Stack.astro's per-layer
-  Astro.slots.render() call never gets its own hoisted script onto the page (see the
-  "dev-server-drops-demo-scripts" memory). boot.ts is armed instead by Stack.astro's own
-  script, which the pagination doesn't touch, via the data-boot-module attribute above.
-*/}
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from './boot';
+
+bootIslands('[data-space-builder-island]', boot);
+</script>
 
 <style lang="scss">
 // Stretch the drawing content cell so the interactive frame can fill the sheet
