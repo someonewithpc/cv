@@ -1,5 +1,7 @@
 import { ActionCreators } from 'redux-undo';
 
+import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
+
 import {
   markersSelector,
   removeMarker,
@@ -140,11 +142,7 @@ function setNativeInputValue(input: HTMLInputElement | HTMLTextAreaElement, valu
 /** A press at the element centre, where the drawn cursor rests, then the click itself. */
 function press(el: HTMLElement) {
   const rect = el.getBoundingClientRect();
-  const x = rect.left + rect.width / 2;
-  const y = rect.top + rect.height / 2;
-  el.dispatchEvent(mouseEvent('mousedown', x, y, 1));
-  el.dispatchEvent(mouseEvent('mouseup', x, y, 0));
-  el.click();
+  return demoPress(el, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
 }
 
 function mouseEvent(type: string, clientX: number, clientY: number, buttons: number) {
@@ -923,7 +921,7 @@ export class AutoPlayController {
     if (shouldClick && cursor?.target) {
       const el = queryDemoTarget(cursor.target);
       if (el instanceof HTMLElement) {
-        press(el);
+        await press(el);
       }
     }
     await step.run?.(this.dispatch, this.getState);
