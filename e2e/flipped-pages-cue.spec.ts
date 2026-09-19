@@ -140,6 +140,24 @@ async function foldAndPile(stack: Locator) {
       height: Number.parseFloat(fold.height),
       cutWidth: Number.parseFloat(grab.width) - em,
       cutHeight: Number.parseFloat(grab.height) - em,
+      // The sheet's own long side, to read the fold's reach against.
+      sheet: Math.max(base.width, base.height),
+      // Where each turned page's band of sheet back ends at its bottom edge, and how far down
+      // the page the band reaches. A band taller than the fold runs past the point where the
+      // crease leaves the page, so by then its edge belongs at or past the page's own left
+      // edge; anything short of that leaves a wedge of bare sheet showing between the pages.
+      bands: pages
+        .filter((page) => getComputedStyle(page, '::after').opacity === '1')
+        .map((page) => {
+          const band = getComputedStyle(page, '::after');
+          // The second vertex of the band's clip polygon is where its crease meets the band's
+          // bottom edge; the browser resolves it to a pixel length in the computed value.
+          const crease = band.clipPath.replace(/^polygon\(/, '').split(',')[1];
+          return {
+            height: Number.parseFloat(band.height),
+            crease: Number.parseFloat(crease),
+          };
+        }),
       // How far each turned page's drawn left edge falls short of the stack's own, at the two
       // ends of that edge: the bottom of the crease that cuts its corner, and the foot of the
       // page. The sheet and the band above it are both cut back by the page's drift, which the
@@ -156,35 +174,62 @@ async function foldAndPile(stack: Locator) {
   });
 }
 
-test('marker editor: the fold stays a dog-ear and the pile keeps to the stack\'s edge', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
-  await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+// A phone puts the stack in portrait, which transposes the crease, and a desktop leaves it
+// landscape; the fold used to be a fixed em, so the same corner was a twentieth of a desktop
+// sheet and a fifth of a phone one. Both widths, and every stack on the page, not just the one
+// the screenshots came from.
+for (const width of [390, 1440]) {
+  test(`every stack keeps the fold a dog-ear and the pile inside its left edge at ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.reload();
 
-  let turned = 0;
-  let first: Awaited<ReturnType<typeof foldAndPile>> | null = null;
+    const stacks = page.locator('article.technical-drawing-stack');
+    const count = await stacks.count();
+    expect(count).toBeGreaterThan(0);
 
-  for (const depth of [1, 3, 5]) {
-    while (turned < depth) {
-      await turn(stack, 'ArrowRight');
-      turned += 1;
+    for (let i = 0; i < count; i += 1) {
+      const stack = stacks.nth(i);
+      await stack.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(500);
+
+      let turned = 0;
+      let first: Awaited<ReturnType<typeof foldAndPile>> | null = null;
+
+      for (const depth of [1, 3, 5]) {
+        while (turned < depth) {
+          await turn(stack, 'ArrowRight');
+          turned += 1;
+        }
+        const seen = await foldAndPile(stack);
+        expect(seen.opacity).toBe('1');
+        expect(seen.spill).toHaveLength(depth);
+
+        // The fold is the corner cut it fills and nothing else: it sits on the page's own corner
+        // and measures the cut plus the hairline of slack that closes the seam, at any depth.
+        expect(seen.left).toBe(0);
+        expect(seen.top).toBe(0);
+        expect(seen.width).toBeCloseTo(seen.cutWidth + 1, 1);
+        expect(seen.height).toBeCloseTo(seen.cutHeight + 1, 1);
+        first ??= seen;
+        expect(seen.width).toBeCloseTo(first.width, 1);
+        expect(seen.height).toBeCloseTo(first.height, 1);
+
+        // And it reaches the same small way along the sheet whatever size the sheet is, so it
+        // reads as a dog-ear on a phone as well as on a desktop.
+        const reach = Math.max(seen.width, seen.height) / seen.sheet;
+        expect(reach).toBeGreaterThan(0.05);
+        expect(reach).toBeLessThan(0.1);
+
+        // No turned page stands out past the stack's left edge, so below the fold that edge
+        // stays a single line instead of fanning into stripes of the pile.
+        for (const spill of seen.spill) expect(spill).toBeLessThanOrEqual(0.5);
+
+        // Every band of sheet back runs the crease all the way to the page's left edge, so the
+        // pile's corners meet the fold with no bare sheet showing between them.
+        for (const band of seen.bands) {
+          if (band.height > seen.cutHeight) expect(band.crease).toBeLessThanOrEqual(0);
+        }
+      }
     }
-    const seen = await foldAndPile(stack);
-    expect(seen.opacity).toBe('1');
-    expect(seen.spill).toHaveLength(depth);
-
-    // The fold is the corner cut it fills and nothing else: it sits on the page's own corner and
-    // measures the cut plus the hairline of slack that closes the seam, at any depth of pile.
-    expect(seen.left).toBe(0);
-    expect(seen.top).toBe(0);
-    expect(seen.width).toBeCloseTo(seen.cutWidth + 1, 1);
-    expect(seen.height).toBeCloseTo(seen.cutHeight + 1, 1);
-    first ??= seen;
-    expect(seen.width).toBeCloseTo(first.width, 1);
-    expect(seen.height).toBeCloseTo(first.height, 1);
-
-    // No turned page stands out past the stack's left edge, so below the fold that edge stays a
-    // single line instead of fanning into stripes of the pile.
-    for (const spill of seen.spill) expect(spill).toBeLessThanOrEqual(0.5);
-  }
-});
+  });
+}
