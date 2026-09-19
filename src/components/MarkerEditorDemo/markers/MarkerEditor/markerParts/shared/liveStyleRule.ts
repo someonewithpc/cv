@@ -3,8 +3,11 @@
  * thumbnail and the step list wait that long: the preview, the control and the serialized
  * marker are all current from the first event, and the control's own `change` flushes this
  * early.
+ *
+ * Under 100 ms the commits start landing inside the drag and the page stops keeping up:
+ * 12.5 fps at 50 ms and 8.2 fps at 25 ms, against 28 fps here, on a 4x throttled drag.
  */
-export const CONTROL_COMMIT_MS = 250;
+export const CONTROL_COMMIT_MS = 200;
 
 /**
  * Keeps a picker event off React's root listener.
