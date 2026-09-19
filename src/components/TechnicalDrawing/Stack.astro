@@ -75,6 +75,22 @@ const totalLayers = Object.keys(layers).length;
 
   container: technical-drawing / size;
 
+  /* The stack's shadow on the desk. A pseudo-element under the pages rather
+     than a shadow on them: the front page's crease clip-path would cut its
+     own shadow, and a filter on the frame would make it the containing block
+     for every fixed box inside the demos. */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: calc(0.5em + 1px);
+    box-shadow:
+      0 0.125rem 0.25rem rgb(0 0 0 / 0.3),
+      0 1rem 2rem -0.5rem rgb(0 0 0 / 0.55);
+    pointer-events: none;
+  }
+
   @container technical-drawing-width (max-width: 40em) {
     /* Portrait has to stack artwork, note and title block where landscape put
        them side by side, so take the height a phone actually has. */
