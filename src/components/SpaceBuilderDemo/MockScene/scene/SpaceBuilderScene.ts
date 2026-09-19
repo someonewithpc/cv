@@ -226,6 +226,12 @@ export class SpaceBuilderScene {
   private skybox: Mesh | null = null;
   private onSnapshot?: (snapshot: SceneSnapshot) => void;
   private resizeObserver: ResizeObserver;
+  /** The canvas rect, read once and kept until a resize, a scroll or a new gesture; reading it
+   * every pointer frame forced a layout each time. */
+  private canvasRectCache: DOMRect | null = null;
+  private readonly dropCanvasRect = () => {
+    this.canvasRectCache = null;
+  };
 
   constructor({ canvas, labelHost, onSnapshot }: SpaceBuilderSceneOptions) {
     this.canvas = canvas;
@@ -285,6 +291,7 @@ export class SpaceBuilderScene {
       });
     });
     this.resizeObserver.observe(this.root);
+    window.addEventListener('scroll', this.dropCanvasRect, { capture: true, passive: true });
     // Viewport can be 0×0 on the first paint; also watch the app shell so we
     // pick up the settled grid height and don't leave the canvas at 300×150.
     const appShell = canvas.closest('.space-builder-app');
@@ -395,6 +402,7 @@ export class SpaceBuilderScene {
    * the chair). Loads its GLB the first time it's selected.
    */
   activateCatalogItem(id: string, variant?: CatalogGhostVariant) {
+    this.canvasRectCache = null;
     this.activeCatalogId = variant?.id ?? id;
     if (this.extraGhost) {
       this.scene.remove(this.extraGhost);
@@ -855,8 +863,13 @@ export class SpaceBuilderScene {
     return true;
   }
 
+  private canvasRect() {
+    this.canvasRectCache ??= this.renderer.domElement.getBoundingClientRect();
+    return this.canvasRectCache;
+  }
+
   clientToGround(clientX: number, clientY: number): Vector3 | null {
-    const rect = this.renderer.domElement.getBoundingClientRect();
+    const rect = this.canvasRect();
     this.pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
@@ -867,7 +880,7 @@ export class SpaceBuilderScene {
   groundToClient(x: number, z: number): { x: number; y: number } | null {
     const v = new Vector3(x, 0, z).project(this.camera);
     if (Math.abs(v.z) > 1) return null;
-    const rect = this.renderer.domElement.getBoundingClientRect();
+    const rect = this.canvasRect();
     return {
       x: rect.left + (v.x * 0.5 + 0.5) * rect.width,
       y: rect.top + (-v.y * 0.5 + 0.5) * rect.height,
@@ -875,6 +888,7 @@ export class SpaceBuilderScene {
   }
 
   beginOrbit(clientX: number, clientY: number) {
+    this.canvasRectCache = null;
     this.interactionEpoch += 1;
     this.orbiting = true;
     this.panning = false;
@@ -942,6 +956,7 @@ export class SpaceBuilderScene {
 
   /** Screen-space pan of the orbit target (Shift/Ctrl-drag or right-drag). */
   beginPan(clientX: number, clientY: number) {
+    this.canvasRectCache = null;
     this.interactionEpoch += 1;
     this.panning = true;
     this.orbiting = false;
@@ -961,7 +976,7 @@ export class SpaceBuilderScene {
   /** Apply a pan from screen-pixel deltas (also used by two-finger drag). */
   panByScreenDelta(dx: number, dy: number) {
     if (dx === 0 && dy === 0) return;
-    const rect = this.renderer.domElement.getBoundingClientRect();
+    const rect = this.canvasRect();
     if (rect.height <= 0) return;
 
     // Scale like OrbitControls screen-space panning: drag distance vs view height.
@@ -1036,7 +1051,7 @@ export class SpaceBuilderScene {
   /** Raycast SelectArea lollipops or fill; null when the pointer is on empty ground. */
   pickHandle(clientX: number, clientY: number, options?: { screenSlop?: number }): HandleKey | null {
     if (!this.area || !this.selectGroup.visible) return null;
-    const rect = this.renderer.domElement.getBoundingClientRect();
+    const rect = this.canvasRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
     this.pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
@@ -1095,6 +1110,7 @@ export class SpaceBuilderScene {
   }
 
   beginHandleDrag(key: HandleKey, clientX: number, clientY: number) {
+    this.canvasRectCache = null;
     if (!this.area) return false;
     const point = this.clientToGround(clientX, clientY);
     if (!point) return false;
@@ -1222,6 +1238,7 @@ export class SpaceBuilderScene {
   }
 
   beginAreaDraw(clientX: number, clientY: number) {
+    this.canvasRectCache = null;
     const point = this.clientToGround(clientX, clientY);
     if (!point) return false;
     this.interactionEpoch += 1;
@@ -1277,6 +1294,7 @@ export class SpaceBuilderScene {
     cancelAnimationFrame(this.animationId);
     if (this.flashTimer) clearTimeout(this.flashTimer);
     this.resizeObserver.disconnect();
+    window.removeEventListener('scroll', this.dropCanvasRect, { capture: true });
     this.textures.forEach((t) => t.dispose());
     if (this.skybox) {
       this.skybox.geometry.dispose();
@@ -1606,6 +1624,7 @@ export class SpaceBuilderScene {
   }
 
   private resize() {
+    this.canvasRectCache = null;
     if (this.disposed || this.gpuReleased) return;
     // Prefer clientWidth/Height — avoids an extra getBoundingClientRect forced reflow.
     const width = Math.max(1, Math.floor(this.root.clientWidth || 1));
