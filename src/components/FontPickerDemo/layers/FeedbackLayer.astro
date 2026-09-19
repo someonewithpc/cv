@@ -76,7 +76,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 
     <div class="study" aria-hidden="true">
       <figure class="plate exploded">
-        <svg viewBox="0 0 300 118" role="presentation">
+        <svg viewBox="0 0 400 118" role="presentation">
           <g class="layer">
             <rect x="14" y="4" width="120" height="26" rx="8" />
             <rect x="14" y="4" width="120" height="26" rx="8" class="arc" />
@@ -132,7 +132,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   display: grid;
   // The live field, the timing curve and the exploded view side by side. The title block owns
   // the sheet's bottom right corner, so the last column is the shortest of the three
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 1.25fr);
   gap: 1.5em;
   align-items: start;
   width: 100%;
@@ -291,7 +291,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 
 .exploded {
   svg {
-    width: min(22em, 100%);
+    width: min(26em, 100%);
     height: auto;
     overflow: visible;
   }
