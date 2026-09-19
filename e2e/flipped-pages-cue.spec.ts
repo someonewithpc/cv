@@ -106,53 +106,85 @@ test('marker editor: a turned page goes to the back of the pile, on an arc', asy
   expect(await pile(stack)).toEqual({ turned: '2', standing: 2, showing: 2 });
 });
 
-test('marker editor: the folded corner covers the pile behind it', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
-  await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
-
-  for (let i = 0; i < 3; i += 1) await turn(stack, 'ArrowRight');
-
-  const seen = await stack.evaluate((el) => {
+/**
+ * The folded-back corner and the pile under it, measured off the front page. Every page of a
+ * stack sits in the same grid cell, so the front page — which never leans or moves — gives the
+ * box they all start from, and a page's own translate and rotate carry it from there. A leaning
+ * sheet's own bounding box would not: it reports the lifted right-hand corner.
+ */
+async function foldAndPile(stack: Locator) {
+  return stack.evaluate((el) => {
     const pages = [...el.children] as HTMLElement[];
     const front = pages.find((page) => page.style.getPropertyValue('--page-index').trim() === '1')!;
-    const style = getComputedStyle(front, '::before');
+    const fold = getComputedStyle(front, '::before');
     const base = front.getBoundingClientRect();
-    // Every page of a stack sits in the same grid cell, so the front page — which never leans —
-    // gives the corner they all start from, and a page's own translate and rotate carry it from
-    // there. A leaning sheet's bounding box would not: it reports the lifted right-hand corner.
-    const corner = (page: HTMLElement) => {
+    // The invisible grab handle over the folded corner is the cut plus 1em on each side (see
+    // .paper-back-grab), which is how the cut's own size is read here without resolving an em.
+    const grab = getComputedStyle(front.querySelector('.paper-back-grab')!);
+    const em = Number.parseFloat(getComputedStyle(front).fontSize);
+
+    const place = (page: HTMLElement, x: number, y: number) => {
       const own = getComputedStyle(page);
       const [ox, oy] = own.transformOrigin.split(' ').map(Number.parseFloat);
       const moved = own.translate === 'none' ? [0, 0] : own.translate.split(' ').map(Number.parseFloat);
       const turn = (own.rotate === 'none' ? 0 : Number.parseFloat(own.rotate)) * Math.PI / 180;
       const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
-      return {
-        x: base.left + ox + (moved[0] ?? 0) - ox * cos + oy * sin,
-        y: base.top + oy + (moved[1] ?? 0) - ox * sin - oy * cos,
-      };
+      return base.left + ox + (moved[0] ?? 0) + (x - ox) * cos - (y - oy) * sin;
     };
+
     return {
-      opacity: style.opacity,
-      left: base.left + Number.parseFloat(style.left),
-      top: base.top + Number.parseFloat(style.top),
-      width: Number.parseFloat(style.width),
-      height: Number.parseFloat(style.height),
-      pile: pages
+      opacity: fold.opacity,
+      left: Number.parseFloat(fold.left),
+      top: Number.parseFloat(fold.top),
+      width: Number.parseFloat(fold.width),
+      height: Number.parseFloat(fold.height),
+      cutWidth: Number.parseFloat(grab.width) - em,
+      cutHeight: Number.parseFloat(grab.height) - em,
+      // How far each turned page's drawn left edge falls short of the stack's own, at the two
+      // ends of that edge: the bottom of the crease that cuts its corner, and the foot of the
+      // page. The sheet and the band above it are both cut back by the page's drift, which the
+      // band's left inset reports in pixels.
+      spill: pages
         .filter((page) => getComputedStyle(page, '::after').opacity === '1')
-        .map(corner),
+        .map((page) => {
+          const drift = Number.parseFloat(getComputedStyle(page, '::after').left);
+          const creaseBottom = place(page, drift, Number.parseFloat(fold.height));
+          const foot = place(page, drift, base.height);
+          return Math.round((base.left - Math.min(creaseBottom, foot)) * 100) / 100;
+        }),
     };
   });
-  expect(seen.opacity).toBe('1');
-  expect(seen.pile).toHaveLength(3);
+}
 
-  // The fold is a triangle cut on the crease, so a corner is under it when it sits inside the
-  // box and on the near side of the hypotenuse.
-  for (const sheet of seen.pile) {
-    const x = (sheet.x - seen.left) / seen.width;
-    const y = (sheet.y - seen.top) / seen.height;
-    expect(x).toBeGreaterThanOrEqual(0);
-    expect(y).toBeGreaterThanOrEqual(0);
-    expect(x + y).toBeLessThanOrEqual(1);
+test('marker editor: the fold stays a dog-ear and the pile keeps to the stack\'s edge', async ({ page }) => {
+  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+
+  let turned = 0;
+  let first: Awaited<ReturnType<typeof foldAndPile>> | null = null;
+
+  for (const depth of [1, 3, 5]) {
+    while (turned < depth) {
+      await turn(stack, 'ArrowRight');
+      turned += 1;
+    }
+    const seen = await foldAndPile(stack);
+    expect(seen.opacity).toBe('1');
+    expect(seen.spill).toHaveLength(depth);
+
+    // The fold is the corner cut it fills and nothing else: it sits on the page's own corner and
+    // measures the cut plus the hairline of slack that closes the seam, at any depth of pile.
+    expect(seen.left).toBe(0);
+    expect(seen.top).toBe(0);
+    expect(seen.width).toBeCloseTo(seen.cutWidth + 1, 1);
+    expect(seen.height).toBeCloseTo(seen.cutHeight + 1, 1);
+    first ??= seen;
+    expect(seen.width).toBeCloseTo(first.width, 1);
+    expect(seen.height).toBeCloseTo(first.height, 1);
+
+    // No turned page stands out past the stack's left edge, so below the fold that edge stays a
+    // single line instead of fanning into stripes of the pile.
+    for (const spill of seen.spill) expect(spill).toBeLessThanOrEqual(0.5);
   }
 });
