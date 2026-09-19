@@ -207,3 +207,98 @@ test('held controls page: the drawn cursor rides each slider it drags', async ({
   expect(closest.plain).toBeLessThanOrEqual(16);
   expect(closest.held).toBeLessThanOrEqual(16);
 });
+
+// Every sheet keeps clear sheet around its content: each layer's root pads by the one token in
+// layers/_sheet.scss, in em of the sheet's own type, so whatever it paints stays off the
+// frame line, the title block and the note's tab. The floor here is what the review asked for.
+const SHEET_MARGIN_EM = 0.5;
+const PAGES = [null, 'Font Extraction', 'Loading Indicator', 'Held Controls'] as const;
+const VIEWPORTS = [
+  { width: 390, height: 844 },
+  { width: 844, height: 390 },
+  { width: 1024, height: 768 },
+  { width: 1440, height: 900 },
+];
+
+// The least clear sheet, in px, between anything the front sheet paints and its frame line
+// (`toFrame`) or its title block and note tab (`toPieces`), against the margin the sheet's
+// type sets
+function clearSheet(front: import('@playwright/test').Locator) {
+  return front.evaluate((wrapper, marginEm) => {
+    const section = wrapper.querySelector(':scope > section')!;
+    const root = section.querySelector(':scope > .content > *') as HTMLElement;
+    const margin = marginEm * parseFloat(getComputedStyle(root).fontSize);
+
+    // The frame line is drawn one pixel wide on the inside of the mat
+    const style = getComputedStyle(section);
+    const mat = parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft) + 1;
+    const sheet = section.getBoundingClientRect();
+    const frame = { left: sheet.left + mat, top: sheet.top + mat, right: sheet.right - mat, bottom: sheet.bottom - mat };
+
+    const pieces = ['table', '.note-fold']
+      .map((s) => section.querySelector(`:scope > ${s}, :scope > .aside > ${s}`)?.getBoundingClientRect())
+      .filter((r): r is DOMRect => !!r && r.width > 0 && r.height > 0);
+
+    // What paints: text, form controls, a drawing, or a box with a fill or a border. Grid
+    // and flex wrappers do not, and a wrapper spanning the sheet says nothing about where
+    // the ink is. The walkthrough's cursor and toasts go where they like.
+    const paints = (el: Element) => {
+      if (el.closest('[data-demo-cursor], .font-picker-toasts')) return false;
+      if (el instanceof SVGElement) return el.tagName === 'svg';
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.display === 'contents' || cs.visibility === 'hidden') return false;
+      if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA', 'IMG'].includes(el.tagName)) return true;
+      if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0) return true;
+      return [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim());
+    };
+    const boxes = [...root.querySelectorAll('*')]
+      .filter(paints)
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0);
+
+    const toFrame = Math.min(...boxes.map((r) => Math.min(
+      r.left - frame.left, frame.right - r.right, r.top - frame.top, frame.bottom - r.bottom,
+    )));
+    const toPieces = Math.min(...boxes.flatMap((r) => pieces.map((p) => Math.max(
+      p.left - r.right, r.left - p.right, p.top - r.bottom, r.top - p.bottom,
+    ))));
+    return { margin, boxes: boxes.length, toFrame, toPieces };
+  }, SHEET_MARGIN_EM);
+}
+
+for (const viewport of VIEWPORTS) {
+  test.describe(`at ${viewport.width}x${viewport.height}`, () => {
+    test.use({ viewport });
+
+    test('every sheet keeps the margin around its content', async ({ page }) => {
+      test.setTimeout(150_000);
+      const stack = fontPickerStack(page);
+      await stack.scrollIntoViewIfNeeded();
+
+      for (const name of PAGES) {
+        if (name) await swipeToPage(page, stack, name);
+        const front = frontPage(stack, await frontPageIndex(stack));
+        if (await front.locator('[data-boot-module]').count()) await waitForIslandMounted(front);
+        await expect.poll(async () => (await clearSheet(front)).boxes).toBeGreaterThan(0);
+
+        const check = async (when: string) => {
+          const gaps = await clearSheet(front);
+          const where = `${name ?? 'picker'}${when}`;
+          expect.soft(gaps.toFrame, `${where}: to the frame line`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+          expect.soft(gaps.toPieces, `${where}: to the title block`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+        };
+        await check('');
+
+        // The held controls sheet is at its tallest while the walkthrough holds each column's
+        // size at the top of its drag: measure it there too
+        if (name === 'Held Controls') {
+          for (const side of ['plain', 'held']) {
+            const size = front.locator(`[data-demo-target="size-${side}"]`);
+            await expect.poll(() => size.inputValue(), { timeout: 45_000 }).toBe('1.25');
+            await check(`, ${side} column dragged`);
+          }
+        }
+      }
+    });
+  });
+}

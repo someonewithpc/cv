@@ -29,11 +29,12 @@
 */}
 
 <style lang="scss">
+@use "./sheet" as *;
 @use "./sheetProse" as *;
 
 .wrapper {
-  box-sizing: border-box;
-  width: 100%;
+  @include sheet-content;
+
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;

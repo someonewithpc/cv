@@ -22,9 +22,11 @@
 */}
 
 <style lang="scss">
+@use "./sheet" as *;
+
 .picker-layer {
-  box-sizing: border-box;
-  width: 100%;
+  @include sheet-content;
+
   display: grid;
   place-items: center;
 
