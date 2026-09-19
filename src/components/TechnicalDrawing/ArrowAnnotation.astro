@@ -30,15 +30,18 @@ const angleRad = angle * Math.PI / 180;
 const underline = text.length * underlinePerChar;
 const labelOffsetY = fontSize * 0.5;
 ---
-<path
-  d={`M ${tipX} ${tipY} l ${length * Math.cos(angleRad)} ${-length * Math.sin(angleRad)} l ${underline} 0`}
-  pathLength="1"
-  class={arrowClass}
-/>
-<text
-  x={tipX + length * Math.cos(angleRad) + (lengthOffset?.x ?? 0)}
-  y={tipY - length * Math.sin(angleRad) - labelOffsetY + (lengthOffset?.y ?? 0)}
-  class={textClass}
->
-  {text}
-</text>
+{/* The tip is what annotations-position.ts anchors to the artwork box. */}
+<g data-tip={`${tipX} ${tipY}`}>
+  <path
+    d={`M ${tipX} ${tipY} l ${length * Math.cos(angleRad)} ${-length * Math.sin(angleRad)} l ${underline} 0`}
+    pathLength="1"
+    class={arrowClass}
+  />
+  <text
+    x={tipX + length * Math.cos(angleRad) + (lengthOffset?.x ?? 0)}
+    y={tipY - length * Math.sin(angleRad) - labelOffsetY + (lengthOffset?.y ?? 0)}
+    class={textClass}
+  >
+    {text}
+  </text>
+</g>
