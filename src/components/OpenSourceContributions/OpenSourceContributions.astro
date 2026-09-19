@@ -3,6 +3,7 @@ import site from './site.json';
 import ContributionRow from './ContributionRow.astro';
 import SectionHeader from './SectionHeader.astro';
 import Highlights from './Highlights.astro';
+import Callout from '@/components/Callout.astro';
 
 const { highlights, groups } = site;
 
@@ -13,7 +14,7 @@ const statistics = {
 };
 ---
 
-<section id="open-source" aria-labelledby="open-source-heading">
+<Callout id="open-source" letter="D" kind="View" title="Open source" titleJp="オープンソース" as="h2" headingId="open-source-heading">
   <SectionHeader statistics={statistics} />
 
   <Highlights highlights={highlights} />
@@ -38,17 +39,17 @@ const statistics = {
       </div>
     </section>
   ))}
-</section>
+</Callout>
 
 <style lang="scss">
-#open-source {
+:global(#open-source) {
   --cell-x: 1.25rem;
   --row-height: 3.75rem;
   --grid: 5.5rem minmax(14rem, 20rem) minmax(0, 1fr);
 
   container-type: inline-size;
-  margin-top: clamp(5rem, 12vw, 8rem);
-  padding-bottom: 5rem;
+  margin-top: clamp(5rem, 12vw, 7rem);
+  margin-bottom: 3rem;
 
   :global([lang='ja']) {
     display: block;
