@@ -1784,9 +1784,12 @@ const registerFoldProperties = () => {
   for (const name of [
     '--fold-x', '--fold-y', '--fold-back-x', '--fold-back-y', '--fold-back-rest-x',
     '--fold-back-rest-y', '--fold-pin-x', '--fold-pin-y', '--fold-page-w', '--fold-page-h',
+    // The pile's reach, transitioned on the stack so the strip behind the crease climbs with it.
+    '--pile-rise', '--pile-drift',
   ]) {
     registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
   }
+  registerProperty({ name: '--pile-lean', syntax: '<angle>', inherits: true, initialValue: '0deg' });
   registerProperty({ name: '--page-index', syntax: '<number>', inherits: true, initialValue: '1' });
   registerProperty({ name: '--flip-progress', syntax: '<number>', inherits: true, initialValue: '0' });
 };
