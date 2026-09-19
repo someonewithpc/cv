@@ -35,17 +35,17 @@ const countLabelShort = `${banquet.length} objects`;
         </div>
 
         <Fragment slot="annotations">
-          <ArrowAnnotation tipX={-0.33} tipY={-0.5} angle={60} length={0.8} text="Arrows step the finishes" arrowClass="on-wide" textClass="on-wide" />
-          <ArrowAnnotation tipX={-1.13} tipY={0.22} angle={-75} length={1} text="One pip per style" arrowClass="on-wide" textClass="on-wide" />
-          <ArrowAnnotation tipX={1.78} tipY={-0.86} angle={75} length={0.45} text={countLabel} arrowClass="on-wide" textClass="on-wide" />
-          <ArrowAnnotation tipX={1.95} tipY={0.64} angle={-10} length={0.45} text="Seats pick a cell" arrowClass="on-wide" textClass="on-wide" />
-          <ArrowAnnotation tipX={1.95} tipY={0.84} angle={-30} length={0.6} text="Size, other axis" arrowClass="on-wide" textClass="on-wide" />
+          <ArrowAnnotation tipX={-0.33} tipY={-0.5} angle={60} length={0.8} text="Arrows step the finishes" only="landscape" />
+          <ArrowAnnotation tipX={-1.13} tipY={0.22} angle={-75} length={1} text="One pip per style" only="landscape" />
+          <ArrowAnnotation tipX={1.78} tipY={-0.86} angle={75} length={0.45} text={countLabel} only="landscape" />
+          <ArrowAnnotation tipX={1.95} tipY={0.64} angle={-10} length={0.45} text="Seats pick a cell" only="landscape" />
+          <ArrowAnnotation tipX={1.95} tipY={0.84} angle={-30} length={0.6} text="Size, other axis" only="landscape" />
 
-          <ArrowAnnotation tipX={0.82} tipY={-1.6} angle={40} length={0.45} text="Next finish" arrowClass="on-narrow" textClass="on-narrow" />
-          <ArrowAnnotation tipX={0.3} tipY={-0.86} angle={10} length={0.7} text="Pip per style" arrowClass="on-narrow" textClass="on-narrow" />
-          <ArrowAnnotation tipX={0.72} tipY={0.22} angle={25} length={0.4} text={countLabelShort} arrowClass="on-narrow" textClass="on-narrow" />
-          <ArrowAnnotation tipX={1.02} tipY={1.72} angle={-20} length={0.3} text="Seats: a cell" arrowClass="on-narrow" textClass="on-narrow" />
-          <ArrowAnnotation tipX={1.02} tipY={1.92} angle={-45} length={0.4} text="Other axis" arrowClass="on-narrow" textClass="on-narrow" />
+          <ArrowAnnotation tipX={0.82} tipY={-1.6} angle={40} length={0.45} text="Next finish" only="portrait" />
+          <ArrowAnnotation tipX={0.3} tipY={-0.86} angle={10} length={0.7} text="Pip per style" only="portrait" />
+          <ArrowAnnotation tipX={0.72} tipY={0.22} angle={25} length={0.4} text={countLabelShort} only="portrait" />
+          <ArrowAnnotation tipX={1.02} tipY={1.72} angle={-20} length={0.3} text="Seats: a cell" only="portrait" />
+          <ArrowAnnotation tipX={1.02} tipY={1.92} angle={-45} length={0.4} text="Other axis" only="portrait" />
         </Fragment>
       </Annotations>
       </div>
@@ -104,21 +104,6 @@ const countLabelShort = `${banquet.length} objects`;
   @container technical-drawing (orientation: portrait) {
     flex-direction: column;
     gap: 1.5rem;
-  }
-}
-
-// Each orientation carries its own set of callouts and hides the other's.
-:global(.on-narrow) {
-  display: none;
-}
-
-@container technical-drawing (orientation: portrait) {
-  :global(.on-wide) {
-    display: none;
-  }
-
-  :global(.on-narrow) {
-    display: revert;
   }
 }
 </style>
