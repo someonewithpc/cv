@@ -15,16 +15,17 @@ figure {
   display: inline-grid;
   width: fit-content;
   height: fit-content;
-  padding: var(--cube-size) calc(var(--cube-size) / 2);
+  /* The padding is clearance for the spin: a tilted side reaches 0.82 of its
+     length from the centre, so half a side on every edge holds it. The same
+     on all four keeps the figure square, which is the box the callouts are
+     measured against. */
+  padding: calc(var(--cube-size) / 2);
   margin: 0;
 
-  /* The padding is clearance for the spin, and it is what sets the figure's
-     min-content — em-sized it outgrew the portrait sheet. Half a side is
-     enough clearance, and cqw keeps it tied to the sheet. */
+  /* The padding is what sets the figure's min-content — em-sized it outgrew
+     the portrait sheet, and cqw keeps it tied to the sheet. */
   @container technical-drawing (orientation: portrait) {
     --cube-size: 26cqw;
-
-    padding: calc(var(--cube-size) / 2);
   }
 }
 
