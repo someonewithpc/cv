@@ -102,6 +102,22 @@ function wordsEnd(words: HTMLElement, origin: DOMRect) {
 }
 
 /**
+ * The colours of the paper the hints are written on: what the halo under a stroke has to carry,
+ * and what the sheet itself would write an accent in. The hint layer is the stack's sibling, so
+ * neither reaches it by inheritance, and a blueprint page redefines both — its accent is near
+ * white, and the page's own dark-orange marker vanishes into the blue at 1.01:1.
+ */
+function paper(front: HTMLElement): { fill: string; ink: string } {
+  const sheet = front.querySelector('section') ?? front;
+  let fill = 'transparent';
+  for (let el: Element | null = sheet; el; el = el.parentElement) {
+    const colour = getComputedStyle(el).backgroundColor;
+    if (colour && !/^(transparent$|rgba\(.*,\s*0\s*\))/.test(colour)) { fill = colour; break; }
+  }
+  return { fill, ink: getComputedStyle(sheet).getPropertyValue('--accent-text').trim() };
+}
+
+/**
  * Draws both hints of a frame, and tells the CSS where on the sheet the words go.
  *
  * Both sentences live on the paper: under the sheet there is only the fan's reserve, and on a
@@ -142,6 +158,10 @@ export function drawFlipHints(frame: HTMLElement): void {
     '--hint-written': origin.bottom - written,
   })) hints.style.setProperty(name, `${value.toFixed(1)}px`);
 
+  const { fill, ink } = paper(front);
+  hints.style.setProperty('--hint-paper', fill);
+  if (ink) hints.style.setProperty('--hint-ink', ink);
+
   // The dog-ear cuts the sheet's bottom-right corner, the folded-away one its top-left; both
   // creases run between the two intercepts, and the normal points across it into the paper,
   // which is the side the words are on and so the side the arrow has to come from.
@@ -169,7 +189,7 @@ export function drawFlipHints(frame: HTMLElement): void {
 
     arrow.setAttribute('viewBox', `0 0 ${origin.width.toFixed(1)} ${origin.height.toFixed(1)}`);
     for (const [part, d] of Object.entries(paths)) {
-      arrow.querySelectorAll<SVGPathElement>(`.hint-${part}`)
+      arrow.querySelectorAll<SVGPathElement>(`.hint-${part}, .hint-${part}-halo`)
         .forEach((path) => path.setAttribute('d', d));
     }
   }
