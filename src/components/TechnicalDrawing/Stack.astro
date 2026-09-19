@@ -27,17 +27,6 @@ const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
 const hint = Astro.props.hint ?? `${totalLayers - 1} more sheets, peel this corner`;
 const hintBack = 'this corner drags the page back';
-
-// One arrow, drawn twice and turned by the CSS. Its tip is at (6, 14) and the shaft leaves it
-// along +x, so the element's left edge at half its height is the point the arrow aims at and
-// `rotate` decides from which side it comes. Drawn by a hand that is not steady: the shaft
-// wanders, a lighter second pass doubles part of it the way a marker does when it goes back over
-// a line, and the head's two barbs are different lengths and miss both the shaft and each other.
-const arrow = {
-  shaft: 'M46 23 C 40 25, 30.5 24.5, 24 21 C 19 18.5, 17 14.6, 12 14.1 C 9.5 13.85, 8.5 13.95, 6 14',
-  pass: 'M45 24 C 37.5 25.5, 28.5 24, 22.5 20.5',
-  head: 'M15.5 8 L5.5 13.4 M13.9 19.6 L5.3 13.8',
-};
 ---
 
 <div class="technical-drawing-frame">
@@ -69,17 +58,17 @@ const arrow = {
 
   <div class="flip-hints" aria-hidden="true">
     <p class="flip-hint flip-hint--fwd hint-words marker-font">{hint}</p>
-    <svg class="flip-hint flip-hint--fwd hint-arrow" viewBox="0 0 48 28">
-      <path class="hint-shaft" d={arrow.shaft} />
-      <path class="hint-pass" d={arrow.pass} />
-      <path class="hint-head" d={arrow.head} />
+    <svg class="flip-hint flip-hint--fwd hint-arrow">
+      <path class="hint-shaft" />
+      <path class="hint-pass" />
+      <path class="hint-head" />
     </svg>
 
     <p class="flip-hint flip-hint--back hint-words marker-font">{hintBack}</p>
-    <svg class="flip-hint flip-hint--back hint-arrow" viewBox="0 0 48 28">
-      <path class="hint-shaft" d={arrow.shaft} />
-      <path class="hint-pass" d={arrow.pass} />
-      <path class="hint-head" d={arrow.head} />
+    <svg class="flip-hint flip-hint--back hint-arrow">
+      <path class="hint-shaft" />
+      <path class="hint-pass" />
+      <path class="hint-head" />
     </svg>
   </div>
 </div>
@@ -123,15 +112,6 @@ $portrait-lean-y: 2.25em;
        page widths before it lands. Swapping the intercepts lays the clip
        flat — onto the left edge, which PaperStack derives from the same two
        numbers — and sends the fold up the long axis instead. */
-    --paper-clip-lean-x: #{$portrait-lean-x};
-    --paper-clip-lean-y: #{$portrait-lean-y};
-  }
-}
-
-// The hint layer is the stack's sibling, not its child, so the transposed lean does not reach it
-// by inheritance. It needs the same two numbers to find the folded-away corner's crease.
-@container technical-drawing-width (max-width: 40em) {
-  .flip-hints {
     --paper-clip-lean-x: #{$portrait-lean-x};
     --paper-clip-lean-y: #{$portrait-lean-y};
   }
@@ -182,7 +162,9 @@ $portrait-lean-y: 2.25em;
   opacity: 0;
 }
 
-// The marker line, off the sheet in the room the fan reserves below it.
+// The marker line, written on the sheet. Below the sheet there is only the room the fan reserves,
+// and on a narrow page that is thinner than one line of this, so the sentence ended up on the
+// grid between two stacks. The script measures the sheet and hands down the lengths below.
 .hint-words {
   max-width: 24em;
   font-size: 1rem;
@@ -192,66 +174,44 @@ $portrait-lean-y: 2.25em;
   }
 }
 
-// Under the fan rather than over it: the frame's own bottom edge is where the reserve for the
-// fanned pages ends, and the words are hard to read across their stripes.
+// Above the title block and left of the dog-ear: the corner of the sheet's own margin that is
+// neither written on nor about to fold away, at every width.
 .flip-hint--fwd.hint-words {
-  top: calc(100% + 0.125em);
-  right: 3.5em;
+  right: calc(var(--hint-sheet-right, 0px) + 0.75em);
+  bottom: calc(var(--hint-written, 0px) + 0.5em);
+  max-width: calc(var(--hint-sheet-inline, 100%) - var(--hint-fold-x, 0px) - 1.5em);
   text-align: right;
 }
 
+// Under the folded-away corner's crease, along the sheet's left margin, so the arrow leaves the
+// end of the sentence going back up the way the page travels.
 .flip-hint--back.hint-words {
-  top: 0;
-  left: 0.5em;
-  translate: 0 -100%;
-
-  // Portrait swings the way back's arrow up over the frame's top edge instead of out past its
-  // left one, through where these words would otherwise sit.
-  @container technical-drawing-width (max-width: 40em) {
-    left: 3em;
-  }
+  left: calc(var(--hint-sheet-left, 0px) + 0.75em);
+  top: calc(var(--hint-sheet-top, 0px) + var(--hint-fold-back-y, 0px) + 0.5em);
+  max-width: calc(var(--hint-sheet-inline, 100%) - 1.5em);
 }
 
-// Left edge, half height: the point the tip aims at, which `rotate` then swings around. The tip
-// itself stands 6/48 of the width off it along the arrow's own line, which is the gap it keeps
-// between its nib and the paper.
+// Both arrows run from where their words stop to the middle of the crease they invite you to
+// take hold of, arriving square to it: aiming at the page's corner instead says nothing about
+// which way the paper travels, and the corner is the one part of the fold the hand does not
+// need. The drawing is flip-hint.ts's, in this box's own pixels, so the layer sits over the
+// frame and spills past it to reach the words.
 .hint-arrow {
-  width: 3.25em;
-  aspect-ratio: 48 / 28;
-  transform-origin: 0 50%;
-  translate: 0 -50%;
+  inset: 0;
+  overflow: visible;
 
   .hint-shaft { stroke-width: 2.5px; }
   .hint-pass { stroke-width: 1.25px; opacity: 0.45; }
   .hint-head { stroke-width: 2.75px; }
-}
 
-// Both arrows point at the middle of the crease they invite you to take hold of, square to it:
-// aiming at the page's corner instead says nothing about which way the paper travels, and the
-// corner is the one part of the fold the hand does not need.
-//
-// The way out is the dog-ear on the front page, whose resting crease runs from
-// (100% - x, 100%) to (100%, 100% - y) of the sheet. atan2(x, y) is the angle of its normal,
-// since the crease itself leans by atan2(y, x) the other way.
-.flip-hint--fwd.hint-arrow {
-  left: calc(100% - var(--fold-rest-x, 2cm) / 2);
-  top: calc(var(--stack-block, 100%) - var(--fold-rest-y, 1cm) / 2);
-  rotate: atan2(var(--fold-rest-x, 2cm), var(--fold-rest-y, 1cm));
-}
-
-// The way back is the folded-away top-left corner, whose crease runs from (lean-x, 0) to
-// (0, lean-y) and whose middle is the pin the paper clip holds. Same normal, half a turn round,
-// so the arrow comes in over the cut corner rather than across the sheet.
-.flip-hint--back.hint-arrow {
-  left: calc(var(--paper-clip-lean-x, 2.25em) / 2);
-  top: calc(var(--paper-clip-lean-y, 4.5em) / 2);
-  rotate: calc(180deg + atan2(var(--paper-clip-lean-x, 2.25em), var(--paper-clip-lean-y, 4.5em)));
 }
 </style>
 
 <script>
 import { armIslands } from '@/client/bootIsland';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
+
+import { drawFlipHints } from './flip-hint';
 
 function initStack(stack: HTMLElement) {
   const onScreen = new WeakMap<HTMLElement, boolean>();
@@ -294,14 +254,6 @@ function initStack(stack: HTMLElement) {
 
   armIslands(stack);
 
-  // The dog-ear's resting size, lifted from the stack onto the frame: the hint layer is the
-  // stack's sibling, so the property PaperStack publishes does not reach it by inheritance, and
-  // without it the arrow has no crease to aim at. It never changes, so once is enough.
-  const stackStyle = getComputedStyle(stack);
-  for (const rest of ['--fold-rest-x', '--fold-rest-y']) {
-    stack.parentElement?.style.setProperty(rest, stackStyle.getPropertyValue(rest));
-  }
-
   // The sheet's size and orientation, restated as plain pixels and a data attribute for the
   // artwork to scale its type by. The container queries and units say the same thing, but a
   // font-size that comes out of them — by unit, by rule, or by an inherited variable — inside
@@ -324,17 +276,28 @@ const measure = new ResizeObserver((entries) => {
     stack.style.setProperty('--sheet-inline', `${inlineSize}px`);
     stack.style.setProperty('--sheet-block', `${blockSize}px`);
     stack.dataset.sheetOrientation = portrait ? 'portrait' : 'landscape';
-    // The frame is taller than the sheet by the fan's reserve, so a hint that belongs on the
-    // sheet's own bottom edge cannot be placed from the frame's box alone.
-    (stack.parentElement as HTMLElement | null)?.style.setProperty('--stack-block', `${blockSize}px`);
   }
+  // The hints are measured off the laid-out frame, so they are redrawn a frame later rather
+  // than read back here between the writes above.
+  requestAnimationFrame(redrawHints);
 });
+
+function redrawHints() {
+  document.querySelectorAll<HTMLElement>('.technical-drawing-frame[data-hint-show]').forEach(drawFlipHints);
+}
 
 // The top stack alone carries the hints: one is a nudge, one per demo is wallpaper, and by the
 // third stack the reader has worked it out. Arming them from here is also what keeps them off a
 // page whose JS never ran, where nothing would turn anyway.
 function armHints() {
-  document.querySelector<HTMLElement>('.technical-drawing-frame')?.setAttribute('data-hint-show', '');
+  const frame = document.querySelector<HTMLElement>('.technical-drawing-frame');
+  if (!frame) return;
+  frame.setAttribute('data-hint-show', '');
+  drawFlipHints(frame);
+  // The arrow starts where the words stop, so it has to be redrawn when they re-wrap: the
+  // marker face lands after the first layout and takes the last line with it.
+  const rewrap = new ResizeObserver(() => requestAnimationFrame(redrawHints));
+  frame.querySelectorAll<HTMLElement>('.hint-words').forEach((words) => rewrap.observe(words));
 }
 
 function init() {
