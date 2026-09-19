@@ -99,12 +99,13 @@ const squirclePath = [
         text="Create marker"
         only="landscape"
       />
-      {/* From the B marker's lower-left corner down past "Cafe" to below the cards;
-          the label runs left from there, where the cell has the room (the note fold
-          takes the right). */}
+      {/* Aimed at the B marker's centre, the tip stopping on its rim, down past "Cafe"
+          to below the cards; the label runs left from there, where the cell has the
+          room (the note fold takes the right). */}
       <ArrowAnnotation
         target=".spaces li.active svg"
-        anchor="bottom-left"
+        anchor="center"
+        gap={0.45}
         tipX={-0.14}
         tipY={0.66}
         angle={-105}
@@ -125,14 +126,15 @@ const squirclePath = [
         text="Create marker"
         only="portrait"
       />
-      {/* Down the marker's right past "Cafe" and out of the card's lower corner. A
-          phone sheet has no room under the cards for the landscape wording. */}
+      {/* Aimed at the marker's centre from below the cards, past "Cafe" and out of
+          the card's lower corner. */}
       <ArrowAnnotation
         target=".spaces li.active svg"
-        anchor="bottom-right"
-        tipX={0.22}
+        anchor="center"
+        gap={0.45}
+        tipX={0}
         tipY={0.75}
-        angle={-75}
+        angle={-105}
         length={0.5}
         text="Same marker, same order"
         only="portrait"
