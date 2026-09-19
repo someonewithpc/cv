@@ -811,7 +811,16 @@ onMounted(async () => {
     });
 
     prepareSpaceBuilderGpu();
-    const scene = new SpaceBuilderScene({ canvas, labelHost });
+    const scene = new SpaceBuilderScene({
+      canvas,
+      labelHost,
+      // A lost context leaves a blank canvas; show the sheet's fallback until it comes back.
+      onContextLost: (lost) => {
+        loadError.value = lost;
+        if (lost) stopAutoplay();
+        else if (inView) startAutoplay();
+      },
+    });
     scene.pause();
     registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
