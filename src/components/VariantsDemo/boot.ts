@@ -1,13 +1,19 @@
-/** Low-priority cache warm — never preload (that competes with LCP). */
+/**
+ * Low-priority cache warm — never preload (that competes with LCP). Every style is warmed,
+ * not just the ones on show: a pick clears the floor and rebuilds it, so a model still in
+ * flight is a gap where the object was.
+ */
 async function warmAssets() {
-  const { variantOf } = await import('@/components/SpaceBuilderDemo/MockScene/catalogItems');
+  const { variantsOf } = await import('@/components/SpaceBuilderDemo/MockScene/catalogItems');
   const { VARIANT_CARDS } = await import('./variantsCatalog');
   const opts = { credentials: 'same-origin', priority: 'low' } as RequestInit;
-  void fetch('/demos/space-builder/chair.glb', opts).catch(() => null);
+  const urls = new Set(['/demos/space-builder/chair.glb']);
   for (const card of VARIANT_CARDS) {
-    const url = variantOf(card, undefined).modelUrl;
-    if (url) void fetch(url, opts).catch(() => null);
+    for (const variant of variantsOf(card)) {
+      if (variant.modelUrl) urls.add(variant.modelUrl);
+    }
   }
+  for (const url of urls) void fetch(url, opts).catch(() => null);
 }
 
 export async function boot(host: HTMLElement) {
