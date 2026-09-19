@@ -2,7 +2,8 @@
 /**
  * The catalog card, rendered on the server so it stands without a script: the finishes
  * are a scroll-snap carousel whose pips and arrows are CSS scroll markers and buttons,
- * and the seat and size rows are <details> that open on their own. panel.ts adds the
+ * the active pip and its trail ride a scroll timeline, and the seat and size rows are
+ * <details> that open on their own. panel.ts adds the
  * hover preview, the picks and the parts a browser without scroll markers is missing.
  * Markup and classes follow SpaceBuilderDemo's CatalogObjectCard.vue, so the two demos
  * read as the same product.
@@ -45,6 +46,9 @@ const sizeAvailable = (size: string) => !active || variants.some(
 );
 
 const styleName = (v: CatalogVariant) => v.style;
+
+/** The product's transition blob has five parts behind the moving pip. */
+const TRAIL_PARTS = [1, 2, 3, 4, 5];
 ---
 
 <div
@@ -71,7 +75,10 @@ const styleName = (v: CatalogVariant) => v.style;
           </li>
         ))}
       </ul>
-      <span class="active-pip" style={`--pips: ${styles.length}; --index: ${styleIndex}`} aria-hidden="true" />
+      <span class="pip-track" style={`--pips: ${styles.length}; --index: ${styleIndex}`} aria-hidden="true">
+        {TRAIL_PARTS.map(() => <span class="pip-trail" />)}
+        <span class="active-pip" />
+      </span>
     ) : (
       <div class="object-icons">
         <img src={visible.thumb} alt="" width="600" height="600" loading="lazy" />

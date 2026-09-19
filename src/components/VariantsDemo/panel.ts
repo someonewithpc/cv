@@ -251,7 +251,7 @@ export function scrollToStyle(styles: HTMLElement, index: number) {
 
 function enhanceCarousel(card: HTMLElement, styles: HTMLElement, commit: (variant: CatalogVariant) => void) {
   const slides = [...styles.querySelectorAll<HTMLElement>('.style')];
-  const dot = card.querySelector<HTMLElement>('.active-pip');
+  const track = card.querySelector<HTMLElement>('.pip-track');
   const thumbnail = styles.parentElement!;
   let current = Number(styles.dataset.index ?? 0);
 
@@ -261,7 +261,7 @@ function enhanceCarousel(card: HTMLElement, styles: HTMLElement, commit: (varian
     if (index === current) return;
     current = index;
     styles.dataset.index = String(index);
-    if (!hasScrollTimeline()) dot?.style.setProperty('--index', String(index));
+    if (!hasScrollTimeline()) track?.style.setProperty('--index', String(index));
     controls?.update(index);
   };
 

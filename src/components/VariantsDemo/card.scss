@@ -1,3 +1,4 @@
+@use "sass:math";
 // The catalog card, its style carousel and its dropdown rows, after Space Builder's
 // _catalog_object_field.scss, _catalog_subcategory_group_field.scss and _hover_select.scss.
 // Scoped under .variants-catalog so the panel and the drawn copy on the sheet share it.
@@ -275,28 +276,51 @@ $pip: 1.125rem;
     }
   }
 
-  // The pip-sized dot that slides along the pip row with the scroll. A scroll timeline
-  // drives it where the browser has one; otherwise --index does, set by the script.
-  .active-pip {
+  // The pip-sized dot that slides along the pip row with the scroll, and the product's
+  // trail behind it. The track carries the position as a registered length: a scroll
+  // timeline drives it where the browser has one, otherwise --index does, set by the
+  // script, and the track transitions it. The dot follows the track exactly; each trail
+  // part follows it through its own short transition, so the parts string out behind
+  // the dot while it moves and close up under it when it stops.
+  .pip-track {
     position: absolute;
     z-index: 2;
     bottom: calc(0.25rem + $pip / 4);
     left: calc(50% - var(--pips, 1) * $pip / 2 + $pip / 4);
     width: calc($pip / 2);
     height: calc($pip / 2);
-    border-radius: 100%;
-    background: var(--active-pip-color);
     pointer-events: none;
-    translate: calc(var(--index, 0) * $pip) 0;
-    transition: translate $duration $easing;
+    --variants-dot-x: calc(var(--index, 0) * #{$pip});
+    transition: --variants-dot-x $duration $easing;
 
     @supports (animation-timeline: scroll()) {
       transition: none;
       animation: variants-active-pip linear both;
     }
 
+    > * {
+      position: absolute;
+      inset: 0;
+      border-radius: 100%;
+      background: var(--active-pip-color);
+      translate: var(--variants-dot-x) 0;
+    }
+
+    // CatalogObjectThumbnailOverlay.vue's five transition-blob-parts: each a step
+    // smaller and fainter than the last, further behind the pip.
+    @for $i from 1 through 5 {
+      > .pip-trail:nth-child(#{$i}) {
+        scale: #{90 - 10 * ($i - 1)}#{'%'};
+        opacity: #{math.div(60 - 10 * ($i - 1), 100)};
+        transition: translate #{30ms * $i} linear;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      transition: none;
+      &,
+      > .pip-trail {
+        transition: none;
+      }
     }
   }
 
@@ -444,20 +468,26 @@ $pip: 1.125rem;
   }
 }
 
+@property --variants-dot-x {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
 @keyframes variants-active-pip {
   from {
-    translate: 0 0;
+    --variants-dot-x: 0px;
   }
 
   to {
-    translate: calc((var(--pips, 1) - 1) * $pip) 0;
+    --variants-dot-x: calc((var(--pips, 1) - 1) * #{$pip});
   }
 }
 
 // Its own rule: folded into the animation shorthand, the timeline is one Chrome
 // cannot read back out.
 @supports (animation-timeline: scroll()) {
-  .variants-catalog .option-item .thumbnail > .active-pip {
+  .variants-catalog .option-item .thumbnail > .pip-track {
     animation-timeline: --styles;
   }
 }
