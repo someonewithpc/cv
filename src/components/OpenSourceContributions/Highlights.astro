@@ -109,8 +109,20 @@ article {
   padding: 1.25rem var(--cell-x) 1.25rem calc(var(--cell-x) + 3px);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
-  border-radius: 0.5em;
-  background: color-mix(in oklch, var(--surface-raised), transparent 40%);
+  border-radius: 0.125em;
+  background: var(--surface-raised);
+  /* Framed: a mat around the sheet, a moulding around the mat, and a shadow on the wall. */
+  outline: 0.5rem solid light-dark(
+    color-mix(in oklch, var(--surface-raised), white 30%),
+    color-mix(in oklch, var(--surface-raised), white 6%)
+  );
+  box-shadow:
+    0 0 0 calc(0.5rem + 1px) var(--line-strong),
+    0 0 0 0.75rem light-dark(
+      color-mix(in oklch, var(--theme-canvas), var(--theme-ink) 45%),
+      color-mix(in oklch, var(--theme-canvas), black 30%)
+    ),
+    0.25rem 1rem 1.5rem 0.5rem rgb(0 0 0 / 0.28);
 
   font-family: sans-serif;
 
