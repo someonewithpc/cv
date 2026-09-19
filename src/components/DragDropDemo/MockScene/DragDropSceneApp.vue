@@ -604,6 +604,32 @@ async function armAndClick(
   return token === autoplayToken;
 }
 
+/**
+ * The product's Remove action, one object at a time: click it to select it, then delete
+ * it. The floor empties the way a visitor would empty it, not by a scene reset.
+ */
+async function removePlaced(token: number, scene: SpaceBuilderScene) {
+  while (scene.placedCount() > 0) {
+    const centre = scene.selectPlaced(scene.placedCount() - 1);
+    selectedPlacement.value = true;
+    const at = centre ? scene.groundToClient(centre.x, centre.z) : null;
+    if (at) {
+      moveCursorTo(at.x, at.y);
+      await wait(300);
+      if (token !== autoplayToken) return false;
+      await pulseClick(token);
+    }
+    await wait(350);
+    if (token !== autoplayToken) return false;
+    scene.removeSelected();
+    selectedPlacement.value = false;
+    await wait(250);
+    if (token !== autoplayToken) return false;
+  }
+  return true;
+}
+
+
 async function runAutoplay() {
   const token = autoplayToken;
   demoPlaying.value = true;
@@ -627,10 +653,10 @@ async function runAutoplay() {
     }
     const [lastX, lastY] = DROP_POINTS[DROP_POINTS.length - 1];
     if (!await armAndClick(token, scene, root, CLICK_ROUTE_ID, lastX, lastY)) break outer;
-    // Hold the fully-built scene a beat, then clear for the next lap.
+    // Hold the fully-built scene a beat, then delete what the lap placed before the next.
     await wait(900);
     if (token !== autoplayToken) break;
-    scene.clearArea();
+    if (!await removePlaced(token, scene)) break;
     await wait(500);
   }
   // A stale run reaching here (superseded mid-flight) must leave the current
