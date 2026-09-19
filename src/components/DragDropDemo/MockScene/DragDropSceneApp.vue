@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
+import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
@@ -190,12 +190,12 @@ function disarm() {
 }
 
 /** The one call both routes end in: one object lands, or nothing did because the GLB is late. */
-function dropOne(item: CatalogItem | null, clientX: number, clientY: number) {
+function dropOne(clientX: number, clientY: number) {
   const scene = sceneRef.value;
   if (!scene) return;
   scene.setGhostAt(clientX, clientY);
-  const placed = scene.placeGhostAsSingle();
-  showToast(placed ? `${item?.name ?? 'Object'} placed` : 'Still loading · pick it again');
+  // The product says nothing on success: the selected object on the floor is the signal.
+  if (!scene.placeGhostAsSingle()) showToast('Still loading · pick it again');
 }
 
 /**
@@ -242,7 +242,6 @@ function onItemDragStart(event: DragEvent) {
 
 function endItemDrag(clientX: number, clientY: number) {
   const scene = sceneRef.value;
-  const dropped = draggingItem;
   draggingItem = null;
   draggingVariant = null;
   phase.value = 'idle';
@@ -250,7 +249,7 @@ function endItemDrag(clientX: number, clientY: number) {
   if (!scene) return;
 
   const rect = canvasRect();
-  if (rect && withinRect(clientX, clientY, rect)) dropOne(dropped, clientX, clientY);
+  if (rect && withinRect(clientX, clientY, rect)) dropOne(clientX, clientY);
   else scene.setGhostVisible(false);
 }
 
@@ -265,7 +264,7 @@ function onPointerDown(event: PointerEvent) {
   if (phase.value === 'armed' && event.button === 0 && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
     const item = armedItem.value;
     disarm();
-    dropOne(item, event.clientX, event.clientY);
+    dropOne(event.clientX, event.clientY);
     return;
   }
 
@@ -373,10 +372,6 @@ function onKeyDown(event: KeyboardEvent) {
   yieldToUser();
   disarm();
 }
-
-const hint = computed(() => (phase.value === 'armed'
-  ? `${armedItem.value?.name ?? 'Object'} on the pointer · click to place, Esc to cancel`
-  : 'Drag a card in, or double-click one · orbit to look around'));
 
 // --- Autoplay: a demo cursor drives the same scene calls a real drag would. ---
 
@@ -515,7 +510,7 @@ async function dragAndOrbit(
   draggedThumb.value = null;
   // Letting go is the whole drag: one object lands and the tool is back to idle.
   phase.value = 'idle';
-  dropOne(item, dropPoint.x, dropPoint.y);
+  dropOne(dropPoint.x, dropPoint.y);
 
   await orbitTween(token, orbitDir * 0.4, 700, dropPoint);
   cursorInstant.value = false;
@@ -572,7 +567,7 @@ async function armAndClick(
   if (token !== autoplayToken) return false;
   phase.value = 'idle';
   armedItem.value = null;
-  dropOne(item, dropPoint.x, dropPoint.y);
+  dropOne(dropPoint.x, dropPoint.y);
   await wait(900);
   return token === autoplayToken;
 }
@@ -787,7 +782,6 @@ onBeforeUnmount(() => {
         <button type="button" class="restart-btn" @click="restartDemo">
           Restart
         </button>
-        <p class="hint">{{ hint }}</p>
       </div>
     </div>
 
@@ -984,14 +978,6 @@ $scene-bg: #212121;
   bottom: 0.55rem;
   z-index: 2;
   translate: -50% 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.35rem 0.5rem;
-  // Narrow frames can't fit the button + full hint on one line — wrap
-  // instead of letting the row force this centered box off both edges.
-  max-width: calc(100% - 1rem);
 }
 
 .restart-btn {
@@ -1007,18 +993,6 @@ $scene-bg: #212121;
   &:hover {
     background: color-mix(in oklab, $visrez-brand 40%, #171717);
   }
-}
-
-.hint {
-  margin: 0;
-  padding: 0.25rem 0.55rem;
-  border-radius: 0.25rem;
-  background: rgba(18, 22, 18, 0.72);
-  color: #e8e4dc;
-  font: 0.62rem/1.3 var(--font-poppins, system-ui, sans-serif);
-  letter-spacing: 0.02em;
-  pointer-events: none;
-  text-align: center;
 }
 
 .demo-cursor {
