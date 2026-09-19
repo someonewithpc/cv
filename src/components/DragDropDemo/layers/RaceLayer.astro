@@ -3,17 +3,17 @@ const races = [
   {
     id: 'loaded',
     title: 'Model arrives first',
-    steps: ['pick', 'GLB in', 'object on pointer', 'drop'],
-    result: 'placed',
+    steps: ['press', 'GLB in', 'model on pointer', 'let go'],
+    result: 'places one',
     toast: 'Chair placed',
     ok: true,
   },
   {
     id: 'racing',
     title: 'Drop arrives first',
-    steps: ['pick', 'drop', 'nothing on the pointer'],
-    result: 'returns false',
-    toast: 'Still loading · drag again',
+    steps: ['press', 'let go', 'nothing on the pointer'],
+    result: 'places nothing',
+    toast: 'Still loading · pick it again',
     ok: false,
   },
 ] as const;
@@ -49,9 +49,14 @@ const races = [
       </div>
 
       <p class="note">
-        The thing following the pointer is the object itself, not a stand-in. Let go before
-        its file lands and there is nothing to place, so the call says so and the catalog
-        stays open for another go. Otherwise a drop would report success over bare floor.
+        What follows the pointer over the floor is the model itself, not a stand-in. Let go
+        before its file arrives and there is nothing to place, so the call returns false.
+      </p>
+      <p class="note">
+        Only a drag can lose this race. A double-click holds a spinner over the page until
+        the file is in, so it always has something to put down. A drag starts the download
+        and does not wait for it. Space Builder says nothing when the drop comes first. This
+        demo toasts, so you can tell a miss from a drop that worked.
       </p>
     </div>
   </div>
