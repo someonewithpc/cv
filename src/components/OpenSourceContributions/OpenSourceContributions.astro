@@ -2,11 +2,20 @@
 import Band from '@/components/Band.astro';
 
 import site from './site.json';
+import BacktickText from './BacktickText.astro';
 import ContributionRow from './ContributionRow.astro';
 import SectionHeader from './SectionHeader.astro';
 import Highlights from './Highlights.astro';
 
 const { highlights, groups } = site;
+
+type Item = (typeof groups)[number]['items'][number];
+
+// The pull quote of a group is its biggest change by lines touched.
+const largestChange = (items: Item[]) =>
+  items
+    .filter((item) => item.stats && item.description && item.number != null)
+    .sort((a, b) => (b.stats!.additions + b.stats!.deletions) - (a.stats!.additions + a.stats!.deletions))[0];
 
 const statistics = {
   merged: groups.find((group) => group.id === 'merged')?.items.length ?? 0,
@@ -23,12 +32,28 @@ const statistics = {
   </Band>
 
   <Band number={5} material="ledger">
-  {groups.map(({ id, label, items }) => (
+  {groups.map(({ id, label, items }) => {
+    const pull = largestChange(items);
+
+    return (
     <section data-group={id} aria-labelledby={`group-${id}`}>
       <h3 id={`group-${id}`}>
         <span class="typewriter">{label}</span>
         <data value={items.length}>{items.length}</data>
       </h3>
+
+      {pull && (
+        <figure class="pull">
+          <blockquote cite={pull.url}>
+            <p><BacktickText text={pull.description!} /></p>
+          </blockquote>
+          <figcaption>
+            <cite>{pull.repository}#{pull.number}</cite>, the biggest change here:
+            <data value={pull.stats!.additions}>+{pull.stats!.additions}</data>
+            <data value={pull.stats!.deletions}>−{pull.stats!.deletions}</data>
+          </figcaption>
+        </figure>
+      )}
 
       <div>
         <header aria-hidden="true">
@@ -42,7 +67,8 @@ const statistics = {
         ))}
       </div>
     </section>
-  ))}
+    );
+  })}
   </Band>
 </section>
 
@@ -88,11 +114,81 @@ const statistics = {
       margin-top: 3.5rem;
     }
 
+    /* The group head is a row of its own: label on the left, the biggest change quoted on the
+       right, the ledger below both. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 26rem);
+    column-gap: 3rem;
+    row-gap: 1.25rem;
+    align-items: end;
+
+    @container (max-width: 50rem) {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 1rem;
+    }
+
+    > div {
+      grid-column: 1 / -1;
+    }
+
+    .pull {
+      margin: 0;
+      display: grid;
+      gap: 0.5rem;
+
+      blockquote,
+      p {
+        margin: 0;
+      }
+
+      p {
+        font-family: "Special Elite", monospace, system-ui;
+        font-size: var(--type-quote);
+        line-height: 1.35;
+        color: var(--ink);
+        text-wrap: pretty;
+
+        &::before,
+        &::after {
+          color: var(--accent-text);
+        }
+
+        &::before {
+          content: open-quote;
+        }
+
+        &::after {
+          content: close-quote;
+        }
+      }
+
+      figcaption {
+        font-family: monospace, system-ui;
+        font-variant-numeric: tabular-nums;
+        font-size: var(--type-small);
+        line-height: 1.5;
+        color: var(--ink-faint);
+
+        cite {
+          font-style: normal;
+          color: var(--ink-muted);
+        }
+
+        data:first-of-type {
+          color: hsl(145 42% 38%);
+        }
+
+        data:last-of-type {
+          color: hsl(0 48% 46%);
+        }
+      }
+    }
+
     h3 {
       display: flex;
       align-items: baseline;
       gap: 0.75rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0;
       font-size: 0.875rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;

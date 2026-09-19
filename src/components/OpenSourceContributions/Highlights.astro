@@ -15,6 +15,8 @@ type Highlight = {
   role?: string;
   roleJp?: string;
   description: string;
+  /** A line lifted from the description, set large beside the card. */
+  quote?: string;
   repository: string;
   commits?: string;
   period?: string;
@@ -33,6 +35,7 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 ---
 
 {highlights.map((entry) => (
+  <div class="highlight">
   <article id={`highlight-${slug(entry.title)}`} aria-labelledby={`highlight-${slug(entry.title)}-heading`}>
     <ul aria-label="Technologies">
       {entry.tags.map((suffix) => {
@@ -97,15 +100,76 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
       </nav>
     )}
   </article>
+
+  {entry.quote && (
+    <blockquote class="pull" cite={`#highlight-${slug(entry.title)}`}>
+      <p>{entry.quote}</p>
+    </blockquote>
+  )}
+  </div>
 ))}
 
 <style lang="scss">
+/* Card and pull quote share a row, the quote taking the narrower side; every second row swaps
+   them, so the column the eye follows changes from one highlight to the next. */
+.highlight {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  column-gap: 3rem;
+  row-gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 3rem;
+
+  &:nth-child(even of .highlight) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+
+    .pull {
+      order: -1;
+      text-align: right;
+    }
+  }
+
+  @container (max-width: 50rem) {
+    grid-template-columns: minmax(0, 1fr);
+
+    &:nth-child(even of .highlight) .pull {
+      order: 0;
+      text-align: left;
+    }
+  }
+}
+
+.pull {
+  margin: 0;
+  padding-block: 1rem;
+  border-block: 1px solid var(--line-strong);
+  font-family: "Special Elite", monospace, system-ui;
+  font-size: clamp(var(--type-quote), 2.25vw, 1.75rem);
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+
+  p {
+    margin: 0;
+  }
+
+  p::before {
+    content: open-quote;
+    color: var(--accent-text);
+  }
+
+  p::after {
+    content: close-quote;
+    color: var(--accent-text);
+  }
+}
+
 article {
   display: grid;
   grid-template-columns: var(--grid);
   column-gap: 1.25rem;
   align-items: start;
-  margin-bottom: 2.5rem;
+  margin-bottom: 0;
   padding: 1.25rem var(--cell-x) 1.25rem calc(var(--cell-x) + 3px);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
