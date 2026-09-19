@@ -19,16 +19,17 @@ $pip: 1.125rem;
   color: #f3f3f4;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   user-select: none;
-  --active-pip-color: #6c757d;
+  // The pips keep the brand colour on every card; only the count badge greys until the
+  // card is the selected one, as _catalog_subcategory_group_field.scss has it.
+  --active-pip-color: #{$brand};
   --active-count-color: #6c757d;
 
-  &:hover:not(.active) {
+  &:hover {
     border-color: #6c757d;
   }
 
   &.active {
     box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
-    --active-pip-color: #{$brand};
     --active-count-color: #{$brand};
 
     .item-label {
