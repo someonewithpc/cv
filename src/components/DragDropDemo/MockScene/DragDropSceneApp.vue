@@ -47,13 +47,16 @@ const DROP_POINTS: Array<[number, number]> = [
 const CLICK_ROUTE_ID = 'table-round';
 
 /**
- * One style per card. The finish carousel and the seat and size pickers are their own PR
+ * Real objects first, placeholders greyed out after them. One style per card: the finish
+ * carousel and the seat and size pickers are their own PR
  * (catalog-carousel); until that lands, each card places its default style.
  */
-const DND_ITEMS: CatalogItem[] = CATALOG_ITEMS.map((item) => ({
-  ...item,
-  variants: item.variants?.slice(0, 1),
-}));
+const DND_ITEMS: CatalogItem[] = [...CATALOG_ITEMS]
+  .sort((a, b) => Number(b.real ?? false) - Number(a.real ?? false))
+  .map((item) => ({
+    ...item,
+    variants: item.variants?.slice(0, 1),
+  }));
 
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
