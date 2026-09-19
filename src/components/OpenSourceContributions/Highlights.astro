@@ -130,7 +130,11 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
   }
 
   @container (max-width: 50rem) {
-    grid-template-columns: minmax(0, 1fr);
+    /* Both rows, the swapped one included: its own rule outranks the plain one. */
+    &,
+    &:nth-child(even of .highlight) {
+      grid-template-columns: minmax(0, 1fr);
+    }
 
     &:nth-child(even of .highlight) .pull {
       order: 0;
