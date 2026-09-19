@@ -127,9 +127,21 @@ function isChrome(target: EventTarget | null) {
   return target instanceof Element && target.closest('.sidebar, button, input, label, details');
 }
 
+/** Rects read once and reused until the page scrolls, the frame resizes or a new gesture starts,
+ * so a tween never forces layout on every frame. */
+let rootRectCache: DOMRect | null = null;
+let canvasRectCache: DOMRect | null = null;
+
+function invalidateRects() {
+  rootRectCache = null;
+  canvasRectCache = null;
+}
+
 function canvasRect() {
+  if (canvasRectCache) return canvasRectCache;
   const canvas = rootRef.value?.querySelector('[data-scene-canvas]');
-  return canvas?.getBoundingClientRect() ?? null;
+  canvasRectCache = canvas?.getBoundingClientRect() ?? null;
+  return canvasRectCache;
 }
 
 function withinRect(clientX: number, clientY: number, rect: DOMRect) {
@@ -240,6 +252,7 @@ function dropOne(clientX: number, clientY: number) {
  * past the threshold, the way a real drag does.
  */
 function onItemPointerdown(event: PointerEvent, item: CatalogItem, variant: CatalogVariant) {
+  invalidateRects();
   if (!item.real || event.button !== 0) return;
   yieldToUser();
   pendingDrag = {
@@ -286,6 +299,7 @@ function endItemDrag(clientX: number, clientY: number) {
 }
 
 function onPointerDown(event: PointerEvent) {
+  invalidateRects();
   const scene = sceneRef.value;
   const root = rootRef.value;
   if (!scene || !root || isChrome(event.target)) return;
@@ -413,7 +427,8 @@ function wait(ms: number) {
 
 /** Client coords → position relative to root, since the cursor element lives inside it. */
 function toRootPoint(clientX: number, clientY: number) {
-  const rect = rootRef.value?.getBoundingClientRect();
+  rootRectCache ??= rootRef.value?.getBoundingClientRect() ?? null;
+  const rect = rootRectCache;
   if (!rect) return { x: clientX, y: clientY };
   return { x: clientX - rect.left, y: clientY - rect.top };
 }
@@ -563,6 +578,7 @@ async function dragAndOrbit(
   fy: number,
   orbitDir: 1 | -1,
 ): Promise<boolean> {
+  invalidateRects();
   await revealCatalogCard(root, id);
   if (token !== autoplayToken) return false;
   const target = catalogButton(root, id);
@@ -620,6 +636,7 @@ async function armAndClick(
   fx: number,
   fy: number,
 ): Promise<boolean> {
+  invalidateRects();
   await revealCatalogCard(root, id);
   if (token !== autoplayToken) return false;
   const target = catalogButton(root, id);
@@ -672,6 +689,7 @@ async function armAndClick(
  * it. The floor empties the way a visitor would empty it, not by a scene reset.
  */
 async function removePlaced(token: number, scene: SpaceBuilderScene) {
+  invalidateRects();
   while (scene.placedCount() > 0) {
     const centre = scene.selectPlaced(scene.placedCount() - 1);
     selectedPlacement.value = true;
@@ -842,6 +860,8 @@ onMounted(async () => {
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
+    window.addEventListener('scroll', invalidateRects, { capture: true, passive: true });
+    window.addEventListener('resize', invalidateRects);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
@@ -864,6 +884,8 @@ onBeforeUnmount(() => {
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
   rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
+  window.removeEventListener('scroll', invalidateRects, { capture: true });
+  window.removeEventListener('resize', invalidateRects);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
   window.removeEventListener('pointercancel', onPointerUp);
@@ -934,8 +956,7 @@ onBeforeUnmount(() => {
       :class="{ instant: cursorInstant }"
       :src="draggedThumb.src"
       :style="{
-        left: `${cursorPos.x - draggedThumb.offsetX}px`,
-        top: `${cursorPos.y - draggedThumb.offsetY}px`,
+        transform: `translate3d(${cursorPos.x - draggedThumb.offsetX}px, ${cursorPos.y - draggedThumb.offsetY}px, 0)`,
         width: `${draggedThumb.width}px`,
         height: `${draggedThumb.height}px`,
       }"
@@ -948,7 +969,7 @@ onBeforeUnmount(() => {
       class="demo-cursor"
       data-demo-cursor
       :class="{ clicking: cursorClicking, instant: cursorInstant }"
-      :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
+      :style="{ transform: `translate3d(${cursorPos.x}px, ${cursorPos.y}px, 0)` }"
       aria-hidden="true"
     >
       <svg viewBox="0 0 32 32" width="40" height="40">
@@ -1128,6 +1149,8 @@ $scene-bg: #212121;
 
 .demo-cursor {
   position: absolute;
+  top: 0;
+  left: 0;
   // Above the sidebar (which has no z-index of its own) so it stays visible while the
   // autoplaying drag passes over the catalog, instead of being painted underneath it.
   z-index: 6;
@@ -1136,7 +1159,9 @@ $scene-bg: #212121;
   translate: -12% -8%;
   transform-origin: 12% 8%;
   pointer-events: none;
-  transition: left 0.12s linear, top 0.12s linear, scale 0.12s ease;
+  // Positioned with a transform, not left/top, so a moving cursor never dirties layout and
+  // the scene's per-frame rect reads stay free of forced reflows.
+  transition: transform 0.12s linear, scale 0.12s ease;
 
   // While a tween is driving cursorPos every frame, its own easing already
   // smooths the motion — this transition would only add trailing lag on top,
@@ -1179,7 +1204,9 @@ $scene-bg: #212121;
   z-index: 5;
   object-fit: contain;
   pointer-events: none;
-  transition: left 0.12s linear, top 0.12s linear;
+  top: 0;
+  left: 0;
+  transition: transform 0.12s linear;
 
   &.instant {
     transition: none;
