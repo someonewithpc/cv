@@ -24,6 +24,7 @@ const TARGET_TOLERANCE = 2;
 const NORMAL_TOLERANCE = 3;
 
 type Box = { left: number; top: number; right: number; bottom: number };
+type Point = { x: number; y: number };
 
 type Reading = {
   layer: string;
@@ -38,7 +39,10 @@ type Reading = {
     offNormal: number | null;
     labelOverTarget: boolean;
     shaftOverLabel: boolean;
+    overTitleBlock: boolean;
     inSheet: boolean;
+    labelBox: Box;
+    underline: [Point, Point];
   }[];
 };
 
@@ -118,6 +122,7 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
 
       const section = svg.closest('section')!;
       const sheet = box(section.getBoundingClientRect());
+      const titleBlock = box(section.querySelector(':scope > table')!.getBoundingClientRect());
       const tips: Reading['tips'] = [];
       const targets: Reading['targets'] = [];
       for (const callout of svg.querySelectorAll<SVGGElement>('[data-tip]')) {
@@ -150,6 +155,7 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
         const d = path.getAttribute('d')!.match(/-?[\d.]+(?:e-?\d+)?/g)!.map(Number);
         const tip = new DOMPoint(d[0], d[1]).matrixTransform(pathCtm);
         const end = new DOMPoint(d[0] + d[2], d[1] + d[3]).matrixTransform(pathCtm);
+        const lineEnd = new DOMPoint(d[0] + d[2] + d[4], d[1] + d[3] + d[5]).matrixTransform(pathCtm);
         const shaft = Math.hypot(end.x - tip.x, end.y - tip.y);
         const dir = { x: (end.x - tip.x) / shaft, y: (end.y - tip.y) / shaft };
         // The tip stops short of the anchor along the shaft by the gap.
@@ -171,7 +177,10 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
           offNormal,
           labelOverTarget: intersects(labelBox, targetBox),
           shaftOverLabel: segmentCrosses(tip, end, glyphs),
+          overTitleBlock: intersects(labelBox, titleBlock) || segmentCrosses(tip, end, titleBlock),
           inSheet: contains(sheet, labelBox) && contains(sheet, { left: tip.x, top: tip.y, right: tip.x, bottom: tip.y }),
+          labelBox,
+          underline: [{ x: end.x, y: end.y }, { x: lineEnd.x, y: lineEnd.y }],
         });
       }
 
@@ -180,6 +189,15 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
     return readings;
   });
 }
+
+const intersects = (a: Box, b: Box) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+// Half a pixel around a segment, so two collinear underlines still meet.
+const around = (p: Point, q: Point): Box => ({
+  left: Math.min(p.x, q.x) - 0.5, top: Math.min(p.y, q.y) - 0.5, right: Math.max(p.x, q.x) + 0.5, bottom: Math.max(p.y, q.y) + 0.5,
+});
+/** Whether a segment meets a box, or (given two points) another segment, by their bounds. */
+const crosses = (segment: [Point, Point], other: Box | [Point, Point]) =>
+  intersects(around(...segment), Array.isArray(other) ? around(...other) : other);
 
 for (const viewport of VIEWPORTS) {
   test(`at ${viewport.width}px every callout lands on its target and the unit square on the artwork box`, async ({ page }) => {
@@ -219,9 +237,19 @@ for (const viewport of VIEWPORTS) {
         expect(callout.error, `${name} tip error`).toBeLessThanOrEqual(TARGET_TOLERANCE);
         expect(callout.labelOverTarget, `${name} label over target`).toBe(false);
         expect(callout.shaftOverLabel, `${name} shaft over label`).toBe(false);
+        expect(callout.overTitleBlock, `${name} over the title block`).toBe(false);
         expect(callout.inSheet, `${name} outside the sheet`).toBe(true);
         if (callout.offNormal !== null) {
           expect(callout.offNormal, `${name} off the edge's normal`).toBeLessThanOrEqual(NORMAL_TOLERANCE);
+        }
+      }
+      for (const a of reading.targets) {
+        for (const b of reading.targets) {
+          if (a === b) continue;
+          const name = `${label}: "${a.label}" and "${b.label}"`;
+          expect(intersects(a.labelBox, b.labelBox), `${name} labels overlap`).toBe(false);
+          expect(crosses(a.underline, b.labelBox), `${name} underline runs into the label`).toBe(false);
+          expect(crosses(a.underline, b.underline), `${name} underlines cross`).toBe(false);
         }
       }
     }
