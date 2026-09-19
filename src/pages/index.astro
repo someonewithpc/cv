@@ -2,6 +2,7 @@
 import Layout from '@/layouts/Layout.astro';
 
 import Name from '@/components/Name.astro';
+import RevisionTable from '@/components/RevisionTable.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
 import SectionHeader from '@/components/SectionHeader.astro';
 
@@ -14,8 +15,11 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 
 <Layout>
   <main id="main">
-    <Name />
-    <TechIconCloud />
+    <div class="cover">
+      <TechIconCloud />
+      <RevisionTable />
+      <Name />
+    </div>
 
     <section id="demos" class="full-width" aria-labelledby="demos-heading">
       <SectionHeader
@@ -35,6 +39,43 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 </Layout>
 
 <style lang="scss">
+/* The first view of the sheet: the parts list up top, the revision table and the title block
+   along the bottom edge, the way a sheet keeps them. The block is what a reader looks for
+   first on a drawing, so on a phone, where there is no bottom right, it comes first. */
+.cover {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'parts parts'
+    'revisions title';
+  align-items: end;
+  gap: 3rem 2rem;
+  padding-block: 1.5rem 1rem;
+
+  > :global(:nth-child(1)) {
+    grid-area: parts;
+  }
+
+  > :global(:nth-child(2)) {
+    grid-area: revisions;
+  }
+
+  > :global(:nth-child(3)) {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  @media (max-width: 52rem) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'title'
+      'parts'
+      'revisions';
+    gap: 2rem;
+    padding-block: 2.75rem 0.5rem;
+  }
+}
+
 #demos {
   display: grid;
   grid-template-columns: subgrid;
