@@ -103,11 +103,10 @@ svg {
   height: 200%;
   width: 200%;
 
-  /* Sized to the artwork's inscribed square by the script, which anchors the
-     long axis's callouts past the ±2 edge of that box. */
-  &[data-annotations='js'] {
-    overflow: visible;
-  }
+  /* Never clip a callout: the script sizes this box to the artwork's inscribed
+     square and anchors the long axis's callouts past its edge, and the sheet
+     already clips at its own boundary. */
+  overflow: visible;
 
   :global(path) {
     marker-start: var(--annotation-marker);
