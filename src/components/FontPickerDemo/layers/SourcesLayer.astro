@@ -86,11 +86,12 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 </div>
 
 <style lang="scss">
+@use "./sheet" as *;
 @use "./sheetProse" as *;
 
 .wrapper {
-  box-sizing: border-box;
-  width: 100%;
+  @include sheet-content;
+
   max-width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);

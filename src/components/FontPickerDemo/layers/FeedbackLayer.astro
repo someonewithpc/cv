@@ -114,11 +114,12 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 
 <style lang="scss">
 @use '../picker/fontSettingsFieldset' as *;
-@use './sheetProse' as *;
+@use "./sheet" as *;
+@use "./sheetProse" as *;
 
 .wrapper {
-  box-sizing: border-box;
-  width: 100%;
+  @include sheet-content;
+
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
