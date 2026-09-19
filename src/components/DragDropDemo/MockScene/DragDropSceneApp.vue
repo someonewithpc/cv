@@ -75,9 +75,14 @@ const arming = ref(false);
  * the orbit look like it starts before the cursor visually finishes arriving. */
 const cursorInstant = ref(false);
 const cursorPos = reactive({ x: 0, y: 0 });
-/** Catalog thumbnail shown while a drag is still over the sidebar — mirrors the browser's
- * own drag-image for native HTML5 drag, which this pointer-based drag doesn't get for free. */
-const draggedThumb = ref<string | null>(null);
+/**
+ * The catalog thumbnail floated under the pointer while a drag is still over the sidebar.
+ * `mixins/ObjectDrag.vue` hides the native drag image and moves the card's own `<img>` at
+ * its rendered size, keeping the point that was under the press under the pointer.
+ */
+type DragThumb = { src: string; width: number; height: number; offsetX: number; offsetY: number };
+const draggedThumb = ref<DragThumb | null>(null);
+let dragThumbSpec: DragThumb | null = null;
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let stopPageWatch: (() => void) | null = null;
@@ -87,7 +92,6 @@ let pinch: PinchState | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 /** Catalog item mid-drag via pointer (not native HTML5 DnD — see onItemPointerdown). */
 let draggingItem: CatalogItem | null = null;
-let draggingVariant: CatalogVariant | null = null;
 /** Item riding the pointer after a double-click, waiting for the floor click that puts it down. */
 const armedItem = ref<CatalogItem | null>(null);
 /** The last placed object carries the product's selection highlight until the next one starts. */
@@ -135,7 +139,7 @@ function withinRect(clientX: number, clientY: number, rect: DOMRect) {
  * over the source panel. Once the point crosses into the viewport, swap to the real 3D ghost,
  * same as `onViewportDragOver` does for the Main page native-drag flow.
  */
-function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
+function updateDragVisual(clientX: number, clientY: number) {
   const scene = sceneRef.value;
   moveCursorTo(clientX, clientY);
   const rect = canvasRect();
@@ -143,9 +147,23 @@ function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
     draggedThumb.value = null;
     scene?.setGhostAt(clientX, clientY);
   } else {
-    draggedThumb.value = draggingVariant?.thumb ?? item.thumb;
+    draggedThumb.value = dragThumbSpec;
     scene?.setGhostVisible(false);
   }
+}
+
+/** The card's `<img>` at its rendered size, grabbed where the press landed on it. */
+function dragThumbFrom(target: EventTarget | null, src: string, clientX: number, clientY: number): DragThumb {
+  const img = target instanceof Element ? target.querySelector('img') : null;
+  const rect = img?.getBoundingClientRect();
+  if (!rect) return { src, width: 64, height: 64, offsetX: 32, offsetY: 32 };
+  return {
+    src,
+    width: rect.width,
+    height: rect.height,
+    offsetX: clientX - rect.left,
+    offsetY: clientY - rect.top,
+  };
 }
 
 /** A single click only highlights a card and swaps the live ghost, the way the product does. */
@@ -232,7 +250,8 @@ function onItemPointerdown(event: PointerEvent, item: CatalogItem, variant: Cata
 
 function startItemDrag(clientX: number, clientY: number) {
   if (!pendingDrag) return;
-  const { item, variant, pointerId, target } = pendingDrag;
+  const { item, variant, pointerId, origin, target } = pendingDrag;
+  dragThumbSpec = dragThumbFrom(target, variant.thumb, origin.x, origin.y);
   pendingDrag = null;
   selectedId.value = item.id;
   armedItem.value = null;
@@ -240,10 +259,9 @@ function startItemDrag(clientX: number, clientY: number) {
   selectedPlacement.value = false;
   sceneRef.value?.activateCatalogItem(item.id, variant);
   draggingItem = item;
-  draggingVariant = variant;
   phase.value = 'dragging';
   trySetPointerCapture(target, pointerId);
-  updateDragVisual(item, clientX, clientY);
+  updateDragVisual(clientX, clientY);
 }
 
 /** The catalog thumbnail is a plain `<img>`, so a press on it still offers the browser's image drag. */
@@ -254,9 +272,9 @@ function onItemDragStart(event: DragEvent) {
 function endItemDrag(clientX: number, clientY: number) {
   const scene = sceneRef.value;
   draggingItem = null;
-  draggingVariant = null;
   phase.value = 'idle';
   draggedThumb.value = null;
+  dragThumbSpec = null;
   if (!scene) return;
 
   const rect = canvasRect();
@@ -310,7 +328,7 @@ function onPointerMove(event: PointerEvent) {
   }
 
   if (draggingItem) {
-    updateDragVisual(draggingItem, event.clientX, event.clientY);
+    updateDragVisual(event.clientX, event.clientY);
     return;
   }
 
@@ -529,16 +547,23 @@ async function dragAndOrbit(
   scene.clearSelection();
   selectedPlacement.value = false;
   scene.activateCatalogItem(item.id, variant);
-  updateDragVisual(item, pos.x, pos.y);
+  dragThumbSpec = dragThumbFrom(
+    root.querySelector(`[data-demo-target="catalog:${id}"]`),
+    variant.thumb,
+    pos.x,
+    pos.y,
+  );
+  updateDragVisual(pos.x, pos.y);
 
   const dropPoint = canvasPoint(fx, fy);
   cursorInstant.value = true;
   await tweenPoint(token, pos, dropPoint, 900, (p) => {
-    updateDragVisual(item, p.x, p.y);
+    updateDragVisual(p.x, p.y);
   });
   cursorInstant.value = false;
   if (token !== autoplayToken) return false;
   draggedThumb.value = null;
+  dragThumbSpec = null;
   // Letting go is the whole drag: one object lands and the tool is back to idle.
   phase.value = 'idle';
   dropOne(dropPoint.x, dropPoint.y);
@@ -685,6 +710,7 @@ function stopAutoplay() {
   demoPlaying.value = false;
   cursorVisible.value = false;
   draggedThumb.value = null;
+  dragThumbSpec = null;
   pendingDrag = null;
   if (draggingItem || phase.value !== 'idle') {
     sceneRef.value?.setGhostVisible(false);
@@ -865,15 +891,20 @@ onBeforeUnmount(() => {
       </div>
     </aside>
 
-    <div
+    <img
       v-if="draggedThumb"
       class="demo-drag-thumb"
       :class="{ instant: cursorInstant }"
-      :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
+      :src="draggedThumb.src"
+      :style="{
+        left: `${cursorPos.x - draggedThumb.offsetX}px`,
+        top: `${cursorPos.y - draggedThumb.offsetY}px`,
+        width: `${draggedThumb.width}px`,
+        height: `${draggedThumb.height}px`,
+      }"
+      alt=""
       aria-hidden="true"
     >
-      <img :src="draggedThumb" alt="">
-    </div>
 
     <div
       v-if="cursorVisible"
@@ -1104,28 +1135,17 @@ $scene-bg: #212121;
 /** Stand-in for the browser's own drag-image — shown only while the simulated drag point
  * is still over the sidebar, since the pointer-based drag (see onItemPointerdown) doesn't
  * get one for free the way native HTML5 drag does. */
+// The card's own image, floated at its rendered size like the product's #catalog-drag
+// element: no chrome, no fade, riding the pointer until the 3D view takes over.
 .demo-drag-thumb {
   position: absolute;
   z-index: 5;
-  width: 4.2rem;
-  height: 3.1rem;
-  padding: 0.3rem;
-  border-radius: 0.3rem;
-  background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
-  box-shadow: 0 0.25rem 0.6rem rgba(0, 0, 0, 0.45);
-  translate: -50% -128%;
+  object-fit: contain;
   pointer-events: none;
   transition: left 0.12s linear, top 0.12s linear;
 
   &.instant {
     transition: none;
-  }
-
-  img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
   }
 }
 
