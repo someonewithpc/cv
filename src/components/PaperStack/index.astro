@@ -230,7 +230,9 @@ const pages = await Promise.all(
     // The folded-back top-left corner's size, inherited by every page's clip-path so the whole
     // stack's corner folds behind as one; transitioning it here is what eases the resting size
     // and the proximity tease in and out.
-    transition: --fold-back-x 300ms ease-out, --fold-back-y 300ms ease-out;
+    transition:
+      --fold-back-x 300ms ease-out, --fold-back-y 300ms ease-out,
+      --pile-rise 250ms ease-in-out, --pile-drift 250ms ease-in-out, --pile-lean 250ms ease-in-out;
 
     // The fan pivots every page about the pin near the top-left, so the hindmost sheet — turned
     // the furthest, by the same $per-page-splay·log(n) the pages' rotate below uses — drops
@@ -263,6 +265,16 @@ const pages = await Promise.all(
     $turn-splay: 0.5deg;
     $turn-drift: 0.125em;
     $turn-under: 0.75em;
+
+    // Where the page turned most recently stands — the furthest page of the pile, rank
+    // --pages-turned — on the same law the pages below apply to their own rank: how far it has
+    // risen, slid back and leaned. The strip behind the front page's crease reaches up to that
+    // page's crease (see .paper-front::before), and these ease at the pages' own pace so it
+    // climbs with the pile instead of popping ahead of it.
+    --pile-arc: calc(log(1 + var(--pages-turned)) / log(2));
+    --pile-rise: calc(#{$turn-lift} * var(--pile-arc));
+    --pile-drift: calc(#{$turn-drift} * var(--pages-turned));
+    --pile-lean: calc(-1 * #{$turn-splay} * var(--pile-arc));
 
     & > div {
       grid-area: content;
@@ -311,30 +323,61 @@ const pages = await Promise.all(
       &.paper-front {
         // The stack's top-left corner, folded away behind the clip. As a bare cut it is a hole,
         // and with pages standing in the pile behind the stack their edges show through it. This
-        // is the paper that went round the back, painted the way the dog-ear paints the same
-        // fold: the sheet's own colour, darkened, carrying the sheet's hairline edge. It paints
-        // before the page's own children, so the clip's wire still lies over it.
+        // is the paper that went round the back: a strip of sheet back running from the front
+        // page's crease up to the same crease on the furthest page of the pile, painted the way
+        // the fold flap paints the same paper — the sheet's own colour, with its hairline edge.
+        // It paints before the page's own children, so the clip's wire still lies over it.
         //
-        // It is the size of the cut it fills and no more: the crease runs from (--fold-back-x,
-        // 0) to (0, --fold-back-y), plus a hairline of slack to close the seam. The pile behind
-        // it is cut on that same crease (see the corner cut on the other pages below), so this
-        // one dog-ear covers every turned page's corner however many have piled up, and the
-        // fold keeps the size a folded corner has instead of growing with the count. The stack
-        // transitions --fold-back-x/-y, so the box eases with them.
+        // Its near edge is the front page's crease, (--fold-back-x, 0) to (0, --fold-back-y),
+        // plus a hairline of slack to close the seam. Its far edge is that crease as the furthest
+        // page carries it: the page's cut stands --pile-drift over (see the corner cut on the
+        // other pages below), and the page then slides back by that drift and up by
+        // --pile-rise, and leans --pile-lean about the pin — the order the browser applies a
+        // page's translate and rotate — so the strip meets that page's corner at any width and
+        // however many pages have piled up. Nothing is folded until a page has been turned, and
+        // until then the pile's crease is the front page's own.
         &::before {
           content: "";
           position: absolute;
+          $pin-x: var(--fold-pin-x);
+          $pin-y: var(--fold-pin-y);
+          --lean-cos: cos(var(--pile-lean));
+          --lean-sin: sin(var(--pile-lean));
+          --pile-crease-top-x: calc(
+            #{$pin-x} - var(--pile-drift)
+            + (var(--fold-back-x) + var(--pile-drift) - #{$pin-x}) * var(--lean-cos)
+            + #{$pin-y} * var(--lean-sin)
+          );
+          --pile-crease-top-y: calc(
+            #{$pin-y} - var(--pile-rise)
+            + (var(--fold-back-x) + var(--pile-drift) - #{$pin-x}) * var(--lean-sin)
+            - #{$pin-y} * var(--lean-cos)
+          );
+          --pile-crease-left-x: calc(
+            #{$pin-x} - var(--pile-drift)
+            + (var(--pile-drift) - #{$pin-x}) * var(--lean-cos)
+            - (var(--fold-back-y) - #{$pin-y}) * var(--lean-sin)
+          );
+          --pile-crease-left-y: calc(
+            #{$pin-y} - var(--pile-rise)
+            + (var(--pile-drift) - #{$pin-x}) * var(--lean-sin)
+            + (var(--fold-back-y) - #{$pin-y}) * var(--lean-cos)
+          );
+          // The box starts above the page by the pile's rise plus room for the lean, and the
+          // polygon measures its y from there.
+          --strip-top: calc(var(--pile-rise) + 1em);
           left: 0;
-          top: 0;
-          width: calc(var(--fold-back-x) + 1px);
-          height: calc(var(--fold-back-y) + 1px);
-          clip-path: polygon(0px 0px, 100% 0px, 0px 100%);
+          top: calc(-1 * var(--strip-top));
+          width: calc(var(--fold-back-x) + 1em);
+          height: calc(var(--fold-back-y) + var(--strip-top) + 1px);
+          clip-path: polygon(
+            calc(var(--fold-back-x) + 1px) var(--strip-top),
+            var(--pile-crease-top-x) calc(var(--pile-crease-top-y) + var(--strip-top)),
+            var(--pile-crease-left-x) calc(var(--pile-crease-left-y) + var(--strip-top)),
+            0px calc(var(--fold-back-y) + 1px + var(--strip-top))
+          );
           background: var(--paper-surface, var(--surface-sunken));
           border: 1px solid var(--line-strong);
-          border-top-left-radius: $border-radius;
-          filter: brightness(75%);
-          // Nothing is folded until a page has been turned, and at that point the box is down to
-          // its own border.
           opacity: clamp(0, var(--pages-turned), 1);
           pointer-events: none;
         }
