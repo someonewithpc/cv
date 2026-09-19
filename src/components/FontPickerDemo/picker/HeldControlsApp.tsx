@@ -7,7 +7,7 @@ import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
 import { Pinned } from './Pinned';
-import { type CursorState, Playthrough, type Run, setNativeValue } from './playthrough';
+import { type CursorState, nextFrame, Playthrough, type Run, setNativeValue } from './playthrough';
 
 import './EditStyle.scss';
 import './HeldControls.scss';
@@ -118,9 +118,9 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     const slider = (side: Side) => el.querySelector<HTMLInputElement>(`[data-demo-target="size-${side}"]`);
 
     // Where the thumb sits for a value: the track is inset by the thumb's radius
-    const thumb = (input: HTMLInputElement) => {
+    const thumb = (input: HTMLInputElement, value = Number(input.value)) => {
       const rect = input.getBoundingClientRect();
-      const t = (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min));
+      const t = (value - Number(input.min)) / (Number(input.max) - Number(input.min));
       return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
     };
 
@@ -136,8 +136,8 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       // Kept against the sheet, not the viewport: a page that scrolls under the walkthrough
       // would otherwise slide the hand up the column
       const holdY = thumb(input).y - page.getBoundingClientRect().top;
-      const ride = (flags: Partial<CursorState> = { dragging: true }) => {
-        run.appear({ x: thumb(input).x, y: page.getBoundingClientRect().top + holdY }, flags);
+      const ride = (value: number, flags: Partial<CursorState> = { dragging: true }) => {
+        run.appear({ x: thumb(input, value).x, y: page.getBoundingClientRect().top + holdY }, flags);
       };
 
       // The line the drag started on, left on the sheet while it runs, and a dimension from it
@@ -155,18 +155,34 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
         });
       };
       mark();
-      ride({ clicking: true });
+      ride(1, { clicking: true });
       await run.wait(220);
 
       const stack = page.closest<HTMLElement>('article.technical-drawing-stack');
       const to = stack?.dataset.sheetOrientation === 'portrait' ? DRAG_TO_PORTRAIT : DRAG_TO;
-      for (let value = 1 + 1 / 8; value <= to + 0.001; value += 1 / 8) {
-        setNativeValue(input, value.toFixed(3));
-        await run.wait(DRAG_STEP_MS);
+      // The hand pulls the thumb, so both come off the same value on the same frame, and the
+      // cursor runs on the value it is dragging towards rather than the step the slider has
+      // snapped to. Stepping the value and catching the cursor up a step later left the pointer
+      // trailing the thumb the whole way down.
+      const step = Number(input.step) || 1 / 8;
+      const span = to - 1;
+      const start = performance.now();
+      let snapped = 1;
+      for (;;) {
+        await nextFrame();
+        run.check();
+        const t = Math.min((performance.now() - start) / ((span / step) * DRAG_STEP_MS), 1);
+        const raw = 1 + span * t;
+        const next = Math.round(raw / step) * step;
+        if (next !== snapped) {
+          snapped = next;
+          setNativeValue(input, next.toFixed(3));
+        }
         mark();
-        ride();
+        ride(raw);
+        if (t >= 1) break;
       }
-      ride({});
+      ride(to, {});
       await run.wait(1800);
       setGrab(null);
       setNativeValue(input, '1');
