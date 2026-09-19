@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, swipeStack, swipeToPage } from './support/paperStack';
+import { frontPage, frontPageIndex, frontPageName, swipeStack, swipeToPage, waitForIslandMounted } from './support/paperStack';
 
 const PAGES = ['Library Tagging Tool', 'Shared Value', 'Simulated Caret', 'Completed Objects'];
 
@@ -265,3 +265,99 @@ test('completed objects page: the leaving-the-list blueprint diagram is shown', 
   await expect(front.locator('section.blueprint')).toBeVisible();
   await expect(front.locator('.grouped-objects.completing')).toHaveCount(1);
 });
+
+// Every sheet keeps clear sheet around its content: each layer's root pads by the one token in
+// layers/_sheet.scss, in em of the sheet's own type, so whatever it paints stays off the
+// frame line, the title block and the note's tab. The floor here is what the review asked for.
+const SHEET_MARGIN_EM = 0.5;
+const VIEWPORTS = [
+  { width: 390, height: 844 },
+  { width: 844, height: 390 },
+  { width: 1024, height: 768 },
+  { width: 1440, height: 900 },
+];
+
+// The least clear sheet, in px, between anything the front sheet paints and its frame line
+// (`toFrame`) or its title block and note tab (`toPieces`), against the margin the sheet's
+// type sets
+function clearSheet(front: import('@playwright/test').Locator) {
+  return front.evaluate((wrapper, marginEm) => {
+    const section = wrapper.querySelector(':scope > section')!;
+    const root = section.querySelector(':scope > .content > *') as HTMLElement;
+    const margin = marginEm * parseFloat(getComputedStyle(root).fontSize);
+
+    // The frame line is drawn one pixel wide on the inside of the mat
+    const style = getComputedStyle(section);
+    const mat = parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft) + 1;
+    const sheet = section.getBoundingClientRect();
+    const frame = { left: sheet.left + mat, top: sheet.top + mat, right: sheet.right - mat, bottom: sheet.bottom - mat };
+
+    const pieces = ['table', '.note-fold']
+      .map((s) => section.querySelector(`:scope > ${s}, :scope > .aside > ${s}`)?.getBoundingClientRect())
+      .filter((r): r is DOMRect => !!r && r.width > 0 && r.height > 0);
+
+    // What paints: text, form controls, a drawing, or a box with a fill or a border. Grid
+    // and flex wrappers do not, and a wrapper spanning the sheet says nothing about where
+    // the ink is. The walkthrough's cursor goes where it likes.
+    const paints = (el: Element) => {
+      if (el.closest('.tagging-cursor')) return false;
+      if (el instanceof SVGElement) return el.tagName === 'svg';
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.display === 'contents' || cs.visibility === 'hidden') return false;
+      if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA', 'IMG'].includes(el.tagName)) return true;
+      if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0) return true;
+      return [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim());
+    };
+    // Only what shows: the list scrolls inside the sheet, so a card scrolled out of its
+    // scroller paints nothing where its box says it is.
+    const visible = (el: Element) => {
+      const b = el.getBoundingClientRect();
+      const r = { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
+      for (let a = el.parentElement; a && a !== root.parentElement; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+        const c = a.getBoundingClientRect();
+        r.left = Math.max(r.left, c.left);
+        r.top = Math.max(r.top, c.top);
+        r.right = Math.min(r.right, c.right);
+        r.bottom = Math.min(r.bottom, c.bottom);
+      }
+      return r;
+    };
+    const boxes = [...root.querySelectorAll('*')]
+      .filter(paints)
+      .map(visible)
+      .filter((r) => r.right > r.left && r.bottom > r.top);
+
+    const toFrame = Math.min(...boxes.map((r) => Math.min(
+      r.left - frame.left, frame.right - r.right, r.top - frame.top, frame.bottom - r.bottom,
+    )));
+    const toPieces = Math.min(...boxes.flatMap((r) => pieces.map((p) => Math.max(
+      p.left - r.right, r.left - p.right, p.top - r.bottom, r.top - p.bottom,
+    ))));
+    return { margin, boxes: boxes.length, toFrame, toPieces };
+  }, SHEET_MARGIN_EM);
+}
+
+for (const viewport of VIEWPORTS) {
+  test.describe(`at ${viewport.width}x${viewport.height}`, () => {
+    test.use({ viewport });
+
+    test('every sheet keeps the margin around its content', async ({ page }) => {
+      test.setTimeout(120_000);
+      const stack = taggingToolStack(page);
+      await stack.scrollIntoViewIfNeeded();
+
+      for (const name of PAGES) {
+        await swipeToPage(page, stack, name);
+        const front = frontPage(stack, await frontPageIndex(stack));
+        if (await front.locator('[data-boot-module]').count()) await waitForIslandMounted(front);
+        await expect.poll(async () => (await clearSheet(front)).boxes).toBeGreaterThan(0);
+
+        const gaps = await clearSheet(front);
+        expect.soft(gaps.toFrame, `${name}: to the frame line`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+        expect.soft(gaps.toPieces, `${name}: to the title block`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+      }
+    });
+  });
+}

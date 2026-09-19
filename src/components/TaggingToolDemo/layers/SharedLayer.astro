@@ -69,9 +69,22 @@ const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
 </div>
 
 <style lang="scss">
+@use "./sheet" as *;
+
 .wrapper {
-  box-sizing: border-box;
-  width: 100%;
+  @include sheet-content;
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* The title block claims the bottom-right corner on a narrow sheet, and the
+       panel is centred, so its bottom edge has to clear that corner. */
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    /* Portrait gives the title block its own row. */
+    padding-bottom: $sheet-margin;
+  }
+
   margin-inline: auto;
   display: grid;
   place-items: center;
