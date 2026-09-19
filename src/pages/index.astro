@@ -5,6 +5,7 @@ import Name from '@/components/Name.astro';
 import RevisionTable from '@/components/RevisionTable.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
 import SectionHeader from '@/components/SectionHeader.astro';
+import Callout from '@/components/Callout.astro';
 
 import VisrezLogoAnimation from '@/components/VisrezLogoAnimation/Demo.astro';
 import MarkerEditorDemo from '@/components/MarkerEditorDemo/Demo.astro';
@@ -26,12 +27,18 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
         headingId="demos-heading"
         titleJp="デモ"
         title="Demos"
-        sheetCode="SH-DEMOS"
+        sheetCode="Details A to C"
       />
 
-      <VisrezLogoAnimation />
-      <MarkerEditorDemo />
-      <SpaceBuilderDemo />
+      <Callout letter="A" kind="Detail" title="Loading logo" titleJp="ローディングロゴ" scale="3:1" headingId="detail-a">
+        <VisrezLogoAnimation />
+      </Callout>
+      <Callout letter="B" kind="Detail" title="Marker editor" titleJp="マーカーエディター" scale="1:1" headingId="detail-b">
+        <MarkerEditorDemo />
+      </Callout>
+      <Callout letter="C" kind="Section" title="Space builder" titleJp="スペースビルダー" scale="1:1" headingId="section-c">
+        <SpaceBuilderDemo />
+      </Callout>
     </section>
 
     <OpenSourceContributions />
@@ -79,12 +86,12 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 #demos {
   display: grid;
   grid-template-columns: subgrid;
-  row-gap: 4em;
-  margin-top: 8rem;
+  row-gap: 5rem;
+  margin-top: 6rem;
 
   @media (max-width: 52rem) {
-    row-gap: 2.5em;
-    margin-top: 4.5rem;
+    row-gap: 3.5rem;
+    margin-top: 4rem;
   }
 
   > :global(header) {
