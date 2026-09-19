@@ -475,6 +475,22 @@ function orbitTween(token: number, deltaTheta: number, ms: number, startClient: 
   });
 }
 
+/**
+ * Scroll the catalog until the card is in view before the demo cursor goes for it, so the
+ * viewer sees where the object came from. Only the panel scrolls, never the page.
+ */
+async function revealCatalogCard(root: HTMLElement, id: string) {
+  const card = root.querySelector<HTMLElement>(`[data-demo-target="catalog:${id}"]`);
+  const body = root.querySelector<HTMLElement>('.sidebar-body');
+  if (!card || !body) return;
+  const cardRect = card.getBoundingClientRect();
+  const bodyRect = body.getBoundingClientRect();
+  if (cardRect.top >= bodyRect.top && cardRect.bottom <= bodyRect.bottom) return;
+  const offset = cardRect.top - bodyRect.top - (bodyRect.height - cardRect.height) / 2;
+  body.scrollBy({ top: offset, behavior: reducedMotion ? 'auto' : 'smooth' });
+  await wait(reducedMotion ? 50 : 450);
+}
+
 function catalogButton(root: HTMLElement, id: string) {
   const item = CATALOG_ITEMS.find((entry) => entry.id === id);
   const pos = elementCenter(root.querySelector(`[data-demo-target="catalog:${id}"]`));
@@ -491,6 +507,8 @@ async function dragAndOrbit(
   fy: number,
   orbitDir: 1 | -1,
 ): Promise<boolean> {
+  await revealCatalogCard(root, id);
+  if (token !== autoplayToken) return false;
   const target = catalogButton(root, id);
   if (!target) return false;
   const { item, pos } = target;
@@ -538,6 +556,8 @@ async function armAndClick(
   fx: number,
   fy: number,
 ): Promise<boolean> {
+  await revealCatalogCard(root, id);
+  if (token !== autoplayToken) return false;
   const target = catalogButton(root, id);
   if (!target) return false;
   const { item, pos } = target;
