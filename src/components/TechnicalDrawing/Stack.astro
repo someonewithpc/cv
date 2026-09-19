@@ -59,6 +59,8 @@ const hintBack = 'this corner drags the page back';
   <div class="flip-hints" aria-hidden="true">
     <p class="flip-hint flip-hint--fwd hint-words marker-font">{hint}</p>
     <svg class="flip-hint flip-hint--fwd hint-arrow">
+      <path class="hint-shaft-halo" />
+      <path class="hint-head-halo" />
       <path class="hint-shaft" />
       <path class="hint-pass" />
       <path class="hint-head" />
@@ -66,6 +68,8 @@ const hintBack = 'this corner drags the page back';
 
     <p class="flip-hint flip-hint--back hint-words marker-font">{hintBack}</p>
     <svg class="flip-hint flip-hint--back hint-arrow">
+      <path class="hint-shaft-halo" />
+      <path class="hint-head-halo" />
       <path class="hint-shaft" />
       <path class="hint-pass" />
       <path class="hint-head" />
@@ -135,7 +139,9 @@ $portrait-lean-y: 2.25em;
   inset: 0;
   z-index: 3;
   display: none;
-  color: var(--accent-text);
+  // The sheet's own accent, not the page's: a blueprint page is dark blue and the page's marker
+  // colour disappears into it. The script reads it off whichever page is in front.
+  color: var(--hint-ink, var(--accent-text));
   pointer-events: none;
 }
 
@@ -214,6 +220,17 @@ $portrait-lean-y: 2.25em;
   .hint-pass { stroke-width: 1.25px; opacity: 0.45; }
   .hint-head { stroke-width: 2.75px; }
 
+  // Marker on paper, not on whatever it crosses: the line runs over the title block's rules and
+  // over the artwork, and accent ink alone sank into both (1.6:1 in the light theme, 1.9:1 in
+  // arctic). A pass in the sheet's own colour under the stroke carries the paper with it, so the
+  // ink is always read against the paper. The colour is sampled from the front page, which is
+  // what makes it follow a blueprint sheet and the theme.
+  .hint-shaft-halo,
+  .hint-head-halo {
+    stroke: var(--hint-paper, var(--surface-page));
+    stroke-width: 8px;
+    opacity: 0.9;
+  }
 }
 </style>
 
@@ -262,7 +279,12 @@ function initStack(stack: HTMLElement) {
   }, { threshold: 0.25, scrollMargin: '25%' });
   [...stack.querySelectorAll('section')].forEach((page) => {
     observer.observe(page);
-    watchFrontPage(page, () => apply(page));
+    watchFrontPage(page, () => {
+      apply(page);
+      // A committed flip puts a different sheet in front, and the hints take their ink and their
+      // paper colour from whichever one that is.
+      requestAnimationFrame(redrawHints);
+    });
   });
 
   // So the first state a demo reports is already heard.
