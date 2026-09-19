@@ -118,7 +118,9 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 @use "./sheetProse" as *;
 
 .wrapper {
-  @include sheet-content;
+  // A portrait sheet has the height for the sample, the buttons and the curve at this, not
+  // at the picker's scale
+  @include sheet-content(0.03);
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -135,15 +137,10 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   width: min(100%, 60em);
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
-  // Sized from the stack's measured pixels, never a container unit: see Stack.astro's
-  // script. A landscape sheet is twice as wide as it is tall, so its height is what runs
-  // out first and the drawing comes off that
-  font-size: clamp(0.5rem, 0.025 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
 
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.75em;
-    font-size: clamp(0.625rem, 0.026 * var(--sheet-inline), 0.9375rem);
 
     // A phone sheet keeps the running indicator and the curve; the exploded stack is the
     // one thing here that a reader can do without

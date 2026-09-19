@@ -1,11 +1,27 @@
-// What the picker's four sheets share: the margin every layer keeps around its content.
+// What the picker's four sheets share: one type scale and the margin every layer keeps
+// around its content. Both go on a layer's root and nowhere else.
 
 // Clear sheet between the content and the frame line, the title block and the corner pieces,
-// in em of the sheet's own type so it scales with the page. It goes on a layer's root and
-// nowhere else, so nothing inside has to be nudged on its own. The spec's floor is 0.5em.
+// in em of the sheet's own type so it scales with the page. The spec's floor is 0.5em.
 $sheet-margin: 0.75em;
 
-@mixin sheet-content {
+// The sheet's type, sized from the stack's measured pixels (Stack.astro's script), never a
+// container unit: a font-size out of a container query costs Chrome seconds per layout in
+// grids this deep. A landscape sheet is twice as wide as it is tall, so its height is what
+// the type runs out of; a portrait sheet gives it the full width. The picker sets the scale
+// and the blueprint sheets read at the same size; a sheet that cannot fit its drawing at
+// the portrait scale passes a smaller factor.
+@mixin sheet-type($portrait: 0.036) {
+  font-size: clamp(0.625rem, 0.027 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, $portrait * var(--sheet-inline));
+  }
+}
+
+@mixin sheet-content($portrait: 0.036) {
+  @include sheet-type($portrait);
+
   box-sizing: border-box;
   width: 100%;
   padding: $sheet-margin;
