@@ -17,6 +17,7 @@
   margin: -1.25em 0 0 -1.25em;
   border: 0.125em solid var(--ink, currentColor);
   border-radius: 50%;
+  box-shadow: 0 0 0 0.0625em var(--surface-page, transparent);
   opacity: 0.6;
   animation: demo-cursor-flare 300ms ease-out forwards;
 }
