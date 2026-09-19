@@ -290,11 +290,17 @@ for (const viewport of VIEWPORTS) {
         await check('');
 
         // The held controls sheet is at its tallest while the walkthrough holds each column's
-        // size at the top of its drag: measure it there too
+        // size at the top of its drag (HeldControlsApp's DRAG_TO): measure it there too
         if (name === 'Held Controls') {
+          const top = (await stack.getAttribute('data-sheet-orientation')) === 'portrait' ? 1.5 : 1.75;
           for (const side of ['plain', 'held']) {
-            const size = front.locator(`[data-demo-target="size-${side}"]`);
-            await expect.poll(() => size.inputValue(), { timeout: 45_000 }).toBe('1.25');
+            // Read off the DOM, not a strict locator: the held column keeps a spacer clone of the
+            // row it holds, so its target can match twice mid-drag
+            const size = () => front.evaluate(
+              (el, s) => Number(el.querySelector<HTMLInputElement>(`[data-demo-target="size-${s}"]`)?.value),
+              side,
+            );
+            await expect.poll(size, { timeout: 45_000, intervals: [100] }).toBe(top);
             await check(`, ${side} column dragged`);
           }
         }
