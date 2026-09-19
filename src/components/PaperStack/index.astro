@@ -495,11 +495,20 @@ const pages = await Promise.all(
           // would — and sign() picks it straight off the lean, so the edge can't fall out of
           // step with the angle. (The two are only ambiguous at exactly 45°, where sign() is 0
           // and the wire would collapse; a lean that square has no edge to prefer anyway.)
+          //
+          // The width is that clearance itself, less an eighth, rather than a fixed em: a stack
+          // that sizes its corner to the sheet gets a clip sized to the corner it pins, instead
+          // of a wire whose flank crosses the crease and hangs off the page once the corner is
+          // small. x·sin(atan2(y, x)) is x·y/|(x, y)|, which calc cannot write directly because
+          // it will not multiply two lengths.
           translate: -87.5% -78.125%;
           transform-origin: 87.5% 78.125%;
           rotate: atan2(var(--fold-back-rest-x), var(--fold-back-rest-y));
           transform: scaleY(sign(var(--fold-back-rest-y) - var(--fold-back-rest-x)));
-          width: 1.75em;
+          width: calc(
+            0.875 * var(--fold-back-rest-x)
+            * sin(atan2(var(--fold-back-rest-y), var(--fold-back-rest-x)))
+          );
           height: auto;
         }
 
