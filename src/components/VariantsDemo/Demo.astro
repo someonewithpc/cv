@@ -7,7 +7,6 @@ import PostIt from '@/components/PostIt.astro';
 
 import Panel from './Panel.astro';
 import GroupsLayer from './layers/GroupsLayer.astro';
-import PickerLayer from './layers/PickerLayer.astro';
 import SwapLayer from './layers/SwapLayer.astro';
 import MissingLayer from './layers/MissingLayer.astro';
 
@@ -27,7 +26,6 @@ const cardSize = toKiB(cardSources.join(''));
 const layers = {
   main: { name: null },
   groups: { name: 'Variant Groups', pageStyle: 'blueprint' },
-  picker: { name: 'Group Picker', pageStyle: 'blueprint' },
   swap: { name: 'Model Swap', pageStyle: 'blueprint' },
   missing: { name: 'Missing Variants', pageStyle: 'blueprint' },
 } as const;
@@ -48,7 +46,6 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: <Panel />,
       groups: <GroupsLayer />,
-      picker: <PickerLayer />,
       swap: <SwapLayer />,
       missing: <MissingLayer />,
     }[layer])}
@@ -64,14 +61,8 @@ type Layer = keyof typeof layers;
       ),
       groups: (
         <PostIt background="#cde" color="black">
-          One catalog card stands for every library object under it. Seats and size cut that
-          group into cells, and a cell's contents are its styles
-        </PostIt>
-      ),
-      picker: (
-        <PostIt background="#dfd" color="black">
-          The carousel walks the styles of one cell. The dropdowns move between cells, and
-          hovering one shows the object without committing to it
+          One card, many library objects. The carousel walks the styles of one cell; the
+          dropdowns move between cells, and hovering an option shows it before a click picks it
         </PostIt>
       ),
       swap: (
