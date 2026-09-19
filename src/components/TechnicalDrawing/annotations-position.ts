@@ -14,7 +14,7 @@
  * mapped through the target's screen matrix; a `normal` angle is that segment's outer
  * normal. The callout is mirrored across the tip's vertical axis (a normal one keeps its
  * geometry and swaps the label's side) when the label would leave the sheet's drawing
- * cell or lie over the target and the mirror image would not.
+ * cell or lie over the target or the title block and the mirror image would not.
  *
  * The overlay itself is re-sized to that square around the artwork rather than around the
  * wrapping `.content`, which can be a line box taller than an inline artwork.
@@ -122,6 +122,26 @@ function union(rects: DOMRect[]): DOMRect {
 const intersects = (a: Box, b: Box) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 const within = (a: Box, b: Box) => a.left >= b.left && a.right <= b.right && a.top >= b.top && a.bottom <= b.bottom;
 
+/** Whether the segment p–q passes through the box, by clipping its parameter to each slab. */
+function crosses(p: Point, q: Point, box: Box) {
+  let t0 = 0;
+  let t1 = 1;
+  for (const [d, lo, hi] of [
+    [q.x - p.x, box.left - p.x, box.right - p.x],
+    [q.y - p.y, box.top - p.y, box.bottom - p.y],
+  ]) {
+    if (Math.abs(d) < 1e-9) {
+      if (lo > 0 || hi < 0) return false;
+      continue;
+    }
+    const [a, b] = d > 0 ? [lo / d, hi / d] : [hi / d, lo / d];
+    t0 = Math.max(t0, a);
+    t1 = Math.min(t1, b);
+    if (t0 > t1) return false;
+  }
+  return true;
+}
+
 /** The label's box for a callout ending at `end` on `sign`'s side, text metrics from `text`. */
 function labelBox(callout: Callout, end: Point, sign: 1 | -1, metrics: { width: number; ascent: number; descent: number }): Box {
   const start = end.x + sign * callout.offset.x;
@@ -134,7 +154,7 @@ function labelBox(callout: Callout, end: Point, sign: 1 | -1, metrics: { width: 
   };
 }
 
-function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: number; sin: number }, cell: Box, sheet: Box) {
+function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: number; sin: number }, cell: Box, sheet: Box, avoid: Box[]) {
   const targetBox = toOverlay(union(callout.target.map((el) => el.getBoundingClientRect())), centre, unit, rot);
   const bbox = callout.text.getBBox();
   const width = bbox.width;
@@ -149,6 +169,7 @@ function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: 
   }
   const defaultSign: 1 | -1 = Math.cos(rad) < 0 && Math.sin(rad) < 0 ? -1 : 1;
   const short = Math.min(targetBox.right - targetBox.left, targetBox.bottom - targetBox.top);
+  const clear = (label: Box) => [targetBox, ...avoid].every((box) => !intersects(label, box));
 
   const place = (mirror: boolean) => {
     const flip = mirror && !fixed ? -1 : 1;
@@ -165,7 +186,11 @@ function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: 
     const end = { x: tip.x + callout.length * cos, y: tip.y - callout.length * sin };
     const sign = ((mirror ? -1 : 1) * (callout.side ?? defaultSign)) as 1 | -1;
     const label = labelBox(callout, end, sign, metrics);
-    const fits = label.left >= cell.left && label.right <= cell.right && within(label, sheet) && !intersects(label, targetBox);
+    // The shaft may touch the label's corner; only a run through the glyphs counts.
+    const inset = 0.01;
+    const glyphs = { left: label.left + inset, top: label.top + inset, right: label.right - inset, bottom: label.bottom - inset };
+    const fits =
+      label.left >= cell.left && label.right <= cell.right && within(label, sheet) && clear(label) && !crosses(tip, end, glyphs);
     return { tip, end, sign, fits };
   };
 
@@ -205,9 +230,11 @@ function read(overlay: Overlay): boolean {
     const everywhere: Box = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity };
     const sheet = section ? toOverlay(section.getBoundingClientRect(), centre, unit, rot) : everywhere;
     const cell = cellEl ? toOverlay(cellEl.getBoundingClientRect(), centre, unit, rot) : sheet;
+    const titleBlock = section?.querySelector(':scope > table');
+    const avoid = titleBlock ? [toOverlay(titleBlock.getBoundingClientRect(), centre, unit, rot)] : [];
     for (const callout of overlay.targeted) {
       if (!callout.group.getClientRects().length) continue;
-      readCallout(callout, centre, unit, rot, cell, sheet);
+      readCallout(callout, centre, unit, rot, cell, sheet, avoid);
     }
   }
   return true;
