@@ -1,4 +1,5 @@
 ---
+import DemoLede from '@/components/DemoLede.astro';
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import PostIt from '@/components/PostIt.astro';
@@ -33,6 +34,10 @@ const layers = {
 
 type Layer = keyof typeof layers;
 ---
+
+<DemoLede number={1} sheets={Object.values(layers).map((layer) => layer.name)}>
+  Visrez's loading logo, redrawn from the Illustrator original as one authored SVG path so it could animate.
+</DemoLede>
 
 <TechnicalDrawingStack
   subtitle="Visrez Animated Loading Logo"

@@ -1,0 +1,50 @@
+---
+/**
+ * The deck paragraph that introduces a drawing stack: which stack this is, what it shows, and
+ * the sheets behind the front one, read off the stack's own layer list so the two never drift.
+ */
+type Props = {
+  number: number;
+  of?: number;
+  sheets: readonly (string | null)[];
+};
+
+const { number, of = 3, sheets } = Astro.props;
+
+const names = sheets.filter((name): name is string => Boolean(name));
+---
+
+<div class="demo-lede">
+  <p class="demo-lede-index typewriter">Stack {number} / {of}</p>
+  <p class="demo-lede-text"><slot /></p>
+  <p class="demo-lede-sheets">{names.length} sheets behind it: {names.join(', ')}.</p>
+</div>
+
+<style lang="scss">
+.demo-lede {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 36ch;
+  text-wrap: pretty;
+
+  .demo-lede-index {
+    font-size: var(--type-small);
+    letter-spacing: 0.06em;
+    color: var(--accent-text);
+  }
+
+  .demo-lede-text {
+    font-family: var(--font-poppins);
+    font-size: var(--type-lead);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .demo-lede-sheets {
+    font-family: monospace, system-ui;
+    font-size: var(--type-caption);
+    line-height: 1.5;
+    color: var(--ink-muted);
+  }
+}
+</style>

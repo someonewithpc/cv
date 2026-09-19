@@ -55,5 +55,20 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
   > :global(:not(header, .folio-rail)) {
     grid-column: breakout;
   }
+
+  /* Each deck sits above its stack, with every second one set from the right edge. */
+  > :global(.demo-lede) {
+    margin-top: 2.5rem;
+    margin-bottom: -2.5em;
+
+    @media (max-width: 52rem) {
+      margin-bottom: -1em;
+    }
+  }
+
+  > :global(.demo-lede:nth-child(even of .demo-lede)) {
+    justify-self: end;
+    text-align: right;
+  }
 }
 </style>

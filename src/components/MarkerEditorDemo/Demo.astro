@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import * as esbuild from 'esbuild';
 
+import DemoLede from '@/components/DemoLede.astro';
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
 
@@ -53,6 +54,10 @@ const layers = {
 
 type Layer = keyof typeof layers;
 ---
+
+<DemoLede number={2} sheets={Object.values(layers).map((layer) => layer.name)}>
+  The marker editor from Visrez's maps, ported to React on Leaflet. Markers are built from parts, and every edit can be undone.
+</DemoLede>
 
 <TechnicalDrawingStack
   subtitle="Interactive Map Marker Editor"
