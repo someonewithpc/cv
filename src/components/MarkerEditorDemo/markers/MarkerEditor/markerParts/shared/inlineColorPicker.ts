@@ -12,6 +12,11 @@
  *
  * The native input stays as the model. This writes to it and dispatches `input`, so the
  * walkthrough, the serialized marker and the live style rule all keep their one code path.
+ *
+ * The picker opens on a press of the swatch (the native input) and closes on the next press
+ * of it, a press outside it, or Escape. A pointer's click on the swatch is cancelled so the
+ * browser's own chooser stays put; the keyboard still reaches it, since Space and Enter
+ * click without a press.
  */
 
 type Hsv = { h: number, s: number, v: number };
@@ -62,11 +67,16 @@ function element<K extends keyof HTMLElementTagNameMap>(
  * A rectangle the pointer drags inside. The box is read once per gesture: reading it per
  * move would force a layout back out of the style change the move just made, which is the
  * cost this whole path exists to avoid.
+ *
+ * A real pointer is tracked through pointer events with capture. The walkthrough presses
+ * with mouse events only (see TechnicalDrawing/demo-cursor-press.ts), so its untrusted
+ * mousedown, moves and mouseup drive the same tracking; a real pointer's own mouse events
+ * are trusted and skipped, having been handled once already.
  */
 function draggable(area: HTMLElement, onMove: (x: number, y: number) => void) {
   let box: DOMRect | null = null;
 
-  const track = (event: PointerEvent) => {
+  const track = (event: MouseEvent) => {
     if (!box) return;
     event.preventDefault();
     onMove(clamp01((event.clientX - box.left) / box.width), clamp01((event.clientY - box.top) / box.height));
@@ -84,12 +94,57 @@ function draggable(area: HTMLElement, onMove: (x: number, y: number) => void) {
     box = null;
     area.releasePointerCapture(event.pointerId);
   });
+
+  area.addEventListener('mousedown', (event) => {
+    if (event.isTrusted) return;
+    box = area.getBoundingClientRect();
+    track(event);
+  });
+  area.addEventListener('mousemove', (event) => {
+    if (!event.isTrusted) track(event);
+  });
+  area.addEventListener('mouseup', (event) => {
+    if (!event.isTrusted) box = null;
+  });
+}
+
+/** Shows the picker on a press of the swatch, and hides it again on the ways out. */
+function openOnPress(field: HTMLElement, host: HTMLElement, input: HTMLInputElement) {
+  host.hidden = true;
+
+  const close = () => {
+    host.hidden = true;
+    document.removeEventListener('mousedown', onPressOutside);
+    document.removeEventListener('keydown', onEscape);
+  };
+  const onPressOutside = (event: MouseEvent) => {
+    if (!field.contains(event.target as Node)) close();
+  };
+  const onEscape = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') close();
+  };
+  const open = () => {
+    host.hidden = false;
+    document.addEventListener('mousedown', onPressOutside);
+    document.addEventListener('keydown', onEscape);
+  };
+
+  input.addEventListener('mousedown', () => {
+    if (host.hidden) open();
+    else close();
+  });
+  // A click that came from a press already toggled the picker; keep the browser's chooser
+  // from opening over it. A keyboard click has no press behind it (`detail` is 0).
+  input.addEventListener('click', (event) => {
+    if (event.detail > 0) event.preventDefault();
+  });
 }
 
 export function mountInlineColorPicker(host: HTMLElement, input: HTMLInputElement): void {
   if (host.dataset.picker === 'mounted') return;
   host.dataset.picker = 'mounted';
 
+  openOnPress(host.parentElement ?? host, host, input);
   const root = element('div', 'marker-color-picker', host);
   const area = element('div', 'marker-color-picker__area', root);
   const areaKnob = element('div', 'marker-color-picker__knob', area);

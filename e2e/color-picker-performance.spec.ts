@@ -19,6 +19,8 @@ async function liveEditor(page: import('@playwright/test').Page) {
   // Hover hands the walkthrough over to the pointer, so the step stays open once clicked.
   await editor.locator('svg').first().hover();
   await editor.locator('[data-demo-target="editor:step:shapeFill"]').first().click();
+  // The picker opens on a press of the swatch.
+  await editor.locator('#marker-fill-color-marker-shape').click();
   return editor;
 }
 
