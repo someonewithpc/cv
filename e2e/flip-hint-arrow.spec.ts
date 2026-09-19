@@ -1,6 +1,23 @@
 import { expect, type Page, test } from '@playwright/test';
+import sharp from 'sharp';
 
 import { swipeStack } from './support/paperStack';
+
+type Rgb = readonly [number, number, number];
+
+const luminance = ([r, g, b]: Rgb) => {
+  const channel = (value: number) => {
+    const c = value / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+};
+
+/** WCAG contrast ratio between two sRGB colours. */
+function contrast(a: Rgb, b: Rgb): number {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+}
 
 /**
  * The hints point at a crease, so what these tests measure is geometry: where the tip of each
@@ -161,6 +178,160 @@ test('a turn hands over to the way back, which points at the folded-away crease'
   await expect(stack).toHaveAttribute('data-paper-returned', '');
   expect((await aim(page, 'fwd')).painted).toBe(false);
   expect((await aim(page, 'back')).painted).toBe(false);
+});
+
+/**
+ * Where the hints sit: in the gap between this stack and its neighbours, mostly off the paper.
+ * Each is measured as its words' box plus its arrow's, against the front sheet and against
+ * whatever comes next in the page's flow (or, for the way back, before).
+ */
+type Place = {
+  /** The share of the hint's painted area (words plus arrow) that lies on the front sheet. */
+  onSheet: number;
+  /** Room between the words and the nearest neighbour in the page's flow, in px. */
+  toNeighbour: number;
+  /** The words' box against the viewport: negative when any of it is off screen. */
+  inView: number;
+};
+
+function placed(page: Page, way: 'fwd' | 'back'): Promise<Place> {
+  return page.evaluate((which) => {
+    const frame = document.querySelector('.technical-drawing-frame')!;
+    const sheet = frame.querySelector<HTMLElement>('.paper-front')!.getBoundingClientRect();
+    const words = frame.querySelector<HTMLElement>(`.flip-hint--${which}.hint-words`)!.getBoundingClientRect();
+    const arrow = frame.querySelector<SVGSVGElement>(`.flip-hint--${which}.hint-arrow`)!.getBoundingClientRect();
+
+    const overlap = (a: DOMRect, b: DOMRect) =>
+      Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+      * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+    const area = (a: DOMRect) => a.width * a.height;
+
+    // The stacks are laid out one under another; scripts between them take no room.
+    const demo = frame.closest('#demos > *')!;
+    let neighbour = which === 'fwd' ? demo.nextElementSibling : demo.previousElementSibling;
+    while (neighbour && neighbour.tagName === 'SCRIPT') {
+      neighbour = which === 'fwd' ? neighbour.nextElementSibling : neighbour.previousElementSibling;
+    }
+    const other = neighbour!.getBoundingClientRect();
+
+    return {
+      onSheet: (overlap(words, sheet) + overlap(arrow, sheet)) / (area(words) + area(arrow)),
+      toNeighbour: which === 'fwd' ? other.top - words.bottom : words.top - other.bottom,
+      inView: Math.min(words.left, words.top, innerWidth - words.right, innerHeight - words.bottom),
+    };
+  }, way);
+}
+
+const sizes = [
+  { width: 360, height: 780 },
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+  { width: 1440, height: 900 },
+];
+
+test('both hints sit in the gap beside the stack at every width', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForTimeout(1200);
+
+  for (const size of sizes) {
+    await page.setViewportSize(size);
+    await page.waitForTimeout(700);
+    const label = `at ${size.width}`;
+
+    for (const way of ['fwd', 'back'] as const) {
+      // Bring the end of the sheet the hint belongs to into view before measuring against it.
+      await page.evaluate((which) => {
+        const frame = document.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
+        window.scrollTo(0, scrollY + (which === 'fwd' ? frame.bottom : frame.top) - innerHeight / 2);
+      }, way);
+      await page.waitForTimeout(300);
+
+      const place = await placed(page, way);
+      expect(place.onSheet, `${way} on the sheet ${label}`).toBeLessThan(0.3);
+      expect(place.toNeighbour, `${way} room to the neighbour ${label}`).toBeGreaterThan(8);
+      expect(place.inView, `${way} in view ${label}`).toBeGreaterThanOrEqual(0);
+    }
+  }
+});
+
+// Both hints are written on the page, not on the sheet, so it is the page's own colour their
+// ink has to stand off, in every theme. The arrow's tail also crosses the fanned pages behind
+// the sheet on its way in, which is what the pass in the page colour under its stroke is for.
+test('the hint reads against the page in every theme and at every width', async ({ page }) => {
+  await page.goto('/');
+
+  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+    await page.evaluate((name) => localStorage.setItem('cv-theme', name), theme);
+    await page.reload();
+    await page.waitForTimeout(1200);
+
+    for (const size of sizes) {
+      await page.setViewportSize(size);
+      await page.evaluate(() => {
+        const frame = document.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
+        window.scrollTo(0, scrollY + frame.bottom - innerHeight / 2);
+      });
+      await page.waitForTimeout(700);
+
+      const { words, path, ink } = await page.evaluate(() => {
+        const frame = document.querySelector('.technical-drawing-frame')!;
+        const text = frame.querySelector<HTMLElement>('.flip-hint--fwd.hint-words')!;
+        const box = text.getBoundingClientRect();
+        const words = { left: box.left, top: box.top, right: box.right, bottom: box.bottom };
+
+        // One point every fortieth of the shaft and of the head, in screen pixels.
+        const path: [number, number][] = [];
+        for (const part of ['hint-shaft', 'hint-head']) {
+          const stroke = frame.querySelector<SVGPathElement>(`.flip-hint--fwd.hint-arrow .${part}`)!;
+          const matrix = stroke.getScreenCTM()!;
+          const total = stroke.getTotalLength();
+          for (let i = 0; i <= 40; i += 1) {
+            const p = stroke.getPointAtLength((total * i) / 40);
+            path.push([
+              Math.round(p.x * matrix.a + p.y * matrix.c + matrix.e),
+              Math.round(p.x * matrix.b + p.y * matrix.d + matrix.f),
+            ]);
+          }
+        }
+        // The themes name their colours in oklch, which no amount of string work turns into the
+        // sRGB the screenshot is in; the canvas already knows how.
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext('2d')!;
+        context.fillStyle = getComputedStyle(text).color;
+        context.fillRect(0, 0, 1, 1);
+        const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+        return { words, path, ink: [r, g, b] as Rgb };
+      });
+
+      // Hide the ink and leave the halo: what remains is what each stroke and glyph is read
+      // against.
+      const hidden = await page.addStyleTag({
+        content: '.hint-words, .hint-shaft, .hint-pass, .hint-head { opacity: 0 !important; transition: none !important; }',
+      });
+      const shot = await page.screenshot();
+      await hidden.evaluate((node: Element) => node.remove());
+      const { data, info } = await sharp(shot).raw().toBuffer({ resolveWithObject: true });
+      const at = ([x, y]: readonly [number, number]) => {
+        const i = (y * info.width + x) * info.channels;
+        return [data[i], data[i + 1], data[i + 2]] as const;
+      };
+
+      let worstWords = Infinity;
+      for (let y = Math.ceil(words.top); y < words.bottom; y += 2) {
+        for (let x = Math.ceil(words.left); x < words.right; x += 2) {
+          worstWords = Math.min(worstWords, contrast(ink, at([x, y])));
+        }
+      }
+      let worstArrow = Infinity;
+      for (const point of path) {
+        if (point[0] < 0 || point[1] < 0 || point[0] >= info.width || point[1] >= info.height) continue;
+        worstArrow = Math.min(worstArrow, contrast(ink, at(point)));
+      }
+      expect(worstWords, `${theme} words at ${size.width}`).toBeGreaterThanOrEqual(4.5);
+      expect(worstArrow, `${theme} arrow at ${size.width}`).toBeGreaterThanOrEqual(4.5);
+    }
+  }
 });
 
 test.describe('with JavaScript off', () => {
