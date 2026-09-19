@@ -527,8 +527,23 @@ const pages = await Promise.all(
       // are inherited from the stack, so every page's corner folds behind as one. Unconditional
       // (not scoped to [data-paper-flipped]) so the cut grows and shrinks with the transitioned
       // sizes instead of popping when the attribute toggles.
+      //
+      // The whole cut, left edge and all, moves over by the page's own drift, which cancels the
+      // translate above: a turned page leans back towards the clip, and without this its left
+      // edge would stand out past the stack's, a stripe of it showing all the way down beside
+      // the front page. Cancelling the drift here instead of dropping it keeps the pile's arc,
+      // which the drift is what bows, and puts every page's crease on the stack's own crease,
+      // which is what lets one dog-ear the size of the cut cover the pile (see
+      // .paper-front::before). --turned-drift is 0 on a page still to come, so their cut is
+      // unchanged.
       &:not(.paper-front) > * {
-        clip-path: polygon(var(--fold-back-x) 0px, 0px var(--fold-back-y), 0px 100%, 100% 100%, 100% 0px);
+        clip-path: polygon(
+          calc(var(--fold-back-x) + var(--turned-drift)) 0px,
+          var(--turned-drift) var(--fold-back-y),
+          var(--turned-drift) 100%,
+          100% 100%,
+          100% 0px
+        );
       }
 
       // The fold flap. Styled at this level rather than under .paper-front: a committed flip
@@ -614,10 +629,21 @@ const pages = await Promise.all(
     & > div::after {
       content: "";
       position: absolute;
-      inset: 0 0 auto;
-      height: calc(var(--turned-rise) + #{$turn-under});
-      // The left end needs no cut of its own: the folded corner on the front page is drawn to
-      // the whole pile's reach and lies over every band's end (see .paper-front::before).
+      --band-height: calc(var(--turned-rise) + #{$turn-under});
+      // The left inset cancels the page's drift, as the corner cut below does, so the band ends
+      // on the stack's left edge rather than out past it.
+      inset: 0 0 auto var(--turned-drift);
+      height: var(--band-height);
+      // The band covers the sheet's own folded corner, so it has to be folded away too or the
+      // pile would end in square corners stacked up the dog-ear's column. Same crease, run down
+      // to the bottom of the band: it starts --fold-back-x in at the top and comes in by the
+      // band's height over the crease's reach. (tan(atan2()) is one length over another as a
+      // plain number, a division Firefox won't take; see the crease formula above.)
+      --band-crease-x: max(
+        calc(var(--fold-back-x) * (1 - tan(atan2(var(--band-height), max(var(--fold-back-y), 1px))))),
+        0px
+      );
+      clip-path: polygon(var(--fold-back-x) 0px, var(--band-crease-x) 100%, 100% 100%, 100% 0px);
       background: var(--paper-surface, var(--surface-sunken));
       border: 1px solid var(--line-strong);
       border-top-right-radius: $border-radius;
