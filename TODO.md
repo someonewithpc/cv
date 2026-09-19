@@ -20,6 +20,8 @@
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
+    - [x] Marker editor pages past the second look rough (#18)
+    - [x] Colour picker lags while dragging (#17)
   - [x] Space builder add tool
     - [x] Layouts page demo doesn't work (#14)
     - [x] Drag and drop furniture doesn't work (#14)
@@ -56,13 +58,14 @@
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
+      - [x] PaperStack focus ring should follow page border (#12)
     - [-] Page indicator
   - [ ] Anotations
-    - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
+    - [x] JS to make sure the placement is correct, when JS available, as progressive enhancement
 - [ ] Scroll animation stacking demos
 - [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
-- [ ] Run W3C validator
+- [x] Run W3C validator (#28)
   - [x] Put CSS and JS out of line (#22)
 - [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)

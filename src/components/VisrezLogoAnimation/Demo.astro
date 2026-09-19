@@ -1,6 +1,7 @@
 ---
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 import PostIt from '@/components/PostIt.astro';
 
 import Result from './Result.astro';
@@ -56,14 +57,47 @@ type Layer = keyof typeof layers;
             style="scale: 0.675"
           />
           <Fragment slot="annotations">
-            <path d="M 0.3 -0.5 l 0.125 -0.175 l 1 0" />
-            <text x="0.42" y="-0.72">3 Overlapping <tspan class="monospace" fill="var(--accent-800)">&lt;span&gt;</tspan></text>
+            {/* The logo is a hexagon; each callout leaves the middle of one of its edges
+                at a right angle, with the edge given as the straight run of the outline
+                path in the svg's own units, traced clockwise. The three layers, the
+                Illustrator switch and the svg's own box all span the drawing; each
+                callout names the one it is about. The labels wrap so that all three
+                fit beside the logo on a phone sheet; the upper two run away from each
+                other and the viewBox one leaves the lower-left edge, clear of the title
+                block in the sheet's lower-right corner. */}
+            <ArrowAnnotation
+              target="#g7"
+              anchor="segment 220.38 61.45 299.81 114.41"
+              angle="normal"
+              tipX={0.34}
+              tipY={-0.56}
+              length={0.3}
+              text="3 Overlapping <span>"
+              lines={['3 Overlapping', '<tspan class="monospace" fill="var(--accent-800)">&lt;span&gt;</tspan>']}
+            />
 
-            <path d="M -0.3 -0.5 l -0.5 -0.6 l 1.07 0" />
-            <text x="-0.83" y="-1.14">Overly complex structure</text>
+            <ArrowAnnotation
+              target="switch"
+              anchor="segment 127.73 114.4 207.16 61.45"
+              angle="normal"
+              labelSide="left"
+              tipX={-0.34}
+              tipY={-0.56}
+              length={0.3}
+              text="Overly complex structure"
+              lines={['Overly complex', 'structure']}
+            />
 
-            <path d="M 0.3 0.5 l 0.5 0.6 l -1.4 0" />
-            <text x="-0.6" y="1.06">Awkwardly sized <tspan class="monospace" fill="var(--accent-800)">viewBox</tspan></text>
+            <ArrowAnnotation
+              target="svg"
+              anchor="segment 207.17 266.63 127.74 213.68"
+              angle="normal"
+              tipX={-0.34}
+              tipY={0.555}
+              length={0.6}
+              text="Awkwardly sized viewBox"
+              lines={['Awkwardly sized', '<tspan class="monospace" fill="var(--accent-800)">viewBox</tspan>']}
+            />
           </Fragment>
         </Annotations>
       ),

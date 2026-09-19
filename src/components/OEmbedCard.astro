@@ -1,4 +1,6 @@
 ---
+import { mailLink } from '../mailLink';
+
 type Props = {
   title: string;
   name: string;
@@ -14,7 +16,7 @@ const { title, name, href, email, profiles } = Astro.props;
   <p class="meta">{title}</p>
   <p class="name"><a href={href}>{name}</a></p>
   <p class="contact">
-    <a href={`mailto:${email}`}>{email}</a>
+    <Fragment set:html={mailLink(email)} />
     {profiles.map(({ label, href }) => (
       <>
         <span class="sep" aria-hidden="true">·</span>

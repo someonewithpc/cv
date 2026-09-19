@@ -76,7 +76,7 @@ test('the tucked note tab covers no control, and nothing covers it', async ({ pa
             const y = Math.min(Math.max((Math.max(box.top, rect.top) + Math.min(box.bottom, rect.bottom)) / 2, box.top + 1), box.bottom - 1);
             return document.elementsFromPoint(x, y).includes(node);
           })
-          .map(({ node }) => `${node.tagName.toLowerCase()}.${(typeof node.className === 'string' ? node.className : node.className.baseVal).split(' ')[0]}`);
+          .map(({ node }) => `${node.tagName.toLowerCase()}.${(node.getAttribute('class') ?? '').split(' ')[0]}`);
 
         return { title: front.querySelector('h2.typewriter')?.textContent?.trim(), covered, overlapping };
       }, CONTROLS);

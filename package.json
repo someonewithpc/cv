@@ -14,7 +14,9 @@
     "check": "astro check",
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",
     "generate:catalog-thumb": "node scripts/render-catalog-thumb.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:audit": "playwright test --config playwright.audit.config.ts",
+    "test:audit:html-validate": "AUDIT_HTML=html-validate playwright test --config playwright.audit.config.ts audit/markup.spec.ts"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.6",
@@ -44,6 +46,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@astrojs/cloudflare": "^14.3.2",
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@types/classnames": "^2.3.4",
     "@types/lodash": "^4.17.25",
@@ -53,7 +56,12 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vue/tsconfig": "^0.9.1",
+    "chrome-launcher": "^1.2.1",
+    "html-validate": "^11.16.0",
+    "lighthouse": "^13.4.1",
     "sass": "^1.104.1",
+    "stylelint": "^17.15.0",
+    "stylelint-config-recommended": "^18.0.0",
     "typescript": "^6.0.3",
     "wrangler": "^4.133.0"
   },

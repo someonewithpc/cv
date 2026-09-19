@@ -1,54 +1,60 @@
 ---
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
-
-// Editor artwork is larger than sibling blueprint pages; scale stroke + type
-// together so screen weight matches (do not override strokeWidth alone).
-const annotationScale = 0.7;
-const annotationFontSize = 0.1 * annotationScale;
+const legend = [
+  { mark: 'circle', term: 'Circles', text: 'the handle you drag' },
+  { mark: 'cross', term: 'Crosses', text: 'where the constraint put it' },
+  { mark: 'list', term: 'Sidebar', text: 'the parts a marker is made of' },
+] as const;
 ---
 
 <div class="wrapper">
-  <Annotations scale={annotationScale} reach={1}>
-    {/* inert: real MarkerEditor chrome, non-interactive diagram. */}
+  <div class="editor-page">
+    <section class="panel">
+      <header>
+        <span class="eyebrow">React</span>
+        <strong>Dragging outside the render loop</strong>
+      </header>
+
+      <p>
+        The whole interactive map is a React app, so the editor started as a regular component.
+        That held until I dragged a control point: every <code>pointermove</code> re-rendered a
+        large subtree (solve constraints, preview SVG, update indicators, update sidebar) and the
+        frame rate fell apart.
+      </p>
+
+      <p>On drag, the handlers now mutate <code>MarkerPart.controlPoints</code> directly, then:</p>
+
+      <ol>
+        <li>Circles and crosses move by CSS <code>translate</code> through DOM refs.</li>
+        <li>
+          Each editor step is a class with its own <code>imperativeReactComponent</code>, a
+          <code>createRoot</code> plus an <code>.update()</code> method, so only the part that
+          changed is redrawn.
+        </li>
+        <li>
+          Widgets that still need React (colours, text, icons) read an external
+          <code>reactiveState</code> through <code>useSyncExternalStore</code>, so React re-renders
+          only once that store is notified.
+        </li>
+      </ol>
+
+      <ul class="legend">
+        {legend.map((entry) => (
+          <li>
+            <span class:list={['mark', entry.mark]} aria-hidden="true"></span>
+            <span><strong>{entry.term}</strong>: {entry.text}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    {/* inert: real MarkerEditor chrome, playing itself back, never a control. */}
     <div
       class="editor-layer"
-      slot="content"
       inert
       data-editor-layer-island
       data-boot-module="/src/components/MarkerEditorDemo/layers/EditorLayer.boot.ts"
     ></div>
-
-    <Fragment slot="annotations">
-      {/* Tip on left sector CP (blue circle); shaft down into the bottom gutter. */}
-      <ArrowAnnotation
-        tipX={-0.025}
-        tipY={0.05}
-        angle={325}
-        length={0.4}
-        fontSize={annotationFontSize}
-        text="Circles: drag to edit shape"
-      />
-      {/* Tip on tip CP's cross (green); shaft down into the bottom gutter. */}
-      <ArrowAnnotation
-        tipX={-0.31}
-        tipY={0.51}
-        angle={360 - 325}
-        length={0.2}
-        fontSize={annotationFontSize}
-        text="Crosses: display resulting constrained position "
-      />
-      {/* Tip on the sidebar's first step header; shaft up into the top gutter. */}
-      <ArrowAnnotation
-        tipX={0.55}
-        tipY={-0.61}
-        angle={135}
-        length={0.15}
-        fontSize={annotationFontSize}
-        text="Sidebar: internal parts of a marker"
-      />
-    </Fragment>
-  </Annotations>
+  </div>
 </div>
 
 {/*
@@ -60,49 +66,149 @@ const annotationFontSize = 0.1 * annotationScale;
 
 <style lang="scss">
 .wrapper {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   position: relative;
   display: grid;
   place-items: center;
+}
+
+.editor-page {
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
+  display: grid;
+  /* Stacked, the chrome's type is bound by the height the text column sets, so
+     a narrower text column would shrink the editor rather than enlarge it. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 0.9em;
+  align-items: center;
 
-  // The overlay is a child of the Annotations box, not of this wrapper.
-  :global(.content > svg) {
-    z-index: 2;
-    pointer-events: none;
-    overflow: visible;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.62rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
+  color: #f4f0ea;
 
-    :global(text) {
-      stroke: var(--blueprint-900);
-      stroke-width: 0.004px;
-      paint-order: stroke fill;
-      stroke-linejoin: round;
-    }
+  /* The chrome needs 32em by 60em even in its stacked layout, which is more of a phone
+     sheet than the text leaves. So portrait keeps the text and drops the editor; the
+     wide sheets are where it is worth looking at anyway. Keyed on the stack's
+     attribute rather than a container query: see Stack.astro's script. */
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5em;
+    font-size: clamp(0.8rem, 0.04 * min(var(--sheet-inline), var(--sheet-block)), 1.15rem);
+  }
 
-    // The chrome only fits inside the callout gutters on a frame this wide.
-    // Under it the room is worth more than the callouts, whose type would be
-    // unreadable at that size anyway — the note says the same thing in prose.
-    @container technical-drawing-width (max-width: 56em) {
-      display: none;
-    }
+  /* A wide sheet has the room, and the coefficient tuned for a phone leaves the
+     type at the size its neighbours only use when they run out of paper. */
+  @container technical-drawing-width (min-width: 56em) {
+    font-size: clamp(0.85rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.25rem);
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  padding: 0.85em;
+  background: #333;
+  border: 2px solid #666;
+  border-radius: 0.55em;
+  display: grid;
+  gap: 0.55em;
+  align-content: start;
+  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+  line-height: 1.4;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+
+  .eyebrow {
+    font-size: 0.7em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+}
+
+p {
+  margin: 0;
+  font-size: 0.78em;
+  opacity: 0.85;
+}
+
+ol {
+  margin: 0;
+  padding-left: 1.15em;
+  display: grid;
+  gap: 0.3em;
+  font-size: 0.78em;
+  opacity: 0.85;
+}
+
+code {
+  font-size: 0.95em;
+  color: #cfe08a;
+}
+
+.legend {
+  margin: 0;
+  padding: 0.5em 0 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25em;
+  font-size: 0.72em;
+  border-top: 1px solid color-mix(in oklab, #f4f0ea 22%, transparent);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+
+}
+
+.mark {
+  flex: none;
+  width: 0.75em;
+  height: 0.75em;
+  display: inline-block;
+
+  &.circle {
+    box-sizing: border-box;
+    border: 0.125em solid #6aa9d8;
+    border-radius: 50%;
+  }
+
+  &.cross {
+    background:
+      linear-gradient(#7fbf5a 0 0) center / 100% 0.125em no-repeat,
+      linear-gradient(#7fbf5a 0 0) center / 0.125em 100% no-repeat;
+  }
+
+  &.list {
+    background:
+      linear-gradient(#f4f0ea 0 0) top / 100% 0.125em no-repeat,
+      linear-gradient(#f4f0ea 0 0) center / 100% 0.125em no-repeat,
+      linear-gradient(#f4f0ea 0 0) bottom / 100% 0.125em no-repeat;
+    opacity: 0.7;
   }
 }
 
 .editor-layer {
-  // Annotations shrink-wraps its slot, and the only child here is the
-  // absolutely positioned embed — so the artwork box has to be sized here or
-  // it collapses to nothing. Slightly taller than the chrome so the tip isn't
-  // flush with the frame.
-  width: min(72cqw, calc(88cqh * 1.5));
-  aspect-ratio: 1.5 / 1;
-  max-width: 100%;
+  // The embed is absolutely positioned inside this box, so the box carries the
+  // artwork's size or it collapses to nothing.
+  width: 100%;
+  // Taller than wide, so the chrome takes its stacked layout (MarkerEditor.scss)
+  // rather than squeezing the canvas-beside-sidebar one: that one wants 56em of
+  // host and this column has about 45, so the sidebar's labels were cut off.
+  align-self: stretch;
+  justify-self: center;
 
-  // The chrome stacks on a phone sheet, so the box turns upright with it: no
-  // callouts to leave gutters for, and the sheet's spare height is the whole
-  // reason the stacked layout beats the side-by-side one.
-  @container technical-drawing (orientation: portrait) {
-    width: min(92cqw, calc(80cqh * 0.68));
-    aspect-ratio: 0.68;
+  :global([data-sheet-orientation='portrait']) & {
+    display: none;
   }
 
   position: relative;
@@ -118,16 +224,10 @@ const annotationFontSize = 0.1 * annotationScale;
     min-height: 0;
   }
 
-  // Absolute embed ignores padding — inset it so arrow labels fit in the gutters.
   :global(#marker-editor-embed.marker-editor--embed) {
-    inset: 14% 16% 15%;
+    inset: 0;
     width: auto;
     height: auto;
-
-    // No callouts down here, so the chrome takes the gutters back.
-    @container technical-drawing-width (max-width: 56em) {
-      inset: 2%;
-    }
   }
 }
 </style>
