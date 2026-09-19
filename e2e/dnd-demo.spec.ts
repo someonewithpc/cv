@@ -132,3 +132,38 @@ test('the explanation sheets turn into view', async ({ page }) => {
   await expect(front.locator('.race-layer')).toBeVisible();
   await expect(front.getByText('Drop arrives first')).toBeVisible();
 });
+
+test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
+  const requests: string[] = [];
+  await page.route('**/demos/space-builder/grass/color.webp*', (route) => {
+    requests.push(route.request().url());
+    void route.abort('failed');
+  });
+  const app = await openDemo(page);
+  await expect(app).toHaveAttribute('data-ready', 'true');
+  await expect.poll(() => requests.length, { timeout: 20_000 }).toBe(2);
+  expect(requests[1]).toContain('?retry');
+  // The scene keeps running on its built-in ground colour rather than failing over.
+  await expect(app.locator('.boot-cover')).toHaveCount(0);
+  await expect(app.locator('canvas[data-scene-canvas]')).toBeVisible();
+});
+
+test('a lost WebGL context shows the sheet fallback until the context is back', async ({ page }) => {
+  const app = await openDemo(page);
+  const canvas = app.locator('canvas[data-scene-canvas]');
+  const cover = app.locator('.boot-cover.error');
+
+  const lost = await canvas.evaluate((el) => {
+    const gl = (el as HTMLCanvasElement).getContext('webgl2') ?? (el as HTMLCanvasElement).getContext('webgl');
+    const ext = gl?.getExtension('WEBGL_lose_context');
+    if (!ext) return false;
+    ext.loseContext();
+    setTimeout(() => ext.restoreContext(), 800);
+    return true;
+  });
+  if (!lost) test.skip(true, 'WEBGL_lose_context unavailable');
+
+  await expect(cover).toBeVisible();
+  await expect(cover).toContainText('3D scene unavailable');
+  await expect(cover).toBeHidden({ timeout: 10_000 });
+});
