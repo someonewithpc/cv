@@ -3,7 +3,14 @@
  * The card itself, drawn still, with callouts on the parts that pick: the carousel for the
  * styles of one cell, the seat and size rows for the cell. Same markup and styles as the
  * front page's cards. The callouts are authored twice, once per sheet orientation, because
- * the cards sit side by side on a landscape sheet and stack on a portrait one.
+ * the cards sit side by side on a landscape sheet and stack on a portrait one. Each names
+ * a target so the script lands its tip on that part at any width; the authored tip is
+ * where the target sits at the sheet's design size.
+ *
+ * The carousel's arrows and pips are ::scroll-button and ::scroll-marker pseudo-elements,
+ * which no selector reaches, so those callouts anchor to a fraction of the styles list:
+ * an arrow is 1.75rem square, 0.25rem in from the list's edge, on a list 10rem wide less
+ * the card's borders; the pip track element is the first pip's cell.
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
@@ -35,17 +42,23 @@ const countLabelShort = `${banquet.length} objects`;
         </div>
 
         <Fragment slot="annotations">
-          <ArrowAnnotation tipX={-0.33} tipY={-0.5} angle={60} length={0.8} text="Arrows step the finishes" only="landscape" />
-          <ArrowAnnotation tipX={-1.13} tipY={0.22} angle={-75} length={1} text="One pip per style" only="landscape" />
-          <ArrowAnnotation tipX={1.78} tipY={-0.86} angle={75} length={0.45} text={countLabel} only="landscape" />
-          <ArrowAnnotation tipX={1.95} tipY={0.64} angle={-10} length={0.45} text="Seats pick a cell" only="landscape" />
-          <ArrowAnnotation tipX={1.95} tipY={0.84} angle={-30} length={0.6} text="Size, other axis" only="landscape" />
+          {/* Landscape: the chair card on the left, the banquet card on the right, and at
+              the narrowest landscape sheet only 0.57 units of panel beside them. The
+              arrows callout leaves the previous arrow's top-left corner, since the count
+              badge sits over the next one; the seat and size rows are pointed to at their
+              left ends, where the icons are, with the labels under the chair card. */}
+          <ArrowAnnotation target='[data-catalog-item="chair"] ul.styles' anchor="0.025 0.365" tipX={-1.97} tipY={-0.54} angle={120} length={0.6} text="Arrows step the finishes" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="chair"] .pip-track' anchor="left" tipX={-1.57} tipY={0.09} angle={180} length={0.5} text="One pip per style" lines={['One pip', 'per style']} labelSide="left" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .group-object-count' anchor="top-right" tipX={1.93} tipY={-0.89} angle={45} length={0.3} text={countLabel} labelSide="left" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-pax' anchor="left" tipX={0.22} tipY={0.61} angle={-150} length={0.9} text="Seats pick a cell" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-size' anchor="left" tipX={0.22} tipY={0.83} angle={-120} length={0.55} text="Size, other axis" only="landscape" />
 
-          <ArrowAnnotation tipX={0.82} tipY={-1.6} angle={40} length={0.45} text="Next finish" only="portrait" />
-          <ArrowAnnotation tipX={0.3} tipY={-0.86} angle={10} length={0.7} text="Pip per style" only="portrait" />
-          <ArrowAnnotation tipX={0.72} tipY={0.22} angle={25} length={0.4} text={countLabelShort} only="portrait" />
-          <ArrowAnnotation tipX={1.02} tipY={1.72} angle={-20} length={0.3} text="Seats: a cell" only="portrait" />
-          <ArrowAnnotation tipX={1.02} tipY={1.92} angle={-45} length={0.4} text="Other axis" only="portrait" />
+          {/* Portrait: the cards stacked, a unit of panel on either side. */}
+          <ArrowAnnotation target='[data-catalog-item="chair"] ul.styles' anchor="0.975 0.5" tipX={0.93} tipY={-1.47} angle={15} length={0.35} text="Next finish" only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="chair"] .pip-track' anchor="left" tipX={-0.51} tipY={-0.99} angle={180} length={0.55} text="Pip per style" labelSide="left" only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .group-object-count' anchor="right" tipX={0.89} tipY={0.28} angle={15} length={0.35} text={countLabelShort} only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-pax' anchor="right" tipX={0.91} tipY={1.73} angle={-15} length={0.35} text="Seats: a cell" only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-size' anchor="right" tipX={0.91} tipY={1.96} angle={-40} length={0.5} text="Other axis" only="portrait" />
         </Fragment>
       </Annotations>
       </div>
