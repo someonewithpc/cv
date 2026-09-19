@@ -12,13 +12,15 @@ test('a wide viewport caps the content column and the demo stacks at 60em', asyn
   await expect(main).toHaveCSS('--breakout-max', '60em');
 
   const columns = await main.evaluate((el) => {
-    // The computed value carries the line names too; the track sizes are the px ones.
-    const grid = getComputedStyle(el).gridTemplateColumns
-      .split(/\s+/)
-      .filter((token) => token.endsWith('px'))
-      .map(parseFloat);
-    // full-width | breakout | content | breakout | full-width
-    return { content: grid[2], breakout: grid[1] + grid[2] + grid[3] };
+    // The computed value carries the line names, so the tracks are read by name
+    // rather than by position: the sum of the px tokens between two lines.
+    const tokens = getComputedStyle(el).gridTemplateColumns.split(/\s+/);
+    const between = (start: string, end: string) =>
+      tokens
+        .slice(tokens.indexOf(`[${start}]`), tokens.indexOf(`[${end}]`))
+        .filter((token) => token.endsWith('px'))
+        .reduce((sum, token) => sum + parseFloat(token), 0);
+    return { content: between('content-start', 'content-end'), breakout: between('breakout-start', 'breakout-end') };
   });
   expect(columns.content).toBeLessThanOrEqual(CAP);
   expect(columns.breakout).toBeLessThanOrEqual(CAP);
