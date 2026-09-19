@@ -606,6 +606,7 @@ onBeforeUnmount(() => {
     <div
       v-if="cursorVisible"
       class="demo-cursor"
+      data-demo-cursor
       :class="{ clicking: cursorClicking, instant: cursorInstant }"
       :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
       aria-hidden="true"
