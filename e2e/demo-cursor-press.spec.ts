@@ -43,3 +43,55 @@ test('walkthrough presses pulse the drawn cursor and flare; the visitor\'s own d
   await expect(flares).toHaveCount(0);
   await expect(stack.locator('[data-demo-cursor][data-pressed]')).toHaveCount(0);
 });
+
+// demoPress() sends the down, holds while the pulse shows, then sends the up and the click,
+// and the release ring trails the up. So the cursor is pressed before the widget hears the
+// click, and the release ring lands after it.
+test('the cursor presses before the widget acts and releases after', async ({ page }) => {
+  await page.goto('/');
+  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const island = await waitForIslandMounted(front);
+  await expect(island.locator('.mock-map-overlay')).toBeVisible({ timeout: 15_000 });
+
+  // Log the first full walkthrough press: when the down was seen, when the click reached
+  // its target (and whether the cursor was still pressed then), and when the release ring
+  // was drawn.
+  await page.evaluate(() => {
+    const log: Record<string, number | boolean> = {};
+    const w = window as Window & { __pressLog?: typeof log };
+    w.__pressLog = log;
+    document.addEventListener('mousedown', (event) => {
+      if (event.isTrusted || 'down' in log) return;
+      log.down = performance.now();
+    }, true);
+    document.addEventListener('click', (event) => {
+      if (event.isTrusted || !('down' in log) || 'click' in log) return;
+      log.click = performance.now();
+      log.pressedAtClick = document.querySelector('[data-demo-cursor][data-pressed]') !== null;
+    }, true);
+    new MutationObserver((records) => {
+      if (!('click' in log) || 'release' in log) return;
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node instanceof Element && node.matches('.demo-cursor-flare--up')) {
+            log.release = performance.now();
+          }
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+
+  await page.waitForFunction(
+    () => 'release' in ((window as Window & { __pressLog?: object }).__pressLog ?? {}),
+    undefined,
+    { timeout: 30_000 },
+  );
+  const log = await page.evaluate(
+    () => (window as Window & { __pressLog?: Record<string, number | boolean> }).__pressLog!,
+  );
+  expect(log.pressedAtClick).toBe(true);
+  expect((log.click as number) - (log.down as number)).toBeGreaterThanOrEqual(80);
+  expect(log.release as number).toBeGreaterThan(log.click as number);
+});
