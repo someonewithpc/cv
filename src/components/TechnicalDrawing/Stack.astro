@@ -70,6 +70,8 @@ const arrow = {
   <div class="flip-hints" aria-hidden="true">
     <p class="flip-hint flip-hint--fwd hint-words marker-font">{hint}</p>
     <svg class="flip-hint flip-hint--fwd hint-arrow" viewBox="0 0 48 28">
+      <path class="hint-halo" d={arrow.shaft} />
+      <path class="hint-halo" d={arrow.head} />
       <path class="hint-shaft" d={arrow.shaft} />
       <path class="hint-pass" d={arrow.pass} />
       <path class="hint-head" d={arrow.head} />
@@ -77,6 +79,8 @@ const arrow = {
 
     <p class="flip-hint flip-hint--back hint-words marker-font">{hintBack}</p>
     <svg class="flip-hint flip-hint--back hint-arrow" viewBox="0 0 48 28">
+      <path class="hint-halo" d={arrow.shaft} />
+      <path class="hint-halo" d={arrow.head} />
       <path class="hint-shaft" d={arrow.shaft} />
       <path class="hint-pass" d={arrow.pass} />
       <path class="hint-head" d={arrow.head} />
@@ -234,6 +238,15 @@ $portrait-lean-y: 2.25em;
   .hint-shaft { stroke-width: 2.5px; }
   .hint-pass { stroke-width: 1.25px; opacity: 0.45; }
   .hint-head { stroke-width: 2.75px; }
+
+  // The tail crosses the fanned edges of the pages behind the sheet on its way in from the gap,
+  // and marker ink on those stripes measured 1.4:1 at best. A pass in the page's own colour
+  // under the stroke brings the grid paper along with the line.
+  .hint-halo {
+    stroke: var(--surface-page);
+    stroke-width: 7px;
+    opacity: 0.9;
+  }
 }
 
 // Both arrows point at the middle of the crease they invite you to take hold of, square to it:
