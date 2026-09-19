@@ -85,21 +85,60 @@ const annotationFontSize = 0.1 * annotationScale;
     </div>
 
     <Fragment slot="annotations">
+      {/* Both labels sit in the panel's header row, right of the heading, the one
+          part of the panel with nothing in it; the sheet has no room around the
+          panel. The arrows come down from there into each sample's top-right. The
+          failed grid's lines end each 1/9 column and each 17.22% row, so 8/9 and
+          0.1722 is the junction one cell in from the top-right corner; the tile grid
+          is 17 crosses wide and centred, so 14.5/17 is the third cross from the right
+          and the row four tiles above the middle one. */}
       <ArrowAnnotation
-        tipX={-0.29}
-        tipY={-0.15}
-        angle={155}
-        length={0.38}
+        target=".fail-card .sample"
+        anchor="0.8889 0.1722"
+        tipX={-0.12}
+        tipY={-0.5}
+        angle={60}
+        length={0.35}
         fontSize={annotationFontSize}
-        text="Subpixel jitter  "
+        text="Subpixel jitter"
+        only="landscape"
       />
       <ArrowAnnotation
-        tipX={0.3}
-        tipY={-0.15}
-        angle={-30}
-        length={0.38}
+        target=".win-card .sample"
+        anchor="0.8529 0.1354"
+        tipX={0.81}
+        tipY={-0.55}
+        angle={120}
+        length={0.28}
+        labelSide="left"
         fontSize={annotationFontSize}
-        text="Stable crosses  "
+        text="Stable crosses"
+        only="landscape"
+      />
+      {/* Portrait: the header is two lines and the samples sit lower, so the
+          shafts are longer. */}
+      <ArrowAnnotation
+        target=".fail-card .sample"
+        anchor="0.8889 0.1722"
+        tipX={-0.12}
+        tipY={-0.24}
+        angle={60}
+        length={0.6}
+        fontSize={annotationFontSize}
+        text="Subpixel jitter"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target=".win-card .sample"
+        anchor="0.8529 0.1354"
+        tipX={0.8}
+        tipY={-0.33}
+        angle={120}
+        length={0.5}
+        labelSide="left"
+        fontSize={annotationFontSize}
+        text="Stable crosses"
+        only="portrait"
       />
     </Fragment>
   </Annotations>
