@@ -791,7 +791,8 @@ export class SpaceBuilderScene {
       });
       this.selectionHighlight = new Mesh(new PlaneGeometry(1, 1), material);
       this.selectionHighlight.rotation.x = -Math.PI / 2;
-      this.selectionHighlight.position.y = 0.004;
+      // Just above the tallest grass blade; at floor level the displaced ground hid it.
+      this.selectionHighlight.position.y = GRASS_DISPLACEMENT * 0.65 + 0.005;
       this.scene.add(this.selectionHighlight);
     }
     const size = box.getSize(new Vector3());
