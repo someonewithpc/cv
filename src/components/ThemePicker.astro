@@ -253,7 +253,8 @@ aside {
 
   body {
     color: var(--ink);
-    background: var(--surface-page);
+    /* The desk under the drawing sheet (Layout.astro); the page surface where there is no sheet. */
+    background: var(--sheet-desk, var(--surface-page));
     accent-color: var(--control-accent);
   }
 }
@@ -287,7 +288,7 @@ html.theme-transition {
 #theme-picker-transition-background {
   position: fixed;
   inset: 0;
-  background: var(--surface-page);
+  background: var(--sheet-desk, var(--surface-page));
   z-index: -1;
 }
 </style>
