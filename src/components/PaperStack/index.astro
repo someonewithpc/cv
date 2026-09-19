@@ -260,12 +260,6 @@ const pages = await Promise.all(
     $turn-drift: 0.125em;
     $turn-under: 0.75em;
 
-    // How far the whole pile reaches out of the stack: the furthest page's own rise and drift,
-    // worked out from the count rather than from a page, because the folded-back corner that
-    // has to cover the pile is painted by the front page (see .paper-front::before).
-    --pile-rise: calc(#{$turn-lift} * log(1 + var(--pages-turned)) / log(2));
-    --pile-drift: calc(#{$turn-drift} * var(--pages-turned));
-
     & > div {
       grid-area: content;
       border-radius: $border-radius;
@@ -314,29 +308,22 @@ const pages = await Promise.all(
         // The stack's top-left corner, folded away behind the clip. As a bare cut it is a hole,
         // and with pages standing in the pile behind the stack their edges show through it. This
         // is the paper that went round the back, painted the way the dog-ear paints the same
-        // fold: the sheet's own colour, darkened, carrying the sheet's hairline edge. It is cut
-        // to the crease and sized to the whole pile, not to this page, so every turned page's
-        // corner is tucked under it. It paints before the page's own children, so the clip's
-        // wire still lies over it.
+        // fold: the sheet's own colour, darkened, carrying the sheet's hairline edge. It paints
+        // before the page's own children, so the clip's wire still lies over it.
+        //
+        // It is the size of the cut it fills and no more: the crease runs from (--fold-back-x,
+        // 0) to (0, --fold-back-y), plus a hairline of slack to close the seam. The pile behind
+        // it is cut on that same crease (see the corner cut on the other pages below), so this
+        // one dog-ear covers every turned page's corner however many have piled up, and the
+        // fold keeps the size a folded corner has instead of growing with the count. The stack
+        // transitions --fold-back-x/-y, so the box eases with them.
         &::before {
           content: "";
           position: absolute;
-          // The hairline of slack on the left is the pile's own lean: a sheet turned on the pin
-          // carries its top-left corner a fraction further out than its drift alone.
-          left: calc(-1 * var(--pile-drift) - 1px);
-          top: calc(-1 * var(--pile-rise));
-          // The crease runs from (--fold-back-x, 0) to (0, --fold-back-y); these carry it out to
-          // where the furthest page of the pile stands, so the whole pile falls behind the one
-          // straight fold. (tan(atan2()) is again one length over another as a plain number, a
-          // division Firefox won't take; see the crease formula below.)
-          width: calc(
-            var(--fold-back-x) * (1 + tan(atan2(var(--pile-rise), var(--fold-back-rest-y))))
-            + var(--pile-drift) + 1px
-          );
-          height: calc(
-            var(--fold-back-y) * (1 + tan(atan2(var(--pile-drift), var(--fold-back-rest-x))))
-            + var(--pile-rise)
-          );
+          left: 0;
+          top: 0;
+          width: calc(var(--fold-back-x) + 1px);
+          height: calc(var(--fold-back-y) + 1px);
           clip-path: polygon(0px 0px, 100% 0px, 0px 100%);
           background: var(--paper-surface, var(--surface-sunken));
           border: 1px solid var(--line-strong);
@@ -346,8 +333,6 @@ const pages = await Promise.all(
           // its own border.
           opacity: clamp(0, var(--pages-turned), 1);
           pointer-events: none;
-          transition: left 250ms ease-in-out, top 250ms ease-in-out,
-            width 250ms ease-in-out, height 250ms ease-in-out;
         }
 
         // The page content, but not the fold flap / paper clip / grab handle / flip hint riding
