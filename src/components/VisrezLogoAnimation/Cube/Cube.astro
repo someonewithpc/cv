@@ -1,6 +1,6 @@
 <figure>
   <div class="scene">
-    {Array.from({ length: 6 }, () => (<div class="face"/>))}
+    {Array.from({ length: 12 }, () => (<div class="edge"/>))}
   </div>
 </figure>
 
@@ -11,6 +11,7 @@ $width: drawing.$artwork-width * 0.5;
 
 figure {
   --cube-size: #{$width};
+  --cube-stroke: 0.25em;
 
   display: inline-grid;
   width: fit-content;
@@ -58,21 +59,50 @@ figure {
     }
   }
 
-  .face {
-    grid-area: 1 / 1;
-    inset: 0;
-    width: var(--cube-size);
-    height: var(--cube-size);
-    border: 0.25em solid var(--ink);
+  /* Each edge is drawn once, as two strips crossed at a right angle about the
+     edge's axis. Bordered faces drew every edge twice, and a lone flat strip
+     thins to nothing as it turns edge-on; the cross keeps at least 0.707 of
+     the stroke facing the viewer whichever way the cube sits. The strips run
+     half a stroke past each end so the corners close. */
+  .edge {
+    --half: calc(var(--cube-size) / 2);
 
+    grid-area: 1 / 1;
+    place-self: center;
+    position: relative;
+    width: calc(var(--cube-size) + var(--cube-stroke));
+    height: var(--cube-stroke);
+    transform-style: preserve-3d;
     transform-origin: center center 0;
 
-    &:nth-child(6) { transform: rotateX(-0.25turn) translateZ(calc(var(--cube-size) / 2)); }
-    &:nth-child(5) { transform: rotateX( 0.25turn) translateZ(calc(var(--cube-size) / 2)); }
-    &:nth-child(4) { transform: rotateY(-0.00turn) translateZ(calc(var(--cube-size) / 2)); }
-    &:nth-child(3) { transform: rotateY(-0.25turn) translateZ(calc(var(--cube-size) / 2)); }
-    &:nth-child(2) { transform: rotateY(-0.50turn) translateZ(calc(var(--cube-size) / 2)); }
-    &:nth-child(1) { transform: rotateY(-0.75turn) translateZ(calc(var(--cube-size) / 2)); }
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--ink);
+    }
+
+    &::after {
+      transform: rotateX(0.25turn);
+    }
+
+    /* Same pattern as a face (rotate, then translateZ to the surface) followed
+       by the offset along the face to its rim. The front and back faces give
+       the eight edges across and up; the left and right faces' rims give the
+       four running front to back. */
+    &:nth-child(1)  { transform: rotateY(0turn)     translateZ(var(--half)) translateY(calc(-1 * var(--half))); }
+    &:nth-child(2)  { transform: rotateY(0turn)     translateZ(var(--half)) translateY(var(--half)); }
+    &:nth-child(3)  { transform: rotateY(0turn)     translateZ(var(--half)) rotateZ(0.25turn) translateY(calc(-1 * var(--half))); }
+    &:nth-child(4)  { transform: rotateY(0turn)     translateZ(var(--half)) rotateZ(0.25turn) translateY(var(--half)); }
+    &:nth-child(5)  { transform: rotateY(0.5turn)   translateZ(var(--half)) translateY(calc(-1 * var(--half))); }
+    &:nth-child(6)  { transform: rotateY(0.5turn)   translateZ(var(--half)) translateY(var(--half)); }
+    &:nth-child(7)  { transform: rotateY(0.5turn)   translateZ(var(--half)) rotateZ(0.25turn) translateY(calc(-1 * var(--half))); }
+    &:nth-child(8)  { transform: rotateY(0.5turn)   translateZ(var(--half)) rotateZ(0.25turn) translateY(var(--half)); }
+    &:nth-child(9)  { transform: rotateY(0.25turn)  translateZ(var(--half)) translateY(calc(-1 * var(--half))); }
+    &:nth-child(10) { transform: rotateY(0.25turn)  translateZ(var(--half)) translateY(var(--half)); }
+    &:nth-child(11) { transform: rotateY(-0.25turn) translateZ(var(--half)) translateY(calc(-1 * var(--half))); }
+    &:nth-child(12) { transform: rotateY(-0.25turn) translateZ(var(--half)) translateY(var(--half)); }
   }
 }
 </style>
