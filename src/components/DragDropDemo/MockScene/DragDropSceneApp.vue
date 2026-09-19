@@ -9,7 +9,7 @@ import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/Au
 import CatalogPanel from '@/components/SpaceBuilderDemo/MockScene/CatalogPanel.vue';
 import {
   CATALOG_ITEMS,
-  variantOf,
+  variantsOf,
   type CatalogItem,
   type CatalogVariant,
 } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
@@ -46,13 +46,20 @@ const DROP_POINTS: Array<[number, number]> = [
 /** The non-layoutable real item autoplay arms by double-click; the Chair is Build's, not Single's. */
 const CLICK_ROUTE_ID = 'table-round';
 
+/**
+ * One style per card. The finish carousel and the seat and size pickers are their own PR
+ * (catalog-carousel); until that lands, each card places its default style.
+ */
+const DND_ITEMS: CatalogItem[] = CATALOG_ITEMS.map((item) => ({
+  ...item,
+  variants: item.variants?.slice(0, 1),
+}));
+
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
 const phase = ref<Phase>('idle');
 const selectedId = ref('chair');
-/** Style picked per card, so a drag, an arm and autoplay all place the one on show. */
-const chosenVariantIds = reactive<Record<string, string>>({});
 const toast = ref<string | null>(null);
 const demoPlaying = ref(false);
 const cursorVisible = ref(false);
@@ -138,14 +145,9 @@ function updateDragVisual(item: CatalogItem, clientX: number, clientY: number) {
   }
 }
 
-function variantFor(item: CatalogItem) {
-  return variantOf(item, chosenVariantIds[item.id]);
-}
-
 /** A single click only highlights a card and swaps the live ghost, the way the product does. */
-function selectItem(item: CatalogItem, variant: CatalogVariant = variantFor(item)) {
+function selectItem(item: CatalogItem, variant: CatalogVariant = variantsOf(item)[0]) {
   yieldToUser();
-  chosenVariantIds[item.id] = variant.id;
   selectedId.value = item.id;
   sceneRef.value?.activateCatalogItem(item.id, variant);
   if (!item.real) showToast('Placeholder · use Chair, Side Chair or Banquet Table');
@@ -156,7 +158,7 @@ function selectItem(item: CatalogItem, variant: CatalogVariant = variantFor(item
  * seating category go to Build instead (draw an area, fill it), which is the Space Builder
  * stack's walkthrough, so the Chair only says where that lives.
  */
-function confirmItem(item: CatalogItem, variant: CatalogVariant = variantFor(item)) {
+function confirmItem(item: CatalogItem, variant: CatalogVariant = variantsOf(item)[0]) {
   selectItem(item, variant);
   if (!item.real) return;
   if (item.layoutable) {
@@ -216,7 +218,6 @@ function dropOne(clientX: number, clientY: number) {
 function onItemPointerdown(event: PointerEvent, item: CatalogItem, variant: CatalogVariant) {
   if (!item.real || event.button !== 0) return;
   yieldToUser();
-  chosenVariantIds[item.id] = variant.id;
   pendingDrag = {
     item,
     variant,
@@ -512,7 +513,7 @@ async function dragAndOrbit(
   const target = catalogButton(root, id);
   if (!target) return false;
   const { item, pos } = target;
-  const variant = variantFor(item);
+  const variant = variantsOf(item)[0];
 
   moveCursorTo(pos.x, pos.y);
   await wait(500);
@@ -561,7 +562,7 @@ async function armAndClick(
   const target = catalogButton(root, id);
   if (!target) return false;
   const { item, pos } = target;
-  const variant = variantFor(item);
+  const variant = variantsOf(item)[0];
 
   moveCursorTo(pos.x, pos.y);
   await wait(450);
@@ -824,7 +825,7 @@ onBeforeUnmount(() => {
       </header>
       <div class="sidebar-body">
         <CatalogPanel
-          :items="CATALOG_ITEMS"
+          :items="DND_ITEMS"
           :selected-id="selectedId"
           :native-drag="false"
           @select="selectItem"
