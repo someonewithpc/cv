@@ -5,7 +5,7 @@ import path from 'node:path';
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
 
-import Stage from './Stage.astro';
+import Panel from './Panel.astro';
 import GroupsLayer from './layers/GroupsLayer.astro';
 import PickerLayer from './layers/PickerLayer.astro';
 import SwapLayer from './layers/SwapLayer.astro';
@@ -15,18 +15,14 @@ function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
 }
 
-// The picker's own source, the three components the card is made of. A Vue SFC cannot go
-// through esbuild the way the other demos bundle their entry, so this is source size.
-const catalogRoot = path.join(
-  process.cwd(),
-  'src/components/SpaceBuilderDemo/MockScene/catalog',
-);
-const pickerSources = await Promise.all(
-  ['CatalogObjectCard.vue', 'VariationCarousel.vue', 'HoverSelect.vue']
-    .map((file) => readFile(path.join(catalogRoot, file), 'utf8')),
+// The card's own source: its markup and styles, and the script that adds the picks.
+const here = path.join(process.cwd(), 'src/components/VariantsDemo');
+const cardSources = await Promise.all(
+  ['Card.astro', 'card.scss', 'panel.ts']
+    .map((file) => readFile(path.join(here, file), 'utf8')),
 );
 
-const cardSize = toKiB(pickerSources.join(''));
+const cardSize = toKiB(cardSources.join(''));
 
 const layers = {
   main: { name: null },
@@ -45,12 +41,12 @@ type Layer = keyof typeof layers;
   scale="1:1"
   size={cardSize}
   date="2024"
-  tech={['vuejs', 'threejs']}
+  tech={['astro', 'css']}
   layers={layers}
 >
   <fragment slot="layers">
     {(layer: Layer) => ({
-      main: <Stage />,
+      main: <Panel />,
       groups: <GroupsLayer />,
       picker: <PickerLayer />,
       swap: <SwapLayer />,
@@ -63,7 +59,7 @@ type Layer = keyof typeof layers;
       main: (
         <PostIt background="#e8e4dc" color="black">
           Hover or focus to take over the auto-playing demo<br />
-          Step a chair through its finishes, or open the banquet set's seats and size
+          Step the chair through its finishes, or open the banquet set's seats and size
         </PostIt>
       ),
       groups: (
@@ -108,23 +104,6 @@ type Layer = keyof typeof layers;
 @container technical-drawing (orientation: portrait) {
   :global(.variants-demo article.technical-drawing-stack > * > section .aside) {
     padding-left: 0;
-  }
-}
-
-// Narrow but still landscape: give the interactive page a slim aside instead of a full
-// third of the sheet, so the 3D view and the sidebar both keep a usable width.
-@container technical-drawing-width (min-width: 40.0625em) and (max-width: 64em) {
-  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint)) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem);
-  }
-
-  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
-    grid-column: 1;
-  }
-
-  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
-    grid-column: 2;
-    padding-left: 0.75em;
   }
 }
 </style>
