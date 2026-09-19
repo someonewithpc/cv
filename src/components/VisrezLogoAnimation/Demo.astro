@@ -56,14 +56,20 @@ type Layer = keyof typeof layers;
             style="scale: 0.675"
           />
           <Fragment slot="annotations">
-            <path d="M 0.3 -0.5 l 0.125 -0.175 l 1 0" />
-            <text x="0.42" y="-0.72">3 Overlapping <tspan class="monospace" fill="var(--accent-800)">&lt;span&gt;</tspan></text>
+            <g data-tip="0.3 -0.5">
+              <path d="M 0.3 -0.5 l 0.125 -0.175 l 1 0" />
+              <text x="0.42" y="-0.72">3 Overlapping <tspan class="monospace" fill="var(--accent-800)">&lt;span&gt;</tspan></text>
+            </g>
 
-            <path d="M -0.3 -0.5 l -0.5 -0.6 l 1.07 0" />
-            <text x="-0.83" y="-1.14">Overly complex structure</text>
+            <g data-tip="-0.3 -0.5">
+              <path d="M -0.3 -0.5 l -0.5 -0.6 l 1.07 0" />
+              <text x="-0.83" y="-1.14">Overly complex structure</text>
+            </g>
 
-            <path d="M 0.3 0.5 l 0.5 0.6 l -1.4 0" />
-            <text x="-0.6" y="1.06">Awkwardly sized <tspan class="monospace" fill="var(--accent-800)">viewBox</tspan></text>
+            <g data-tip="0.3 0.5">
+              <path d="M 0.3 0.5 l 0.5 0.6 l -1.4 0" />
+              <text x="-0.6" y="1.06">Awkwardly sized <tspan class="monospace" fill="var(--accent-800)">viewBox</tspan></text>
+            </g>
           </Fragment>
         </Annotations>
       ),
