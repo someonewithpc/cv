@@ -133,6 +133,8 @@ export type SpaceBuilderSceneOptions = {
   canvas: HTMLCanvasElement;
   labelHost: HTMLElement;
   onSnapshot?: (snapshot: SceneSnapshot) => void;
+  /** Called with true when the WebGL context is lost and false when the browser restores it. */
+  onContextLost?: (lost: boolean) => void;
 };
 
 const DEFAULT_OPTIONS: LayoutOptions = {
@@ -225,6 +227,15 @@ export class SpaceBuilderScene {
   private textures: Texture[] = [];
   private skybox: Mesh | null = null;
   private onSnapshot?: (snapshot: SceneSnapshot) => void;
+  private onContextLost?: (lost: boolean) => void;
+  private readonly handleContextLost = (event: Event) => {
+    // Default-prevented so the browser may restore the context; three re-creates its GL state then.
+    event.preventDefault();
+    this.onContextLost?.(true);
+  };
+  private readonly handleContextRestored = () => {
+    this.onContextLost?.(false);
+  };
   private resizeObserver: ResizeObserver;
   /** The canvas rect, read once and kept until a resize, a scroll or a new gesture; reading it
    * every pointer frame forced a layout each time. */
@@ -233,10 +244,13 @@ export class SpaceBuilderScene {
     this.canvasRectCache = null;
   };
 
-  constructor({ canvas, labelHost, onSnapshot }: SpaceBuilderSceneOptions) {
+  constructor({ canvas, labelHost, onSnapshot, onContextLost }: SpaceBuilderSceneOptions) {
     this.canvas = canvas;
     this.root = canvas.parentElement ?? labelHost;
     this.onSnapshot = onSnapshot;
+    this.onContextLost = onContextLost;
+    canvas.addEventListener('webglcontextlost', this.handleContextLost);
+    canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
 
     this.renderer = this.createRenderer();
 
@@ -1294,6 +1308,8 @@ export class SpaceBuilderScene {
     cancelAnimationFrame(this.animationId);
     if (this.flashTimer) clearTimeout(this.flashTimer);
     this.resizeObserver.disconnect();
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
     window.removeEventListener('scroll', this.dropCanvasRect, { capture: true });
     this.textures.forEach((t) => t.dispose());
     if (this.skybox) {
@@ -1362,7 +1378,7 @@ export class SpaceBuilderScene {
       return texture;
     };
 
-    loader.load('/demos/space-builder/grass/color.webp', (color) => {
+    this.loadGrassMap(loader, '/demos/space-builder/grass/color.webp', (color) => {
       if (this.disposed) {
         color.dispose();
         return;
@@ -1372,7 +1388,7 @@ export class SpaceBuilderScene {
       grassMat.needsUpdate = true;
     });
 
-    loader.load('/demos/space-builder/grass/normal.webp', (normal) => {
+    this.loadGrassMap(loader, '/demos/space-builder/grass/normal.webp', (normal) => {
       if (this.disposed) {
         normal.dispose();
         return;
@@ -1382,13 +1398,22 @@ export class SpaceBuilderScene {
       grassMat.needsUpdate = true;
     });
 
-    loader.load('/demos/space-builder/grass/displacement.webp', (displacement) => {
+    this.loadGrassMap(loader, '/demos/space-builder/grass/displacement.webp', (displacement) => {
       if (this.disposed) {
         displacement.dispose();
         return;
       }
       grassMat.displacementMap = configureMap(displacement);
       grassMat.needsUpdate = true;
+    });
+  }
+
+  /** One retry on a failed texture; after that the flat colour the ground was built with stays. */
+  private loadGrassMap(loader: TextureLoader, url: string, apply: (texture: Texture) => void, retry = true) {
+    loader.load(url, apply, undefined, () => {
+      if (this.disposed) return;
+      if (retry) this.loadGrassMap(loader, `${url}?retry`, apply, false);
+      else console.debug(`Grass texture ${url} failed twice, keeping the flat colour`);
     });
   }
 
