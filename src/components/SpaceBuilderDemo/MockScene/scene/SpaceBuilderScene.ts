@@ -221,6 +221,7 @@ export class SpaceBuilderScene {
   private placedExtras: Object3D[] = [];
   /** Space Builder's SelectionHighlight for the object a Single placement just selected. */
   private selectionHighlight: Mesh | null = null;
+  private selected: { kind: 'chair' | 'extra'; index: number } | null = null;
   private textures: Texture[] = [];
   private skybox: Mesh | null = null;
   private onSnapshot?: (snapshot: SceneSnapshot) => void;
@@ -758,7 +759,7 @@ export class SpaceBuilderScene {
    * translucent green plane on the floor under the footprint, 10% wider than the object and
    * at least a metre across (`utils/three/SelectionHighlight.js`, GREEN_HIGHTLIGHT_COLOR).
    */
-  private selectPlaced(box: Box3) {
+  private showSelection(box: Box3) {
     if (!this.selectionHighlight) {
       const material = new MeshPhongMaterial({
         color: 0x89ab22,
@@ -777,15 +778,57 @@ export class SpaceBuilderScene {
     this.selectionHighlight.position.x = center.x;
     this.selectionHighlight.position.z = center.z;
     this.selectionHighlight.visible = true;
+    return { x: center.x, z: center.z };
   }
 
   /** `Single.start()` dispatches `selection/clear` before the next object rides the pointer. */
   clearSelection() {
+    this.selected = null;
     if (this.selectionHighlight) this.selectionHighlight.visible = false;
   }
 
   hasSelection() {
-    return this.selectionHighlight?.visible === true;
+    return this.selected !== null;
+  }
+
+  /** Objects placed one at a time, in placement order: single chairs first, then the rest. */
+  placedCount() {
+    return this.singlePoses.length + this.placedExtras.length;
+  }
+
+  /** Select the n-th placed object, as a click on it would in view mode; returns its ground centre. */
+  selectPlaced(index: number) {
+    if (index < this.singlePoses.length) {
+      const pose = this.singlePoses[index];
+      const bounds = this.chairGeometry?.boundingBox;
+      if (!bounds) return null;
+      const box = bounds.clone();
+      box.min.multiplyScalar(this.chairScale);
+      box.max.multiplyScalar(this.chairScale);
+      box.translate(new Vector3(pose.x, this.chairYOffset, pose.z));
+      this.selected = { kind: 'chair', index };
+      return this.showSelection(box);
+    }
+    const extra = this.placedExtras[index - this.singlePoses.length];
+    if (!extra) return null;
+    this.selected = { kind: 'extra', index: index - this.singlePoses.length };
+    return this.showSelection(new Box3().setFromObject(extra));
+  }
+
+  /** The product's Remove action: the selected object leaves the layout and the selection clears. */
+  removeSelected() {
+    const selected = this.selected;
+    if (!selected) return false;
+    if (selected.kind === 'chair') {
+      this.singlePoses.splice(selected.index, 1);
+      this.renderChairs(this.composedChairPoses());
+    } else {
+      const [extra] = this.placedExtras.splice(selected.index, 1);
+      if (extra) this.scene.remove(extra);
+    }
+    this.clearSelection();
+    this.emitSnapshot();
+    return true;
   }
 
   /** False when the selected item's GLB is still in flight, so nothing was placed. */
@@ -798,14 +841,16 @@ export class SpaceBuilderScene {
     if (this.activeCatalogId === 'chair') {
       this.singlePoses.push({ x: ghost.position.x, z: ghost.position.z, angle: 0 });
       this.renderChairs(this.composedChairPoses());
+      this.selected = { kind: 'chair', index: this.singlePoses.length - 1 };
     } else {
       const placed = ghost.clone(true);
       placed.visible = true;
       this.scene.add(placed);
       this.placedExtras.push(placed);
+      this.selected = { kind: 'extra', index: this.placedExtras.length - 1 };
     }
     this.setGhostVisible(false);
-    this.selectPlaced(footprint);
+    this.showSelection(footprint);
     this.emitSnapshot();
     return true;
   }
