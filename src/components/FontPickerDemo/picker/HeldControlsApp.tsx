@@ -103,7 +103,7 @@ function Column({ side }: { side: Side }) {
 /** Drags each column's size slider in turn, with the pointer held where a hand would hold it. */
 function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> }) {
   const [cursor, setCursor] = useState<DrawnCursorState>(CURSOR_GONE);
-  const [grab, setGrab] = useState<{ top: number; left: number; width: number; thumb: number; side: Side } | null>(null);
+  const [grab, setGrab] = useState<{ top: number; left: number; width: number; gutter: number; thumb: number; side: Side } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [host, setHost] = useState<HTMLElement | null>(null);
 
@@ -143,6 +143,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       // The line the drag started on, left on the sheet while it runs, and a dimension from it
       // to where the slider is now: the plain column walks away from it, the held one does not
       const column = input.closest<HTMLElement>('.column')!;
+      const [plain, held] = el.querySelectorAll<HTMLElement>('.column');
       const mark = () => {
         const sheet = page.getBoundingClientRect();
         const box = column.getBoundingClientRect();
@@ -150,6 +151,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
           top: holdY,
           left: box.left - sheet.left,
           width: box.width,
+          gutter: (plain.getBoundingClientRect().right + held.getBoundingClientRect().left) / 2 - sheet.left,
           thumb: thumb(input).y - sheet.top,
           side,
         });
@@ -294,8 +296,9 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
             data-side={grab.side}
             style={{
               top: Math.min(grab.top, grab.thumb),
-              // On the column's outer side, where the sheet has room for the figure
-              left: grab.side === 'plain' ? grab.left - 12 : grab.left + grab.width + 12,
+              // Down the middle of the gutter between the columns: the plain one's outer side
+              // is the sheet's margin, and on a phone sheet the held one's is too
+              left: grab.gutter,
               height: Math.abs(grab.thumb - grab.top),
             }}
             aria-hidden="true"
