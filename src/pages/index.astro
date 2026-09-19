@@ -10,14 +10,36 @@ import MarkerEditorDemo from '@/components/MarkerEditorDemo/Demo.astro';
 import SpaceBuilderDemo from '@/components/SpaceBuilderDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
+
+/* The index tabs. One per divider below, in page order; the layout's
+   --divider-count and its per-tab colours and timelines are keyed on these. */
+const tabs = [
+  { href: '#cover', label: 'Cover' },
+  { href: '#materials', label: 'Materials' },
+  { href: '#demos', label: 'Demos' },
+  { href: '#open-source', label: 'Open source' },
+];
 ---
 
 <Layout>
   <main id="main">
-    <Name />
-    <TechIconCloud />
+    <nav class="binder-tabs typewriter" aria-label="Sections">
+      {tabs.map(({ href, label }) => (
+        <a href={href}><span>{label}</span></a>
+      ))}
+    </nav>
 
-    <section id="demos" class="full-width" aria-labelledby="demos-heading">
+    <div class="binder-rings" aria-hidden="true"><span></span><span></span></div>
+
+    <div class="divider" id="cover" data-tab="cover">
+      <Name />
+    </div>
+
+    <div class="divider" id="materials" data-tab="materials">
+      <TechIconCloud />
+    </div>
+
+    <section id="demos" class="divider" data-tab="demos" aria-labelledby="demos-heading">
       <SectionHeader
         headingId="demos-heading"
         titleJp="デモ"
@@ -30,20 +52,18 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
       <SpaceBuilderDemo />
     </section>
 
-    <OpenSourceContributions />
+    <div class="divider" data-tab="oss">
+      <OpenSourceContributions />
+    </div>
   </main>
 </Layout>
 
 <style lang="scss">
 #demos {
-  display: grid;
-  grid-template-columns: subgrid;
   row-gap: 4em;
-  margin-top: 8rem;
 
   @media (max-width: 52rem) {
     row-gap: 2.5em;
-    margin-top: 4.5rem;
   }
 
   > :global(header) {
@@ -66,3 +86,31 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
   }
 }
 </style>
+
+<script>
+/* Marks the tab of the section under the 30% line for assistive tech, and
+   pulls it out where the stylesheet's scroll-driven animation is unsupported. */
+const nav = document.querySelector<HTMLElement>('.binder-tabs');
+
+if (nav) {
+  const tabs = [...nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
+  const tabOf = new Map<Element, HTMLAnchorElement>();
+  for (const tab of tabs) {
+    const divider = document.querySelector(tab.hash)?.closest('.divider');
+    if (divider) tabOf.set(divider, tab);
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const current = tabOf.get(entry.target);
+      for (const tab of tabs) {
+        if (tab === current) tab.setAttribute('aria-current', 'location');
+        else tab.removeAttribute('aria-current');
+      }
+    }
+  }, { rootMargin: '-30% 0px -69% 0px' });
+
+  tabOf.forEach((_, divider) => observer.observe(divider));
+}
+</script>
