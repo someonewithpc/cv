@@ -156,6 +156,29 @@ main {
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
   --content: min(100% - var(--page-gap) * 2, var(--content-max));
 
+  /* One wall colour per room, mixed from the theme so each theme paints its own
+     gallery. light-dark() reads the color-scheme the body sets per theme. */
+  --wall-foyer: var(--surface-page);
+  --wall-vitrine: color-mix(in oklch, var(--theme-canvas), var(--theme-ink) 5%);
+  --wall-logo: light-dark(
+    color-mix(in oklch, var(--theme-canvas), var(--theme-accent) 22%),
+    color-mix(in oklch, var(--theme-canvas), var(--theme-accent) 12%)
+  );
+  --wall-markers: light-dark(
+    color-mix(in oklch, var(--theme-canvas), var(--theme-blueprint) 18%),
+    color-mix(in oklch, var(--theme-canvas), var(--theme-blueprint) 26%)
+  );
+  --wall-spaces: light-dark(
+    color-mix(in oklch, var(--theme-canvas), oklch(0.45 0.07 160) 28%),
+    color-mix(in oklch, var(--theme-canvas), oklch(0.3 0.06 160) 45%)
+  );
+  --wall-archive: light-dark(
+    color-mix(in oklch, var(--theme-canvas), var(--theme-ink) 10%),
+    color-mix(in oklch, var(--theme-canvas), var(--theme-ink) 3%)
+  );
+  --wall-light: light-dark(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.07));
+  --wall-shade: light-dark(rgb(0 0 0 / 0.07), rgb(0 0 0 / 0.28));
+
   position: relative;
   display: grid;
   grid-template-columns:
@@ -166,19 +189,10 @@ main {
     var(--full-width) [full-width-end];
   grid-template-rows: auto;
   align-content: start;
-  padding-bottom: 1.5rem;
 
   @media (max-width: 52rem) {
     --page-gap: clamp(0.75rem, 3.5vw, 1.25rem);
-    padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
-
-  /* Quiet drafting grid */
-  background-image:
-    linear-gradient(to right, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px);
-  background-size: 2.5rem 2.5rem;
-  background-attachment: local;
 
   > :not(.full-width, .breakout) {
     grid-column: content;
