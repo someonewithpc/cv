@@ -238,6 +238,320 @@ main {
   }
 }
 
+/* A divider sheet. The paper is a pseudo-element so the divider's own box can
+   run on into the gap below it: the dividers then touch, and the view timeline
+   and the intersection observer that pick the current tab never fall between
+   two of them. */
+.divider {
+  --stock: var(--surface-page);
+  --below-1: var(--board);
+  --below-2: var(--board);
+
+  grid-column: sheet;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-content: start;
+  position: relative;
+  z-index: 1;
+  padding-block: var(--sheet-pad-block) calc(var(--sheet-pad-block) + var(--sheet-gap));
+  scroll-margin-top: var(--tab-strip);
+
+  > * {
+    grid-column: content;
+    min-width: 0;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 var(--sheet-gap);
+    z-index: -1;
+    border: 1px solid var(--line);
+    border-radius: 0.25rem;
+    background-color: var(--stock);
+    /* The sheet's own shadow first, so it falls on the two dividers peeking
+       out below it; each of those is a filled copy a step down and right with
+       a hairline edge. */
+    box-shadow:
+      0 0.125rem 0.375rem rgb(0 0 0 / 0.12),
+      0.25rem 0.375rem 0 -1px var(--below-1),
+      0.25rem 0.375rem 0 0 var(--line),
+      0.5rem 0.75rem 0 -1px var(--below-2),
+      0.5rem 0.75rem 0 0 var(--line);
+  }
+
+  &[data-tab='cover'] {
+    --stock: var(--stock-cover);
+    --below-1: var(--stock-materials);
+    --below-2: var(--stock-demos);
+  }
+
+  &[data-tab='materials'] {
+    --stock: var(--stock-materials);
+    --below-1: var(--stock-demos);
+    --below-2: var(--stock-oss);
+
+    &::before {
+      background-image:
+        linear-gradient(to right, color-mix(in oklch, var(--blueprint-grid), transparent 72%) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklch, var(--blueprint-grid), transparent 72%) 1px, transparent 1px);
+      background-size: 2.5rem 2.5rem;
+      background-position: center top;
+    }
+  }
+
+  &[data-tab='demos'] {
+    --stock: var(--stock-demos);
+    --below-1: var(--stock-oss);
+
+    &::before {
+      background-image: radial-gradient(circle, var(--rule) 1px, transparent 1.5px);
+      background-size: 1.25rem 1.25rem;
+      background-position: center top;
+    }
+  }
+
+  &[data-tab='oss'] {
+    --stock: var(--stock-oss);
+
+    /* Ledger paper: ruled every 1.5rem with the margin line down the left. */
+    &::before {
+      background-image:
+        linear-gradient(to right, transparent var(--sheet-pad), oklch(0.62 0.16 20 / 0.45) var(--sheet-pad), oklch(0.62 0.16 20 / 0.45) calc(var(--sheet-pad) + 1px), transparent calc(var(--sheet-pad) + 1px)),
+        repeating-linear-gradient(to bottom, transparent 0 calc(1.5rem - 1px), var(--rule) calc(1.5rem - 1px) 1.5rem);
+    }
+  }
+}
+
+/* How far a tab is pulled out. 1 for the section on screen, 0 for the rest;
+   the scroll-driven animation below moves it, and where that is unsupported
+   aria-current and :target set it outright. */
+@property --proud {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+.binder-tabs {
+  --picker-clear: 2.75rem;
+
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 8;
+  display: flex;
+  align-items: end;
+  gap: 0.375rem;
+  height: var(--tab-strip);
+  padding-inline: var(--page-gap) var(--picker-clear);
+  background: var(--desk);
+  border-bottom: 1px solid var(--line);
+
+  @media (min-width: 52rem) {
+    --picker-clear: 7rem;
+  }
+
+  a {
+    --tab: var(--tab-cover);
+    --lift: max(var(--proud), var(--hover, 0));
+
+    display: grid;
+    place-items: center;
+    padding: calc(0.25rem + var(--lift) * 0.25rem) 0.25rem 0.25rem;
+    border-radius: 0.375rem 0.375rem 0 0;
+    background: color-mix(in oklch, var(--tab), var(--desk) calc(40% - var(--lift) * 40%));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      0 0 0.25rem rgb(0 0 0 / 0.15);
+    color: var(--ink);
+    text-decoration: none;
+    transition: padding 200ms ease, background-color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+      --hover: 0.5;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    &[href='#materials'] { --tab: var(--tab-materials); }
+    &[href='#demos'] { --tab: var(--tab-demos); }
+    &[href='#open-source'] { --tab: var(--tab-oss); }
+
+    /* The paper label slid into the tab. */
+    span {
+      display: block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.125rem;
+      background: var(--surface-raised);
+      font-size: 0.6875rem;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    /* Down the sheet's right edge, staggered like a real set, and stuck in
+       place while the sheets scroll past. Starts below the theme picker until
+       the screen is wide enough for the two not to meet. */
+    --rail-top: 9.5rem;
+
+    position: sticky;
+    inset: auto;
+    top: 0;
+    z-index: 2;
+    grid-column: sheet-end / full-width-end;
+    grid-row: 1 / span var(--divider-count);
+    align-self: start;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.5rem;
+    height: auto;
+    padding: var(--rail-top) 0 0;
+    margin-left: -0.25rem;
+    background: none;
+    border-bottom: 0;
+
+    @media (min-width: 90rem) {
+      --rail-top: 2rem;
+    }
+
+    a {
+      writing-mode: vertical-rl;
+      inline-size: 6.75rem;
+      block-size: 2.25rem;
+      padding: 0.25rem;
+      border-radius: 0 0.375rem 0.375rem 0;
+      box-shadow:
+        inset 1px 0 0 rgb(255 255 255 / 0.3),
+        0.125rem 0.125rem 0.25rem rgb(0 0 0 / 0.18);
+      translate: calc(var(--lift) * 0.375rem) 0;
+      transition: translate 200ms ease, background-color 200ms ease;
+
+      span {
+        inline-size: 100%;
+        block-size: 100%;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+/* Two rings through the punched margin, stuck to the screen so the sheets
+   slide along them. The arc is the half that rises out of the hole and over
+   the sheet's edge; the rest is under the paper. */
+.binder-rings {
+  display: none;
+
+  @media (min-width: 64rem) {
+    display: block;
+    grid-column: full-width-start / sheet-start;
+    grid-row: 1 / span var(--divider-count);
+    justify-self: end;
+    align-self: start;
+    position: sticky;
+    top: 20vh;
+    z-index: 2;
+    width: 3rem;
+    height: 60vh;
+    margin-top: 20vh;
+    pointer-events: none;
+
+    span {
+      position: absolute;
+      right: -2.75rem;
+      width: 3rem;
+      height: 3rem;
+
+      &:first-child { top: 0; }
+      &:last-child { bottom: 0; }
+
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+      }
+
+      &::before {
+        inset: 50% auto auto 50%;
+        width: 0.75rem;
+        height: 0.75rem;
+        translate: -50% -50%;
+        background: var(--board);
+        box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.55);
+      }
+
+      &::after {
+        inset: 0;
+        background: conic-gradient(from 200deg, #eef0f3, #8f959f 30%, #d6d9de 55%, #767c86 80%, #eef0f3);
+        mask: radial-gradient(circle, transparent calc(50% - 0.375rem), #000 calc(50% - 0.3125rem), #000 calc(50% - 0.0625rem), transparent 50%);
+        clip-path: inset(0 50% 0 0);
+        filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
+      }
+    }
+  }
+}
+
+/* The tab follows the sheet under a line 30% down the screen. Named timelines
+   on the dividers, scoped to main, drive each tab's own animation; the
+   keyframes step in and out at the range's edges so the fill leaves 0 both
+   before and after. */
+@supports (animation-timeline: view()) {
+  main {
+    timeline-scope: --tl-cover, --tl-materials, --tl-demos, --tl-oss;
+  }
+
+  .divider {
+    view-timeline-inset: 30% 69%;
+
+    &[data-tab='cover'] { view-timeline-name: --tl-cover; }
+    &[data-tab='materials'] { view-timeline-name: --tl-materials; }
+    &[data-tab='demos'] { view-timeline-name: --tl-demos; }
+    &[data-tab='oss'] { view-timeline-name: --tl-oss; }
+  }
+
+  .binder-tabs a {
+    animation: binder-tab-proud linear both;
+
+    &[href='#cover'] { animation-timeline: --tl-cover; }
+    &[href='#materials'] { animation-timeline: --tl-materials; }
+    &[href='#demos'] { animation-timeline: --tl-demos; }
+    &[href='#open-source'] { animation-timeline: --tl-oss; }
+  }
+}
+
+@keyframes binder-tab-proud {
+  0%, 100% { --proud: 0; }
+  0.01%, 99.99% { --proud: 1; }
+}
+
+@supports not (animation-timeline: view()) {
+  .binder-tabs a[aria-current] {
+    --proud: 1;
+  }
+
+  main:has(#cover:target) .binder-tabs a[href='#cover'],
+  main:has(#materials:target) .binder-tabs a[href='#materials'],
+  main:has(#demos:target) .binder-tabs a[href='#demos'],
+  main:has(#open-source:target) .binder-tabs a[href='#open-source'],
+  main:not(:has(:target, [aria-current])) .binder-tabs a:first-child {
+    --proud: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .binder-tabs a {
+    transition: none;
+  }
+}
+
 image, svg, img, picture {
   color-scheme: only light;
 }
