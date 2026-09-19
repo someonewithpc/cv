@@ -1,10 +1,38 @@
 ---
+/**
+ * A callout: an arrow from `tip` along `angle` for `length`, then an underline with the
+ * label above it. The label sits on the side of the shaft's end that the shaft does not
+ * come back over: right, unless the shaft leaves the label upward and to the right.
+ *
+ * With `target`, annotations-position.ts moves the tip onto that element (a selector
+ * scoped to the layer's artwork; several matches are boxed together) at `anchor`, a
+ * named point of its box or an "fx fy" fraction pair, and mirrors the whole callout when
+ * the label would run off the sheet or over the target. The authored tip is the
+ * no-script placement, so keep it close to where the anchor lands.
+ */
+type Anchor =
+  | 'center'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | `${number} ${number}`;
+
 type Props = {
   tipX: number;
   tipY: number;
   angle: number;
   length: number;
   text: string;
+  target?: string;
+  anchor?: Anchor;
+  labelSide?: 'left' | 'right';
+  /** Renders on one sheet orientation only, for layers whose artwork re-flows. */
+  only?: 'landscape' | 'portrait';
   /** Matches Annotations `fontSize` so the underline tracks glyph width. */
   fontSize?: number;
   underlinePerChar?: number;
@@ -19,6 +47,10 @@ const {
   angle,
   length,
   text,
+  target,
+  anchor = 'center',
+  labelSide,
+  only,
   fontSize = 0.1,
   underlinePerChar = fontSize * 0.43,
   lengthOffset,
@@ -26,22 +58,50 @@ const {
   textClass,
 } = Astro.props as Props;
 
+const ANCHORS: Record<string, [number, number]> = {
+  center: [0.5, 0.5],
+  top: [0.5, 0],
+  bottom: [0.5, 1],
+  left: [0, 0.5],
+  right: [1, 0.5],
+  'top-left': [0, 0],
+  'top-right': [1, 0],
+  'bottom-left': [0, 1],
+  'bottom-right': [1, 1],
+};
+const anchorPoint = ANCHORS[anchor] ?? anchor.split(/\s+/).map(Number);
+
 const angleRad = angle * Math.PI / 180;
+const endX = tipX + length * Math.cos(angleRad);
+const endY = tipY - length * Math.sin(angleRad);
+const side = labelSide ?? (Math.cos(angleRad) < 0 && Math.sin(angleRad) < 0 ? 'left' : 'right');
+const sign = side === 'left' ? -1 : 1;
 const underline = text.length * underlinePerChar;
-const labelOffsetY = fontSize * 0.5;
+const offsetX = lengthOffset?.x ?? 0;
+const offsetY = -fontSize * 0.5 + (lengthOffset?.y ?? 0);
+const onlyClass = only && `on-${only}`;
 ---
-{/* The tip is what annotations-position.ts anchors to the artwork box. */}
-<g data-tip={`${tipX} ${tipY}`}>
+<g
+  data-tip={`${tipX} ${tipY}`}
+  data-target={target}
+  data-anchor={target && anchorPoint.join(' ')}
+  data-angle={angle}
+  data-length={length}
+  data-side={labelSide}
+  data-label-offset={`${offsetX} ${offsetY}`}
+  class={onlyClass}
+>
   <path
-    d={`M ${tipX} ${tipY} l ${length * Math.cos(angleRad)} ${-length * Math.sin(angleRad)} l ${underline} 0`}
+    d={`M ${tipX} ${tipY} l ${endX - tipX} ${endY - tipY} l ${sign * underline} 0`}
     pathLength="1"
     class={arrowClass}
   />
   <text
-    x={tipX + length * Math.cos(angleRad) + (lengthOffset?.x ?? 0)}
-    y={tipY - length * Math.sin(angleRad) - labelOffsetY + (lengthOffset?.y ?? 0)}
+    x={endX + sign * offsetX}
+    y={endY + offsetY}
+    text-anchor={side === 'left' ? 'end' : undefined}
     class={textClass}
   >
-    {text}
+    <slot>{text}</slot>
   </text>
 </g>

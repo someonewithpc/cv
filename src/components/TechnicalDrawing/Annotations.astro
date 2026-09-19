@@ -121,5 +121,21 @@ svg {
     font-family: sans-serif;
     fill: var(--ink);
   }
+
+  /* A layer whose artwork re-flows between orientations authors a callout set for
+     each (ArrowAnnotation `only`); the other set is not drawn. */
+  :global(.on-portrait) {
+    display: none;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    :global(.on-landscape) {
+      display: none;
+    }
+
+    :global(.on-portrait) {
+      display: revert;
+    }
+  }
 }
 </style>

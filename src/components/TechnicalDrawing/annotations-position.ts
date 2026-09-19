@@ -1,36 +1,149 @@
 /**
- * Anchors each callout of an Annotations overlay to the artwork's own box.
+ * Anchors each callout of an Annotations overlay to the artwork, or to the element it
+ * names.
  *
  * The overlay's stylesheet inscribes the unit square in the largest centred square of the
  * artwork (`viewBox="-2 -2 4 4"` with `meet` on a 200% box), so on a non-square artwork the
  * long axis's ±1 falls short of the edges, and by a factor that changes with the container
  * width wherever the artwork's aspect does. Stretching the overlay to fit would stretch the
  * text and arrowheads with it, so the overlay keeps its uniform unit and each callout is
- * moved instead: a `[data-tip="x y"]` group is translated so its tip lands at
- * (x · half width, y · half height) of the artwork, while the rest of the callout keeps its
- * authored shape and size.
+ * moved instead. A `[data-tip="x y"]` group is translated so its tip lands at
+ * (x · half width, y · half height) of the artwork. A group with `data-target` is redrawn
+ * from its authored angle and length so its tip lands on the `data-anchor` point of that
+ * element's box, and is mirrored across the tip's vertical axis when the label would leave
+ * the sheet's drawing cell or lie over the target and the mirror image would not.
  *
  * The overlay itself is re-sized to that square around the artwork rather than around the
  * wrapping `.content`, which can be a line box taller than an inline artwork.
  *
  * Sizes come from the observer, which reports layout boxes untouched by the stack's splay
- * rotate. Positions are taken from the box centres, which a rotate or a centred `scale`
- * leaves in place; the artwork is not expected to be translated inside `.content`.
+ * rotate. Every other box is read from client rects and turned back by the page's rotation
+ * (taken from the overlay's screen matrix), so a page positioned while splayed at the back
+ * of the stack is right when it turns to the front. The artwork is not expected to be
+ * translated inside `.content`. A target whose position comes from an animation (the cube's
+ * faces) is re-read when an animation on the artwork ends or is cancelled.
  */
+
+type Point = { x: number; y: number };
+type Box = { left: number; top: number; right: number; bottom: number };
+
+type Callout = {
+  group: SVGGElement;
+  path: SVGPathElement;
+  text: SVGTextElement;
+  angle: number;
+  length: number;
+  side?: 1 | -1;
+  offset: Point;
+  target: Element[];
+  anchor: Point;
+  /** Filled by read(): the drawing, in overlay units. */
+  tip: Point;
+  end: Point;
+  sign: 1 | -1;
+  underline: number;
+};
 
 type Overlay = {
   svg: SVGSVGElement;
   content: HTMLElement;
   artwork: Element;
   callouts: SVGGElement[];
+  targeted: Callout[];
   size: { left: number; top: number; side: number };
-  anchor: { x: number; y: number };
+  anchor: Point;
 };
 
 const overlays = new Map<Element, Overlay>();
 const boxes = new WeakMap<Element, [number, number]>();
 const pending = new Set<Overlay>();
 let frame = 0;
+
+const numbers = (value: string | undefined) => (value ?? '').trim().split(/\s+/).map(Number);
+
+/** The page's rotation and the overlay's scale, from its screen matrix. */
+function frameOf(svg: SVGSVGElement) {
+  const ctm = svg.getScreenCTM();
+  const angle = ctm ? Math.atan2(ctm.b, ctm.a) : 0;
+  return { cos: Math.cos(angle), sin: Math.sin(angle) };
+}
+
+/**
+ * A client rect, as a box in overlay units around `centre`. The rect of a rotated box is
+ * its axis-aligned bounds, so its size is solved back from the rotation and its centre,
+ * which the rotation keeps, is turned back.
+ */
+function toOverlay(rect: DOMRect, centre: Point, unit: number, rot: { cos: number; sin: number }): Box {
+  const { cos, sin } = rot;
+  const c = Math.abs(cos);
+  const s = Math.abs(sin);
+  const det = c * c - s * s || 1;
+  const width = Math.max(0, (rect.width * c - rect.height * s) / det) / unit;
+  const height = Math.max(0, (rect.height * c - rect.width * s) / det) / unit;
+  const dx = rect.left + rect.width / 2 - centre.x;
+  const dy = rect.top + rect.height / 2 - centre.y;
+  const x = (dx * cos + dy * sin) / unit;
+  const y = (-dx * sin + dy * cos) / unit;
+  return { left: x - width / 2, top: y - height / 2, right: x + width / 2, bottom: y + height / 2 };
+}
+
+function union(rects: DOMRect[]): DOMRect {
+  const left = Math.min(...rects.map((r) => r.left));
+  const top = Math.min(...rects.map((r) => r.top));
+  const right = Math.max(...rects.map((r) => r.right));
+  const bottom = Math.max(...rects.map((r) => r.bottom));
+  return new DOMRect(left, top, right - left, bottom - top);
+}
+
+const intersects = (a: Box, b: Box) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+const within = (a: Box, b: Box) => a.left >= b.left && a.right <= b.right && a.top >= b.top && a.bottom <= b.bottom;
+
+/** The label's box for a callout ending at `end` on `sign`'s side, text metrics from `text`. */
+function labelBox(callout: Callout, end: Point, sign: 1 | -1, metrics: { width: number; ascent: number; descent: number }): Box {
+  const start = end.x + sign * callout.offset.x;
+  const baseline = end.y + callout.offset.y;
+  return {
+    left: Math.min(start, start + sign * metrics.width),
+    right: Math.max(start, start + sign * metrics.width),
+    top: baseline - metrics.ascent,
+    bottom: baseline + metrics.descent,
+  };
+}
+
+function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: number; sin: number }, cell: Box, sheet: Box) {
+  const targetBox = toOverlay(union(callout.target.map((el) => el.getBoundingClientRect())), centre, unit, rot);
+  const bbox = callout.text.getBBox();
+  const width = callout.text.getComputedTextLength() || bbox.width;
+  const authoredY = Number(callout.text.getAttribute('y')) || 0;
+  const metrics = { width, ascent: authoredY - bbox.y, descent: bbox.y + bbox.height - authoredY };
+  const rad = (callout.angle * Math.PI) / 180;
+  const defaultSign: 1 | -1 = Math.cos(rad) < 0 && Math.sin(rad) < 0 ? -1 : 1;
+
+  const place = (mirror: boolean) => {
+    const fx = mirror ? 1 - callout.anchor.x : callout.anchor.x;
+    const tip = {
+      x: targetBox.left + fx * (targetBox.right - targetBox.left),
+      y: targetBox.top + callout.anchor.y * (targetBox.bottom - targetBox.top),
+    };
+    const cos = (mirror ? -1 : 1) * Math.cos(rad);
+    const end = { x: tip.x + callout.length * cos, y: tip.y - callout.length * Math.sin(rad) };
+    const sign = ((mirror ? -1 : 1) * (callout.side ?? defaultSign)) as 1 | -1;
+    const label = labelBox(callout, end, sign, metrics);
+    const fits =
+      label.left >= cell.left && label.right <= cell.right && within(label, sheet) && !intersects(label, targetBox);
+    return { tip, end, sign, fits };
+  };
+
+  let placement = place(false);
+  if (!placement.fits) {
+    const mirrored = place(true);
+    if (mirrored.fits) placement = mirrored;
+  }
+  callout.tip = placement.tip;
+  callout.end = placement.end;
+  callout.sign = placement.sign;
+  callout.underline = width;
+}
 
 function read(overlay: Overlay): boolean {
   const artwork = boxes.get(overlay.artwork);
@@ -48,20 +161,47 @@ function read(overlay: Overlay): boolean {
 
   overlay.size = { left: cx - 2 * unit, top: cy - 2 * unit, side: 4 * unit };
   overlay.anchor = { x: aw / (2 * unit), y: ah / (2 * unit) };
+
+  if (overlay.targeted.length) {
+    const rot = frameOf(overlay.svg);
+    const centre = { x: a.left + a.width / 2, y: a.top + a.height / 2 };
+    const section = overlay.svg.closest('section');
+    const cellEl = section?.querySelector(':scope > .content') ?? section;
+    const everywhere: Box = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity };
+    const sheet = section ? toOverlay(section.getBoundingClientRect(), centre, unit, rot) : everywhere;
+    const cell = cellEl ? toOverlay(cellEl.getBoundingClientRect(), centre, unit, rot) : sheet;
+    for (const callout of overlay.targeted) {
+      if (!callout.group.getClientRects().length) continue;
+      readCallout(callout, centre, unit, rot, cell, sheet);
+    }
+  }
   return true;
 }
 
 function write(overlay: Overlay) {
-  const { svg, size, anchor, callouts } = overlay;
+  const { svg, size, anchor, callouts, targeted } = overlay;
   svg.style.left = `${size.left}px`;
   svg.style.top = `${size.top}px`;
   svg.style.width = `${size.side}px`;
   svg.style.height = `${size.side}px`;
+  const drawn = new Set(targeted.map((callout) => callout.group));
   for (const callout of callouts) {
-    const [x = 0, y = 0] = (callout.dataset.tip ?? '').trim().split(/\s+/).map(Number);
+    if (drawn.has(callout)) continue;
+    const [x = 0, y = 0] = numbers(callout.dataset.tip);
     const dx = x * (anchor.x - 1);
     const dy = y * (anchor.y - 1);
     callout.setAttribute('transform', `translate(${dx.toFixed(5)} ${dy.toFixed(5)})`);
+  }
+  for (const callout of targeted) {
+    if (!callout.underline) continue;
+    const { tip, end, sign, underline } = callout;
+    const f = (n: number) => n.toFixed(5);
+    callout.group.removeAttribute('transform');
+    callout.path.setAttribute('d', `M ${f(tip.x)} ${f(tip.y)} l ${f(end.x - tip.x)} ${f(end.y - tip.y)} l ${f(sign * underline)} 0`);
+    callout.text.setAttribute('x', f(end.x + sign * callout.offset.x));
+    callout.text.setAttribute('y', f(end.y + callout.offset.y));
+    if (sign < 0) callout.text.setAttribute('text-anchor', 'end');
+    else callout.text.removeAttribute('text-anchor');
   }
   svg.dataset.annotations = 'js';
 }
@@ -72,6 +212,11 @@ function flush() {
   pending.clear();
 }
 
+function schedule(overlay: Overlay) {
+  if (read(overlay)) pending.add(overlay);
+  if (pending.size && !frame) frame = requestAnimationFrame(flush);
+}
+
 const observer = new ResizeObserver((entries) => {
   for (const entry of entries) {
     const [box] = entry.borderBoxSize;
@@ -79,10 +224,36 @@ const observer = new ResizeObserver((entries) => {
   }
   const touched = new Set(entries.map((entry) => overlays.get(entry.target)));
   for (const overlay of touched) {
-    if (overlay && read(overlay)) pending.add(overlay);
+    if (overlay) schedule(overlay);
   }
-  if (pending.size && !frame) frame = requestAnimationFrame(flush);
 });
+
+function calloutOf(group: SVGGElement, artwork: Element): Callout | undefined {
+  const path = group.querySelector('path');
+  const text = group.querySelector('text');
+  const selector = group.dataset.target;
+  if (!path || !text || !selector) return;
+  const target = artwork.matches(selector) ? [artwork] : [...artwork.querySelectorAll(selector)];
+  if (!target.length) return;
+  const [ax = 0.5, ay = 0.5] = numbers(group.dataset.anchor);
+  const [ox = 0, oy = 0] = numbers(group.dataset.labelOffset);
+  const side = group.dataset.side === 'left' ? -1 : group.dataset.side === 'right' ? 1 : undefined;
+  return {
+    group,
+    path,
+    text,
+    angle: Number(group.dataset.angle) || 0,
+    length: Number(group.dataset.length) || 0,
+    side,
+    offset: { x: ox, y: oy },
+    target,
+    anchor: { x: ax, y: ay },
+    tip: { x: 0, y: 0 },
+    end: { x: 0, y: 0 },
+    sign: 1,
+    underline: 0,
+  };
+}
 
 /** Positions every Annotations overlay under `scope` and keeps it positioned on resize. */
 export function positionAnnotations(scope: ParentNode) {
@@ -91,11 +262,13 @@ export function positionAnnotations(scope: ParentNode) {
     const artwork = content && [...content.children].find((child) => child !== svg);
     if (!content || !artwork || overlays.has(svg)) continue;
 
+    const callouts = [...svg.querySelectorAll<SVGGElement>('[data-tip]')];
     const overlay: Overlay = {
       svg,
       content,
       artwork,
-      callouts: [...svg.querySelectorAll<SVGGElement>('[data-tip]')],
+      callouts,
+      targeted: callouts.map((group) => calloutOf(group, artwork)).filter((callout): callout is Callout => Boolean(callout)),
       size: { left: 0, top: 0, side: 0 },
       anchor: { x: 1, y: 1 },
     };
@@ -104,5 +277,12 @@ export function positionAnnotations(scope: ParentNode) {
     overlays.set(artwork, overlay);
     observer.observe(content);
     observer.observe(artwork);
+    if (overlay.targeted.length) {
+      // Stack.astro cancels and restarts a page's animations as it turns; both events
+      // arrive once the animation has settled where the faces will be read.
+      for (const event of ['animationend', 'animationcancel']) {
+        artwork.addEventListener(event, () => schedule(overlay));
+      }
+    }
   }
 }
