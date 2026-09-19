@@ -65,19 +65,19 @@ type Layer = keyof typeof layers;
       main: (
         <PostIt background="#fed" color="black">
           Hover or focus to take over the auto-playing animation<br />
-          Grab a chair from the catalog and drop it on the floor to place a single piece
+          Drag a card onto the floor, or double-click one and click where it goes
         </PostIt>
       ),
       paths: (
         <PostIt background="#cde" color="black">
-          Both routes end in the same call. What differs is how many objects you get and
-          when the pointer lets go
+          Two ways to start, the same call to finish. Neither one keeps placing. Filling a
+          floor is Build's job, in the Space Builder stack
         </PostIt>
       ),
       race: (
         <PostIt background="#fee" color="black">
-          What follows the pointer is the model itself. Drop it before its file arrives and
-          the call reports nothing placed
+          What follows the pointer is the model itself. Let go before its file arrives and
+          nothing lands
         </PostIt>
       ),
     }[layer])}
