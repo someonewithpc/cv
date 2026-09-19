@@ -7,7 +7,6 @@ import PostIt from '@/components/PostIt.astro';
 
 import Panel from './Panel.astro';
 import GroupsLayer from './layers/GroupsLayer.astro';
-import SwapLayer from './layers/SwapLayer.astro';
 import MissingLayer from './layers/MissingLayer.astro';
 
 function toKiB(text: string) {
@@ -26,7 +25,6 @@ const cardSize = toKiB(cardSources.join(''));
 const layers = {
   main: { name: null },
   groups: { name: 'Variant Groups', pageStyle: 'blueprint' },
-  swap: { name: 'Model Swap', pageStyle: 'blueprint' },
   missing: { name: 'Missing Variants', pageStyle: 'blueprint' },
 } as const;
 
@@ -46,7 +44,6 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: <Panel />,
       groups: <GroupsLayer />,
-      swap: <SwapLayer />,
       missing: <MissingLayer />,
     }[layer])}
   </fragment>
@@ -63,12 +60,6 @@ type Layer = keyof typeof layers;
         <PostIt background="#cde" color="black">
           One card, many library objects. The carousel walks the styles of one cell; the
           dropdowns move between cells, and hovering an option shows it before a click picks it
-        </PostIt>
-      ),
-      swap: (
-        <PostIt background="#fed" color="black">
-          Replace builds the new model where the old one stood, down to the rotation, and
-          leaves it selected
         </PostIt>
       ),
       missing: (
