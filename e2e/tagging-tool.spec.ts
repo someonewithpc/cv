@@ -264,6 +264,23 @@ test('completed objects page: the leaving-the-list blueprint diagram is shown', 
   // .grouped-objects blocks; scope to the page's own blueprint section.
   await expect(front.locator('section.blueprint')).toBeVisible();
   await expect(front.locator('.grouped-objects.completing')).toHaveCount(1);
+
+  // The sheet says what it is about without its prose: a headline, and a callout on each
+  // of the three things it shows, pinned to the element it names.
+  await expect(front.locator('.point')).toHaveText(/leaves the list/);
+  const callouts = front.locator('.callout');
+  await expect(callouts).toHaveCount(3);
+  for (const id of ['list', 'save', 'leave']) {
+    const callout = front.locator(`.callout[data-callout="${id}"]`);
+    const target = front.locator('.missing-layer').locator(await callout.getAttribute('data-target') ?? '.none');
+    await expect(target, `${id} points at something on the sheet`).toHaveCount(1);
+    const [c, t] = await Promise.all([callout.boundingBox(), target.boundingBox()]);
+    // The arrow's tip sits on the target's edge: above it for list and save, below for leave.
+    const gap = id === 'leave' ? c!.y - (t!.y + t!.height) : t!.y - (c!.y + c!.height);
+    expect(Math.abs(gap), `${id} callout meets its target`).toBeLessThanOrEqual(4);
+    expect(c!.x + c!.width, `${id} callout is over its target`).toBeGreaterThan(t!.x);
+    expect(c!.x, `${id} callout is over its target`).toBeLessThan(t!.x + t!.width);
+  }
 });
 
 // Every sheet keeps clear sheet around its content: each layer's root pads by the one token in
