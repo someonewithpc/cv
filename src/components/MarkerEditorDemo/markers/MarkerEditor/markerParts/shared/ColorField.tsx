@@ -2,13 +2,13 @@ import { mountInlineColorPicker } from "./inlineColorPicker";
 
 /**
  * The colour control both solid parts show: a native `<input type="color">` with the
- * on-page picker under it.
+ * on-page picker under it, shown while the swatch is pressed open.
  *
  * The native input stays because it is the model everything else already talks to, the
- * walkthrough included, and because tapping it is still the way to reach the system palette
- * and the eyedropper. It is the picker under it that the drag happens on, so the preview
- * stays in sight while the colour moves. The input is rendered first so its ref, and with
- * it the value the picker reads, lands before the picker mounts.
+ * walkthrough included, and because the keyboard can still open the system palette and
+ * the eyedropper from it. It is the picker under it that the drag happens on, so the
+ * preview stays in sight while the colour moves. The input is rendered first so its ref,
+ * and with it the value the picker reads, lands before the picker mounts.
  */
 export function ColorField({ id, demoTarget, color, onInput, onChange }: {
   id: string,
