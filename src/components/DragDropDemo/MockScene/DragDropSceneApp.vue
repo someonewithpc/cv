@@ -80,6 +80,8 @@ let draggingItem: CatalogItem | null = null;
 let draggingVariant: CatalogVariant | null = null;
 /** Item riding the pointer after a double-click, waiting for the floor click that puts it down. */
 const armedItem = ref<CatalogItem | null>(null);
+/** The last placed object carries the product's selection highlight until the next one starts. */
+const selectedPlacement = ref(false);
 /** Pressed card waiting to see whether the pointer moves far enough to be a drag. */
 let pendingDrag: {
   item: CatalogItem;
@@ -171,6 +173,8 @@ function confirmItem(item: CatalogItem, variant: CatalogVariant = variantFor(ite
 async function armItem(item: CatalogItem, variant: CatalogVariant) {
   const scene = sceneRef.value;
   if (!scene) return;
+  scene.clearSelection();
+  selectedPlacement.value = false;
   scene.activateCatalogItem(item.id, variant);
   arming.value = true;
   await scene.whenCatalogItemReady(variant.id);
@@ -196,6 +200,7 @@ function dropOne(clientX: number, clientY: number) {
   scene.setGhostAt(clientX, clientY);
   // The product says nothing on success: the selected object on the floor is the signal.
   if (!scene.placeGhostAsSingle()) showToast('Still loading · pick it again');
+  selectedPlacement.value = scene.hasSelection();
 }
 
 /**
@@ -227,6 +232,8 @@ function startItemDrag(clientX: number, clientY: number) {
   pendingDrag = null;
   selectedId.value = item.id;
   armedItem.value = null;
+  sceneRef.value?.clearSelection();
+  selectedPlacement.value = false;
   sceneRef.value?.activateCatalogItem(item.id, variant);
   draggingItem = item;
   draggingVariant = variant;
@@ -497,6 +504,8 @@ async function dragAndOrbit(
   if (token !== autoplayToken) return false;
   selectedId.value = item.id;
   phase.value = 'dragging';
+  scene.clearSelection();
+  selectedPlacement.value = false;
   scene.activateCatalogItem(item.id, variant);
   updateDragVisual(item, pos.x, pos.y);
 
@@ -544,6 +553,8 @@ async function armAndClick(
   if (token !== autoplayToken) return false;
 
   selectedId.value = item.id;
+  scene.clearSelection();
+  selectedPlacement.value = false;
   scene.activateCatalogItem(item.id, variant);
   // The product blocks behind a spinner until the GLB is in, so its click route cannot
   // lose the race the drag route can (page three).
@@ -637,6 +648,7 @@ function restartDemo() {
   stopAutoplay();
   userControl = false;
   sceneRef.value?.reset();
+  selectedPlacement.value = false;
   startAutoplay();
 }
 
@@ -752,6 +764,7 @@ onBeforeUnmount(() => {
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
     :data-phase="phase"
+    :data-selected="selectedPlacement ? 'true' : 'false'"
     aria-label="Drag and drop demo, autoplaying the Add tool; drag a catalog card onto the floor, or double-click one and click where it goes"
     @keydown="onKeyDown"
   >
