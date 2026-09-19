@@ -218,12 +218,12 @@ const rowLabel = `${repository}${number == null ? '' : `#${number}`}: ${title.re
     }
 
     &[open] > summary {
-      background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 10%);
+      background: color-mix(in oklch, var(--row-accent, var(--line-strong)) 12%, transparent);
     }
   }
 
   &:hover > details > summary {
-    background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 10%);
+    background: color-mix(in oklch, var(--row-accent, var(--line-strong)) 12%, transparent);
   }
 
   .body {
@@ -233,7 +233,7 @@ const rowLabel = `${repository}${number == null ? '' : `#${number}`}: ${title.re
   .body > p,
   .body > footer {
     padding: 0 var(--cell-x) 1rem;
-    background: color-mix(in oklch, var(--surface-raised), var(--row-accent, var(--line-strong)) 8%);
+    background: color-mix(in oklch, var(--row-accent, var(--line-strong)) 8%, transparent);
     font-family: sans-serif;
   }
 
