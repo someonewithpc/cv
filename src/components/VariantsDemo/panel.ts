@@ -104,13 +104,34 @@ function enhanceCard(card: HTMLElement, selection: Selection) {
     else hold(variant);
   });
 
-  card.querySelectorAll<HTMLDetailsElement>('details.hover-select').forEach((row) => {
-    enhanceRow(row, variants, held, show, pick);
+  // A pick on one row can move the other: findObjectByPax falls back to the first object
+  // with that seat count when none exists at the held size, so the size changes without
+  // the user touching it. That row gets the red dot until it is opened or hovered.
+  const rows = [...card.querySelectorAll<HTMLDetailsElement>('details.hover-select')];
+  const flag = (row: HTMLDetailsElement) => row.classList.add('new-dot');
+  const clear = (row: HTMLDetailsElement) => row.classList.remove('new-dot');
+  rows.forEach((row) => {
+    row.addEventListener('toggle', () => {
+      if (row.open) clear(row);
+    });
+    // A moving pointer, not the boundary event Chrome sends when a list closing above
+    // the row leaves the pointer resting on it.
+    row.addEventListener('mousemove', () => clear(row));
+    enhanceRow(row, variants, held, show, (variant) => {
+      const before = held();
+      pick(variant);
+      const isPax = row.classList.contains('object-pax');
+      const other = rows.find((candidate) => candidate !== row);
+      if (!other) return;
+      const moved = isPax ? variant.size !== before.size : variant.pax !== before.pax;
+      if (moved) flag(other);
+    });
   });
 
   return () => {
-    card.querySelectorAll<HTMLDetailsElement>('details[open]').forEach((row) => {
+    rows.forEach((row) => {
       row.open = false;
+      clear(row);
     });
     hold(variants[0]);
   };
