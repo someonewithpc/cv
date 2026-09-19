@@ -12,6 +12,7 @@ import {
   InstancedMesh,
   Mesh,
   MeshBasicMaterial,
+  MeshPhongMaterial,
   MeshStandardMaterial,
   Object3D,
   PCFShadowMap,
@@ -218,6 +219,8 @@ export class SpaceBuilderScene {
   private extraGhost: Object3D | null = null;
   /** Individually placed non-chair objects — cleared with the rest of the scene on reset/Clear. */
   private placedExtras: Object3D[] = [];
+  /** Space Builder's SelectionHighlight for the object a Single placement just selected. */
+  private selectionHighlight: Mesh | null = null;
   private textures: Texture[] = [];
   private skybox: Mesh | null = null;
   private onSnapshot?: (snapshot: SceneSnapshot) => void;
@@ -589,6 +592,7 @@ export class SpaceBuilderScene {
     this.singlePoses = [];
     this.clearChairs();
     this.clearExtras();
+    this.clearSelection();
     this.emitSnapshot();
   }
 
@@ -736,10 +740,47 @@ export class SpaceBuilderScene {
     ghost.visible = true;
   }
 
+  /**
+   * The product's `Single.end()` adds the object and selects it. Its highlight is a
+   * translucent green plane on the floor under the footprint, 10% wider than the object and
+   * at least a metre across (`utils/three/SelectionHighlight.js`, GREEN_HIGHTLIGHT_COLOR).
+   */
+  private selectPlaced(box: Box3) {
+    if (!this.selectionHighlight) {
+      const material = new MeshPhongMaterial({
+        color: 0x89ab22,
+        opacity: 0.5,
+        transparent: true,
+        depthWrite: false,
+      });
+      this.selectionHighlight = new Mesh(new PlaneGeometry(1, 1), material);
+      this.selectionHighlight.rotation.x = -Math.PI / 2;
+      this.selectionHighlight.position.y = 0.004;
+      this.scene.add(this.selectionHighlight);
+    }
+    const size = box.getSize(new Vector3());
+    const center = box.getCenter(new Vector3());
+    this.selectionHighlight.scale.set(Math.max(size.x * 1.1, 1), Math.max(size.z * 1.1, 1), 1);
+    this.selectionHighlight.position.x = center.x;
+    this.selectionHighlight.position.z = center.z;
+    this.selectionHighlight.visible = true;
+  }
+
+  /** `Single.start()` dispatches `selection/clear` before the next object rides the pointer. */
+  clearSelection() {
+    if (this.selectionHighlight) this.selectionHighlight.visible = false;
+  }
+
+  hasSelection() {
+    return this.selectionHighlight?.visible === true;
+  }
+
   /** False when the selected item's GLB is still in flight, so nothing was placed. */
   placeGhostAsSingle(): boolean {
     const ghost = this.activeGhost();
     if (!ghost?.visible) return false;
+    ghost.updateMatrixWorld(true);
+    const footprint = new Box3().setFromObject(ghost);
 
     if (this.activeCatalogId === 'chair') {
       this.singlePoses.push({ x: ghost.position.x, z: ghost.position.z, angle: 0 });
@@ -751,6 +792,7 @@ export class SpaceBuilderScene {
       this.placedExtras.push(placed);
     }
     this.setGhostVisible(false);
+    this.selectPlaced(footprint);
     this.emitSnapshot();
     return true;
   }
@@ -1197,6 +1239,12 @@ export class SpaceBuilderScene {
       this.extraGhost = null;
     }
     this.extraTemplates.clear();
+    if (this.selectionHighlight) {
+      this.selectionHighlight.geometry.dispose();
+      (this.selectionHighlight.material as MeshPhongMaterial).dispose();
+      this.scene.remove(this.selectionHighlight);
+      this.selectionHighlight = null;
+    }
   }
 
   private buildGround() {
