@@ -1,6 +1,15 @@
 ---
 import { roundedCorners } from '@/server/svg-utils';
 
+/**
+ * Callouts are authored in artwork units: a tip at (x, y) with |x|, |y| ≤ 1 sits
+ * on the artwork, ±1 being its edges. With the script (annotations-position.ts,
+ * run from Stack.astro), x is a fraction of the half width and y of the half
+ * height, whatever the artwork's aspect. The stylesheet alone can only fit one
+ * square, so without it both axes share the short side's unit and the long
+ * axis's ±1 falls short of the edges. Label offsets and type sizes use that
+ * shared unit in both modes.
+ */
 type Props = {
   /** Multiplies the default stroke and font sizes when those props are omitted. */
   scale?: number;
@@ -34,11 +43,15 @@ const arrowPathD = roundedCorners(vertices, radius);
 const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
 ---
 
+{/* The overlay below is the no-script placement. Stack.astro's script runs
+    annotations-position.ts over it, which is what marks it data-annotations="js";
+    a script here would never reach the page (see bootIsland.ts). */}
 <div class="content" style={`--annotation-reach: ${reach};`}>
   <slot name="content" />
   <svg
     viewBox="-2 -2 4 4"
     preserveAspectRatio={preserveAspectRatio}
+    data-annotations="css"
     style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px; --annotation-marker: url(#${arrowId});`}
   >
     <defs>
@@ -89,6 +102,12 @@ svg {
   top: -50%;
   height: 200%;
   width: 200%;
+
+  /* Sized to the artwork's inscribed square by the script, which anchors the
+     long axis's callouts past the ±2 edge of that box. */
+  &[data-annotations='js'] {
+    overflow: visible;
+  }
 
   :global(path) {
     marker-start: var(--annotation-marker);
