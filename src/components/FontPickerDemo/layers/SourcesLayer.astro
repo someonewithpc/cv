@@ -90,7 +90,8 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 @use "./sheetProse" as *;
 
 .wrapper {
-  @include sheet-content;
+  // A portrait sheet has the height for the 2x2 at this, a shade under the picker's scale
+  @include sheet-content(0.033);
 
   max-width: 100%;
   display: grid;
@@ -100,8 +101,9 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 
 .pipeline {
   display: grid;
-  // Four steps with a hop drawn between them, so the flow reads as one line
-  grid-template-columns: repeat(3, minmax(0, 1fr) auto) minmax(0, 1fr);
+  // Four steps with a hop drawn between them, so the flow reads as one line. The listing is
+  // the widest thing on the sheet, so its step gets the most of the row
+  grid-template-columns: minmax(0, 0.85fr) auto minmax(0, 0.9fr) auto minmax(0, 1.35fr) auto minmax(0, 0.9fr);
   grid-auto-rows: min-content;
   align-items: start;
   gap: 0 0.5em;
@@ -361,6 +363,16 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   }
 }
 
+// A sheet under 56em keeps the row but not the label beside the last arrow, nor the two
+// listing lines that only show the stylesheet being followed
+@container technical-drawing-width (max-width: 56em) {
+  .hop-note,
+  .listing .line:nth-child(2),
+  .listing .line:nth-child(3) {
+    display: none;
+  }
+}
+
 // Four steps across while the sheet has the width for them. Where it has not, they go round
 // a 2x2 instead: step 1 top left, across to step 2, down to step 3 and back to step 4 under
 // the first. The steps are the children at odd places, the hops at even ones.
@@ -384,7 +396,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     grid-area: down;
     // The arrow turns in a box as tall as it is long, so it stays between the two steps
     // instead of standing over them
-    height: 3em;
+    height: 2.25em;
     padding: 0;
     align-content: center;
 
@@ -397,11 +409,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     rotate: 180deg;
   }
 
-  // Half a sheet is too narrow for a label beside the arrow, or a title at full size
-  .hop-note {
-    display: none;
-  }
-
+  // Half a sheet is too narrow for a title at full size
   .step {
     padding-top: 1.5em;
 
@@ -410,10 +418,9 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     }
   }
 
-  // The listing keeps the rules that matter, and the Google branch, which only says where
-  // it joins the flow, is what a sheet this small does without
-  .listing .line:nth-child(2),
-  .listing .line:nth-child(3),
+  // The listing keeps the two rules that matter, and the Google branch, which only says
+  // where it joins the flow, is what a sheet this small does without
+  .listing .line:nth-child(1),
   .branch {
     display: none;
   }
