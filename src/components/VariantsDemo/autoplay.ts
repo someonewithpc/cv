@@ -1,3 +1,5 @@
+import { createCursorMover, type Point } from '@/client/cursorMotion';
+
 import { scrollToStyle } from './panel';
 import { BANQUET_CARD, CHAIR_CARD } from './variantsCatalog';
 
@@ -56,7 +58,10 @@ export const AUTOPLAY_STEPS: AutoplayStep[] = [
   { aim: `${CHAIR} .style:nth-child(4) img`, delay: 1800 },
 ];
 
-const CURSOR_TRAVEL_MS = 560;
+/** The tip of the drawn arrow, as fractions of the cursor's box. */
+const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
+/** A hand rests a moment on the target before it presses. */
+const PRESS_DELAY_MS = 160;
 const CURSOR_CLICK_MS = 260;
 const CURSOR_FADE_MS = 420;
 const RESUME_DELAY_MS = 6000;
@@ -82,11 +87,11 @@ export function createPlayer(host: HTMLElement) {
   cursor.setAttribute('aria-hidden', 'true');
   cursor.hidden = true;
   host.append(cursor);
+  const mover = createCursorMover(cursor, { hotspot: CURSOR_HOTSPOT });
 
   let playToken = 0;
   let active = false;
   let userControl = false;
-  let moved = false;
   let noteOpen = false;
   let resumeTimer: ReturnType<typeof setTimeout> | null = null;
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -117,19 +122,14 @@ export function createPlayer(host: HTMLElement) {
     }, CURSOR_FADE_MS);
   }
 
-  /** Move the cursor onto `el`; true when it had some way to go. */
-  function aimCursor(el: HTMLElement, at = { x: 0.5, y: 0.5 }) {
+  /** Where on the host the cursor's tip should land to be at `at` on `el`. */
+  function pointOn(el: HTMLElement, at = { x: 0.5, y: 0.5 }): Point {
     const rect = el.getBoundingClientRect();
     const hostRect = host.getBoundingClientRect();
-    const x = rect.left + rect.width * at.x - hostRect.left;
-    const y = rect.top + rect.height * at.y - hostRect.top;
-    const from = { x: parseFloat(cursor.style.left) || 0, y: parseFloat(cursor.style.top) || 0 };
-    const travels = !moved || Math.hypot(x - from.x, y - from.y) > 8;
-    moved = true;
-    cursor.style.left = `${x}px`;
-    cursor.style.top = `${y}px`;
-    showCursor();
-    return travels;
+    return {
+      x: rect.left + rect.width * at.x - hostRect.left,
+      y: rect.top + rect.height * at.y - hostRect.top,
+    };
   }
 
   function flashClick() {
@@ -160,7 +160,13 @@ export function createPlayer(host: HTMLElement) {
 
       const el = host.querySelector<HTMLElement>(step.aim);
       if (!el) continue;
-      if (aimCursor(el, step.at)) await wait(CURSOR_TRAVEL_MS, token);
+      // Place before showing: the first hop is a jump, and a shown cursor would spend a
+      // frame at the host's corner first.
+      const hop = mover.moveTo(pointOn(el, step.at));
+      showCursor();
+      await hop;
+      if (token !== playToken) return;
+      if (step.act) await wait(PRESS_DELAY_MS, token);
       if (token !== playToken) return;
       if (step.act === 'click' || step.act === 'next') flashClick();
       runStep(el, step.act);
@@ -169,6 +175,7 @@ export function createPlayer(host: HTMLElement) {
 
   function stopPlaying() {
     playToken += 1;
+    mover.cancel();
   }
 
   function canPlay() {

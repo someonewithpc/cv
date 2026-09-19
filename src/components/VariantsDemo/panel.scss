@@ -102,20 +102,20 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
     }
   }
 
+  // Placed by translate alone: cursorMotion.ts animates each hop with its own duration
+  // and folds the hotspot, the arrow's tip, into every keyframe.
   .demo-cursor {
     position: absolute;
     z-index: 30;
+    top: 0;
+    left: 0;
     width: 56px;
     height: 56px;
-    // Hotspot at the arrow tip.
-    translate: -12% -8%;
     transform-origin: 12% 8%;
     pointer-events: none;
     background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" fill="%23fff" stroke="%23222" stroke-width="1.6" stroke-linejoin="round"/></svg>') center / contain no-repeat;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
     transition:
-      left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-      top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
       opacity 0.32s ease,
       scale 0.12s ease;
 
@@ -125,10 +125,6 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
 
     &--clicking {
       scale: 0.88;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      transition: opacity 0.32s ease;
     }
   }
 }
