@@ -83,6 +83,9 @@ const cursorPos = reactive({ x: 0, y: 0 });
 type DragThumb = { src: string; width: number; height: number; offsetX: number; offsetY: number };
 const draggedThumb = ref<DragThumb | null>(null);
 let dragThumbSpec: DragThumb | null = null;
+/** Where the drawn cursor's hot spot is, in client coordinates, for the events it fires. */
+const cursorClient = { x: 0, y: 0 };
+let cursorPressed = false;
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let stopPageWatch: (() => void) | null = null;
@@ -416,9 +419,40 @@ function toRootPoint(clientX: number, clientY: number) {
 }
 
 function moveCursorTo(clientX: number, clientY: number) {
+  cursorClient.x = clientX;
+  cursorClient.y = clientY;
   const p = toRootPoint(clientX, clientY);
   cursorPos.x = p.x;
   cursorPos.y = p.y;
+}
+
+/**
+ * The drawn cursor presses and releases with real, bubbling mouse events at its hot spot,
+ * before any click, so page-wide effects that react to a press see the walkthrough's.
+ */
+function fireCursorButton(type: 'mousedown' | 'mouseup') {
+  cursorPressed = type === 'mousedown';
+  const { x, y } = cursorClient;
+  const target = document.elementFromPoint(x, y);
+  target?.dispatchEvent(new MouseEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    clientX: x,
+    clientY: y,
+    button: 0,
+    buttons: type === 'mousedown' ? 1 : 0,
+  }));
+}
+
+function pressCursor() {
+  cursorClicking.value = true;
+  fireCursorButton('mousedown');
+}
+
+function releaseCursor() {
+  fireCursorButton('mouseup');
+  cursorClicking.value = false;
 }
 
 /** Fraction of the canvas rect → client coords, so targets scale with viewport size. */
@@ -460,10 +494,10 @@ function elementCenter(el: Element | null) {
 }
 
 async function pulseClick(token: number) {
-  cursorClicking.value = true;
+  pressCursor();
   await wait(160);
   if (token !== autoplayToken) return;
-  cursorClicking.value = false;
+  releaseCursor();
 }
 
 /** Incremental orbit so the drop reads as a real 3D scene, not a flat image — the demo
@@ -540,7 +574,7 @@ async function dragAndOrbit(
   await wait(500);
   if (token !== autoplayToken) return false;
 
-  await pulseClick(token);
+  pressCursor();
   if (token !== autoplayToken) return false;
   selectedId.value = item.id;
   phase.value = 'dragging';
@@ -566,6 +600,7 @@ async function dragAndOrbit(
   dragThumbSpec = null;
   // Letting go is the whole drag: one object lands and the tool is back to idle.
   phase.value = 'idle';
+  releaseCursor();
   dropOne(dropPoint.x, dropPoint.y);
 
   await orbitTween(token, orbitDir * 0.4, 700, dropPoint);
@@ -709,6 +744,8 @@ function stopAutoplay() {
   autoplayToken += 1;
   demoPlaying.value = false;
   cursorVisible.value = false;
+  // A run cut off mid-press still lets go, so nothing downstream is left held.
+  if (cursorPressed) releaseCursor();
   draggedThumb.value = null;
   dragThumbSpec = null;
   pendingDrag = null;
