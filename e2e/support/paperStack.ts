@@ -64,11 +64,11 @@ export async function swipeToPage(page: Page, stack: Locator, name: string, maxP
 }
 
 /**
- * Waits for a `[data-boot-module]` island inside `page` to finish mounting: bootIsland.ts
- * sets `data-mounted="true"` before calling the module's `boot()`, so this alone doesn't
- * guarantee the app rendered — callers should also assert on the app's own content.
+ * Waits for an island inside `page` to finish mounting: pageIsland.ts sets `data-mounted="true"`
+ * before calling the component's `boot()`, so this alone doesn't guarantee the app rendered,
+ * callers should also assert on the app's own content.
  */
-export async function waitForIslandMounted(page: Locator, selector = '[data-boot-module]'): Promise<Locator> {
+export async function waitForIslandMounted(page: Locator, selector = '[data-mounted]'): Promise<Locator> {
   const island = page.locator(selector).first();
   await expect(island).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
   return island;
