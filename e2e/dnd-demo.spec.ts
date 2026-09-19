@@ -41,12 +41,18 @@ test('the scene loads with the catalog beside it', async ({ page }) => {
   await expect(chair).toHaveAttribute('draggable', 'false');
 });
 
-test('clicking an object then the floor keeps placing more of it', async ({ page }) => {
+test('a single click only highlights a card', async ({ page }) => {
   const app = await openDemo(page);
-  const chair = app.locator('[data-demo-target="catalog:chair"]');
+  await app.locator('[data-demo-target="catalog:table-round"]').click();
+  await expect(app).toHaveAttribute('data-phase', 'idle');
+});
+
+test('double-clicking an object places one on the next floor click, then goes back to view', async ({ page }) => {
+  const app = await openDemo(page);
+  const table = app.locator('[data-demo-target="catalog:table-round"]');
   const canvas = app.locator('canvas[data-scene-canvas]');
 
-  await chair.click();
+  await table.dblclick();
   await expect(app).toHaveAttribute('data-phase', 'armed');
   await expect(app.locator('.hint')).toContainText('on the pointer');
 
@@ -54,16 +60,39 @@ test('clicking an object then the floor keeps placing more of it', async ({ page
   if (!box) throw new Error('Scene canvas has no layout box');
 
   await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5);
-  await expect(app.getByText('Chair placed')).toBeVisible();
+  await expect(app.getByText('Banquet Table placed')).toBeVisible();
 
-  // The object stays on the pointer, which is what makes the second click place a second
-  // chair without going back to the catalog.
+  // Space Builder's Single subaction commits the object and sets the editor back to `view`.
+  // Nothing rides the pointer afterwards, so a second click cannot place a second object.
+  await expect(app).toHaveAttribute('data-phase', 'idle');
+});
+
+test('Esc drops an armed object instead of placing it', async ({ page }) => {
+  const app = await openDemo(page);
+  await app.locator('[data-demo-target="catalog:table-round"]').dblclick();
   await expect(app).toHaveAttribute('data-phase', 'armed');
-  await page.mouse.click(box.x + box.width * 0.6, box.y + box.height * 0.45);
-  await expect(app.getByText('Chair placed')).toBeVisible();
-
   await app.press('Escape');
   await expect(app).toHaveAttribute('data-phase', 'idle');
+});
+
+test('the style picked on a card is the model that gets loaded', async ({ page }) => {
+  const glbs: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('.glb')) glbs.push(request.url());
+  });
+
+  const app = await openDemo(page);
+  const card = app.locator('[data-catalog-item="table-round"]');
+
+  // Six seats on the wide top is its own GLB, not the default eight.
+  await card.locator('.object-pax .hover-select-current').click();
+  await card.locator('.object-pax .hover-select-options button', { hasText: '6 seats' }).click();
+
+  await card.locator('[data-demo-target="catalog:table-round"]').dblclick();
+  // Only a picked style gets this file; the card's default is the eight-seat top.
+  await expect
+    .poll(() => glbs.some((url) => url.includes('banquet-6pax-243x121')), { timeout: 20_000 })
+    .toBe(true);
 });
 
 test('dragging an object onto the floor places exactly one in a live scene', async ({ page }) => {
