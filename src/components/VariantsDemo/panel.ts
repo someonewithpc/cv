@@ -7,40 +7,113 @@ import { VARIANT_CARDS } from './variantsCatalog';
 const UNITS = unitsFor(navigator.language);
 
 /**
- * What the script adds to a server-rendered card: hovering a dropdown option shows that
- * object, picking it commits, and the carousel gets arrows and pips where the browser
- * lacks CSS scroll markers. The card itself is Card.astro's HTML, left in place.
+ * The catalog's one selected object, as CatalogField.vue keeps a single selectedObject
+ * for every card it lists. A card is active while the object it shows is that one, so
+ * hovering another option on the selected card takes the highlight off until the pointer
+ * leaves or a click commits, the way CatalogObjectField.vue's `.active` binding does.
  */
-export function enhanceCard(card: HTMLElement) {
+type Selection = {
+  /** The selected variant, when it belongs to this card; undefined on the other cards. */
+  onCard(card: HTMLElement): CatalogVariant | undefined;
+  select(card: HTMLElement, variant: CatalogVariant): void;
+  /** Re-read each card's visible variant against the selection. */
+  refresh(): void;
+};
+
+/**
+ * What the script adds to the server-rendered panel: one selection across its cards,
+ * a hover preview on each dropdown option, picks that commit, and carousel arrows and
+ * pips where the browser lacks CSS scroll markers. The cards are Card.astro's HTML,
+ * left in place.
+ */
+export function enhancePanel(host: HTMLElement) {
+  const cards = [...host.querySelectorAll<HTMLElement>('[data-catalog-item]')];
+  const initial = cards.find((card) => card.classList.contains('active')) ?? cards[0];
+  if (!initial) return;
+  const initialVariant = initial.dataset.variant;
+
+  let selected = { card: initial, variant: initialVariant };
+  const applySelection = () => cards.forEach((card) => {
+    card.classList.toggle('active', card === selected.card && card.dataset.variant === selected.variant);
+  });
+
+  const selection: Selection = {
+    onCard(card) {
+      if (card !== selected.card) return undefined;
+      const item = VARIANT_CARDS.find((entry) => entry.id === card.dataset.catalogItem);
+      return item ? variantsOf(item).find((v) => v.id === selected.variant) : undefined;
+    },
+    select(card, variant) {
+      selected = { card, variant: variant.id };
+      applySelection();
+    },
+    refresh: applySelection,
+  };
+
+  const resets = cards.map((card) => enhanceCard(card, selection));
+
+  // The autoplay loop starts each round from the library's default.
+  host.addEventListener('variants:reset', () => {
+    selected = { card: initial, variant: initialVariant };
+    resets.forEach((reset) => reset?.());
+    applySelection();
+  });
+  applySelection();
+}
+
+function enhanceCard(card: HTMLElement, selection: Selection) {
   const item = VARIANT_CARDS.find((entry) => entry.id === card.dataset.catalogItem);
-  if (!item) return;
+  if (!item) return undefined;
   const variants = variantsOf(item);
   const variantById = (id: string | undefined) => variants.find((v) => v.id === id) ?? variants[0];
 
+  // What the card holds, as against what it shows: a hover preview only shows, and the
+  // held object comes back when the pointer leaves, as HoverSelect.vue's leave puts the
+  // initial option back.
   let committed = variantById(card.dataset.variant);
-  render(card, variants, committed);
+  const held = () => committed;
+  const show = (variant: CatalogVariant) => {
+    render(card, variants, variant, selection.onCard(card));
+    selection.refresh();
+  };
+  const hold = (variant: CatalogVariant) => {
+    committed = variant;
+    show(variant);
+  };
+  const pick = (variant: CatalogVariant) => {
+    selection.select(card, variant);
+    hold(variant);
+  };
+  show(committed);
+
+  // Clicking the picture picks what it shows, as CatalogObjectThumbnail.vue's LoadImg
+  // click does. A click that lands on the list itself is on a scroll button or marker,
+  // pseudo-elements that report the list as their target, and those only scroll.
+  const icons = card.querySelector<HTMLElement>('.object-icons');
+  icons?.addEventListener('click', (event) => {
+    if (icons.classList.contains('styles') && event.target === icons) return;
+    pick(variantById(card.dataset.variant));
+  });
 
   const styles = card.querySelector<HTMLElement>('ul.styles');
   if (styles) enhanceCarousel(card, styles, (variant) => {
-    committed = variant;
-    card.dataset.variant = variant.id;
+    // Stepping the selected card's carousel moves the selection with it; on another
+    // card it only changes what is shown, as CatalogObjectThumbnailOverlay.vue emits
+    // its click only when the style it left was the selected one.
+    if (selection.onCard(card)) pick(variant);
+    else hold(variant);
   });
 
   card.querySelectorAll<HTMLDetailsElement>('details.hover-select').forEach((row) => {
-    enhanceRow(card, row, variants, () => committed, (variant) => {
-      committed = variant;
-      render(card, variants, variant);
-    });
+    enhanceRow(row, variants, held, show, pick);
   });
 
-  // The autoplay loop starts each round from the library's default.
-  card.addEventListener('variants:reset', () => {
-    committed = variants[0];
+  return () => {
     card.querySelectorAll<HTMLDetailsElement>('details[open]').forEach((row) => {
       row.open = false;
     });
-    render(card, variants, committed);
-  });
+    hold(variants[0]);
+  };
 }
 
 /** Keep as much of the current pick as the library allows, the way the product does. */
@@ -55,23 +128,23 @@ function bySize(variants: CatalogVariant[], current: CatalogVariant, size: strin
 }
 
 function enhanceRow(
-  card: HTMLElement,
   row: HTMLDetailsElement,
   variants: CatalogVariant[],
-  current: () => CatalogVariant,
-  commit: (variant: CatalogVariant) => void,
+  held: () => CatalogVariant,
+  show: (variant: CatalogVariant) => void,
+  pick: (variant: CatalogVariant) => void,
 ) {
   const isPax = row.classList.contains('object-pax');
   const resolve = (value: string) => (isPax
-    ? byPax(variants, current(), Number(value))
-    : bySize(variants, current(), value));
+    ? byPax(variants, held(), Number(value))
+    : bySize(variants, held(), value));
 
   row.querySelectorAll<HTMLElement>('.hover-select-options li').forEach((option) => {
     const button = option.querySelector('button');
     const value = option.dataset.value ?? '';
     const preview = () => {
       const variant = resolve(value);
-      if (variant) render(card, variants, variant);
+      if (variant) show(variant);
     };
     button?.addEventListener('mouseover', preview);
     button?.addEventListener('focus', preview);
@@ -79,7 +152,7 @@ function enhanceRow(
       event.stopPropagation();
       row.open = false;
       const variant = resolve(value);
-      if (variant) commit(variant);
+      if (variant) pick(variant);
     });
   });
 
@@ -88,15 +161,24 @@ function enhanceRow(
     row.open = false;
   });
   row.addEventListener('toggle', () => {
-    if (!row.open) render(card, variants, current());
+    if (!row.open) show(held());
   });
   row.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') row.open = false;
   });
 }
 
-/** Draw one variant on the card: thumbnail, row labels and which options it rules out. */
-export function render(card: HTMLElement, variants: CatalogVariant[], visible: CatalogVariant) {
+/**
+ * Draw one variant on the card: thumbnail, row labels and which options it rules out.
+ * The greyed options are judged against the selected object, as CatalogObjectFooter.vue's
+ * isAvailablePax does, so a card that holds no selection greys nothing.
+ */
+export function render(
+  card: HTMLElement,
+  variants: CatalogVariant[],
+  visible: CatalogVariant,
+  selected: CatalogVariant | undefined,
+) {
   card.dataset.variant = visible.id;
   const img = card.querySelector<HTMLImageElement>('.object-icons > img');
   if (img && img.getAttribute('src') !== visible.thumb) img.src = visible.thumb;
@@ -106,7 +188,8 @@ export function render(card: HTMLElement, variants: CatalogVariant[], visible: C
     setText(pax, `${visible.pax ?? 0} seats`, `Seats, ${visible.pax ?? 0}`);
     pax.querySelectorAll<HTMLElement>('.hover-select-options li').forEach((option) => {
       const value = Number(option.dataset.value);
-      const available = variants.some((v) => (v.pax ?? 0) === value && v.size === visible.size);
+      const available = !selected
+        || variants.some((v) => (v.pax ?? 0) === value && v.size === selected.size);
       option.classList.toggle('unavailable', !available);
     });
   }
@@ -119,7 +202,8 @@ export function render(card: HTMLElement, variants: CatalogVariant[], visible: C
       const value = option.dataset.value ?? '';
       const label = option.querySelector<HTMLElement>('.option-text');
       if (label && label.textContent !== formatSize(value, UNITS)) label.textContent = formatSize(value, UNITS);
-      const available = variants.some((v) => v.size === value && v.pax === visible.pax);
+      const available = !selected
+        || variants.some((v) => v.size === value && v.pax === selected.pax);
       option.classList.toggle('unavailable', !available);
     });
   }

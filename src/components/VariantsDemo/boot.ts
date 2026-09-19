@@ -3,7 +3,7 @@ import { watchPageActive } from '@/client/frontPage';
 import { variantsOf } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 
 import { createPlayer } from './autoplay';
-import { enhanceCard } from './panel';
+import { enhancePanel } from './panel';
 import { VARIANT_CARDS } from './variantsCatalog';
 
 /**
@@ -11,7 +11,7 @@ import { VARIANT_CARDS } from './variantsCatalog';
  * warmed at low priority so a hover preview does not flicker on a cold image.
  */
 export function boot(host: HTMLElement) {
-  host.querySelectorAll<HTMLElement>('[data-catalog-item]').forEach(enhanceCard);
+  enhancePanel(host);
   host.dataset.ready = 'true';
 
   const urls = new Set(VARIANT_CARDS.flatMap((card) => variantsOf(card).map((v) => v.thumb)));

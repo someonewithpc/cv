@@ -38,7 +38,10 @@ export const AUTOPLAY_STEPS: AutoplayStep[] = [
   { aim: `${SET} .object-pax .hover-select-current`, delay: 2200, act: 'click' },
   { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 900, act: 'hover' },
   { aim: `${SET} .object-pax li:nth-child(1) button`, delay: 900, act: 'click' },
-  { aim: `${SET} .object-icons`, delay: 2600 },
+  // The fourth finish is the one on show after three steps; clicking it picks the chair
+  // again, so the highlight is seen moving back.
+  { aim: `${CHAIR} .style:nth-child(4) img`, delay: 2600, act: 'click' },
+  { aim: `${CHAIR} .style:nth-child(4) img`, delay: 1800 },
 ];
 
 const CURSOR_TRAVEL_MS = 560;
@@ -131,9 +134,7 @@ export function createPlayer(host: HTMLElement) {
 
   function resetCards() {
     host.querySelectorAll<HTMLElement>('ul.styles').forEach((styles) => scrollToStyle(styles, 0));
-    host.querySelectorAll<HTMLElement>('[data-catalog-item]').forEach((card) => {
-      card.dispatchEvent(new CustomEvent('variants:reset'));
-    });
+    host.dispatchEvent(new CustomEvent('variants:reset'));
   }
 
   async function play() {

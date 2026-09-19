@@ -35,10 +35,12 @@ const sizeOptions = [...new Set(variants.map((v) => v.size ?? ''))].filter(Boole
 const showPax = paxOptions.length > 1;
 const showSize = sizeOptions.length > 1;
 
-const paxAvailable = (pax: number) => variants.some(
+// Greyed options are judged against the selected object, which on the server is the
+// visible one of the active card; a card holding no selection greys nothing.
+const paxAvailable = (pax: number) => !active || variants.some(
   (v) => (v.pax ?? 0) === pax && v.size === visible.size,
 );
-const sizeAvailable = (size: string) => variants.some(
+const sizeAvailable = (size: string) => !active || variants.some(
   (v) => v.size === size && v.pax === visible.pax,
 );
 
