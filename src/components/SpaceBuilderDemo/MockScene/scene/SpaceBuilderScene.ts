@@ -377,6 +377,15 @@ export class SpaceBuilderScene {
     return this.chairReady ?? Promise.resolve();
   }
 
+  /** Resolves once {@link activateCatalogItem}'s ghost for `id` exists, so a caller can wait out its GLB. */
+  async whenCatalogItemReady(id: string) {
+    if (id === 'chair') {
+      await this.whenChairReady();
+      return;
+    }
+    await (this.extraLoading.get(id) ?? Promise.resolve());
+  }
+
   /**
    * Switch the Add tool's ghost to a non-chair real catalog item (or back to
    * the chair). Loads its GLB the first time it's selected.
