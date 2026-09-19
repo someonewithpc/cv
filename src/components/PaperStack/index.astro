@@ -652,9 +652,14 @@ const pages = await Promise.all(
       // to the bottom of the band: it starts --fold-back-x in at the top and comes in by the
       // band's height over the crease's reach. (tan(atan2()) is one length over another as a
       // plain number, a division Firefox won't take; see the crease formula above.)
-      --band-crease-x: max(
-        calc(var(--fold-back-x) * (1 - tan(atan2(var(--band-height), max(var(--fold-back-y), 1px))))),
-        0px
+      //
+      // Not floored at 0: a band taller than the fold reaches past the point where the crease
+      // leaves the page, and the crease has to keep its slope there so the band ends on the
+      // page's own left edge. Flooring it stood the band's edge up straight instead, leaving a
+      // wedge of the sheet below the crease uncovered, which showed as a pale notch of the
+      // next sheet's margin between one page of the pile and the next.
+      --band-crease-x: calc(
+        var(--fold-back-x) * (1 - tan(atan2(var(--band-height), max(var(--fold-back-y), 1px))))
       );
       clip-path: polygon(var(--fold-back-x) 0px, var(--band-crease-x) 100%, 100% 100%, 100% 0px);
       background: var(--paper-surface, var(--surface-sunken));
