@@ -87,50 +87,55 @@ const squirclePath = [
     </div>
 
     <Fragment slot="annotations">
-      {/* Wide sheet: the five chips sit in one row, so + is the middle one. */}
-      {/* Tip just outside the +, upper-right, aimed at its center. */}
+      {/* Landscape sheet: the five chips sit in one row, so + is the middle one. The
+          label sits above the panel, in the sheet's grid. */}
       <ArrowAnnotation
-        tipX={0.05}
-        tipY={-0.4}
-        angle={50}
-        length={0.55}
+        target='.chip[title="Create"]'
+        anchor="top-right"
+        tipX={0.16}
+        tipY={-0.84}
+        angle={60}
+        length={0.35}
         text="Create marker"
-        arrowClass="on-wide"
-        textClass="on-wide"
+        only="landscape"
       />
-      {/* Tip on the Cafe card's lower edge. Coming up from below is what keeps the
-          label off the Plaza card, which is where a shaft to the right put it. */}
+      {/* From the B marker's lower-left corner down past "Cafe" to below the cards;
+          the label runs left from there, where the cell has the room (the note fold
+          takes the right). */}
       <ArrowAnnotation
-        tipX={0}
-        tipY={1.04}
-        angle={201}
-        length={0.7}
+        target=".spaces li.active svg"
+        anchor="bottom-left"
+        tipX={-0.14}
+        tipY={0.66}
+        angle={-105}
+        length={0.6}
         text="Same marker, matches the pin order"
-        arrowClass="on-wide"
-        textClass="on-wide"
+        only="landscape"
       />
 
-      {/* Phone sheet: the chips wrap to three columns, which moves + to the
+      {/* Portrait sheet: the chips wrap to three columns, which moves + to the
           top-right and makes the artwork taller than it is wide. */}
       <ArrowAnnotation
-        tipX={0.62}
-        tipY={-0.94}
-        angle={56}
-        length={0.33}
+        target='.chip[title="Create"]'
+        anchor="top"
+        tipX={0.59}
+        tipY={-0.87}
+        angle={90}
+        length={0.25}
         text="Create marker"
-        arrowClass="on-narrow"
-        textClass="on-narrow"
+        only="portrait"
       />
-      {/* Tip on the Cafe card's lower edge, under its marker — coming up from
-          below keeps the shaft off the cards. */}
+      {/* Down the marker's right past "Cafe" and out of the card's lower corner. A
+          phone sheet has no room under the cards for the landscape wording. */}
       <ArrowAnnotation
-        tipX={0}
-        tipY={1.02}
-        angle={201}
-        length={0.76}
-        text="Same marker, matches the pin order"
-        arrowClass="on-narrow"
-        textClass="on-narrow"
+        target=".spaces li.active svg"
+        anchor="bottom-right"
+        tipX={0.22}
+        tipY={0.75}
+        angle={-75}
+        length={0.5}
+        text="Same marker, same order"
+        only="portrait"
       />
     </Fragment>
   </Annotations>
@@ -158,22 +163,6 @@ const squirclePath = [
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-
-  // Wrapping the chips moves everything the callouts point at, so each
-  // orientation carries its own set and hides the other's.
-  :global(.on-narrow) {
-    display: none;
-  }
-
-  @container technical-drawing (orientation: portrait) {
-    :global(.on-wide) {
-      display: none;
-    }
-
-    :global(.on-narrow) {
-      display: revert;
-    }
-  }
 }
 
 .selector-layer {
