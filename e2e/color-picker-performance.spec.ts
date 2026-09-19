@@ -60,6 +60,34 @@ test('the fill colour picker is on the page and a drag paints the preview', asyn
   expect(fill.replace(/\s/g, '')).toBe(`rgb(${channels.join(',')})`);
 });
 
+test('the thumbnail catches up once the drag stops', async ({ page }) => {
+  test.setTimeout(120_000);
+  const editor = await liveEditor(page);
+
+  const input = editor.locator('#marker-fill-color-marker-shape');
+  await expect(input).toBeVisible();
+  const area = input.locator('xpath=following-sibling::div').locator('.marker-color-picker__area');
+  await expect(area).toBeVisible();
+  const thumbnail = editor.locator('[data-demo-target="editor:shapeFill:solid"] svg');
+
+  const box = (await area.boundingBox())!;
+  await page.mouse.move(box.x + 3, box.y + box.height - 3);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i += 1) {
+    await page.mouse.move(
+      box.x + 3 + (box.width - 6) * (i / 8),
+      box.y + box.height - 3 - (box.height - 6) * (i / 8),
+    );
+  }
+  await page.mouse.up();
+
+  // The thumbnail is one of the things that waits out CONTROL_COMMIT_MS: it holds React's
+  // copy of the colour, so it arriving is what proves the settle still flushes.
+  const expected = await input.inputValue();
+  const channels = [1, 3, 5].map((at) => parseInt(expected.slice(at, at + 2), 16));
+  await expect(thumbnail).toHaveCSS('color', `rgb(${channels.join(', ')})`);
+});
+
 test('the picker follows a colour the walkthrough writes onto the input', async ({ page }) => {
   test.setTimeout(120_000);
   const editor = await liveEditor(page);
