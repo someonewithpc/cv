@@ -108,11 +108,6 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   width: 100%;
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
-
-  :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
 }
 
 .step {
@@ -328,20 +323,6 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     text-align: center;
     color: var(--ink-muted);
   }
-
-  :global([data-sheet-orientation='portrait']) & {
-    // The arrow turns, not the row it sits in: rotating a full-width row left a box as tall
-    // as the sheet is wide, standing over the steps on either side of it
-    padding: 0.375em 0;
-
-    .arrow {
-      rotate: 90deg;
-    }
-
-    .hop-note {
-      display: none;
-    }
-  }
 }
 
 .arrow {
@@ -363,8 +344,9 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 
 // The Google branch runs under the flow and joins it where the two paths meet
 .branch {
-  // Stops under step 3, which is where this path rejoins the flow
-  grid-column: 1 / 6;
+  // Under the first two steps and the hop into step 3, which is where this path rejoins the
+  // flow. Stopping there also keeps it out of the title block's corner on a short sheet
+  grid-column: 1 / 4;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -377,30 +359,64 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     width: 7.5em;
     height: 2.5em;
   }
-
-  :global([data-sheet-orientation='portrait']) & {
-    // The span goes with the flow: left at 1 / 6 on a one-column sheet it opened five
-    // implicit columns in the parent grid, and the four steps flowed across them
-    grid-column: 1;
-    grid-template-columns: minmax(0, 1fr);
-    margin-top: 0.5em;
-    padding-top: 0.5em;
-
-    .branch-arrow {
-      display: none;
-    }
-  }
 }
 
-// A phone sheet runs the flow down instead of across, and the listing keeps what fits
-:global([data-sheet-orientation='portrait']) .pipeline {
-  .step {
-    padding-top: 1.5em;
+// Four steps across while the sheet has the width for them. Where it has not, they go round
+// a 2x2 instead: step 1 top left, across to step 2, down to step 3 and back to step 4 under
+// the first. The steps are the children at odd places, the hops at even ones.
+@container technical-drawing-width (max-width: 44em) {
+  .pipeline {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas:
+      'one across two'
+      '. . down'
+      'four back three';
   }
 
+  .step:nth-child(1) { grid-area: one; }
+  .step:nth-child(3) { grid-area: two; }
+  .step:nth-child(5) { grid-area: three; }
+  .step:nth-child(7) { grid-area: four; }
+  .hop:nth-child(2) { grid-area: across; }
+  .hop:nth-child(6) { grid-area: back; }
+
+  .hop:nth-child(4) {
+    grid-area: down;
+    // The arrow turns in a box as tall as it is long, so it stays between the two steps
+    // instead of standing over them
+    height: 3em;
+    padding: 0;
+    align-content: center;
+
+    .arrow {
+      rotate: 90deg;
+    }
+  }
+
+  .hop:nth-child(6) .arrow {
+    rotate: 180deg;
+  }
+
+  // Half a sheet is too narrow for a label beside the arrow, or a title at full size
+  .hop-note {
+    display: none;
+  }
+
+  .step {
+    padding-top: 1.5em;
+
+    .step-title {
+      font-size: 0.8125em;
+    }
+  }
+
+  // The listing keeps the rules that matter, and the Google branch, which only says where
+  // it joins the flow, is what a sheet this small does without
   .listing .line:nth-child(2),
-  .listing .line:nth-child(3) {
+  .listing .line:nth-child(3),
+  .branch {
     display: none;
   }
 }
+
 </style>
