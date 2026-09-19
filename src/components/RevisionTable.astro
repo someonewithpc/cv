@@ -1,0 +1,65 @@
+---
+/**
+ * The sheet's revision table, the block a drawing keeps beside its title block. One issue so far.
+ */
+const issued = new Date().toISOString().slice(0, 10);
+---
+
+<table class="revisions monospace" aria-label="Revisions">
+  <thead>
+    <tr>
+      <th scope="col">Rev.</th>
+      <th scope="col">Description</th>
+      <th scope="col">Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="typewriter">A</td>
+      <td>First issue. Three details, one view, parts list.</td>
+      <td><time datetime={issued}>{issued}</time></td>
+    </tr>
+  </tbody>
+</table>
+
+<style lang="scss">
+.revisions {
+  align-self: end;
+  width: min(100%, 26rem);
+  border: 2px solid var(--sheet-frame);
+  border-collapse: collapse;
+  background: var(--sheet-paper);
+  font-size: 0.6875rem;
+  color: var(--ink-muted);
+
+  th,
+  td {
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--sheet-frame);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    font-weight: 400;
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  td:first-child {
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  td:last-child {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 52rem) {
+    width: 100%;
+  }
+}
+</style>
