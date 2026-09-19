@@ -943,6 +943,7 @@ onBeforeUnmount(() => {
     <div
       v-if="cursorPhase !== 'gone'"
       class="space-builder-demo-cursor"
+      data-demo-cursor
       :class="[
         `space-builder-demo-cursor--${cursorPhase}`,
         { 'space-builder-demo-cursor--clicking': cursorClicking },

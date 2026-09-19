@@ -107,6 +107,20 @@ function targetCenter(el: Element) {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 }
 
+/** Down and up at the point the drawn cursor aims at, so the press layer draws them. */
+function pressAt(el: Element, client: { x: number; y: number }) {
+  for (const [type, buttons] of [['mousedown', 1], ['mouseup', 0]] as const) {
+    el.dispatchEvent(new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: client.x,
+      clientY: client.y,
+      buttons,
+    }));
+  }
+}
+
 function isVisibleInScroller(el: HTMLElement, scroller: HTMLElement, pad = 12) {
   const elRect = el.getBoundingClientRect();
   const box = scroller.getBoundingClientRect();
@@ -415,6 +429,7 @@ export class AutoPlayController {
             click: true,
             dragging: aimed.dragging,
           });
+          pressAt(el, client);
           el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
         }
       } else if (shouldClick && aimed?.target) {
@@ -429,6 +444,7 @@ export class AutoPlayController {
             click: true,
             dragging: aimed.dragging,
           });
+          pressAt(el, client);
           el.click();
         }
       } else if (aimed?.click) {
