@@ -108,15 +108,10 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   width: 100%;
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
-  // Sized from the stack's measured pixels, never a container unit: see Stack.astro's
-  // script. A landscape sheet is twice as wide as it is tall, so its height is what the
-  // flow runs out of and the type comes off that
-  font-size: clamp(0.5rem, 0.0235 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
 
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
-    font-size: clamp(0.625rem, 0.026 * var(--sheet-inline), 0.9375rem);
   }
 }
 

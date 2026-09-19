@@ -10,15 +10,10 @@
   width: 100%;
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
-  // Sized from the stack's measured pixels, never a container unit: see Stack.astro's
-  // script. The drag makes a column two thirds taller than it starts, so the type comes off
-  // the sheet's height, which on a 2:1 sheet is what runs out first
-  font-size: clamp(0.5rem, 0.0225 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
 
   [data-sheet-orientation='portrait'] & {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.75em;
-    font-size: clamp(0.625rem, 0.026 * var(--sheet-inline), 0.875rem);
 
     // The product pads its sidebar for a desktop map; a phone sheet has no room for that
     nav {
