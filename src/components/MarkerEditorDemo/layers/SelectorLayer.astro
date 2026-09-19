@@ -101,7 +101,7 @@ const squirclePath = [
       />
       {/* Aimed at the B marker's centre, the tip stopping on its rim, down past "Cafe"
           to below the cards; the label runs left from there, where the cell has the
-          room (the note fold takes the right). */}
+          room (the note fold takes the right) but not for the wording on one line. */}
       <ArrowAnnotation
         target=".spaces li.active svg"
         anchor="center"
@@ -110,7 +110,8 @@ const squirclePath = [
         tipY={0.66}
         angle={-105}
         length={0.6}
-        text="Same marker, matches the pin order"
+        text="Each marker gets the letter or number matching its ordering"
+        lines={['Each marker gets the letter or number', 'matching its ordering']}
         only="landscape"
       />
 
@@ -136,7 +137,8 @@ const squirclePath = [
         tipY={0.75}
         angle={-105}
         length={0.5}
-        text="Same marker, same order"
+        text="Each marker gets the letter or number matching its ordering"
+        lines={['Each marker gets the', 'letter or number', 'matching its ordering']}
         only="portrait"
       />
     </Fragment>
