@@ -100,23 +100,41 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 ))}
 
 <style lang="scss">
+/* An index card: the head written above the red rule, the note on the blue
+   rules under it. The rules run the card's full width, so the body backs out
+   of the card padding and the tech column and pads itself back in. */
 article {
+  --surface-raised: var(--theme-paper);
+  --card-margin: calc(var(--cell-x) + 5.5rem + 1.25rem);
+  --card-rule: color-mix(in oklch, var(--line), var(--blueprint) 40%);
+  --card-head-rule: oklch(0.62 0.17 25 / 0.6);
+  --rule-pitch: 1.75rem;
+
   display: grid;
   grid-template-columns: var(--grid);
   column-gap: 1.25rem;
   align-items: start;
   margin-bottom: 2.5rem;
-  padding: 1.25rem var(--cell-x) 1.25rem calc(var(--cell-x) + 3px);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
-  border-radius: 0.5em;
-  background: color-mix(in oklch, var(--surface-raised), transparent 40%);
+  padding: 1.25rem var(--cell-x) 1.25rem;
+  rotate: -0.5deg;
+  color: var(--ink);
+  background: var(--theme-paper);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.12),
+    0 1px 2px rgb(0 0 0 / 0.25),
+    0 1rem 2rem -0.75rem rgb(0 0 0 / 0.45);
 
   font-family: sans-serif;
+
+  &:nth-of-type(even) {
+    rotate: 0.5deg;
+  }
 
   > ul {
     grid-column: 1;
     grid-row: 1 / -1;
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -198,8 +216,19 @@ article {
   }
 
   > p {
-    max-width: 52rem;
-    line-height: 1.65;
+    margin-top: 0.75rem;
+    margin-inline: calc(-1 * var(--card-margin)) calc(-1 * var(--cell-x));
+    padding-inline: var(--card-margin) var(--cell-x);
+    border-top: 2px solid var(--card-head-rule);
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--rule-pitch) - 1px),
+      var(--card-rule) calc(var(--rule-pitch) - 1px) var(--rule-pitch)
+    );
+    background-origin: content-box;
+    /* Pulled up so the writing sits on the rule rather than floating over it. */
+    background-position: 0 -0.25rem;
+    line-height: var(--rule-pitch);
     color: var(--ink-muted);
     overflow-wrap: break-word;
   }
@@ -260,6 +289,8 @@ article {
   }
 
   @container (max-width: 50rem) {
+    --card-margin: calc(var(--cell-x) + 5rem + 1.25rem);
+
     grid-template-columns: 5rem 1fr;
 
     > header,
@@ -275,6 +306,8 @@ article {
   }
 
   @container (max-width: 30rem) {
+    --card-margin: var(--cell-x);
+
     grid-template-columns: auto minmax(0, 1fr);
     column-gap: 0.65rem;
 
