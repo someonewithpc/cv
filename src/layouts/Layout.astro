@@ -191,13 +191,6 @@ main {
     padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Quiet drafting grid */
-  background-image:
-    linear-gradient(to right, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklch, var(--blueprint-grid), transparent 78%) 1px, transparent 1px);
-  background-size: 2.5rem 2.5rem;
-  background-attachment: local;
-
   > :not(.full-width, .breakout) {
     grid-column: content;
     min-width: 0;
@@ -289,6 +282,13 @@ image, svg, img, picture {
 .monospace {
   font-family: monospace, system-ui;
   font-style: normal;
+}
+
+.stencil {
+  font-family: var(--font-stencil);
+  font-weight: 400;
+  font-style: normal;
+  text-transform: uppercase;
 }
 
 .marker-font {

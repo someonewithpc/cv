@@ -5,13 +5,13 @@ const { statistics } = Astro.props;
 <header>
   <div class="title">
     <p class="sheet-code monospace" aria-hidden="true">
-      <span>SH-OSS</span>
+      <span>SH-04</span>
       <span>/</span>
       <span>REV A</span>
     </p>
     <h2 id="open-source-heading">
       <small lang="ja">オープンソース</small>
-      <span class="typewriter">Open Source</span>
+      <span class="stencil">Open Source</span>
     </h2>
   </div>
 
@@ -69,11 +69,9 @@ header {
       font-size: 0.6875rem;
     }
 
-    .typewriter {
-      font-size: clamp(2.25rem, 5.5vw, 3.25rem);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      line-height: 1.05;
+    .stencil {
+      font-size: var(--type-h2);
+      line-height: 1;
       color: var(--ink);
     }
   }

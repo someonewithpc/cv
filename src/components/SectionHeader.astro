@@ -17,7 +17,7 @@ const { headingId, titleJp, title, sheetCode = 'SH' } = Astro.props;
   </p>
   <h2 id={headingId}>
     <small lang="ja">{titleJp}</small>
-    <span class="typewriter">{title}</span>
+    <span class="stencil">{title}</span>
   </h2>
 </header>
 
@@ -46,11 +46,9 @@ header {
       font-size: 0.6875rem;
     }
 
-    .typewriter {
-      font-size: clamp(2.25rem, 5.5vw, 3.25rem);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      line-height: 1.05;
+    .stencil {
+      font-size: var(--type-h2);
+      line-height: 1;
       color: var(--ink);
     }
   }

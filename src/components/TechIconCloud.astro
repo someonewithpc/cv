@@ -8,7 +8,17 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
 ---
 
 <section aria-labelledby="tech-icon-cloud-label">
-  <p id="tech-icon-cloud-label" class="cloud-label monospace">Bill of materials</p>
+  <header>
+    <p class="sheet-code monospace" aria-hidden="true">
+      <span>SH-02</span>
+      <span>/</span>
+      <span>REV A</span>
+    </p>
+    <h2 id="tech-icon-cloud-label">
+      <small lang="ja">部品表</small>
+      <span class="stencil">Bill of materials</span>
+    </h2>
+  </header>
 
   <div class="filter-bar">
     <fieldset class="filter-toggle">
@@ -41,17 +51,40 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
 
 <style lang="scss">
 section {
-  max-width: 80ch;
-  margin-inline: auto;
-  margin-top: 1.5rem;
+  > header {
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid color-mix(in oklch, var(--line), transparent 25%);
 
-  .cloud-label {
-    margin: 0 0 0.75rem;
-    font-size: 0.625rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    text-align: center;
+    .sheet-code {
+      display: flex;
+      gap: 0.5ch;
+      margin: 0 0 0.375rem;
+      font-size: 0.625rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent-text);
+    }
+
+    h2 {
+      display: grid;
+      justify-items: start;
+      gap: 0.125rem;
+
+      [lang='ja'] {
+        display: block;
+        font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+        font-size: 0.6875rem;
+        letter-spacing: 0.12em;
+        color: color-mix(in oklch, var(--ink-faint), transparent 20%);
+      }
+
+      .stencil {
+        font-size: var(--type-h2);
+        line-height: 1;
+        color: var(--ink);
+      }
+    }
   }
 
   .sr-only {
@@ -69,7 +102,7 @@ section {
   .filter-bar {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.85rem;
     flex-wrap: wrap;
     margin: 0 0 1.1rem;
@@ -159,7 +192,7 @@ section {
 
   ul {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.5em;
     flex-wrap: wrap;
 

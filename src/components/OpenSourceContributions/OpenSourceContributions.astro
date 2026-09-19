@@ -1,4 +1,6 @@
 ---
+import Band from '@/components/Band.astro';
+
 import site from './site.json';
 import ContributionRow from './ContributionRow.astro';
 import SectionHeader from './SectionHeader.astro';
@@ -13,11 +15,14 @@ const statistics = {
 };
 ---
 
-<section id="open-source" aria-labelledby="open-source-heading">
-  <SectionHeader statistics={statistics} />
+<section id="open-source" class="full-width" aria-labelledby="open-source-heading">
+  <Band number={4} material="vellum">
+    <SectionHeader statistics={statistics} />
 
-  <Highlights highlights={highlights} />
+    <Highlights highlights={highlights} />
+  </Band>
 
+  <Band number={5} material="ledger">
   {groups.map(({ id, label, items }) => (
     <section data-group={id} aria-labelledby={`group-${id}`}>
       <h3 id={`group-${id}`}>
@@ -38,6 +43,7 @@ const statistics = {
       </div>
     </section>
   ))}
+  </Band>
 </section>
 
 <style lang="scss">
@@ -46,9 +52,9 @@ const statistics = {
   --row-height: 3.75rem;
   --grid: 5.5rem minmax(14rem, 20rem) minmax(0, 1fr);
 
+  display: grid;
+  grid-template-columns: subgrid;
   container-type: inline-size;
-  margin-top: clamp(5rem, 12vw, 8rem);
-  padding-bottom: 5rem;
 
   :global([lang='ja']) {
     display: block;
@@ -59,7 +65,7 @@ const statistics = {
     margin-inline-start: -0.125rem;
   }
 
-  > section {
+  :global(.band) > section {
     &[data-group='merged'] {
       --row-accent: hsl(145 42% 38%);
     }
@@ -79,7 +85,7 @@ const statistics = {
     }
 
     & + section {
-      margin-top: 3rem;
+      margin-top: 3.5rem;
     }
 
     h3 {
