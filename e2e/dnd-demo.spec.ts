@@ -75,6 +75,26 @@ test('Esc drops an armed object instead of placing it', async ({ page }) => {
   await expect(app).toHaveAttribute('data-phase', 'idle');
 });
 
+test('the style picked on a card is the model that gets loaded', async ({ page }) => {
+  const glbs: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('.glb')) glbs.push(request.url());
+  });
+
+  const app = await openDemo(page);
+  const card = app.locator('[data-catalog-item="table-round"]');
+
+  // Six seats on the wide top is its own GLB, not the default eight.
+  await card.locator('.object-pax .hover-select-current').click();
+  await card.locator('.object-pax .hover-select-options button', { hasText: '6 seats' }).click();
+
+  await card.locator('[data-demo-target="catalog:table-round"]').dblclick();
+  // Only a picked style gets this file; the card's default is the eight-seat top.
+  await expect
+    .poll(() => glbs.some((url) => url.includes('banquet-6pax-243x121')), { timeout: 20_000 })
+    .toBe(true);
+});
+
 test('dragging an object onto the floor places exactly one in a live scene', async ({ page }) => {
   await armDrawCounter(page);
   const app = await openDemo(page);
