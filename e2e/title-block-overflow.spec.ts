@@ -87,3 +87,21 @@ for (const width of WIDTHS) {
     expect(under(await sheets(page, PROSE), OVERRUNS_ITS_COLUMN)).toEqual({});
   });
 }
+
+test('a sheet that sheds the Proj. cell keeps the projection symbol inside the block', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const section = page.locator('article.technical-drawing-stack section').first();
+  const table = section.locator(':scope > table');
+  await expect(table.locator('.title-proj')).toBeHidden();
+
+  const mark = table.locator('.title-proj-mark');
+  await expect(mark).toBeVisible();
+  const box = (await table.boundingBox())!;
+  const glyph = (await mark.boundingBox())!;
+  expect(glyph.x).toBeGreaterThanOrEqual(box.x);
+  expect(glyph.y).toBeGreaterThanOrEqual(box.y);
+  expect(glyph.x + glyph.width).toBeLessThanOrEqual(box.x + box.width);
+  expect(glyph.y + glyph.height).toBeLessThanOrEqual(box.y + box.height);
+});
