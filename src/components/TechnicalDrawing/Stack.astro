@@ -30,9 +30,11 @@ const inWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'e
 const sheetsBelow = totalLayers - 1;
 const hint = Astro.props.hint ?? `${inWords[sheetsBelow] ?? sheetsBelow} more sheets, peel this corner`;
 const hintBack = 'this corner drags the page back';
-// One span per character, spaces included so the line's width stays put: the callout types
+// One span per character, spaces included so the line's width stays put: each callout types
 // itself out when it appears, and the stylesheet times each letter by its index.
-const hintBackLetters = [...hintBack].map((letter, index) => ({ letter, index }));
+const struck = (line: string) => [...line].map((letter, index) => ({ letter, index }));
+const hintLetters = struck(hint);
+const hintBackLetters = struck(hintBack);
 
 // One arrow, drawn twice and turned by the CSS. Its tip is at (6, 14) and the shaft leaves it
 // along +x, so the element's left edge at half its height is the point the arrow aims at and
@@ -73,8 +75,14 @@ const arrow = {
     }}
   </PaperStack>
 
-  <div class="flip-hints" aria-hidden="true" style={`--hint-back-letters: ${hintBackLetters.length}`}>
-    <p class="flip-hint flip-hint--fwd hint-words typewriter">{hint}</p>
+  <div
+    class="flip-hints"
+    aria-hidden="true"
+    style={`--hint-fwd-letters: ${hintLetters.length}; --hint-back-letters: ${hintBackLetters.length}`}
+  >
+    <p class="flip-hint flip-hint--fwd hint-words typewriter">{hintLetters.map(({ letter, index }) => (
+      <span class="hint-letter" style={`--i: ${index}`}>{letter}</span>
+    ))}</p>
     <svg class="flip-hint flip-hint--fwd hint-arrow" viewBox="0 0 48 28">
       <path class="hint-halo" d={arrow.shaft} />
       <path class="hint-halo" d={arrow.head} />
@@ -97,9 +105,11 @@ const arrow = {
 </div>
 
 <style lang="scss">
-// The lean a page this tall takes, shared by the stack and by the hint layer beside it.
-$portrait-lean-x: 4.5em;
-$portrait-lean-y: 2.25em;
+// How long a hint takes to fade in, and how long one part of it waits for another.
+$hint-fade: 400ms;
+
+// How far the resting crease reaches along the sheet's long side, for the stack and the hint layer.
+$paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 
 // The width container has to be an ancestor of the stack, not the stack itself: the stack is
 // what the aspect query below styles, and an element never matches a container it declares
@@ -129,7 +139,7 @@ $portrait-lean-y: 2.25em;
      phone-width sheet and a twentieth on a desktop one, so it is a fraction of the sheet
      instead, floored so the paper clip still has a corner to sit in and capped at what a
      desktop sheet already had. 100cqw is the frame's width, which is the stack's own. */
-  --paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
+  --paper-clip-reach: #{$paper-clip-reach};
   --paper-clip-lean-x: calc(var(--paper-clip-reach) / 2);
   --paper-clip-lean-y: var(--paper-clip-reach);
 
@@ -150,15 +160,6 @@ $portrait-lean-y: 2.25em;
   }
 }
 
-// The hint layer is the stack's sibling, not its child, so the transposed lean does not reach it
-// by inheritance. It needs the same two numbers to find the folded-away corner's crease.
-@container technical-drawing-width (max-width: 40em) {
-  .flip-hints {
-    --paper-clip-lean-x: #{$portrait-lean-x};
-    --paper-clip-lean-y: #{$portrait-lean-y};
-  }
-}
-
 // Two sentences drawn on the frame: this corner turns the page, and that corner brings it back.
 // The script decides which stacks get them, and nothing shows until it does, which also keeps
 // all of this off a page without JS.
@@ -169,18 +170,33 @@ $portrait-lean-y: 2.25em;
   display: none;
   color: var(--accent-text);
   pointer-events: none;
+
+  // The hint layer is the stack's sibling, not its child, so the crease numbers do not reach it
+  // by inheritance. It needs the same reach and lean, transposed the same way on a page this
+  // tall, to find the folded-away corner's crease. cqw is the frame's width here too.
+  --paper-clip-reach: #{$paper-clip-reach};
+  --paper-clip-lean-x: calc(var(--paper-clip-reach) / 2);
+  --paper-clip-lean-y: var(--paper-clip-reach);
+
+  @container technical-drawing-width (max-width: 40em) {
+    --paper-clip-lean-x: var(--paper-clip-reach);
+    --paper-clip-lean-y: calc(var(--paper-clip-reach) / 2);
+  }
 }
 
 .technical-drawing-frame[data-hint-show] .flip-hints {
   display: block;
 }
 
+// Neither callout is there until it is called for: the peel hint waits to be scrolled to, the
+// way back waits for a page to have been turned.
 .flip-hint {
   position: absolute;
   margin: 0;
   line-height: 1.2;
   pointer-events: none;
-  transition: opacity 400ms ease;
+  opacity: 0;
+  transition: opacity $hint-fade ease;
 }
 
 .flip-hints svg {
@@ -190,13 +206,14 @@ $portrait-lean-y: 2.25em;
   stroke-linejoin: round;
 }
 
-// The way back only makes sense once there is a page behind you, and only until you find it.
-.flip-hint--back {
-  opacity: 0;
-}
+// The peel hint waits for the reader to reach it: flip-hint.ts marks the frame once the line
+// has come up past the quarter mark of the viewport, so the words are written out in front of
+// the reader instead of being found already written. The mark stays, so scrolling back does not
+// start the line over. And a turned page has nothing left to peel.
+$peel-shown: '.technical-drawing-frame[data-hint-seen]:not(:has([data-paper-turned])) .flip-hint--fwd';
 
-.technical-drawing-frame:has([data-paper-turned]) .flip-hint--fwd {
-  opacity: 0;
+#{$peel-shown} {
+  opacity: 1;
 }
 
 // The way back waits for the turned page to lie flat and still at the front; shown while it is
@@ -210,27 +227,39 @@ $way-back-shown: '.technical-drawing-frame:has([data-paper-turned][data-paper-se
   opacity: 1;
 }
 
-// The way back types itself out, a letter at a time in the typewriter face, rather than
+// Both callouts type themselves out, a letter at a time in the typewriter face, rather than
 // fading in as one block: the line shows at once and each letter waits its turn, so the
-// animation starts with the callout and runs again on every show. The arrow follows the last
-// letter, so the eye goes words, arrow, corner. Opacity only: the face is not monospace, so
-// the letters keep their width from the first frame and the arrow's measurement holds.
+// animation starts with the callout and runs again on every show. Opacity only: the face is not
+// monospace, so the letters keep their width from the first frame and the arrow's measurement
+// holds.
+//
+// Each one is read left to right. The peel hint's words are to the left of its arrow, so they
+// are struck first and the arrow follows the last letter; the way back's arrow is to the left of
+// its words, so the arrow comes in first and the letters start once it is there.
+@mixin types-itself($lead, $arrow-delay) {
+  --hint-letter-beat: 40ms;
+
+  &.hint-words {
+    transition: none;
+  }
+
+  .hint-letter {
+    animation: hint-letter-struck 1ms linear both;
+    animation-delay: calc(#{$lead} + var(--i) * var(--hint-letter-beat));
+  }
+
+  &.hint-arrow {
+    transition-delay: $arrow-delay;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
+  #{$peel-shown} {
+    @include types-itself(0ms, calc(var(--hint-fwd-letters, 0) * var(--hint-letter-beat)));
+  }
+
   #{$way-back-shown} {
-    --hint-letter-beat: 40ms;
-
-    &.hint-words {
-      transition: none;
-    }
-
-    .hint-letter {
-      animation: hint-letter-struck 1ms linear both;
-      animation-delay: calc(var(--i) * var(--hint-letter-beat));
-    }
-
-    &.hint-arrow {
-      transition-delay: calc(var(--hint-back-letters, 0) * var(--hint-letter-beat));
-    }
+    @include types-itself($hint-fade, 0ms);
   }
 }
 
@@ -380,7 +409,7 @@ function initStack(stack: HTMLElement) {
     watchFrontPage(page, () => apply(page));
   });
 
-  // So the first state a demo reports is already heard.
+  // Before the islands mount, so the first state a demo reports is already heard.
   [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
     .forEach((page) => initAutoplayStatus(page));
 
