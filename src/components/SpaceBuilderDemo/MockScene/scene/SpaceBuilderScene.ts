@@ -160,6 +160,8 @@ export class SpaceBuilderScene {
   private readonly dummy = new Object3D();
   private readonly spherical = new Spherical(18, Math.PI * 0.38, Math.PI * 0.28);
   private readonly cameraTarget = new Vector3(0, 0, 0);
+  /** The framing {@link resetCamera} returns to: the constructor's, or the page's own via {@link setCameraAngles}. */
+  private cameraHome = { radius: 0, phi: 0, theta: 0, target: new Vector3() };
 
   private animationId = 0;
   private active = true;
@@ -239,6 +241,7 @@ export class SpaceBuilderScene {
 
     this.camera = new PerspectiveCamera(42, 1, 0.1, 120);
     this.updateCamera();
+    this.markCameraHome();
 
     this.scene.background = new Color('#6e8fc4');
     this.scene.fog = null;
@@ -804,7 +807,8 @@ export class SpaceBuilderScene {
     this.updateTagPosition();
   }
 
-  /** Absolute camera angle set (radians) — for initial framing, not pointer drag. */
+  /** Absolute camera angle set (radians) — for initial framing, not pointer drag.
+   * The result becomes the camera home that {@link resetCamera} returns to. */
   setCameraAngles(theta?: number, phi?: number) {
     if (theta !== undefined) this.spherical.theta = theta;
     if (phi !== undefined) {
@@ -812,6 +816,79 @@ export class SpaceBuilderScene {
     }
     this.updateCamera();
     this.updateTagPosition();
+    this.markCameraHome();
+  }
+
+  private markCameraHome() {
+    this.cameraHome = {
+      radius: this.spherical.radius,
+      phi: this.spherical.phi,
+      theta: this.spherical.theta,
+      target: this.cameraTarget.clone(),
+    };
+  }
+
+  /** Bring the camera back to its home framing over `ms` (instant at 0 or under reduced motion).
+   * Resolves early when the user takes the camera over or the scene is disposed. */
+  resetCamera(ms = 500): Promise<void> {
+    const home = this.cameraHome;
+    const from = {
+      radius: this.spherical.radius,
+      phi: this.spherical.phi,
+      theta: this.spherical.theta,
+      target: this.cameraTarget.clone(),
+    };
+    // Take the short way round however many laps the orbit has drifted.
+    let dTheta = (home.theta - from.theta) % (Math.PI * 2);
+    if (dTheta > Math.PI) dTheta -= Math.PI * 2;
+    if (dTheta < -Math.PI) dTheta += Math.PI * 2;
+    const apply = (eased: number) => {
+      this.spherical.radius = from.radius + (home.radius - from.radius) * eased;
+      this.spherical.phi = from.phi + (home.phi - from.phi) * eased;
+      this.spherical.theta = from.theta + dTheta * eased;
+      this.cameraTarget.lerpVectors(from.target, home.target, eased);
+      this.updateCamera();
+      this.updateTagPosition();
+    };
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (ms <= 0 || reduced) {
+      apply(1);
+      return Promise.resolve();
+    }
+    const t0 = performance.now();
+    const epoch = this.interactionEpoch;
+    return new Promise<void>((resolve) => {
+      const step = (now: number) => {
+        if (this.disposed || epoch !== this.interactionEpoch) {
+          resolve();
+          return;
+        }
+        const t = Math.min(1, (now - t0) / ms);
+        apply(t * t * (3 - 2 * t));
+        if (t < 1) requestAnimationFrame(step);
+        else resolve();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  /** True when every floor point projects inside the canvas rect inset by `margin` (a fraction of each side). */
+  groundInView(points: Array<{ x: number; z: number }>, margin = 0.08) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const insetX = rect.width * margin;
+    const insetY = rect.height * margin;
+    return points.every((p) => {
+      const c = this.groundToClient(p.x, p.z);
+      return (
+        c !== null &&
+        c.x >= rect.left + insetX &&
+        c.x <= rect.right - insetX &&
+        c.y >= rect.top + insetY &&
+        c.y <= rect.bottom - insetY
+      );
+    });
   }
 
   getOrbitRadius() {
