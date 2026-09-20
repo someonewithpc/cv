@@ -98,7 +98,7 @@ test('main page: the walkthrough puts its pointer on the tick before the row sav
       if (!cursor.hidden && x >= tick.left && x <= tick.right && y >= tick.top && y <= tick.bottom) {
         onTick = true;
       }
-      if (group.classList.contains('completing')) return { onTick, committed: true };
+      if (group.classList.contains('success')) return { onTick, committed: true };
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     return { onTick, committed: false };
@@ -318,10 +318,11 @@ test('main page: the walkthrough takes the gold row from wrong values to the one
   expect(await values()).toEqual(['Ivory', 'Beige', 'Ivory', 'Champagne']);
   expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
 
-  // After the shared save lands: Ivory on every object, and the field holds it.
-  await expect(gold).toHaveClass(/\bcompleting\b/, { timeout: 20_000 });
+  // After the shared save lands: Ivory on every object, and the field holds it. The row
+  // stays put, only its ring marks the save.
+  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'true', { timeout: 20_000 });
   expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', 'Ivory']);
-  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'true');
+  await expect(gold).not.toHaveClass(/\bcompleting\b/);
   await expect(shared).toHaveValue('Ivory');
   expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
 
