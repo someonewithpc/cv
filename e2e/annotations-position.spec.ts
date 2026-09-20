@@ -143,8 +143,12 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
         const segment = anchorAttr.startsWith('segment')
           ? anchorAttr.slice('segment'.length).trim().split(/\s+/).map(Number)
           : null;
-        const [fx, fy] = segment ? [] : anchorAttr.split(/\s+/).map(Number);
+        const [ax, fy] = segment ? [] : anchorAttr.split(/\s+/).map(Number);
         const ends = segment && [segmentPoint(elements[0], segment[0], segment[1]), segmentPoint(elements[0], segment[2], segment[3])];
+        // A callout with no segment mirrors across the target's vertical axis when its
+        // authored side would leave the cell or lie over the target or the title block;
+        // annotations-position.ts marks that with data-mirrored on the group.
+        const fx = !ends && callout.dataset.mirrored === 'true' ? 1 - ax : ax;
         const anchor = ends
           ? { x: (ends[0].x + ends[1].x) / 2, y: (ends[0].y + ends[1].y) / 2 }
           : {

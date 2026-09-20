@@ -49,6 +49,7 @@ type Callout = {
   end: Point;
   sign: 1 | -1;
   underline: number;
+  mirrored: boolean;
 };
 
 type Overlay = {
@@ -191,7 +192,7 @@ function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: 
     const glyphs = { left: label.left + inset, top: label.top + inset, right: label.right - inset, bottom: label.bottom - inset };
     const fits =
       label.left >= cell.left && label.right <= cell.right && within(label, sheet) && clear(label) && !crosses(tip, end, glyphs);
-    return { tip, end, sign, fits };
+    return { tip, end, sign, fits, mirror };
   };
 
   let placement = place(false);
@@ -203,6 +204,7 @@ function readCallout(callout: Callout, centre: Point, unit: number, rot: { cos: 
   callout.end = placement.end;
   callout.sign = placement.sign;
   callout.underline = width;
+  callout.mirrored = placement.mirror;
 }
 
 function read(overlay: Overlay): boolean {
@@ -256,7 +258,7 @@ function write(overlay: Overlay) {
   }
   for (const callout of targeted) {
     if (!callout.underline) continue;
-    const { tip, end, sign, underline } = callout;
+    const { tip, end, sign, underline, mirrored } = callout;
     const f = (n: number) => n.toFixed(5);
     callout.group.removeAttribute('transform');
     callout.path.setAttribute('d', `M ${f(tip.x)} ${f(tip.y)} l ${f(end.x - tip.x)} ${f(end.y - tip.y)} l ${f(sign * underline)} 0`);
@@ -266,6 +268,11 @@ function write(overlay: Overlay) {
     for (const span of callout.spans) span.setAttribute('x', x);
     if (sign < 0) callout.text.setAttribute('text-anchor', 'end');
     else callout.text.removeAttribute('text-anchor');
+    // Read by e2e/annotations-position.spec.ts, which otherwise assumes the authored
+    // anchor side; the label falls back to the mirrored side when the authored one
+    // would leave the cell or lie over the target or the title block.
+    if (mirrored) callout.group.dataset.mirrored = 'true';
+    else delete callout.group.dataset.mirrored;
   }
   svg.dataset.annotations = 'js';
 }
@@ -324,6 +331,7 @@ function calloutOf(group: SVGGElement, artwork: Element): Callout | undefined {
     end: { x: 0, y: 0 },
     sign: 1,
     underline: 0,
+    mirrored: false,
   };
 }
 
