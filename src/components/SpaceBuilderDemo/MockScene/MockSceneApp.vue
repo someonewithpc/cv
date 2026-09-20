@@ -576,7 +576,7 @@ function startAutoplay(controller: AutoPlayController) {
   pushToast(autoplayStartedToast());
 }
 
-function restartDemo() {
+async function restartDemo() {
   if (!chairsReady.value) return;
   if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
   if (handoffTimer) { clearTimeout(handoffTimer); handoffTimer = null; }
@@ -585,6 +585,9 @@ function restartDemo() {
   sceneRef.value?.reset();
   panel.value = 'closed';
   phase.value = 'idle';
+  // Bring the view home before the walkthrough aims at the floor again.
+  await sceneRef.value?.resetCamera();
+  if (userControl.value) return;
   controllerRef.value?.start();
 }
 
