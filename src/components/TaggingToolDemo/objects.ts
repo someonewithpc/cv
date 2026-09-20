@@ -38,38 +38,46 @@ export const properties: readonly Property[] = [
 export const defaultProperty = properties[0].id;
 
 /** The walkthrough's script: one shared value over a group whose objects disagree, then
-    one variant set back on its own card. Both values are ones the category already
-    holds for the schema. */
+    one object set on its own card. Each step moves the row towards what the product
+    holds for it. */
 export const walkthrough = {
   value: 'Ivory',
-  overrideValue: 'Beige',
-  /** Which object of the auto-played row gets the hand-typed override. */
-  overrideIndex: 1,
+  /** What the own-card step saves; null empties the field, which is how the product
+      stores nil. */
+  overrideValue: null as string | null,
+  /** Which object of the auto-played row gets the own-card step: the bare table, whose
+      chair value goes back to none. */
+  overrideIndex: 3,
 };
 
 /* Rows of the Banquet category as the product stores them (library_objects 10629 and
    11150 with their styles, properties for schemas 11 "table color" and 12 "chair"),
    thumbnails from the same rows. Each group runs to sixteen styles in the product; the
    sheet shows the base and three, chosen so the row still has the disagreement and the
-   gap the page is about. */
+   gap the page is about. Three chair values on the gold row are the walkthrough's wrong
+   starting point, marked below; its steps end on the product's values. */
 export const baseObjects: readonly BaseObject[] = [
   {
     id: 'gold',
     autoplay: true,
+    // The walkthrough's wrong starting point, not the product's row: the product holds
+    // chair "Beige" on 10629, the shared save overwrites it with "Ivory" like the rest.
     base: {
       id: '10629',
       name: 'Banquet Set',
       details: '12 seats, 1.82m',
       image: gold12,
-      values: { chair: 'Beige', 'table color': 'White and Beige' },
+      values: { chair: 'Ivory', 'table color': 'White and Beige' },
     },
     variants: [
+      // The walkthrough's wrong starting point, not the product's row: the product holds
+      // chair "Ivory" on 10630, the shared save puts it back.
       {
         id: '10630',
         name: 'Banquet Set',
         details: '11 seats, 1.82m',
         image: gold11,
-        values: { chair: 'Ivory', 'table color': 'White and Beige' },
+        values: { chair: 'Beige', 'table color': 'White and Beige' },
       },
       {
         id: '10631',
@@ -78,12 +86,14 @@ export const baseObjects: readonly BaseObject[] = [
         image: gold10,
         values: { chair: 'Ivory', 'table color': 'White and Beige' },
       },
+      // Also a wrong starting point: the product holds chair nil on 10638, the table
+      // without chairs. The walkthrough's last step empties it again.
       {
         id: '10638',
         name: 'Banquet Set',
         details: '0 seats, 1.82m',
         image: gold0,
-        values: { chair: null, 'table color': 'White and Beige' },
+        values: { chair: 'Champagne', 'table color': 'White and Beige' },
       },
     ],
   },
