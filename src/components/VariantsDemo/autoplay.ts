@@ -203,11 +203,28 @@ export function createPlayer(host: HTMLElement) {
     restartIdleTimer();
   }
 
-  function onTrustedPointer(event: Event) {
+  // A finger on the cards is not yet a visitor taking over: on a phone the same touch
+  // starts a page scroll, and the browser cancels the pointer once it does. Only a
+  // touch that lifts, a tap or a drag the open list kept, hands the demo over. Every
+  // scroll used to, and the walkthrough then sat still for the idle spell and started
+  // again from the chair, so a phone saw nothing happen to the seats for 16 s.
+  function onTrustedPointer(event: PointerEvent) {
     if (!event.isTrusted || !active) return;
     const target = event.target;
     if (!(target instanceof Node) || !host.contains(target)) return;
-    yieldToUser();
+    if (event.pointerType !== 'touch') {
+      yieldToUser();
+      return;
+    }
+    if (event.type !== 'pointerdown') return;
+    const settle = (outcome: PointerEvent) => {
+      if (outcome.pointerId !== event.pointerId) return;
+      window.removeEventListener('pointerup', settle);
+      window.removeEventListener('pointercancel', settle);
+      if (outcome.type === 'pointerup') yieldToUser();
+    };
+    window.addEventListener('pointerup', settle);
+    window.addEventListener('pointercancel', settle);
   }
 
   host.addEventListener('focus', yieldToUser);
