@@ -48,6 +48,9 @@ const DROP_MARGIN = 0.08;
 /** The non-layoutable real item autoplay arms by double-click; the Chair is Build's, not Single's. */
 const CLICK_ROUTE_ID = 'table-round';
 
+/** How long a demo stood down by the visitor waits before it picks the walkthrough up again. */
+const RESUME_DELAY_MS = 2500;
+
 /**
  * Real objects first, placeholders greyed out after them. One style per card: the finish
  * carousel and the seat and size pickers are their own PR
@@ -116,6 +119,7 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
+let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function showToast(message: string) {
   toast.value = message;
@@ -783,20 +787,35 @@ function stopAutoplay() {
   }
 }
 
-function restartDemo() {
+async function restartDemo() {
+  if (resumeTimer) clearTimeout(resumeTimer);
+  resumeTimer = null;
   stopAutoplay();
   userControl = false;
   sceneRef.value?.reset();
   selectedPlacement.value = false;
+  // Bring the view home before the first drop so it is aimed at the floor it lands on.
+  await sceneRef.value?.resetCamera();
   startAutoplay();
 }
 
-// Every caller is a deliberate grab at the catalog or the scene, so the visitor keeps
-// control until they ask for the walkthrough back from the sheet's status chip.
-function yieldToUser() {
+// Standing down is not the same as stopping for good: a pointer that only crossed the demo
+// gets a quiet spell and then the walkthrough picks itself up again. `keepControl` is the
+// deliberate hand-over — the deck's pause key — which holds it off until play is pressed.
+function yieldToUser(keepControl = false) {
+  if (resumeTimer) clearTimeout(resumeTimer);
+  resumeTimer = null;
   if (demoPlaying.value) stopAutoplay();
   userControl = true;
   reportAutoplayState(rootRef.value, 'user');
+  if (keepControl) return;
+  resumeTimer = setTimeout(() => {
+    resumeTimer = null;
+    userControl = false;
+    // startAutoplay reports 'playing' for itself, and declines while the visitor still has
+    // hold of the scene, in which case the deck rightly goes on reading MANUAL CONTROL.
+    startAutoplay();
+  }, RESUME_DELAY_MS);
 }
 
 onMounted(async () => {
@@ -871,7 +890,7 @@ onMounted(async () => {
     });
 
     onAutoplayCommand(root, (command) => {
-      if (command === 'pause') yieldToUser();
+      if (command === 'pause') yieldToUser(true);
       else restartDemo();
     });
     root.addEventListener('pointerdown', onPointerDown);
@@ -894,6 +913,7 @@ onBeforeUnmount(() => {
   stopNoteWatch?.();
   stopNoteWatch = null;
   autoplayToken += 1;
+  if (resumeTimer) clearTimeout(resumeTimer);
   if (toastTimer) clearTimeout(toastTimer);
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();

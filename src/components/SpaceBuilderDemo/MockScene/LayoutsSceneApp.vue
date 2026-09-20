@@ -90,6 +90,7 @@ function startAutoplay() {
 
 function restartDemo() {
   userControl = false;
+  void sceneRef.value?.resetCamera();
   startAutoplay();
 }
 
