@@ -208,6 +208,11 @@ const currentBackFoldSize = (sheet: HTMLElement): Vec => {
   return { x, y };
 };
 
+// How far a turned page's corner cut stands over from its left edge (see --turned-drift in
+// index.astro): the page slides back by the same amount, so the cut stays on the stack's edge.
+// Read per frame, since it eases while a page joins or leaves the pile.
+const currentDrift = (sheet: HTMLElement): number => lengthsOf(sheet, '--turned-drift')[0] || 0;
+
 // What a gesture reads off a sheet but never writes: the page's own pixel size, the pin the paper
 // is held at, and the resting crease's intercepts. The last two are fixed by the stylesheet in em
 // and the first is measured by the ResizeObserver that feeds --fold-page-w/-h, so none of them
@@ -321,9 +326,10 @@ const splitPolygon = (points: Vec[], mid: Vec, normal: Vec) => {
 };
 
 // The page rectangle minus the back-fold's top-left corner cut (both cut vertices collapse to
-// (0, 0) while the back-fold is 0, i.e. before any page has been flipped).
-const pagePentagon = (w: number, h: number, back: Vec): Vec[] => [
-  { x: back.x, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }, { x: 0, y: back.y },
+// (0, 0) while the back-fold is 0, i.e. before any page has been flipped). A turned page's cut
+// and left edge stand `drift` over, the way index.astro cuts it at rest.
+const pagePentagon = (w: number, h: number, back: Vec, drift = 0): Vec[] => [
+  { x: back.x + drift, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: drift, y: h }, { x: drift, y: back.y },
 ];
 
 // The crease is the perpendicular bisector between the page corner (w, h) and the dragged tip
@@ -708,12 +714,21 @@ const glideFoldTip = (
 // direction follows the pointer (see onBackApproach).
 const renderLanding = (
   section: HTMLElement, fold: HTMLElement, w: number, h: number, seed: Vec, back: Vec, t: Vec,
+  drift = 0,
 ): void => {
   const length = Math.hypot(seed.x, seed.y);
   const n = { x: seed.x / length, y: seed.y / length };
-  const mid = { x: w + seed.x / 2, y: h + seed.y / 2 };
-  const tip = { x: w + seed.x, y: h + seed.y };
-  const { hole: packet } = splitPolygon(pagePentagon(w, h, back), mid, n);
+  // The seed's crease is the resting cut of a page with no drift. On a page of the pile the cut
+  // stands `drift` over, and the crease has to go with it or a sliver of sheet shows between
+  // the two, and the paper the page lays down runs out past the stack's left edge. Sliding
+  // the crease that far along x moves the corner's reflection by twice the crease's shift
+  // along its own normal, which the seed lies along, so t stays on the seed's line.
+  const shift = 2 * drift * n.x;
+  const seedX = seed.x + shift * n.x;
+  const seedY = seed.y + shift * n.y;
+  const mid = { x: w + seedX / 2, y: h + seedY / 2 };
+  const tip = { x: w + seedX, y: h + seedY };
+  const { hole: packet } = splitPolygon(pagePentagon(w, h, back, drift), mid, n);
   const angle = Math.atan2(n.x, -n.y);
   fold.style.transformOrigin = `${mid.x}px ${mid.y}px`;
   fold.style.transform = `rotate(${angle}rad) scaleY(-1) rotate(${-angle}rad)`;
@@ -779,7 +794,7 @@ const glideLanding = (
     const tt = Math.min(Math.max((now - start) / duration, 0), 1);
     const eased = 1 - (1 - tt) ** 3;
     const t = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
-    renderLanding(section, fold, width, height, seed, currentBackFoldSize(sheet), t);
+    renderLanding(section, fold, width, height, seed, currentBackFoldSize(sheet), t, currentDrift(sheet));
     if (tt < 1) {
       frame = requestAnimationFrame(step);
       return;
@@ -873,6 +888,17 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 // dog-ear, and swapped back out for the real flap the moment the flip lets go of it.
 const STAND_IN = 'paper-fold--stand-in';
 
+// Puts the stack's turn clock at its starting value with no transition, so the value set right
+// after runs the transition from there. Turning the stack's transitions off for the
+// reflow is safe: the only other ones there are the corner cut's, which a committed flip has
+// long since finished growing.
+const restartTurn = (stack: HTMLElement, name: string, from: string): void => {
+  stack.style.transition = 'none';
+  stack.style.setProperty(name, from);
+  void stack.offsetWidth;
+  stack.style.transition = '';
+};
+
 const standInFold = (): HTMLElement => {
   const standIn = document.createElement('div');
   standIn.className = `paper-fold ${STAND_IN}`;
@@ -889,11 +915,16 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
 
   fold.classList.remove('paper-fold--will-commit');
   const next = pages.find((page) => pageIndex(page) === 2)!;
+  // The strip behind the front crease follows this page up to the pile on --turn-ease (see
+  // index.astro): back to 0 without a transition, then eased to 1 in the same recalc that
+  // renumbers the pages, so it runs on the page's own clock.
+  restartTurn(stack, '--turn-ease', '0');
   for (const page of pages) {
     const index = pageIndex(page);
     page.style.setProperty('--page-index', `${index === 1 ? pages.length : index - 1}`);
   }
   stack.style.removeProperty('--flip-progress');
+  stack.style.setProperty('--turn-ease', '1');
   sheet.classList.remove('paper-front');
   // index.astro holds the reveal back half a second so the dog-ear draws itself once the page
   // has loaded, and restarting the animation here brought that wait along: the flip landed on a
@@ -1033,7 +1064,7 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   approach.s = s;
   approach.t = t;
   track(back.trail, { along, time: at.timeStamp });
-  renderLanding(section, fold, w, h, approach.seed, backCut, t);
+  renderLanding(section, fold, w, h, approach.seed, backCut, t, currentDrift(sheet));
   if (s < 1) return;
 
   // Fully folded over — promote the page and hand the rest of the gesture to the unfold drag,
@@ -1109,7 +1140,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
       }
       const k = (p - d1) / d2;
       const t = { x: home.x + to.x * (1 - k), y: home.y + to.y * (1 - k) };
-      renderLanding(section, fold, width, height, to, backCut, t);
+      renderLanding(section, fold, width, height, to, backCut, t, currentDrift(sheet));
     }
     if (tt < 1) {
       frame = requestAnimationFrame(step);
@@ -1164,7 +1195,7 @@ const bringFold = (
     if (p < d1) {
       const k = p / d1;
       const t = { x: from.x + (over.x - from.x) * k, y: from.y + (over.y - from.y) * k };
-      renderLanding(section, fold, w, h, seed, backCut, t);
+      renderLanding(section, fold, w, h, seed, backCut, t, currentDrift(sheet));
     } else {
       if (!promoted) promote();
       const k = (p - d1) / d2;
@@ -1410,7 +1441,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // that box — a page-sized slab of flap colour on a sheet whose top-left corner shows through
     // the front page's cut. Render the reverse landing's flat start now so it begins hidden.
     const seed = restSeed(sheetMetrics);
-    renderLanding(section, fold, w, h, seed, backCut, { x: w, y: h });
+    renderLanding(section, fold, w, h, seed, backCut, { x: w, y: h }, currentDrift(sheet));
     // The pull direction: the resting crease's normal, which the seed lies opposite along
     const seedLength = Math.hypot(seed.x, seed.y);
     const dir = { x: -seed.x / seedLength, y: -seed.y / seedLength };
@@ -1786,12 +1817,17 @@ const registerFoldProperties = () => {
     '--fold-back-rest-y', '--fold-pin-x', '--fold-pin-y', '--fold-page-w', '--fold-page-h',
     // The pile's reach, transitioned on the stack so the strip behind the crease climbs with it.
     '--pile-rise', '--pile-drift',
+    // A turned page's own step out, transitioned on the page so its cut, band and translate
+    // climb together.
+    '--turned-drift', '--turned-rise',
   ]) {
     registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
   }
   registerProperty({ name: '--pile-lean', syntax: '<angle>', inherits: true, initialValue: '0deg' });
   registerProperty({ name: '--page-index', syntax: '<number>', inherits: true, initialValue: '1' });
   registerProperty({ name: '--flip-progress', syntax: '<number>', inherits: true, initialValue: '0' });
+  // The strip's turn clock (see --pile-rise in index.astro): at rest by default.
+  registerProperty({ name: '--turn-ease', syntax: '<number>', inherits: true, initialValue: '1' });
 };
 
 export function initPaperStackFold(): void {
