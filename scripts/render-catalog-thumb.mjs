@@ -3,7 +3,7 @@
  * Uses headless Chrome + Three.js (meshopt) so the catalog matches the live model.
  *
  * Usage: npm run generate:catalog-thumb
- *        node scripts/render-catalog-thumb.mjs <site-path.glb> <out.webp>
+ *        node scripts/render-catalog-thumb.mjs <site-path.glb> <out.webp> [tint-json] ["incl azim"]
  */
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
@@ -19,6 +19,8 @@ const outPath = path.resolve(root, process.argv[3] ?? 'public/demos/space-builde
 // Optional per-material base colour, as the catalog variants declare it: a JSON array of
 // hex strings (or nulls) in the GLB's material order.
 const tint = process.argv[4] ? JSON.parse(process.argv[4]) : null;
+// Optional camera angle, "inclination azimuth" in degrees; the catalog's own is 60 60.
+const [inclinationDeg, azimuthDeg] = (process.argv[5] ?? '60 60').split(' ').map(Number);
 // Space Builder stores catalog thumbnails at 600px square (Upload/Preview.vue renders 300
 // and the platform keeps a 2x original).
 const SIZE = 600;
@@ -82,8 +84,8 @@ const TINT = ${JSON.stringify(tint)};
 // quarter away, looking at the model's centre. far is re-set once that distance is known,
 // because library GLBs are authored in centimetres.
 const FOV = (0.8 * 180) / Math.PI;
-const INCLINATION = (60 * Math.PI) / 180;
-const AZIMUTH = (60 * Math.PI) / 180;
+const INCLINATION = (${inclinationDeg} * Math.PI) / 180;
+const AZIMUTH = (${azimuthDeg} * Math.PI) / 180;
 
 const scene = new Scene();
 const camera = new PerspectiveCamera(FOV, 1, 0.01, 100);
