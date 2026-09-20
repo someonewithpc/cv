@@ -25,7 +25,10 @@ type Props = {
 
 const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
-const hint = Astro.props.hint ?? `${totalLayers - 1} more sheets, peel this corner`;
+// A hand writes a small count out in words; only a stack deeper than a dozen gets a digit
+const inWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const sheetsBelow = totalLayers - 1;
+const hint = Astro.props.hint ?? `${inWords[sheetsBelow] ?? sheetsBelow} more sheets, peel this corner`;
 const hintBack = 'this corner drags the page back';
 
 // One arrow, drawn twice and turned by the CSS. Its tip is at (6, 14) and the shaft leaves it
