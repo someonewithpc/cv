@@ -42,7 +42,6 @@ export const defaultProperty = properties[0].id;
     holds for the schema. */
 export const walkthrough = {
   value: 'Ivory',
-  storedProperty: 'table color',
   overrideValue: 'Beige',
   /** Which object of the auto-played row gets the hand-typed override. */
   overrideIndex: 1,
