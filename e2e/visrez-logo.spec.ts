@@ -117,3 +117,19 @@ test('cube page: twelve edges, drawn in ink that stands off the grid on every th
     expect(distance(ink, grid), `${theme}: ink ${ink} against grid ${grid}`).toBeGreaterThan(120);
   }
 });
+
+test('cube page: every strip is cut to a point at each end, so the vertices join cleanly', async ({ page }) => {
+  const stack = visrezStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Cube :)');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  // A square strip end pokes past the strips it meets at a vertex. The cut is a clip-path
+  // polygon on both strips; anything else here means it was dropped.
+  const cuts = await front.locator('.scene .edge').evaluateAll((edges) => edges.flatMap((edge) => [
+    getComputedStyle(edge, '::before').clipPath,
+    getComputedStyle(edge, '::after').clipPath,
+  ]));
+  expect(cuts).toHaveLength(24);
+  for (const cut of cuts) expect(cut).toMatch(/^polygon\(/);
+});
