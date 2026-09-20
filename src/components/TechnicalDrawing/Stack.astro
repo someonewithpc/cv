@@ -30,6 +30,9 @@ const inWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'e
 const sheetsBelow = totalLayers - 1;
 const hint = Astro.props.hint ?? `${inWords[sheetsBelow] ?? sheetsBelow} more sheets, peel this corner`;
 const hintBack = 'this corner drags the page back';
+// One span per character, spaces included so the line's width stays put: the callout types
+// itself out when it appears, and the stylesheet times each letter by its index.
+const hintBackLetters = [...hintBack].map((letter, index) => ({ letter, index }));
 
 // One arrow, drawn twice and turned by the CSS. Its tip is at (6, 14) and the shaft leaves it
 // along +x, so the element's left edge at half its height is the point the arrow aims at and
@@ -70,7 +73,7 @@ const arrow = {
     }}
   </PaperStack>
 
-  <div class="flip-hints" aria-hidden="true">
+  <div class="flip-hints" aria-hidden="true" style={`--hint-back-letters: ${hintBackLetters.length}`}>
     <p class="flip-hint flip-hint--fwd hint-words typewriter">{hint}</p>
     <svg class="flip-hint flip-hint--fwd hint-arrow" viewBox="0 0 48 28">
       <path class="hint-halo" d={arrow.shaft} />
@@ -80,7 +83,9 @@ const arrow = {
       <path class="hint-head" d={arrow.head} />
     </svg>
 
-    <p class="flip-hint flip-hint--back hint-words typewriter">{hintBack}</p>
+    <p class="flip-hint flip-hint--back hint-words typewriter">{hintBackLetters.map(({ letter, index }) => (
+      <span class="hint-letter" style={`--i: ${index}`}>{letter}</span>
+    ))}</p>
     <svg class="flip-hint flip-hint--back hint-arrow" viewBox="0 0 48 28">
       <path class="hint-halo" d={arrow.shaft} />
       <path class="hint-halo" d={arrow.head} />
@@ -198,6 +203,35 @@ $portrait-lean-y: 2.25em;
 // still gliding over, the arrow would be drawn across the moving sheet and whatever is on it.
 .technical-drawing-frame:has([data-paper-turned][data-paper-settled]) .flip-hint--back {
   opacity: 1;
+}
+
+// The way back types itself out, a letter at a time in the typewriter face, rather than
+// fading in as one block: the line shows at once and each letter waits its turn, so the
+// animation starts with the callout and runs again on every show. The arrow follows the last
+// letter, so the eye goes words, arrow, corner. Opacity only: the face is not monospace, so
+// the letters keep their width from the first frame and the arrow's measurement holds.
+@media (prefers-reduced-motion: no-preference) {
+  .technical-drawing-frame:has([data-paper-turned][data-paper-settled]) .flip-hint--back {
+    --hint-letter-beat: 40ms;
+
+    &.hint-words {
+      transition: none;
+    }
+
+    .hint-letter {
+      animation: hint-letter-struck 1ms linear both;
+      animation-delay: calc(var(--i) * var(--hint-letter-beat));
+    }
+
+    &.hint-arrow {
+      transition-delay: calc(var(--hint-back-letters, 0) * var(--hint-letter-beat));
+    }
+  }
+}
+
+@keyframes hint-letter-struck {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .technical-drawing-frame:has([data-paper-returned]) .flip-hint--back {
