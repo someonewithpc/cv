@@ -153,6 +153,8 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 </div>
 
 <style lang="scss">
+@use '@/scss/statusBorder' as *;
+
 /* Product measurements (Bootstrap 3 at a 14px base) carried over in em, so the
    whole tool scales with the sheet. 1em here is the product's 14px. */
 .tagging-tool {
@@ -254,14 +256,26 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 /* _library_object_properties.scss's .grouped-objects, minus the negative
    margins it uses to escape Bootstrap's column padding. */
 .grouped-objects {
+  --row-bg: var(--surface-raised);
+
   padding: 0.357em 0.571em 0.571em;
   display: grid;
   grid-template-rows: auto minmax(min-content, 1fr);
   outline: 1px dotted var(--line-strong);
-  transition: opacity 0.4s ease, translate 0.4s ease;
+  /* The save ring for a whole group: the status-border gradient paints this border,
+     transparent while idle so the dotted outline stays the row's edge. */
+  border: 2px solid transparent;
+
+  @include status-border(
+    row-save,
+    var(--row-bg),
+    $idle: transparent,
+    $transitions: "opacity, translate",
+    $transition-durations: "0.4s, 0.4s"
+  );
 
   &.odd {
-    background-color: var(--highlight);
+    --row-bg: var(--highlight);
   }
 
   &[hidden] {
@@ -365,10 +379,18 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius-panel);
-  background: var(--surface-raised);
-  transition: top 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+
+  /* The product's 1px line is the save ring's idle colour: a save on this one object
+     orbits the arc through it, and the hover colour still paints over it. */
+  @include status-border(
+    card-save,
+    var(--surface-raised),
+    $idle: var(--line),
+    $transitions: "top, box-shadow, border-color",
+    $transition-durations: "0.3s, 0.3s, 0.3s"
+  );
 
   &:hover {
     top: -2px;
@@ -465,20 +487,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   }
 }
 
-.image-thumbnail.saved .panel-preview-library-object {
-  animation: saved-flash 700ms ease-out;
-}
-
-@keyframes saved-flash {
-  from {
-    box-shadow: 0 0 0 2px var(--accent);
-  }
-
-  to {
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
-
 /* While the shared input has the caret, every variant form draws one of its own:
    a literal bar in monospace at the shared input's selectionStart, less however
    far mirror() scrolled the input to keep it in view, clamped to the input's far
@@ -542,11 +550,18 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
     opacity: 0.75;
   }
 
-  .image-thumbnail.saved .panel-preview-library-object,
   .grouped-objects,
   .panel-preview-library-object {
     animation: none;
     transition: none;
+  }
+
+  /* No orbit: the ring shows closed in the verdict colour for as long as the save's
+     success holds, then goes. */
+  .grouped-objects.success,
+  .panel-preview-library-object.success {
+    --status-border-colored-width: 1turn;
+    --status-border-color: #{$status-border-brand};
   }
 }
 </style>

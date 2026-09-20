@@ -1,0 +1,106 @@
+// A border that reports on a request: an arc orbits while pending, then the ring sweeps
+// closed in the verdict's colour. One conic gradient driven by three custom properties,
+// registered in src/client/registerStatusBorderProperties.ts so they animate. Copied from
+// the font picker's FontPickerDemo/picker/_statusBorder.scss with the properties renamed;
+// the two should become one file when both are on main.
+$status-border-duration: 1s;
+// Eases in, then JS switches it to linear at the point where this bezier already is,
+// so the loop has no seam
+$status-border-timing: cubic-bezier(0.75, 0.25, 0.2, 0.2);
+$status-border-idle: #bbb;
+$status-border-brand: #89ab24;
+
+// `$transitions` and `$transition-durations` are extra transition-property and
+// transition-duration entries, as strings, for an element that already transitions
+// something of its own; the mixin's own list would replace them otherwise.
+@mixin status-border(
+  $name,
+  $background,
+  $idle: $status-border-idle,
+  $pending: $status-border-brand,
+  $success: $status-border-brand,
+  $error: #f44,
+  $transitions: "",
+  $transition-durations: ""
+) {
+  @keyframes #{$name}-idle {
+    from { --status-border-color: #{$idle}; }
+    to {
+      --status-border-colored-width: 0turn;
+      --status-border-color: #{$idle};
+    }
+  }
+
+  @keyframes #{$name}-pending {
+    from {
+      --status-border-colored-width: 0.25turn;
+      --status-border-color: #{$pending};
+    }
+    to {
+      --status-border-start: 1turn;
+      --status-border-colored-width: 0.25turn;
+      --status-border-color: #{$pending};
+    }
+  }
+
+  @keyframes #{$name}-success {
+    to {
+      --status-border-colored-width: 1turn;
+      --status-border-color: #{$success};
+    }
+  }
+
+  @keyframes #{$name}-error {
+    to {
+      --status-border-colored-width: 1turn;
+      --status-border-color: #{$error};
+    }
+  }
+
+  --status-border-colored-width: 0turn;
+  --status-border-color: #{$idle};
+  --status-border-start: 0turn;
+
+  animation: $status-border-duration $status-border-timing 1 both #{$name}-idle;
+
+  &.idle {
+    animation-name: #{$name}-pending, #{$name}-idle;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  &.pending {
+    animation-name: #{$name}-pending;
+    animation-iteration-count: infinite;
+  }
+
+  // The paused pending animation keeps --status-border-start wherever the orbit was,
+  // so the ring closes from there instead of snapping to the top
+  &.success {
+    animation-name: #{$name}-pending, #{$name}-success;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  &.error {
+    animation-name: #{$name}-pending, #{$name}-error;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  // Soft edges on the arc, clamped so a full turn cannot overflow the range
+  --status-border-color-gradient-width: clamp(0deg, 10deg, min(1turn - var(--status-border-colored-width), var(--status-border-colored-width)));
+
+  transition-property: --status-border-color-gradient-width, --status-border-color, --status-border-colored-width, --status-border-start#{if($transitions == "", "", ", " + $transitions)};
+  transition-duration: 250ms, 250ms, 250ms, 250ms#{if($transition-durations == "", "", ", " + $transition-durations)};
+  transition-timing-function: ease-in-out;
+
+  background:
+    linear-gradient($background, $background) border-box padding-box,
+    conic-gradient(
+      from var(--status-border-start),
+      #{$idle} 0deg,
+      var(--status-border-color) calc(var(--status-border-color-gradient-width) / 2) calc(var(--status-border-color-gradient-width) / 2 + var(--status-border-colored-width)),
+      #{$idle} calc(var(--status-border-color-gradient-width) / 2 + var(--status-border-colored-width) + var(--status-border-color-gradient-width) / 2),
+    ) border-box border-box;
+}
