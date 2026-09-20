@@ -1,6 +1,7 @@
 # TODOS
 
 - [ ] Themes
+  - [x] Body text in the theme picker's monospace face (#47)
   - [x] Cave dark theme
   - [x] Forrest light theme
   - [x] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
