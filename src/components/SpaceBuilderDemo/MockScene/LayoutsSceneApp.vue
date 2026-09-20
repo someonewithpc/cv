@@ -89,6 +89,7 @@ function restartDemo() {
   if (resumeTimer) clearTimeout(resumeTimer);
   resumeTimer = null;
   userControl = false;
+  void sceneRef.value?.resetCamera();
   startAutoplay();
 }
 

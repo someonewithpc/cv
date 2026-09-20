@@ -434,12 +434,14 @@ function stopAutoplay() {
   }
 }
 
-function restartDemo() {
+async function restartDemo() {
   if (resumeTimer) clearTimeout(resumeTimer);
   resumeTimer = null;
   stopAutoplay();
   userControl = false;
   sceneRef.value?.reset();
+  // Bring the view home before the first drop so it is aimed at the floor it lands on.
+  await sceneRef.value?.resetCamera();
   startAutoplay();
 }
 
