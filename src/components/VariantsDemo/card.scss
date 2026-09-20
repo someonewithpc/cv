@@ -380,6 +380,23 @@ $pip: 1.125rem;
     text-align: center;
   }
 
+  // Stacked rows read as one field with two lines: the shared edge is square, and the
+  // second row's top border sits on the first's bottom one. The product rounds each row
+  // on its own; this is Hugo's call.
+  .hover-select:has(+ .hover-select) .hover-select-current {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .hover-select + .hover-select {
+    margin-top: -1px;
+
+    .hover-select-current {
+      border-top-right-radius: 0;
+      border-top-left-radius: 0;
+    }
+  }
+
   .hover-select-current,
   .hover-select-options button {
     display: flex;
