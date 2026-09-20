@@ -149,6 +149,54 @@ test('main page: the shared value mirrors onto the base and every variant, and E
   await expect(tool.locator('.demo-note')).toBeVisible();
 });
 
+// The save ring: src/scss/_statusBorder.scss on the row (a shared save) or the card (one
+// object). Pending orbits for the mock round trip, success sweeps the ring closed, and only
+// then do the values land; idle follows once the closed ring has rested.
+test('main page: a shared save plays the ring on the whole group, pending then success', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+  const gold = tool.locator('.grouped-objects[data-group="gold"]');
+  const cards = gold.locator('.panel-preview-library-object');
+
+  await gold.locator('.shared-value').fill('bright gold');
+  const pressed = Date.now();
+  await gold.locator('.shared-form button').click();
+  await expect(gold).toHaveClass(/\bpending\b/);
+  await expect(gold.locator('.panel-preview-library-object:is(.pending, .success)')).toHaveCount(0);
+  // Mirrored as typed; the titleized value is what a save writes back.
+  await expect(gold.locator('.object-value').nth(2)).toHaveValue('bright gold');
+
+  await expect(gold).toHaveClass(/\bsuccess\b/, { timeout: 5_000 });
+  expect(Date.now() - pressed, 'the ring orbits for the round trip first').toBeGreaterThanOrEqual(800);
+  await expect(gold.locator('.object-value').nth(2)).toHaveValue('bright gold');
+
+  await expect(gold.locator('.object-value').nth(2)).toHaveValue('Bright Gold', { timeout: 5_000 });
+  await expect(cards.locator(':scope.pending, :scope.success')).toHaveCount(0);
+  await expect(gold).toHaveClass(/\bidle\b/, { timeout: 5_000 });
+});
+
+test('main page: saving one object plays the ring on that card alone', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+  const gold = tool.locator('.grouped-objects[data-group="gold"]');
+  // gold-10, the one object of the row still without a table colour.
+  const thumb = gold.locator('.image-thumbnail').nth(2);
+  const card = thumb.locator('.panel-preview-library-object');
+
+  await thumb.locator('.object-value').fill('bright gold');
+  const pressed = Date.now();
+  await thumb.locator('.object-form button').click();
+  await expect(card).toHaveClass(/\bpending\b/);
+  await expect(gold.locator('.panel-preview-library-object.pending')).toHaveCount(1);
+  await expect(gold).not.toHaveClass(/\b(pending|success|idle)\b/);
+
+  await expect(card).toHaveClass(/\bsuccess\b/, { timeout: 5_000 });
+  expect(Date.now() - pressed, 'the ring orbits for the round trip first').toBeGreaterThanOrEqual(800);
+  await expect(thumb.locator('.object-value')).toHaveValue('bright gold');
+
+  await expect(thumb.locator('.object-value')).toHaveValue('Bright Gold', { timeout: 5_000 });
+  await expect(gold).not.toHaveClass(/\b(pending|success|idle)\b/);
+  await expect(card).toHaveClass(/\bidle\b/, { timeout: 5_000 });
+});
+
 test('main page: typing mid-value keeps the shared caret put and scrolls each card to it, not to the end', async ({ page }) => {
   const { tool } = await mountedTool(page);
 

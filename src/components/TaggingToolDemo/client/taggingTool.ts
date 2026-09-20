@@ -1,4 +1,5 @@
 import { watchPageActive } from '@/client/frontPage';
+import { registerStatusBorderProperties } from '@/client/registerStatusBorderProperties';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -9,6 +10,8 @@ type Card = {
   form: HTMLFormElement;
   input: HTMLInputElement;
   save: HTMLButtonElement;
+  /** The card's bordered box, where its save ring plays. */
+  ring: HTMLElement;
   values: Values;
   initial: Values;
 };
@@ -86,10 +89,44 @@ function mirror(group: Group, eventType = 'keyup') {
   });
 }
 
-function flash(card: Card) {
-  card.root.classList.remove('saved');
-  void card.root.offsetWidth;
-  card.root.classList.add('saved');
+/** The mock server's round trip: nothing is stored, but a save takes as long to come
+    back as one would. */
+const SAVE_MS = 900;
+/** $status-border-duration in src/scss/_statusBorder.scss: how long the ring takes to close. */
+const RING_MS = 1000;
+/** How long the closed ring rests before it sweeps back. */
+const RING_REST_MS = 1000;
+
+type RingState = 'idle' | 'pending' | 'success';
+
+/** The pending loop eases in, then goes linear at the point where the bezier is already
+    linear, so the orbit has no seam. The font picker's subform does the same. */
+function armRing(el: HTMLElement) {
+  el.addEventListener('animationstart', () => {
+    setTimeout(() => el.style.setProperty('animation-timing-function', 'linear'), RING_MS * 0.75);
+  });
+  el.addEventListener('animationend', () => el.style.removeProperty('animation-timing-function'));
+}
+
+function ringState(el: HTMLElement, state: RingState | null) {
+  el.classList.remove('idle', 'pending', 'success');
+  if (state) el.classList.add(state);
+}
+
+/** A save as its ring reports it: pending orbits for the round trip, success sweeps the
+    ring closed, then `commit` lands the values and the ring rests before sweeping back.
+    Resolves once the values have landed. A save already in flight on `el` swallows the
+    new one: the change and submit events of one press both come here. */
+async function saving(el: HTMLElement, commit: () => void) {
+  if (el.classList.contains('pending')) return;
+  ringState(el, 'pending');
+  await wait(SAVE_MS);
+  ringState(el, 'success');
+  await wait(RING_MS);
+  commit();
+  window.setTimeout(() => {
+    if (el.classList.contains('success')) ringState(el, 'idle');
+  }, RING_REST_MS);
 }
 
 function showValue(tool: Tool, card: Card) {
@@ -102,7 +139,6 @@ function showValue(tool: Tool, card: Card) {
 function setValue(tool: Tool, card: Card, raw: string) {
   card.values[tool.property] = raw.trim() === '' ? null : titleize(raw);
   showValue(tool, card);
-  flash(card);
 }
 
 /** _object.html.haml's shared_value: nothing set, or every object set to one value. */
@@ -164,8 +200,17 @@ function afterSave(tool: Tool, group: Group, hide = true) {
 }
 
 function submitShared(tool: Tool, group: Group, hide = true) {
-  group.cards.forEach((card) => setValue(tool, card, group.shared.value));
-  afterSave(tool, group, hide);
+  return saving(group.root, () => {
+    group.cards.forEach((card) => setValue(tool, card, group.shared.value));
+    afterSave(tool, group, hide);
+  });
+}
+
+function submitCard(tool: Tool, group: Group, card: Card, hide = true) {
+  return saving(card.ring, () => {
+    setValue(tool, card, card.input.value);
+    afterSave(tool, group, hide);
+  });
 }
 
 /** Redraw every row for the property the picker is on. */
@@ -185,9 +230,10 @@ function restore(tool: Tool) {
   tool.groups.forEach((group) => {
     group.cards.forEach((card) => {
       card.values = { ...card.initial };
-      card.root.classList.remove('saved');
+      ringState(card.ring, null);
     });
     group.root.classList.remove('autoplay', 'completing');
+    ringState(group.root, null);
   });
   showProperty(tool, tool.initialProperty);
 }
@@ -195,15 +241,19 @@ function restore(tool: Tool) {
 function initGroup(tool: Tool, section: HTMLElement): Group {
   const cards = [...section.querySelectorAll<HTMLElement>('.image-thumbnail')].map((root) => {
     const values = JSON.parse(root.dataset.values ?? '{}') as Values;
+    const ring = root.querySelector<HTMLElement>('.panel-preview-library-object')!;
+    armRing(ring);
     return {
       root,
       form: root.querySelector<HTMLFormElement>('.object-form')!,
       input: root.querySelector<HTMLInputElement>('.object-value')!,
       save: root.querySelector<HTMLButtonElement>('.object-form button')!,
+      ring,
       values,
       initial: { ...values },
     };
   });
+  armRing(section);
 
   const sharedSave = section.querySelector<HTMLButtonElement>('.shared-form button')!;
   const group: Group = {
@@ -241,14 +291,10 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
         card.input.blur();
       }
     });
-    card.input.addEventListener('change', () => {
-      setValue(tool, card, card.input.value);
-      afterSave(tool, group);
-    });
+    card.input.addEventListener('change', () => submitCard(tool, group, card));
     card.form.addEventListener('submit', (event) => {
       event.preventDefault();
-      setValue(tool, card, card.input.value);
-      afterSave(tool, group);
+      submitCard(tool, group, card);
     });
   });
 
@@ -369,7 +415,10 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await aim(cursor, group.sharedSave);
     if (stopped) break;
     await press(cursor);
-    submitShared(tool, group, false);
+    // The ring orbits for the round trip and closes before the values land and the row
+    // starts to leave.
+    await submitShared(tool, group, false);
+    if (stopped) break;
     group.root.classList.remove('autoplay');
     group.root.classList.add('completing');
     await pause(1100);
@@ -398,13 +447,14 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await aim(cursor, card.save);
     if (stopped) break;
     await press(cursor);
-    setValue(tool, card, card.input.value);
-    afterSave(tool, group, false);
+    await submitCard(tool, group, card, false);
     await pause(2600);
   }
 }
 
 export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
+  registerStatusBorderProperties();
+
   const select = root.querySelector<HTMLSelectElement>('.property-select');
   const list = root.querySelector<HTMLDataListElement>('datalist');
   if (!select || !list) return;
