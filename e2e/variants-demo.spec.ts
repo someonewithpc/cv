@@ -216,6 +216,13 @@ test.describe('metric locale', () => {
     // The two borders sit on one another: one line between the rows, not two.
     expect(bottom.y).toBeCloseTo(top.y + top.height - 1, 0);
 
+    // The field sits as far from the footer's sides as from its bottom edge.
+    const footer = await set.locator('.item-label').boundingBox();
+    if (!footer) throw new Error('The footer has no layout box');
+    const sideInset = bottom.x - footer.x;
+    const bottomInset = footer.y + footer.height - (bottom.y + bottom.height);
+    expect(sideInset).toBeCloseTo(bottomInset, 0);
+
     await seats.click();
     expect(await radii(seats)).toEqual(['4px', '4px', '0px', '0px']);
     const list = set.locator('.object-pax .hover-select-options');
