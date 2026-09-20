@@ -38,6 +38,10 @@ type Aim = {
   offCrease: number;
   /** The angle between the arrow's last stroke and the crease's normal, in degrees. */
   angleToNormal: number;
+  /** How far the tail's start stands from the words' box, in px: 0 when it touches. */
+  tailToWords: number;
+  /** How far the tip stands from the crease's middle, in px. */
+  tipToMiddle: number;
   painted: boolean;
   animations: number;
 };
@@ -88,6 +92,12 @@ function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
     };
     const tip = at(shaft.getTotalLength());
     const before = at(shaft.getTotalLength() - 2);
+    const tail = at(0);
+    const words = frame.querySelector<HTMLElement>(`.flip-hint--${which}.hint-words`)!.getBoundingClientRect();
+    const tailToWords = Math.hypot(
+      Math.max(words.left - tail.x, 0, tail.x - words.right),
+      Math.max(words.top - tail.y, 0, tail.y - words.bottom),
+    );
 
     // Along the crease, and out of the sheet across it.
     const edge = { x: crease.b.x - crease.a.x, y: crease.b.y - crease.a.y };
@@ -108,6 +118,8 @@ function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
       alongCrease: (off.x * edge.x + off.y * edge.y) / edgeLength,
       offCrease: off.x * out.x + off.y * out.y,
       angleToNormal: (Math.acos(Math.max(-1, Math.min(1, cosine))) * 180) / Math.PI,
+      tailToWords,
+      tipToMiddle: Math.hypot(off.x, off.y),
       painted: Number(getComputedStyle(arrow).opacity) > 0.5,
       animations: arrow.getAnimations({ subtree: true }).length,
     };
@@ -199,7 +211,16 @@ function placed(page: Page, way: 'fwd' | 'back'): Promise<Place> {
     const frame = document.querySelector('.technical-drawing-frame')!;
     const sheet = frame.querySelector<HTMLElement>('.paper-front')!.getBoundingClientRect();
     const words = frame.querySelector<HTMLElement>(`.flip-hint--${which}.hint-words`)!.getBoundingClientRect();
-    const arrow = frame.querySelector<SVGSVGElement>(`.flip-hint--${which}.hint-arrow`)!.getBoundingClientRect();
+    // The arrow's own box is the whole layer once the script has drawn it, so take the strokes.
+    const strokes = [...frame.querySelectorAll<SVGPathElement>(
+      `.flip-hint--${which}.hint-arrow .hint-shaft, .flip-hint--${which}.hint-arrow .hint-head`,
+    )].map((stroke) => stroke.getBoundingClientRect());
+    const arrow = new DOMRect(
+      Math.min(...strokes.map((r) => r.left)),
+      Math.min(...strokes.map((r) => r.top)),
+      Math.max(...strokes.map((r) => r.right)) - Math.min(...strokes.map((r) => r.left)),
+      Math.max(...strokes.map((r) => r.bottom)) - Math.min(...strokes.map((r) => r.top)),
+    );
 
     const overlap = (a: DOMRect, b: DOMRect) =>
       Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
@@ -226,8 +247,37 @@ const sizes = [
   { width: 360, height: 780 },
   { width: 390, height: 844 },
   { width: 768, height: 1024 },
+  { width: 1024, height: 768 },
   { width: 1440, height: 900 },
 ];
+
+// The words stay where the stylesheet puts them and the arrow is drawn between them and the
+// crease, so at any width the tail is at the words and the head lands square on the fold.
+test('each arrow runs from its words to the middle of its crease at every width', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForTimeout(1200);
+
+  const stack = page.locator('article.technical-drawing-stack').first();
+  for (const way of ['fwd', 'back'] as const) {
+    if (way === 'back') {
+      await stack.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(500);
+      await swipeStack(page, stack, true);
+      await expect(stack).toHaveAttribute('data-paper-turned', '');
+    }
+    for (const size of sizes) {
+      await page.setViewportSize(size);
+      await page.waitForTimeout(700);
+      const label = `${way} at ${size.width}`;
+
+      const arrow = await aim(page, way);
+      expect(arrow.painted, `${label} painted`).toBe(true);
+      expect(arrow.tailToWords, `${label} tail at the words`).toBeLessThan(12);
+      expect(arrow.tipToMiddle, `${label} tip on the crease's middle`).toBeLessThan(6);
+      expect(arrow.angleToNormal, `${label} square to the crease`).toBeLessThan(10);
+    }
+  }
+});
 
 test('both hints sit in the gap beside the stack at every width', async ({ page }) => {
   await page.goto('/');
