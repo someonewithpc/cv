@@ -506,8 +506,12 @@ for (const width of [390, 1440]) {
 
       let turned = 0;
       let first: Awaited<ReturnType<typeof foldAndPile>> | null = null;
+      // A stack with fewer pages than the deepest pile cycles back to its front page before
+      // the pile gets that deep, so only piles the stack can hold are checked.
+      const pages = await stack.evaluate((el) => el.childElementCount);
 
       for (const depth of [1, 3, 5]) {
+        if (depth >= pages) break;
         while (turned < depth) {
           await turn(stack, 'ArrowRight');
           turned += 1;
