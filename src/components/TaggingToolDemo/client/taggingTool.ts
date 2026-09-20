@@ -40,7 +40,8 @@ type Tool = {
 /** The script the walkthrough plays, handed over from objects.ts by GridLayer.astro. */
 type Walkthrough = {
   value: string;
-  overrideValue: string;
+  /** null empties the card's field on the own-card step, the product's nil. */
+  overrideValue: string | null;
   overrideIndex: number;
 };
 
@@ -345,8 +346,8 @@ async function press(cursor: Cursor) {
 /**
  * The walkthrough: the page opens on a group whose objects disagree, so the shared field
  * is empty with the overrides in its placeholder and a warning for a tick. One value
- * typed there lands on the base and every variant, then one variant is set back on its
- * own card and the placeholder lists the two values again.
+ * typed there lands on the base and every variant, then one object is set on its own
+ * card, emptied when the script says so, and the placeholder lists the overrides again.
  *
  * It only runs while the sheet is on screen and its page is the one drawn on top, which
  * `--page-index` answers and an IntersectionObserver cannot: every page of a stack shares
@@ -402,8 +403,8 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(500);
     if (stopped) break;
 
-    // The row disagrees with itself: the base holds one value, two variants another, and
-    // one has none. A pause on the warning is what gives the placeholder time to be read.
+    // The row disagrees with itself: three chair values over four objects. A pause on
+    // the warning is what gives the placeholder time to be read.
     group.root.classList.add('autoplay');
     await aim(cursor, group.sharedSave);
     if (stopped) break;
@@ -439,15 +440,16 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(1200);
     if (stopped) break;
 
-    // One variant is set on its own card, and the shared field goes back to listing
-    // the overrides.
+    // One object is set on its own card, and the shared field goes back to listing
+    // the overrides. An empty script value leaves the field cleared, which is how the
+    // product's per-object input stores nil.
     const card = group.cards[script.overrideIndex] ?? group.cards[0];
     await aim(cursor, card.input, true);
     if (stopped) break;
     await press(cursor);
     card.input.value = '';
     await pause(260);
-    await type(card.input, script.overrideValue, () => {});
+    await type(card.input, script.overrideValue ?? '', () => {});
     await pause(600);
     if (stopped) break;
 
