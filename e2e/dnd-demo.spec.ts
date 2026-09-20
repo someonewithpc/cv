@@ -118,7 +118,7 @@ test('autoplay runs and hands over to the visitor', async ({ page }) => {
   await expect(playing).toBeHidden();
 });
 
-test('the second sheet draws the handoff in four stills and few words', async ({ page }) => {
+test('the second sheet shows the handoff in four frames of the demo and few words', async ({ page }) => {
   const stack = dragDropStack(page);
   await stack.scrollIntoViewIfNeeded();
   await expect(stack.locator(':scope > div')).toHaveCount(2);
@@ -127,7 +127,9 @@ test('the second sheet draws the handoff in four stills and few words', async ({
   const front = frontPage(stack, await frontPageIndex(stack));
   const layer = front.locator('[data-handoff-layer]');
   await expect(layer).toBeVisible();
-  await expect(layer.locator('[data-still]')).toHaveCount(4);
+  await expect(layer.locator('img[src^="/demos/drag-drop/handoff-"]')).toHaveCount(4);
+  // The callouts' placement is annotations-position.spec.ts's; here only that they exist.
+  await expect(layer.locator('svg[data-annotations] [data-target]')).toHaveCount(4);
 
   const words = await front.evaluate((page) => {
     const text = [
@@ -136,7 +138,7 @@ test('the second sheet draws the handoff in four stills and few words', async ({
     ].join(' ');
     return text.split(/\s+/).filter((word) => /\w/.test(word)).length;
   });
-  expect(words).toBeLessThan(40);
+  expect(words).toBeLessThan(30);
 });
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
