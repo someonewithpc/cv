@@ -236,7 +236,7 @@ const pages = await Promise.all(
     // and the proximity tease in and out.
     transition:
       --fold-back-x 300ms ease-out, --fold-back-y 300ms ease-out,
-      --pile-rise 250ms ease-in-out, --pile-drift 250ms ease-in-out, --pile-lean 250ms ease-in-out;
+      --turn-ease 250ms ease-in-out;
 
     // The fan pivots every page about the pin near the top-left, so the hindmost sheet — turned
     // the furthest, by the same $per-page-splay·log(n) the pages' rotate below uses — drops
@@ -273,12 +273,30 @@ const pages = await Promise.all(
     // Where the page turned most recently stands — the furthest page of the pile, rank
     // --pages-turned — on the same law the pages below apply to their own rank: how far it has
     // risen, slid back and leaned. The strip behind the front page's crease reaches up to that
-    // page's crease (see .paper-front::before), and these ease at the pages' own pace so it
-    // climbs with the pile instead of popping ahead of it.
+    // page's crease (see .paper-front::before), so while a page is on its way there the strip
+    // has to follow the page, not the number: a page turned forward climbs from the front crease
+    // to its place at the top of the pile, and until it has passed the page turned before it
+    // the strip ends on that one's crease. --turn-ease runs 0 to 1 over the turn (fold-drag.ts
+    // resets it at each restack; the page's own --turned-rise eases on the same clock), so the
+    // furthest crease is the higher of the two. Easing these three between the two resting
+    // positions instead left the strip's tip standing up to 3px proud of the pile at the top of
+    // the crease, with page background beside it, for most of the turn. A page coming back the
+    // other way takes the front in one step (fold-drag.ts cancels its transitions as it
+    // promotes it), so the pile's furthest crease is the resting one from that moment.
     --pile-arc: calc(log(1 + var(--pages-turned)) / log(2));
-    --pile-rise: calc(#{$turn-lift} * var(--pile-arc));
-    --pile-drift: calc(#{$turn-drift} * var(--pages-turned));
-    --pile-lean: calc(-1 * #{$turn-splay} * var(--pile-arc));
+    --pile-arc-under: calc(log(max(var(--pages-turned), 1)) / log(2));
+    --pile-rise: max(
+      #{$turn-lift} * var(--pile-arc-under),
+      #{$turn-lift} * var(--pile-arc) * var(--turn-ease)
+    );
+    --pile-drift: max(
+      #{$turn-drift} * max(var(--pages-turned) - 1, 0),
+      #{$turn-drift} * var(--pages-turned) * var(--turn-ease)
+    );
+    --pile-lean: min(
+      -1 * #{$turn-splay} * var(--pile-arc-under),
+      -1 * #{$turn-splay} * var(--pile-arc) * var(--turn-ease)
+    );
 
     & > div {
       grid-area: content;
@@ -318,8 +336,14 @@ const pages = await Promise.all(
         + var(--paper-peek, 0deg)
       );
       translate: calc(-1 * var(--turned-drift)) calc(-1 * var(--turned-rise));
+      // The drift and the rise are what ease, not the translate they feed: the corner cut and
+      // the band below read the same two numbers, so cut, band and translate arrive together
+      // and the page's left edge stays on the stack's while it climbs. Easing the translate on
+      // its own left the cut at the new drift while the translate was still catching up, which
+      // opened a hairline of page background at the top of the crease, between the strip and
+      // the band, for the length of the turn. fold-drag.ts registers both as lengths.
       // TODO transition rotate at startup isn't working
-      transition: rotate 250ms ease-in-out, translate 250ms ease-in-out;
+      transition: rotate 250ms ease-in-out, --turned-drift 250ms ease-in-out, --turned-rise 250ms ease-in-out;
 
       // The front page. A class rather than :first-child: fold-drag.ts hands it to the next
       // page when a completed drag flips this one onto the back of the stack, without touching
