@@ -109,5 +109,10 @@ for (const [width, height] of [[390, 844], [760, 900], [1024, 900], [1440, 900]]
         .map(() => table.getAttribute('aria-label'));
     }));
     expect(strays).toEqual([]);
+
+    // The cell itself is drawn on a desktop sheet and shed on a phone sheet.
+    const cell = blocks.first().locator('.title-proj');
+    if (width >= 1024) await expect(cell).toBeVisible();
+    else if (width < 760) await expect(cell).toBeHidden();
   });
 }
