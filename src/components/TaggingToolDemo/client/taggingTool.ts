@@ -40,7 +40,6 @@ type Tool = {
 /** The script the walkthrough plays, handed over from objects.ts by GridLayer.astro. */
 type Walkthrough = {
   value: string;
-  storedProperty: string;
   overrideValue: string;
   overrideIndex: number;
 };
@@ -343,9 +342,10 @@ async function press(cursor: Cursor) {
 }
 
 /**
- * The walkthrough: tag a whole object through the shared field, switch to a property
- * that already has values so every field fills on the way in, then override one variant
- * by hand.
+ * The walkthrough: the page opens on a group whose objects disagree, so the shared field
+ * is empty with the overrides in its placeholder and a warning for a tick. One value
+ * typed there lands on the base and every variant, then one variant is set back on its
+ * own card and the placeholder lists the two values again.
  *
  * It only runs while the sheet is on screen and its page is the one drawn on top, which
  * `--page-index` answers and an IntersectionObserver cannot: every page of a stack shares
@@ -401,8 +401,15 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(500);
     if (stopped) break;
 
-    // One value in the shared field tags the base object and every variant at once.
+    // The row disagrees with itself: the base holds one value, two variants another, and
+    // one has none. A pause on the warning is what gives the placeholder time to be read.
     group.root.classList.add('autoplay');
+    await aim(cursor, group.sharedSave);
+    if (stopped) break;
+    await pause(1400);
+    if (stopped) break;
+
+    // One value in the shared field tags the base object and every variant at once.
     await aim(cursor, group.shared, true);
     if (stopped) break;
     await press(cursor);
@@ -424,16 +431,15 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await pause(1100);
     if (stopped) break;
 
-    // A property that already has values fills every field on the way in.
+    // The row now agrees, so the shared field holds the value and the tick is back.
     group.root.classList.remove('completing');
-    await aim(cursor, tool.select);
+    await aim(cursor, group.sharedSave);
     if (stopped) break;
-    await press(cursor);
-    showProperty(tool, script.storedProperty);
-    await pause(1400);
+    await pause(1200);
     if (stopped) break;
 
-    // One variant disagrees, so it is changed on its own card.
+    // One variant is set on its own card, and the shared field goes back to listing
+    // the overrides.
     const card = group.cards[script.overrideIndex] ?? group.cards[0];
     await aim(cursor, card.input, true);
     if (stopped) break;

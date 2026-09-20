@@ -293,6 +293,37 @@ test('main page: picking another property brings up the values already stored fo
   await expect(gold).toBeHidden();
 });
 
+test('main page: the walkthrough opens on a row that disagrees and leaves it agreeing', async ({ page }) => {
+  const stack = taggingToolStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await expect(front.locator('.tagging-grid-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
+  await expect(front.locator('.tagging-tool[data-live]')).toHaveAttribute('data-autoplay', 'playing');
+
+  const gold = front.locator('.grouped-objects[data-group="gold"]');
+  const objects = gold.locator('.object-value');
+  const shared = gold.locator('.shared-value');
+  const values = () => objects.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+
+  // Before: the base says Beige, two variants say Ivory, the table without chairs says
+  // nothing. The shared field is empty with the overrides in its placeholder and its tick
+  // is a warning.
+  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
+  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Beige, Ivory');
+  expect(await values()).toEqual(['Beige', 'Ivory', 'Ivory', '']);
+
+  // After the shared save lands: one value on every object, and the field holds it.
+  await expect(gold).toHaveClass(/\bcompleting\b/, { timeout: 20_000 });
+  expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', 'Ivory']);
+  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'true');
+  await expect(shared).toHaveValue('Ivory');
+
+  // Then one variant is set on its own card, and the placeholder lists both values again.
+  await expect(objects.nth(1)).toHaveValue('Beige', { timeout: 20_000 });
+  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
+  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory, Beige');
+});
+
 test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
