@@ -78,6 +78,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
           data-group={group.id}
           data-complete={String(filling || isComplete(group, property))}
           data-autoplay-target={live && group.autoplay ? '' : undefined}
+          role="group"
           aria-label={group.base.name}
         >
           <form class="shared-form" data-shared={String(shared.shared)} title={title}>
