@@ -253,7 +253,10 @@ export function render(
 ) {
   card.dataset.variant = visible.id;
   const img = card.querySelector<HTMLImageElement>('.object-icons > img');
-  if (img && img.getAttribute('src') !== visible.thumb) img.src = visible.thumb;
+  if (img && img.getAttribute('src') !== visible.thumb) {
+    img.src = visible.thumb;
+    announce(img, [{ opacity: 0.25 }, { opacity: 1 }]);
+  }
 
   const pax = card.querySelector<HTMLElement>('.object-pax');
   if (pax) {
@@ -287,8 +290,25 @@ function setText(row: HTMLElement, text: string, label: string) {
   const current = row.querySelector<HTMLElement>('.hover-select-current');
   const target = current ?? row;
   const span = target.querySelector<HTMLElement>(':scope > .option-text');
-  if (span && span.textContent !== text) span.textContent = text;
+  if (span && span.textContent !== text) {
+    span.textContent = text;
+    if (current) announce(current, [{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }, { backgroundColor: 'rgba(255, 255, 255, 0)' }]);
+  }
   current?.setAttribute('aria-label', label);
+}
+
+const SWAP_MS = 320;
+
+/**
+ * A change on the card says so: the new picture fades in and a changed readout glows
+ * for a moment. Two chairs fewer at thumbnail size is easy to miss, and on a phone the
+ * open list covers the readout. The product's LoadImg blanks the picture until the next
+ * one has loaded, a blink this stands in for.
+ */
+function announce(el: HTMLElement, keyframes: Keyframe[]) {
+  if (typeof el.animate !== 'function') return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  el.animate(keyframes, { duration: SWAP_MS, easing: 'ease-out' });
 }
 
 const hasScrollMarkers = () => CSS.supports('selector(::scroll-marker)');
