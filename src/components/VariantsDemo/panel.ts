@@ -212,6 +212,7 @@ export function render(
       const available = !selected
         || variants.some((v) => (v.pax ?? 0) === value && v.size === selected.size);
       option.classList.toggle('unavailable', !available);
+      option.classList.toggle('current', value === (visible.pax ?? 0));
     });
   }
 
@@ -226,6 +227,7 @@ export function render(
       const available = !selected
         || variants.some((v) => v.size === value && v.pax === selected.pax);
       option.classList.toggle('unavailable', !available);
+      option.classList.toggle('current', value === visible.size);
     });
   }
 }
