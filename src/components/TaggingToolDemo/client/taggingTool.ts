@@ -233,7 +233,7 @@ function restore(tool: Tool) {
       card.values = { ...card.initial };
       ringState(card.ring, null);
     });
-    group.root.classList.remove('autoplay', 'completing');
+    group.root.classList.remove('autoplay');
     ringState(group.root, null);
   });
   showProperty(tool, tool.initialProperty);
@@ -375,7 +375,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     stopped = true;
     stopPageWatch();
     cursorEl.hidden = true;
-    group.root.classList.remove('autoplay', 'completing');
+    group.root.classList.remove('autoplay');
     root.dataset.autoplay = 'user';
   };
   root.addEventListener('pointerenter', stop, { once: true });
@@ -424,17 +424,16 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     await aim(cursor, group.sharedSave);
     if (stopped) break;
     await press(cursor);
-    // The ring orbits for the round trip and closes before the values land and the row
-    // starts to leave.
+    // The ring orbits for the round trip and closes before the values land. The ring is
+    // the whole cue: the row does not fade out and back the way a row leaving the
+    // product's list would, since here it stays for the next step.
     await submitShared(tool, group, false);
     if (stopped) break;
     group.root.classList.remove('autoplay');
-    group.root.classList.add('completing');
     await pause(1100);
     if (stopped) break;
 
     // The row now agrees, so the shared field holds the value and the tick is back.
-    group.root.classList.remove('completing');
     await aim(cursor, group.sharedSave);
     if (stopped) break;
     await pause(1200);
