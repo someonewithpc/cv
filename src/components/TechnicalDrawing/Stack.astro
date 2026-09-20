@@ -228,7 +228,9 @@ $portrait-lean-y: 2.25em;
 .flip-hint--back.hint-words {
   top: 0;
   left: 0.5em;
-  translate: 0 -100%;
+  // Off the frame's top edge, then a touch further up and right, so the line stands clear of
+  // the sheet's rim instead of resting on it.
+  translate: 0.375em calc(-100% - 0.375em);
 
   // Portrait swings the way back's arrow up over the frame's top edge instead of out past its
   // left one, through where these words would otherwise sit.
