@@ -59,9 +59,10 @@ test('main page: the walkthrough types with a drawn cursor and hands over on hov
   await expect(tool).toHaveAttribute('data-autoplay', 'playing');
   await expect(cursor).toBeVisible({ timeout: 10_000 });
 
-  // It fills the whole row from the one shared field, mirroring as it types.
+  // It fills the whole row from the one shared field, mirroring as it types: the base
+  // card leaves its own Beige as soon as the first letter lands.
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
-  await expect(gold.locator('.object-value').last()).not.toHaveValue('', { timeout: 15_000 });
+  await expect(gold.locator('.object-value').first()).not.toHaveValue('Beige', { timeout: 15_000 });
 
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
@@ -177,7 +178,7 @@ test('main page: a shared save plays the ring on the whole group, pending then s
 test('main page: saving one object plays the ring on that card alone', async ({ page }) => {
   const { tool } = await mountedTool(page);
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
-  // 10638, the table without chairs, is the one object of the row still without a chair value.
+  // 10638, the table without chairs, is the last card of the row.
   const thumb = gold.locator('.image-thumbnail').nth(3);
   const card = thumb.locator('.panel-preview-library-object');
 
@@ -266,7 +267,7 @@ test('main page: differing variant values keep the shared input open and flag th
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
   await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
   await expect(gold.locator('.shared-value')).toBeEnabled();
-  await expect(gold.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: Beige, Ivory');
+  await expect(gold.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: Ivory, Beige, Champagne');
 
   // Hovering the warning sign has to say what it is warning about.
   const title = await gold.locator('.shared-form button').getAttribute('title');
@@ -293,7 +294,7 @@ test('main page: picking another property brings up the values already stored fo
   await expect(gold).toBeHidden();
 });
 
-test('main page: the walkthrough opens on a row that disagrees and leaves it agreeing', async ({ page }) => {
+test('main page: the walkthrough takes the gold row from wrong values to the ones the product holds', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
@@ -301,27 +302,38 @@ test('main page: the walkthrough opens on a row that disagrees and leaves it agr
   await expect(front.locator('.tagging-tool[data-live]')).toHaveAttribute('data-autoplay', 'playing');
 
   const gold = front.locator('.grouped-objects[data-group="gold"]');
+  const wood = front.locator('.grouped-objects[data-group="wood"]');
   const objects = gold.locator('.object-value');
   const shared = gold.locator('.shared-value');
-  const values = () => objects.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+  const values = (row = objects) =>
+    row.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+  // The wood row is the product's data and has no step in the script.
+  const woodValues = ['Cream', 'Cream', '', ''];
 
-  // Before: the base says Beige, two variants say Ivory, the table without chairs says
-  // nothing. The shared field is empty with the overrides in its placeholder and its tick
-  // is a warning.
+  // Before: Ivory, Beige, Ivory, Champagne over the four cards, the product's Ivory on
+  // the base and 10631 and two wrong values beside them. The shared field is empty with
+  // the overrides in its placeholder and its tick is a warning.
   await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
-  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Beige, Ivory');
-  expect(await values()).toEqual(['Beige', 'Ivory', 'Ivory', '']);
+  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory, Beige, Champagne');
+  expect(await values()).toEqual(['Ivory', 'Beige', 'Ivory', 'Champagne']);
+  expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
 
-  // After the shared save lands: one value on every object, and the field holds it.
+  // After the shared save lands: Ivory on every object, and the field holds it.
   await expect(gold).toHaveClass(/\bcompleting\b/, { timeout: 20_000 });
   expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', 'Ivory']);
   await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'true');
   await expect(shared).toHaveValue('Ivory');
+  expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
 
-  // Then one variant is set on its own card, and the placeholder lists both values again.
-  await expect(objects.nth(1)).toHaveValue('Beige', { timeout: 20_000 });
+  // Then the bare table, 10638, has its chair value emptied on its own card: the
+  // product's nil, which is what it holds. The placeholder lists the one value left.
+  await expect(gold.locator('.image-thumbnail[data-object="10638"]')).toHaveAttribute('data-missing', 'true', {
+    timeout: 20_000,
+  });
+  expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', '']);
   await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
-  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory, Beige');
+  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory');
+  expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
 });
 
 test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
