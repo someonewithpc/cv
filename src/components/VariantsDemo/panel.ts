@@ -181,11 +181,62 @@ function enhanceRow(
   row.addEventListener('mouseleave', () => {
     row.open = false;
   });
+  enhanceTouch(row, (option) => {
+    const variant = resolve(option.dataset.value ?? '');
+    if (variant) show(variant);
+  }, (option) => {
+    row.open = false;
+    const variant = option && resolve(option.dataset.value ?? '');
+    if (variant) pick(variant);
+  });
   row.addEventListener('toggle', () => {
     if (!row.open) show(held());
   });
   row.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') row.open = false;
+  });
+}
+
+/**
+ * A finger has no hover, so the open list previews the row under it as it moves and
+ * commits the one it lifts from, as a mouse does by hovering and clicking. A tap that
+ * lands and lifts on one row is left to its click.
+ */
+function enhanceTouch(
+  row: HTMLDetailsElement,
+  preview: (option: HTMLElement) => void,
+  commit: (option: HTMLElement | null) => void,
+) {
+  const list = row.querySelector<HTMLElement>('.hover-select-options');
+  if (!list) return;
+  const optionAt = (event: PointerEvent) => {
+    const hit = document.elementFromPoint(event.clientX, event.clientY);
+    const option = hit?.closest<HTMLElement>('.hover-select-options li');
+    return option && list.contains(option) ? option : null;
+  };
+
+  let origin: HTMLElement | null = null;
+  let moved = false;
+  list.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') return;
+    origin = optionAt(event);
+    moved = false;
+  });
+  list.addEventListener('pointermove', (event) => {
+    if (event.pointerType !== 'touch' || !origin) return;
+    const option = optionAt(event);
+    if (option !== origin) moved = true;
+    if (option) preview(option);
+  });
+  const lift = (event: PointerEvent) => {
+    if (event.pointerType !== 'touch' || !origin) return;
+    origin = null;
+    if (!moved) return;
+    commit(optionAt(event));
+  };
+  list.addEventListener('pointerup', lift);
+  list.addEventListener('pointercancel', () => {
+    origin = null;
   });
 }
 
