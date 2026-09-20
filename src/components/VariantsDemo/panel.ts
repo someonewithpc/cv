@@ -221,6 +221,8 @@ function enhanceTouch(
     if (event.pointerType !== 'touch') return;
     origin = optionAt(event);
     moved = false;
+    // A finger resting on a row shows it at once, before it moves or lifts.
+    if (origin) preview(origin);
   });
   list.addEventListener('pointermove', (event) => {
     if (event.pointerType !== 'touch' || !origin) return;
