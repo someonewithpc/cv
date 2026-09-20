@@ -443,7 +443,10 @@ $pip: 1.125rem;
       color: #868e96;
     }
 
-    button:hover {
+    // The option the card is showing: the hovered one, or the one a finger or the
+    // demo's own cursor rests on, where no :hover follows.
+    button:hover,
+    li.current button {
       box-shadow: inset 0 0 0.125rem 0.625rem color-mix(in srgb, #{$border} 80%, #495057);
     }
   }
