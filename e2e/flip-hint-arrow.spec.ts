@@ -192,6 +192,65 @@ test('a turn hands over to the way back, which points at the folded-away crease'
   expect((await aim(page, 'back')).painted).toBe(false);
 });
 
+test('the default hint writes its sheet count in lowercase words', async ({ page }) => {
+  await page.goto('/');
+  const words = (await page.locator('.flip-hint--fwd.hint-words').first().textContent())?.trim() ?? '';
+  expect(words).toContain('more sheets');
+  expect(words).not.toMatch(/\d/);
+  expect(words).toBe(words.toLowerCase());
+});
+
+// The way back is drawn across the sheet's top-left corner, where the turned page is still
+// gliding in for most of a second after the hand lets go. Until it has settled flat at the front
+// the callout stays hidden; the stack says when with data-paper-settled.
+test('the way back waits for the turned page to settle', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForTimeout(1200);
+
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+  const backHint = page.locator('.technical-drawing-frame').first().locator('.flip-hint--back.hint-words');
+  const opacity = () => backHint.evaluate((el) => Number(getComputedStyle(el).opacity));
+
+  // A corner drag, released past the commit point, so the flip glides the rest of the way on
+  // its own: the fold on the front page is the dog-ear at the sheet's bottom-right.
+  const sheet = (await stack.locator('.paper-front').boundingBox())!;
+  const fold = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
+  await page.mouse.move(fold.x + fold.width / 2, fold.y + fold.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 6; i += 1) {
+    await page.mouse.move(
+      fold.x + fold.width / 2 - (sheet.width * 0.6 * i) / 6,
+      fold.y + fold.height / 2 - (sheet.height * 0.6 * i) / 6,
+    );
+    await page.waitForTimeout(30);
+  }
+  await expect(stack).not.toHaveAttribute('data-paper-settled');
+  await page.mouse.up();
+
+  // The turn is committed half way through the glide, with the page still on its way over
+  await expect(stack).toHaveAttribute('data-paper-turned', '');
+  expect(await stack.evaluate((el) => el.hasAttribute('data-paper-settled'))).toBe(false);
+  expect(await opacity()).toBe(0);
+
+  await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
+  await expect.poll(opacity, { timeout: 1500 }).toBe(1);
+  expect((await aim(page, 'back')).painted).toBe(true);
+
+  // Taking hold of the corner again hides the callout until the page comes to rest once more
+  const again = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
+  await page.mouse.move(again.x + again.width / 2, again.y + again.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(again.x - 40, again.y - 40);
+  await page.waitForTimeout(30);
+  await page.mouse.move(again.x - 60, again.y - 60);
+  await expect(stack).not.toHaveAttribute('data-paper-settled');
+  await page.mouse.up();
+  await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
+  await expect.poll(opacity, { timeout: 1500 }).toBe(1);
+});
+
 /**
  * Where the hints sit: in the gap between this stack and its neighbours, mostly off the paper.
  * Each is measured as its words' box plus its arrow's, against the front sheet and against
