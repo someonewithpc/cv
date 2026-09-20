@@ -48,6 +48,7 @@
 - [ ] TechnicalDrawing
   - [ ] Paper texture
   - [x] Tucked note tab collides with the sheet content and toolbar (#16)
+  - [x] Projection symbol sits beside the title and under the fold; own corner cell or nothing (#46)
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
