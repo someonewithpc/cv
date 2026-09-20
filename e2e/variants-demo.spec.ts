@@ -198,6 +198,30 @@ test.describe('metric locale', () => {
     await expect(set).not.toHaveClass(/active/);
   });
 
+  test('the seats and size rows share a square edge and read as one field', async ({ page }) => {
+    const app = await openDemo(page);
+    const set = card(app, 'table-round');
+    const seats = set.locator('.object-pax .hover-select-current');
+    const size = set.locator('.object-size .hover-select-current');
+    const radii = (row: Locator) => row.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomLeftRadius, style.borderBottomRightRadius];
+    });
+
+    expect(await radii(seats)).toEqual(['4px', '4px', '0px', '0px']);
+    expect(await radii(size)).toEqual(['0px', '0px', '4px', '4px']);
+    const top = await seats.boundingBox();
+    const bottom = await size.boundingBox();
+    if (!top || !bottom) throw new Error('A row has no layout box');
+    // The two borders sit on one another: one line between the rows, not two.
+    expect(bottom.y).toBeCloseTo(top.y + top.height - 1, 0);
+
+    await seats.click();
+    expect(await radii(seats)).toEqual(['4px', '4px', '0px', '0px']);
+    const list = set.locator('.object-pax .hover-select-options');
+    await expect(list).toHaveCSS('border-bottom-left-radius', '4px');
+  });
+
   test('the hover preview follows the pointer and comes back on leave', async ({ page }) => {
     const app = await openDemo(page);
     const set = card(app, 'table-round');
@@ -410,6 +434,90 @@ test.describe('on a phone', () => {
     await expect(set).toHaveClass(/active/);
   });
 });
+
+/** Driven by the touchscreen alone, on two real phone sizes rather than Playwright's device. */
+const PHONE_VIEWPORTS = {
+  '390x844': { width: 390, height: 844 },
+  '360x780': { width: 360, height: 780 },
+};
+
+for (const [name, viewport] of Object.entries(PHONE_VIEWPORTS)) {
+  test.describe(`touch only at ${name}`, () => {
+    test.use({ viewport, deviceScaleFactor: 3, isMobile: true, hasTouch: true, locale: 'pt-PT' });
+
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/');
+    });
+
+    /** The panel with its script mounted and its walkthrough still running. */
+    async function openPlaying(page: Page) {
+      const stack = variantsStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      const app = frontPage(stack, await frontPageIndex(stack)).locator('.variants-stage');
+      await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 30_000 });
+      await expect(app).toHaveAttribute('data-user-control', 'false');
+      return app;
+    }
+
+    test('a finger scrolling the page over the cards leaves the walkthrough running', async ({ page }) => {
+      const app = await openPlaying(page);
+      const set = card(app, 'table-round');
+      const picture = await centre(set.locator('.object-icons'));
+      const before = await page.evaluate(() => window.scrollY);
+
+      // A thumb flick that starts on the picture: the browser takes it as a scroll.
+      await drag(page, [
+        { x: picture.x, y: picture.y + 120 },
+        { x: picture.x, y: picture.y + 80 },
+        { x: picture.x, y: picture.y + 30 },
+        { x: picture.x, y: picture.y },
+      ]);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).not.toBe(before);
+      await page.waitForTimeout(400);
+      await expect(app).toHaveAttribute('data-user-control', 'false');
+
+      // A tap is the visitor taking over.
+      const summary = await centre(set.locator('.object-pax .hover-select-current'));
+      await page.touchscreen.tap(summary.x, summary.y);
+      await expect(app).toHaveAttribute('data-user-control', 'true');
+      await expect(set.locator('.object-pax')).toHaveAttribute('open', '');
+    });
+
+    test('a finger resting on a row shows it, and the picture and readout say so', async ({ page }) => {
+      const app = await openDemo(page);
+      const set = card(app, 'table-round');
+      const seats = set.locator('.object-pax');
+      const rows = seats.locator('.hover-select-options li');
+      const thumb = set.locator('.object-icons > img');
+      const running = (el: HTMLElement) => el.getAnimations().length;
+
+      const summary = await centre(seats.locator('.hover-select-current'));
+      await page.touchscreen.tap(summary.x, summary.y);
+      await expect(seats).toHaveAttribute('open', '');
+      await expectListClearOfPicture(set, seats);
+      // Both the picture and the open list are inside the viewport.
+      const list = await seats.locator('.hover-select-options').boundingBox();
+      const picture = await set.locator('.object-icons').boundingBox();
+      if (!list || !picture) throw new Error('The list or the picture has no layout box');
+      expect(picture.y).toBeGreaterThanOrEqual(0);
+      expect(list.y + list.height).toBeLessThanOrEqual(viewport.height);
+
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [await centre(rows.nth(1))] });
+      await expect(set).toHaveAttribute('data-variant', 'table-6-243');
+      await expect(rows.nth(1)).toHaveClass(/current/);
+      expect(await thumb.evaluate(running)).toBeGreaterThan(0);
+      expect(await seats.locator('.hover-select-current').evaluate(running)).toBeGreaterThan(0);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await cdp.detach();
+
+      // Lifting where it landed is a tap, and the tap picks the row.
+      await expect(seats).not.toHaveAttribute('open', '');
+      await expect(seats.locator('.hover-select-current')).toContainText('6 seats');
+      await expect(set).toHaveClass(/active/);
+    });
+  });
+}
 
 test.describe('US locale', () => {
   test.use({ locale: 'en-US' });
