@@ -332,6 +332,14 @@ const pages = await Promise.all(
         + var(--paper-peek, 0deg)
       );
       translate: calc(-1 * var(--turned-drift)) calc(-1 * var(--turned-rise));
+
+      // The sheet's back in three tones, for the bend behind the crease and the flap: the
+      // paper's own colour (lifted onto the sheet by fold-drag.ts), lit a little along a bend's
+      // apex and darkened a little where it turns away. Mixed from the one colour so every
+      // theme keeps its own paper.
+      --bend-paper: var(--paper-surface, var(--surface-sunken));
+      --bend-light: color-mix(in oklab, var(--bend-paper) 86%, white);
+      --bend-dark: color-mix(in oklab, var(--bend-paper) 88%, black);
       // The drift and the rise are what ease, not the translate they feed: the corner cut and
       // the band below read the same two numbers, so cut, band and translate arrive together
       // and the page's left edge stays on the stack's while it climbs. Easing the translate on
@@ -394,13 +402,59 @@ const pages = await Promise.all(
           top: calc(-1 * var(--strip-top));
           width: calc(var(--fold-back-x) + 1em);
           height: calc(var(--fold-back-y) + var(--strip-top) + 1px);
+
+          // Paper does not fold flat along a line: between the front crease and the pile it
+          // rolls over the pile's edge in a rounded bend, and that is what this quadrilateral
+          // stands for. Two things make it read as one. Its long edges bow outward, three
+          // extra points on each set out along the crease's normal by a share of the bend's
+          // width (the near bow lies under the front sheet, and is there so the shape stays a
+          // whole), while the four corners stay on the two creases. And it is shaded across
+          // its width, from the crease to the pile: darker where the sheet turns up out of the
+          // crease, lit along the apex, darker again where it turns under at the pile's edge.
+          // The normal is (sin a, cos a) for a the crease's angle, pointing into the page; the
+          // gradient runs the other way, and its stops are measured from the box corner the
+          // gradient line starts at, which for that direction is the bottom-right one.
+          --bend-angle: atan2(var(--fold-back-y), var(--fold-back-x));
+          --bend-sin: sin(var(--bend-angle));
+          --bend-cos: cos(var(--bend-angle));
+          --bend-width: calc(var(--pile-rise) * var(--bend-cos));
+          --bend-bow: calc(var(--bend-width) * 0.3);
+          --bend-far-ax: var(--pile-crease-top-x);
+          --bend-far-ay: calc(var(--pile-crease-top-y) + var(--strip-top));
+          --bend-far-bx: var(--pile-crease-left-x);
+          --bend-far-by: calc(var(--pile-crease-left-y) + var(--strip-top));
+          --bend-near-ax: calc(var(--fold-back-x) + 1px);
+          --bend-near-ay: var(--strip-top);
+          --bend-near-bx: 0px;
+          --bend-near-by: calc(var(--fold-back-y) + 1px + var(--strip-top));
+          --bend-side: calc(var(--bend-bow) * 0.7071);
           clip-path: polygon(
-            calc(var(--fold-back-x) + 1px) var(--strip-top),
-            var(--pile-crease-top-x) calc(var(--pile-crease-top-y) + var(--strip-top)),
-            var(--pile-crease-left-x) calc(var(--pile-crease-left-y) + var(--strip-top)),
-            0px calc(var(--fold-back-y) + 1px + var(--strip-top))
+            var(--bend-near-ax) var(--bend-near-ay),
+            var(--bend-far-ax) var(--bend-far-ay),
+            calc(var(--bend-far-ax) + (var(--bend-far-bx) - var(--bend-far-ax)) * 0.25 - var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-far-ay) + (var(--bend-far-by) - var(--bend-far-ay)) * 0.25 - var(--bend-side) * var(--bend-cos)),
+            calc(var(--bend-far-ax) + (var(--bend-far-bx) - var(--bend-far-ax)) * 0.5 - var(--bend-bow) * var(--bend-sin))
+              calc(var(--bend-far-ay) + (var(--bend-far-by) - var(--bend-far-ay)) * 0.5 - var(--bend-bow) * var(--bend-cos)),
+            calc(var(--bend-far-ax) + (var(--bend-far-bx) - var(--bend-far-ax)) * 0.75 - var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-far-ay) + (var(--bend-far-by) - var(--bend-far-ay)) * 0.75 - var(--bend-side) * var(--bend-cos)),
+            var(--bend-far-bx) var(--bend-far-by),
+            var(--bend-near-bx) var(--bend-near-by),
+            calc(var(--bend-near-bx) + (var(--bend-near-ax) - var(--bend-near-bx)) * 0.25 + var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-near-by) + (var(--bend-near-ay) - var(--bend-near-by)) * 0.25 + var(--bend-side) * var(--bend-cos)),
+            calc(var(--bend-near-bx) + (var(--bend-near-ax) - var(--bend-near-bx)) * 0.5 + var(--bend-bow) * var(--bend-sin))
+              calc(var(--bend-near-by) + (var(--bend-near-ay) - var(--bend-near-by)) * 0.5 + var(--bend-bow) * var(--bend-cos)),
+            calc(var(--bend-near-bx) + (var(--bend-near-ax) - var(--bend-near-bx)) * 0.75 + var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-near-by) + (var(--bend-near-ay) - var(--bend-near-by)) * 0.75 + var(--bend-side) * var(--bend-cos))
           );
-          background: var(--paper-surface, var(--surface-sunken));
+          --bend-crease: calc((1em - 1px) * var(--bend-sin) + (var(--fold-back-y) + 1px) * var(--bend-cos));
+          background:
+            linear-gradient(
+              calc(-1 * var(--bend-angle)),
+              var(--bend-dark) calc(var(--bend-crease) - var(--bend-bow)),
+              var(--bend-light) calc(var(--bend-crease) + var(--bend-width) * 0.45),
+              var(--bend-dark) calc(var(--bend-crease) + var(--bend-width) + var(--bend-bow))
+            )
+            var(--bend-paper);
           border: 1px solid var(--line-strong);
           opacity: clamp(0, var(--pages-turned), 1);
           pointer-events: none;
@@ -645,7 +699,20 @@ const pages = await Promise.all(
         // own resolved background color, lifted onto the sheet by fold-drag.ts — as a sibling
         // of the page this element can't see background definitions scoped inside it (e.g. a
         // blueprint page redefining its surface).
-        background: var(--paper-surface, var(--surface-sunken));
+        // Lit where it comes off the crease and darker toward its free corner, the way the
+        // bend behind the crease is shaded (see .paper-front::before), so flap and bend read as
+        // one sheet. The crease lies --fold-x * sin(a) along the gradient line from the box's
+        // bottom-right corner, and the corner twice that, a the crease's angle.
+        --flap-angle: atan2(var(--fold-y), var(--fold-x));
+        --flap-crease: calc(var(--fold-x) * sin(var(--flap-angle)));
+        background:
+          linear-gradient(
+            calc(-1 * var(--flap-angle)),
+            var(--bend-light) var(--flap-crease),
+            var(--bend-paper) calc(var(--flap-crease) * 1.4),
+            var(--bend-dark) calc(var(--flap-crease) * 2)
+          )
+          var(--bend-paper);
         border: 1px solid var(--line-strong);
         filter: brightness(75%);
         transition: filter 200ms ease-out;
