@@ -40,3 +40,5 @@ tmp/
 /audit-report/
 /blob-report/
 /playwright/.cache/
+
+playwright.tmp.config.ts
