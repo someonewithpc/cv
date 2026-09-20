@@ -153,3 +153,4 @@ test('main page: the demo cursor leaves when its page is no longer in front', as
   await page.waitForTimeout(3_000);
   expect(await cursor.count()).toBe(0);
 });
+

@@ -269,6 +269,8 @@ $portrait-lean-y: 2.25em;
 import { armIslands } from '@/client/bootIsland';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 
+import { positionAnnotations } from './annotations-position';
+
 function initStack(stack: HTMLElement) {
   const onScreen = new WeakMap<HTMLElement, boolean>();
 
@@ -309,6 +311,7 @@ function initStack(stack: HTMLElement) {
   });
 
   armIslands(stack);
+  positionAnnotations(stack);
 
   // The dog-ear's resting size, lifted from the stack onto the frame: the hint layer is the
   // stack's sibling, so the property PaperStack publishes does not reach it by inheritance, and

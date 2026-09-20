@@ -9,7 +9,6 @@ import PostIt from '@/components/PostIt.astro';
 import MockMap from './MockMap/MockMap.astro';
 import SelectorLayer from './layers/SelectorLayer.astro';
 import EditorLayer from './layers/EditorLayer.astro';
-import EditorAside from './layers/EditorAside.astro';
 import BackgroundLayer from './layers/BackgroundLayer.astro';
 import PartsLayer from './layers/PartsLayer.astro';
 import StoreLayer from './layers/StoreLayer.astro';
@@ -85,11 +84,16 @@ type Layer = keyof typeof layers;
       selector: (
         <PostIt background="#cde" color="black">
           Pick or create a marker for a space. If the decoration is a space number or letter, the
-          selector rewrites every thumbnail to that space’s label — one shared marker, Lobby A /
-          Cafe B / Plaza C
+          selector rewrites every thumbnail to that space’s label. One shared marker reads Lobby A,
+          Cafe B, Plaza C
         </PostIt>
       ),
-      editor: (<EditorAside />),
+      editor: (
+        <PostIt background="#fec" color="black">
+          The editor on the sheet plays itself back. It is a picture, not a control. The live one
+          is on the first page, behind any pin
+        </PostIt>
+      ),
       background: (
         <PostIt background="#dfd" color="black">
           H and V stripe layers were meant to stack into a cross grid, but each axis rounded stops

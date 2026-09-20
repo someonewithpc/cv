@@ -20,6 +20,7 @@
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
+    - [x] Marker editor pages past the second look rough (#18)
     - [x] Colour picker lags while dragging (#17)
   - [x] Space builder add tool
     - [x] Layouts page demo doesn't work (#14)
@@ -35,7 +36,7 @@
       - [x] Blueprint pages (Place / Parameters / Layouts / Badge / DnD)
       - [~] Faster first paint / load
       - [~] Visual parity (chrome + 3D look)
-    - [ ] Grab some models like a classroom and a banquet set
+    - [~] Grab some models like a classroom and a banquet set (#24)
     - [ ] Showcase the carousel? With the animated pips
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
@@ -60,7 +61,7 @@
       - [x] PaperStack focus ring should follow page border (#12)
     - [-] Page indicator
   - [ ] Anotations
-    - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
+    - [x] JS to make sure the placement is correct, when JS available, as progressive enhancement
 - [ ] Scroll animation stacking demos
 - [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
