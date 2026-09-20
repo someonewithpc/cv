@@ -1,0 +1,569 @@
+---
+import { Icon } from 'astro-icon/components';
+
+import {
+  baseObjects,
+  defaultProperty,
+  isComplete,
+  objectsOf,
+  properties,
+  sharedState,
+  usedValues,
+  walkthrough,
+} from './objects';
+
+type Props = {
+  /** Wire the grid up to the client script and the walkthrough. */
+  live?: boolean;
+  /** Render this object mid-fade, as it looks the moment it gets its last value. */
+  completing?: string;
+  /** Render only these groups, in this order, for the blueprint pages that quote a row or two. */
+  only?: readonly string[];
+  /** Render only these objects of each group, for a sheet with no room for a whole row. */
+  objects?: readonly string[];
+  /** Which property schema the page is showing. */
+  property?: string;
+};
+
+const { live = false, completing, only, objects, property = defaultProperty } = Astro.props;
+
+const scope = live ? 'live' : 'static';
+const listId = `tagging-tool-values-${scope}`;
+const sharedTitle = 'Update base + variants';
+const overrideNote =
+  'The objects in this group do not all have the same value. Saving here overwrites the variants with the base value.';
+const rows = only ? only.flatMap((id) => baseObjects.filter((group) => group.id === id)) : baseObjects;
+const shown = (group: (typeof baseObjects)[number]) =>
+  objectsOf(group).filter((object) => !objects || objects.includes(object.id));
+const propertyName = properties.find((entry) => entry.id === property)?.name ?? property;
+---
+
+<div
+  class="tagging-tool"
+  data-live={live ? '' : undefined}
+  data-property={property}
+  tabindex={live ? -1 : undefined}
+>
+  <datalist id={listId}>
+    {usedValues(property).map((value) => <option value={value} />)}
+  </datalist>
+
+  <div class="panel-actions-heading">
+    <label>
+      Property
+      {/* Demo-only: the product renames the schema here. A picker is what makes the page
+          worth showing on its own, since the stored values change with the schema. */}
+      <select class="form-control property-select" aria-label="Property schema">
+        {properties.map((entry) => (
+          <option value={entry.id} selected={entry.id === property}>{entry.name}</option>
+        ))}
+      </select>
+    </label>
+  </div>
+
+  <div class="body">
+    {rows.map((group, index) => {
+      // The fading row has just been saved, so it reads as fully tagged on its way out.
+      const filling = completing === group.id;
+      const shared = filling
+        ? { shared: true, value: walkthrough.value, overrides: [walkthrough.value] }
+        : sharedState(group, property);
+      const placeholder = shared.shared ? sharedTitle : `Overrides: ${shared.overrides.join(', ')}`;
+      const title = shared.shared ? sharedTitle : `${sharedTitle}\n${placeholder}\n${overrideNote}`;
+      const setLabel = `Set ${propertyName} on ${group.base.name} and every variant`;
+      const sharedId = `${listId}-${group.id}-shared`;
+      return (
+        <div
+          class:list={['grouped-objects', index % 2 ? 'even' : 'odd', { completing: filling }]}
+          data-group={group.id}
+          data-complete={String(filling || isComplete(group, property))}
+          data-autoplay-target={live && group.autoplay ? '' : undefined}
+          aria-label={group.base.name}
+        >
+          <form class="shared-form" data-shared={String(shared.shared)} title={title}>
+            <label for={sharedId}>Shared value</label>
+            <input
+              id={sharedId}
+              class="shared-value"
+              type="text"
+              value={shared.value}
+              list={listId}
+              placeholder={placeholder}
+              aria-label={`Shared value for ${group.base.name}`}
+            />
+            <button type="submit" title={title} data-label={setLabel}>
+              <Icon name="lucide:check" class="when-shared" />
+              <Icon name="lucide:triangle-alert" class="when-overrides" />
+              <span class="sr-only">
+                {shared.shared ? setLabel : `${setLabel}. ${overrideNote}`}
+              </span>
+            </button>
+          </form>
+
+          <div class="shared-properties">
+            {shown(group).map((object) => {
+              const value = filling ? walkthrough.value : object.values[property] ?? '';
+              return (
+                <div
+                  class="image-thumbnail"
+                  data-object={object.id}
+                  data-values={JSON.stringify(object.values)}
+                  data-missing={String(value === '')}
+                >
+                  <div
+                    class="panel-preview-library-object"
+                    title={[object.name, object.details].filter(Boolean).join(', ')}
+                  >
+                    <div class="heading">
+                      <form class="object-form">
+                        <input
+                          class="object-value"
+                          type="text"
+                          value={value}
+                          list={listId}
+                          aria-label={`Value for ${[object.name, object.details].filter(Boolean).join(' ')}`}
+                        />
+                        <button type="submit" title="Update">
+                          <Icon name="lucide:check" />
+                          <span class="sr-only">{`Save ${[object.name, object.details].filter(Boolean).join(' ')}`}</span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="body">
+                      <div class="thumbnail-image-container">
+                        <img src={object.image} alt="" width="156" height="100" draggable="false" loading="lazy" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {live && (
+    <p class="demo-note" hidden>
+      <span class="hidden-count"></span>
+      <button type="button" class="demo-reset">Bring them back</button>
+    </p>
+  )}
+</div>
+
+<style lang="scss">
+@use '@/scss/statusBorder' as *;
+
+/* Product measurements (Bootstrap 3 at a 14px base) carried over in em, so the
+   whole tool scales with the sheet. 1em here is the product's 14px. */
+.tagging-tool {
+  --radius-panel: 0.714em;   /* 10px */
+  --radius-control: 0.571em; /* 8px */
+  --gutter: 1.071em;         /* 15px, half a Bootstrap gutter */
+  --highlight: color-mix(in oklch, var(--surface-raised), var(--ink) 5%);
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  outline: none;
+
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.625rem, 0.02 * min(var(--sheet-inline), var(--sheet-block)), 0.875rem);
+  line-height: 1.428;
+  color: var(--ink);
+
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+}
+
+.tagging-tool :global(input),
+.tagging-tool :global(select),
+.tagging-tool :global(button) {
+  font: inherit;
+  color: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.form-control {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 2.429em; /* 34px */
+  padding: 0.429em 0.857em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-page);
+  color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 90%);
+  }
+}
+
+/* The product's panel header: one labelled inline control, left-aligned. */
+.panel-actions-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5em;
+  padding: 0.714em var(--gutter);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--line);
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 700;
+  }
+
+  .property-select {
+    width: 12em;
+    font-weight: 400;
+  }
+}
+
+/* The list of rows. Rows stretch into any spare height, but never below what a row
+   needs to stay readable: the thumbnail is the point of the page, so the list scrolls
+   before a card gives its picture up. */
+.tagging-tool > .body {
+  min-height: 0;
+  padding: var(--gutter);
+  display: grid;
+  grid-auto-rows: minmax(min-content, 1fr);
+  gap: var(--gutter);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* _library_object_properties.scss's .grouped-objects, minus the negative
+   margins it uses to escape Bootstrap's column padding. */
+.grouped-objects {
+  --row-bg: var(--surface-raised);
+
+  padding: 0.357em 0.571em 0.571em;
+  display: grid;
+  grid-template-rows: auto minmax(min-content, 1fr);
+  outline: 1px dotted var(--line-strong);
+  /* The save ring for a whole group: the status-border gradient paints this border,
+     transparent while idle so the dotted outline stays the row's edge. The cards'
+     radius rounds the outline and the ring alike. */
+  border: 2px solid transparent;
+  border-radius: var(--radius-panel);
+
+  @include status-border(
+    row-save,
+    var(--row-bg),
+    $idle: transparent,
+    $transitions: "opacity, translate",
+    $transition-durations: "0.4s, 0.4s"
+  );
+
+  &.odd {
+    --row-bg: var(--highlight);
+  }
+
+  &[hidden] {
+    display: none;
+  }
+
+  &.completing {
+    opacity: 0.45;
+    translate: 0 -0.25em;
+  }
+}
+
+.shared-form {
+  display: flex;
+  align-items: center;
+  gap: 1em; /* gap-3 */
+  padding-inline: 2px;
+  padding-block: 0.5em;
+
+  label {
+    flex: none;
+  }
+
+  input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.143em 0.357em;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--surface-page);
+
+    &::placeholder {
+      color: var(--ink-faint);
+    }
+
+    &:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+  }
+
+  button {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.75em;
+    height: 1.75em;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--surface-page);
+    cursor: pointer;
+
+    :global(svg) {
+      width: 1em;
+      height: 1em;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+
+  &[data-shared='true'] :global(.when-overrides),
+  &[data-shared='false'] :global(.when-shared) {
+    display: none;
+  }
+
+  &[data-shared='false'] button {
+    color: var(--accent);
+  }
+}
+
+/* Bootstrap's .row of .col-lg-3 cards: four across, the way the product lays a
+   base object and its variants out on a wide screen. */
+.shared-properties {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gutter);
+
+  :global([data-sheet-orientation='portrait']) & {
+    /* A portrait sheet reads a row as a 2x2 block instead of four slivers. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.image-thumbnail {
+  min-width: 0;
+  transition: opacity 0.1s ease;
+}
+
+/* _preview_thumbnails.scss's .panel-preview-item, with the heading carrying
+   the per-object form the way _object_thumbnail.html.haml lays it out. */
+.panel-preview-library-object {
+  position: relative;
+  top: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid transparent;
+  border-radius: var(--radius-panel);
+
+  /* The product's 1px line is the save ring's idle colour: a save on this one object
+     orbits the arc through it, and the hover colour still paints over it. */
+  @include status-border(
+    card-save,
+    var(--surface-raised),
+    $idle: var(--line),
+    $transitions: "top, box-shadow, border-color",
+    $transition-durations: "0.3s, 0.3s, 0.3s"
+  );
+
+  &:hover {
+    top: -2px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    border-color: var(--accent);
+  }
+
+  .heading {
+    flex: none;
+    padding: 0.714em;
+    line-height: 1.429em;
+    background: var(--surface-sunken);
+    border-bottom: 1px solid var(--line);
+    border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  }
+
+  .body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0;
+    background: color-mix(in oklch, var(--surface-sunken), black 3%);
+    border-radius: 0 0 var(--radius-panel) var(--radius-panel);
+  }
+
+  .thumbnail-image-container {
+    box-sizing: border-box;
+    display: flex;
+    place-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    /* The floor the list scrolls to protect: below this a thumbnail stops reading as
+       the object it names. */
+    min-height: 5em;
+    padding: 0.5em;
+
+    img {
+      width: auto;
+      height: auto;
+      max-width: 90%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+  }
+}
+
+.object-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5em; /* the product's gap-3 at a card a third as wide clips every value */
+
+  input {
+    flex: 1;
+    width: 100%;
+    min-width: 5ch;
+    box-sizing: border-box;
+    padding: 0.143em 0.357em;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--surface-page);
+    color: var(--ink);
+
+    &:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+  }
+
+  button {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.75em;
+    height: 1.75em;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--surface-page);
+    cursor: pointer;
+
+    :global(svg) {
+      width: 1em;
+      height: 1em;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+}
+
+/* While the shared input has the caret, every variant form draws one of its own:
+   a literal bar in monospace at the shared input's selectionStart, less however
+   far mirror() scrolled the input to keep it in view, clamped to the input's far
+   edge (the product's ::before rule, in em, with the scroll taken off). */
+.grouped-objects:is(.autoplay, :has(> .shared-form > .shared-value:focus)) .object-form {
+  font-family: monospace, system-ui;
+
+  &::before {
+    content: '|';
+    position: absolute;
+    z-index: 1;
+    top: 0.143em;
+    left: calc(min(var(--caret, 0) * 1ch - var(--scroll, 0px), var(--input-width, 100%) - 1ch) + 0.5ch);
+    animation: blink 500ms infinite alternate both;
+  }
+
+  input {
+    background-color: var(--highlight);
+  }
+}
+
+@keyframes blink {
+  from, 49% {
+    opacity: 0;
+  }
+
+  50%, to {
+    opacity: 0.75;
+  }
+}
+
+/* Demo-only: the product drops a fully tagged object from the list; this
+   footer offers it back so the sheet doesn't end up empty. */
+.demo-note {
+  margin: 0;
+  padding: 0.5em var(--gutter);
+  border-top: 1px dashed var(--line-strong);
+  background: var(--surface-raised);
+  font-family: monospace, system-ui;
+  font-size: 0.857em;
+  color: var(--ink-muted);
+
+  &[hidden] {
+    display: none;
+  }
+
+  .demo-reset {
+    margin-left: 0.5em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grouped-objects:is(.autoplay, :has(> .shared-form > .shared-value:focus)) .object-form::before {
+    animation: none;
+    opacity: 0.75;
+  }
+
+  .grouped-objects,
+  .panel-preview-library-object {
+    animation: none;
+    transition: none;
+  }
+
+  /* No orbit: the ring shows closed in the verdict colour for as long as the save's
+     success holds, then goes. */
+  .grouped-objects.success,
+  .panel-preview-library-object.success {
+    --status-border-colored-width: 1turn;
+    --status-border-color: #{$status-border-brand};
+  }
+}
+</style>

@@ -31,7 +31,17 @@ export default defineConfig({
     vue(),
     icon({
       include: {
-        lucide: ['external-link', 'plus', 'upload', 'x'],
+        lucide: [
+          'check',
+          'external-link',
+          'pencil',
+          'plus',
+          'search',
+          'triangle-alert',
+          'undo-2',
+          'upload',
+          'x',
+        ],
       },
       // Keep gradient/filter IDs unique across inlined icons (SVGO's cleanupIds
       // collapses every icon to a/b/c and they steal each other's fills).
