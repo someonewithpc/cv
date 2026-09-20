@@ -263,8 +263,10 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   grid-template-rows: auto minmax(min-content, 1fr);
   outline: 1px dotted var(--line-strong);
   /* The save ring for a whole group: the status-border gradient paints this border,
-     transparent while idle so the dotted outline stays the row's edge. */
+     transparent while idle so the dotted outline stays the row's edge. The cards'
+     radius rounds the outline and the ring alike. */
   border: 2px solid transparent;
+  border-radius: var(--radius-panel);
 
   @include status-border(
     row-save,
