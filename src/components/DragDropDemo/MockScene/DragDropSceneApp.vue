@@ -36,12 +36,14 @@ import type { SpaceBuilderScene } from '@/components/SpaceBuilderDemo/MockScene/
  */
 type Phase = 'idle' | 'armed' | 'dragging';
 
-/** Fractions of the canvas rect — autoplay cycles the drop point between these. */
-const DROP_POINTS: Array<[number, number]> = [
-  [0.4, 0.42],
-  [0.62, 0.58],
-  [0.32, 0.66],
+/** Floor points (scene units) autoplay cycles the drop between, so a moved camera still drops on the floor. */
+const DROP_POINTS: Array<{ x: number; z: number }> = [
+  { x: -3.6, z: -1.0 },
+  { x: 2.8, z: 0.5 },
+  { x: 2.3, z: 4.2 },
 ];
+/** A drop point closer than this (fraction of the canvas per side) to the edge brings the camera home first. */
+const DROP_MARGIN = 0.08;
 
 /** The non-layoutable real item autoplay arms by double-click; the Chair is Build's, not Single's. */
 const CLICK_ROUTE_ID = 'table-round';
@@ -568,16 +570,20 @@ function catalogButton(root: HTMLElement, id: string) {
   return item && pos ? { item, pos } : null;
 }
 
-/** Drag one object from the catalog to (fx, fy) and orbit briefly. False once the token goes stale. */
+/** Drag one object from the catalog onto a floor point and orbit briefly. False once the token goes stale. */
 async function dragAndOrbit(
   token: number,
   scene: SpaceBuilderScene,
   root: HTMLElement,
   id: string,
-  fx: number,
-  fy: number,
+  point: { x: number; z: number },
   orbitDir: 1 | -1,
 ): Promise<boolean> {
+  // A viewer who orbited or zoomed to look keeps that view as long as the floor spot is on screen.
+  if (!scene.groundInView([point], DROP_MARGIN)) {
+    await scene.resetCamera();
+    if (token !== autoplayToken) return false;
+  }
   invalidateRects();
   await revealCatalogCard(root, id);
   if (token !== autoplayToken) return false;
@@ -605,7 +611,7 @@ async function dragAndOrbit(
   );
   updateDragVisual(pos.x, pos.y);
 
-  const dropPoint = canvasPoint(fx, fy);
+  const dropPoint = scene.groundToClient(point.x, point.z) ?? canvasPoint(0.5, 0.5);
   cursorInstant.value = true;
   await tweenPoint(token, pos, dropPoint, 900, (p) => {
     updateDragVisual(p.x, p.y);
@@ -633,9 +639,12 @@ async function armAndClick(
   scene: SpaceBuilderScene,
   root: HTMLElement,
   id: string,
-  fx: number,
-  fy: number,
+  point: { x: number; z: number },
 ): Promise<boolean> {
+  if (!scene.groundInView([point], DROP_MARGIN)) {
+    await scene.resetCamera();
+    if (token !== autoplayToken) return false;
+  }
   invalidateRects();
   await revealCatalogCard(root, id);
   if (token !== autoplayToken) return false;
@@ -664,7 +673,7 @@ async function armAndClick(
   armedItem.value = item;
   phase.value = 'armed';
 
-  const dropPoint = canvasPoint(fx, fy);
+  const dropPoint = scene.groundToClient(point.x, point.z) ?? canvasPoint(0.5, 0.5);
   cursorInstant.value = true;
   await tweenPoint(token, pos, dropPoint, 900, (p) => {
     moveCursorTo(p.x, p.y);
@@ -728,12 +737,11 @@ async function runAutoplay() {
     // Two drags, then the double-click route, so a lap shows both ways in and that each
     // one leaves exactly one object behind.
     for (let i = 0; i < DROP_POINTS.length - 1; i += 1) {
-      const [fx, fy] = DROP_POINTS[i];
-      const ok = await dragAndOrbit(token, scene, root, 'chair', fx, fy, i % 2 === 0 ? 1 : -1);
+      const ok = await dragAndOrbit(token, scene, root, 'chair', DROP_POINTS[i], i % 2 === 0 ? 1 : -1);
       if (!ok) break outer;
     }
-    const [lastX, lastY] = DROP_POINTS[DROP_POINTS.length - 1];
-    if (!await armAndClick(token, scene, root, CLICK_ROUTE_ID, lastX, lastY)) break outer;
+    const last = DROP_POINTS[DROP_POINTS.length - 1];
+    if (!await armAndClick(token, scene, root, CLICK_ROUTE_ID, last)) break outer;
     // Hold the fully-built scene a beat, then delete what the lap placed before the next.
     await wait(900);
     if (token !== autoplayToken) break;
