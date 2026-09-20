@@ -142,10 +142,7 @@ const transportKeys = [
 
         <td class="title-proj">
           <div>
-            <span class="title-label monospace">
-              <span aria-hidden="true">Proj.</span>
-              <span class="sr-only">Projection</span>
-            </span>
+            <span class="title-label sr-only">Projection</span>
             <Icon name="first-angle-projection" aria-hidden="true" />
           </div>
         </td>
@@ -1248,6 +1245,14 @@ section {
       padding: 0.25em;
       color: var(--ink);
 
+      /* The symbol alone, a quarter under the size it draws itself at, and no
+         visible label: at that width the cell fits beside the artwork on a 60em
+         sheet, where the labelled cell ran 7px into the prose of two pages. */
+      &.title-proj :global(svg) {
+        width: 1.5em;
+        height: 0.75em;
+      }
+
       // display must stay table-cell — grid/flex on the td breaks rowspan.
       &.title-tech {
         padding: 0.25em;
@@ -1396,8 +1401,10 @@ section {
 
   /* Pick the step from the sheet's own width. The lower bound keeps the ladder out
      of the portrait layout below, which gives the block its own row and has no
-     room problem to solve. */
-  @container technical-drawing-width (40em < width <= 62em) { @include title-fit-1; }
+     room problem to solve. The symbol's cell, symbol only and 1.5em wide, fits
+     beside the artwork on every sheet down to the width where Scale goes too:
+     measured clear of the prose on every page at 960, 1024 and 1440. */
+  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-1; }
   @container technical-drawing-width (40em < width <= 50em) { @include title-fit-2; }
   @container technical-drawing-width (40em < width <= 46em) { @include title-fit-3; }
   @container technical-drawing-width (40em < width <= 43em) { @include title-fit-4; }
