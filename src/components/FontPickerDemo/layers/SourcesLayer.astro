@@ -1,0 +1,431 @@
+---
+// The route a face takes from a URL a visitor types to a row in the dropdown, drawn as the
+// four hops it makes. The data on the sheet is the real thing: the URL the walkthrough
+// types, one of the rules that comes back, and the row it ends up as
+const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlfaSlabOne.woff2';
+---
+
+<div class="wrapper">
+  <div class="pipeline" aria-hidden="true">
+    <div class="step" style="--seq: 1">
+      <p class="step-title">Type a URL</p>
+      <div class="paper field">
+        <span class="field-label">Embed URL</span>
+        <span class="field-input">rust-lang.org</span>
+      </div>
+      <p class="caption">A page the visitor names in the Embed URL subform</p>
+    </div>
+
+    <div class="hop">
+      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+    </div>
+
+    <div class="step" style="--seq: 2">
+      <p class="step-title">Fetch the page</p>
+      <div class="draft">
+        <span class="route denied">
+          <span class="route-label">iframe</span>
+          <span class="route-reason">x-frame-options: deny</span>
+        </span>
+        <span class="route allowed">
+          <span class="route-label">/api/font-proxy</span>
+          <span class="route-reason">one origin, so the HTML can be read</span>
+        </span>
+      </div>
+      <p class="caption">rust-lang.org refuses to be framed, so a worker on this origin fetches the HTML</p>
+    </div>
+
+    <div class="hop">
+      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+    </div>
+
+    <div class="step" style="--seq: 3">
+      <p class="step-title">Read the stylesheets</p>
+      <div class="draft listing">
+        <code class="line"><span class="tag">&lt;base href=</span>"https://rust-lang.org/"<span class="tag">&gt;</span></code>
+        <code class="line"><span class="tag">&lt;link href=</span>"/static/styles.css"<span class="tag">&gt;</span></code>
+        <code class="line indent">@import url("fonts.css")</code>
+        <code class="line rule">@font-face &#123; font-family: "Alfa Slab One";</code>
+        <code class="line rule indent">src: url(<span class="rewritten">{PROXIED_SRC}</span>)</code>
+      </div>
+      <p class="caption">
+        The worker follows every <code>link</code> and <code>@import</code>. Each
+        <code>src</code> is made absolute and sent back through the proxy, because loading a
+        webfont is CORS-checked too
+      </p>
+    </div>
+
+    <div class="hop">
+      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+      <span class="hop-note">new FontFace().load()<br />document.fonts.add()</span>
+    </div>
+
+    <div class="step" style="--seq: 4">
+      <p class="step-title">Show the new face</p>
+      <div class="paper select">
+        <span class="select-value">Poppins 400<span class="dot"></span></span>
+        <span class="select-row new">Alfa Slab One 400</span>
+      </div>
+      <p class="caption">
+        The dropdown re-reads <code>document.fonts</code> on <code>loadingdone</code>. The dot
+        marks what the last source brought
+      </p>
+    </div>
+
+    <div class="branch">
+      <p class="caption">
+        A Google font skips the first two steps. <code>fonts.googleapis.com/css2?family=Lobster</code>
+        answers with the same kind of stylesheet, and joins the flow here
+      </p>
+      <svg viewBox="0 0 120 44" class="arrow branch-arrow">
+        <path d="M0 36 H106 Q114 36 114 28 V14" />
+        <path d="M110 18 L114 6 L118 18 z" class="head" />
+      </svg>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+@use "./sheetProse" as *;
+
+.wrapper {
+  // A portrait sheet has the height for the 2x2 at this, a shade under the picker's scale
+  @include sheet-content(0.033, $prose-landscape);
+
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+}
+
+.pipeline {
+  display: grid;
+  // Four steps with a hop drawn between them, so the flow reads as one line. The listing is
+  // the widest thing on the sheet, so its step gets the most of the row
+  grid-template-columns: minmax(0, 0.8fr) auto minmax(0, 0.9fr) auto minmax(0, 1.35fr) auto minmax(0, 1fr);
+  grid-auto-rows: min-content;
+  align-items: start;
+  gap: 0 0.375em;
+  width: 100%;
+  color: var(--ink);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  gap: 0.5em;
+  align-content: start;
+  padding-top: 1.75em;
+  min-width: 0;
+
+  // The hop's number, drafted in a circle at the head of each step
+  &::before {
+    content: counter(step-seq);
+    counter-reset: step-seq var(--seq);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 1.5em;
+    height: 1.5em;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+    font-size: 0.875em;
+    line-height: 1;
+  }
+
+  // The steps name themselves on that rule, the way a drawing labels a section
+  .step-title {
+    // Over the rule below, which is a later pseudo-element and would otherwise cross it
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 1.75em;
+    margin: 0;
+    padding-right: 0.5em;
+    background: var(--surface-sunken);
+    font-size: 0.875em;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  // A rule from the number across the step, the way a drafted caption is underscored
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0.75em;
+    left: 1.75em;
+    right: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+.caption {
+  @include sheet-prose;
+
+  margin: 0;
+  font-size: 0.8125em;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+}
+
+// The product's own material, quoted at 1:1: a light control on the blueprint
+.paper {
+  color-scheme: only light;
+  display: grid;
+  gap: 0.375em;
+  padding: 0.625em 0.75em;
+  background: #e9e9e9;
+  color: #111;
+  border-radius: 0.5em;
+  box-shadow: 0 0.25em 0.75em color-mix(in oklab, #000 30%, transparent);
+}
+
+.field {
+  .field-label {
+    font-size: 0.8125em;
+  }
+
+  .field-input {
+    padding: 0.375em 0.5em;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0.25em;
+    font-size: 0.9375em;
+  }
+}
+
+.select {
+  .select-value {
+    position: relative;
+    padding: 0.375em 0.5em;
+    background: #fff;
+    border: 1px solid #767676;
+    border-radius: 0.25em;
+    font-size: 0.9375em;
+  }
+
+  .dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0.5em;
+    height: 0.5em;
+    translate: 50% -50%;
+    background: #c33;
+    border-radius: 50%;
+  }
+
+  .select-row {
+    padding: 0.375em 0.5em;
+    background: #ddd;
+    border-radius: 0.25em;
+    font-size: 0.9375em;
+
+    &.new {
+      background: #cfe0b4;
+      box-shadow: inset 0 0 0 1px #89ab24;
+    }
+  }
+}
+
+// What is not the product is drawn rather than built: hairline boxes on the blueprint
+.draft {
+  display: grid;
+  gap: 0.5em;
+  padding: 0.625em 0.75em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  // The grid stops at the frame, so a listing this dense is read off a flat ground
+  background: var(--surface-sunken);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125em;
+  line-height: 1.4;
+}
+
+.route {
+  display: grid;
+  gap: 0.125em;
+
+  .route-label {
+    justify-self: start;
+    padding: 0.125em 0.375em;
+    border: 1px solid var(--ink);
+    border-radius: 0.25em;
+  }
+
+  .route-reason {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    font-size: 0.875em;
+    color: var(--ink-muted);
+  }
+
+  // The refused route, struck out the way a drawing cancels a dimension
+  &.denied .route-label {
+    color: var(--ink-muted);
+    border-color: var(--ink-muted);
+    border-style: dashed;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
+  &.allowed .route-label {
+    border-width: 2px;
+  }
+}
+
+.listing {
+  gap: 0.125em;
+  overflow-wrap: anywhere;
+
+  .line {
+    display: block;
+  }
+
+  .indent {
+    padding-left: 1.25em;
+  }
+
+  .tag,
+  .rule {
+    color: var(--ink-muted);
+  }
+
+  .rewritten {
+    color: #c5e06a;
+    text-decoration: underline;
+    text-underline-offset: 0.125em;
+  }
+}
+
+.hop {
+  display: grid;
+  justify-items: center;
+  gap: 0.25em;
+  padding-top: 3.25em;
+
+  .hop-note {
+    @include sheet-prose;
+
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.625em;
+    line-height: 1.3;
+    text-align: center;
+    color: var(--ink-muted);
+  }
+}
+
+.arrow {
+  width: 3em;
+  height: 0.75em;
+  overflow: visible;
+
+  path {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  .head {
+    fill: var(--ink);
+    stroke: none;
+  }
+}
+
+// The Google branch runs under the flow and joins it where the two paths meet
+.branch {
+  // Under the first two steps and the hop into step 3, which is where this path rejoins the
+  // flow. Stopping there also keeps it out of the title block's corner on a short sheet
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75em;
+  margin-top: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px dashed var(--line);
+
+  // Short, so the caption beside it has the width to run in few lines: the branch's row
+  // is what reaches nearest the frame line on a landscape sheet
+  .branch-arrow {
+    width: 5.5em;
+    height: 2em;
+  }
+}
+
+// A sheet under 56em keeps the row but not the label beside the last arrow, nor the two
+// listing lines that only show the stylesheet being followed
+@container technical-drawing-width (max-width: 56em) {
+  .hop-note,
+  .listing .line:nth-child(2),
+  .listing .line:nth-child(3) {
+    display: none;
+  }
+}
+
+// Four steps across while the sheet has the width for them. Where it has not, they go round
+// a 2x2 instead: step 1 top left, across to step 2, down to step 3 and back to step 4 under
+// the first. The steps are the children at odd places, the hops at even ones.
+@container technical-drawing-width (max-width: 44em) {
+  .pipeline {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas:
+      'one across two'
+      '. . down'
+      'four back three';
+  }
+
+  .step:nth-child(1) { grid-area: one; }
+  .step:nth-child(3) { grid-area: two; }
+  .step:nth-child(5) { grid-area: three; }
+  .step:nth-child(7) { grid-area: four; }
+  .hop:nth-child(2) { grid-area: across; }
+  .hop:nth-child(6) { grid-area: back; }
+
+  .hop:nth-child(4) {
+    grid-area: down;
+    // The arrow turns in a box as tall as it is long, so it stays between the two steps
+    // instead of standing over them
+    height: 2.25em;
+    padding: 0;
+    align-content: center;
+
+    .arrow {
+      rotate: 90deg;
+    }
+  }
+
+  .hop:nth-child(6) .arrow {
+    rotate: 180deg;
+  }
+
+  // Half a sheet is too narrow for a title at full size
+  .step {
+    padding-top: 1.5em;
+
+    .step-title {
+      font-size: 0.8125em;
+    }
+  }
+
+  // The listing keeps the two rules that matter, and the Google branch, which only says
+  // where it joins the flow, is what a sheet this small does without
+  .listing .line:nth-child(1),
+  .branch {
+    display: none;
+  }
+}
+
+</style>

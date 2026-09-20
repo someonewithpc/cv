@@ -1,0 +1,394 @@
+@use './fontSettingsFieldset' as *;
+@use './demoCursor';
+
+// The product's settings column, with a specimen set on the sheet beside it
+.edit-style {
+  width: 100%;
+  // The product's face; the chosen one replaces it here and reaches both columns
+  font-family: var(--font-poppins, 'Poppins'), sans-serif;
+  display: grid;
+  // The product's column and the specimen beside it share whatever the sheet gives them, so a
+  // narrow sheet takes width off both instead of squeezing the specimen to a few characters
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 2em;
+  align-items: center;
+
+  [data-sheet-orientation='portrait'] & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1em;
+  }
+}
+
+.specimen {
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5em;
+
+  color: var(--ink);
+  text-align: left;
+
+  p {
+    margin: 0;
+  }
+
+  .specimen-display {
+    font-size: 6em;
+    line-height: 1;
+  }
+
+  .specimen-pangram {
+    font-size: 1.5em;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .specimen-glyphs {
+    font-size: 1em;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
+  }
+
+  // A readout in the title block's manner: monospace captions, values in the face itself
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1.5em;
+    margin-top: 0.25em;
+    padding-top: 0.5em;
+    border-top: 1px solid var(--line);
+
+    > span {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125em;
+      min-width: 0;
+    }
+
+    .monospace {
+      font-size: 0.625em;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+  }
+
+  [data-sheet-orientation='portrait'] & {
+    // Above the sidebar on a phone sheet, and without the alphabet block; what is left has
+    // to fit the 11em the sidebar leaves it
+    order: -1;
+    gap: 0.125em;
+
+    .specimen-display {
+      font-size: 2.5em;
+    }
+
+    .specimen-pangram {
+      font-size: 1.1em;
+    }
+
+    .specimen-glyphs {
+      display: none;
+    }
+
+    figcaption {
+      margin-top: 0;
+      padding-top: 0.375em;
+    }
+  }
+}
+
+// The Interactive Map's settings sidebar from the Style section down: the product's markup
+// and rules, with its light-dark() option colours extended to the whole column so it follows
+// the page's colour scheme
+.sidebar {
+  --sidebar-background: light-dark(#{$sidebar-background}, #2b2b2b);
+  --sidebar-ink: light-dark(black, #e6e6e6);
+
+  box-sizing: border-box;
+  width: 100%;
+  // Scrolls inside the sheet like the real sidebar does inside the map. Measured pixels
+  // rather than a container unit, as everything else on these sheets is sized
+  max-height: calc(var(--sheet-block, 30em) - 2 * var(--sheet-margin, 1rem) - 1.5em);
+  overflow-y: auto;
+
+  // A portrait sheet stacks the specimen above and the title block below, so leave them their rows
+  [data-sheet-orientation='portrait'] & {
+    max-height: calc(var(--sheet-block, 30em) - 2 * var(--sheet-margin, 1rem) - 5.5rem - 11em);
+  }
+
+  background: var(--sidebar-background);
+  border: 1px solid light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 14%));
+  border-radius: 0.5em;
+  color: var(--sidebar-ink);
+
+  font-size: 1em;
+  text-align: left;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  input,
+  button {
+    font-family: inherit;
+    max-width: 100%;
+  }
+
+  a {
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  nav {
+    padding: 1.25em;
+  }
+
+  section.edit-settings {
+    display: flex;
+    flex-direction: column;
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      li {
+        margin-bottom: 1.25em;
+
+        label {
+          display: flex;
+
+          input[type='range'] {
+            flex-basis: 100%;
+          }
+        }
+      }
+    }
+
+    footer {
+      margin-top: auto;
+      margin-left: auto;
+      display: flex;
+
+      input[type='button'] {
+        margin: 5px;
+        padding: 5px;
+        border: 1px solid gray;
+        border-radius: 5px;
+        font-weight: 700;
+        min-width: 80px;
+        background: light-dark(#efefef, #3a3a3a);
+        color: inherit;
+        cursor: pointer;
+
+        &:hover {
+          background: light-dark(#e0e0e0, #474747);
+        }
+      }
+    }
+  }
+
+  .font-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25em;
+
+    .w-100 {
+      width: 100%;
+    }
+
+    select,
+    ::picker(select) {
+      appearance: base-select;
+    }
+
+    select {
+      font: inherit;
+      color: inherit;
+      background: light-dark(white, #1e1e1e);
+      border: 1px solid light-dark(#767676, #555);
+      border-radius: 0.25em;
+      padding: 0.375em 0.5em;
+    }
+
+    ::picker(select) {
+      border: 1px solid light-dark(#767676, #555);
+      padding: 0;
+    }
+
+    option {
+      max-width: 100%;
+      padding: 0.375em 0.5em;
+
+      &:nth-of-type(even) {
+        background: light-dark(#eee, #333);
+      }
+      &:nth-of-type(odd) {
+        background: light-dark(#ddd, #3a3a3a);
+      }
+
+      &:hover {
+        background: light-dark(#ccc, #444);
+      }
+    }
+
+    select:open,
+    .is-demo-open select {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    ::picker(select),
+    option:last-of-type {
+      border-radius: 0 0 0.5em 0.5em;
+    }
+
+    .select-wrapper {
+      position: relative;
+
+      &.new-dot::before {
+        content: '';
+        background: #c33;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 1ch;
+        height: 1ch;
+        translate: calc(50% - 1px) calc(-50% + 1px);
+        z-index: 1;
+
+        border-radius: 50%;
+      }
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375em;
+      cursor: pointer;
+
+      &:has(input:disabled) {
+        color: light-dark(gray, #8a8a8a);
+      }
+    }
+
+    svg[data-icon] {
+      cursor: pointer;
+    }
+
+    p {
+      margin-inline: 0;
+      font-size: 0.875em;
+      line-height: 1;
+    }
+
+    p[role='alert'] {
+      padding-inline-start: 1ch;
+      border-left: 3px solid orange;
+
+      svg {
+        color: orange;
+      }
+    }
+
+    fieldset {
+      @include font-settings-fieldset(var(--sidebar-background));
+
+      // The mixin's colours are the light sidebar's; the dark scheme needs its own
+      color: inherit;
+
+      &.hidden {
+        display: none;
+      }
+
+      label {
+        color: inherit;
+      }
+
+      input {
+        background: light-dark(white, #1e1e1e);
+        border-color: light-dark(#ddd, #444);
+        color: inherit;
+
+        &:focus {
+          outline-color: light-dark(#888, #aaa);
+        }
+      }
+
+      p {
+        color: light-dark(#666, #a8a8a8);
+
+        &[role='alert'] {
+          color: inherit;
+        }
+      }
+    }
+  }
+}
+
+// The product's FixedElement: a hovered control holds its place out of the flow, and one being
+// worked rises over its neighbours behind a halo of the sidebar's colour
+.pinned {
+  position: relative;
+  isolation: isolate;
+
+  &.is-interacting {
+    z-index: 10;
+  }
+
+  .pinned-box.is-held {
+    z-index: 1;
+    background: var(--sidebar-background);
+  }
+
+  &.is-interacting .pinned-box {
+    box-shadow: 0 0 1.5em 1.5em var(--sidebar-background);
+  }
+}
+
+// The list the auto-play draws in place of the native one, in the ::picker(select) style
+.font-picker-demo-picker {
+  position: absolute;
+  z-index: 1090;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden auto;
+  scrollbar-width: thin;
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid light-dark(#767676, #555);
+  border-top: 0;
+  border-radius: 0 0 0.5em 0.5em;
+  background: light-dark(white, #1e1e1e);
+  color: light-dark(black, #e6e6e6);
+  box-shadow: 0 0.5em 1.5em color-mix(in oklab, #000 35%, transparent);
+
+  &.is-upward {
+    border-top: 1px solid light-dark(#767676, #555);
+    border-bottom: 0;
+    border-radius: 0.5em 0.5em 0 0;
+  }
+
+  li {
+    padding: 0.375em 0.5em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:nth-child(even) {
+      background: light-dark(#eee, #333);
+    }
+    &:nth-child(odd) {
+      background: light-dark(#ddd, #3a3a3a);
+    }
+    &.is-hovered {
+      background: light-dark(#ccc, #444);
+    }
+  }
+}

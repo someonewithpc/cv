@@ -1,0 +1,88 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import PickerLayer from './layers/PickerLayer.astro';
+import SourcesLayer from './layers/SourcesLayer.astro';
+import FeedbackLayer from './layers/FeedbackLayer.astro';
+import PinnedLayer from './layers/PinnedLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+// Resolve from cwd — import.meta.url points at dist prerender chunks during build.
+const srcRoot = path.join(process.cwd(), 'src');
+const fontPickerEntry = path.join(
+  srcRoot,
+  'components/FontPickerDemo/picker/EditStyleApp.tsx',
+);
+
+const { outputFiles: [fontPickerBundle] } = await esbuild.build({
+  entryPoints: [fontPickerEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  jsx: 'automatic',
+  packages: 'external',
+  alias: { '@': srcRoot },
+  loader: {
+    '.scss': 'empty',
+    '.css': 'empty',
+  },
+});
+
+const fontPickerSize = toKiB(fontPickerBundle.text);
+
+const layers = {
+  main: { name: null },
+  sources: { name: 'Font Extraction', pageStyle: 'blueprint' },
+  feedback: { name: 'Loading Indicator', pageStyle: 'blueprint' },
+  pinned: { name: 'Held Controls', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Interactive Map Font Picker"
+  scale="1:1"
+  size={fontPickerSize}
+  date="2026"
+  tech={['react']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      main: <PickerLayer />,
+      sources: <SourcesLayer />,
+      feedback: <FeedbackLayer />,
+      pinned: <PinnedLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      main: (
+        <PostIt background="#cde" color="black">
+          The dropdown is <code>document.fonts</code>: every face this page has
+          loaded, its Unicode subsets folded back into one entry per face. Nothing
+          in it is hardcoded, so a font loaded below is in the list a moment later
+        </PostIt>
+      ),
+      sources: null,
+      feedback: null,
+      pinned: null,
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
+
+{/*
+  No <script> here: the picker and the feedback sheet's sample each boot from a
+  `*.boot.ts` named in their `data-boot-module`, armed by Stack.astro's own script.
+*/}

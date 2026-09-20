@@ -42,6 +42,7 @@
     - [ ] Showcase the carousel? With the animated pips
   - [x] Visrez library tagging tool (#21)
   - [x] Slotted components carry their own scripts; boot island removed
+  - [x] Interactive map font picker (#25)
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
