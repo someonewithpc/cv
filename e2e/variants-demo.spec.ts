@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { devices, expect, test, type Locator, type Page } from '@playwright/test';
 
 import {
   frontPage,
@@ -52,6 +52,33 @@ async function leaveCard(page: Page, card: Locator) {
   const box = await card.boundingBox();
   if (!box) throw new Error('The card has no layout box');
   await page.mouse.move(box.x + box.width + 60, box.y + box.height / 2, { steps: 6 });
+}
+
+/** Boxes of the open list and the picture: the list sits over the label rows, not the picture. */
+async function expectListClearOfPicture(set: Locator, row: Locator) {
+  const list = await row.locator('.hover-select-options').boundingBox();
+  const picture = await set.locator('.object-icons').boundingBox();
+  if (!list || !picture) throw new Error('The list or the picture has no layout box');
+  expect(list.y).toBeGreaterThanOrEqual(picture.y + picture.height - 1);
+}
+
+/** A finger down, across the given points and up, through the CDP touch events. */
+async function drag(page: Page, points: { x: number; y: number }[]) {
+  const cdp = await page.context().newCDPSession(page);
+  const [first, ...rest] = points;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+  for (const point of rest) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] });
+    await page.waitForTimeout(80);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
+}
+
+async function centre(locator: Locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('The element has no layout box');
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
 /** The scroll marker's fill: transparent until the slide is the current one. */
@@ -180,6 +207,7 @@ test.describe('metric locale', () => {
 
     await set.locator('.object-pax .hover-select-current').click();
     await expect(rows).toHaveCount(3);
+    await expectListClearOfPicture(set, set.locator('.object-pax'));
     const seen: string[] = [];
     for (const [index, expected] of [[0, '8 seats'], [1, '6 seats'], [2, '4 seats']] as const) {
       const box = await rows.nth(index).boundingBox();
@@ -189,6 +217,8 @@ test.describe('metric locale', () => {
         await page.mouse.move(box.x + box.width / 2, box.y + (box.height * step) / 5);
       }
       await expect(label).toHaveText(expected);
+      await expect(rows.nth(index)).toHaveClass(/current/);
+      await expect(set.locator('.object-pax li.current')).toHaveCount(1);
       const src = await thumb.getAttribute('src');
       expect(seen).not.toContain(src);
       seen.push(src ?? '');
@@ -282,6 +312,102 @@ test.describe('metric locale', () => {
     const missing = frontPage(stack, await frontPageIndex(stack));
     await expect(missing.locator('.drawn details.object-pax')).toHaveAttribute('open', '');
     await expect(missing.locator('.drawn .object-pax li.unavailable')).toHaveCount(2);
+  });
+});
+
+test.describe('on a phone', () => {
+  // The device minus its browser type, which cannot change inside a describe.
+  const { defaultBrowserType, ...phone } = devices['Pixel 7'];
+  void defaultBrowserType;
+  test.use({ ...phone, locale: 'pt-PT' });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('the walkthrough shows a different set on each seat row it hovers', async ({ page }) => {
+    const stack = variantsStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const app = frontPage(stack, await frontPageIndex(stack)).locator('.variants-stage');
+    await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 30_000 });
+    const set = card(app, 'table-round');
+    const seats = set.locator('.object-pax');
+
+    // Nothing touches the demo, so its own cursor works the rows. Read the card while
+    // the seat list is open: each hovered row is the current one and the set it shows.
+    await expect(seats).toHaveAttribute('open', '', { timeout: 30_000 });
+    await expectListClearOfPicture(set, seats);
+    const shown = new Map<string, string>();
+    await expect.poll(async () => {
+      if (await seats.getAttribute('open') === null) return shown.size;
+      const current = await seats.locator('.hover-select-options li.current').getAttribute('data-value');
+      const variant = await set.getAttribute('data-variant');
+      if (current && variant) shown.set(current, variant);
+      return shown.size;
+    }, { timeout: 20_000, intervals: [100] }).toBe(3);
+    expect(shown.get('8')).toBe('table-8-243');
+    expect(shown.get('6')).toBe('table-6-243');
+    expect(shown.get('4')).toBe('table-4-243');
+  });
+
+  test('a finger over the open list previews each row and commits the one it lifts from', async ({ page }) => {
+    const app = await openDemo(page);
+    const set = card(app, 'table-round');
+    const seats = set.locator('.object-pax');
+    const rows = seats.locator('.hover-select-options li');
+    const thumb = set.locator('.object-icons > img');
+
+    await seats.locator('.hover-select-current').tap();
+    await expect(seats).toHaveAttribute('open', '');
+    const first = await thumb.getAttribute('src');
+
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [await centre(rows.nth(0))] });
+    await expect(rows.nth(0)).toHaveClass(/current/);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [await centre(rows.nth(1))] });
+    await expect(set).toHaveAttribute('data-variant', 'table-6-243');
+    await expect(rows.nth(1)).toHaveClass(/current/);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [await centre(rows.nth(2))] });
+    await expect(set).toHaveAttribute('data-variant', 'table-4-243');
+    await expect(rows.nth(2)).toHaveClass(/current/);
+    expect(await thumb.getAttribute('src')).not.toBe(first);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await cdp.detach();
+
+    await expect(seats).not.toHaveAttribute('open', '');
+    await expect(seats.locator('.hover-select-current')).toContainText('4 seats');
+    await expect(set).toHaveAttribute('data-variant', 'table-4-243');
+    await expect(set).toHaveClass(/active/);
+  });
+
+  test('a finger that lifts off the list puts the held set back', async ({ page }) => {
+    const app = await openDemo(page);
+    const set = card(app, 'table-round');
+    const seats = set.locator('.object-pax');
+    const rows = seats.locator('.hover-select-options li');
+
+    await seats.locator('.hover-select-current').tap();
+    await expect(seats).toHaveAttribute('open', '');
+    const picture = await centre(set.locator('.object-icons'));
+    await drag(page, [await centre(rows.nth(0)), await centre(rows.nth(2)), picture]);
+
+    await expect(seats).not.toHaveAttribute('open', '');
+    await expect(seats.locator('.hover-select-current')).toContainText('8 seats');
+    await expect(set).toHaveAttribute('data-variant', 'table-8-243');
+    await expect(set).not.toHaveClass(/active/);
+  });
+
+  test('a tap on a row picks it', async ({ page }) => {
+    const app = await openDemo(page);
+    const set = card(app, 'table-round');
+    const seats = set.locator('.object-pax');
+
+    await seats.locator('.hover-select-current').tap();
+    await seats.locator('.hover-select-options li').nth(1).locator('button').tap();
+    await expect(seats).not.toHaveAttribute('open', '');
+    await expect(seats.locator('.hover-select-current')).toContainText('6 seats');
+    await expect(set).toHaveAttribute('data-variant', 'table-6-243');
+    await expect(set).toHaveClass(/active/);
   });
 });
 
