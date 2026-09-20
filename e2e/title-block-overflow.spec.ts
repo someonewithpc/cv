@@ -88,20 +88,26 @@ for (const width of WIDTHS) {
   });
 }
 
-test('a sheet that sheds the Proj. cell keeps the projection symbol inside the block', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+/**
+ * The projection symbol is drawn in its own corner cell or not at all. A sheet that has shed
+ * the Proj. cell shows no symbol anywhere else in the block, beside the title least of all.
+ */
+for (const [width, height] of [[390, 844], [760, 900], [1024, 900], [1440, 900]]) {
+  test(`the projection symbol stays in its own cell at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
 
-  const section = page.locator('article.technical-drawing-stack section').first();
-  const table = section.locator(':scope > table');
-  await expect(table.locator('.title-proj')).toBeHidden();
+    const blocks = page.locator('article.technical-drawing-stack section > table');
+    expect(await blocks.count()).toBeGreaterThan(0);
 
-  const mark = table.locator('.title-proj-mark');
-  await expect(mark).toBeVisible();
-  const box = (await table.boundingBox())!;
-  const glyph = (await mark.boundingBox())!;
-  expect(glyph.x).toBeGreaterThanOrEqual(box.x);
-  expect(glyph.y).toBeGreaterThanOrEqual(box.y);
-  expect(glyph.x + glyph.width).toBeLessThanOrEqual(box.x + box.width);
-  expect(glyph.y + glyph.height).toBeLessThanOrEqual(box.y + box.height);
-});
+    const strays = await blocks.evaluateAll((tables) => tables.flatMap((table) => {
+      const cell = table.querySelector<HTMLElement>('.title-proj');
+      const cellShown = cell !== null && getComputedStyle(cell).display !== 'none';
+      return [...table.querySelectorAll<SVGElement>('svg[data-icon="first-angle-projection"]')]
+        .filter((svg) => !cellShown || svg.closest('.title-proj') !== cell)
+        .filter((svg) => svg.getBoundingClientRect().width > 0)
+        .map(() => table.getAttribute('aria-label'));
+    }));
+    expect(strays).toEqual([]);
+  });
+}
