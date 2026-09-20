@@ -228,17 +228,25 @@ async function sceneBox(app: Locator): Promise<Box> {
   return box;
 }
 
-/** Orbit with a drag, zoom in with the wheel and pan with a shift-drag, all on the canvas. */
-async function moveCamera(page: Page, box: Box) {
+/** Orbit with a horizontal drag of `dx` px across the canvas (0.005 rad per px). */
+async function orbitCamera(page: Page, box: Box, dx: number) {
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   for (let step = 1; step <= 8; step += 1) {
-    await page.mouse.move(cx + step * 20, cy - step * 6);
+    await page.mouse.move(cx + (dx * step) / 8, cy);
     await page.waitForTimeout(30);
   }
   await page.mouse.up();
+}
+
+/** Orbit with a drag, zoom in with the wheel and pan with a shift-drag, all on the canvas. */
+async function moveCamera(page: Page, box: Box) {
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await orbitCamera(page, box, 160);
+  await page.waitForTimeout(100);
   // Back over the canvas, whose wheel handler zooms instead of scrolling the page.
   await page.mouse.move(cx, cy);
   await page.mouse.wheel(0, -900);
@@ -258,19 +266,31 @@ test('the walkthrough still drops on the visible floor after the camera moves', 
   const app = await openDemo(page);
   await watchDrops(app);
   const box = await sceneBox(app);
-  await dropAfter(app, 0);
+  const fresh = await dropAfter(app, 0);
 
   // The next placement clears the selection, so this flip puts the takeover between drops.
+  // Taking over restarts the lap, so the next drop aims at the first floor point again,
+  // the same one the fresh load dropped on.
+  await expect(app).toHaveAttribute('data-selected', 'false');
+  await orbitCamera(page, box, -160);
+  const orbited = await dropAfter(app, 1);
+  expect(orbited.x).toBeGreaterThan(0);
+  expect(orbited.x).toBeLessThan(orbited.width);
+  expect(orbited.y).toBeGreaterThan(0);
+  expect(orbited.y).toBeLessThan(orbited.height);
+  // The floor point moved on screen with the orbit. Drops used to be screen fractions, which
+  // land on the same pixel whatever the camera does and so on some other floor spot.
+  expect(Math.abs(orbited.x - fresh.x)).toBeGreaterThan(20);
+
+  // Zooming in and panning may push the point out of view; the drop must still land in frame.
   await expect(app).toHaveAttribute('data-selected', 'false');
   const seen = await dropCount(app);
   await moveCamera(page, box);
-
-  // Drops used to be screen fractions, which a moved camera sends off the floor or out of frame.
-  const drop = await dropAfter(app, seen);
-  expect(drop.x).toBeGreaterThan(0);
-  expect(drop.x).toBeLessThan(drop.width);
-  expect(drop.y).toBeGreaterThan(0);
-  expect(drop.y).toBeLessThan(drop.height);
+  const moved = await dropAfter(app, seen);
+  expect(moved.x).toBeGreaterThan(0);
+  expect(moved.x).toBeLessThan(moved.width);
+  expect(moved.y).toBeGreaterThan(0);
+  expect(moved.y).toBeLessThan(moved.height);
 });
 
 test('Restart brings the camera home', async ({ page }) => {
