@@ -17,20 +17,24 @@ type Props = {
   live?: boolean;
   /** Render this object mid-fade, as it looks the moment it gets its last value. */
   completing?: string;
-  /** Render only these objects, for the blueprint pages that quote a row or two. */
+  /** Render only these groups, in this order, for the blueprint pages that quote a row or two. */
   only?: readonly string[];
+  /** Render only these objects of each group, for a sheet with no room for a whole row. */
+  objects?: readonly string[];
   /** Which property schema the page is showing. */
   property?: string;
 };
 
-const { live = false, completing, only, property = defaultProperty } = Astro.props;
+const { live = false, completing, only, objects, property = defaultProperty } = Astro.props;
 
 const scope = live ? 'live' : 'static';
 const listId = `tagging-tool-values-${scope}`;
 const sharedTitle = 'Update base + variants';
 const overrideNote =
   'The objects in this group do not all have the same value. Saving here overwrites the variants with the base value.';
-const rows = only ? baseObjects.filter((group) => only.includes(group.id)) : baseObjects;
+const rows = only ? only.flatMap((id) => baseObjects.filter((group) => group.id === id)) : baseObjects;
+const shown = (group: (typeof baseObjects)[number]) =>
+  objectsOf(group).filter((object) => !objects || objects.includes(object.id));
 const propertyName = properties.find((entry) => entry.id === property)?.name ?? property;
 ---
 
@@ -97,7 +101,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
           </form>
 
           <div class="shared-properties">
-            {objectsOf(group).map((object) => {
+            {shown(group).map((object) => {
               const value = filling ? walkthrough.value : object.values[property] ?? '';
               return (
                 <div
