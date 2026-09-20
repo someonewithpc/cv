@@ -9,12 +9,12 @@ import Cube from './Cube.astro';
   <Cube slot="content" />
   <Fragment slot="annotations">
     {/* The tilted cube's outline is a hexagon whose right vertices sit a quarter and
-        three quarters down the faces' joint box, which the script re-reads once the
-        tilt has run. Before it runs the faces are one flat square and the tips sit on
-        its right edge. */}
+        three quarters down the edges' joint box, which the script re-reads once the
+        tilt has run. Before it runs the edges lie in one flat square and the tips sit
+        on its right edge. */}
     <g class="annotations">
       <ArrowAnnotation
-        target=".face"
+        target=".edge"
         anchor="1 0.25"
         tipX={Math.sqrt(2) / 2}
         tipY={-0.41}
@@ -25,7 +25,7 @@ import Cube from './Cube.astro';
       />
 
       <ArrowAnnotation
-        target=".face"
+        target=".edge"
         anchor="1 0.75"
         tipX={Math.sqrt(2) / 2}
         tipY={0.41}
