@@ -27,7 +27,7 @@ async function mountedTool(page: import('@playwright/test').Page) {
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
   // The walkthrough may have switched property before the handover landed; every test
   // below starts from the property the page opens on.
-  await tool.locator('.property-select').selectOption('table color');
+  await tool.locator('.property-select').selectOption('chair');
   return { stack, front, tool };
 }
 
@@ -60,17 +60,17 @@ test('main page: the walkthrough types with a drawn cursor and hands over on hov
   await expect(cursor).toBeVisible({ timeout: 10_000 });
 
   // It fills the whole row from the one shared field, mirroring as it types.
-  const round = tool.locator('.grouped-objects[data-group="round"]');
-  await expect(round.locator('.object-value').first()).not.toHaveValue('', { timeout: 15_000 });
+  const gold = tool.locator('.grouped-objects[data-group="gold"]');
+  await expect(gold.locator('.object-value').last()).not.toHaveValue('', { timeout: 15_000 });
 
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
   await expect(cursor).toBeHidden();
 
   // Handover means handover: nothing types itself after this.
-  const settled = await round.locator('.shared-value').inputValue();
+  const settled = await gold.locator('.shared-value').inputValue();
   await page.waitForTimeout(1_500);
-  expect(await round.locator('.shared-value').inputValue()).toBe(settled);
+  expect(await gold.locator('.shared-value').inputValue()).toBe(settled);
 });
 
 test('main page: the walkthrough puts its pointer on the tick before the row saves', async ({ page }) => {
@@ -84,7 +84,7 @@ test('main page: the walkthrough puts its pointer on the tick before the row sav
   // coming is the bug: the pointer has to reach the tick first.
   const seen = await front.evaluate(async (root: HTMLElement) => {
     const cursor = root.querySelector<HTMLElement>('.tagging-cursor')!;
-    const group = root.querySelector<HTMLElement>('.grouped-objects[data-group="round"]')!;
+    const group = root.querySelector<HTMLElement>('.grouped-objects[data-group="gold"]')!;
     const save = group.querySelector<HTMLElement>('.shared-form button')!;
     let onTick = false;
 
@@ -177,8 +177,8 @@ test('main page: a shared save plays the ring on the whole group, pending then s
 test('main page: saving one object plays the ring on that card alone', async ({ page }) => {
   const { tool } = await mountedTool(page);
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
-  // gold-10, the one object of the row still without a table colour.
-  const thumb = gold.locator('.image-thumbnail').nth(2);
+  // 10638, the table without chairs, is the one object of the row still without a chair value.
+  const thumb = gold.locator('.image-thumbnail').nth(3);
   const card = thumb.locator('.panel-preview-library-object');
 
   await thumb.locator('.object-value').fill('bright gold');
@@ -266,7 +266,7 @@ test('main page: differing variant values keep the shared input open and flag th
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
   await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
   await expect(gold.locator('.shared-value')).toBeEnabled();
-  await expect(gold.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: White and Beige');
+  await expect(gold.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: Beige, Ivory');
 
   // Hovering the warning sign has to say what it is warning about.
   const title = await gold.locator('.shared-form button').getAttribute('title');
@@ -277,14 +277,20 @@ test('main page: differing variant values keep the shared input open and flag th
 test('main page: picking another property brings up the values already stored for it', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
-  const round = tool.locator('.grouped-objects[data-group="round"]');
-  await tool.locator('.property-select').selectOption('linen');
+  const gold = tool.locator('.grouped-objects[data-group="gold"]');
+  const wood = tool.locator('.grouped-objects[data-group="wood"]');
+  await tool.locator('.property-select').selectOption('table color');
 
-  await expect(round.locator('.object-value').first()).toHaveValue('Ivory Satin');
-  await expect(round.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: Ivory Satin');
+  // Stored as typed: the product titleizes on save, and this row's base was not saved
+  // through this page, so its value differs from its variants' by case alone.
+  await expect(wood.locator('.object-value').first()).toHaveValue('wood');
+  await expect(wood.locator('.object-value').nth(1)).toHaveValue('Wood');
+  await expect(wood.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: wood, Wood');
 
-  // The last variant has no linen value, which is why the object is still listed.
-  await expect(round.locator('.object-value').last()).toHaveValue('');
+  // The last variant has no table colour, which is why the object is still listed; the
+  // other row has one on every object, so it is not.
+  await expect(wood.locator('.object-value').last()).toHaveValue('');
+  await expect(gold).toBeHidden();
 });
 
 test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
