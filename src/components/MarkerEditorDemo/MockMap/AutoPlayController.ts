@@ -32,9 +32,9 @@ export type DemoCursorStep = {
 type Step = {
   delay: number | (() => number);
   /**
-   * Where the cursor goes. With `click`, the step presses there before `run`: the target
-   * element, or the map at the cursor's rest point when there is no target. A step whose
-   * `run` drags leaves `click` unset and presses inside the drag instead.
+   * Where the cursor goes. With `click`, the step presses the target element before `run`.
+   * A step whose `run` drags leaves `click` unset and presses inside the drag instead, and a
+   * keyboard shortcut step leaves it unset: nothing is pressed under the cursor for those.
    */
   cursor?: DemoCursorStep | (() => DemoCursorStep | undefined);
   /** Let the press end in a real click on the cursor target element. */
@@ -324,17 +324,6 @@ export class AutoPlayController {
       return { client: { x: rect.left + rect.width * 0.88, y: rect.bottom + 52 } };
     }
     return { client: { x: window.innerWidth - 48, y: window.innerHeight - 48 } };
-  }
-
-  /** A press on the map itself, where the cursor rests when a step has no target. */
-  private pressMap() {
-    const overlay = document.querySelector('.mock-map-overlay');
-    if (!overlay) return Promise.resolve();
-    const rect = overlay.getBoundingClientRect();
-    return demoPress(overlay, {
-      x: rect.left + rect.width * REST_CURSOR_FRACTION.x,
-      y: rect.top + rect.height * REST_CURSOR_FRACTION.y,
-    }, { click: false });
   }
 
   /** Close UI and restore the map to the default markers so the demo can loop cleanly. */
@@ -947,7 +936,7 @@ export class AutoPlayController {
       },
       {
         delay: 700,
-        cursor: { target: null, click: true },
+        cursor: { target: null },
         run: (dispatch) => {
           this.onToast(undoRedoShortcut('Undo'));
           dispatch(ActionCreators.undo());
@@ -955,7 +944,7 @@ export class AutoPlayController {
       },
       {
         delay: 900,
-        cursor: { target: null, click: true },
+        cursor: { target: null },
         run: (dispatch) => {
           this.onToast(undoRedoShortcut('Redo'));
           dispatch(ActionCreators.redo());
@@ -1016,12 +1005,8 @@ export class AutoPlayController {
     }
     if (cursor?.click) {
       const click = Boolean(typeof step.domClick === 'function' ? step.domClick() : step.domClick);
-      if (cursor.target == null) {
-        await this.pressMap();
-      } else {
-        const el = queryDemoTarget(cursor.target);
-        if (el) await press(el, click);
-      }
+      const el = cursor.target == null ? null : queryDemoTarget(cursor.target);
+      if (el) await press(el, click);
     }
     await step.run?.(this.dispatch, this.getState);
     this.stepIndex += 1;
