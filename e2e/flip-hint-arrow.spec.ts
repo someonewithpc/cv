@@ -126,14 +126,67 @@ function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
   }, way);
 }
 
-// The way back's arrow holds off until its words have typed themselves out (about 1.2s for
-// the line) and then fades in over 400ms, so a check on it waits for that fade to end.
+// The way back's arrow leads its words, so it is in after a 400ms fade; the peel hint's arrow
+// comes last, once its line has typed itself out (about 1.4s) and faded in. A check on either
+// waits for the fade to end.
 async function backArrowShown(page: Page): Promise<Aim> {
   await expect.poll(async () => {
     const back = await aim(page, 'back');
     return back.painted && back.animations === 0;
   }, { timeout: 4000 }).toBe(true);
   return aim(page, 'back');
+}
+
+/** Scrolls the peel hint to the middle of the screen and waits for it to be written out. */
+async function peelHintShown(page: Page): Promise<Aim> {
+  await page.evaluate(() => {
+    const words = document.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
+    window.scrollTo(0, scrollY + words.top - innerHeight / 2);
+  });
+  await expect.poll(async () => {
+    const forward = await aim(page, 'fwd');
+    return forward.painted && forward.animations === 0;
+  }, { timeout: 5000 }).toBe(true);
+  return aim(page, 'fwd');
+}
+
+/**
+ * When each part of a hint comes in, in ms from the moment it is called for: the arrow, the
+ * first letter of the line and the last. Read frame by frame in the page, since the whole hint
+ * is written in under two seconds and a round trip per sample would miss most of it.
+ */
+type Strikes = { arrowAt: number; firstAt: number; lastAt: number };
+
+function strikes(page: Page, way: 'fwd' | 'back', calledFor: { on: 'frame' | 'stack'; mark: string }) {
+  return page.evaluate(({ which, on, mark }) => new Promise<Strikes>((resolve) => {
+    const frame = document.querySelector('.technical-drawing-frame')!;
+    const words = frame.querySelector<HTMLElement>(`.flip-hint--${which}.hint-words`)!;
+    const arrow = frame.querySelector<SVGSVGElement>(`.flip-hint--${which}.hint-arrow`)!;
+    const spans = words.querySelectorAll('.hint-letter');
+    const shown = (node: Element) => Number(getComputedStyle(node).opacity) > 0.5;
+    const watched = on === 'frame' ? frame : frame.querySelector('article.technical-drawing-stack')!;
+
+    const time = () => {
+      const start = performance.now();
+      const marks: Strikes = { arrowAt: -1, firstAt: -1, lastAt: -1 };
+      const step = () => {
+        const now = performance.now() - start;
+        if (marks.arrowAt < 0 && shown(arrow)) marks.arrowAt = now;
+        if (marks.firstAt < 0 && shown(spans[0])) marks.firstAt = now;
+        if (marks.lastAt < 0 && shown(spans[spans.length - 1])) marks.lastAt = now;
+        if (Object.values(marks).every((at) => at >= 0) || now > 6000) resolve(marks);
+        else requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+
+    if (watched.hasAttribute(mark)) { time(); return; }
+    new MutationObserver((_, observer) => {
+      if (!watched.hasAttribute(mark)) return;
+      observer.disconnect();
+      time();
+    }).observe(watched, { attributes: true, attributeFilter: [mark] });
+  }), { which: way, ...calledFor });
 }
 
 const armed = (page: Page, index: number) => page.evaluate((i) => {
@@ -145,7 +198,7 @@ test('the way out points square at the middle of the dog-ear crease', async ({ p
   await page.goto('/');
   await page.waitForTimeout(1200);
 
-  const forward = await aim(page, 'fwd');
+  const forward = await peelHintShown(page);
   expect(forward.painted).toBe(true);
   expect(Math.abs(forward.alongCrease)).toBeLessThan(6);
   expect(forward.offCrease).toBeGreaterThan(1);
@@ -228,21 +281,9 @@ test.describe('with motion allowed', () => {
     const opacity = () => backHint.evaluate((el) => Number(getComputedStyle(el).opacity));
     const letters = backHint.locator('.hint-letter');
 
-    // The words type themselves out from the settle, so the first and last letters are read in
-    // the page two frames after the mark lands (a fresh animation has no start time until the
-    // first frame after it), before a round trip could miss the typing.
-    const typing = () => backHint.evaluate((el) => new Promise<{ first: number; last: number }>((resolve) => {
-      const stack = el.closest('.technical-drawing-frame')!.querySelector('article.technical-drawing-stack')!;
-      const spans = el.querySelectorAll('.hint-letter');
-      const shown = (span: Element) => Number(getComputedStyle(span).opacity);
-      new MutationObserver((_, observer) => {
-        if (!stack.hasAttribute('data-paper-settled')) return;
-        observer.disconnect();
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          resolve({ first: shown(spans[0]), last: shown(spans[spans.length - 1]) });
-        }));
-      }).observe(stack, { attributes: true, attributeFilter: ['data-paper-settled'] });
-    }));
+    // The hint is timed in the page from the settle: the arrow is in first, then the line types
+    // itself out under it, which a round trip per sample would be too slow to catch.
+    const typing = () => strikes(page, 'back', { on: 'stack', mark: 'data-paper-settled' });
 
     // A corner drag, released past the commit point, so the flip glides the rest of the way on
     // its own: the fold on the front page is the dog-ear at the sheet's bottom-right.
@@ -269,10 +310,13 @@ test.describe('with motion allowed', () => {
     await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
     await expect.poll(opacity, { timeout: 1500 }).toBe(1);
 
-    // Right after the settle the first letter is struck and the last is not; every letter ends
-    // up shown, and the arrow follows the last letter.
+    // The arrow is in before the first letter is struck, and the line is typed in order, so the
+    // hint reads left to right from its arrow into its words. Every letter ends up shown.
     expect(await letters.count()).toBeGreaterThan(20);
-    expect(await typed).toEqual({ first: 1, last: 0 });
+    const marks = await typed;
+    expect(marks.arrowAt, 'the arrow is in first').toBeGreaterThanOrEqual(0);
+    expect(marks.arrowAt).toBeLessThan(marks.firstAt);
+    expect(marks.firstAt, 'then the letters, in order').toBeLessThan(marks.lastAt);
     const allShown = () => letters.evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1'));
     await expect.poll(allShown, { timeout: 3000 }).toBe(true);
     expect((await backArrowShown(page)).painted).toBe(true);
@@ -289,9 +333,63 @@ test.describe('with motion allowed', () => {
     await page.mouse.up();
     await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
     await expect.poll(opacity, { timeout: 1500 }).toBe(1);
-    // and the line types itself out again from its first letter
-    expect(await typedAgain).toEqual({ first: 1, last: 0 });
+    // and the arrow and the line come in again, in the same order
+    const again2 = await typedAgain;
+    expect(again2.arrowAt).toBeGreaterThanOrEqual(0);
+    expect(again2.arrowAt).toBeLessThan(again2.firstAt);
+    expect(again2.firstAt).toBeLessThan(again2.lastAt);
     await expect.poll(allShown, { timeout: 3000 }).toBe(true);
+  });
+
+  // The peel hint is written out in front of the reader who scrolls down to it: nothing of it is
+  // on the page until the line has come up past the quarter mark of the viewport.
+  test('the peel hint waits to be scrolled to, then types itself out', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(1200);
+
+    const frame = page.locator('.technical-drawing-frame').first();
+    const hint = frame.locator('.flip-hint--fwd.hint-words');
+    const letters = hint.locator('.hint-letter');
+    const opacity = (part: 'hint-words' | 'hint-arrow') => frame
+      .locator(`.flip-hint--fwd.${part}`)
+      .evaluate((el) => Number(getComputedStyle(el).opacity));
+
+    // The frame just inside the bottom of the viewport: its hint is written below its bottom
+    // edge, so at this point the line is not on the screen at all.
+    await page.evaluate(() => {
+      const box = document.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
+      window.scrollTo(0, scrollY + box.top - innerHeight + 40);
+    });
+    await page.waitForTimeout(600);
+    expect(await frame.evaluate((el) => el.hasAttribute('data-hint-seen'))).toBe(false);
+    expect(await opacity('hint-words')).toBe(0);
+    expect(await opacity('hint-arrow')).toBe(0);
+
+    // Scrolling on writes it: the letters in order, and the arrow after the last of them.
+    const typed = strikes(page, 'fwd', { on: 'frame', mark: 'data-hint-seen' });
+    await page.evaluate(() => {
+      const words = document.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
+      window.scrollTo(0, scrollY + words.top - innerHeight / 2);
+    });
+    await expect(frame).toHaveAttribute('data-hint-seen', '', { timeout: 3000 });
+
+    expect(await letters.count()).toBeGreaterThan(20);
+    const marks = await typed;
+    expect(marks.firstAt, 'the letters come in order').toBeLessThan(marks.lastAt);
+    expect(marks.lastAt, 'the arrow follows the last letter').toBeLessThan(marks.arrowAt);
+    const allShown = () => letters.evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1'));
+    await expect.poll(allShown, { timeout: 3000 }).toBe(true);
+
+    // Scrolling away and back finds it written, not writing
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(400);
+    await page.evaluate(() => {
+      const words = document.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
+      window.scrollTo(0, scrollY + words.top - innerHeight / 2);
+    });
+    await page.waitForTimeout(200);
+    expect(await allShown()).toBe(true);
+    expect(await opacity('hint-arrow')).toBe(1);
   });
 });
 
@@ -374,7 +472,8 @@ test('each arrow runs from its words to the middle of its crease at every width'
       await page.waitForTimeout(700);
       const label = `${way} at ${size.width}`;
 
-      const arrow = await aim(page, way);
+      // The peel hint is written when it is scrolled to, so bring it into view at each width.
+      const arrow = way === 'fwd' ? await peelHintShown(page) : await aim(page, way);
       expect(arrow.painted, `${label} painted`).toBe(true);
       expect(arrow.tailToWords, `${label} tail at the words`).toBeLessThan(12);
       expect(arrow.tipToMiddle, `${label} tip on the crease's middle`).toBeLessThan(6);
