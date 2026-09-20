@@ -1,6 +1,7 @@
 ---
 /**
- * The drag route, drawn as four stills of the app. What each still shows is what the code
+ * The drag route, in four frames of the demo itself (public/demos/drag-drop/handoff-*.webp,
+ * made by scripts/capture-handoff-frames.mjs). What each frame shows is what the code
  * does: the press on a card arms a drag and the first move starts it (DragDropSceneApp.vue
  * onItemPointerdown, startItemDrag; the product's ObjectDrag.vue dragStart); while the
  * pointer is over the sidebar the card's own <img> rides it at its rendered size, grabbed
@@ -10,85 +11,37 @@
  * pointer (updateDragVisual, SpaceBuilderScene.setGhostAt; the product's Scene.vue dragEnter
  * hides the picture and create.start('single')); the release places one object and selects
  * it, and the tool is back to idle (endItemDrag, dropOne, placeGhostAsSingle; the product's
- * drop). The chair's GLB is loaded when the scene boots, so its chip is full from the first
- * still; another card's GLB starts downloading when its drag starts (activateCatalogItem).
+ * drop).
  *
- * Two stills to a row: the page's content cell is a third narrower than the sheet, and
- * four across would leave each still too small to read at any sheet size.
+ * Each callout aims at a mark, an empty positioned element at the thing's place in its
+ * frame, so the label can sit over the frame's empty canvas without lying over its target.
+ * The marks' positions are fractions of the frame read off the captured images; the
+ * authored tips are the marks' places on a two-by-two strip with a gap of 0.025 units.
+ *
+ * Two frames to a row at every sheet size: four high on a phone would halve both the
+ * frames and the callout type.
  */
-const THUMB = '/demos/space-builder/chair-thumb.webp';
-const MODEL = '/demos/drag-drop/chair-view.webp';
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
-const W = 160;
-const H = 100;
-const LABEL = 18;
-const GAP = 14;
-const ROW_GAP = 24;
-const COLUMNS = 2;
-const STRIP = { width: COLUMNS * W + (COLUMNS - 1) * GAP, height: 2 * (H + LABEL) + ROW_GAP };
+const FRAME = { width: 1308, height: 960 };
+const FONT = 0.072;
+/** Thinner than the default: the frames are photographs, and the arrows cross them. */
+const STROKE = 0.013;
 
-type Still = {
+type Frame = {
   id: string;
-  label: string;
-  /** The pointer's hot spot. */
-  at: [number, number];
-  pressed: boolean;
-  /** The card's picture floats under the pointer. */
-  picture: boolean;
-  /** The chair mesh rides the pointer, or has landed. */
-  model: 'none' | 'ghost' | 'placed';
-  /** The GLB chip shows while the drag can still need it. */
-  chip: boolean;
+  alt: string;
+  /** Where the thing the callout names sits in the frame, as fractions of it. */
+  mark: [number, number];
 };
 
-const CARD_IMAGE = { x: 113, y: 21, size: 38 };
-/** Where the press lands on the picture; the floating copy keeps this grab offset. */
-const GRAB: [number, number] = [27, 26];
-const PRESS_AT: [number, number] = [CARD_IMAGE.x + GRAB[0], CARD_IMAGE.y + GRAB[1]];
-const OVER_SIDEBAR: [number, number] = [112, 52];
-const ON_FLOOR: [number, number] = [66, 70];
-const CANVAS_EDGE = 104;
-
-const stills: Still[] = [
-  { id: 'press', label: 'mousedown', at: PRESS_AT, pressed: true, picture: false, model: 'none', chip: true },
-  { id: 'picture', label: 'picture follows', at: OVER_SIDEBAR, pressed: true, picture: true, model: 'none', chip: true },
-  { id: 'model', label: 'enters canvas: model takes over', at: ON_FLOOR, pressed: true, picture: false, model: 'ghost', chip: true },
-  { id: 'placed', label: 'release: placed', at: ON_FLOOR, pressed: false, picture: false, model: 'placed', chip: false },
+const frames: Frame[] = [
+  { id: 'press', alt: 'The pointer pressed on the chair card in the catalog', mark: [0.5, 0.3] },
+  { id: 'picture', alt: 'The chair picture riding the pointer over the catalog', mark: [0.46, 0.54] },
+  { id: 'model', alt: 'The chair model under the pointer at the edge of the floor', mark: [0.25, 0.74] },
+  { id: 'placed', alt: 'The chair placed on the floor with its selection highlight', mark: [0.15, 0.76] },
 ];
-
-/** The pointer's trail up to a still, through the sidebar's edge into the canvas. */
-function trail(index: number) {
-  const points = [PRESS_AT, OVER_SIDEBAR, ON_FLOOR].slice(0, Math.max(0, Math.min(index + 1, 3)));
-  return points.map(([x, y]) => `${x} ${y}`).join(' L ');
-}
-
-const edgeT = (OVER_SIDEBAR[0] - CANVAS_EDGE) / (OVER_SIDEBAR[0] - ON_FLOOR[0]);
-const EDGE_CROSS: [number, number] = [CANVAS_EDGE, OVER_SIDEBAR[1] + edgeT * (ON_FLOOR[1] - OVER_SIDEBAR[1])];
-
-const MODEL_SIZE = 50;
-const HIGHLIGHT = [[46, 74], [88, 74], [82, 64], [52, 64]].map(([x, y]) => `${x},${y}`).join(' ');
-
-// The demo's own cursor, drawn at half its on-screen size; its hot spot is (4, 2.5).
-const CURSOR = 'M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z';
-
-function origin(index: number): [number, number] {
-  return [(index % COLUMNS) * (W + GAP), Math.floor(index / COLUMNS) * (H + LABEL + ROW_GAP)];
-}
-
-/** From one still to the next: a chevron across the gap, or a dashed elbow down to the next row. */
-function connector(index: number) {
-  const [ax, ay] = origin(index);
-  const [bx, by] = origin(index + 1);
-  if (by === ay) {
-    const x = ax + W + GAP / 2;
-    const y = ay + H / 2;
-    return `M ${x - 1.5} ${y - 3} l 3 3 -3 3`;
-  }
-  const top = ay + H + LABEL + 2;
-  const mid = top + ROW_GAP / 2 - 2;
-  const bottom = by - 3;
-  return `M ${ax + W / 2} ${top} V ${mid} H ${bx + W / 2} V ${bottom} m -3 -3 l 3 3 3 -3`;
-}
 ---
 
 <div class="wrapper">
@@ -98,105 +51,40 @@ function connector(index: number) {
         <strong>Picture over the catalog, model over the floor</strong>
       </header>
 
-      <svg class="strip" viewBox={`0 0 ${STRIP.width} ${STRIP.height}`} data-handoff-strip aria-hidden="true">
-          <defs>
-            <filter id="handoff-lift" x="-20%" y="-20%" width="140%" height="150%">
-              <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.65" />
-            </filter>
-            <linearGradient id="handoff-floor" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#6d8f3c" />
-              <stop offset="1" stop-color="#3f5a26" />
-            </linearGradient>
-            <linearGradient id="handoff-tile" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0" stop-color="#dee2e6" />
-              <stop offset="1" stop-color="#adb5bd" />
-            </linearGradient>
-            <clipPath id="handoff-frame">
-              <rect width={W} height={H} rx="3" />
-            </clipPath>
-          </defs>
-
-          {stills.map((still, index) => {
-            const [ox, oy] = origin(index);
-            const [hx, hy] = still.at;
-            return (
-              <g transform={`translate(${ox} ${oy})`} data-still={still.id}>
-                <g clip-path="url(#handoff-frame)">
-                  <rect width={W} height={H} fill="#212121" />
-                  <polygon points="14,88 90,88 76,44 28,44" fill="url(#handoff-floor)" />
-
-                  {/* The sidebar: search field, the chair card, a greyed placeholder below it. */}
-                  <rect x={CANVAS_EDGE} width={W - CANVAS_EDGE} height={H} fill="#323232" />
-                  <rect x={CANVAS_EDGE - 3} width="3" height={H} fill="#000" opacity="0.35" />
-                  <rect x="109" y="6" width="46" height="8" rx="1.5" fill="#2a2a2a" stroke="#555" stroke-width="0.6" />
-                  <rect x="109" y="18" width="46" height="52" rx="2" fill="#3a3a3a" stroke="#4a4a4a" stroke-width="0.6" />
-                  <rect x={CARD_IMAGE.x} y={CARD_IMAGE.y} width={CARD_IMAGE.size} height={CARD_IMAGE.size} rx="1.5" fill="url(#handoff-tile)" />
-                  <image href={THUMB} x={CARD_IMAGE.x} y={CARD_IMAGE.y} width={CARD_IMAGE.size} height={CARD_IMAGE.size} />
-                  <rect x="113" y="62" width="22" height="3" rx="1" fill="#9a9a9a" />
-                  <rect x="109" y="75" width="46" height="30" rx="2" fill="#333" stroke="#444" stroke-width="0.6" />
-                  <rect x="113" y="78" width="38" height="20" rx="1" fill="#3a3a3a" />
-
-                  {still.chip && (
-                    <g>
-                      <rect x="4" y="4" width="38" height="10" rx="2" fill="#2b2b2b" stroke="#555" stroke-width="0.6" />
-                      <path d="M7.5 9.2l1.8 1.8 3.2-3.6" fill="none" stroke="#89ab24" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-                      <text x="15" y="11" class="chip">chair.glb</text>
-                      <rect x="4" y="15" width="38" height="1.4" rx="0.7" fill="#89ab24" />
-                    </g>
-                  )}
-
-                  {still.model === 'placed' && (
-                    <polygon points={HIGHLIGHT} fill="#89ab22" opacity="0.5" />
-                  )}
-                  {still.model !== 'none' && (
-                    <image href={MODEL} x={hx - MODEL_SIZE / 2} y={hy + 3 - MODEL_SIZE} width={MODEL_SIZE} height={MODEL_SIZE} />
-                  )}
-
-                  {index > 0 && (
-                    <path d={`M ${trail(index)}`} class="trail" />
-                  )}
-                  {index >= 2 && (
-                    <circle cx={EDGE_CROSS[0]} cy={EDGE_CROSS[1]} r="2" class="cross" />
-                  )}
-
-                  {still.picture && (
-                    <image
-                      href={THUMB}
-                      x={hx - GRAB[0]}
-                      y={hy - GRAB[1]}
-                      width={CARD_IMAGE.size}
-                      height={CARD_IMAGE.size}
-                      filter="url(#handoff-lift)"
-                    />
-                  )}
-
-                  {still.pressed && <circle cx={hx} cy={hy} r="5" class="press" />}
-                  <path
-                    d={CURSOR}
-                    transform={`translate(${hx - 2} ${hy - 1.25}) scale(0.5)`}
-                    fill="#fff"
-                    stroke="#222"
-                    stroke-width="1.6"
-                    stroke-linejoin="round"
-                  />
-                </g>
-                <rect width={W} height={H} rx="3" class="frame" />
-                <text x={W / 2} y={H + 12} class="label">{still.label}</text>
-              </g>
-            );
-          })}
-
-          {stills.slice(1).map((_, index) => (
-            <path d={connector(index)} class="chevron" />
+      <Annotations reach={1} fontSize={FONT} strokeWidth={STROKE}>
+        <div class="strip" slot="content" data-handoff-strip>
+          {frames.map((frame, index) => (
+            <figure class="frame" data-frame={frame.id}>
+              <img
+                src={`/demos/drag-drop/handoff-${index + 1}.webp`}
+                alt={frame.alt}
+                width={FRAME.width}
+                height={FRAME.height}
+                loading="lazy"
+                decoding="async"
+              />
+              <span
+                class="mark"
+                data-mark={frame.id}
+                style={`left: ${frame.mark[0] * 100}%; top: ${frame.mark[1] * 100}%;`}
+                aria-hidden="true"
+              />
+            </figure>
           ))}
-      </svg>
+        </div>
+
+        <Fragment slot="annotations">
+          <ArrowAnnotation target='[data-mark="press"]' tipX={-0.51} tipY={-0.71} angle={-129} length={0.32} text="press the card" lines={['press', 'the card']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="picture"]' tipX={0.47} tipY={-0.47} angle={123} length={0.226} text="its picture follows" lines={['its picture', 'follows']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="model"]' tipX={-0.76} tipY={0.75} angle={71} length={0.405} text="in the canvas, the model" lines={['in the canvas', 'the model']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="placed"]' tipX={0.17} tipY={0.77} angle={69} length={0.43} text="released: placed" lines={['released:', 'placed']} labelSide="left" fontSize={FONT} />
+        </Fragment>
+      </Annotations>
     </div>
   </div>
 </div>
 
 <style lang="scss">
-$accent: #89ab24;
-
 .wrapper {
   box-sizing: border-box;
   width: 100%;
@@ -240,62 +128,37 @@ header {
   }
 }
 
-// The picture owns the sheet: the strip is four fifths of the sheet's height, which with
-// the title and padding brings the panel to just inside the sheet's border on a landscape
-// sheet; a portrait sheet is narrower than that and the width cap takes over.
+// The frames own the sheet: the strip is four fifths of the sheet's height, which with the
+// title and padding brings the panel to just inside the sheet's border on a landscape
+// sheet; a portrait sheet is narrower than that and the width cap takes over. The gap is
+// the same fraction of the strip's width on both axes, so the strip keeps the frames'
+// aspect and the callouts' authored tips hold.
 .strip {
-  display: block;
-  width: calc(0.8 * var(--sheet-block) * 1.285);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25%;
+  width: calc(0.8 * var(--sheet-block) * 1308 / 960);
   max-width: 100%;
-  height: auto;
-  overflow: visible;
 }
 
 .frame {
-  fill: none;
-  stroke: var(--line-strong);
-  stroke-width: 0.8;
+  position: relative;
+  margin: 0;
+  min-width: 0;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    box-sizing: border-box;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.1875em;
+  }
 }
 
-.label {
-  font-size: 10px;
-  text-anchor: middle;
-  fill: var(--ink);
-}
-
-.chip {
-  font-family: monospace, system-ui;
-  font-size: 6px;
-  fill: #e8e4dc;
-}
-
-.trail {
-  fill: none;
-  stroke: $accent;
-  stroke-width: 1;
-  stroke-dasharray: 2.5 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.cross {
-  fill: $accent;
-  stroke: #212121;
-  stroke-width: 0.8;
-}
-
-.press {
-  fill: color-mix(in oklab, $accent 35%, transparent);
-  stroke: $accent;
-  stroke-width: 1;
-}
-
-.chevron {
-  fill: none;
-  stroke: var(--ink-muted);
-  stroke-width: 1.2;
-  stroke-dasharray: 3 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.mark {
+  position: absolute;
+  width: 0;
+  height: 0;
 }
 </style>
