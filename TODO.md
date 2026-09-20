@@ -35,6 +35,7 @@
     - [x] Badge showing number of seats (positioning)
     - [x] Drag and drop from sidebar to 3D
     - [x] WebGL texImage3D FLIP_Y warnings on GPU re-attach (#52)
+    - [x] Drag and drop walkthrough breaks after the camera moves; Restart keeps the old view (#30)
     - [~] Polish to Marker Editor / live SB quality
       - [x] Grass color / normal / displacement
       - [x] Fill vertical page space (stretch content cell)
