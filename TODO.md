@@ -32,6 +32,7 @@
     - [x] Different layouts
     - [x] Badge showing number of seats (positioning)
     - [x] Drag and drop from sidebar to 3D
+    - [x] Drag and drop walkthrough breaks after the camera moves; Restart keeps the old view (#45)
     - [~] Polish to Marker Editor / live SB quality
       - [x] Grass color / normal / displacement
       - [x] Fill vertical page space (stretch content cell)
