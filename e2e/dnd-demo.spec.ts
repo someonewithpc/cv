@@ -175,3 +175,118 @@ test('a lost WebGL context shows the sheet fallback until the context is back', 
   await expect(cover).toContainText('3D scene unavailable');
   await expect(cover).toBeHidden({ timeout: 10_000 });
 });
+
+type Drop = { x: number; y: number; width: number; height: number };
+type Box = { x: number; y: number; width: number; height: number };
+
+/**
+ * Record where the walkthrough cursor sits, canvas-relative, each time a placement lands.
+ * The attribute flip is read as it happens, before the orbit that follows a drop carries the
+ * cursor on. Removing an object selects it too, so only a flip that follows a carried object
+ * counts as a drop. No production hooks: the app already reports its phase and selection.
+ */
+async function watchDrops(app: Locator) {
+  await app.evaluate((root) => {
+    const store = window as typeof window & { __drops?: Drop[] };
+    const drops: Drop[] = [];
+    store.__drops = drops;
+    let carrying = false;
+    new MutationObserver(() => {
+      const phase = root.getAttribute('data-phase');
+      if (phase === 'dragging' || phase === 'armed') carrying = true;
+      if (!carrying || root.getAttribute('data-selected') !== 'true') return;
+      carrying = false;
+      const canvas = root.querySelector('canvas[data-scene-canvas]')?.getBoundingClientRect();
+      const cursor = root.querySelector('[data-demo-cursor]')?.getBoundingClientRect();
+      if (!canvas || !cursor) return;
+      drops.push({
+        x: cursor.left + cursor.width / 2 - canvas.left,
+        y: cursor.top + cursor.height / 2 - canvas.top,
+        width: canvas.width,
+        height: canvas.height,
+      });
+    }).observe(root, { attributes: true, attributeFilter: ['data-phase', 'data-selected'] });
+  });
+}
+
+function dropCount(app: Locator) {
+  return app.evaluate(() => (window as typeof window & { __drops?: Drop[] }).__drops?.length ?? 0);
+}
+
+/** Resolves with the next placement the walkthrough lands after `seen` of them. */
+async function dropAfter(app: Locator, seen: number): Promise<Drop> {
+  await expect.poll(() => dropCount(app), { timeout: 30_000, intervals: [40] }).toBeGreaterThan(seen);
+  return app.evaluate(
+    (_root, index) => (window as typeof window & { __drops: Drop[] }).__drops[index],
+    seen,
+  );
+}
+
+async function sceneBox(app: Locator): Promise<Box> {
+  const box = await app.locator('canvas[data-scene-canvas]').boundingBox();
+  if (!box) throw new Error('Scene canvas has no layout box');
+  return box;
+}
+
+/** Orbit with a drag, zoom in with the wheel and pan with a shift-drag, all on the canvas. */
+async function moveCamera(page: Page, box: Box) {
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let step = 1; step <= 8; step += 1) {
+    await page.mouse.move(cx + step * 20, cy - step * 6);
+    await page.waitForTimeout(30);
+  }
+  await page.mouse.up();
+  // Back over the canvas, whose wheel handler zooms instead of scrolling the page.
+  await page.mouse.move(cx, cy);
+  await page.mouse.wheel(0, -900);
+  await page.waitForTimeout(100);
+  await page.keyboard.down('Shift');
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let step = 1; step <= 6; step += 1) {
+    await page.mouse.move(cx - step * 15, cy + step * 12);
+    await page.waitForTimeout(30);
+  }
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+}
+
+test('the walkthrough still drops on the visible floor after the camera moves', async ({ page }) => {
+  const app = await openDemo(page);
+  await watchDrops(app);
+  const box = await sceneBox(app);
+  await dropAfter(app, 0);
+
+  // The next placement clears the selection, so this flip puts the takeover between drops.
+  await expect(app).toHaveAttribute('data-selected', 'false');
+  const seen = await dropCount(app);
+  await moveCamera(page, box);
+
+  // Drops used to be screen fractions, which a moved camera sends off the floor or out of frame.
+  const drop = await dropAfter(app, seen);
+  expect(drop.x).toBeGreaterThan(0);
+  expect(drop.x).toBeLessThan(drop.width);
+  expect(drop.y).toBeGreaterThan(0);
+  expect(drop.y).toBeLessThan(drop.height);
+});
+
+test('Restart brings the camera home', async ({ page }) => {
+  const app = await openDemo(page);
+  await watchDrops(app);
+  const box = await sceneBox(app);
+  const fresh = await dropAfter(app, 0);
+
+  await expect(app).toHaveAttribute('data-selected', 'false');
+  await moveCamera(page, box);
+  const seen = await dropCount(app);
+  await app.getByRole('button', { name: 'Restart' }).click();
+
+  // The first drop after Restart aims at the same floor point as the first drop after load,
+  // so with the camera back home it lands on the same pixel; a kept view would put it elsewhere.
+  const restarted = await dropAfter(app, seen);
+  expect(Math.abs(restarted.x - fresh.x)).toBeLessThan(8);
+  expect(Math.abs(restarted.y - fresh.y)).toBeLessThan(8);
+});
