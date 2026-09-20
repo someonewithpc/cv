@@ -1,42 +1,114 @@
 ---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
 import Grid from '../Grid.astro';
 
-// What the sheet points at, by a selector inside the embedded grid. Each callout is pinned
-// to its target with CSS anchor positioning, so it follows the row wherever the sheet's
-// width puts it; a browser without anchors gets the three labels in a row instead.
-const callouts = [
-  { id: 'list', target: '.panel-actions-heading', text: 'Only objects still missing a value' },
-  { id: 'save', target: '.shared-form button', text: 'One row per object, on Change or Enter' },
-  { id: 'leave', target: '.grouped-objects.completing', text: 'Last gap filled: on its way out' },
-] as const;
+// Callout type at this scale; each ArrowAnnotation takes it too so its underline tracks
+// the glyphs.
+const annotationScale = 0.6;
+const annotationFontSize = 0.1 * annotationScale;
+
+// What the sheet points at, by a selector inside the embedded grid: the row that still
+// has an empty field, its save tick, and the row that has just had its last gap filled.
+const rows = {
+  listed: '.grouped-objects:not(.completing)',
+  save: '.grouped-objects:not(.completing) .shared-form button',
+  leaving: '.grouped-objects.completing',
+};
 ---
 
 <div class="wrapper">
   <p class="point typewriter">Fill the last gap, and the object leaves the list</p>
 
-  <div class="missing-layer">
+  <Annotations scale={annotationScale} reach={1}>
     {/* inert: aria-hidden alone doesn't pull the embedded Grid's real inputs/buttons out
         of the Tab order, so a keyboard user would land on illustration-only controls a
-        screen reader stays silent about. Same fix as EditorLayer.astro's inert embed. */}
-    <div class="figure" aria-hidden="true" inert>
-      <Grid completing="round" only={['round']} />
+        screen reader stays silent about. Same fix as EditorLayer.astro's inert embed.
+        Two objects of each row: the sheet has no height for four, and a base with one
+        variant still reads as a group. */}
+    <div class="figure" slot="content" aria-hidden="true" inert>
+      <Grid completing="round" only={['gold', 'round']} objects={['gold-40', 'gold-10', 'round-10', 'round-4']} />
     </div>
 
-    {callouts.map((callout) => (
-      <p class="callout" data-callout={callout.id} data-target={callout.target}>
-        <svg class="leader" viewBox="0 0 40 24" aria-hidden="true">
-          <path d="M38 2 L6 20" />
-          <path d="M14 21 L4 21 L7 12" />
-        </svg>
-        <span>{callout.text}</span>
-      </p>
-    ))}
+    <Fragment slot="annotations">
+      {/* The authored tips are the no-script placement; the script moves each onto its
+          target. Landscape and portrait get their own lengths: the labels have to land
+          in the figure's padding, above or below the panel, and the panel is a different
+          share of the artwork in each. */}
+      <ArrowAnnotation
+        target={rows.listed}
+        anchor="0 0.1"
+        tipX={-0.88}
+        tipY={-0.5}
+        angle={100}
+        length={0.4}
+        fontSize={annotationFontSize}
+        text="Only objects still missing a value"
+        only="landscape"
+      />
+      <ArrowAnnotation
+        target={rows.save}
+        anchor="top"
+        tipX={0.78}
+        tipY={-0.56}
+        angle={70}
+        length={0.33}
+        fontSize={annotationFontSize}
+        text="One row per object, on Change or Enter"
+        only="landscape"
+      />
+      <ArrowAnnotation
+        target={rows.leaving}
+        anchor="bottom-left"
+        tipX={-0.88}
+        tipY={0.68}
+        angle={-70}
+        length={0.17}
+        fontSize={annotationFontSize}
+        text="Last gap filled: on its way out"
+        only="landscape"
+      />
 
-    <p class="footnote">
-      Thirty at a time, more on scroll. A save is <code>find_or_initialize_by</code> then <code>save!</code>;
-      an emptied field destroys the row rather than keeping <code>""</code>.
-    </p>
-  </div>
+      <ArrowAnnotation
+        target={rows.listed}
+        anchor="0 0.1"
+        tipX={-0.88}
+        tipY={-0.5}
+        angle={95}
+        length={0.45}
+        fontSize={annotationFontSize}
+        text="Only objects still missing a value"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target={rows.save}
+        anchor="top"
+        tipX={0.78}
+        tipY={-0.56}
+        angle={70}
+        length={0.5}
+        fontSize={annotationFontSize}
+        text="One row per object, on Change or Enter"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target={rows.leaving}
+        anchor="bottom-left"
+        tipX={-0.88}
+        tipY={0.68}
+        angle={-70}
+        length={0.22}
+        fontSize={annotationFontSize}
+        text="Last gap filled: on its way out"
+        only="portrait"
+      />
+    </Fragment>
+  </Annotations>
+
+  <p class="footnote">
+    A save is <code>find_or_initialize_by</code> then <code>save!</code>; an emptied field destroys the row.
+  </p>
 </div>
 
 <style lang="scss">
@@ -53,14 +125,35 @@ const callouts = [
   row-gap: 0.75em;
 
   @container technical-drawing-width (max-width: 56em) {
-    /* The title block claims the bottom-right corner on a narrow sheet, and the
-       footnote was running under it. The wrapper centres what it holds, so this
-       has to cover the corner twice over. */
-    padding-bottom: calc(5em + $sheet-margin);
+    /* The title block reaches into the content column on a short landscape sheet, so
+       the figure and the footnote keep to the column's left and stop short of it. */
+    justify-items: start;
+    /* And the note's tab takes the bottom-left corner, so the column fills from the top
+       and keeps a step off the left. */
+    align-content: start;
+    padding-left: 1em;
+    row-gap: 0.25em;
   }
 
   @container technical-drawing (orientation: portrait) {
-    padding-bottom: $sheet-margin;
+    justify-items: center;
+    align-content: center;
+    padding-left: $sheet-margin;
+    row-gap: 0.75em;
+  }
+
+  /* The overlay shrink-wraps the figure; this is the figure's width. */
+  > :global(.content) {
+    width: 100%;
+    max-width: 30rem;
+
+    @container technical-drawing-width (max-width: 56em) {
+      max-width: calc(100% - 6em);
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      max-width: 30rem;
+    }
   }
 }
 
@@ -72,16 +165,33 @@ const callouts = [
   text-align: center;
   text-wrap: balance;
   color: var(--ink);
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* One line on a short landscape sheet; the figure needs the height more. */
+    max-width: none;
+    justify-self: center;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    max-width: 24em;
+  }
 }
 
-.missing-layer {
-  position: relative;
+.figure {
+  box-sizing: border-box;
   width: 100%;
-  max-width: 44em;
-  display: grid;
-  gap: 0.625em;
-  /* Room for the callouts pinned above and below the grid. */
-  padding-block: 3em 2.5em;
+  /* Room inside the artwork box for the callout labels, above and below the panel, so
+     they never sit on the headline or the footnote. The callout lengths scale with the
+     artwork's short side, and so does this. */
+  padding-block: 3em 2em;
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-block: 2.5em 1em;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    padding-block: 4.5em 3em;
+  }
   font-family: var(--font-poppins), system-ui, sans-serif;
   /* A short landscape sheet has to hold the grid, the callouts and the title block's
      corner, so the floor goes down to where all three still fit. */
@@ -97,9 +207,8 @@ const callouts = [
     pointer-events: none;
 
     @container technical-drawing-width (max-width: 56em) {
-      /* Two cards across cost the height four across saved, and this sheet has none
-         to give: the grid pays the difference so the footnote clears the title block. */
-      font-size: 0.6875em;
+      /* Two rows and their callouts on a short landscape sheet: the grid pays. */
+      font-size: 0.65em;
     }
 
     @container technical-drawing (orientation: portrait) {
@@ -107,142 +216,42 @@ const callouts = [
     }
   }
 
-  /* The three things the callouts point at. */
-  :global(.panel-actions-heading) {
-    anchor-name: --tagging-list;
-  }
-
-  :global(.shared-form button) {
-    anchor-name: --tagging-save;
-  }
-
-  :global(.grouped-objects.completing) {
-    anchor-name: --tagging-leave;
-  }
-
   /* The live page hands the tool a sheet's worth of height to divide up; here the grid
-     is an illustration under a label, so it takes what the card gives it. */
+     is an illustration under a label, so the picture is capped and the card takes what
+     is left. */
   :global(.thumbnail-image-container) {
     min-height: 0;
+    /* A landscape sheet is half as tall as it is wide, and two rows have to fit. */
+    max-height: 4em;
+    overflow: hidden;
 
     @container technical-drawing-width (max-width: 56em) {
-      /* A short landscape sheet has no height to spare: cap the picture so the callout
-         below it stays on the paper. */
-      max-height: 4.5em;
+      max-height: 2.5em;
     }
 
     @container technical-drawing (orientation: portrait) {
-      max-height: none;
+      max-height: 5.5em;
     }
   }
 
-  /* A fixed run, not the live grid's auto-fill: one base object and its three variants
-     read as one row here, rather than wrapping a lone card onto a second line. Four
-     across only survives a wide sheet; below that a card is too narrow to hold the
-     value it is meant to show. */
+  /* A base object and one variant, side by side at every width. */
   :global(.shared-properties) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-
-    @container technical-drawing-width (max-width: 56em) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-}
-
-.callout {
-  position: absolute;
-  margin: 0;
-  display: flex;
-  align-items: flex-end;
-  gap: 0.125em;
-  font-family: monospace, system-ui;
-  font-size: 0.75em;
-  line-height: 1.2;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--accent);
-
-  .leader {
-    flex: none;
-    width: 2.5em;
-    height: 1.5em;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  span {
-    /* The label sits on the shaft's far end, off the arrow's tip. */
-    padding-bottom: 0.9em;
-    border-bottom: 1px solid currentColor;
-  }
-
-  /* Tip at the bottom-left of the box, on the anchor's edge: list and save sit above
-     the grid, leave below it, mirrored so its tip points up. */
-  &[data-callout='list'] {
-    position-anchor: --tagging-list;
-    bottom: anchor(top);
-    left: anchor(left);
-    translate: 0.25em 0.125em;
-  }
-
-  &[data-callout='save'] {
-    position-anchor: --tagging-save;
-    bottom: anchor(top);
-    right: anchor(right);
-    flex-direction: row-reverse;
-    translate: 0 -0.125em;
-
-    .leader {
-      /* The tick sits a header row down inside the panel; a longer shaft carries the
-         label up past the panel's top edge. */
-      width: 4.6em;
-      height: 2.75em;
-      transform: scaleX(-1);
-    }
-  }
-
-  &[data-callout='leave'] {
-    position-anchor: --tagging-leave;
-    top: anchor(bottom);
-    left: anchor(left);
-    align-items: flex-start;
-    translate: 0.25em 0.125em;
-
-    .leader {
-      transform: scaleY(-1);
-    }
-
-    span {
-      padding-bottom: 0;
-      padding-top: 0.9em;
-      border-bottom: 0;
-      border-top: 1px solid currentColor;
-    }
-  }
-}
-
-@supports not (anchor-name: --a) {
-  /* No anchors: the labels line up under the grid without their leaders. */
-  .missing-layer {
-    padding-block: 0;
-  }
-
-  .callout {
-    position: static;
-    translate: none;
-
-    .leader {
-      display: none;
-    }
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .footnote {
   margin: 0;
+  /* As wide as the figure, so on a landscape sheet it stops short of the title block. */
+  max-width: 30rem;
+
+  @container technical-drawing-width (max-width: 56em) {
+    max-width: calc(100% - 6em);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    max-width: 30rem;
+  }
 
   @container technical-drawing-width (max-width: 56em) {
     /* A short landscape sheet has the note's tab in one bottom corner and the title
@@ -257,6 +266,16 @@ const callouts = [
   line-height: 1.35;
   text-wrap: pretty;
   color: var(--ink-muted);
+
+  @container technical-drawing-width (max-width: 56em) {
+    font-size: 0.625em;
+    text-wrap: nowrap;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    font-size: 0.6875em;
+    text-wrap: pretty;
+  }
 
   code {
     font-family: monospace, system-ui;

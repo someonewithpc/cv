@@ -266,22 +266,28 @@ test('completed objects page: the leaving-the-list blueprint diagram is shown', 
   await expect(front.locator('.grouped-objects.completing')).toHaveCount(1);
 
   // The sheet says what it is about without its prose: a headline, and a callout on each
-  // of the three things it shows, pinned to the element it names.
+  // of the three things it shows, anchored to the element it names by the shared
+  // Annotations overlay (annotations-position.spec.ts checks where the tips land).
   await expect(front.locator('.point')).toHaveText(/leaves the list/);
-  const callouts = front.locator('.callout');
-  await expect(callouts).toHaveCount(3);
-  for (const id of ['list', 'save', 'leave']) {
-    const callout = front.locator(`.callout[data-callout="${id}"]`);
-    const target = front.locator('.missing-layer').locator(await callout.getAttribute('data-target') ?? '.none');
-    await expect(target, `${id} points at something on the sheet`).toHaveCount(1);
-    const [c, t] = await Promise.all([callout.boundingBox(), target.boundingBox()]);
-    // The arrow's tip sits on the target's edge: above it for list and save, below for leave.
-    const gap = id === 'leave' ? c!.y - (t!.y + t!.height) : t!.y - (c!.y + c!.height);
-    expect(Math.abs(gap), `${id} callout meets its target`).toBeLessThanOrEqual(4);
-    expect(c!.x + c!.width, `${id} callout is over its target`).toBeGreaterThan(t!.x);
-    expect(c!.x, `${id} callout is over its target`).toBeLessThan(t!.x + t!.width);
+  await expect(front.locator('svg[data-annotations]')).toHaveAttribute('data-annotations', 'js');
+  const callouts = await visibleCallouts(front);
+  expect(callouts).toHaveLength(3);
+  for (const callout of callouts) {
+    await expect(front.locator('.figure').locator(callout.target), `"${callout.label}" points at one thing on the sheet`).toHaveCount(1);
   }
 });
+
+/** The callouts drawn for the sheet's orientation, with the selector each one points at. */
+function visibleCallouts(front: import('@playwright/test').Locator) {
+  return front.locator('svg[data-annotations] [data-tip]').evaluateAll((groups) =>
+    groups
+      .filter((group) => group.getClientRects().length)
+      .map((group) => ({
+        label: group.querySelector('text')?.textContent?.trim() ?? '',
+        target: (group as SVGGElement).dataset.target ?? '',
+      })),
+  );
+}
 
 // Every sheet keeps clear sheet around its content: each layer's root pads by the one token in
 // layers/_sheet.scss, in em of the sheet's own type, so whatever it paints stays off the
@@ -318,7 +324,11 @@ function clearSheet(front: import('@playwright/test').Locator) {
     // the ink is. The walkthrough's cursor goes where it likes.
     const paints = (el: Element) => {
       if (el.closest('.tagging-cursor')) return false;
-      if (el instanceof SVGElement) return el.tagName === 'svg';
+      // An Annotations overlay is twice its artwork's size by design; its ink is its callouts.
+      if (el instanceof SVGElement) {
+        if (el.closest('svg[data-annotations]')) return el.tagName === 'path' || el.tagName === 'text';
+        return el.tagName === 'svg';
+      }
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.display === 'contents' || cs.visibility === 'hidden') return false;
       if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA', 'IMG'].includes(el.tagName)) return true;
@@ -374,6 +384,31 @@ for (const viewport of VIEWPORTS) {
         const gaps = await clearSheet(front);
         expect.soft(gaps.toFrame, `${name}: to the frame line`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
         expect.soft(gaps.toPieces, `${name}: to the title block`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+      }
+    });
+
+    test('the completed objects callouts keep off the headline, the footnote and the title block', async ({ page }) => {
+      const stack = taggingToolStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await swipeToPage(page, stack, 'Completed Objects');
+      const front = frontPage(stack, await frontPageIndex(stack));
+      await expect(front.locator('svg[data-annotations="js"]')).toBeAttached();
+
+      const labels = await front.evaluate((wrapper) => {
+        const section = wrapper.querySelector('section')!;
+        const others = ['.point', '.footnote', ':scope > table'].map((s) => section.querySelector(s)!.getBoundingClientRect());
+        const hits = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+        return [...section.querySelectorAll<SVGGElement>('svg[data-annotations] [data-tip]')]
+          .filter((group) => group.getClientRects().length)
+          .map((group) => {
+            const text = group.querySelector('text')!;
+            const box = text.getBoundingClientRect();
+            return { label: text.textContent!.trim(), clear: others.every((other) => !hits(box, other)) };
+          });
+      });
+      expect(labels).toHaveLength(3);
+      for (const { label, clear } of labels) {
+        expect(clear, `"${label}" keeps off the headline, the footnote and the title block`).toBe(true);
       }
     });
   });
