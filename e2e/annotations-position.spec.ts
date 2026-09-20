@@ -209,12 +209,15 @@ for (const viewport of VIEWPORTS) {
     await expect(overlays.first()).toBeAttached();
     await expect.poll(() => page.locator('svg[data-annotations="js"]').count()).toBe(await overlays.count());
     // The cube's faces are targets and spin for three seconds after load; the script
-    // re-reads them when that ends.
+    // re-reads them when that ends. An animation on a scroll timeline (the Groups sheet's
+    // pip track) runs for as long as the page does and is not waited for.
     await expect
       .poll(() => page.evaluate(() =>
         [...document.querySelectorAll('svg[data-annotations]')].every((svg) => {
           const artwork = [...svg.parentElement!.children].find((child) => child !== svg)!;
-          return artwork.getAnimations({ subtree: true }).every((animation) => animation.playState !== 'running');
+          return artwork
+            .getAnimations({ subtree: true })
+            .every((animation) => animation.playState !== 'running' || !(animation.timeline instanceof DocumentTimeline));
         })), { timeout: 10_000 })
       .toBe(true);
     await page.waitForTimeout(100);

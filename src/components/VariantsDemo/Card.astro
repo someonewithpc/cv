@@ -1,0 +1,156 @@
+---
+/**
+ * The catalog card, rendered on the server so it stands without a script: the finishes
+ * are a scroll-snap carousel whose pips and arrows are CSS scroll markers and buttons,
+ * the active pip and its trail ride a scroll timeline, and the seat and size rows are
+ * <details> that open on their own. panel.ts adds the
+ * hover preview, the picks and the parts a browser without scroll markers is missing.
+ * Markup and classes follow SpaceBuilderDemo's CatalogObjectCard.vue, so the two demos
+ * read as the same product.
+ */
+import { variantsOf, type CatalogItem, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
+
+import { formatSize } from './units';
+
+type Props = {
+  item: CatalogItem;
+  /** Variant on show; the first one when left out. */
+  variantId?: string;
+  /** This card is the catalog's current pick. */
+  active?: boolean;
+  /** Render one dropdown row open, for a sheet that draws the card mid-pick. */
+  open?: 'pax' | 'size';
+};
+
+const { item, variantId, active = false, open } = Astro.props;
+
+const variants = variantsOf(item);
+const visible = variants.find((v) => v.id === variantId) ?? variants[0];
+
+/** Styles that differ only in finish, which is what the thumbnail carousel steps through. */
+const styles = variants.filter((v) => v.pax === visible.pax && v.size === visible.size);
+const styleIndex = Math.max(0, styles.indexOf(visible));
+
+const paxOptions = [...new Set(variants.map((v) => v.pax ?? 0))].sort((a, b) => b - a);
+const sizeOptions = [...new Set(variants.map((v) => v.size ?? ''))].filter(Boolean);
+const showPax = paxOptions.length > 1;
+const showSize = sizeOptions.length > 1;
+
+// Greyed options are judged against the selected object, which on the server is the
+// visible one of the active card; a card holding no selection greys nothing.
+const paxAvailable = (pax: number) => !active || variants.some(
+  (v) => (v.pax ?? 0) === pax && v.size === visible.size,
+);
+const sizeAvailable = (size: string) => !active || variants.some(
+  (v) => v.size === size && v.pax === visible.pax,
+);
+
+const styleName = (v: CatalogVariant) => v.style;
+
+/** The product's transition blob has five parts behind the moving pip. */
+const TRAIL_PARTS = [1, 2, 3, 4, 5];
+---
+
+<div
+  class:list={['option-item', { active, group: styles.length > 1 }]}
+  data-catalog-item={item.id}
+  data-variant={visible.id}
+>
+  <div class:list={['thumbnail', { group: styles.length > 1 }]}>
+    {styles.length > 1 ? (
+      <ul
+        class="object-icons styles"
+        aria-label={`${item.name} styles`}
+        tabindex="0"
+        data-index={styleIndex}
+      >
+        {styles.map((style, index) => (
+          <li class="style" data-variant={style.id} aria-label={styleName(style)}>
+            <img src={style.thumb} alt="" width="600" height="600" loading="lazy" />
+            <span class="group-object-count">
+              <span>{index + 1}</span>
+              <span class="vr" />
+              <span>{styles.length}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <span class="pip-track" style={`--pips: ${styles.length}; --index: ${styleIndex}`} aria-hidden="true">
+        {TRAIL_PARTS.map(() => <span class="pip-trail" />)}
+        <span class="active-pip" />
+      </span>
+    ) : (
+      <div class="object-icons">
+        <img src={visible.thumb} alt="" width="600" height="600" loading="lazy" />
+        {variants.length > 1 && <span class="group-object-count">{variants.length}</span>}
+      </div>
+    )}
+  </div>
+
+  <div class="item-label">
+    <span class="object-name">{item.name}</span>
+
+    {showPax && (
+      <details class="hover-select object-pax" open={open === 'pax'}>
+        <summary class="hover-select-current" aria-label={`Seats, ${visible.pax ?? 0}`}>
+          <svg viewBox="0 0 448 512" width="10" height="10" aria-hidden="true">
+            <path fill="currentColor" d="M224 256a112 112 0 1 0 0-224 112 112 0 0 0 0 224zm-64 48C71 304 0 375 0 464c0 26 22 48 48 48h352c26 0 48-22 48-48 0-89-71-160-160-160h-128z" />
+          </svg>
+          <span class="option-text">{visible.pax ?? 0} seats</span>
+          <svg class="caret" viewBox="0 0 320 512" width="8" height="8" aria-hidden="true">
+            <path fill="currentColor" d="M31 175h258c18 0 27 21 14 34L174 338a20 20 0 0 1-28 0L17 209c-13-13-4-34 14-34z" />
+          </svg>
+        </summary>
+        <ul class="hover-select-options">
+          {paxOptions.map((pax) => (
+            <li class:list={{ unavailable: !paxAvailable(pax) }} data-value={pax}>
+              <button type="button">
+                <svg viewBox="0 0 448 512" width="10" height="10" aria-hidden="true">
+                  <path fill="currentColor" d="M224 256a112 112 0 1 0 0-224 112 112 0 0 0 0 224zm-64 48C71 304 0 375 0 464c0 26 22 48 48 48h352c26 0 48-22 48-48 0-89-71-160-160-160h-128z" />
+                </svg>
+                <span class="option-text">{pax} seats</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )}
+
+    {showSize ? (
+      <details class="hover-select object-size" open={open === 'size'}>
+        <summary class="hover-select-current" aria-label={`Size, ${formatSize(visible.size ?? '', 'metric')}`}>
+          <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
+            <path d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          <span class="option-text">{formatSize(visible.size ?? '', 'metric')}</span>
+          <svg class="caret" viewBox="0 0 320 512" width="8" height="8" aria-hidden="true">
+            <path fill="currentColor" d="M31 175h258c18 0 27 21 14 34L174 338a20 20 0 0 1-28 0L17 209c-13-13-4-34 14-34z" />
+          </svg>
+        </summary>
+        <ul class="hover-select-options">
+          {sizeOptions.map((size) => (
+            <li class:list={{ unavailable: !sizeAvailable(size) }} data-value={size}>
+              <button type="button">
+                <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
+                  <path d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                <span class="option-text">{formatSize(size, 'metric')}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </details>
+    ) : visible.size && (
+      <span class="object-size static">
+        <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
+          <path d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        <span class="option-text">{formatSize(visible.size ?? '', 'metric')}</span>
+      </span>
+    )}
+  </div>
+</div>
+
+<style is:global lang="scss">
+@use './card';
+</style>

@@ -1,0 +1,126 @@
+---
+/**
+ * The banquet card, selected and holding its small table, with the seats row open: the
+ * counts the library never made at that size are the greyed rows, drawn by the card
+ * itself. Selected, because the product greys nothing on a card that holds no selection.
+ */
+import Card from '../Card.astro';
+import { BANQUET_CARD } from '../variantsCatalog';
+
+const variants = BANQUET_CARD.variants ?? [];
+/** The reading the dropdown is opened against: the smallest table the group carries. */
+const held = [...new Set(variants.map((variant) => variant.size ?? ''))].at(-1) ?? '';
+const shown = variants.find((variant) => variant.size === held) ?? variants[0];
+const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
+  .filter((pax) => !variants.some((variant) => variant.pax === pax && variant.size === held));
+---
+
+<div class="wrapper">
+  <div class="sheet" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">CatalogObjectFooter.vue · isAvailablePax</span>
+        <strong>What happens when the combination does not exist</strong>
+      </header>
+
+      <div class="body">
+        <div class="variants-catalog drawn" inert>
+          <Card item={BANQUET_CARD} variantId={shown.id} active={true} open="pax" />
+          <p class="note">
+            Every seat count stays on the list. The {missing.join(' and ')} seat sets have no
+            object at the size held, so they go grey. Grey is not disabled.
+          </p>
+        </div>
+
+        <ol class="fallback">
+          <li>
+            <span class="head">Try the pair</span>
+            <span>Same seat count, and the size already showing</span>
+          </li>
+          <li>
+            <span class="head">Else take the seat count</span>
+            <span>The first object with that many seats, whatever its size</span>
+          </li>
+          <li>
+            <span class="head">Both readings move</span>
+            <span>The size under the list changes to match what was found</span>
+          </li>
+        </ol>
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Never disabled</dt>
+          <dd>A greyed option is still clickable. Grey says the other axis will move, not that the pick is refused</dd>
+        </div>
+        <div>
+          <dt>Sorted</dt>
+          <dd>Available values first, then the rest, each run in descending order</dd>
+        </div>
+        <div>
+          <dt>Nothing selected</dt>
+          <dd>With no object picked yet, every value counts as available</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use './sheet' as *;
+
+@include sheet-chrome(44em);
+
+.body {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 1em;
+  align-items: start;
+}
+
+// The card at the product's own size; its open list is laid out in flow here, so the
+// drawing grows with it instead of covering what is below.
+.drawn {
+  display: grid;
+  gap: 0.5em;
+  width: 10rem;
+
+  :global(.option-item) {
+    color-scheme: only dark;
+  }
+
+  :global(.option-item .object-icons) {
+    aspect-ratio: auto;
+    height: 5.5rem;
+  }
+
+  :global(.hover-select-options) {
+    position: static;
+  }
+}
+
+.fallback {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: hop;
+  display: grid;
+  gap: 0.375em;
+
+  li {
+    counter-increment: hop;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.5em;
+    align-items: baseline;
+    padding: 0.25em 0.375em;
+    border-left: 2px solid var(--accent);
+    background: var(--surface-sunken);
+    font-size: 0.6875em;
+  }
+
+  .head {
+    font-weight: 700;
+  }
+}
+</style>
