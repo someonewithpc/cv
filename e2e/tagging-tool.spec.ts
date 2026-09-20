@@ -9,7 +9,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 function taggingToolStack(page: import('@playwright/test').Page) {
-  return page.locator('article.technical-drawing-stack').nth(3);
+  // By title, not by position: the demos run gains stacks over time.
+  return page.locator('article.technical-drawing-stack').filter({
+    has: page.locator('h2.typewriter', { hasText: 'Library Tagging Tool' }),
+  });
 }
 
 async function mountedTool(page: import('@playwright/test').Page) {
