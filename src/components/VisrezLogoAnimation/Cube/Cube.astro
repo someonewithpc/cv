@@ -63,7 +63,10 @@ figure {
      edge's axis. Bordered faces drew every edge twice, and a lone flat strip
      thins to nothing as it turns edge-on; the cross keeps at least 0.707 of
      the stroke facing the viewer whichever way the cube sits. The strips run
-     half a stroke past each end so the corners close. */
+     half a stroke past each end so the corners close, and each end is cut to a
+     point: a square end pokes past the strips it meets as a nub, while the six
+     points meeting at a vertex make an octahedron that never shows past any of
+     them from any angle. */
   .edge {
     --half: calc(var(--cube-size) / 2);
 
@@ -81,6 +84,14 @@ figure {
       position: absolute;
       inset: 0;
       background: var(--ink);
+      clip-path: polygon(
+        0 50%,
+        calc(var(--cube-stroke) / 2) 0,
+        calc(100% - var(--cube-stroke) / 2) 0,
+        100% 50%,
+        calc(100% - var(--cube-stroke) / 2) 100%,
+        calc(var(--cube-stroke) / 2) 100%
+      );
     }
 
     &::after {
