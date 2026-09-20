@@ -157,7 +157,8 @@ function refreshShared(tool: Tool, group: Group) {
   group.sharedSaveName.textContent = shared ? group.setLabel : `${group.setLabel}. ${OVERRIDE_NOTE}`;
   group.shared.placeholder = placeholder;
   group.shared.value = shared ? (distinct[0] ?? '') : '';
-  group.root.dataset.complete = String(stored.length === group.cards.length);
+  // Mirrors objects.ts's isComplete: set but still disagreeing is not done.
+  group.root.dataset.complete = String(stored.length === group.cards.length && distinct.length === 1);
 }
 
 function refreshDatalist(tool: Tool) {

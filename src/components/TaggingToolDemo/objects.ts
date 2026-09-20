@@ -137,8 +137,12 @@ export function sharedState(group: BaseObject, property: string) {
   return { shared, value: shared ? (distinct[0] ?? '') : '', overrides: distinct };
 }
 
+/** A row with every object set but still disagreeing still needs the shared editor;
+    the walkthrough's own start state (all four gold cards set, three chair values
+    between them) would otherwise read as done and leave the list before it opens. */
 export function isComplete(group: BaseObject, property: string) {
-  return objectsOf(group).every((object) => (object.values[property] ?? null) !== null);
+  const stored = objectsOf(group).map((object) => object.values[property] ?? null);
+  return stored.every((value) => value !== null) && new Set(stored).size === 1;
 }
 
 export function usedValues(property: string) {
