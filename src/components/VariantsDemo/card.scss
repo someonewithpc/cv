@@ -423,6 +423,8 @@ $pip: 1.125rem;
   .hover-select-options {
     position: absolute;
     z-index: 5;
+    // A finger drags over the open list to preview its rows; the page must not scroll.
+    touch-action: none;
     top: 100%;
     right: 0;
     left: 0;
