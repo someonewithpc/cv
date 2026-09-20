@@ -108,6 +108,9 @@ const cssConfig = {
     // element called right. An ignoreTypes list would have to grow with every new
     // pseudo-element argument, and it would hide a real unknown element on the way.
     'selector-type-no-unknown': null,
+    // :target-current is the scroll marker pseudo-class (CSS Overflow 5); stylelint 17's
+    // list does not have it yet.
+    'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['target-current'] }],
   },
 };
 
