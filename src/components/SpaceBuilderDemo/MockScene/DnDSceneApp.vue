@@ -25,12 +25,14 @@ import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
 
 type Phase = 'idle' | 'placing';
 
-/** Fractions of the canvas rect — autoplay cycles the drop point between these. */
-const DROP_POINTS: Array<[number, number]> = [
-  [0.4, 0.42],
-  [0.62, 0.58],
-  [0.32, 0.66],
+/** Floor points (scene units) autoplay cycles the drop between, so a moved camera still drops on the floor. */
+const DROP_POINTS: Array<{ x: number; z: number }> = [
+  { x: -3.6, z: -1.0 },
+  { x: 2.8, z: 0.5 },
+  { x: 2.3, z: 4.2 },
 ];
+/** A drop point closer than this (fraction of the canvas per side) to the edge brings the camera home first. */
+const DROP_MARGIN = 0.08;
 
 const RESUME_DELAY_MS = 2500;
 
@@ -343,10 +345,14 @@ async function placeAndOrbit(
   token: number,
   scene: SpaceBuilderScene,
   root: HTMLElement,
-  fx: number,
-  fy: number,
+  point: { x: number; z: number },
   orbitDir: 1 | -1,
 ): Promise<boolean> {
+  // A viewer who orbited or zoomed to look keeps that view as long as the floor spot is on screen.
+  if (!scene.groundInView([point], DROP_MARGIN)) {
+    await scene.resetCamera();
+    if (token !== autoplayToken) return false;
+  }
   const chairItem = CATALOG_ITEMS.find((item) => item.id === 'chair');
   const chairBtn = root.querySelector('[data-demo-target="catalog:chair"]');
   const chairPos = elementCenter(chairBtn);
@@ -362,7 +368,7 @@ async function placeAndOrbit(
   scene.activateCatalogItem('chair');
   updateDragVisual(chairItem, chairPos.x, chairPos.y);
 
-  const dropPoint = canvasPoint(fx, fy);
+  const dropPoint = scene.groundToClient(point.x, point.z) ?? canvasPoint(0.5, 0.5);
   cursorInstant.value = true;
   await tweenPoint(token, chairPos, dropPoint, 900, (p) => {
     updateDragVisual(chairItem, p.x, p.y);
@@ -397,8 +403,7 @@ async function runAutoplay() {
 
   outer: while (token === autoplayToken) {
     for (let i = 0; i < DROP_POINTS.length; i += 1) {
-      const [fx, fy] = DROP_POINTS[i];
-      const ok = await placeAndOrbit(token, scene, root, fx, fy, i % 2 === 0 ? 1 : -1);
+      const ok = await placeAndOrbit(token, scene, root, DROP_POINTS[i], i % 2 === 0 ? 1 : -1);
       if (!ok) break outer;
     }
     // Hold the fully-built scene a beat, then clear for the next lap.
