@@ -124,12 +124,12 @@ test('cube page: every strip is cut to a point at each end, so the vertices join
   await swipeToPage(page, stack, 'Cube :)');
   const front = frontPage(stack, await frontPageIndex(stack));
 
-  // A square strip end pokes past the strips it meets at a vertex. The cut is a clip-path
-  // polygon on both strips; anything else here means it was dropped.
+  // A square strip end pokes past the strips it meets at a vertex. The cut is four corner
+  // gradients and a middle fill on both strips; a single flat fill here means it was dropped.
   const cuts = await front.locator('.scene .edge').evaluateAll((edges) => edges.flatMap((edge) => [
-    getComputedStyle(edge, '::before').clipPath,
-    getComputedStyle(edge, '::after').clipPath,
+    getComputedStyle(edge, '::before').backgroundImage,
+    getComputedStyle(edge, '::after').backgroundImage,
   ]));
   expect(cuts).toHaveLength(24);
-  for (const cut of cuts) expect(cut).toMatch(/^polygon\(/);
+  for (const cut of cuts) expect(cut.match(/linear-gradient\(/g)).toHaveLength(5);
 });

@@ -67,7 +67,9 @@ figure {
      half a stroke past each end so the corners close, and each end is cut to a
      point: a square end pokes past the strips it meets as a nub, while the six
      points meeting at a vertex make an octahedron that never shows past any of
-     them from any angle. */
+     them from any angle. The cut is painted with gradients, not a clip-path: a
+     clip on twenty-four strips inside the spinning cube held up the first
+     paint of this page after a flip by a few hundred milliseconds. */
   .edge {
     --half: calc(var(--cube-size) / 2);
 
@@ -84,15 +86,13 @@ figure {
       content: '';
       position: absolute;
       inset: 0;
-      background: var(--ink);
-      clip-path: polygon(
-        0 50%,
-        calc(var(--cube-stroke) / 2) 0,
-        calc(100% - var(--cube-stroke) / 2) 0,
-        100% 50%,
-        calc(100% - var(--cube-stroke) / 2) 100%,
-        calc(var(--cube-stroke) / 2) 100%
-      );
+      --cut: calc(var(--cube-stroke) / 2);
+      background:
+        linear-gradient(to bottom right, transparent 50%, var(--ink) 50%) left top / var(--cut) 50% no-repeat,
+        linear-gradient(to top right, transparent 50%, var(--ink) 50%) left bottom / var(--cut) 50% no-repeat,
+        linear-gradient(to bottom left, transparent 50%, var(--ink) 50%) right top / var(--cut) 50% no-repeat,
+        linear-gradient(to top left, transparent 50%, var(--ink) 50%) right bottom / var(--cut) 50% no-repeat,
+        linear-gradient(var(--ink), var(--ink)) var(--cut) 0 / calc(100% - 2 * var(--cut)) 100% no-repeat;
     }
 
     &::after {
