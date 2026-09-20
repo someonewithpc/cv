@@ -655,9 +655,11 @@ export class AutoPlayController {
       {
         delay: 700,
         cursor: { target: 'tool:add' },
-        run: () => {
+        run: async () => {
           this.scene.reset();
           this.onUi({ panel: 'closed', phase: 'idle' });
+          // A viewer who moved the camera keeps the view unless the area about to be drawn is off screen.
+          if (!this.scene.groundInView([start, end])) await this.scene.resetCamera();
         },
       },
       {
