@@ -133,8 +133,8 @@ test('the second sheet shows the handoff in four frames of the demo and few word
 
   const words = await front.evaluate((page) => {
     const text = [
-      page.querySelector('[data-handoff-layer]')?.innerText ?? '',
-      page.querySelector('.aside')?.innerText ?? '',
+      page.querySelector<HTMLElement>('[data-handoff-layer]')?.innerText ?? '',
+      page.querySelector<HTMLElement>('.aside')?.innerText ?? '',
     ].join(' ');
     return text.split(/\s+/).filter((word) => /\w/.test(word)).length;
   });
