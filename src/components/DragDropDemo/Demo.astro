@@ -7,8 +7,7 @@ import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
 
 import DragDropScene from './MockScene/DragDropScene.astro';
-import PathsLayer from './layers/PathsLayer.astro';
-import RaceLayer from './layers/RaceLayer.astro';
+import HandoffLayer from './layers/HandoffLayer.astro';
 
 function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
@@ -36,8 +35,7 @@ const sceneSize = toKiB(sceneBundle.text);
 
 const layers = {
   main: { name: null },
-  paths: { name: 'Two Ways In', pageStyle: 'blueprint' },
-  race: { name: 'Drop Before Load', pageStyle: 'blueprint' },
+  handoff: { name: 'Picture to Model', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -55,8 +53,7 @@ type Layer = keyof typeof layers;
   <fragment slot="layers">
     {(layer: Layer) => ({
       main: <DragDropScene />,
-      paths: <PathsLayer />,
-      race: <RaceLayer />,
+      handoff: <HandoffLayer />,
     }[layer])}
   </fragment>
 
@@ -68,16 +65,9 @@ type Layer = keyof typeof layers;
           it goes. Drag the ground to orbit
         </PostIt>
       ),
-      paths: (
+      handoff: (
         <PostIt background="#cde" color="black">
-          Two ways to start, the same call to finish. Neither one keeps placing. Filling a
-          floor is Build's job, in the Space Builder stack
-        </PostIt>
-      ),
-      race: (
-        <PostIt background="#fee" color="black">
-          What follows the pointer is the model itself. Let go before its file arrives and
-          nothing lands
+          Over the catalog the picture follows the pointer; over the floor, the model does
         </PostIt>
       ),
     }[layer])}

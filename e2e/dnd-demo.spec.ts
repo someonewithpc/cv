@@ -118,19 +118,25 @@ test('autoplay runs and hands over to the visitor', async ({ page }) => {
   await expect(playing).toBeHidden();
 });
 
-test('the explanation sheets turn into view', async ({ page }) => {
+test('the second sheet draws the handoff in four stills and few words', async ({ page }) => {
   const stack = dragDropStack(page);
   await stack.scrollIntoViewIfNeeded();
+  await expect(stack.locator(':scope > div')).toHaveCount(2);
 
-  await swipeToPage(page, stack, 'Two Ways In', 3);
-  let front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('.paths-layer')).toBeVisible();
-  await expect(front.getByText('placeGhostAsSingle()')).toBeVisible();
+  await swipeToPage(page, stack, 'Picture to Model', 2);
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const layer = front.locator('[data-handoff-layer]');
+  await expect(layer).toBeVisible();
+  await expect(layer.locator('[data-still]')).toHaveCount(4);
 
-  await swipeToPage(page, stack, 'Drop Before Load', 3);
-  front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('.race-layer')).toBeVisible();
-  await expect(front.getByText('Drop arrives first')).toBeVisible();
+  const words = await front.evaluate((page) => {
+    const text = [
+      page.querySelector('[data-handoff-layer]')?.innerText ?? '',
+      page.querySelector('.aside')?.innerText ?? '',
+    ].join(' ');
+    return text.split(/\s+/).filter((word) => /\w/.test(word)).length;
+  });
+  expect(words).toBeLessThan(40);
 });
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
