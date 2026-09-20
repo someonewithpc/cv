@@ -9,7 +9,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 function taggingToolStack(page: import('@playwright/test').Page) {
-  return page.locator('article.technical-drawing-stack').nth(3);
+  // By title, not by position: the demos run gains stacks over time.
+  return page.locator('article.technical-drawing-stack').filter({
+    has: page.locator('h2.typewriter', { hasText: 'Library Tagging Tool' }),
+  });
 }
 
 async function mountedTool(page: import('@playwright/test').Page) {
@@ -476,7 +479,7 @@ for (const viewport of VIEWPORTS) {
       for (const name of PAGES) {
         await swipeToPage(page, stack, name);
         const front = frontPage(stack, await frontPageIndex(stack));
-        if (await front.locator('[data-boot-module]').count()) await waitForIslandMounted(front);
+        if (await front.locator('.tagging-grid-demo').count()) await waitForIslandMounted(front);
         await expect.poll(async () => (await clearSheet(front)).boxes).toBeGreaterThan(0);
 
         const gaps = await clearSheet(front);
