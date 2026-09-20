@@ -126,6 +126,16 @@ function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
   }, way);
 }
 
+// The way back's arrow holds off until its words have typed themselves out (about 1.2s for
+// the line) and then fades in over 400ms, so a check on it waits for that fade to end.
+async function backArrowShown(page: Page): Promise<Aim> {
+  await expect.poll(async () => {
+    const back = await aim(page, 'back');
+    return back.painted && back.animations === 0;
+  }, { timeout: 4000 }).toBe(true);
+  return aim(page, 'back');
+}
+
 const armed = (page: Page, index: number) => page.evaluate((i) => {
   const hints = document.querySelectorAll('.technical-drawing-frame')[i].querySelector('.flip-hints')!;
   return getComputedStyle(hints).display !== 'none';
@@ -178,7 +188,7 @@ test('a turn hands over to the way back, which points at the folded-away crease'
   await expect(stack).toHaveAttribute('data-paper-turned', '');
 
   expect((await aim(page, 'fwd')).painted).toBe(false);
-  const back = await aim(page, 'back');
+  const back = await backArrowShown(page);
   expect(back.painted).toBe(true);
   expect(Math.abs(back.alongCrease)).toBeLessThan(6);
   expect(back.offCrease).toBeGreaterThan(1);
@@ -202,53 +212,87 @@ test('the default hint writes its sheet count in lowercase words', async ({ page
 
 // The way back is drawn across the sheet's top-left corner, where the turned page is still
 // gliding in for most of a second after the hand lets go. Until it has settled flat at the front
-// the callout stays hidden; the stack says when with data-paper-settled.
-test('the way back waits for the turned page to settle', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForTimeout(1200);
+// the callout stays hidden; the stack says when with data-paper-settled. Then it types itself
+// out, which only runs with motion allowed.
+test.describe('with motion allowed', () => {
+  test.use({ reducedMotion: 'no-preference' });
 
-  const stack = page.locator('article.technical-drawing-stack').first();
-  await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
-  const backHint = page.locator('.technical-drawing-frame').first().locator('.flip-hint--back.hint-words');
-  const opacity = () => backHint.evaluate((el) => Number(getComputedStyle(el).opacity));
+  test('the way back waits for the turned page to settle, then types itself out', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(1200);
 
-  // A corner drag, released past the commit point, so the flip glides the rest of the way on
-  // its own: the fold on the front page is the dog-ear at the sheet's bottom-right.
-  const sheet = (await stack.locator('.paper-front').boundingBox())!;
-  const fold = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
-  await page.mouse.move(fold.x + fold.width / 2, fold.y + fold.height / 2);
-  await page.mouse.down();
-  for (let i = 1; i <= 6; i += 1) {
-    await page.mouse.move(
-      fold.x + fold.width / 2 - (sheet.width * 0.6 * i) / 6,
-      fold.y + fold.height / 2 - (sheet.height * 0.6 * i) / 6,
-    );
+    const stack = page.locator('article.technical-drawing-stack').first();
+    await stack.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+    const backHint = page.locator('.technical-drawing-frame').first().locator('.flip-hint--back.hint-words');
+    const opacity = () => backHint.evaluate((el) => Number(getComputedStyle(el).opacity));
+    const letters = backHint.locator('.hint-letter');
+
+    // The words type themselves out from the settle, so the first and last letters are read in
+    // the page two frames after the mark lands (a fresh animation has no start time until the
+    // first frame after it), before a round trip could miss the typing.
+    const typing = () => backHint.evaluate((el) => new Promise<{ first: number; last: number }>((resolve) => {
+      const stack = el.closest('.technical-drawing-frame')!.querySelector('article.technical-drawing-stack')!;
+      const spans = el.querySelectorAll('.hint-letter');
+      const shown = (span: Element) => Number(getComputedStyle(span).opacity);
+      new MutationObserver((_, observer) => {
+        if (!stack.hasAttribute('data-paper-settled')) return;
+        observer.disconnect();
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          resolve({ first: shown(spans[0]), last: shown(spans[spans.length - 1]) });
+        }));
+      }).observe(stack, { attributes: true, attributeFilter: ['data-paper-settled'] });
+    }));
+
+    // A corner drag, released past the commit point, so the flip glides the rest of the way on
+    // its own: the fold on the front page is the dog-ear at the sheet's bottom-right.
+    const sheet = (await stack.locator('.paper-front').boundingBox())!;
+    const fold = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
+    await page.mouse.move(fold.x + fold.width / 2, fold.y + fold.height / 2);
+    await page.mouse.down();
+    for (let i = 1; i <= 6; i += 1) {
+      await page.mouse.move(
+        fold.x + fold.width / 2 - (sheet.width * 0.6 * i) / 6,
+        fold.y + fold.height / 2 - (sheet.height * 0.6 * i) / 6,
+      );
+      await page.waitForTimeout(30);
+    }
+    await expect(stack).not.toHaveAttribute('data-paper-settled');
+    const typed = typing();
+    await page.mouse.up();
+
+    // The turn is committed half way through the glide, with the page still on its way over
+    await expect(stack).toHaveAttribute('data-paper-turned', '');
+    expect(await stack.evaluate((el) => el.hasAttribute('data-paper-settled'))).toBe(false);
+    expect(await opacity()).toBe(0);
+
+    await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
+    await expect.poll(opacity, { timeout: 1500 }).toBe(1);
+
+    // Right after the settle the first letter is struck and the last is not; every letter ends
+    // up shown, and the arrow follows the last letter.
+    expect(await letters.count()).toBeGreaterThan(20);
+    expect(await typed).toEqual({ first: 1, last: 0 });
+    const allShown = () => letters.evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1'));
+    await expect.poll(allShown, { timeout: 3000 }).toBe(true);
+    expect((await backArrowShown(page)).painted).toBe(true);
+
+    // Taking hold of the corner again hides the callout until the page comes to rest once more
+    const again = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
+    await page.mouse.move(again.x + again.width / 2, again.y + again.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(again.x - 40, again.y - 40);
     await page.waitForTimeout(30);
-  }
-  await expect(stack).not.toHaveAttribute('data-paper-settled');
-  await page.mouse.up();
-
-  // The turn is committed half way through the glide, with the page still on its way over
-  await expect(stack).toHaveAttribute('data-paper-turned', '');
-  expect(await stack.evaluate((el) => el.hasAttribute('data-paper-settled'))).toBe(false);
-  expect(await opacity()).toBe(0);
-
-  await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
-  await expect.poll(opacity, { timeout: 1500 }).toBe(1);
-  expect((await aim(page, 'back')).painted).toBe(true);
-
-  // Taking hold of the corner again hides the callout until the page comes to rest once more
-  const again = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
-  await page.mouse.move(again.x + again.width / 2, again.y + again.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(again.x - 40, again.y - 40);
-  await page.waitForTimeout(30);
-  await page.mouse.move(again.x - 60, again.y - 60);
-  await expect(stack).not.toHaveAttribute('data-paper-settled');
-  await page.mouse.up();
-  await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
-  await expect.poll(opacity, { timeout: 1500 }).toBe(1);
+    await page.mouse.move(again.x - 60, again.y - 60);
+    await expect(stack).not.toHaveAttribute('data-paper-settled');
+    const typedAgain = typing();
+    await page.mouse.up();
+    await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
+    await expect.poll(opacity, { timeout: 1500 }).toBe(1);
+    // and the line types itself out again from its first letter
+    expect(await typedAgain).toEqual({ first: 1, last: 0 });
+    await expect.poll(allShown, { timeout: 3000 }).toBe(true);
+  });
 });
 
 /**
@@ -323,6 +367,7 @@ test('each arrow runs from its words to the middle of its crease at every width'
       await page.waitForTimeout(500);
       await swipeStack(page, stack, true);
       await expect(stack).toHaveAttribute('data-paper-turned', '');
+      await backArrowShown(page);
     }
     for (const size of sizes) {
       await page.setViewportSize(size);
