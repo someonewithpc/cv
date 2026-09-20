@@ -87,18 +87,25 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
     }
 
     // The bottom card's dropdowns would open past the end of the panel, where the
-    // drawing's title block covers them. Open them upward instead.
-    .option-item:last-child .hover-select-options {
-      top: auto;
-      bottom: 100%;
-      margin: 0 0 -1px;
-      border-top: 1px solid #3d4246;
-      border-bottom: 0;
-      border-radius: 0.25rem 0.25rem 0 0;
+    // drawing's title block covers them. Opened upward from the row they hid the
+    // picture, which is what a hovered option is meant to change, so they open over
+    // the card's label rows instead: three rows, the same height as the seat list.
+    .option-item:last-child .item-label {
+      position: relative;
     }
 
-    .option-item:last-child .hover-select[open] .hover-select-current {
-      border-radius: 0 0 0.25rem 0.25rem;
+    .option-item:last-child .hover-select {
+      position: static;
+    }
+
+    .option-item:last-child .hover-select-options {
+      top: auto;
+      right: 0.375rem;
+      bottom: 0.25rem;
+      left: 0.375rem;
+      margin: 0;
+      border-top: 1px solid #3d4246;
+      border-radius: 0.25rem;
     }
   }
 
