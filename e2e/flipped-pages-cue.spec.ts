@@ -213,22 +213,32 @@ async function strip(stack: Locator) {
       return { x: rect.left, y: rect.top };
     };
 
+    // The polygon runs near-top, far-top, three bow points, far-left, near-left, three bow
+    // points (see .paper-front::before), so the corners are the first, second, sixth and
+    // seventh vertices, and the middle bow point of each long edge is the fourth and ninth.
     return {
       vertices,
+      corners: [vertices[0], vertices[1], vertices[5], vertices[6]],
+      bows: [vertices[3], vertices[8]],
       near: [{ x: base.left + foldX, y: base.top }, { x: base.left, y: base.top + foldY }],
       far: [carry(foldX + drift, 0), carry(drift, foldY)],
       background: back.backgroundColor,
+      shading: back.backgroundImage,
       // The stack's one flap, wherever a gesture has it at the moment.
       flap: getComputedStyle(el.querySelector('.paper-fold')!).backgroundColor,
+      flapShading: getComputedStyle(el.querySelector('.paper-fold')!).backgroundImage,
     };
   });
 }
 
 const apart = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 
+/** How far a point stands off the line through two others, signed: positive is to the right of a to b. */
+const sideOf = (p: Point, [a, b]: Point[]) =>
+  ((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / apart(a, b);
+
 /** How far a point stands off the line through two others. */
-const offLine = (p: Point, [a, b]: Point[]) =>
-  Math.abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / apart(a, b);
+const offLine = (p: Point, line: Point[]) => Math.abs(sideOf(p, line));
 
 type Frame = {
   t: number,
@@ -309,7 +319,8 @@ async function watchTurn(stack: Locator, ms = 320): Promise<void> {
           t: now - since,
           forward,
           near: [{ x: base.left + foldX, y: base.top }, { x: base.left, y: base.top + foldY }],
-          vertices,
+          // The four corners of the bowed polygon (see strip()).
+          vertices: [vertices[0], vertices[1], vertices[5], vertices[6]],
           moving: creaseOf(moving, foldX, foldY),
           furthest: inPile ? creaseOf(furthest, foldX, foldY) : null,
         });
@@ -458,10 +469,10 @@ test.describe('the strip through a turn', () => {
       }
       await page.waitForTimeout(400);
       const held = await strip(stack);
-      expect(offLine(held.vertices[0], held.near)).toBeLessThan(1.5);
-      expect(offLine(held.vertices[3], held.near)).toBeLessThan(1.5);
-      expect(apart(held.vertices[1], held.far[0])).toBeLessThan(1);
-      expect(apart(held.vertices[2], held.far[1])).toBeLessThan(1);
+      expect(offLine(held.corners[0], held.near)).toBeLessThan(1.5);
+      expect(offLine(held.corners[3], held.near)).toBeLessThan(1.5);
+      expect(apart(held.corners[1], held.far[0])).toBeLessThan(1);
+      expect(apart(held.corners[2], held.far[1])).toBeLessThan(1);
       await page.mouse.up();
       await page.waitForTimeout(1000);
 
@@ -516,12 +527,24 @@ for (const width of [390, 1440]) {
         // actually stands after its rise, drift and lean. Painted in the paper's own colour,
         // as the fold flap paints the back of the same sheet.
         const back = await strip(stack);
-        expect(back.vertices).toHaveLength(4);
-        expect(offLine(back.vertices[0], back.near)).toBeLessThan(1.5);
-        expect(offLine(back.vertices[3], back.near)).toBeLessThan(1.5);
-        expect(apart(back.vertices[1], back.far[0])).toBeLessThan(1);
-        expect(apart(back.vertices[2], back.far[1])).toBeLessThan(1);
+        expect(back.vertices).toHaveLength(10);
+        expect(offLine(back.corners[0], back.near)).toBeLessThan(1.5);
+        expect(offLine(back.corners[3], back.near)).toBeLessThan(1.5);
+        expect(apart(back.corners[1], back.far[0])).toBeLessThan(1);
+        expect(apart(back.corners[2], back.far[1])).toBeLessThan(1);
         expect(back.background).toBe(back.flap);
+
+        // The strip is a bend, not a flat trapezium: its long edges bow outward between the
+        // corners, by a share of its width, and it is shaded across its width, as the flap is
+        // along its own, so a flat fill cannot come back unnoticed.
+        const width = offLine(back.corners[1], back.near);
+        const farBow = sideOf(back.bows[0], [back.corners[1], back.corners[2]]);
+        const nearBow = sideOf(back.bows[1], [back.corners[0], back.corners[3]]);
+        expect(Math.sign(farBow)).toBe(-Math.sign(nearBow));
+        expect(Math.abs(farBow)).toBeGreaterThan(width * 0.2);
+        expect(Math.abs(farBow)).toBeLessThan(width * 0.5);
+        expect(back.shading).toMatch(/^linear-gradient\(/);
+        expect(back.flapShading).toMatch(/^linear-gradient\(/);
 
         // And the cut reaches the same small way along the sheet whatever size the sheet is, so
         // it reads as a dog-ear on a phone as well as on a desktop.
