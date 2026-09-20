@@ -68,7 +68,7 @@ const arrow = {
   </PaperStack>
 
   <div class="flip-hints" aria-hidden="true">
-    <p class="flip-hint flip-hint--fwd hint-words marker-font">{hint}</p>
+    <p class="flip-hint flip-hint--fwd hint-words typewriter">{hint}</p>
     <svg class="flip-hint flip-hint--fwd hint-arrow" viewBox="0 0 48 28">
       <path class="hint-halo" d={arrow.shaft} />
       <path class="hint-halo" d={arrow.head} />
@@ -77,7 +77,7 @@ const arrow = {
       <path class="hint-head" d={arrow.head} />
     </svg>
 
-    <p class="flip-hint flip-hint--back hint-words marker-font">{hintBack}</p>
+    <p class="flip-hint flip-hint--back hint-words typewriter">{hintBack}</p>
     <svg class="flip-hint flip-hint--back hint-arrow" viewBox="0 0 48 28">
       <path class="hint-halo" d={arrow.shaft} />
       <path class="hint-halo" d={arrow.head} />
@@ -196,7 +196,7 @@ $portrait-lean-y: 2.25em;
   opacity: 0;
 }
 
-// The marker line, off the sheet in the room the fan reserves below it.
+// The hint line, off the sheet in the room the fan reserves below it.
 .hint-words {
   max-width: 24em;
   font-size: 1rem;
