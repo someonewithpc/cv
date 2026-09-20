@@ -95,7 +95,6 @@ function connector(index: number) {
   <div class="handoff-layer" data-handoff-layer>
     <div class="panel">
       <header>
-        <span class="eyebrow">ObjectDrag.vue · Scene.vue</span>
         <strong>Picture over the catalog, model over the floor</strong>
       </header>
 
@@ -241,18 +240,12 @@ header {
   }
 }
 
-.eyebrow {
-  font-family: monospace, system-ui;
-  font-size: 0.625em;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-// As wide as the panel allows, but never so tall that the panel leaves the drawing cell.
+// The picture owns the sheet: the strip is four fifths of the sheet's height, which with
+// the title and padding brings the panel to just inside the sheet's border on a landscape
+// sheet; a portrait sheet is narrower than that and the width cap takes over.
 .strip {
   display: block;
-  width: calc(0.64 * var(--sheet-block) * 1.285);
+  width: calc(0.8 * var(--sheet-block) * 1.285);
   max-width: 100%;
   height: auto;
   overflow: visible;
