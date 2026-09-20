@@ -65,7 +65,7 @@ const TRAIL_PARTS = [1, 2, 3, 4, 5];
         data-index={styleIndex}
       >
         {styles.map((style, index) => (
-          <li class="style" data-variant={style.id} aria-label={styleName(style)}>
+          <li class="style" data-variant={style.id} data-name={styleName(style)}>
             <img src={style.thumb} alt="" width="600" height="600" loading="lazy" />
             <span class="group-object-count">
               <span>{index + 1}</span>

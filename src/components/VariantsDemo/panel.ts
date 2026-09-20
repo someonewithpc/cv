@@ -347,7 +347,7 @@ function buildControls(thumbnail: HTMLElement, styles: HTMLElement, slides: HTML
     const li = document.createElement('li');
     const button = document.createElement('button');
     button.type = 'button';
-    button.setAttribute('aria-label', slide.getAttribute('aria-label') ?? `Style ${index + 1}`);
+    button.setAttribute('aria-label', slide.dataset.name ?? `Style ${index + 1}`);
     button.addEventListener('click', () => scrollToStyle(styles, index));
     li.append(button);
     pips.append(li);
