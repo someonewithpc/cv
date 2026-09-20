@@ -191,7 +191,12 @@ $portrait-lean-y: 2.25em;
 
 // The way back waits for the turned page to lie flat and still at the front; shown while it is
 // still gliding over, the arrow would be drawn across the moving sheet and whatever is on it.
-.technical-drawing-frame:has([data-paper-turned][data-paper-settled]) .flip-hint--back {
+// And once the reader has found the way back it stays down: the stack keeps its turned mark
+// after the return, so the return has to be part of the show rule, or the settle at the end of
+// the way back would bring the callout up again.
+$way-back-shown: '.technical-drawing-frame:has([data-paper-turned][data-paper-settled]:not([data-paper-returned])) .flip-hint--back';
+
+#{$way-back-shown} {
   opacity: 1;
 }
 
@@ -201,7 +206,7 @@ $portrait-lean-y: 2.25em;
 // letter, so the eye goes words, arrow, corner. Opacity only: the face is not monospace, so
 // the letters keep their width from the first frame and the arrow's measurement holds.
 @media (prefers-reduced-motion: no-preference) {
-  .technical-drawing-frame:has([data-paper-turned][data-paper-settled]) .flip-hint--back {
+  #{$way-back-shown} {
     --hint-letter-beat: 40ms;
 
     &.hint-words {
@@ -224,9 +229,6 @@ $portrait-lean-y: 2.25em;
   to { opacity: 1; }
 }
 
-.technical-drawing-frame:has([data-paper-returned]) .flip-hint--back {
-  opacity: 0;
-}
 
 // The hint line, off the sheet in the room the fan reserves below it.
 .hint-words {
