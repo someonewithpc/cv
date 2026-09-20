@@ -150,6 +150,26 @@ function layout(frame: HTMLElement) {
   for (const { way, svg, words } of measured) draw(svg, box, words, creases[way], way);
 }
 
+/**
+ * Marks the frame the first time its peel hint has come up past the quarter mark of the
+ * viewport, which is what the stylesheet waits for before typing the line out. The words are
+ * the thing that has to be watched rather than the frame: they are written below the frame's
+ * bottom edge, so a frame a quarter in view still has its hint off the bottom of the screen,
+ * and the line would have typed itself out before the reader got to it. The mark is set once
+ * and the watch ends there, so coming back to it later finds it written, not writing.
+ */
+function markWhenSeen(frame: HTMLElement) {
+  const words = frame.querySelector<HTMLElement>('.flip-hint--fwd.hint-words');
+  if (!words) return;
+
+  const seen = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    frame.setAttribute('data-hint-seen', '');
+    seen.disconnect();
+  }, { rootMargin: '0px 0px -25%' });
+  seen.observe(words);
+}
+
 /** Lays the frame's hint arrows out now and again whenever their ends move. */
 export function drawFlipHints(frame: HTMLElement) {
   if (frames.has(frame)) { frames.get(frame)!(); return; }
@@ -172,6 +192,7 @@ export function drawFlipHints(frame: HTMLElement) {
     });
   }
   document.fonts?.addEventListener('loadingdone', schedule);
+  markWhenSeen(frame);
 
   layout(frame);
 }
