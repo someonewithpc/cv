@@ -171,3 +171,105 @@ test('drag & drop page: dragging the chair onto the ground places it in a live s
   const drawnOnDrop = await sceneDraws(app);
   await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnDrop);
 });
+
+/** The walkthrough cursor relative to the canvas rect, with whether the "Chair placed" toast is up. */
+function cursorAtDrop(app: import('@playwright/test').Locator) {
+  return app.evaluate((root) => {
+    const canvas = root.querySelector('canvas[data-scene-canvas]')?.getBoundingClientRect();
+    const rect = root.querySelector('[data-demo-cursor]')?.getBoundingClientRect();
+    const toast = Array.from(root.querySelectorAll('.toast')).some((el) =>
+      el.textContent?.includes('Chair placed'),
+    );
+    if (!canvas || !rect) return { toast, x: NaN, y: NaN, width: NaN, height: NaN };
+    return {
+      toast,
+      x: rect.left + rect.width / 2 - canvas.left,
+      y: rect.top + rect.height / 2 - canvas.top,
+      width: canvas.width,
+      height: canvas.height,
+    };
+  });
+}
+
+/** Resolves with the cursor's position the first time the walkthrough reports a placed chair. */
+async function nextDrop(app: import('@playwright/test').Locator) {
+  let seen = { toast: false, x: NaN, y: NaN, width: NaN, height: NaN };
+  await expect
+    .poll(
+      async () => {
+        seen = await cursorAtDrop(app);
+        return seen.toast;
+      },
+      { timeout: 25_000, intervals: [40] },
+    )
+    .toBe(true);
+  return seen;
+}
+
+async function openDragAndDrop(page: import('@playwright/test').Page) {
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Drag & Drop');
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const app = await waitForSceneReady(front);
+  const canvas = app.locator('canvas[data-scene-canvas]');
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('Scene canvas has no layout box');
+  return { app, box };
+}
+
+/** Orbit with a drag, zoom in with the wheel and pan with a shift-drag, all on the canvas. */
+async function moveCamera(page: import('@playwright/test').Page, box: { x: number; y: number; width: number; height: number }) {
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let step = 1; step <= 8; step += 1) {
+    await page.mouse.move(cx + step * 20, cy - step * 6);
+    await page.waitForTimeout(30);
+  }
+  await page.mouse.up();
+  // Back over the canvas, whose wheel handler zooms instead of scrolling the page.
+  await page.mouse.move(cx, cy);
+  await page.mouse.wheel(0, -900);
+  await page.waitForTimeout(100);
+  await page.keyboard.down('Shift');
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let step = 1; step <= 6; step += 1) {
+    await page.mouse.move(cx - step * 15, cy + step * 12);
+    await page.waitForTimeout(30);
+  }
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+}
+
+test('drag & drop page: the walkthrough still drops on the visible floor after the camera moves', async ({ page }) => {
+  const { app, box } = await openDragAndDrop(page);
+  await nextDrop(app);
+
+  await moveCamera(page, box);
+  await expect(app.getByText('Chair placed')).toBeHidden();
+
+  // Drops used to be screen fractions, which a moved camera sends off the floor or out of frame.
+  const drop = await nextDrop(app);
+  expect(drop.x).toBeGreaterThan(0);
+  expect(drop.x).toBeLessThan(drop.width);
+  expect(drop.y).toBeGreaterThan(0);
+  expect(drop.y).toBeLessThan(drop.height);
+});
+
+test('drag & drop page: Restart brings the camera home', async ({ page }) => {
+  const { app, box } = await openDragAndDrop(page);
+  const fresh = await nextDrop(app);
+
+  await moveCamera(page, box);
+  await expect(app.getByText('Chair placed')).toBeHidden();
+  await app.getByRole('button', { name: 'Restart' }).click();
+
+  // The first drop after Restart aims at the same floor point as the first drop after load,
+  // so with the camera back home it lands on the same pixel; a kept view would put it elsewhere.
+  const restarted = await nextDrop(app);
+  expect(Math.abs(restarted.x - fresh.x)).toBeLessThan(8);
+  expect(Math.abs(restarted.y - fresh.y)).toBeLessThan(8);
+});
