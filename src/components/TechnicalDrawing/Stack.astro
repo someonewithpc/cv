@@ -180,9 +180,14 @@ $portrait-lean-y: 2.25em;
   opacity: 0;
 }
 
-.technical-drawing-frame:has([data-paper-turned]) {
-  .flip-hint--fwd { opacity: 0; }
-  .flip-hint--back { opacity: 1; }
+.technical-drawing-frame:has([data-paper-turned]) .flip-hint--fwd {
+  opacity: 0;
+}
+
+// The way back waits for the turned page to lie flat and still at the front; shown while it is
+// still gliding over, the arrow would be drawn across the moving sheet and whatever is on it.
+.technical-drawing-frame:has([data-paper-turned][data-paper-settled]) .flip-hint--back {
+  opacity: 1;
 }
 
 .technical-drawing-frame:has([data-paper-returned]) .flip-hint--back {

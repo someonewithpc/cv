@@ -168,7 +168,7 @@ export function drawFlipHints(frame: HTMLElement) {
   if (stack) {
     new MutationObserver(schedule).observe(stack, {
       attributes: true,
-      attributeFilter: ['data-paper-turned', 'data-paper-returned'],
+      attributeFilter: ['data-paper-turned', 'data-paper-returned', 'data-paper-settled'],
     });
   }
   document.fonts?.addEventListener('loadingdone', schedule);
