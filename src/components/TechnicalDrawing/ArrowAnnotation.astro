@@ -1,10 +1,47 @@
 ---
+/**
+ * A callout: an arrow from `tip` along `angle` for `length`, then an underline with the
+ * label above it. The label sits on the side of the shaft's end that the shaft does not
+ * come back over: right, unless the shaft leaves the label upward and to the right.
+ *
+ * With `target`, annotations-position.ts moves the tip onto that element (a selector
+ * scoped to the layer's artwork; several matches are boxed together) at `anchor`, a
+ * named point of its box, an "fx fy" fraction pair, or "segment x1 y1 x2 y2", a stroke
+ * of the target in its own SVG user space whose midpoint is the anchor. With a segment,
+ * `angle` may be "normal": the arrow then leaves the segment at a right angle, on the
+ * outer side of a segment traced clockwise around its shape. `gap` stops the tip short
+ * of the anchor, along the shaft, by that fraction of the target's shorter side. The
+ * script mirrors a callout (or, for a normal, swaps its label side) when the label would
+ * run off the sheet or over the target or the title block. The authored tip is the
+ * no-script placement, so keep it close to where the anchor lands.
+ */
+type Anchor =
+  | 'center'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | `${number} ${number}`
+  | `segment ${number} ${number} ${number} ${number}`;
+
 type Props = {
   tipX: number;
   tipY: number;
-  angle: number;
+  angle: number | 'normal';
   length: number;
   text: string;
+  /** Lines of a label that wraps, as SVG text markup; `text` still names it. */
+  lines?: string[];
+  target?: string;
+  anchor?: Anchor;
+  gap?: number;
+  labelSide?: 'left' | 'right';
+  /** Renders on one sheet orientation only, for layers whose artwork re-flows. */
+  only?: 'landscape' | 'portrait';
   /** Matches Annotations `fontSize` so the underline tracks glyph width. */
   fontSize?: number;
   underlinePerChar?: number;
@@ -19,6 +56,12 @@ const {
   angle,
   length,
   text,
+  lines,
+  target,
+  anchor = 'center',
+  gap,
+  labelSide,
+  only,
   fontSize = 0.1,
   underlinePerChar = fontSize * 0.43,
   lengthOffset,
@@ -26,19 +69,68 @@ const {
   textClass,
 } = Astro.props as Props;
 
-const angleRad = angle * Math.PI / 180;
-const underline = text.length * underlinePerChar;
-const labelOffsetY = fontSize * 0.5;
+const ANCHORS: Record<string, [number, number]> = {
+  center: [0.5, 0.5],
+  top: [0.5, 0],
+  bottom: [0.5, 1],
+  left: [0, 0.5],
+  right: [1, 0.5],
+  'top-left': [0, 0],
+  'top-right': [1, 0],
+  'bottom-left': [0, 1],
+  'bottom-right': [1, 1],
+};
+const segment = anchor.startsWith('segment') ? anchor.split(/\s+/).slice(1).map(Number) : undefined;
+const anchorAttr = segment ? `segment ${segment.join(' ')}` : (ANCHORS[anchor] ?? anchor.split(/\s+/).map(Number)).join(' ');
+
+if (angle === 'normal' && !segment) {
+  throw new Error(`ArrowAnnotation "${text}": a normal angle needs a segment anchor`);
+}
+// The segment's outer normal, in a y-down space; the CSS fallback keeps the same angle
+// since the target's SVG preserves its aspect.
+const fallbackAngle = segment
+  ? Math.atan2(segment[2] - segment[0], segment[3] - segment[1]) * 180 / Math.PI
+  : 0;
+const drawnAngle = angle === 'normal' ? fallbackAngle : angle;
+
+const LINE_HEIGHT = 1.15;
+const angleRad = drawnAngle * Math.PI / 180;
+const endX = tipX + length * Math.cos(angleRad);
+const endY = tipY - length * Math.sin(angleRad);
+const side = labelSide ?? (Math.cos(angleRad) < 0 && Math.sin(angleRad) < 0 ? 'left' : 'right');
+const sign = side === 'left' ? -1 : 1;
+const plain = (line: string) => line.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, '.');
+const longest = lines ? Math.max(...lines.map((line) => plain(line).length)) : text.length;
+const underline = longest * underlinePerChar;
+const offsetX = lengthOffset?.x ?? 0;
+const offsetY = -fontSize * 0.5 - (lines ? (lines.length - 1) * LINE_HEIGHT * fontSize : 0) + (lengthOffset?.y ?? 0);
+const onlyClass = only && `on-${only}`;
+const textX = endX + sign * offsetX;
 ---
-<path
-  d={`M ${tipX} ${tipY} l ${length * Math.cos(angleRad)} ${-length * Math.sin(angleRad)} l ${underline} 0`}
-  pathLength="1"
-  class={arrowClass}
-/>
-<text
-  x={tipX + length * Math.cos(angleRad) + (lengthOffset?.x ?? 0)}
-  y={tipY - length * Math.sin(angleRad) - labelOffsetY + (lengthOffset?.y ?? 0)}
-  class={textClass}
+<g
+  data-tip={`${tipX} ${tipY}`}
+  data-target={target}
+  data-anchor={target && anchorAttr}
+  data-angle={angle}
+  data-length={length}
+  data-gap={gap}
+  data-side={labelSide}
+  data-label-offset={`${offsetX} ${offsetY}`}
+  class={onlyClass}
 >
-  {text}
-</text>
+  <path
+    d={`M ${tipX} ${tipY} l ${endX - tipX} ${endY - tipY} l ${sign * underline} 0`}
+    pathLength="1"
+    class={arrowClass}
+  />
+  <text
+    x={textX}
+    y={endY + offsetY}
+    text-anchor={side === 'left' ? 'end' : undefined}
+    class={textClass}
+  >
+    <slot>
+      {lines ? lines.map((line, i) => (<tspan x={textX} dy={i ? `${LINE_HEIGHT}em` : undefined} set:html={line} />)) : text}
+    </slot>
+  </text>
+</g>

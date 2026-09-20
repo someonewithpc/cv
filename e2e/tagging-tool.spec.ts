@@ -368,7 +368,7 @@ for (const viewport of VIEWPORTS) {
       for (const name of PAGES) {
         await swipeToPage(page, stack, name);
         const front = frontPage(stack, await frontPageIndex(stack));
-        if (await front.locator('[data-boot-module]').count()) await waitForIslandMounted(front);
+        if (await front.locator('.tagging-grid-demo').count()) await waitForIslandMounted(front);
         await expect.poll(async () => (await clearSheet(front)).boxes).toBeGreaterThan(0);
 
         const gaps = await clearSheet(front);

@@ -1,8 +1,11 @@
+import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
+
 import {
   DEFAULT_LAYOUT_OPTIONS,
   type LayoutStyle,
 } from './scene/layoutEngine';
 import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
+import { CATALOG_ITEMS, variantOf } from './catalogItems';
 
 export type DemoCursorStep = {
   target?: string | null;
@@ -31,6 +34,8 @@ export type DemoToastHandler = (toast: DemoToastPayload) => void;
 export type DemoUiHandler = (patch: {
   panel?: 'closed' | 'catalog' | 'options';
   phase?: 'idle' | 'build' | 'placing';
+  /** Which catalog card the walkthrough is holding, so the card reads as picked. */
+  catalogId?: string;
 }) => void;
 
 export const autoplayStartedToast = (): DemoToastPayload => ({
@@ -177,7 +182,7 @@ async function revealDemoTarget(
 }
 
 type Preset = {
-  kind: 'build' | 'dnd';
+  kind: 'build' | 'dnd' | 'banquet';
   style: LayoutStyle;
   seats: number;
   distanceX: number;
@@ -201,6 +206,8 @@ const PRESETS: Preset[] = [
     aisle: 0.95,
     blocks: { width: 3, height: 2 },
   },
+  // The chair loop again, cut to its bones, on the object a caterer actually lays out.
+  { kind: 'banquet', style: 'grid', seats: 0, distanceX: 0.2, distanceZ: 0.35 },
   { kind: 'build', style: 'offset', seats: 0, distanceX: 0.2, distanceZ: 0.35, offset: 0.35 },
   { kind: 'build', style: 'hollow', seats: 0, distanceX: 0.25, distanceZ: 0.4 },
   { kind: 'dnd', style: 'grid', seats: 0, distanceX: 0.2, distanceZ: 0.35 },
@@ -410,7 +417,7 @@ export class AutoPlayController {
             click: true,
             dragging: aimed.dragging,
           });
-          el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+          await demoPress(el, client, { click: false, dblclick: true });
         }
       } else if (shouldClick && aimed?.target) {
         const el = queryDemoTarget(aimed.target);
@@ -424,7 +431,7 @@ export class AutoPlayController {
             click: true,
             dragging: aimed.dragging,
           });
-          el.click();
+          await demoPress(el, client);
         }
       } else if (aimed?.click) {
         if (aimed.client) this.lastCursorClient = aimed.client;
@@ -620,6 +627,7 @@ export class AutoPlayController {
   private steps(): Step[] {
     const preset = this.currentPreset();
     if (preset.kind === 'dnd') return this.dndSteps();
+    if (preset.kind === 'banquet') return this.banquetSteps();
     return this.buildSteps(preset);
   }
 
@@ -818,6 +826,82 @@ export class AutoPlayController {
       {
         delay: 1100,
         cursor: () => this.offCanvasCursor(),
+      },
+    ];
+  }
+
+  /**
+   * The Add loop over a banquet set: open the catalog, pick the set, drag it onto the
+   * floor. No Build pass, because a banquet set is placed one at a time.
+   */
+  private banquetSteps(): Step[] {
+    const item = CATALOG_ITEMS.find((entry) => entry.id === 'table-round')!;
+    const variant = variantOf(item, undefined);
+
+    return [
+      {
+        delay: 700,
+        cursor: { target: 'tool:add' },
+        run: () => {
+          this.scene.reset();
+          this.onUi({ panel: 'closed', phase: 'idle' });
+        },
+      },
+      {
+        delay: 500,
+        cursor: { target: 'tool:add', click: true },
+        domClick: true,
+      },
+      {
+        delay: 650,
+        cursor: { target: 'catalog:table-round' },
+        run: () => {
+          // Start the GLB downloading a step before the drag, so the drop has a model.
+          this.onUi({ panel: 'catalog', catalogId: item.id });
+          this.scene.activateCatalogItem(item.id, variant);
+        },
+      },
+      {
+        delay: 250,
+        cursor: { target: 'catalog:table-round', dragging: true },
+        run: () => {
+          this.onUi({ panel: 'catalog', phase: 'placing' });
+          this.scene.setGhostVisible(true);
+        },
+      },
+      {
+        delay: 250,
+        cursor: () => this.groundCursor(-0.4, 0.6, { dragging: true }),
+        run: () => {
+          const client = this.scene.groundToClient(-0.4, 0.6);
+          if (client) this.scene.setGhostAt(client.x, client.y);
+        },
+      },
+      {
+        delay: 750,
+        cursor: () => this.groundCursor(0.9, -0.4, { dragging: true }),
+        run: () => {
+          const client = this.scene.groundToClient(0.9, -0.4);
+          if (client) this.scene.setGhostAt(client.x, client.y);
+        },
+      },
+      {
+        delay: 500,
+        cursor: () => this.groundCursor(0.9, -0.4, { click: true }),
+        run: () => {
+          const placed = this.scene.placeGhostAsSingle();
+          this.onToast({ action: placed ? 'Object placed' : 'Still loading · drag again' });
+          this.onUi({ panel: 'closed', phase: 'idle' });
+        },
+      },
+      {
+        delay: 1400,
+        cursor: () => this.offCanvasCursor(),
+        run: () => {
+          // Hand the next preset back the chair it expects as the live ghost.
+          this.onUi({ catalogId: 'chair' });
+          this.scene.activateCatalogItem('chair', variantOf(CATALOG_ITEMS[0], undefined));
+        },
       },
     ];
   }

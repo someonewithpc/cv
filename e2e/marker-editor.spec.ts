@@ -64,6 +64,57 @@ test('editor page: live marker-editor diagram mounts', async ({ page }) => {
   await expect(front.locator('.marker-editor--embed')).toBeVisible({ timeout: 15_000 });
 });
 
+/**
+ * One picker event on the shape fill, read back inside the same task. Nothing else can run
+ * in between, however busy the page is, so a version that routes the drag through React
+ * state fails this no matter the timing.
+ */
+function paintShapeFill(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    const editor = document.querySelector('.marker-editor--embed');
+    const input = editor?.querySelector<HTMLInputElement>('#marker-fill-color-marker-shape');
+    const style = editor?.querySelector('#marker-content-shapeFill style') as SVGStyleElement | null;
+    if (!input || !style) throw new Error('Marker editor shape fill controls not found');
+
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    setValue.call(input, '#123456');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+
+    return {
+      fill: (style.sheet?.cssRules[0] as CSSStyleRule | undefined)?.style.getPropertyValue('fill'),
+      value: input.value,
+    };
+  });
+}
+
+test('editor page: a picker event paints the preview before React renders', async ({ page }) => {
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Marker Editor');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  await waitForIslandMounted(front);
+  await expect(front.locator('.marker-editor--embed')).toBeVisible({ timeout: 15_000 });
+
+  expect(await paintShapeFill(page)).toEqual({ fill: 'rgb(18, 52, 86)', value: '#123456' });
+
+  // And the colour still reaches React, which is what a saved marker serializes from.
+  // The map's walkthrough keeps reaching into this editor through its demo targets, colour
+  // inputs included, so every attempt writes ours again before reading the rule back.
+  await expect
+    .poll(
+      async () => {
+        await paintShapeFill(page);
+        return page.evaluate(() => (
+          document.querySelector('.marker-editor--embed #marker-content-shapeFill style')?.textContent ?? ''
+        ));
+      },
+      { timeout: 10_000 },
+    )
+    .toContain('#123456');
+});
+
 test('background page: static preview-background illustration is reachable', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
@@ -102,3 +153,4 @@ test('main page: the demo cursor leaves when its page is no longer in front', as
   await page.waitForTimeout(3_000);
   expect(await cursor.count()).toBe(0);
 });
+

@@ -1,6 +1,15 @@
 ---
 import { roundedCorners } from '@/server/svg-utils';
 
+/**
+ * Callouts are authored in artwork units: a tip at (x, y) with |x|, |y| ≤ 1 sits
+ * on the artwork, ±1 being its edges. With the script (annotations-position.ts,
+ * run from Stack.astro), x is a fraction of the half width and y of the half
+ * height, whatever the artwork's aspect. The stylesheet alone can only fit one
+ * square, so without it both axes share the short side's unit and the long
+ * axis's ±1 falls short of the edges. Label offsets and type sizes use that
+ * shared unit in both modes.
+ */
 type Props = {
   /** Multiplies the default stroke and font sizes when those props are omitted. */
   scale?: number;
@@ -28,18 +37,26 @@ const vertices = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
 const radius = 0.5;
 
 const arrowPathD = roundedCorners(vertices, radius);
+
+// One marker per layer: the same id on every annotated sheet would be a duplicate,
+// and every arrow would draw the first sheet's marker.
+const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
 ---
 
+{/* The overlay below is the no-script placement. Stack.astro's script runs
+    annotations-position.ts over it, which is what marks it data-annotations="js";
+    a script here would never reach the page (see bootIsland.ts). */}
 <div class="content" style={`--annotation-reach: ${reach};`}>
   <slot name="content" />
   <svg
     viewBox="-2 -2 4 4"
     preserveAspectRatio={preserveAspectRatio}
-    style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px;`}
+    data-annotations="css"
+    style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px; --annotation-marker: url(#${arrowId});`}
   >
     <defs>
       <marker
-        id="annotation-rounded-arrow"
+        id={arrowId}
         refX="0"
         refY="0"
         orient="auto-start-reverse"
@@ -86,8 +103,13 @@ svg {
   height: 200%;
   width: 200%;
 
+  /* Never clip a callout: the script sizes this box to the artwork's inscribed
+     square and anchors the long axis's callouts past its edge, and the sheet
+     already clips at its own boundary. */
+  overflow: visible;
+
   :global(path) {
-    marker-start: url('#annotation-rounded-arrow');
+    marker-start: var(--annotation-marker);
     stroke: var(--ink);
     stroke-width: var(--annotation-stroke-width, 0.02);
     fill: none;
@@ -97,6 +119,22 @@ svg {
     font-size: var(--annotation-font-size, 0.1px);
     font-family: sans-serif;
     fill: var(--ink);
+  }
+
+  /* A layer whose artwork re-flows between orientations authors a callout set for
+     each (ArrowAnnotation `only`); the other set is not drawn. */
+  :global(.on-portrait) {
+    display: none;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    :global(.on-landscape) {
+      display: none;
+    }
+
+    :global(.on-portrait) {
+      display: revert;
+    }
   }
 }
 </style>

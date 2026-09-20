@@ -1,5 +1,12 @@
 import { ActionCreators } from 'redux-undo';
 
+import { hexToHsv } from '@/components/MarkerEditorDemo/markers/MarkerEditor/markerParts/shared/inlineColorPicker';
+import {
+  demoPress,
+  demoPressDown,
+  demoRelease,
+} from '@/components/TechnicalDrawing/demo-cursor-press';
+
 import {
   markersSelector,
   removeMarker,
@@ -24,14 +31,22 @@ export type DemoCursorStep = {
 
 type Step = {
   delay: number | (() => number);
+  /**
+   * Where the cursor goes. With `click`, the step presses the target element before `run`.
+   * A step whose `run` drags leaves `click` unset and presses inside the drag instead, and a
+   * keyboard shortcut step leaves it unset: nothing is pressed under the cursor for those.
+   */
   cursor?: DemoCursorStep | (() => DemoCursorStep | undefined);
-  /** Fire a real click on the cursor target element. */
+  /** Let the press end in a real click on the cursor target element. */
   domClick?: boolean | (() => boolean);
   run?: (dispatch: AppDispatch, getState: () => RootState) => void | Promise<void>;
 };
 
 /** Editor-canvas width (px) the presets' control-point drags were tuned on. */
 const DRAG_REFERENCE_CANVAS_PX = 450;
+
+/** Where the cursor rests on the map between targets, as a fraction of the overlay. */
+export const REST_CURSOR_FRACTION = { x: 0.48, y: 0.44 };
 
 type CpDrag = {
   cp: string;
@@ -135,6 +150,16 @@ function setNativeInputValue(input: HTMLInputElement | HTMLTextAreaElement, valu
   proto?.set?.call(input, value);
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function elementCentre(el: Element) {
+  const rect = el.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+/** A press at the element centre, where the drawn cursor rests, ending in a click or not. */
+function press(el: Element, click: boolean) {
+  return demoPress(el, elementCentre(el), { click });
 }
 
 function mouseEvent(type: string, clientX: number, clientY: number, buttons: number) {
@@ -313,34 +338,27 @@ export class AutoPlayController {
     dispatch(ActionCreators.clearHistory());
   }
 
-  private animateCpDrag(
-    target: string,
-    dx: number,
-    dy: number,
-    disableSnap = false,
+  /**
+   * A drag from `from` to `to` (viewport points): the down on `handle` with its hold, eased
+   * moves on `surface`, then the release, the drawn cursor following throughout. Pausing
+   * the demo mid-drag releases where the cursor is.
+   */
+  private animateDrag(
+    handle: Element,
+    surface: Element,
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+    { durationMs = 620, disableSnap = false }: { durationMs?: number; disableSnap?: boolean } = {},
   ): Promise<void> {
     return new Promise((resolve) => {
-      const handle = queryDemoTarget(target);
-      const svg = handle?.closest('svg');
-      if (!(handle instanceof Element) || !svg || this.paused) {
+      if (this.paused) {
         resolve();
         return;
       }
 
-      const rect = handle.getBoundingClientRect();
-      const fromX = rect.left + rect.width / 2;
-      const fromY = rect.top + rect.height / 2;
-      // The canvas maps its client rect onto a fixed viewBox, so a preset's px
-      // delta moves the point further in shape units the smaller the editor is.
-      // Scale deltas to the canvas the presets were tuned on, or a phone-sized
-      // editor blows the shape past the viewBox.
-      const dragScale = svg.getBoundingClientRect().width / DRAG_REFERENCE_CANVAS_PX;
-      const toX = fromX + dx * dragScale;
-      const toY = fromY + dy * dragScale;
-      const durationMs = 620;
       const root = document.documentElement;
-      let curX = fromX;
-      let curY = fromY;
+      let curX = from.x;
+      let curY = from.y;
       let settled = false;
       let shiftHeld = false;
 
@@ -364,7 +382,7 @@ export class AutoPlayController {
           cancelAnimationFrame(this.dragRaf);
           this.dragRaf = null;
         }
-        svg.dispatchEvent(mouseEvent('mouseup', x, y, 0));
+        demoRelease(surface, { x, y });
         if (shiftHeld) {
           shiftEvent('keyup', false);
           shiftHeld = false;
@@ -378,11 +396,12 @@ export class AutoPlayController {
       };
       this.dragCleanup = cleanup;
 
-      handle.dispatchEvent(mouseEvent('mousedown', fromX, fromY, 1));
-      this.onCursor({ client: { x: fromX, y: fromY }, dragging: true, click: true });
+      // The hold before the first move is also when React commits draggedControlPoint.
+      const held = demoPressDown(handle, from);
+      this.onCursor({ client: from, dragging: true, click: true });
 
-      // Wait for React to commit draggedControlPoint, then optional Shift (snap off).
-      window.setTimeout(() => {
+      // Then optional Shift (snap off), and the moves.
+      void held.then(() => {
         if (settled || this.paused) {
           cleanup();
           return;
@@ -410,11 +429,11 @@ export class AutoPlayController {
 
             const t = Math.min(1, (now - startedAt) / durationMs);
             const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
-            curX = fromX + (toX - fromX) * eased;
-            curY = fromY + (toY - fromY) * eased;
+            curX = from.x + (to.x - from.x) * eased;
+            curY = from.y + (to.y - from.y) * eased;
 
             this.onCursor({ client: { x: curX, y: curY }, dragging: true });
-            svg.dispatchEvent(mouseEvent('mousemove', curX, curY, 1));
+            surface.dispatchEvent(mouseEvent('mousemove', curX, curY, 1));
 
             if (t < 1) {
               this.dragRaf = requestAnimationFrame(tick);
@@ -422,13 +441,85 @@ export class AutoPlayController {
             }
 
             this.dragRaf = null;
-            finish(toX, toY);
+            finish(to.x, to.y);
           };
 
           this.dragRaf = requestAnimationFrame(tick);
         }, disableSnap ? 40 : 0);
-      }, 50);
+      });
     });
+  }
+
+  private animateCpDrag(
+    target: string,
+    dx: number,
+    dy: number,
+    disableSnap = false,
+  ): Promise<void> {
+    const handle = queryDemoTarget(target);
+    const svg = handle?.closest('svg');
+    if (!handle || !svg) return Promise.resolve();
+
+    const from = elementCentre(handle);
+    // The canvas maps its client rect onto a fixed viewBox, so a preset's px
+    // delta moves the point further in shape units the smaller the editor is.
+    // Scale deltas to the canvas the presets were tuned on, or a phone-sized
+    // editor blows the shape past the viewBox.
+    const dragScale = svg.getBoundingClientRect().width / DRAG_REFERENCE_CANVAS_PX;
+    const to = { x: from.x + dx * dragScale, y: from.y + dy * dragScale };
+    return this.animateDrag(handle, svg, from, to, { disableSnap });
+  }
+
+  /** A pause in a run; the caller checks `this.paused` afterwards. */
+  private wait(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, ms);
+    });
+  }
+
+  /**
+   * Pick `hex` in the on-page picker the press on the swatch just opened: slide the hue
+   * bar when the hue changes, drag the saturation and value area to the colour, then press
+   * the swatch to close. The preview follows through the picker's own input events, as it
+   * does under a finger.
+   */
+  private async pickColor(target: string, hex: string): Promise<void> {
+    const input = queryDemoTarget(target);
+    const host = input?.nextElementSibling;
+    if (!(input instanceof HTMLInputElement) || !(host instanceof HTMLElement) || host.hidden) return;
+    const hue = host.querySelector('.marker-color-picker__hue');
+    const area = host.querySelector('.marker-color-picker__area');
+    if (!hue || !area) return;
+
+    const from = hexToHsv(input.value);
+    const to = hexToHsv(hex);
+
+    await this.wait(260);
+    if (this.paused) return;
+
+    if (Math.abs(to.h - from.h) > 1) {
+      const bar = hue.getBoundingClientRect();
+      const at = (h: number) => ({ x: bar.left + bar.width * (h / 360), y: bar.top + bar.height / 2 });
+      await this.animateDrag(hue, hue, at(from.h), at(to.h), { durationMs: 380 });
+      if (this.paused) return;
+      await this.wait(120);
+      if (this.paused) return;
+    }
+
+    const box = area.getBoundingClientRect();
+    const at = (c: { s: number; v: number }) => ({
+      x: box.left + box.width * c.s,
+      y: box.top + box.height * (1 - c.v),
+    });
+    await this.animateDrag(area, area, at(from), at(to));
+    if (this.paused) return;
+
+    // Back to the swatch (the cursor takes 0.55 s to get there), then press it closed.
+    this.onCursor({ target });
+    await this.wait(560);
+    if (this.paused || host.hidden) return;
+    this.onCursor({ target, click: true });
+    await press(input, false);
   }
 
   private dragSteps(drags: CpDrag[]): Step[] {
@@ -445,7 +536,7 @@ export class AutoPlayController {
         delay: () => (this.sessionIsCreate ? 160 : 40),
         cursor: () => (
           this.sessionIsCreate
-            ? { target: `editor:cp:${drag.cp}`, click: true }
+            ? { target: `editor:cp:${drag.cp}` }
             : undefined
         ),
         run: async () => {
@@ -474,15 +565,14 @@ export class AutoPlayController {
       const max = parseFloat(input.max || '1');
       const from = parseFloat(input.value);
       const durationMs = 420;
-      const startedAt = performance.now();
+      let startedAt = 0;
       let settled = false;
       let curValue = from;
 
-      const thumbX = (value: number) => {
+      const thumb = (value: number) => {
         const t = max === min ? 0 : (value - min) / (max - min);
-        return rect.left + rect.width * t;
+        return { x: rect.left + rect.width * t, y: rect.top + rect.height / 2 };
       };
-      const thumbY = rect.top + rect.height / 2;
 
       const finish = (value: number) => {
         if (settled) return;
@@ -495,7 +585,8 @@ export class AutoPlayController {
           this.dragRaf = null;
         }
         setNativeInputValue(input, String(value));
-        this.onCursor({ client: { x: thumbX(value), y: thumbY }, dragging: false });
+        demoRelease(input, thumb(value));
+        this.onCursor({ client: thumb(value), dragging: false });
         resolve();
       };
 
@@ -504,7 +595,8 @@ export class AutoPlayController {
       };
       this.dragCleanup = cleanup;
 
-      this.onCursor({ client: { x: thumbX(from), y: thumbY }, click: true });
+      const held = demoPressDown(input, thumb(from));
+      this.onCursor({ client: thumb(from), click: true });
 
       const tick = (now: number) => {
         if (settled || this.paused) {
@@ -517,7 +609,7 @@ export class AutoPlayController {
         const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
         curValue = from + (toValue - from) * eased;
         setNativeInputValue(input, String(curValue));
-        this.onCursor({ client: { x: thumbX(curValue), y: thumbY }, dragging: true });
+        this.onCursor({ client: thumb(curValue), dragging: true });
 
         if (t < 1) {
           this.dragRaf = requestAnimationFrame(tick);
@@ -528,7 +620,14 @@ export class AutoPlayController {
         finish(toValue);
       };
 
-      this.dragRaf = requestAnimationFrame(tick);
+      void held.then(() => {
+        if (settled || this.paused) {
+          cleanup();
+          return;
+        }
+        startedAt = performance.now();
+        this.dragRaf = requestAnimationFrame(tick);
+      });
     });
   }
 
@@ -569,7 +668,7 @@ export class AutoPlayController {
       },
       {
         delay: () => (hasWidth() ? 160 : 40),
-        cursor: () => (hasWidth() ? { target: 'editor:border-width', click: true } : undefined),
+        cursor: () => (hasWidth() ? { target: 'editor:border-width' } : undefined),
         run: async () => {
           const width = this.currentPreset().borderWidth;
           if (width == null) return;
@@ -582,7 +681,7 @@ export class AutoPlayController {
       },
       {
         delay: () => (hasDash() ? 160 : 40),
-        cursor: () => (hasDash() ? { target: 'editor:dash-length', click: true } : undefined),
+        cursor: () => (hasDash() ? { target: 'editor:dash-length' } : undefined),
         run: async () => {
           const dash = this.currentPreset().dashLength;
           if (dash == null) return;
@@ -595,7 +694,7 @@ export class AutoPlayController {
       },
       {
         delay: () => (hasGap() ? 160 : 40),
-        cursor: () => (hasGap() ? { target: 'editor:gap-length', click: true } : undefined),
+        cursor: () => (hasGap() ? { target: 'editor:gap-length' } : undefined),
         run: async () => {
           const gap = this.currentPreset().gapLength;
           if (gap == null) return;
@@ -712,12 +811,7 @@ export class AutoPlayController {
       {
         delay: 280,
         cursor: { target: 'editor:fill-color:marker-shape', click: true },
-        run: () => {
-          const input = queryDemoTarget('editor:fill-color:marker-shape');
-          if (input instanceof HTMLInputElement) {
-            setNativeInputValue(input, preset().fill);
-          }
-        },
+        run: () => this.pickColor('editor:fill-color:marker-shape', preset().fill),
       },
       ...this.shapeBorderSteps(),
       {
@@ -736,12 +830,7 @@ export class AutoPlayController {
       {
         delay: 280,
         cursor: { target: 'editor:border-color:marker-shape', click: true },
-        run: () => {
-          const input = queryDemoTarget('editor:border-color:marker-shape');
-          if (input instanceof HTMLInputElement) {
-            setNativeInputValue(input, preset().border);
-          }
-        },
+        run: () => this.pickColor('editor:border-color:marker-shape', preset().border),
       },
       {
         delay: () => (preset().textColor != null ? 480 : 40),
@@ -778,10 +867,7 @@ export class AutoPlayController {
         run: () => {
           const color = preset().textColor;
           if (color == null) return;
-          const input = queryDemoTarget('editor:fill-color:marker-decoration');
-          if (input instanceof HTMLInputElement) {
-            setNativeInputValue(input, color);
-          }
+          return this.pickColor('editor:fill-color:marker-decoration', color);
         },
       },
       {
@@ -844,7 +930,7 @@ export class AutoPlayController {
       },
       {
         delay: 700,
-        cursor: { target: null, click: true },
+        cursor: { target: null },
         run: (dispatch) => {
           this.onToast(undoRedoShortcut('Undo'));
           dispatch(ActionCreators.undo());
@@ -852,7 +938,7 @@ export class AutoPlayController {
       },
       {
         delay: 900,
-        cursor: { target: null, click: true },
+        cursor: { target: null },
         run: (dispatch) => {
           this.onToast(undoRedoShortcut('Redo'));
           dispatch(ActionCreators.redo());
@@ -909,12 +995,10 @@ export class AutoPlayController {
     if (cursor) {
       this.onCursor(cursor);
     }
-    const shouldClick = typeof step.domClick === 'function' ? step.domClick() : step.domClick;
-    if (shouldClick && cursor?.target) {
-      const el = queryDemoTarget(cursor.target);
-      if (el instanceof HTMLElement) {
-        el.click();
-      }
+    if (cursor?.click) {
+      const click = Boolean(typeof step.domClick === 'function' ? step.domClick() : step.domClick);
+      const el = cursor.target == null ? null : queryDemoTarget(cursor.target);
+      if (el) await press(el, click);
     }
     await step.run?.(this.dispatch, this.getState);
     this.stepIndex += 1;

@@ -6,7 +6,7 @@ import { walkthrough } from '../objects';
 <div
   class="tagging-grid-demo"
   data-walkthrough={JSON.stringify(walkthrough)}
-  data-boot-module="/src/components/TaggingToolDemo/client/boot.ts"
+  data-tagging-grid-demo
 >
   <Grid live />
 
@@ -25,14 +25,12 @@ import { walkthrough } from '../objects';
   </div>
 </div>
 
-{/*
-  No <script> here — a component reached only through Stack.astro's per-layer
-  Astro.slots.render() call never gets its own hoisted script onto the page (see the
-  "dev-server-drops-demo-scripts" memory). boot.ts is armed instead by Stack.astro's own
-  script, which the pagination doesn't touch, via the data-boot-module attribute above —
-  this also defers loading and running taggingTool.ts until the stack scrolls into view,
-  same as every other demo's island.
-*/}
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from '../client/boot';
+
+bootIslands('[data-tagging-grid-demo]', boot);
+</script>
 
 <style lang="scss">
 @use "./sheet" as *;
