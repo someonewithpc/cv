@@ -57,20 +57,14 @@ type Layer = keyof typeof layers;
     }[layer])}
   </fragment>
 
+  {/* Only the live scene has a note. The handoff page carries its own words. */}
   <fragment slot="aside">
-    {(layer: Layer) => ({
-      main: (
-        <PostIt background="#fed" color="black">
-          Hover to take over. Drag a card onto the floor, or double-click one and click where
-          it goes. Drag the ground to orbit
-        </PostIt>
-      ),
-      handoff: (
-        <PostIt background="#cde" color="black">
-          Where the pointer is decides what follows it
-        </PostIt>
-      ),
-    }[layer])}
+    {(layer: Layer) => layer === 'main' && (
+      <PostIt background="#fed" color="black">
+        Hover to take over. Drag a card onto the floor, or double-click one and click where
+        it goes. Drag the ground to orbit
+      </PostIt>
+    )}
   </fragment>
 </TechnicalDrawingStack>
 </div>
@@ -93,11 +87,24 @@ type Layer = keyof typeof layers;
   }
 }
 
+// The handoff page carries its own words, so it has no note and no column to keep for one:
+// the explainer takes all three, and only the block's corner is spoken for. The empty note
+// cell goes with them, or auto-placement drops it into a second row and the sheet splits
+// its spare height between that row and the artwork's instead of centring the explainer.
+:global(.drag-drop-demo article.technical-drawing-stack > * > section.blueprint .content) {
+  grid-column: 1 / -1;
+  padding-bottom: var(--title-block-reach, 0px);
+}
+
+:global(.drag-drop-demo article.technical-drawing-stack > * > section.blueprint .aside) {
+  display: none;
+}
+
 // Regular (non-portrait) layout only — reserve a gutter next to the demo content and
 // centre the PostIt in whatever space is left, the same way the Space Builder stack does.
 // The note is centred in its column, so a bottom margin — not padding, which would leave the
 // column's own box reaching into the corner — lifts it by half of the block's height.
-:global(.drag-drop-demo article.technical-drawing-stack > * > section .aside) {
+:global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
   display: flex;
   justify-content: center;
   padding-left: 1.75em;
@@ -107,7 +114,7 @@ type Layer = keyof typeof layers;
 
 @container technical-drawing (orientation: portrait) {
   /* Portrait centres the aside itself; only the landscape gutter has to go. */
-  :global(.drag-drop-demo article.technical-drawing-stack > * > section .aside) {
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
     padding-left: 0;
   }
 }

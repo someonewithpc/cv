@@ -13,43 +13,43 @@
  * it, and the tool is back to idle (endItemDrag, dropOne, placeGhostAsSingle; the product's
  * drop).
  *
- * Each callout aims at a mark, an empty positioned element at the thing's place in its
- * frame, so the label can sit over the frame's empty canvas without lying over its target.
- * The marks' positions are fractions of the frame, off the pointer path the capture script
- * drives; the authored tips are the same places on a two-by-two strip, for the no-script
- * drawing. The crop leaves the canvas a little over half of each frame (CANVAS_FRACTION),
- * which is room for a whole label, so the angles and lengths lay each one on that half,
- * tail included, and off the catalog cards beside it.
- *
- * One set of angles and lengths holds at every sheet size: the strip is wider than it is
- * tall whatever caps it, so the overlay's unit is half its height, which is one frame, and
- * a frame is always 1 unit tall by 1.8 wide.
- *
- * Two frames to a row at every sheet size: four high on a phone would leave the strip
- * taller than the sheet, and fitting it back would only shrink the frames again.
+ * The frames run in one row across a sheet wider than it is tall, and two by two on a phone,
+ * where a row of four would leave each frame a sliver. Each caption is set under its own
+ * frame. They were leader-line callouts laid inside the frames until the row of four, which
+ * cannot hold one: four frames across a 960px sheet are 217px wide, and the overlay sizes
+ * its type off the strip's height, so a label inside one came out 5px tall.
  */
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
 const FRAME = { width: 1731, height: 960 };
-/** The canvas's share of a frame's width, the fraction the capture script prints. */
-const CANVAS_FRACTION = 0.515;
-const FONT = 0.08;
-/** Thinner than the default: the frames are photographs, and the arrows cross them. */
-const STROKE = 0.013;
 
 type Frame = {
   id: string;
   alt: string;
-  /** Where the thing the callout names sits in the frame, as fractions of it. */
-  mark: [number, number];
+  /** Reads in drag order, left to right. */
+  caption: string;
 };
 
 const frames: Frame[] = [
-  { id: 'press', alt: 'The pointer dragging the chair card out of the catalog', mark: [0.64, 0.31] },
-  { id: 'picture', alt: 'The chair picture riding the pointer over the catalog', mark: [0.59, 0.53] },
-  { id: 'model', alt: 'The chair model under the pointer at the edge of the floor', mark: [0.43, 0.74] },
-  { id: 'placed', alt: 'The chair placed on the floor with its selection highlight', mark: [0.36, 0.77] },
+  {
+    id: 'press',
+    alt: 'The pointer dragging the chair card out of the catalog',
+    caption: 'drag the object to the viewport',
+  },
+  {
+    id: 'picture',
+    alt: 'The chair picture riding the pointer over the catalog',
+    caption: 'over the catalog it is still a picture',
+  },
+  {
+    id: 'model',
+    alt: 'The chair model under the pointer at the edge of the floor',
+    caption: 'over the floor it becomes the model',
+  },
+  {
+    id: 'placed',
+    alt: 'The chair placed on the floor with its selection highlight',
+    caption: 'let go and it is placed',
+  },
 ];
 ---
 
@@ -58,37 +58,27 @@ const frames: Frame[] = [
     <div class="panel">
       <header>
         <strong>Picture over the catalog, model over the floor</strong>
+        <p class="note">
+          Four moments of one drag: the card's picture follows the pointer, the model takes
+          over the moment the pointer crosses onto the floor, and letting go places it.
+        </p>
       </header>
 
-      <Annotations reach={1} fontSize={FONT} strokeWidth={STROKE}>
-        <div class="strip" slot="content" data-handoff-strip data-canvas-fraction={CANVAS_FRACTION}>
-          {frames.map((frame, index) => (
-            <figure class="frame" data-frame={frame.id}>
-              <img
-                src={`/demos/drag-drop/handoff-${index + 1}.webp`}
-                alt={frame.alt}
-                width={FRAME.width}
-                height={FRAME.height}
-                loading="lazy"
-                decoding="async"
-              />
-              <span
-                class="mark"
-                data-mark={frame.id}
-                style={`left: ${frame.mark[0] * 100}%; top: ${frame.mark[1] * 100}%;`}
-                aria-hidden="true"
-              />
-            </figure>
-          ))}
-        </div>
-
-        <Fragment slot="annotations">
-          <ArrowAnnotation target='[data-mark="press"]' tipX={-0.665} tipY={-0.69} angle={-137.9} length={0.462} text="drag the object to the viewport" lines={['drag the object', 'to the viewport']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="picture"]' tipX={1.076} tipY={-0.47} angle={151.7} length={0.232} text="over the catalog it is still a picture" lines={['over the catalog', 'it is still a picture']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="model"]' tipX={-1.04} tipY={0.74} angle={65} length={0.265} text="over the floor it becomes the model" lines={['over the floor', 'it becomes the model']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="placed"]' tipX={0.665} tipY={0.77} angle={50.4} length={0.325} text="let go and it is placed" lines={['let go', 'and it is placed']} labelSide="left" fontSize={FONT} />
-        </Fragment>
-      </Annotations>
+      <div class="strip" data-handoff-strip>
+        {frames.map((frame, index) => (
+          <figure class="frame" data-frame={frame.id}>
+            <img
+              src={`/demos/drag-drop/handoff-${index + 1}.webp`}
+              alt={frame.alt}
+              width={FRAME.width}
+              height={FRAME.height}
+              loading="lazy"
+              decoding="async"
+            />
+            <figcaption>{frame.caption}</figcaption>
+          </figure>
+        ))}
+      </div>
     </div>
   </div>
 </div>
@@ -97,17 +87,6 @@ const frames: Frame[] = [
 .wrapper {
   box-sizing: border-box;
   width: 100%;
-  margin-inline: auto;
-  display: grid;
-  place-items: center;
-
-  // A landscape sheet gives the artwork two of its three columns and keeps the third for
-  // the note and the title block. An auto track grows to whatever the strip asks for, and
-  // the panel's `max-width: 100%` then measures that track instead of the column, so the
-  // panel ran under both. A 1fr track is the column, and the cap bites again.
-  :global([data-sheet-orientation='landscape']) & {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .handoff-layer {
@@ -122,53 +101,62 @@ const frames: Frame[] = [
   }
 }
 
+// This page keeps no column for a note, so the panel takes the whole width the sheet gives
+// the artwork and the frames grow with it.
 .panel {
   box-sizing: border-box;
-  width: fit-content;
-  max-width: 100%;
-  margin-inline: auto;
-  padding: 0.75em 0.875em;
+  width: 100%;
+  padding: 1em;
   border: 1px solid var(--line-strong);
   border-radius: 0.5em;
   background: var(--surface-raised);
   display: grid;
-  gap: 0.625em;
-
-  // The Annotations wrapper is this grid's item, and a grid item's own minimum size is the
-  // strip's authored width, so the strip carried the panel past its cap instead of being
-  // held by it. Portrait caps the wrapper itself, at 92cqw, and keeps that.
-  :global([data-sheet-orientation='landscape']) & > :global(*) {
-    min-width: 0;
-  }
+  gap: 1em;
 }
 
 header {
   display: flex;
   flex-direction: column;
-  gap: 0.125em;
+  gap: 0.25em;
 
+  /* A floor in rem under the sheet's own scale, here and on the two kinds of small text
+     below: a phone sheet letters the panel at 8px, which is under any of them. */
   strong {
-    font-size: 0.875em;
+    font-size: max(0.8125rem, 1.125em);
   }
 }
 
-// Four fifths of the sheet's height is as tall as the panel can stand inside the mat once
-// the title has its line. Every sheet so far runs out of width first, so `max-width` sizes
-// the strip and the height only holds it to its own aspect on a sheet wide enough to
-// outgrow it. The gap is the same fraction of the strip's width on both axes, so the strip
-// keeps the frames' aspect and the callouts' authored tips hold.
+.note {
+  margin: 0;
+  /* Two rows at every sheet size: one 900px line is more than an eye tracks back across
+     on a wide sheet, and a third row is height a short sheet has not got. */
+  max-width: 92ch;
+  font-size: max(0.6875rem, 0.9375em);
+  line-height: 1.4;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+/* One row of four, and two by two only where the sheet really is taller than it is wide.
+   The query is the one that moves the title block and the note, rather than the sheet's
+   orientation attribute, which reads portrait for a few window widths where the sheet is
+   still laid out across. */
 .strip {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25%;
-  width: calc(0.8 * var(--sheet-block) * 1731 / 960);
-  max-width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.875em;
+
+  @container technical-drawing (orientation: portrait) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .frame {
-  position: relative;
   margin: 0;
   min-width: 0;
+  display: grid;
+  gap: 0.375em;
+  align-content: start;
 
   img {
     display: block;
@@ -180,9 +168,9 @@ header {
   }
 }
 
-.mark {
-  position: absolute;
-  width: 0;
-  height: 0;
+figcaption {
+  font-size: max(0.6875rem, 0.9375em);
+  line-height: 1.3;
+  text-wrap: pretty;
 }
 </style>
