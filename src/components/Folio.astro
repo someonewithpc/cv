@@ -8,7 +8,8 @@
  * the desk and not to the paper. Absolutely positioned in the left margin column of the grid
  * row its sheet sits in, it takes that row as its containing block, which is what gives the
  * numeral the sheet's own height to stick along. The row is the number: there is one folio
- * per sheet and they run in page order.
+ * per sheet and they run in page order. Both ends of the row are named, since a grid line an
+ * absolutely positioned child leaves at auto resolves to the grid's own padding edge.
  */
 type Props = {
   number: number;
@@ -18,7 +19,7 @@ type Props = {
 const { number, label } = Astro.props;
 ---
 
-<div class="folio-rail" style={`--folio-row: ${number}`} aria-hidden="true">
+<div class="folio-rail" style={`--folio-row: ${number} / ${number + 1}`} aria-hidden="true">
   <p class="folio">
     <span class="folio-number stencil">{String(number).padStart(2, '0')}</span>
     <span class="folio-label typewriter">{label}</span>
