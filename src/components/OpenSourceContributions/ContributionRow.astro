@@ -38,9 +38,9 @@ const hasMeta = updatedAt || stats;
 
 const rowLabel = `${repository}${number == null ? '' : `#${number}`}: ${title.replaceAll('`', '')}`;
 
-// A row is one line of a ruled sheet, so a long name has to wrap where a reader would
-// break it — after an owner, before an issue number — rather than in the middle of a word.
-// null marks a break opportunity; the text either side of it is unchanged.
+// A row is one line of a ruled sheet, so a long name has to wrap where a reader would break
+// it, after an owner or before an issue number, rather than in the middle of a word. null
+// marks a break opportunity; the text either side of it is unchanged.
 const citePieces: (string | null)[] = [];
 repository.split('/').forEach((part, index) => {
   if (index > 0) citePieces.push('/', null);
