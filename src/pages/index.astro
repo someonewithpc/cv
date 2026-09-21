@@ -148,8 +148,6 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
   .cutting-mat {
     --mat-line: 1px;
     --mat-rim: calc(var(--page-gap) - var(--mat-line));
-    --mat-inset: 0px;
-    --mat-max: 100rem;
     /* The mat a drawing lies on rather than fills: this much mat is kept clear on all four
        sides of the widest thing laid down on it, and more than this beside it wherever the
        mat has the width to spare, which is what makes the stack look put down on the mat
@@ -170,6 +168,8 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 
     grid-column: full-width;
     justify-self: center;
+    /* --mat-inset and --mat-max are the desk's (Layout.astro): the folio's lane is measured
+       against the same edge. */
     width: min(100% - var(--mat-inset) * 2, var(--mat-max));
     min-width: 0;
     display: grid;
@@ -212,9 +212,6 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     @media (width > 64rem) {
       --mat-rim: 1.5rem;
       --mat-margin: 3rem;
-      /* The mat and the folio share the desk margin, so the mat stops at the far side of the
-         lane the sheet number stands in whenever that is the wider of the two. */
-      --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
     }
 
     @media (width >= 105rem) {
