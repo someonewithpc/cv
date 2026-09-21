@@ -186,6 +186,9 @@ export const autoplayCompletedToast = (): DemoToastPayload => ({
 
 export type DemoToastHandler = (toast: DemoToastPayload) => void;
 
+/** Which step of the walkthrough is about to run, and how many it has in all. */
+export type DemoProgressHandler = (step: number, total: number) => void;
+
 export class AutoPlayController {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private dragRaf: number | null = null;
@@ -201,6 +204,7 @@ export class AutoPlayController {
   private readonly onEditingChange: (spaceId: string | null) => void;
   private readonly onCursor: DemoCursorHandler;
   private readonly onToast: DemoToastHandler;
+  private readonly onProgress: DemoProgressHandler;
 
   constructor(
     dispatch: AppDispatch,
@@ -208,12 +212,14 @@ export class AutoPlayController {
     onEditingChange: (spaceId: string | null) => void,
     onCursor: DemoCursorHandler,
     onToast: DemoToastHandler = () => {},
+    onProgress: DemoProgressHandler = () => {},
   ) {
     this.dispatch = dispatch;
     this.getState = getState;
     this.onEditingChange = onEditingChange;
     this.onCursor = onCursor;
     this.onToast = onToast;
+    this.onProgress = onProgress;
   }
 
   start() {
@@ -894,6 +900,8 @@ export class AutoPlayController {
       this.scheduleNext();
       return;
     }
+
+    this.onProgress(this.stepIndex, steps.length);
 
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
     this.timer = setTimeout(() => {
