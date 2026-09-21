@@ -76,12 +76,21 @@ type Layer = keyof typeof layers;
 </div>
 
 <style lang="scss">
-// A landscape sheet puts its title block in the bottom-right corner, absolutely placed over
-// the artwork column and the note's column both. That corner is the block's: the demo and
-// the note end above it rather than running under its lettering. Portrait gives the block a
-// row of its own, so there the reach stays 0 and nothing moves.
-:global(.drag-drop-demo article.technical-drawing-stack[data-sheet-orientation='landscape'] > * > section) {
+// The title block is absolutely placed in the sheet's bottom-right corner, over the artwork
+// column and the note's column both. That corner is the block's: the demo and the note end
+// above it rather than running under its lettering.
+:global(.drag-drop-demo article.technical-drawing-stack > * > section) {
   --title-block-reach: var(--title-block-block);
+}
+
+// Portrait gives the block a row of its own, so the reach goes back to 0 and nothing moves.
+// The query is the one Page.astro moves the block with, not the sheet's orientation
+// attribute: the two disagree while the stack's max-height clamps its 3/5 aspect, which is
+// every window between about 580 and 640 wide.
+@container technical-drawing (orientation: portrait) {
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section) {
+    --title-block-reach: 0px;
+  }
 }
 
 // Regular (non-portrait) layout only — reserve a gutter next to the demo content and
