@@ -532,6 +532,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // whether a grab ever became a drag, so it must be added here and not at the grab.
   if (!fold.classList.contains('paper-fold--active')) {
     fold.classList.add('paper-fold--active');
+    unsettle(sheet.parentElement!);
     sheet.getAnimations().forEach((animation) => animation.cancel());
     holdUnsplayed(sheet);
   }
@@ -839,6 +840,18 @@ const updateFlippedState = (stack: HTMLElement): void => {
   stack.style.setProperty('--pages-turned', `${first === 1 ? 0 : stack.children.length - first + 1}`);
 };
 
+// [data-paper-settled] means the front page is lying flat and still: set as a flip or a settle
+// hands the rendering back, and dropped the moment a gesture starts moving a page again. Hints
+// that point at the page (TechnicalDrawing's way-back callout) wait for it, so their arrow is
+// never drawn across a sheet still gliding over.
+const settle = (stack: HTMLElement): void => {
+  stack.dataset.paperSettled = '';
+};
+
+const unsettle = (stack: HTMLElement): void => {
+  delete stack.dataset.paperSettled;
+};
+
 // Puts a front page's fold back in its resting idle state: the dog-ear held at the reveal size
 // with the pulse running. The drag (or a back-drag borrowing the flap) cancelled
 // initial-fold-reveal, so its forwards-fill is gone for good — leaving --fold-x/-y set here is
@@ -863,6 +876,7 @@ const restFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   sheet.parentElement!.style.removeProperty('--flip-progress');
   // A settled back-drag may have restored the stack's original order
   updateFlippedState(sheet.parentElement!);
+  settle(sheet.parentElement!);
 };
 
 // Glides back to the resting dog-ear, then hands rendering back to index.astro's idle CSS rules
@@ -939,6 +953,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   // Where index.astro puts the flap: after the clip, so paper dragged over the wire covers it
   next.insertBefore(standInFold(), grab);
   updateFlippedState(stack);
+  stack.dataset.paperTurned = '';
   syncPaperSurface(next, sectionOf(next));
   syncInert(stack);
 };
@@ -975,6 +990,7 @@ const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   const standIn = front.querySelector<HTMLElement>(`.${STAND_IN}`);
   if (standIn) standIn.replaceWith(fold);
   else front.insertBefore(fold, front.querySelector('.paper-back-grab'));
+  settle(stack);
 };
 
 // Inverse of a flip's restack: promotes the page most recently sent to the back (the highest
@@ -1001,6 +1017,9 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   prev.classList.add('paper-front');
   prev.prepend(under);
   prev.append(clip, fold, hint);
+  stack.dataset.paperTurned = '';
+  // Coming back is the harder half to find, so it is marked apart from having turned at all.
+  stack.dataset.paperReturned = '';
   syncInert(stack);
   // Promoting the originally-first page puts the stack back in its own order, so the corner cut
   // unfolds from here — the mirror of flipFold committing the flipped state as its glide sets
@@ -1095,6 +1114,8 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   // while the landing folds material in behind it. A re-grab that settles instead re-derives
   // the flipped state from the page order (settleFold), shrinking the cuts back.
   sheet.parentElement!.dataset.paperFlipped = '';
+  // A key press flips without a drag, so the page is only now known to be on the move
+  unsettle(sheet.parentElement!);
 
   // Both halves — folding out to the resting seed, then the landing back down behind the stack —
   // run on one clock, measured in crease travel (the edge the eye follows: the first fold's
@@ -1170,6 +1191,7 @@ const bringFold = (
   approach: NonNullable<FoldGesture['approach']>, onPromoted: () => void,
 ): (() => void) => {
   const { w, h } = metricsOf(sheet);
+  unsettle(sheet.parentElement!);
   const { seed } = approach;
   const over = { x: w + seed.x, y: h + seed.y };
   const rest = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
@@ -1437,6 +1459,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     const backCut = currentBackFoldSize(sheet);
     sheet.append(fold);
     fold.classList.add('paper-fold--active');
+    unsettle(stack);
     // Active mode sizes the flap to the whole page, and the idle clip-path it still carries fills
     // that box — a page-sized slab of flap colour on a sheet whose top-left corner shows through
     // the front page's cut. Render the reverse landing's flat start now so it begins hidden.
