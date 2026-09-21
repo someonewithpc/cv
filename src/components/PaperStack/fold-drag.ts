@@ -203,22 +203,40 @@ const currentFoldSize = (sheet: HTMLElement): Vec => {
   return { x, y };
 };
 
-const currentBackFoldSize = (sheet: HTMLElement): Vec => {
-  const [x, y] = lengthsOf(sheet, '--fold-back-x', '--fold-back-y');
-  return { x, y };
-};
-
 // The corner cut and the drift together, off one computed-style object: what a landing frame
 // needs, and all it reads. (The drift is how far a turned page's corner cut stands over from its
 // left edge — see --turned-drift in index.astro; the page slides back by the same amount, so the
-// cut stays on the stack's edge. Both ease while a page joins or leaves the pile, so both are
-// read per frame.) Asked for one at a time they were two style resolutions, and the second
-// usually came after the frame had already written — the read-after-write this file's readers
-// exist to avoid, and an expensive one here, since a turn dirties style document-wide.
-const currentLanding = (sheet: HTMLElement): { back: Vec, drift: number } => {
-  const [x, y, drift] = lengthsOf(sheet, '--fold-back-x', '--fold-back-y', '--turned-drift');
-  return { back: { x, y }, drift: drift || 0 };
+// cut stays on the stack's edge.)
+//
+// Both are transitioned, and every one of those transitions is started from this file: the cut
+// by a change of flipped state (300ms, on the stack), the drift by a renumbering (250ms, on the
+// page). Outside those windows the answer is last frame's, so a frame that asked again was
+// buying a style resolve to be told nothing had moved — and on this page that resolve is a
+// whole-document one whenever anything at all has touched a class, an attribute or the node tree
+// since the last paint, which a demo playing under the paper does several times a second. So the
+// reading is kept, and refreshed only while one of those transitions could still be running.
+// stirLanding below marks every place that starts one, plus the two that can move the values
+// without a transition at all — a resize and a theme change, both of which re-derive the em
+// lengths the cut is written in.
+const LANDING_SETTLE_MS = 600;
+
+const landingLive = new WeakMap<HTMLElement, number>();
+const landingCache = new WeakMap<HTMLElement, { back: Vec, drift: number }>();
+
+const stirLanding = (stack: HTMLElement): void => {
+  landingLive.set(stack, performance.now() + LANDING_SETTLE_MS);
 };
+
+const currentLanding = (sheet: HTMLElement): { back: Vec, drift: number } => {
+  const kept = landingCache.get(sheet);
+  if (kept && performance.now() > (landingLive.get(sheet.parentElement!) ?? 0)) return kept;
+  const [x, y, drift] = lengthsOf(sheet, '--fold-back-x', '--fold-back-y', '--turned-drift');
+  const fresh = { back: { x, y }, drift: drift || 0 };
+  landingCache.set(sheet, fresh);
+  return fresh;
+};
+
+const currentBackFoldSize = (sheet: HTMLElement): Vec => currentLanding(sheet).back;
 
 // What a gesture reads off a sheet but never writes: the page's own pixel size, the pin the paper
 // is held at, and the resting crease's intercepts. The last two are fixed by the stylesheet in em
@@ -291,6 +309,8 @@ const syncStackSurfaces = (stack: HTMLElement): void => {
 const watchThemePaperSurface = (): void => {
   const resync = () => {
     for (const stack of document.querySelectorAll<HTMLElement>('[data-paper-stack]')) {
+      // A theme can carry its own type, and the corner cut is written in em.
+      stirLanding(stack);
       syncStackSurfaces(stack);
     }
   };
@@ -513,8 +533,11 @@ const renderFold = (
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
   // Once per gesture the metrics are taken fresh rather than trusted from the cache — the
   // ResizeObserver keeps them current across resizes, but this is what catches anything that
-  // moved the em-based pin without changing the page's pixel size.
+  // moved the em-based pin without changing the page's pixel size. The landing reading goes with
+  // them: one read at the start of a gesture costs nothing and covers whatever moved the corner
+  // cut while no stack was being touched.
   sampleMetrics(sheet);
+  stirLanding(sheet.parentElement!);
   const size = currentFoldSize(sheet);
   const contentRect = sheet.getBoundingClientRect();
   const tip = foldTipFromSize(size.x, size.y);
@@ -843,6 +866,9 @@ const syncInert = (stack: HTMLElement): void => {
 // flips only renumber --page-index, never reorder the DOM). It gates the folded-back top-left
 // corner and its grab handle.
 const updateFlippedState = (stack: HTMLElement): void => {
+  // Either branch below can start the corner cut's 300ms transition, so the kept reading has to
+  // go stale from here.
+  stirLanding(stack);
   const first = pageIndex(stack.children[0] as HTMLElement);
   if (first === 1) {
     delete stack.dataset.paperFlipped;
@@ -1026,6 +1052,8 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   // renumbers the pages, so it runs on the page's own clock.
   restartTurn(stack, '--turn-ease', '0');
   fold.classList.remove('paper-fold--will-commit');
+  // Renumbering starts every page's 250ms drift transition.
+  stirLanding(stack);
   for (const page of pages) {
     const index = pageIndex(page);
     page.style.setProperty('--page-index', `${index === 1 ? pages.length : index - 1}`);
@@ -1103,6 +1131,8 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   const fold = stack.querySelector<HTMLElement>(`.paper-fold:not(.${STAND_IN})`)!;
   const hint = front.querySelector<HTMLElement>('.paper-flip-hint')!;
 
+  // Renumbering starts every page's 250ms drift transition.
+  stirLanding(stack);
   for (const page of pages) {
     const index = pageIndex(page);
     page.style.setProperty('--page-index', `${index === pages.length ? 1 : index + 1}`);
@@ -1222,6 +1252,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   // the seed outlasts the cuts' 300ms transition, which would otherwise still be mid-growth
   // while the landing folds material in behind it. A re-grab that settles instead re-derives
   // the flipped state from the page order (settleFold), shrinking the cuts back.
+  stirLanding(sheet.parentElement!);
   sheet.parentElement!.dataset.paperFlipped = '';
   // A key press flips without a drag, so the page is only now known to be on the move
   unsettle(sheet.parentElement!);
@@ -1377,6 +1408,9 @@ const observeFoldPageSizes = (stack: HTMLElement): void => {
   // Every page's readings before any page's writes (see lengthsOf): interleaved, each write
   // made the browser redo style before the next page's read, once per page per resize.
   const observer = new ResizeObserver((entries) => {
+    // A resize re-derives the corner cut, which is written in em: the kept landing reading goes
+    // stale here with no transition to announce it.
+    stirLanding(stack);
     const pages = entries.map((entry) => {
       const page = entry.target as HTMLElement;
       sampleMetrics(page, entry.contentRect);
@@ -1561,6 +1595,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     sectionOf(front).style.clipPath = '';
 
     const sheetMetrics = sampleMetrics(sheet);
+    stirLanding(stack);
     const { w, h } = sheetMetrics;
     // Read before the node move and the class below: both put the document's :has() rules back
     // in play, and a read after them resolves every element on the page.
