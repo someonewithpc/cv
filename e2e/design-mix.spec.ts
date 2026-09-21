@@ -172,6 +172,107 @@ test('the mat runs the full width of a phone and nothing scrolls sideways', asyn
   expect(fit.padding).toBeGreaterThan(0);
 });
 
+/** The width from which index.astro opens a lane beside each stack for its title card. */
+const CARDS_FROM = 86 * 16;
+
+/** Every detail's card, its stack, its boundary and its leader, in page order. */
+const readCards = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => {
+    const px = (value: string) => {
+      const probe = document.createElement('div');
+      probe.style.width = value;
+      document.body.append(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width;
+    };
+
+    const mat = document.querySelector('#demos .cutting-mat')!.getBoundingClientRect();
+
+    return {
+      mat: { left: mat.left, right: mat.right },
+      details: [...document.querySelectorAll<HTMLElement>('#demos .callout')].map((callout) => {
+        const card = callout.querySelector<HTMLElement>('.callout-card')!;
+        const leader = callout.querySelector<HTMLElement>('.callout-card-leader')!;
+        const stack = callout.querySelector('article.technical-drawing-stack')!;
+        const shown = getComputedStyle(card).display !== 'none';
+        const pad = px(getComputedStyle(callout).getPropertyValue('--callout-pad'));
+        const box = callout.getBoundingClientRect();
+        const stackBox = stack.getBoundingClientRect();
+
+        return {
+          side: callout.dataset.card,
+          shown,
+          // The chain-line boundary is drawn this far outside the view's own box.
+          boundary: { left: box.left - pad, right: box.right + pad },
+          stack: { left: stackBox.left, right: stackBox.right },
+          // Zero wherever the card is not drawn: it then takes no room anywhere on the page,
+          // beside the view or under it.
+          room: card.getBoundingClientRect().width + card.getBoundingClientRect().height,
+          card: shown ? card.getBoundingClientRect() : null,
+          leader: shown ? leader.getBoundingClientRect() : null,
+        };
+      }),
+    };
+  });
+
+test('a title card stands beside every detail at 1600px, alternating sides', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto('/');
+
+  const { mat, details } = await readCards(page);
+  expect(details).toHaveLength(LETTERS.length);
+
+  for (const [index, detail] of details.entries()) {
+    const letter = LETTERS[index];
+    const onTheLeft = index % 2 === 0;
+    expect(detail.side, `${letter} side`).toBe(onTheLeft ? 'start' : 'end');
+    expect(detail.shown, `${letter} shown`).toBe(true);
+
+    const card = detail.card!;
+    const leader = detail.leader!;
+    const centre = (card.left + card.right) / 2;
+
+    if (onTheLeft) {
+      expect(centre, `${letter} card centre`).toBeLessThan(detail.stack.left);
+      expect(card.right, `${letter} card clear of the stack`).toBeLessThanOrEqual(detail.stack.left);
+      // The leader runs from the card's near edge and ends in its arrowhead on the boundary.
+      expect(leader.left, `${letter} leader starts at the card`).toBeGreaterThanOrEqual(card.right - 1);
+      expect(Math.abs(leader.right - detail.boundary.left), `${letter} arrowhead`).toBeLessThanOrEqual(2);
+    } else {
+      expect(centre, `${letter} card centre`).toBeGreaterThan(detail.stack.right);
+      expect(card.left, `${letter} card clear of the stack`).toBeGreaterThanOrEqual(detail.stack.right);
+      expect(leader.right, `${letter} leader starts at the card`).toBeLessThanOrEqual(card.left + 1);
+      expect(Math.abs(leader.left - detail.boundary.right), `${letter} arrowhead`).toBeLessThanOrEqual(2);
+    }
+
+    expect(card.left, `${letter} card inside the mat`).toBeGreaterThanOrEqual(mat.left);
+    expect(card.right, `${letter} card inside the mat`).toBeLessThanOrEqual(mat.right);
+  }
+});
+
+for (const width of [CARDS_FROM - 16, 1280, 390]) {
+  test(`no title card at ${width}px, and none of it under the stack`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width < 800 ? 844 : 800 });
+    await page.goto('/');
+    await page.waitForTimeout(1000);
+
+    const { details } = await readCards(page);
+    expect(details).toHaveLength(LETTERS.length);
+
+    for (const [index, detail] of details.entries()) {
+      expect(detail.shown, `${LETTERS[index]} hidden`).toBe(false);
+      expect(detail.room, `${LETTERS[index]} takes no room`).toBe(0);
+    }
+
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
+  });
+}
+
 test('every band on the desk is a sheet of the same width, edged and lifted', async ({ page }) => {
   await withTheme(page, 'light');
   await page.setViewportSize({ width: 1440, height: 900 });
