@@ -16,7 +16,12 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import {
+  isTransportControl,
+  onAutoplayCommand,
+  reportAutoplayProgress,
+  reportAutoplayState,
+} from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
@@ -366,6 +371,7 @@ function MockMapOverlayInner() {
       setEditingSpaceId,
       (step) => applyCursorStepRef.current(step),
       (toast) => pushToastRef.current(toast),
+      (step, total) => reportAutoplayProgress(containerRef.current, step, total),
     );
     autoplayRef.current = controller;
 

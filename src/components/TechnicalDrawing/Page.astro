@@ -186,6 +186,32 @@ const transportKeys = [
       <span class="demo-caption monospace" data-demo-caption role="status"></span>
       <span class="demo-hint monospace" data-demo-hint></span>
     </span>
+
+    <!-- Shape 4: a dimension line along the bottom of the drawing, ticked once per step of
+         the walkthrough, with the arrowhead that advances along it doubling as the control
+         and a circled zero that rewinds. -->
+    <span class="demo-dimension" data-demo-dimension>
+      <span class="dim-lettering monospace" aria-hidden="true">
+        <span data-demo-dimension-state></span>
+        <span class="dim-stop">.</span>
+        <span class="dim-hint" data-demo-dimension-hint></span>
+      </span>
+
+      <span class="dim-run">
+        <span class="dim-line" aria-hidden="true"></span>
+
+        <button class="dim-arrow" type="button" data-demo-act="toggle">
+          <span class="sr-only" data-demo-act-label></span>
+          <svg viewBox="0 0 12 10" aria-hidden="true"><path d="M11.5 5 1 9.4V0.6Z" /></svg>
+        </button>
+      </span>
+
+      <button class="dim-zero" type="button" data-demo-act="replay">
+        <span class="sr-only" data-demo-act-label></span>
+        <span class="dim-zero-mark monospace" aria-hidden="true">0</span>
+      </button>
+    </span>
+
   </div>
 </section>
 
@@ -193,6 +219,17 @@ const transportKeys = [
 @use 'sass:math';
 
 @use "@/scss/_colors.scss" as colors;
+
+/* Off the paper but still in the page: the shapes that letter the state onto the
+   drawing keep the live region for a screen reader and say nothing twice. */
+@mixin off-the-paper {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 section {
   /* rem, not em: the title block sets its own font-size, and an em offset there
@@ -492,6 +529,12 @@ section {
     display: none;
   }
 
+  /* Shape 4 draws a mark a sheet already has instead of keys, so it is hidden until
+     its own shape is asked for. */
+  .demo-dimension {
+    display: none;
+  }
+
   /* Shape 2: the deck is one more cell of the title block, sitting on its top edge so
      the two share a rule, drawn in the block's border and its label face. */
   :global(html[data-deck='2']) & {
@@ -543,12 +586,7 @@ section {
     /* The label and value are a reading, not an announcement, so the live region stays
        in the page for a screen reader and comes off the paper. */
     .demo-caption {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
+      @include off-the-paper;
     }
 
     .demo-hint {
@@ -577,8 +615,143 @@ section {
     }
   }
 
+  /* Shape 4: a dimension line, run along the bottom edge of the drawing from the left
+     margin to the title block, lettered above the way a dimension is. The arrowhead is
+     where the walkthrough has got to and the control that stops it; the circled zero at
+     the other end sends it back to the start. */
+  :global(html[data-deck='4']) & {
+    .demo-transport {
+      position-anchor: var(--drawing-title-anchor);
+      right: calc(anchor(left) + 0.5rem);
+      /* On the frame line, inside the drawing: the band is one margin deep and a
+         dimension needs its lettering as well as its line. */
+      bottom: var(--sheet-margin);
+      height: auto;
+      align-items: flex-end;
+    }
+
+    .demo-keys,
+    .demo-led {
+      display: none;
+    }
+
+    .demo-readout {
+      @include off-the-paper;
+    }
+
+    .demo-dimension {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      flex-direction: column;
+      gap: 0.25em;
+      font-size: 0.625rem;
+      pointer-events: none;
+    }
+  }
+
+  .dim-lettering {
+    margin-inline-start: 1.6em;
+    overflow: hidden;
+    letter-spacing: 0.1em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dim-stop,
+  .dim-hint {
+    color: var(--ink-muted);
+  }
+
+  /* Where the line itself runs: from the circled zero to the title block. */
+  .dim-run {
+    position: relative;
+    margin-inline-start: 1.6em;
+  }
+
+  /* The line, its two extension ticks, and one tick per step of the walkthrough once a
+     demo has said how many it has. A demo that loops without numbered steps reports
+     none, and then the line is drawn plain. */
+  .dim-line {
+    display: block;
+    height: 0.5em;
+    border-bottom: 1px solid var(--line-strong);
+    border-inline: 1px solid var(--line-strong);
+  }
+
+  .demo-transport[data-progress='counted'] .dim-line {
+    background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
+    background-size: calc(100% / var(--deck-steps, 1)) 0.3em;
+    background-position: left bottom;
+    background-repeat: repeat-x;
+  }
+
+  .dim-arrow,
+  .dim-zero {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 0.125em;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.5;
+    }
+  }
+
+  .dim-arrow {
+    left: calc(var(--deck-progress, 0) * 100%);
+    bottom: -0.125em;
+    translate: -50% 0;
+    transition: left 320ms ease;
+
+    svg {
+      display: block;
+      height: 0.75em;
+      width: auto;
+      fill: currentColor;
+    }
+
+    &:hover svg,
+    &:focus-visible svg {
+      fill: var(--accent);
+    }
+  }
+
+  .dim-zero {
+    left: 0;
+    bottom: -0.2em;
+    line-height: 1;
+  }
+
+  .dim-zero-mark {
+    display: grid;
+    place-items: center;
+    width: 1em;
+    height: 1em;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    font-size: 0.875em;
+  }
+
+  .dim-zero:hover .dim-zero-mark,
+  .dim-zero:focus-visible .dim-zero-mark {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .demo-led { animation: none; }
+    .dim-arrow { transition: none; }
   }
 
   .aside {
@@ -958,6 +1131,13 @@ section {
       flex-direction: row;
       align-items: baseline;
       margin-inline-start: 0;
+    }
+
+    /* Shape 4's dimension line takes the row too, full width above the title block,
+       rather than the strip of drawing a wider sheet gives it. */
+    :global(html[data-deck='4']) & .demo-transport {
+      position: static;
+      align-items: stretch;
     }
 
     .content {
