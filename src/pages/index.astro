@@ -29,24 +29,26 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
         sheetCode="SH-DEMOS"
       />
 
-      <Callout letter="A" title="Loading logo" titleJp="ローディングロゴ" scale="3:1" headingId="detail-a">
-        <VisrezLogoAnimation />
-      </Callout>
-      <Callout letter="B" title="Marker editor" titleJp="マーカーエディター" scale="1:1" headingId="detail-b">
-        <MarkerEditorDemo />
-      </Callout>
-      <Callout letter="C" title="Space builder" titleJp="スペースビルダー" scale="1:1" headingId="detail-c">
-        <SpaceBuilderDemo />
-      </Callout>
-      <Callout letter="D" title="Object variants" titleJp="オブジェクトバリアント" scale="1:1" headingId="detail-d">
-        <VariantsDemo />
-      </Callout>
-      <Callout letter="E" title="Tagging tool" titleJp="タグ付けツール" scale="1:1" headingId="detail-e">
-        <TaggingToolDemo />
-      </Callout>
-      <Callout letter="F" title="Font picker" titleJp="フォントピッカー" scale="1:1" headingId="detail-f">
-        <FontPickerDemo />
-      </Callout>
+      <div class="cutting-mat">
+        <Callout letter="A" title="Loading logo" titleJp="ローディングロゴ" scale="3:1" headingId="detail-a">
+          <VisrezLogoAnimation />
+        </Callout>
+        <Callout letter="B" title="Marker editor" titleJp="マーカーエディター" scale="1:1" headingId="detail-b">
+          <MarkerEditorDemo />
+        </Callout>
+        <Callout letter="C" title="Space builder" titleJp="スペースビルダー" scale="1:1" headingId="detail-c">
+          <SpaceBuilderDemo />
+        </Callout>
+        <Callout letter="D" title="Object variants" titleJp="オブジェクトバリアント" scale="1:1" headingId="detail-d">
+          <VariantsDemo />
+        </Callout>
+        <Callout letter="E" title="Tagging tool" titleJp="タグ付けツール" scale="1:1" headingId="detail-e">
+          <TaggingToolDemo />
+        </Callout>
+        <Callout letter="F" title="Font picker" titleJp="フォントピッカー" scale="1:1" headingId="detail-f">
+          <FontPickerDemo />
+        </Callout>
+      </div>
     </section>
 
     <OpenSourceContributions />
@@ -70,9 +72,46 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     margin-bottom: 0;
   }
 
-  > :global(:not(header)) {
-    grid-column: breakout;
+  /* The details lie on a cutting mat. Past 64rem it stops short of the viewport so the desk
+     shows down both sides; below that there is no desk, so it runs edge to edge and its rim
+     takes the page gutter. The four grid layers are laid out from the content box and clipped
+     to it, which is what leaves the rim unruled; the last layer is the mat's own colour,
+     clipped to the border box, so the rim is still mat and not desk. */
+  .cutting-mat {
+    --mat-rim: var(--page-gap);
+    --mat-inset: 0px;
+    --mat-max: 80rem;
+
+    grid-column: full-width;
+    justify-self: center;
+    width: min(100% - var(--mat-inset) * 2, var(--mat-max));
     min-width: 0;
+    display: grid;
+    grid-template-columns: min(100%, var(--breakout-max));
+    justify-content: center;
+    row-gap: 4em;
+    padding: var(--mat-rim);
+    border: 1px solid var(--mat-edge);
+    border-radius: 0.25rem;
+    background-color: transparent;
+    background-image:
+      linear-gradient(to right, var(--mat-grid-major) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--mat-grid-major) 1px, transparent 1px),
+      linear-gradient(to right, var(--mat-grid-minor) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--mat-grid-minor) 1px, transparent 1px),
+      linear-gradient(var(--mat-paper), var(--mat-paper));
+    background-size: 2.5rem 2.5rem, 2.5rem 2.5rem, 0.5rem 0.5rem, 0.5rem 0.5rem, auto;
+    background-origin: content-box, content-box, content-box, content-box, border-box;
+    background-clip: content-box, content-box, content-box, content-box, border-box;
+
+    @media (width > 64rem) {
+      --mat-rim: 1.5rem;
+      --mat-inset: clamp(1.5rem, 4vw, 5rem);
+    }
+
+    @media (max-width: 52rem) {
+      row-gap: 2.5em;
+    }
   }
 
   :global([lang='ja']) {
