@@ -484,10 +484,11 @@ function canvasPoint(fx: number, fy: number) {
   return { x: rect.left + rect.width * fx, y: rect.top + rect.height * fy };
 }
 
+/** `to` may be read afresh each frame, for a target that moves while the tween runs. */
 function tweenPoint(
   token: number,
   from: { x: number; y: number },
-  to: { x: number; y: number },
+  to: { x: number; y: number } | (() => { x: number; y: number }),
   ms: number,
   onFrame: (p: { x: number; y: number }) => void,
 ) {
@@ -498,9 +499,10 @@ function tweenPoint(
         resolve();
         return;
       }
+      const target = typeof to === 'function' ? to() : to;
       const t = Math.min(1, (now - start) / ms);
       const eased = t * t * (3 - 2 * t);
-      onFrame({ x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased });
+      onFrame({ x: from.x + (target.x - from.x) * eased, y: from.y + (target.y - from.y) * eased });
       if (t < 1) requestAnimationFrame(step);
       else resolve();
     };
@@ -615,7 +617,10 @@ async function dragAndOrbit(
   );
   updateDragVisual(pos.x, pos.y);
 
-  const dropPoint = scene.groundToClient(point.x, point.z) ?? canvasPoint(0.5, 0.5);
+  // Read afresh, never saved: the page scrolling under the demo moves the canvas, and with
+  // it the pixel the floor point sits on, so a point taken before the drag is a lie by the
+  // time the object lands — the chair went wherever that stale pixel now pointed.
+  const dropPoint = () => scene.groundToClient(point.x, point.z) ?? canvasPoint(0.5, 0.5);
   cursorInstant.value = true;
   await tweenPoint(token, pos, dropPoint, 900, (p) => {
     updateDragVisual(p.x, p.y);
@@ -627,9 +632,10 @@ async function dragAndOrbit(
   // Letting go is the whole drag: one object lands and the tool is back to idle.
   phase.value = 'idle';
   releaseCursor();
-  dropOne(dropPoint.x, dropPoint.y);
+  const landed = dropPoint();
+  dropOne(landed.x, landed.y);
 
-  await orbitTween(token, orbitDir * 0.4, 700, dropPoint);
+  await orbitTween(token, orbitDir * 0.4, 700, landed);
   cursorInstant.value = false;
   cursorClicking.value = false;
   if (token !== autoplayToken) return false;
@@ -677,7 +683,7 @@ async function armAndClick(
   armedItem.value = item;
   phase.value = 'armed';
 
-  const dropPoint = scene.groundToClient(point.x, point.z) ?? canvasPoint(0.5, 0.5);
+  const dropPoint = () => scene.groundToClient(point.x, point.z) ?? canvasPoint(0.5, 0.5);
   cursorInstant.value = true;
   await tweenPoint(token, pos, dropPoint, 900, (p) => {
     moveCursorTo(p.x, p.y);
@@ -692,7 +698,8 @@ async function armAndClick(
   if (token !== autoplayToken) return false;
   phase.value = 'idle';
   armedItem.value = null;
-  dropOne(dropPoint.x, dropPoint.y);
+  const landed = dropPoint();
+  dropOne(landed.x, landed.y);
   await wait(900);
   return token === autoplayToken;
 }
