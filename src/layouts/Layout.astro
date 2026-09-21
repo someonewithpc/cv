@@ -149,20 +149,21 @@ body {
      size browsers give a bare monospace stack. */
   font-family: monospace, system-ui;
 
-  /* The cutting mat the demos lie on. A light theme lifts the canvas toward vellum and rules
-     it in the blueprint colour; a dark one mixes the canvas toward the blueprint and rules it
-     in white. Both stay near the canvas they come from, so the sheets on the mat keep the eye. */
+  /* The cutting mat the demos lie on. A light theme lifts the canvas toward vellum, a dark one
+     mixes it toward the blueprint, and both rule it in the blueprint colour. The ruling stays
+     close to the mat it is on, so the sheets keep the eye and the stacks' hints, which are
+     written on the mat and not on their sheet, still read against it. */
   --mat-paper: light-dark(
     color-mix(in oklch, var(--theme-canvas), white 24%),
     color-mix(in oklch, var(--theme-canvas), var(--theme-blueprint) 30%)
   );
   --mat-grid-minor: light-dark(
-    color-mix(in oklch, var(--theme-blueprint), transparent 88%),
-    color-mix(in oklch, white, transparent 95%)
+    color-mix(in oklch, var(--theme-blueprint), transparent 92%),
+    color-mix(in oklch, var(--theme-blueprint), transparent 80%)
   );
   --mat-grid-major: light-dark(
-    color-mix(in oklch, var(--theme-blueprint), transparent 72%),
-    color-mix(in oklch, white, transparent 88%)
+    color-mix(in oklch, var(--theme-blueprint), transparent 84%),
+    color-mix(in oklch, var(--theme-blueprint), transparent 60%)
   );
   --mat-edge: light-dark(
     color-mix(in oklch, var(--ink-muted), transparent 40%),
