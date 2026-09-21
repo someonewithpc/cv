@@ -283,12 +283,12 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
   const sheets = await page.evaluate(() => {
     const main = document.querySelector('main')!;
     const bands = [
-      // The index rail is fixed in the margin, not laid down as a band. #open-source is not
-      // one band of paper either: it lays down a sheet for its heading and one torn sheet of
+      // A folio stands in the desk margin, not laid down as a band. #open-source is not one
+      // band of paper either: it lays down a sheet for its heading and one torn sheet of
       // ruled paper per group, which the tests below measure.
       ...[...main.children].filter((el) =>
         !el.classList.contains('full-width')
-        && !el.classList.contains('index-tabs')
+        && !el.classList.contains('folio-rail')
         && el.id !== 'open-source'),
       ...main.querySelectorAll(':scope > .full-width > *:not(.cutting-mat)'),
     ];
@@ -324,114 +324,118 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
   }
 });
 
-/** The sections the rail indexes, in page order, with the heading each one carries itself. */
-const SECTIONS = [
+/** Every sheet on the desk, in page order, with the heading it carries itself. */
+const SHEETS = [
   // The ruby bases, without the pronunciation the rt annotations carry.
-  { id: 'profile', heading: '#profile h1 ruby span' },
-  { id: 'bill-of-materials', heading: '#tech-icon-cloud-label' },
-  { id: 'demos', heading: '#demos-heading .typewriter' },
-  { id: 'open-source', heading: '#open-source-heading .typewriter' },
+  { number: '01', id: 'profile', heading: '#profile h1 ruby span' },
+  { number: '02', id: 'bill-of-materials', heading: '#tech-icon-cloud-label' },
+  { number: '03', id: 'demos', heading: '#demos-heading .typewriter' },
+  { number: '04', id: 'open-source', heading: '#open-source-heading .typewriter' },
 ];
 
-const readRail = (page: import('@playwright/test').Page) =>
-  page.evaluate((sections) => {
+/** The width from which Layout.astro has desk to spare for a folio. */
+const FOLIO_FROM = 80 * 16;
+
+const readFolios = (page: import('@playwright/test').Page) =>
+  page.evaluate((sheets) => {
     const text = (el: Element | null) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     const box = ({ left, right, top, bottom, width, height }: DOMRect) =>
       ({ left, right, top, bottom, width, height });
 
-    const tabs = [...document.querySelectorAll<HTMLAnchorElement>('.index-tabs a')].map((tab) => ({
-      href: tab.getAttribute('href')!,
-      number: text(tab.querySelector('.tab-number')),
-      name: text(tab.querySelector('.tab-name')),
-      resolves: !!document.querySelector(tab.hash),
-      proud: getComputedStyle(tab).getPropertyValue('--proud').trim(),
-      current: tab.getAttribute('aria-current'),
-      box: box(tab.getBoundingClientRect()),
-    }));
-
     return {
-      tabs,
-      headings: sections.map(({ heading }) =>
+      folios: [...document.querySelectorAll<HTMLElement>('.folio-rail')].map((rail) => ({
+        number: text(rail.querySelector('.folio-number')),
+        label: text(rail.querySelector('.folio-label')),
+        hidden: rail.getAttribute('aria-hidden'),
+        links: rail.querySelectorAll('a, button').length,
+        shown: getComputedStyle(rail).display !== 'none',
+        box: box(rail.getBoundingClientRect()),
+        numeral: box(rail.querySelector('.folio-number')!.getBoundingClientRect()),
+      })),
+      headings: sheets.map(({ heading }) =>
         [...document.querySelectorAll(heading)].map(text).join(' ')),
-      // Every sheet the page lays down, and the mat with its stacks: what the rail must stay
-      // out of. The #demos section itself is the whole viewport wide and holds no ink.
-      bands: [...document.querySelectorAll('#profile, #bill-of-materials, #demos > *, #open-source, article.technical-drawing-stack')]
+      sheets: sheets.map(({ id }) => box(document.querySelector(`#${id}`)!.getBoundingClientRect())),
+      // Every piece of paper the page lays down, and the mat with its stacks: what a folio
+      // must stay clear of. #demos itself is the whole viewport wide and holds no ink.
+      paper: [...document.querySelectorAll('#profile, #bill-of-materials, #demos > *, #open-source .intro, #open-source section[data-group], article.technical-drawing-stack')]
         .map((band) => ({ name: band.id || band.className, ...box(band.getBoundingClientRect()) })),
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
     };
-  }, SECTIONS);
+  }, SHEETS);
 
-test('the rail carries one numbered tab per section, each named after that section', async ({ page }) => {
+test('the desk margin carries one numbered folio per sheet, named after that sheet', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
-  const { tabs, headings } = await readRail(page);
+  const { folios, headings } = await readFolios(page);
 
-  expect(tabs.map((tab) => tab.name)).toEqual(headings);
-  expect(tabs.map((tab) => tab.href)).toEqual(SECTIONS.map(({ id }) => `#${id}`));
-  expect(tabs.map((tab) => tab.number)).toEqual(['01', '02', '03', '04']);
-  for (const tab of tabs) {
-    expect(tab.resolves, `${tab.href} points at an element on the page`).toBe(true);
+  expect(folios.map((folio) => folio.number)).toEqual(SHEETS.map(({ number }) => number));
+  expect(folios.map((folio) => folio.label)).toEqual(headings);
+  // Decoration: it says nothing the sheet does not already say, and nothing can be done to it.
+  for (const folio of folios) {
+    expect(folio.hidden, `${folio.number} is hidden from assistive tech`).toBe('true');
+    expect(folio.links, `${folio.number} is not interactive`).toBe(0);
   }
 });
 
-test('the rail stands in the desk margin, clear of every band the page lays down', async ({ page }) => {
+test('every folio stands in the desk margin beside its own sheet', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
-  const { tabs, bands } = await readRail(page);
+  const { folios, sheets, paper } = await readFolios(page);
+  expect(folios).toHaveLength(SHEETS.length);
+  expect(paper.length).toBeGreaterThanOrEqual(4);
 
-  // The pulled-out tab reaches furthest left, the rest furthest right.
-  const edge = Math.max(...tabs.map((tab) => tab.box.right));
-  expect(Math.min(...tabs.map((tab) => tab.box.left))).toBeGreaterThan(0);
-  expect(bands.length).toBeGreaterThanOrEqual(4);
-  for (const band of bands) {
-    expect(band.left, `${band.name} starts right of the rail`).toBeGreaterThanOrEqual(edge);
+  for (const [index, folio] of folios.entries()) {
+    const sheet = sheets[index];
+    expect(folio.shown, `${folio.number} shows`).toBe(true);
+    expect(folio.box.left, `${folio.number} starts at the desk's edge`).toBeGreaterThanOrEqual(0);
+    // Beside its own sheet, top to bottom, and never over anything written on the page.
+    expect(folio.box.top, `${folio.number} top`).toBeCloseTo(sheet.top, 0);
+    expect(folio.box.bottom, `${folio.number} bottom`).toBeCloseTo(sheet.bottom, 0);
+    for (const band of paper) {
+      expect(folio.box.right, `${folio.number} clear of ${band.name}`).toBeLessThanOrEqual(band.left);
+    }
   }
 });
 
-test('a tab scrolls to its section and is the one left standing out', async ({ page }) => {
+test('a folio rides along while its sheet scrolls past', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
-  await page.locator('.index-tabs a').nth(2).click();
-
-  const demos = page.locator('.index-tabs a[href="#demos"]');
-  await expect(demos).toHaveAttribute('aria-current', 'location');
-
-  const landed = await page.evaluate(() => {
-    const section = document.querySelector('#demos')!.getBoundingClientRect();
-    const tabs = [...document.querySelectorAll<HTMLAnchorElement>('.index-tabs a')];
-    return {
-      top: section.top,
-      bottom: section.bottom,
-      proud: tabs.map((tab) => getComputedStyle(tab).getPropertyValue('--proud').trim()),
-      marked: tabs.filter((tab) => tab.hasAttribute('aria-current')).length,
-    };
+  const before = (await readFolios(page)).folios[2];
+  // The demos sheet is the tall one: 400px into it the folio has travelled but not left.
+  await page.evaluate(() => {
+    const demos = document.querySelector('#demos')!.getBoundingClientRect();
+    window.scrollTo(0, demos.top + window.scrollY + 400);
   });
+  await page.waitForTimeout(200);
 
-  // The section starts at the top of the screen and runs down past it.
-  expect(Math.abs(landed.top)).toBeLessThanOrEqual(2);
-  expect(landed.bottom).toBeGreaterThan(0);
-  expect(landed.proud).toEqual(['0', '0', '1', '0']);
-  expect(landed.marked).toBe(1);
+  const { folios, clientWidth } = await readFolios(page);
+  const after = folios[2];
+  expect(after.numeral.top).toBeLessThan(before.numeral.top);
+  // Stuck 1.5rem down the screen, and still on it.
+  expect(after.numeral.top).toBeCloseTo(24, 0);
+  expect(after.numeral.left).toBeGreaterThanOrEqual(0);
+  expect(after.numeral.right).toBeLessThan(clientWidth);
 });
 
-test('no rail on a phone, and no tab anywhere over the page', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  await page.waitForTimeout(1000);
+for (const [width, height] of [[FOLIO_FROM - 16, 900], [1024, 768], [390, 844]]) {
+  test(`no folio at ${width}px, where the desk has no margin to spare`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.waitForTimeout(1000);
 
-  await expect(page.locator('.index-tabs')).toBeHidden();
-
-  const { tabs, scrollWidth, clientWidth } = await readRail(page);
-  expect(tabs).toHaveLength(SECTIONS.length);
-  for (const tab of tabs) {
-    expect(tab.box.width + tab.box.height, `${tab.href} takes no room`).toBe(0);
-  }
-  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
-});
+    const { folios, scrollWidth, clientWidth } = await readFolios(page);
+    expect(folios).toHaveLength(SHEETS.length);
+    for (const folio of folios) {
+      expect(folio.shown, `${folio.number} is not drawn`).toBe(false);
+      expect(folio.box.width + folio.box.height, `${folio.number} takes no room`).toBe(0);
+    }
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+}
 
 /** The groups site.json carries, in the order the section writes them out. */
 const GROUPS = JSON.parse(
