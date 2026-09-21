@@ -101,6 +101,8 @@ if (number != null) citePieces.push(null, `#${number}`);
 </div>
 
 <style lang="scss">
+@use "@/scss/_ruled.scss" as ruled;
+
 .row {
   > ul {
     grid-area: 1 / 1;
@@ -136,6 +138,8 @@ if (number != null) citePieces.push(null, `#${number}`);
   }
 
   cite {
+    @include ruled.on-the-rule;
+
     grid-area: 1 / 2;
     position: relative;
     z-index: 1;
@@ -143,12 +147,14 @@ if (number != null) citePieces.push(null, `#${number}`);
     font-family: monospace, system-ui;
     font-style: normal;
     color: var(--ink-muted);
-    /* The ruling's pitch is the line height of everything written on it. */
-    line-height: var(--rule-pitch);
     overflow-wrap: break-word;
   }
 
   .title {
+    /* A title that fits is one ruled line; a title that wraps is two, both of them on the
+       rules, because the line height is the ruling's own pitch. */
+    @include ruled.on-the-rule;
+
     grid-area: 1 / 3;
     position: relative;
     z-index: 1;
@@ -156,9 +162,6 @@ if (number != null) citePieces.push(null, `#${number}`);
     display: block;
     width: fit-content;
     color: var(--ink);
-    /* A title that fits is one ruled line; a title that wraps is two, both of them on the
-       rules, because the line height is the ruling's own pitch. */
-    line-height: var(--rule-pitch);
     overflow-wrap: break-word;
     word-break: normal;
     hyphens: none;
@@ -245,16 +248,18 @@ if (number != null) citePieces.push(null, `#${number}`);
   }
 
   .body > p {
+    @include ruled.on-the-rule;
+
     margin: 0;
-    line-height: var(--rule-pitch);
     color: var(--ink-muted);
     overflow-wrap: break-word;
   }
 
   .body > footer {
+    @include ruled.on-the-rule;
+
     font-family: monospace, system-ui;
     font-size: 0.75rem;
-    line-height: var(--rule-pitch);
     color: var(--ink-faint);
 
     .additions {
