@@ -141,6 +141,63 @@ test('the second sheet shows the handoff in four frames of the demo and few word
   expect(words).toBeLessThan(50);
 });
 
+/** What the four callouts say, in the order the frames run. */
+const HANDOFF_CALLOUTS = [
+  'drag the object to the viewport',
+  'over the catalog it is still a picture',
+  'over the floor it becomes the model',
+  'let go and it is placed',
+];
+
+test('the handoff callouts read in frame order, each inside its own frame', async ({ page }) => {
+  const stack = dragDropStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Picture to Model', 2);
+  const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
+  await expect(layer).toBeVisible();
+
+  const callouts = await layer.evaluate((root) => {
+    const box = (el: Element) => {
+      const { left, top, right, bottom } = el.getBoundingClientRect();
+      return { left, top, right, bottom };
+    };
+    const svg = root.querySelector('svg[data-annotations]')!;
+    return [...svg.querySelectorAll<SVGGElement>('[data-target]')].map((callout) => {
+      const mark = root.querySelector(callout.dataset.target!)!;
+      return {
+        // The label wraps into one tspan a row, so its words only read back with the rows spaced.
+        text: [...callout.querySelectorAll('tspan')].map((row) => row.textContent?.trim()).join(' '),
+        label: box(callout.querySelector('text')!),
+        frame: box(mark.closest('figure')!),
+        sheet: box(svg.closest('section')!),
+      };
+    });
+  });
+
+  expect(callouts.map((callout) => callout.text)).toEqual(HANDOFF_CALLOUTS);
+
+  // Every line is wider than the canvas its frame shows beside the catalog, so the rule
+  // left to hold is that a label stays on the frame it names. That keeps it on the sheet
+  // and clear of the other three, since no two frames overlap.
+  const SLACK = 1;
+  for (const { text, label, frame, sheet } of callouts) {
+    expect(label.left, `"${text}" past its frame's left edge`).toBeGreaterThanOrEqual(frame.left - SLACK);
+    expect(label.right, `"${text}" past its frame's right edge`).toBeLessThanOrEqual(frame.right + SLACK);
+    expect(label.top, `"${text}" above its frame`).toBeGreaterThanOrEqual(frame.top - SLACK);
+    expect(label.bottom, `"${text}" below its frame`).toBeLessThanOrEqual(frame.bottom + SLACK);
+    expect(label.left >= sheet.left && label.right <= sheet.right, `"${text}" off the sheet`).toBe(true);
+  }
+  for (const a of callouts) {
+    for (const b of callouts) {
+      if (a === b) continue;
+      const overlap =
+        a.label.left < b.label.right && b.label.left < a.label.right &&
+        a.label.top < b.label.bottom && b.label.top < a.label.bottom;
+      expect(overlap, `"${a.text}" and "${b.text}" overlap`).toBe(false);
+    }
+  }
+});
+
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
   const requests: string[] = [];
   await page.route('**/demos/space-builder/grass/color.webp*', (route) => {
