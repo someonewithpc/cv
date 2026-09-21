@@ -65,6 +65,15 @@ const STAMP_HINT: Record<AutoplayState, string> = {
 
 const STAMP_TOUCH_HINT = 'tap to take over';
 
+/** Shape 6 writes one line in the margin and strikes it out when the visitor takes over. */
+const NOTE_LINE: Record<AutoplayState, string> = {
+  playing: 'playing itself, hover to take over',
+  user: 'playing itself, hover to take over',
+  off: 'parked, reduced motion is on',
+};
+
+const NOTE_TOUCH_LINE = 'playing itself, tap to take over';
+
 /** What the marks a visitor can press are called, for anyone who cannot see them. */
 const ACT_LABEL: Record<AutoplayState, { toggle: string; replay: string }> = {
   playing: { toggle: 'Take the walkthrough over', replay: 'Replay the walkthrough' },
@@ -73,14 +82,14 @@ const ACT_LABEL: Record<AutoplayState, { toggle: string; replay: string }> = {
 };
 
 /**
- * Five shapes for the same deck, so the preview can show all of them. `?deck=1` fills the
+ * Six shapes for the same deck, so the preview can show all of them. `?deck=1` fills the
  * bottom band, `?deck=2` stamps the deck onto the title block, `?deck=3` fills the band too
- * and leads with the instruction. Those three are keys. The others are marks a drawing already
- * has: `?deck=4` a dimension line, `?deck=5` a rubber stamp.
+ * and leads with the instruction. Those three are keys. The other three are marks a drawing
+ * already has: `?deck=4` a dimension line, `?deck=5` a rubber stamp, `?deck=6` a margin note.
  * The shape lands on <html>, which is where Page.astro's styles read it. Once one shape is
  * chosen, the rest and this switch go.
  */
-const DECK_SHAPES = ['1', '2', '3', '4', '5'];
+const DECK_SHAPES = ['1', '2', '3', '4', '5', '6'];
 const DEFAULT_DECK_SHAPE = '1';
 
 /** How long shape 3 shows the instruction before the readout settles on the state. */
@@ -172,6 +181,7 @@ export function initAutoplayStatus(page: HTMLElement) {
     write('[data-demo-stamp-hint]', state === 'playing' && touch
       ? STAMP_TOUCH_HINT
       : STAMP_HINT[state]);
+    write('[data-demo-note-line]', state === 'playing' && touch ? NOTE_TOUCH_LINE : NOTE_LINE[state]);
 
     acts.forEach((act) => {
       const kind = act.dataset.demoAct === 'replay' ? 'replay' : 'toggle';
