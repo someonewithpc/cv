@@ -149,54 +149,68 @@ const HANDOFF_CALLOUTS = [
   'let go and it is placed',
 ];
 
-test('the handoff callouts read in frame order, each inside its own frame', async ({ page }) => {
-  const stack = dragDropStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Picture to Model', 2);
-  const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
-  await expect(layer).toBeVisible();
+/** A phone held upright, the size the callouts had the least room on. */
+const PORTRAIT_PHONE = { width: 390, height: 844 };
 
-  const callouts = await layer.evaluate((root) => {
-    const box = (el: Element) => {
-      const { left, top, right, bottom } = el.getBoundingClientRect();
-      return { left, top, right, bottom };
-    };
-    const svg = root.querySelector('svg[data-annotations]')!;
-    return [...svg.querySelectorAll<SVGGElement>('[data-target]')].map((callout) => {
-      const mark = root.querySelector(callout.dataset.target!)!;
-      return {
-        // The label wraps into one tspan a row, so its words only read back with the rows spaced.
-        text: [...callout.querySelectorAll('tspan')].map((row) => row.textContent?.trim()).join(' '),
-        label: box(callout.querySelector('text')!),
-        frame: box(mark.closest('figure')!),
-        sheet: box(svg.closest('section')!),
-      };
-    });
-  });
-
-  expect(callouts.map((callout) => callout.text)).toEqual(HANDOFF_CALLOUTS);
-
-  // Every line is wider than the canvas its frame shows beside the catalog, so the rule
-  // left to hold is that a label stays on the frame it names. That keeps it on the sheet
-  // and clear of the other three, since no two frames overlap.
-  const SLACK = 1;
-  for (const { text, label, frame, sheet } of callouts) {
-    expect(label.left, `"${text}" past its frame's left edge`).toBeGreaterThanOrEqual(frame.left - SLACK);
-    expect(label.right, `"${text}" past its frame's right edge`).toBeLessThanOrEqual(frame.right + SLACK);
-    expect(label.top, `"${text}" above its frame`).toBeGreaterThanOrEqual(frame.top - SLACK);
-    expect(label.bottom, `"${text}" below its frame`).toBeLessThanOrEqual(frame.bottom + SLACK);
-    expect(label.left >= sheet.left && label.right <= sheet.right, `"${text}" off the sheet`).toBe(true);
-  }
-  for (const a of callouts) {
-    for (const b of callouts) {
-      if (a === b) continue;
-      const overlap =
-        a.label.left < b.label.right && b.label.left < a.label.right &&
-        a.label.top < b.label.bottom && b.label.top < a.label.bottom;
-      expect(overlap, `"${a.text}" and "${b.text}" overlap`).toBe(false);
+for (const phone of [false, true]) {
+  test(`the handoff callouts read in frame order, each on its own frame's canvas${phone ? ', on a phone' : ''}`, async ({ page }) => {
+    if (phone) {
+      await page.setViewportSize(PORTRAIT_PHONE);
+      await page.goto('/');
     }
-  }
-});
+    const stack = dragDropStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await swipeToPage(page, stack, 'Picture to Model', 2);
+    const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
+    await expect(layer).toBeVisible();
+
+    const callouts = await layer.evaluate((root) => {
+      const box = (el: Element) => {
+        const { left, top, right, bottom } = el.getBoundingClientRect();
+        return { left, top, right, bottom };
+      };
+      const svg = root.querySelector('svg[data-annotations]')!;
+      // How much of a frame's width the captured canvas takes, from the crop the capture
+      // script prints, so this reads the same fraction the frames were made with.
+      const canvas = Number(root.querySelector<HTMLElement>('[data-handoff-strip]')!.dataset.canvasFraction);
+      return [...svg.querySelectorAll<SVGGElement>('[data-target]')].map((callout) => {
+        const mark = root.querySelector(callout.dataset.target!)!;
+        const frame = box(mark.closest('figure')!);
+        return {
+          // The label wraps into one tspan a row, so its words only read back with the rows spaced.
+          text: [...callout.querySelectorAll('tspan')].map((row) => row.textContent?.trim()).join(' '),
+          label: box(callout.querySelector('text')!),
+          frame,
+          canvasRight: frame.left + (frame.right - frame.left) * canvas,
+          sheet: box(svg.closest('section')!),
+        };
+      });
+    });
+
+    expect(callouts.map((callout) => callout.text)).toEqual(HANDOFF_CALLOUTS);
+
+    // A label belongs on the frame it names, and on the canvas half of it: the catalog side
+    // is cards and their titles, and a line laid over those reads as neither. Staying on one
+    // frame also keeps it on the sheet and clear of the other three, since no two overlap.
+    const SLACK = 1;
+    for (const { text, label, frame, canvasRight, sheet } of callouts) {
+      expect(label.left, `"${text}" past its frame's left edge`).toBeGreaterThanOrEqual(frame.left - SLACK);
+      expect(label.right, `"${text}" over its frame's catalog`).toBeLessThanOrEqual(canvasRight + SLACK);
+      expect(label.top, `"${text}" above its frame`).toBeGreaterThanOrEqual(frame.top - SLACK);
+      expect(label.bottom, `"${text}" below its frame`).toBeLessThanOrEqual(frame.bottom + SLACK);
+      expect(label.left >= sheet.left && label.right <= sheet.right, `"${text}" off the sheet`).toBe(true);
+    }
+    for (const a of callouts) {
+      for (const b of callouts) {
+        if (a === b) continue;
+        const overlap =
+          a.label.left < b.label.right && b.label.left < a.label.right &&
+          a.label.top < b.label.bottom && b.label.top < a.label.bottom;
+        expect(overlap, `"${a.text}" and "${b.text}" overlap`).toBe(false);
+      }
+    }
+  });
+}
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
   const requests: string[] = [];
