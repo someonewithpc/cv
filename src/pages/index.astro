@@ -4,6 +4,7 @@ import Layout from '@/layouts/Layout.astro';
 import Name from '@/components/Name.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
 import SectionHeader from '@/components/SectionHeader.astro';
+import Callout from '@/components/Callout.astro';
 
 import VisrezLogoAnimation from '@/components/VisrezLogoAnimation/Demo.astro';
 import MarkerEditorDemo from '@/components/MarkerEditorDemo/Demo.astro';
@@ -29,13 +30,27 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
         sheetCode="SH-DEMOS"
       />
 
-      <VisrezLogoAnimation />
-      <MarkerEditorDemo />
-      <SpaceBuilderDemo />
-      <VariantsDemo />
-      <TaggingToolDemo />
-      <FontPickerDemo />
-      <DragDropDemo />
+      <Callout letter="A" title="Loading logo" titleJp="ローディングロゴ" scale="3:1" headingId="detail-a">
+        <VisrezLogoAnimation />
+      </Callout>
+      <Callout letter="B" title="Marker editor" titleJp="マーカーエディター" scale="1:1" headingId="detail-b">
+        <MarkerEditorDemo />
+      </Callout>
+      <Callout letter="C" title="Space builder" titleJp="スペースビルダー" scale="1:1" headingId="detail-c">
+        <SpaceBuilderDemo />
+      </Callout>
+      <Callout letter="D" title="Object variants" titleJp="オブジェクトバリアント" scale="1:1" headingId="detail-d">
+        <VariantsDemo />
+      </Callout>
+      <Callout letter="E" title="Tagging tool" titleJp="タグ付けツール" scale="1:1" headingId="detail-e">
+        <TaggingToolDemo />
+      </Callout>
+      <Callout letter="F" title="Font picker" titleJp="フォントピッカー" scale="1:1" headingId="detail-f">
+        <FontPickerDemo />
+      </Callout>
+      <Callout letter="G" title="Drag and drop" titleJp="ドラッグ＆ドロップ" scale="1:1" headingId="detail-g">
+        <DragDropDemo />
+      </Callout>
     </section>
 
     <OpenSourceContributions />
