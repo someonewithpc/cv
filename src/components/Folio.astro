@@ -1,0 +1,67 @@
+---
+/**
+ * The sheet number in the desk's left margin: a stencil numeral with that sheet's own title
+ * under it, riding along while the sheet scrolls past. It is decoration, so assistive tech
+ * never sees it; the sheet carries the same words as its heading.
+ *
+ * It is a child of #main rather than of the sheet, because the margin it stands in belongs to
+ * the desk and not to the paper. Absolutely positioned in the left margin column of the grid
+ * row its sheet sits in, it takes that row as its containing block, which is what gives the
+ * numeral the sheet's own height to stick along. The row is the number: there is one folio
+ * per sheet and they run in page order.
+ */
+type Props = {
+  number: number;
+  label: string;
+};
+
+const { number, label } = Astro.props;
+---
+
+<div class="folio-rail" style={`--folio-row: ${number}`} aria-hidden="true">
+  <p class="folio">
+    <span class="folio-number stencil">{String(number).padStart(2, '0')}</span>
+    <span class="folio-label typewriter">{label}</span>
+  </p>
+</div>
+
+<style lang="scss">
+/* 80rem is the width at which the margin holds the numeral with 1.5rem still clear of the
+   widest band the page lays down. Narrower than that the margin is a gutter, so there is no
+   folio at all. */
+.folio-rail {
+  display: none;
+
+  @media (width >= 80rem) {
+    display: block;
+    position: absolute;
+    grid-row: var(--folio-row);
+    grid-column: full-width-start / content-start;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--folio-lane);
+    color: color-mix(in oklch, var(--ink), transparent 45%);
+  }
+}
+
+.folio {
+  position: sticky;
+  top: 1.5rem;
+  display: grid;
+  justify-items: end;
+  gap: 0.5rem;
+  padding-inline-end: var(--folio-gap);
+  text-align: right;
+  line-height: 1;
+}
+
+.folio-number {
+  font-size: var(--type-folio);
+  letter-spacing: -0.02em;
+}
+
+.folio-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+</style>

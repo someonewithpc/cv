@@ -1,6 +1,7 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 
+import Folio from '@/components/Folio.astro';
 import Name from '@/components/Name.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
 import SectionHeader from '@/components/SectionHeader.astro';
@@ -20,9 +21,16 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 
 <Layout>
   <main id="main">
+    {/* One folio per sheet, in page order. Each label is the heading that sheet already
+        shows, so the margin and the paper say the same thing; the top sheet has no heading
+        but the name, so the name is what its folio reads. */}
+    <Folio number={1} label="Hugo Sales" />
     <Name />
+
+    <Folio number={2} label="Bill of materials" />
     <TechIconCloud />
 
+    <Folio number={3} label="Demos" />
     <section id="demos" class="full-width" aria-labelledby="demos-heading">
       <SectionHeader
         headingId="demos-heading"
@@ -83,6 +91,7 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
       </div>
     </section>
 
+    <Folio number={4} label="Open Source" />
     <OpenSourceContributions />
   </main>
 </Layout>
@@ -180,7 +189,9 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 
     @media (width > 64rem) {
       --mat-rim: 1.5rem;
-      --mat-inset: clamp(1.5rem, 4vw, 5rem);
+      /* The mat and the folio share the desk margin, so the mat stops at the far side of the
+         lane the sheet number stands in whenever that is the wider of the two. */
+      --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
     }
 
     @media (width >= 86rem) {
