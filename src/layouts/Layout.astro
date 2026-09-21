@@ -207,6 +207,16 @@ main {
     );
   }
 
+  /* The cutting mat's width rule belongs to the desk and not to the mat, because the folio
+     stands in the margin the mat leaves and has to know where it ends (index.astro reads
+     both). --desk-edge is where the paper starts: the near edge of the widest thing the desk
+     lays down, which is always the mat. Past the mat's cap the desk keeps widening and the
+     mat does not, so the margin opens faster than the lane and the folio hangs off this
+     rather than off the window. */
+  --mat-inset: 0px;
+  --mat-max: 100rem;
+  --desk-edge: max((100vw - var(--mat-max)) / 2, var(--mat-inset));
+
   --full-width: minmax(var(--page-gap), 1fr);
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
   --content: min(100% - var(--page-gap) * 2, var(--content-max));
@@ -253,6 +263,9 @@ main {
        the last. */
     --desk-gap: 2.5rem;
     --sheet-pad: 1.5rem;
+    /* The mat and the folio share the desk margin, so the mat stops at the far side of the
+       lane the sheet number stands in whenever that is the wider of the two. */
+    --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
     --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
 
     row-gap: var(--desk-gap);

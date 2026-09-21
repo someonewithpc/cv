@@ -400,6 +400,23 @@ test('every folio stands in the desk margin beside its own sheet', async ({ page
   }
 });
 
+test('a folio keeps to the paper once the mat stops growing', async ({ page }) => {
+  // Past the mat's 100rem cap the desk's margin opens faster than the folio's lane, so a
+  // lane measured from the window is left behind in the corner.
+  await page.setViewportSize({ width: 2560, height: 1440 });
+  await page.goto('/');
+
+  const { folios, paper } = await readFolios(page);
+  expect(folios).toHaveLength(SHEETS.length);
+  const nearest = Math.min(...paper.map((band) => band.left));
+  expect(nearest).toBeGreaterThan(0);
+
+  for (const folio of folios) {
+    expect(folio.box.left, `${folio.number} follows the paper in`).toBeGreaterThan(0);
+    expect(nearest - folio.box.right, `${folio.number} lane ends at the paper`).toBeLessThanOrEqual(1);
+  }
+});
+
 test('a folio rides along while its sheet scrolls past', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
