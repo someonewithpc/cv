@@ -184,8 +184,7 @@ test('the second sheet shows the handoff in four frames of the demo and few word
   const layer = front.locator('[data-handoff-layer]');
   await expect(layer).toBeVisible();
   await expect(layer.locator('img[src^="/demos/drag-drop/handoff-"]')).toHaveCount(4);
-  // The callouts' placement is annotations-position.spec.ts's; here only that they exist.
-  await expect(layer.locator('svg[data-annotations] [data-target]')).toHaveCount(4);
+  await expect(layer.locator('figcaption')).toHaveCount(4);
 
   const words = await front.evaluate((page) => {
     const text = [
@@ -194,22 +193,24 @@ test('the second sheet shows the handoff in four frames of the demo and few word
     ].join(' ');
     return text.split(/\s+/).filter((word) => /\w/.test(word)).length;
   });
-  expect(words).toBeLessThan(50);
+  // The sheet says all of it now: a heading, the line under it, and the four captions come
+  // to 63 words, where the page used to hand a third of its width to an eight-word note.
+  expect(words).toBeLessThan(75);
 });
 
-/** What the four callouts say, in the order the frames run. */
-const HANDOFF_CALLOUTS = [
+/** What the four captions say, in the order the frames run. */
+const HANDOFF_CAPTIONS = [
   'drag the object to the viewport',
   'over the catalog it is still a picture',
   'over the floor it becomes the model',
   'let go and it is placed',
 ];
 
-/** A phone held upright, the size the callouts had the least room on. */
+/** A phone held upright, the size the frames and their captions have the least room on. */
 const PORTRAIT_PHONE = { width: 390, height: 844 };
 
 for (const phone of [false, true]) {
-  test(`the handoff callouts read in frame order, each on its own frame's canvas${phone ? ', on a phone' : ''}`, async ({ page }) => {
+  test(`the handoff captions read in frame order, each under its own frame${phone ? ', on a phone' : ''}`, async ({ page }) => {
     if (phone) {
       await page.setViewportSize(PORTRAIT_PHONE);
       await page.goto('/');
@@ -220,50 +221,39 @@ for (const phone of [false, true]) {
     const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
     await expect(layer).toBeVisible();
 
-    const callouts = await layer.evaluate((root) => {
+    const frames = await layer.evaluate((root) => {
       const box = (el: Element) => {
         const { left, top, right, bottom } = el.getBoundingClientRect();
         return { left, top, right, bottom };
       };
-      const svg = root.querySelector('svg[data-annotations]')!;
-      // How much of a frame's width the captured canvas takes, from the crop the capture
-      // script prints, so this reads the same fraction the frames were made with.
-      const canvas = Number(root.querySelector<HTMLElement>('[data-handoff-strip]')!.dataset.canvasFraction);
-      return [...svg.querySelectorAll<SVGGElement>('[data-target]')].map((callout) => {
-        const mark = root.querySelector(callout.dataset.target!)!;
-        const frame = box(mark.closest('figure')!);
-        return {
-          // The label wraps into one tspan a row, so its words only read back with the rows spaced.
-          text: [...callout.querySelectorAll('tspan')].map((row) => row.textContent?.trim()).join(' '),
-          label: box(callout.querySelector('text')!),
-          frame,
-          canvasRight: frame.left + (frame.right - frame.left) * canvas,
-          sheet: box(svg.closest('section')!),
-        };
-      });
+      return [...root.querySelectorAll('figure.frame')].map((frame) => ({
+        text: frame.querySelector('figcaption')!.textContent?.trim() ?? '',
+        caption: box(frame.querySelector('figcaption')!),
+        picture: box(frame.querySelector('img')!),
+        frame: box(frame),
+        sheet: box(frame.closest('section')!),
+      }));
     });
 
-    expect(callouts.map((callout) => callout.text)).toEqual(HANDOFF_CALLOUTS);
+    expect(frames.map((frame) => frame.text)).toEqual(HANDOFF_CAPTIONS);
 
-    // A label belongs on the frame it names, and on the canvas half of it: the catalog side
-    // is cards and their titles, and a line laid over those reads as neither. Staying on one
-    // frame also keeps it on the sheet and clear of the other three, since no two overlap.
+    // A caption is set under the picture it names and no wider than it, so the eye that
+    // reads one knows which still it belongs to, and it stays on the sheet.
     const SLACK = 1;
-    for (const { text, label, frame, canvasRight, sheet } of callouts) {
-      expect(label.left, `"${text}" past its frame's left edge`).toBeGreaterThanOrEqual(frame.left - SLACK);
-      expect(label.right, `"${text}" over its frame's catalog`).toBeLessThanOrEqual(canvasRight + SLACK);
-      expect(label.top, `"${text}" above its frame`).toBeGreaterThanOrEqual(frame.top - SLACK);
-      expect(label.bottom, `"${text}" below its frame`).toBeLessThanOrEqual(frame.bottom + SLACK);
-      expect(label.left >= sheet.left && label.right <= sheet.right, `"${text}" off the sheet`).toBe(true);
+    for (const { text, caption, picture, frame, sheet } of frames) {
+      expect(caption.top, `"${text}" is not under its frame`).toBeGreaterThanOrEqual(picture.bottom - SLACK);
+      expect(caption.left, `"${text}" past its frame's left edge`).toBeGreaterThanOrEqual(frame.left - SLACK);
+      expect(caption.right, `"${text}" past its frame's right edge`).toBeLessThanOrEqual(frame.right + SLACK);
+      expect(caption.left >= sheet.left && caption.right <= sheet.right, `"${text}" off the sheet`).toBe(true);
     }
-    for (const a of callouts) {
-      for (const b of callouts) {
-        if (a === b) continue;
-        const overlap =
-          a.label.left < b.label.right && b.label.left < a.label.right &&
-          a.label.top < b.label.bottom && b.label.top < a.label.bottom;
-        expect(overlap, `"${a.text}" and "${b.text}" overlap`).toBe(false);
-      }
+
+    // And the frames themselves run in reading order, so the drag reads left to right (or,
+    // on a phone, row by row) rather than in whatever order the grid happened to lay them.
+    for (const [index, { text, frame }] of frames.entries()) {
+      if (index === 0) continue;
+      const before = frames[index - 1].frame;
+      const after = frame.top > before.top + SLACK || frame.left >= before.right - SLACK;
+      expect(after, `"${text}" comes before the frame it follows`).toBe(true);
     }
   });
 }
@@ -286,24 +276,28 @@ test('the handoff panel stays out of the title block and the note', async ({ pag
       return { left, top, right, bottom };
     };
     const sheet = root.closest('section')!;
+    const mat = Number.parseFloat(getComputedStyle(sheet).paddingBottom);
+    const edge = box(sheet);
     return {
-      sheet: box(sheet),
+      artwork: { left: edge.left + mat, top: edge.top + mat, right: edge.right - mat, bottom: edge.bottom - mat },
       panel: box(root.querySelector('.panel')!),
-      // The title block is the sheet's own corner table, the note its third column.
+      // The title block is the sheet's own corner table; a note would be its third column.
       titleBlock: box(sheet.querySelector(':scope > table')!),
-      aside: box(sheet.querySelector(':scope > .aside')!),
+      note: sheet.querySelector('.aside .note-card > *') ? 'yes' : 'none',
     };
   });
 
-  // A landscape sheet gives the artwork two of its three columns and keeps the third for
-  // the note and the title block, which the panel once covered by growing to the strip's
-  // own width instead of the column's.
-  expect(boxes.panel.right).toBeLessThanOrEqual(boxes.titleBlock.left);
-  expect(boxes.panel.right).toBeLessThanOrEqual(boxes.aside.left);
-  // And it still fills that column, rather than having been fixed by shrinking to nothing:
-  // two thirds of the sheet, less the mat, is 0.64 of it.
-  const sheetWidth = boxes.sheet.right - boxes.sheet.left;
-  expect(boxes.panel.right - boxes.panel.left).toBeGreaterThan(0.6 * sheetWidth);
+  // This page says everything on its own plate, so it keeps no column for a note and the
+  // block's corner is the only part of the sheet the panel has to stay out of.
+  expect(boxes.note).toBe('none');
+  expect(boxes.panel.bottom).toBeLessThanOrEqual(boxes.titleBlock.top);
+  expect(boxes.panel.left).toBeGreaterThanOrEqual(boxes.artwork.left - 1);
+  expect(boxes.panel.right).toBeLessThanOrEqual(boxes.artwork.right + 1);
+
+  // And it takes the artwork's whole width rather than the two thirds it used to sit in,
+  // which is what gives a row of four frames the room to be four frames.
+  const artworkWidth = boxes.artwork.right - boxes.artwork.left;
+  expect(boxes.panel.right - boxes.panel.left).toBeGreaterThanOrEqual(0.9 * artworkWidth);
 });
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
