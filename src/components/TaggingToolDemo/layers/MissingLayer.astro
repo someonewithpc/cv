@@ -5,8 +5,9 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 import Grid from '../Grid.astro';
 
 // Callout type at this scale; each ArrowAnnotation takes it too so its underline tracks
-// the glyphs.
-const annotationScale = 0.6;
+// the glyphs. A notch under the 0.6 the sheet was drawn at: the monospace body face runs
+// wider, and at 0.6 the two top labels met and one ran to the frame line.
+const annotationScale = 0.52;
 const annotationFontSize = 0.1 * annotationScale;
 
 // What the sheet points at, by a selector inside the embedded grid: the row that still
@@ -76,7 +77,7 @@ const rows = {
         tipX={-0.88}
         tipY={-0.5}
         angle={95}
-        length={0.45}
+        length={0.36}
         fontSize={annotationFontSize}
         text="Only objects still missing a value"
         only="portrait"
@@ -122,7 +123,9 @@ const rows = {
   display: grid;
   place-items: center;
   align-content: center;
-  row-gap: 0.75em;
+  /* A step under the portrait sheet's gap: the tall sheet keeps the figure and the note
+     clear of the frame line by a few pixels in the monospace body face. */
+  row-gap: 0.5em;
 
   @container technical-drawing-width (max-width: 56em) {
     /* The title block reaches into the content column on a short landscape sheet, so
@@ -262,7 +265,9 @@ const rows = {
   @container technical-drawing (orientation: portrait) {
     margin-inline: 0;
   }
-  font-size: 0.6875em;
+  /* The short sheet's size on every sheet: in the monospace body face the note wrapped
+     once more at 0.6875em and its last line came within 4px of the frame at 1024. */
+  font-size: 0.625em;
   line-height: 1.35;
   text-wrap: pretty;
   color: var(--ink-muted);
@@ -273,7 +278,6 @@ const rows = {
   }
 
   @container technical-drawing (orientation: portrait) {
-    font-size: 0.6875em;
     text-wrap: pretty;
   }
 
