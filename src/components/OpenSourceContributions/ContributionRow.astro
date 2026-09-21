@@ -119,6 +119,11 @@ if (number != null) citePieces.push(null, `#${number}`);
     justify-content: center;
     gap: 0.3rem;
     list-style: none;
+    /* The writing beside them is trimmed to sit on the rule, which puts its capitals in the
+       bottom of the pitch; a mark centred in the pitch itself floats a third of a line above
+       what it marks. Dropping it by half the difference stands it on the same middle. The
+       face's own cap height, so no size or face needs a constant of its own. */
+    translate: 0 calc((var(--rule-pitch) - 1cap) / 2);
 
     li {
       display: flex;
@@ -284,6 +289,9 @@ if (number != null) citePieces.push(null, `#${number}`);
     align-items: start;
 
     > ul {
+      /* A column of marks down the margin beside two written lines, so there is no single
+         line for them to stand on. */
+      translate: none;
       height: auto;
       padding-block: 0.4rem;
       flex-direction: column;
