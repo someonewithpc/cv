@@ -134,6 +134,7 @@ const hasCard = Astro.slots.has('card');
    for the leader is the lane's gap less the clearance the boundary is drawn out at. */
 .callout-card-leader {
   position: absolute;
+  /* Level with the card's title cell, which is where a leader off a title block would start. */
   top: 1.75rem;
   width: calc(var(--card-gap, 3rem) - var(--callout-pad));
   height: 0.5rem;
