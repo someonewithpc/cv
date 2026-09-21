@@ -5,6 +5,7 @@ import Name from '@/components/Name.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
 import SectionHeader from '@/components/SectionHeader.astro';
 import Callout from '@/components/Callout.astro';
+import TitleCard from '@/components/TitleCard.astro';
 
 import VisrezLogoAnimation from '@/components/VisrezLogoAnimation/Demo.astro';
 import MarkerEditorDemo from '@/components/MarkerEditorDemo/Demo.astro';
@@ -30,22 +31,49 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
       />
 
       <div class="cutting-mat">
-        <Callout letter="A" title="Loading logo" titleJp="ローディングロゴ" scale="3:1" headingId="detail-a">
+        <Callout letter="A" title="Loading logo" titleJp="ローディングロゴ" scale="3:1" headingId="detail-a" cardSide="start">
+          <TitleCard slot="card" title="Visrez Animated Loading Logo" medium="SVG, CSS animation" year="2023">
+            The Illustrator export became one path and a cube, animated by hand. The blue
+            sheets behind it show each step.
+          </TitleCard>
           <VisrezLogoAnimation />
         </Callout>
-        <Callout letter="B" title="Marker editor" titleJp="マーカーエディター" scale="1:1" headingId="detail-b">
+        <Callout letter="B" title="Marker editor" titleJp="マーカーエディター" scale="1:1" headingId="detail-b" cardSide="end">
+          <TitleCard slot="card" title="Interactive Map Marker Editor" medium="React, Leaflet, Redux" year="2026">
+            A pin editor for venue maps. Shape, border, fill and decoration are separate
+            parts, and a saved pin rebuilds itself from them.
+          </TitleCard>
           <MarkerEditorDemo />
         </Callout>
-        <Callout letter="C" title="Space builder" titleJp="スペースビルダー" scale="1:1" headingId="detail-c">
+        <Callout letter="C" title="Space builder" titleJp="スペースビルダー" scale="1:1" headingId="detail-c" cardSide="start">
+          <TitleCard slot="card" title="Space Builder · Add Tool" medium="Vue, Three.js" year="2023">
+            Draw a rectangle on the floor and it fills with chairs. Sliders set the spacing,
+            the aisles and the seat count.
+          </TitleCard>
           <SpaceBuilderDemo />
         </Callout>
-        <Callout letter="D" title="Object variants" titleJp="オブジェクトバリアント" scale="1:1" headingId="detail-d">
+        <Callout letter="D" title="Object variants" titleJp="オブジェクトバリアント" scale="1:1" headingId="detail-d" cardSide="end">
+          <TitleCard slot="card" title="Space Builder · Object Variants" medium="Vue, Sass" year="2024">
+            One card covers a whole group of library objects. The carousel steps through one
+            cell's finishes, the dropdowns move between cells, and a pair the catalogue never
+            made falls back to the nearest one it did.
+          </TitleCard>
           <VariantsDemo />
         </Callout>
-        <Callout letter="E" title="Tagging tool" titleJp="タグ付けツール" scale="1:1" headingId="detail-e">
+        <Callout letter="E" title="Tagging tool" titleJp="タグ付けツール" scale="1:1" headingId="detail-e" cardSide="start">
+          <TitleCard slot="card" title="Library Tagging Tool" medium="CSS, JavaScript" year="2025">
+            One input tags a base object and every variant under it. Variants that already
+            disagree keep their own value, and an object leaves the page once nothing about it
+            is missing.
+          </TitleCard>
           <TaggingToolDemo />
         </Callout>
-        <Callout letter="F" title="Font picker" titleJp="フォントピッカー" scale="1:1" headingId="detail-f">
+        <Callout letter="F" title="Font picker" titleJp="フォントピッカー" scale="1:1" headingId="detail-f" cardSide="end">
+          <TitleCard slot="card" title="Interactive Map Font Picker" medium="React" year="2026">
+            The list of faces comes from document.fonts, each face's Unicode subsets folded
+            back into one entry. Nothing in it is hardcoded, so a font that loads later shows
+            up on its own.
+          </TitleCard>
           <FontPickerDemo />
         </Callout>
       </div>
@@ -91,12 +119,21 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     --mat-inset: 0px;
     --mat-max: 80rem;
 
+    /* The lane a detail's title card stands in, beside the view rather than under it. It is
+       open only where the mat is wide enough to hold a stack and a card side by side: the mat
+       stops growing at 80rem, so past 86rem the lane is this width and no more. One switch
+       drives both the column here and the card itself (Callout.astro). */
+    --card-width: 12rem;
+    --card-gap: 3rem;
+    --card-lane: 0px;
+    --card-display: none;
+
     grid-column: full-width;
     justify-self: center;
     width: min(100% - var(--mat-inset) * 2, var(--mat-max));
     min-width: 0;
     display: grid;
-    grid-template-columns: min(100%, var(--breakout-max));
+    grid-template-columns: min(100%, calc(var(--breakout-max) + var(--card-lane)));
     justify-content: center;
     row-gap: 4em;
     padding: var(--mat-rim);
@@ -121,6 +158,11 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     @media (width > 64rem) {
       --mat-rim: 1.5rem;
       --mat-inset: clamp(1.5rem, 4vw, 5rem);
+    }
+
+    @media (width >= 86rem) {
+      --card-lane: calc(var(--card-width) + var(--card-gap));
+      --card-display: block;
     }
 
     @media (max-width: 52rem) {
