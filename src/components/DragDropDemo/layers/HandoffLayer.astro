@@ -100,6 +100,14 @@ const frames: Frame[] = [
   margin-inline: auto;
   display: grid;
   place-items: center;
+
+  // A landscape sheet gives the artwork two of its three columns and keeps the third for
+  // the note and the title block. An auto track grows to whatever the strip asks for, and
+  // the panel's `max-width: 100%` then measures that track instead of the column, so the
+  // panel ran under both. A 1fr track is the column, and the cap bites again.
+  :global([data-sheet-orientation='landscape']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .handoff-layer {
@@ -125,6 +133,13 @@ const frames: Frame[] = [
   background: var(--surface-raised);
   display: grid;
   gap: 0.625em;
+
+  // The Annotations wrapper is this grid's item, and a grid item's own minimum size is the
+  // strip's authored width, so the strip carried the panel past its cap instead of being
+  // held by it. Portrait caps the wrapper itself, at 92cqw, and keeps that.
+  :global([data-sheet-orientation='landscape']) & > :global(*) {
+    min-width: 0;
+  }
 }
 
 header {
@@ -137,11 +152,11 @@ header {
   }
 }
 
-// The frames own the sheet: the strip is four fifths of the sheet's height, which with the
-// title and padding brings the panel to just inside the sheet's border on a landscape
-// sheet; a portrait sheet is narrower than that and the width cap takes over. The gap is
-// the same fraction of the strip's width on both axes, so the strip keeps the frames'
-// aspect and the callouts' authored tips hold.
+// Four fifths of the sheet's height is as tall as the panel can stand inside the mat once
+// the title has its line. Every sheet so far runs out of width first, so `max-width` sizes
+// the strip and the height only holds it to its own aspect on a sheet wide enough to
+// outgrow it. The gap is the same fraction of the strip's width on both axes, so the strip
+// keeps the frames' aspect and the callouts' authored tips hold.
 .strip {
   display: grid;
   grid-template-columns: 1fr 1fr;
