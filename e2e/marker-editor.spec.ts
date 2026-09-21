@@ -113,8 +113,9 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
       await expect(deck).toContainText('AUTO PLAYING');
 
-      // It is a stamp in the border band: inside the paper margin under the frame
-      // line, clear of the drawing and of the title block.
+      // It is a stamp in the border band: inside the paper margin under the frame line,
+      // clear of the drawing and of the title block. A phone sheet has no room for it
+      // there, so it takes a row of its own inside the frame above the title block.
       const placement = await deck.evaluate((el) => {
         const section = el.closest('section')!;
         const sheet = section.getBoundingClientRect();
@@ -132,7 +133,11 @@ for (const { name, viewport } of VIEWPORTS) {
           clearOfTitleBlock: clearOf(section.querySelector('table')),
         };
       });
-      expect(placement).toEqual({ insideBand: true, clearOfDrawing: true, clearOfTitleBlock: true });
+      expect(placement).toEqual({
+        insideBand: name === 'desktop',
+        clearOfDrawing: true,
+        clearOfTitleBlock: true,
+      });
       await expect(play).toHaveAttribute('aria-pressed', 'true');
       await expect(pause).toHaveAttribute('aria-pressed', 'false');
 
