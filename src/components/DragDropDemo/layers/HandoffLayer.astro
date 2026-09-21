@@ -37,7 +37,7 @@ type Frame = {
 };
 
 const frames: Frame[] = [
-  { id: 'press', alt: 'The pointer pressed on the chair card in the catalog', mark: [0.5, 0.3] },
+  { id: 'press', alt: 'The pointer dragging the chair card out of the catalog', mark: [0.5, 0.3] },
   { id: 'picture', alt: 'The chair picture riding the pointer over the catalog', mark: [0.46, 0.54] },
   { id: 'model', alt: 'The chair model under the pointer at the edge of the floor', mark: [0.25, 0.74] },
   { id: 'placed', alt: 'The chair placed on the floor with its selection highlight', mark: [0.15, 0.76] },
@@ -74,10 +74,10 @@ const frames: Frame[] = [
         </div>
 
         <Fragment slot="annotations">
-          <ArrowAnnotation target='[data-mark="press"]' tipX={-0.51} tipY={-0.71} angle={-129} length={0.32} text="press the card" lines={['press', 'the card']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="picture"]' tipX={0.47} tipY={-0.47} angle={123} length={0.226} text="its picture follows" lines={['its picture', 'follows']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="model"]' tipX={-0.76} tipY={0.75} angle={71} length={0.405} text="in the canvas, the model" lines={['in the canvas', 'the model']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="placed"]' tipX={0.17} tipY={0.77} angle={69} length={0.43} text="released: placed" lines={['released:', 'placed']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="press"]' tipX={-0.51} tipY={-0.71} angle={-129} length={0.32} text="drag the object to the viewport" lines={['drag the object', 'to the viewport']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="picture"]' tipX={0.47} tipY={-0.47} angle={123} length={0.226} text="over the catalog it is still a picture" lines={['over the catalog', 'it is still a picture']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="model"]' tipX={-0.76} tipY={0.75} angle={71} length={0.405} text="over the floor it becomes the model" lines={['over the floor', 'it becomes the model']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="placed"]' tipX={0.17} tipY={0.77} angle={69} length={0.43} text="let go and it is placed" lines={['let go', 'and it is placed']} labelSide="left" fontSize={FONT} />
         </Fragment>
       </Annotations>
     </div>
