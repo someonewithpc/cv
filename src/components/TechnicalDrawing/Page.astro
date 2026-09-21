@@ -311,7 +311,9 @@ section {
      the keys are drawn at whatever that leaves. */
   .demo-transport {
     position: absolute;
-    left: calc(var(--note-fold-size) + 0.25rem);
+    /* Both ends sit under the frame line's corners, so the paper left around the deck
+       is the same at the ends as the band is deep above and below it. */
+    left: var(--sheet-margin);
     right: var(--sheet-margin);
     bottom: 0;
     height: var(--sheet-margin);
@@ -319,7 +321,7 @@ section {
 
     display: flex;
     align-items: center;
-    gap: 0.625em;
+    gap: 0.5em;
 
     color: var(--ink);
     font-size: 0.625rem;
@@ -878,6 +880,13 @@ section {
 
     .note-fold {
       display: block;
+    }
+
+    /* The corner is only folded out on a sheet this narrow, and at the sheet's
+       bottom edge it covers the whole band. A deck drawn in the band starts past
+       its diagonal here, and keeps the same clearance from it as from the ends. */
+    .demo-transport {
+      left: calc(var(--note-fold-size) + var(--sheet-margin));
     }
 
     /* The tab lies on the artwork, the way a note tucked under a sheet would.
