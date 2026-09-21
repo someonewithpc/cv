@@ -37,6 +37,9 @@ const { id, class: className, letter, title, titleJp, scale, headingId } = Astro
 .callout {
   --callout-line: color-mix(in oklch, var(--ink), transparent 30%);
   --callout-pad: 1.5rem;
+  /* Above and below, the clearance also has to clear a line of text the view writes outside
+     its own box, the way a drawing stack writes its peel hint just under the sheet. */
+  --callout-room: calc(var(--callout-pad) + 1.5rem);
   --callout-lead: 1.75rem;
   /* The label's box; the bubble sits at its bottom, so the leader below it has a known length. */
   --callout-label: 3.75rem;
@@ -44,13 +47,16 @@ const { id, class: className, letter, title, titleJp, scale, headingId } = Astro
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  padding: calc(var(--callout-label) + var(--callout-lead) + var(--callout-pad)) var(--callout-pad) var(--callout-pad);
+  /* The boundary stands the same clearance off the view on all four sides, but the two sides
+     are drawn outside the box rather than padded in, so the view keeps the full width of the
+     column it was given. */
+  padding: calc(var(--callout-label) + var(--callout-lead) + var(--callout-room)) 0 var(--callout-room);
 
   /* The chain-line boundary of the view: long dash, gap, short dash, gap. */
   &::before {
     content: '';
     position: absolute;
-    inset: calc(var(--callout-label) + var(--callout-lead)) 0 0;
+    inset: calc(var(--callout-label) + var(--callout-lead)) calc(-1 * var(--callout-pad)) 0;
     pointer-events: none;
     --dash: repeating-linear-gradient(90deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
     --dash-v: repeating-linear-gradient(180deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
