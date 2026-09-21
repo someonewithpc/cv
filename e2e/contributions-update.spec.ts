@@ -19,7 +19,7 @@ test('the section header counts the rows each group actually has', async ({ page
     const heading = page.locator(`#open-source section[data-group="${id}"] h3 data`);
     await expect(heading).toHaveText(String(count));
 
-    const tally = page.locator('#open-source > header dl div').filter({ hasText: label }).locator('dd');
+    const tally = page.locator('#open-source header dl div').filter({ hasText: label }).locator('dd');
     await expect(tally).toHaveText(String(count));
   }
 });
