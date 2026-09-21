@@ -129,12 +129,12 @@ test('the cutting mat lies under every detail and leaves the desk showing at 144
     expect(stack.bottom).toBeLessThanOrEqual(box.bottom);
   }
 
-  // The rim is a plain margin closed by one line: the four grid layers are clipped to the
-  // content box, and only the mat's own colour reaches the border box.
+  // The rim is a plain margin closed by one line: the two rulings are clipped to the content
+  // box, and only the mat's own colour reaches the border box.
   expect(box.padding).toBeGreaterThanOrEqual(16);
   expect(box.border).toBe(1);
-  expect(box.layers).toBe(5);
-  expect(box.clip).toBe('content-box, content-box, content-box, content-box, border-box');
+  expect(box.layers).toBe(3);
+  expect(box.clip).toBe('content-box, content-box, border-box');
 });
 
 test('each demo is a lettered detail and nothing else is called out', async ({ page }) => {
