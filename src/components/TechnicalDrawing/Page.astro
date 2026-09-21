@@ -232,6 +232,23 @@ const transportKeys = [
       </button>
     </span>
 
+    <!-- Shape 6: the sheet's own callout, leader into the drawing and the note written on
+         its shelf. Taking over strikes the line out in pencil and writes the next one. -->
+    <span class="demo-margin-note" data-demo-note>
+      <svg class="note-leader" viewBox="0 0 40 32" aria-hidden="true">
+        <path d="M4 4 40 31" />
+        <path class="note-leader-head" d="M4 4 12.2 6.4 8.6 11.2Z" />
+      </svg>
+
+      <span class="note-first monospace" data-demo-note-line></span>
+
+      <span class="note-second monospace">
+        <span aria-hidden="true">you have it.</span>
+        <button class="note-link" type="button" data-demo-act="toggle">hand back</button>
+        <span class="note-slash" aria-hidden="true">/</span>
+        <button class="note-link" type="button" data-demo-act="replay">replay</button>
+      </span>
+    </span>
   </div>
 </section>
 
@@ -549,10 +566,11 @@ section {
     display: none;
   }
 
-  /* Shapes 4 and 5 draw marks a sheet already has instead of keys, so each is hidden
+  /* Shapes 4 to 6 draw marks a sheet already has instead of keys, so each is hidden
      until its own shape is asked for. */
   .demo-dimension,
-  .demo-stamp {
+  .demo-stamp,
+  .demo-margin-note {
     display: none;
   }
 
@@ -898,10 +916,128 @@ section {
     }
   }
 
+  /* Shape 6: the sheet's own callout. A leader runs into the drawing, the note is
+     written on its shelf, and taking over strikes that line out in pencil and writes
+     the next one under it. */
+  :global(html[data-deck='6']) & {
+    .demo-transport {
+      position-anchor: var(--drawing-title-anchor);
+      left: auto;
+      right: anchor(right);
+      bottom: calc(anchor(top) + 0.75rem);
+      height: auto;
+      width: max-content;
+      max-width: 60%;
+    }
+
+    .demo-keys,
+    .demo-led {
+      display: none;
+    }
+
+    .demo-readout {
+      @include off-the-paper;
+    }
+
+    .demo-margin-note {
+      display: flex;
+      position: relative;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.2em;
+      padding-bottom: 0.25em;
+      border-bottom: 1px solid var(--ink);
+      font-size: 0.625rem;
+      color: var(--ink);
+    }
+  }
+
+  .note-leader {
+    position: absolute;
+    right: 100%;
+    bottom: -1px;
+    width: 2.75em;
+    height: 2.2em;
+    overflow: visible;
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.6;
+
+    .note-leader-head {
+      fill: var(--ink);
+      stroke: none;
+    }
+  }
+
+  /* Struck through by a pencil drawn across it, not by an underline the font supplies:
+     the line has to arrive when the visitor takes over, and stay off the second line. */
+  .note-first {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: -0.1em;
+      right: -0.1em;
+      top: 55%;
+      height: 1px;
+      background: var(--ink-muted);
+      scale: 0 1;
+      transform-origin: left center;
+    }
+  }
+
+  .note-second {
+    display: none;
+  }
+
+  .demo-transport[data-state='user'] {
+    .note-first {
+      color: var(--ink-muted);
+
+      &::after {
+        scale: 1 1;
+        transition: scale 240ms ease;
+      }
+    }
+
+    .note-second {
+      display: block;
+    }
+  }
+
+  .note-slash {
+    color: var(--ink-faint);
+  }
+
+  .note-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .demo-led { animation: none; }
     .dim-arrow { transition: none; }
     .stamp-mark { transition: none; }
+
+    .demo-transport[data-state='user'] .note-first::after { transition: none; }
   }
 
   .aside {
@@ -1290,11 +1426,12 @@ section {
       align-items: stretch;
     }
 
-    /* Shape 5 is a mark on the drawing itself, so it keeps its corner of it and leaves
-       the row empty. Taking the grid placement back matters: a positioned grid item is
-       laid out inside its own grid area, and the title block it anchors to is one row
-       further down. */
-    :global(html[data-deck='5']) & .demo-transport {
+    /* Shapes 5 and 6 are marks on the drawing itself, so they keep their corner of it
+       and leave the row empty. Taking the grid placement back matters: a positioned grid
+       item is laid out inside its own grid area, and the title block it anchors to is
+       one row further down. */
+    :global(html[data-deck='5']) & .demo-transport,
+    :global(html[data-deck='6']) & .demo-transport {
       position: absolute;
       grid-column: auto;
       grid-row: auto;
