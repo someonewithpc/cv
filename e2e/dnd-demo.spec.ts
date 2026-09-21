@@ -212,6 +212,44 @@ for (const phone of [false, true]) {
   });
 }
 
+/** A wide window, where the sheet has the most room for the panel to run past its column. */
+const DESKTOP = { width: 1440, height: 900 };
+
+test('the handoff panel stays out of the title block and the note', async ({ page }) => {
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/');
+  const stack = dragDropStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Picture to Model', 2);
+  const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
+  await expect(layer).toBeVisible();
+
+  const boxes = await layer.evaluate((root) => {
+    const box = (el: Element) => {
+      const { left, top, right, bottom } = el.getBoundingClientRect();
+      return { left, top, right, bottom };
+    };
+    const sheet = root.closest('section')!;
+    return {
+      sheet: box(sheet),
+      panel: box(root.querySelector('.panel')!),
+      // The title block is the sheet's own corner table, the note its third column.
+      titleBlock: box(sheet.querySelector(':scope > table')!),
+      aside: box(sheet.querySelector(':scope > .aside')!),
+    };
+  });
+
+  // A landscape sheet gives the artwork two of its three columns and keeps the third for
+  // the note and the title block, which the panel once covered by growing to the strip's
+  // own width instead of the column's.
+  expect(boxes.panel.right).toBeLessThanOrEqual(boxes.titleBlock.left);
+  expect(boxes.panel.right).toBeLessThanOrEqual(boxes.aside.left);
+  // And it still fills that column, rather than having been fixed by shrinking to nothing:
+  // two thirds of the sheet, less the mat, is 0.64 of it.
+  const sheetWidth = boxes.sheet.right - boxes.sheet.left;
+  expect(boxes.panel.right - boxes.panel.left).toBeGreaterThan(0.6 * sheetWidth);
+});
+
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
   const requests: string[] = [];
   await page.route('**/demos/space-builder/grass/color.webp*', (route) => {
