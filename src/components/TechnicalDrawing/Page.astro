@@ -788,14 +788,15 @@ section {
     color: var(--accent);
   }
 
-  /* Shape 5: a stamp pressed onto the bottom right of the drawing, clear of the title
-     block, and a pencil note beside it. Pressing the stamp takes the walkthrough over;
-     the note sends it back to the start. */
+  /* Shape 5: a stamp pressed into the bottom right of the drawing, which is the corner
+     above the title block and left of it: the note card takes the column to its right on
+     a wide sheet. A pencil note beside the stamp sends the walkthrough back to the start;
+     the stamp itself takes it over. */
   :global(html[data-deck='5']) & {
     .demo-transport {
       position-anchor: var(--drawing-title-anchor);
       left: auto;
-      right: anchor(right);
+      right: calc(anchor(left) + 0.5rem);
       bottom: calc(anchor(top) + 0.75rem);
       height: auto;
       width: max-content;
@@ -917,13 +918,13 @@ section {
   }
 
   /* Shape 6: the sheet's own callout. A leader runs into the drawing, the note is
-     written on its shelf, and taking over strikes that line out in pencil and writes
-     the next one under it. */
+     written on its shelf, and taking over strikes that line out in pencil and writes the
+     next one under it. It sits in the same corner of the drawing as the stamp. */
   :global(html[data-deck='6']) & {
     .demo-transport {
       position-anchor: var(--drawing-title-anchor);
       left: auto;
-      right: anchor(right);
+      right: calc(anchor(left) + 0.5rem);
       bottom: calc(anchor(top) + 0.75rem);
       height: auto;
       width: max-content;
@@ -1428,13 +1429,16 @@ section {
 
     /* Shapes 5 and 6 are marks on the drawing itself, so they keep their corner of it
        and leave the row empty. Taking the grid placement back matters: a positioned grid
-       item is laid out inside its own grid area, and the title block it anchors to is
-       one row further down. */
+       item is laid out inside its own grid area, and the title block it anchors to is a
+       row further down. The block runs the full width here, so its left edge is no corner
+       of the drawing; the right one is, and the note is folded away under the opposite
+       corner rather than taking a column of its own. */
     :global(html[data-deck='5']) & .demo-transport,
     :global(html[data-deck='6']) & .demo-transport {
       position: absolute;
       grid-column: auto;
       grid-row: auto;
+      right: anchor(right);
       padding: 0;
       margin-bottom: 0;
     }
