@@ -76,13 +76,24 @@ type Layer = keyof typeof layers;
 </div>
 
 <style lang="scss">
+// A landscape sheet puts its title block in the bottom-right corner, absolutely placed over
+// the artwork column and the note's column both. That corner is the block's: the demo and
+// the note end above it rather than running under its lettering. Portrait gives the block a
+// row of its own, so there the reach stays 0 and nothing moves.
+:global(.drag-drop-demo article.technical-drawing-stack[data-sheet-orientation='landscape'] > * > section) {
+  --title-block-reach: var(--title-block-block);
+}
+
 // Regular (non-portrait) layout only — reserve a gutter next to the demo content and
 // centre the PostIt in whatever space is left, the same way the Space Builder stack does.
+// The note is centred in its column, so a bottom margin — not padding, which would leave the
+// column's own box reaching into the corner — lifts it by half of the block's height.
 :global(.drag-drop-demo article.technical-drawing-stack > * > section .aside) {
   display: flex;
   justify-content: center;
   padding-left: 1.75em;
   margin-inline: 0;
+  margin-bottom: var(--title-block-reach, 0px);
 }
 
 @container technical-drawing (orientation: portrait) {
