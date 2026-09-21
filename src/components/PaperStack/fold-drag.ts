@@ -271,6 +271,9 @@ const syncStackSurfaces = (stack: HTMLElement): void => {
   for (const page of stack.children as HTMLCollectionOf<HTMLElement>) {
     syncPaperSurface(page, sectionOf(page));
   }
+  // The strip behind the crease reads the pile's colour off the page that carries it, so a
+  // theme switch has to reach it too.
+  syncPileSurface(stack);
 };
 
 // The colour above is a snapshot, taken when a gesture starts or a flip hands the flap on, so a
@@ -838,6 +841,24 @@ const updateFlippedState = (stack: HTMLElement): void => {
   // the back is how many turns it has sat through. Back at 1 it is the front page again and the
   // stack has come full circle, which is no pages turned rather than all of them.
   stack.style.setProperty('--pages-turned', `${first === 1 ? 0 : stack.children.length - first + 1}`);
+  syncPileSurface(stack);
+};
+
+// The strip behind the front page's crease is the back of the page turned most recently, so it
+// paints in that page's paper (see index.astro). That page is the furthest of the pile, which is
+// the highest --page-index; its own colour is already on it, lifted by syncStackSurfaces. With
+// nothing turned there is no pile, and the strip falls back to the front page's paper under an
+// opacity of 0.
+const syncPileSurface = (stack: HTMLElement): void => {
+  const pages = [...stack.children] as HTMLElement[];
+  const furthest = pageIndex(pages[0]) === 1
+    ? undefined
+    : pages.find((page) => pageIndex(page) === pages.length);
+  if (furthest) {
+    stack.style.setProperty('--pile-paper', furthest.style.getPropertyValue('--paper-surface'));
+  } else {
+    stack.style.removeProperty('--pile-paper');
+  }
 };
 
 // [data-paper-settled] means the front page is lying flat and still: set as a flip or a settle

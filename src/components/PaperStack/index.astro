@@ -370,7 +370,8 @@ const pages = await Promise.all(
         // and with pages standing in the pile behind the stack their edges show through it. This
         // is the paper that went round the back: a strip of sheet back running from the front
         // page's crease up to the same crease on the furthest page of the pile, painted the way
-        // the fold flap paints the same paper — the sheet's own colour, with its hairline edge.
+        // the fold flap paints a sheet's back — in that furthest page's own colour, with its
+        // hairline edge.
         // It paints before the page's own children, so the clip's wire still lies over it.
         //
         // Its near edge is the front page's crease, (--fold-back-x, 0) to (0, --fold-back-y),
@@ -460,14 +461,23 @@ const pages = await Promise.all(
               calc(var(--bend-near-by) + (var(--bend-near-ay) - var(--bend-near-by)) * 0.75 + var(--bend-side) * var(--bend-cos))
           );
           --bend-crease: calc((1em - 1px) * var(--bend-sin) + (var(--fold-back-y) + 1px) * var(--bend-cos));
+          // The strip is the back of the page turned most recently, going round behind the
+          // stack, so it is that page's paper and not the front page's — pages in one stack can
+          // carry different backgrounds. fold-drag.ts puts the furthest page's own
+          // --paper-surface on the stack as --pile-paper whenever the pile changes, and leaves
+          // it unset when nothing is turned, where the strip is transparent anyway. The fold
+          // flap above stays on --bend-paper: that one really is the front page's own sheet.
+          --pile-bend-paper: var(--pile-paper, var(--bend-paper));
+          --pile-bend-light: color-mix(in oklab, var(--pile-bend-paper) 86%, white);
+          --pile-bend-dark: color-mix(in oklab, var(--pile-bend-paper) 88%, black);
           background:
             linear-gradient(
               calc(-1 * var(--bend-angle)),
-              var(--bend-dark) calc(var(--bend-crease) - var(--bend-bow)),
-              var(--bend-light) calc(var(--bend-crease) + var(--bend-width) * 0.45),
-              var(--bend-dark) calc(var(--bend-crease) + var(--bend-width) + var(--bend-bow))
+              var(--pile-bend-dark) calc(var(--bend-crease) - var(--bend-bow)),
+              var(--pile-bend-light) calc(var(--bend-crease) + var(--bend-width) * 0.45),
+              var(--pile-bend-dark) calc(var(--bend-crease) + var(--bend-width) + var(--bend-bow))
             )
-            var(--bend-paper);
+            var(--pile-bend-paper);
           border: 1px solid var(--line-strong);
           opacity: clamp(0, var(--pages-turned), 1);
           pointer-events: none;
