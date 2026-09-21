@@ -50,6 +50,21 @@ const DIMENSION_HINT: Record<AutoplayState, string> = {
   off: 'reduced motion is on',
 };
 
+/** Whatever the state is called when it is inked into shape 5's stamp. */
+const STAMP_STATE: Record<AutoplayState, string> = {
+  playing: 'AUTO PLAY',
+  user: 'HELD BY YOU',
+  off: 'AUTO PLAY OFF',
+};
+
+const STAMP_HINT: Record<AutoplayState, string> = {
+  playing: 'hover to take over',
+  user: 'tap the stamp to hand back',
+  off: 'reduced motion is on',
+};
+
+const STAMP_TOUCH_HINT = 'tap to take over';
+
 /** What the marks a visitor can press are called, for anyone who cannot see them. */
 const ACT_LABEL: Record<AutoplayState, { toggle: string; replay: string }> = {
   playing: { toggle: 'Take the walkthrough over', replay: 'Replay the walkthrough' },
@@ -58,14 +73,14 @@ const ACT_LABEL: Record<AutoplayState, { toggle: string; replay: string }> = {
 };
 
 /**
- * Four shapes for the same deck, so the preview can show all of them. `?deck=1` fills the
+ * Five shapes for the same deck, so the preview can show all of them. `?deck=1` fills the
  * bottom band, `?deck=2` stamps the deck onto the title block, `?deck=3` fills the band too
- * and leads with the instruction. Those three are keys; `?deck=4` is a dimension line, a mark
- * the drawing already has.
+ * and leads with the instruction. Those three are keys. The others are marks a drawing already
+ * has: `?deck=4` a dimension line, `?deck=5` a rubber stamp.
  * The shape lands on <html>, which is where Page.astro's styles read it. Once one shape is
  * chosen, the rest and this switch go.
  */
-const DECK_SHAPES = ['1', '2', '3', '4'];
+const DECK_SHAPES = ['1', '2', '3', '4', '5'];
 const DEFAULT_DECK_SHAPE = '1';
 
 /** How long shape 3 shows the instruction before the readout settles on the state. */
@@ -153,6 +168,10 @@ export function initAutoplayStatus(page: HTMLElement) {
     write('[data-demo-dimension-hint]', state === 'playing' && touch
       ? TOUCH_HINT
       : DIMENSION_HINT[state]);
+    write('[data-demo-stamp-state]', STAMP_STATE[state]);
+    write('[data-demo-stamp-hint]', state === 'playing' && touch
+      ? STAMP_TOUCH_HINT
+      : STAMP_HINT[state]);
 
     acts.forEach((act) => {
       const kind = act.dataset.demoAct === 'replay' ? 'replay' : 'toggle';
