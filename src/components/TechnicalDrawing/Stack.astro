@@ -172,7 +172,14 @@ function init() {
   [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack')].forEach(initStack);
 }
 
-document.addEventListener('DOMContentLoaded', init);
-
-if (document.readyState !== 'loading') { init(); }
+/* A module script is deferred, so by the time this one runs the document is already
+   "interactive" while DOMContentLoaded has still to fire. Listening for that event as
+   well as calling init() ran the whole setup twice, and doubled every listener it binds.
+   A doubled key press was invisible, since play twice is still play. A doubled press of
+   the marks shapes 4 to 6 draw is not: they toggle, so the second undid the first. */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init, { once: true });
+} else {
+  init();
+}
 </script>
