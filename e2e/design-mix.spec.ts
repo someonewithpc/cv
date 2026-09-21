@@ -7,10 +7,10 @@ const DESK_FROM = 1024;
 
 /** --theme-desk per theme, as ThemePicker.astro writes it. */
 const DESKS = {
-  light: 'oklch(0.87 0.022 76)',
-  dark: 'oklch(0.175 0.018 48)',
-  arctic: 'oklch(0.875 0.009 85)',
-  'dark-forest': 'oklch(0.225 0.045 58)',
+  light: 'oklch(0.76 0.05 68)',
+  dark: 'oklch(0.235 0.018 55)',
+  arctic: 'oklch(0.81 0.013 232)',
+  'dark-forest': 'oklch(0.225 0.03 75)',
 } as const;
 
 const withTheme = async (page: import('@playwright/test').Page, theme: string) => {
