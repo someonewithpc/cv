@@ -453,6 +453,9 @@ for (const width of [1440, 1920]) {
       const drawn = [...document.querySelectorAll('#demos .cutting-mat article.technical-drawing-stack, #demos .cutting-mat .callout-card')]
         .filter((el) => getComputedStyle(el).display !== 'none')
         .map((el) => el.getBoundingClientRect());
+      // Down the mat there is no slack to take a margin from, so the details themselves are
+      // held that far off the mat's own top and bottom edge.
+      const details = [...mat.children].map((el) => el.getBoundingClientRect());
       const folio = document.querySelector<HTMLElement>('.folio-rail')!;
       return {
         mat: { left: box.left, right: box.right },
@@ -461,12 +464,19 @@ for (const width of [1440, 1920]) {
           left: Math.min(...drawn.map((rect) => rect.left)),
           right: Math.max(...drawn.map((rect) => rect.right)),
         },
+        tallest: {
+          top: Math.min(...details.map((rect) => rect.top)),
+          bottom: Math.max(...details.map((rect) => rect.bottom)),
+        },
+        edges: { top: box.top, bottom: box.bottom },
         folioRight: folio.getBoundingClientRect().right,
       };
     });
 
     expect(room.widest.left - room.inside.left, 'mat clear on the left').toBeGreaterThanOrEqual(48);
     expect(room.inside.right - room.widest.right, 'mat clear on the right').toBeGreaterThanOrEqual(48);
+    expect(room.tallest.top - room.edges.top, 'mat clear above').toBeGreaterThanOrEqual(48);
+    expect(room.edges.bottom - room.tallest.bottom, 'mat clear below').toBeGreaterThanOrEqual(48);
     // The mat and the folio share the desk margin and never reach into each other.
     expect(room.mat.left).toBeGreaterThanOrEqual(room.folioRight);
   });
