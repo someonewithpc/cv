@@ -126,12 +126,19 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     --mat-line: 1px;
     --mat-rim: calc(var(--page-gap) - var(--mat-line));
     --mat-inset: 0px;
-    --mat-max: 80rem;
+    --mat-max: 100rem;
+    /* The mat a drawing lies on rather than fills: this much mat is kept clear on both
+       sides of the widest thing laid down on it, and more than this wherever the mat has
+       the width to spare, which is what makes the stack look put down on the mat instead
+       of cut to it. Taken from the mat's own slack and never from the drawing, so nothing
+       on it is narrower than it was. */
+    --mat-margin: 0px;
 
     /* The lane a detail's title card stands in, beside the view rather than under it. It is
-       open only where the mat is wide enough to hold a stack and a card side by side: the mat
-       stops growing at 80rem, so past 86rem the lane is this width and no more. One switch
-       drives both the column here and the card itself (Callout.astro). */
+       open only where the mat is wide enough to hold a stack, a card and the mat's own
+       margin side by side, which now takes 105rem: the card and its gap stand inside that
+       margin and not over it, and the folio's lane comes off the desk before either. One
+       switch drives both the column here and the card itself (Callout.astro). */
     --card-width: 12rem;
     --card-gap: 3rem;
     --card-lane: 0px;
@@ -142,7 +149,10 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     width: min(100% - var(--mat-inset) * 2, var(--mat-max));
     min-width: 0;
     display: grid;
-    grid-template-columns: min(100%, calc(var(--breakout-max) + var(--card-lane)));
+    grid-template-columns: min(
+      max(100% - var(--mat-margin) * 2, min(100%, var(--breakout-max))),
+      calc(var(--breakout-max) + var(--card-lane))
+    );
     justify-content: center;
     row-gap: 4em;
     padding: var(--mat-rim);
@@ -166,12 +176,13 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 
     @media (width > 64rem) {
       --mat-rim: 1.5rem;
+      --mat-margin: 3rem;
       /* The mat and the folio share the desk margin, so the mat stops at the far side of the
          lane the sheet number stands in whenever that is the wider of the two. */
       --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
     }
 
-    @media (width >= 86rem) {
+    @media (width >= 105rem) {
       --card-lane: calc(var(--card-width) + var(--card-gap));
       --card-display: block;
     }
