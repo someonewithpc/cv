@@ -71,8 +71,10 @@ const { id, class: className, letter, title, titleJp, scale, headingId } = Astro
     min-width: 0;
   }
 
+  /* The side lines are drawn outside the box, and on a phone the only room out there is the
+     mat's rim, so the clearance shrinks to a few pixels rather than landing on the mat's edge. */
   @media (max-width: 52rem) {
-    --callout-pad: 0.75rem;
+    --callout-pad: 0.375rem;
     --callout-lead: 1.5rem;
     --callout-label: 3rem;
   }
