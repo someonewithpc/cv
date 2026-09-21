@@ -679,6 +679,55 @@ for (const fonts of ['loaded', 'blocked'] as const) {
   });
 }
 
+/**
+ * Each row's technology marks, against the writing they stand beside. The writing sits on
+ * the rule, so its middle is half a cap height above the baseline; a mark centred in the
+ * pitch instead floats a third of a line over the row it marks.
+ */
+const readMarks = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => {
+    const marks: { repo: string; offset: number }[] = [];
+
+    for (const row of document.querySelectorAll('#open-source .lines .row')) {
+      const list = row.querySelector('ul');
+      const cite = row.querySelector('cite');
+      const drawn = [...(list?.querySelectorAll('svg') ?? [])].map((svg) => svg.getBoundingClientRect());
+      if (!cite || drawn.length === 0) continue;
+
+      // Prepended, not appended: a repository too long for its line takes a second one, and
+      // the marks stand on the first.
+      const baselineProbe = document.createElement('span');
+      baselineProbe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+      cite.prepend(baselineProbe);
+      const baseline = baselineProbe.getBoundingClientRect().bottom;
+      baselineProbe.remove();
+
+      const capProbe = document.createElement('div');
+      capProbe.style.width = '1cap';
+      cite.append(capProbe);
+      const cap = capProbe.getBoundingClientRect().width;
+      capProbe.remove();
+
+      const middle = (Math.min(...drawn.map((rect) => rect.top)) + Math.max(...drawn.map((rect) => rect.bottom))) / 2;
+      marks.push({ repo: cite.textContent?.trim().slice(0, 40) ?? '', offset: middle - (baseline - cap / 2) });
+    }
+
+    return marks;
+  });
+
+test('every row wears its marks on the line it is written on', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.waitForTimeout(500);
+
+  const marks = await readMarks(page);
+  expect(marks.length).toBeGreaterThan(50);
+
+  for (const { repo, offset } of marks) {
+    expect(Math.abs(offset), `${repo} marks are ${offset}px off its line`).toBeLessThanOrEqual(1.5);
+  }
+});
+
 /** The letter's ink against the circle drawn round it. */
 const readBubbles = (page: import('@playwright/test').Page) =>
   page.evaluate(() =>
