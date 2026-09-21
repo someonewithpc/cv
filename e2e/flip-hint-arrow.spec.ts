@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 import sharp from 'sharp';
 
 import { swipeStack } from './support/paperStack';
@@ -189,6 +189,23 @@ function strikes(page: Page, way: 'fwd' | 'back', calledFor: { on: 'frame' | 'st
   }), { which: way, ...calledFor });
 }
 
+// A point on the folded-back corner itself. The flap's box runs past the sheet edge, so its
+// centre can fall in the cut-away corner and a press there lands on the page under it. The
+// resting crease runs from (w - x, h) to (w, h - y) and the corner is mirrored across it, so
+// the flap is that triangle; its centroid is inside it on any sheet.
+const flapGrip = (stack: Locator) => stack.locator('.paper-front').evaluate((sheet) => {
+  const fold = sheet.querySelector<HTMLElement>('.paper-fold')!;
+  const style = getComputedStyle(fold);
+  const x = parseFloat(style.getPropertyValue('--fold-x'));
+  const y = parseFloat(style.getPropertyValue('--fold-y'));
+  const { right, bottom } = sheet.getBoundingClientRect();
+  const mirrored = { x: right - (2 * x * y * y) / (x * x + y * y), y: bottom - (2 * x * x * y) / (x * x + y * y) };
+  return {
+    x: (right - x + right + mirrored.x) / 3,
+    y: (bottom + bottom - y + mirrored.y) / 3,
+  };
+});
+
 const armed = (page: Page, index: number) => page.evaluate((i) => {
   const hints = document.querySelectorAll('.technical-drawing-frame')[i].querySelector('.flip-hints')!;
   return getComputedStyle(hints).display !== 'none';
@@ -288,13 +305,13 @@ test.describe('with motion allowed', () => {
     // A corner drag, released past the commit point, so the flip glides the rest of the way on
     // its own: the fold on the front page is the dog-ear at the sheet's bottom-right.
     const sheet = (await stack.locator('.paper-front').boundingBox())!;
-    const fold = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
-    await page.mouse.move(fold.x + fold.width / 2, fold.y + fold.height / 2);
+    const grip = await flapGrip(stack);
+    await page.mouse.move(grip.x, grip.y);
     await page.mouse.down();
     for (let i = 1; i <= 6; i += 1) {
       await page.mouse.move(
-        fold.x + fold.width / 2 - (sheet.width * 0.6 * i) / 6,
-        fold.y + fold.height / 2 - (sheet.height * 0.6 * i) / 6,
+        grip.x - (sheet.width * 0.6 * i) / 6,
+        grip.y - (sheet.height * 0.6 * i) / 6,
       );
       await page.waitForTimeout(30);
     }
@@ -322,8 +339,8 @@ test.describe('with motion allowed', () => {
     expect((await backArrowShown(page)).painted).toBe(true);
 
     // Taking hold of the corner again hides the callout until the page comes to rest once more
-    const again = (await stack.locator('.paper-front .paper-fold').boundingBox())!;
-    await page.mouse.move(again.x + again.width / 2, again.y + again.height / 2);
+    const again = await flapGrip(stack);
+    await page.mouse.move(again.x, again.y);
     await page.mouse.down();
     await page.mouse.move(again.x - 40, again.y - 40);
     await page.waitForTimeout(30);
@@ -511,6 +528,8 @@ test('both hints sit in the gap beside the stack at every width', async ({ page 
 // ink has to stand off, in every theme. The arrow's tail also crosses the fanned pages behind
 // the sheet on its way in, which is what the pass in the page colour under its stroke is for.
 test('the hint reads against the page in every theme and at every width', async ({ page }) => {
+  // Four themes by four widths, each a full-page screenshot read pixel by pixel
+  test.slow();
   await page.goto('/');
 
   for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
