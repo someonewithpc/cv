@@ -222,8 +222,15 @@ async function strip(stack: Locator) {
       bows: [vertices[3], vertices[8]],
       near: [{ x: base.left + foldX, y: base.top }, { x: base.left, y: base.top + foldY }],
       far: [carry(foldX + drift, 0), carry(drift, foldY)],
+      opacity: back.opacity,
       background: back.backgroundColor,
       shading: back.backgroundImage,
+      // The two papers the strip could be painted in: the front page's, which is the flap's,
+      // and the furthest pile page's, which is the strip's own. fold-drag.ts lifts each page's
+      // resolved background onto it, and hands the pile's to the stack as --pile-paper.
+      frontPaper: front.style.getPropertyValue('--paper-surface').trim(),
+      pilePaper: furthest.style.getPropertyValue('--paper-surface').trim(),
+      stackPaper: own.getPropertyValue('--pile-paper').trim(),
       // The stack's one flap, wherever a gesture has it at the moment.
       flap: getComputedStyle(el.querySelector('.paper-fold')!).backgroundColor,
       flapShading: getComputedStyle(el.querySelector('.paper-fold')!).backgroundImage,
@@ -239,6 +246,41 @@ const sideOf = (p: Point, [a, b]: Point[]) =>
 
 /** How far a point stands off the line through two others. */
 const offLine = (p: Point, line: Point[]) => Math.abs(sideOf(p, line));
+
+// The logo demo is the one stack whose pages are not all the same paper: its first page is
+// plain and the four behind it are blueprint sheets, so which page the strip takes its colour
+// from is visible there and nowhere else.
+test('logo demo: the strip is the turned page\'s paper, not the front page\'s', async ({ page }) => {
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+
+  // Nothing turned: no pile to paint, and no colour on the stack for one.
+  expect(await strip(stack)).toMatchObject({ opacity: '0', stackPaper: '' });
+
+  await turn(stack, 'ArrowRight');
+  const pile = await strip(stack);
+  // The plain first page has gone round the back and a blueprint sheet is in front, so the two
+  // papers differ and the strip has to pick one.
+  expect(pile.pilePaper).not.toBe(pile.frontPaper);
+  expect(pile.opacity).toBe('1');
+  expect(pile.stackPaper).toBe(pile.pilePaper);
+  expect(pile.background).toBe(pile.pilePaper);
+  // The flap is the front page's own sheet, so it stays on the front page's paper.
+  expect(pile.flap).toBe(pile.frontPaper);
+
+  // A second turn hands the strip on to the page that has just gone round.
+  await turn(stack, 'ArrowRight');
+  const deeper = await strip(stack);
+  expect(deeper.pilePaper).not.toBe(pile.pilePaper);
+  expect(deeper.background).toBe(deeper.pilePaper);
+
+  // And back at the start there is no pile again: the strip is not drawn and the stack drops
+  // the colour rather than leaving the last pile's paper behind.
+  await turn(stack, 'ArrowLeft');
+  await turn(stack, 'ArrowLeft');
+  expect(await strip(stack)).toMatchObject({ opacity: '0', stackPaper: '' });
+});
 
 type Frame = {
   t: number,
@@ -530,15 +572,16 @@ for (const width of [390, 1440]) {
         // The strip of sheet back behind the cut is a quadrilateral: its near edge lies on the
         // front page's crease (with the hairline of slack that closes the seam), and its far
         // edge sits on the same crease of the page furthest out in the pile, where that page
-        // actually stands after its rise, drift and lean. Painted in the paper's own colour,
-        // as the fold flap paints the back of the same sheet.
+        // actually stands after its rise, drift and lean. It is that page's back, so it is
+        // painted in that page's paper, while the flap paints the front page's own.
         const back = await strip(stack);
         expect(back.vertices).toHaveLength(10);
         expect(offLine(back.corners[0], back.near)).toBeLessThan(1.5);
         expect(offLine(back.corners[3], back.near)).toBeLessThan(1.5);
         expect(apart(back.corners[1], back.far[0])).toBeLessThan(1);
         expect(apart(back.corners[2], back.far[1])).toBeLessThan(1);
-        expect(back.background).toBe(back.flap);
+        expect(back.background).toBe(back.pilePaper);
+        expect(back.flap).toBe(back.frontPaper);
 
         // The strip is a bend, not a flat trapezium: its long edges bow outward between the
         // corners, by a share of its width, and it is shaded across its width, as the flap is
