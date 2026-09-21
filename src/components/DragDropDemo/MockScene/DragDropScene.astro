@@ -32,6 +32,11 @@ bootIslands('[data-drag-drop-scene-island]', boot);
   min-height: 0;
   box-sizing: border-box;
   padding: clamp(0.7rem, 3.2%, 1.35rem);
+  /* The title block is absolutely placed in the sheet's bottom-right corner, over this
+     cell, so an app that filled the cell ran the catalog under its lettering. Reserve the
+     block's height and the app ends above it. `--title-block-reach` (Demo.astro) is that
+     height on a sheet that corners the block, and 0 on one that gives it a row of its own. */
+  padding-bottom: calc(clamp(0.7rem, 3.2%, 1.35rem) + var(--title-block-reach, 0px));
 }
 
 .drag-drop-scene-demo {
