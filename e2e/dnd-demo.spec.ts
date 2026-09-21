@@ -383,3 +383,100 @@ test('a lap that starts after a takeover clears the floor first', async ({ page 
   const cleared = resumed.slice(0, resumed.indexOf('place'));
   expect(cleared.filter((event) => event === 'remove').length).toBeGreaterThanOrEqual(left);
 });
+
+type Placement = { x: number; z: number };
+
+/**
+ * Every floor point the walkthrough puts an object on, from the app's own `data-placed`
+ * list. The list holds one `x,z` per object in placement order, so whatever it gains at
+ * the end is what just landed; a removal only ever shortens it.
+ */
+async function watchPlacements(app: Locator) {
+  await app.evaluate((root) => {
+    const store = window as typeof window & { __placed?: Placement[] };
+    const placed: Placement[] = [];
+    store.__placed = placed;
+    const read = () => (root.getAttribute('data-placed') ?? '').split(' ').filter(Boolean);
+    let last = read();
+    new MutationObserver(() => {
+      const now = read();
+      for (const entry of now.slice(last.length)) {
+        const [x, z] = entry.split(',').map(Number);
+        placed.push({ x, z });
+      }
+      last = now;
+    }).observe(root, { attributes: true, attributeFilter: ['data-placed'] });
+  });
+}
+
+function placements(app: Locator): Promise<Placement[]> {
+  return app.evaluate(
+    () => [...((window as typeof window & { __placed?: Placement[] }).__placed ?? [])],
+  );
+}
+
+/** Half the ground's side, in scene units, as the scene that draws it reports it. */
+async function floorHalf(app: Locator) {
+  const half = Number(await app.getAttribute('data-floor'));
+  expect(half).toBeGreaterThan(0);
+  return half;
+}
+
+function onFloor(at: Placement, half: number) {
+  return Math.abs(at.x) <= half && Math.abs(at.z) <= half;
+}
+
+/** Wait for `count` placements, then hand back the whole list. */
+async function placementsAfter(app: Locator, count: number) {
+  await expect
+    .poll(() => placements(app).then((all) => all.length), { timeout: 60_000, intervals: [100] })
+    .toBeGreaterThanOrEqual(count);
+  return placements(app);
+}
+
+test('two laps nobody touches put every object on the floor', async ({ page }) => {
+  test.slow();
+  const app = await openDemo(page);
+  await watchPlacements(app);
+  const half = await floorHalf(app);
+
+  // Three objects a lap: two drags and the double-click route.
+  const placed = await placementsAfter(app, 6);
+  for (const at of placed) {
+    expect(onFloor(at, half), `${JSON.stringify(at)} is off the floor`).toBe(true);
+  }
+});
+
+test('a page scroll under the demo still lands objects on their floor points', async ({ page }) => {
+  test.slow();
+  const app = await openDemo(page);
+  await watchPlacements(app);
+  const half = await floorHalf(app);
+
+  const aimed = (await placementsAfter(app, 3)).slice(0, 3);
+
+  // Nudging the page never touches the demo, but it moves the canvas under a drag in flight.
+  // The drop used to aim at a screen point taken before the drag, which after a scroll means
+  // some other floor point — on a phone-sized canvas, one past the floor's edge.
+  await page.evaluate(() => {
+    const store = window as typeof window & { __nudge?: number };
+    let down = true;
+    store.__nudge = window.setInterval(() => {
+      window.scrollBy(0, down ? 60 : -60);
+      down = !down;
+    }, 700);
+  });
+
+  const scrolled = (await placementsAfter(app, 6)).slice(3);
+  await page.evaluate(() => {
+    const store = window as typeof window & { __nudge?: number };
+    if (store.__nudge) window.clearInterval(store.__nudge);
+  });
+
+  // A lap always aims at the same three floor points, in order, however the page has moved.
+  for (const at of scrolled) {
+    expect(onFloor(at, half), `${JSON.stringify(at)} is off the floor`).toBe(true);
+    const match = aimed.some((p) => Math.abs(p.x - at.x) < 0.01 && Math.abs(p.z - at.z) < 0.01);
+    expect(match, `${JSON.stringify(at)} is none of ${JSON.stringify(aimed)}`).toBe(true);
+  }
+});
