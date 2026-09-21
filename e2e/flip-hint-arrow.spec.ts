@@ -446,11 +446,14 @@ function placed(page: Page, way: 'fwd' | 'back'): Promise<Place> {
     const area = (a: DOMRect) => a.width * a.height;
 
     // Each stack sits in its own lettered callout, and the callouts are laid out one under
-    // another; scripts between them take no room.
-    const demo = frame.closest('#demos .callout, #demos > *')!;
-    let neighbour = which === 'fwd' ? demo.nextElementSibling : demo.previousElementSibling;
-    while (neighbour && neighbour.tagName === 'SCRIPT') {
-      neighbour = which === 'fwd' ? neighbour.nextElementSibling : neighbour.previousElementSibling;
+    // another; scripts between them take no room. The first callout on the cutting mat has
+    // nothing before it there, so the walk climbs out of the mat to the section header.
+    const step = (node: Element) => (which === 'fwd' ? node.nextElementSibling : node.previousElementSibling);
+    let neighbour: Element | null = null;
+    for (let node = frame.closest('#demos .callout, #demos > *'); node && !neighbour; node = node.parentElement) {
+      if (!node.closest('#demos')) break;
+      neighbour = step(node);
+      while (neighbour && neighbour.tagName === 'SCRIPT') neighbour = step(neighbour);
     }
     const other = neighbour!.getBoundingClientRect();
 
