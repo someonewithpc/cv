@@ -175,7 +175,7 @@ test('the mat runs the full width of a phone and nothing scrolls sideways', asyn
 });
 
 /** The width from which index.astro opens a lane beside each stack for its title card. */
-const CARDS_FROM = 86 * 16;
+const CARDS_FROM = 105 * 16;
 
 /** Every detail's card, its stack, its boundary and its leader, in page order. */
 const readCards = (page: import('@playwright/test').Page) =>
@@ -218,8 +218,8 @@ const readCards = (page: import('@playwright/test').Page) =>
     };
   });
 
-test('a title card stands beside every detail at 1600px, alternating sides', async ({ page }) => {
-  await page.setViewportSize({ width: 1600, height: 900 });
+test('a title card stands beside every detail at 1728px, alternating sides', async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 900 });
   await page.goto('/');
 
   const { mat, details } = await readCards(page);
@@ -253,7 +253,7 @@ test('a title card stands beside every detail at 1600px, alternating sides', asy
   }
 });
 
-for (const width of [CARDS_FROM - 16, 1280, 390]) {
+for (const width of [CARDS_FROM - 16, 1440, 1280, 390]) {
   test(`no title card at ${width}px, and none of it under the stack`, async ({ page }) => {
     await page.setViewportSize({ width, height: width < 800 ? 844 : 800 });
     await page.goto('/');
@@ -434,6 +434,41 @@ for (const [width, height] of [[FOLIO_FROM - 16, 900], [1024, 768], [390, 844]])
       expect(folio.box.width + folio.box.height, `${folio.number} takes no room`).toBe(0);
     }
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+}
+
+for (const width of [1440, 1920]) {
+  test(`the mat keeps 3rem of itself clear around the drawings at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+
+    const room = await page.evaluate(() => {
+      const mat = document.querySelector('#demos .cutting-mat')!;
+      const style = getComputedStyle(mat);
+      const box = mat.getBoundingClientRect();
+      const inside = {
+        left: box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft),
+        right: box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight),
+      };
+      const drawn = [...document.querySelectorAll('#demos .cutting-mat article.technical-drawing-stack, #demos .cutting-mat .callout-card')]
+        .filter((el) => getComputedStyle(el).display !== 'none')
+        .map((el) => el.getBoundingClientRect());
+      const folio = document.querySelector<HTMLElement>('.folio-rail')!;
+      return {
+        mat: { left: box.left, right: box.right },
+        inside,
+        widest: {
+          left: Math.min(...drawn.map((rect) => rect.left)),
+          right: Math.max(...drawn.map((rect) => rect.right)),
+        },
+        folioRight: folio.getBoundingClientRect().right,
+      };
+    });
+
+    expect(room.widest.left - room.inside.left, 'mat clear on the left').toBeGreaterThanOrEqual(48);
+    expect(room.inside.right - room.widest.right, 'mat clear on the right').toBeGreaterThanOrEqual(48);
+    // The mat and the folio share the desk margin and never reach into each other.
+    expect(room.mat.left).toBeGreaterThanOrEqual(room.folioRight);
   });
 }
 
