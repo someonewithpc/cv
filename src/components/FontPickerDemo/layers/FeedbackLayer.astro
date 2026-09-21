@@ -24,7 +24,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 ---
 
 <div class="wrapper">
-  <div class="indicator" data-boot-module="/src/components/FontPickerDemo/layers/FeedbackLayer.boot.ts">
+  <div class="indicator" data-feedback-island>
     <div class="live">
       <div class="sample">
         <fieldset class="idle" data-border-demo>
@@ -106,12 +106,11 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   </div>
 </div>
 
-{/*
-  No <script> here — a component reached only through Stack.astro's per-layer
-  Astro.slots.render() call never gets its own hoisted script onto the page (see the
-  "dev-server-drops-demo-scripts" memory). FeedbackLayer.boot.ts is armed instead by
-  Stack.astro's own script, which the pagination doesn't touch, via data-boot-module.
-*/}
+<script>
+  import { bootIslands } from '@/client/pageIsland';
+  import { boot } from './FeedbackLayer.boot';
+  bootIslands('[data-feedback-island]', boot);
+</script>
 
 <style lang="scss">
 @use '../picker/fontSettingsFieldset' as *;

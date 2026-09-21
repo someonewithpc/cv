@@ -83,6 +83,6 @@ type Layer = keyof typeof layers;
 </TechnicalDrawingStack>
 
 {/*
-  No <script> here: the picker and the feedback sheet's sample each boot from a
-  `*.boot.ts` named in their `data-boot-module`, armed by Stack.astro's own script.
+  No <script> here: each layer boots its own island from its `*.boot.ts` through
+  bootIslands, in its own <script>.
 */}
