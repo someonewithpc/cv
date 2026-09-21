@@ -822,6 +822,19 @@ export class SpaceBuilderScene {
     return this.singlePoses.length + this.placedExtras.length;
   }
 
+  /** Ground centres of the placed objects, in the order {@link selectPlaced} indexes them. */
+  placedPoses(): Array<{ x: number; z: number }> {
+    return [
+      ...this.singlePoses.map((pose) => ({ x: pose.x, z: pose.z })),
+      ...this.placedExtras.map((extra) => ({ x: extra.position.x, z: extra.position.z })),
+    ];
+  }
+
+  /** Half the ground plane's side: anything placed further out than this is off the floor. */
+  groundHalfExtent() {
+    return GROUND_SIZE / 2;
+  }
+
   /** Select the n-th placed object, as a click on it would in view mode; returns its ground centre. */
   selectPlaced(index: number) {
     if (index < this.singlePoses.length) {

@@ -104,6 +104,10 @@ let draggingItem: CatalogItem | null = null;
 const armedItem = ref<CatalogItem | null>(null);
 /** The last placed object carries the product's selection highlight until the next one starts. */
 const selectedPlacement = ref(false);
+/** Every placed object's floor point, `x,z` per object, so a drop can be checked against the floor. */
+const placedAt = ref('');
+/** Half the ground's side in scene units: past it a drop is over the void, not on the floor. */
+const floorExtent = ref('');
 /** Pressed card waiting to see whether the pointer moves far enough to be a drag. */
 let pendingDrag: {
   item: CatalogItem;
@@ -237,6 +241,13 @@ function disarm() {
   sceneRef.value?.setGhostVisible(false);
 }
 
+function syncPlaced() {
+  const scene = sceneRef.value;
+  placedAt.value = scene
+    ? scene.placedPoses().map((p) => `${p.x.toFixed(2)},${p.z.toFixed(2)}`).join(' ')
+    : '';
+}
+
 /** The one call both routes end in: one object lands, or nothing did because the GLB is late. */
 function dropOne(clientX: number, clientY: number) {
   const scene = sceneRef.value;
@@ -245,6 +256,7 @@ function dropOne(clientX: number, clientY: number) {
   // The product says nothing on success: the selected object on the floor is the signal.
   if (!scene.placeGhostAsSingle()) showToast('Still loading · pick it again');
   selectedPlacement.value = scene.hasSelection();
+  syncPlaced();
 }
 
 /**
@@ -724,6 +736,7 @@ async function removePlaced(token: number, scene: SpaceBuilderScene) {
     if (token !== autoplayToken) return false;
     scene.removeSelected();
     selectedPlacement.value = false;
+    syncPlaced();
     await wait(250);
     if (token !== autoplayToken) return false;
   }
@@ -809,6 +822,7 @@ async function restartDemo() {
   userControl = false;
   sceneRef.value?.reset();
   selectedPlacement.value = false;
+  syncPlaced();
   // Bring the view home before the first drop so it is aimed at the floor it lands on.
   await sceneRef.value?.resetCamera();
   startAutoplay();
@@ -866,6 +880,7 @@ onMounted(async () => {
     scene.pause();
     registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
+    floorExtent.value = String(scene.groundHalfExtent());
 
     ready.value = true;
     requestAnimationFrame(() => {
@@ -952,6 +967,8 @@ onBeforeUnmount(() => {
     :data-ready="ready ? 'true' : 'false'"
     :data-phase="phase"
     :data-selected="selectedPlacement ? 'true' : 'false'"
+    :data-placed="placedAt"
+    :data-floor="floorExtent"
     aria-label="Drag and drop demo, autoplaying the Add tool; drag a catalog card onto the floor, or double-click one and click where it goes"
     @keydown="onKeyDown"
   >
