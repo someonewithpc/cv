@@ -887,6 +887,50 @@ const unsettle = (stack: HTMLElement): void => {
   delete stack.dataset.paperSettled;
 };
 
+// The one thing on a stack that never stops: index.astro's fold-reveal-pulse, breathing the
+// resting dog-ear on a 7.5s loop for as long as the page is open. It animates --fold-x/--fold-y,
+// which the front page's crease clip-path reads, so every frame it advances the browser resolves
+// style for that page and everything printed on it — a demo's whole interface. One stack costs
+// about 1.5ms a frame that way and this page carries six, so better than half a 60fps frame was
+// going on dog-ears, including every frame of a turn happening on some other stack.
+//
+// A tease has no one to tease off screen, so there it holds still. Through the Web Animations
+// API rather than a class or a data attribute: a class or an attribute would put the document's
+// :has() rules back in play on every scroll past, and the whole-document style resolve that
+// follows is exactly what a turn is already paying too much of. A paused animation keeps its
+// value, so the dog-ear is where the reader left it when the stack comes back.
+const PULSE = 'fold-reveal-pulse';
+
+const stillStacks = new WeakSet<HTMLElement>();
+
+const pulsesOf = (stack: HTMLElement): Animation[] =>
+  [...stack.querySelectorAll<HTMLElement>('.paper-front')]
+    .flatMap((sheet) => sheet.getAnimations())
+    .filter((animation) => (animation as CSSAnimation).animationName === PULSE);
+
+// Re-applies the hold after anything that restarts the pulse — a flip hands it to the next page,
+// a settle starts it again. Free on a stack in view, which is the only kind a turn happens on.
+const holdPulseOffScreen = (stack: HTMLElement): void => {
+  if (!stillStacks.has(stack)) return;
+  for (const pulse of pulsesOf(stack)) pulse.pause();
+};
+
+const watchStackPulse = (stack: HTMLElement): void => {
+  // A margin so the pulse is already running by the time the stack is actually looked at,
+  // rather than starting under the reader's eye as it crosses the viewport edge.
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) stillStacks.delete(stack);
+      else stillStacks.add(stack);
+      for (const pulse of pulsesOf(stack)) {
+        if (entry.isIntersecting) pulse.play();
+        else pulse.pause();
+      }
+    }
+  }, { rootMargin: '25%' });
+  observer.observe(stack);
+};
+
 // Puts a front page's fold back in its resting idle state: the dog-ear held at the reveal size
 // with the pulse running. The drag (or a back-drag borrowing the flap) cancelled
 // initial-fold-reveal, so its forwards-fill is gone for good — leaving --fold-x/-y set here is
@@ -898,7 +942,8 @@ const restIdleFold = (sheet: HTMLElement): void => {
   sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
   sheet.style.animationName = 'none, none';
   void sheet.offsetWidth;
-  sheet.style.animationName = 'none, fold-reveal-pulse';
+  sheet.style.animationName = `none, ${PULSE}`;
+  holdPulseOffScreen(sheet.parentElement!);
 };
 
 // What a page that has come to rest at the front hands back: index.astro's own rules take the
@@ -1003,6 +1048,9 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   updateFlippedState(stack);
   stack.dataset.paperTurned = '';
   syncInert(stack);
+  // The dog-ear's pulse goes with the front-page role, so an off-screen stack has to hold the
+  // new page's still too.
+  holdPulseOffScreen(stack);
 };
 
 // Drops everything the front-page role leaves behind on a sheet, so its next turn at the front
@@ -1077,6 +1125,8 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   // state again on its way (flipFold).
   updateFlippedState(stack);
   syncPaperSurface(prev, sectionOf(prev));
+  // The pulse travels with the front-page role; off screen it stays held.
+  holdPulseOffScreen(stack);
   return prev;
 };
 
@@ -1928,6 +1978,7 @@ export function initPaperStackFold(): void {
       attachFoldDrag(fold, grab);
       syncStackSurfaces(stack);
       syncInert(stack);
+      watchStackPulse(stack);
     }
     watchThemePaperSurface();
   };
