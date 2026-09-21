@@ -15,29 +15,10 @@ import TaggingToolDemo from '@/components/TaggingToolDemo/Demo.astro';
 import FontPickerDemo from '@/components/FontPickerDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
-
-/* The index tabs, one per section below and in page order. Every label is the heading that
-   section already carries, so a tab and the sheet it points at say the same thing; the top
-   sheet has no heading but the name, so the name is what its tab reads. */
-const tabs = [
-  { href: '#profile', label: 'Hugo Sales' },
-  { href: '#bill-of-materials', label: 'Bill of materials' },
-  { href: '#demos', label: 'Demos' },
-  { href: '#open-source', label: 'Open Source' },
-];
 ---
 
 <Layout>
   <main id="main">
-    <nav class="index-tabs" aria-label="Sections">
-      {tabs.map(({ href, label }, index) => (
-        <a href={href}>
-          <span class="tab-number monospace" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-          <span class="tab-name typewriter">{label}</span>
-        </a>
-      ))}
-    </nav>
-
     <Name />
     <TechIconCloud />
 
@@ -127,9 +108,7 @@ const tabs = [
   }
 
   /* The details lie on a cutting mat. Past 64rem it stops short of the viewport so the desk
-     shows down both sides; how far it stops short, and the width it stops growing at, are the
-     desk's own measurements (--mat-inset and --mat-max in Layout.astro), since the index rail
-     stands off this edge. Below 64rem there is no desk, so it runs edge to edge and its rim
+     shows down both sides; below that there is no desk, so it runs edge to edge and its rim
      takes the page gutter. The four grid layers are laid out from the content box and clipped
      to it, which is what leaves the rim unruled; the last layer is the mat's own colour,
      clipped to the border box, so the rim is still mat and not desk. Edge to edge, the line
@@ -137,6 +116,8 @@ const tabs = [
   .cutting-mat {
     --mat-line: 1px;
     --mat-rim: calc(var(--page-gap) - var(--mat-line));
+    --mat-inset: 0px;
+    --mat-max: 80rem;
 
     /* The lane a detail's title card stands in, beside the view rather than under it. It is
        open only where the mat is wide enough to hold a stack and a card side by side: the mat
@@ -176,6 +157,7 @@ const tabs = [
 
     @media (width > 64rem) {
       --mat-rim: 1.5rem;
+      --mat-inset: clamp(1.5rem, 4vw, 5rem);
     }
 
     @media (width >= 86rem) {
@@ -198,32 +180,3 @@ const tabs = [
   }
 }
 </style>
-
-<script>
-/* Marks the tab of the section under the 30% line for assistive tech, and pulls that tab out
-   where the stylesheet's scroll-driven animation is unsupported. Nothing is marked while the
-   line is over the desk between two sections, so the tab that was out stays out. */
-const rail = document.querySelector<HTMLElement>('.index-tabs');
-
-if (rail) {
-  const tabs = [...rail.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
-  const tabOf = new Map<Element, HTMLAnchorElement>();
-  for (const tab of tabs) {
-    const section = document.querySelector(tab.hash);
-    if (section) tabOf.set(section, tab);
-  }
-
-  const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      const current = tabOf.get(entry.target);
-      for (const tab of tabs) {
-        if (tab === current) tab.setAttribute('aria-current', 'location');
-        else tab.removeAttribute('aria-current');
-      }
-    }
-  }, { rootMargin: '-30% 0px -69% 0px' });
-
-  tabOf.forEach((_, section) => observer.observe(section));
-}
-</script>
