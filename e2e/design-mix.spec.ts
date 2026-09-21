@@ -592,3 +592,79 @@ test('the ruled sheets fit a phone without scrolling sideways', async ({ page })
   }));
   expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
 });
+
+/** Every baseline written on a sheet, against the rule it is meant to sit on. */
+const readBaselines = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => {
+    const px = (value: string, el: Element) => {
+      const probe = document.createElement('div');
+      probe.style.width = value;
+      el.append(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width;
+    };
+
+    const offsets: { kind: string; size: number; offset: number }[] = [];
+
+    for (const sheet of document.querySelectorAll<HTMLElement>('#open-source section[data-group]')) {
+      const style = getComputedStyle(sheet);
+      const pitch = px(style.getPropertyValue('--rule-pitch'), sheet);
+      const shift = px(style.getPropertyValue('--rule-shift'), sheet);
+      const paperTop = px(style.getPropertyValue('--paper-top'), sheet);
+      // The ruling is laid out from the padding box, which is where the writing starts.
+      const top = sheet.getBoundingClientRect().top + parseFloat(style.borderTopWidth) + window.scrollY;
+
+      const cells: [string, string][] = [
+        ['head', '.lines > header > span'],
+        ['group', 'h3 > span'],
+        ['repo', '.row cite'],
+        ['title', '.row .title .title-text'],
+      ];
+
+      for (const [kind, selector] of cells) {
+        for (const cell of sheet.querySelectorAll(selector)) {
+          // A zero-height inline-block aligned to the baseline puts its own bottom on it.
+          const marker = document.createElement('span');
+          marker.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+          cell.append(marker);
+          const baseline = marker.getBoundingClientRect().bottom + window.scrollY;
+          marker.remove();
+
+          const n = Math.round((baseline - top - paperTop - shift) / pitch);
+          const rule = top + paperTop + shift + n * pitch;
+          offsets.push({ kind, size: parseFloat(getComputedStyle(cell).fontSize), offset: baseline - rule });
+        }
+      }
+    }
+
+    return offsets;
+  });
+
+const blockWebfonts = (page: import('@playwright/test').Page) =>
+  page.route('**/*', (route) => {
+    const url = route.request().url();
+    if (/fonts\.(googleapis|gstatic)\.com/.test(url) || /\.(woff2?|ttf|otf|eot)(\?|$)/.test(url)) {
+      return route.abort();
+    }
+    return route.continue();
+  });
+
+for (const fonts of ['loaded', 'blocked'] as const) {
+  test(`every line on a ruled sheet sits on a rule with the webfonts ${fonts}`, async ({ page }) => {
+    if (fonts === 'blocked') await blockWebfonts(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    const offsets = await readBaselines(page);
+    // Four sizes and three faces are written on these sheets; a drop measured against one of
+    // them is right for that one and wrong for the rest, which is what this catches.
+    expect(offsets.length).toBeGreaterThan(100);
+    expect(new Set(offsets.map(({ kind }) => kind)).size).toBe(4);
+
+    for (const { kind, size, offset } of offsets) {
+      expect(Math.abs(offset), `${kind} at ${size}px is ${offset}px off its rule`).toBeLessThanOrEqual(1);
+    }
+  });
+}
