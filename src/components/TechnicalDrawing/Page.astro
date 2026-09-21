@@ -360,14 +360,19 @@ section {
       overflow: visible;
     }
 
+    /* The sheet's own paper, not the mat the band is: --surface-raised sits a step
+       away from the mat on every theme, which left the cap looking like an outline
+       with the drawing showing through it. Paper is a step the other way, and it is
+       the lightest surface on the light themes and the darkest on the dark ones, so
+       the cap reads as a solid key on all four. */
     .key-face {
-      fill: var(--surface-raised);
+      fill: var(--surface-page);
       stroke: var(--line-strong);
       stroke-width: 0.9;
     }
 
     .key-bevel {
-      fill: color-mix(in oklab, var(--ink) 18%, var(--surface-raised));
+      fill: color-mix(in oklab, var(--ink) 18%, var(--surface-page));
       stroke: var(--line-strong);
       stroke-width: 0.9;
       stroke-linejoin: round;
@@ -399,10 +404,16 @@ section {
       outline-offset: 0.125em;
     }
 
-    /* Held down: the cap drops the full depth of its bevel, which disappears under it. */
+    /* Held down: the cap drops the full depth of its bevel, which disappears under it,
+       and the face takes a little ink so a held key still reads at a glance once the
+       bevel that used to mark it is gone. */
     &[aria-pressed='true'] {
       .key-cap {
         translate: 1.5px 3.5px;
+      }
+
+      .key-face {
+        fill: color-mix(in oklab, var(--ink) 12%, var(--surface-page));
       }
 
       .key-bevel {
