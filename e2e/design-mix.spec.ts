@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { expect, test } from '@playwright/test';
 
 /** The width past which Layout.astro lays the page on a desk. */
@@ -281,8 +283,13 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
   const sheets = await page.evaluate(() => {
     const main = document.querySelector('main')!;
     const bands = [
-      // The index rail is fixed in the margin, not laid down as a band.
-      ...[...main.children].filter((el) => !el.classList.contains('full-width') && !el.classList.contains('index-tabs')),
+      // The index rail is fixed in the margin, not laid down as a band. #open-source is not
+      // one band of paper either: it lays down a sheet for its heading and one torn sheet of
+      // ruled paper per group, which the tests below measure.
+      ...[...main.children].filter((el) =>
+        !el.classList.contains('full-width')
+        && !el.classList.contains('index-tabs')
+        && el.id !== 'open-source'),
       ...main.querySelectorAll(':scope > .full-width > *:not(.cutting-mat)'),
     ];
     return bands.map((band) => {
@@ -304,7 +311,7 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
     });
   });
 
-  expect(sheets.length).toBeGreaterThanOrEqual(4);
+  expect(sheets.length).toBeGreaterThanOrEqual(3);
   const widest = Math.max(...sheets.map((sheet) => sheet.width));
   for (const sheet of sheets) {
     expect(Math.abs(sheet.width - widest), `${sheet.name} width`).toBeLessThanOrEqual(1);
@@ -424,4 +431,125 @@ test('no rail on a phone, and no tab anywhere over the page', async ({ page }) =
     expect(tab.box.width + tab.box.height, `${tab.href} takes no room`).toBe(0);
   }
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+});
+
+/** The groups site.json carries, in the order the section writes them out. */
+const GROUPS = JSON.parse(
+  readFileSync(new URL('../src/components/OpenSourceContributions/site.json', import.meta.url), 'utf8'),
+).groups.map(({ id, items }: { id: string; items: unknown[] }) => ({ id, rows: items.length }));
+
+/** Every ruled sheet: its paper, its tear, its pitch and the height of every row on it. */
+const readSheets = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => {
+    const px = (value: string) => {
+      const probe = document.createElement('div');
+      probe.style.width = value;
+      document.body.append(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width;
+    };
+
+    const intro = document.querySelector('#open-source .intro')!.getBoundingClientRect();
+
+    return {
+      intro: { left: intro.left, width: intro.width },
+      sheets: [...document.querySelectorAll<HTMLElement>('#open-source section[data-group]')].map((sheet) => {
+        const style = getComputedStyle(sheet);
+        const box = sheet.getBoundingClientRect();
+        return {
+          id: sheet.dataset.group!,
+          left: box.left,
+          width: box.width,
+          pitch: px(style.getPropertyValue('--rule-pitch')),
+          // Paper tone, the two fibre edges, the ruling and the margin line.
+          image: style.backgroundImage,
+          layers: style.backgroundImage.split('linear-gradient(').length - 1,
+          size: style.backgroundSize.split(', '),
+          repeat: style.backgroundRepeat.split(', '),
+          mask: style.maskImage,
+          maskPosition: style.maskPosition,
+          rows: [...sheet.querySelectorAll('.row')].map((row) => row.getBoundingClientRect().height),
+        };
+      }),
+    };
+  });
+
+test('each group is a sheet of ruled paper torn along the top and the bottom', async ({ page }) => {
+  await withTheme(page, 'light');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const { intro, sheets } = await readSheets(page);
+  expect(sheets.map((sheet) => sheet.id)).toEqual(GROUPS.map(({ id }: { id: string }) => id));
+
+  for (const sheet of sheets) {
+    // Fibre along both tears, the ruling, the margin line.
+    expect(sheet.layers, `${sheet.id} paper`).toBe(4);
+    // The ruling is one pitch-tall tile repeated down the whole sheet, so it runs on past
+    // the writing and off both torn edges rather than stopping under the last row.
+    expect(sheet.size[2], `${sheet.id} ruling`).toBe(`100% ${sheet.pitch}px`);
+    expect(sheet.repeat[2], `${sheet.id} ruling repeats`).toBe('repeat');
+    // A jagged path along the top, a different one along the bottom, and straight sides.
+    expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
+    expect(sheet.mask.split('url(').length - 1, `${sheet.id} two tears`).toBe(2);
+    // The sheets are the width of the band, laid one under the other.
+    expect(Math.abs(sheet.width - intro.width), `${sheet.id} width`).toBeLessThanOrEqual(1);
+    expect(Math.abs(sheet.left - intro.left), `${sheet.id} edge`).toBeLessThanOrEqual(1);
+  }
+
+  // No two sheets tear alike: each one slides its masks along by a different amount.
+  const tears = sheets.map((sheet) => sheet.maskPosition);
+  expect(new Set(tears).size, 'each sheet tears differently').toBe(sheets.length);
+});
+
+test('every contribution is written on the rules of its sheet at 1440px', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const { sheets } = await readSheets(page);
+  expect(sheets.map(({ id, rows }) => ({ id, rows: rows.length }))).toEqual(GROUPS);
+
+  let onOneLine = 0;
+  let total = 0;
+  for (const sheet of sheets) {
+    for (const height of sheet.rows) {
+      const lines = height / sheet.pitch;
+      // A row is a whole number of ruled lines, so every line of it sits on a rule and so
+      // does every row under it.
+      expect(Math.abs(height - Math.round(lines) * sheet.pitch), `${sheet.id} row of ${height}px`)
+        .toBeLessThanOrEqual(1);
+      // A title long enough to wrap takes a second line. Nothing here needs a third.
+      expect(Math.round(lines), `${sheet.id} row of ${height}px`).toBeLessThanOrEqual(2);
+      if (Math.round(lines) === 1) onOneLine++;
+      total++;
+    }
+  }
+  // One contribution to a line is the rule, and a wrapped title the exception.
+  expect(onOneLine / total).toBeGreaterThan(0.5);
+});
+
+test('the ruled sheets fit a phone without scrolling sideways', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForTimeout(1000);
+
+  const { sheets } = await readSheets(page);
+  expect(sheets).toHaveLength(GROUPS.length);
+  for (const sheet of sheets) {
+    expect(sheet.layers, `${sheet.id} paper`).toBe(4);
+    expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
+    // Wider ruling for a thumb.
+    expect(sheet.pitch, `${sheet.id} pitch`).toBeGreaterThan(32);
+    for (const height of sheet.rows) {
+      expect(Math.abs(height - Math.round(height / sheet.pitch) * sheet.pitch), `${sheet.id} row`)
+        .toBeLessThanOrEqual(1);
+    }
+  }
+
+  const overflow = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
 });
