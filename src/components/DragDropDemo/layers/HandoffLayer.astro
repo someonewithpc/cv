@@ -15,13 +15,18 @@
  *
  * Each callout aims at a mark, an empty positioned element at the thing's place in its
  * frame, so the label can sit over the frame's empty canvas without lying over its target.
- * The marks' positions are fractions of the frame read off the captured images; the
- * authored tips are the marks' places on a two-by-two strip with a gap of 0.025 units.
- * Each label is wider than the canvas its frame shows beside the catalog, so the angles
- * and lengths are set to keep the whole label inside its own frame, tail included.
+ * The marks' positions are fractions of the frame, off the pointer path the capture script
+ * drives; the authored tips are the same places on a two-by-two strip, for the no-script
+ * drawing. The crop leaves the canvas a little over half of each frame (CANVAS_FRACTION),
+ * which is room for a whole label, so the angles and lengths lay each one on that half,
+ * tail included, and off the catalog cards beside it.
  *
- * Two frames to a row at every sheet size: four high on a phone would halve both the
- * frames and the callout type.
+ * One set of angles and lengths holds at every sheet size: the strip is wider than it is
+ * tall whatever caps it, so the overlay's unit is half its height, which is one frame, and
+ * a frame is always 1 unit tall by 1.8 wide.
+ *
+ * Two frames to a row at every sheet size: four high on a phone would leave the strip
+ * taller than the sheet, and fitting it back would only shrink the frames again.
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
@@ -29,7 +34,7 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 const FRAME = { width: 1731, height: 960 };
 /** The canvas's share of a frame's width, the fraction the capture script prints. */
 const CANVAS_FRACTION = 0.515;
-const FONT = 0.072;
+const FONT = 0.08;
 /** Thinner than the default: the frames are photographs, and the arrows cross them. */
 const STROKE = 0.013;
 
@@ -78,10 +83,10 @@ const frames: Frame[] = [
         </div>
 
         <Fragment slot="annotations">
-          <ArrowAnnotation target='[data-mark="press"]' tipX={-0.51} tipY={-0.71} angle={-120.7} length={0.29} text="drag the object to the viewport" lines={['drag the object', 'to the viewport']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="picture"]' tipX={0.47} tipY={-0.47} angle={96} length={0.191} text="over the catalog it is still a picture" lines={['over the catalog', 'it is still a picture']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="model"]' tipX={-0.76} tipY={0.75} angle={42.3} length={0.569} text="over the floor it becomes the model" lines={['over the floor', 'it becomes the model']} labelSide="left" fontSize={FONT} />
-          <ArrowAnnotation target='[data-mark="placed"]' tipX={0.17} tipY={0.77} angle={50.2} length={0.523} text="let go and it is placed" lines={['let go', 'and it is placed']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="press"]' tipX={-0.665} tipY={-0.69} angle={-137.9} length={0.462} text="drag the object to the viewport" lines={['drag the object', 'to the viewport']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="picture"]' tipX={1.076} tipY={-0.47} angle={151.7} length={0.232} text="over the catalog it is still a picture" lines={['over the catalog', 'it is still a picture']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="model"]' tipX={-1.04} tipY={0.74} angle={65} length={0.265} text="over the floor it becomes the model" lines={['over the floor', 'it becomes the model']} labelSide="left" fontSize={FONT} />
+          <ArrowAnnotation target='[data-mark="placed"]' tipX={0.665} tipY={0.77} angle={50.4} length={0.325} text="let go and it is placed" lines={['let go', 'and it is placed']} labelSide="left" fontSize={FONT} />
         </Fragment>
       </Annotations>
     </div>
