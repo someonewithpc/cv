@@ -1,0 +1,96 @@
+---
+/**
+ * The title block a drawing carries in its own corner, stood up beside the detail: the same
+ * hairline cells, the same labels and faces as TechnicalDrawing/Page.astro's block, with a
+ * Notes cell for a sentence of context the sheet has no room for.
+ */
+type Props = {
+  title: string;
+  medium: string;
+  year: string;
+};
+
+const { title, medium, year } = Astro.props;
+---
+
+<div class="title-card">
+  <dl>
+    <div class="title-cell title-cell-wide">
+      <dt class="monospace">Title</dt>
+      <dd class="typewriter">{title}</dd>
+    </div>
+
+    <div class="title-cell">
+      <dt class="monospace">Medium</dt>
+      <dd class="typewriter">{medium}</dd>
+    </div>
+
+    <div class="title-cell">
+      <dt class="monospace">Year</dt>
+      <dd class="typewriter"><time datetime={year}>{year}</time></dd>
+    </div>
+
+    <div class="title-cell title-cell-wide title-cell-notes">
+      <dt class="monospace">Notes</dt>
+      <dd><slot /></dd>
+    </div>
+  </dl>
+</div>
+
+<style lang="scss">
+/* The hairlines are the grid's own gaps over the block's background, so every cell keeps one
+   line between it and the next and the block keeps one around the outside. */
+.title-card {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--line-strong);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.125rem;
+
+  /* dl and dd keep the browser's own margins through the page reset; a cell is a cell here. */
+  dl,
+  dd {
+    margin: 0;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1px;
+  }
+}
+
+.title-cell {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+  padding: 0.3125rem 0.5rem 0.4375rem;
+  background: var(--surface-sunken);
+
+  dt {
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  dd {
+    overflow-wrap: break-word;
+  }
+}
+
+.title-cell-wide {
+  grid-column: 1 / -1;
+}
+
+.title-cell-wide dd.typewriter {
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+
+.title-cell-notes dd {
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+</style>
