@@ -218,6 +218,14 @@ main {
      between sections, never behind text. */
   @media (width > 64rem) {
     --desk-veil: color-mix(in oklch, var(--theme-desk), transparent calc(var(--theme-desk-grain) * 100%));
+    /* One gap between every two sheets, and the same strip of desk above the first and below
+       the last. */
+    --desk-gap: 2.5rem;
+    --sheet-pad: 1.5rem;
+    --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
+
+    row-gap: var(--desk-gap);
+    padding-block: var(--desk-gap);
 
     background-color: var(--theme-desk);
     background-image:
@@ -226,19 +234,32 @@ main {
     background-size: auto, 40rem 40rem;
     background-blend-mode: normal, overlay;
 
-    > *,
-    > .full-width > * {
-      background-color: var(--surface-page);
-      background-image:
-        linear-gradient(to right, var(--page-rule) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--page-rule) 1px, transparent 1px);
-      background-size: 2.5rem 2.5rem;
+    /* Every band on the desk is a sheet of the same paper: one width, the page column's, a
+       hairline edge, a small radius and the lift the drawing stacks have. Their own margins
+       and width caps go, so the rhythm is the row gap above and nothing else. The drafting
+       grid is the cutting mat's now, so no sheet carries it. The id is in the selector to
+       outrank the sections' own margins, which the desk takes over here. */
+    &#main > *,
+    &#main > .full-width > * {
+      width: 100%;
+      max-width: none;
+      margin-block: 0;
+      padding: var(--sheet-pad);
+      border: 1px solid var(--line);
+      border-radius: 0.25rem;
+      background: var(--surface-page);
+      box-shadow: var(--sheet-lift);
     }
 
-    /* A full-width section is the whole viewport, so the surface belongs to the
-       column-width children above, not to it. */
-    > .full-width {
+    /* A full-width section is the whole viewport, so the paper belongs to the column-width
+       children in it, not to it. */
+    &#main > .full-width {
+      row-gap: var(--desk-gap);
+      padding: 0;
+      border: 0;
+      border-radius: 0;
       background: none;
+      box-shadow: none;
     }
   }
 

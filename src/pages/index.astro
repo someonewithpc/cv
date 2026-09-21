@@ -67,6 +67,13 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     margin-top: 4.5rem;
   }
 
+  /* On the desk the gap between the header sheet and the mat is the same as between any two
+     sheets, and the desk's row gap is what separates this section from the one above. */
+  @media (width > 64rem) {
+    row-gap: var(--desk-gap);
+    margin-top: 0;
+  }
+
   > :global(header) {
     grid-column: content;
     margin-bottom: 0;
