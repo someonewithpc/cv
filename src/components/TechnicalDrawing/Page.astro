@@ -857,6 +857,9 @@ section {
     border-radius: 0.25rem;
     outline: 0.06rem solid color-mix(in oklab, currentColor 55%, transparent);
     outline-offset: 0.18rem;
+    /* A thin wash of paper under the impression: the drawing it is pressed onto can be a
+       photograph of grass, and an ink-only stamp disappears into one. */
+    background: color-mix(in oklab, var(--surface-page) 62%, transparent);
     mask-image: radial-gradient(ellipse 95% 90% at 50% 48%, #000 72%, transparent 100%);
   }
 
