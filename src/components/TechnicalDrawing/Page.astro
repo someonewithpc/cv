@@ -212,6 +212,26 @@ const transportKeys = [
       </button>
     </span>
 
+    <!-- Shape 5: a stamp inked onto the drawing, re-inked when the visitor takes over, and
+         a pencil note beside it that rewinds. -->
+    <span class="demo-stamp" data-demo-stamp>
+      <button class="stamp-mark" type="button" data-demo-act="toggle">
+        <span class="sr-only" data-demo-act-label></span>
+        <span class="stamp-ring" aria-hidden="true">
+          <span class="stamp-line monospace" data-demo-stamp-state></span>
+          <span class="stamp-sub monospace" data-demo-stamp-hint></span>
+        </span>
+      </button>
+
+      <button class="stamp-replay" type="button" data-demo-act="replay">
+        <svg viewBox="0 0 14 14" aria-hidden="true">
+          <path d="M7 2.2a4.8 4.8 0 1 1-4.5 3.2" />
+          <path class="replay-head" d="M4.4 0.4 8 2.2 4.4 4Z" />
+        </svg>
+        <span class="monospace">replay</span>
+      </button>
+    </span>
+
   </div>
 </section>
 
@@ -529,9 +549,10 @@ section {
     display: none;
   }
 
-  /* Shape 4 draws a mark a sheet already has instead of keys, so it is hidden until
-     its own shape is asked for. */
-  .demo-dimension {
+  /* Shapes 4 and 5 draw marks a sheet already has instead of keys, so each is hidden
+     until its own shape is asked for. */
+  .demo-dimension,
+  .demo-stamp {
     display: none;
   }
 
@@ -749,9 +770,138 @@ section {
     color: var(--accent);
   }
 
+  /* Shape 5: a stamp pressed onto the bottom right of the drawing, clear of the title
+     block, and a pencil note beside it. Pressing the stamp takes the walkthrough over;
+     the note sends it back to the start. */
+  :global(html[data-deck='5']) & {
+    .demo-transport {
+      position-anchor: var(--drawing-title-anchor);
+      left: auto;
+      right: anchor(right);
+      bottom: calc(anchor(top) + 0.75rem);
+      height: auto;
+      width: max-content;
+      max-width: 60%;
+    }
+
+    .demo-keys,
+    .demo-led {
+      display: none;
+    }
+
+    .demo-readout {
+      @include off-the-paper;
+    }
+
+    .demo-stamp {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.3rem;
+    }
+  }
+
+  /* The ink is the theme's accent at the weight it is readable on paper, and the same
+     bled edge WipStamp.astro gives its own impression. */
+  .stamp-mark {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    cursor: pointer;
+    pointer-events: auto;
+    rotate: -5deg;
+    transition: rotate 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      rotate: -3deg;
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 0.25em;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+  }
+
+  .stamp-ring {
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    padding: 0.3rem 0.7rem 0.35rem;
+    border: 0.14rem solid currentColor;
+    border-radius: 0.25rem;
+    outline: 0.06rem solid color-mix(in oklab, currentColor 55%, transparent);
+    outline-offset: 0.18rem;
+    mask-image: radial-gradient(ellipse 95% 90% at 50% 48%, #000 72%, transparent 100%);
+  }
+
+  .stamp-line {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-indent: 0.16em;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .stamp-sub {
+    font-size: 0.5rem;
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* Written next to the stamp in pencil, underlined the way the sheet underlines a
+     callout's own lettering. */
+  .stamp-replay {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    cursor: pointer;
+    pointer-events: auto;
+    font-size: 0.5625rem;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+
+    svg {
+      display: block;
+      height: 1.1em;
+      width: auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.3;
+    }
+
+    .replay-head {
+      fill: currentColor;
+      stroke: none;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .demo-led { animation: none; }
     .dim-arrow { transition: none; }
+    .stamp-mark { transition: none; }
   }
 
   .aside {
@@ -1138,6 +1288,18 @@ section {
     :global(html[data-deck='4']) & .demo-transport {
       position: static;
       align-items: stretch;
+    }
+
+    /* Shape 5 is a mark on the drawing itself, so it keeps its corner of it and leaves
+       the row empty. Taking the grid placement back matters: a positioned grid item is
+       laid out inside its own grid area, and the title block it anchors to is one row
+       further down. */
+    :global(html[data-deck='5']) & .demo-transport {
+      position: absolute;
+      grid-column: auto;
+      grid-row: auto;
+      padding: 0;
+      margin-bottom: 0;
     }
 
     .content {
