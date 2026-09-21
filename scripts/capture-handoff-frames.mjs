@@ -34,9 +34,10 @@ const SCALE = 3;
 /**
  * The part of the app each frame shows, as fractions of its box: the sidebar and the
  * canvas beside it, where the handoff happens. The whole app at the sheet's still size
- * would lose the cursor and the model.
+ * would lose the cursor and the model. The left edge is set so the canvas takes a little
+ * over half of each frame, since the sheet's callouts have to sit on that half.
  */
-const CROP = { left: 0.38, top: 0.14, right: 1, bottom: 0.94 };
+const CROP = { left: 0.18, top: 0.14, right: 1, bottom: 0.94 };
 const WEBP_QUALITY = 0.9;
 
 /** The hot spot of the cursor below, the path's tip, as a point of its 32-unit viewBox. */
@@ -83,6 +84,11 @@ await page.waitForTimeout(1500);
 // The sheet's title block lies over the island's corner; the frames show the app alone.
 await stack.locator('table[aria-label$="title block"]').evaluateAll((tables) => {
   for (const table of tables) table.style.visibility = 'hidden';
+});
+// The Restart button sits in the canvas corner the wider crop reaches, and the drag is the
+// only thing these frames are about.
+await app.locator('.controls').evaluateAll((controls) => {
+  for (const el of controls) el.style.visibility = 'hidden';
 });
 
 const card = app.locator('[data-demo-target="catalog:chair"]');
@@ -193,5 +199,8 @@ await moveTo(drop, canvasEdge);
 await page.mouse.up();
 await showCursor(drop, false);
 await capture(4);
+
+// What HandoffLayer.astro's callouts have to stay inside: the canvas's share of a frame.
+console.log(`canvas fraction ${((sidebarBox.x - clip.x) / clip.width).toFixed(3)}`);
 
 await browser.close();
