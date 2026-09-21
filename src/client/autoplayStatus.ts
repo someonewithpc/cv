@@ -37,10 +37,10 @@ const HINT: Record<AutoplayState, string> = {
 const TOUCH_HINT = 'tap the sheet to take over';
 
 /**
- * Three shapes for the same deck, so the preview can show all of them: `?deck=1` fills a
- * widened bottom band, `?deck=2` stamps the deck onto the title block, `?deck=3` keeps the
- * band flush. The shape lands on <html>, which is where Page.astro's styles read it. Once
- * one shape is chosen, the other two and this switch go.
+ * Three shapes for the same deck, so the preview can show all of them: `?deck=1` fills the
+ * bottom band, `?deck=2` stamps the deck onto the title block, `?deck=3` fills the band too
+ * and leads with the instruction. The shape lands on <html>, which is where Page.astro's
+ * styles read it. Once one shape is chosen, the rest and this switch go.
  */
 const DECK_SHAPES = ['1', '2', '3'];
 const DEFAULT_DECK_SHAPE = '1';

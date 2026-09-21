@@ -199,12 +199,6 @@ section {
      resolved smaller than the mat and pushed the block across the frame line. */
   --sheet-margin: 1rem;
 
-  /* The bottom margin is wider than the other three, so the transport deck's keys can
-     be drawn at a size a thumb can aim at. A drawing gets a deeper bottom margin for
-     its title block anyway, so the frame line sitting higher here reads as convention
-     rather than as a box dropped on the paper. */
-  --sheet-band: 1.75rem;
-
   /* The note tab's size, and how far it reaches past the mat over the artwork.
      rem for the same reason: the tab sits in the sheet's corner, not in anyone's
      text. The reach is 0 until the tab appears, so a demo can keep its controls
@@ -221,17 +215,12 @@ section {
   $border: 1px solid var(--line-strong);
   border: $border;
   padding: var(--sheet-margin);
-  padding-bottom: var(--sheet-band);
   border-radius: 0.5em;
 
-  /* The mat and the frame line, in one paint. The uniform ring goes on top so the
-     bottom band's own strip cannot leak its line into the side margins; the strip
-     then covers the ring's bottom edge and redraws the frame line higher up. With
-     --sheet-band equal to --sheet-margin the four shadows land on the same pixels
-     the plain two used to. */
+  /* The mat and the frame line, in one paint: an even ring of mat, then the line
+     drawn one pixel inside it. The margin is the same on all four sides, so the
+     band the deck is drawn in is whatever the bottom of that ring leaves. */
   box-shadow: inset 0 0 0 var(--sheet-margin) var(--surface-sunken),
-              inset 0 calc(-1 * var(--sheet-band)) 0 0 var(--surface-sunken),
-              inset 0 calc(-1 * var(--sheet-band) - 1px) 0 0 var(--line-strong),
               inset 0 0 0 calc(var(--sheet-margin) + 1px) var(--line-strong);
 
   display: grid;
@@ -316,15 +305,16 @@ section {
     }
   }
 
-  /* The deck fills the bottom band, the strip of paper between the sheet edge and the
+  /* The deck fills the bottom band, the strip of mat between the sheet edge and the
      frame line that the title block already sits against, starting clear of the
-     dog-eared corner. */
+     dog-eared corner. The band is one margin deep, like the other three sides, so
+     the keys are drawn at whatever that leaves. */
   .demo-transport {
     position: absolute;
     left: calc(var(--note-fold-size) + 0.25rem);
     right: var(--sheet-margin);
     bottom: 0;
-    height: var(--sheet-band);
+    height: var(--sheet-margin);
     z-index: 4;
 
     display: flex;
@@ -363,7 +353,9 @@ section {
 
     svg {
       display: block;
-      height: 1.125rem;
+      /* What the band leaves once the margin is the same on all four sides. The
+         shapes that draw the deck somewhere else set their own size. */
+      height: 0.75rem;
       width: auto;
       overflow: visible;
     }
@@ -488,11 +480,8 @@ section {
   }
 
   /* Shape 2: the deck is one more cell of the title block, sitting on its top edge so
-     the two share a rule, drawn in the block's border and its label face. The band and
-     the frame line stay where a sheet without a demo has them. */
+     the two share a rule, drawn in the block's border and its label face. */
   :global(html[data-deck='2']) & {
-    --sheet-band: var(--sheet-margin);
-
     .demo-transport {
       position-anchor: var(--drawing-title-anchor);
       left: auto;
@@ -554,16 +543,9 @@ section {
     }
   }
 
-  /* Shape 3: nothing moves at all. The band keeps the height a sheet without a demo
-     has, which caps the keys at 14px, and the instruction pays for that by saying its
-     piece once and then getting out of the way. */
+  /* Shape 3: the same keys in the same band as shape 1, and the instruction pays for
+     the room by saying its piece once and then getting out of the way. */
   :global(html[data-deck='3']) & {
-    --sheet-band: var(--sheet-margin);
-
-    .demo-key svg {
-      height: 0.875rem;
-    }
-
     .demo-transport[data-phase='intro'] {
       .demo-caption {
         display: none;
@@ -780,7 +762,7 @@ section {
 
     position: absolute;
     right: var(--sheet-margin);
-    bottom: var(--sheet-band);
+    bottom: var(--sheet-margin);
 
     border-collapse: collapse;
     border-spacing: 0;
@@ -908,11 +890,8 @@ section {
   }
 
   @container technical-drawing (orientation: portrait) {
-    /* A phone sheet cannot spare a 1rem mat on all four edges. The bottom band stays
-       as narrow as the rest for every shape: the deck is not in it here (see below), so
-       a wider band would be an empty strip. */
+    /* A phone sheet cannot spare a 1rem mat on all four edges. */
     --sheet-margin: 0.625rem;
-    --sheet-band: var(--sheet-margin);
 
     grid-template-columns: minmax(0, 1fr);
     /* Artwork, then the deck, then the title block. The note is tucked under the
