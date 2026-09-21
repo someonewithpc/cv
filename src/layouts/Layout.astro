@@ -179,10 +179,19 @@ main {
   --content-max: 60em;
   /* The demo stacks sit in the breakout column, so this is what caps them. */
   --breakout-max: var(--content-max);
+  /* The strip left and right of the page column. It is the page gutter, except where the
+     index rail stands in it and needs more room. */
+  --page-gutter: var(--page-gap);
+
+  /* The cutting mat (index.astro) is the widest band the page lays down, and the rail is
+     measured off its edge, so the mat's cap and inset are kept here with the rest of the
+     desk's measurements. */
+  --mat-inset: 0px;
+  --mat-max: 80rem;
 
   --full-width: minmax(var(--page-gap), 1fr);
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
-  --content: min(100% - var(--page-gap) * 2, var(--content-max));
+  --content: min(100% - var(--page-gutter) * 2, var(--content-max));
 
   position: relative;
   display: grid;
@@ -225,6 +234,15 @@ main {
     --sheet-pad: 1.5rem;
     --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
 
+    /* The lane the index rail stands in: a tab with a gap on either side of it. The page
+       gutter opens to at least that, and so does the mat's inset, so the rail has the margin
+       to itself and no band of the page ever reaches under it. */
+    --rail-width: 2.75rem;
+    --rail-gap: 0.75rem;
+    --rail-lane: calc(var(--rail-width) + var(--rail-gap) * 2);
+    --page-gutter: max(var(--page-gap), var(--rail-lane));
+    --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--rail-lane));
+
     row-gap: var(--desk-gap);
     padding-block: var(--desk-gap);
 
@@ -240,7 +258,7 @@ main {
        and width caps go, so the rhythm is the row gap above and nothing else. The drafting
        grid is the cutting mat's now, so no sheet carries it. The id is in the selector to
        outrank the sections' own margins, which the desk takes over here. */
-    &#main > *,
+    &#main > *:not(.index-tabs),
     &#main > .full-width > * {
       width: 100%;
       max-width: none;
@@ -277,6 +295,139 @@ main {
   .breakout {
     grid-column: breakout;
     min-width: 0;
+  }
+}
+
+/* How far a tab is pulled out of the rail: 1 for the section on screen, 0 for the rest. The
+   view timeline below moves it, and where that is unsupported aria-current and :target set
+   it outright. */
+@property --proud {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+/* The index rail: one numbered paper tab per section, named after the heading that section
+   carries, down the left margin of the desk. It hangs off the cutting mat's edge, which is
+   the widest band the page lays down, so it is always clear of the content; the left margin
+   is also the one side the theme picker never reaches. Below 64rem there is no desk to stand
+   it in and the headings are too long to lie along the top of a phone, so it goes. */
+.index-tabs {
+  display: none;
+
+  @media (width > 64rem) {
+    position: fixed;
+    top: 50%;
+    left: calc(max(var(--mat-inset), (100% - var(--mat-max)) / 2) - var(--rail-gap) - var(--rail-width));
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    translate: 0 -50%;
+  }
+
+  a {
+    --lift: max(var(--proud), var(--hover, 0));
+
+    /* The label lies along the page's edge, so the tab's inline axis runs down the rail:
+       inline-size is its length and block-size its width. */
+    writing-mode: vertical-rl;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    block-size: var(--rail-width);
+    min-inline-size: 5rem;
+    padding-inline: 0.75rem;
+    padding-block: 0.25rem;
+    border: 1px solid color-mix(in oklch, var(--line), var(--line-strong) calc(var(--lift) * 100%));
+    border-radius: 0.25rem;
+    background: color-mix(in oklch, var(--surface-sunken), var(--surface-page) calc(var(--lift) * 100%));
+    box-shadow: -1px 1px 0.25rem rgb(0 0 0 / 12%);
+    color: color-mix(in oklch, var(--ink-muted), var(--ink) calc(var(--lift) * 100%));
+    text-decoration: none;
+    translate: calc(var(--lift) * -0.375rem) 0;
+    transition: translate 200ms ease, background-color 200ms ease, color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+      --hover: 0.5;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+  }
+
+  .tab-number {
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+  }
+
+  .tab-name {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (width > 64rem) {
+    main {
+      timeline-scope: --section-profile, --section-materials, --section-demos, --section-oss;
+    }
+
+    /* The tab follows the section under a line 30% down the screen. The band is exactly as
+       deep as the gap between two sheets, so the line always has one section under it and
+       never two, and no tab drops back while the desk shows between them. */
+    #profile,
+    #bill-of-materials,
+    #demos,
+    #open-source {
+      view-timeline-inset: 30% calc(70% - var(--desk-gap));
+    }
+
+    #profile { view-timeline-name: --section-profile; }
+    #bill-of-materials { view-timeline-name: --section-materials; }
+    #demos { view-timeline-name: --section-demos; }
+    #open-source { view-timeline-name: --section-oss; }
+
+    .index-tabs a {
+      animation: index-tab-proud linear both;
+
+      &[href='#profile'] { animation-timeline: --section-profile; }
+      &[href='#bill-of-materials'] { animation-timeline: --section-materials; }
+      &[href='#demos'] { animation-timeline: --section-demos; }
+      &[href='#open-source'] { animation-timeline: --section-oss; }
+    }
+  }
+}
+
+/* The steps at the edges leave the fill at 0 both before the section reaches the line and
+   after it has passed. */
+@keyframes index-tab-proud {
+  0%, 100% { --proud: 0; }
+  0.01%, 99.99% { --proud: 1; }
+}
+
+@supports not (animation-timeline: view()) {
+  .index-tabs a[aria-current] {
+    --proud: 1;
+  }
+
+  main:has(#profile:target) .index-tabs a[href='#profile'],
+  main:has(#bill-of-materials:target) .index-tabs a[href='#bill-of-materials'],
+  main:has(#demos:target) .index-tabs a[href='#demos'],
+  main:has(#open-source:target) .index-tabs a[href='#open-source'],
+  main:not(:has(:target, [aria-current])) .index-tabs a:first-child {
+    --proud: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .index-tabs a {
+    transition: none;
   }
 }
 
