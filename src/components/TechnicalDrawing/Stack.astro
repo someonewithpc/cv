@@ -431,6 +431,15 @@ function initStack(stack: HTMLElement) {
   // Chrome's layout of that runs seconds per pass: a resize, or docking DevTools, froze the
   // page for twenty. The orientation is read back from the aspect the width query picked.
   measure.observe(stack);
+
+  // The title block's own size, in plain pixels on its sheet. On a landscape sheet the block
+  // is absolutely placed in the bottom-right corner, over the artwork column, so a demo that
+  // fills that column has to know how far up the corner reaches to stay out of it. How far
+  // that is depends on which step of the block's fit ladder the sheet width picked and on how
+  // wide the text in the cells ran, so it is measured rather than restated as a constant.
+  [...stack.querySelectorAll<HTMLElement>('section > table')].forEach((block) => {
+    measureTitleBlock.observe(block);
+  });
 }
 
 // One observer for every stack, so a resize is answered with all the reads before any of the
@@ -449,6 +458,18 @@ const measure = new ResizeObserver((entries) => {
     // The frame is taller than the sheet by the fan's reserve, so a hint that belongs on the
     // sheet's own bottom edge cannot be placed from the frame's box alone.
     (stack.parentElement as HTMLElement | null)?.style.setProperty('--stack-block', `${blockSize}px`);
+  }
+});
+
+// Reads before writes, for the same reason as `measure` above.
+const measureTitleBlock = new ResizeObserver((entries) => {
+  const read = entries.map((entry) => {
+    const [{ inlineSize, blockSize }] = entry.borderBoxSize;
+    return { sheet: entry.target.parentElement as HTMLElement, inlineSize, blockSize };
+  });
+  for (const { sheet, inlineSize, blockSize } of read) {
+    sheet.style.setProperty('--title-block-inline', `${inlineSize}px`);
+    sheet.style.setProperty('--title-block-block', `${blockSize}px`);
   }
 });
 
