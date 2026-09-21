@@ -5,7 +5,6 @@
   <div
     class="picker-island"
     data-font-picker-island
-    data-boot-module="/src/components/FontPickerDemo/layers/PickerLayer.boot.ts"
   >
     <div class="boot-placeholder" aria-hidden="true">
       <span class="boot-spinner"></span>
@@ -14,12 +13,11 @@
   </div>
 </div>
 
-{/*
-  No <script> here — a component reached only through Stack.astro's per-layer
-  Astro.slots.render() call never gets its own hoisted script onto the page (see the
-  "dev-server-drops-demo-scripts" memory). PickerLayer.boot.ts is armed instead by
-  Stack.astro's own script, which the pagination doesn't touch, via data-boot-module.
-*/}
+<script>
+  import { bootIslands } from '@/client/pageIsland';
+  import { boot } from './PickerLayer.boot';
+  bootIslands('[data-font-picker-island]', boot);
+</script>
 
 <style lang="scss">
 @use "./sheet" as *;
