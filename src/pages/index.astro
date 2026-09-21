@@ -106,9 +106,11 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
      shows down both sides; below that there is no desk, so it runs edge to edge and its rim
      takes the page gutter. The four grid layers are laid out from the content box and clipped
      to it, which is what leaves the rim unruled; the last layer is the mat's own colour,
-     clipped to the border box, so the rim is still mat and not desk. */
+     clipped to the border box, so the rim is still mat and not desk. Edge to edge, the line
+     counts toward the gutter, so a stack is exactly as wide as it was without the mat. */
   .cutting-mat {
-    --mat-rim: var(--page-gap);
+    --mat-line: 1px;
+    --mat-rim: calc(var(--page-gap) - var(--mat-line));
     --mat-inset: 0px;
     --mat-max: 80rem;
 
@@ -121,7 +123,7 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     justify-content: center;
     row-gap: 4em;
     padding: var(--mat-rim);
-    border: 1px solid var(--mat-edge);
+    border: var(--mat-line) solid var(--mat-edge);
     border-radius: 0.25rem;
     background-color: transparent;
     background-image:
