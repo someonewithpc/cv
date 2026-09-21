@@ -205,7 +205,13 @@ for (const { name, viewport } of [
           clearOfTitleBlock: clearOf(section.querySelector('table')),
         };
       });
-      expect(placement).toEqual({ insideBand: true, clearOfDrawing: true, clearOfTitleBlock: true });
+      // A phone sheet has no room in the band, so the deck takes a row of its own inside
+      // the frame above the title block instead.
+      expect(placement).toEqual({
+        insideBand: name === 'desktop',
+        clearOfDrawing: true,
+        clearOfTitleBlock: true,
+      });
     });
   });
 }
