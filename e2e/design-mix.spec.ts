@@ -668,3 +668,51 @@ for (const fonts of ['loaded', 'blocked'] as const) {
     }
   });
 }
+
+/** The letter's ink against the circle drawn round it. */
+const readBubbles = (page: import('@playwright/test').Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('.callout-bubble')].map((bubble) => {
+      const letter = bubble.querySelector<HTMLElement>('.callout-letter')!;
+      const style = getComputedStyle(letter);
+      const circle = bubble.getBoundingClientRect();
+
+      const node = [...letter.childNodes].find((child) => child.nodeType === Node.TEXT_NODE)!;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const line = range.getBoundingClientRect();
+
+      const context = document.createElement('canvas').getContext('2d')!;
+      context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const ink = context.measureText(node.textContent!.trim());
+
+      // The range's box is the face's own ascent-to-descent box, so the baseline is one
+      // ascent down it; the ink of a capital is measured from there.
+      const baseline = line.top + ink.fontBoundingBoxAscent;
+      const inkCentre = baseline + (ink.actualBoundingBoxDescent - ink.actualBoundingBoxAscent) / 2;
+
+      return {
+        letter: node.textContent!.trim(),
+        lineBox: line.height,
+        faceBox: ink.fontBoundingBoxAscent + ink.fontBoundingBoxDescent,
+        off: inkCentre - (circle.top + circle.bottom) / 2,
+      };
+    }));
+
+for (const [width, height] of [[1440, 900], [390, 844]]) {
+  test(`the letter is centred in its detail's circle at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    // The circle is set in Special Elite; the fallback centres a pixel or two differently.
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+
+    const bubbles = await readBubbles(page);
+    expect(bubbles.map(({ letter }) => letter)).toEqual(LETTERS);
+
+    for (const bubble of bubbles) {
+      expect(Math.abs(bubble.lineBox - bubble.faceBox), `${bubble.letter} face box`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(bubble.off), `${bubble.letter} sits ${bubble.off}px off centre`).toBeLessThanOrEqual(1);
+    }
+  });
+}
