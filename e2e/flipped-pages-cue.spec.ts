@@ -492,6 +492,8 @@ test.describe('the strip through a turn', () => {
 // the screenshots came from.
 for (const width of [390, 1440]) {
   test(`every stack keeps the fold a dog-ear and the pile inside its left edge at ${width}`, async ({ page }) => {
+    // Six stacks of piles no longer fit the default minute.
+    test.slow();
     await page.setViewportSize({ width, height: 900 });
     await page.reload();
 
