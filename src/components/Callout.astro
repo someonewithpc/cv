@@ -29,7 +29,7 @@ const hasCard = Astro.slots.has('card');
   aria-labelledby={headingId}
 >
   <h3 id={headingId} class="callout-label">
-    <span class="callout-bubble typewriter" aria-hidden="true">{letter}</span>
+    <span class="callout-bubble typewriter" aria-hidden="true"><span class="callout-letter">{letter}</span></span>
     <span class="callout-text">
       <span class="callout-kind monospace">
         <span>Detail {letter}</span>
@@ -194,6 +194,9 @@ const hasCard = Astro.slots.has('card');
   position: relative;
   display: grid;
   place-items: center;
+  /* Special Elite's ascender and descender are unequal, so centring the line box leaves the
+     cap 3px above the circle's middle at both sizes: 0.14em of the face's size, measured. */
+  --bubble-cap: 0.14em;
   flex: none;
   width: 3rem;
   height: 3rem;
@@ -204,6 +207,20 @@ const hasCard = Astro.slots.has('card');
   font-size: 1.5rem;
   line-height: 1;
   color: var(--ink);
+
+  .callout-letter {
+    display: block;
+    translate: 0 var(--bubble-cap);
+
+    /* The face's own ascent box down to its baseline, which is what the nudge above
+       approximates. Not its cap box: Special Elite declares a cap height of about a third of
+       its size, which lands the letter further off the middle than doing nothing at all. */
+    @supports (text-box-trim: trim-both) {
+      text-box-trim: trim-both;
+      text-box-edge: text alphabetic;
+      translate: none;
+    }
+  }
 
   /* The leader: straight down from the bubble to the boundary, ending in a dot on the line. */
   &::before {
