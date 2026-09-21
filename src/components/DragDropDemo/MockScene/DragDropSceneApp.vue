@@ -738,6 +738,14 @@ async function runAutoplay() {
   }
 
   outer: while (token === autoplayToken) {
+    // Only a lap that runs to its end clears up after itself, so a lap starting after a stop,
+    // or after the visitor left objects of their own, finds the floor still full. Empty it
+    // the way a lap ends, through Remove rather than a scene reset.
+    if (scene.placedCount() > 0) {
+      if (!await removePlaced(token, scene)) break outer;
+      await wait(500);
+      if (token !== autoplayToken) break outer;
+    }
     // Two drags, then the double-click route, so a lap shows both ways in and that each
     // one leaves exactly one object behind.
     for (let i = 0; i < DROP_POINTS.length - 1; i += 1) {
