@@ -1038,7 +1038,7 @@ onBeforeUnmount(() => {
       class="demo-cursor"
       data-demo-cursor
       :class="{ clicking: cursorClicking, instant: cursorInstant }"
-      :style="{ transform: `translate3d(${cursorPos.x}px, ${cursorPos.y}px, 0)` }"
+      :style="{ translate: `calc(${cursorPos.x}px - 12%) calc(${cursorPos.y}px - 8%)` }"
       aria-hidden="true"
     >
       <svg viewBox="0 0 32 32" width="40" height="40">
@@ -1225,12 +1225,15 @@ $scene-bg: #212121;
   z-index: 6;
   width: 40px;
   height: 40px;
-  translate: -12% -8%;
+  // The hot spot, the path's tip, sits 12% 8% into the box; the inline translate takes it
+  // off the pointer's place so the tip lands there, and the shrinks below turn about it.
   transform-origin: 12% 8%;
   pointer-events: none;
-  // Positioned with a transform, not left/top, so a moving cursor never dirties layout and
-  // the scene's per-frame rect reads stay free of forced reflows.
-  transition: transform 0.12s linear, scale 0.12s ease;
+  // Placed with `translate`, not left/top, so a moving cursor never dirties layout and the
+  // scene's per-frame rect reads stay free of forced reflows — and not with `transform`
+  // either: a `transform` is applied after `scale`, so a press would multiply the cursor's
+  // whole offset by the shrink and slide it towards the app's top-left corner.
+  transition: translate 0.12s linear, scale 0.12s ease;
 
   // While a tween is driving cursorPos every frame, its own easing already
   // smooths the motion — this transition would only add trailing lag on top,

@@ -39,6 +39,11 @@ const SCALE = 3;
 const CROP = { left: 0.38, top: 0.14, right: 1, bottom: 0.94 };
 const WEBP_QUALITY = 0.9;
 
+/** The hot spot of the cursor below, the path's tip, as a point of its 32-unit viewBox. */
+const HOT_SPOT = { x: 4, y: 2.5 };
+/** How far the drawn hot spot may sit from the pointer, in CSS pixels. */
+const HOT_SPOT_SLACK = 0.5;
+
 /** The app's cursor, as DragDropSceneApp.vue draws it; its hot spot is the path's top-left. */
 const CURSOR_SVG =
   '<svg viewBox="0 0 32 32" width="40" height="40"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" fill="#fff" stroke="#222" stroke-width="1.6" stroke-linejoin="round"/></svg>';
@@ -124,13 +129,27 @@ await app.evaluate((el, svg) => {
   el.appendChild(cursor);
 }, CURSOR_SVG);
 
+/**
+ * Put the cursor at a pointer point of the page, the way the app places its own: with
+ * `translate`, which the press shrink (`scale`) leaves alone, and offset by the hot spot.
+ * A `transform` here would be multiplied by that shrink and slide towards the app's corner.
+ * The drawn hot spot is then measured against the pointer, through the path's own screen
+ * matrix, so a frame is never shot with the cursor beside the thing it acts on.
+ */
 async function showCursor(at, pressed) {
-  await app.evaluate((el, { x, y, pressed }) => {
+  const off = await app.evaluate((el, { x, y, pressed, hotSpot }) => {
     const cursor = el.querySelector('[data-capture-cursor]');
     const rect = el.getBoundingClientRect();
-    cursor.style.transform = `translate3d(${x - rect.left}px, ${y - rect.top}px, 0)`;
+    cursor.style.translate = `calc(${x - rect.left}px - 12%) calc(${y - rect.top}px - 8%)`;
     cursor.classList.toggle('clicking', pressed);
-  }, { x: at.x, y: at.y, pressed });
+    const path = cursor.querySelector('path');
+    const ctm = path.getScreenCTM();
+    const drawn = new DOMPoint(hotSpot.x, hotSpot.y).matrixTransform(ctm);
+    return { x: drawn.x - x, y: drawn.y - y };
+  }, { x: at.x, y: at.y, pressed, hotSpot: HOT_SPOT });
+  if (Math.abs(off.x) > HOT_SPOT_SLACK || Math.abs(off.y) > HOT_SPOT_SLACK) {
+    throw new Error(`Cursor hot spot ${off.x.toFixed(2)}, ${off.y.toFixed(2)} px off the pointer`);
+  }
 }
 
 async function capture(index) {
