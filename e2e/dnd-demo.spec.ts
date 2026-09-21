@@ -310,3 +310,76 @@ test('Restart brings the camera home', async ({ page }) => {
   expect(Math.abs(restarted.x - fresh.x)).toBeLessThan(8);
   expect(Math.abs(restarted.y - fresh.y)).toBeLessThan(8);
 });
+
+type FloorEvent = 'place' | 'remove';
+
+/**
+ * Log what the floor gains and loses, from the app's own phase and selection. A selection
+ * that follows a carried object is a placement; a selection with nothing carried is the
+ * click the product's Remove starts with. A phase back to idle that places nothing is the
+ * visitor taking over, and that object never landed.
+ */
+async function watchFloor(app: Locator) {
+  await app.evaluate((root) => {
+    const store = window as typeof window & { __floor?: FloorEvent[] };
+    const log: FloorEvent[] = [];
+    store.__floor = log;
+    let carrying = false;
+    let selected = root.getAttribute('data-selected') === 'true';
+    new MutationObserver(() => {
+      const phase = root.getAttribute('data-phase');
+      const now = root.getAttribute('data-selected') === 'true';
+      if (now && !selected) {
+        log.push(carrying ? 'place' : 'remove');
+        carrying = false;
+      } else if (phase === 'dragging' || phase === 'armed') {
+        carrying = true;
+      } else if (phase === 'idle') {
+        carrying = false;
+      }
+      selected = now;
+    }).observe(root, { attributes: true, attributeFilter: ['data-phase', 'data-selected'] });
+  });
+}
+
+function floorLog(app: Locator): Promise<FloorEvent[]> {
+  return app.evaluate(
+    () => [...((window as typeof window & { __floor?: FloorEvent[] }).__floor ?? [])],
+  );
+}
+
+/** What the log leaves standing on the floor. */
+function standing(log: FloorEvent[]) {
+  return log.reduce((count, event) => count + (event === 'place' ? 1 : -1), 0);
+}
+
+test('a lap that starts after a takeover clears the floor first', async ({ page }) => {
+  const app = await openDemo(page);
+  await watchFloor(app);
+  const box = await sceneBox(app);
+
+  // One chair is down, and the drag that follows it has cleared the selection, so the
+  // takeover lands between placements with that chair still on the floor.
+  await expect
+    .poll(() => floorLog(app).then(standing), { timeout: 30_000, intervals: [40] })
+    .toBeGreaterThan(0);
+  await expect(app).toHaveAttribute('data-selected', 'false');
+  // An orbit hands the scene over the way any visitor gesture does. Restart, the one path
+  // that resets the scene, is not involved, and the lap resumes on its own.
+  await orbitCamera(page, box, -160);
+
+  const before = await floorLog(app);
+  const left = standing(before);
+  expect(left).toBeGreaterThan(0);
+
+  // The resumed lap removes what it found before it places anything of its own.
+  await expect
+    .poll(() => floorLog(app).then((log) => log.slice(before.length)), {
+      timeout: 30_000,
+      intervals: [40],
+    })
+    .toContain('place');
+  const resumed = (await floorLog(app)).slice(before.length);
+  const cleared = resumed.slice(0, resumed.indexOf('place'));
+  expect(cleared.filter((event) => event === 'remove').length).toBeGreaterThanOrEqual(left);
+});
