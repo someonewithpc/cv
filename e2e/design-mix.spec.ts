@@ -281,7 +281,8 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
   const sheets = await page.evaluate(() => {
     const main = document.querySelector('main')!;
     const bands = [
-      ...[...main.children].filter((el) => !el.classList.contains('full-width')),
+      // The index rail is fixed in the margin, not laid down as a band.
+      ...[...main.children].filter((el) => !el.classList.contains('full-width') && !el.classList.contains('index-tabs')),
       ...main.querySelectorAll(':scope > .full-width > *:not(.cutting-mat)'),
     ];
     return bands.map((band) => {
@@ -314,4 +315,113 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
       expect(heading.right, `${sheet.name} / ${heading.text} right`).toBeLessThanOrEqual(sheet.right);
     }
   }
+});
+
+/** The sections the rail indexes, in page order, with the heading each one carries itself. */
+const SECTIONS = [
+  // The ruby bases, without the pronunciation the rt annotations carry.
+  { id: 'profile', heading: '#profile h1 ruby span' },
+  { id: 'bill-of-materials', heading: '#tech-icon-cloud-label' },
+  { id: 'demos', heading: '#demos-heading .typewriter' },
+  { id: 'open-source', heading: '#open-source-heading .typewriter' },
+];
+
+const readRail = (page: import('@playwright/test').Page) =>
+  page.evaluate((sections) => {
+    const text = (el: Element | null) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const box = ({ left, right, top, bottom, width, height }: DOMRect) =>
+      ({ left, right, top, bottom, width, height });
+
+    const tabs = [...document.querySelectorAll<HTMLAnchorElement>('.index-tabs a')].map((tab) => ({
+      href: tab.getAttribute('href')!,
+      number: text(tab.querySelector('.tab-number')),
+      name: text(tab.querySelector('.tab-name')),
+      resolves: !!document.querySelector(tab.hash),
+      proud: getComputedStyle(tab).getPropertyValue('--proud').trim(),
+      current: tab.getAttribute('aria-current'),
+      box: box(tab.getBoundingClientRect()),
+    }));
+
+    return {
+      tabs,
+      headings: sections.map(({ heading }) =>
+        [...document.querySelectorAll(heading)].map(text).join(' ')),
+      // Every sheet the page lays down, and the mat with its stacks: what the rail must stay
+      // out of. The #demos section itself is the whole viewport wide and holds no ink.
+      bands: [...document.querySelectorAll('#profile, #bill-of-materials, #demos > *, #open-source, article.technical-drawing-stack')]
+        .map((band) => ({ name: band.id || band.className, ...box(band.getBoundingClientRect()) })),
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  }, SECTIONS);
+
+test('the rail carries one numbered tab per section, each named after that section', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const { tabs, headings } = await readRail(page);
+
+  expect(tabs.map((tab) => tab.name)).toEqual(headings);
+  expect(tabs.map((tab) => tab.href)).toEqual(SECTIONS.map(({ id }) => `#${id}`));
+  expect(tabs.map((tab) => tab.number)).toEqual(['01', '02', '03', '04']);
+  for (const tab of tabs) {
+    expect(tab.resolves, `${tab.href} points at an element on the page`).toBe(true);
+  }
+});
+
+test('the rail stands in the desk margin, clear of every band the page lays down', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const { tabs, bands } = await readRail(page);
+
+  // The pulled-out tab reaches furthest left, the rest furthest right.
+  const edge = Math.max(...tabs.map((tab) => tab.box.right));
+  expect(Math.min(...tabs.map((tab) => tab.box.left))).toBeGreaterThan(0);
+  expect(bands.length).toBeGreaterThanOrEqual(4);
+  for (const band of bands) {
+    expect(band.left, `${band.name} starts right of the rail`).toBeGreaterThanOrEqual(edge);
+  }
+});
+
+test('a tab scrolls to its section and is the one left standing out', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  await page.locator('.index-tabs a').nth(2).click();
+
+  const demos = page.locator('.index-tabs a[href="#demos"]');
+  await expect(demos).toHaveAttribute('aria-current', 'location');
+
+  const landed = await page.evaluate(() => {
+    const section = document.querySelector('#demos')!.getBoundingClientRect();
+    const tabs = [...document.querySelectorAll<HTMLAnchorElement>('.index-tabs a')];
+    return {
+      top: section.top,
+      bottom: section.bottom,
+      proud: tabs.map((tab) => getComputedStyle(tab).getPropertyValue('--proud').trim()),
+      marked: tabs.filter((tab) => tab.hasAttribute('aria-current')).length,
+    };
+  });
+
+  // The section starts at the top of the screen and runs down past it.
+  expect(Math.abs(landed.top)).toBeLessThanOrEqual(2);
+  expect(landed.bottom).toBeGreaterThan(0);
+  expect(landed.proud).toEqual(['0', '0', '1', '0']);
+  expect(landed.marked).toBe(1);
+});
+
+test('no rail on a phone, and no tab anywhere over the page', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForTimeout(1000);
+
+  await expect(page.locator('.index-tabs')).toBeHidden();
+
+  const { tabs, scrollWidth, clientWidth } = await readRail(page);
+  expect(tabs).toHaveLength(SECTIONS.length);
+  for (const tab of tabs) {
+    expect(tab.box.width + tab.box.height, `${tab.href} takes no room`).toBe(0);
+  }
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
 });
