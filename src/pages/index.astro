@@ -127,11 +127,12 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     --mat-rim: calc(var(--page-gap) - var(--mat-line));
     --mat-inset: 0px;
     --mat-max: 100rem;
-    /* The mat a drawing lies on rather than fills: this much mat is kept clear on both
-       sides of the widest thing laid down on it, and more than this wherever the mat has
-       the width to spare, which is what makes the stack look put down on the mat instead
-       of cut to it. Taken from the mat's own slack and never from the drawing, so nothing
-       on it is narrower than it was. */
+    /* The mat a drawing lies on rather than fills: this much mat is kept clear on all four
+       sides of the widest thing laid down on it, and more than this beside it wherever the
+       mat has the width to spare, which is what makes the stack look put down on the mat
+       instead of cut to it. Across, it is taken from the mat's own slack and never from the
+       drawing, so nothing on it is narrower than it was; down, where there is no slack to
+       take it from, the mat is that much taller. */
     --mat-margin: 0px;
 
     /* The lane a detail's title card stands in, beside the view rather than under it. It is
@@ -173,6 +174,17 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
       linear-gradient(var(--mat-paper), var(--mat-paper));
     background-origin: content-box, content-box, border-box;
     background-clip: content-box, content-box, border-box;
+
+    /* The margin down the mat is ruled mat, like the margin across it, so it belongs inside
+       the content box and not to the rim: the rim is the same plain band on all four sides
+       whatever the margin is. */
+    > :global(:first-child) {
+      margin-block-start: var(--mat-margin);
+    }
+
+    > :global(:last-child) {
+      margin-block-end: var(--mat-margin);
+    }
 
     @media (width > 64rem) {
       --mat-rim: 1.5rem;
