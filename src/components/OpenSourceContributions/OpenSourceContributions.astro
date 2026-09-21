@@ -50,6 +50,13 @@ const statistics = {
   margin-top: clamp(5rem, 12vw, 8rem);
   padding-bottom: 5rem;
 
+  /* On the desk this section is one sheet, and Layout.astro sets a sheet's spacing and its
+     padding. */
+  @media (width > 64rem) {
+    margin-top: 0;
+    padding-bottom: var(--sheet-pad);
+  }
+
   :global([lang='ja']) {
     display: block;
     font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
