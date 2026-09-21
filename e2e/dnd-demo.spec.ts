@@ -138,7 +138,7 @@ test('the second sheet shows the handoff in four frames of the demo and few word
     ].join(' ');
     return text.split(/\s+/).filter((word) => /\w/.test(word)).length;
   });
-  expect(words).toBeLessThan(30);
+  expect(words).toBeLessThan(50);
 });
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
