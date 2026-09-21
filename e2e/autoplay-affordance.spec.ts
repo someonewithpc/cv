@@ -90,6 +90,19 @@ test('the deck shape follows ?deck, and an unknown one falls back to the first',
   await expect(page.locator('html')).toHaveAttribute('data-deck', '1');
 });
 
+test('the sheet keeps one margin on all four sides, whichever shape is drawn', async ({ page }) => {
+  for (const shape of SHAPES) {
+    await page.goto(`/?deck=${shape}`);
+    const deck = await playingDeck(markerEditorStack(page));
+    const margins = await deck.evaluate((el) => {
+      const style = getComputedStyle(el.closest('section')!);
+      return (['Top', 'Right', 'Bottom', 'Left'] as const)
+        .map((side) => Math.round(parseFloat(style[`padding${side}`])));
+    });
+    expect(new Set(margins).size, `deck ${shape} margins ${margins.join()}`).toBe(1);
+  }
+});
+
 for (const shape of SHAPES) {
   test.describe(`deck shape ${shape}`, () => {
     for (const { name, viewport } of VIEWPORTS) {
@@ -140,9 +153,10 @@ for (const shape of SHAPES) {
       const pause = deck.locator('[data-demo-key="pause"]');
       const reset = deck.locator('[data-demo-key="reset"]');
 
-      // Big enough to aim at: the point of shapes 1 and 2 is keys you can read.
+      // Big enough to aim at. A key drawn in the band is capped by the band, which is one
+      // margin deep like the other three sides; shape 2's cell has the title block's room.
       const keyHeight = await play.locator('svg').evaluate((el) => el.getBoundingClientRect().height);
-      expect(keyHeight).toBeGreaterThanOrEqual(shape === '3' ? 12 : 16);
+      expect(keyHeight).toBeGreaterThanOrEqual(shape === '2' ? 16 : 12);
 
       await expect(play).toHaveAttribute('aria-pressed', 'true');
       await expect(pause).toHaveAttribute('aria-pressed', 'false');
