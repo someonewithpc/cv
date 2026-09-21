@@ -13,12 +13,21 @@ type Props = {
   titleJp?: string;
   scale?: string;
   headingId: string;
+  /** Which side of the view the `card` slot stands on, wherever there is a lane for it. */
+  cardSide?: 'start' | 'end';
 };
 
-const { id, class: className, letter, title, titleJp, scale, headingId } = Astro.props;
+const { id, class: className, letter, title, titleJp, scale, headingId, cardSide } = Astro.props;
+
+const hasCard = Astro.slots.has('card');
 ---
 
-<section id={id} class:list={['callout', className]} aria-labelledby={headingId}>
+<section
+  id={id}
+  class:list={['callout', className]}
+  data-card={hasCard ? (cardSide ?? 'start') : undefined}
+  aria-labelledby={headingId}
+>
   <h3 id={headingId} class="callout-label">
     <span class="callout-bubble typewriter" aria-hidden="true">{letter}</span>
     <span class="callout-text">
@@ -30,6 +39,14 @@ const { id, class: className, letter, title, titleJp, scale, headingId } = Astro
       <span class="callout-title typewriter">{title}</span>
     </span>
   </h3>
+
+  {hasCard && (
+    <div class="callout-card">
+      <slot name="card" />
+      <span class="callout-card-leader" aria-hidden="true"></span>
+    </div>
+  )}
+
   <slot />
 </section>
 
@@ -77,6 +94,82 @@ const { id, class: className, letter, title, titleJp, scale, headingId } = Astro
     --callout-pad: 0.375rem;
     --callout-lead: 1.5rem;
     --callout-label: 3rem;
+  }
+}
+
+/* The card stands in the lane the mat opens beside the view (index.astro), so the view takes
+   the rest of the column and the two together stay centred on the mat. With no lane open
+   there is no card, and this is the column the view has always had. */
+.callout[data-card] {
+  width: min(100%, var(--breakout-max, 100%));
+}
+
+.callout[data-card='start'] {
+  justify-self: end;
+}
+
+.callout[data-card='end'] {
+  justify-self: start;
+}
+
+/* Never under the view: the card is shown only where the lane is (--card-display), and it is
+   hung from the top of the boundary rather than laid out in the flow. */
+.callout-card {
+  display: var(--card-display, none);
+  position: absolute;
+  top: calc(var(--callout-label) + var(--callout-lead));
+  width: var(--card-width, 12rem);
+
+  .callout[data-card='start'] & {
+    inset-inline-end: calc(100% + var(--card-gap, 3rem));
+  }
+
+  .callout[data-card='end'] & {
+    inset-inline-start: calc(100% + var(--card-gap, 3rem));
+  }
+}
+
+/* The leader runs level from the card's near edge to the boundary and ends in an arrowhead on
+   it, in the boundary's own ink. The lane is measured to the view's box, so what is left over
+   for the leader is the lane's gap less the clearance the boundary is drawn out at. */
+.callout-card-leader {
+  position: absolute;
+  top: 1.75rem;
+  width: calc(var(--card-gap, 3rem) - var(--callout-pad));
+  height: 0.5rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block: calc(50% - 0.5px);
+    inset-inline: 0;
+    background: var(--callout-line);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    width: 0.5rem;
+    background: var(--callout-line);
+  }
+
+  .callout[data-card='start'] & {
+    inset-inline-start: 100%;
+
+    &::after {
+      inset-inline-end: 0;
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+    }
+  }
+
+  .callout[data-card='end'] & {
+    inset-inline-end: 100%;
+
+    &::after {
+      inset-inline-start: 0;
+      clip-path: polygon(100% 0, 0 50%, 100% 100%);
+    }
   }
 }
 
