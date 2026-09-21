@@ -445,8 +445,9 @@ function placed(page: Page, way: 'fwd' | 'back'): Promise<Place> {
       * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
     const area = (a: DOMRect) => a.width * a.height;
 
-    // The stacks are laid out one under another; scripts between them take no room.
-    const demo = frame.closest('#demos > *')!;
+    // Each stack sits in its own lettered callout, and the callouts are laid out one under
+    // another; scripts between them take no room.
+    const demo = frame.closest('#demos .callout, #demos > *')!;
     let neighbour = which === 'fwd' ? demo.nextElementSibling : demo.previousElementSibling;
     while (neighbour && neighbour.tagName === 'SCRIPT') {
       neighbour = which === 'fwd' ? neighbour.nextElementSibling : neighbour.previousElementSibling;
