@@ -19,7 +19,7 @@
   }
 }
 
-.specimen {
+:is(.edit-style, .held-controls) .specimen {
   min-width: 0;
   margin: 0;
   display: grid;
@@ -102,8 +102,9 @@
 
 // The Interactive Map's settings sidebar from the Style section down: the product's markup
 // and rules, with its light-dark() option colours extended to the whole column so it follows
-// the page's colour scheme
-.sidebar {
+// the page's colour scheme. This sheet is global, so the rules are kept to the picker's own
+// roots: the variants demo has a .sidebar of its own, which the max-height here clipped.
+:is(.edit-style, .held-controls) .sidebar {
   --sidebar-background: light-dark(#{$sidebar-background}, #2b2b2b);
   --sidebar-ink: light-dark(black, #e6e6e6);
 
@@ -333,7 +334,7 @@
 
 // The product's FixedElement: a hovered control holds its place out of the flow, and one being
 // worked rises over its neighbours behind a halo of the sidebar's colour
-.pinned {
+:is(.edit-style, .held-controls) .pinned {
   position: relative;
   isolation: isolate;
 
