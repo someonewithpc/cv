@@ -49,11 +49,19 @@ oembedUrl.searchParams.set('format', 'json');
       media="print"
       onload="this.setAttribute('media', 'all')"
     />
+    <!-- Digits only: the stencil sets the sheet numbers in the desk margin and nothing else. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&text=0123456789&display=swap"
+      media="print"
+      onload="this.setAttribute('media', 'all')"
+    />
     <noscript>
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Poppins:wght@400;500;600;700&family=Special+Elite&display=swap"
       />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&text=0123456789&display=swap" />
     </noscript>
     <script is:inline>
       (() => {
@@ -141,6 +149,7 @@ body {
   height: 100%;
   view-transition-name: none;
   --font-poppins: "Poppins", system-ui, sans-serif;
+  --font-stencil: "Allerta Stencil", "Impact", "Arial Black", system-ui, sans-serif;
 }
 
 body {
@@ -180,6 +189,24 @@ main {
   /* The demo stacks sit in the breakout column, so this is what caps them. */
   --breakout-max: var(--content-max);
 
+  /* The sheet number in the desk's left margin (Folio.astro). The lane it stands in is what
+     the desk can spare once the cutting mat has the width it needs to lay a full drawing
+     down with 3rem of mat clear on either side of it, and it never grows past what a 7.5rem
+     numeral asks for: the numeral's own width, about 1.15 of its size for two stencil
+     digits, and 1.5rem of desk left clear between it and whatever lies beside it. The
+     numeral is then sized from the lane, so it fits the margin at every width. Below 80rem
+     the desk can spare nothing and there is no folio, so no measurement moves for one. */
+  --folio-gap: 1.5rem;
+  --folio-lane: 0px;
+  --type-folio: calc((var(--folio-lane) - var(--folio-gap)) / 1.15);
+
+  @media (width >= 80rem) {
+    --folio-lane: min(
+      (100vw - var(--breakout-max) - 10rem) / 2,
+      calc(7.5rem * 1.15 + var(--folio-gap))
+    );
+  }
+
   --full-width: minmax(var(--page-gap), 1fr);
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
   --content: min(100% - var(--page-gap) * 2, var(--content-max));
@@ -192,7 +219,10 @@ main {
     [content-start] var(--content) [content-end]
     var(--breakout) [breakout-end]
     var(--full-width) [full-width-end];
-  grid-template-rows: auto;
+  /* Four rows, one per sheet, written out rather than left implicit: a folio is placed in
+     the row of the sheet it numbers, and an absolutely positioned grid child can only name a
+     line of the explicit grid. */
+  grid-template-rows: repeat(4, auto);
   align-content: start;
   padding-bottom: 1.5rem;
 
@@ -240,7 +270,7 @@ main {
        and width caps go, so the rhythm is the row gap above and nothing else. The drafting
        grid is the cutting mat's now, so no sheet carries it. The id is in the selector to
        outrank the sections' own margins, which the desk takes over here. */
-    &#main > *,
+    &#main > *:not(.folio-rail),
     &#main > .full-width > * {
       width: 100%;
       max-width: none;
@@ -264,7 +294,7 @@ main {
     }
   }
 
-  > :not(.full-width, .breakout) {
+  > :not(.full-width, .breakout, .folio-rail) {
     grid-column: content;
     min-width: 0;
   }
@@ -355,6 +385,13 @@ image, svg, img, picture {
 .monospace {
   font-family: monospace, system-ui;
   font-style: normal;
+}
+
+.stencil {
+  font-family: var(--font-stencil);
+  font-weight: 400;
+  font-style: normal;
+  text-transform: uppercase;
 }
 
 .marker-font {
