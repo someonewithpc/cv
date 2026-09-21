@@ -125,16 +125,21 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     padding: var(--mat-rim);
     border: var(--mat-line) solid var(--mat-edge);
     border-radius: 0.25rem;
+    /* One ruling per axis, not a minor grid under a major one: where two of those crossed,
+       four coats of ink stacked up and the stacks' peel hints stopped reading against them. */
+    --mat-rule: var(--mat-grid-major) 0 1px, transparent 1px 0.5rem,
+      var(--mat-grid-minor) 0.5rem calc(0.5rem + 1px), transparent calc(0.5rem + 1px) 1rem,
+      var(--mat-grid-minor) 1rem calc(1rem + 1px), transparent calc(1rem + 1px) 1.5rem,
+      var(--mat-grid-minor) 1.5rem calc(1.5rem + 1px), transparent calc(1.5rem + 1px) 2rem,
+      var(--mat-grid-minor) 2rem calc(2rem + 1px), transparent calc(2rem + 1px) 2.5rem;
+
     background-color: transparent;
     background-image:
-      linear-gradient(to right, var(--mat-grid-major) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--mat-grid-major) 1px, transparent 1px),
-      linear-gradient(to right, var(--mat-grid-minor) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--mat-grid-minor) 1px, transparent 1px),
+      repeating-linear-gradient(to right, var(--mat-rule)),
+      repeating-linear-gradient(to bottom, var(--mat-rule)),
       linear-gradient(var(--mat-paper), var(--mat-paper));
-    background-size: 2.5rem 2.5rem, 2.5rem 2.5rem, 0.5rem 0.5rem, 0.5rem 0.5rem, auto;
-    background-origin: content-box, content-box, content-box, content-box, border-box;
-    background-clip: content-box, content-box, content-box, content-box, border-box;
+    background-origin: content-box, content-box, border-box;
+    background-clip: content-box, content-box, border-box;
 
     @media (width > 64rem) {
       --mat-rim: 1.5rem;
