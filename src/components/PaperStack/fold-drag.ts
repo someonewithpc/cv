@@ -438,7 +438,12 @@ const holdUnsplayed = (sheet: HTMLElement): void => {
 };
 
 // Hands the page and its flap back to index.astro's own rules, dropping everything renderFold
-// drives inline.
+// drives inline — the hint's left/top included. Those are page-local pixels, and only a drag
+// frame ever recomputes them, so left behind they pin the hint (invisible at rest, but still
+// laid out) where the corner of a wider page used to be. Narrow the window after a gesture and
+// it stands off the page's right edge, which is scrollable overflow; a tablet answers overflow
+// by widening the layout viewport, and every `position: fixed` box rides along — the theme
+// picker off the side of the screen with them.
 const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
   section.style.clipPath = '';
   section.style.transform = '';
@@ -446,6 +451,11 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
   fold.style.clipPath = '';
   fold.style.transform = '';
   fold.style.transformOrigin = '';
+  const hint = hintOf.get(fold);
+  if (hint) {
+    hint.style.left = '';
+    hint.style.top = '';
+  }
 };
 
 const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
