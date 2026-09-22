@@ -12,6 +12,8 @@ const TILES = [
   {
     file: 'oak-7760',
     name: 'Slip Match Oak Wood Veneer',
+    weight: '184 KB',
+    veil: '15%',
     asset: 7760,
     href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
     note: 'The veneer you picked, turned a quarter so the grain runs across the page. Long unbroken figure, no joints anywhere.',
@@ -19,6 +21,8 @@ const TILES = [
   {
     file: 'oak-7760-mid',
     name: 'Slip Match Oak Wood Veneer, levelled',
+    weight: '152 KB',
+    veil: 'none',
     asset: 7760,
     href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
     note: "The same tile with its mean lifted to mid grey. The desk paints the tile with an overlay blend, and overlay leaves the backdrop alone at mid grey, so this one lends its grain and takes the theme's colour. It is the one to try on dark and forest.",
@@ -26,6 +30,8 @@ const TILES = [
   {
     file: 'ash-4186',
     name: 'Ash Wood Board, Light Beige',
+    weight: '125 KB',
+    veil: '15%',
     asset: 4186,
     href: 'https://www.poliigon.com/texture/ash-wood-board-texture-light-beige/4186',
     note: 'Boards rather than veneer, scanned with the grain already across, and the plank joints come with it. The palest of the four.',
@@ -33,6 +39,8 @@ const TILES = [
   {
     file: 'oak-7760-down',
     name: 'Slip Match Oak Wood Veneer, as scanned',
+    weight: '172 KB',
+    veil: '15%',
     asset: 7760,
     href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
     note: 'The veneer left the way it was captured, grain down the desk. Here to set against the boards that ship today, since down is the direction they run.',
@@ -131,6 +139,30 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
         white-space: nowrap;
       }
 
+      table {
+        width: 100%;
+        margin: 1rem 0 0;
+        border-collapse: collapse;
+        font-size: 0.9375rem;
+      }
+
+      th,
+      td {
+        padding: 0.35rem 0.75rem 0.35rem 0;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      th {
+        font-weight: 600;
+      }
+
+      td:not(:first-child) {
+        color: var(--faint);
+        white-space: nowrap;
+      }
+
       code {
         font-family: ui-monospace, monospace;
         font-size: 0.875em;
@@ -141,9 +173,8 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
     <h1>Desk wood, candidates</h1>
     <p class="lede">
       Four tiles cut from two Poliigon scans. Each link opens the CV with that tile on the desk
-      and the theme already picked. The desk only shows above 64rem wide, so give the window
-      some room. A second link on each line drops the grain veil, which is the layer most
-      likely to be softening the figure.
+      and the theme already picked, under the veil listed for it below. A second link on each
+      line takes the veil off altogether.
     </p>
     <p class="lede">
       Only two scans were free on the account, so every tile below comes from one of those two.
@@ -153,8 +184,32 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
 
     <h2>The tiles</h2>
     <p class="lede">
-      Shown at the size the desk paints them, 45rem across, and on their own, so this is the
-      file before the theme's desk colour and veil reach it.
+      Every tile is 1440 px square and paints at 45rem, so one image pixel lands on one device
+      pixel on a 2x screen. The veil is how much of the theme's desk colour lies over the tile:
+      the drawn boards take 42 to 58 per cent of it, since flat colour is all they have, and a
+      scan brings its own so it takes far less.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Tile</th>
+          <th>File</th>
+          <th>Veil</th>
+        </tr>
+      </thead>
+      <tbody>
+        {TILES.map((tile) => (
+          <tr>
+            <td>{tile.name}</td>
+            <td><code>{tile.file}.webp</code>, {tile.weight}</td>
+            <td>{tile.veil}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <p class="lede">
+      Below, each one is shown on its own at the size the desk paints it, so this is the file
+      before the theme's desk colour and veil reach it.
     </p>
     {TILES.map((tile) => (
       <>
