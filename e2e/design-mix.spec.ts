@@ -5,6 +5,9 @@ import { expect, test } from '@playwright/test';
 /** The width past which Layout.astro lays the page on a desk. */
 const DESK_FROM = 1024;
 
+/** The side of the plank tile, as src/deskTile.ts sets it. */
+const TILE = 720;
+
 /** --theme-desk per theme, as ThemePicker.astro writes it. */
 const DESKS = {
   light: 'oklch(0.76 0.05 68)',
@@ -48,8 +51,8 @@ for (const [theme, desk] of Object.entries(DESKS)) {
       return { image: style.backgroundImage, color: style.backgroundColor };
     });
 
-    // The grain is one inline SVG tile: a fine noise stretched along the grain,
-    // displaced by a coarse one so the lines wander rather than band.
+    // The grain is one inline SVG tile of boards: a noise stretched the length of a board,
+    // bent a few pixels sideways by a second, slower one.
     expect(background.image).toContain('feTurbulence');
     expect(background.image).toContain('feDisplacementMap');
     expect(background.color).toBe(await asComputedColor(page, desk));
@@ -70,6 +73,147 @@ test(`no desk at ${DESK_FROM}px, where the page column still fills the viewport`
   expect(background.image).not.toContain('url(');
   expect(background.image.match(/linear-gradient/g)).toHaveLength(2);
   expect(background.color).toBe('rgba(0, 0, 0, 0)');
+});
+
+/** The widest lightness swing, in L*, each theme's boards are allowed inside one board. */
+const BOARD_RANGE = {
+  light: 8,
+  dark: 11,
+  arctic: 7,
+  'dark-forest': 11,
+} as const;
+
+/**
+ * Reads the desk out of a screenshot of the bare margin beside the sheets, as L* per pixel.
+ * The strip is taken on the right, where nothing stands: the sheet numbers are in the left
+ * margin and the theme picker is at the top.
+ */
+const readDesk = async (page: import('@playwright/test').Page) => {
+  const frame = await page.evaluate(() => {
+    const main = document.querySelector('main')!;
+    // The widest thing the desk lays down, which is the cutting mat: the desk to measure is
+    // what is left beside it. A .full-width wrapper is the window itself, not something laid
+    // down, so it is measured through its children.
+    const laid = [
+      ...[...main.children].filter((el) => !el.classList.contains('folio-rail') && !el.classList.contains('full-width')),
+      ...main.querySelectorAll(':scope > .full-width > *'),
+    ].map((el) => el.getBoundingClientRect()).filter((box) => box.width < window.innerWidth - 4);
+    const sheet = laid.reduce((widest, box) => (box.right > widest.right ? box : widest));
+    const origin = main.getBoundingClientRect();
+    return {
+      // The tile is positioned from main's padding box, so the boards are counted from there.
+      originX: origin.left,
+      originY: origin.top,
+      clip: { x: Math.ceil(sheet.right) + 8, y: 200, width: Math.floor(window.innerWidth - sheet.right) - 16, height: 1100 },
+    };
+  });
+  const shot = await page.screenshot({ clip: frame.clip });
+  const lightness = await page.evaluate(async (png) => {
+    const image = new Image();
+    await new Promise((done, fail) => { image.onload = done; image.onerror = fail; image.src = `data:image/png;base64,${png.data}`; });
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d', { willReadFrequently: true })!;
+    context.drawImage(image, 0, 0);
+    const { data } = context.getImageData(0, 0, image.width, image.height);
+    const linear = (value: number) => (value / 255 <= 0.04045 ? value / 255 / 12.92 : ((value / 255 + 0.055) / 1.055) ** 2.4);
+    const rows: number[][] = [];
+    for (let y = 0; y < image.height; y += 1) {
+      const row: number[] = [];
+      for (let x = 0; x < image.width; x += 1) {
+        const at = (y * image.width + x) * 4;
+        const luminance = 0.2126 * linear(data[at]) + 0.7152 * linear(data[at + 1]) + 0.0722 * linear(data[at + 2]);
+        row.push(luminance > 0.008856 ? 116 * Math.cbrt(luminance) - 16 : 903.3 * luminance);
+      }
+      rows.push(row);
+    }
+    return rows;
+  }, { data: shot.toString('base64') });
+  return { ...frame, lightness };
+};
+
+const median = (values: number[]) => values.slice().sort((a, b) => a - b)[Math.floor(values.length / 2)];
+
+for (const [theme, bound] of Object.entries(BOARD_RANGE)) {
+  test(`the ${theme} desk is quiet boards that join at the tile's edge at 2560px`, async ({ page }) => {
+    await withTheme(page, theme);
+    await page.setViewportSize({ width: 2560, height: 1440 });
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    const desk = await readDesk(page);
+    const rows = desk.lightness;
+    const width = rows[0].length;
+    expect(width, 'bare desk to measure').toBeGreaterThan(360);
+
+    const columns = rows[0].map((_, x) => rows.reduce((sum, row) => sum + row[x], 0) / rows.length);
+
+    /* Where the boards are joined, read off the tile the page is actually painting: the
+       joint is the dark hairline on each board's first pixel. */
+    const tile = await page.locator('main').evaluate((el) => getComputedStyle(el).backgroundImage);
+    const joints = [...tile.matchAll(/rect x='(\d+)' width='1'[^/]*?fill='%23000'/g)].map((found) => Number(found[1]));
+    const board = joints[1] - joints[0];
+    expect(joints[0], "the tile starts on a joint").toBe(0);
+    expect(joints.map((at, index) => at - index * board), 'the boards are all one width').toEqual(joints.map(() => 0));
+    expect(TILE % board, `${TILE}px of tile is a whole number of ${board}px boards`).toBe(0);
+
+    /* Where those joints land in the strip. The tile is positioned from main's padding box,
+       and it repeats on a joint, so the boards run on unbroken across the tile's edge. A joint
+       is three columns wide: the hairline, the lighter edge beside it, and the board again. */
+    const isJoint = (x: number) => (x + desk.clip.x - desk.originX) % board <= 2;
+
+    /* Nothing but a joint steps like a joint: that is what keeps the repeat from showing as a
+       seam of its own and the figure from reading as stripes. */
+    const steps = columns.slice(1).map((value, index) => ({ at: index + 1, step: Math.abs(value - columns[index]) }));
+    const atJoint = steps.filter(({ at }) => isJoint(at));
+    const inBoard = steps.filter(({ at }) => !isJoint(at));
+    expect(atJoint.length, 'joints in the strip').toBeGreaterThanOrEqual(4);
+    const loudest = inBoard.reduce((worst, one) => (one.step > worst.step ? one : worst));
+    const faintest = atJoint.reduce((best, one) => (one.step < best.step ? one : best));
+    expect(loudest.step, `column ${loudest.at} steps ${loudest.step.toFixed(2)} L* against the faintest joint's ${faintest.step.toFixed(2)}`)
+      .toBeLessThan(faintest.step);
+
+    /* Inside a board, away from its joint and the lighter edge beside it, the figure is only
+       ever a whisper. */
+    const inside: number[] = [];
+    for (const row of rows) {
+      for (let x = 0; x < width; x += 1) {
+        const since = (x + desk.clip.x - desk.originX) % board;
+        if (since > 2 && since < board - 1) inside.push(row[x]);
+      }
+    }
+    inside.sort((a, b) => a - b);
+    const range = inside[Math.floor(inside.length * 0.99)] - inside[Math.floor(inside.length * 0.01)];
+    expect(range, `${theme} boards swing ${range.toFixed(1)} L*`).toBeLessThanOrEqual(bound);
+    expect(range, `${theme} boards should still read as wood`).toBeGreaterThan(1.5);
+
+    /* Down the desk the tile has no joint to hide behind: its top edge has to meet its own
+       bottom edge as closely as any two rows inside it. */
+    const join = Math.ceil((desk.clip.y - desk.originY) / TILE) * TILE + desk.originY - desk.clip.y;
+    const step = (y: number) => rows[y].reduce((sum, value, x) => sum + Math.abs(value - rows[y + 1][x]), 0) / width;
+    const inTile: number[] = [];
+    for (let y = 40; y < rows.length - 40; y += 29) inTile.push(step(y));
+    expect(join, 'the strip crosses the tile edge').toBeGreaterThan(0);
+    expect(step(join - 1), `the tile's own join steps ${step(join - 1).toFixed(3)} L* against ${median(inTile).toFixed(3)} inside it`)
+      .toBeLessThanOrEqual(median(inTile) * 2 + 0.05);
+  });
+}
+
+test('each theme brings its own wood, not one tile recoloured', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  const tiles = await page.evaluate((names) => names.map((name) => {
+    document.documentElement.dataset.theme = name;
+    return getComputedStyle(document.querySelector('main')!).backgroundImage;
+  }), Object.keys(DESKS));
+
+  expect(new Set(tiles).size, 'four themes, four grains').toBe(tiles.length);
+  for (const tile of tiles) {
+    expect(tile).toContain('feTurbulence');
+    expect(tile).toContain("stitchTiles='stitch'");
+  }
 });
 
 for (const width of [390, 1024, 1440]) {
