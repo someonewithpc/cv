@@ -232,7 +232,7 @@ section {
   /* The mat and the frame line, in one paint: an even ring of mat, then the line
      drawn one pixel inside it. The margin is the same on all four sides, so the
      band the deck is drawn in is whatever the bottom of that ring leaves. */
-  box-shadow: inset 0 0 0 var(--sheet-margin) var(--surface-sunken),
+  box-shadow: inset 0 0 0 var(--sheet-margin) var(--sheet-paper),
               inset 0 0 0 calc(var(--sheet-margin) + 1px) var(--line-strong);
 
   display: grid;
@@ -240,7 +240,17 @@ section {
   align-items: center;
   position: relative;
 
-  background: var(--surface-sunken);
+  /* The sheet's own paper. --surface-sunken, which this was, steps from the theme's canvas
+     toward its ink, and ink is dark on a light theme and light on a dark one: the same token
+     lifts the sheet off the page on the dark themes the way paper should, and pushes it the
+     other way on the light ones, two steps down into grey. Measured on the light theme, the
+     sheet came out at L* 81 against a canvas asking for 97.
+     It cannot simply be the canvas. The sheet carries no outer edge of its own, and the
+     cutting mat it lies on is that same canvas lifted toward vellum, less than a level above
+     it, so a sheet painted with the canvas would have nothing to read against. One step
+     instead of two puts the light sheet at L* 89, paper under the mat's vellum. */
+  --sheet-paper: light-dark(var(--surface-raised), var(--surface-sunken));
+  background: var(--sheet-paper);
 
   /* The sheet is paper, so it carries the fibre tile. On the page face rather than on the
      stack's page wrapper: the wrapper's box is the whole rectangle, while the face is what
@@ -258,6 +268,7 @@ section {
 
     // Thick margin must match the sheet fill; the outline is the visible border.
     --surface-sunken: var(--blueprint);
+    --sheet-paper: var(--blueprint);
     background-size: 1cm 1cm;
     background-image:
       linear-gradient(to right, var(--blueprint-grid) 1px, transparent 1px),
@@ -269,6 +280,7 @@ section {
     --blueprint: color-mix(in oklch, var(--theme-blueprint) 36%, #6a6e6a 64%);
     --blueprint-grid: color-mix(in oklch, var(--blueprint), #c5c8c5 34%);
     --surface-sunken: var(--blueprint);
+    --sheet-paper: var(--blueprint);
 
     background-image:
       linear-gradient(to right, var(--blueprint-grid) 1px, transparent 1px),
