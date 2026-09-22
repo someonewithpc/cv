@@ -31,7 +31,9 @@ type ThemeSettings = {
    * in _colors.scss.
    */
   paperGrain: string;
-  /** The same on the contributions paper, which reads as the rougher sheet. Spread 3.2. */
+  /** The same on the contributions paper, which reads as the rougher sheet. Spread 2.6, and
+   * L* 91.7 against the 96.5 the sheet has bare: multiply pays for roughness in darkening.
+   * Round 4 ran this at 0.44, which is spread 3.2 at L* 90.6, and that read as too strong. */
   paperSheetGrain: string;
   /** multiply for a light sheet, screen for a dark one -- see paper-grain in _colors.scss. */
   paperBlend: 'multiply' | 'screen';
@@ -58,7 +60,7 @@ const THEMES = {
     /* The same oak as the other three, raised to the ash boards' tone and limed. */
     deskWood: 'oak-7760-limed',
     paperGrain: '0.22',
-    paperSheetGrain: '0.44',
+    paperSheetGrain: '0.36',
     paperBlend: 'multiply',
     paperInvert: '0',
     follows: 'light',
@@ -80,7 +82,7 @@ const THEMES = {
     deskWood: 'oak-7760-mid',
     deskBase: 'rgb(128 97 73)',
     paperGrain: '0.26',
-    paperSheetGrain: '0.47',
+    paperSheetGrain: '0.38',
     paperBlend: 'screen',
     paperInvert: '1',
     follows: 'dark',
@@ -101,7 +103,7 @@ const THEMES = {
     /* The same oak at its own lightness, which under a pale desk reads as bleached. */
     deskWood: 'oak-7760',
     paperGrain: '0.22',
-    paperSheetGrain: '0.44',
+    paperSheetGrain: '0.36',
     paperBlend: 'multiply',
     paperInvert: '0',
     follows: 'light',
@@ -123,7 +125,7 @@ const THEMES = {
     deskWood: 'oak-7760-smoked',
     deskBase: 'rgb(76 68 62)',
     paperGrain: '0.24',
-    paperSheetGrain: '0.43',
+    paperSheetGrain: '0.35',
     paperBlend: 'screen',
     paperInvert: '1',
     follows: 'dark',
