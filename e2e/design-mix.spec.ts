@@ -941,7 +941,7 @@ test('the paper grain tile is fetched once and stays under 40 KB', async ({ page
   const paperRequests: string[] = [];
   let paperBytes = -1;
   page.on('requestfinished', async (request) => {
-    if (!/\/paper\/handmade\.webp$/.test(request.url())) return;
+    if (!/\/paper\.webp$/.test(request.url())) return;
     paperRequests.push(request.url());
     const response = await request.response();
     const body = await response?.body();
@@ -972,6 +972,8 @@ test("the light sheet's paper is lighter than before the grain was added", async
   );
   const lightness = parseFloat(canvas.replace(/^oklch\(/, ''));
 
-  // The paper was oklch(0.94 0.014 85) before this change lifted it toward white.
-  expect(lightness).toBeGreaterThan(0.94);
+  // The paper was oklch(0.94 0.014 85) before round 1 lifted it toward white, then
+  // oklch(0.97 0.011 85) after round 1. Round 2's multiply blend darkens the paper again as
+  // it draws the grain, so the canvas needs a further lift to pay that back.
+  expect(lightness).toBeGreaterThan(0.97);
 });
