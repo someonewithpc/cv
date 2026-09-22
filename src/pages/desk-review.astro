@@ -2,59 +2,231 @@
 /**
  * REVIEW ONLY, strip before this lands on main, along with the ?desk switch in Layout.astro.
  *
- * Four wood tiles cut from the two Poliigon scans a free account can download, and the links
- * that put each one on the desk. The page deliberately skips Layout: it has no desk of its
- * own, so the strips show the tile as the file has it, before the theme's desk colour and
- * grain veil get at it.
+ * Every wood tile cut so far and the links that put each one on the desk. The page
+ * deliberately skips Layout: it has no desk of its own, so the strips show the tile as the
+ * file has it, before the theme's desk colour and grain veil get at it.
  */
 
-const TILES = [
-  {
-    file: 'oak-7760',
-    name: 'Slip Match Oak Wood Veneer',
-    weight: '184 KB',
-    veil: '15%',
-    asset: 7760,
-    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    note: 'The veneer you picked, turned a quarter so the grain runs across the page. Long unbroken figure, no joints anywhere.',
-  },
-  {
-    file: 'oak-7760-mid',
-    name: 'Slip Match Oak Wood Veneer, levelled',
-    weight: '152 KB',
-    veil: 'none',
-    asset: 7760,
-    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    note: "The same tile with its mean lifted to mid grey. The desk paints the tile with an overlay blend, and overlay leaves the backdrop alone at mid grey, so this one lends its grain and takes the theme's colour. It is the one to try on dark and forest.",
-  },
+type Tile = {
+  file: string;
+  name: string;
+  weight: string;
+  L: string;
+  C: string;
+  step: string;
+  ratio: string;
+  source: string;
+  href: string;
+  licence: string;
+  note: string;
+};
+
+/* Poliigon's two free scans, cut in round 2. Light and arctic are settled on the ash. */
+const POLIIGON: readonly Tile[] = [
   {
     file: 'ash-4186',
     name: 'Ash Wood Board, Light Beige',
     weight: '125 KB',
-    veil: '15%',
-    asset: 4186,
+    L: '74.4',
+    C: '19.7',
+    step: '5.35',
+    ratio: '0.709',
+    source: 'Poliigon 4186',
     href: 'https://www.poliigon.com/texture/ash-wood-board-texture-light-beige/4186',
-    note: 'Boards rather than veneer, scanned with the grain already across, and the plank joints come with it. The palest of the four.',
+    licence: 'Poliigon Free',
+    note: 'Your pick for light and for arctic. Boards rather than veneer, scanned with the grain already across, and the plank joints come with it.',
+  },
+  {
+    file: 'oak-7760',
+    name: 'Slip Match Oak Wood Veneer',
+    weight: '184 KB',
+    L: '64.2',
+    C: '22.2',
+    step: '5.39',
+    ratio: '0.788',
+    source: 'Poliigon 7760',
+    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
+    licence: 'Poliigon Free',
+    note: 'The veneer turned a quarter so the grain runs across the page. Long unbroken figure, no joints anywhere. Half the treatments below start here.',
+  },
+  {
+    file: 'oak-7760-mid',
+    name: 'Slip Match Oak, levelled',
+    weight: '152 KB',
+    L: '54.8',
+    C: '19.7',
+    step: '4.46',
+    ratio: '0.775',
+    source: 'Poliigon 7760',
+    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
+    licence: 'Poliigon Free',
+    note: 'Your near miss on forest: the same tile with its mean lifted to mid grey, so the overlay blend leaves the theme colour alone. Chroma 19.7 is the red you want out.',
   },
   {
     file: 'oak-7760-down',
-    name: 'Slip Match Oak Wood Veneer, as scanned',
+    name: 'Slip Match Oak, as scanned',
     weight: '172 KB',
-    veil: '15%',
-    asset: 7760,
+    L: '64.2',
+    C: '22.2',
+    step: '1.21',
+    ratio: '0.176',
+    source: 'Poliigon 7760',
     href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    note: 'The veneer left the way it was captured, grain down the desk. Here to set against the boards that ship today, since down is the direction they run.',
+    licence: 'Poliigon Free',
+    note: 'The veneer left the way it was captured, grain down the desk. Its figure lies along the measured direction rather than across it, which is why the step reads low here.',
+  },
+];
+
+/* Poly Haven scans. Everything there is CC0, so these carry no conditions at all. */
+const CC0: readonly Tile[] = [
+  {
+    file: 'cc0-oak-light',
+    name: 'Oak Veneer 02',
+    weight: '182 KB',
+    L: '77.3',
+    C: '24.1',
+    step: '7.89',
+    ratio: '1.222',
+    source: 'Poly Haven',
+    href: 'https://polyhaven.com/a/oak_veneer_02',
+    licence: 'CC0',
+    note: 'The crispest grain of anything measured, half again as sharp as the Poliigon oak. Far too warm to use pale, but it is the base the other two treated cuts come from.',
+  },
+  {
+    file: 'cc0-oak-grey',
+    name: 'Grey Oak Veneer 02',
+    weight: '191 KB',
+    L: '60.4',
+    C: '8.0',
+    step: '6.96',
+    ratio: '0.691',
+    source: 'Poly Haven',
+    href: 'https://polyhaven.com/a/grey_oak_veneer_02',
+    licence: 'CC0',
+    note: 'A silvery oak at roughly the levelled tile\'s lightness with under half its chroma. This is what muted with the red gone looks like without going darker. The figure is striped rather than cathedral, which is either the charm or the problem.',
+  },
+  {
+    file: 'cc0-oak-black',
+    name: 'Black Oak Veneer',
+    weight: '186 KB',
+    L: '41.9',
+    C: '7.4',
+    step: '4.60',
+    ratio: '0.724',
+    source: 'Poly Haven',
+    href: 'https://polyhaven.com/a/black_oak_veneer',
+    licence: 'CC0',
+    note: 'The darkest scan in either library that still shows real cathedral figure, and olive grey rather than brown. My pick for forest out of the untreated ones.',
+  },
+  {
+    file: 'cc0-black-flamed',
+    name: 'Flamed Black Veneer',
+    weight: '52 KB',
+    L: '34.6',
+    C: '3.0',
+    step: '0.97',
+    ratio: '0.426',
+    source: 'Poly Haven',
+    href: 'https://polyhaven.com/a/flamed_black_veneer',
+    licence: 'CC0',
+    note: 'The nearest thing to black either library has, and nearly featureless with it: a step of 0.97 against the oak\'s 5.39. It is here to show why dark wants a treated cut rather than a scan.',
+  },
+];
+
+/* Treatments, not scans. Same recipe both times: pull most of the chroma out, then drop the
+   level with a gain and an offset rather than a brightness multiply, which keeps the grain's
+   own step instead of losing it to 8-bit rounding and to WebP on a flat dark patch. */
+const TREATED: readonly Tile[] = [
+  {
+    file: 'oak-7760-smoked',
+    name: 'Slip Match Oak, smoked',
+    weight: '122 KB',
+    L: '41.3',
+    C: '5.3',
+    step: '3.76',
+    ratio: '0.755',
+    source: 'Poliigon 7760, treated',
+    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
+    licence: 'Poliigon Free',
+    note: 'The levelled tile you nearly picked, 13 points of lightness darker with three quarters of its chroma taken out. Same cathedral figure, no red left in it. This is the one I would put on forest.',
+  },
+  {
+    file: 'cc0-oak-light-smoked',
+    name: 'Oak Veneer 02, smoked',
+    weight: '111 KB',
+    L: '40.9',
+    C: '5.0',
+    step: '5.33',
+    ratio: '1.212',
+    source: 'Poly Haven, treated',
+    href: 'https://polyhaven.com/a/oak_veneer_02',
+    licence: 'CC0',
+    note: 'The same treatment on the sharper grain, landing within half a point of the tile above on both lightness and chroma. Fine straight lines where the other has figure, so the pair is a clean choice of grain and nothing else.',
+  },
+  {
+    file: 'oak-7760-ebonised',
+    name: 'Slip Match Oak, ebonised',
+    weight: '118 KB',
+    L: '20.1',
+    C: '4.7',
+    step: '3.47',
+    ratio: '0.746',
+    source: 'Poliigon 7760, treated',
+    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
+    licence: 'Poliigon Free',
+    note: 'Near black and the figure still reads: the step holds at 3.47, where taking the same tile to this level with a brightness multiply drops it to 0.65.',
+  },
+  {
+    file: 'cc0-oak-light-ebonised',
+    name: 'Oak Veneer 02, ebonised',
+    weight: '106 KB',
+    L: '20.1',
+    C: '4.3',
+    step: '5.02',
+    ratio: '1.212',
+    source: 'Poly Haven, treated',
+    href: 'https://polyhaven.com/a/oak_veneer_02',
+    licence: 'CC0',
+    note: 'The same lightness as the tile above to one decimal place, on the sharper grain. These two are the only near black candidates that still read as wood.',
+  },
+];
+
+const GROUPS = [
+  {
+    title: 'Poliigon, round 2',
+    tiles: POLIIGON,
+    lead: 'The two free Poliigon scans, cut in round 2 and untouched since.',
+  },
+  {
+    title: 'Poly Haven, untreated',
+    tiles: CC0,
+    lead: 'Poly Haven releases everything as CC0, which is public domain: any purpose, no credit needed, redistribution allowed. These are the colour maps as downloaded, with nothing done to them but the cut.',
+  },
+  {
+    title: 'Treated for the dark themes',
+    tiles: TREATED,
+    lead: 'Neither library has a wood that is near black and still shows grain, so these four are made rather than found. Each is named after the scan it comes from.',
   },
 ] as const;
 
+const ALL = [...POLIIGON, ...CC0, ...TREATED];
+const tileByFile = Object.fromEntries(ALL.map((tile) => [tile.file, tile]));
+
 const THEMES = [
-  { id: 'light', label: 'Light', try: ['oak-7760', 'ash-4186', 'oak-7760-down'] },
-  { id: 'arctic', label: 'Arctic', try: ['ash-4186', 'oak-7760-mid', 'oak-7760'] },
-  { id: 'dark', label: 'Dark', try: ['oak-7760-mid', 'oak-7760', 'ash-4186'] },
-  { id: 'dark-forest', label: 'Dark forest', try: ['oak-7760-mid', 'oak-7760-down', 'ash-4186'] },
+  { id: 'light', label: 'Light', try: ['ash-4186', 'cc0-oak-grey', 'oak-7760'] },
+  { id: 'arctic', label: 'Arctic', try: ['ash-4186', 'cc0-oak-grey', 'oak-7760-mid'] },
+  {
+    id: 'dark',
+    label: 'Dark',
+    try: ['oak-7760-ebonised', 'cc0-oak-light-ebonised', 'cc0-black-flamed'],
+  },
+  {
+    id: 'dark-forest',
+    label: 'Dark forest',
+    try: ['oak-7760-smoked', 'cc0-oak-light-smoked', 'cc0-oak-black', 'oak-7760-mid'],
+  },
 ] as const;
 
-const tileByFile = Object.fromEntries(TILES.map((tile) => [tile.file, tile]));
 const deskUrl = (file: string, theme: string, veil: boolean) =>
   `../?desk=${file}&theme=${theme}${veil ? '' : '&veil=0'}`;
 ---
@@ -86,7 +258,7 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
       body {
         margin: 0 auto;
         padding: 2rem 1rem 6rem;
-        max-width: 50rem;
+        max-width: 54rem;
         background: var(--paper);
         color: var(--ink);
         font: 1rem/1.6 system-ui, sans-serif;
@@ -139,6 +311,10 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
         white-space: nowrap;
       }
 
+      .scroll {
+        overflow-x: auto;
+      }
+
       table {
         width: 100%;
         margin: 1rem 0 0;
@@ -151,6 +327,7 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
         padding: 0.35rem 0.75rem 0.35rem 0;
         text-align: left;
         vertical-align: top;
+        white-space: nowrap;
         border-bottom: 1px solid var(--rule);
       }
 
@@ -158,9 +335,15 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
         font-weight: 600;
       }
 
+      th.num,
+      td.num {
+        text-align: right;
+        padding-right: 1rem;
+        font-variant-numeric: tabular-nums;
+      }
+
       td:not(:first-child) {
         color: var(--faint);
-        white-space: nowrap;
       }
 
       code {
@@ -172,52 +355,69 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
   <body>
     <h1>Desk wood, candidates</h1>
     <p class="lede">
-      Four tiles cut from two Poliigon scans. Each link opens the CV with that tile on the desk
-      and the theme already picked, under the veil listed for it below. A second link on each
-      line takes the veil off altogether.
+      Every tile cut so far. The links at the foot of the page open the CV with that tile on the
+      desk and the theme already picked, under a 15 per cent veil of the theme's desk colour. A
+      second link on each line takes the veil off altogether.
     </p>
     <p class="lede">
-      Only two scans were free on the account, so every tile below comes from one of those two.
-      The veneers picked out for dark, arctic and forest sit behind a paid plan and were left
-      alone. Until one is chosen, the procedural boards stay the default.
+      Light and arctic are settled on the ash, so this round is aimed at dark and forest. Dark
+      wants near black and forest wants the levelled oak without the red. Nothing either library
+      gives away is dark enough on its own, so the last group is made rather than found.
     </p>
 
-    <h2>The tiles</h2>
+    <h2>How to read the numbers</h2>
     <p class="lede">
-      Every tile is 1440 px square and paints at 45rem, so one image pixel lands on one device
-      pixel on a 2x screen. The veil is how much of the theme's desk colour lies over the tile:
-      the drawn boards take 42 to 58 per cent of it, since flat colour is all they have, and a
-      scan brings its own so it takes far less.
+      L* is mean lightness on 0 to 100 and C* is mean chroma, both in CIELAB. Chroma is the
+      column your forest objection lives in: the levelled oak sits at 19.7 and the smoked cuts
+      at about 5. Step is the mean absolute luminance step between neighbouring rows of pixels
+      on 0 to 255, which is across the grain on every tile but <code>oak-7760-down</code>. Step
+      over the tile's own standard deviation is the figure that survives the desk, since the
+      overlay blend scales every step by the same factor. Higher is sharper both times. Every
+      tile is 1440 px square and paints at 45rem, so one image pixel lands on one device pixel
+      at 2x.
     </p>
-    <table>
-      <thead>
-        <tr>
-          <th>Tile</th>
-          <th>File</th>
-          <th>Veil</th>
-        </tr>
-      </thead>
-      <tbody>
-        {TILES.map((tile) => (
-          <tr>
-            <td>{tile.name}</td>
-            <td><code>{tile.file}.webp</code>, {tile.weight}</td>
-            <td>{tile.veil}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-    <p class="lede">
-      Below, each one is shown on its own at the size the desk paints it, so this is the file
-      before the theme's desk colour and veil reach it.
-    </p>
-    {TILES.map((tile) => (
+
+    {GROUPS.map((group) => (
       <>
-        <h3>{tile.name}</h3>
-        <p class="note">
-          {tile.note} <a href={tile.href}>Poliigon {tile.asset}</a>, <code>{tile.file}.webp</code>
-        </p>
-        <div class="strip" style={`background-image: url(../desk/${tile.file}.webp)`} />
+        <h2>{group.title}</h2>
+        <p class="lede">{group.lead}</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Tile</th>
+                <th>File</th>
+                <th class="num">L*</th>
+                <th class="num">C*</th>
+                <th class="num">Step</th>
+                <th class="num">Step/sd</th>
+                <th>Source</th>
+                <th>Licence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.tiles.map((tile) => (
+                <tr>
+                  <td>{tile.name}</td>
+                  <td><code>{tile.file}.webp</code>, {tile.weight}</td>
+                  <td class="num">{tile.L}</td>
+                  <td class="num">{tile.C}</td>
+                  <td class="num">{tile.step}</td>
+                  <td class="num">{tile.ratio}</td>
+                  <td><a href={tile.href}>{tile.source}</a></td>
+                  <td>{tile.licence}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {group.tiles.map((tile) => (
+          <>
+            <h3>{tile.name}</h3>
+            <p class="note">{tile.note} <code>{tile.file}.webp</code></p>
+            <div class="strip" style={`background-image: url(../desk/${tile.file}.webp)`} />
+          </>
+        ))}
       </>
     ))}
 
@@ -238,10 +438,10 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
 
     <h2>If none of them work</h2>
     <p>
-      Nothing in a free oak scan comes anywhere near charred, so the paid veneers are still the
-      better answer for the dark themes. A month of Poliigon buys the whole shortlist. Their
-      licence allows commercial use but forbids redistributing the assets, and a site background
-      does serve the image file, so that wants a read before any of this lands.
+      A treated cut can land anywhere on the scale, so say which way and by how much. Darker,
+      greyer, more figure, all of it is one number in the recipe. Both ebonised tiles sit at L*
+      20; a charred desk would be nearer 12, and by then the grain starts to disappear under the
+      paper's own shadow.
     </p>
   </body>
 </html>
