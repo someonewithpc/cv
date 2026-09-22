@@ -6,9 +6,9 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "ASTRO_DEV_BACKGROUND=1 astro dev",
     "build": "astro build && node scripts/render-oembed-card.mjs",
-    "preview": "astro preview",
+    "preview": "ASTRO_PREVIEW_BACKGROUND=1 astro preview",
     "deploy": "npm run test:e2e && npm run build && wrangler deploy",
     "astro": "astro",
     "check": "astro check",
