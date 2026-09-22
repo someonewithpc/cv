@@ -76,21 +76,22 @@ oembedUrl.searchParams.set('format', 'json');
       })();
     </script>
     <!-- REVIEW ONLY, strip before this lands on main. Sets how strongly the paper's fibre
-         tile shows, so the number can be settled in the browser instead of in a rebuild:
-           ?grain=<0..1>   overrides the theme's own --theme-paper-grain, 0 for a bare sheet
-         It reaches both sheets that carry the tile, a drawing stack's pages and the torn
-         contributions page, since both scale off that one property. The value is written as
-         an inline custom property on the html element, which outranks the theme rules, and
-         nothing else in the page knows it is here. -->
+         tile shows, so the numbers can be settled in the browser instead of in a rebuild:
+           ?grain=<0..1>         both sheets at once, 0 for bare paper
+           ?grain=<0..1>,<0..1>  a drawing stack's pages, then the contributions paper
+         The values are written as inline custom properties on the html element, which outrank
+         the theme rules, and nothing else in the page knows they are here. -->
     <script is:inline>
       (() => {
         const asked = new URLSearchParams(location.search).get('grain');
         if (asked === null) return;
-        const grain = Number(asked);
-        if (!Number.isFinite(grain)) return;
+        const parts = asked.split(',').map(Number);
+        if (parts.length > 2 || !parts.every(Number.isFinite)) return;
+        const clamp = (n) => String(Math.min(1, Math.max(0, n)));
+        document.documentElement.style.setProperty('--theme-paper-grain', clamp(parts[0]));
         document.documentElement.style.setProperty(
-          '--theme-paper-grain',
-          String(Math.min(1, Math.max(0, grain))),
+          '--theme-paper-sheet-grain',
+          clamp(parts.length > 1 ? parts[1] : parts[0]),
         );
       })();
     </script>
