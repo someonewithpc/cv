@@ -282,22 +282,47 @@ main {
     padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Quiet drafting grid */
-  --page-rule: color-mix(in oklch, var(--blueprint-grid), transparent 78%);
-  background-image:
-    linear-gradient(to right, var(--page-rule) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--page-rule) 1px, transparent 1px);
-  background-size: 2.5rem 2.5rem;
-  background-attachment: local;
+  /* The page lies on a desk at every width. The desk is boards: --theme-desk-tile is one
+     stitched tile of them, a whole number of boards wide, built per theme by src/deskTile.ts.
+     --theme-desk-grain veils it down to a tone that stays out of the way. Every band of
+     content keeps the page's own surface, so the desk is only ever seen in the side margins
+     and in the gaps between bands, never behind text. A phone has only the page gutter to
+     spare, so there the wood is a strip down each edge and a band between every two sections,
+     which is all Hugo asked it for. */
+  --desk-veil: color-mix(in oklch, var(--theme-desk), transparent calc(var(--theme-desk-grain) * 100%));
+  --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
 
-  /* Wider than the page column plus its margins, there is desk to see, so lay the page on
-     one. The desk is boards: --theme-desk-tile is one stitched tile of them, a whole number
-     of boards wide, built per theme by src/deskTile.ts. --theme-desk-grain veils it down to
-     a tone that stays out of the way. Every band of content keeps the page's own surface, so
-     the desk is only ever seen in the side margins and in the gaps between sections, never
-     behind text. */
+  background-color: var(--theme-desk);
+  background-image:
+    linear-gradient(var(--desk-veil), var(--desk-veil)),
+    var(--theme-desk-tile);
+  background-size: auto, var(--theme-desk-tile-size) var(--theme-desk-tile-size);
+  background-blend-mode: normal, overlay;
+
+  /* Every band on the desk is a sheet of the same paper, with the small radius and the lift
+     the drawing stacks have. Narrow, that is all it is: the band keeps the width, the margins
+     and the padding it already had, so no line of text moves to make room for the wood. The
+     id is in the selector to outrank the sections' own margins, which the desk takes over
+     once it is wide enough to. */
+  &#main > *:not(.folio-rail),
+  &#main > .full-width > * {
+    border-radius: 0.25rem;
+    background: var(--surface-page);
+    box-shadow: var(--sheet-lift);
+  }
+
+  /* A full-width section is the whole viewport, so the paper belongs to the column-width
+     children in it, not to it. */
+  &#main > .full-width {
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* Wider than the page column plus its margins there is desk to spare on both sides, so the
+     sheets take a rim of padding and a hairline edge, their own margins and width caps go,
+     and the row gap is the only rhythm left. */
   @media (width > 64rem) {
-    --desk-veil: color-mix(in oklch, var(--theme-desk), transparent calc(var(--theme-desk-grain) * 100%));
     /* One gap between every two sheets, and the same strip of desk above the first and below
        the last. */
     --desk-gap: 2.5rem;
@@ -305,23 +330,10 @@ main {
     /* The mat and the folio share the desk margin, so the mat stops at the far side of the
        lane the sheet number stands in whenever that is the wider of the two. */
     --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
-    --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
 
     row-gap: var(--desk-gap);
     padding-block: var(--desk-gap);
 
-    background-color: var(--theme-desk);
-    background-image:
-      linear-gradient(var(--desk-veil), var(--desk-veil)),
-      var(--theme-desk-tile);
-    background-size: auto, var(--theme-desk-tile-size) var(--theme-desk-tile-size);
-    background-blend-mode: normal, overlay;
-
-    /* Every band on the desk is a sheet of the same paper: one width, the page column's, a
-       hairline edge, a small radius and the lift the drawing stacks have. Their own margins
-       and width caps go, so the rhythm is the row gap above and nothing else. The drafting
-       grid is the cutting mat's now, so no sheet carries it. The id is in the selector to
-       outrank the sections' own margins, which the desk takes over here. */
     &#main > *:not(.folio-rail),
     &#main > .full-width > * {
       width: 100%;
@@ -329,20 +341,12 @@ main {
       margin-block: 0;
       padding: var(--sheet-pad);
       border: 1px solid var(--line);
-      border-radius: 0.25rem;
-      background: var(--surface-page);
-      box-shadow: var(--sheet-lift);
     }
 
-    /* A full-width section is the whole viewport, so the paper belongs to the column-width
-       children in it, not to it. */
     &#main > .full-width {
       row-gap: var(--desk-gap);
       padding: 0;
       border: 0;
-      border-radius: 0;
-      background: none;
-      box-shadow: none;
     }
   }
 
