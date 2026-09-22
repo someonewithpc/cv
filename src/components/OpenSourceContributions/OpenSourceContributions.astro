@@ -59,10 +59,23 @@ const statistics = {
   margin-top: clamp(5rem, 12vw, 8rem);
   padding-bottom: 5rem;
 
-  /* Past 64rem Layout.astro lays every band down as a sheet of paper. This band is not one
+  /* Layout.astro lays every band down as a sheet of paper on the desk. This band is not one
      sheet: it is the heading on a sheet and then a sheet of ruled paper per group, each one
-     torn along the top and the bottom. So the band gives its own paper up and the sheets
-     inside carry it. The id is doubled to outrank the layout's `#main > *`. */
+     torn along the top and the bottom. So the band gives its own paper up, the sheets inside
+     carry it and the wood shows in the gaps between them. The id is doubled to outrank the
+     layout's `#main > *`. */
+  &#open-source {
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .intro {
+    border-radius: 0.25rem;
+    background: var(--surface-page);
+    box-shadow: var(--sheet-lift);
+  }
+
   @media (width > 64rem) {
     &#open-source {
       --sheet-gap: var(--desk-gap);
@@ -70,17 +83,11 @@ const statistics = {
       margin-top: 0;
       padding: 0;
       border: 0;
-      border-radius: 0;
-      background: none;
-      box-shadow: none;
     }
 
     .intro {
       padding: var(--sheet-pad);
       border: 1px solid var(--line);
-      border-radius: 0.25rem;
-      background: var(--surface-page);
-      box-shadow: var(--sheet-lift);
     }
   }
 
