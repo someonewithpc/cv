@@ -1089,6 +1089,9 @@ test('the grain paints on the paper sheets and on nothing else', async ({ page }
         // The page face of a drawing stack: the element that wears the fold's clip-path, so
         // the grain is cut by the dog-ear along with the rest of the sheet.
         drawingPage: el.matches('article.technical-drawing-stack > * > section'),
+        // The title block paints paper of its own over the sheet's, so it carries its own
+        // fibre. Without it the block is the one flat patch on a sheet of paper.
+        titleBlock: el.matches('article.technical-drawing-stack > * > section > table'),
         contributions: !!el.closest('#open-source'),
         behindTheContent: getComputedStyle(el, '::before').zIndex === '-1',
       })),
@@ -1096,12 +1099,56 @@ test('the grain paints on the paper sheets and on nothing else', async ({ page }
 
   expect(carriers.length).toBeGreaterThan(20);
   for (const carrier of carriers) {
-    expect(carrier.drawingPage || carrier.contributions).toBe(true);
+    expect(carrier.drawingPage || carrier.titleBlock || carrier.contributions).toBe(true);
     expect(carrier.behindTheContent).toBe(true);
   }
-  // Both kinds are here, not one kind twice.
+  // All three kinds are here, not one kind over and over.
   expect(carriers.some((c) => c.drawingPage)).toBe(true);
+  expect(carriers.some((c) => c.titleBlock)).toBe(true);
   expect(carriers.some((c) => c.contributions)).toBe(true);
+});
+
+test("the title block's paper is the sheet's, on the sheet's phase", async ({ page }) => {
+  await withTheme(page, 'light');
+  await page.goto('/');
+
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(800);
+
+  const block = await stack.evaluate((el) => {
+    const sheet = el.querySelector('.paper-front > section')!;
+    const table = sheet.querySelector(':scope > table')!;
+    const fill = (node: Element) => {
+      const cx = document.createElement('canvas').getContext('2d')!;
+      cx.fillStyle = getComputedStyle(node).backgroundColor;
+      cx.fillRect(0, 0, 1, 1);
+      return [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    };
+    // Both pseudo-elements are inset: 0 on their own element, so each tiles from that
+    // element's padding box, which is its border box less its border. One tile is 12rem, so
+    // in register is a whole number of tiles apart.
+    const origin = (node: Element) => {
+      const box = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      const [x, y] = getComputedStyle(node, '::before').backgroundPosition.split(' ').map(parseFloat);
+      return [
+        box.left + parseFloat(style.borderLeftWidth) + x,
+        box.top + parseFloat(style.borderTopWidth) + y,
+      ];
+    };
+    const [sx, sy] = origin(sheet);
+    const [bx, by] = origin(table);
+    const off = (a: number, b: number) => {
+      const d = Math.abs(a - b) % 192;
+      return Math.min(d, 192 - d);
+    };
+    return { sheetFill: fill(sheet), blockFill: fill(table), dx: off(sx, bx), dy: off(sy, by) };
+  });
+
+  expect(block.blockFill).toEqual(block.sheetFill);
+  expect(block.dx).toBeLessThan(1);
+  expect(block.dy).toBeLessThan(1);
 });
 
 test('the fold flap is the back of the sheet, with no fibre on it', async ({ page }) => {
