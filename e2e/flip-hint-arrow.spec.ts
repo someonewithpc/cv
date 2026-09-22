@@ -472,6 +472,10 @@ const sizes = [
 // The words stay where the stylesheet puts them and the arrow is drawn between them and the
 // crease, so at any width the tail is at the words and the head lands square on the fold.
 test('each arrow runs from its words to the middle of its crease at every width', async ({ page }) => {
+  // Two directions by five widths, each one a settle wait and a measured redraw: 52.7s of the
+  // 60s budget at four workers, and it times out at eight. Same reason as the theme sweep
+  // below, so the same marker.
+  test.slow();
   await page.goto('/');
   await page.waitForTimeout(1200);
 
