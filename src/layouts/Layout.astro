@@ -75,15 +75,40 @@ oembedUrl.searchParams.set('format', 'json');
         }
       })();
     </script>
-    <!-- REVIEW ONLY, strip before this lands on main. Sets how strongly the paper's fibre
-         tile shows, so the numbers can be settled in the browser instead of in a rebuild:
+    <!-- REVIEW ONLY, strip before this lands on main, /review with it. Settles the paper in
+         the browser instead of in a rebuild:
            ?grain=<0..1>         both sheets at once, 0 for bare paper
            ?grain=<0..1>,<0..1>  a drawing stack's pages, then the contributions paper
-         The values are written as inline custom properties on the html element, which outrank
-         the theme rules, and nothing else in the page knows they are here. -->
+           ?tile=lifted          the same fibre centred 232 rather than 216.4, so multiply
+                                 darkens the sheet less for the same spread
+           ?tile=patch-b         a different patch of the same scan
+           ?theme=<id>           picks a theme, through the key the picker itself writes
+         The grain and the tile are written as inline custom properties on the html element,
+         which outrank the theme rules, and nothing else in the page knows they are here. -->
     <script is:inline>
       (() => {
-        const asked = new URLSearchParams(location.search).get('grain');
+        const params = new URLSearchParams(location.search);
+
+        const theme = params.get('theme');
+        if (theme && ['light', 'dark', 'arctic', 'dark-forest'].includes(theme)) {
+          document.documentElement.dataset.theme = theme;
+          try {
+            localStorage.setItem('cv-theme', theme);
+          } catch {
+            /* ignore */
+          }
+        }
+
+        const tile = params.get('tile');
+        if (tile && /^[a-z-]+$/.test(tile)) {
+          // From this page's own directory, not from the root: the preview worker serves the
+          // whole build under /<branch>/, and a stylesheet's relative url() would resolve
+          // against /_astro/ instead.
+          const here = location.pathname.endsWith('/') ? location.pathname : `${location.pathname}/`;
+          document.documentElement.style.setProperty('--theme-paper-tile', `url("${here}paper-${tile}.webp")`);
+        }
+
+        const asked = params.get('grain');
         if (asked === null) return;
         const parts = asked.split(',').map(Number);
         if (parts.length > 2 || !parts.every(Number.isFinite)) return;

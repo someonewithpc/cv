@@ -226,11 +226,11 @@
     inset: 0;
     z-index: -1;
     border-radius: #{$radius};
-    background-image: url('/paper.webp');
+    background-image: var(--theme-paper-tile, url('/paper.webp'));
     background-size: 12rem 12rem;
     background-position: #{$offset};
     mix-blend-mode: var(--theme-paper-blend, multiply);
-    filter: invert(var(--theme-paper-invert, 0));
+    filter: var(--theme-paper-filter, invert(var(--theme-paper-invert, 0)));
     opacity: #{$opacity};
     pointer-events: none;
   }
