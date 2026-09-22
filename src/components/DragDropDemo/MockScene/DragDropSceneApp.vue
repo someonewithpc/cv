@@ -223,9 +223,9 @@ function updateDragVisual(clientX: number, clientY: number) {
 }
 
 /**
- * The card's picture at its rendered size, grabbed where the press landed on it. The size
- * is the tile's, not the `<img>`'s: the picture is drawn bigger than its own box (see
- * `.object-icons img`), and it is the tile the ghost paints.
+ * The card's picture at its rendered size, grabbed where the press landed on it. The box
+ * read is the tile's rather than the picture's, because it is the tile the ghost paints:
+ * the grey gradient behind the chair rides the pointer with it.
  */
 function dragThumbFrom(target: EventTarget | null, src: string, clientX: number, clientY: number): DragThumb {
   const tile = target instanceof Element ? target.closest('.object-icons') : null;
@@ -1133,8 +1133,6 @@ $visrez-brand: #89ab24;
 $light-grey: #565656;
 $nav-sidebar-bg: #323232;
 $scene-bg: #212121;
-/** How much bigger than its own box the catalog picture draws (see .object-icons img). */
-$thumb-zoom: 1.6;
 
 .drag-drop-scene-app {
   position: relative;
@@ -1394,7 +1392,6 @@ $thumb-zoom: 1.6;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    scale: $thumb-zoom;
   }
 }
 
@@ -1440,18 +1437,6 @@ $thumb-zoom: 1.6;
   overflow-y: auto;
   padding: 0.75rem;
   scrollbar-width: thin;
-}
-
-/**
- * The catalog card is Space Builder's, sized for a sidebar three times as wide as this
- * one. At this size the picture's own padding, plus the transparent margin the 600px
- * render leaves around the model, left the chair under half the tile's height. Drop the
- * padding and blow the picture up until the chair nearly fills the tile; the tile, the
- * card and the grid keep the sizes the product gives them.
- */
-.sidebar-body :deep(.object-icons img) {
-  padding: 0;
-  scale: $thumb-zoom;
 }
 
 </style>
