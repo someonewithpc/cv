@@ -175,10 +175,12 @@
 }
 
 // A sheet of drawing paper: a small seamless fibre tile, cut from a real paper scan at its
-// native resolution, laid over the element's own background colour so the paper reads as paper
-// rather than a flat fill. Two sheets wear it -- a page of a technical drawing stack, and the
-// torn contributions page -- and the chrome of the CV around them does not, so the grain marks
-// out what is meant to be paper instead of tinting the whole document.
+// native resolution (see scripts/cut-paper-tile.mjs), laid over the element's own background
+// colour so the paper reads as paper rather than a flat fill. Two sheets wear it -- a page of
+// a technical drawing stack, and the torn contributions page -- and the chrome of the CV
+// around them does not, so the grain marks out what is meant to be paper instead of tinting
+// the whole document. The tile paints at its own pixel size, 192px at 1x, so the fibre on the
+// page is the fibre of the scan and not a resampled version of it.
 //
 // The tile sits on a pseudo-element behind the sheet's own content (z-index: -1 inside the
 // stacking context this establishes) so it never blends with text or child elements, only with
@@ -212,7 +214,7 @@
     z-index: -1;
     border-radius: #{$radius};
     background-image: url('/paper.webp');
-    background-size: 32rem 32rem;
+    background-size: 12rem 12rem;
     mix-blend-mode: var(--theme-paper-blend, multiply);
     filter: invert(var(--theme-paper-invert, 0));
     opacity: calc(var(--theme-paper-grain, 0) * #{$strength});
