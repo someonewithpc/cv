@@ -6,7 +6,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * but the *layout* viewport takes the width of the widest thing on the page, so anything
  * reaching past the frame's right edge widens it: `innerWidth` runs ahead of
  * `documentElement.clientWidth`, the visitor gets a 768px window onto a wider page, and every
- * `position: fixed` box — the theme picker among them — is laid out against the wider one.
+ * `position: fixed` box, the theme picker among them, is laid out against the wider one.
  * From the reader's side the page is simply zoomed in and scrolls sideways.
  *
  * So each case here puts the page into a state at 1440x900, switches to an emulated frame
@@ -58,7 +58,7 @@ async function widths(page: Page) {
 
 /**
  * The resting dog-ear's hit area is the clip triangle its `transform` mirrors, not its box, and
- * the idle pulse keeps resizing it — so ask the page which point actually lands on the flap
+ * the idle pulse keeps resizing it, so ask the page which point actually lands on the flap
  * rather than aiming at a corner and missing.
  */
 async function flapPoint(stack: Locator): Promise<{ x: number, y: number }> {
@@ -153,7 +153,7 @@ for (let index = 0; index < 6; index += 1) {
     const grab = await flapPoint(stack);
 
     // The flap's own box is the page's, mirrored across the crease, so a deep fold throws it
-    // hundreds of pixels past the page — invisibly, but not weightlessly.
+    // hundreds of pixels past the page, invisibly but not weightlessly.
     await checkFrames(page, async () => {
       await page.mouse.move(grab.x, grab.y);
       await page.mouse.down();
