@@ -5,6 +5,7 @@ import {
   frontPage,
   frontPageIndex,
   sceneDraws,
+  swipeStack,
   swipeToPage,
   waitForIslandMounted,
 } from './support/paperStack';
@@ -170,6 +171,27 @@ test('drag & drop page: dragging the chair onto the ground places it in a live s
   // this one, so the drop was real but nothing was ever drawn.
   const drawnOnDrop = await sceneDraws(app);
   await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnDrop);
+});
+
+test('main page: no WebGL unpack warnings across a GPU release and re-attach', async ({ page }) => {
+  const warnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') warnings.push(message.text());
+  });
+
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await waitForSceneReady(front);
+
+  // Swiping away releases the front page's WebGL context (releaseGpu); swiping back
+  // re-attaches a new renderer to the same canvas (attachGpu) — see spaceBuilderGpu.ts.
+  await swipeStack(page, stack, true);
+  await swipeStack(page, stack, false);
+  await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
+
+  expect(warnings.some((text) => /texImage3D/.test(text))).toBe(false);
+  expect(warnings.some((text) => /WebGL.*INVALID_/.test(text))).toBe(false);
 });
 
 for (const { name, viewport } of [
