@@ -21,7 +21,7 @@ const TILES = [
     name: 'Slip Match Oak Wood Veneer, levelled',
     asset: 7760,
     href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    note: 'The same tile with its mean lifted to mid grey. The desk paints the tile with an overlay blend, and overlay leaves the backdrop alone at mid grey, so this one lends its grain and takes the theme’s colour. It is the one to try on dark and forest.',
+    note: "The same tile with its mean lifted to mid grey. The desk paints the tile with an overlay blend, and overlay leaves the backdrop alone at mid grey, so this one lends its grain and takes the theme's colour. It is the one to try on dark and forest.",
   },
   {
     file: 'ash-4186',
@@ -48,7 +48,7 @@ const THEMES = [
 
 const tileByFile = Object.fromEntries(TILES.map((tile) => [tile.file, tile]));
 const deskUrl = (file: string, theme: string, veil: boolean) =>
-  `/?desk=${file}&theme=${theme}${veil ? '' : '&veil=0'}`;
+  `../?desk=${file}&theme=${theme}${veil ? '' : '&veil=0'}`;
 ---
 
 <html lang="en">
@@ -154,7 +154,7 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
     <h2>The tiles</h2>
     <p class="lede">
       Shown at the size the desk paints them, 45rem across, and on their own, so this is the
-      file before the theme&rsquo;s desk colour and veil reach it.
+      file before the theme's desk colour and veil reach it.
     </p>
     {TILES.map((tile) => (
       <>
@@ -162,7 +162,7 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
         <p class="note">
           {tile.note} <a href={tile.href}>Poliigon {tile.asset}</a>, <code>{tile.file}.webp</code>
         </p>
-        <div class="strip" style={`background-image: url(/desk/${tile.file}.webp)`} />
+        <div class="strip" style={`background-image: url(../desk/${tile.file}.webp)`} />
       </>
     ))}
 
@@ -183,10 +183,10 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
 
     <h2>If none of them work</h2>
     <p>
-      The paid veneers are still the better answer for the dark themes: nothing in a free oak
-      scan is anywhere near charred. A month of Poliigon buys the whole shortlist. Their licence
-      allows commercial use but forbids redistributing the assets, and a site background does
-      serve the image file, so that wants a read before any of this lands.
+      Nothing in a free oak scan comes anywhere near charred, so the paid veneers are still the
+      better answer for the dark themes. A month of Poliigon buys the whole shortlist. Their
+      licence allows commercial use but forbids redistributing the assets, and a site background
+      does serve the image file, so that wants a read before any of this lands.
     </p>
   </body>
 </html>

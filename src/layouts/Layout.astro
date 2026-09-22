@@ -89,7 +89,9 @@ oembedUrl.searchParams.set('format', 'json');
         const theme = query.get('theme');
         const root = document.documentElement;
         if (tile && /^[a-z0-9-]+$/.test(tile)) {
-          root.style.setProperty('--theme-desk-tile', `url(/desk/${tile}.webp)`);
+          /* Relative to the document, so this still works under the preview's sub-path. */
+          const file = new URL(`desk/${tile}.webp`, document.baseURI).href;
+          root.style.setProperty('--theme-desk-tile', `url(${file})`);
           root.style.setProperty('--theme-desk-tile-size', '45rem');
         }
         /* --theme-desk-grain is how far the veil is faded out, so 1 is no veil at all. */
