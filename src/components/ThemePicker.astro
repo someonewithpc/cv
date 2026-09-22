@@ -24,7 +24,12 @@ type ThemeSettings = {
   /** How strongly the paper's fibre tile shows on a sheet (see paper-grain in _colors.scss).
       Dark paper needs less of it: soft-light lightens as much as it darkens, and on a dark
       sheet the lightened fibre reads faster than on a light one. */
+  /** How strongly the paper's fibre tile shows on a sheet (see paper-grain in _colors.scss). */
   paperGrain: string;
+  /** multiply for a light sheet, screen for a dark one -- see paper-grain in _colors.scss. */
+  paperBlend: 'multiply' | 'screen';
+  /** '1' flips the tile dark-side-up for screen on a dark sheet, '0' leaves it as scanned. */
+  paperInvert: '0' | '1';
   follows: ThemeFollows;
   name: string;
   transitionScaleFactor: number;
@@ -36,7 +41,9 @@ type ThemeSettings = {
 
 const THEMES = {
   light: {
-    canvas: 'oklch(0.97 0.011 85)',
+    // Lifted from round 1's oklch(0.97 0.011 85): multiply's own darkening eats back into
+    // this, and the tile's grain needs the extra headroom to read at a visible sd.
+    canvas: 'oklch(0.99 0.006 85)',
     ink: 'oklch(0.24 0.025 260)',
     accent: 'oklch(0.7 0.13 65)',
     blueprint: 'oklch(0.52 0.14 255)',
@@ -44,7 +51,9 @@ const THEMES = {
     deskGrain: '0.85',
     /* The same oak as the other three, raised to the ash boards' tone and limed. */
     deskWood: 'oak-7760-limed',
-    paperGrain: '0.5',
+    paperGrain: '0.7',
+    paperBlend: 'multiply',
+    paperInvert: '0',
     follows: 'light',
     name: 'Light',
     transitionScaleFactor: 2.4,
@@ -63,7 +72,9 @@ const THEMES = {
     /* Slip-matched oak, levelled: cathedral figure across the page and no joint in it. */
     deskWood: 'oak-7760-mid',
     deskBase: 'rgb(128 97 73)',
-    paperGrain: '0.08',
+    paperGrain: '0.6',
+    paperBlend: 'screen',
+    paperInvert: '1',
     follows: 'dark',
     name: 'Dark',
     transitionScaleFactor: 1.2,
@@ -73,7 +84,8 @@ const THEMES = {
     },
   },
   arctic: {
-    canvas: 'oklch(0.96 0.016 230)',
+    // Lifted from round 1's oklch(0.96 0.016 230) to pay back multiply's darkening, same as light.
+    canvas: 'oklch(0.98 0.009 230)',
     ink: 'oklch(0.3 0.04 250)',
     accent: 'oklch(0.52 0.1 210)',
     blueprint: 'oklch(0.58 0.12 220)',
@@ -81,7 +93,9 @@ const THEMES = {
     deskGrain: '0.85',
     /* The same oak at its own lightness, which under a pale desk reads as bleached. */
     deskWood: 'oak-7760',
-    paperGrain: '0.45',
+    paperGrain: '0.7',
+    paperBlend: 'multiply',
+    paperInvert: '0',
     follows: 'light',
     name: 'Arctic',
     transitionScaleFactor: 2,
@@ -100,7 +114,9 @@ const THEMES = {
     /* The same oak smoked in the file: darker, and drained of red before the veil goes on. */
     deskWood: 'oak-7760-smoked',
     deskBase: 'rgb(76 68 62)',
-    paperGrain: '0.15',
+    paperGrain: '0.6',
+    paperBlend: 'screen',
+    paperInvert: '1',
     follows: 'dark',
     name: 'Forest',
     transitionScaleFactor: 1.4,
@@ -132,6 +148,8 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-desk: ${settings.desk};
       --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}
       --theme-paper-grain: ${settings.paperGrain};
+      --theme-paper-blend: ${settings.paperBlend};
+      --theme-paper-invert: ${settings.paperInvert};
       --theme-mode: ${settings.follows};
       --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
 `;
@@ -287,7 +305,7 @@ aside {
 @use "@/scss/_colors.scss" as colors;
 
 :root {
-  --theme-canvas: oklch(0.97 0.011 85);
+  --theme-canvas: oklch(0.99 0.006 85);
   --theme-ink: oklch(0.24 0.025 260);
   --theme-accent: oklch(0.7 0.13 65);
   --theme-blueprint: oklch(0.52 0.14 255);
@@ -295,6 +313,9 @@ aside {
   --theme-desk-grain: 0.85;
   --theme-desk-tile: url("/desk/oak-7760-limed.webp");
   --theme-paper-grain: 0.5;
+  --theme-paper-grain: 0.7;
+  --theme-paper-blend: multiply;
+  --theme-paper-invert: 0;
   --theme-mode: light;
   --theme-kind: light;
 
