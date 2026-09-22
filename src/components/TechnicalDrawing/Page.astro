@@ -711,6 +711,24 @@ section {
     border-collapse: collapse;
     border-spacing: 0;
 
+    /* The block is pasted onto the sheet, the way a real one is: the paper under it
+       is its own, so artwork that reaches this corner is covered by it rather than
+       read through its lettering. The fill is the sheet's own paper, which makes the
+       change invisible on every sheet whose artwork stops short of the corner.
+
+       A blueprint sheet rules its paper, so the block carries that ruling on: the
+       same image (inherit takes the sheet's own, already resolved, so the WIP tint
+       comes with it) shifted back by exactly how far the block sits from the sheet's
+       top-left, which is what puts its lines on the sheet's. Both boxes are measured
+       in Stack.astro; the offset is the sheet's padding box less the margin the block
+       is inset by and the block's own size. */
+    background-color: var(--surface-sunken);
+    background-image: inherit;
+    background-size: inherit;
+    background-position:
+      calc(-1 * (var(--sheet-inline) - 2px - var(--sheet-margin) - var(--title-block-inline)))
+      calc(-1 * (var(--sheet-block) - 2px - var(--sheet-margin) - var(--title-block-block)));
+
     td {
       border: $border;
       padding: 0.25em;
@@ -915,12 +933,10 @@ section {
     --note-fold-reach: calc(var(--note-fold-size) - var(--sheet-margin));
 
     /* The artwork keeps the sheet centre, so the corner block gives ground —
-       same size portrait uses — and wears the sheet like a real title block,
-       so a diagram running underneath is clipped by it instead of mixing
-       with its text. */
+       the same size portrait uses. Its paper is the sheet's at every width now,
+       so only the type shrinks here. */
     & > table {
       font-size: 0.7em;
-      background: var(--surface-sunken);
 
       td {
         padding: 0.2em;
@@ -984,6 +1000,13 @@ section {
       grid-row: 3;
       width: 100%;
       font-size: 0.7em;
+
+      /* The last row of the grid, running the full width of it, so the block starts at
+         the sheet's own left edge and ends at its bottom one: no margin to subtract on
+         either axis, and nothing to subtract at all across. */
+      background-position:
+        0
+        calc(-1 * (var(--sheet-block) - 2px - var(--title-block-block)));
 
       td {
         padding: 0.2em;
