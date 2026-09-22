@@ -1006,7 +1006,7 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
   });
 }
 
-test('the paper grain tile is fetched once and stays under 40 KB', async ({ page }) => {
+test('the paper grain tile is fetched once and stays under 24 KB', async ({ page }) => {
   const paperRequests: string[] = [];
   let paperBytes = -1;
   page.on('requestfinished', async (request) => {
@@ -1029,7 +1029,11 @@ test('the paper grain tile is fetched once and stays under 40 KB', async ({ page
 
   expect(paperRequests, `requested from:\n${paperRequests.join('\n')}`).toHaveLength(1);
   expect(paperBytes).toBeGreaterThan(0);
-  expect(paperBytes).toBeLessThan(40 * 1024);
+  // 21,604 bytes today, cut losslessly by scripts/cut-paper-tile.mjs. Lossless is the point:
+  // a lossy encode of paper fibre lays a visible transform grid over every sheet. The budget
+  // is the room a 192px tile needs to stay lossless, and is deliberately too tight for a
+  // bigger one to be squeezed back under it by being encoded lossily.
+  expect(paperBytes).toBeLessThan(24 * 1024);
 });
 
 test("the light sheet's paper is lighter than before the grain was added", async ({ page }) => {
@@ -1046,6 +1050,33 @@ test("the light sheet's paper is lighter than before the grain was added", async
   // round 3 took the grain off those sheets, so that second lift went with it.
   expect(lightness).toBeGreaterThanOrEqual(0.97);
 });
+
+for (const theme of ['light', 'arctic'] as const) {
+  test(`a ${theme} drawing sheet is paper, not a sunken panel`, async ({ page }) => {
+    await withTheme(page, theme);
+    await page.goto('/');
+
+    const sheet = page.locator('article.technical-drawing-stack .paper-front > section').first();
+    await sheet.scrollIntoViewIfNeeded();
+
+    const lightness = await sheet.evaluate((el) => {
+      // backgroundColor comes back as oklch() here, so a canvas fill does the conversion.
+      const cx = document.createElement('canvas').getContext('2d')!;
+      cx.fillStyle = getComputedStyle(el).backgroundColor;
+      cx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = cx.getImageData(0, 0, 1, 1).data;
+      const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      const y = 0.2126 * lin(r / 255) + 0.7152 * lin(g / 255) + 0.0722 * lin(b / 255);
+      return y > 216 / 24389 ? 116 * Math.cbrt(y) - 16 : (y * 24389) / 27;
+    });
+
+    // --surface-sunken, which this was, steps from the canvas toward the ink, so on a light
+    // theme it put the sheet at L* 81, a clear grey, however far round 1 lifted the canvas.
+    // One step instead of two puts it at 89, under the cutting mat's 97 and well clear of it.
+    expect(lightness).toBeGreaterThan(86);
+    expect(lightness).toBeLessThan(93);
+  });
+}
 
 test('the grain paints on the paper sheets and on nothing else', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 2400 });
