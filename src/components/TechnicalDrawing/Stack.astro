@@ -424,14 +424,22 @@ function initStack(stack: HTMLElement) {
     stack.parentElement?.style.setProperty(rest, stackStyle.getPropertyValue(rest));
   }
 
-  // The sheet's size and orientation, restated as plain pixels and a data attribute for the
-  // artwork to scale its type by. The container queries and units say the same thing, but a
-  // font-size that comes out of them — by unit, by rule, or by an inherited variable — inside
-  // the deep grids of some layers makes every em in them depend on this container, and
-  // Chrome's layout of that runs seconds per pass: a resize, or docking DevTools, froze the
-  // page for twenty. The orientation is read back from the aspect the width query picked.
+  // The sheet's size, orientation and width band, restated as plain pixels and two data
+  // attributes for the artwork to scale its type by. The container queries and units say the
+  // same thing, but a font-size that comes out of them, by unit, by rule, or by an inherited
+  // variable, inside the deep grids of some layers makes every em in them depend on this
+  // container, and Chrome's layout of that runs seconds per pass: a resize, or docking
+  // DevTools, froze the page for twenty. The orientation is read back from the aspect the
+  // width query picked.
   measure.observe(stack);
 }
+
+// The width the artwork layers switch their type at, the same 56em their remaining
+// `@container technical-drawing-width` rules use, restated here because the em is the
+// container's: the frame declares the container and inherits the root's font size, and the
+// stack spans the frame (which is also what the fan's `100cqw` margin below leans on). The two
+// have to flip at the same width or a layer would take its wide padding with its narrow type.
+const SHEET_WIDE_EM = 56;
 
 // One observer for every stack, so a resize is answered with all the reads before any of the
 // writes: a write to one stack followed by a read from the next would make the browser redo
@@ -439,13 +447,22 @@ function initStack(stack: HTMLElement) {
 const measure = new ResizeObserver((entries) => {
   const read = entries.map((entry) => {
     const [{ inlineSize, blockSize }] = entry.contentBoxSize;
-    const [w, h] = getComputedStyle(entry.target).aspectRatio.split('/').map(Number);
-    return { stack: entry.target as HTMLElement, inlineSize, blockSize, portrait: h > w };
+    const style = getComputedStyle(entry.target);
+    const [w, h] = style.aspectRatio.split('/').map(Number);
+    const em = parseFloat(style.fontSize) || 16;
+    return {
+      stack: entry.target as HTMLElement,
+      inlineSize,
+      blockSize,
+      portrait: h > w,
+      wide: inlineSize >= SHEET_WIDE_EM * em,
+    };
   });
-  for (const { stack, inlineSize, blockSize, portrait } of read) {
+  for (const { stack, inlineSize, blockSize, portrait, wide } of read) {
     stack.style.setProperty('--sheet-inline', `${inlineSize}px`);
     stack.style.setProperty('--sheet-block', `${blockSize}px`);
     stack.dataset.sheetOrientation = portrait ? 'portrait' : 'landscape';
+    stack.dataset.sheetWidth = wide ? 'wide' : 'narrow';
     // The frame is taller than the sheet by the fan's reserve, so a hint that belongs on the
     // sheet's own bottom edge cannot be placed from the frame's box alone.
     (stack.parentElement as HTMLElement | null)?.style.setProperty('--stack-block', `${blockSize}px`);

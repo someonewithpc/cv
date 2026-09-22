@@ -176,7 +176,8 @@ const squirclePath = [
   width: 100%;
   font-size: 1.25em;
 
-  @container technical-drawing-width (min-width: 56em) {
+  // Keyed on the stack's attribute, not the width query: see Stack.astro's script.
+  :global([data-sheet-width='wide']) & {
     font-size: 1.75em;
   }
   color: var(--fg-700, #f4f0ea);
