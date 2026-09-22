@@ -209,12 +209,15 @@ const rows = {
     font-size: 0.75em;
     pointer-events: none;
 
-    @container technical-drawing-width (max-width: 56em) {
+    /* Both keyed on the stack's attributes rather than the queries, like the figure
+       above: a font size that comes out of a container query re-lays the grid under it
+       on every resize step that crosses the breakpoint. See Stack.astro's script. */
+    :global([data-sheet-width='narrow']) & {
       /* Two rows and their callouts on a short landscape sheet: the grid pays. */
       font-size: 0.625em;
     }
 
-    @container technical-drawing (orientation: portrait) {
+    :global([data-sheet-orientation='portrait']) & {
       font-size: 0.75em;
     }
   }

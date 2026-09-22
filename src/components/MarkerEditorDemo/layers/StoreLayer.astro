@@ -103,8 +103,10 @@ $op-slot: 0.85em;
 
   /* A wide sheet has room this coefficient left empty: the timeline stopped under half
      the artwork area while the pages either side of it filled theirs. Below the
-     breakpoint the title block sits far enough left that a bigger card runs under it. */
-  @container technical-drawing-width (min-width: 56em) {
+     breakpoint the title block sits far enough left that a bigger card runs under it.
+     Keyed on the stack's attribute, not the width query, for the same reason the
+     orientation is: see Stack.astro's script. */
+  :global([data-sheet-width='wide']) & {
     font-size: clamp(0.8rem, 0.034 * min(var(--sheet-inline), var(--sheet-block)), 1.5rem);
   }
 

@@ -93,16 +93,18 @@ bootIslands('[data-editor-layer-island]', boot);
      sheet than the text leaves. So portrait keeps the text and drops the editor; the
      wide sheets are where it is worth looking at anyway. Keyed on the stack's
      attribute rather than a container query: see Stack.astro's script. */
+  /* A wide sheet has the room, and the coefficient tuned for a phone leaves the
+     type at the size its neighbours only use when they run out of paper. Keyed on the
+     stack's attribute too, and written above portrait so that one still has the last
+     word: a portrait sheet is narrow by definition, so the two never both apply. */
+  :global([data-sheet-width='wide']) & {
+    font-size: clamp(0.85rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.25rem);
+  }
+
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5em;
     font-size: clamp(0.8rem, 0.04 * min(var(--sheet-inline), var(--sheet-block)), 1.15rem);
-  }
-
-  /* A wide sheet has the room, and the coefficient tuned for a phone leaves the
-     type at the size its neighbours only use when they run out of paper. */
-  @container technical-drawing-width (min-width: 56em) {
-    font-size: clamp(0.85rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.25rem);
   }
 }
 
