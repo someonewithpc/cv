@@ -85,8 +85,11 @@ const title = computed(() => {
  */
 const held = ref(visible.value);
 
+/** The last id this card sent up, so the prop coming back is not read as a fresh pick. */
+let echoed: string | undefined;
+
 watch(() => props.variantId, (id) => {
-  if (!id) return;
+  if (!id || id === echoed) return;
   localId.value = id;
   const variant = variants.value.find((v) => v.id === id);
   if (variant) held.value = variant;
@@ -102,6 +105,7 @@ function clearFlag(row: 'pax' | 'size') {
 function show(variant: CatalogVariant | undefined) {
   if (!variant) return;
   localId.value = variant.id;
+  echoed = variant.id;
   emit('update:variantId', variant.id);
 }
 
