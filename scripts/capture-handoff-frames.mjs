@@ -6,10 +6,15 @@
  * The frames come from the demo itself. Playwright drives the app's own pointer drag
  * (DragDropSceneApp.vue onItemPointerdown, updateDragVisual, endItemDrag) against a
  * built preview of this checkout, and the app is screenshotted at 3x after each moment,
- * cropped to the sidebar and the canvas beside it. The app draws its cursor only while its walkthrough runs, so the same cursor
- * markup is put at the pointer for the shot, from the app's own styles; nothing else is
- * drawn over the frames. Chrome runs with reduced motion so the walkthrough never starts
- * and the floor is empty when the drag begins.
+ * cropped to the sidebar and the canvas beside it. The app draws its cursor only while its
+ * walkthrough runs, so the same cursor markup is put at the pointer for the shot, from the
+ * app's own styles; nothing else is drawn over the frames. Chrome runs with reduced motion
+ * so the walkthrough never starts and the floor is empty when the drag begins.
+ *
+ * What a frame shows and what the live demo shows are not the same thing, and the
+ * difference is this script's to make: it hides the catalog's other cards, narrows the
+ * sidebar, tightens the chair in its tile (THUMB_FILL) and zooms the shot itself
+ * (CHAIR_ZOOM). None of that reaches the page a visitor gets.
  *
  * Usage: npm run build && ASTRO_PREVIEW_BACKGROUND=1 npm run preview -- --port 4369
  *        node scripts/capture-handoff-frames.mjs [http://localhost:4369] [out-dir]
@@ -48,6 +53,24 @@ const CROP = { left: 0.535, top: 0, bottom: 1 };
  * lines, as the product's own sidebar title does when its panel is this narrow.
  */
 const SIDEBAR_WIDTH_PX = 144;
+/**
+ * The catalog card is Space Builder's, drawn here in a sidebar a third of the width it was
+ * made for, and the 600px render leaves a wide transparent margin around the model, so at
+ * this size the chair came out under half the tile's height: too small to read in a frame
+ * that is itself a fraction of a sheet. These three numbers tighten it for the capture
+ * alone. The live demo keeps the catalog the product gives it, where the card is one of
+ * many at a size a visitor can pick from, not a still to be read across a room.
+ *
+ * `THUMB_MODEL` is the chair's own extent in that render, measured off its alpha channel:
+ * 333 of 600 pixels tall, its middle 320 of 600 down, the drop shadow included. Since
+ * `object-fit: contain` in a square box draws the render square, the chair's height is
+ * that fraction of the box, so a box of THUMB_FILL / THUMB_MODEL.height tiles puts the
+ * chair at THUMB_FILL of the tile, and lifting the box by (0.5 - centre) of its own height
+ * centres the chair in it. The box grows; the tile, the card and the grid do not, and the
+ * tile's own clip means nothing can reach a neighbour or a caption however big it gets.
+ */
+const THUMB_MODEL = { height: 333 / 600, centre: 320 / 600 };
+const THUMB_FILL = 0.9;
 /**
  * The camera comes in on the drop before the drag starts, so the chair that lands on the
  * floor is about twice as tall in the frame. `applyWheelZoom` turns a wheel notch into a
@@ -144,6 +167,25 @@ await app.evaluate((el, width) => {
   el.style.gridTemplateColumns = `minmax(0, 1fr) ${width}px`;
   el.querySelector('.catalog-grid')?.style.setProperty('grid-template-columns', 'minmax(0, 1fr)');
 }, SIDEBAR_WIDTH_PX);
+
+// The tighter thumbnail, injected into the page about to be shot rather than shipped in the
+// app's own styles. The picture riding the pointer gets the same treatment, so frame 2 shows
+// one chair at one size in the card and in what was lifted from it.
+await page.addStyleTag({
+  content: `
+    .drag-drop-scene-app[data-ready] .object-icons img,
+    .drag-drop-scene-app[data-ready] .demo-drag-thumb img {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      padding: 0;
+      width: ${(100 * THUMB_FILL / THUMB_MODEL.height).toFixed(2)}%;
+      height: ${(100 * THUMB_FILL / THUMB_MODEL.height).toFixed(2)}%;
+      translate: -50% calc(-50% - ${(100 * (THUMB_MODEL.centre - 0.5)).toFixed(2)}%);
+    }
+  `,
+});
+
 const canvas = app.locator('canvas[data-scene-canvas]');
 const sidebar = app.locator('.sidebar');
 const boxOf = async (locator) => {
