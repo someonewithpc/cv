@@ -57,6 +57,26 @@ const SIDEBAR_WIDTH_PX = 144;
  * product opens with, since it has a whole floor to show and not one drop.
  */
 const ZOOM_WHEEL_DELTA = Math.log(1 / 3) / 0.0012;
+/**
+ * A second pass on the placed chair, on top of the dolly above: re-aiming the orbit target
+ * at the drop before dollying was tried first and does nothing, provably. Panning translates
+ * camera and target together, so the ground point under any fixed screen pixel — the drop
+ * included — moves by exactly the pan itself; the gap between that point and the target is
+ * invariant under a translation, at a fixed radius. The gap only closes enough to matter past
+ * where the chair's mat clears the grass patch onto the water beyond it, which is the frame
+ * lying about the floor. Cropping the capture tighter is the same lever as this one — cropping
+ * a rectilinear render and digitally zooming it are the same transform — but there is no slack
+ * to spend it from: the sidebar already fills the frame's full height, so shrinking the crop's
+ * height cuts the sidebar, and holding the frame's aspect ratio (required so the sheet's frame
+ * boxes keep their round 6 sizes, which depend on it) ties the width to whatever the height is.
+ * So this digital zoom, done after the shot instead of before it: extract a rectangle around
+ * the drop from the canvas portion alone and scale it back up to that portion's own size,
+ * leaving the sidebar untouched beside it. It is exactly what a narrower field of view on the
+ * capture's camera would render, without a scene API this script has no way to reach — the
+ * capture has no handle on the running scene, only the page's DOM and input, and there is no
+ * user gesture that changes field of view for it to drive.
+ */
+const CHAIR_ZOOM = 1.5;
 const WEBP_QUALITY = 0.9;
 
 /** The hot spot of the cursor below, the path's tip, as a point of its 32-unit viewBox. */
@@ -152,6 +172,25 @@ const clip = {
   height: appBox.height * (CROP.bottom - CROP.top),
 };
 
+/**
+ * The digital zoom's extraction rectangle, in the frame's own raw pixels: a CHAIR_ZOOM-th of
+ * the canvas portion's width and height, wide enough for the drop and the model's stop at the
+ * canvas edge (frame 3) both to land inside it with room either side. Flush against the
+ * frame's bottom edge, which is as far as it can sit without losing the chair's own feet or
+ * the cursor drawn just past them, and it leaves everything above (most of the frame) as
+ * margin for the chair's back and the grass around it.
+ */
+const canvasPortionRaw = Math.round((sidebarBox.x - clip.x) * SCALE);
+const frameRaw = { width: Math.round(clip.width * SCALE), height: Math.round(clip.height * SCALE) };
+const zoomExtract = { width: Math.round(canvasPortionRaw / CHAIR_ZOOM), height: Math.round(frameRaw.height / CHAIR_ZOOM) };
+const dropRawX = Math.round((drop.x - clip.x) * SCALE);
+const edgeRawX = Math.round((canvasEdge.x - clip.x) * SCALE);
+zoomExtract.left = Math.min(
+  Math.max(Math.round((dropRawX + edgeRawX) / 2 - zoomExtract.width / 2), 0),
+  canvasPortionRaw - zoomExtract.width,
+);
+zoomExtract.top = frameRaw.height - zoomExtract.height;
+
 async function moveTo(to, from, steps = 12) {
   for (let step = 1; step <= steps; step += 1) {
     await page.mouse.move(from.x + ((to.x - from.x) * step) / steps, from.y + ((to.y - from.y) * step) / steps);
@@ -196,16 +235,44 @@ async function showCursor(at, pressed) {
 async function capture(index) {
   await page.waitForTimeout(800);
   const png = await page.screenshot({ clip, animations: 'disabled' });
-  const dataUrl = await page.evaluate(async ({ png, quality }) => {
-    const image = new Image();
-    image.src = `data:image/png;base64,${png}`;
-    await image.decode();
-    const canvas = document.createElement('canvas');
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    canvas.getContext('2d').drawImage(image, 0, 0);
-    return canvas.toDataURL('image/webp', quality);
-  }, { png: png.toString('base64'), quality: WEBP_QUALITY });
+  // The digital zoom: the canvas portion is redrawn from zoomExtract at the portion's own
+  // size (CHAIR_ZOOM larger), the sidebar portion is redrawn as shot. Both land on one canvas
+  // the source image's own size, so the frame's own pixel dimensions never change.
+  const dataUrl = await page.evaluate(
+    async ({ png, quality, canvasPortionRaw, zoomExtract }) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${png}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(
+        image,
+        zoomExtract.left,
+        zoomExtract.top,
+        zoomExtract.width,
+        zoomExtract.height,
+        0,
+        0,
+        canvasPortionRaw,
+        canvas.height,
+      );
+      ctx.drawImage(
+        image,
+        canvasPortionRaw,
+        0,
+        canvas.width - canvasPortionRaw,
+        canvas.height,
+        canvasPortionRaw,
+        0,
+        canvas.width - canvasPortionRaw,
+        canvas.height,
+      );
+      return canvas.toDataURL('image/webp', quality);
+    },
+    { png: png.toString('base64'), quality: WEBP_QUALITY, canvasPortionRaw, zoomExtract },
+  );
   const file = path.join(outDir, `handoff-${index}.webp`);
   await writeFile(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
   console.log(file);
