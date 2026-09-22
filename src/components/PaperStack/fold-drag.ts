@@ -6,6 +6,8 @@
 // --fold-pin-y, --fold-page-w, --fold-page-h, --page-index, --flip-progress) the stack's
 // styles (in index.astro) key off of.
 
+import { setStackTurning } from '@/client/frontPage';
+
 type Vec = { x: number, y: number };
 
 // What a release hands the glide that takes over: where the throw's speed would coast the fold's
@@ -658,6 +660,9 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     : sheet.parentElement!.childElementCount > 1
       && pointFolded(commitPoint(w, h), w, h, tip);
   fold.classList.toggle('paper-fold--will-commit', willCommit);
+  // Same threshold, the other thing it decides: past it the turn is going to happen, so the
+  // demo on the paper stops playing (see commitTurn).
+  if (willCommit) commitTurn(sheet.parentElement!);
 
   if (back) track(back.trail, { along, time: at.timeStamp });
 
@@ -907,10 +912,28 @@ const syncPileSurface = (stack: HTMLElement): void => {
 // never drawn across a sheet still gliding over.
 const settle = (stack: HTMLElement): void => {
   stack.dataset.paperSettled = '';
+  // The turn is over, whichever way it went: the page that ended up at the front comes alive
+  // here, and a gesture that came back short of committing gets its demo back.
+  setStackTurning(stack, false);
 };
 
 const unsettle = (stack: HTMLElement): void => {
   delete stack.dataset.paperSettled;
+};
+
+// The demos under the paper hold still for the rest of a turn (watchPageActive in
+// client/frontPage.ts), from here. Not from the grab: a drag that comes back and settles would
+// then have stopped and restarted the Space Builder's WebGL context for nothing. From the
+// commit point the turn is going to happen, so what is paused is a page on its way out —
+// either it has passed the flap's own threshold (`paper-fold--will-commit`, in onFoldDrag), or
+// it is a key, wheel or swipe turn, which decides everything the moment it starts.
+//
+// Reaching it is one-way for the rest of the gesture. Dragging back below the threshold after
+// passing it would otherwise start the demo up again mid-drag, for the second or two until the
+// hand makes up its mind — the churn this whole arrangement exists to avoid. A release that
+// settles back resumes it at the settle instead.
+const commitTurn = (stack: HTMLElement): void => {
+  setStackTurning(stack, true);
 };
 
 // The one thing on a stack that never stops: index.astro's fold-reveal-pulse, breathing the
@@ -1210,6 +1233,9 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   approach.s = s;
   approach.t = t;
   track(back.trail, { along, time: at.timeStamp });
+  // The release's own test, which reads the same pull the approach is driven by, so a hand that
+  // has already thrown it far enough is holding a turn that is going to happen (see commitTurn).
+  if (along >= backReach(sheet)) commitTurn(sheet.parentElement!);
   renderLanding(section, fold, w, h, approach.seed, backCut, t, drift);
   if (s < 1) return;
 
@@ -1256,6 +1282,9 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   sheet.parentElement!.dataset.paperFlipped = '';
   // A key press flips without a drag, so the page is only now known to be on the move
   unsettle(sheet.parentElement!);
+  // Nothing can call this off now, whether a hand let go past the threshold or a key asked for
+  // the turn outright, so the demo on the paper stops here if it hasn't already.
+  commitTurn(sheet.parentElement!);
 
   const from = foldTipFromSize(fx, fy);
   const d1 = Math.hypot(to.x - from.x, to.y - from.y) / 2;
@@ -1329,6 +1358,8 @@ const bringFold = (
 ): (() => void) => {
   const { w, h } = metricsOf(sheet);
   unsettle(sheet.parentElement!);
+  // Its caller only ever commits, so the same as flipFold: the demos hold still from here.
+  commitTurn(sheet.parentElement!);
   const { seed } = approach;
   const over = { x: w + seed.x, y: h + seed.y };
   const rest = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
