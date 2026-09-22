@@ -16,6 +16,8 @@
           packages = with pkgs; [
             git
             nodejs_22
+            # vnu, the W3C Nu HTML checker `npm run test:audit:w3c` calls.
+            validator-nu
           ];
 
           shellHook = ''
@@ -24,6 +26,10 @@
             fi
 
             export PATH="$PWD/node_modules/.bin:$PATH"
+
+            # workerd (astro dev SSR) looks for CA roots at /etc/ssl/cert.pem, which NixOS
+            # does not provide, so every outbound https fetch fails without this
+            export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
           '';
         };
       }

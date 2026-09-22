@@ -1,0 +1,91 @@
+---
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import Panel from './Panel.astro';
+import GroupsLayer from './layers/GroupsLayer.astro';
+import MissingLayer from './layers/MissingLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+// The card's own source: its markup and styles, and the script that adds the picks.
+const here = path.join(process.cwd(), 'src/components/VariantsDemo');
+const cardSources = await Promise.all(
+  ['Card.astro', 'card.scss', 'panel.ts']
+    .map((file) => readFile(path.join(here, file), 'utf8')),
+);
+
+const cardSize = toKiB(cardSources.join(''));
+
+const layers = {
+  main: { name: null },
+  groups: { name: 'Variant Groups', pageStyle: 'blueprint' },
+  missing: { name: 'Missing Variants', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<div class="variants-demo">
+<TechnicalDrawingStack
+  subtitle="Space Builder · Object Variants"
+  scale="1:1"
+  size={cardSize}
+  date="2024"
+  tech={['vuejs', 'sass']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      main: <Panel />,
+      groups: <GroupsLayer />,
+      missing: <MissingLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      main: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over the auto-playing demo<br />
+          Step the chair through its finishes, or open the banquet set's seats and size
+        </PostIt>
+      ),
+      groups: (
+        <PostIt background="#cde" color="black">
+          One card, many library objects. The carousel walks the styles of one cell; the
+          dropdowns move between cells, and hovering an option shows it before a click picks it
+        </PostIt>
+      ),
+      missing: (
+        <PostIt background="#edf" color="black">
+          Not every seat count comes in every size. The missing pairs stay on the list, go
+          grey, and fall back to the nearest object that exists
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
+</div>
+
+<style lang="scss">
+// Match the Space Builder stack: reserve a gutter next to the interactive page's content
+// and centre the note in what is left.
+:global(.variants-demo article.technical-drawing-stack > * > section .aside) {
+  display: flex;
+  justify-content: center;
+  padding-left: 1.75em;
+  margin-inline: 0;
+}
+
+@container technical-drawing (orientation: portrait) {
+  :global(.variants-demo article.technical-drawing-stack > * > section .aside) {
+    padding-left: 0;
+  }
+}
+</style>

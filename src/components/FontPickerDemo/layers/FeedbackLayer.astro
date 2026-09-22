@@ -1,0 +1,401 @@
+---
+const states = ['idle', 'pending', 'success', 'error'] as const;
+
+// The border's own easing, drawn from the numbers the stylesheet animates with
+// (_statusBorder.scss). Sampling the curve keeps the plot honest: it is the function itself,
+// not a picture of one
+const CONTROL = [0.75, 0.25, 0.2, 0.2] as const;
+const SWAP_AT = 0.75;
+
+function bezier(u: number, p1: number, p2: number) {
+  const v = 1 - u;
+  return 3 * v * v * u * p1 + 3 * v * u * u * p2 + u * u * u;
+}
+
+const samples = Array.from({ length: 65 }, (_, i) => {
+  const u = i / 64;
+  return { x: bezier(u, CONTROL[0], CONTROL[2]), y: bezier(u, CONTROL[1], CONTROL[3]) };
+});
+
+const plot = (x: number, y: number) => `${(x * 100).toFixed(2)} ${(100 - y * 100).toFixed(2)}`;
+const curve = `M ${samples.map(({ x, y }) => plot(x, y)).join(' L ')}`;
+const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(best.x - SWAP_AT) ? s : best));
+
+---
+
+<div class="wrapper">
+  <div class="indicator" data-feedback-island>
+    <div class="live">
+      <div class="sample">
+        <fieldset class="idle" data-border-demo>
+          <legend class="sr-only">The font family field, as the request goes</legend>
+          <label for="border-demo-input">Font Family</label>
+          <input id="border-demo-input" class="w-100" type="text" value="Lobster" readonly />
+          <p>Enter a name of a font that can be found on <span class="link">Google&nbsp;Fonts</span></p>
+        </fieldset>
+      </div>
+
+      <div class="controls" role="group" aria-label="Simulate a request state">
+        {states.map((state) => (
+          <button
+            type="button"
+            data-border-state={state}
+            class:list={[{ active: state === 'idle' }]}
+            aria-pressed={state === 'idle' ? 'true' : 'false'}
+          >{state}</button>
+        ))}
+      </div>
+
+      <p class="caption">
+        The field's own border reports the fetch. A quarter turn orbits while the request is
+        out, then the ring closes from wherever the orbit had got to, green for a font that
+        exists and red for one that does not
+      </p>
+    </div>
+
+    <figure class="plate timing">
+      <svg viewBox="-20 -12 136 130" role="presentation">
+        <g class="axes">
+          <path d="M0 0 V100 H100" />
+          <text x="-4" y="4" class="tick">1 turn</text>
+          <text x="-4" y="100" class="tick">0</text>
+          <text x="100" y="112" class="tick end">1s</text>
+        </g>
+        <path class="curve" d={curve} />
+        <path class="linear" d={`M ${plot(swap.x, swap.y)} L ${plot(1, 1)}`} />
+        <path class="swap" d={`M ${plot(SWAP_AT, 0)} L ${plot(SWAP_AT, 1.06)}`} />
+        <circle class="knot" cx={swap.x * 100} cy={100 - swap.y * 100} r="2.5" />
+        <text class="swap-label" x={SWAP_AT * 100 + 4} y="-2">750ms: go linear</text>
+      </svg>
+      <figcaption>
+        <code>cubic-bezier(0.75, 0.25, 0.2, 0.2)</code> gives the orbit a push and lets it
+        settle. Kept for every turn it stutters at each restart, so at 750ms the script swaps
+        the timing function for <code>linear</code> at the point the curve has already
+        reached. The seam goes, the first turn keeps its kick
+      </figcaption>
+    </figure>
+
+    <div class="study" aria-hidden="true">
+      <figure class="plate exploded">
+        <svg viewBox="0 0 400 118" role="presentation">
+          <g class="layer">
+            <rect x="14" y="4" width="120" height="26" rx="8" />
+            <rect x="14" y="4" width="120" height="26" rx="8" class="arc" />
+            <text x="146" y="21">conic-gradient, on the border box</text>
+          </g>
+          <g class="layer">
+            <rect x="14" y="44" width="120" height="26" rx="8" class="fill" />
+            <text x="146" y="61">the field's own colour, on the padding box</text>
+          </g>
+          <g class="layer">
+            <rect x="14" y="84" width="120" height="26" rx="8" class="dashed" />
+            <text x="146" y="101">2px of transparent border, which lets it through</text>
+          </g>
+          <path class="centre" d="M74 0 V118" />
+        </svg>
+        <figcaption>
+          One element, two backgrounds. The gradient is painted on the border box and the
+          field's own colour covers the padding box over it, so the only part left showing is
+          the border. Three custom properties move it: where the arc starts, how much of the
+          turn is coloured, and the colour. <code>@property</code> types them as angles and a
+          colour, which is what makes them animatable at all
+        </figcaption>
+      </figure>
+
+
+    </div>
+  </div>
+</div>
+
+<script>
+  import { bootIslands } from '@/client/pageIsland';
+  import { boot } from './FeedbackLayer.boot';
+  bootIslands('[data-feedback-island]', boot);
+</script>
+
+<style lang="scss">
+@use '../picker/fontSettingsFieldset' as *;
+@use "./sheet" as *;
+@use "./sheetProse" as *;
+
+.wrapper {
+  // A portrait sheet has the height for the sample, the buttons and the curve at this, not
+  // at the picker's scale
+  @include sheet-content(0.03, $prose-landscape);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+}
+
+.indicator {
+  display: grid;
+  // The live field, the timing curve and the exploded view side by side. The title block owns
+  // the sheet's bottom right corner, so the last column is the shortest of the three
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 1.25fr);
+  gap: 1.5em;
+  align-items: start;
+  width: 100%;
+  color: var(--ink);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75em;
+
+    // A phone sheet keeps the running indicator and the curve; the exploded stack is the
+    // one thing here that a reader can do without
+    .exploded {
+      display: none;
+    }
+  }
+}
+
+.live {
+  display: grid;
+  justify-items: center;
+  gap: 0.875em;
+  min-width: 0;
+}
+
+// The product's sidebar, quoted at 1:1 on the blueprint the way the extraction sheet quotes its
+// controls, in the colours the picker's own sidebar wears (EditStyle.scss), so it follows the
+// page's scheme as that does. The fieldset alone read as a grey card floating on the grid,
+// because that grey is the sidebar it sits in: against it only the ring shows, which is the
+// point of the sheet
+.sample {
+  --sidebar-background: light-dark(#e9e9e9, #2b2b2b);
+  --sidebar-ink: light-dark(black, #e6e6e6);
+
+  box-sizing: border-box;
+  width: min(18em, 100%);
+  padding: 0.75em 0.875em 0.875em;
+  border: 1px solid light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 14%));
+  border-radius: 0.5em;
+  background: var(--sidebar-background);
+  color: var(--sidebar-ink);
+  box-shadow: 0 0.25em 0.75em color-mix(in oklab, #000 30%, transparent);
+  font-size: 1.125em;
+
+  fieldset {
+    @include font-settings-fieldset(var(--sidebar-background));
+    display: grid;
+    gap: 0.375em;
+    margin: 0;
+    color: inherit;
+
+    label {
+      color: inherit;
+      font-size: 0.875em;
+    }
+
+    input {
+      background: light-dark(white, #1e1e1e);
+      border-color: light-dark(#ddd, #444);
+      color: inherit;
+      font: inherit;
+      font-size: 0.9375em;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    p {
+      margin: 0;
+      color: light-dark(#666, #a8a8a8);
+      font-size: 0.75em;
+      line-height: 1.3;
+    }
+
+    // The product links the name out to Google Fonts from here
+    .link {
+      color: light-dark(blue, #8ab4f8);
+    }
+  }
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375em;
+
+  button {
+    font: inherit;
+    font-size: 0.8125em;
+    padding: 0.25em 0.875em;
+    border-radius: 1em;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    &.active {
+      border-color: #c5e06a;
+      color: #c5e06a;
+    }
+  }
+}
+
+.caption {
+  @include sheet-prose;
+
+  margin: 0;
+  max-width: 34em;
+  font-size: 0.8125em;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.study {
+  display: grid;
+  gap: 1em;
+  align-self: center;
+  min-width: 0;
+  max-width: 26em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    gap: 0.75em;
+  }
+}
+
+.plate {
+  margin: 0;
+  display: grid;
+  gap: 0.5em;
+  min-width: 0;
+
+  figcaption,
+  .note {
+    @include sheet-prose;
+
+    margin: 0;
+    max-width: 36em;
+    font-size: 0.75em;
+    line-height: 1.35;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    color: var(--ink);
+  }
+}
+
+.exploded {
+  svg {
+    width: min(26em, 100%);
+    height: auto;
+    overflow: visible;
+  }
+
+  rect {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+
+    &.fill {
+      fill: color-mix(in oklab, var(--ink) 14%, transparent);
+    }
+
+    &.dashed {
+      stroke-dasharray: 5 4;
+    }
+
+    // A quarter of the ring's way round, in the colour a pending fetch wears
+    &.arc {
+      stroke: #c5e06a;
+      stroke-width: 3;
+      stroke-dasharray: 72 216;
+      stroke-dashoffset: -18;
+    }
+  }
+
+  text {
+    @include sheet-prose-svg;
+
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    font-size: 10px;
+    fill: var(--ink-muted);
+    text-anchor: start;
+  }
+
+  // The assembly line an exploded view is read along
+  .centre {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-dasharray: 8 3 2 3;
+  }
+}
+
+.timing {
+  justify-items: center;
+
+  svg {
+    width: min(14em, 100%);
+    height: auto;
+    overflow: visible;
+  }
+
+  .axes path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+  }
+
+  .tick {
+    @include sheet-prose-svg(2px);
+
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 7px;
+    fill: var(--ink-muted);
+    text-anchor: end;
+
+    &.end {
+      text-anchor: middle;
+    }
+  }
+
+  .curve {
+    fill: none;
+    stroke: #c5e06a;
+    stroke-width: 2;
+  }
+
+  .linear {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+  }
+
+  .swap {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-dasharray: 6 2 1 2;
+  }
+
+  .knot {
+    fill: var(--ink);
+  }
+
+  .swap-label {
+    @include sheet-prose-svg(2.5px);
+
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    font-size: 8px;
+    fill: var(--ink);
+    text-anchor: end;
+  }
+}
+
+</style>

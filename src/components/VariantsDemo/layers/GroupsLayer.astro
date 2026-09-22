@@ -1,0 +1,122 @@
+---
+/**
+ * The card itself, drawn still, with callouts on the parts that pick: the carousel for the
+ * styles of one cell, the seat and size rows for the cell. Same markup and styles as the
+ * front page's cards. The callouts are authored twice, once per sheet orientation, because
+ * the cards sit side by side on a landscape sheet and stack on a portrait one. Each names
+ * a target so the script lands its tip on that part at any width; the authored tip is
+ * where the target sits at the sheet's design size.
+ *
+ * The carousel's arrows and pips are ::scroll-button and ::scroll-marker pseudo-elements,
+ * which no selector reaches, so those callouts anchor to a fraction of the styles list:
+ * an arrow is 1.75rem square, 0.25rem in from the list's edge, on a list 10rem wide less
+ * the card's borders; the pip track element is the first pip's cell.
+ */
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+import Card from '../Card.astro';
+import { BANQUET_CARD, CHAIR_CARD } from '../variantsCatalog';
+
+const banquet = BANQUET_CARD.variants ?? [];
+const finishes = CHAIR_CARD.variants ?? [];
+const seats = new Set(banquet.map((variant) => variant.pax)).size;
+const sizes = new Set(banquet.map((variant) => variant.size)).size;
+const countLabel = `${banquet.length} objects, one card`;
+const countLabelShort = `${banquet.length} objects`;
+---
+
+<div class="wrapper">
+  <div class="sheet">
+    <div class="panel">
+      <header>
+        <span class="eyebrow">CatalogObjectField.vue · CatalogObjectThumbnailOverlay.vue · HoverSelect.vue</span>
+        <strong>One card stands for every library object in its group</strong>
+      </header>
+
+      <div class="figure">
+      <Annotations reach={1.5} fontSize={0.11}>
+        <div class="variants-catalog drawn" slot="content" aria-hidden="true" inert>
+          <Card item={CHAIR_CARD} active={true} />
+          <Card item={BANQUET_CARD} />
+        </div>
+
+        <Fragment slot="annotations">
+          {/* Landscape: the chair card on the left, the banquet card on the right, and at
+              the narrowest landscape sheet only 0.57 units of panel beside them. The
+              arrows callout leaves the previous arrow's top-left corner, since the count
+              badge sits over the next one; the seat and size rows are pointed to at their
+              left ends, where the icons are, with the labels under the chair card. */}
+          <ArrowAnnotation target='[data-catalog-item="chair"] ul.styles' anchor="0.025 0.365" tipX={-1.97} tipY={-0.54} angle={120} length={0.6} text="Arrows step the finishes" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="chair"] .pip-track' anchor="left" tipX={-1.57} tipY={0.09} angle={180} length={0.5} text="One pip per style" lines={['One pip', 'per style']} labelSide="left" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .group-object-count' anchor="top-right" tipX={1.93} tipY={-0.89} angle={45} length={0.3} text={countLabel} labelSide="left" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-pax' anchor="left" tipX={0.22} tipY={0.61} angle={-150} length={0.9} text="Seats pick a cell" only="landscape" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-size' anchor="left" tipX={0.22} tipY={0.83} angle={-120} length={0.55} text="Size, other axis" only="landscape" />
+
+          {/* Portrait: the cards stacked, a unit of panel on either side. */}
+          <ArrowAnnotation target='[data-catalog-item="chair"] ul.styles' anchor="0.975 0.5" tipX={0.93} tipY={-1.47} angle={15} length={0.35} text="Next finish" only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="chair"] .pip-track' anchor="left" tipX={-0.51} tipY={-0.99} angle={180} length={0.55} text="Pip per style" labelSide="left" only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .group-object-count' anchor="right" tipX={0.89} tipY={0.28} angle={15} length={0.35} text={countLabelShort} only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-pax' anchor="right" tipX={0.91} tipY={1.73} angle={-15} length={0.35} text="Seats: a cell" only="portrait" />
+          <ArrowAnnotation target='[data-catalog-item="table-round"] .object-size' anchor="right" tipX={0.91} tipY={1.96} angle={-40} length={0.5} text="Other axis" only="portrait" />
+        </Fragment>
+      </Annotations>
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Group</dt>
+          <dd>Every library object under one catalog entry: {finishes.length} chairs, {banquet.length} banquet sets</dd>
+        </div>
+        <div>
+          <dt>Cells</dt>
+          <dd><code>pax</code> and <code>size</code> cut the group, {seats} seat counts by {sizes} sizes here; a cell's objects are its styles</dd>
+        </div>
+        <div>
+          <dt>Preview</dt>
+          <dd>Hovering an option shows that object on the card; a click is the pick</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use './sheet' as *;
+
+@include sheet-chrome(46em);
+
+.panel {
+  justify-items: center;
+}
+
+// Room for the callouts above and below, between the header and the rules. The padding
+// sits outside the annotated box so the cards alone set the callouts' unit.
+.figure {
+  padding: 1.75rem 0 1.5rem;
+}
+
+// The cards keep the product's own rem sizes so the callouts, in units of the artwork,
+// land on the same parts at every sheet size.
+.drawn {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+
+  :global(.option-item) {
+    width: 10rem;
+    flex: 0 0 auto;
+    color-scheme: only dark;
+  }
+
+  :global(.option-item .object-icons) {
+    aspect-ratio: auto;
+    height: 6.5rem;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
+</style>

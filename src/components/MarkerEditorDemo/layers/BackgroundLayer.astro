@@ -32,8 +32,8 @@ const annotationFontSize = 0.1 * annotationScale;
             </figcaption>
             <div class="sample fail-both debug odd-width"></div>
             <p class="note">
-              H + V stripe layers stack into a grid — but each axis rounds stops alone, so columns
-              drift.
+              H + V stripe layers stack into a grid, but each axis rounds its stops alone, so the
+              columns drift.
             </p>
           </figure>
 
@@ -44,7 +44,7 @@ const annotationFontSize = 0.1 * annotationScale;
             </figcaption>
             <div class="sample shipped" style={`--cross-tile: ${crossTileUrl}`}></div>
             <p class="note">
-              One tiny SVG draws a centered <code>+</code> — two short strokes in a
+              One tiny SVG draws a centered <code>+</code> from two short strokes in a
               <code>viewBox="-1 -1 2 2"</code>. <code>background-repeat</code> tiles that cell so
               every cross stays coherent.
             </p>
@@ -55,13 +55,13 @@ const annotationFontSize = 0.1 * annotationScale;
           <figure class="mini">
             <figcaption>H stripes</figcaption>
             <div class="sample fail-h debug"></div>
-            <p class="mini-note"></p>
+            <p class="mini-note">Rows, no columns</p>
           </figure>
           <span class="op" aria-hidden="true">+</span>
           <figure class="mini">
             <figcaption>V stripes</figcaption>
             <div class="sample fail-v debug"></div>
-            <p class="mini-note"></p>
+            <p class="mini-note">Columns, no rows</p>
           </figure>
           <span class="op" aria-hidden="true">→</span>
           <figure class="mini intent">
@@ -85,21 +85,62 @@ const annotationFontSize = 0.1 * annotationScale;
     </div>
 
     <Fragment slot="annotations">
+      {/* Both labels sit in the panel's header row, right of the heading, the one
+          part of the panel with nothing in it; the sheet has no room around the
+          panel. The arrows come down from there into each sample's top-right. The
+          failed grid's lines end each 1/9 column and each 17.22% row, so 8/9 and
+          0.1722 is the junction one cell in from the top-right corner; the tile grid
+          is 17 crosses wide and centred, so 14.5/17 is the third cross from the right
+          and the row four tiles above the middle one. */}
       <ArrowAnnotation
-        tipX={-0.4}
-        tipY={-0.15}
-        angle={155}
-        length={0.38}
+        target=".fail-card .sample"
+        anchor="0.8889 0.1722"
+        tipX={-0.12}
+        tipY={-0.5}
+        angle={60}
+        length={0.35}
+        lengthOffset={{ x: -0.05 }}
         fontSize={annotationFontSize}
-        text="Subpixel jitter  "
+        text="Subpixel jitter"
+        only="landscape"
       />
       <ArrowAnnotation
-        tipX={0.42}
-        tipY={-0.15}
-        angle={-30}
-        length={0.38}
+        target=".win-card .sample"
+        anchor="0.8529 0.1354"
+        tipX={0.81}
+        tipY={-0.55}
+        angle={120}
+        length={0.28}
+        labelSide="left"
+        lengthOffset={{ x: -0.05 }}
         fontSize={annotationFontSize}
-        text="Stable crosses  "
+        text="Stable crosses"
+        only="landscape"
+      />
+      {/* Portrait: the header is two lines and the samples sit lower, so the
+          shafts are longer. */}
+      <ArrowAnnotation
+        target=".fail-card .sample"
+        anchor="0.8889 0.1722"
+        tipX={-0.12}
+        tipY={-0.24}
+        angle={60}
+        length={0.6}
+        fontSize={annotationFontSize}
+        text="Subpixel jitter"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target=".win-card .sample"
+        anchor="0.8529 0.1354"
+        tipX={0.8}
+        tipY={-0.33}
+        angle={120}
+        length={0.5}
+        labelSide="left"
+        fontSize={annotationFontSize}
+        text="Stable crosses"
+        only="portrait"
       />
     </Fragment>
   </Annotations>
@@ -222,9 +263,15 @@ header {
 }
 
 .sample {
+  // A gradient stop in % measures along its own axis, so the `to bottom` period has to
+  // carry the box ratio or the debug cells come out as wide as the sample is.
+  --sample-aspect: 1.55;
+  --cell-x: #{$cell-debug};
+  --cell-y: calc(#{$cell-debug} * var(--sample-aspect));
+
   box-sizing: border-box;
   width: 100%;
-  aspect-ratio: 1.55 / 1;
+  aspect-ratio: var(--sample-aspect) / 1;
   border-radius: 0.35em;
   border: 1px solid #666;
   overflow: hidden;
@@ -239,9 +286,9 @@ header {
     background-image: repeating-linear-gradient(
       to bottom,
       transparent 0,
-      transparent calc(#{$cell-debug} - 1px),
-      #{$stripe-h} calc(#{$cell-debug} - 1px),
-      #{$stripe-h} #{$cell-debug}
+      transparent calc(var(--cell-y) - 1px),
+      #{$stripe-h} calc(var(--cell-y) - 1px),
+      #{$stripe-h} var(--cell-y)
     );
   }
 
@@ -249,9 +296,9 @@ header {
     background-image: repeating-linear-gradient(
       to right,
       transparent 0,
-      transparent calc(#{$cell-debug} - 2.5px),
-      #{$stripe-v} calc(#{$cell-debug} - 2.5px),
-      #{$stripe-v} #{$cell-debug}
+      transparent calc(var(--cell-x) - 2.5px),
+      #{$stripe-v} calc(var(--cell-x) - 2.5px),
+      #{$stripe-v} var(--cell-x)
     );
   }
 
@@ -262,16 +309,16 @@ header {
       repeating-linear-gradient(
         to right,
         transparent 0,
-        transparent calc(#{$cell-debug} - 2.5px),
-        #{$stripe-v} calc(#{$cell-debug} - 2.5px),
-        #{$stripe-v} #{$cell-debug}
+        transparent calc(var(--cell-x) - 2.5px),
+        #{$stripe-v} calc(var(--cell-x) - 2.5px),
+        #{$stripe-v} var(--cell-x)
       ),
       repeating-linear-gradient(
         to bottom,
         transparent 0,
-        transparent calc(#{$cell-debug} - 1px),
-        #{$stripe-h} calc(#{$cell-debug} - 1px),
-        #{$stripe-h} #{$cell-debug}
+        transparent calc(var(--cell-y) - 1px),
+        #{$stripe-h} calc(var(--cell-y) - 1px),
+        #{$stripe-h} var(--cell-y)
       ),
       linear-gradient($preview-bg);
   }
@@ -302,7 +349,7 @@ header {
 
 .pipeline {
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1.15fr auto 1fr;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
   grid-template-rows: auto 1fr auto;
   gap: 0.35em 0.45em;
   align-items: stretch;
@@ -325,8 +372,9 @@ header {
   }
 
   .sample {
-    aspect-ratio: 1.4 / 1;
-    align-self: stretch;
+    // Stretching to the row killed the ratio the cell size is derived from.
+    --sample-aspect: 1.4;
+    align-self: start;
   }
 
   .mini-note {
@@ -344,16 +392,16 @@ header {
       repeating-linear-gradient(
         to right,
         transparent 0,
-        transparent calc(#{$cell-debug} - 1px),
-        #{$stripe-v} calc(#{$cell-debug} - 1px),
-        #{$stripe-v} #{$cell-debug}
+        transparent calc(var(--cell-x) - 1px),
+        #{$stripe-v} calc(var(--cell-x) - 1px),
+        #{$stripe-v} var(--cell-x)
       ),
       repeating-linear-gradient(
         to bottom,
         transparent 0,
-        transparent calc(#{$cell-debug} - 1px),
-        #{$stripe-h} calc(#{$cell-debug} - 1px),
-        #{$stripe-h} #{$cell-debug}
+        transparent calc(var(--cell-y) - 1px),
+        #{$stripe-h} calc(var(--cell-y) - 1px),
+        #{$stripe-h} var(--cell-y)
       ),
       linear-gradient($preview-bg);
   }

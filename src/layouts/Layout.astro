@@ -143,6 +143,13 @@ body {
   --font-poppins: "Poppins", system-ui, sans-serif;
 }
 
+body {
+  /* The theme picker's face (ThemePicker.astro), so prose, lists, captions
+     and controls read as one sheet. system-ui also stops the 13px default
+     size browsers give a bare monospace stack. */
+  font-family: monospace, system-ui;
+}
+
 main {
   --page-gap: clamp(1rem, 4vw, 2.5rem);
   /* em, not ch: the cap is a page width, and ch pins it to whatever font this

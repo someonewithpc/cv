@@ -1,6 +1,8 @@
 import {
   ACESFilmicToneMapping,
   AmbientLight,
+  Box3,
+  BufferAttribute,
   Color,
   CylinderGeometry,
   DirectionalLight,
@@ -32,8 +34,10 @@ import {
   type Texture,
 } from 'three';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 import {
   DEFAULT_LAYOUT_OPTIONS,
@@ -46,6 +50,41 @@ import {
   type LayoutStyle,
 } from './layoutEngine';
 import { createDemoSkybox } from './demoSkybox';
+
+/** The part of a catalog variant the scene needs to draw it. */
+export type CatalogGhostVariant = {
+  id: string;
+  modelUrl?: string;
+  tint?: (string | null)[];
+};
+
+/** Repaint a loaded model's materials, slot by slot, in the GLB's own material order. */
+function applyTint(root: Object3D, tint: (string | null)[]) {
+  let slot = 0;
+  root.traverse((obj) => {
+    if (!(obj as Mesh).isMesh) return;
+    for (const material of [(obj as Mesh).material].flat()) {
+      const hex = tint[slot];
+      slot += 1;
+      if (hex) (material as MeshStandardMaterial).color.set(hex);
+    }
+  });
+}
+
+/**
+ * The banquet sets ship Draco-compressed, which is what keeps a dressed table with eight
+ * chairs under half a megabyte. The decoder only fetches its wasm once a Draco mesh
+ * actually turns up, so the chair, which is not compressed, never pays for it.
+ */
+let dracoLoader: DRACOLoader | null = null;
+
+function makeGltfLoader() {
+  dracoLoader ??= new DRACOLoader().setDecoderPath('/demos/space-builder/draco/');
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  loader.setDRACOLoader(dracoLoader);
+  return loader;
+}
 
 const GROUND_SIZE = 28;
 const GRASS_REPEAT = 5;
@@ -163,11 +202,22 @@ export class SpaceBuilderScene {
   /** Individually drag-placed chairs (Add tool, no area) — accumulate, don't replace. */
   private singlePoses: ChairPose[] = [];
   private chairGeometry: BufferGeometry | null = null;
-  private chairMaterial: Material | null = null;
+  private chairMaterial: Material | Material[] | null = null;
+  /** The GLB's own colours, so a finish can be swapped for another or cleared. */
+  private chairBaseColors: Color[] = [];
   private chairScale = 1;
   private chairYOffset = 0;
   private chairReady: Promise<void> | null = null;
   private ghost: Mesh | null = null;
+  /** Non-chair catalog id currently selected in the Add tool ('chair' uses {@link ghost} instead). */
+  private activeCatalogId = 'chair';
+  /** Hidden, pre-scaled Object3D per real non-chair catalog id — cloned on each placement. */
+  private extraTemplates = new Map<string, Object3D>();
+  private extraLoading = new Map<string, Promise<void>>();
+  /** Clone of the active extra template, positioned like {@link ghost} while placing. */
+  private extraGhost: Object3D | null = null;
+  /** Individually placed non-chair objects — cleared with the rest of the scene on reset/Clear. */
+  private placedExtras: Object3D[] = [];
   private textures: Texture[] = [];
   private skybox: Mesh | null = null;
   private onSnapshot?: (snapshot: SceneSnapshot) => void;
@@ -314,25 +364,115 @@ export class SpaceBuilderScene {
     return this.chairReady ?? Promise.resolve();
   }
 
-  private async loadChairInternal(url: string) {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
+  /**
+   * Switch the Add tool's ghost to a non-chair real catalog item (or back to
+   * the chair). Loads its GLB the first time it's selected.
+   */
+  activateCatalogItem(id: string, variant?: CatalogGhostVariant) {
+    this.activeCatalogId = variant?.id ?? id;
+    if (this.extraGhost) {
+      this.scene.remove(this.extraGhost);
+      this.extraGhost = null;
+    }
+    if (id === 'chair') {
+      this.activeCatalogId = 'chair';
+      this.setChairTint(variant?.tint);
+      return;
+    }
+    if (variant?.modelUrl) this.ensureExtraLoaded(this.activeCatalogId, variant);
+    this.applyActiveGhostTemplate();
+  }
+
+  /**
+   * Recolour the chair in place. Space Builder's library keeps every finish as its own
+   * object; the demo ships one GLB whose frame and seat are flat colours, so a finish is
+   * a base colour per material slot.
+   */
+  private setChairTint(tint?: (string | null)[]) {
+    const materials = [this.chairMaterial].flat().filter(Boolean) as MeshStandardMaterial[];
+    materials.forEach((material, slot) => {
+      const base = this.chairBaseColors[slot];
+      if (!base) return;
+      const hex = tint?.[slot];
+      material.color.copy(base);
+      if (hex) material.color.set(hex);
+    });
+  }
+
+  private ensureExtraLoaded(id: string, variant: CatalogGhostVariant) {
+    if (this.extraTemplates.has(id) || this.extraLoading.has(id)) return;
+    this.extraLoading.set(
+      id,
+      this.loadExtraInternal(id, variant).catch((error) => {
+        console.debug('Space Builder extra prop failed to load', id, error);
+      }),
+    );
+  }
+
+  private async loadExtraInternal(id: string, variant: CatalogGhostVariant) {
+    const url = variant.modelUrl!;
+    // Library GLBs share one export pipeline's arbitrary unit — wait for the
+    // primary chair's own raw-height measurement so every extra converts to
+    // real meters by the same factor, instead of guessing per model.
+    await this.whenChairReady();
+    const loader = makeGltfLoader();
     if (MeshoptDecoder.ready) {
       await MeshoptDecoder.ready;
     }
     const gltf = await loader.loadAsync(url);
     if (this.disposed) return;
-    const mesh = this.findFirstMesh(gltf.scene);
-    if (!mesh) throw new Error('Chair mesh missing');
+    const root = gltf.scene;
+    if (variant.tint) applyTint(root, variant.tint);
+    root.updateMatrixWorld(true);
 
-    mesh.geometry.computeBoundingBox();
-    const box = mesh.geometry.boundingBox!;
+    const box = new Box3().setFromObject(root);
+    const scale = this.chairScale;
+    const center = box.getCenter(new Vector3());
+    root.scale.setScalar(scale);
+    root.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
+    root.traverse((obj) => {
+      if ((obj as Mesh).isMesh) {
+        const mesh = obj as Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
+    });
+
+    const pivot = new Group();
+    pivot.add(root);
+    this.extraTemplates.set(id, pivot);
+    if (this.activeCatalogId === id) this.applyActiveGhostTemplate();
+  }
+
+  private applyActiveGhostTemplate() {
+    if (this.activeCatalogId === 'chair') return;
+    const template = this.extraTemplates.get(this.activeCatalogId);
+    if (!template) return;
+    this.extraGhost = template.clone(true);
+    this.extraGhost.visible = false;
+    this.scene.add(this.extraGhost);
+  }
+
+  private clearExtras() {
+    for (const object of this.placedExtras) this.scene.remove(object);
+    this.placedExtras = [];
+  }
+
+  private async loadChairInternal(url: string) {
+    const { geometry, material } = await this.loadModelAsMergedMesh(url);
+    if (this.disposed) return;
+
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox!;
     const height = box.max.y - box.min.y;
     this.chairScale = CHAIR_TARGET_HEIGHT / height;
     this.chairYOffset = -box.min.y * this.chairScale;
 
-    this.chairGeometry = mesh.geometry;
-    this.chairMaterial = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    this.chairGeometry = geometry;
+    this.chairMaterial = material;
+    this.chairBaseColors = [material].flat().map(
+      (slot) => (slot as MeshStandardMaterial).color.clone(),
+    );
 
     this.ghost = new Mesh(this.chairGeometry, this.chairMaterial);
     this.ghost.scale.setScalar(this.chairScale);
@@ -342,6 +482,49 @@ export class SpaceBuilderScene {
     // The area/options set before the (async) chair GLB resolved rendered zero
     // chairs — reflow now so seats appear without needing a follow-up interaction.
     this.reflow();
+  }
+
+  /**
+   * Load a GLB and flatten every primitive (glTF splits one mesh into a
+   * primitive per material) into a single BufferGeometry with per-primitive
+   * groups, so the result works as one InstancedMesh/Mesh draw call — even
+   * when the source model has more than one material (e.g. a chair frame +
+   * cushion). World transforms are baked in so nested nodes merge correctly.
+   */
+  private async loadModelAsMergedMesh(url: string): Promise<{ geometry: BufferGeometry; material: Material | Material[] }> {
+    const loader = makeGltfLoader();
+    if (MeshoptDecoder.ready) {
+      await MeshoptDecoder.ready;
+    }
+    const gltf = await loader.loadAsync(url);
+    const root = gltf.scene;
+    root.updateMatrixWorld(true);
+
+    const geometries: BufferGeometry[] = [];
+    const materials: Material[] = [];
+    root.traverse((obj) => {
+      if (!(obj as Mesh).isMesh) return;
+      const mesh = obj as Mesh;
+      const geom = mesh.geometry.clone();
+      geom.applyMatrix4(mesh.matrixWorld);
+      // Keep only the attributes every primitive shares — extras like vertex
+      // tangents/colour aren't needed for MeshStandardMaterial and would make
+      // mergeGeometries reject a set that isn't identical across primitives.
+      for (const name of Object.keys(geom.attributes)) {
+        if (!['position', 'normal', 'uv'].includes(name)) geom.deleteAttribute(name);
+      }
+      if (!geom.getAttribute('uv')) {
+        geom.setAttribute('uv', new BufferAttribute(new Float32Array(geom.attributes.position.count * 2), 2));
+      }
+      geometries.push(geom);
+      materials.push(Array.isArray(mesh.material) ? mesh.material[0] : mesh.material);
+    });
+    if (!geometries.length) throw new Error(`Model has no mesh: ${url}`);
+
+    const geometry = geometries.length > 1 ? mergeGeometries(geometries, true) : geometries[0];
+    if (!geometry) throw new Error(`Failed to merge model geometry: ${url}`);
+
+    return { geometry, material: materials.length > 1 ? materials : materials[0] };
   }
 
   getSnapshot(): SceneSnapshot {
@@ -396,6 +579,7 @@ export class SpaceBuilderScene {
     this.tagObject.visible = false;
     this.singlePoses = [];
     this.clearChairs();
+    this.clearExtras();
     this.emitSnapshot();
   }
 
@@ -523,30 +707,43 @@ export class SpaceBuilderScene {
     this.setArea({ ...this.area, angle });
   }
 
+  private activeGhost(): Object3D | null {
+    return this.activeCatalogId === 'chair' ? this.ghost : this.extraGhost;
+  }
+
   setGhostVisible(visible: boolean) {
-    if (this.ghost) this.ghost.visible = visible;
+    const ghost = this.activeGhost();
+    if (ghost) ghost.visible = visible;
   }
 
   setGhostAt(clientX: number, clientY: number) {
-    if (!this.ghost) return;
+    const ghost = this.activeGhost();
+    if (!ghost) return;
     const point = this.clientToGround(clientX, clientY);
     if (!point) return;
-    this.ghost.position.x = point.x;
-    this.ghost.position.z = point.z;
-    this.ghost.position.y = this.chairYOffset;
-    this.ghost.visible = true;
+    ghost.position.x = point.x;
+    ghost.position.z = point.z;
+    if (this.activeCatalogId === 'chair') ghost.position.y = this.chairYOffset;
+    ghost.visible = true;
   }
 
-  placeGhostAsSingle() {
-    if (!this.ghost?.visible) return;
-    this.singlePoses.push({
-      x: this.ghost.position.x,
-      z: this.ghost.position.z,
-      angle: 0,
-    });
-    this.renderChairs(this.composedChairPoses());
+  /** False when the selected item's GLB is still in flight, so nothing was placed. */
+  placeGhostAsSingle(): boolean {
+    const ghost = this.activeGhost();
+    if (!ghost?.visible) return false;
+
+    if (this.activeCatalogId === 'chair') {
+      this.singlePoses.push({ x: ghost.position.x, z: ghost.position.z, angle: 0 });
+      this.renderChairs(this.composedChairPoses());
+    } else {
+      const placed = ghost.clone(true);
+      placed.visible = true;
+      this.scene.add(placed);
+      this.placedExtras.push(placed);
+    }
     this.setGhostVisible(false);
     this.emitSnapshot();
+    return true;
   }
 
   clientToGround(clientX: number, clientY: number): Vector3 | null {
@@ -985,6 +1182,12 @@ export class SpaceBuilderScene {
     }
     this.labelRenderer.domElement.remove();
     this.clearChairs();
+    this.clearExtras();
+    if (this.extraGhost) {
+      this.scene.remove(this.extraGhost);
+      this.extraGhost = null;
+    }
+    this.extraTemplates.clear();
   }
 
   private buildGround() {
@@ -1270,14 +1473,6 @@ export class SpaceBuilderScene {
       this.chairs.dispose();
       this.chairs = null;
     }
-  }
-
-  private findFirstMesh(root: Object3D): Mesh | null {
-    let found: Mesh | null = null;
-    root.traverse((obj) => {
-      if (!found && (obj as Mesh).isMesh) found = obj as Mesh;
-    });
-    return found;
   }
 
   private updateCamera() {

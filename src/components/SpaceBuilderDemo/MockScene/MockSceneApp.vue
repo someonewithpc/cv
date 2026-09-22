@@ -18,7 +18,7 @@ import {
   type DemoToastPayload,
 } from './AutoPlayController';
 import CatalogPanel from './CatalogPanel.vue';
-import { CATALOG_ITEMS, type CatalogItem } from './catalogItems';
+import { CATALOG_ITEMS, variantOf, type CatalogItem, type CatalogVariant } from './catalogItems';
 import OptionsPanel from './OptionsPanel.vue';
 import {
   RAIL_ARRANGE_TOOLS,
@@ -91,7 +91,7 @@ const selectedCatalogItem = computed(() => (
   CATALOG_ITEMS.find((item) => item.id === selectedCatalogId.value) ?? null
 ));
 
-const canBuildSelected = computed(() => Boolean(selectedCatalogItem.value?.real));
+const canBuildSelected = computed(() => Boolean(selectedCatalogItem.value?.layoutable));
 
 const loadError = ref(false);
 const inView = ref(false);
@@ -409,6 +409,7 @@ function openAdd() {
   panel.value = 'catalog';
   phase.value = 'idle';
   selectedCatalogId.value = 'chair';
+  sceneRef.value?.activateCatalogItem('chair');
   catalogPanelKey.value += 1;
 }
 
@@ -428,15 +429,20 @@ function goBack() {
   closePanel();
 }
 
-function selectCatalogItem(item: CatalogItem) {
+function selectCatalogItem(item: CatalogItem, variant: CatalogVariant = variantOf(item, undefined)) {
   selectedCatalogId.value = item.id;
+  sceneRef.value?.activateCatalogItem(item.id, variant);
   panel.value = 'catalog';
 }
 
-function confirmCatalogItem(item: CatalogItem) {
-  selectCatalogItem(item);
+function confirmCatalogItem(item: CatalogItem, variant?: CatalogVariant) {
+  selectCatalogItem(item, variant ?? variantOf(item, undefined));
   if (!item.real) {
     pushToast({ action: 'Placeholder · use Chair for the demo' });
+    return;
+  }
+  if (!item.layoutable) {
+    pushToast({ action: 'Drag onto the floor to place' });
     return;
   }
   // Match Space Builder: double-click advances past the catalog (Build path).
@@ -446,6 +452,7 @@ function confirmCatalogItem(item: CatalogItem) {
 function startBuild() {
   if (!canBuildSelected.value) {
     selectedCatalogId.value = 'chair';
+    sceneRef.value?.activateCatalogItem('chair');
   }
   phase.value = 'build';
   panel.value = 'options';
@@ -511,13 +518,14 @@ function saveArrangement() {
   phase.value = 'idle';
 }
 
-function onCatalogDragStart(event: DragEvent, item: CatalogItem) {
+function onCatalogDragStart(event: DragEvent, item: CatalogItem, variant: CatalogVariant) {
   if (!item.real) {
     event.preventDefault();
     return;
   }
   if (!userControl.value) yieldToUser(true);
   selectedCatalogId.value = item.id;
+  sceneRef.value?.activateCatalogItem(item.id, variant);
   phase.value = 'placing';
   panel.value = 'catalog';
   sceneRef.value?.setGhostVisible(true);
@@ -544,10 +552,12 @@ function onViewportDrop(event: DragEvent) {
   event.preventDefault();
   if (!userControl.value) yieldToUser(true);
   sceneRef.value?.setGhostAt(event.clientX, event.clientY);
-  sceneRef.value?.placeGhostAsSingle();
+  const placed = sceneRef.value?.placeGhostAsSingle() ?? false;
   phase.value = 'idle';
-  panel.value = 'closed';
-  pushToast({ action: 'Object placed' });
+  // A drop that beat the model's own download placed nothing — leave the catalog open
+  // so the next drag lands, rather than claiming an object that isn't there.
+  if (placed) panel.value = 'closed';
+  pushToast({ action: placed ? 'Object placed' : 'Still loading · drag again' });
 }
 
 function onKeyDown(event: KeyboardEvent) {
@@ -634,6 +644,7 @@ onMounted(async () => {
       (patch) => {
         if (patch.panel) panel.value = patch.panel;
         if (patch.phase) phase.value = patch.phase;
+        if (patch.catalogId) selectedCatalogId.value = patch.catalogId;
       },
       (step, total) => reportAutoplayProgress(rootRef.value, step, total),
     );
@@ -964,6 +975,7 @@ onBeforeUnmount(() => {
     <div
       v-if="cursorPhase !== 'gone'"
       class="space-builder-demo-cursor"
+      data-demo-cursor
       :class="[
         `space-builder-demo-cursor--${cursorPhase}`,
         { 'space-builder-demo-cursor--clicking': cursorClicking },
@@ -1296,7 +1308,10 @@ $scene-bg: #212121;
     z-index: 4;
     grid-column: 2;
     grid-row: 1;
-    width: min(17.5rem, 46vw);
+    // Space Builder gives the Add sidebar 780px of a 1440px window, three catalog cards
+    // across at 178px each. This frame is about half as wide, so take a comparable share
+    // and keep the cards near the product's size instead of shrinking them to fit.
+    width: min(22rem, 52vw);
     min-height: 0;
     max-height: 100%;
     display: flex;

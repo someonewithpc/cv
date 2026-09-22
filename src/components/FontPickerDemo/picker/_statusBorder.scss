@@ -1,0 +1,91 @@
+// A border that reports on a fetch: an arc orbits while pending, then the ring sweeps
+// closed in the verdict's colour. One conic gradient driven by three custom properties,
+// registered in registerFontSettingsProperties.ts so they animate.
+$status-border-duration: 1s;
+// Eases in, then JS switches it to linear at the point where this bezier already is,
+// so the loop has no seam
+$status-border-timing: cubic-bezier(0.75, 0.25, 0.2, 0.2);
+$status-border-idle: #bbb;
+
+@mixin status-border($name, $background, $idle: $status-border-idle, $pending: #89ab24, $success: #89ab24, $error: #f44) {
+  @keyframes #{$name}-idle {
+    from { --font-settings-border-color: #{$idle}; }
+    to {
+      --font-settings-border-colored-width: 0turn;
+      --font-settings-border-color: #{$idle};
+    }
+  }
+
+  @keyframes #{$name}-pending {
+    from {
+      --font-settings-border-colored-width: 0.25turn;
+      --font-settings-border-color: #{$pending};
+    }
+    to {
+      --font-settings-border-start: 1turn;
+      --font-settings-border-colored-width: 0.25turn;
+      --font-settings-border-color: #{$pending};
+    }
+  }
+
+  @keyframes #{$name}-success {
+    to {
+      --font-settings-border-colored-width: 1turn;
+      --font-settings-border-color: #{$success};
+    }
+  }
+
+  @keyframes #{$name}-error {
+    to {
+      --font-settings-border-colored-width: 1turn;
+      --font-settings-border-color: #{$error};
+    }
+  }
+
+  --font-settings-border-colored-width: 0turn;
+  --font-settings-border-color: #{$idle};
+  --font-settings-border-start: 0turn;
+
+  animation: $status-border-duration $status-border-timing 1 both #{$name}-idle;
+
+  &.idle {
+    animation-name: #{$name}-pending, #{$name}-idle;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  &.pending {
+    animation-name: #{$name}-pending;
+    animation-iteration-count: infinite;
+  }
+
+  // The paused pending animation keeps --font-settings-border-start wherever the
+  // orbit was, so the ring closes from there instead of snapping to the top
+  &.success {
+    animation-name: #{$name}-pending, #{$name}-success;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  &.error {
+    animation-name: #{$name}-pending, #{$name}-error;
+    animation-play-state: paused, running;
+    animation-iteration-count: infinite, 1;
+  }
+
+  // Soft edges on the arc, clamped so a full turn cannot overflow the range
+  --font-settings-border-color-gradient-width: clamp(0deg, 10deg, min(1turn - var(--font-settings-border-colored-width), var(--font-settings-border-colored-width)));
+
+  transition-property: --font-settings-border-color-gradient-width, --font-settings-border-color, --font-settings-border-colored-width, --font-settings-border-start;
+  transition-duration: 250ms;
+  transition-timing-function: ease-in-out;
+
+  background:
+    linear-gradient($background, $background) border-box padding-box,
+    conic-gradient(
+      from var(--font-settings-border-start),
+      #{$idle} 0deg,
+      var(--font-settings-border-color) calc(var(--font-settings-border-color-gradient-width) / 2) calc(var(--font-settings-border-color-gradient-width) / 2 + var(--font-settings-border-colored-width)),
+      #{$idle} calc(var(--font-settings-border-color-gradient-width) / 2 + var(--font-settings-border-colored-width) + var(--font-settings-border-color-gradient-width) / 2),
+    ) border-box border-box;
+}

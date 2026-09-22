@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
-import type { CatalogItem } from './catalogItems';
+import CatalogObjectCard from './catalog/CatalogObjectCard.vue';
+import type { CatalogItem, CatalogVariant } from './catalogItems';
 
 const props = withDefaults(defineProps<{
   items: CatalogItem[];
@@ -13,14 +14,15 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  select: [item: CatalogItem];
-  confirm: [item: CatalogItem];
-  dragstart: [event: DragEvent, item: CatalogItem];
+  select: [item: CatalogItem, variant: CatalogVariant];
+  confirm: [item: CatalogItem, variant: CatalogVariant];
+  dragstart: [event: DragEvent, item: CatalogItem, variant: CatalogVariant];
   dragend: [];
-  itemPointerdown: [event: PointerEvent, item: CatalogItem];
+  itemPointerdown: [event: PointerEvent, item: CatalogItem, variant: CatalogVariant];
 }>();
 
 const search = ref('');
+const variantIds = reactive<Record<string, string>>({});
 
 const itemsVisible = computed(() => {
   const q = search.value.trim().toLowerCase();
@@ -46,33 +48,26 @@ const itemsVisible = computed(() => {
   </p>
 
   <div v-else class="catalog-grid">
-    <button
+    <CatalogObjectCard
       v-for="item in itemsVisible"
       :key="item.id"
-      type="button"
-      class="option-item"
-      :class="{ active: selectedId === item.id, placeholder: !item.real }"
-      :data-demo-target="item.real ? 'catalog:chair' : `catalog:${item.id}`"
-      :draggable="nativeDrag && Boolean(item.real)"
-      :title="item.real ? `${item.name} · double-click to Build` : `${item.name} (placeholder)`"
-      @click="emit('select', item)"
-      @dblclick="emit('confirm', item)"
-      @dragstart="emit('dragstart', $event, item)"
+      v-model:variant-id="variantIds[item.id]"
+      :item="item"
+      :active="selectedId === item.id"
+      :native-drag="nativeDrag"
+      @select="(...args) => emit('select', ...args)"
+      @confirm="(...args) => emit('confirm', ...args)"
+      @dragstart="(...args) => emit('dragstart', ...args)"
       @dragend="emit('dragend')"
-      @pointerdown="emit('itemPointerdown', $event, item)"
-    >
-      <div class="object-icons">
-        <img :src="item.thumb" alt="" width="120" height="90">
-      </div>
-      <span class="item-label">
-        <span class="object-name">{{ item.name }}</span>
-      </span>
-    </button>
+      @item-pointerdown="(...args) => emit('itemPointerdown', ...args)"
+    />
   </div>
 </template>
 
 <style lang="scss" scoped>
-$navy: #1ab394;
+// Space Builder's own accent (ui/main.scss `$visrez-brand`), which the rest of the demo
+// already uses; the catalog was the one panel still on Inspinia's default teal.
+$brand: #89ab24;
 
 .catalog-search {
   display: block;
@@ -95,8 +90,8 @@ $navy: #1ab394;
 
     &:focus {
       outline: 0;
-      border-color: $navy;
-      box-shadow: 0 0 0 0.15rem rgba(26, 179, 148, 0.35);
+      border-color: $brand;
+      box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
     }
   }
 }
@@ -109,9 +104,12 @@ $navy: #1ab394;
 
 .catalog-grid {
   display: grid;
+  // Space Builder lays the catalog out three across in a 780px sidebar; this one is a
+  // third of that, so keep its card size and let as many columns fit as will.
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 1rem;
   align-content: start;
+  grid-auto-rows: 1fr;
 
   // Matches the rail-hide breakpoint in MockSceneApp.vue — below it the
   // sidebar is too narrow for two columns of thumbnails to stay legible.
@@ -130,93 +128,5 @@ $navy: #1ab394;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-.option-item {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 0;
-  border: 1px solid #495057;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: grab;
-  overflow: hidden;
-  user-select: none;
-
-  &.placeholder {
-    cursor: pointer;
-
-    .object-icons {
-      // Same tile chrome as real items — just mute the silhouette.
-      filter: grayscale(1);
-
-      img {
-        opacity: 0.45;
-      }
-    }
-
-    .item-label {
-      color: #868e96;
-      font-weight: 600;
-    }
-
-    &.active .item-label {
-      color: rgba(255, 255, 255, 0.85);
-    }
-  }
-
-  &:hover:not(.active) {
-    border-color: #adb5bd;
-  }
-
-  &.active {
-    box-shadow: 0 0 0 0.2rem rgba(26, 179, 148, 0.35);
-
-    .item-label {
-      background: $navy;
-      color: #fff;
-    }
-  }
-
-  &.is-demo-target {
-    box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.65);
-  }
-
-  .object-icons {
-    position: relative;
-    display: flex;
-    flex: 1 1 auto;
-    min-height: 5rem;
-    background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
-
-    img {
-      display: block;
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      padding: 0.5rem;
-    }
-  }
-
-  .item-label {
-    display: block;
-    margin: 0;
-    padding: 0.35rem 0.4rem;
-    background: #212529;
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 700;
-
-    .object-name {
-      display: block;
-      overflow: hidden;
-      max-height: 1.15em;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
 }
 </style>

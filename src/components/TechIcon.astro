@@ -67,8 +67,9 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
 }
 
 /* Dark-following themes (dark, dark-forest): boost contrast strokes */
-:global(:root:has(#theme-picker input[name='theme'][value='dark']:is(:not(.with-transition):checked, .with-transition.checked))),
-:global(:root:has(#theme-picker input[name='theme'][value='dark-forest']:is(:not(.with-transition):checked, .with-transition.checked))),
+/* Matched by id, not by attribute: see the note in ThemePicker.astro. */
+:global(:root:has(#theme-dark:is(:not(.with-transition):checked, .with-transition.checked))),
+:global(:root:has(#theme-dark-forest:is(:not(.with-transition):checked, .with-transition.checked))),
 :global(:root[data-theme='dark']),
 :global(:root[data-theme='dark-forest']) {
   .tech-icon {
@@ -84,7 +85,12 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
 }
 
 @media (prefers-color-scheme: dark) {
-  :global(:root:not([data-theme]):not(:has(#theme-picker input[name='theme']:is(:not(.with-transition):checked, .with-transition.checked)))) {
+  :global(:root:not([data-theme]):not(:has(
+    #theme-light:is(:not(.with-transition):checked, .with-transition.checked),
+    #theme-dark:is(:not(.with-transition):checked, .with-transition.checked),
+    #theme-arctic:is(:not(.with-transition):checked, .with-transition.checked),
+    #theme-dark-forest:is(:not(.with-transition):checked, .with-transition.checked)
+  ))) {
     .tech-icon {
       --icon-contrast-stroke: rgb(255 255 255 / 0.65);
       --icon-contrast-stroke-width: 9;

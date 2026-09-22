@@ -78,3 +78,58 @@ test('cube page: its diagram animation starts when the page is turned to', async
     .filter((animation) => animation.playState === 'running').length);
   await expect.poll(running, { timeout: 15_000 }).toBeGreaterThan(0);
 });
+
+test('cube page: twelve edges, drawn in ink that stands off the grid on every theme', async ({ page }) => {
+  const stack = visrezStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Cube :)');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  // One element per edge. The bordered faces this replaced drew every edge twice.
+  await expect(front.locator('.scene .edge')).toHaveCount(12);
+
+  // Resolve the strip's ink and the sheet's grid colour on the same sheet, so the reading
+  // follows the theme rather than the token names. The tokens are oklch mixes, and Chrome
+  // keeps them in oklch when computed; a canvas turns both into sRGB bytes.
+  const colours = () => front.locator('section.blueprint').evaluate((sheet) => {
+    const rgb = (value: string) => {
+      const probe = document.createElement('span');
+      probe.style.color = value;
+      sheet.append(probe);
+      const context = document.createElement('canvas').getContext('2d')!;
+      context.fillStyle = getComputedStyle(probe).color;
+      context.fillRect(0, 0, 1, 1);
+      probe.remove();
+      return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+    };
+    const edge = sheet.querySelector('.scene .edge')!;
+    return { ink: rgb(getComputedStyle(edge, '::before').backgroundColor), grid: rgb('var(--blueprint-grid)') };
+  });
+  const distance = (a: number[], b: number[]) => Math.hypot(...a.map((channel, i) => channel - b[i]));
+
+  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+    await page.locator(`#theme-picker label:has(input[value="${theme}"])`).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    await page.waitForTimeout(900);
+
+    const { ink, grid } = await colours();
+    // The accent this replaced sat 30 from the grid on the arctic sheet; the ink sits 160 or more.
+    expect(distance(ink, grid), `${theme}: ink ${ink} against grid ${grid}`).toBeGreaterThan(120);
+  }
+});
+
+test('cube page: every strip is cut to a point at each end, so the vertices join cleanly', async ({ page }) => {
+  const stack = visrezStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Cube :)');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  // A square strip end pokes past the strips it meets at a vertex. The cut is four corner
+  // gradients and a middle fill on both strips; a single flat fill here means it was dropped.
+  const cuts = await front.locator('.scene .edge').evaluateAll((edges) => edges.flatMap((edge) => [
+    getComputedStyle(edge, '::before').backgroundImage,
+    getComputedStyle(edge, '::after').backgroundImage,
+  ]));
+  expect(cuts).toHaveLength(24);
+  for (const cut of cuts) expect(cut.match(/linear-gradient\(/g)).toHaveLength(5);
+});

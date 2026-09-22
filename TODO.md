@@ -1,6 +1,7 @@
 # TODOS
 
 - [ ] Themes
+  - [x] Body text in the theme picker's monospace face (#47)
   - [x] Cave dark theme
   - [x] Forrest light theme
   - [x] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
@@ -17,10 +18,14 @@
 - [ ] Access Keys
 - [ ] ARIA roles
 - [ ] Demos
+  - [x] Drawn cursor pulses and flares on press and release, shared by every demo
+  - [x] Logo cube: edges drawn once, visible on every theme
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Autoplay is not very intuitive (#7)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
+    - [x] Marker editor pages past the second look rough (#18)
+    - [x] Colour picker lags while dragging (#17)
   - [x] Space builder add tool
     - [x] Layouts page demo doesn't work (#14)
     - [x] Drag and drop furniture doesn't work (#14)
@@ -35,8 +40,11 @@
       - [x] Blueprint pages (Place / Parameters / Layouts / Badge / DnD)
       - [~] Faster first paint / load
       - [~] Visual parity (chrome + 3D look)
-    - [ ] Grab some models like a classroom and a banquet set
+    - [~] Grab some models like a classroom and a banquet set (#24)
     - [ ] Showcase the carousel? With the animated pips
+  - [x] Visrez library tagging tool (#21)
+  - [x] Slotted components carry their own scripts; boot island removed
+  - [x] Interactive map font picker (#25)
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
@@ -44,6 +52,7 @@
 - [ ] TechnicalDrawing
   - [ ] Paper texture
   - [x] Tucked note tab collides with the sheet content and toolbar (#16)
+  - [x] Projection symbol sits beside the title and under the fold; own corner cell or nothing (#46)
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
@@ -54,21 +63,22 @@
     - [x] Turned paper corners/dogear
       - [x] Dogear doesn't follow theme (#5)
       - [x] Dogear doesn't appear until next page animation finished (#6)
+      - [x] Strip behind the crease paints the turned page's back, not the front page's (#49)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
       - [x] PaperStack focus ring should follow page border (#12)
     - [-] Page indicator
   - [ ] Anotations
-    - [ ] JS to make sure the placement is correct, when JS available, as progressive enhancement
+    - [x] JS to make sure the placement is correct, when JS available, as progressive enhancement
 - [ ] Scroll animation stacking demos
 - [ ] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
-- [ ] Run W3C validator
+- [x] Run W3C validator (#28)
   - [x] Put CSS and JS out of line (#22)
 - [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
 - [ ] Work History
-- [ ] Drawn arrows indicating paper turn, maybe only for reduced-motion?
+- [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)

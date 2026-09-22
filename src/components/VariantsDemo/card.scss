@@ -1,0 +1,516 @@
+@use "sass:math";
+// The catalog card, its style carousel and its dropdown rows, after Space Builder's
+// _catalog_object_field.scss, _catalog_subcategory_group_field.scss and _hover_select.scss.
+// Scoped under .variants-catalog so the panel and the drawn copy on the sheet share it.
+$brand: #89ab24;
+$border: #3d4246;
+$row-bg: #212529;
+$duration: 250ms;
+$easing: ease-out;
+$pip: 1.125rem;
+
+.variants-catalog .option-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 1px solid $border;
+  border-radius: 0.25rem;
+  color: #f3f3f4;
+  font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
+  user-select: none;
+  // The pips keep the brand colour on every card; only the count badge greys until the
+  // card is the selected one, as _catalog_subcategory_group_field.scss has it.
+  --active-pip-color: #{$brand};
+  --active-count-color: #6c757d;
+
+  &:hover {
+    border-color: #6c757d;
+  }
+
+  &.active {
+    box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
+    --active-count-color: #{$brand};
+
+    .item-label {
+      background: $brand;
+      color: #fff;
+    }
+  }
+
+  .thumbnail {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex: 1 1 auto;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    overflow: hidden;
+    timeline-scope: --styles;
+  }
+
+  .object-icons {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    aspect-ratio: 1;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 0.5rem;
+    }
+  }
+
+  .group-object-count {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 2;
+    display: flex;
+    flex-direction: row;
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    min-width: 2em;
+    height: 2em;
+    padding: 0 0.5em;
+    border: 1px solid var(--active-count-color);
+    border-radius: 1em;
+    background: color-mix(in srgb, var(--active-count-color), black 5%);
+    color: #fff;
+    font-size: 0.75rem;
+    line-height: 1;
+
+    .vr {
+      width: 1px;
+      height: 0.75em;
+      background: color-mix(in srgb, currentColor 80%, black);
+      rotate: 10deg;
+    }
+  }
+
+  // The style carousel: one slide per finish, snapping in the inline axis. The badge rides
+  // its own slide, so "2 / 5" arrives with the second finish.
+  ul.styles {
+    list-style: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    scroll-timeline: --styles inline;
+    outline: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      scroll-behavior: smooth;
+    }
+
+    > .style {
+      position: relative;
+      flex: 0 0 100%;
+      width: 100%;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+  }
+
+  // Arrows and pips are the scroller's own scroll buttons and markers where the browser
+  // draws them; panel.ts builds the same controls out of buttons elsewhere.
+  @supports selector(::scroll-marker) {
+    ul.styles {
+      scroll-marker-group: after;
+
+      &::scroll-button(*) {
+        position: absolute;
+        z-index: 3;
+        top: 50%;
+        translate: 0 -50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75em;
+        height: 1.75em;
+        padding: 0;
+        border: 0;
+        border-radius: 0.25em;
+        background: rgba(52, 58, 64, 0.4);
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      &::scroll-button(*):not(:disabled):is(:hover, :focus-visible) {
+        outline: 1px solid rgba(52, 58, 64, 0.75);
+      }
+
+      &::scroll-button(*):disabled {
+        color: rgba(173, 181, 189, 0.75);
+        cursor: default;
+      }
+
+      &::scroll-button(inline-start) {
+        left: 0.25rem;
+        content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512" width="10" height="12"><path fill="white" d="M31 239 175 95c9-9 24-9 33 0s9 24 0 33L97 256l111 128c9 9 9 24 0 33s-24 9-33 0L31 273a24 24 0 0 1 0-34z"/></svg>') / 'Previous style';
+      }
+
+      &::scroll-button(inline-end) {
+        right: 0.25rem;
+        content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512" width="10" height="12"><path fill="white" d="M225 273 81 417c-9 9-24 9-33 0s-9-24 0-33l111-128L48 128c-9-9-9-24 0-33s24-9 33 0l144 144a24 24 0 0 1 0 34z"/></svg>') / 'Next style';
+      }
+
+      &::scroll-button(*):disabled {
+        opacity: 0.55;
+      }
+
+      &::scroll-marker-group {
+        position: absolute;
+        z-index: 3;
+        bottom: 0.25rem;
+        left: 50%;
+        translate: -50% 0;
+        display: flex;
+        flex-direction: row;
+      }
+
+      > .style::scroll-marker {
+        content: '';
+        box-sizing: border-box;
+        width: calc($pip / 2);
+        height: calc($pip / 2);
+        margin: calc($pip / 4);
+        border: 2px solid var(--active-pip-color);
+        border-radius: 100%;
+        background: transparent;
+        cursor: pointer;
+        transition: background $duration $easing;
+      }
+
+      > .style::scroll-marker:target-current {
+        background: color-mix(in srgb, var(--active-pip-color), black 15%);
+      }
+
+      > .style::scroll-marker:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 1px;
+      }
+    }
+  }
+
+  // Script-built copies of the same controls.
+  button.previous,
+  button.next {
+    position: absolute;
+    z-index: 3;
+    top: 50%;
+    translate: 0 -50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75em;
+    height: 1.75em;
+    padding: 0;
+    border: 0;
+    border-radius: 0.25em;
+    background: rgba(52, 58, 64, 0.4);
+    color: #fff;
+    cursor: pointer;
+
+    &:not([disabled]):is(:hover, :focus-visible) {
+      outline: 1px solid rgba(52, 58, 64, 0.75);
+    }
+
+    &[disabled] {
+      color: rgba(173, 181, 189, 0.75);
+      cursor: default;
+    }
+  }
+
+  button.previous { left: 0.25rem; }
+  button.next { right: 0.25rem; }
+
+  ul.pagination-control {
+    position: absolute;
+    z-index: 3;
+    bottom: 0.25rem;
+    left: 50%;
+    translate: -50% 0;
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    > li {
+      width: $pip;
+      height: $pip;
+      display: grid;
+      place-items: center;
+    }
+
+    button {
+      box-sizing: border-box;
+      width: calc($pip / 2);
+      height: calc($pip / 2);
+      padding: 0;
+      border: 2px solid var(--active-pip-color);
+      border-radius: 100%;
+      background: transparent;
+      cursor: pointer;
+      transition: background $duration $easing;
+
+      &[aria-current='true'] {
+        background: color-mix(in srgb, var(--active-pip-color), black 15%);
+      }
+    }
+  }
+
+  // The pip-sized dot that slides along the pip row with the scroll, and the product's
+  // trail behind it. The track carries the position as a registered length: a scroll
+  // timeline drives it where the browser has one, otherwise --index does, set by the
+  // script, and the track transitions it. The dot follows the track exactly; each trail
+  // part follows it through its own short transition, so the parts string out behind
+  // the dot while it moves and close up under it when it stops.
+  .pip-track {
+    position: absolute;
+    z-index: 2;
+    bottom: calc(0.25rem + $pip / 4);
+    left: calc(50% - var(--pips, 1) * $pip / 2 + $pip / 4);
+    width: calc($pip / 2);
+    height: calc($pip / 2);
+    pointer-events: none;
+    --variants-dot-x: calc(var(--index, 0) * #{$pip});
+    transition: --variants-dot-x $duration $easing;
+
+    @supports (animation-timeline: scroll()) {
+      transition: none;
+      animation: variants-active-pip linear both;
+    }
+
+    > * {
+      position: absolute;
+      inset: 0;
+      border-radius: 100%;
+      background: var(--active-pip-color);
+      translate: var(--variants-dot-x) 0;
+    }
+
+    // CatalogObjectThumbnailOverlay.vue's five transition-blob-parts: each a step
+    // smaller and fainter than the last, further behind the pip.
+    @for $i from 1 through 5 {
+      > .pip-trail:nth-child(#{$i}) {
+        scale: #{90 - 10 * ($i - 1)}#{'%'};
+        opacity: #{math.div(60 - 10 * ($i - 1), 100)};
+        transition: translate #{30ms * $i} linear;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &,
+      > .pip-trail {
+        transition: none;
+      }
+    }
+  }
+
+  .item-label {
+    display: block;
+    width: 0;
+    min-width: 100%;
+    margin: 0;
+    padding: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+    background: $row-bg;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.5;
+
+    .object-name {
+      display: block;
+      overflow: hidden;
+      max-height: 1.5em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .object-size,
+    .object-pax {
+      font-size: 0.6875rem;
+      font-weight: 400;
+      color: #ced4da;
+    }
+
+    // The product clips this line to one row; a narrow card lets it wrap instead.
+    .object-size.static {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0 0.25rem;
+      text-wrap: balance;
+
+      svg {
+        flex: 0 0 auto;
+      }
+    }
+  }
+
+  &.active .item-label :is(.object-size, .object-pax) {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  // The dropdown rows: a <details> whose summary is the current option, so they open
+  // without a script. The product marks it up as ul[role=select].
+  .hover-select {
+    position: relative;
+    text-align: center;
+  }
+
+  // Stacked rows read as one field with two lines: the shared edge is square, and the
+  // second row's top border sits on the first's bottom one. The product rounds each row
+  // on its own; this is Hugo's call.
+  .hover-select:has(+ .hover-select) .hover-select-current {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .hover-select + .hover-select {
+    margin-top: -1px;
+
+    .hover-select-current {
+      border-top-right-radius: 0;
+      border-top-left-radius: 0;
+    }
+  }
+
+  .hover-select-current,
+  .hover-select-options button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0 0.25rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: 1.5;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .hover-select-current {
+    box-sizing: border-box;
+    list-style: none;
+    border-color: $border;
+    border-radius: 0.25rem;
+
+    &::-webkit-details-marker,
+    &::marker {
+      display: none;
+      content: '';
+    }
+
+    .caret {
+      position: absolute;
+      right: 0.5rem;
+      pointer-events: none;
+    }
+
+    &:hover {
+      box-shadow: inset 0 0 0.125rem 0.625rem color-mix(in srgb, #{$border} 80%, #495057);
+    }
+  }
+
+  .hover-select-options {
+    position: absolute;
+    z-index: 5;
+    // A finger drags over the open list to preview its rows; the page must not scroll.
+    touch-action: none;
+    top: 100%;
+    right: 0;
+    left: 0;
+    margin: -1px 0 0;
+    padding: 0;
+    list-style: none;
+    background: $row-bg;
+    border: 1px solid $border;
+    border-top: 0;
+    border-bottom-right-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+
+    li + li button {
+      border-top: 1px solid color-mix(in srgb, #{$border} 50%, transparent);
+    }
+
+    li.unavailable {
+      color: #868e96;
+    }
+
+    // The option the card is showing: the hovered one, or the one a finger or the
+    // demo's own cursor rests on, where no :hover follows.
+    button:hover,
+    li.current button {
+      box-shadow: inset 0 0 0.125rem 0.625rem color-mix(in srgb, #{$border} 80%, #495057);
+    }
+  }
+
+  .hover-select[open] .hover-select-current {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  // A pick on the other row moved this one. The font picker's dot, copied as is.
+  .hover-select.new-dot::before {
+    content: '';
+    background: #c33;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1ch;
+    height: 1ch;
+    translate: calc(50% - 1px) calc(-50% + 1px);
+    z-index: 1;
+
+    border-radius: 50%;
+  }
+}
+
+@property --variants-dot-x {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@keyframes variants-active-pip {
+  from {
+    --variants-dot-x: 0px;
+  }
+
+  to {
+    --variants-dot-x: calc((var(--pips, 1) - 1) * #{$pip});
+  }
+}
+
+// Its own rule: folded into the animation shorthand, the timeline is one Chrome
+// cannot read back out.
+@supports (animation-timeline: scroll()) {
+  .variants-catalog .option-item .thumbnail > .pip-track {
+    animation-timeline: --styles;
+  }
+}

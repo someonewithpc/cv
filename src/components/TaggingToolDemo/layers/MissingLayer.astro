@@ -1,0 +1,288 @@
+---
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+import Grid from '../Grid.astro';
+
+// Callout type at this scale; each ArrowAnnotation takes it too so its underline tracks
+// the glyphs. A notch under the 0.6 the sheet was drawn at: the monospace body face runs
+// wider, and at 0.6 the two top labels met and one ran to the frame line.
+const annotationScale = 0.52;
+const annotationFontSize = 0.1 * annotationScale;
+
+// What the sheet points at, by a selector inside the embedded grid: the row that still
+// has an empty field, its save tick, and the row that has just had its last gap filled.
+const rows = {
+  listed: '.grouped-objects:not(.completing)',
+  save: '.grouped-objects:not(.completing) .shared-form button',
+  leaving: '.grouped-objects.completing',
+};
+---
+
+<div class="wrapper">
+  <p class="point typewriter">Fill the last gap, and the object leaves the list</p>
+
+  <Annotations scale={annotationScale} reach={1}>
+    {/* inert: aria-hidden alone doesn't pull the embedded Grid's real inputs/buttons out
+        of the Tab order, so a keyboard user would land on illustration-only controls a
+        screen reader stays silent about. Same fix as EditorLayer.astro's inert embed.
+        Two objects of each row: the sheet has no height for four, and a base with one
+        variant still reads as a group. */}
+    <div class="figure" slot="content" aria-hidden="true" inert>
+      <Grid completing="gold" only={['wood', 'gold']} objects={['11150', '11152', '10629', '10630']} />
+    </div>
+
+    <Fragment slot="annotations">
+      {/* The authored tips are the no-script placement; the script moves each onto its
+          target. Landscape and portrait get their own lengths: the labels have to land
+          in the figure's padding, above or below the panel, and the panel is a different
+          share of the artwork in each. */}
+      <ArrowAnnotation
+        target={rows.listed}
+        anchor="0 0.1"
+        tipX={-0.88}
+        tipY={-0.5}
+        angle={100}
+        length={0.4}
+        fontSize={annotationFontSize}
+        text="Only objects still missing a value"
+        only="landscape"
+      />
+      <ArrowAnnotation
+        target={rows.save}
+        anchor="top"
+        tipX={0.78}
+        tipY={-0.56}
+        angle={70}
+        length={0.33}
+        fontSize={annotationFontSize}
+        text="One row per object, on Change or Enter"
+        only="landscape"
+      />
+      <ArrowAnnotation
+        target={rows.leaving}
+        anchor="bottom-left"
+        tipX={-0.88}
+        tipY={0.68}
+        angle={-70}
+        length={0.17}
+        fontSize={annotationFontSize}
+        text="Last gap filled: on its way out"
+        only="landscape"
+      />
+
+      <ArrowAnnotation
+        target={rows.listed}
+        anchor="0 0.1"
+        tipX={-0.88}
+        tipY={-0.5}
+        angle={95}
+        length={0.36}
+        fontSize={annotationFontSize}
+        text="Only objects still missing a value"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target={rows.save}
+        anchor="top"
+        tipX={0.78}
+        tipY={-0.56}
+        angle={70}
+        length={0.5}
+        fontSize={annotationFontSize}
+        text="One row per object, on Change or Enter"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target={rows.leaving}
+        anchor="bottom-left"
+        tipX={-0.88}
+        tipY={0.68}
+        angle={-70}
+        length={0.22}
+        fontSize={annotationFontSize}
+        text="Last gap filled: on its way out"
+        only="portrait"
+      />
+    </Fragment>
+  </Annotations>
+
+  <p class="footnote">
+    A save is <code>find_or_initialize_by</code> then <code>save!</code>; an emptied field destroys the row.
+  </p>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+
+  max-width: min(92cqw, 100%);
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  /* A step under the portrait sheet's gap: the tall sheet keeps the figure and the note
+     clear of the frame line by a few pixels in the monospace body face. */
+  row-gap: 0.5em;
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* The title block reaches into the content column on a short landscape sheet, so
+       the figure and the footnote keep to the column's left and stop short of it. */
+    justify-items: start;
+    /* And the note's tab takes the bottom-left corner, so the column fills from the top
+       and keeps a step off the left. */
+    align-content: start;
+    padding-left: 1em;
+    row-gap: 0.25em;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    justify-items: center;
+    align-content: center;
+    padding-left: $sheet-margin;
+    row-gap: 0.75em;
+  }
+
+  /* The overlay shrink-wraps the figure; this is the figure's width. */
+  > :global(.content) {
+    width: 100%;
+    max-width: 30rem;
+
+    @container technical-drawing-width (max-width: 56em) {
+      max-width: calc(100% - 6em);
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      max-width: 30rem;
+    }
+  }
+}
+
+.point {
+  margin: 0;
+  max-width: 24em;
+  font-size: clamp(0.875rem, 0.034 * min(var(--sheet-inline), var(--sheet-block)), 1.375rem);
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink);
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* One line on a short landscape sheet; the figure needs the height more. */
+    max-width: none;
+    justify-self: center;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    max-width: 24em;
+  }
+}
+
+.figure {
+  box-sizing: border-box;
+  width: 100%;
+  /* Room inside the artwork box for the callout labels, above and below the panel, so
+     they never sit on the headline or the footnote. The callout lengths scale with the
+     artwork's short side, and so does this. */
+  padding-block: 3em 2em;
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-block: 2.5em 1em;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    padding-block: 4.5em 3em;
+  }
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  /* A short landscape sheet has to hold the grid, the callouts and the title block's
+     corner, so the floor goes down to where all three still fit. */
+  font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+  }
+
+  :global(.tagging-tool) {
+    font-size: 0.75em;
+    pointer-events: none;
+
+    @container technical-drawing-width (max-width: 56em) {
+      /* Two rows and their callouts on a short landscape sheet: the grid pays. */
+      font-size: 0.625em;
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      font-size: 0.75em;
+    }
+  }
+
+  /* The live page hands the tool a sheet's worth of height to divide up; here the grid
+     is an illustration under a label, so the picture is capped and the card takes what
+     is left. */
+  :global(.thumbnail-image-container) {
+    min-height: 0;
+    /* A landscape sheet is half as tall as it is wide, and two rows have to fit. */
+    max-height: 4em;
+    overflow: hidden;
+
+    @container technical-drawing-width (max-width: 56em) {
+      max-height: 2.5em;
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      max-height: 5.5em;
+    }
+  }
+
+  /* A base object and one variant, side by side at every width. */
+  :global(.shared-properties) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.footnote {
+  margin: 0;
+  /* As wide as the figure, so on a landscape sheet it stops short of the title block. */
+  max-width: 30rem;
+
+  @container technical-drawing-width (max-width: 56em) {
+    max-width: calc(100% - 6em);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    max-width: 30rem;
+  }
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* A short landscape sheet has the note's tab in one bottom corner and the title
+       block in the other; the footnote keeps out of both. */
+    margin-inline: 3.5em;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    margin-inline: 0;
+  }
+  /* The short sheet's size on every sheet: in the monospace body face the note wrapped
+     once more at 0.6875em and its last line came within 4px of the frame at 1024. */
+  font-size: 0.625em;
+  line-height: 1.35;
+  text-wrap: pretty;
+  color: var(--ink-muted);
+
+  @container technical-drawing-width (max-width: 56em) {
+    font-size: 0.625em;
+    text-wrap: nowrap;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    text-wrap: pretty;
+  }
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+</style>

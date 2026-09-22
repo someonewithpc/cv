@@ -36,5 +36,9 @@ tmp/
 # playwright
 /test-results/
 /playwright-report/
+/playwright-report-audit/
+/audit-report/
 /blob-report/
 /playwright/.cache/
+
+playwright.tmp.config.ts

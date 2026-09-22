@@ -14,6 +14,10 @@ export type Props = {
 const { as: tagName = 'div', class: className, pageCount, label } = Astro.props;
 const Tag = tagName;
 
+// One pair of gradients per stack: a page carries its clip wherever the stack goes, and a
+// shared id would leave every clip painted from the first stack's gradient.
+const clipId = crypto.randomUUID().slice(0, 8);
+
 // One gem-clip wire, split at the top bend into its two physical layers. The wire leans with
 // the resting fold-back crease — its outer-right edge runs along that crease, bottoming out at
 // the pin (see --fold-pin-x/-y below) — so the whole body sits inside the corner region a flip
@@ -35,21 +39,21 @@ const clipGradient = (id: string) => `<defs>
 const paperClipUnder = `<div class="paper-clip-under"><svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path
     d="M5 22 V50 a9 9 0 0 0 18 0 V14 a6.25 6.25 0 0 0 -12.5 0"
-    stroke="url(#paper-clip-under-gradient)"
+    stroke="url(#paper-clip-under-gradient-${clipId})"
     stroke-width="3"
     stroke-linecap="round"
   />
-  ${clipGradient('paper-clip-under-gradient')}
+  ${clipGradient(`paper-clip-under-gradient-${clipId}`)}
 </svg></div>`;
 
 const paperClipOver = `<svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path
     d="M10.5 14 V44 a4 4 0 0 0 8 0 V22"
-    stroke="url(#paper-clip-over-gradient)"
+    stroke="url(#paper-clip-over-gradient-${clipId})"
     stroke-width="3"
     stroke-linecap="round"
   />
-  ${clipGradient('paper-clip-over-gradient')}
+  ${clipGradient(`paper-clip-over-gradient-${clipId}`)}
 </svg>`;
 
 // The fold flap, paper clip, back-grab handle, and flip hint are siblings of the page content,
@@ -61,6 +65,10 @@ const paperClipOver = `<svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3
 // content in the template so the page itself hides it.)
 const foldFront = `<div class="paper-clip">${paperClipOver}</div><div class="paper-fold"></div><div class="paper-back-grab"></div>${flipHint}`;
 
+// Each page stays the SlotString the render returned. Its hoisted scripts ride in a property
+// of that object, replayed only when it reaches the output whole; a concatenation or template
+// literal keeps the markup and drops the scripts, which is how every slotted component lost
+// its <script> for a while.
 const pages = await Promise.all(
   Array.from({ length: pageCount }, (_, index) => Astro.slots.render('default', [index])),
 );
@@ -145,7 +153,7 @@ const pages = await Promise.all(
   aria-label={label}
 >
   {pages.map((page, index) => (
-    <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`} set:html={(index === 0 ? paperClipUnder : '') + page + (index === 0 ? foldFront : '')} />
+    <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`}>{index === 0 && <Fragment set:html={paperClipUnder} />}{page}{index === 0 && <Fragment set:html={foldFront} />}</div>
   ))}
 </Tag>
 
@@ -195,6 +203,15 @@ const pages = await Promise.all(
     $per-page-splay: 1.5deg;
     $border-radius: calc(0.5em + 1px);
 
+    // How big the dog-ear sits when nothing is touching it: where the opening reveal lands and
+    // where the pulse starts and returns (see the keyframes below). Published as custom
+    // properties because the crease it draws — from (100% - x, 100%) to (100%, 100% - y) on the
+    // front page — is what anything pointing at the fold from outside the stack has to aim at.
+    $fold-rest-x: 2cm;
+    $fold-rest-y: 1cm;
+    --fold-rest-x: #{$fold-rest-x};
+    --fold-rest-y: #{$fold-rest-y};
+
     // The folded-back corner's resting crease runs along the paper clip wire's outer-left
     // edge: intercepts (2.25em, 4.5em) by default, a 1-in-2 lean. The pin — where the wire's
     // edge bottoms out on that crease, halfway along — is where the paper is held: the splay
@@ -219,10 +236,16 @@ const pages = await Promise.all(
     // the paper clip at the viewport's top-left corner while the page loads.
     --flip-progress: 0;
 
+    // How many pages have been turned, counted onto the stack by fold-drag.ts. Same reason for
+    // the fallback as above: every page's rotate reads it.
+    --pages-turned: 0;
+
     // The folded-back top-left corner's size, inherited by every page's clip-path so the whole
     // stack's corner folds behind as one; transitioning it here is what eases the resting size
     // and the proximity tease in and out.
-    transition: --fold-back-x 300ms ease-out, --fold-back-y 300ms ease-out;
+    transition:
+      --fold-back-x 300ms ease-out, --fold-back-y 300ms ease-out,
+      --turn-ease 250ms ease-in-out;
 
     // The fan pivots every page about the pin near the top-left, so the hindmost sheet — turned
     // the furthest, by the same $per-page-splay·log(n) the pages' rotate below uses — drops
@@ -236,11 +259,76 @@ const pages = await Promise.all(
     // spans the frame.
     margin-bottom: calc(100cqw * sin(#{$per-page-splay} * log(var(--page-count))));
 
+    // The pile of pages already turned. The pages still to come fan out below the front one,
+    // which is what says there is more underneath; the ones already turned had nothing saying
+    // they were still there, since a flip drops them into that same fan, at the back of it. So
+    // they leave it: a turned page rises out of the stack's top edge instead, the way it went
+    // over the clip, one step further for each page turned before it. What is left to read
+    // stands below, what has been read stands above, and the two piles never share an edge — the
+    // top edge is also the one side free of the dog-ear, the clip and the title block.
+    //
+    // The pile steps out on the same law the fan below splays on: a log of the rank, so each
+    // page adds less than the one before and the corners bend over instead of running off in a
+    // straight line. $turn-lift is how far the first page turned rises, $turn-splay how far it
+    // leans on the pin, and $turn-drift how far it slides back towards the clip. The drift is
+    // the one term that stays even with the rank, which is what bows the corner column: the
+    // pages spread sideways at a steady rate while their rise closes up. $turn-under is how far
+    // the band of sheet back reaches down behind the front page, so it never ends in mid-air.
+    $turn-lift: 0.5em;
+    $turn-splay: 0.5deg;
+    $turn-drift: 0.125em;
+    $turn-under: 0.75em;
+
+    // Where the page turned most recently stands — the furthest page of the pile, rank
+    // --pages-turned — on the same law the pages below apply to their own rank: how far it has
+    // risen, slid back and leaned. The strip behind the front page's crease reaches up to that
+    // page's crease (see .paper-front::before), so while a page is on its way there the strip
+    // has to follow the page, not the number: a page turned forward climbs from the front crease
+    // to its place at the top of the pile, and until it has passed the page turned before it
+    // the strip ends on that one's crease. --turn-ease runs 0 to 1 over the turn (fold-drag.ts
+    // resets it at each restack; the page's own --turned-rise eases on the same clock), so the
+    // furthest crease is the higher of the two. Easing these three between the two resting
+    // positions instead left the strip's tip standing up to 3px proud of the pile at the top of
+    // the crease, with page background beside it, for most of the turn. A page coming back the
+    // other way takes the front in one step (fold-drag.ts cancels its transitions as it
+    // promotes it), so the pile's furthest crease is the resting one from that moment.
+    --pile-arc: calc(log(1 + var(--pages-turned)) / log(2));
+    --pile-arc-under: calc(log(max(var(--pages-turned), 1)) / log(2));
+    --pile-rise: max(
+      #{$turn-lift} * var(--pile-arc-under),
+      #{$turn-lift} * var(--pile-arc) * var(--turn-ease)
+    );
+    --pile-drift: max(
+      #{$turn-drift} * max(var(--pages-turned) - 1, 0),
+      #{$turn-drift} * var(--pages-turned) * var(--turn-ease)
+    );
+    --pile-lean: min(
+      -1 * #{$turn-splay} * var(--pile-arc-under),
+      -1 * #{$turn-splay} * var(--pile-arc) * var(--turn-ease)
+    );
+
     & > div {
       grid-area: content;
       border-radius: $border-radius;
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
+      // The turned pages are the last --pages-turned of the order — a flip sends the front page
+      // to --page-count and shifts the rest down — so the rank is 1 on the page turned first,
+      // which now lies nearest the pages still to come, and --pages-turned on the one turned
+      // most recently, which a flip sent under the whole stack and which therefore stands
+      // furthest out. Everything still to come ranks 0 or less.
+      --turned-rank: calc(var(--page-index) - var(--page-count) + var(--pages-turned));
+      --turned: clamp(0, var(--turned-rank), 1);
+      // log base 2 of one past the rank: 1 for the first page turned, then 1.58, 2, 2.32, and
+      // 0 for everything still to come. Written as a ratio of natural logs because that is the
+      // form the fan above uses.
+      --turned-arc: calc(log(1 + max(var(--turned-rank), 0)) / log(2));
+      --turned-rise: calc(#{$turn-lift} * var(--turned-arc));
+      --turned-drift: calc(#{$turn-drift} * max(var(--turned-rank), 0));
+
+      // Paint order: back to front by --page-index, which already reads the pile the right way
+      // round. A turned page carries the highest indices, so it paints behind the bottom page of
+      // the stack, and within the pile the page turned most recently paints behind the rest.
       order: calc(-1 * var(--page-index));
       // --flip-progress (set to 1 by fold-drag.ts for the length of a drag) closes the fan by
       // one page: the front page and the one behind it square up — so their folded-back corners
@@ -249,14 +337,152 @@ const pages = await Promise.all(
       // (inline, set by the back-fold tease) swings the hindmost page a little further out of
       // the fan when the pointer nears the folded-back corner, showing the page a back-drag
       // would bring over; the rotate transition below eases both effects.
-      rotate: calc(#{$per-page-splay} * log(max(var(--page-index) - var(--flip-progress), 1)) + var(--paper-peek, 0deg));
+      // A turned page leaves the fan below and leans the other way instead, so the fan always
+      // counts the pages still to come.
+      rotate: calc(
+        (1 - var(--turned)) * #{$per-page-splay} * log(max(var(--page-index) - var(--flip-progress), 1))
+        - #{$turn-splay} * var(--turned-arc)
+        + var(--paper-peek, 0deg)
+      );
+      translate: calc(-1 * var(--turned-drift)) calc(-1 * var(--turned-rise));
+
+      // The sheet's back in three tones, for the bend behind the crease and the flap: the
+      // paper's own colour (lifted onto the sheet by fold-drag.ts), lit a little along a bend's
+      // apex and darkened a little where it turns away. Mixed from the one colour so every
+      // theme keeps its own paper.
+      --bend-paper: var(--paper-surface, var(--surface-sunken));
+      --bend-light: color-mix(in oklab, var(--bend-paper) 86%, white);
+      --bend-dark: color-mix(in oklab, var(--bend-paper) 88%, black);
+      // The drift and the rise are what ease, not the translate they feed: the corner cut and
+      // the band below read the same two numbers, so cut, band and translate arrive together
+      // and the page's left edge stays on the stack's while it climbs. Easing the translate on
+      // its own left the cut at the new drift while the translate was still catching up, which
+      // opened a hairline of page background at the top of the crease, between the strip and
+      // the band, for the length of the turn. fold-drag.ts registers both as lengths.
       // TODO transition rotate at startup isn't working
-      transition: rotate 250ms ease-in-out;
+      transition: rotate 250ms ease-in-out, --turned-drift 250ms ease-in-out, --turned-rise 250ms ease-in-out;
 
       // The front page. A class rather than :first-child: fold-drag.ts hands it to the next
       // page when a completed drag flips this one onto the back of the stack, without touching
       // DOM order — so the rotate transition above can animate every page's re-splay.
       &.paper-front {
+        // The stack's top-left corner, folded away behind the clip. As a bare cut it is a hole,
+        // and with pages standing in the pile behind the stack their edges show through it. This
+        // is the paper that went round the back: a strip of sheet back running from the front
+        // page's crease up to the same crease on the furthest page of the pile, painted the way
+        // the fold flap paints a sheet's back — in that furthest page's own colour, with its
+        // hairline edge.
+        // It paints before the page's own children, so the clip's wire still lies over it.
+        //
+        // Its near edge is the front page's crease, (--fold-back-x, 0) to (0, --fold-back-y),
+        // plus a hairline of slack to close the seam. Its far edge is that crease as the furthest
+        // page carries it: the page's cut stands --pile-drift over (see the corner cut on the
+        // other pages below), and the page then slides back by that drift and up by
+        // --pile-rise, and leans --pile-lean about the pin — the order the browser applies a
+        // page's translate and rotate — so the strip meets that page's corner at any width and
+        // however many pages have piled up. Nothing is folded until a page has been turned, and
+        // until then the pile's crease is the front page's own.
+        &::before {
+          content: "";
+          position: absolute;
+          $pin-x: var(--fold-pin-x);
+          $pin-y: var(--fold-pin-y);
+          --lean-cos: cos(var(--pile-lean));
+          --lean-sin: sin(var(--pile-lean));
+          --pile-crease-top-x: calc(
+            #{$pin-x} - var(--pile-drift)
+            + (var(--fold-back-x) + var(--pile-drift) - #{$pin-x}) * var(--lean-cos)
+            + #{$pin-y} * var(--lean-sin)
+          );
+          --pile-crease-top-y: calc(
+            #{$pin-y} - var(--pile-rise)
+            + (var(--fold-back-x) + var(--pile-drift) - #{$pin-x}) * var(--lean-sin)
+            - #{$pin-y} * var(--lean-cos)
+          );
+          --pile-crease-left-x: calc(
+            #{$pin-x} - var(--pile-drift)
+            + (var(--pile-drift) - #{$pin-x}) * var(--lean-cos)
+            - (var(--fold-back-y) - #{$pin-y}) * var(--lean-sin)
+          );
+          --pile-crease-left-y: calc(
+            #{$pin-y} - var(--pile-rise)
+            + (var(--pile-drift) - #{$pin-x}) * var(--lean-sin)
+            + (var(--fold-back-y) - #{$pin-y}) * var(--lean-cos)
+          );
+          // The box starts above the page by the pile's rise plus room for the lean, and the
+          // polygon measures its y from there.
+          --strip-top: calc(var(--pile-rise) + 1em);
+          left: 0;
+          top: calc(-1 * var(--strip-top));
+          width: calc(var(--fold-back-x) + 1em);
+          height: calc(var(--fold-back-y) + var(--strip-top) + 1px);
+
+          // Paper does not fold flat along a line: between the front crease and the pile it
+          // rolls over the pile's edge in a rounded bend, and that is what this quadrilateral
+          // stands for. Two things make it read as one. Its long edges bow outward, three
+          // extra points on each set out along the crease's normal by a share of the bend's
+          // width (the near bow lies under the front sheet, and is there so the shape stays a
+          // whole), while the four corners stay on the two creases. And it is shaded across
+          // its width, from the crease to the pile: darker where the sheet turns up out of the
+          // crease, lit along the apex, darker again where it turns under at the pile's edge.
+          // The normal is (sin a, cos a) for a the crease's angle, pointing into the page; the
+          // gradient runs the other way, and its stops are measured from the box corner the
+          // gradient line starts at, which for that direction is the bottom-right one.
+          --bend-angle: atan2(var(--fold-back-y), var(--fold-back-x));
+          --bend-sin: sin(var(--bend-angle));
+          --bend-cos: cos(var(--bend-angle));
+          --bend-width: calc(var(--pile-rise) * var(--bend-cos));
+          --bend-bow: calc(var(--bend-width) * 0.3);
+          --bend-far-ax: var(--pile-crease-top-x);
+          --bend-far-ay: calc(var(--pile-crease-top-y) + var(--strip-top));
+          --bend-far-bx: var(--pile-crease-left-x);
+          --bend-far-by: calc(var(--pile-crease-left-y) + var(--strip-top));
+          --bend-near-ax: calc(var(--fold-back-x) + 1px);
+          --bend-near-ay: var(--strip-top);
+          --bend-near-bx: 0px;
+          --bend-near-by: calc(var(--fold-back-y) + 1px + var(--strip-top));
+          --bend-side: calc(var(--bend-bow) * 0.7071);
+          clip-path: polygon(
+            var(--bend-near-ax) var(--bend-near-ay),
+            var(--bend-far-ax) var(--bend-far-ay),
+            calc(var(--bend-far-ax) + (var(--bend-far-bx) - var(--bend-far-ax)) * 0.25 - var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-far-ay) + (var(--bend-far-by) - var(--bend-far-ay)) * 0.25 - var(--bend-side) * var(--bend-cos)),
+            calc(var(--bend-far-ax) + (var(--bend-far-bx) - var(--bend-far-ax)) * 0.5 - var(--bend-bow) * var(--bend-sin))
+              calc(var(--bend-far-ay) + (var(--bend-far-by) - var(--bend-far-ay)) * 0.5 - var(--bend-bow) * var(--bend-cos)),
+            calc(var(--bend-far-ax) + (var(--bend-far-bx) - var(--bend-far-ax)) * 0.75 - var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-far-ay) + (var(--bend-far-by) - var(--bend-far-ay)) * 0.75 - var(--bend-side) * var(--bend-cos)),
+            var(--bend-far-bx) var(--bend-far-by),
+            var(--bend-near-bx) var(--bend-near-by),
+            calc(var(--bend-near-bx) + (var(--bend-near-ax) - var(--bend-near-bx)) * 0.25 + var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-near-by) + (var(--bend-near-ay) - var(--bend-near-by)) * 0.25 + var(--bend-side) * var(--bend-cos)),
+            calc(var(--bend-near-bx) + (var(--bend-near-ax) - var(--bend-near-bx)) * 0.5 + var(--bend-bow) * var(--bend-sin))
+              calc(var(--bend-near-by) + (var(--bend-near-ay) - var(--bend-near-by)) * 0.5 + var(--bend-bow) * var(--bend-cos)),
+            calc(var(--bend-near-bx) + (var(--bend-near-ax) - var(--bend-near-bx)) * 0.75 + var(--bend-side) * var(--bend-sin))
+              calc(var(--bend-near-by) + (var(--bend-near-ay) - var(--bend-near-by)) * 0.75 + var(--bend-side) * var(--bend-cos))
+          );
+          --bend-crease: calc((1em - 1px) * var(--bend-sin) + (var(--fold-back-y) + 1px) * var(--bend-cos));
+          // The strip is the back of the page turned most recently, going round behind the
+          // stack, so it is that page's paper and not the front page's — pages in one stack can
+          // carry different backgrounds. fold-drag.ts puts the furthest page's own
+          // --paper-surface on the stack as --pile-paper whenever the pile changes, and leaves
+          // it unset when nothing is turned, where the strip is transparent anyway. The fold
+          // flap above stays on --bend-paper: that one really is the front page's own sheet.
+          --pile-bend-paper: var(--pile-paper, var(--bend-paper));
+          --pile-bend-light: color-mix(in oklab, var(--pile-bend-paper) 86%, white);
+          --pile-bend-dark: color-mix(in oklab, var(--pile-bend-paper) 88%, black);
+          background:
+            linear-gradient(
+              calc(-1 * var(--bend-angle)),
+              var(--pile-bend-dark) calc(var(--bend-crease) - var(--bend-bow)),
+              var(--pile-bend-light) calc(var(--bend-crease) + var(--bend-width) * 0.45),
+              var(--pile-bend-dark) calc(var(--bend-crease) + var(--bend-width) + var(--bend-bow))
+            )
+            var(--pile-bend-paper);
+          border: 1px solid var(--line-strong);
+          opacity: clamp(0, var(--pages-turned), 1);
+          pointer-events: none;
+        }
+
         // The page content, but not the fold flap / paper clip / grab handle / flip hint riding
         // on top of it (or the clip's back bar riding under it): clip-path clips descendants
         // too, and those must be able to overhang the page.
@@ -409,11 +635,20 @@ const pages = await Promise.all(
           // would — and sign() picks it straight off the lean, so the edge can't fall out of
           // step with the angle. (The two are only ambiguous at exactly 45°, where sign() is 0
           // and the wire would collapse; a lean that square has no edge to prefer anyway.)
+          //
+          // The width is that clearance itself, less an eighth, rather than a fixed em: a stack
+          // that sizes its corner to the sheet gets a clip sized to the corner it pins, instead
+          // of a wire whose flank crosses the crease and hangs off the page once the corner is
+          // small. x·sin(atan2(y, x)) is x·y/|(x, y)|, which calc cannot write directly because
+          // it will not multiply two lengths.
           translate: -87.5% -78.125%;
           transform-origin: 87.5% 78.125%;
           rotate: atan2(var(--fold-back-rest-x), var(--fold-back-rest-y));
           transform: scaleY(sign(var(--fold-back-rest-y) - var(--fold-back-rest-x)));
-          width: 1.75em;
+          width: calc(
+            0.875 * var(--fold-back-rest-x)
+            * sin(atan2(var(--fold-back-rest-y), var(--fold-back-rest-x)))
+          );
           height: auto;
         }
 
@@ -436,11 +671,11 @@ const pages = await Promise.all(
 
         @keyframes initial-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }
-          to { --fold-x: 2cm; --fold-y: 1cm; }
+          to { --fold-x: #{$fold-rest-x}; --fold-y: #{$fold-rest-y}; }
         }
 
         @keyframes fold-reveal-pulse {
-          from, 50% { --fold-x: 2cm; --fold-y: 1cm; }
+          from, 50% { --fold-x: #{$fold-rest-x}; --fold-y: #{$fold-rest-y}; }
           90%, to { --fold-x: 3cm; --fold-y: 2cm; }
         }
       }
@@ -449,8 +684,23 @@ const pages = await Promise.all(
       // are inherited from the stack, so every page's corner folds behind as one. Unconditional
       // (not scoped to [data-paper-flipped]) so the cut grows and shrinks with the transitioned
       // sizes instead of popping when the attribute toggles.
+      //
+      // The whole cut, left edge and all, moves over by the page's own drift, which cancels the
+      // translate above: a turned page leans back towards the clip, and without this its left
+      // edge would stand out past the stack's, a stripe of it showing all the way down beside
+      // the front page. Cancelling the drift here instead of dropping it keeps the pile's arc,
+      // which the drift is what bows, and puts every page's crease on the stack's own crease,
+      // which is what lets one dog-ear the size of the cut cover the pile (see
+      // .paper-front::before). --turned-drift is 0 on a page still to come, so their cut is
+      // unchanged.
       &:not(.paper-front) > * {
-        clip-path: polygon(var(--fold-back-x) 0px, 0px var(--fold-back-y), 0px 100%, 100% 100%, 100% 0px);
+        clip-path: polygon(
+          calc(var(--fold-back-x) + var(--turned-drift)) 0px,
+          var(--turned-drift) var(--fold-back-y),
+          var(--turned-drift) 100%,
+          100% 100%,
+          100% 0px
+        );
       }
 
       // The fold flap. Styled at this level rather than under .paper-front: a committed flip
@@ -472,7 +722,20 @@ const pages = await Promise.all(
         // own resolved background color, lifted onto the sheet by fold-drag.ts — as a sibling
         // of the page this element can't see background definitions scoped inside it (e.g. a
         // blueprint page redefining its surface).
-        background: var(--paper-surface, var(--surface-sunken));
+        // Lit where it comes off the crease and darker toward its free corner, the way the
+        // bend behind the crease is shaded (see .paper-front::before), so flap and bend read as
+        // one sheet. The crease lies --fold-x * sin(a) along the gradient line from the box's
+        // bottom-right corner, and the corner twice that, a the crease's angle.
+        --flap-angle: atan2(var(--fold-y), var(--fold-x));
+        --flap-crease: calc(var(--fold-x) * sin(var(--flap-angle)));
+        background:
+          linear-gradient(
+            calc(-1 * var(--flap-angle)),
+            var(--bend-light) var(--flap-crease),
+            var(--bend-paper) calc(var(--flap-crease) * 1.4),
+            var(--bend-dark) calc(var(--flap-crease) * 2)
+          )
+          var(--bend-paper);
         border: 1px solid var(--line-strong);
         filter: brightness(75%);
         transition: filter 200ms ease-out;
@@ -523,6 +786,45 @@ const pages = await Promise.all(
           pointer-events: none;
         }
       }
+    }
+
+    // The band of sheet back a risen page shows above the front one: the page's own colour,
+    // which fold-drag.ts lifts onto it because a background defined inside the page can't be
+    // seen from out here, darkened exactly as the fold flap darkens the same paper, with the
+    // sheet's hairline edge and its corner. It runs $turn-under behind the front page, so the
+    // bottom of the band is never in view and what shows is exactly how far the sheet has
+    // risen. ::after, not ::before: the page content would paint over it. The opacity is not
+    // transitioned on purpose — a page coming back is the front page the moment it is promoted,
+    // and a band fading out over it would wipe across the top of the sheet.
+    & > div::after {
+      content: "";
+      position: absolute;
+      --band-height: calc(var(--turned-rise) + #{$turn-under});
+      // The left inset cancels the page's drift, as the corner cut below does, so the band ends
+      // on the stack's left edge rather than out past it.
+      inset: 0 0 auto var(--turned-drift);
+      height: var(--band-height);
+      // The band covers the sheet's own folded corner, so it has to be folded away too or the
+      // pile would end in square corners stacked up the dog-ear's column. Same crease, run down
+      // to the bottom of the band: it starts --fold-back-x in at the top and comes in by the
+      // band's height over the crease's reach. (tan(atan2()) is one length over another as a
+      // plain number, a division Firefox won't take; see the crease formula above.)
+      //
+      // Not floored at 0: a band taller than the fold reaches past the point where the crease
+      // leaves the page, and the crease has to keep its slope there so the band ends on the
+      // page's own left edge. Flooring it stood the band's edge up straight instead, leaving a
+      // wedge of the sheet below the crease uncovered, which showed as a pale notch of the
+      // next sheet's margin between one page of the pile and the next.
+      --band-crease-x: calc(
+        var(--fold-back-x) * (1 - tan(atan2(var(--band-height), max(var(--fold-back-y), 1px))))
+      );
+      clip-path: polygon(var(--fold-back-x) 0px, var(--band-crease-x) 100%, 100% 100%, 100% 0px);
+      background: var(--paper-surface, var(--surface-sunken));
+      border: 1px solid var(--line-strong);
+      border-top-right-radius: $border-radius;
+      filter: brightness(94%);
+      opacity: var(--turned);
+      pointer-events: none;
     }
 
     // Once a page has been flipped to the back there is a previous page to go back to: the

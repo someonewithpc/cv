@@ -1,0 +1,271 @@
+---
+import { baseObjects, objectsOf, walkthrough } from '../objects';
+
+const group = baseObjects.find((object) => object.autoplay) ?? baseObjects[0];
+const members = objectsOf(group).map((object, index) => {
+  const seats = object.details.split(',')[0];
+  return index === 0 ? `${seats} · base` : seats;
+});
+const caret = walkthrough.value.length;
+/* Trailing room, so the box never shrinks onto the caret the way a max-content one does. */
+const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
+---
+
+<div class="wrapper">
+  <div class="shared-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <strong>One "Shared value" input for the base object and every variant</strong>
+      </header>
+
+      <div class="fan">
+        <div class="source">
+          <span class="caption">{group.base.name} · shared value</span>
+          <div class="field" style={fieldStyle}>
+            <span class="text">{walkthrough.value}</span>
+            <span class="caret"></span>
+            <span class="tick">✓</span>
+          </div>
+          <span class="events"><code>keyup</code> · <code>focus</code> · <code>click</code> · <code>blur</code></span>
+        </div>
+
+        <svg class="wires" viewBox="0 0 40 100" preserveAspectRatio="none">
+          <path d="M0 50 C 18 50, 22 12, 40 12" />
+          <path d="M0 50 C 18 50, 22 37, 40 37" />
+          <path d="M0 50 C 18 50, 22 63, 40 63" />
+          <path d="M0 50 C 18 50, 22 88, 40 88" />
+        </svg>
+
+        <ul class="targets">
+          {members.map((member) => (
+            <li>
+              <span class="member">{member}</span>
+              <span class="field mirrored" style={fieldStyle}>
+                <span class="text">{walkthrough.value}</span>
+                <span class="caret"></span>
+              </span>
+              <code class="prop">--caret: {caret}</code>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Mirror</dt>
+          <dd>Every keystroke copies the value into each variant card's own input, scrolled to its end so the tail stays in view</dd>
+        </div>
+        <div>
+          <dt>Save</dt>
+          <dd>Change or Enter submits with <code>update_styles</code>: one row per object, titleized, and a cleared value destroys the rows</dd>
+        </div>
+        <div>
+          <dt>Warn</dt>
+          <dd>Variants that already disagree keep the input open but empty; the placeholder lists the overrides and the tick becomes a warning sign</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* The title block claims the bottom-right corner on a narrow sheet, and the
+       panel is centred, so its bottom edge has to clear that corner. */
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    /* Portrait gives the title block its own row. */
+    padding-bottom: $sheet-margin;
+  }
+
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.shared-layer {
+  box-sizing: border-box;
+  width: min(100%, 44em);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  display: grid;
+  gap: 0.625em;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.875em;
+  }
+}
+
+.fan {
+  display: grid;
+  grid-template-columns: max-content 2.5em max-content;
+  align-items: center;
+}
+
+.source {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.caption,
+.member {
+  font-size: 0.625em;
+  color: var(--ink-muted);
+}
+
+.field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375em;
+  padding: 0.125em 0.5em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  font-family: monospace, system-ui;
+  font-size: 0.875em;
+
+  .text {
+    /* The value plus room to keep typing, so the caret always lands inside the box. */
+    min-width: calc(var(--chars) * 1ch + 3ch);
+    white-space: pre;
+  }
+
+  .caret {
+    position: absolute;
+    left: calc(0.5em + 1px + var(--caret) * 1ch);
+    top: 50%;
+    width: 1px;
+    height: 1.125em;
+    translate: 0 -50%;
+    background: var(--ink);
+    animation: caret-blink 500ms infinite alternate both;
+  }
+
+  .tick {
+    margin-left: 0.25em;
+    color: var(--accent);
+  }
+
+  &.mirrored {
+    font-size: 0.75em;
+  }
+}
+
+.events {
+  font-size: 0.625em;
+  color: var(--ink-muted);
+}
+
+.wires {
+  width: 100%;
+  height: 100%;
+  min-height: 7em;
+  overflow: visible;
+
+  path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.targets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.375em;
+
+  li {
+    display: grid;
+    grid-template-columns: 3em max-content max-content;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  .prop {
+    font-size: 0.625em;
+    color: var(--ink-muted);
+  }
+}
+
+.rules {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--line);
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+  }
+
+  dt {
+    font-size: 0.625em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+
+@keyframes caret-blink {
+  from, 49% {
+    opacity: 0;
+  }
+
+  50%, to {
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field .caret {
+    animation: none;
+    opacity: 0.75;
+  }
+}
+</style>

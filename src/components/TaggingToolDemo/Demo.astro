@@ -1,0 +1,88 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import GridLayer from './layers/GridLayer.astro';
+import SharedLayer from './layers/SharedLayer.astro';
+import CaretLayer from './layers/CaretLayer.astro';
+import MissingLayer from './layers/MissingLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+const srcRoot = path.join(process.cwd(), 'src');
+const clientEntry = path.join(srcRoot, 'components/TaggingToolDemo/client/taggingTool.ts');
+
+const { outputFiles: [clientBundle] } = await esbuild.build({
+  entryPoints: [clientEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  alias: { '@': srcRoot },
+});
+
+const clientSize = toKiB(clientBundle.text);
+
+const layers = {
+  grid: { name: null },
+  shared: { name: 'Shared Value', pageStyle: 'blueprint' },
+  caret: { name: 'Simulated Caret', pageStyle: 'blueprint' },
+  missing: { name: 'Completed Objects', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Library Tagging Tool"
+  scale="1:1"
+  size={clientSize}
+  date="2025"
+  tech={['css3', 'javascript']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      grid: <GridLayer />,
+      shared: <SharedLayer />,
+      caret: <CaretLayer />,
+      missing: <MissingLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      grid: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over. One shared value tags the base object and every variant,
+          caret and all. Switch property and what is already stored comes back
+        </PostIt>
+      ),
+      shared: (
+        <PostIt background="#cde" color="black">
+          One input tags a base object and all of its variants at once. Variants that already
+          disagree keep their values; the input shows a warning and lists the overrides in
+          its placeholder
+        </PostIt>
+      ),
+      caret: (
+        <PostIt background="#fed" color="black">
+          The mirrored inputs never take focus, so they never get a caret. Each draws a bar
+          from a custom property, one ch per character
+        </PostIt>
+      ),
+      missing: (
+        <PostIt background="#dfd" color="black">
+          The list only holds objects still missing the property. The save that fills the last
+          gap takes the object off the page
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>

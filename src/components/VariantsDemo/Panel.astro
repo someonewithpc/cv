@@ -1,0 +1,35 @@
+---
+/**
+ * The Replace tool's sidebar on its own: a header and the two cards. No scene behind it,
+ * the cards are the subject. Everything here renders on the server; boot.ts adds the
+ * picks, the hover preview and the autoplay once the page is in front.
+ */
+import Card from './Card.astro';
+import { VARIANT_CARDS } from './variantsCatalog';
+---
+
+<div
+  class="variants-stage variants-catalog"
+  data-variants-island
+  tabindex="-1"
+>
+  <aside class="sidebar" aria-label="Replace tool">
+    <header class="sidebar-header">
+      <h3 class="sidebar-title">Select an Object</h3>
+    </header>
+    <div class="sidebar-body">
+      {VARIANT_CARDS.map((card) => <Card item={card} active={true} />)}
+    </div>
+  </aside>
+</div>
+
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from './boot';
+
+bootIslands('[data-variants-island]', boot);
+</script>
+
+<style is:global lang="scss">
+@use './panel';
+</style>

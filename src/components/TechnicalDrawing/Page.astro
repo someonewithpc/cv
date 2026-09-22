@@ -104,7 +104,7 @@ const transportKeys = [
             </div>
           </td>
         )}
-        <td colspan="5">
+        <td colspan="5" class="title-name">
           <header>
             <h2 class="typewriter">{title ?? subtitle}</h2>
             {title && subtitle && (<h3 class="typewriter">{subtitle}</h3>)}
@@ -112,28 +112,28 @@ const transportKeys = [
         </td>
       </tr>
       <tr>
-        <td>
+        <td class="title-no">
           <div>
             <span class="title-label monospace">Drawing No.</span>
             <span class="typewriter">{index} / {layerCount}</span>
           </div>
         </td>
 
-        <td>
+        <td class="title-scale">
           <div>
             <span class="title-label monospace">Scale</span>
             <span class="typewriter">{scale ?? '3:1'}</span>
           </div>
         </td>
 
-        <td>
+        <td class="title-weight">
           <div>
             <span class="title-label monospace">Weight</span>
             <span class="typewriter">{size ?? '-'}</span>
           </div>
         </td>
 
-        <td>
+        <td class="title-date">
           <div>
             <span class="title-label monospace">Date</span>
             <span class="typewriter"><time datetime={date}>{date ?? '-'}</time></span>
@@ -142,10 +142,7 @@ const transportKeys = [
 
         <td class="title-proj">
           <div>
-            <span class="title-label monospace">
-              <span aria-hidden="true">Proj.</span>
-              <span class="sr-only">Projection</span>
-            </span>
+            <span class="title-label sr-only">Projection</span>
             <Icon name="first-angle-projection" aria-hidden="true" />
           </div>
         </td>
@@ -1191,6 +1188,17 @@ section {
     display: none;
   }
 
+  /* No note at all: the note's column is the artwork's to use. */
+  &:not(:has(.note-card > *)) {
+    .content {
+      grid-column: 1 / -1;
+    }
+
+    .aside {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .drawing-note:modal .note-card { transition: none; }
   }
@@ -1247,6 +1255,14 @@ section {
       border: $border;
       padding: 0.25em;
       color: var(--ink);
+
+      /* The symbol alone, a quarter under the size it draws itself at, and no
+         visible label: at that width the cell fits beside the artwork on a 60em
+         sheet, where the labelled cell ran 7px into the prose of two pages. */
+      &.title-proj :global(svg) {
+        width: 1.5em;
+        height: 0.75em;
+      }
 
       // display must stay table-cell — grid/flex on the td breaks rowspan.
       &.title-tech {
@@ -1324,6 +1340,86 @@ section {
       }
     }
   }
+
+  /* The block gives up its parts, in this order, as the room at the sheet's
+     bottom-right runs out. Each step includes the ones before it. */
+  /* Drop the Proj. cell. Its symbol lives in that corner cell or nowhere: a mark
+     beside the title reads as part of the title, and the corner is what the fold
+     covers anyway. */
+  @mixin drop-proj {
+    .title-proj { display: none; }
+  }
+
+  @mixin title-fit-1 {
+    & > table { @include drop-proj; }
+  }
+
+  @mixin title-fit-2 {
+    @include title-fit-1;
+    & > table .title-scale { display: none; }
+  }
+
+  @mixin title-fit-3 {
+    @include title-fit-2;
+    & > table .title-weight { display: none; }
+  }
+
+  @mixin title-fit-4 {
+    @include title-fit-3;
+
+    /* The cells stop being a table so the logo cell can drop under the title
+       instead of standing a column beside it. Each cell keeps its hairline, and
+       the negative margins do what border-collapse did. */
+    & > table {
+      display: flex;
+      flex-wrap: wrap;
+
+      tbody,
+      tr { display: contents; }
+
+      td {
+        display: block;
+        margin: 0 -1px -1px 0;
+      }
+
+      .title-name {
+        order: -1;
+        flex: 1 0 100%;
+      }
+
+      .title-tech .title-tech-stack {
+        width: 2.625em;
+        height: 2em;
+        aspect-ratio: auto;
+
+        :global(.tech-icon svg) {
+          width: 1.25em;
+          height: 1.25em;
+        }
+      }
+
+      .title-no,
+      .title-date { order: 1; }
+    }
+  }
+
+  @mixin title-fit-5 {
+    @include title-fit-4;
+    /* Narrow enough that the title has to take a second line. 11rem is what clears
+       the artwork cell on a 60em sheet, which is as wide as a sheet gets. */
+    & > table { max-width: 11rem; }
+  }
+
+  /* Pick the step from the sheet's own width. The lower bound keeps the ladder out
+     of the portrait layout below, which gives the block its own row and has no
+     room problem to solve. The symbol's cell, symbol only and 1.5em wide, fits
+     beside the artwork on every sheet down to the width where Scale goes too:
+     measured clear of the prose on every page at 960, 1024 and 1440. */
+  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-1; }
+  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-2; }
+  @container technical-drawing-width (40em < width <= 46em) { @include title-fit-3; }
+  @container technical-drawing-width (40em < width <= 43em) { @include title-fit-4; }
+  @container technical-drawing-width (40em < width <= 41em) { @include title-fit-5; }
 
   /* A sheet this narrow cannot host the note beside the artwork — landscape
      included, where the sheet is half as tall as it is wide and the note runs
@@ -1471,11 +1567,9 @@ section {
         padding: 0.2em;
       }
 
-      // Purely decorative on a phone sheet — drop it rather than squeeze the
-      // rest of the title block to make room for it.
-      .title-proj {
-        display: none;
-      }
+      // Purely decorative on a phone sheet: drop the cell rather than squeeze
+      // the rest of the title block to make room for it.
+      @include drop-proj;
 
       // No longer has to stay square once the sheet can't spare the width —
       // a shorter, wider strip still reads fine at this size.

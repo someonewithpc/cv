@@ -4,7 +4,6 @@
 <div
   class="parameters-scene-demo"
   data-parameters-scene-island
-  data-boot-module="/src/components/SpaceBuilderDemo/layers/ParametersLayer.boot.ts"
   tabindex="-1"
 >
   <div class="boot-placeholder" aria-hidden="true">
@@ -13,12 +12,12 @@
   </div>
 </div>
 
-{/*
-  No <script> here — a component reached only through Stack.astro's per-layer
-  Astro.slots.render() call never gets its own hoisted script onto the page (see the
-  "dev-server-drops-demo-scripts" memory). ParametersLayer.boot.ts is armed instead by
-  Stack.astro's own script, which the pagination doesn't touch, via data-boot-module.
-*/}
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from './ParametersLayer.boot';
+
+bootIslands('[data-parameters-scene-island]', boot);
+</script>
 
 <style lang="scss">
 :global(article.technical-drawing-stack > * > section .content:has(.parameters-scene-demo)) {

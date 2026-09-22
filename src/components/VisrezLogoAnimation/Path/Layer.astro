@@ -4,10 +4,14 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 ---
 
 <div class="wrapper">
-  <Annotations reach={1.6}>
+  <Annotations reach={1.6} scale={0.85}>
     <svg class="path-layer" viewBox="-1 -1 2 2" slot="content">
       <g transform="translate(0, 0.2) scale(.707)">
         <circle cx="1" cy="-0.707" r={0.224 / 2} fill="gray" class="first-vertex-virtual" />
+        {/* The drawn vertices, as the stroke covers them: unpainted, for the callouts to anchor to. */}
+        <circle cx="0.6" cy="-0.4242" r={0.224 / 2} fill="none" data-vertex="first" />
+        <circle cx="0" cy="0" r={0.224 / 2} fill="none" data-vertex="second" />
+        <circle cx="-1" cy="-0.707" r={0.224 / 2} fill="none" data-vertex="third" />
         <path
           d="M.6-.42L0 0l-1-.707 1-.707 1 .707v1L0 1l-1-.707V-.2"
           stroke-width=".224"
@@ -20,9 +24,13 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
     </svg>
 
     <Fragment slot="annotations">
+      {/* Each tip lands on the edge of its vertex's circle, on the side the shaft comes
+          from, so the arrowhead is not under the stroke. */}
       <ArrowAnnotation
-        tipX={0.85}
-        tipY={-0.375}
+        target=".first-vertex-virtual"
+        anchor="0.854 0.146"
+        tipX={0.77}
+        tipY={-0.36}
         angle={30}
         length={0.2}
         text="(1.0, -0.707)"
@@ -31,8 +39,10 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
       />
 
       <ArrowAnnotation
-        tipX={0.55}
-        tipY={-0.025}
+        target='[data-vertex="first"]'
+        anchor="0.854 0.854"
+        tipX={0.48}
+        tipY={-0.04}
         angle={-30}
         length={0.2}
         text="(1.0, -0.707) * 0.6"
@@ -41,8 +51,10 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
       />
 
       <ArrowAnnotation
-        tipX={0.125}
-        tipY={0.275}
+        target='[data-vertex="second"]'
+        anchor="0.854 0.854"
+        tipX={0.06}
+        tipY={0.26}
         angle={-30}
         length={0.2}
         text="(0.0, 0.0)"
@@ -50,13 +62,17 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
         arrowClass="second-vertex"
       />
 
+      {/* The label is pushed right of the shaft's foot, so the shaft's climb clears it. */}
       <ArrowAnnotation
-        tipX={-0.825}
-        tipY={-0.2}
+        target='[data-vertex="third"]'
+        anchor="0.146 0.854"
+        tipX={-0.76}
+        tipY={-0.24}
         angle={-30 - 90}
         length={0.5}
-        lengthOffset={{ x: 0.125, y: 0 }}
-        text="  (-1.0, -0.707)"
+        labelSide="right"
+        lengthOffset={{ x: 0.15, y: 0 }}
+        text="(-1.0, -0.707)"
         textClass="monospace third-vertex"
         arrowClass="third-vertex"
       />
