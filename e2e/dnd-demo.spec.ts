@@ -204,6 +204,33 @@ test('autoplay runs and hands over to the visitor', async ({ page }) => {
   await expect(playing).toBeHidden();
 });
 
+test('a real pointer resting on the demo keeps the walkthrough off it', async ({ page }) => {
+  const app = await openDemo(page);
+  const playing = app.locator('.demo-flash');
+  const cursor = app.locator('[data-demo-cursor]');
+  await expect(playing).toBeVisible({ timeout: 25_000 });
+
+  const box = await app.boundingBox();
+  if (!box) throw new Error('Demo has no layout box');
+  await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.5);
+
+  // The run stands down at once, and takes its cursor, its carried picture and its ghost
+  // with it rather than leaving any of them mid-gesture.
+  await expect(playing).toBeHidden();
+  await expect(cursor).toHaveCount(0);
+  await expect(app.locator('.demo-drag-thumb')).toHaveCount(0);
+  await expect(app).toHaveAttribute('data-phase', 'idle');
+
+  // And it stays down while the pointer rests there, past the spell that would resume it.
+  await page.waitForTimeout(4000);
+  await expect(playing).toBeHidden();
+  await expect(cursor).toHaveCount(0);
+
+  // Off the demo, the walkthrough comes back on its own.
+  await leaveDemo(page, app);
+  await expect(playing).toBeVisible({ timeout: 25_000 });
+});
+
 /** An ordinary desktop window, and the size the sheet is as wide as it ever gets at. */
 const DESKTOP_WINDOW = { width: 1366, height: 768 };
 
@@ -523,6 +550,19 @@ async function sceneBox(app: Locator): Promise<Box> {
   return box;
 }
 
+/**
+ * Take the pointer off the demo, the way a hand leaves the mouse once a gesture is done.
+ * The walkthrough will not start under a pointer that is still resting on it, so a test
+ * that wants the scripted run back has to let go of it first.
+ */
+async function leaveDemo(page: Page, app: Locator) {
+  const box = await app.boundingBox();
+  if (!box) throw new Error('Demo has no layout box');
+  const viewport = page.viewportSize()!;
+  const below = box.y + box.height + 12;
+  await page.mouse.move(box.x + box.width / 2, below < viewport.height ? below : Math.max(0, box.y - 12));
+}
+
 /** Orbit with a horizontal drag of `dx` px across the canvas (0.005 rad per px). */
 async function orbitCamera(page: Page, box: Box, dx: number) {
   const cx = box.x + box.width / 2;
@@ -568,6 +608,7 @@ test('the walkthrough still drops on the visible floor after the camera moves', 
   // the same one the fresh load dropped on.
   await expect(app).toHaveAttribute('data-selected', 'false');
   await orbitCamera(page, box, -160);
+  await leaveDemo(page, app);
   const orbited = await dropAfter(app, 1);
   expect(orbited.x).toBeGreaterThan(0);
   expect(orbited.x).toBeLessThan(orbited.width);
@@ -581,6 +622,7 @@ test('the walkthrough still drops on the visible floor after the camera moves', 
   await expect(app).toHaveAttribute('data-selected', 'false');
   const seen = await dropCount(app);
   await moveCamera(page, box);
+  await leaveDemo(page, app);
   const moved = await dropAfter(app, seen);
   expect(moved.x).toBeGreaterThan(0);
   expect(moved.x).toBeLessThan(moved.width);
@@ -662,6 +704,7 @@ test('a lap that starts after a takeover clears the floor first', async ({ page 
   // An orbit hands the scene over the way any visitor gesture does. Restart, the one path
   // that resets the scene, is not involved, and the lap resumes on its own.
   await orbitCamera(page, box, -160);
+  await leaveDemo(page, app);
 
   const before = await floorLog(app);
   const left = standing(before);
@@ -746,6 +789,7 @@ test('the walkthrough shows the same key while it clears the floor', async ({ pa
     .poll(() => floorLog(app).then(standing), { timeout: 30_000, intervals: [40] })
     .toBeGreaterThan(0);
   await orbitCamera(page, box, -160);
+  await leaveDemo(page, app);
 
   await expect
     .poll(() => keyToasts(app), { timeout: 30_000, intervals: [100] })
