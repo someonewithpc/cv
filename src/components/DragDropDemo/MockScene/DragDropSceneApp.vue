@@ -130,6 +130,8 @@ const DRAG_THRESHOLD_PX = 5;
 
 let inView = false;
 let userControl = false;
+/** Whether a real pointer is resting on the demo. The walkthrough stays down while it is. */
+let pointerOver = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
@@ -197,6 +199,11 @@ function canvasRect() {
   const canvas = rootRef.value?.querySelector('[data-scene-canvas]');
   canvasRectCache = canvas?.getBoundingClientRect() ?? null;
   return canvasRectCache;
+}
+
+function rootRect() {
+  rootRectCache ??= rootRef.value?.getBoundingClientRect() ?? null;
+  return rootRectCache;
 }
 
 function withinRect(clientX: number, clientY: number, rect: DOMRect) {
@@ -501,8 +508,7 @@ function wait(ms: number) {
 
 /** Client coords → position relative to root, since the cursor element lives inside it. */
 function toRootPoint(clientX: number, clientY: number) {
-  rootRectCache ??= rootRef.value?.getBoundingClientRect() ?? null;
-  const rect = rootRectCache;
+  const rect = rootRect();
   if (!rect) return { x: clientX, y: clientY };
   return { x: clientX - rect.left, y: clientY - rect.top };
 }
@@ -846,8 +852,9 @@ function startAutoplay() {
     return;
   }
   // An object the visitor is still carrying is theirs to put down; taking the scene back
-  // mid-placement would drop it for them.
-  if (userControl || !chairsReady || !inView || phase.value !== 'idle') return;
+  // mid-placement would drop it for them. Nor does it start under a resting pointer: a
+  // mouse parked on the demo sends no more moves, so only this guard keeps the run off it.
+  if (userControl || pointerOver || !chairsReady || !inView || phase.value !== 'idle') return;
   autoplayToken += 1;
   reportAutoplayState(rootRef.value, 'playing');
   void runAutoplay();
@@ -875,6 +882,8 @@ async function restartDemo() {
   resumeTimer = null;
   stopAutoplay();
   userControl = false;
+  // Restart is an ask for the walkthrough, so the pointer that pressed it is not in its way.
+  pointerOver = false;
   sceneRef.value?.reset();
   selectedPlacement.value = false;
   syncPlaced();
@@ -900,6 +909,40 @@ function yieldToUser(keepControl = false) {
     // hold of the scene, in which case the deck rightly goes on reading MANUAL CONTROL.
     startAutoplay();
   }, RESUME_DELAY_MS);
+}
+
+/**
+ * A real pointer beats the walkthrough. While one rests anywhere on the demo the scripted
+ * run stands down, and it only picks up again a quiet spell after the pointer has left.
+ * Pausing rather than stopping for good is what a pointer that merely crossed the demo on
+ * its way down the page deserves, and it is what a press has always done here. Nothing
+ * mistakes the walkthrough for the visitor: its own cursor presses are untrusted
+ * `mousedown` and `mouseup` events (see fireCursorButton), and it sends no pointer events
+ * at all.
+ */
+function onRealPointerMove(event: PointerEvent) {
+  if (!event.isTrusted) return;
+  const root = rootRef.value;
+  if (!root) return;
+  const rect = rootRect();
+  const over = (event.target instanceof Node && root.contains(event.target))
+    || Boolean(
+      rect
+      && event.clientX >= rect.left && event.clientX <= rect.right
+      && event.clientY >= rect.top && event.clientY <= rect.bottom,
+    );
+  // Off the demo and already known to be off it: the rest of the page is not this demo's
+  // business, and the quiet spell is already counting down.
+  if (!over && !pointerOver) return;
+  pointerOver = over;
+  yieldToUser();
+}
+
+/** A pointer can also leave by leaving the window, which sends no move to follow it out. */
+function onRealPointerLeave(event: PointerEvent) {
+  if (!event.isTrusted || !pointerOver) return;
+  pointerOver = false;
+  yieldToUser();
 }
 
 onMounted(async () => {
@@ -979,10 +1022,12 @@ onMounted(async () => {
       else restartDemo();
     });
     root.addEventListener('pointerdown', onPointerDown);
+    root.addEventListener('pointerleave', onRealPointerLeave);
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
     window.addEventListener('scroll', invalidateRects, { capture: true, passive: true });
     window.addEventListener('resize', invalidateRects);
+    window.addEventListener('pointermove', onRealPointerMove, { passive: true });
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
@@ -1006,10 +1051,12 @@ onBeforeUnmount(() => {
   sceneRef.value?.dispose();
   sceneRef.value = null;
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
+  rootRef.value?.removeEventListener('pointerleave', onRealPointerLeave);
   rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
   window.removeEventListener('scroll', invalidateRects, { capture: true });
   window.removeEventListener('resize', invalidateRects);
+  window.removeEventListener('pointermove', onRealPointerMove);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
   window.removeEventListener('pointercancel', onPointerUp);
