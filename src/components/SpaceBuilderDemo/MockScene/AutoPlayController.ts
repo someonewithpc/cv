@@ -216,6 +216,12 @@ const PRESETS: Preset[] = [
   { kind: 'build', style: 'u_shape', seats: 0, distanceX: 0.22, distanceZ: 0.35 },
 ];
 
+/**
+ * The seat count the banquet loop takes off the card's variant picker. Six seats at the
+ * same table size is its own library object, so the pick swaps the model in the scene.
+ */
+const BANQUET_PICKED_PAX = 6;
+
 function blocksDemoOf(preset: Preset) {
   const blocks = preset.blocks;
   if (!blocks || (blocks.width <= 0 && blocks.height <= 0)) return null;
@@ -831,8 +837,9 @@ export class AutoPlayController {
   }
 
   /**
-   * The Add loop over a banquet set: open the catalog, pick the set, drag it onto the
-   * floor. No Build pass, because a banquet set is placed one at a time.
+   * The Add loop over a banquet set: open the catalog, pick the set, take a seat count off
+   * its variant picker, drag it onto the floor. No Build pass, because a banquet set is
+   * placed one at a time.
    */
   private banquetSteps(): Step[] {
     const item = CATALOG_ITEMS.find((entry) => entry.id === 'table-round')!;
@@ -861,8 +868,28 @@ export class AutoPlayController {
           this.scene.activateCatalogItem(item.id, variant);
         },
       },
+      // The variant picker, where the product keeps it: the set's seats row on its card in
+      // the sidebar, opened and picked from before the set is dragged out.
       {
-        delay: 250,
+        delay: 600,
+        cursor: { target: 'variant:pax' },
+      },
+      {
+        delay: 420,
+        cursor: { target: 'variant:pax', click: true },
+        domClick: true,
+      },
+      {
+        delay: 700,
+        cursor: { target: `variant:pax:${BANQUET_PICKED_PAX}` },
+      },
+      {
+        delay: 420,
+        cursor: { target: `variant:pax:${BANQUET_PICKED_PAX}`, click: true },
+        domClick: true,
+      },
+      {
+        delay: 600,
         cursor: { target: 'catalog:table-round', dragging: true },
         run: () => {
           this.onUi({ panel: 'catalog', phase: 'placing' });
