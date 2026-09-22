@@ -2,372 +2,182 @@
 /**
  * REVIEW ONLY, strip before this lands on main, along with the ?desk switch in Layout.astro.
  *
- * Every wood tile cut so far and the links that put each one on the desk. The page
- * deliberately skips Layout: it has no desk of its own, so the strips show the tile as the
- * file has it, before the theme's desk colour and grain veil get at it.
+ * Every link Hugo needs, in one block, with nothing above it. Each link opens the CV with that
+ * desk already painted and the theme already picked. Nothing here has been narrowed on our
+ * judgement: every tile that was ever cut is on the dark lists, because the painting lands them
+ * all at the same near black and only the grain is left to choose. The measurements, the
+ * mechanism and the history of the rounds live in the pull request and the state file, not here.
  */
 
-type Tile = {
+type Wood = {
   file: string;
   name: string;
-  weight: string;
+  figure: string;
+  swing: string;
   L: string;
   C: string;
-  step: string;
-  ratio: string;
-  source: string;
-  href: string;
-  licence: string;
-  note: string;
 };
 
-/* Poliigon's two free scans, cut in round 2. Light and arctic are settled on the ash. */
-const POLIIGON: readonly Tile[] = [
+/* swing is the painted desk's L* standard deviation, read off the bare margin beside the
+   sheets at 1440x900, dark theme. The drawn boards this replaces measure 2.02 there. Forest
+   paints within 0.02 of dark on every tile, so one number does for both. L* and C* are the
+   tile file's own lightness and chroma, which is what a light desk shows through the veil. */
+const WOODS: readonly Wood[] = [
   {
     file: 'ash-4186',
-    name: 'Ash Wood Board, Light Beige',
-    weight: '125 KB',
+    name: 'Ash boards',
+    figure: 'Sawn boards with the plank joints left in. The wood light and arctic wear now.',
+    swing: '3.11',
     L: '74.4',
     C: '19.7',
-    step: '5.35',
-    ratio: '0.709',
-    source: 'Poliigon 4186',
-    href: 'https://www.poliigon.com/texture/ash-wood-board-texture-light-beige/4186',
-    licence: 'Poliigon Free',
-    note: 'Your pick for light and for arctic. Boards rather than veneer, scanned with the grain already across, and the plank joints come with it.',
   },
   {
     file: 'oak-7760',
-    name: 'Slip Match Oak Wood Veneer',
-    weight: '184 KB',
+    name: 'Slip-match oak',
+    figure: 'Long cathedral figure across the page, no joint anywhere in it.',
+    swing: '2.84',
     L: '64.2',
     C: '22.2',
-    step: '5.39',
-    ratio: '0.788',
-    source: 'Poliigon 7760',
-    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    licence: 'Poliigon Free',
-    note: 'The veneer turned a quarter so the grain runs across the page. Long unbroken figure, no joints anywhere. Half the treatments below start here.',
   },
   {
     file: 'oak-7760-mid',
-    name: 'Slip Match Oak, levelled',
-    weight: '152 KB',
+    name: 'Slip-match oak, levelled',
+    figure: 'The same figure with the contrast pulled in to sit at mid grey. Arctic and forest wear this.',
+    swing: '2.45',
     L: '54.8',
     C: '19.7',
-    step: '4.46',
-    ratio: '0.775',
-    source: 'Poliigon 7760',
-    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    licence: 'Poliigon Free',
-    note: 'Your near miss on forest: the same tile with its mean lifted to mid grey, so the overlay blend leaves the theme colour alone. Chroma 19.7 is the red you want out.',
   },
   {
     file: 'oak-7760-down',
-    name: 'Slip Match Oak, as scanned',
-    weight: '172 KB',
+    name: 'Slip-match oak, turned',
+    figure: 'The same veneer with the grain running down the page instead of across it.',
+    swing: '2.83',
     L: '64.2',
     C: '22.2',
-    step: '1.21',
-    ratio: '0.176',
-    source: 'Poliigon 7760',
-    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    licence: 'Poliigon Free',
-    note: 'The veneer left the way it was captured, grain down the desk. Its figure lies along the measured direction rather than across it, which is why the step reads low here.',
   },
-];
-
-/* Poly Haven scans. Everything there is CC0, so these carry no conditions at all. */
-const CC0: readonly Tile[] = [
-  {
-    file: 'cc0-oak-light',
-    name: 'Oak Veneer 02',
-    weight: '182 KB',
-    L: '77.3',
-    C: '24.1',
-    step: '7.89',
-    ratio: '1.222',
-    source: 'Poly Haven',
-    href: 'https://polyhaven.com/a/oak_veneer_02',
-    licence: 'CC0',
-    note: 'The crispest grain of anything measured, half again as sharp as the Poliigon oak. Far too warm to use pale, but it is the base the other two treated cuts come from.',
-  },
-  {
-    file: 'cc0-oak-grey',
-    name: 'Grey Oak Veneer 02',
-    weight: '191 KB',
-    L: '60.4',
-    C: '8.0',
-    step: '6.96',
-    ratio: '0.691',
-    source: 'Poly Haven',
-    href: 'https://polyhaven.com/a/grey_oak_veneer_02',
-    licence: 'CC0',
-    note: 'A silvery oak at roughly the levelled tile\'s lightness with under half its chroma. This is what muted with the red gone looks like without going darker. The figure is striped rather than cathedral, which is either the charm or the problem.',
-  },
-  {
-    file: 'cc0-oak-black',
-    name: 'Black Oak Veneer',
-    weight: '186 KB',
-    L: '41.9',
-    C: '7.4',
-    step: '4.60',
-    ratio: '0.724',
-    source: 'Poly Haven',
-    href: 'https://polyhaven.com/a/black_oak_veneer',
-    licence: 'CC0',
-    note: 'The darkest scan in either library that still shows real cathedral figure, and olive grey rather than brown. Its own colour no longer matters on a dark desk, and its grain sits between the levelled oak and the grey oak.',
-  },
-  {
-    file: 'cc0-black-flamed',
-    name: 'Flamed Black Veneer',
-    weight: '52 KB',
-    L: '34.6',
-    C: '3.0',
-    step: '0.97',
-    ratio: '0.426',
-    source: 'Poly Haven',
-    href: 'https://polyhaven.com/a/flamed_black_veneer',
-    licence: 'CC0',
-    note: 'The nearest thing to black either library has, and nearly featureless with it: a step of 0.97 against the oak\'s 5.39. It paints the quietest desk of anything here, at a swing of 1.05 where the drawn boards swing 2.0.',
-  },
-];
-
-/* Treatments, not scans. Same recipe both times: pull most of the chroma out, then drop the
-   level with a gain and an offset rather than a brightness multiply, which keeps the grain's
-   own step instead of losing it to 8-bit rounding and to WebP on a flat dark patch. */
-const TREATED: readonly Tile[] = [
   {
     file: 'oak-7760-smoked',
-    name: 'Slip Match Oak, smoked',
-    weight: '122 KB',
+    name: 'Slip-match oak, smoked',
+    figure: 'The levelled oak darkened and drained of red in the file itself.',
+    swing: '2.14',
     L: '41.3',
     C: '5.3',
-    step: '3.76',
-    ratio: '0.755',
-    source: 'Poliigon 7760, treated',
-    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    licence: 'Poliigon Free',
-    note: 'The levelled tile you nearly picked, 13 points of lightness darker with three quarters of its chroma taken out. Same cathedral figure, no red left in it. Superseded: the painting sets the tone now, and this cut reaches the desk with less grain than the tile it was cut from.',
-  },
-  {
-    file: 'cc0-oak-light-smoked',
-    name: 'Oak Veneer 02, smoked',
-    weight: '111 KB',
-    L: '40.9',
-    C: '5.0',
-    step: '5.33',
-    ratio: '1.212',
-    source: 'Poly Haven, treated',
-    href: 'https://polyhaven.com/a/oak_veneer_02',
-    licence: 'CC0',
-    note: 'The same treatment on the sharper grain, landing within half a point of the tile above on both lightness and chroma. Fine straight lines where the other has figure, so the pair is a clean choice of grain and nothing else.',
   },
   {
     file: 'oak-7760-ebonised',
-    name: 'Slip Match Oak, ebonised',
-    weight: '118 KB',
+    name: 'Slip-match oak, ebonised',
+    figure: 'The same again, taken near black in the file.',
+    swing: '2.01',
     L: '20.1',
     C: '4.7',
-    step: '3.47',
-    ratio: '0.746',
-    source: 'Poliigon 7760, treated',
-    href: 'https://www.poliigon.com/texture/slip-match-oak-wood-veneer-texture/7760',
-    licence: 'Poliigon Free',
-    note: 'Near black and the figure still reads: the step holds at 3.47, where taking the same tile to this level with a brightness multiply drops it to 0.65.',
-  },
-  {
-    file: 'cc0-oak-light-ebonised',
-    name: 'Oak Veneer 02, ebonised',
-    weight: '106 KB',
-    L: '20.1',
-    C: '4.3',
-    step: '5.02',
-    ratio: '1.212',
-    source: 'Poly Haven, treated',
-    href: 'https://polyhaven.com/a/oak_veneer_02',
-    licence: 'CC0',
-    note: 'The same lightness as the tile above to one decimal place, on the sharper grain. Cut when the file had to carry the tone; now that the desk does, it is the losses on the way down that show.',
-  },
-];
-
-const GROUPS = [
-  {
-    title: 'Poliigon, round 2',
-    tiles: POLIIGON,
-    lead: 'The two free Poliigon scans, cut in round 2 and untouched since.',
-  },
-  {
-    title: 'Poly Haven, untreated',
-    tiles: CC0,
-    lead: 'Poly Haven releases everything as CC0, which is public domain: any purpose, no credit needed, redistribution allowed. These are the colour maps as downloaded, with nothing done to them but the cut.',
-  },
-  {
-    title: 'Treated for the dark themes',
-    tiles: TREATED,
-    lead: 'Cut when the file had to be as dark as the desk, because no library gives away a wood that is near black and still shows grain. The painting reaches that black from any tile now, so these four are kept for the record rather than in the running. Each is named after the scan it comes from.',
-  },
-] as const;
-
-const ALL = [...POLIIGON, ...CC0, ...TREATED];
-const tileByFile = Object.fromEntries(ALL.map((tile) => [tile.file, tile]));
-
-/* The four left standing for dark and forest. All four now paint at the same near black, so
-   the only thing left to choose between them is the grain. Swing is the painted desk's L*
-   standard deviation, read off the bare margin beside the sheets at 1440x900. The drawn boards
-   this would replace measure 2.02 there, and the old painting left these tiles at 0.3 to 0.6. */
-const SHORTLIST = [
-  {
-    file: 'ash-4186',
-    swing: '3.11',
-    figure:
-      'Sawn boards, plank joints and all. The same wood light and arctic are settled on, so all four desks would be one board.',
-  },
-  {
-    file: 'oak-7760-mid',
-    swing: '2.45',
-    figure:
-      'Cathedral figure across the page and no joint anywhere in it. Nearest of the four to the drawn boards it replaces.',
   },
   {
     file: 'cc0-oak-light',
-    swing: '2.09',
+    name: 'Oak veneer 02',
     figure: 'Fine straight lines, no figure and no joints. The quiet one.',
+    swing: '2.09',
+    L: '77.3',
+    C: '24.1',
   },
   {
     file: 'cc0-oak-grey',
+    name: 'Grey oak veneer 02',
+    figure: 'Open ring-porous oak, coarse and streaky. The loud one, and the only one you can read across a room.',
     swing: '4.14',
-    figure:
-      'Open ring-porous oak, coarse and streaky. Twice the swing of the quiet one and the only one of the four you can read from across the room.',
+    L: '60.4',
+    C: '8.0',
   },
+  {
+    file: 'cc0-oak-black',
+    name: 'Black oak veneer',
+    figure: 'Cathedral figure again, olive rather than brown, between the levelled oak and the grey one.',
+    swing: '2.71',
+    L: '41.9',
+    C: '7.4',
+  },
+  {
+    file: 'cc0-black-flamed',
+    name: 'Flamed black veneer',
+    figure: 'Nearly featureless. The only tile that paints a desk quieter than the drawn boards.',
+    swing: '1.05',
+    L: '34.6',
+    C: '3.0',
+  },
+  {
+    file: 'cc0-oak-light-smoked',
+    name: 'Oak veneer 02, smoked',
+    figure: 'The fine lines darkened and drained of red in the file.',
+    swing: '1.45',
+    L: '40.9',
+    C: '5.0',
+  },
+  {
+    file: 'cc0-oak-light-ebonised',
+    name: 'Oak veneer 02, ebonised',
+    figure: 'The fine lines taken near black in the file.',
+    swing: '1.37',
+    L: '20.1',
+    C: '4.3',
+  },
+];
+
+const woodByFile = Object.fromEntries(WOODS.map((wood) => [wood.file, wood]));
+
+/* The pale six. The other six were cut to carry a near-black tone in the file, which on a pale
+   desk paints a dark desk under a light page: a different question from the one being asked
+   here, and one link away by hand if it is ever wanted. */
+const PALE = [
+  'ash-4186',
+  'oak-7760',
+  'oak-7760-mid',
+  'oak-7760-down',
+  'cc0-oak-light',
+  'cc0-oak-grey',
 ] as const;
 
-/* Round 6. Satin is the pick, and the two faults left in it are two separate knobs. Floor and
-   gain take the body down; the chroma of the veil takes the brown out of the sheen. Measured
-   the way the shortlist was: L* per pixel off the bare margin beside the sheets at 1440x900.
-   Body is the median, top the 99th percentile, black the share of the margin under L* 1, and
-   sheen the share above L* 17, which is where round 4 stopped. Bright is the mean chroma of
-   the brightest twentieth of the margin, the only place on a desk this dark where colour
-   survives at all. */
+/* The polish grid. Down is how black the body of the desk goes, which is floor and gain
+   together; across is how much colour is left in the sheen, which is the chroma of the veil and
+   moves no lightness at all. black is the share of the bare margin under L* 1; sheen C* is the
+   mean chroma of its brightest twentieth. */
 const POLISH = [
   {
-    name: 'Satin, as round 5 left it',
-    gloss: 'satin',
-    levels: '239 / 112',
-    chroma: '0.018',
-    mean: '7.9',
-    sd: '4.96',
-    body: '7.2',
-    top: '18.8',
-    black: '8.6',
-    sheen: '3.7',
-    bright: '6.2',
-    note: 'The baseline. A twelfth of the margin is black, and the sheen is the colour of the wood.',
+    levels: 'no floor, no gain',
+    black: '0.0',
+    brown: { gloss: '', name: 'None', sheen: '6.3' },
+    neutral: null,
   },
   {
-    name: 'Blacker',
-    gloss: 'blacker',
+    levels: '239 / 112',
+    black: '8.6',
+    brown: { gloss: 'satin', name: 'Satin', sheen: '6.2' },
+    neutral: { gloss: 'neutral', name: 'Satin, neutral sheen', sheen: '2.0' },
+  },
+  {
+    levels: '235 / 135',
+    black: '18.2',
+    brown: { gloss: 'polished', name: 'Polished', sheen: '6.2' },
+    neutral: { gloss: 'polished-neutral', name: 'Polished, neutral sheen', sheen: '2.0' },
+  },
+  {
     levels: '234 / 142',
-    chroma: '0.018',
-    mean: '6.2',
-    sd: '5.35',
-    body: '5.0',
-    top: '19.3',
     black: '21.3',
-    sheen: '3.7',
-    bright: '6.2',
-    note: 'Black only. A fifth of the margin goes black against a twelfth, and the sheen holds to a tenth of a per cent.',
+    brown: { gloss: 'blacker', name: 'Blacker', sheen: '6.2' },
+    neutral: { gloss: 'blacker-neutral', name: 'Blacker, neutral sheen', sheen: '2.0' },
   },
   {
-    name: 'Neutral',
-    gloss: 'neutral',
-    levels: '239 / 112',
-    chroma: '0.006',
-    mean: '8.0',
-    sd: '4.98',
-    body: '7.5',
-    top: '18.7',
-    black: '8.6',
-    sheen: '4.1',
-    bright: '2.0',
-    note: 'Brown only. Every lightness satin had, with two thirds of the colour gone out of the sheen.',
-  },
-  {
-    name: 'Blacker and neutral',
-    gloss: 'blacker-neutral',
-    levels: '234 / 142',
-    chroma: '0.006',
-    mean: '6.3',
-    sd: '5.37',
-    body: '5.3',
-    top: '19.6',
-    black: '21.6',
-    sheen: '4.0',
-    bright: '2.0',
-    note: 'The two above at once, and they do not fight: the black lands where Blacker put it and the colour where Neutral put it.',
-  },
-  {
-    name: 'Blackest and neutral',
-    gloss: 'blackest-neutral',
     levels: '231 / 162',
-    chroma: '0.002',
-    mean: '5.3',
-    sd: '5.63',
-    body: '3.4',
-    top: '20.4',
     black: '33.3',
-    sheen: '5.0',
-    bright: '0.8',
-    note: 'Both knobs at the end of their useful travel. A third of the margin is flat black and nothing on the desk is brown.',
+    brown: { gloss: 'lacquer', name: 'Lacquer', sheen: '6.1' },
+    neutral: { gloss: 'blackest-neutral', name: 'Lacquer, sheen barely coloured', sheen: '0.8' },
   },
 ] as const;
 
-/* Round 5 stops, still reachable. Polished and lacquer sit on the same floor and gain line as
-   Blacker, one nearer satin and one past the end of it. */
-const PRIOR = [
-  { gloss: '', name: 'None, as round 4 left it', levels: 'no floor, no gain', black: '0.0', bright: '6.3' },
-  { gloss: 'polished', name: 'Polished', levels: '235 / 135', black: '18.2', bright: '6.2' },
-  { gloss: 'lacquer', name: 'Lacquer', levels: '231 / 166', black: '33.3', bright: '6.1' },
-] as const;
-
-/* Decided, one link each. */
-const SETTLED = [
-  {
-    id: 'light',
-    label: 'Light',
-    file: 'ash-4186',
-    when: 'Round 3',
-    noVeilLink: true,
-    note: 'The ash as scanned, under a veil of the desk colour at 15 per cent.',
-  },
-  {
-    id: 'arctic',
-    label: 'Arctic',
-    file: 'oak-7760-mid',
-    when: 'Round 4',
-    note: 'The levelled oak with no veil over it, which is what took the red out.',
-  },
-  {
-    id: 'dark-forest',
-    label: 'Dark forest',
-    file: 'oak-7760-mid',
-    when: 'Round 5',
-    note: 'The same tile subtracted rather than blended. Good as round 4 paints it, so nothing this round goes near it.',
-  },
-] as const;
-
-/* Everything that was on the shortlist and lost, kept reachable for comparing against. */
-const ALSO = [
-  { id: 'light', label: 'Light', files: ['cc0-oak-grey', 'oak-7760'], noVeilLink: true },
-  { id: 'arctic', label: 'Arctic', files: ['ash-4186', 'cc0-oak-grey'], noVeilLink: true },
-  { id: 'dark', label: 'Dark', files: ['oak-7760-mid', 'cc0-oak-light', 'cc0-oak-grey'], noVeilLink: false },
-  {
-    id: 'dark-forest',
-    label: 'Dark forest',
-    files: ['ash-4186', 'cc0-oak-light', 'cc0-oak-grey'],
-    noVeilLink: false,
-  },
-] as const;
+const PICK = {
+  light: 'ash-4186',
+  arctic: 'oak-7760-mid',
+  dark: 'ash-4186',
+  'dark-forest': 'oak-7760-mid',
+} as const;
 
 const deskUrl = (file: string, theme: string, veil: boolean) =>
   `../?desk=${file}&theme=${theme}${veil ? '' : '&veil=0'}`;
@@ -380,7 +190,7 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>Desk wood, candidates</title>
+    <title>Desk wood, every link</title>
     <style is:inline>
       :root {
         color-scheme: light dark;
@@ -405,64 +215,47 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
         max-width: 54rem;
         background: var(--paper);
         color: var(--ink);
-        font: 1rem/1.6 system-ui, sans-serif;
+        font: 1rem/1.5 system-ui, sans-serif;
       }
 
       h1 {
         font-size: 1.5rem;
-        margin-bottom: 0.25rem;
+        margin: 0 0 0.5rem;
       }
 
       h2 {
         font-size: 1.125rem;
-        margin: 2.5rem 0 0.5rem;
-        padding-top: 1rem;
+        margin: 2.25rem 0 0.25rem;
+        padding-top: 0.75rem;
         border-top: 1px solid var(--rule);
       }
 
-      h3 {
-        font-size: 1rem;
-        margin: 1.75rem 0 0.25rem;
-      }
-
-      h4 {
-        font-size: 0.9375rem;
-        margin: 1.25rem 0 0.25rem;
-      }
-
       p {
-        margin: 0.25rem 0 0.75rem;
-      }
-
-      .lede,
-      .note {
+        margin: 0.25rem 0 0.5rem;
         color: var(--faint);
       }
 
-      .strip {
-        height: 11rem;
-        border: 1px solid var(--rule);
-        border-radius: 0.25rem;
-        background-repeat: repeat;
-        background-size: 45rem 45rem;
-      }
-
-      .links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem 1rem;
+      ul {
         margin: 0.5rem 0 0;
         padding: 0;
         list-style: none;
       }
 
-      .links li {
-        white-space: nowrap;
+      li {
+        margin-bottom: 0.4rem;
       }
 
-      .decided li {
-        white-space: normal;
-        margin-bottom: 0.25rem;
+      li a {
+        font-weight: 600;
+      }
+
+      .say {
+        color: var(--faint);
+      }
+
+      .pick {
+        color: var(--ink);
+        font-weight: 600;
       }
 
       .scroll {
@@ -471,17 +264,15 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
 
       table {
         width: 100%;
-        margin: 1rem 0 0;
+        margin: 0.75rem 0 0;
         border-collapse: collapse;
-        font-size: 0.9375rem;
       }
 
       th,
       td {
-        padding: 0.35rem 0.75rem 0.35rem 0;
+        padding: 0.4rem 0.75rem 0.4rem 0;
         text-align: left;
         vertical-align: top;
-        white-space: nowrap;
         border-bottom: 1px solid var(--rule);
       }
 
@@ -489,15 +280,17 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
         font-weight: 600;
       }
 
-      th.num,
-      td.num {
+      td.num,
+      th.num {
         text-align: right;
         padding-right: 1rem;
         font-variant-numeric: tabular-nums;
+        white-space: nowrap;
       }
 
-      td:not(:first-child) {
-        color: var(--faint);
+      td .say {
+        display: block;
+        font-size: 0.875rem;
       }
 
       code {
@@ -507,271 +300,133 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
     </style>
   </head>
   <body>
-    <h1>Desk wood, candidates</h1>
-    <p class="lede">
-      Every tile cut so far. The links at the foot of the page open the CV with that tile on the
-      desk and the theme already picked. A light desk takes the tile under a 15 per cent veil of
-      its own colour and has a second link that lifts the veil; a dark desk subtracts the tile
-      instead, so there the veil is the only thing holding the colour and there is nothing to
-      lift.
-    </p>
-    <p class="lede">
-      Light is settled on the ash, arctic and forest on the levelled oak, and dark on the ash
-      under a satin polish. What is still open there is how black the satin goes and how much
-      brown is left in it, which is the section near the foot of the page.
-    </p>
-
-    <h2>How to read the numbers</h2>
-    <p class="lede">
-      L* is mean lightness on 0 to 100 and C* is mean chroma, both in CIELAB, and both describe
-      the file rather than the desk. Step is the mean absolute luminance step between
-      neighbouring rows of pixels on 0 to 255, which is across the grain on every tile but{' '}
-      <code>oak-7760-down</code>, and step over the tile's own standard deviation says how much
-      of that step is fibre rather than figure. Higher is sharper both times. What reaches the
-      desk is a different number, and the shortlist below carries it. Every tile is 1440 px
-      square and paints at 45rem, so one image pixel lands on one device pixel at 2x. Painting
-      it smaller costs grain: at 22.5rem the same tile loses a third of its swing.
-    </p>
-
-    {GROUPS.map((group) => (
-      <>
-        <h2>{group.title}</h2>
-        <p class="lede">{group.lead}</p>
-        <div class="scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Tile</th>
-                <th>File</th>
-                <th class="num">L*</th>
-                <th class="num">C*</th>
-                <th class="num">Step</th>
-                <th class="num">Step/sd</th>
-                <th>Source</th>
-                <th>Licence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {group.tiles.map((tile) => (
-                <tr>
-                  <td>{tile.name}</td>
-                  <td><code>{tile.file}.webp</code>, {tile.weight}</td>
-                  <td class="num">{tile.L}</td>
-                  <td class="num">{tile.C}</td>
-                  <td class="num">{tile.step}</td>
-                  <td class="num">{tile.ratio}</td>
-                  <td><a href={tile.href}>{tile.source}</a></td>
-                  <td>{tile.licence}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {group.tiles.map((tile) => (
-          <>
-            <h3>{tile.name}</h3>
-            <p class="note">{tile.note} <code>{tile.file}.webp</code></p>
-            <div class="strip" style={`background-image: url(../desk/${tile.file}.webp)`} />
-          </>
-        ))}
-      </>
-    ))}
-
-    <h2>Dark and forest, down to four</h2>
-    <p class="lede">
-      The grain was invisible on the dark desks because of how the tile was painted, not because
-      of anything in the tile. The desk blended the tile with overlay against its own colour,
-      and overlay scales every step the tile has by base times one minus base: strongest on a
-      mid tone, gone by the time the base is near black. The painted desk was swinging 0.3 to
-      0.6 L* where the drawn boards swing 2.0, so all that came through was the tone, which is
-      why three tiles with nothing in common looked alike.
-    </p>
-    <p class="lede">
-      The dark desks now subtract the tile from a base cut to the tile's own mean instead. A
-      subtraction keeps every step at its full size however dark the result lands, and the veil
-      goes opaque and blends with color, which hands the desk back the theme's own hue and
-      chroma. Painted lightness is L* 10 and chroma 6.2 on dark, 10.5 on forest, within half a
-      point of the drawn boards on both. Every candidate below lands there, whatever it was cut
-      at, so nothing but the grain is left to choose.
-    </p>
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Tile</th>
-            <th>File</th>
-            <th class="num">Swing</th>
-            <th>What it looks like</th>
-          </tr>
-        </thead>
-        <tbody>
-          {SHORTLIST.map((tile) => (
-            <tr>
-              <td>{tileByFile[tile.file].name}</td>
-              <td><code>{tile.file}.webp</code></td>
-              <td class="num">{tile.swing}</td>
-              <td style="white-space: normal">{tile.figure}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    <p class="lede">
-      The four smoked and ebonised cuts are off the list. Their whole job was to carry the dark
-      tone in the file, and the painting does that now, so all they add is the grain they lost
-      on the way down. <code>cc0-black-flamed</code> is off it too, at a swing of 1.05: it is
-      there if you want the desk quieter than the drawn boards rather than louder.
-    </p>
-
-    <h2>On the desk</h2>
-    <p class="lede">
-      Three of the four desks are decided and have one link each. The fourth, dark, is the only
-      thing still being picked, and what is left to pick there is how the satin is cut rather
-      than the tile. Everything that lost is still reachable further down.
-    </p>
-
-    <h3>Settled</h3>
-    <ul class="links decided">
-      {SETTLED.map((desk) => (
-        <li>
-          {desk.label}: <a href={deskUrl(desk.file, desk.id, true)}>{tileByFile[desk.file].name}</a>
-          {'noVeilLink' in desk ? <>{' '}<a href={deskUrl(desk.file, desk.id, false)}>(no veil)</a></> : null}.{' '}
-          <span class="note">{desk.when}. {desk.note}</span>
-        </li>
-      ))}
-    </ul>
-
-    <h3>Dark, the one still open</h3>
-    <p class="lede">
-      The dark desk keeps the ash and keeps satin. Blacker and less brown is what it still wants,
-      and those are two knobs that do not touch each other, so below they move one at a time.
-    </p>
-    <p class="lede">
-      Blacker is floor and gain, the two greys that sit between the tile and the veil. A flat
-      grey under color-burn clips to black every fibre more than a set distance below the tile's
-      own mean, and a second flat grey under color-dodge multiplies whatever survived back up.
-      Clip, then open up: the range widens downwards instead of sliding, so the body of the desk
-      goes black while the bright fibres hold the lightness they had or pass it. Drop the floor
-      by one and raise the gain by six and a half and the top end does not move, so there is a
-      whole line of settings that are all satin at the top and blacker underneath. Blacker is
-      one step along it.
-    </p>
-    <p class="lede">
-      Less brown is one number more. By the time the floor has been through it the shadows have
-      no room for colour at all, so the brown of the desk lives in the sheen alone, and the
-      sheen gets it from the veil. Take the chroma of the veil from 0.018 to 0.006 and the
-      brightest twentieth of the margin falls from C* 6.2 to 2.0 while not one lightness in the
-      table moves. A sheen that reflects the room rather than the wood is the physical answer
-      too. Below about 0.004 the last of the warmth is gone and the desk reads as charcoal, so
-      0.002 is as far as this goes.
-    </p>
-    <p class="lede">
-      Mean, swing and the rest are L* off the bare margin beside the sheets at 1440x900, the same
-      measurement the shortlist above carries. Every layer lives in the painting, so no tile file
-      changed and the three settled desks are byte for byte what they were.
-    </p>
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Polish</th>
-            <th>Floor / gain</th>
-            <th class="num">Veil C</th>
-            <th class="num">Mean</th>
-            <th class="num">Swing</th>
-            <th class="num">Body</th>
-            <th class="num">Top</th>
-            <th class="num">Black</th>
-            <th class="num">Sheen</th>
-            <th class="num">Bright C*</th>
-          </tr>
-        </thead>
-        <tbody>
-          {POLISH.map((polish) => (
-            <tr>
-              <td><a href={glossUrl(polish.gloss)}>{polish.name}</a></td>
-              <td>{polish.levels}</td>
-              <td class="num">{polish.chroma}</td>
-              <td class="num">{polish.mean}</td>
-              <td class="num">{polish.sd}</td>
-              <td class="num">{polish.body}</td>
-              <td class="num">{polish.top}</td>
-              <td class="num">{polish.black}%</td>
-              <td class="num">{polish.sheen}%</td>
-              <td class="num">{polish.bright}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    <ul class="links">
-      {POLISH.map((polish) => (
-        <li>
-          <a href={glossUrl(polish.gloss)}>{polish.name}</a>{' '}
-          <span class="note">{polish.note}</span>
-        </li>
-      ))}
-    </ul>
-    <p class="lede">
-      Sheen is a small share of the desk on purpose. A highlight that takes 4 per cent of the
-      area and stands 14 L* over the body reads as light caught on something hard; the same
-      lightness spread evenly reads as grey wood, which is what the drawn boards do. That is why
-      none of the four above lets the sheen grow: Blacker takes the body down and leaves the top
-      exactly where satin had it.
-    </p>
-
-    <h3>Also tried</h3>
-    <p class="lede">
-      Round 5 offered these three as well, all of them with the veil left brown. Polished and
-      lacquer are the same floor and gain line Blacker is on, one stop short of it and one stop
-      past.
-    </p>
-    <ul class="links">
-      {PRIOR.map((polish) => (
-        <li>
-          <a href={glossUrl(polish.gloss)}>{polish.name}</a>{' '}
-          <span class="note">{polish.levels}, {polish.black}% black, bright C* {polish.bright}</span>
-        </li>
-      ))}
-    </ul>
-    <p class="lede">
-      <a href={glossUrl('window')}>Window</a> is polished with a broad reflection over it: the
-      gain climbs from grey 105 at the left of the desk to 160 at the right instead of holding
-      at 135. It runs across the desk and never up or down, which is the only reason it survives
-      the sheets lying over it, and it does look lit from one side. It is parked here because
-      the two margins stop matching. The right reads mean 8.3, top 23.4 and 12 per cent sheen,
-      the left 5.7, 16.0 and 0.3 per cent, so the left margin ends up at round 4's top end with
-      no sheen in it at all. On a phone, where the desk is two thin strips, it mostly reads as
-      darker.
-    </p>
-    <p class="lede">
-      The tiles that lost are below, painted the way their theme paints them. Dark and forest
-      show the other three off the shortlist, with no polish on them.
-    </p>
-    {ALSO.map((theme) => (
-      <>
-        <h4>{theme.label}</h4>
-        <ul class="links">
-          {theme.files.map((file) => (
-            <li>
-              <a href={deskUrl(file, theme.id, true)}>{tileByFile[file].name}</a>
-              {theme.noVeilLink ? <> <a href={deskUrl(file, theme.id, false)}>(no veil)</a></> : null}
-            </li>
-          ))}
-        </ul>
-      </>
-    ))}
-
-    <h2>If none of them work</h2>
+    <h1>Desk wood, every link</h1>
     <p>
-      Say blacker still or less brown still and only that one moves. Blacker is another step
-      down the floor and gain line, a twelfth of the margin black at satin and a third at the
-      far end of it, with the top holding all the way; less brown is the chroma of the veil, and
-      0.002 is the last useful stop before the desk is charcoal. More glare, if you ever want
-      it, is the gain on its own with the floor left alone. Each is one number in the painting.
-      The tile under all of it can still change too, and the shortlist above spans a swing of
-      2.1 to 4.1 against the drawn boards' 2.0, but the ash is the only one of the four that is
-      also on the light and arctic desks.
+      Every desk we have, grouped by theme, dark first because it is the one still open. A pick
+      marked below is ours and not a closed question.
+    </p>
+
+    <h2>Dark: how black, and how brown</h2>
+    <p>
+      Down the table the body of the desk goes black; across it the colour comes out of the sheen.
+      The two do not touch. Polished is what you picked, and the link beside it is that same
+      blackness with the brown gone, which is the comparison we are asking for. All on the ash.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="num">Black</th>
+            <th>Sheen the colour of the wood</th>
+            <th>Sheen closer to grey</th>
+          </tr>
+        </thead>
+        <tbody>
+          {POLISH.map((stop) => (
+            <tr>
+              <td class="num">
+                {stop.black}%
+                <span class="say">{stop.levels}</span>
+              </td>
+              <td>
+                <a href={glossUrl(stop.brown.gloss)}>{stop.brown.name}</a>
+                <span class="say">sheen C* {stop.brown.sheen}</span>
+              </td>
+              <td>
+                {stop.neutral ? (
+                  <>
+                    <a href={glossUrl(stop.neutral.gloss)}>{stop.neutral.name}</a>
+                    <span class="say">sheen C* {stop.neutral.sheen}</span>
+                  </>
+                ) : (
+                  <span class="say">nothing to take out yet</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Dark: the wood under it</h2>
+    <p>
+      All twelve tiles cut so far, none of them ruled out. The painting takes every one of them to
+      the same near black, so the only thing that changes down this list is the grain. Swing is how
+      far that grain moves the desk's lightness, and the drawn boards these replace swing 2.0. No
+      polish on these links, because the floor clips the darkest fibre to black and the wood shows
+      plainest without it.
+    </p>
+    <ul>
+      {WOODS.map((wood) => (
+        <li>
+          <a href={deskUrl(wood.file, 'dark', true)}>{wood.name}</a>{' '}
+          <span class="say">
+            swing {wood.swing}. {wood.figure}
+            {PICK.dark === wood.file ? <span class="pick"> Our pick.</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Dark forest: the wood under it</h2>
+    <p>
+      You said forest is good as it is, and nothing this round went near it. It paints exactly the
+      way the dark desk above does, though, so the same twelve are here if the grain is worth a
+      second look.
+    </p>
+    <ul>
+      {WOODS.map((wood) => (
+        <li>
+          <a href={deskUrl(wood.file, 'dark-forest', true)}>{wood.name}</a>{' '}
+          <span class="say">
+            swing {wood.swing}. {wood.figure}
+            {PICK['dark-forest'] === wood.file ? <span class="pick"> Our pick.</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Light: the wood</h2>
+    <p>
+      A light desk lays the tile under a veil of its own colour at 15 per cent, and the second link
+      on each line lifts the veil off. Here the tile keeps its own lightness and colour, so those
+      are the numbers that tell these apart: L* is how pale the wood is and C* how much colour is
+      in it, both off the file.
+    </p>
+    <ul>
+      {PALE.map((file) => (
+        <li>
+          <a href={deskUrl(file, 'light', true)}>{woodByFile[file].name}</a>{' '}
+          <a href={deskUrl(file, 'light', false)}>(no veil)</a>{' '}
+          <span class="say">
+            L* {woodByFile[file].L}, C* {woodByFile[file].C}. {woodByFile[file].figure}
+            {PICK.light === file ? <span class="pick"> Our pick.</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Arctic: the wood</h2>
+    <p>Painted the same way as light, and the same six are the ones pale enough to sit under it.</p>
+    <ul>
+      {PALE.map((file) => (
+        <li>
+          <a href={deskUrl(file, 'arctic', true)}>{woodByFile[file].name}</a>{' '}
+          <a href={deskUrl(file, 'arctic', false)}>(no veil)</a>{' '}
+          <span class="say">
+            L* {woodByFile[file].L}, C* {woodByFile[file].C}. {woodByFile[file].figure}
+            {PICK.arctic === file ? <span class="pick"> Our pick.</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+
+    <h2>What is not on this page</h2>
+    <p>
+      The six near-black cuts are missing from light and arctic only: they were made to carry the
+      desk's own tone in the file, so on a pale theme they paint a dark desk under a light page.
+      Say the word and they go up. Everything else that was ever cut or tried is linked above, and
+      the numbers, the reasoning and what each round changed are in the pull request.
     </p>
   </body>
 </html>
