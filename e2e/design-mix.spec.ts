@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
-/** The width past which Layout.astro lays the page on a desk. */
+/** The width past which Layout.astro gives the sheets a margin of desk on either side. */
 const DESK_FROM = 1024;
 
 /** The side of the plank tile, as src/deskTile.ts sets it. */
@@ -59,20 +59,100 @@ for (const [theme, desk] of Object.entries(DESKS)) {
   });
 }
 
-test(`no desk at ${DESK_FROM}px, where the page column still fills the viewport`, async ({ page }) => {
-  await withTheme(page, 'light');
-  await page.setViewportSize({ width: DESK_FROM, height: 768 });
-  await page.goto('/');
+/** A phone and a tablet, where the desk has nothing but the page gutter to show in. */
+const NARROW = [
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+] as const;
 
-  const background = await page.locator('main').evaluate((el) => {
-    const style = getComputedStyle(el);
-    return { image: style.backgroundImage, color: style.backgroundColor };
+for (const { width, height } of NARROW) {
+  test(`the desk still lies under the page at ${width}px`, async ({ page }) => {
+    await withTheme(page, 'light');
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+
+    const background = await page.locator('main').evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        image: style.backgroundImage,
+        color: style.backgroundColor,
+        size: style.backgroundSize,
+        blend: style.backgroundBlendMode,
+      };
+    });
+
+    // The same two layers the wide desk has: the veil, then the tile of boards under it.
+    expect(background.image).toContain('feTurbulence');
+    expect(background.blend).toBe('normal, overlay');
+    expect(background.size).toContain(`${TILE}px ${TILE}px`);
+    expect(background.color).toBe(await asComputedColor(page, DESKS.light));
+
+    const fit = await page.evaluate(() => ({
+      scrollWidth: document.body.scrollWidth,
+      innerWidth: window.innerWidth,
+    }));
+    expect(fit.scrollWidth).toBeLessThanOrEqual(fit.innerWidth);
+  });
+}
+
+test('the wood shows in the gutter and between the bands on a phone', async ({ page }) => {
+  await withTheme(page, 'light');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForTimeout(500);
+
+  const spots = await page.evaluate(() => {
+    const main = document.querySelector('main')!;
+    const bands = [...main.children].filter((el) => !el.classList.contains('folio-rail'));
+    const first = bands[0].getBoundingClientRect();
+    const second = bands[1].getBoundingClientRect();
+    return {
+      paper: getComputedStyle(bands[0]).backgroundColor,
+      gutter: {
+        x: 1,
+        y: Math.round(first.top + first.height / 2),
+        width: Math.floor(first.left) - 2,
+        height: 24,
+      },
+      gap: {
+        x: Math.round(first.left + 20),
+        y: Math.round(first.bottom + 2),
+        width: 40,
+        height: Math.max(1, Math.floor(second.top - first.bottom) - 4),
+      },
+    };
   });
 
-  // What main has always had: the two drafting-grid gradients over a transparent box.
-  expect(background.image).not.toContain('url(');
-  expect(background.image.match(/linear-gradient/g)).toHaveLength(2);
-  expect(background.color).toBe('rgba(0, 0, 0, 0)');
+  // The band is paper and the gutter beside it is not, so there is wood down the edge of the
+  // page, and the same between one band and the next.
+  expect(spots.gutter.width).toBeGreaterThan(8);
+  expect(spots.gap.height).toBeGreaterThan(8);
+  const paper = spots.paper.match(/\d+/g)!.map(Number);
+
+  for (const [name, clip] of [['gutter', spots.gutter], ['gap', spots.gap]] as const) {
+    const shot = await page.screenshot({ clip });
+    const off = await page.evaluate(async ({ png, ink }) => {
+      const image = new Image();
+      await new Promise((done, fail) => {
+        image.onload = done;
+        image.onerror = fail;
+        image.src = `data:image/png;base64,${png}`;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d', { willReadFrequently: true })!;
+      context.drawImage(image, 0, 0);
+      const { data } = context.getImageData(0, 0, image.width, image.height);
+      let nearest = Infinity;
+      for (let at = 0; at < data.length; at += 4) {
+        const distance = Math.abs(data[at] - ink[0]) + Math.abs(data[at + 1] - ink[1]) + Math.abs(data[at + 2] - ink[2]);
+        nearest = Math.min(nearest, distance);
+      }
+      return nearest;
+    }, { png: shot.toString('base64'), ink: paper });
+    expect(off, `${name} is paper, not desk`).toBeGreaterThan(60);
+  }
 });
 
 /** The widest lightness swing, in L*, each theme's boards are allowed inside one board. */
