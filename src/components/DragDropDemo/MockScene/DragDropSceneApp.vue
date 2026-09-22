@@ -222,10 +222,14 @@ function updateDragVisual(clientX: number, clientY: number) {
   }
 }
 
-/** The card's `<img>` at its rendered size, grabbed where the press landed on it. */
+/**
+ * The card's picture at its rendered size, grabbed where the press landed on it. The size
+ * is the tile's, not the `<img>`'s: the picture is drawn bigger than its own box (see
+ * `.object-icons img`), and it is the tile the ghost paints.
+ */
 function dragThumbFrom(target: EventTarget | null, src: string, clientX: number, clientY: number): DragThumb {
-  const img = target instanceof Element ? target.querySelector('img') : null;
-  const rect = img?.getBoundingClientRect();
+  const tile = target instanceof Element ? target.closest('.object-icons') : null;
+  const rect = tile?.getBoundingClientRect();
   if (!rect) return { src, width: 64, height: 64, offsetX: 32, offsetY: 32 };
   return {
     src,
@@ -1086,19 +1090,19 @@ onBeforeUnmount(() => {
       </div>
     </aside>
 
-    <img
+    <div
       v-if="draggedThumb"
       class="demo-drag-thumb"
       :class="{ instant: cursorInstant }"
-      :src="draggedThumb.src"
       :style="{
         transform: `translate3d(${cursorPos.x - draggedThumb.offsetX}px, ${cursorPos.y - draggedThumb.offsetY}px, 0)`,
         width: `${draggedThumb.width}px`,
         height: `${draggedThumb.height}px`,
       }"
-      alt=""
       aria-hidden="true"
     >
+      <img :src="draggedThumb.src" alt="">
+    </div>
 
     <div
       v-if="cursorVisible"
@@ -1366,19 +1370,31 @@ $thumb-zoom: 1.6;
 /** Stand-in for the browser's own drag-image — shown only while the simulated drag point
  * is still over the sidebar, since the pointer-based drag (see onItemPointerdown) doesn't
  * get one for free the way native HTML5 drag does. */
-// The card's own image, floated at its rendered size like the product's #catalog-drag
-// element: no chrome, no fade, riding the pointer until the 3D view takes over.
+// The card's own picture, tile and all, floated at its rendered size like the product's
+// #catalog-drag element: no fade, riding the pointer until the 3D view takes over. The
+// tile's background comes along so that what crosses the catalog reads as the flat
+// picture it was lifted from, and the swap at the canvas edge is a swap to the model.
 .demo-drag-thumb {
   position: absolute;
   z-index: 5;
-  object-fit: contain;
   pointer-events: none;
   top: 0;
   left: 0;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
   transition: transform 0.12s linear;
 
   &.instant {
     transition: none;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    scale: $thumb-zoom;
   }
 }
 
@@ -1430,8 +1446,8 @@ $thumb-zoom: 1.6;
  * The catalog card is Space Builder's, sized for a sidebar three times as wide as this
  * one. At this size the picture's own padding, plus the transparent margin the 600px
  * render leaves around the model, left the chair under half the tile's height. Drop the
- * padding and draw the picture bigger than its box until the chair nearly fills the tile;
- * the tile, the card and the grid keep the sizes the product gives them.
+ * padding and blow the picture up until the chair nearly fills the tile; the tile, the
+ * card and the grid keep the sizes the product gives them.
  */
 .sidebar-body :deep(.object-icons img) {
   padding: 0;
