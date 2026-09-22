@@ -75,136 +75,6 @@ oembedUrl.searchParams.set('format', 'json');
         }
       })();
     </script>
-    <!-- REVIEW ONLY, strip before this lands on main. Swaps the veneer a theme wears for any
-         other scan in public/desk so Hugo can compare them:
-           ?desk=<file>   paints /desk/<file>.webp at the tile's own 45rem
-           &veil=<0..1>   how much desk colour lies over the tile, 0 for none
-           &theme=<id>    picks the theme, so a link can carry one
-           &gloss=<name>  on a dark desk only, polishes it: see GLOSS below
-           &floor=&gain=  the two gloss levels by hand, for measuring
-           &chroma=<c>    the veil's oklch chroma on a dark theme, with or without a tile
-         A light desk takes the photograph under a light veil, the way round 2 left it. A dark
-         desk paints it the other way round, subtracting it from a base cut to its own mean, so
-         see the note on the painting in the stylesheet below for why. The switch writes inline
-         custom properties on the html element, which outrank the theme rules, and nothing else
-         in the page knows it is here. -->
-    <script is:inline>
-      (() => {
-        const query = new URLSearchParams(location.search);
-        const tile = query.get('desk');
-        const theme = query.get('theme');
-        const root = document.documentElement;
-        if (theme && ['light', 'dark', 'arctic', 'dark-forest'].includes(theme)) {
-          root.dataset.theme = theme;
-          /* The picker restores its own pick on boot and would undo the query, so tell it. */
-          try {
-            localStorage.setItem('cv-theme', theme);
-          } catch {
-            /* ignore */
-          }
-        }
-        /* --theme-desk-grain is how far the veil is faded out, so 1 is no veil at all. The
-           drawn boards are one flat tone under a heavy veil that gives them their colour. A
-           scan brings its own, so it takes a sixth of that and the levelled copy takes none:
-           overlay already leaves the theme's colour alone where that tile sits at mid grey. */
-        const VEIL = { 'oak-7760-mid': 0 };
-        /* Each tile's own mean colour, measured off the file. A dark desk subtracts a base from
-           the tile, and the base is that mean less LEVEL, so every tile lands on the same near
-           black however light it was cut and the only thing left to choose between them is the
-           grain. LEVEL is the lightness the desk keeps, in 0 to 255, and 28 puts the painted
-           desk on the L* 10 the drawn boards already paint there. */
-        const MEAN = {
-          'ash-4186': [206, 178, 149],
-          'oak-7760': [185, 149, 120],
-          'oak-7760-down': [185, 149, 120],
-          'oak-7760-mid': [156, 125, 101],
-          'oak-7760-smoked': [104, 96, 90],
-          'oak-7760-ebonised': [54, 47, 43],
-          'cc0-oak-light': [220, 185, 149],
-          'cc0-oak-grey': [156, 144, 133],
-          'cc0-oak-black': [107, 98, 87],
-          'cc0-black-flamed': [86, 80, 77],
-          'cc0-oak-light-smoked': [101, 96, 89],
-          'cc0-oak-light-ebonised': [53, 48, 43],
-        };
-        const LEVEL = 28;
-        /* Each dark theme's desk colour as ThemePicker writes it, split into lightness and hue
-           so a polish can move the chroma between them and nothing else. */
-        const DESK = {
-          dark: [0.235, 55],
-          'dark-forest': [0.225, 75],
-        };
-        /* How far each polish takes a dark desk. floor is the color-burn grey: it clips to
-           black every fibre more than 255 - floor below the tile's own mean, so with LEVEL at
-           28 a floor of 239 keeps 12 of the 28 levels the desk had. gain is the color-dodge
-           grey, multiplying what is left by 255 / (255 - gain), which puts the surviving fibres
-           back where they were or higher. Both are flat. A gain that ramped across the desk
-           laid a broad window sheen over the per-fibre one, but it also made a gradient the
-           height of the document for the compositor to blend on every frame: 10 per cent more
-           raster than a flat gain, and the one variant a browser here was reported to stall on.
-           chroma is the veil's, and it is the only one of the two that moves colour: by the
-           time the floor has been through it the shadows have no room for any, so the desk's
-           brown lives in the sheen alone and this is the knob that takes it out. Floor and gain
-           trade off against each other one for six and a half, which holds the sheen where
-           satin has it, so blacker and less brown are two knobs and neither one drags the
-           other. Every entry names its own chroma, the shipped dark desk included, so a gloss
-           link paints the same sheen whatever chroma the theme itself carries. */
-        const GLOSS = {
-          satin: { floor: 239, gain: 112, chroma: 0.018 },
-          polished: { floor: 235, gain: 135, chroma: 0.018 },
-          lacquer: { floor: 231, gain: 166, chroma: 0.018 },
-          blacker: { floor: 234, gain: 142, chroma: 0.018 },
-          neutral: { floor: 239, gain: 112, chroma: 0.006 },
-          'polished-neutral': { floor: 235, gain: 135, chroma: 0.006 },
-          'blacker-neutral': { floor: 234, gain: 142, chroma: 0.006 },
-          'blackest-neutral': { floor: 231, gain: 162, chroma: 0.002 },
-        };
-        const veil = (amount) =>
-          root.style.setProperty('--theme-desk-grain', String(1 - Math.min(1, Math.max(0, amount))));
-        const grey = (level) => `rgb(${level} ${level} ${level})`;
-        const polish = ({ floor, gain }) => {
-          root.style.setProperty('--theme-desk-floor', `linear-gradient(${grey(floor)}, ${grey(floor)})`);
-          root.style.setProperty('--theme-desk-gain', `linear-gradient(${grey(gain)}, ${grey(gain)})`);
-        };
-        const sheen = (chroma) => {
-          const desk = DESK[root.dataset.theme];
-          if (desk) root.style.setProperty('--theme-desk', `oklch(${desk[0]} ${chroma} ${desk[1]})`);
-        };
-        const by = (key) => (query.get(key) === null ? undefined : Number(query.get(key)));
-        let chroma = by('chroma');
-        if (tile && /^[a-z0-9-]+$/.test(tile)) {
-          /* Relative to the document, so this still works under the preview's sub-path. */
-          const file = new URL(`desk/${tile}.webp`, document.baseURI).href;
-          root.style.setProperty('--theme-desk-tile', `url(${file})`);
-          root.style.setProperty('--theme-desk-tile-size', '45rem');
-          const dark = root.dataset.theme === 'dark' || root.dataset.theme === 'dark-forest';
-          if (dark && MEAN[tile]) {
-            const base = MEAN[tile].map((channel) => Math.max(0, channel - LEVEL));
-            root.style.setProperty('--theme-desk-base', `rgb(${base.join(' ')})`);
-            root.style.setProperty('--theme-desk-blend', 'difference');
-            /* The veil is the only thing left holding the desk's colour, so it goes opaque. */
-            root.style.setProperty('--theme-desk-veil-blend', 'color');
-            veil(1);
-            const named = GLOSS[query.get('gloss')];
-            const floor = by('floor');
-            const gain = by('gain');
-            if (Number.isFinite(floor) && Number.isFinite(gain)) {
-              polish({ floor, gain });
-            } else if (named) {
-              polish(named);
-              chroma ??= named.chroma;
-            }
-          } else {
-            veil(tile in VEIL ? VEIL[tile] : 0.15);
-          }
-        }
-        /* The sheen's chroma is the one knob a shipped dark desk still carries, so it answers
-           on its own, with no tile and no polish under it. */
-        if (Number.isFinite(chroma)) sheen(chroma);
-        const asked = Number(query.get('veil'));
-        if (query.get('veil') !== null && Number.isFinite(asked)) veil(asked);
-      })();
-    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -389,26 +259,14 @@ main {
      own mean, --theme-desk-blend to difference so the tile is subtracted from it rather than
      scaled by it, which keeps each step at its full size however dark the result lands, and
      --theme-desk-veil-blend to color so the opaque veil hands the desk its hue and chroma back
-     while the subtraction keeps the lightness. */
-  /* Between the tile and the veil sit two layers that turn dark wood into a polished surface.
-     --theme-desk-floor is a flat grey under color-burn, which clips to black everything below
-     255 less its own level; --theme-desk-gain is a flat grey under color-dodge, which is a
-     plain multiply by 255 / (255 less its own level). Clip, then open up: the range widens
-     downwards rather than sliding, so the body of the desk goes black while the bright fibres
-     hold the lightness they had, and that is what reads as sheen. Unset, both are `none`, a
-     transparent layer that composites away to nothing, so every other desk paints as it did. */
+     while the subtraction keeps the lightness. The scans are 1440px square and the desk lays
+     them down at half that, which is the side round 2 cut the drawn boards to. */
   background-color: var(--theme-desk-base, var(--theme-desk));
   background-image:
     linear-gradient(var(--desk-veil), var(--desk-veil)),
-    var(--theme-desk-gain, none),
-    var(--theme-desk-floor, none),
     var(--theme-desk-tile);
-  background-size: auto, auto, auto, var(--theme-desk-tile-size) var(--theme-desk-tile-size);
-  background-blend-mode:
-    var(--theme-desk-veil-blend, normal),
-    color-dodge,
-    color-burn,
-    var(--theme-desk-blend, overlay);
+  background-size: auto, 45rem 45rem;
+  background-blend-mode: var(--theme-desk-veil-blend, normal), var(--theme-desk-blend, overlay);
 
   /* Every band on the desk is a sheet of the same paper, with the small radius and the lift
      the drawing stacks have. Narrow, that is all it is: the band keeps the width, the margins
