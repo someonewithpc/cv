@@ -87,6 +87,8 @@ oembedUrl.searchParams.set('format', 'json');
 </html>
 
 <style lang="scss" is:global>
+@use "@/scss/_colors.scss" as colors;
+
 /* No list-markers by default, since lists are used more often for semantics */
 ul, ol {
   list-style: none;
@@ -291,6 +293,16 @@ main {
       border-radius: 0.25rem;
       background: var(--surface-page);
       box-shadow: var(--sheet-lift);
+    }
+
+    /* Grain only belongs where the paper background above actually stays: a plain sheet, or
+       a column-width child of a full-width section. A full-width section itself matches the
+       rule above too (it is a direct #main child), but its own background is turned off
+       below, so giving it the grain pseudo-element as well would paint fibre over the desk
+       showing through it instead of over paper. */
+    &#main > *:not(.folio-rail, .full-width),
+    &#main > .full-width > * {
+      @include colors.paper-grain(0.25rem);
     }
 
     /* A full-width section is the whole viewport, so the paper belongs to the column-width
