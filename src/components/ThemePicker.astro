@@ -15,10 +15,12 @@ type ThemeSettings = {
   deskGrain: string;
   /** The boards that desk is made of. One generator, a different wood per theme. */
   deskTile: PlankTile;
-  /** How strongly the paper's fibre tile shows on a sheet (see paper-grain in _colors.scss).
-      Dark paper needs less of it: soft-light lightens as much as it darkens, and on a dark
-      sheet the lightened fibre reads faster than on a light one. */
+  /** How strongly the paper's fibre tile shows on a sheet (see paper-grain in _colors.scss). */
   paperGrain: string;
+  /** multiply for a light sheet, screen for a dark one -- see paper-grain in _colors.scss. */
+  paperBlend: 'multiply' | 'screen';
+  /** '1' flips the tile dark-side-up for screen on a dark sheet, '0' leaves it as scanned. */
+  paperInvert: '0' | '1';
   follows: ThemeFollows;
   name: string;
   transitionScaleFactor: number;
@@ -30,13 +32,17 @@ type ThemeSettings = {
 
 const THEMES = {
   light: {
-    canvas: 'oklch(0.97 0.011 85)',
+    // Lifted from round 1's oklch(0.97 0.011 85): multiply's own darkening eats back into
+    // this, and the tile's grain needs the extra headroom to read at a visible sd.
+    canvas: 'oklch(0.99 0.006 85)',
     ink: 'oklch(0.24 0.025 260)',
     accent: 'oklch(0.7 0.13 65)',
     blueprint: 'oklch(0.52 0.14 255)',
     desk: 'oklch(0.76 0.05 68)',
     deskGrain: '0.45',
-    paperGrain: '0.5',
+    paperGrain: '0.7',
+    paperBlend: 'multiply',
+    paperInvert: '0',
     /* A mid warm wood: plain straight grain on 9rem boards. */
     deskTile: { lie: 'down', seed: 7, boards: 5, lines: 9, waves: 3, octaves: 2, bend: 8, grain: 0.45, boardTone: 0.09, boardWarmth: 0.03, seam: 0.35 },
     follows: 'light',
@@ -54,7 +60,9 @@ const THEMES = {
     blueprint: 'oklch(0.4 0.12 265)',
     desk: 'oklch(0.235 0.018 55)',
     deskGrain: '0.65',
-    paperGrain: '0.08',
+    paperGrain: '0.6',
+    paperBlend: 'screen',
+    paperInvert: '1',
     /* Charred cedar: a tighter grain on narrower boards, crazed along it by the char. */
     deskTile: { lie: 'down', seed: 23, boards: 6, lines: 14, waves: 2, octaves: 2, bend: 5, grain: 0.8, boardTone: 0.1, boardWarmth: 0.02, seam: 0.72, char: 0.22 },
     follows: 'dark',
@@ -66,13 +74,16 @@ const THEMES = {
     },
   },
   arctic: {
-    canvas: 'oklch(0.96 0.016 230)',
+    // Lifted from round 1's oklch(0.96 0.016 230) to pay back multiply's darkening, same as light.
+    canvas: 'oklch(0.98 0.009 230)',
     ink: 'oklch(0.3 0.04 250)',
     accent: 'oklch(0.52 0.1 210)',
     blueprint: 'oklch(0.58 0.12 220)',
     desk: 'oklch(0.81 0.013 232)',
     deskGrain: '0.45',
-    paperGrain: '0.45',
+    paperGrain: '0.7',
+    paperBlend: 'multiply',
+    paperInvert: '0',
     /* Bleached ash: a fine, very straight grain on wide boards that barely differ in tone. */
     deskTile: { lie: 'down', seed: 41, boards: 4, lines: 12, waves: 2, octaves: 2, bend: 4, grain: 0.42, boardTone: 0.035, boardWarmth: 0.008, seam: 0.3 },
     follows: 'light',
@@ -90,7 +101,9 @@ const THEMES = {
     blueprint: 'oklch(0.36 0.08 165)',
     desk: 'oklch(0.225 0.03 75)',
     deskGrain: '0.55',
-    paperGrain: '0.15',
+    paperGrain: '0.6',
+    paperBlend: 'screen',
+    paperInvert: '1',
     /* Dark stained wood: a little wilder than the light desk, and the one pale streak of sapwood. */
     deskTile: { lie: 'down', seed: 59, boards: 5, lines: 8, waves: 3, octaves: 2, bend: 10, grain: 1, boardTone: 0.11, boardWarmth: 0.04, seam: 0.42, sapwood: 0.12 },
     follows: 'dark',
@@ -120,6 +133,8 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-desk-tile: ${plankTile(settings.deskTile)};
       --theme-desk-tile-size: ${DESK_TILE_REM}rem;
       --theme-paper-grain: ${settings.paperGrain};
+      --theme-paper-blend: ${settings.paperBlend};
+      --theme-paper-invert: ${settings.paperInvert};
       --theme-mode: ${settings.follows};
       --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
 `;
@@ -282,13 +297,15 @@ aside {
 @use "@/scss/_colors.scss" as colors;
 
 :root {
-  --theme-canvas: oklch(0.97 0.011 85);
+  --theme-canvas: oklch(0.99 0.006 85);
   --theme-ink: oklch(0.24 0.025 260);
   --theme-accent: oklch(0.7 0.13 65);
   --theme-blueprint: oklch(0.52 0.14 255);
   --theme-desk: oklch(0.76 0.05 68);
   --theme-desk-grain: 0.45;
-  --theme-paper-grain: 0.5;
+  --theme-paper-grain: 0.7;
+  --theme-paper-blend: multiply;
+  --theme-paper-invert: 0;
   --theme-mode: light;
   --theme-kind: light;
 
