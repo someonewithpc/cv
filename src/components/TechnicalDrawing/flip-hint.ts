@@ -13,7 +13,7 @@
  * The creases are the ones PaperStack publishes: the dog-ear's resting intercepts
  * (`--fold-rest-x/y`, from the sheet's bottom-right corner) and the folded-back corner's
  * (`--fold-back-rest-x/y`, from its top-left). Redrawn when the stack or the words change
- * size, which covers the viewport and the font arriving, and when the stack marks a turn.
+ * size, which covers the viewport and the font arriving, and when a turned page settles.
  *
  * The shared annotation script was not a fit: it anchors a callout to an element of a page's
  * artwork, and the crease is not an element but a line the stack's clip-path draws.
@@ -186,10 +186,13 @@ export function drawFlipHints(frame: HTMLElement) {
   if (stack) sized.observe(stack);
   frame.querySelectorAll<HTMLElement>('.flip-hints .hint-words').forEach((words) => sized.observe(words));
   if (stack) {
-    new MutationObserver(schedule).observe(stack, {
-      attributes: true,
-      attributeFilter: ['data-paper-turned', 'data-paper-returned', 'data-paper-settled'],
-    });
+    // Neither callout is on screen while a page is moving: the peel hint goes the moment the
+    // stack is marked as turned, and the way back waits for the settle. So the measure waits for
+    // the settle too. Taken at the turn, it fell in the frame right after the stack renumbers
+    // its pages, and cost a sixth of a second there for a drawing nothing could see yet.
+    new MutationObserver(() => {
+      if (stack.hasAttribute('data-paper-settled')) schedule();
+    }).observe(stack, { attributes: true, attributeFilter: ['data-paper-settled'] });
   }
   document.fonts?.addEventListener('loadingdone', schedule);
   markWhenSeen(frame);
