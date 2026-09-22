@@ -18,9 +18,14 @@
  * frame. They were leader-line callouts laid inside the frames until the row of four, which
  * cannot hold one: four frames across a 960px sheet are 217px wide, and the overlay sizes
  * its type off the strip's height, so a label inside one came out 5px tall.
+ *
+ * The plate takes the whole artwork area and the pictures grow into whatever height is
+ * left over, which is what makes a step big enough to read: at 1440x900 a frame goes from
+ * 219x125 to about 210x209. Two rows of two would give each frame more width, but the
+ * sheet has no height for a second row: one row of four already reaches the plate's floor.
  */
 
-const FRAME = { width: 1731, height: 960 };
+const FRAME = { width: 985, height: 980 };
 
 type Frame = {
   id: string;
@@ -84,14 +89,20 @@ const frames: Frame[] = [
 </div>
 
 <style lang="scss">
+/* The gutter the sheet leaves between its own border and anything drawn on it, so the
+   plate floats on the page instead of sitting against the line. Same value the sheet pads
+   itself with, not a length of this page's own. */
 .wrapper {
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
+  padding: var(--sheet-margin);
 }
 
 .handoff-layer {
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
@@ -102,15 +113,18 @@ const frames: Frame[] = [
 }
 
 // This page keeps no column for a note, so the panel takes the whole width the sheet gives
-// the artwork and the frames grow with it.
+// the artwork, and the whole height too: the frames are the page, and every pixel the
+// plate is not using is a pixel off each one of them.
 .panel {
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
   padding: 1em;
   border: 1px solid var(--line-strong);
   border-radius: 0.5em;
   background: var(--surface-raised);
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 1em;
 }
 
@@ -142,26 +156,40 @@ header {
    orientation attribute, which reads portrait for a few window widths where the sheet is
    still laid out across. */
 .strip {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.875em;
+  /* Pictures in one row, captions in another, and every frame takes both: a caption that
+     runs to two lines then shortens every picture rather than only its own. */
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: 0.875em;
+  row-gap: 0.375em;
 
   @container technical-drawing (orientation: portrait) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr) auto);
+    row-gap: 0.5em;
   }
 }
 
+/* The picture takes the height its cell has and the width that follows from it, unless
+   that is wider than the cell, in which case the width wins and the height comes down.
+   Either way it is as big as the row can hold and the caption stays under it. */
 .frame {
   margin: 0;
   min-width: 0;
+  min-height: 0;
   display: grid;
-  gap: 0.375em;
-  align-content: start;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
 
   img {
     display: block;
-    width: 100%;
-    height: auto;
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    margin-inline: auto;
     box-sizing: border-box;
     border: 1px solid var(--line-strong);
     border-radius: 0.1875em;
