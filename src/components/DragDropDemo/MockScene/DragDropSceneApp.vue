@@ -69,6 +69,16 @@ const loadError = ref(false);
 const phase = ref<Phase>('idle');
 const selectedId = ref('chair');
 const toast = ref<string | null>(null);
+/**
+ * Remove, as the product spells it: the builder's key handler sends DEL to its `remove`
+ * action (three/Actions/index.js, KEYS.DEL_KEY), and the tool that runs is the one
+ * labelled "Remove [DEL]" (components/tools/Remove.vue).
+ */
+const REMOVE_KEY = 'Delete';
+const REMOVE_ACTION = 'Remove';
+type KeyToast = { id: number; keys: string[]; action: string; leaving: boolean };
+/** Shortcut toasts, the Marker Editor demo's undo and redo ones in all but the key. */
+const keyToasts = ref<KeyToast[]>([]);
 const demoPlaying = ref(false);
 const cursorVisible = ref(false);
 const cursorClicking = ref(false);
@@ -131,6 +141,41 @@ function showToast(message: string) {
   toastTimer = setTimeout(() => {
     toast.value = null;
   }, 1800);
+}
+
+/** How long a shortcut toast is read for, and how long its collapse takes after that. */
+const KEY_TOAST_VISIBLE_MS = 1400;
+const KEY_TOAST_EXIT_MS = 320;
+const keyToastTimers = new Set<ReturnType<typeof setTimeout>>();
+let keyToastId = 0;
+
+function showKeyToast(keys: string[], action: string) {
+  const id = (keyToastId += 1);
+  keyToasts.value = [...keyToasts.value, { id, keys, action, leaving: false }];
+  const fade = setTimeout(() => {
+    keyToastTimers.delete(fade);
+    keyToasts.value = keyToasts.value.map((t) => (t.id === id ? { ...t, leaving: true } : t));
+    const drop = setTimeout(() => {
+      keyToastTimers.delete(drop);
+      keyToasts.value = keyToasts.value.filter((t) => t.id !== id);
+    }, KEY_TOAST_EXIT_MS);
+    keyToastTimers.add(drop);
+  }, KEY_TOAST_VISIBLE_MS);
+  keyToastTimers.add(fade);
+}
+
+/**
+ * The one way an object leaves the floor, for the walkthrough and for a visitor pressing
+ * the key alike, so the toast is never out of step with what the scene did.
+ */
+function removeSelectedObject() {
+  const scene = sceneRef.value;
+  if (!scene || !scene.hasSelection()) return false;
+  showKeyToast([REMOVE_KEY], REMOVE_ACTION);
+  scene.removeSelected();
+  selectedPlacement.value = false;
+  syncPlaced();
+  return true;
 }
 
 function isChrome(target: EventTarget | null) {
@@ -432,6 +477,13 @@ function onContextMenu(event: Event) {
 }
 
 function onKeyDown(event: KeyboardEvent) {
+  if (event.key === REMOVE_KEY) {
+    // The floor is the visitor's from here: the key only ever acts on what they can see is
+    // selected, and taking it means they are driving.
+    yieldToUser();
+    if (removeSelectedObject()) event.preventDefault();
+    return;
+  }
   if (event.key !== 'Escape' || phase.value !== 'armed') return;
   yieldToUser();
   disarm();
@@ -734,9 +786,8 @@ async function removePlaced(token: number, scene: SpaceBuilderScene) {
     }
     await wait(350);
     if (token !== autoplayToken) return false;
-    scene.removeSelected();
-    selectedPlacement.value = false;
-    syncPlaced();
+    // Through the visitor's own Remove, toast and all, so the key is shown being pressed.
+    if (!removeSelectedObject()) return false;
     await wait(250);
     if (token !== autoplayToken) return false;
   }
@@ -945,6 +996,8 @@ onBeforeUnmount(() => {
   autoplayToken += 1;
   if (resumeTimer) clearTimeout(resumeTimer);
   if (toastTimer) clearTimeout(toastTimer);
+  for (const timer of keyToastTimers) clearTimeout(timer);
+  keyToastTimers.clear();
   if (sceneRef.value) releaseSpaceBuilderGpu(sceneRef.value);
   sceneRef.value?.dispose();
   sceneRef.value = null;
@@ -994,6 +1047,20 @@ onBeforeUnmount(() => {
       <p v-if="demoPlaying" class="demo-flash" role="status">{{ autoplayStartedToast().action }}</p>
 
       <div v-if="toast" class="toast" aria-live="polite">{{ toast }}</div>
+
+      <div v-if="keyToasts.length > 0" class="key-toasts" aria-live="polite">
+        <div
+          v-for="entry in keyToasts"
+          :key="entry.id"
+          class="key-toast"
+          :class="{ 'is-leaving': entry.leaving }"
+        >
+          <span class="key-toast__keys">
+            <kbd v-for="key in entry.keys" :key="key">{{ key }}</kbd>
+          </span>
+          <span class="key-toast__action">{{ entry.action }}</span>
+        </div>
+      </div>
 
       <div v-if="ready && !loadError" class="controls">
         <button type="button" class="restart-btn" @click="restartDemo">
@@ -1056,6 +1123,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+@use '@/scss/demo-toast' as toast;
+
 $visrez-brand: #89ab24;
 $light-grey: #565656;
 $nav-sidebar-bg: #323232;
@@ -1191,6 +1260,32 @@ $scene-bg: #212121;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+}
+
+@include toast.keyframes;
+
+.key-toasts {
+  @include toast.stack;
+
+  // Clear of the Restart button, which owns the bottom centre of this viewport.
+  bottom: 2.6rem;
+  z-index: 3;
+}
+
+.key-toast {
+  @include toast.toast;
+
+  &.is-leaving {
+    @include toast.leaving;
+  }
+
+  &__keys {
+    @include toast.keys;
+  }
+
+  &__action {
+    @include toast.action;
+  }
 }
 
 .controls {
