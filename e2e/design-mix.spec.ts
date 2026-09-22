@@ -950,9 +950,9 @@ test('the paper grain tile is fetched once and stays under 40 KB', async ({ page
 
   await page.setViewportSize({ width: 1440, height: 2400 });
   await page.goto('/');
-  // Every sheet on the page carries the grain (the main stack, the intro card, and the torn
-  // open-source pages), so scroll the whole thing to give every one of them a chance to
-  // request the tile before counting.
+  // Dozens of sheets carry the grain, the drawing stacks' pages and the contributions sheets,
+  // so scroll the whole page to give every one of them a chance to request the tile before
+  // counting.
   await page.evaluate(() => document.getElementById('open-source')?.scrollIntoView());
   await page.waitForTimeout(300);
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -972,8 +972,58 @@ test("the light sheet's paper is lighter than before the grain was added", async
   );
   const lightness = parseFloat(canvas.replace(/^oklch\(/, ''));
 
-  // The paper was oklch(0.94 0.014 85) before round 1 lifted it toward white, then
-  // oklch(0.97 0.011 85) after round 1. Round 2's multiply blend darkens the paper again as
-  // it draws the grain, so the canvas needs a further lift to pay that back.
-  expect(lightness).toBeGreaterThan(0.97);
+  // The paper was oklch(0.94 0.014 85) and round 1 lifted it to oklch(0.97 0.011 85), where it
+  // stays. Round 2 lifted it again to pay back the grain's multiply on the CV's own sheets;
+  // round 3 took the grain off those sheets, so that second lift went with it.
+  expect(lightness).toBeGreaterThanOrEqual(0.97);
+});
+
+test('the grain paints on the paper sheets and on nothing else', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 2400 });
+  await page.goto('/');
+
+  const carriers = await page.evaluate(() =>
+    [...document.querySelectorAll('*')]
+      .filter((el) => getComputedStyle(el, '::before').backgroundImage.includes('paper.webp'))
+      .map((el) => ({
+        // The page face of a drawing stack: the element that wears the fold's clip-path, so
+        // the grain is cut by the dog-ear along with the rest of the sheet.
+        drawingPage: el.matches('article.technical-drawing-stack > * > section'),
+        contributions: !!el.closest('#open-source'),
+        behindTheContent: getComputedStyle(el, '::before').zIndex === '-1',
+      })),
+  );
+
+  expect(carriers.length).toBeGreaterThan(20);
+  for (const carrier of carriers) {
+    expect(carrier.drawingPage || carrier.contributions).toBe(true);
+    expect(carrier.behindTheContent).toBe(true);
+  }
+  // Both kinds are here, not one kind twice.
+  expect(carriers.some((c) => c.drawingPage)).toBe(true);
+  expect(carriers.some((c) => c.contributions)).toBe(true);
+});
+
+test('the fold flap is the back of the sheet, with no fibre on it', async ({ page }) => {
+  await page.goto('/');
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(800);
+
+  // The flap, the clip, the grab handle and the hint ride on top of the page rather than being
+  // the page, so none of them may carry the tile.
+  const riders = stack.locator(
+    '.paper-front > :is(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)',
+  );
+  expect(await riders.count()).toBeGreaterThan(0);
+  for (const rider of await riders.all()) {
+    for (const pseudo of ['::before', '::after']) {
+      const painted = await rider.evaluate(
+        (el, p) => getComputedStyle(el, p).backgroundImage,
+        pseudo,
+      );
+      expect(painted).not.toContain('paper.webp');
+    }
+    await expect(rider).not.toHaveCSS('background-image', /paper\.webp/);
+  }
 });
