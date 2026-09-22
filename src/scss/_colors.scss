@@ -173,3 +173,33 @@
 
   --blueprint-900: var(--sheet-canvas);
 }
+
+// A sheet of the paper stack: a small seamless fibre tile laid over the element's own
+// background colour, so the paper reads as paper rather than a flat fill. The tile sits on a
+// pseudo-element behind the sheet's own content (z-index: -1 inside the stacking context this
+// establishes) so it never blends with text or child elements, only with the flat colour
+// underneath -- safe to add to a sheet that already paints its own background-image (the torn
+// page in OpenSourceContributions), since it never touches that element's own background
+// layers. --theme-paper-grain (0–1, set per theme in ThemePicker.astro) is the pseudo's
+// opacity; soft-light both lightens and darkens around the tile's mid-grey, so one blend mode
+// works whether the sheet underneath is a light or a dark paper. A sheet with its own
+// border-radius should set $radius to match, so the grain doesn't square off rounded corners;
+// a sheet that clips itself with mask-image (the torn page) clips the grain along with it for
+// free, no extra work needed here.
+@mixin paper-grain($radius: 0) {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: #{$radius};
+    background-image: url('/paper/handmade.webp');
+    background-size: 20rem 20rem;
+    mix-blend-mode: soft-light;
+    opacity: var(--theme-paper-grain, 0);
+    pointer-events: none;
+  }
+}
