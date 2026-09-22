@@ -193,3 +193,47 @@ test('main page: no WebGL unpack warnings across a GPU release and re-attach', a
   expect(warnings.some((text) => /texImage3D/.test(text))).toBe(false);
   expect(warnings.some((text) => /WebGL.*INVALID_/.test(text))).toBe(false);
 });
+
+for (const { name, viewport } of [
+  { name: 'desktop', viewport: { width: 1440, height: 900 } },
+  { name: 'phone', viewport: { width: 390, height: 844 } },
+]) {
+  test.describe(`transport deck at ${name} width`, () => {
+    test.use({ viewport });
+
+    test('is stamped in the border band, clear of the drawing', async ({ page }) => {
+      const stack = spaceBuilderStack(page);
+      await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const front = frontPage(stack, await frontPageIndex(stack));
+      await waitForSceneReady(front);
+
+      const deck = front.locator('[data-demo-transport]');
+      await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
+
+      const placement = await deck.evaluate((el) => {
+        const section = el.closest('section')!;
+        const sheet = section.getBoundingClientRect();
+        const box = el.getBoundingClientRect();
+        const band = parseFloat(getComputedStyle(section).paddingBottom);
+        const clearOf = (other: Element | null) => {
+          if (!other) return false;
+          const b = other.getBoundingClientRect();
+          return box.right <= b.left + 1 || box.left >= b.right - 1
+            || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
+        };
+        return {
+          insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
+          clearOfDrawing: clearOf(section.querySelector('.content')),
+          clearOfTitleBlock: clearOf(section.querySelector('table')),
+        };
+      });
+      // A phone sheet has no room in the band, so the deck takes a row of its own inside
+      // the frame above the title block instead.
+      expect(placement).toEqual({
+        insideBand: name === 'desktop',
+        clearOfDrawing: true,
+        clearOfTitleBlock: true,
+      });
+    });
+  });
+}

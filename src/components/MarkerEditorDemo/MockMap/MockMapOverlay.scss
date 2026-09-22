@@ -212,4 +212,19 @@
   svg {
     display: block;
   }
+
+  // Says out loud that this arrow is the walkthrough's, not the visitor's pointer.
+  &__label {
+    position: absolute;
+    left: 2.25em;
+    top: 2em;
+    padding: 0 0.25em;
+    border: 1px solid var(--accent, #222);
+    border-radius: 0.25em;
+    background: var(--bg-900, #fff);
+    color: var(--fg-850, #222);
+    font-size: 0.625rem;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+  }
 }

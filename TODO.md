@@ -21,6 +21,7 @@
   - [x] Drawn cursor pulses and flares on press and release, shared by every demo
   - [x] Logo cube: edges drawn once, visible on every theme
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
+  - [x] Autoplay is not very intuitive (#7)
   - [x] Visrez animated icon
   - [x] Visrez marker editor
     - [x] Marker editor pages past the second look rough (#18)
