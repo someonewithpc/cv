@@ -543,6 +543,79 @@ test('a lap that starts after a takeover clears the floor first', async ({ page 
   expect(cleared.filter((event) => event === 'remove').length).toBeGreaterThanOrEqual(left);
 });
 
+/** How many objects the app says are on the floor, from its own `x,z` list. */
+function onFloorCount(placed: string | null) {
+  return (placed ?? '').split(' ').filter(Boolean).length;
+}
+
+test('Delete takes the selected object off the floor and names the key', async ({ page }) => {
+  const app = await openDemo(page);
+  const box = await sceneBox(app);
+
+  await app.locator('[data-demo-target="catalog:table-round"]').dblclick();
+  await expect(app).toHaveAttribute('data-phase', 'armed');
+  await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5);
+  await expect(app).toHaveAttribute('data-selected', 'true');
+  const before = onFloorCount(await app.getAttribute('data-placed'));
+  expect(before).toBeGreaterThan(0);
+
+  // The product's own shortcut: DEL on a selected object, and the demo says which key ran.
+  await app.press('Delete');
+  const toast = app.locator('.key-toast');
+  await expect(toast).toBeVisible();
+  await expect(toast.locator('kbd')).toHaveText(['Delete']);
+  await expect(toast.locator('.key-toast__action')).toHaveText('Remove');
+
+  await expect(app).toHaveAttribute('data-selected', 'false');
+  expect(onFloorCount(await app.getAttribute('data-placed'))).toBe(before - 1);
+});
+
+/**
+ * Every shortcut toast the app raises, read as it is added rather than polled for: one is
+ * on screen for under two seconds, which a poll can step over.
+ */
+async function watchKeyToasts(app: Locator) {
+  await app.evaluate((root) => {
+    const store = window as typeof window & { __keyToasts?: string[] };
+    const seen: string[] = [];
+    store.__keyToasts = seen;
+    new MutationObserver(() => {
+      for (const toast of root.querySelectorAll('.key-toast')) {
+        const keys = [...toast.querySelectorAll('kbd')]
+          .map((chip) => chip.textContent?.trim() ?? '')
+          .join('+');
+        const entry = `${keys} ${toast.querySelector('.key-toast__action')?.textContent?.trim() ?? ''}`;
+        if (seen[seen.length - 1] !== entry) seen.push(entry);
+      }
+    }).observe(root, { childList: true, subtree: true });
+  });
+}
+
+function keyToasts(app: Locator): Promise<string[]> {
+  return app.evaluate(
+    () => [...((window as typeof window & { __keyToasts?: string[] }).__keyToasts ?? [])],
+  );
+}
+
+test('the walkthrough shows the same key while it clears the floor', async ({ page }) => {
+  test.slow();
+  const app = await openDemo(page);
+  await watchFloor(app);
+  await watchKeyToasts(app);
+  const box = await sceneBox(app);
+
+  // One object down, then a takeover: the lap that resumes empties the floor before it
+  // places anything, and that clearing is the Remove step the toast belongs to.
+  await expect
+    .poll(() => floorLog(app).then(standing), { timeout: 30_000, intervals: [40] })
+    .toBeGreaterThan(0);
+  await orbitCamera(page, box, -160);
+
+  await expect
+    .poll(() => keyToasts(app), { timeout: 30_000, intervals: [100] })
+    .toContain('Delete Remove');
+});
+
 type Placement = { x: number; z: number };
 
 /**
