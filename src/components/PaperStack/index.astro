@@ -312,6 +312,21 @@ const pages = await Promise.all(
       border-radius: $border-radius;
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
+      // Keep the sheet's sideways reach down to the sheet. The flap is a page-sized box
+      // mirrored across the crease (renderFold in fold-drag.ts), so while a fold is in flight
+      // its box lands wherever that reflection sends it: 750px past the page's right edge on a
+      // deep fold, with nothing painted out there, since the clip-path keeps the flap on the
+      // paper. An unpainted box still counts as scrollable overflow, so the document grows a
+      // horizontal scrollbar for the length of the gesture — and a mobile viewport answers the
+      // same overflow by widening its layout viewport, which leaves a phone, or Chrome's
+      // responsive device mode, showing a slice of a page half again as wide as the frame.
+      // Sideways only, which `clip` allows and `hidden` does not: the fan, the pile and the
+      // resting dog-ear all stand below the sheet and have to keep showing. The margin covers
+      // what does belong off the sheet's sides — the flip hint's 10px, the clip wire, and the
+      // drop shadow a flap past the commit point wears.
+      overflow-x: clip;
+      overflow-clip-margin: 1.5em;
+
       // The turned pages are the last --pages-turned of the order — a flip sends the front page
       // to --page-count and shifts the rest down — so the rank is 1 on the page turned first,
       // which now lies nearest the pages still to come, and --pages-turned on the one turned
