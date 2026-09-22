@@ -1,0 +1,288 @@
+---
+/**
+ * REVIEW ONLY, strip with the ?grain, ?tile and ?theme switches in Layout.astro before this
+ * lands on main.
+ *
+ * Every paper setting worth looking at, as a link, for every theme, above everything else on
+ * the page. The numbers on each row are measured on the light theme by scratchpad/measure5.mjs
+ * against the build this page ships with: the contributions sheet's rendered L*, which is 96.5
+ * with no fibre on it at all, and the spread of the fibre on that sheet and on a drawing page,
+ * in display levels. L* falls when the grain darkens the paper; spread rises when it roughens
+ * it. They move separately and only one of them is roughness.
+ */
+type Option = {
+  query: string;
+  label: string;
+  /** Measured on the light theme: contributions sheet L*, its spread, a drawing page's spread. */
+  sheetL: number;
+  sheetSpread: number;
+  pageSpread: number;
+  note?: string;
+};
+
+const THEMES = [
+  ['light', 'Light'],
+  ['arctic', 'Arctic'],
+  ['dark', 'Dark'],
+  ['dark-forest', 'Forest'],
+] as const;
+
+const OPTIONS: Option[] = [
+  {
+    query: '',
+    label: 'The page as it stands, each theme on its own numbers',
+    sheetL: 91.7,
+    sheetSpread: 2.6,
+    pageSpread: 1.32,
+    note: 'Nothing forced. The numbers are the light theme; the other three are within 0.15 levels of it.',
+  },
+  {
+    query: 'grain=0',
+    label: 'Bare paper, no fibre at all',
+    sheetL: 96.5,
+    sheetSpread: 0,
+    pageSpread: 0,
+    note: 'The reference every other row is measured against.',
+  },
+  {
+    query: 'grain=0.22,0.44',
+    label: 'Round 4, the setting you called way too strong',
+    sheetL: 90.62,
+    sheetSpread: 3.2,
+    pageSpread: 1.32,
+    note: 'What the branch carried into this round.',
+  },
+  {
+    query: 'grain=0.22,0.36',
+    label: 'What the branch has now, four fifths of round 4 fibre',
+    sheetL: 91.7,
+    sheetSpread: 2.6,
+    pageSpread: 1.32,
+    note: 'Our current pick, not a decision: it sits between round 3, which you called too subtle at spread 2.02, and round 4.',
+  },
+  {
+    query: 'grain=0.22,0.30',
+    label: 'Two thirds of it',
+    sheetL: 92.51,
+    sheetSpread: 2.16,
+    pageSpread: 1.32,
+  },
+  {
+    query: 'grain=0.22,0.24',
+    label: 'Half of it',
+    sheetL: 93.37,
+    sheetSpread: 1.78,
+    pageSpread: 1.32,
+  },
+  {
+    query: 'grain=0.22,0.18',
+    label: 'A third of it',
+    sheetL: 94.19,
+    sheetSpread: 1.37,
+    pageSpread: 1.32,
+  },
+  {
+    query: 'grain=0.22,0.44&tile=lifted',
+    label: 'Round 4 roughness on a tile centred 232 rather than 216',
+    sheetL: 93.03,
+    sheetSpread: 3.15,
+    pageSpread: 1.44,
+    note: 'Same fibre, same spread, two fifths of the darkening.',
+  },
+  {
+    query: 'grain=0.22,0.30&tile=lifted',
+    label: 'Two thirds of that roughness on the same lifted tile',
+    sheetL: 94.17,
+    sheetSpread: 2.23,
+    pageSpread: 1.44,
+  },
+  {
+    query: 'grain=0.25,0.38',
+    label: 'Round 3 shortlist, louder page and quieter sheet',
+    sheetL: 91.43,
+    sheetSpread: 2.75,
+    pageSpread: 1.62,
+    note: 'Set aside on our own judgement in round 4.',
+  },
+  {
+    query: 'grain=0.19,0.49',
+    label: 'Round 3 shortlist, quieter page and louder sheet',
+    sheetL: 89.93,
+    sheetSpread: 3.44,
+    pageSpread: 1.09,
+    note: 'Set aside on our own judgement in round 4.',
+  },
+  {
+    query: 'grain=0.16,0.58',
+    label: 'Round 3 shortlist, the loudest sheet of them',
+    sheetL: 88.78,
+    sheetSpread: 4.09,
+    pageSpread: 0.99,
+    note: 'Set aside on our own judgement in round 4.',
+  },
+  {
+    query: 'grain=0.35,0.28',
+    label: 'Round 3 as it shipped, one number driving both sheets',
+    sheetL: 92.84,
+    sheetSpread: 2.02,
+    pageSpread: 2.19,
+    note: 'The pair you saw before round 4 moved them apart.',
+  },
+  {
+    query: 'grain=0.22,0.30&tile=patch-b',
+    label: 'A different patch of the same scan, coarser by half a level',
+    sheetL: 92.52,
+    sheetSpread: 2.18,
+    pageSpread: 1.27,
+    note: 'Round 4 cut the flattest of 1,692 patches. This is one of the others.',
+  },
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Paper review</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --page: light-dark(#f6f4ee, #14171c);
+        --ink: light-dark(#1b1f24, #e6e8ea);
+        --faint: light-dark(#5d646c, #98a1aa);
+        --line: light-dark(#d3cec1, #2c333b);
+        --link: light-dark(#8a4b12, #f0b071);
+      }
+
+      body {
+        margin: 0 auto;
+        padding: 2rem 1rem 4rem;
+        max-width: 60rem;
+        background: var(--page);
+        color: var(--ink);
+        font: 1rem/1.5 system-ui, sans-serif;
+      }
+
+      h1 {
+        margin: 0 0 1.5rem;
+        font-size: 1.5rem;
+      }
+
+      ol {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      li {
+        padding: 0.75rem 0;
+        border-top: 1px solid var(--line);
+      }
+
+      li:last-child {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .label {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .numbers,
+      .note {
+        margin: 0.125rem 0 0;
+        color: var(--faint);
+        font-size: 0.875rem;
+      }
+
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0.5rem 0 0;
+        padding: 0;
+      }
+
+      .links a {
+        padding: 0.25rem 0.75rem;
+        border: 1px solid var(--line);
+        border-radius: 0.25rem;
+        color: var(--link);
+        text-decoration: none;
+      }
+
+      .links a:hover,
+      .links a:focus-visible {
+        border-color: var(--link);
+        text-decoration: underline;
+      }
+
+      footer {
+        margin-top: 2.5rem;
+        color: var(--faint);
+        font-size: 0.9375rem;
+      }
+
+      footer h2 {
+        color: var(--ink);
+        font-size: 1.125rem;
+      }
+
+      code {
+        font-family: ui-monospace, monospace;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Paper: every setting, on every theme</h1>
+
+    <ol>
+      {OPTIONS.map((option) => (
+        <li>
+          <p class="label">{option.label}</p>
+          <p class="numbers">
+            Contributions sheet L* {option.sheetL.toFixed(1)} against 96.5 bare, spread{' '}
+            {option.sheetSpread.toFixed(2)} levels. Drawing page spread {option.pageSpread.toFixed(2)}.
+          </p>
+          {option.note && <p class="note">{option.note}</p>}
+          <p class="links">
+            {THEMES.map(([id, name]) => (
+              <a href={option.query ? `../?theme=${id}&${option.query}` : `../?theme=${id}`}>{name}</a>
+            ))}
+          </p>
+        </li>
+      ))}
+    </ol>
+
+    <footer>
+      <h2>What the numbers are</h2>
+      <p>
+        L* is how light the paper renders, 100 being white. The contributions sheet is L* 96.5
+        with no fibre on it, and multiply can only take that down, never up. Spread is the
+        standard deviation of the fibre in display levels, measured as the difference between
+        two shots of the same sheet at the same scroll offset with the grain off and on, over
+        the pixels that are one flat colour with it off. Both numbers are from the light theme;
+        the other three land within 0.15 levels of spread of it.
+      </p>
+      <p>
+        Roughness and darkening are separate, and this is where they part. The paper is close
+        enough to white that a grain cannot modulate about its own level: at the current sheet
+        strength the fibre would have to lighten the paper past white on the light half, so
+        multiply takes the mean down with it. Paying that back by lifting the paper is only
+        arithmetically possible below about 0.24, and only by making the bare sheet pure white.
+        The lifted tile is the other way at it: the same fibre with the same spread, centred 232
+        instead of 216.4, so multiply has less to subtract in the first place.
+      </p>
+
+      <h2>What the links carry</h2>
+      <p>
+        <code>?grain=&lt;page&gt;,&lt;sheet&gt;</code> sets a drawing stack's pages and the torn
+        contributions paper separately, <code>?tile=</code> swaps the fibre tile, and
+        <code>?theme=</code> picks a theme through the same key the theme picker writes, so it
+        sticks until you pick another one.
+      </p>
+    </footer>
+  </body>
+</html>
