@@ -203,8 +203,21 @@
 // square off rounded corners; a sheet that clips itself with mask-image (the torn page) or
 // clip-path (a stack's pages, through every frame of a fold) clips the grain along with it for
 // free, no extra work needed here.
-@mixin paper-grain($radius: 0, $opacity: var(--theme-paper-grain, 0)) {
-  position: relative;
+//
+// $position is what the sheet needs to become a containing block for the pseudo. A sheet that
+// already positions itself -- the title block is absolute in the corner of a landscape sheet --
+// passes null and keeps its own.
+//
+// $offset moves the tile's origin. A separate element painted on top of a sheet starts its
+// tiling at its own padding box, which steps the fibre at its edge; passing how far that box
+// sits from the sheet's puts the tile back on the sheet's own phase.
+@mixin paper-grain(
+  $radius: 0,
+  $opacity: var(--theme-paper-grain, 0),
+  $position: relative,
+  $offset: null
+) {
+  position: $position;
   isolation: isolate;
 
   &::before {
@@ -215,6 +228,7 @@
     border-radius: #{$radius};
     background-image: url('/paper.webp');
     background-size: 12rem 12rem;
+    background-position: #{$offset};
     mix-blend-mode: var(--theme-paper-blend, multiply);
     filter: invert(var(--theme-paper-invert, 0));
     opacity: #{$opacity};
