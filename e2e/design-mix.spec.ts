@@ -90,10 +90,9 @@ for (const { width, height } of NARROW) {
       };
     });
 
-    // The same layers the wide desk has: the veil, the two polish layers that a dark desk
-    // fills in and every other desk leaves at `none`, then the scan of veneer under them.
+    // The same two layers the wide desk has: the veil of theme colour, and the scan under it.
     expect(background.image).toContain(`/desk/${WOODS.light.file}.webp`);
-    expect(background.blend).toBe('normal, color-dodge, color-burn, overlay');
+    expect(background.blend).toBe('normal, overlay');
     expect(background.size).toContain(`${TILE}px ${TILE}px`);
     expect(background.color).toBe(await asComputedColor(page, DESKS.light));
 
