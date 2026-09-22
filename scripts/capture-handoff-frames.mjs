@@ -48,6 +48,15 @@ const CROP = { left: 0.535, top: 0, bottom: 1 };
  * lines, as the product's own sidebar title does when its panel is this narrow.
  */
 const SIDEBAR_WIDTH_PX = 144;
+/**
+ * The camera comes in on the drop before the drag starts, so the chair that lands on the
+ * floor is about twice as tall in the frame. `applyWheelZoom` turns a wheel notch into a
+ * radius factor of `exp(deltaY * 0.0012)`, and a third is as far in as the scene goes:
+ * `setOrbitRadius` clamps the radius at 6 scene units, which from the opening 18 leaves
+ * the placed chair 1.8x as tall. Only the capture zooms. The demo keeps the framing the
+ * product opens with, since it has a whole floor to show and not one drop.
+ */
+const ZOOM_WHEEL_DELTA = Math.log(1 / 3) / 0.0012;
 const WEBP_QUALITY = 0.9;
 
 /** The hot spot of the cursor below, the path's tip, as a point of its 32-unit viewBox. */
@@ -203,6 +212,12 @@ async function capture(index) {
 }
 
 await mkdir(outDir, { recursive: true });
+
+// The frames are about one chair, so the camera comes in on it; the app's own wheel
+// handler does the zoom, the same way a visitor would.
+await page.mouse.move(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.5);
+await page.mouse.wheel(0, ZOOM_WHEEL_DELTA);
+await page.waitForTimeout(600);
 
 // 1. The press on the card: the drag is armed, nothing moves yet.
 await page.mouse.move(press.x, press.y);
