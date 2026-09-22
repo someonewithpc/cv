@@ -32,12 +32,16 @@ const outDir = path.resolve(root, process.argv[3] ?? 'public/demos/drag-drop');
 const VIEWPORT = { width: 1440, height: 900 };
 const SCALE = 3;
 /**
- * The part of the app each frame shows, as fractions of its box: the sidebar and the
- * canvas beside it, where the handoff happens. The whole app at the sheet's still size
- * would lose the cursor and the model. The left edge is set so the canvas takes a little
- * over half of each frame, since the sheet's callouts have to sit on that half.
+ * The part of the app each frame shows, as fractions of its box: the end of the canvas and
+ * the one catalog card beside it, where the handoff happens. The whole app at the sheet's
+ * still size would lose the cursor and the model. The right edge is no fraction but the
+ * card's own, measured below, because a frame only has to hold the card that is dragged.
+ * Top and bottom keep nearly the whole height, and that is what lets four frames across a
+ * sheet still be tall enough to read.
  */
-const CROP = { left: 0.18, top: 0.14, right: 1, bottom: 0.94 };
+const CROP = { left: 0.337, top: 0, bottom: 1 };
+/** Sidebar kept past the card's right edge, so the card is not cut at the frame's border. */
+const CARD_MARGIN_PX = 10;
 const WEBP_QUALITY = 0.9;
 
 /** The hot spot of the cursor below, the path's tip, as a point of its 32-unit viewBox. */
@@ -92,6 +96,16 @@ await app.locator('.controls').evaluateAll((controls) => {
 });
 
 const card = app.locator('[data-demo-target="catalog:chair"]');
+// Only the card that is dragged, so each frame can give the floor the width the rest of
+// the catalog was taking. Done here rather than in the app: the page a visitor gets keeps
+// its whole catalog, and nothing about these four stills belongs in it.
+await app.evaluate((el) => {
+  const hide = (node) => node?.style.setProperty('display', 'none');
+  for (const other of el.querySelectorAll('[data-catalog-item]')) {
+    if (other.getAttribute('data-catalog-item') !== 'chair') hide(other);
+  }
+  hide(el.querySelector('.catalog-search'));
+});
 const picture = card.locator('img');
 const canvas = app.locator('canvas[data-scene-canvas]');
 const sidebar = app.locator('.sidebar');
@@ -101,19 +115,24 @@ const boxOf = async (locator) => {
   return box;
 };
 const appBox = await boxOf(app);
+const cardBox = await boxOf(card);
 const pictureBox = await boxOf(picture);
 const canvasBox = await boxOf(canvas);
 const sidebarBox = await boxOf(sidebar);
 
 /** The moments, as pointer positions in the page. */
 const press = { x: pictureBox.x + pictureBox.width * 0.55, y: pictureBox.y + pictureBox.height * 0.6 };
-const overSidebar = { x: sidebarBox.x + sidebarBox.width * 0.18, y: press.y + 70 };
+// Below the card rather than on it: with one card in the catalog the picture riding the
+// pointer would otherwise sit on the picture it was dragged from, and the frame would show
+// the same chair twice.
+const overSidebar = { x: cardBox.x + cardBox.width * 0.45, y: cardBox.y + cardBox.height + 55 };
 const canvasEdge = { x: canvasBox.x + canvasBox.width * 0.88, y: canvasBox.y + canvasBox.height * 0.78 };
 const drop = { x: canvasBox.x + canvasBox.width * 0.78, y: canvasBox.y + canvasBox.height * 0.8 };
+const clipLeft = appBox.x + appBox.width * CROP.left;
 const clip = {
-  x: appBox.x + appBox.width * CROP.left,
+  x: clipLeft,
   y: appBox.y + appBox.height * CROP.top,
-  width: appBox.width * (CROP.right - CROP.left),
+  width: cardBox.x + cardBox.width + CARD_MARGIN_PX - clipLeft,
   height: appBox.height * (CROP.bottom - CROP.top),
 };
 
@@ -200,7 +219,10 @@ await page.mouse.up();
 await showCursor(drop, false);
 await capture(4);
 
-// What HandoffLayer.astro's callouts have to stay inside: the canvas's share of a frame.
+// What HandoffLayer.astro lays the frames out from: the shot's own shape, and the canvas's
+// share of it, which is where everything the captions point at happens.
+console.log(`frame ${Math.round(clip.width * SCALE)}x${Math.round(clip.height * SCALE)}`);
+console.log(`aspect ${(clip.width / clip.height).toFixed(3)}`);
 console.log(`canvas fraction ${((sidebarBox.x - clip.x) / clip.width).toFixed(3)}`);
 
 await browser.close();
