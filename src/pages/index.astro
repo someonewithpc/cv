@@ -47,6 +47,25 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
   row-gap: 4em;
   margin-top: 8rem;
 
+  // Cut the demos off at the window's own two edges. The fold flap is a page-sized box
+  // mirrored across the crease (renderFold in fold-drag.ts), so for the length of a fold or a
+  // turn its box lands wherever that reflection sends it: 830px past the sheet's right edge on
+  // a deep drag at a 1440 window. Nothing paints out there, because the flap's clip-path keeps
+  // it on the polygon, but an unpainted box is still scrollable overflow, and the document
+  // grows a horizontal scrollbar for the length of the gesture. A mobile viewport answers the
+  // same overflow by widening its layout viewport instead, which leaves a phone, or Chrome's
+  // responsive device mode, showing a slice of a page half again as wide as the frame, with
+  // the fixed theme picker off the side of it.
+  //
+  // Here and not on the sheet, because the flap's paint does leave the sheet: a deep fold and
+  // a turn each sweep it some 800px off the sheet's left edge, and a clip at the sheet cuts
+  // that sweep out of the animation. This section is the full-width grid column, so its border
+  // box runs from 0 to documentElement.clientWidth at every window size, and a clip with no
+  // margin therefore falls exactly on the two edges of the window: whatever it cuts was off
+  // screen already. Sideways only, which `clip` allows and `hidden` does not, so nothing is
+  // clipped vertically.
+  overflow-x: clip;
+
   @media (max-width: 52rem) {
     row-gap: 2.5em;
     margin-top: 4.5rem;
