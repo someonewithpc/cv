@@ -81,9 +81,10 @@ for (const { width, height } of NARROW) {
       };
     });
 
-    // The same two layers the wide desk has: the veil, then the tile of boards under it.
+    // The same layers the wide desk has: the veil, the two polish layers that a dark desk
+    // fills in and every other desk leaves at `none`, then the tile of boards under them.
     expect(background.image).toContain('feTurbulence');
-    expect(background.blend).toBe('normal, overlay');
+    expect(background.blend).toBe('normal, color-dodge, color-burn, overlay');
     expect(background.size).toContain(`${TILE}px ${TILE}px`);
     expect(background.color).toBe(await asComputedColor(page, DESKS.light));
 
