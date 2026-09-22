@@ -28,13 +28,22 @@ export default defineConfig({
   timeout: 60_000,
   fullyParallel: true,
   // Every test here drives a real WebGL/React/Vue-heavy page (Three.js scenes, fold-drag
-  // swipes with real waits), and this sandbox has no GPU passthrough — Chrome falls back
-  // to software rendering (SwiftShader), so a handful of concurrent Chromes already
-  // saturates a core each. Too many workers starves them all and turns genuine passes
-  // into timeouts, regardless of the machine's core count. Measured on the 32-core host
-  // under normal load: 2 workers 14 min clean, 4 workers 8 min clean, 8 workers 5 min with
-  // three timing failures (two timeouts, one 400 ms assertion).
-  workers: 4,
+  // swipes with real waits). Chrome is not on software rendering here, whatever an earlier
+  // version of this comment claimed: WebGL reports "ANGLE (AMD, Vulkan 1.4.354 (AMD Radeon
+  // RX 7900 XTX (RADV NAVI31)), radv)", the box's own card. A worker still costs about a
+  // core, and several specs measure the page's own frame timing (paper-stack-fold's 400 ms
+  // dog-ear, flip-hint-arrow's settle), so once the browsers crowd each other out the page
+  // really is slower and those specs fail on the product, not on a sloppy assertion.
+  // Measured on the 32-core host against one prebuilt preview, nothing else running:
+  //    4 workers  7.9 min, clean
+  //    6 workers  5.5 min, clean twice
+  //    8 workers  4.4 min, clean in five of six runs, the sixth losing the dog-ear budget
+  //   16 workers  3.4 min, six to eight failures, five of them the same specs both runs
+  // Four shards of four workers is the same sixteen browsers and slower again at 4.4 min,
+  // since a static split idles the last shard while the others are still going. Sharding
+  // buys nothing on one host; it is for spreading a suite over several.
+  // On a box shared with other work, drop back to 4.
+  workers: 8,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [['html', { open: 'never' }]],
