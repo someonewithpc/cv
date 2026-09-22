@@ -109,7 +109,9 @@ article {
   padding: 1.25rem var(--cell-x) 1.25rem calc(var(--cell-x) + 3px);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
-  border-radius: 0.5em;
+  /* The corner every sheet on the desk and the cutting mat are cut with. At 0.5em these
+     two were the only rounded card on the page, on paper cut half as round. */
+  border-radius: 0.25rem;
   background: color-mix(in oklch, var(--surface-raised), transparent 40%);
 
   > ul {
