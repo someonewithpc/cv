@@ -31,8 +31,10 @@ export default defineConfig({
   // swipes with real waits), and this sandbox has no GPU passthrough — Chrome falls back
   // to software rendering (SwiftShader), so a handful of concurrent Chromes already
   // saturates a core each. Too many workers starves them all and turns genuine passes
-  // into timeouts, regardless of the machine's core count.
-  workers: 2,
+  // into timeouts, regardless of the machine's core count. Measured on the 32-core host
+  // under normal load: 2 workers 14 min clean, 4 workers 8 min clean, 8 workers 5 min with
+  // three timing failures (two timeouts, one 400 ms assertion).
+  workers: 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [['html', { open: 'never' }]],
