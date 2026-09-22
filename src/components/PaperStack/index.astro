@@ -317,12 +317,12 @@ const pages = await Promise.all(
       // its box lands wherever that reflection sends it: 750px past the page's right edge on a
       // deep fold, with nothing painted out there, since the clip-path keeps the flap on the
       // paper. An unpainted box still counts as scrollable overflow, so the document grows a
-      // horizontal scrollbar for the length of the gesture — and a mobile viewport answers the
+      // horizontal scrollbar for the length of the gesture, and a mobile viewport answers the
       // same overflow by widening its layout viewport, which leaves a phone, or Chrome's
       // responsive device mode, showing a slice of a page half again as wide as the frame.
       // Sideways only, which `clip` allows and `hidden` does not: the fan, the pile and the
       // resting dog-ear all stand below the sheet and have to keep showing. The margin covers
-      // what does belong off the sheet's sides — the flip hint's 10px, the clip wire, and the
+      // what does belong off the sheet's sides: the flip hint's 10px, the clip wire, and the
       // drop shadow a flap past the commit point wears.
       overflow-x: clip;
       overflow-clip-margin: 1.5em;
