@@ -83,7 +83,10 @@ const statistics = {
       background: var(--surface-page);
       box-shadow: var(--sheet-lift);
 
-      @include colors.paper-grain(0.25rem);
+      /* The page canvas is paler than a drawing sheet's mat, and multiply bites harder the
+         lighter the colour under it, so this sheet takes four fifths of the theme's number to
+         land on the same measured spread. Same fraction on the torn pages below. */
+      @include colors.paper-grain(0.25rem, $strength: 0.8);
     }
   }
 
@@ -182,8 +185,9 @@ const statistics = {
     background-repeat: no-repeat, no-repeat, repeat, no-repeat;
 
     // The grain sits on its own pseudo-element (see the mixin), so it never has to join this
-    // background-image stack or its four-layer size/position/repeat lists.
-    @include colors.paper-grain;
+    // background-image stack or its four-layer size/position/repeat lists. Four fifths of the
+    // theme's number, for the same reason as the intro card above.
+    @include colors.paper-grain($strength: 0.8);
 
     /* The two tears are one jagged path each, stretched across the sheet and slid sideways
        by --tear-shift so no two sheets tear alike. The sides stay cut straight. */

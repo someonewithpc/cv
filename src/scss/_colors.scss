@@ -191,11 +191,17 @@
 // dark-side-up so screen can lighten a dark sheet by the same amount instead.
 // --theme-paper-blend and --theme-paper-invert (both set per theme) choose the pair.
 //
-// --theme-paper-grain (0-1, set per theme in ThemePicker.astro) is the pseudo's opacity. A sheet with its own border-radius should set $radius to match, so the grain doesn't
+// --theme-paper-grain (0-1, set per theme in ThemePicker.astro) is the pseudo's opacity, and
+// $strength scales it for one call site. Multiply's bite grows with the colour underneath, so
+// the same opacity is louder on the page canvas than on a drawing sheet's darker mat: the
+// theme's number is the one a drawing page wants, and the paler sheets take a fraction of it
+// to land on the same measured spread.
+//
+// A sheet with its own border-radius should set $radius to match, so the grain doesn't
 // square off rounded corners; a sheet that clips itself with mask-image (the torn page) or
 // clip-path (a stack's pages, through every frame of a fold) clips the grain along with it for
 // free, no extra work needed here.
-@mixin paper-grain($radius: 0) {
+@mixin paper-grain($radius: 0, $strength: 1) {
   position: relative;
   isolation: isolate;
 
@@ -209,7 +215,7 @@
     background-size: 32rem 32rem;
     mix-blend-mode: var(--theme-paper-blend, multiply);
     filter: invert(var(--theme-paper-invert, 0));
-    opacity: var(--theme-paper-grain, 0);
+    opacity: calc(var(--theme-paper-grain, 0) * #{$strength});
     pointer-events: none;
   }
 }
