@@ -112,10 +112,13 @@ function draggable(area: HTMLElement, onMove: (x: number, y: number) => void) {
 function openOnPress(field: HTMLElement, host: HTMLElement, input: HTMLInputElement) {
   host.hidden = true;
 
+  // Escape is caught on the way down: the editor is a dialog and stops every keydown
+  // it rendered from bubbling (see MarkerEditor/index.tsx), so a listener on the document
+  // in the bubble phase never hears one pressed in the picker's own field.
   const close = () => {
     host.hidden = true;
     document.removeEventListener('mousedown', onPressOutside);
-    document.removeEventListener('keydown', onEscape);
+    document.removeEventListener('keydown', onEscape, true);
   };
   const onPressOutside = (event: MouseEvent) => {
     if (!field.contains(event.target as Node)) close();
@@ -126,7 +129,7 @@ function openOnPress(field: HTMLElement, host: HTMLElement, input: HTMLInputElem
   const open = () => {
     host.hidden = false;
     document.addEventListener('mousedown', onPressOutside);
-    document.addEventListener('keydown', onEscape);
+    document.addEventListener('keydown', onEscape, true);
   };
 
   input.addEventListener('mousedown', () => {
