@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
 
@@ -175,4 +175,116 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
   await page.waitForTimeout(2500);
   expect(await stack.locator('.paper-fold').count()).toBe(1);
   expect(await stack.locator('.paper-fold--stand-in').count()).toBe(0);
+});
+
+// A point on the folded-back corner itself, to grab with a real pointer drag (see
+// flip-hint-arrow.spec.ts's identical helper). The flap's box runs past the sheet edge, so its
+// centre can fall in the cut-away corner and land on the page under it instead; the resting
+// crease runs from (w - x, h) to (w, h - y) and the corner is mirrored across it, so the flap
+// is that triangle and its centroid is inside it on any sheet.
+const flapGrip = (stack: Locator) => stack.locator('.paper-front').evaluate((sheet) => {
+  const fold = sheet.querySelector<HTMLElement>('.paper-fold')!;
+  const style = getComputedStyle(fold);
+  const x = parseFloat(style.getPropertyValue('--fold-x'));
+  const y = parseFloat(style.getPropertyValue('--fold-y'));
+  const { right, bottom } = sheet.getBoundingClientRect();
+  const mirrored = { x: right - (2 * x * y * y) / (x * x + y * y), y: bottom - (2 * x * x * y) / (x * x + y * y) };
+  return {
+    x: (right - x + right + mirrored.x) / 3,
+    y: (bottom + bottom - y + mirrored.y) / 3,
+  };
+});
+
+// The dog-ear's own size, read the way fold-drag.ts writes it while dragging or resting.
+const foldSize = (stack: Locator) => stack.locator('.paper-front').evaluate((sheet) => {
+  const style = getComputedStyle(sheet);
+  return {
+    x: parseFloat(style.getPropertyValue('--fold-x')),
+    y: parseFloat(style.getPropertyValue('--fold-y')),
+  };
+});
+
+// Drags the front page's dog-ear through a sequence of corner-relative offsets from the grab
+// point (in CSS px, +x right / +y down), a handful of pointermove events per leg so fold-drag.ts
+// sees the travel rather than a single jump. Leaves the button down; callers release it.
+const dragFold = async (page: Page, stack: Locator, legs: { dx: number, dy: number }[]): Promise<{ x: number, y: number }> => {
+  const grip = await flapGrip(stack);
+  await page.mouse.move(grip.x, grip.y);
+  await page.mouse.down();
+  for (const { dx, dy } of legs) {
+    const steps = 8;
+    for (let i = 1; i <= steps; i += 1) {
+      await page.mouse.move(grip.x + (dx * i) / steps, grip.y + (dy * i) / steps);
+      await page.waitForTimeout(20);
+    }
+  }
+  return grip;
+};
+
+test.describe('a drag that pulls the wrong way cancels', () => {
+  // The pulse that periodically grows the resting dog-ear (fold-reveal-pulse in index.astro)
+  // would otherwise move --fold-x/-y out from under a before/after comparison independently of
+  // anything a drag does.
+  test.use({ reducedMotion: 'reduce' });
+
+  test('80px straight down-right from the grab cancels: no flip, no fold left behind', async ({ page }) => {
+    const stack = page.locator('article.technical-drawing-stack').first();
+    await stack.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+
+    const before = await frontPageIndex(stack);
+    const restBefore = await foldSize(stack);
+
+    // Grabbing the corner and pulling it further away from the page — down and right, the
+    // opposite of the fold — is the drag Hugo described as "weird": before the fix this runs the
+    // tip toward the near-zero singularity in foldSizeFromTip (see fold-drag.ts), and --fold-x/-y
+    // rocket up rather than shrinking smoothly (this stack reads x 90.58, y 31.57 six pixels out
+    // along the outward axis, more than a fifth again its 75.59/37.80 resting size, and by twelve
+    // pixels out x is past 300 before flipping negative). 80px clears the 10px
+    // FOLD_CANCEL_OUTWARD_MARGIN many times over, so the fix gives the drag up long before any of
+    // that is reached.
+    await dragFold(page, stack, [{ dx: 80, dy: 80 }]);
+    await page.mouse.up();
+    await page.waitForTimeout(1500);
+
+    expect(await frontPageIndex(stack), 'front page unchanged, no flip').toBe(before);
+    const restAfter = await foldSize(stack);
+    expect(restAfter.x, '--fold-x back at rest').toBeCloseTo(restBefore.x, 0);
+    expect(restAfter.y, '--fold-y back at rest').toBeCloseTo(restBefore.y, 0);
+  });
+
+  test('a small wobble the wrong way on grab, then a strong pull inward, still turns the page', async ({ page }) => {
+    const stack = page.locator('article.technical-drawing-stack').first();
+    await stack.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+
+    const before = await frontPageIndex(stack);
+
+    // A hand settling onto the corner before it pulls — a few pixels the wrong way, well inside
+    // the 10px FOLD_CANCEL_OUTWARD_MARGIN — must not cancel the drag that follows: only outward
+    // travel past the margin does, and a pointer that comes back inside it keeps its drag. The
+    // recovery pull is well past this stack's own commit point (a plain 200px pull, the figure a
+    // hand's throw might cover, isn't quite enough to carry this particular sheet's corner past
+    // its commit point at all, even with no wobble first, so 400px is used here for a pull
+    // comfortably past it).
+    await dragFold(page, stack, [{ dx: 5, dy: 5 }, { dx: -395, dy: -395 }]);
+    await page.mouse.up();
+    await page.waitForTimeout(2500);
+
+    expect(await frontPageIndex(stack), 'the turn still committed').not.toBe(before);
+  });
+
+  test('a normal forward drag still turns the page', async ({ page }) => {
+    const stack = page.locator('article.technical-drawing-stack').first();
+    await stack.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+
+    const before = await frontPageIndex(stack);
+    const sheet = (await stack.locator('.paper-front').boundingBox())!;
+    await dragFold(page, stack, [{ dx: -sheet.width * 0.6, dy: -sheet.height * 0.6 }]);
+    await page.mouse.up();
+    await page.waitForTimeout(2500);
+
+    expect(await frontPageIndex(stack), 'the turn committed').not.toBe(before);
+  });
 });
