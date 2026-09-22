@@ -111,6 +111,22 @@ test.describe('desktop', () => {
     await expect(chair).toHaveClass(/active/);
   });
 
+  test('hovering an option shows it and leaving puts the held object back', async ({ page }) => {
+    const app = await openCatalog(page);
+    const set = card(app, 'table-round');
+    const seats = set.locator('.object-pax');
+
+    await seats.locator('.hover-select-current').click();
+    await seats.locator('.hover-select-options li').nth(2).locator('button').hover();
+    await expect(set).toHaveAttribute('data-variant', 'table-4-243');
+
+    // Out of the card without a click, so nothing was picked.
+    const box = await set.boundingBox();
+    if (!box) throw new Error('The card has no layout box');
+    await page.mouse.move(box.x + box.width + 60, box.y + box.height / 2, { steps: 6 });
+    await expect(set).toHaveAttribute('data-variant', 'table-8-243');
+  });
+
   test('picking a seat count selects the set and shows that object', async ({ page }) => {
     const app = await openCatalog(page);
     const set = card(app, 'table-round');
