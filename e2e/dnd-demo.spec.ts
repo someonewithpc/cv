@@ -144,8 +144,55 @@ test('the picture riding the pointer over the catalog carries the card tile', as
   expect(carried.background).toContain('linear-gradient');
   expect(carried.width).toBe(Math.round(tile.width));
   expect(carried.height).toBe(Math.round(tile.height));
-  // And the chair in it is the one the card draws, which runs past the tile's edges.
-  expect(carried.pictureWidth).toBeGreaterThan(carried.width);
+  // And the picture inside fills that tile rather than spilling out of it.
+  expect(carried.pictureWidth).toBe(carried.width);
+});
+
+/** The sizes the sheet and its frames were measured at in earlier rounds. */
+const VIEWPORTS = [
+  { width: 1440, height: 900 },
+  { width: 1280, height: 720 },
+  { width: 1024, height: 768 },
+  { width: 768, height: 1024 },
+  { width: 390, height: 844 },
+];
+
+test('every catalog picture stays inside its own tile and off its label', async ({ page }) => {
+  const app = await openDemo(page);
+
+  for (const viewport of VIEWPORTS) {
+    await page.setViewportSize(viewport);
+    await dragDropStack(page).scrollIntoViewIfNeeded();
+    // The sidebar reflows with the sheet's orientation; measure after it has settled.
+    await page.waitForTimeout(400);
+
+    const cards = await app.locator('[data-catalog-item]').evaluateAll((items) =>
+      items.map((item) => {
+        const picture = item.querySelector('.object-icons img')!.getBoundingClientRect();
+        const tile = item.querySelector('.object-icons')!.getBoundingClientRect();
+        const label = item.querySelector('.item-label')?.getBoundingClientRect() ?? null;
+        return {
+          id: item.getAttribute('data-catalog-item'),
+          picture: { left: picture.left, right: picture.right, top: picture.top, bottom: picture.bottom },
+          tile: { left: tile.left, right: tile.right, top: tile.top, bottom: tile.bottom },
+          labelTop: label ? label.top : null,
+        };
+      }),
+    );
+    expect(cards.length).toBeGreaterThan(0);
+
+    const SLACK = 0.5;
+    for (const card of cards) {
+      const where = `${card.id} at ${viewport.width}x${viewport.height}`;
+      expect(card.picture.left, `${where} spills left of its tile`).toBeGreaterThanOrEqual(card.tile.left - SLACK);
+      expect(card.picture.right, `${where} spills right of its tile`).toBeLessThanOrEqual(card.tile.right + SLACK);
+      expect(card.picture.top, `${where} spills above its tile`).toBeGreaterThanOrEqual(card.tile.top - SLACK);
+      expect(card.picture.bottom, `${where} spills below its tile`).toBeLessThanOrEqual(card.tile.bottom + SLACK);
+      if (card.labelTop !== null) {
+        expect(card.picture.bottom, `${where} covers its own label`).toBeLessThanOrEqual(card.labelTop + SLACK);
+      }
+    }
+  }
 });
 
 test('autoplay runs and hands over to the visitor', async ({ page }) => {
