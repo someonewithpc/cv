@@ -41,6 +41,7 @@
       - [~] Faster first paint / load
       - [~] Visual parity (chrome + 3D look)
     - [~] Grab some models like a classroom and a banquet set (#24)
+    - [x] Space builder shows the variant picker in place (#51)
     - [ ] Showcase the carousel? With the animated pips
   - [x] Visrez library tagging tool (#21)
   - [x] Slotted components carry their own scripts; boot island removed

@@ -40,8 +40,9 @@ test('the catalog offers the chair, side chair and banquet table as real objects
     const item = app.locator(`[data-demo-target="catalog:${id}"]`);
     await expect(item).toHaveAttribute('draggable', 'true');
     await expect(app.locator(`[data-catalog-item="${id}"]`)).not.toHaveClass(/placeholder/);
-    // Real items show a render of their own GLB; placeholders keep the flat SVG icon.
-    await expect(item.locator('img')).toHaveAttribute('src', /\.webp$/);
+    // Real items show a render of their own GLB; placeholders keep the flat SVG icon. A
+    // card with several finishes carries one picture per finish, so check the first.
+    await expect(item.locator('img').first()).toHaveAttribute('src', /\.webp$/);
   }
 
   await expect(app.locator('[data-demo-target="catalog:barstool"]')).toHaveAttribute('draggable', 'false');
@@ -68,27 +69,37 @@ test('a catalog model is only fetched once its item is picked', async ({ page })
   expect(models).not.toContain('armchair.glb');
 });
 
+/** Clicks where one of the carousel's arrows sits; they are the scroller's own buttons. */
+async function clickArrow(page: Page, styles: Locator, side: 'previous' | 'next') {
+  const box = await styles.boundingBox();
+  if (!box) throw new Error('The carousel has no layout box');
+  const x = side === 'next' ? box.x + box.width - 14 : box.x + 14;
+  await page.mouse.click(x, box.y + box.height / 2);
+}
+
 test('the chair card steps through the library finishes', async ({ page }) => {
   await page.goto('/');
   const app = await openCatalog(page);
 
   const card = app.locator('[data-catalog-item="chair"]');
-  const thumb = card.locator('.object-icons img');
+  const styles = card.locator('ul.styles');
 
-  await expect(card.locator('.group-object-count')).toContainText('5');
-  await expect(card.locator('button.previous')).toBeDisabled();
-  await expect(thumb).toHaveAttribute('src', /chair-thumb\.webp$/);
+  await expect(card.locator('li.style')).toHaveCount(5);
+  await expect(card.locator('.group-object-count').first()).toContainText('5');
+  await expect(card).toHaveAttribute('data-variant', 'chair');
 
   // Four steps right lands on the last finish, and the carousel refuses to go further.
   for (let i = 0; i < 4; i += 1) {
-    await card.locator('button.next').click();
-    await page.waitForTimeout(400);
+    await clickArrow(page, styles, 'next');
+    await page.waitForTimeout(500);
   }
-  await expect(thumb).toHaveAttribute('src', /chair-black-thumb\.webp$/);
-  await expect(card.locator('button.next')).toBeDisabled();
+  await expect(card).toHaveAttribute('data-variant', 'chair-black');
+  await clickArrow(page, styles, 'next');
+  await page.waitForTimeout(500);
+  await expect(card).toHaveAttribute('data-variant', 'chair-black');
 
-  await card.locator('button.previous').click();
-  await expect(thumb).toHaveAttribute('src', /chair-white-thumb\.webp$/);
+  await clickArrow(page, styles, 'previous');
+  await expect(card).toHaveAttribute('data-variant', 'chair-white');
 });
 
 test('the banquet card swaps the model for the seat count and table size picked', async ({ page }) => {

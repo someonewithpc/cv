@@ -47,7 +47,8 @@ const itemsVisible = computed(() => {
     Search does not match any object.
   </p>
 
-  <div v-else class="catalog-grid">
+  <!-- `variants-catalog` is what scopes the shared card stylesheet; see the style block. -->
+  <div v-else class="catalog-grid variants-catalog">
     <CatalogObjectCard
       v-for="item in itemsVisible"
       :key="item.id"
@@ -63,6 +64,15 @@ const itemsVisible = computed(() => {
     />
   </div>
 </template>
+
+<!--
+  The cards' look, shared with the object variants demo rather than copied: one stylesheet
+  for the card, its style carousel and its seats and size rows, scoped under
+  `.variants-catalog` so it reaches the cards here and nothing else in the app.
+-->
+<style lang="scss">
+@use '../../VariantsDemo/card';
+</style>
 
 <style lang="scss" scoped>
 // Space Builder's own accent (ui/main.scss `$visrez-brand`), which the rest of the demo
