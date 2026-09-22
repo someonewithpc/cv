@@ -35,13 +35,19 @@ const SCALE = 3;
  * The part of the app each frame shows, as fractions of its box: the end of the canvas and
  * the one catalog card beside it, where the handoff happens. The whole app at the sheet's
  * still size would lose the cursor and the model. The right edge is no fraction but the
- * card's own, measured below, because a frame only has to hold the card that is dragged.
+ * sidebar's own, measured below, so nothing in the sidebar is cut at the frame's border.
  * Top and bottom keep nearly the whole height, and that is what lets four frames across a
  * sheet still be tall enough to read.
  */
-const CROP = { left: 0.337, top: 0, bottom: 1 };
-/** Sidebar kept past the card's right edge, so the card is not cut at the frame's border. */
-const CARD_MARGIN_PX = 10;
+const CROP = { left: 0.535, top: 0, bottom: 1 };
+/**
+ * The sidebar, narrowed to the single column the hidden cards leave behind. At its full
+ * width the frame could either cut the header's title in half or spend a third of itself
+ * on the empty column, and the card would keep the width the two-column grid gives it
+ * either way. Narrowed, the whole sidebar fits the frame and the title wraps to two
+ * lines, as the product's own sidebar title does when its panel is this narrow.
+ */
+const SIDEBAR_WIDTH_PX = 144;
 const WEBP_QUALITY = 0.9;
 
 /** The hot spot of the cursor below, the path's tip, as a point of its 32-unit viewBox. */
@@ -99,14 +105,16 @@ const card = app.locator('[data-demo-target="catalog:chair"]');
 // Only the card that is dragged, so each frame can give the floor the width the rest of
 // the catalog was taking. Done here rather than in the app: the page a visitor gets keeps
 // its whole catalog, and nothing about these four stills belongs in it.
-await app.evaluate((el) => {
+await app.evaluate((el, width) => {
   const hide = (node) => node?.style.setProperty('display', 'none');
   for (const other of el.querySelectorAll('[data-catalog-item]')) {
     if (other.getAttribute('data-catalog-item') !== 'chair') hide(other);
   }
   hide(el.querySelector('.catalog-search'));
-});
-const picture = card.locator('img');
+  // One card, one column, and a sidebar no wider than it needs to hold that column.
+  el.style.gridTemplateColumns = `minmax(0, 1fr) ${width}px`;
+  el.querySelector('.catalog-grid')?.style.setProperty('grid-template-columns', 'minmax(0, 1fr)');
+}, SIDEBAR_WIDTH_PX);
 const canvas = app.locator('canvas[data-scene-canvas]');
 const sidebar = app.locator('.sidebar');
 const boxOf = async (locator) => {
@@ -116,23 +124,22 @@ const boxOf = async (locator) => {
 };
 const appBox = await boxOf(app);
 const cardBox = await boxOf(card);
-const pictureBox = await boxOf(picture);
 const canvasBox = await boxOf(canvas);
 const sidebarBox = await boxOf(sidebar);
 
-/** The moments, as pointer positions in the page. */
-const press = { x: pictureBox.x + pictureBox.width * 0.55, y: pictureBox.y + pictureBox.height * 0.6 };
-// Below the card rather than on it: with one card in the catalog the picture riding the
-// pointer would otherwise sit on the picture it was dragged from, and the frame would show
-// the same chair twice.
-const overSidebar = { x: cardBox.x + cardBox.width * 0.45, y: cardBox.y + cardBox.height + 55 };
+/** The moments, as pointer positions in the page. The card box is the picture's tile. */
+const press = { x: cardBox.x + cardBox.width * 0.5, y: cardBox.y + cardBox.height * 0.5 };
+// A tile's height below the press, which puts the carried picture just under the card it
+// came from: with one card in the catalog, a ghost over the card would show the same chair
+// twice in one frame, and the sidebar has no room to clear the card by more than this.
+const overSidebar = { x: cardBox.x + cardBox.width * 0.45, y: press.y + cardBox.height + 4 };
 const canvasEdge = { x: canvasBox.x + canvasBox.width * 0.88, y: canvasBox.y + canvasBox.height * 0.78 };
 const drop = { x: canvasBox.x + canvasBox.width * 0.78, y: canvasBox.y + canvasBox.height * 0.8 };
 const clipLeft = appBox.x + appBox.width * CROP.left;
 const clip = {
   x: clipLeft,
   y: appBox.y + appBox.height * CROP.top,
-  width: cardBox.x + cardBox.width + CARD_MARGIN_PX - clipLeft,
+  width: sidebarBox.x + sidebarBox.width - clipLeft,
   height: appBox.height * (CROP.bottom - CROP.top),
 };
 
