@@ -1005,3 +1005,42 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     }
   });
 }
+
+test('the paper grain tile is fetched once and stays under 40 KB', async ({ page }) => {
+  const paperRequests: string[] = [];
+  let paperBytes = -1;
+  page.on('requestfinished', async (request) => {
+    if (!/\/paper\/handmade\.webp$/.test(request.url())) return;
+    paperRequests.push(request.url());
+    const response = await request.response();
+    const body = await response?.body();
+    if (body) paperBytes = body.byteLength;
+  });
+
+  await page.setViewportSize({ width: 1440, height: 2400 });
+  await page.goto('/');
+  // Every sheet on the page carries the grain (the main stack, the intro card, and the torn
+  // open-source pages), so scroll the whole thing to give every one of them a chance to
+  // request the tile before counting.
+  await page.evaluate(() => document.getElementById('open-source')?.scrollIntoView());
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(300);
+
+  expect(paperRequests, `requested from:\n${paperRequests.join('\n')}`).toHaveLength(1);
+  expect(paperBytes).toBeGreaterThan(0);
+  expect(paperBytes).toBeLessThan(40 * 1024);
+});
+
+test("the light sheet's paper is lighter than before the grain was added", async ({ page }) => {
+  await withTheme(page, 'light');
+  await page.goto('/');
+
+  const canvas = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--theme-canvas').trim(),
+  );
+  const lightness = parseFloat(canvas.replace(/^oklch\(/, ''));
+
+  // The paper was oklch(0.94 0.014 85) before this change lifted it toward white.
+  expect(lightness).toBeGreaterThan(0.94);
+});
