@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchEffect } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import {
@@ -92,6 +93,14 @@ const inView = ref(false);
 const userControl = ref(false);
 const reducedMotion = ref(false);
 
+// Drives the sheet's status chip (TechnicalDrawing/Page.astro).
+watchEffect(() => {
+  reportAutoplayState(
+    rootRef.value,
+    reducedMotion.value ? 'off' : userControl.value ? 'user' : 'playing',
+  );
+});
+
 const panel = ref<Panel>('closed');
 const phase = ref<Phase>('idle');
 const snapshot = ref<SceneSnapshot | null>(null);
@@ -177,8 +186,9 @@ function applyCursor(step: DemoCursorStep) {
   }
 }
 
-function yieldToUser() {
-  // Match Marker Editor: any trusted activity pauses autoplay and resets the idle timer.
+// Match Marker Editor: hovering pauses autoplay and resets the idle timer, while a
+// deliberate interaction keeps control until the visitor replays from the status chip.
+function yieldToUser(keepControl = false) {
   if (resumeTimer) clearTimeout(resumeTimer);
 
   if (cursorPhase.value === 'demo') {
@@ -197,6 +207,8 @@ function yieldToUser() {
     cursorPhase.value = 'gone';
     pushToast(autoplayPausedToast());
   }
+
+  if (keepControl) return;
 
   resumeTimer = setTimeout(() => {
     resumeTimer = null;
@@ -243,12 +255,13 @@ function onTrustedPointer(event: PointerEvent) {
     }
   }
 
-  yieldToUser();
+  if (isTransportControl(event.target)) return;
+  yieldToUser(event.type === 'pointerdown');
 }
 
 function onPointerDown(event: PointerEvent) {
   if (!event.isTrusted) return;
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
 
   const target = event.target as HTMLElement | null;
   // UI chrome handles its own clicks — don't steal them for orbit/draw.
@@ -375,7 +388,7 @@ function onWheel(event: WheelEvent) {
   if (target?.closest('.rail, .sidebar, .flash, .toasts, button, input, label, details')) return;
   const scene = sceneRef.value;
   if (!scene) return;
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   applyWheelZoom(scene, event);
 }
 
@@ -505,7 +518,7 @@ function onCatalogDragStart(event: DragEvent, item: CatalogItem, variant: Catalo
     event.preventDefault();
     return;
   }
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   selectedCatalogId.value = item.id;
   sceneRef.value?.activateCatalogItem(item.id, variant);
   phase.value = 'placing';
@@ -525,14 +538,14 @@ function onCatalogDragEnd() {
 function onViewportDragOver(event: DragEvent) {
   if (phase.value !== 'placing' && !event.dataTransfer?.types.includes('text/plain')) return;
   event.preventDefault();
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   phase.value = 'placing';
   sceneRef.value?.setGhostAt(event.clientX, event.clientY);
 }
 
 function onViewportDrop(event: DragEvent) {
   event.preventDefault();
-  if (!userControl.value) yieldToUser();
+  if (!userControl.value) yieldToUser(true);
   sceneRef.value?.setGhostAt(event.clientX, event.clientY);
   const placed = sceneRef.value?.placeGhostAsSingle() ?? false;
   phase.value = 'idle';
@@ -545,7 +558,7 @@ function onViewportDrop(event: DragEvent) {
 function onKeyDown(event: KeyboardEvent) {
   if (event.key === 'a' || event.key === 'A') {
     event.preventDefault();
-    if (!userControl.value) yieldToUser();
+    if (!userControl.value) yieldToUser(true);
     openAdd();
   } else if (event.key === 'Escape') {
     if (panel.value !== 'closed') goBack();
@@ -682,6 +695,19 @@ onMounted(async () => {
       }
     });
 
+    onAutoplayCommand(root, (command) => {
+      if (command === 'reset') {
+        restartDemo();
+        return;
+      }
+      if (command === 'play') {
+        userControl.value = false;
+        startAutoplay(controller);
+        return;
+      }
+      yieldToUser(true);
+    });
+
     // Marker Editor pattern: any trusted pointer over the page takes over.
     window.addEventListener('pointermove', onTrustedPointer, { passive: true });
     window.addEventListener('pointerdown', onTrustedPointer, { passive: true });
@@ -732,7 +758,7 @@ onBeforeUnmount(() => {
     :data-ready="ready ? 'true' : 'false'"
     :data-user-control="userControl ? 'true' : 'false'"
     :data-panel="panel"
-    @focus="yieldToUser"
+    @focus="yieldToUser(true)"
   >
     <aside class="rail" aria-label="Tools">
       <div class="rail-logo" aria-hidden="true" title="Visrez">
@@ -956,11 +982,12 @@ onBeforeUnmount(() => {
         <path
           d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
           fill="#fff"
-          stroke="#222"
+          stroke="var(--accent, #222)"
           stroke-width="1.6"
           stroke-linejoin="round"
         />
       </svg>
+      <span class="demo-cursor-label monospace">demo</span>
     </div>
   </div>
 </template>
@@ -1481,6 +1508,21 @@ $scene-bg: #212121;
   svg {
     display: block;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  }
+
+  // Says out loud that this arrow is the walkthrough's, not the visitor's pointer.
+  .demo-cursor-label {
+    position: absolute;
+    left: 2.25em;
+    top: 2em;
+    padding: 0 0.25em;
+    border: 1px solid var(--accent, #222);
+    border-radius: 0.25em;
+    background: #fff;
+    color: #222;
+    font-size: 0.625rem;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
   }
 }
 </style>

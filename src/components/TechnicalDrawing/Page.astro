@@ -41,11 +41,33 @@ const noteId = `drawing-note-${crypto.randomUUID().slice(0, 8)}`;
 const asideHtml = (await Astro.slots.render('aside')) ?? '';
 const noteBackground = asideHtml.match(/--background:\s*([^;"]+)/)?.[1];
 const sheetAnchor = `--${noteId}-sheet`;
+const titleAnchor = `--${noteId}-title`;
+
+/* One chassis, three glyphs: a cassette key drawn from the top left, so its cap has a
+   front and a side face to drop onto when it is held down. Each glyph sits in the cap's
+   own box (x 1 to 18, y 1 to 13), cut wide enough to still read at a 12px key. */
+const transportKeys = [
+  {
+    id: 'reset',
+    label: 'Reset the walkthrough',
+    glyph: '<path d="M4.6 3.4v7.2" /><path d="M10 3.4 6.6 7 10 10.6Z" /><path d="M14.4 3.4 11 7l3.4 3.6Z" />',
+  },
+  {
+    id: 'play',
+    label: 'Play the walkthrough',
+    glyph: '<path d="M6.6 2.9 13.9 7l-7.3 4.1Z" />',
+  },
+  {
+    id: 'pause',
+    label: 'Take over',
+    glyph: '<path d="M6.6 3.2h2.3v7.6H6.6z" /><path d="M10.6 3.2h2.3v7.6h-2.3z" />',
+  },
+];
 ---
 
 <section
   class={pageStyle}
-  style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
+  style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor, '--drawing-title-anchor': titleAnchor }}
 >
   <div class="content">
     <slot name="content" />
@@ -70,7 +92,7 @@ const sheetAnchor = `--${noteId}-sheet`;
     </button>
   </div>
 
-  <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`}>
+  <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`} style={{ 'anchor-name': titleAnchor }}>
     <tbody>
       <tr>
         {techs.length > 0 && (
@@ -127,12 +149,56 @@ const sheetAnchor = `--${noteId}-sheet`;
       </tr>
     </tbody>
   </table>
+
+  <!-- Transport deck: cassette keys, a lamp and a readout, filled in and revealed by
+       src/client/autoplayStatus.ts once a demo on this sheet reports that it is playing
+       by itself. -->
+  <div class="demo-transport" data-demo-transport hidden>
+    <span class="demo-keys">
+      {transportKeys.map(({ id, label, glyph }) => (
+        <button class="demo-key" type="button" data-demo-key={id} title={label} aria-pressed="false">
+          <span class="sr-only">{label}</span>
+          <svg viewBox="0 0 21 18" aria-hidden="true">
+            <path class="key-bevel" d="M1 13 2.5 16.5h17L18 13Z" />
+            <path class="key-bevel" d="M18 1 19.5 4.5v12L18 13Z" />
+            <g class="key-cap">
+              <rect class="key-face" x="1" y="1" width="17" height="12" rx="1.5" />
+              <g class="key-hatch">
+                <path d="M4 10.6 7.2 3.4" />
+                <path d="M8.4 10.6 11.6 3.4" />
+                <path d="M12.8 10.6 16 3.4" />
+              </g>
+              <g class="key-glyph" set:html={glyph} />
+            </g>
+          </svg>
+        </button>
+      ))}
+    </span>
+
+    <span class="demo-led" aria-hidden="true"></span>
+
+    <span class="demo-readout">
+      <span class="demo-caption monospace" data-demo-caption role="status"></span>
+      <span class="demo-hint monospace" data-demo-hint></span>
+    </span>
+  </div>
 </section>
 
 <style lang="scss">
 @use 'sass:math';
 
 @use "@/scss/_colors.scss" as colors;
+
+/* Off the paper but still in the page: the shapes that letter the state onto the
+   drawing keep the live region for a screen reader and say nothing twice. */
+@mixin off-the-paper {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 section {
   /* rem, not em: the title block sets its own font-size, and an em offset there
@@ -157,6 +223,9 @@ section {
   padding: var(--sheet-margin);
   border-radius: 0.5em;
 
+  /* The mat and the frame line, in one paint: an even ring of mat, then the line
+     drawn one pixel inside it. The margin is the same on all four sides, so the
+     band the deck is drawn in is whatever the bottom of that ring leaves. */
   box-shadow: inset 0 0 0 var(--sheet-margin) var(--surface-sunken),
               inset 0 0 0 calc(var(--sheet-margin) + 1px) var(--line-strong);
 
@@ -240,6 +309,190 @@ section {
       /* Portrait gives the artwork the full sheet width, not a third of it. */
       font-size: min(1rem, 0.038 * var(--sheet-inline));
     }
+  }
+
+  /* The deck fills the bottom band, the strip of mat between the sheet edge and the
+     frame line that the title block already sits against, starting clear of the
+     dog-eared corner. The band is one margin deep, like the other three sides, so
+     the keys are drawn at whatever that leaves. */
+  .demo-transport {
+    position: absolute;
+    /* Both ends sit under the frame line's corners, so the paper left around the deck
+       is the same at the ends as the band is deep above and below it. */
+    left: var(--sheet-margin);
+    right: var(--sheet-margin);
+    bottom: 0;
+    height: var(--sheet-margin);
+    z-index: 4;
+
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+
+    color: var(--ink);
+    font-size: 0.625rem;
+    line-height: 1;
+    /* Paper, not chrome: the band under it shows through, and the sheet stays
+       hoverable everywhere except on the keys themselves. */
+    pointer-events: none;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .demo-keys {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+  }
+
+  /* Each key is line art in the sheet's ink: a cap with a side bevel, and when it
+     is held down the cap sits on the bevel and takes the hatch a sectioned part
+     gets in a drawing. */
+  .demo-key {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+
+    svg {
+      display: block;
+      /* What the band leaves once the margin is the same on all four sides. */
+      height: 0.75rem;
+      width: auto;
+      overflow: visible;
+    }
+
+    /* The sheet's own paper, not the mat the band is: --surface-raised sits a step
+       away from the mat on every theme, which left the cap looking like an outline
+       with the drawing showing through it. Paper is a step the other way, and it is
+       the lightest surface on the light themes and the darkest on the dark ones, so
+       the cap reads as a solid key on all four. */
+    .key-face {
+      fill: var(--surface-page);
+      stroke: var(--line-strong);
+      stroke-width: 0.9;
+    }
+
+    .key-bevel {
+      fill: color-mix(in oklab, var(--ink) 18%, var(--surface-page));
+      stroke: var(--line-strong);
+      stroke-width: 0.9;
+      stroke-linejoin: round;
+    }
+
+    .key-glyph {
+      fill: var(--ink);
+      stroke: var(--ink);
+      stroke-width: 1.1;
+      stroke-linejoin: round;
+      stroke-linecap: square;
+    }
+
+    .key-hatch {
+      display: none;
+      stroke: var(--line-strong);
+      stroke-width: 0.5;
+      opacity: 0.55;
+    }
+
+    &:hover .key-glyph,
+    &:focus-visible .key-glyph {
+      fill: var(--accent);
+      stroke: var(--accent);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 0.125em;
+    }
+
+    /* Held down: the cap drops the full depth of its bevel, which disappears under it,
+       and the face takes a little ink so a held key still reads at a glance once the
+       bevel that used to mark it is gone. */
+    &[aria-pressed='true'] {
+      .key-cap {
+        translate: 1.5px 3.5px;
+      }
+
+      .key-face {
+        fill: color-mix(in oklab, var(--ink) 12%, var(--surface-page));
+      }
+
+      .key-bevel {
+        display: none;
+      }
+
+      .key-hatch {
+        display: inline;
+      }
+    }
+
+    &:active .key-cap {
+      translate: 1.5px 3.5px;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.5;
+    }
+  }
+
+  .demo-transport[data-state='playing'] [data-demo-key='play'] .key-glyph {
+    fill: var(--accent);
+    stroke: var(--accent);
+  }
+
+  .demo-led {
+    flex: none;
+    width: 0.5em;
+    height: 0.5em;
+    border: 1px solid var(--ink-muted);
+    border-radius: 50%;
+  }
+
+  /* Not nested under .demo-led: an `&` there carries the whole `section .demo-led`
+     chain into the selector and it never matches. */
+  .demo-transport[data-state='playing'] .demo-led {
+    border-color: var(--accent);
+    background: var(--accent);
+    animation: demo-led-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes demo-led-pulse {
+    50% { opacity: 0.25; }
+  }
+
+  /* One line, because the band is one line tall: the state reads as a stamp and
+     the instruction trails it in the muted ink the title block uses for labels. */
+  .demo-readout {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    min-width: 0;
+  }
+
+  .demo-caption {
+    flex: none;
+    letter-spacing: 0.1em;
+  }
+
+  /* Ruled off from the state the way the title block rules its cells apart. */
+  .demo-hint {
+    overflow: hidden;
+    padding-inline-start: 0.625em;
+    border-inline-start: 1px solid var(--line);
+    color: var(--ink-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .demo-led { animation: none; }
   }
 
   .aside {
@@ -642,6 +895,13 @@ section {
       display: block;
     }
 
+    /* The corner is only folded out on a sheet this narrow, and at the sheet's
+       bottom edge it covers the whole band. A deck drawn in the band starts past
+       its diagonal here, and keeps the same clearance from it as from the ends. */
+    .demo-transport {
+      left: calc(var(--note-fold-size) + var(--sheet-margin));
+    }
+
     /* The tab lies on the artwork, the way a note tucked under a sheet would.
        What it must not do is cover a control or hide behind one, so it paints
        over the cell (see .content's isolation) and every demo keeps its own
@@ -667,10 +927,36 @@ section {
     --sheet-margin: 0.625rem;
 
     grid-template-columns: minmax(0, 1fr);
-    /* Artwork, then the title block. The note is tucked under the dog-eared
-       corner instead of taking a row of its own. */
-    grid-template-rows: minmax(0, 1fr) auto;
+    /* Artwork, then the deck, then the title block. The note is tucked under the
+       dog-eared corner instead of taking a row of its own. */
+    grid-template-rows: minmax(0, 1fr) auto auto;
     align-items: stretch;
+
+    /* The dog-eared corner reaches 56px up the sheet, which is the whole band and most
+       of the title block, so a deck drawn in the band starts against its diagonal. On a
+       phone the deck takes a full-width row of its own inside the frame instead, above
+       the title block, where the corner cannot reach it. A phone sheet has no room for
+       the instruction beside the state, so the row is the keys, the lamp and the state. */
+    .demo-transport {
+      position: static;
+      grid-column: 1;
+      grid-row: 2;
+      height: auto;
+      justify-content: flex-start;
+      gap: 0.5em;
+      padding: 0.25rem 0.375rem;
+      /* Ruled off from the title block by clear paper, not a shared line. */
+      margin-bottom: 0.375rem;
+      font-size: 0.625rem;
+    }
+
+    .demo-key svg {
+      height: 1.125rem;
+    }
+
+    .demo-hint {
+      display: none;
+    }
 
     .content {
       grid-column: 1;
@@ -683,13 +969,13 @@ section {
 
     .layers {
       grid-column: 1;
-      grid-row: 2;
+      grid-row: 3;
     }
 
     & > table {
       position: static;
       grid-column: 1;
-      grid-row: 2;
+      grid-row: 3;
       width: 100%;
       font-size: 0.7em;
 
