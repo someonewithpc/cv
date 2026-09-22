@@ -2,12 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchEffect } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import {
-  isTransportControl,
-  onAutoplayCommand,
-  reportAutoplayProgress,
-  reportAutoplayState,
-} from '@/client/autoplayStatus';
+import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import {
@@ -646,7 +641,6 @@ onMounted(async () => {
         if (patch.phase) phase.value = patch.phase;
         if (patch.catalogId) selectedCatalogId.value = patch.catalogId;
       },
-      (step, total) => reportAutoplayProgress(rootRef.value, step, total),
     );
     controllerRef.value = controller;
 

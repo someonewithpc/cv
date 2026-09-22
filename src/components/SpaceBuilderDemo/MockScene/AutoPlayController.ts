@@ -31,9 +31,6 @@ export type DemoToastPayload = {
 
 export type DemoToastHandler = (toast: DemoToastPayload) => void;
 
-/** Which step of the walkthrough is about to run, and how many it has in all. */
-export type DemoProgressHandler = (step: number, total: number) => void;
-
 export type DemoUiHandler = (patch: {
   panel?: 'closed' | 'catalog' | 'options';
   phase?: 'idle' | 'build' | 'placing';
@@ -239,20 +236,17 @@ export class AutoPlayController {
   private readonly onCursor: DemoCursorHandler;
   private readonly onToast: DemoToastHandler;
   private readonly onUi: DemoUiHandler;
-  private readonly onProgress: DemoProgressHandler;
 
   constructor(
     scene: SpaceBuilderScene,
     onCursor: DemoCursorHandler,
     onToast: DemoToastHandler,
     onUi: DemoUiHandler,
-    onProgress: DemoProgressHandler = () => {},
   ) {
     this.scene = scene;
     this.onCursor = onCursor;
     this.onToast = onToast;
     this.onUi = onUi;
-    this.onProgress = onProgress;
   }
 
   /** Fresh beginning — initial appear, or re-appearing after being scrolled out of view. */
@@ -304,8 +298,6 @@ export class AutoPlayController {
       }
     }
     const step = this.steps()[this.stepIndex];
-    this.onProgress(this.stepIndex, steps.length);
-
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
     this.timer = setTimeout(() => {
       void this.runStep(step);
