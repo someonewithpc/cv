@@ -1129,6 +1129,8 @@ $visrez-brand: #89ab24;
 $light-grey: #565656;
 $nav-sidebar-bg: #323232;
 $scene-bg: #212121;
+/** How much bigger than its own box the catalog picture draws (see .object-icons img). */
+$thumb-zoom: 1.6;
 
 .drag-drop-scene-app {
   position: relative;
@@ -1422,6 +1424,18 @@ $scene-bg: #212121;
   overflow-y: auto;
   padding: 0.75rem;
   scrollbar-width: thin;
+}
+
+/**
+ * The catalog card is Space Builder's, sized for a sidebar three times as wide as this
+ * one. At this size the picture's own padding, plus the transparent margin the 600px
+ * render leaves around the model, left the chair under half the tile's height. Drop the
+ * padding and draw the picture bigger than its box until the chair nearly fills the tile;
+ * the tile, the card and the grid keep the sizes the product gives them.
+ */
+.sidebar-body :deep(.object-icons img) {
+  padding: 0;
+  scale: $thumb-zoom;
 }
 
 </style>
