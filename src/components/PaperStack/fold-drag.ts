@@ -6,6 +6,8 @@
 // --fold-pin-y, --fold-page-w, --fold-page-h, --page-index, --flip-progress) the stack's
 // styles (in index.astro) key off of.
 
+import { setStackTurning } from '@/client/frontPage';
+
 type Vec = { x: number, y: number };
 
 // What a release hands the glide that takes over: where the throw's speed would coast the fold's
@@ -203,15 +205,40 @@ const currentFoldSize = (sheet: HTMLElement): Vec => {
   return { x, y };
 };
 
-const currentBackFoldSize = (sheet: HTMLElement): Vec => {
-  const [x, y] = lengthsOf(sheet, '--fold-back-x', '--fold-back-y');
-  return { x, y };
+// The corner cut and the drift together, off one computed-style object: what a landing frame
+// needs, and all it reads. (The drift is how far a turned page's corner cut stands over from its
+// left edge — see --turned-drift in index.astro; the page slides back by the same amount, so the
+// cut stays on the stack's edge.)
+//
+// Both are transitioned, and every one of those transitions is started from this file: the cut
+// by a change of flipped state (300ms, on the stack), the drift by a renumbering (250ms, on the
+// page). Outside those windows the answer is last frame's, so a frame that asked again was
+// buying a style resolve to be told nothing had moved — and on this page that resolve is a
+// whole-document one whenever anything at all has touched a class, an attribute or the node tree
+// since the last paint, which a demo playing under the paper does several times a second. So the
+// reading is kept, and refreshed only while one of those transitions could still be running.
+// stirLanding below marks every place that starts one, plus the two that can move the values
+// without a transition at all — a resize and a theme change, both of which re-derive the em
+// lengths the cut is written in.
+const LANDING_SETTLE_MS = 600;
+
+const landingLive = new WeakMap<HTMLElement, number>();
+const landingCache = new WeakMap<HTMLElement, { back: Vec, drift: number }>();
+
+const stirLanding = (stack: HTMLElement): void => {
+  landingLive.set(stack, performance.now() + LANDING_SETTLE_MS);
 };
 
-// How far a turned page's corner cut stands over from its left edge (see --turned-drift in
-// index.astro): the page slides back by the same amount, so the cut stays on the stack's edge.
-// Read per frame, since it eases while a page joins or leaves the pile.
-const currentDrift = (sheet: HTMLElement): number => lengthsOf(sheet, '--turned-drift')[0] || 0;
+const currentLanding = (sheet: HTMLElement): { back: Vec, drift: number } => {
+  const kept = landingCache.get(sheet);
+  if (kept && performance.now() > (landingLive.get(sheet.parentElement!) ?? 0)) return kept;
+  const [x, y, drift] = lengthsOf(sheet, '--fold-back-x', '--fold-back-y', '--turned-drift');
+  const fresh = { back: { x, y }, drift: drift || 0 };
+  landingCache.set(sheet, fresh);
+  return fresh;
+};
+
+const currentBackFoldSize = (sheet: HTMLElement): Vec => currentLanding(sheet).back;
 
 // What a gesture reads off a sheet but never writes: the page's own pixel size, the pin the paper
 // is held at, and the resting crease's intercepts. The last two are fixed by the stylesheet in em
@@ -284,6 +311,8 @@ const syncStackSurfaces = (stack: HTMLElement): void => {
 const watchThemePaperSurface = (): void => {
   const resync = () => {
     for (const stack of document.querySelectorAll<HTMLElement>('[data-paper-stack]')) {
+      // A theme can carry its own type, and the corner cut is written in em.
+      stirLanding(stack);
       syncStackSurfaces(stack);
     }
   };
@@ -438,7 +467,12 @@ const holdUnsplayed = (sheet: HTMLElement): void => {
 };
 
 // Hands the page and its flap back to index.astro's own rules, dropping everything renderFold
-// drives inline.
+// drives inline — the hint's left/top included. Those are page-local pixels, and only a drag
+// frame ever recomputes them, so left behind they pin the hint (invisible at rest, but still
+// laid out) where the corner of a wider page used to be. Narrow the window after a gesture and
+// it stands off the page's right edge, which is scrollable overflow; a tablet answers overflow
+// by widening the layout viewport, and every `position: fixed` box rides along — the theme
+// picker off the side of the screen with them.
 const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
   section.style.clipPath = '';
   section.style.transform = '';
@@ -446,6 +480,11 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
   fold.style.clipPath = '';
   fold.style.transform = '';
   fold.style.transformOrigin = '';
+  const hint = hintOf.get(fold);
+  if (hint) {
+    hint.style.left = '';
+    hint.style.top = '';
+  }
 };
 
 const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
@@ -506,8 +545,11 @@ const renderFold = (
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
   // Once per gesture the metrics are taken fresh rather than trusted from the cache — the
   // ResizeObserver keeps them current across resizes, but this is what catches anything that
-  // moved the em-based pin without changing the page's pixel size.
+  // moved the em-based pin without changing the page's pixel size. The landing reading goes with
+  // them: one read at the start of a gesture costs nothing and covers whatever moved the corner
+  // cut while no stack was being touched.
   sampleMetrics(sheet);
+  stirLanding(sheet.parentElement!);
   const size = currentFoldSize(sheet);
   const contentRect = sheet.getBoundingClientRect();
   const tip = foldTipFromSize(size.x, size.y);
@@ -526,6 +568,19 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
 // This frame's θ isn't known until after size is solved for below, so the last solved frame's θ
 // is used instead — a one-frame lag, invisible at drag sampling rates.
 const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, gesture: FoldGesture, at: Pull) => {
+  // Every computed-style and layout read the frame needs, taken before it writes anything: the
+  // sheet's screen box (the page can still scroll vertically under a drag), the corner cut
+  // (mid-transition for 300ms after a flip state change), and the cached page metrics.
+  //
+  // These come before the first move's class and attribute writes below, not after. A class or
+  // an attribute anywhere on the page invalidates every element the document's :has() rules
+  // could reach — which on this page means all of it — so a read taken afterwards makes the
+  // browser resolve the whole document on the spot, in the middle of a frame that is about to
+  // dirty it again anyway.
+  const contentRect = sheet.getBoundingClientRect();
+  const backCut = currentBackFoldSize(sheet);
+  const { w, h, pin } = metricsOf(sheet);
+
   // A gesture's first move (a back-drag arrives with the class already on, its setup done by
   // beginBack/promoteFold): the sheet's animations have to be dropped outright rather than
   // paused — animations outrank inline styles in the cascade, and a paused one still forces its
@@ -539,13 +594,6 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     sheet.getAnimations().forEach((animation) => animation.cancel());
     holdUnsplayed(sheet);
   }
-
-  // Every computed-style and layout read the frame needs, taken before it writes anything: the
-  // sheet's screen box (the page can still scroll vertically under a drag), the corner cut
-  // (mid-transition for 300ms after a flip state change), and the cached page metrics.
-  const contentRect = sheet.getBoundingClientRect();
-  const backCut = currentBackFoldSize(sheet);
-  const { w, h, pin } = metricsOf(sheet);
 
   const { x: wPrev, y: hPrev } = gesture.size;
   // The rotating offset keeps a point grabbed on the flap fixed to its surface — only
@@ -622,6 +670,9 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     : sheet.parentElement!.childElementCount > 1
       && pointFolded(commitPoint(w, h), w, h, tip);
   fold.classList.toggle('paper-fold--will-commit', willCommit);
+  // Same threshold, the other thing it decides: past it the turn is going to happen, so the
+  // demo on the paper stops playing (see commitTurn).
+  if (willCommit) commitTurn(sheet.parentElement!);
 
   if (back) track(back.trail, { along, time: at.timeStamp });
 
@@ -798,7 +849,8 @@ const glideLanding = (
     const tt = Math.min(Math.max((now - start) / duration, 0), 1);
     const eased = 1 - (1 - tt) ** 3;
     const t = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
-    renderLanding(section, fold, width, height, seed, currentBackFoldSize(sheet), t, currentDrift(sheet));
+    const { back, drift } = currentLanding(sheet);
+    renderLanding(section, fold, width, height, seed, back, t, drift);
     if (tt < 1) {
       frame = requestAnimationFrame(step);
       return;
@@ -829,6 +881,9 @@ const syncInert = (stack: HTMLElement): void => {
 // flips only renumber --page-index, never reorder the DOM). It gates the folded-back top-left
 // corner and its grab handle.
 const updateFlippedState = (stack: HTMLElement): void => {
+  // Either branch below can start the corner cut's 300ms transition, so the kept reading has to
+  // go stale from here.
+  stirLanding(stack);
   const first = pageIndex(stack.children[0] as HTMLElement);
   if (first === 1) {
     delete stack.dataset.paperFlipped;
@@ -867,10 +922,72 @@ const syncPileSurface = (stack: HTMLElement): void => {
 // never drawn across a sheet still gliding over.
 const settle = (stack: HTMLElement): void => {
   stack.dataset.paperSettled = '';
+  // The turn is over, whichever way it went: the page that ended up at the front comes alive
+  // here, and a gesture that came back short of committing gets its demo back.
+  setStackTurning(stack, false);
 };
 
 const unsettle = (stack: HTMLElement): void => {
   delete stack.dataset.paperSettled;
+};
+
+// The demos under the paper hold still for the rest of a turn (watchPageActive in
+// client/frontPage.ts), from here. Not from the grab: a drag that comes back and settles would
+// then have stopped and restarted the Space Builder's WebGL context for nothing. From the
+// commit point the turn is going to happen, so what is paused is a page on its way out —
+// either it has passed the flap's own threshold (`paper-fold--will-commit`, in onFoldDrag), or
+// it is a key, wheel or swipe turn, which decides everything the moment it starts.
+//
+// Reaching it is one-way for the rest of the gesture. Dragging back below the threshold after
+// passing it would otherwise start the demo up again mid-drag, for the second or two until the
+// hand makes up its mind — the churn this whole arrangement exists to avoid. A release that
+// settles back resumes it at the settle instead.
+const commitTurn = (stack: HTMLElement): void => {
+  setStackTurning(stack, true);
+};
+
+// The one thing on a stack that never stops: index.astro's fold-reveal-pulse, breathing the
+// resting dog-ear on a 7.5s loop for as long as the page is open. It animates --fold-x/--fold-y,
+// which the front page's crease clip-path reads, so every frame it advances the browser resolves
+// style for that page and everything printed on it — a demo's whole interface. One stack costs
+// about 1.5ms a frame that way and this page carries six, so better than half a 60fps frame was
+// going on dog-ears, including every frame of a turn happening on some other stack.
+//
+// A tease has no one to tease off screen, so there it holds still. Through the Web Animations
+// API rather than a class or a data attribute: a class or an attribute would put the document's
+// :has() rules back in play on every scroll past, and the whole-document style resolve that
+// follows is exactly what a turn is already paying too much of. A paused animation keeps its
+// value, so the dog-ear is where the reader left it when the stack comes back.
+const PULSE = 'fold-reveal-pulse';
+
+const stillStacks = new WeakSet<HTMLElement>();
+
+const pulsesOf = (stack: HTMLElement): Animation[] =>
+  [...stack.querySelectorAll<HTMLElement>('.paper-front')]
+    .flatMap((sheet) => sheet.getAnimations())
+    .filter((animation) => (animation as CSSAnimation).animationName === PULSE);
+
+// Re-applies the hold after anything that restarts the pulse — a flip hands it to the next page,
+// a settle starts it again. Free on a stack in view, which is the only kind a turn happens on.
+const holdPulseOffScreen = (stack: HTMLElement): void => {
+  if (!stillStacks.has(stack)) return;
+  for (const pulse of pulsesOf(stack)) pulse.pause();
+};
+
+const watchStackPulse = (stack: HTMLElement): void => {
+  // A margin so the pulse is already running by the time the stack is actually looked at,
+  // rather than starting under the reader's eye as it crosses the viewport edge.
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) stillStacks.delete(stack);
+      else stillStacks.add(stack);
+      for (const pulse of pulsesOf(stack)) {
+        if (entry.isIntersecting) pulse.play();
+        else pulse.pause();
+      }
+    }
+  }, { rootMargin: '25%' });
+  observer.observe(stack);
 };
 
 // Puts a front page's fold back in its resting idle state: the dog-ear held at the reveal size
@@ -884,16 +1001,20 @@ const restIdleFold = (sheet: HTMLElement): void => {
   sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
   sheet.style.animationName = 'none, none';
   void sheet.offsetWidth;
-  sheet.style.animationName = 'none, fold-reveal-pulse';
+  sheet.style.animationName = `none, ${PULSE}`;
+  holdPulseOffScreen(sheet.parentElement!);
 };
 
 // What a page that has come to rest at the front hands back: index.astro's own rules take the
 // rendering again, with the resting dog-ear running on it.
 const restFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
+  // The dog-ear first, because restarting its pulse means forcing a reflow, and a reflow forced
+  // after the class below has come off is one that re-resolves the whole document — the page's
+  // :has() rules see to that. Both land in the same frame either way, so the order is free.
+  restIdleFold(sheet);
   fold.classList.remove('paper-fold--active');
   clearFoldRender(section, fold);
 
-  restIdleFold(sheet);
   sheet.parentElement!.style.removeProperty('--flip-progress');
   // A settled back-drag may have restored the stack's original order
   updateFlippedState(sheet.parentElement!);
@@ -902,11 +1023,14 @@ const restFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
 
 // Glides back to the resting dog-ear, then hands rendering back to index.astro's idle CSS rules
 const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, thrown = 0): (() => void) => {
-  // Settling means no flip is coming, so the commit feedback drops immediately
-  fold.classList.remove('paper-fold--will-commit');
-  return glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, thrown, () => {
+  // The glide opens by reading where the fold stands, so it goes first: dropping the commit
+  // feedback is a class change, and a read after one costs a whole-document resolve. Settling
+  // means no flip is coming, so the feedback still drops in this same frame, just after.
+  const glide = glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, thrown, () => {
     restFold(sheet, section, fold);
   });
+  fold.classList.remove('paper-fold--will-commit');
+  return glide;
 };
 
 // The first half of committing a flip: every page's --page-index shifts down one (the splay
@@ -948,12 +1072,21 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   const grab = sheet.querySelector<HTMLElement>('.paper-back-grab')!;
   const hint = sheet.querySelector<HTMLElement>('.paper-flip-hint')!;
 
-  fold.classList.remove('paper-fold--will-commit');
   const next = pages.find((page) => pageIndex(page) === 2)!;
+  // The incoming page's own paper, lifted before anything below moves a node or changes a class.
+  // It is the last computed-style read this function makes, and restartTurn's forced reflow is
+  // the last flush: after them come the moves and the classes, and the whole restack costs one
+  // document-wide resolve instead of the three it used to (the page's :has() rules put every
+  // element back in play on each one). Same colour either way — nothing below touches it.
+  syncPaperSurface(next, sectionOf(next));
+
   // The strip behind the front crease follows this page up to the pile on --turn-ease (see
   // index.astro): back to 0 without a transition, then eased to 1 in the same recalc that
   // renumbers the pages, so it runs on the page's own clock.
   restartTurn(stack, '--turn-ease', '0');
+  fold.classList.remove('paper-fold--will-commit');
+  // Renumbering starts every page's 250ms drift transition.
+  stirLanding(stack);
   for (const page of pages) {
     const index = pageIndex(page);
     page.style.setProperty('--page-index', `${index === 1 ? pages.length : index - 1}`);
@@ -975,8 +1108,10 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   next.insertBefore(standInFold(), grab);
   updateFlippedState(stack);
   stack.dataset.paperTurned = '';
-  syncPaperSurface(next, sectionOf(next));
   syncInert(stack);
+  // The dog-ear's pulse goes with the front-page role, so an off-screen stack has to hold the
+  // new page's still too.
+  holdPulseOffScreen(stack);
 };
 
 // Drops everything the front-page role leaves behind on a sheet, so its next turn at the front
@@ -1029,6 +1164,8 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   const fold = stack.querySelector<HTMLElement>(`.paper-fold:not(.${STAND_IN})`)!;
   const hint = front.querySelector<HTMLElement>('.paper-flip-hint')!;
 
+  // Renumbering starts every page's 250ms drift transition.
+  stirLanding(stack);
   for (const page of pages) {
     const index = pageIndex(page);
     page.style.setProperty('--page-index', `${index === pages.length ? 1 : index + 1}`);
@@ -1051,6 +1188,8 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   // state again on its way (flipFold).
   updateFlippedState(stack);
   syncPaperSurface(prev, sectionOf(prev));
+  // The pulse travels with the front-page role; off screen it stays held.
+  holdPulseOffScreen(stack);
   return prev;
 };
 
@@ -1091,7 +1230,7 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   const approach = gesture.approach!;
   const back = gesture.back!;
   const { w, h } = metricsOf(sheet);
-  const backCut = currentBackFoldSize(sheet);
+  const { back: backCut, drift } = currentLanding(sheet);
   const delta = { x: at.clientX - back.origin.x, y: at.clientY - back.origin.y };
   const along = delta.x * back.dir.x + delta.y * back.dir.y;
   const s = Math.min(Math.max(along / approach.pull, 0), 1);
@@ -1104,7 +1243,10 @@ const onBackApproach = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElem
   approach.s = s;
   approach.t = t;
   track(back.trail, { along, time: at.timeStamp });
-  renderLanding(section, fold, w, h, approach.seed, backCut, t, currentDrift(sheet));
+  // The release's own test, which reads the same pull the approach is driven by, so a hand that
+  // has already thrown it far enough is holding a turn that is going to happen (see commitTurn).
+  if (along >= backReach(sheet)) commitTurn(sheet.parentElement!);
+  renderLanding(section, fold, w, h, approach.seed, backCut, t, drift);
   if (s < 1) return;
 
   // Fully folded over — promote the page and hand the rest of the gesture to the unfold drag,
@@ -1130,20 +1272,30 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   const sheetMetrics = metricsOf(sheet);
   const { w: width, h: height } = sheetMetrics;
   const to = restSeed(sheetMetrics);
-  // The flip is committed, so a first flip grows every page's corner cut now — the glide out to
-  // the seed outlasts the cuts' 300ms transition, which would otherwise still be mid-growth
-  // while the landing folds material in behind it. A re-grab that settles instead re-derives
-  // the flipped state from the page order (settleFold), shrinking the cuts back.
-  sheet.parentElement!.dataset.paperFlipped = '';
-  // A key press flips without a drag, so the page is only now known to be on the move
-  unsettle(sheet.parentElement!);
 
   // Both halves — folding out to the resting seed, then the landing back down behind the stack —
   // run on one clock, measured in crease travel (the edge the eye follows: the first fold's
   // crease rides half the tip's path out, the landing's sweeps half the seed back in), under a
   // single ease-out. The crease keeps its speed straight through the restack instead of settling
   // to a stop at the seed and setting off again, so the flip reads as one released motion.
+  //
+  // Where the fold stands is read before the two attributes below are written, not after: an
+  // attribute write puts the document's :has() rules back in play, and the read would then have
+  // to resolve every element on the page before it could answer.
   const { x: fx, y: fy } = currentFoldSize(sheet);
+
+  // The flip is committed, so a first flip grows every page's corner cut now — the glide out to
+  // the seed outlasts the cuts' 300ms transition, which would otherwise still be mid-growth
+  // while the landing folds material in behind it. A re-grab that settles instead re-derives
+  // the flipped state from the page order (settleFold), shrinking the cuts back.
+  stirLanding(sheet.parentElement!);
+  sheet.parentElement!.dataset.paperFlipped = '';
+  // A key press flips without a drag, so the page is only now known to be on the move
+  unsettle(sheet.parentElement!);
+  // Nothing can call this off now, whether a hand let go past the threshold or a key asked for
+  // the turn outright, so the demo on the paper stops here if it hasn't already.
+  commitTurn(sheet.parentElement!);
+
   const from = foldTipFromSize(fx, fy);
   const d1 = Math.hypot(to.x - from.x, to.y - from.y) / 2;
   const d2 = Math.hypot(to.x, to.y) / 2;
@@ -1162,9 +1314,12 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   const step = (now: number) => {
     const tt = Math.min(Math.max((now - start) / duration, 0), 1);
     const p = (1 - (1 - tt) ** 3) * total;
-    // The corner cut is read at the top of the frame, while style is still clean from the last
-    // paint, then everything writes — same discipline as the other per-frame loops.
-    const backCut = currentBackFoldSize(sheet);
+    // The corner cut and the drift are read at the top of the frame, while style is still clean
+    // from the last paint, then everything writes — same discipline as the other per-frame loops.
+    // The drift especially: the frame that restacks writes a dozen classes, attributes and moved
+    // nodes, and reading it afterwards (as the landing call below used to) made that one frame
+    // resolve the whole document twice over.
+    const { back: backCut, drift } = currentLanding(sheet);
     if (p < d1) {
       const k = p / d1;
       const tip = { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
@@ -1182,7 +1337,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
       }
       const k = (p - d1) / d2;
       const t = { x: home.x + to.x * (1 - k), y: home.y + to.y * (1 - k) };
-      renderLanding(section, fold, width, height, to, backCut, t, currentDrift(sheet));
+      renderLanding(section, fold, width, height, to, backCut, t, drift);
     }
     if (tt < 1) {
       frame = requestAnimationFrame(step);
@@ -1213,6 +1368,8 @@ const bringFold = (
 ): (() => void) => {
   const { w, h } = metricsOf(sheet);
   unsettle(sheet.parentElement!);
+  // Its caller only ever commits, so the same as flipFold: the demos hold still from here.
+  commitTurn(sheet.parentElement!);
   const { seed } = approach;
   const over = { x: w + seed.x, y: h + seed.y };
   const rest = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
@@ -1234,11 +1391,11 @@ const bringFold = (
   const step = (now: number) => {
     const tt = Math.min(Math.max((now - start) / duration, 0), 1);
     const p = (1 - (1 - tt) ** 3) * total;
-    const backCut = currentBackFoldSize(sheet);
+    const { back: backCut, drift } = currentLanding(sheet);
     if (p < d1) {
       const k = p / d1;
       const t = { x: from.x + (over.x - from.x) * k, y: from.y + (over.y - from.y) * k };
-      renderLanding(section, fold, w, h, seed, backCut, t, currentDrift(sheet));
+      renderLanding(section, fold, w, h, seed, backCut, t, drift);
     } else {
       if (!promoted) promote();
       const k = (p - d1) / d2;
@@ -1292,6 +1449,9 @@ const observeFoldPageSizes = (stack: HTMLElement): void => {
   // Every page's readings before any page's writes (see lengthsOf): interleaved, each write
   // made the browser redo style before the next page's read, once per page per resize.
   const observer = new ResizeObserver((entries) => {
+    // A resize re-derives the corner cut, which is written in em: the kept landing reading goes
+    // stale here with no transition to announce it.
+    stirLanding(stack);
     const pages = entries.map((entry) => {
       const page = entry.target as HTMLElement;
       sampleMetrics(page, entry.contentRect);
@@ -1476,8 +1636,11 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     sectionOf(front).style.clipPath = '';
 
     const sheetMetrics = sampleMetrics(sheet);
+    stirLanding(stack);
     const { w, h } = sheetMetrics;
-    const backCut = currentBackFoldSize(sheet);
+    // Read before the node move and the class below: both put the document's :has() rules back
+    // in play, and a read after them resolves every element on the page.
+    const { back: backCut, drift } = currentLanding(sheet);
     sheet.append(fold);
     fold.classList.add('paper-fold--active');
     unsettle(stack);
@@ -1485,7 +1648,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // that box — a page-sized slab of flap colour on a sheet whose top-left corner shows through
     // the front page's cut. Render the reverse landing's flat start now so it begins hidden.
     const seed = restSeed(sheetMetrics);
-    renderLanding(section, fold, w, h, seed, backCut, { x: w, y: h }, currentDrift(sheet));
+    renderLanding(section, fold, w, h, seed, backCut, { x: w, y: h }, drift);
     // The pull direction: the resting crease's normal, which the seed lies opposite along
     const seedLength = Math.hypot(seed.x, seed.y);
     const dir = { x: -seed.x / seedLength, y: -seed.y / seedLength };
@@ -1891,6 +2054,7 @@ export function initPaperStackFold(): void {
       attachFoldDrag(fold, grab);
       syncStackSurfaces(stack);
       syncInert(stack);
+      watchStackPulse(stack);
     }
     watchThemePaperSurface();
   };

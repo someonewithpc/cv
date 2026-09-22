@@ -34,6 +34,7 @@
     - [x] Different layouts
     - [x] Badge showing number of seats (positioning)
     - [x] Drag and drop from sidebar to 3D
+    - [x] WebGL texImage3D FLIP_Y warnings on GPU re-attach (#52)
     - [~] Polish to Marker Editor / live SB quality
       - [x] Grass color / normal / displacement
       - [x] Fill vertical page space (stretch content cell)
@@ -41,6 +42,7 @@
       - [~] Faster first paint / load
       - [~] Visual parity (chrome + 3D look)
     - [~] Grab some models like a classroom and a banquet set (#24)
+    - [x] Space builder shows the variant picker in place (#51)
     - [ ] Showcase the carousel? With the animated pips
   - [x] Visrez library tagging tool (#21)
   - [x] Slotted components carry their own scripts; boot island removed
@@ -68,6 +70,7 @@
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
       - [x] PaperStack focus ring should follow page border (#12)
+    - [x] Page turn is laggy (#50)
     - [-] Page indicator
   - [ ] Anotations
     - [x] JS to make sure the placement is correct, when JS available, as progressive enhancement

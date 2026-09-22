@@ -326,14 +326,27 @@ export class SpaceBuilderScene {
     this.gpuReleased = true;
     // dispose() only — forceContextLoss() leaves the canvas unable to get a new context.
     this.renderer.dispose();
+    this.resetUnpackState();
   }
 
   /** Recreate the WebGL renderer after {@link releaseGpu}. */
   attachGpu() {
     if (this.disposed || !this.gpuReleased) return;
+    this.resetUnpackState();
     this.renderer = this.createRenderer();
     this.gpuReleased = false;
     this.resize();
+  }
+
+  /**
+   * The old renderer's last texture upload can leave UNPACK_FLIP_Y/PREMULTIPLY_ALPHA true on
+   * the context it shares with the next one; Three's WebGLState reset clears them too late.
+   */
+  private resetUnpackState() {
+    const gl = this.canvas.getContext('webgl2');
+    if (!gl) return;
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
   }
 
   private createRenderer() {
