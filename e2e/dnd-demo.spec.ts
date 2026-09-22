@@ -279,6 +279,7 @@ test('the handoff panel stays out of the title block and the note', async ({ pag
     const mat = Number.parseFloat(getComputedStyle(sheet).paddingBottom);
     const edge = box(sheet);
     return {
+      mat,
       artwork: { left: edge.left + mat, top: edge.top + mat, right: edge.right - mat, bottom: edge.bottom - mat },
       panel: box(root.querySelector('.panel')!),
       // The title block is the sheet's own corner table; a note would be its third column.
@@ -291,13 +292,44 @@ test('the handoff panel stays out of the title block and the note', async ({ pag
   // block's corner is the only part of the sheet the panel has to stay out of.
   expect(boxes.note).toBe('none');
   expect(boxes.panel.bottom).toBeLessThanOrEqual(boxes.titleBlock.top);
-  expect(boxes.panel.left).toBeGreaterThanOrEqual(boxes.artwork.left - 1);
-  expect(boxes.panel.right).toBeLessThanOrEqual(boxes.artwork.right + 1);
 
-  // And it takes the artwork's whole width rather than the two thirds it used to sit in,
-  // which is what gives a row of four frames the room to be four frames.
+  // The plate floats inside the border rather than running up against it: a gutter of the
+  // sheet's own mat on the two sides and the top, and the block's corner below.
+  expect(boxes.panel.left - boxes.artwork.left).toBeGreaterThanOrEqual(boxes.mat - 1);
+  expect(boxes.artwork.right - boxes.panel.right).toBeGreaterThanOrEqual(boxes.mat - 1);
+  expect(boxes.panel.top - boxes.artwork.top).toBeGreaterThanOrEqual(boxes.mat - 1);
+
+  // And what is left of the artwork's width is still nearly all of it, which is what gives
+  // a row of four frames the room to be four frames.
   const artworkWidth = boxes.artwork.right - boxes.artwork.left;
-  expect(boxes.panel.right - boxes.panel.left).toBeGreaterThanOrEqual(0.9 * artworkWidth);
+  expect(boxes.panel.right - boxes.panel.left).toBeGreaterThanOrEqual(0.85 * artworkWidth);
+});
+
+test('every frame is the same size, and big enough to read', async ({ page }) => {
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/');
+  const stack = dragDropStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await swipeToPage(page, stack, 'Picture to Model', 2);
+  const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
+  await expect(layer).toBeVisible();
+
+  const pictures = await layer.evaluate((root) =>
+    [...root.querySelectorAll('figure.frame img')].map((img) => {
+      const { width, height } = img.getBoundingClientRect();
+      return { width: Math.round(width), height: Math.round(height) };
+    }),
+  );
+  expect(pictures).toHaveLength(4);
+
+  // One caption running to two lines used to shorten its own picture alone; the frames
+  // share their rows now, so the four stills read as one strip.
+  for (const picture of pictures) expect(picture).toEqual(pictures[0]);
+
+  // The frames grow into whatever height the plate has left. At 1440x900 that is about
+  // 209x220, where a row of four sized off its width alone came to 219x125.
+  expect(pictures[0].width).toBeGreaterThanOrEqual(195);
+  expect(pictures[0].height).toBeGreaterThanOrEqual(195);
 });
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
