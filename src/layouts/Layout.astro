@@ -75,6 +75,35 @@ oembedUrl.searchParams.set('format', 'json');
         }
       })();
     </script>
+    <!-- REVIEW ONLY, strip before this lands on main. Swaps the procedural desk tile for one
+         of the photographs in public/desk so Hugo can compare them:
+           ?desk=<file>   paints /desk/<file>.webp at the tile's own 45rem
+           &veil=0        drops the grain veil, in case it is what softens the figure
+           &theme=<id>    picks the theme, so a link can carry one
+         The switch writes inline custom properties on the html element, which outrank the
+         theme rules, and nothing else in the page knows it is here. -->
+    <script is:inline>
+      (() => {
+        const query = new URLSearchParams(location.search);
+        const tile = query.get('desk');
+        const theme = query.get('theme');
+        const root = document.documentElement;
+        if (tile && /^[a-z0-9-]+$/.test(tile)) {
+          root.style.setProperty('--theme-desk-tile', `url(/desk/${tile}.webp)`);
+          root.style.setProperty('--theme-desk-tile-size', '45rem');
+        }
+        if (query.get('veil') === '0') root.style.setProperty('--theme-desk-grain', '0');
+        if (theme && ['light', 'dark', 'arctic', 'dark-forest'].includes(theme)) {
+          root.dataset.theme = theme;
+          /* The picker restores its own pick on boot and would undo the query, so tell it. */
+          try {
+            localStorage.setItem('cv-theme', theme);
+          } catch {
+            /* ignore */
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
