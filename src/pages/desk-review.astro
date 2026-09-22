@@ -244,6 +244,57 @@ const SHORTLIST = [
 
 const SHORT_FILES = SHORTLIST.map((tile) => tile.file);
 
+/* Round 5. The dark desk keeps the ash and only the polish is open, so these are the settings
+   of it, measured the way the shortlist was: L* per pixel off the bare margin beside the
+   sheets at 1440x900. Body is the median, top the 99th percentile, black the share of the
+   margin under L* 1, and sheen the share above L* 17, which is where round 4's desk stopped. */
+const POLISH = [
+  {
+    name: 'None, as round 4 left it',
+    gloss: '',
+    levels: 'no floor, no gain',
+    mean: '10.0',
+    body: '10.2',
+    top: '16.0',
+    black: '0.0',
+    sheen: '0.1',
+    note: 'Dark wood at an even lightness, the grain legible the whole way across the margin.',
+  },
+  {
+    name: 'Satin',
+    gloss: 'satin',
+    levels: '239 / 112',
+    mean: '7.9',
+    body: '7.2',
+    top: '18.8',
+    black: '8.6',
+    sheen: '3.7',
+    note: 'Still wood. The dark grain closes up, the light fibres stand out of it, and a twelfth of the margin has gone black.',
+  },
+  {
+    name: 'Polished',
+    gloss: 'polished',
+    levels: '235 / 135',
+    mean: '6.5',
+    body: '5.4',
+    top: '19.3',
+    black: '18.2',
+    sheen: '3.6',
+    note: 'Black between the fibres, figure lit. A sixth of the margin is black and the top end has passed where round 4 had it.',
+  },
+  {
+    name: 'Lacquer',
+    gloss: 'lacquer',
+    levels: '231 / 166',
+    mean: '5.5',
+    body: '3.6',
+    top: '21.1',
+    black: '33.3',
+    sheen: '5.7',
+    note: 'A third of the margin is flat black and the sheen carries the grain by itself. The loudest of the three.',
+  },
+] as const;
+
 const THEMES = [
   { id: 'light', label: 'Light', try: ['ash-4186', 'cc0-oak-grey', 'oak-7760'], noVeilLink: true },
   { id: 'arctic', label: 'Arctic', try: ['ash-4186', 'cc0-oak-grey', 'oak-7760-mid'], noVeilLink: true },
@@ -253,6 +304,8 @@ const THEMES = [
 
 const deskUrl = (file: string, theme: string, veil: boolean) =>
   `../?desk=${file}&theme=${theme}${veil ? '' : '&veil=0'}`;
+
+const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&gloss=${gloss}` : ''}`;
 ---
 
 <html lang="en">
@@ -386,9 +439,9 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
       lift.
     </p>
     <p class="lede">
-      Light is settled on the ash and arctic on the levelled oak, so what is left is dark and
-      forest. Start at the shortlist below: it is four tiles, they all paint at the same near
-      black, and they differ in nothing but the grain.
+      Light is settled on the ash, arctic and forest on the levelled oak, and dark on the ash
+      as well. The only thing still open is how far the dark desk is polished, which is the
+      section near the foot of the page.
     </p>
 
     <h2>How to read the numbers</h2>
@@ -491,6 +544,70 @@ const deskUrl = (file: string, theme: string, veil: boolean) =>
       tone in the file, and the painting does that now, so all they add is the grain they lost
       on the way down. <code>cc0-black-flamed</code> is off it too, at a swing of 1.05: it is
       there if you want the desk quieter than the drawn boards rather than louder.
+    </p>
+
+    <h2>Dark, blacker, the light grain as gloss</h2>
+    <p class="lede">
+      The dark desk keeps the ash. What is open is how far down its low end goes. Two layers
+      now sit between the tile and the veil. A flat grey under color-burn clips to black every
+      fibre more than a set distance below the tile's own mean, and a second flat grey under
+      color-dodge multiplies whatever survived back up. Clip, then open up: the range widens
+      downwards instead of sliding, so the body of the desk goes black while the bright fibres
+      hold the lightness they had or pass it. A plain offset would have taken the highlights
+      down with everything else.
+    </p>
+    <p class="lede">
+      The two numbers under each name are those greys, floor first. Both live in the painting,
+      so no tile file changed and the other three desks are byte for byte what they were.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Polish</th>
+            <th>Floor / gain</th>
+            <th class="num">Mean</th>
+            <th class="num">Body</th>
+            <th class="num">Top</th>
+            <th class="num">Black</th>
+            <th class="num">Sheen</th>
+            <th>What it looks like</th>
+          </tr>
+        </thead>
+        <tbody>
+          {POLISH.map((polish) => (
+            <tr>
+              <td><a href={glossUrl(polish.gloss)}>{polish.name}</a></td>
+              <td>{polish.levels}</td>
+              <td class="num">{polish.mean}</td>
+              <td class="num">{polish.body}</td>
+              <td class="num">{polish.top}</td>
+              <td class="num">{polish.black}%</td>
+              <td class="num">{polish.sheen}%</td>
+              <td style="white-space: normal">{polish.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">
+      Sheen is a small share of the desk by design. A highlight that takes 4 per cent of the
+      area and stands 14 L* over the body reads as light caught on something hard; the same
+      lightness spread evenly reads as grey wood, which is what the drawn boards do. Chroma
+      splits with it. The dark half of the margin falls from C* 5.2 to between 0 and 2.5,
+      because there is no room for colour that near black, while the brightest twentieth stays
+      at 6.1, so the desk's brown now lives in the sheen and nowhere else.
+    </p>
+    <h3><a href={glossUrl('window')}>Window</a></h3>
+    <p class="lede">
+      Polished, plus a broad reflection: the gain climbs from grey 105 on the left of the desk
+      to 160 on the right instead of holding at 135, so the far side of the page catches more
+      light. It runs left to right and never up or down, which is the only reason it survives
+      the sheets. A gradient with any vertical run would be cut into steps by them, and every
+      strip of bare desk would show a different piece of it. This one shows the same sweep in
+      every strip. The right margin reads mean 8.3, body 7.2, top 23.4 and 12 per cent sheen;
+      the left reads 5.7, 5.0, 16.0 and 0.3 per cent. That is the same desk at both ends, lit
+      from one side.
     </p>
 
     <h2>On the desk</h2>
