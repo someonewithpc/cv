@@ -31,6 +31,8 @@ type ThemeSettings = {
    * in _colors.scss.
    */
   paperGrain: string;
+  /** The same on the contributions paper, which reads as the rougher sheet. Spread 3.2. */
+  paperSheetGrain: string;
   /** multiply for a light sheet, screen for a dark one -- see paper-grain in _colors.scss. */
   paperBlend: 'multiply' | 'screen';
   /** '1' flips the tile dark-side-up for screen on a dark sheet, '0' leaves it as scanned. */
@@ -55,7 +57,8 @@ const THEMES = {
     deskGrain: '0.85',
     /* The same oak as the other three, raised to the ash boards' tone and limed. */
     deskWood: 'oak-7760-limed',
-    paperGrain: '0.35',
+    paperGrain: '0.22',
+    paperSheetGrain: '0.44',
     paperBlend: 'multiply',
     paperInvert: '0',
     follows: 'light',
@@ -76,7 +79,8 @@ const THEMES = {
     /* Slip-matched oak, levelled: cathedral figure across the page and no joint in it. */
     deskWood: 'oak-7760-mid',
     deskBase: 'rgb(128 97 73)',
-    paperGrain: '0.31',
+    paperGrain: '0.26',
+    paperSheetGrain: '0.47',
     paperBlend: 'screen',
     paperInvert: '1',
     follows: 'dark',
@@ -96,7 +100,8 @@ const THEMES = {
     deskGrain: '0.85',
     /* The same oak at its own lightness, which under a pale desk reads as bleached. */
     deskWood: 'oak-7760',
-    paperGrain: '0.36',
+    paperGrain: '0.22',
+    paperSheetGrain: '0.44',
     paperBlend: 'multiply',
     paperInvert: '0',
     follows: 'light',
@@ -117,7 +122,8 @@ const THEMES = {
     /* The same oak smoked in the file: darker, and drained of red before the veil goes on. */
     deskWood: 'oak-7760-smoked',
     deskBase: 'rgb(76 68 62)',
-    paperGrain: '0.3',
+    paperGrain: '0.24',
+    paperSheetGrain: '0.43',
     paperBlend: 'screen',
     paperInvert: '1',
     follows: 'dark',
@@ -151,6 +157,7 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-desk: ${settings.desk};
       --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}
       --theme-paper-grain: ${settings.paperGrain};
+      --theme-paper-sheet-grain: ${settings.paperSheetGrain};
       --theme-paper-blend: ${settings.paperBlend};
       --theme-paper-invert: ${settings.paperInvert};
       --theme-mode: ${settings.follows};
@@ -318,6 +325,8 @@ aside {
   --theme-paper-grain: 0.5;
   --theme-paper-grain: 0.7;
   --theme-paper-grain: 0.35;
+  --theme-paper-grain: 0.22;
+  --theme-paper-sheet-grain: 0.44;
   --theme-paper-blend: multiply;
   --theme-paper-invert: 0;
   --theme-mode: light;
