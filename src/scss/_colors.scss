@@ -174,23 +174,27 @@
   --blueprint-900: var(--sheet-canvas);
 }
 
-// A sheet of the paper stack: a small seamless fibre tile, cut from a real paper scan at its
+// A sheet of drawing paper: a small seamless fibre tile, cut from a real paper scan at its
 // native resolution, laid over the element's own background colour so the paper reads as paper
-// rather than a flat fill. The tile sits on a pseudo-element behind the sheet's own content
-// (z-index: -1 inside the stacking context this establishes) so it never blends with text or
-// child elements, only with the flat colour underneath -- safe to add to a sheet that already
-// paints its own background-image (the torn page in OpenSourceContributions), since it never
-// touches that element's own background layers. --theme-paper-grain (0-1, set per theme in
-// ThemePicker.astro) is the pseudo's opacity. The tile's own mean sits well above mid-grey (it
-// is a light scan), so one blend mode can't carry the grain on both a light and a dark sheet:
-// multiply keeps the fibre's contrast proportional to the base and darkens a light sheet, and
-// filter: invert flips the tile dark-side-up so screen can lighten a dark sheet by the same
-// amount instead. --theme-paper-blend and --theme-paper-invert (both set per theme) choose
-// the pair; the light-side themes pay back multiply's darkening by lifting --theme-canvas a
-// little further than it would otherwise sit. A sheet with its own border-radius should set
-// $radius to match, so the grain doesn't square off rounded corners; a sheet that clips itself
-// with mask-image (the torn page) clips the grain along with it for free, no extra work needed
-// here.
+// rather than a flat fill. Two sheets wear it -- a page of a technical drawing stack, and the
+// torn contributions page -- and the chrome of the CV around them does not, so the grain marks
+// out what is meant to be paper instead of tinting the whole document.
+//
+// The tile sits on a pseudo-element behind the sheet's own content (z-index: -1 inside the
+// stacking context this establishes) so it never blends with text or child elements, only with
+// the flat colour underneath -- safe on a sheet that already paints its own background-image
+// (the torn page has four layers), since it never joins that element's background list.
+//
+// The tile's own mean sits well above mid-grey (it is a light scan), so one blend mode cannot
+// carry the grain on both a light and a dark sheet: multiply keeps the fibre's contrast
+// proportional to the base and darkens a light sheet, and filter: invert flips the tile
+// dark-side-up so screen can lighten a dark sheet by the same amount instead.
+// --theme-paper-blend and --theme-paper-invert (both set per theme) choose the pair.
+//
+// --theme-paper-grain (0-1, set per theme in ThemePicker.astro) is the pseudo's opacity. A sheet with its own border-radius should set $radius to match, so the grain doesn't
+// square off rounded corners; a sheet that clips itself with mask-image (the torn page) or
+// clip-path (a stack's pages, through every frame of a fold) clips the grain along with it for
+// free, no extra work needed here.
 @mixin paper-grain($radius: 0) {
   position: relative;
   isolation: isolate;

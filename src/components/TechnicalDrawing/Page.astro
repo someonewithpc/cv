@@ -241,6 +241,18 @@ section {
   position: relative;
 
   background: var(--surface-sunken);
+
+  /* The sheet is paper, so it carries the fibre tile. On the page face rather than on the
+     stack's page wrapper: the wrapper's box is the whole rectangle, while the face is what
+     wears the fold's crease clip-path, so the grain is cut by the dog-ear and by the
+     folded-back corner along with everything else the sheet is made of, at every frame of a
+     drag, for free. It also leaves the wrapper's own ::before, the crease bend shading, where
+     it is (see PaperStack). Every page carries it, not just the front one, since a flip brings
+     each of them to the front in turn. The flap and the strip behind the crease paint the
+     sheet's back, which is plain paper with no fibre on it: they read the face's background
+     colour, and the pseudo-element never touches that. */
+  @include colors.paper-grain(0.5em);
+
   &:global(.blueprint) {
     @include colors.blueprint-sheet-boundary;
 
