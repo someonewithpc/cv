@@ -77,34 +77,20 @@ oembedUrl.searchParams.set('format', 'json');
     </script>
     <!-- REVIEW ONLY, strip before this lands on main. Swaps the procedural desk tile for one
          of the photographs in public/desk so Hugo can compare them:
-           ?desk=<file>   paints /desk/<file>.webp at the tile's own 45rem, under the light
-                          veil a photograph wants rather than the theme's own
+           ?desk=<file>   paints /desk/<file>.webp at the tile's own 45rem
            &veil=<0..1>   how much desk colour lies over the tile, 0 for none
            &theme=<id>    picks the theme, so a link can carry one
-         The switch writes inline custom properties on the html element, which outrank the
-         theme rules, and nothing else in the page knows it is here. -->
+         A light desk takes the photograph under a light veil, the way round 2 left it. A dark
+         desk paints it the other way round, subtracting it from a base cut to its own mean, so
+         see the note on the painting in the stylesheet below for why. The switch writes inline
+         custom properties on the html element, which outrank the theme rules, and nothing else
+         in the page knows it is here. -->
     <script is:inline>
       (() => {
         const query = new URLSearchParams(location.search);
         const tile = query.get('desk');
         const theme = query.get('theme');
         const root = document.documentElement;
-        /* --theme-desk-grain is how far the veil is faded out, so 1 is no veil at all. The
-           drawn boards are one flat tone under a heavy veil that gives them their colour. A
-           scan brings its own, so it takes a sixth of that and the levelled copy takes none:
-           overlay already leaves the theme's colour alone where that tile sits at mid grey. */
-        const VEIL = { 'oak-7760-mid': 0 };
-        const veil = (amount) =>
-          root.style.setProperty('--theme-desk-grain', String(1 - Math.min(1, Math.max(0, amount))));
-        if (tile && /^[a-z0-9-]+$/.test(tile)) {
-          /* Relative to the document, so this still works under the preview's sub-path. */
-          const file = new URL(`desk/${tile}.webp`, document.baseURI).href;
-          root.style.setProperty('--theme-desk-tile', `url(${file})`);
-          root.style.setProperty('--theme-desk-tile-size', '45rem');
-          veil(tile in VEIL ? VEIL[tile] : 0.15);
-        }
-        const asked = Number(query.get('veil'));
-        if (query.get('veil') !== null && Number.isFinite(asked)) veil(asked);
         if (theme && ['light', 'dark', 'arctic', 'dark-forest'].includes(theme)) {
           root.dataset.theme = theme;
           /* The picker restores its own pick on boot and would undo the query, so tell it. */
@@ -114,6 +100,52 @@ oembedUrl.searchParams.set('format', 'json');
             /* ignore */
           }
         }
+        /* --theme-desk-grain is how far the veil is faded out, so 1 is no veil at all. The
+           drawn boards are one flat tone under a heavy veil that gives them their colour. A
+           scan brings its own, so it takes a sixth of that and the levelled copy takes none:
+           overlay already leaves the theme's colour alone where that tile sits at mid grey. */
+        const VEIL = { 'oak-7760-mid': 0 };
+        /* Each tile's own mean colour, measured off the file. A dark desk subtracts a base from
+           the tile, and the base is that mean less LEVEL, so every tile lands on the same near
+           black however light it was cut and the only thing left to choose between them is the
+           grain. LEVEL is the lightness the desk keeps, in 0 to 255, and 28 puts the painted
+           desk on the L* 10 the drawn boards already paint there. */
+        const MEAN = {
+          'ash-4186': [206, 178, 149],
+          'oak-7760': [185, 149, 120],
+          'oak-7760-down': [185, 149, 120],
+          'oak-7760-mid': [156, 125, 101],
+          'oak-7760-smoked': [104, 96, 90],
+          'oak-7760-ebonised': [54, 47, 43],
+          'cc0-oak-light': [220, 185, 149],
+          'cc0-oak-grey': [156, 144, 133],
+          'cc0-oak-black': [107, 98, 87],
+          'cc0-black-flamed': [86, 80, 77],
+          'cc0-oak-light-smoked': [101, 96, 89],
+          'cc0-oak-light-ebonised': [53, 48, 43],
+        };
+        const LEVEL = 28;
+        const veil = (amount) =>
+          root.style.setProperty('--theme-desk-grain', String(1 - Math.min(1, Math.max(0, amount))));
+        if (tile && /^[a-z0-9-]+$/.test(tile)) {
+          /* Relative to the document, so this still works under the preview's sub-path. */
+          const file = new URL(`desk/${tile}.webp`, document.baseURI).href;
+          root.style.setProperty('--theme-desk-tile', `url(${file})`);
+          root.style.setProperty('--theme-desk-tile-size', '45rem');
+          const dark = root.dataset.theme === 'dark' || root.dataset.theme === 'dark-forest';
+          if (dark && MEAN[tile]) {
+            const base = MEAN[tile].map((channel) => Math.max(0, channel - LEVEL));
+            root.style.setProperty('--theme-desk-base', `rgb(${base.join(' ')})`);
+            root.style.setProperty('--theme-desk-blend', 'difference');
+            /* The veil is the only thing left holding the desk's colour, so it goes opaque. */
+            root.style.setProperty('--theme-desk-veil-blend', 'color');
+            veil(1);
+          } else {
+            veil(tile in VEIL ? VEIL[tile] : 0.15);
+          }
+        }
+        const asked = Number(query.get('veil'));
+        if (query.get('veil') !== null && Number.isFinite(asked)) veil(asked);
       })();
     </script>
   </head>
@@ -292,12 +324,21 @@ main {
   --desk-veil: color-mix(in oklch, var(--theme-desk), transparent calc(var(--theme-desk-grain) * 100%));
   --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
 
-  background-color: var(--theme-desk);
+  /* How the tile meets the desk colour is a per-theme choice, because no one blend carries
+     grain the whole way down the lightness scale. Overlay scales every step the tile has by
+     base * (1 - base), which is at its strongest on a mid tone and collapses to nothing as the
+     base nears black or white: on a near black desk it leaves the tone and eats the fibre. A
+     theme whose desk is that dark sets --theme-desk-base to a colour a little above the tile's
+     own mean, --theme-desk-blend to difference so the tile is subtracted from it rather than
+     scaled by it, which keeps each step at its full size however dark the result lands, and
+     --theme-desk-veil-blend to color so the opaque veil hands the desk its hue and chroma back
+     while the subtraction keeps the lightness. */
+  background-color: var(--theme-desk-base, var(--theme-desk));
   background-image:
     linear-gradient(var(--desk-veil), var(--desk-veil)),
     var(--theme-desk-tile);
   background-size: auto, var(--theme-desk-tile-size) var(--theme-desk-tile-size);
-  background-blend-mode: normal, overlay;
+  background-blend-mode: var(--theme-desk-veil-blend, normal), var(--theme-desk-blend, overlay);
 
   /* Every band on the desk is a sheet of the same paper, with the small radius and the lift
      the drawing stacks have. Narrow, that is all it is: the band keeps the width, the margins
