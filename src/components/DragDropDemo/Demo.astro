@@ -91,9 +91,24 @@ type Layer = keyof typeof layers;
 // the explainer takes all three, and only the block's corner is spoken for. The empty note
 // cell goes with them, or auto-placement drops it into a second row and the sheet splits
 // its spare height between that row and the artwork's instead of centring the explainer.
+// The cell also takes its whole height rather than shrinking onto the plate: the frames
+// size themselves off the room they are given, and a cell that fits the plate would hand
+// back the height they are trying to grow into.
 :global(.drag-drop-demo article.technical-drawing-stack > * > section.blueprint .content) {
   grid-column: 1 / -1;
+  height: 100%;
   padding-bottom: var(--title-block-reach, 0px);
+}
+
+// And the row has to be a measured one for that height to mean anything. The sheet's own
+// row is auto, sized by whatever the cell asks for, and a percentage inside an auto row
+// resolves to nothing: the frames would fall back to their natural size and, on a short
+// sheet, run past the title block. Portrait already gives the artwork a row of its own
+// above the block's, so only the wide sheets need this.
+@container technical-drawing (orientation: landscape) {
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section.blueprint) {
+    grid-template-rows: minmax(0, 1fr);
+  }
 }
 
 :global(.drag-drop-demo article.technical-drawing-stack > * > section.blueprint .aside) {
