@@ -92,7 +92,8 @@ oembedUrl.searchParams.set('format', 'json');
           root.style.setProperty('--theme-desk-tile', `url(/desk/${tile}.webp)`);
           root.style.setProperty('--theme-desk-tile-size', '45rem');
         }
-        if (query.get('veil') === '0') root.style.setProperty('--theme-desk-grain', '0');
+        /* --theme-desk-grain is how far the veil is faded out, so 1 is no veil at all. */
+        if (query.get('veil') === '0') root.style.setProperty('--theme-desk-grain', '1');
         if (theme && ['light', 'dark', 'arctic', 'dark-forest'].includes(theme)) {
           root.dataset.theme = theme;
           /* The picker restores its own pick on boot and would undo the query, so tell it. */
