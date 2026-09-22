@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+/**
+ * The catalog card in the Add tool's "Select an Object" sidebar, which is where Space
+ * Builder shows an object's variants. The picker itself — the style carousel, its pips and
+ * sliding dot, and the seats and size rows — is the object variants demo's, reused here:
+ * the markup follows VariantsDemo/Card.astro and the look is that demo's card.scss, pulled
+ * in once by CatalogPanel.vue. What stays this demo's own is the scene wiring: drag to
+ * place, double-click to Build, and the walkthrough's aim points.
+ */
+import { computed, nextTick, ref, watch } from 'vue';
+
+import { formatSize, unitsFor } from '@/components/VariantsDemo/units';
 
 import { variantsOf, type CatalogItem, type CatalogVariant } from '../catalogItems';
 import HoverSelect from './HoverSelect.vue';
-import VariationCarousel from './VariationCarousel.vue';
 
 const props = withDefaults(defineProps<{
   item: CatalogItem;
@@ -28,12 +37,14 @@ const emit = defineEmits<{
   itemPointerdown: [event: PointerEvent, item: CatalogItem, variant: CatalogVariant];
 }>();
 
+/** Server output is metric; a US-region visitor reads the same sizes in feet and inches. */
+const units = unitsFor(typeof navigator === 'undefined' ? undefined : navigator.language);
+
+/** Arrows and pips are the scroller's own where the browser draws them, as in the panel. */
+const hasScrollMarkers = typeof CSS !== 'undefined' && CSS.supports('selector(::scroll-marker)');
+
 const variants = computed(() => variantsOf(props.item));
 const localId = ref(props.variantId ?? variants.value[0].id);
-
-watch(() => props.variantId, (id) => {
-  if (id) localId.value = id;
-});
 
 const visible = computed(
   () => variants.value.find((v) => v.id === localId.value) ?? variants.value[0],
@@ -44,6 +55,7 @@ const styles = computed(() => variants.value.filter(
   (v) => v.pax === visible.value.pax && v.size === visible.value.size,
 ));
 const styleIndex = computed(() => Math.max(0, styles.value.indexOf(visible.value)));
+const isGroup = computed(() => styles.value.length > 1);
 
 const paxOptions = computed(() => [...new Set(variants.value.map((v) => v.pax ?? 0))]
   .sort((a, b) => b - a));
@@ -67,46 +79,196 @@ const title = computed(() => {
     : `${props.item.name} · drag to place`;
 });
 
+/**
+ * What the card holds, as against what it shows: a hover preview only shows, and the held
+ * object comes back when the pointer leaves without a pick.
+ */
+const held = ref(visible.value);
+
+/** The last id this card sent up, so the prop coming back is not read as a fresh pick. */
+let echoed: string | undefined;
+
+watch(() => props.variantId, (id) => {
+  if (!id || id === echoed) return;
+  localId.value = id;
+  const variant = variants.value.find((v) => v.id === id);
+  if (variant) held.value = variant;
+});
+
+/** A pick on one row moved the other; that row keeps a red dot until it is noticed. */
+const movedRow = ref<'pax' | 'size' | null>(null);
+
+function clearFlag(row: 'pax' | 'size') {
+  if (movedRow.value === row) movedRow.value = null;
+}
+
 function show(variant: CatalogVariant | undefined) {
   if (!variant) return;
   localId.value = variant.id;
+  echoed = variant.id;
   emit('update:variantId', variant.id);
 }
 
 function pick(variant: CatalogVariant | undefined) {
   if (!variant) return;
+  held.value = variant;
   show(variant);
   emit('select', props.item, variant);
 }
 
 /** Keep as much of the current pick as the library allows, the way the product does. */
 function byPax(pax: string | number) {
-  return variants.value.find((v) => (v.pax ?? 0) === Number(pax) && v.size === visible.value.size)
+  return variants.value.find((v) => (v.pax ?? 0) === Number(pax) && v.size === held.value.size)
     ?? variants.value.find((v) => (v.pax ?? 0) === Number(pax));
 }
 
 function bySize(size: string | number) {
-  return variants.value.find((v) => v.size === size && v.pax === visible.value.pax)
+  return variants.value.find((v) => v.size === size && v.pax === held.value.pax)
     ?? variants.value.find((v) => v.size === size);
 }
 
-function onStyleIndex(index: number) {
-  const variant = styles.value[index];
+function pickRow(row: 'pax' | 'size', variant: CatalogVariant | undefined) {
   if (!variant) return;
+  const before = held.value;
+  pick(variant);
+  const moved = row === 'pax' ? variant.size !== before.size : variant.pax !== before.pax;
+  if (moved) movedRow.value = row === 'pax' ? 'size' : 'pax';
+}
+
+// The style carousel. The list scrolls and snaps; which slide it settled on is the pick,
+// as VariantsDemo/panel.ts reads it.
+const list = ref<HTMLElement | null>(null);
+
+function scrollToStyle(index: number) {
+  const el = list.value;
+  const slide = el?.children[Math.max(0, Math.min(styles.value.length - 1, index))];
+  if (!el || !(slide instanceof HTMLElement)) return;
+  el.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+}
+
+function onScrollEnd() {
+  const el = list.value;
+  if (!el) return;
+  const index = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+  const variant = styles.value[index];
+  if (!variant || variant.id === localId.value) return;
+  held.value = variant;
   show(variant);
   // The product commits a style change only for the card already in play.
   if (props.active) emit('select', props.item, variant);
+}
+
+// A pick from elsewhere (a dropdown row, or the walkthrough) moves the carousel with it.
+watch(styleIndex, async (index) => {
+  if (!isGroup.value) return;
+  await nextTick();
+  const el = list.value;
+  if (!el) return;
+  if (Math.round(el.scrollLeft / Math.max(1, el.clientWidth)) !== index) scrollToStyle(index);
+});
+
+/**
+ * Clicking the picture picks what it shows. A trusted click reported by the list itself
+ * landed on a scroll button or marker — pseudo-elements with no node of their own — and
+ * those only scroll; the walkthrough's own `element.click()` is untrusted and does pick.
+ */
+function onPictureClick(event: MouseEvent) {
+  if (event.isTrusted && event.target === list.value) return;
+  pick(visible.value);
 }
 </script>
 
 <template>
   <div
     class="option-item"
-    :class="{ active, placeholder: !item.real, group: styles.length > 1 }"
+    :class="{ active, placeholder: !item.real, group: isGroup }"
     :data-catalog-item="item.id"
+    :data-variant="visible.id"
   >
-    <div class="thumbnail" :class="{ group: styles.length > 1 }">
+    <div class="thumbnail" :class="{ group: isGroup }">
+      <ul
+        v-if="isGroup"
+        ref="list"
+        class="object-icons styles"
+        :aria-label="`${item.name} styles`"
+        tabindex="0"
+        :data-index="styleIndex"
+        :data-demo-target="`catalog:${item.id}`"
+        :draggable="nativeDrag && Boolean(item.real)"
+        :title="title"
+        @click="onPictureClick"
+        @dblclick="emit('confirm', item, visible)"
+        @dragstart="emit('dragstart', $event, item, visible)"
+        @dragend="emit('dragend')"
+        @pointerdown="emit('itemPointerdown', $event, item, visible)"
+        @scrollend="onScrollEnd"
+      >
+        <li
+          v-for="(style, index) in styles"
+          :key="style.id"
+          class="style"
+          :data-variant="style.id"
+          :data-name="style.style"
+        >
+          <img :src="style.thumb" alt="" width="600" height="600">
+          <span class="group-object-count">
+            <span>{{ index + 1 }}</span>
+            <span class="vr" />
+            <span>{{ styles.length }}</span>
+          </span>
+        </li>
+      </ul>
+
+      <span
+        v-if="isGroup"
+        class="pip-track"
+        :style="{ '--pips': styles.length, '--index': styleIndex }"
+        aria-hidden="true"
+      >
+        <span v-for="part in 5" :key="part" class="pip-trail" />
+        <span class="active-pip" />
+      </span>
+
+      <template v-if="isGroup && !hasScrollMarkers">
+        <button
+          type="button"
+          class="previous"
+          :disabled="styleIndex <= 0"
+          :aria-label="`Previous style of ${item.name}`"
+          @click.stop="scrollToStyle(styleIndex - 1)"
+          @dblclick.stop
+        >
+          <svg viewBox="0 0 256 512" width="10" height="12" aria-hidden="true">
+            <path fill="currentColor" d="M31 239 175 95c9-9 24-9 33 0s9 24 0 33L97 256l111 128c9 9 9 24 0 33s-24 9-33 0L31 273a24 24 0 0 1 0-34z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="next"
+          :disabled="styleIndex >= styles.length - 1"
+          :aria-label="`Next style of ${item.name}`"
+          @click.stop="scrollToStyle(styleIndex + 1)"
+          @dblclick.stop
+        >
+          <svg viewBox="0 0 256 512" width="10" height="12" aria-hidden="true">
+            <path fill="currentColor" d="M225 273 81 417c-9 9-24 9-33 0s-9-24 0-33l111-128L48 128c-9-9-9-24 0-33s24-9 33 0l144 144a24 24 0 0 1 0 34z" />
+          </svg>
+        </button>
+        <ul class="pagination-control">
+          <li v-for="(style, index) in styles" :key="style.id">
+            <button
+              type="button"
+              :aria-label="style.style"
+              :aria-current="index === styleIndex ? 'true' : undefined"
+              @click.stop="scrollToStyle(index)"
+              @dblclick.stop
+            />
+          </li>
+        </ul>
+      </template>
+
       <button
+        v-if="!isGroup"
         type="button"
         class="object-icons"
         :data-demo-target="`catalog:${item.id}`"
@@ -119,17 +281,10 @@ function onStyleIndex(index: number) {
         @pointerdown="emit('itemPointerdown', $event, item, visible)"
       >
         <img :src="visible.thumb" alt="" width="600" height="600">
-        <span v-if="styles.length === 1 && variants.length > 1" class="group-object-count">
+        <span v-if="variants.length > 1" class="group-object-count">
           {{ variants.length }}
         </span>
       </button>
-
-      <VariationCarousel
-        v-if="styles.length > 1"
-        :variants="styles"
-        :index="styleIndex"
-        @update:index="onStyleIndex"
-      />
     </div>
 
     <div class="item-label">
@@ -139,11 +294,16 @@ function onStyleIndex(index: number) {
         v-if="showPax"
         class="object-pax"
         label="Seats"
+        demo-target="variant:pax"
         :options="paxOptions"
         :current="visible.pax ?? 0"
+        :current-text="String(visible.pax ?? 0)"
         :unavailable="unavailablePax"
-        @pick="pick(byPax($event))"
+        :moved="movedRow === 'pax'"
+        @pick="pickRow('pax', byPax($event))"
         @hover="show(byPax($event))"
+        @seen="clearFlag('pax')"
+        @revert="show(held)"
       >
         <template #option="{ option }">
           <svg viewBox="0 0 448 512" width="10" height="10" aria-hidden="true">
@@ -152,7 +312,7 @@ function onStyleIndex(index: number) {
               d="M224 256a112 112 0 1 0 0-224 112 112 0 0 0 0 224zm-64 48C71 304 0 375 0 464c0 26 22 48 48 48h352c26 0 48-22 48-48 0-89-71-160-160-160h-128z"
             />
           </svg>
-          {{ option }} seats
+          <span class="option-text">{{ option }} seats</span>
         </template>
       </HoverSelect>
 
@@ -162,9 +322,13 @@ function onStyleIndex(index: number) {
         label="Size"
         :options="sizeOptions"
         :current="visible.size ?? ''"
+        :current-text="formatSize(visible.size ?? '', units)"
         :unavailable="unavailableSize"
-        @pick="pick(bySize($event))"
+        :moved="movedRow === 'size'"
+        @pick="pickRow('size', bySize($event))"
         @hover="show(bySize($event))"
+        @seen="clearFlag('size')"
+        @revert="show(held)"
       >
         <template #option="{ option }">
           <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
@@ -176,7 +340,7 @@ function onStyleIndex(index: number) {
               stroke-linecap="round"
             />
           </svg>
-          {{ option }}
+          <span class="option-text">{{ formatSize(String(option), units) }}</span>
         </template>
       </HoverSelect>
 
@@ -190,160 +354,36 @@ function onStyleIndex(index: number) {
             stroke-linecap="round"
           />
         </svg>
-        {{ visible.size }}
+        <span class="option-text">{{ formatSize(visible.size, units) }}</span>
       </span>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-// Space Builder's catalog card (forms/CatalogObjectField.vue, _catalog_object_field.scss,
-// _catalog_styles_group_field.scss).
-$brand: #89ab24;
-
-.option-item {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  // darken($secondary, 20%) in _catalog_object_field.scss.
-  border: 1px solid #3d4246;
-  border-radius: 0.25rem;
-  color: inherit;
-  user-select: none;
-  --active-pip-color: #6c757d;
-  --active-count-color: #6c757d;
-
-  &.placeholder .object-icons {
-    // Same tile chrome as real items — just mute the silhouette.
+// Only what the scene wiring adds to the shared card: the placeholder items this demo
+// stocks the catalog with, the grab cursor for a drag, and the walkthrough's aim ring.
+// Everything else comes from VariantsDemo/card.scss.
+.option-item.placeholder {
+  :deep(.object-icons) {
     filter: grayscale(1);
+    cursor: pointer;
 
     img {
       opacity: 0.45;
     }
   }
 
-  &.placeholder .item-label {
+  :deep(.item-label) {
     color: #868e96;
   }
-
-  &:hover:not(.active) {
-    border-color: #6c757d;
-  }
-
-  &.active {
-    box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
-    --active-pip-color: #{$brand};
-    --active-count-color: #{$brand};
-
-    .item-label {
-      background: $brand;
-      color: #fff;
-    }
-  }
 }
 
-.thumbnail {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  flex: 1 1 auto;
-  border-top-left-radius: 0.25rem;
-  border-top-right-radius: 0.25rem;
-  overflow: hidden;
-}
-
-.object-icons {
-  position: relative;
-  display: flex;
-  flex: 1 1 auto;
-  // Square tile with the model floating on the gradient — the thumbnails are
-  // transparent, as the product's are.
-  aspect-ratio: 1;
-  padding: 0;
-  border: 0;
-  background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
+.option-item:not(.placeholder) :deep(.object-icons) {
   cursor: grab;
-
-  img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 0.5rem;
-  }
-
-  .placeholder & {
-    cursor: pointer;
-  }
-
-  &.is-demo-target {
-    box-shadow: inset 0 0 0 0.1875rem rgba(137, 171, 36, 0.65);
-  }
 }
 
-.group-object-count {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  z-index: 2;
-  width: 2em;
-  height: 2em;
-  border: 1px solid var(--active-count-color);
-  border-radius: 100%;
-  background: color-mix(in srgb, var(--active-count-color), black 5%);
-  color: #fff;
-  font-size: 0.75rem;
-  line-height: 2em;
-  text-align: center;
-}
-
-.item-label {
-  display: block;
-  // Keep the label from widening the grid column when a style name is long.
-  width: 0;
-  min-width: 100%;
-  margin: 0;
-  padding: 0.25rem 0.375rem;
-  border-bottom-right-radius: 0.25rem;
-  border-bottom-left-radius: 0.25rem;
-  background: #212529;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1.5;
-
-  .object-name {
-    display: block;
-    overflow: hidden;
-    max-height: 1.5em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  :deep(.object-size),
-  :deep(.object-pax) {
-    font-size: 0.6875rem;
-    font-weight: 400;
-    color: #ced4da;
-  }
-
-  .object-size.static {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    overflow: hidden;
-    white-space: nowrap;
-
-    svg {
-      flex: 0 0 auto;
-    }
-  }
-}
-
-.active .item-label :deep(.object-size),
-.active .item-label :deep(.object-pax) {
-  color: rgba(255, 255, 255, 0.85);
+:deep(.object-icons.is-demo-target) {
+  box-shadow: inset 0 0 0 0.1875rem rgba(137, 171, 36, 0.65);
 }
 </style>

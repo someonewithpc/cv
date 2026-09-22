@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * One dropdown row of the catalog card: seats, or size. The markup is the object variants
+ * demo's (VariantsDemo/Card.astro) — a <details> whose summary is the current option — and
+ * the look comes from that demo's card.scss, so both demos draw the product's row from one
+ * source. Only the behaviour is Vue's: hover previews an option, a click commits it, and
+ * leaving without a click puts the held one back, as Space Builder's HoverSelect.vue does.
+ */
 import { ref } from 'vue';
 
 export type HoverSelectOption = string | number;
@@ -10,34 +17,37 @@ const props = defineProps<{
   unavailable?: HoverSelectOption[];
   /** Accessible name for the control, e.g. "Seats". */
   label: string;
+  /** Printed text of the current option, for the summary's accessible name. */
+  currentText: string;
+  /** A pick on the other row moved this one: flag it until it is opened or hovered. */
+  moved?: boolean;
+  /** Aim point for the walkthrough; each option gets `<demoTarget>:<option>`. */
+  demoTarget?: string;
 }>();
 
 const emit = defineEmits<{
   pick: [option: HoverSelectOption];
   hover: [option: HoverSelectOption];
+  /** The row was opened, or the pointer crossed it, so its flag can go. */
+  seen: [];
+  /** The row closed without a pick; the card puts back what it holds. */
+  revert: [];
 }>();
 
 const expanded = ref(false);
-const initial = ref<HoverSelectOption | null>(null);
 
 function isUnavailable(option: HoverSelectOption) {
   return props.unavailable?.includes(option) ?? false;
 }
 
-function toggle() {
-  if (expanded.value) {
-    collapse();
-    return;
-  }
-  initial.value = props.current;
-  expanded.value = true;
+function onToggle(event: Event) {
+  expanded.value = (event.target as HTMLDetailsElement).open;
+  if (expanded.value) emit('seen');
+  else emit('revert');
 }
 
-function collapse() {
-  if (!expanded.value) return;
+function close() {
   expanded.value = false;
-  // Space Builder puts the preview back when the pointer leaves without a pick.
-  if (initial.value !== null) emit('hover', initial.value);
 }
 
 function pick(option: HoverSelectOption) {
@@ -47,35 +57,37 @@ function pick(option: HoverSelectOption) {
 </script>
 
 <template>
-  <div v-if="options.length <= 1" class="hover-select single">
-    <slot name="option" :option="current" />
-  </div>
-
-  <div
-    v-else
+  <details
     class="hover-select"
-    :class="{ expanded }"
-    @mouseleave="collapse"
-    @keydown.esc.stop="collapse"
+    :class="{ 'new-dot': moved }"
+    :open="expanded"
+    @toggle="onToggle"
+    @mouseleave="close"
+    @mousemove="emit('seen')"
+    @keydown.esc.stop="close"
   >
-    <button
-      type="button"
+    <summary
       class="hover-select-current"
-      :aria-expanded="expanded"
-      :aria-label="`${label}, ${current}`"
-      @click.stop="toggle"
+      :aria-label="`${label}, ${currentText}`"
+      :data-demo-target="demoTarget"
       @dblclick.stop
     >
       <slot name="option" :option="current" />
       <svg class="caret" viewBox="0 0 320 512" width="8" height="8" aria-hidden="true">
         <path fill="currentColor" d="M31 175h258c18 0 27 21 14 34L174 338a20 20 0 0 1-28 0L17 209c-13-13-4-34 14-34z" />
       </svg>
-    </button>
+    </summary>
 
-    <ul v-show="expanded" class="hover-select-options">
-      <li v-for="option in options" :key="option" :class="{ unavailable: isUnavailable(option) }">
+    <ul class="hover-select-options">
+      <li
+        v-for="option in options"
+        :key="option"
+        :class="{ unavailable: isUnavailable(option), current: option === current }"
+        :data-value="option"
+      >
         <button
           type="button"
+          :data-demo-target="demoTarget ? `${demoTarget}:${option}` : undefined"
           @click.stop="pick(option)"
           @dblclick.stop
           @mouseover="emit('hover', option)"
@@ -85,87 +97,5 @@ function pick(option: HoverSelectOption) {
         </button>
       </li>
     </ul>
-  </div>
+  </details>
 </template>
-
-<style lang="scss" scoped>
-// Space Builder's own dropdown (forms/HoverSelect.vue + ui/custom/components/_hover_select.scss).
-// The product marks it up as `ul[role=select]`, which is not a real ARIA role; this keeps the
-// look and the hover-to-preview behaviour but builds it out of plain buttons.
-$border: #3d4246;
-$row-bg: #212529;
-
-.hover-select {
-  position: relative;
-  text-align: center;
-
-  &.single {
-    padding: 0 0.125rem;
-  }
-}
-
-.hover-select-current,
-.hover-select-options button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  width: 100%;
-  padding: 0 0.25rem;
-  border: 1px solid transparent;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  line-height: 1.5;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.hover-select-current {
-  border-color: $border;
-  border-radius: 0.25rem;
-
-  .caret {
-    position: absolute;
-    right: 0.5rem;
-    pointer-events: none;
-  }
-
-  &:hover {
-    box-shadow: inset 0 0 0.125rem 0.625rem color-mix(in srgb, #{$border} 80%, #495057);
-  }
-}
-
-.hover-select-options {
-  position: absolute;
-  z-index: 5;
-  top: 100%;
-  right: 0;
-  left: 0;
-  margin: -1px 0 0;
-  padding: 0;
-  list-style: none;
-  background: $row-bg;
-  border: 1px solid $border;
-  border-top: 0;
-  border-bottom-right-radius: 0.25rem;
-  border-bottom-left-radius: 0.25rem;
-
-  li + li button {
-    border-top: 1px solid color-mix(in srgb, #{$border} 50%, transparent);
-  }
-
-  li.unavailable {
-    color: #868e96;
-  }
-
-  button:hover {
-    box-shadow: inset 0 0 0.125rem 0.625rem color-mix(in srgb, #{$border} 80%, #495057);
-  }
-}
-
-.expanded .hover-select-current {
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
-}
-</style>
