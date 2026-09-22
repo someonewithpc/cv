@@ -110,12 +110,8 @@ const OS_THEMES = {
   dark: THEMES.dark,
 } as const;
 
-/** The scans are 1440px square and the desk lays them down at half that, as round 2 cut them. */
-const DESK_WOOD_REM = 45;
-
 const deskWood = (settings: ThemeSettings) => `
-      --theme-desk-tile: url("/desk/${settings.deskWood}.webp");
-      --theme-desk-tile-size: ${DESK_WOOD_REM}rem;${settings.deskBase ? `
+      --theme-desk-tile: url("/desk/${settings.deskWood}.webp");${settings.deskBase ? `
       --theme-desk-base: ${settings.deskBase};
       --theme-desk-blend: difference;
       --theme-desk-veil-blend: color;` : ''}`;
@@ -140,12 +136,7 @@ const ANY_THEME_CHECKED = Object.keys(THEMES).map(themeChecked).join(', ');
 
 /* Theme application mirrors the original radio/.checked contract so view
    transitions keep working; data-theme is an extra early-paint / persistence path. */
-const THEMES_CSS = `
-  /* The desk's wood cannot be written beside the other fallbacks below, which are plain SCSS
-     with nothing to interpolate into. It follows Light, as they do. */
-  :root {${deskWood(THEMES.light)}
-  }
-${Object.entries(OS_THEMES).map(([id, settings]) => (
+const THEMES_CSS = `${Object.entries(OS_THEMES).map(([id, settings]) => (
   `  @media (prefers-color-scheme: ${id}) {
     :root:not([data-theme]):not(:has(${ANY_THEME_CHECKED})) {
 ${themeVars(settings)}
@@ -293,6 +284,7 @@ aside {
   --theme-blueprint: oklch(0.52 0.14 255);
   --theme-desk: oklch(0.76 0.05 68);
   --theme-desk-grain: 0.85;
+  --theme-desk-tile: url("/desk/ash-4186.webp");
   --theme-mode: light;
   --theme-kind: light;
 
