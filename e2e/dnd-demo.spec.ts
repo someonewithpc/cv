@@ -109,6 +109,45 @@ test('dragging an object onto the floor places exactly one in a live scene', asy
   await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnDrop);
 });
 
+test('the picture riding the pointer over the catalog carries the card tile', async ({ page }) => {
+  const app = await openDemo(page);
+  const chair = app.locator('[data-demo-target="catalog:chair"]');
+  const tile = await chair.boundingBox();
+  if (!tile) throw new Error('Catalog item has no layout box');
+
+  // Straight down from the press, so the pointer never leaves the sidebar and the scene's
+  // ghost never takes over.
+  const start = { x: tile.x + tile.width / 2, y: tile.y + tile.height / 2 };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  for (let step = 1; step <= 6; step += 1) {
+    await page.mouse.move(start.x, start.y + step * 6);
+    await page.waitForTimeout(20);
+  }
+
+  const ghost = app.locator('.demo-drag-thumb');
+  await expect(ghost).toBeVisible();
+  const carried = await ghost.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const picture = el.querySelector('img')!;
+    return {
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+      background: getComputedStyle(el).backgroundImage,
+      pictureWidth: Math.round(picture.getBoundingClientRect().width),
+    };
+  });
+  await page.mouse.up();
+
+  // What crosses the catalog is the card's flat picture, tile and all, not a cut-out of
+  // the chair: the tile's own gradient, at the tile's own size.
+  expect(carried.background).toContain('linear-gradient');
+  expect(carried.width).toBe(Math.round(tile.width));
+  expect(carried.height).toBe(Math.round(tile.height));
+  // And the chair in it is the one the card draws, which runs past the tile's edges.
+  expect(carried.pictureWidth).toBeGreaterThan(carried.width);
+});
+
 test('autoplay runs and hands over to the visitor', async ({ page }) => {
   const app = await openDemo(page);
   const playing = app.locator('.demo-flash');
@@ -330,6 +369,24 @@ test('every frame is the same size, and big enough to read', async ({ page }) =>
   // 209x220, where a row of four sized off its width alone came to 219x125.
   expect(pictures[0].width).toBeGreaterThanOrEqual(195);
   expect(pictures[0].height).toBeGreaterThanOrEqual(195);
+});
+
+test('the sidebar title stays inside its header, wrapping if it has to', async ({ page }) => {
+  for (const viewport of [DESKTOP, PORTRAIT_PHONE]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    const app = await openDemo(page);
+    const fit = await app.locator('.sidebar-title').evaluate((el) => ({
+      scroll: el.scrollWidth,
+      client: el.clientWidth,
+    }));
+    // The title wraps like the product's own, so the header never cuts a word off at its
+    // edge however narrow the sidebar gets.
+    expect(
+      fit.scroll,
+      `"Select an Object" is cut off at ${viewport.width}x${viewport.height}`,
+    ).toBeLessThanOrEqual(fit.client);
+  }
 });
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
