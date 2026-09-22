@@ -77,8 +77,9 @@ oembedUrl.searchParams.set('format', 'json');
     </script>
     <!-- REVIEW ONLY, strip before this lands on main. Swaps the procedural desk tile for one
          of the photographs in public/desk so Hugo can compare them:
-           ?desk=<file>   paints /desk/<file>.webp at the tile's own 45rem
-           &veil=0        drops the grain veil, in case it is what softens the figure
+           ?desk=<file>   paints /desk/<file>.webp at the tile's own 45rem, under the light
+                          veil a photograph wants rather than the theme's own
+           &veil=<0..1>   how much desk colour lies over the tile, 0 for none
            &theme=<id>    picks the theme, so a link can carry one
          The switch writes inline custom properties on the html element, which outrank the
          theme rules, and nothing else in the page knows it is here. -->
@@ -88,14 +89,22 @@ oembedUrl.searchParams.set('format', 'json');
         const tile = query.get('desk');
         const theme = query.get('theme');
         const root = document.documentElement;
+        /* --theme-desk-grain is how far the veil is faded out, so 1 is no veil at all. The
+           drawn boards are one flat tone under a heavy veil that gives them their colour. A
+           scan brings its own, so it takes a sixth of that and the levelled copy takes none:
+           overlay already leaves the theme's colour alone where that tile sits at mid grey. */
+        const VEIL = { 'oak-7760-mid': 0 };
+        const veil = (amount) =>
+          root.style.setProperty('--theme-desk-grain', String(1 - Math.min(1, Math.max(0, amount))));
         if (tile && /^[a-z0-9-]+$/.test(tile)) {
           /* Relative to the document, so this still works under the preview's sub-path. */
           const file = new URL(`desk/${tile}.webp`, document.baseURI).href;
           root.style.setProperty('--theme-desk-tile', `url(${file})`);
           root.style.setProperty('--theme-desk-tile-size', '45rem');
+          veil(tile in VEIL ? VEIL[tile] : 0.15);
         }
-        /* --theme-desk-grain is how far the veil is faded out, so 1 is no veil at all. */
-        if (query.get('veil') === '0') root.style.setProperty('--theme-desk-grain', '1');
+        const asked = Number(query.get('veil'));
+        if (query.get('veil') !== null && Number.isFinite(asked)) veil(asked);
         if (theme && ['light', 'dark', 'arctic', 'dark-forest'].includes(theme)) {
           root.dataset.theme = theme;
           /* The picker restores its own pick on boot and would undo the query, so tell it. */
