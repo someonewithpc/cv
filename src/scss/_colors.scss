@@ -196,7 +196,7 @@
     inset: 0;
     z-index: -1;
     border-radius: #{$radius};
-    background-image: url('/paper/handmade.webp');
+    background-image: url('/paper.webp');
     background-size: 20rem 20rem;
     mix-blend-mode: soft-light;
     opacity: var(--theme-paper-grain, 0);
