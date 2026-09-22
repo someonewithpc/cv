@@ -470,8 +470,15 @@ const measure = new ResizeObserver((entries) => {
   for (const { stack, inlineSize, blockSize, portrait, wide } of read) {
     stack.style.setProperty('--sheet-inline', `${inlineSize}px`);
     stack.style.setProperty('--sheet-block', `${blockSize}px`);
-    stack.dataset.sheetOrientation = portrait ? 'portrait' : 'landscape';
-    stack.dataset.sheetWidth = wide ? 'wide' : 'narrow';
+    // Both only when they actually change. Writing the same value back is still an attribute
+    // write, and this page carries enough `:has()` rules that any attribute change invalidates
+    // every element in the document (see PR #50), so a resize step that moved the numbers and
+    // nothing else was still paying for it, twice per stack. The custom properties above are
+    // inline styles, which cost nothing like it.
+    const orientation = portrait ? 'portrait' : 'landscape';
+    if (stack.dataset.sheetOrientation !== orientation) stack.dataset.sheetOrientation = orientation;
+    const band = wide ? 'wide' : 'narrow';
+    if (stack.dataset.sheetWidth !== band) stack.dataset.sheetWidth = band;
     // The frame is taller than the sheet by the fan's reserve, so a hint that belongs on the
     // sheet's own bottom edge cannot be placed from the frame's box alone.
     (stack.parentElement as HTMLElement | null)?.style.setProperty('--stack-block', `${blockSize}px`);
