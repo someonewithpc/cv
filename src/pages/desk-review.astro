@@ -26,7 +26,7 @@ const WOODS: readonly Wood[] = [
   {
     file: 'ash-4186',
     name: 'Ash boards',
-    figure: 'Sawn boards with the plank joints left in. The wood light and arctic wear now.',
+    figure: 'Sawn boards with the plank joints left in. Light wears this.',
     swing: '3.11',
     L: '74.4',
     C: '19.7',
@@ -34,7 +34,7 @@ const WOODS: readonly Wood[] = [
   {
     file: 'oak-7760',
     name: 'Slip-match oak',
-    figure: 'Long cathedral figure across the page, no joint anywhere in it.',
+    figure: 'Long cathedral figure across the page, no joint anywhere in it. Arctic wears this.',
     swing: '2.84',
     L: '64.2',
     C: '22.2',
@@ -42,7 +42,7 @@ const WOODS: readonly Wood[] = [
   {
     file: 'oak-7760-mid',
     name: 'Slip-match oak, levelled',
-    figure: 'The same figure with the contrast pulled in to sit at mid grey. Arctic and forest wear this.',
+    figure: 'The same figure with the contrast pulled in to sit at mid grey. Dark wears this.',
     swing: '2.45',
     L: '54.8',
     C: '19.7',
@@ -58,7 +58,7 @@ const WOODS: readonly Wood[] = [
   {
     file: 'oak-7760-smoked',
     name: 'Slip-match oak, smoked',
-    figure: 'The levelled oak darkened and drained of red in the file itself.',
+    figure: 'The levelled oak darkened and drained of red in the file itself. Forest wears this.',
     swing: '2.14',
     L: '41.3',
     C: '5.3',
@@ -172,17 +172,32 @@ const POLISH = [
   },
 ] as const;
 
+/* What each theme paints with no query on it at all. */
 const PICK = {
   light: 'ash-4186',
-  arctic: 'oak-7760-mid',
-  dark: 'ash-4186',
-  'dark-forest': 'oak-7760-mid',
+  arctic: 'oak-7760',
+  dark: 'oak-7760-mid',
+  'dark-forest': 'oak-7760-smoked',
 } as const;
+
+const PICKED = [
+  { theme: 'light', name: 'Light', say: 'Sawn ash under a light veil of the desk colour.' },
+  { theme: 'arctic', name: 'Arctic', say: 'The oak at its own lightness, which under a pale desk reads as bleached.' },
+  { theme: 'dark', name: 'Dark', say: 'The levelled oak, no polish on it, the sheen at chroma 0.010.' },
+  { theme: 'dark-forest', name: 'Forest', say: 'The same oak smoked in the file, under the theme’s own green.' },
+] as const;
+
+/* How brown the dark desk reads, which is the veil's chroma and nothing else: it moves no
+   lightness at all, so the grain is the same the whole way down. */
+const CHROMA = ['0.018', '0.015', '0.012', '0.010', '0.008', '0.006', '0.004', '0.002'] as const;
 
 const deskUrl = (file: string, theme: string, veil: boolean) =>
   `../?desk=${file}&theme=${theme}${veil ? '' : '&veil=0'}`;
 
-const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&gloss=${gloss}` : ''}`;
+/* The unpolished link says its chroma out loud so the grid's first row keeps the wood's own
+   colour rather than picking up the one the dark theme now carries. */
+const glossUrl = (gloss: string) =>
+  `../?desk=ash-4186&theme=dark${gloss ? `&gloss=${gloss}` : '&chroma=0.018'}`;
 ---
 
 <html lang="en">
@@ -302,15 +317,39 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
   <body>
     <h1>Desk wood, every link</h1>
     <p>
-      Every desk we have, grouped by theme, dark first because it is the one still open. A pick
-      marked below is ours and not a closed question.
+      The four desks you picked are what the site paints now, with no query on them at all. Every
+      other desk we ever cut or tried is below them, grouped by theme, and still one link away.
     </p>
 
-    <h2>Dark: how black, and how brown</h2>
+    <h2>What the site paints</h2>
+    <ul>
+      {PICKED.map((pick) => (
+        <li>
+          <a href={`../?theme=${pick.theme}`}>{pick.name}</a>{' '}
+          <span class="say">{woodByFile[PICK[pick.theme]].name}. {pick.say}</span>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Dark: how brown</h2>
     <p>
-      Down the table the body of the desk goes black; across it the colour comes out of the sheen.
-      The two do not touch. Polished is what you picked, and the link beside it is that same
-      blackness with the brown gone, which is the comparison we are asking for. All on the ash.
+      The one knob the dark desk still carries. It is the chroma of the veil, it moves no lightness
+      at all, and the grain is the same the whole way down the list.
+    </p>
+    <ul>
+      {CHROMA.map((chroma) => (
+        <li>
+          <a href={`../?theme=dark&chroma=${chroma}`}>Chroma {chroma}</a>
+          {chroma === '0.010' ? <span class="pick"> What it paints now.</span> : null}
+        </li>
+      ))}
+    </ul>
+
+    <h2>Dark: how black, and how brown together</h2>
+    <p>
+      The polish that rounds 5 to 7 tuned. Nothing on this grid ships: you took the contrast all
+      the way off it. Down the table the body of the desk goes black; across it the colour comes
+      out of the sheen, and the two do not touch. All on the ash.
     </p>
     <div class="scroll">
       <table>
@@ -353,8 +392,8 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
       All twelve tiles cut so far, none of them ruled out. The painting takes every one of them to
       the same near black, so the only thing that changes down this list is the grain. Swing is how
       far that grain moves the desk's lightness, and the drawn boards these replace swing 2.0. No
-      polish on these links, because the floor clips the darkest fibre to black and the wood shows
-      plainest without it.
+      polish on these links and the theme's own chroma over them, which is how the dark desk is
+      painted now.
     </p>
     <ul>
       {WOODS.map((wood) => (
@@ -362,7 +401,7 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
           <a href={deskUrl(wood.file, 'dark', true)}>{wood.name}</a>{' '}
           <span class="say">
             swing {wood.swing}. {wood.figure}
-            {PICK.dark === wood.file ? <span class="pick"> Our pick.</span> : null}
+            {PICK.dark === wood.file ? <span class="pick"> What it paints now.</span> : null}
           </span>
         </li>
       ))}
@@ -370,9 +409,8 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
 
     <h2>Dark forest: the wood under it</h2>
     <p>
-      You said forest is good as it is, and nothing this round went near it. It paints exactly the
-      way the dark desk above does, though, so the same twelve are here if the grain is worth a
-      second look.
+      Forest wears the smoked oak now. It paints exactly the way the dark desk above does, so the
+      same twelve are here if the grain is worth a second look.
     </p>
     <ul>
       {WOODS.map((wood) => (
@@ -380,7 +418,7 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
           <a href={deskUrl(wood.file, 'dark-forest', true)}>{wood.name}</a>{' '}
           <span class="say">
             swing {wood.swing}. {wood.figure}
-            {PICK['dark-forest'] === wood.file ? <span class="pick"> Our pick.</span> : null}
+            {PICK['dark-forest'] === wood.file ? <span class="pick"> What it paints now.</span> : null}
           </span>
         </li>
       ))}
@@ -400,7 +438,7 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
           <a href={deskUrl(file, 'light', false)}>(no veil)</a>{' '}
           <span class="say">
             L* {woodByFile[file].L}, C* {woodByFile[file].C}. {woodByFile[file].figure}
-            {PICK.light === file ? <span class="pick"> Our pick.</span> : null}
+            {PICK.light === file ? <span class="pick"> What it paints now.</span> : null}
           </span>
         </li>
       ))}
@@ -415,7 +453,7 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
           <a href={deskUrl(file, 'arctic', false)}>(no veil)</a>{' '}
           <span class="say">
             L* {woodByFile[file].L}, C* {woodByFile[file].C}. {woodByFile[file].figure}
-            {PICK.arctic === file ? <span class="pick"> Our pick.</span> : null}
+            {PICK.arctic === file ? <span class="pick"> What it paints now.</span> : null}
           </span>
         </li>
       ))}
