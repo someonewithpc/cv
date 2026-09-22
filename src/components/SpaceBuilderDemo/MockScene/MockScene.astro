@@ -36,6 +36,12 @@ bootIslands('[data-space-builder-island]', boot);
   // box-shadow), so a frame filling the cell would paint over it.
   box-sizing: border-box;
   padding: 2px;
+  // The title block is absolutely placed in the sheet's bottom-right corner, over this
+  // cell, so an app filling the cell ran its catalog and its Drag & Drop footer under the
+  // block's lettering. Reserve the block's measured height at the bottom and the app ends
+  // above it. --title-block-reach (Demo.astro) is that height on a sheet that corners the
+  // block and 0 on one that gives it a row of its own.
+  padding-bottom: calc(2px + var(--title-block-reach, 0px));
 }
 
 .mock-scene-demo {

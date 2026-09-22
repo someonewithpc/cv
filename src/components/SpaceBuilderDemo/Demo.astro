@@ -180,6 +180,23 @@ type Layer = keyof typeof layers;
 </div>
 
 <style lang="scss">
+// A landscape sheet puts its title block in the bottom-right corner, absolutely placed over
+// the artwork column. That corner belongs to the block, so a demo that fills the cell ends
+// above it instead of running under its lettering.
+:global(.space-builder-demo article.technical-drawing-stack > * > section) {
+  --title-block-reach: var(--title-block-block);
+}
+
+// Portrait gives the block a row of its own, the reach goes back to 0, and nothing moves.
+// The query is the one Page.astro moves the block with, not the sheet's orientation
+// attribute. Those two disagree while the stack's max-height clamps its 3/5 aspect, which
+// is every window between about 580 and 640 wide, and there the block is still cornered.
+@container technical-drawing (orientation: portrait) {
+  :global(.space-builder-demo article.technical-drawing-stack > * > section) {
+    --title-block-reach: 0px;
+  }
+}
+
 // Regular (non-portrait) layout only — reserve a gutter next to the demo
 // content (where a wide page like the Add tool can otherwise butt right up
 // against it) and center the PostIt in whatever space is left. Portrait mode
