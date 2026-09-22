@@ -409,7 +409,8 @@ function initStack(stack: HTMLElement) {
     watchFrontPage(page, () => apply(page));
   });
 
-  // Before the islands mount, so the first state a demo reports is already heard.
+  // A demo island boots only once its page is on screen, so the deck is listening long
+  // before the first state is reported. One that beat it to it is read back instead.
   [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
     .forEach((page) => initAutoplayStatus(page));
 
