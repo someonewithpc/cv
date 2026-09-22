@@ -363,6 +363,7 @@ $way-back-shown: '.technical-drawing-frame:has([data-paper-turned][data-paper-se
 </style>
 
 <script>
+import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 import './demo-cursor-press';
 
@@ -407,6 +408,11 @@ function initStack(stack: HTMLElement) {
     observer.observe(page);
     watchFrontPage(page, () => apply(page));
   });
+
+  // A demo island boots only once its page is on screen, so the deck is listening long
+  // before the first state is reported. One that beat it to it is read back instead.
+  [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
+    .forEach((page) => initAutoplayStatus(page));
 
   positionAnnotations(stack);
 
@@ -461,7 +467,14 @@ function init() {
   armHints();
 }
 
-document.addEventListener('DOMContentLoaded', init);
-
-if (document.readyState !== 'loading') { init(); }
+/* A module script is deferred, so by the time this one runs the document is already
+   "interactive" while DOMContentLoaded has still to fire. Listening for that event as
+   well as calling init() ran the whole setup twice, and doubled every listener it binds.
+   A doubled key press was invisible, since play twice is still play. A doubled press of
+   the marks shapes 4 to 6 draw is not: they toggle, so the second undid the first. */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init, { once: true });
+} else {
+  init();
+}
 </script>

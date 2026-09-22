@@ -139,6 +139,108 @@ test('store page: static undoable-store illustration is reachable', async ({ pag
   await expect(front.locator('section')).toBeVisible();
 });
 
+const VIEWPORTS = [
+  { name: 'desktop', viewport: { width: 1440, height: 900 } },
+  { name: 'phone', viewport: { width: 390, height: 844 } },
+];
+
+for (const { name, viewport } of VIEWPORTS) {
+  test.describe(`transport deck at ${name} width`, () => {
+    test.use({ viewport });
+
+    test('follows hover, the pause key and reset', async ({ page }) => {
+      const stack = markerEditorStack(page);
+      // Centred, not just nudged into view: the demo only drives itself (and so only
+      // reports to the deck) while its page counts as active.
+      await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const front = frontPage(stack, await frontPageIndex(stack));
+      await waitForIslandMounted(front);
+
+      const deck = front.locator('[data-demo-transport]');
+      const play = deck.locator('[data-demo-key="play"]');
+      const pause = deck.locator('[data-demo-key="pause"]');
+      const reset = deck.locator('[data-demo-key="reset"]');
+
+      await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
+      await expect(deck).toContainText('AUTO PLAYING');
+
+      // It is a stamp in the border band: inside the paper margin under the frame line,
+      // clear of the drawing and of the title block. A phone sheet has no room for it
+      // there, so it takes a row of its own inside the frame above the title block.
+      const placement = await deck.evaluate((el) => {
+        const section = el.closest('section')!;
+        const sheet = section.getBoundingClientRect();
+        const box = el.getBoundingClientRect();
+        const band = parseFloat(getComputedStyle(section).paddingBottom);
+        const clearOf = (other: Element | null) => {
+          if (!other) return false;
+          const b = other.getBoundingClientRect();
+          return box.right <= b.left + 1 || box.left >= b.right - 1
+            || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
+        };
+        return {
+          insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
+          clearOfDrawing: clearOf(section.querySelector('.content')),
+          clearOfTitleBlock: clearOf(section.querySelector('table')),
+        };
+      });
+      expect(placement).toEqual({
+        insideBand: name === 'desktop',
+        clearOfDrawing: true,
+        clearOfTitleBlock: true,
+      });
+      await expect(play).toHaveAttribute('aria-pressed', 'true');
+      await expect(pause).toHaveAttribute('aria-pressed', 'false');
+
+      // Hovering the sheet is the takeover the deck's hint promises.
+      const box = (await stack.boundingBox())!;
+      await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.6);
+      await page.mouse.move(box.x + box.width * 0.42, box.y + box.height * 0.62);
+      await expect(deck).toHaveAttribute('data-state', 'user');
+      await expect(deck).toContainText('MANUAL CONTROL');
+      await expect(pause).toHaveAttribute('aria-pressed', 'true');
+      await expect(play).toHaveAttribute('aria-pressed', 'false');
+
+      // Play hands the walkthrough back.
+      await play.click();
+      await expect(deck).toHaveAttribute('data-state', 'playing');
+
+      // Pause is the explicit takeover, and it holds past the idle resume (2s).
+      await pause.click();
+      await expect(deck).toHaveAttribute('data-state', 'user');
+      await page.waitForTimeout(3000);
+      await expect(deck).toHaveAttribute('data-state', 'user');
+
+      // Reset starts the walkthrough again.
+      await reset.click();
+      await expect(deck).toHaveAttribute('data-state', 'playing');
+    });
+  });
+}
+
+test.describe('with reduced motion', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('the map walkthrough stays parked and the deck says so', async ({ page }) => {
+    const stack = markerEditorStack(page);
+    await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    const front = frontPage(stack, await frontPageIndex(stack));
+    await waitForIslandMounted(front);
+
+    const deck = front.locator('[data-demo-transport]');
+    await expect(deck).toHaveAttribute('data-state', 'off', { timeout: 20_000 });
+    await expect(deck).toContainText('AUTO PLAY OFF');
+    for (const key of ['reset', 'play', 'pause']) {
+      await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeDisabled();
+    }
+
+    // Nothing of the walkthrough runs: no drawn cursor, and it never opens the editor.
+    await page.waitForTimeout(4000);
+    await expect(front.locator('.mock-map-demo-cursor')).toHaveCount(0);
+    await expect(page.locator('#marker-editor')).toHaveCount(0);
+  });
+});
+
 test('main page: the demo cursor leaves when its page is no longer in front', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
