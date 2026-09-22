@@ -1,0 +1,102 @@
+/**
+ * The toast a demo raises when a keyboard shortcut fires: the keys as <kbd> chips, then the
+ * word the product's own menu gives the action. The Marker Editor demo's undo and redo
+ * toast is where the look started (MockMapOverlay.scss); the Drag & Drop demo shows the
+ * same one for Remove, so the two read as one product rather than two.
+ *
+ * A caller places the stack and the toast itself, then layers on whatever the demo needs on
+ * top (a z-index of its own, say). `keyframes` has to sit at the top level of the sheet
+ * that includes it.
+ */
+
+/** The enter animation's name, so a caller can refer to it without spelling it out. */
+$enter: demo-toast-in;
+
+@mixin keyframes {
+  @keyframes #{$enter} {
+    from {
+      opacity: 0;
+      translate: 0 0.65rem;
+    }
+
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+}
+
+/** The column toasts pile into, bottom centre of the demo. */
+@mixin stack {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+/** One toast. The leaving state collapses it so the ones under it slide up. */
+@mixin toast {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  overflow: hidden;
+  max-height: 3rem;
+  padding: 0.45em 0.7em;
+  border: 1px solid color-mix(in oklab, #000 12%, transparent);
+  border-radius: 0.45em;
+  background: color-mix(in oklab, var(--bg-900, #fff) 92%, transparent);
+  color: var(--fg-850, #222);
+  box-shadow: 0 2px 10px color-mix(in oklab, #000 16%, transparent);
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
+  animation: $enter 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    max-height 0.32s ease,
+    padding 0.32s ease,
+    margin 0.32s ease,
+    opacity 0.32s ease,
+    translate 0.32s ease,
+    border-width 0.32s ease;
+}
+
+@mixin leaving {
+  max-height: 0;
+  margin: 0;
+  padding-block: 0;
+  border-width: 0;
+  opacity: 0;
+  translate: 0 0.85rem;
+  animation: none;
+}
+
+/** The run of key chips before the action word. */
+@mixin keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35em;
+    padding: 0.2em 0.35em;
+    border: 1px solid color-mix(in oklab, #000 18%, transparent);
+    border-bottom-width: 2px;
+    border-radius: 0.3em;
+    background: color-mix(in oklab, var(--bg-800, #f3f3f3) 88%, transparent);
+    font: inherit;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+}
+
+@mixin action {
+  font-weight: 600;
+}
