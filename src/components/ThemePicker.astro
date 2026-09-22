@@ -1,8 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import { DESK_TILE_REM, plankTile, type PlankTile } from '@/deskTile';
-
 type ThemeFollows = 'light' | 'dark';
 
 type ThemeSettings = {
@@ -13,8 +11,16 @@ type ThemeSettings = {
   /** The desk top the page lies on at wide viewports, and how much of its grain shows. */
   desk: string;
   deskGrain: string;
-  /** The boards that desk is made of. One generator, a different wood per theme. */
-  deskTile: PlankTile;
+  /** The veneer that desk is cut from: one scan per theme, in public/desk. */
+  deskWood: string;
+  /**
+   * A dark desk subtracts its veneer from this base rather than laying it over the desk
+   * colour, because overlay scales every step by base * (1 - base) and near black that
+   * leaves the tone and eats the fibre. The base is the scan's own mean colour less 28 of
+   * 255, which is the lightness the desk keeps; the veil then goes opaque and hands the
+   * desk its hue and chroma back while the subtraction holds the grain at full size.
+   */
+  deskBase?: string;
   follows: ThemeFollows;
   name: string;
   transitionScaleFactor: number;
@@ -31,9 +37,9 @@ const THEMES = {
     accent: 'oklch(0.7 0.13 65)',
     blueprint: 'oklch(0.52 0.14 255)',
     desk: 'oklch(0.76 0.05 68)',
-    deskGrain: '0.45',
-    /* A mid warm wood: plain straight grain on 9rem boards. */
-    deskTile: { lie: 'down', seed: 7, boards: 5, lines: 9, waves: 3, octaves: 2, bend: 8, grain: 0.45, boardTone: 0.09, boardWarmth: 0.03, seam: 0.35 },
+    deskGrain: '0.85',
+    /* Sawn ash boards, with the plank joints left in. */
+    deskWood: 'ash-4186',
     follows: 'light',
     name: 'Light',
     transitionScaleFactor: 2.4,
@@ -47,10 +53,11 @@ const THEMES = {
     ink: 'oklch(0.92 0.02 250)',
     accent: 'oklch(0.78 0.1 75)',
     blueprint: 'oklch(0.4 0.12 265)',
-    desk: 'oklch(0.235 0.018 55)',
-    deskGrain: '0.65',
-    /* Charred cedar: a tighter grain on narrower boards, crazed along it by the char. */
-    deskTile: { lie: 'down', seed: 23, boards: 6, lines: 14, waves: 2, octaves: 2, bend: 5, grain: 0.8, boardTone: 0.1, boardWarmth: 0.02, seam: 0.72, char: 0.22 },
+    desk: 'oklch(0.235 0.01 55)',
+    deskGrain: '0',
+    /* Slip-matched oak, levelled: cathedral figure across the page and no joint in it. */
+    deskWood: 'oak-7760-mid',
+    deskBase: 'rgb(128 97 73)',
     follows: 'dark',
     name: 'Dark',
     transitionScaleFactor: 1.2,
@@ -65,9 +72,9 @@ const THEMES = {
     accent: 'oklch(0.52 0.1 210)',
     blueprint: 'oklch(0.58 0.12 220)',
     desk: 'oklch(0.81 0.013 232)',
-    deskGrain: '0.45',
-    /* Bleached ash: a fine, very straight grain on wide boards that barely differ in tone. */
-    deskTile: { lie: 'down', seed: 41, boards: 4, lines: 12, waves: 2, octaves: 2, bend: 4, grain: 0.42, boardTone: 0.035, boardWarmth: 0.008, seam: 0.3 },
+    deskGrain: '0.85',
+    /* The same oak at its own lightness, which under a pale desk reads as bleached. */
+    deskWood: 'oak-7760',
     follows: 'light',
     name: 'Arctic',
     transitionScaleFactor: 2,
@@ -82,9 +89,10 @@ const THEMES = {
     accent: 'oklch(0.72 0.1 95)',
     blueprint: 'oklch(0.36 0.08 165)',
     desk: 'oklch(0.225 0.03 75)',
-    deskGrain: '0.55',
-    /* Dark stained wood: a little wilder than the light desk, and the one pale streak of sapwood. */
-    deskTile: { lie: 'down', seed: 59, boards: 5, lines: 8, waves: 3, octaves: 2, bend: 10, grain: 1, boardTone: 0.11, boardWarmth: 0.04, seam: 0.42, sapwood: 0.12 },
+    deskGrain: '0',
+    /* The same oak smoked in the file: darker, and drained of red before the veil goes on. */
+    deskWood: 'oak-7760-smoked',
+    deskBase: 'rgb(76 68 62)',
     follows: 'dark',
     name: 'Forest',
     transitionScaleFactor: 1.4,
@@ -102,15 +110,23 @@ const OS_THEMES = {
   dark: THEMES.dark,
 } as const;
 
+/** The scans are 1440px square and the desk lays them down at half that, as round 2 cut them. */
+const DESK_WOOD_REM = 45;
+
+const deskWood = (settings: ThemeSettings) => `
+      --theme-desk-tile: url("/desk/${settings.deskWood}.webp");
+      --theme-desk-tile-size: ${DESK_WOOD_REM}rem;${settings.deskBase ? `
+      --theme-desk-base: ${settings.deskBase};
+      --theme-desk-blend: difference;
+      --theme-desk-veil-blend: color;` : ''}`;
+
 const themeVars = (settings: ThemeSettings) => `
       --theme-canvas: ${settings.canvas};
       --theme-ink: ${settings.ink};
       --theme-accent: ${settings.accent};
       --theme-blueprint: ${settings.blueprint};
       --theme-desk: ${settings.desk};
-      --theme-desk-grain: ${settings.deskGrain};
-      --theme-desk-tile: ${plankTile(settings.deskTile)};
-      --theme-desk-tile-size: ${DESK_TILE_REM}rem;
+      --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}
       --theme-mode: ${settings.follows};
       --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
 `;
@@ -125,11 +141,9 @@ const ANY_THEME_CHECKED = Object.keys(THEMES).map(themeChecked).join(', ');
 /* Theme application mirrors the original radio/.checked contract so view
    transitions keep working; data-theme is an extra early-paint / persistence path. */
 const THEMES_CSS = `
-  /* The desk tile cannot be written beside the other fallbacks below, which are plain SCSS
+  /* The desk's wood cannot be written beside the other fallbacks below, which are plain SCSS
      with nothing to interpolate into. It follows Light, as they do. */
-  :root {
-    --theme-desk-tile: ${plankTile(THEMES.light.deskTile)};
-    --theme-desk-tile-size: ${DESK_TILE_REM}rem;
+  :root {${deskWood(THEMES.light)}
   }
 ${Object.entries(OS_THEMES).map(([id, settings]) => (
   `  @media (prefers-color-scheme: ${id}) {
@@ -278,7 +292,7 @@ aside {
   --theme-accent: oklch(0.7 0.13 65);
   --theme-blueprint: oklch(0.52 0.14 255);
   --theme-desk: oklch(0.76 0.05 68);
-  --theme-desk-grain: 0.45;
+  --theme-desk-grain: 0.85;
   --theme-mode: light;
   --theme-kind: light;
 

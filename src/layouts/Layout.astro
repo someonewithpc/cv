@@ -75,14 +75,14 @@ oembedUrl.searchParams.set('format', 'json');
         }
       })();
     </script>
-    <!-- REVIEW ONLY, strip before this lands on main. Swaps the procedural desk tile for one
-         of the photographs in public/desk so Hugo can compare them:
+    <!-- REVIEW ONLY, strip before this lands on main. Swaps the veneer a theme wears for any
+         other scan in public/desk so Hugo can compare them:
            ?desk=<file>   paints /desk/<file>.webp at the tile's own 45rem
            &veil=<0..1>   how much desk colour lies over the tile, 0 for none
            &theme=<id>    picks the theme, so a link can carry one
            &gloss=<name>  on a dark desk only, polishes it: see GLOSS below
            &floor=&gain=  the two gloss levels by hand, for measuring
-           &chroma=<c>    the veil's oklch chroma by hand, the third gloss number
+           &chroma=<c>    the veil's oklch chroma on a dark theme, with or without a tile
          A light desk takes the photograph under a light veil, the way round 2 left it. A dark
          desk paints it the other way round, subtracting it from a base cut to its own mean, so
          see the note on the painting in the stylesheet below for why. The switch writes inline
@@ -147,12 +147,13 @@ oembedUrl.searchParams.set('format', 'json');
            brown lives in the sheen alone and this is the knob that takes it out. Floor and gain
            trade off against each other one for six and a half, which holds the sheen where
            satin has it, so blacker and less brown are two knobs and neither one drags the
-           other. */
+           other. Every entry names its own chroma, the shipped dark desk included, so a gloss
+           link paints the same sheen whatever chroma the theme itself carries. */
         const GLOSS = {
-          satin: { floor: 239, gain: 112 },
-          polished: { floor: 235, gain: 135 },
-          lacquer: { floor: 231, gain: 166 },
-          blacker: { floor: 234, gain: 142 },
+          satin: { floor: 239, gain: 112, chroma: 0.018 },
+          polished: { floor: 235, gain: 135, chroma: 0.018 },
+          lacquer: { floor: 231, gain: 166, chroma: 0.018 },
+          blacker: { floor: 234, gain: 142, chroma: 0.018 },
           neutral: { floor: 239, gain: 112, chroma: 0.006 },
           'polished-neutral': { floor: 235, gain: 135, chroma: 0.006 },
           'blacker-neutral': { floor: 234, gain: 142, chroma: 0.006 },
@@ -161,14 +162,16 @@ oembedUrl.searchParams.set('format', 'json');
         const veil = (amount) =>
           root.style.setProperty('--theme-desk-grain', String(1 - Math.min(1, Math.max(0, amount))));
         const grey = (level) => `rgb(${level} ${level} ${level})`;
-        const polish = ({ floor, gain, chroma }) => {
+        const polish = ({ floor, gain }) => {
           root.style.setProperty('--theme-desk-floor', `linear-gradient(${grey(floor)}, ${grey(floor)})`);
           root.style.setProperty('--theme-desk-gain', `linear-gradient(${grey(gain)}, ${grey(gain)})`);
-          const desk = DESK[root.dataset.theme];
-          if (chroma !== undefined && desk) {
-            root.style.setProperty('--theme-desk', `oklch(${desk[0]} ${chroma} ${desk[1]})`);
-          }
         };
+        const sheen = (chroma) => {
+          const desk = DESK[root.dataset.theme];
+          if (desk) root.style.setProperty('--theme-desk', `oklch(${desk[0]} ${chroma} ${desk[1]})`);
+        };
+        const by = (key) => (query.get(key) === null ? undefined : Number(query.get(key)));
+        let chroma = by('chroma');
         if (tile && /^[a-z0-9-]+$/.test(tile)) {
           /* Relative to the document, so this still works under the preview's sub-path. */
           const file = new URL(`desk/${tile}.webp`, document.baseURI).href;
@@ -183,18 +186,21 @@ oembedUrl.searchParams.set('format', 'json');
             root.style.setProperty('--theme-desk-veil-blend', 'color');
             veil(1);
             const named = GLOSS[query.get('gloss')];
-            const floor = Number(query.get('floor'));
-            const gain = Number(query.get('gain'));
-            const by = (key) => (query.get(key) === null ? undefined : Number(query.get(key)));
-            if (Number.isFinite(floor) && Number.isFinite(gain) && query.get('floor') !== null) {
-              polish({ floor, gain, chroma: by('chroma') });
+            const floor = by('floor');
+            const gain = by('gain');
+            if (Number.isFinite(floor) && Number.isFinite(gain)) {
+              polish({ floor, gain });
             } else if (named) {
-              polish({ ...named, chroma: by('chroma') ?? named.chroma });
+              polish(named);
+              chroma ??= named.chroma;
             }
           } else {
             veil(tile in VEIL ? VEIL[tile] : 0.15);
           }
         }
+        /* The sheen's chroma is the one knob a shipped dark desk still carries, so it answers
+           on its own, with no tile and no polish under it. */
+        if (Number.isFinite(chroma)) sheen(chroma);
         const asked = Number(query.get('veil'));
         if (query.get('veil') !== null && Number.isFinite(asked)) veil(asked);
       })();
@@ -365,9 +371,9 @@ main {
     padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
 
-  /* The page lies on a desk at every width. The desk is boards: --theme-desk-tile is one
-     stitched tile of them, a whole number of boards wide, built per theme by src/deskTile.ts.
-     --theme-desk-grain veils it down to a tone that stays out of the way. Every band of
+  /* The page lies on a desk at every width. The desk is veneer: --theme-desk-tile is one
+     scan of it, a different wood per theme, under a veil of the theme's own colour.
+     --theme-desk-grain is how far that veil is faded out, so 1 is no veil at all. Every band of
      content keeps the page's own surface, so the desk is only ever seen in the side margins
      and in the gaps between bands, never behind text. A phone has only the page gutter to
      spare, so there the wood is a strip down each edge and a band between every two sections,
