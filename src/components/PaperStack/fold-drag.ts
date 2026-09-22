@@ -39,6 +39,10 @@ type FoldGesture = {
   // Set when the drag gives up (pointer strayed past the grace margin) — the release then
   // always settles back rather than considering a flip.
   canceled: boolean;
+  // Client coordinates the gesture grabbed at, for a forward drag's own outward-travel check
+  // (see FOLD_CANCEL_OUTWARD_MARGIN) — the raw pointer, not gesture.offset, which is tip-local
+  // and rotates with the fold as it's dragged.
+  grabAt: Vec;
   // The direction the tip lies in while the page is folded over, fixed when a back-drag's
   // approach hands the gesture on. The tip may run all the way back to the page corner along it
   // but no further: paper unfolds flat, it doesn't keep going and fold the other way.
@@ -78,6 +82,23 @@ const FOLD_REVEAL_END_PX = { x: 2 * PX_PER_CM, y: 1 * PX_PER_CM };
 // How far past the paper's reach (see the pin check in onFoldDrag) the pointer may stray while
 // the fold holds at its limit, before the drag lets go entirely.
 const FOLD_CANCEL_GRACE = 48;
+
+// How far a forward drag's pointer may travel outward — down and right, away from the page,
+// the opposite of the pull that folds it over — before the drag gives up. The pin-overshoot
+// grace above only catches a hand that has already dragged the fold most of the way back out to
+// its limit; a hand pulling the wrong way from the start runs the tip toward the near-zero
+// singularity in foldSizeFromTip long before the pin ever sees it, so this reads the pointer's
+// own travel from the grab instead of the fold's geometry. A plain fraction of the page diagonal
+// looked like the natural scale at first, but the resting dog-ear that this measures against is
+// a fixed size in cm (see FOLD_REVEAL_END, $fold-rest-x/-y in index.astro), not a share of the
+// page, so the singularity sits the same few pixels out from the grab on a phone sheet as on a
+// wide desktop one — a diagonal-scaled margin would let a big sheet wander much further into the
+// odd shapes than a small one before giving up. So this is a plain pixel count instead, tuned
+// against the actual --fold-x/-y readings a drag produces: 2px out is barely off the resting
+// size, 8px is already a third again as big, and past 12px the size rockets past 300px and then
+// flips negative. 10px sits ahead of that runaway growth with room for a hand that wavers a few
+// pixels on grab.
+const FOLD_CANCEL_OUTWARD_MARGIN = 10;
 
 // Outside a drag, a pointer within BACK_TEASE_RADIUS of the front page's top-left corner
 // rotates the hindmost page out from behind the stack — up to BACK_TEASE_PEEK degrees right at
@@ -559,6 +580,7 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
   };
   gesture.theta = Math.atan2(size.y, size.x);
   gesture.size = size;
+  gesture.grabAt = { x: at.clientX, y: at.clientY };
 };
 
 // T(θ), the fold's reflection transform, is self-inverse, and T(θ)·T(θ₀) works out to exactly
@@ -579,7 +601,8 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // dirty it again anyway.
   const contentRect = sheet.getBoundingClientRect();
   const backCut = currentBackFoldSize(sheet);
-  const { w, h, pin } = metricsOf(sheet);
+  const sheetMetrics = metricsOf(sheet);
+  const { w, h, pin } = sheetMetrics;
 
   // A gesture's first move (a back-drag arrives with the class already on, its setup done by
   // beginBack/promoteFold): the sheet's animations have to be dropped outright rather than
@@ -591,8 +614,39 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   if (!fold.classList.contains('paper-fold--active')) {
     fold.classList.add('paper-fold--active');
     unsettle(sheet.parentElement!);
+    // Cancelling the reveal/pulse animation below drops whatever size it was mid-playing, and
+    // nothing else here is guaranteed to write a fresh one this frame: a cancel further down
+    // (the outward check that follows, or the pin-overshoot one after it) can return before ever
+    // reaching this function's own --fold-x/-y write, on the very first move of a gesture that
+    // already crosses one of those margins. Freezing the size the grab captured first (gesture.
+    // size, read once in onFoldGrab) keeps the dog-ear at what it visibly was, rather than
+    // leaving the property unset and the flap sized calc(var(--fold-x)) of nothing.
+    sheet.style.setProperty('--fold-x', `${gesture.size.x}px`);
+    sheet.style.setProperty('--fold-y', `${gesture.size.y}px`);
     sheet.getAnimations().forEach((animation) => animation.cancel());
     holdUnsplayed(sheet);
+  }
+
+  // A forward drag whose pointer runs outward — down and right, away from the page, the
+  // opposite of the pull that folds it over — gives up before the geometry below even sees it.
+  // The pin-overshoot check further down only catches a hand that has already dragged the fold's
+  // tip most of the way back out to its limit; reading the raw pointer's own travel from the
+  // grab instead catches a hand heading the wrong way well before the fold gets there, while the
+  // margin keeps a hand that merely wavers a few pixels the wrong way on grab from tripping it.
+  // Sideways and inward travel are the ordinary gesture and don't count, only outward travel past
+  // the margin, so a pointer that strayed out and comes back inside it before crossing keeps its
+  // drag. Back-drags (gain > 1) run their pointer toward the bottom-right on purpose — that's
+  // the unfold, not a stray — so this only watches a forward one.
+  if (gesture.gain === 1) {
+    const pull = restSeed(sheetMetrics);
+    const pullLen = Math.hypot(pull.x, pull.y);
+    const outward = { x: -pull.x / pullLen, y: -pull.y / pullLen };
+    const travel = { x: at.clientX - gesture.grabAt.x, y: at.clientY - gesture.grabAt.y };
+    const outwardTravel = travel.x * outward.x + travel.y * outward.y;
+    if (outwardTravel > FOLD_CANCEL_OUTWARD_MARGIN) {
+      gesture.canceled = true;
+      return;
+    }
   }
 
   const { x: wPrev, y: hPrev } = gesture.size;
@@ -1526,7 +1580,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
     gesture = {
       pointerId: e.pointerId, offset: { x: 0, y: 0 }, theta: 0, size: { x: 0, y: 0 }, gain: 1, canceled: false,
-      unfoldFrom: null, approach: null, back: null, trail: [],
+      grabAt: { x: 0, y: 0 }, unfoldFrom: null, approach: null, back: null, trail: [],
     };
     onFoldGrab(sheet, gesture, e);
     try {
@@ -1661,6 +1715,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
     return {
       pointerId, offset: { x: 0, y: 0 }, theta: 0, size: { x: 0, y: 0 }, gain: 2, canceled: false,
+      grabAt: { x: at.clientX, y: at.clientY },
       unfoldFrom: null,
       approach: { seed, pull: seedLength * BACK_APPROACH_PULL, s: 0, t: { x: w, y: h } },
       back: { origin: { x: at.clientX, y: at.clientY }, dir, trail: [] },
@@ -1774,7 +1829,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     const diagonal = Math.hypot(box.width, box.height);
     gesture = {
       pointerId: -1, offset: { x: 0, y: 0 }, theta: 0, size: { x: 0, y: 0 }, gain: 1, canceled: false,
-      unfoldFrom: null, approach: null, back: null, trail: [],
+      grabAt: { x: 0, y: 0 }, unfoldFrom: null, approach: null, back: null, trail: [],
     };
     onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: time });
     swipe = restingSwipe(at, { x: -box.width / diagonal, y: -box.height / diagonal });
