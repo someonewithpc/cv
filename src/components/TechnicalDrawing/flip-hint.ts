@@ -49,6 +49,28 @@ function px(el: HTMLElement, value: string) {
   return width;
 }
 
+const restLengths = new WeakMap<HTMLElement, number[]>();
+
+/**
+ * The four resting intercepts in pixels, kept between layouts. Resolving one means a probe div
+ * in the stack, which is a write in the middle of the reads: the browser has to redo style and
+ * layout for the stack, with every `:has()` rule on the page back in play, before the probe's
+ * box can be read. Four of them cost about a sixth of a second on the frame a page lands on.
+ *
+ * None of the four moves while a page turns. They are written in cm and in em against a
+ * container width, so they move when the stack changes size or the face does, which is where
+ * the cache is dropped.
+ */
+function creaseLengths(stack: HTMLElement) {
+  const kept = restLengths.get(stack);
+  if (kept) return kept;
+  const lengths = lengthsOf(
+    stack, '--fold-rest-x', '--fold-rest-y', '--fold-back-rest-x', '--fold-back-rest-y',
+  ).map((value) => px(stack, value));
+  restLengths.set(stack, lengths);
+  return lengths;
+}
+
 const unit = (v: Point) => {
   const length = Math.hypot(v.x, v.y) || 1;
   return { x: v.x / length, y: v.y / length };
@@ -118,9 +140,7 @@ function layout(frame: HTMLElement) {
 
   const box = layer.getBoundingClientRect();
   const sheet = stack.getBoundingClientRect();
-  const [restX, restY, leanX, leanY] = lengthsOf(
-    stack, '--fold-rest-x', '--fold-rest-y', '--fold-back-rest-x', '--fold-back-rest-y',
-  ).map((value) => px(stack, value));
+  const [restX, restY, leanX, leanY] = creaseLengths(stack);
   const s = {
     left: sheet.left - box.left,
     top: sheet.top - box.top,
@@ -182,7 +202,11 @@ export function drawFlipHints(frame: HTMLElement) {
   frames.set(frame, schedule);
 
   const stack = frame.querySelector<HTMLElement>('article.technical-drawing-stack');
-  const sized = new ResizeObserver(schedule);
+  const remeasure = () => {
+    if (stack) restLengths.delete(stack);
+    schedule();
+  };
+  const sized = new ResizeObserver(remeasure);
   if (stack) sized.observe(stack);
   frame.querySelectorAll<HTMLElement>('.flip-hints .hint-words').forEach((words) => sized.observe(words));
   if (stack) {
@@ -194,7 +218,7 @@ export function drawFlipHints(frame: HTMLElement) {
       if (stack.hasAttribute('data-paper-settled')) schedule();
     }).observe(stack, { attributes: true, attributeFilter: ['data-paper-settled'] });
   }
-  document.fonts?.addEventListener('loadingdone', schedule);
+  document.fonts?.addEventListener('loadingdone', remeasure);
   markWhenSeen(frame);
 
   layout(frame);
