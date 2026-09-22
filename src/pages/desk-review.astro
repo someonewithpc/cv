@@ -242,8 +242,6 @@ const SHORTLIST = [
   },
 ] as const;
 
-const SHORT_FILES = SHORTLIST.map((tile) => tile.file);
-
 /* Round 5. The dark desk keeps the ash and only the polish is open, so these are the settings
    of it, measured the way the shortlist was: L* per pixel off the bare margin beside the
    sheets at 1440x900. Body is the median, top the 99th percentile, black the share of the
@@ -254,6 +252,7 @@ const POLISH = [
     gloss: '',
     levels: 'no floor, no gain',
     mean: '10.0',
+    sd: '3.11',
     body: '10.2',
     top: '16.0',
     black: '0.0',
@@ -265,6 +264,7 @@ const POLISH = [
     gloss: 'satin',
     levels: '239 / 112',
     mean: '7.9',
+    sd: '4.96',
     body: '7.2',
     top: '18.8',
     black: '8.6',
@@ -276,6 +276,7 @@ const POLISH = [
     gloss: 'polished',
     levels: '235 / 135',
     mean: '6.5',
+    sd: '5.24',
     body: '5.4',
     top: '19.3',
     black: '18.2',
@@ -287,6 +288,7 @@ const POLISH = [
     gloss: 'lacquer',
     levels: '231 / 166',
     mean: '5.5',
+    sd: '5.90',
     body: '3.6',
     top: '21.1',
     black: '33.3',
@@ -295,11 +297,43 @@ const POLISH = [
   },
 ] as const;
 
-const THEMES = [
-  { id: 'light', label: 'Light', try: ['ash-4186', 'cc0-oak-grey', 'oak-7760'], noVeilLink: true },
-  { id: 'arctic', label: 'Arctic', try: ['ash-4186', 'cc0-oak-grey', 'oak-7760-mid'], noVeilLink: true },
-  { id: 'dark', label: 'Dark', try: SHORT_FILES, noVeilLink: false },
-  { id: 'dark-forest', label: 'Dark forest', try: SHORT_FILES, noVeilLink: false },
+/* Decided, one link each. */
+const SETTLED = [
+  {
+    id: 'light',
+    label: 'Light',
+    file: 'ash-4186',
+    when: 'Round 3',
+    noVeilLink: true,
+    note: 'The ash as scanned, under a veil of the desk colour at 15 per cent.',
+  },
+  {
+    id: 'arctic',
+    label: 'Arctic',
+    file: 'oak-7760-mid',
+    when: 'Round 4',
+    note: 'The levelled oak with no veil over it, which is what took the red out.',
+  },
+  {
+    id: 'dark-forest',
+    label: 'Dark forest',
+    file: 'oak-7760-mid',
+    when: 'Round 5',
+    note: 'The same tile subtracted rather than blended. Good as round 4 paints it, so nothing this round goes near it.',
+  },
+] as const;
+
+/* Everything that was on the shortlist and lost, kept reachable for comparing against. */
+const ALSO = [
+  { id: 'light', label: 'Light', files: ['cc0-oak-grey', 'oak-7760'], noVeilLink: true },
+  { id: 'arctic', label: 'Arctic', files: ['ash-4186', 'cc0-oak-grey'], noVeilLink: true },
+  { id: 'dark', label: 'Dark', files: ['oak-7760-mid', 'cc0-oak-light', 'cc0-oak-grey'], noVeilLink: false },
+  {
+    id: 'dark-forest',
+    label: 'Dark forest',
+    files: ['ash-4186', 'cc0-oak-light', 'cc0-oak-grey'],
+    noVeilLink: false,
+  },
 ] as const;
 
 const deskUrl = (file: string, theme: string, veil: boolean) =>
@@ -358,6 +392,11 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
         margin: 1.75rem 0 0.25rem;
       }
 
+      h4 {
+        font-size: 0.9375rem;
+        margin: 1.25rem 0 0.25rem;
+      }
+
       p {
         margin: 0.25rem 0 0.75rem;
       }
@@ -386,6 +425,11 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
 
       .links li {
         white-space: nowrap;
+      }
+
+      .decided li {
+        white-space: normal;
+        margin-bottom: 0.25rem;
       }
 
       .scroll {
@@ -546,19 +590,41 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
       there if you want the desk quieter than the drawn boards rather than louder.
     </p>
 
-    <h2>Dark, blacker, the light grain as gloss</h2>
+    <h2>On the desk</h2>
     <p class="lede">
-      The dark desk keeps the ash. What is open is how far down its low end goes. Two layers
-      now sit between the tile and the veil. A flat grey under color-burn clips to black every
-      fibre more than a set distance below the tile's own mean, and a second flat grey under
+      Three of the four desks are decided and have one link each. The fourth, dark, is the only
+      thing still being picked, and what is left to pick there is the polish rather than the
+      tile. Everything that lost is still reachable further down.
+    </p>
+
+    <h3>Settled</h3>
+    <ul class="links decided">
+      {SETTLED.map((desk) => (
+        <li>
+          {desk.label}: <a href={deskUrl(desk.file, desk.id, true)}>{tileByFile[desk.file].name}</a>
+          {'noVeilLink' in desk ? <>{' '}<a href={deskUrl(desk.file, desk.id, false)}>(no veil)</a></> : null}.{' '}
+          <span class="note">{desk.when}. {desk.note}</span>
+        </li>
+      ))}
+    </ul>
+
+    <h3>Dark, the one still open</h3>
+    <p class="lede">
+      The dark desk keeps the ash. What is open is how far down its low end goes. Two layers now
+      sit between the tile and the veil. A flat grey under color-burn clips to black every fibre
+      more than a set distance below the tile's own mean, and a second flat grey under
       color-dodge multiplies whatever survived back up. Clip, then open up: the range widens
       downwards instead of sliding, so the body of the desk goes black while the bright fibres
       hold the lightness they had or pass it. A plain offset would have taken the highlights
       down with everything else.
     </p>
     <p class="lede">
-      The two numbers under each name are those greys, floor first. Both live in the painting,
-      so no tile file changed and the other three desks are byte for byte what they were.
+      Floor and gain are those two greys. Mean, swing and the rest are L* off the bare margin
+      beside the sheets at 1440x900, the same measurement the shortlist above carries. Body is
+      the median, top the 99th percentile, black the share of the margin under L* 1, and sheen
+      the share over L* 17, which is where round 4's desk stopped. Both layers live in the
+      painting, so no tile file changed and the three settled desks are byte for byte what they
+      were.
     </p>
     <div class="scroll">
       <table>
@@ -567,6 +633,7 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
             <th>Polish</th>
             <th>Floor / gain</th>
             <th class="num">Mean</th>
+            <th class="num">Swing</th>
             <th class="num">Body</th>
             <th class="num">Top</th>
             <th class="num">Black</th>
@@ -580,6 +647,7 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
               <td><a href={glossUrl(polish.gloss)}>{polish.name}</a></td>
               <td>{polish.levels}</td>
               <td class="num">{polish.mean}</td>
+              <td class="num">{polish.sd}</td>
               <td class="num">{polish.body}</td>
               <td class="num">{polish.top}</td>
               <td class="num">{polish.black}%</td>
@@ -591,31 +659,36 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
       </table>
     </div>
     <p class="lede">
-      Sheen is a small share of the desk by design. A highlight that takes 4 per cent of the
+      Sheen is a small share of the desk on purpose. A highlight that takes 4 per cent of the
       area and stands 14 L* over the body reads as light caught on something hard; the same
       lightness spread evenly reads as grey wood, which is what the drawn boards do. Chroma
-      splits with it. The dark half of the margin falls from C* 5.2 to between 0 and 2.5,
-      because there is no room for colour that near black, while the brightest twentieth stays
-      at 6.1, so the desk's brown now lives in the sheen and nowhere else.
-    </p>
-    <h3><a href={glossUrl('window')}>Window</a></h3>
-    <p class="lede">
-      Polished, plus a broad reflection: the gain climbs from grey 105 on the left of the desk
-      to 160 on the right instead of holding at 135, so the far side of the page catches more
-      light. It runs left to right and never up or down, which is the only reason it survives
-      the sheets. A gradient with any vertical run would be cut into steps by them, and every
-      strip of bare desk would show a different piece of it. This one shows the same sweep in
-      every strip. The right margin reads mean 8.3, body 7.2, top 23.4 and 12 per cent sheen;
-      the left reads 5.7, 5.0, 16.0 and 0.3 per cent. That is the same desk at both ends, lit
-      from one side.
+      splits with it. The dark quarter of the margin falls from C* 5.2 to between 0 and 2.5,
+      since there is no room for colour that near black, while the brightest twentieth holds at
+      6.1. The desk's brown now lives in the sheen and nowhere else. If you want the sheen to
+      read as a reflection of the room rather than of the wood, dropping the veil's chroma by
+      half takes that 6.1 to 3.0 and leaves every lightness where it is.
     </p>
 
-    <h2>On the desk</h2>
-    {THEMES.map((theme) => (
+    <h3>Also tried</h3>
+    <p class="lede">
+      <a href={glossUrl('window')}>Window</a> is polished with a broad reflection over it: the
+      gain climbs from grey 105 at the left of the desk to 160 at the right instead of holding
+      at 135. It runs across the desk and never up or down, which is the only reason it survives
+      the sheets lying over it, and it does look lit from one side. It is parked here because
+      the two margins stop matching. The right reads mean 8.3, top 23.4 and 12 per cent sheen,
+      the left 5.7, 16.0 and 0.3 per cent, so the left margin ends up at round 4's top end with
+      no sheen in it at all. On a phone, where the desk is two thin strips, it mostly reads as
+      darker.
+    </p>
+    <p class="lede">
+      The tiles that lost are below, painted the way their theme paints them. Dark and forest
+      show the other three off the shortlist, with no polish on them.
+    </p>
+    {ALSO.map((theme) => (
       <>
-        <h3>{theme.label}</h3>
+        <h4>{theme.label}</h4>
         <ul class="links">
-          {theme.try.map((file) => (
+          {theme.files.map((file) => (
             <li>
               <a href={deskUrl(file, theme.id, true)}>{tileByFile[file].name}</a>
               {theme.noVeilLink ? <> <a href={deskUrl(file, theme.id, false)}>(no veil)</a></> : null}
@@ -627,11 +700,14 @@ const glossUrl = (gloss: string) => `../?desk=ash-4186&theme=dark${gloss ? `&glo
 
     <h2>If none of them work</h2>
     <p>
-      Tone and grain are separate knobs now. The desk's lightness is one number in the painting,
-      so darker or lighter than the L* 10 the shortlist paints at is a one-line change and any
-      tile can follow it. How loud the grain is comes from the tile, and the shortlist spans 2.1
-      to 4.1 against the drawn boards' 2.0, so say louder or quieter and I will say which tile
-      that is.
+      The polish is a curve with two ends and both move. Floor decides how much of the desk goes
+      flat black, from a twelfth of it to a third across the three above, and gain decides how
+      far the fibres that survive are lifted, which is what sets the top end. Blacker with the
+      same sheen is a lower floor at the same gain; the same black with more glare is the gain
+      on its own. Either is one number in the painting, so say which way and I will send the
+      next one. The tile under it can still change too, and the shortlist above spans a swing of
+      2.1 to 4.1 against the drawn boards' 2.0, but the ash is the only one of the four that is
+      also on the light and arctic desks.
     </p>
   </body>
 </html>
