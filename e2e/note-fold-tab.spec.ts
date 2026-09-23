@@ -8,6 +8,12 @@ import { frontPageName } from './support/paperStack';
  */
 const TUCKED = { width: 800, height: 1000 };
 
+/**
+ * One case per stack: walking every page of all of them in one test took 53 s alone and ran
+ * past the 60 s budget under eight workers.
+ */
+const STACKS = 7;
+
 /** Buttons, links and fields. A scene's own surface is not one of these. */
 const CONTROLS = 'a[href], button, input, select, textarea, [role="button"], [draggable="true"]';
 
@@ -15,16 +21,15 @@ const CONTROLS = 'a[href], button, input, select, textarea, [role="button"], [dr
  * The tab lies on the artwork on purpose, so a demo's backdrop may run under it.
  * A control may not, and nothing may paint over the tab itself.
  */
-test('the tucked note tab covers no control, and nothing covers it', async ({ page }) => {
-  await page.setViewportSize(TUCKED);
-  await page.goto('/');
+for (let index = 0; index < STACKS; index += 1) {
+  test(`the tucked note tab covers no control on stack ${index}, and nothing covers it`, async ({ page }) => {
+    await page.setViewportSize(TUCKED);
+    await page.goto('/');
 
-  const stacks = page.locator('article.technical-drawing-stack');
-  const stackCount = await stacks.count();
-  expect(stackCount).toBeGreaterThan(0);
+    const stacks = page.locator('article.technical-drawing-stack');
+    expect(await stacks.count(), 'a stack was added or taken away: update STACKS').toBe(STACKS);
 
-  let pagesChecked = 0;
-  for (let index = 0; index < stackCount; index += 1) {
+    let pagesChecked = 0;
     const stack = stacks.nth(index);
     // Centred, not merely in view: the page's own desktop-hint footer is fixed to
     // the bottom of the viewport and would answer the hit tests below.
@@ -87,7 +92,7 @@ test('the tucked note tab covers no control, and nothing covers it', async ({ pa
       expect(measured.overlapping, `${measured.title}: the note tab lies on a control`).toEqual([]);
       expect(measured.covered, `${measured.title}: something paints over the note tab`).toBe(0);
     }
-  }
 
-  expect(pagesChecked, 'no page showed a tucked note tab to check').toBeGreaterThan(0);
-});
+    expect(pagesChecked, 'no page showed a tucked note tab to check').toBeGreaterThan(0);
+  });
+}
