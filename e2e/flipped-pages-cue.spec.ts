@@ -1,6 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test';
 
-import { frontPageName } from './support/paperStack';
+import { frontPageName, pressTurn } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -44,12 +44,6 @@ async function standing(stack: Locator) {
   });
 }
 
-const turn = async (stack: Locator, key: 'ArrowRight' | 'ArrowLeft') => {
-  await stack.focus();
-  await stack.page().keyboard.press(key);
-  // Long enough for the flip's own glide, and for the pile's 250ms ease, to finish.
-  await stack.page().waitForTimeout(2500);
-};
 
 test('marker editor: the pile behind the stack counts the pages turned', async ({ page }) => {
   const stack = page.locator('article.technical-drawing-stack').nth(1);
@@ -59,18 +53,18 @@ test('marker editor: the pile behind the stack counts the pages turned', async (
   // Nothing turned yet, so nothing stands behind the stack.
   expect(await pile(stack)).toEqual({ turned: '0', standing: 0, showing: 0 });
 
-  await turn(stack, 'ArrowRight');
+  await pressTurn(stack, 'ArrowRight');
   expect(await pile(stack)).toEqual({ turned: '1', standing: 1, showing: 1 });
 
-  await turn(stack, 'ArrowRight');
+  await pressTurn(stack, 'ArrowRight');
   expect(await pile(stack)).toEqual({ turned: '2', standing: 2, showing: 2 });
   expect(await frontPageName(stack)).toBe('Marker Editor');
 
   // The pile comes back down page by page, the same way it went up.
-  await turn(stack, 'ArrowLeft');
+  await pressTurn(stack, 'ArrowLeft');
   expect(await pile(stack)).toEqual({ turned: '1', standing: 1, showing: 1 });
 
-  await turn(stack, 'ArrowLeft');
+  await pressTurn(stack, 'ArrowLeft');
   expect(await pile(stack)).toEqual({ turned: '0', standing: 0, showing: 0 });
   expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
 });
@@ -80,7 +74,7 @@ test('marker editor: a turned page goes to the back of the pile, on an arc', asy
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
-  for (let i = 0; i < 3; i += 1) await turn(stack, 'ArrowRight');
+  for (let i = 0; i < 3; i += 1) await pressTurn(stack, 'ArrowRight');
   const sheets = await standing(stack);
   expect(sheets).toHaveLength(3);
 
@@ -97,7 +91,7 @@ test('marker editor: a turned page goes to the back of the pile, on an arc', asy
 
   // Coming back takes the page furthest out, not the one nearest the stack.
   const furthest = sheets[2].slot;
-  await turn(stack, 'ArrowLeft');
+  await pressTurn(stack, 'ArrowLeft');
   const promoted = await stack.evaluate(
     (el, slot) => (el.children[slot] as HTMLElement).style.getPropertyValue('--page-index').trim(),
     furthest,
@@ -258,7 +252,7 @@ test('logo demo: the strip is the turned page\'s paper, not the front page\'s', 
   // Nothing turned: no pile to paint, and no colour on the stack for one.
   expect(await strip(stack)).toMatchObject({ opacity: '0', stackPaper: '' });
 
-  await turn(stack, 'ArrowRight');
+  await pressTurn(stack, 'ArrowRight');
   const pile = await strip(stack);
   // The plain first page has gone round the back and a blueprint sheet is in front, so the two
   // papers differ and the strip has to pick one.
@@ -270,15 +264,15 @@ test('logo demo: the strip is the turned page\'s paper, not the front page\'s', 
   expect(pile.flap).toBe(pile.frontPaper);
 
   // A second turn hands the strip on to the page that has just gone round.
-  await turn(stack, 'ArrowRight');
+  await pressTurn(stack, 'ArrowRight');
   const deeper = await strip(stack);
   expect(deeper.pilePaper).not.toBe(pile.pilePaper);
   expect(deeper.background).toBe(deeper.pilePaper);
 
   // And back at the start there is no pile again: the strip is not drawn and the stack drops
   // the colour rather than leaving the last pile's paper behind.
-  await turn(stack, 'ArrowLeft');
-  await turn(stack, 'ArrowLeft');
+  await pressTurn(stack, 'ArrowLeft');
+  await pressTurn(stack, 'ArrowLeft');
   expect(await strip(stack)).toMatchObject({ opacity: '0', stackPaper: '' });
 });
 
@@ -557,7 +551,7 @@ for (const width of [390, 1440]) {
       for (const depth of [1, 3, 5]) {
         if (depth >= pages) break;
         while (turned < depth) {
-          await turn(stack, 'ArrowRight');
+          await pressTurn(stack, 'ArrowRight');
           turned += 1;
         }
         const seen = await foldAndPile(stack);
