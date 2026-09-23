@@ -32,14 +32,13 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
 
     <Folio number={3} label="Demos" />
     <section id="demos" class="full-width" aria-labelledby="demos-heading">
-      <SectionHeader
-        headingId="demos-heading"
-        titleJp="デモ"
-        title="Demos"
-        sheetCode="SH-DEMOS"
-      />
-
       <div class="cutting-mat">
+        <SectionHeader
+          headingId="demos-heading"
+          titleJp="デモ"
+          title="Demos"
+          sheetCode="SH-DEMOS"
+        />
         <Callout letter="A" title="Loading logo" titleJp="ローディングロゴ" scale="3:1" headingId="detail-a" cardSide="start">
           <TitleCard slot="card" title="Visrez Animated Loading Logo" medium="SVG, CSS animation" year="2023">
             The Illustrator export became one path and a cube, animated by hand. The blue
@@ -131,15 +130,15 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     margin-top: 4.5rem;
   }
 
-  /* On the desk the gap between the header sheet and the mat is the same as between any two
-     sheets, and the desk's row gap is what separates this section from the one above. */
+  /* On the desk the desk's row gap is what separates this section from the one above. */
   @media (width > 64rem) {
     row-gap: var(--desk-gap);
     margin-top: 0;
   }
 
-  > :global(header) {
-    grid-column: content;
+  /* The title is written on the mat, so it reads as the mat's own and not as a sheet of its own
+     above it. */
+  .cutting-mat > :global(header) {
     margin-bottom: 0;
   }
 
