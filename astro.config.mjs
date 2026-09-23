@@ -15,6 +15,9 @@ export default defineConfig({
   adapter: cloudflare({
     // astro-icon → @iconify/utils needs Node (tty, etc.) during prerender/dev
     prerenderEnvironment: 'node',
+    // No astro:assets anywhere, so the adapter's default binding would ship an
+    // unmetered /_image that only strangers can spend.
+    imageService: 'passthrough',
   }),
   compressHTML: true,
   build: {
