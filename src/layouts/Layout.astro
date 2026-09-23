@@ -108,7 +108,10 @@ oembedUrl.searchParams.set('format', 'json');
           // whole build under /<branch>/, and a stylesheet's relative url() would resolve
           // against /_astro/ instead.
           const here = location.pathname.endsWith('/') ? location.pathname : `${location.pathname}/`;
-          document.documentElement.style.setProperty('--theme-paper-tile', `url("${here}paper-${tile}.webp")`);
+          document.documentElement.style.setProperty(
+            '--theme-paper-tile',
+            `url("${here}paper-fibre-${tile}.webp")`,
+          );
         }
 
         const asked = params.get('grain');
