@@ -23,45 +23,22 @@ test('main page: the loading-logo SVG renders and its dash animation runs', asyn
   expect(animationName).not.toBe('none');
 });
 
-test('original-logo page: the unoptimized original SVG is shown', async ({ page }) => {
+// Every page of a stack shares one grid cell once its script runs, so a covered page's
+// drawing is laid out and visible without turning to it. Turning is checked in
+// paper-stack-fold.spec.ts, which swipes this stack through every page by name.
+test('every inner page carries its drawing', async ({ page }) => {
   const stack = visrezStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Original Logo');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('svg').first()).toBeVisible();
-});
+  const pageNamed = (name: string) => stack.locator(':scope > div').filter({
+    has: page.locator('h2.typewriter', { hasText: name }),
+  });
 
-test('cube page: the 3-face cube diagram is shown', async ({ page }) => {
-  const stack = visrezStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Cube :)');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('svg').first()).toBeVisible();
-});
-
-test('authored-path page: the hand-authored path diagram is shown', async ({ page }) => {
-  const stack = visrezStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Authored Path');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('svg.path-layer')).toBeVisible();
-});
-
-test('path-data page: the annotated SVG source listing is shown', async ({ page }) => {
-  const stack = visrezStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Path Data');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('pre.path-data-layer')).toBeVisible();
-  await expect(front.locator('pre.path-data-layer')).toContainText('<svg');
-});
-
-test('all-together page: the combined face diagram is shown', async ({ page }) => {
-  const stack = visrezStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Putting it all together');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('svg.face')).toBeVisible();
+  await expect(pageNamed('Original Logo').locator('svg').first()).toBeVisible();
+  await expect(pageNamed('Cube :)').locator('svg').first()).toBeVisible();
+  await expect(pageNamed('Authored Path').locator('svg.path-layer')).toBeVisible();
+  const listing = pageNamed('Path Data').locator('pre.path-data-layer');
+  await expect(listing).toBeVisible();
+  await expect(listing).toContainText('<svg');
+  await expect(pageNamed('Putting it all together').locator('svg.face')).toBeVisible();
 });
 
 test('cube page: its diagram animation starts when the page is turned to', async ({ page }) => {
