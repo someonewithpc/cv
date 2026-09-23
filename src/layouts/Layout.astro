@@ -247,14 +247,16 @@ main {
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
   --content: min(100% - var(--page-gap) * 2, var(--content-max));
 
-  position: relative;
-  display: grid;
-  grid-template-columns:
+  --page-columns:
     [full-width-start] var(--full-width)
     [breakout-start] var(--breakout)
     [content-start] var(--content) [content-end]
     var(--breakout) [breakout-end]
     var(--full-width) [full-width-end];
+
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--page-columns);
   /* Four rows, one per sheet, written out rather than left implicit: a folio is placed in
      the row of the sheet it numbers, and an absolutely positioned grid child can only name a
      line of the explicit grid. */
