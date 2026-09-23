@@ -499,11 +499,13 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
       // A folio stands in the desk margin, not laid down as a band. #open-source is not one
       // band of paper either: it lays down a sheet for its heading and one torn sheet of
       // ruled paper per group, which the tests below measure. The demos lay down no sheet:
-      // their title is written on the cutting mat.
+      // their title is written on the cutting mat. Nor does the name: its title block is the
+      // paper, and the header behind it is bare.
       ...[...main.children].filter((el) =>
         !el.classList.contains('full-width')
         && !el.classList.contains('folio-rail')
-        && el.id !== 'open-source'),
+        && el.id !== 'open-source'
+        && el.id !== 'profile'),
       ...main.querySelectorAll(':scope > .full-width > *:not(.cutting-mat)'),
     ];
     return bands.map((band) => {
@@ -525,7 +527,7 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
     });
   });
 
-  expect(sheets.length).toBeGreaterThanOrEqual(2);
+  expect(sheets.length).toBeGreaterThanOrEqual(1);
   const widest = Math.max(...sheets.map((sheet) => sheet.width));
   for (const sheet of sheets) {
     expect(Math.abs(sheet.width - widest), `${sheet.name} width`).toBeLessThanOrEqual(1);
