@@ -27,9 +27,9 @@ const shipped = Object.fromEntries(
 );
 ---
 
-<aside id="paper-tuner" hidden aria-label="Paper grain" data-shipped={JSON.stringify(shipped)}>
+<aside id="paper-tuner" hidden aria-label="Paper" data-shipped={JSON.stringify(shipped)}>
   <header>
-    <strong>Paper grain</strong>
+    <strong>Paper</strong>
     <button type="button" data-fold aria-expanded="true">Hide</button>
   </header>
   <div data-body>
@@ -51,6 +51,16 @@ const shipped = Object.fromEntries(
       <input type="number" data-number="sheet" min="0" max="1" step="0.01" />
     </label>
     <p class="was" data-was="sheet"></p>
+    <label class="row">
+      <span>Paper</span>
+      <input type="color" data-colour="paper" />
+      <button type="button" data-clear="paper">Back</button>
+    </label>
+    <label class="row">
+      <span>Blueprint paper</span>
+      <input type="color" data-colour="blueprint" />
+      <button type="button" data-clear="blueprint">Back</button>
+    </label>
     <nav data-jumps>
       <button type="button" data-jump="drawings">Go to the drawings</button>
       <button type="button" data-jump="open-source">Go to contributions</button>
@@ -104,17 +114,96 @@ const shipped = Object.fromEntries(
 
     const round = (n) => Math.round(n * 100) / 100;
 
-    /* The table the Copy button hands back: one row per theme, whether or not it was opened. */
+    /* The two papers. A plain drawing sheet paints --sheet-paper, which the stylesheet works
+       out per theme from the neutral ramp, and a blueprint page paints the same token set to
+       the blueprint colour. Neither is a number in ThemePicker's table, so the shipped value
+       is read off the page itself: a probe element inside the sheet, given the token as its
+       own background, resolves the whole var chain to an rgb() the picker can take. */
+    const PLAIN = 'article.technical-drawing-stack > * > section:not(.blueprint)';
+    const BLUE = 'article.technical-drawing-stack > * > section.blueprint';
+    const pickers = {
+      paper: panel.querySelector('[data-colour="paper"]'),
+      blueprint: panel.querySelector('[data-colour="blueprint"]'),
+    };
+    const sheet = document.createElement('style');
+    document.head.append(sheet);
+    const painted = {};
+
+    const paint2d = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    const bytes = (colour) => {
+      paint2d.clearRect(0, 0, 1, 1);
+      paint2d.fillStyle = colour;
+      paint2d.fillRect(0, 0, 1, 1);
+      return [...paint2d.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    };
+    const hex = (colour) =>
+      '#' + bytes(colour).map((v) => v.toString(16).padStart(2, '0')).join('');
+
+    /* The export says both, because the page is written in oklch and a picker speaks hex. */
+    const oklch = (colour) => {
+      const [r, g, b] = bytes(colour).map((v) => v / 255);
+      const lin = (v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      const [R, G, B] = [r, g, b].map(lin);
+      const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B);
+      const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B);
+      const t = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+      const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * t;
+      const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * t;
+      const Bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * t;
+      return `oklch(${L.toFixed(3)} ${Math.hypot(A, Bb).toFixed(3)} ${(((Math.atan2(Bb, A) * 180) / Math.PI + 360) % 360).toFixed(0)})`;
+    };
+
+    const probe = (selector) => {
+      const host = document.querySelector(selector);
+      if (!host) return '';
+      const mark = document.createElement('span');
+      mark.style.cssText = 'position:absolute;width:0;height:0;background-color:var(--sheet-paper)';
+      host.append(mark);
+      const value = getComputedStyle(mark).backgroundColor;
+      mark.remove();
+      return value;
+    };
+
+    /* Read with the overrides off, so what comes back is the theme's own paper. */
+    const readPainted = () => {
+      const held = sheet.textContent;
+      sheet.textContent = '';
+      const value = { paper: probe(PLAIN), blueprint: probe(BLUE) };
+      sheet.textContent = held;
+      return value.paper && value.blueprint ? value : null;
+    };
+
+    const dress = () => {
+      const edit = edits[theme()] ?? {};
+      const rules = [];
+      if (edit.paper) {
+        rules.push(`:root { --surface-page: ${edit.paper} !important; }`);
+        rules.push(`${PLAIN} { --sheet-paper: ${edit.paper} !important; }`);
+      }
+      if (edit.blueprint) rules.push(`:root { --theme-blueprint: ${edit.blueprint} !important; }`);
+      sheet.textContent = rules.join('\n');
+    };
+
+    /* The table the Copy button hands back: one row per theme, whether or not it was opened,
+       and a second block for the papers, with the oklch the stylesheet is written in. */
     const table = () => {
       const width = Math.max(...THEMES.map((id) => id.length));
       const rows = THEMES.map((id) => {
         const base = shipped[id] ?? { page: 0, sheet: 0 };
         const edit = edits[id] ?? {};
         const page = edit.page ?? base.page;
-        const sheet = edit.sheet ?? base.sheet;
-        return `${id.padEnd(width)}  ${page.toFixed(2)}  ${sheet.toFixed(2)}`;
+        const sheet2 = edit.sheet ?? base.sheet;
+        return `${id.padEnd(width)}  ${page.toFixed(2)}  ${sheet2.toFixed(2)}`;
       });
-      return [`${'theme'.padEnd(width)}  pages sheets`, ...rows].join('\n');
+      const paper = THEMES.filter((id) => edits[id]?.paper || edits[id]?.blueprint).map((id) => {
+        const say = (which) => {
+          const value = edits[id]?.[which];
+          return value ? `${value} ${oklch(value)}` : 'as it was';
+        };
+        return `${id.padEnd(width)}  paper ${say('paper')}  blueprint ${say('blueprint')}`;
+      });
+      const grain = [`${'theme'.padEnd(width)}  pages sheets`, ...rows];
+      return paper.length ? [...grain, '', ...paper].join('\n') : grain.join('\n');
     };
 
     const paint = () => {
@@ -129,6 +218,23 @@ const shipped = Object.fromEntries(
         const moved = edit[which] !== undefined && round(edit[which]) !== round(base[which]);
         wases[which].textContent = moved ? `${base[which].toFixed(2)} on the branch` : 'as the branch has it';
         wases[which].dataset.moved = moved ? 'yes' : 'no';
+      }
+      dress();
+      /* The theme's own paper is only readable while that theme is the live one, and the
+         picker's transition takes a moment to hand it over. */
+      if (!painted[id]) {
+        setTimeout(() => {
+          if (theme() !== id || painted[id]) return;
+          const read = readPainted();
+          if (!read) return;
+          painted[id] = read;
+          paint();
+        }, 200);
+      }
+      for (const which of ['paper', 'blueprint']) {
+        const shippedColour = painted[id]?.[which];
+        pickers[which].value = edit[which] ?? (shippedColour ? hex(shippedColour) : '#000000');
+        pickers[which].disabled = !painted[id];
       }
       for (const button of panel.querySelectorAll('[data-theme-button]')) {
         button.dataset.current = button.dataset.themeButton === id ? 'yes' : 'no';
@@ -147,6 +253,21 @@ const shipped = Object.fromEntries(
     for (const which of ['page', 'sheet']) {
       sliders[which].addEventListener('input', (event) => set(which, event.target.value));
       numbers[which].addEventListener('change', (event) => set(which, event.target.value));
+    }
+
+    for (const which of ['paper', 'blueprint']) {
+      pickers[which].addEventListener('input', (event) => {
+        const id = theme();
+        edits[id] = { ...(edits[id] ?? {}), [which]: event.target.value };
+        save();
+        paint();
+      });
+      panel.querySelector(`[data-clear="${which}"]`).addEventListener('click', () => {
+        const id = theme();
+        if (edits[id]) delete edits[id][which];
+        save();
+        paint();
+      });
     }
 
     for (const button of panel.querySelectorAll('[data-theme-button]')) {
@@ -281,6 +402,19 @@ const shipped = Object.fromEntries(
     &[data-current='yes'] {
       border-color: var(--accent);
       background: color-mix(in oklch, var(--surface-sunken), var(--accent) 22%);
+    }
+  }
+
+  input[type='color'] {
+    width: 100%;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 0.25rem;
+    background: var(--surface-sunken);
+
+    &:disabled {
+      opacity: 0.4;
     }
   }
 
