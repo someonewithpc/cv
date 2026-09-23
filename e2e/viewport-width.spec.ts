@@ -114,15 +114,6 @@ test('the foot of the page fits the frame', async ({ page }) => {
 });
 
 for (let index = 0; index < 6; index += 1) {
-  test(`stack ${index} fits the frame scrolled to`, async ({ page }) => {
-    await openAtDesk(page);
-    const stack = page.locator('article.technical-drawing-stack').nth(index);
-    await stack.scrollIntoViewIfNeeded();
-    await checkFrames(page, async () => {
-      await page.waitForTimeout(1200);
-    });
-  });
-
   test(`stack ${index} fits the frame mid-turn and once it has settled`, async ({ page }) => {
     await openAtDesk(page);
     const stack = page.locator('article.technical-drawing-stack').nth(index);
