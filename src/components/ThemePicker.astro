@@ -23,7 +23,8 @@ type ThemeSettings = {
   deskBase?: string;
   /**
    * The plain paper, which the drawing sheets and the contributions page both take. Hugo
-   * picked one per theme on the tuner; dark made no pick and keeps the ramp step below.
+   * picked one per theme on the tuner. A theme without one sets it to initial, so the
+   * var() fallbacks take the ramp step; left unset, it would inherit light's white from :root.
    */
   paper?: string;
   /**
@@ -161,8 +162,8 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-accent: ${settings.accent};
       --theme-blueprint: ${settings.blueprint};
       --theme-desk: ${settings.desk};
-      --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}${settings.paper ? `
-      --theme-paper: ${settings.paper};` : ''}
+      --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}
+      --theme-paper: ${settings.paper ?? 'initial'};
       --theme-paper-grain: ${settings.paperGrain};
       --theme-paper-sheet-grain: ${settings.paperSheetGrain};
       --theme-paper-blend: ${settings.paperBlend};
