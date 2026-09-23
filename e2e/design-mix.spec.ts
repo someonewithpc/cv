@@ -753,13 +753,16 @@ const readSheets = (page: import('@playwright/test').Page) =>
           left: box.left,
           width: box.width,
           pitch: px(style.getPropertyValue('--rule-pitch')),
-          // Paper tone, the two fibre edges, the ruling and the margin line.
+          // The ruling and the margin line.
           image: style.backgroundImage,
           layers: style.backgroundImage.split('linear-gradient(').length - 1,
           size: style.backgroundSize.split(', '),
           repeat: style.backgroundRepeat.split(', '),
           mask: style.maskImage,
           maskPosition: style.maskPosition,
+          maskRepeat: style.maskRepeat,
+          maskSize: style.maskSize.split(', '),
+          fringe: getComputedStyle(sheet, '::after').maskImage,
           rows: [...sheet.querySelectorAll('.row')].map((row) => row.getBoundingClientRect().height),
         };
       }),
@@ -775,15 +778,22 @@ test('each group is a sheet of ruled paper torn along the top and the bottom', a
   expect(sheets.map((sheet) => sheet.id)).toEqual(GROUPS.map(({ id }: { id: string }) => id));
 
   for (const sheet of sheets) {
-    // Fibre along both tears, the ruling, the margin line.
-    expect(sheet.layers, `${sheet.id} paper`).toBe(4);
+    // The ruling and the margin line.
+    expect(sheet.layers, `${sheet.id} paper`).toBe(2);
     // The ruling is one pitch-tall tile repeated down the whole sheet, so it runs on past
     // the writing and off both torn edges rather than stopping under the last row.
-    expect(sheet.size[2], `${sheet.id} ruling`).toBe(`100% ${sheet.pitch}px`);
-    expect(sheet.repeat[2], `${sheet.id} ruling repeats`).toBe('repeat');
-    // A jagged path along the top, a different one along the bottom, and straight sides.
+    expect(sheet.size[0], `${sheet.id} ruling`).toBe(`100% ${sheet.pitch}px`);
+    expect(sheet.repeat[0], `${sheet.id} ruling repeats`).toBe('repeat');
+    // A torn edge along the top, a different one along the bottom, and straight sides. Each
+    // edge is a tile laid side by side at its own size rather than one path stretched across
+    // the sheet, so the tear is as fine on a phone as on a wide screen.
     expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
     expect(sheet.mask.split('url(').length - 1, `${sheet.id} two tears`).toBe(2);
+    expect(sheet.maskRepeat, `${sheet.id} tear tiles`).toBe('repeat-x, no-repeat, repeat-x');
+    expect(sheet.maskSize[0], `${sheet.id} tile`).toBe(sheet.maskSize[2]);
+    expect(sheet.maskSize[0], `${sheet.id} tile`).not.toMatch(/%/);
+    // A thin pale fringe runs along both tears, where the fibres pulled out.
+    expect(sheet.fringe.split('url(').length - 1, `${sheet.id} fringe`).toBe(2);
     // The sheets are the width of the band, laid one under the other.
     expect(Math.abs(sheet.width - intro.width), `${sheet.id} width`).toBeLessThanOrEqual(1);
     expect(Math.abs(sheet.left - intro.left), `${sheet.id} edge`).toBeLessThanOrEqual(1);
@@ -828,7 +838,7 @@ test('the ruled sheets fit a phone without scrolling sideways', async ({ page })
   const { sheets } = await readSheets(page);
   expect(sheets).toHaveLength(GROUPS.length);
   for (const sheet of sheets) {
-    expect(sheet.layers, `${sheet.id} paper`).toBe(4);
+    expect(sheet.layers, `${sheet.id} paper`).toBe(2);
     expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
     // Wider ruling for a thumb.
     expect(sheet.pitch, `${sheet.id} pitch`).toBeGreaterThan(32);
