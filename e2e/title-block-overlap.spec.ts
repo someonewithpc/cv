@@ -49,8 +49,8 @@ test('the space builder app ends above the title block', async ({ page }) => {
 });
 
 /**
- * Every page of every stack. Once a stack's script has run they all share one grid cell, so
- * each one's block is live and can be read without turning to it.
+ * Every page of every stack. A block's paper is a computed colour, the same whether its stack
+ * has been scrolled to or not, so all of them are read in one pass without scrolling.
  */
 for (const [width, height] of [[VIEWPORT.width, VIEWPORT.height], [1440, 900], [390, 844]]) {
   test(`every title block paints opaque paper at ${width}px`, async ({ page }) => {
@@ -58,34 +58,28 @@ for (const [width, height] of [[VIEWPORT.width, VIEWPORT.height], [1440, 900], [
     await page.goto('/');
 
     const stacks = page.locator('article.technical-drawing-stack');
-    const count = await stacks.count();
-    expect(count).toBeGreaterThan(0);
+    expect(await stacks.count()).toBeGreaterThan(0);
 
-    const seethrough: string[] = [];
-    for (let index = 0; index < count; index += 1) {
-      const stack = await settle(page, `article.technical-drawing-stack >> nth=${index}`);
+    const seethrough = await stacks.evaluateAll((all) => all.flatMap((el) => {
+      /** The alpha of a computed colour, whichever space the browser serialised it in. */
+      const alpha = (colour: string) => {
+        if (colour === 'transparent') return 0;
+        const slashed = colour.match(/\/\s*([\d.]+)(%?)\s*\)\s*$/);
+        if (slashed) return Number(slashed[1]) / (slashed[2] ? 100 : 1);
+        const legacy = colour.match(/^rgba?\(([^)]*)\)$/);
+        if (!legacy) return 1;
+        const parts = legacy[1].split(/[\s,]+/).filter(Boolean);
+        return parts.length > 3 ? Number(parts[3]) : 1;
+      };
 
-      seethrough.push(...await stack.evaluate((el) => {
-        /** The alpha of a computed colour, whichever space the browser serialised it in. */
-        const alpha = (colour: string) => {
-          if (colour === 'transparent') return 0;
-          const slashed = colour.match(/\/\s*([\d.]+)(%?)\s*\)\s*$/);
-          if (slashed) return Number(slashed[1]) / (slashed[2] ? 100 : 1);
-          const legacy = colour.match(/^rgba?\(([^)]*)\)$/);
-          if (!legacy) return 1;
-          const parts = legacy[1].split(/[\s,]+/).filter(Boolean);
-          return parts.length > 3 ? Number(parts[3]) : 1;
-        };
-
-        return [...el.querySelectorAll('section')].flatMap((section) => {
-          const block = section.querySelector<HTMLElement>(':scope > table');
-          if (!block) return [];
-          const paper = getComputedStyle(block).backgroundColor;
-          if (alpha(paper) >= 1) return [];
-          return [`${section.querySelector('h2')?.textContent?.trim() ?? '?'}: ${paper}`];
-        });
-      }));
-    }
+      return [...el.querySelectorAll('section')].flatMap((section) => {
+        const block = section.querySelector<HTMLElement>(':scope > table');
+        if (!block) return [];
+        const paper = getComputedStyle(block).backgroundColor;
+        if (alpha(paper) >= 1) return [];
+        return [`${section.querySelector('h2')?.textContent?.trim() ?? '?'}: ${paper}`];
+      });
+    }));
 
     expect(seethrough).toEqual([]);
   });
