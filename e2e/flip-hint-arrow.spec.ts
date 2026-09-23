@@ -535,8 +535,13 @@ test('both hints sit in the gap beside the stack at every width', async ({ page 
 // Both hints are written on the page, not on the sheet, so it is the page's own colour their
 // ink has to stand off, in every theme. The arrow's tail also crosses the fanned pages behind
 // the sheet on its way in, which is what the pass in the page colour under its stroke is for.
+// What sits behind the hint follows the sheet, and two pairs of windows draw nearly the same one:
+// 360 and 390 a portrait sheet 335 and 363px wide, 1024 and 1440 the capped landscape sheet at
+// 944 and 960px. One of each pair is enough here.
+const contrastSizes = sizes.filter(({ width }) => [390, 768, 1440].includes(width));
+
 test('the hint reads against the page in every theme and at every width', async ({ page }) => {
-  // Four themes by four widths, each a full-page screenshot read pixel by pixel
+  // Four themes by three widths, each a full-page screenshot read pixel by pixel
   test.slow();
   await page.goto('/');
 
@@ -545,7 +550,7 @@ test('the hint reads against the page in every theme and at every width', async 
     await page.reload();
     await page.waitForTimeout(1200);
 
-    for (const size of sizes) {
+    for (const size of contrastSizes) {
       await page.setViewportSize(size);
       await page.evaluate(() => {
         const frame = document.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
