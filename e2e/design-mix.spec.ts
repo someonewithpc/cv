@@ -855,8 +855,26 @@ test('the ruled sheets fit a phone without scrolling sideways', async ({ page })
   expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
 });
 
-/** Every baseline written on a sheet, against the rule it is meant to sit on. */
-const readBaselines = (page: import('@playwright/test').Page) =>
+type WrittenLine = {
+  sheet: string;
+  kind: string;
+  text: string;
+  size: number;
+  /** The line's baseline, from the top of its sheet. */
+  baseline: number;
+  /** How far the baseline is from the top of the nearest rule the sheet's ruling draws. */
+  offset: number;
+};
+
+/**
+ * Every line of writing on every sheet, wrapped lines included, against the ruling.
+ *
+ * A text node's line boxes come from a Range, one rectangle per line it covers. The top of each
+ * is the face's ascent above its baseline; that ascent is measured once per node, by setting a
+ * zero-height mark down after the node and reading off where its own baseline puts it, so
+ * every face and size is measured with its own number rather than one that suits the rows.
+ */
+const readWrittenLines = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
     const px = (value: string, el: Element) => {
       const probe = document.createElement('div');
@@ -866,41 +884,65 @@ const readBaselines = (page: import('@playwright/test').Page) =>
       probe.remove();
       return width;
     };
+    const kinds: [string, string][] = [
+      ['group', 'h3'],
+      ['head', '.lines > header'],
+      ['repo', 'cite'],
+      ['title', '.title'],
+      ['note', '.body'],
+    ];
 
-    const offsets: { kind: string; size: number; offset: number }[] = [];
-
+    // One mark per face and size: setting one down makes the page lay itself out again.
+    const ascents = new Map<string, number>();
+    const lines: WrittenLine[] = [];
     for (const sheet of document.querySelectorAll<HTMLElement>('#open-source section[data-group]')) {
       const style = getComputedStyle(sheet);
+      const box = sheet.getBoundingClientRect();
       const pitch = px(style.getPropertyValue('--rule-pitch'), sheet);
-      const shift = px(style.getPropertyValue('--rule-shift'), sheet);
-      const paperTop = px(style.getPropertyValue('--paper-top'), sheet);
-      // The ruling is laid out from the padding box, which is where the writing starts.
-      const top = sheet.getBoundingClientRect().top + parseFloat(style.borderTopWidth) + window.scrollY;
+      // The ruling's tile starts here and draws its rule in the tile's last pixel.
+      const origin = parseFloat(style.borderTopWidth)
+        + px(style.getPropertyValue('--paper-top'), sheet)
+        + px(style.getPropertyValue('--rule-shift'), sheet);
 
-      const cells: [string, string][] = [
-        ['head', '.lines > header > span'],
-        ['group', 'h3 > span'],
-        ['repo', '.row cite'],
-        ['title', '.row .title .title-text'],
-      ];
+      const walker = document.createTreeWalker(sheet, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+        const parent = node.parentElement!;
+        if (!node.data.trim() || parent.closest('.sr-only, details:not([open]) > .body')) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0);
+        if (rects.length === 0) continue;
 
-      for (const [kind, selector] of cells) {
-        for (const cell of sheet.querySelectorAll(selector)) {
-          // A zero-height inline-block aligned to the baseline puts its own bottom on it.
-          const marker = document.createElement('span');
-          marker.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
-          cell.append(marker);
-          const baseline = marker.getBoundingClientRect().bottom + window.scrollY;
-          marker.remove();
+        const font = getComputedStyle(parent);
+        const face = `${font.fontStyle} ${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
+        if (!ascents.has(face)) {
+          const mark = document.createElement('span');
+          mark.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+          node.after(mark);
+          ascents.set(face, mark.getBoundingClientRect().bottom - rects[rects.length - 1].top);
+          mark.remove();
+        }
+        const ascent = ascents.get(face)!;
 
-          const n = Math.round((baseline - top - paperTop - shift) / pitch);
-          const rule = top + paperTop + shift + n * pitch;
-          offsets.push({ kind, size: parseFloat(getComputedStyle(cell).fontSize), offset: baseline - rule });
+        const kind = kinds.find(([, selector]) => parent.closest(selector))?.[0] ?? parent.tagName;
+        const seen = new Set<number>();
+        for (const rect of rects) {
+          const baseline = rect.top + ascent - box.top;
+          if (seen.has(Math.round(baseline))) continue;
+          seen.add(Math.round(baseline));
+          const rule = origin - 1 + Math.round((baseline - origin + 1) / pitch) * pitch;
+          lines.push({
+            sheet: sheet.dataset.group!,
+            kind,
+            text: node.data.trim().slice(0, 32),
+            size: parseFloat(font.fontSize),
+            baseline,
+            offset: baseline - rule,
+          });
         }
       }
     }
-
-    return offsets;
+    return lines;
   });
 
 const blockWebfonts = (page: import('@playwright/test').Page) =>
@@ -912,23 +954,138 @@ const blockWebfonts = (page: import('@playwright/test').Page) =>
     return route.continue();
   });
 
-for (const fonts of ['loaded', 'blocked'] as const) {
-  test(`every line on a ruled sheet sits on a rule with the webfonts ${fonts}`, async ({ page }) => {
-    if (fonts === 'blocked') await blockWebfonts(page);
-    await page.setViewportSize({ width: 1440, height: 900 });
+const expectOnTheRules = (lines: WrittenLine[]) => {
+  for (const { sheet, kind, text, size, offset } of lines) {
+    expect(Math.abs(offset), `${sheet} ${kind} "${text}" at ${size}px is ${offset.toFixed(2)}px off its rule`)
+      .toBeLessThanOrEqual(1);
+  }
+};
+
+// The layout changes at each of these: three columns, two, the marks down the margin, a
+// narrower sheet with a wider pitch. A row that grows by a pixel anywhere pushes every line
+// under it off the ruling, so each width is walked to the last line of the last sheet.
+for (const width of [1440, 1280, 1024, 900, 768, 640, 560, 480, 430, 390, 360, 320]) {
+  test(`every line on a ruled sheet sits on a rule at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+
+    const lines = await readWrittenLines(page);
+    const rows = await page.locator('#open-source .row').count();
+    // Every row has a repository and a title, and some of them run onto a second line.
+    expect(lines.length).toBeGreaterThan(rows * 2);
+    expectOnTheRules(lines);
+  });
+}
+
+for (const width of [1440, 390]) {
+  test(`every line sits on a rule with the webfonts blocked at ${width}px`, async ({ page }) => {
+    await blockWebfonts(page);
+    await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await page.waitForTimeout(500);
 
-    const offsets = await readBaselines(page);
-    // Four sizes and three faces are written on these sheets; a drop measured against one of
-    // them is right for that one and wrong for the rest, which is what this catches.
-    expect(offsets.length).toBeGreaterThan(100);
-    expect(new Set(offsets.map(({ kind }) => kind)).size).toBe(4);
+    const lines = await readWrittenLines(page);
+    expect(new Set(lines.map(({ kind }) => kind))).toEqual(
+      new Set(width > 480 ? ['group', 'head', 'repo', 'title'] : ['group', 'repo', 'title']),
+    );
+    expectOnTheRules(lines);
+  });
+}
 
-    for (const { kind, size, offset } of offsets) {
-      expect(Math.abs(offset), `${kind} at ${size}px is ${offset}px off its rule`).toBeLessThanOrEqual(1);
+test('an opened row writes its note on the rules and keeps the rows under it there', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.evaluate(() => {
+    for (const details of document.querySelectorAll<HTMLDetailsElement>('#open-source .row details')) {
+      details.open = true;
     }
   });
+
+  const lines = await readWrittenLines(page);
+  expect(lines.filter(({ kind }) => kind === 'note').length).toBeGreaterThan(20);
+  expectOnTheRules(lines);
+});
+
+/**
+ * The rules the page really paints, found in a screenshot of the strip of paper left of the
+ * margin line where nothing is written, against the baselines of the writing. The tests above
+ * trust the ruling's own numbers; this one looks at the pixels.
+ */
+for (const theme of ['light', 'dark-forest'] as const) {
+  for (const width of [1440, 390]) {
+    test(`the painted rules run under the writing in ${theme} at ${width}px`, async ({ page }) => {
+      await withTheme(page, theme);
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+
+      const sheet = page.locator('#open-source section[data-group="merged"]');
+      const lines = (await readWrittenLines(page)).filter((line) => line.sheet === 'merged');
+      const strip = await sheet.evaluate((el) => {
+        const style = getComputedStyle(el);
+        const probe = document.createElement('div');
+        probe.style.width = style.getPropertyValue('--margin-x');
+        el.append(probe);
+        const margin = probe.getBoundingClientRect().width;
+        probe.style.width = style.getPropertyValue('--rule-pitch');
+        const pitch = probe.getBoundingClientRect().width;
+        probe.remove();
+        return { from: 4, to: Math.floor(margin) - 6, pitch };
+      });
+      // A clip of the full page in document coordinates; an element screenshot of a sheet this
+      // tall lands a few pixels off its box.
+      const clip = await sheet.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        return { x: box.left + scrollX, y: box.top + scrollY, width: box.width, height: box.height };
+      });
+      const shot = await page.screenshot({ fullPage: true, clip, animations: 'disabled' });
+
+      // How far each row of pixels in the strip is from the paper around it.
+      const profile: number[] = await page.evaluate(async ({ png, from, to }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${png}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext('2d')!;
+        context.drawImage(image, 0, 0);
+        const data = context.getImageData(from, 0, to - from, image.height).data;
+        const w = to - from;
+        const rows = Array.from({ length: image.height }, (_, y) => {
+          let sum = 0;
+          for (let i = 0; i < w; i++) sum += data[(y * w + i) * 4] + data[(y * w + i) * 4 + 1] + data[(y * w + i) * 4 + 2];
+          return sum / w / 3;
+        });
+        return rows.map((value, y) => {
+          const around = rows.slice(Math.max(0, y - 8), y + 9).sort((a, b) => a - b);
+          return Math.abs(value - around[Math.floor(around.length / 2)]);
+        });
+      }, { png: shot.toString('base64'), from: strip.from, to: strip.to });
+
+      // The painted rule nearest each baseline: the row that stands out most within a few
+      // pixels of it. It must be the row right under the writing, and it must stand out.
+      const noise = [...profile].sort((a, b) => a - b)[Math.floor(profile.length / 2)];
+      const rules: number[] = [];
+      for (const { kind, text, baseline } of lines) {
+        const near = Math.round(baseline);
+        let best = near;
+        for (let y = near - 4; y <= near + 4; y++) if (profile[y] > profile[best]) best = y;
+        expect(profile[best], `no rule painted near ${kind} "${text}"`).toBeGreaterThan(noise * 3 + 2);
+        expect(Math.abs(best - baseline), `${kind} "${text}" is ${(best - baseline).toFixed(2)}px from the painted rule`)
+          .toBeLessThanOrEqual(1);
+        rules.push(best);
+      }
+
+      // The rules under the writing are a pitch apart, the same pitch the writing is spaced at.
+      const painted = [...new Set(rules)].sort((a, b) => a - b);
+      for (let i = 1; i < painted.length; i++) {
+        const gap = painted[i] - painted[i - 1];
+        expect(Math.abs(gap - Math.round(gap / strip.pitch) * strip.pitch), `rule gap of ${gap}px`).toBeLessThanOrEqual(1);
+      }
+    });
+  }
 }
 
 /**
