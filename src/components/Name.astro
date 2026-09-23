@@ -59,16 +59,12 @@ header {
     $accent-outset: ($accent-width - $frame-width) * 0.5;
 
     position: relative;
-    /* No padding under the block: the player below the checkbox is laid out whether it is
-       asked for or not, so that the name does not jump when it is, and its row is the
-       block's bottom field. Padding on top of it left 86px of empty paper against 40px
-       above the sheet code, and the writing sat in the top 72% of the block. */
-    padding: 2.5rem 1.5rem 0;
+    padding: 1.5rem;
     max-width: 42rem;
     width: min(100%, 42rem);
 
     @media (max-width: 52rem) {
-      padding: 1.75rem 1rem 0;
+      padding: 1rem;
     }
 
     display: inline-flex;
@@ -78,7 +74,6 @@ header {
     text-align: center;
 
     border-radius: $radius;
-    background: color-mix(in oklch, var(--surface-raised), transparent 35%);
 
     /* Frame + corner accents share one rounded path; accent is wider and
        outset so its stroke stays centered on the frame. */
