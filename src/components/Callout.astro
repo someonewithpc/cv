@@ -54,9 +54,10 @@ const hasCard = Astro.slots.has('card');
 .callout {
   --callout-line: color-mix(in oklch, var(--ink), transparent 30%);
   --callout-pad: 1.5rem;
-  /* Above and below, the clearance also has to clear a line of text the view writes outside
-     its own box, the way a drawing stack writes its peel hint just under the sheet. */
-  --callout-room: calc(var(--callout-pad) + 1.5rem);
+  /* Below, the view writes a line outside its own box, the way a drawing stack writes its peel
+     hint just under the sheet. That line is part of what the boundary goes round, so the
+     clearance under it is the same as on the other three sides. */
+  --callout-hint: 1.5rem;
   --callout-lead: 1.75rem;
   /* The label's box; the bubble sits at its bottom, so the leader below it has a known length. */
   --callout-label: 3.75rem;
@@ -67,7 +68,7 @@ const hasCard = Astro.slots.has('card');
   /* The boundary stands the same clearance off the view on all four sides, but the two sides
      are drawn outside the box rather than padded in, so the view keeps the full width of the
      column it was given. */
-  padding: calc(var(--callout-label) + var(--callout-lead) + var(--callout-room)) 0 var(--callout-room);
+  padding: calc(var(--callout-label) + var(--callout-lead) + var(--callout-pad)) 0 calc(var(--callout-hint) + var(--callout-pad));
 
   /* The chain-line boundary of the view: long dash, gap, short dash, gap. */
   &::before {
