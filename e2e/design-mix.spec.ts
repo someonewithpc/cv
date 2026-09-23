@@ -231,7 +231,7 @@ for (const width of [390, 1024, 1440]) {
 }
 
 /** One lettered detail per demo, in order. */
-const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 test('the cutting mat lies under every detail and leaves the desk showing at 1440px', async ({ page }) => {
   await withTheme(page, 'light');
