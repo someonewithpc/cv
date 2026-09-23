@@ -21,10 +21,11 @@ type ThemeSettings = {
    * desk its hue and chroma back while the subtraction holds the grain at full size.
    */
   deskBase?: string;
-  /** How strongly the paper's fibre tile shows on a sheet (see paper-grain in _colors.scss).
-      Dark paper needs less of it: soft-light lightens as much as it darkens, and on a dark
-      sheet the lightened fibre reads faster than on a light one. */
-  /** How strongly the paper's fibre tile shows on a sheet (see paper-grain in _colors.scss). */
+  /**
+   * The plain paper, which the drawing sheets and the contributions page both take. Hugo
+   * picked one per theme on the tuner; dark made no pick and keeps the ramp step below.
+   */
+  paper?: string;
   /**
    * How strongly the paper's fibre tile shows on a drawing page, tuned so the painted sheet
    * has a spread of about two levels. A paler sheet takes a fraction of this; see paper-grain
@@ -54,11 +55,12 @@ const THEMES = {
     canvas: 'oklch(0.97 0.011 85)',
     ink: 'oklch(0.24 0.025 260)',
     accent: 'oklch(0.7 0.13 65)',
-    blueprint: 'oklch(0.52 0.14 255)',
+    blueprint: 'oklch(0.622 0.121 254)',
     desk: 'oklch(0.76 0.05 68)',
     deskGrain: '0.85',
     /* The same oak as the other three, raised to the ash boards' tone and limed. */
     deskWood: 'oak-7760-limed',
+    paper: 'oklch(1 0 90)',
     paperGrain: '0.45',
     paperSheetGrain: '0.48',
     paperBlend: 'multiply',
@@ -97,11 +99,12 @@ const THEMES = {
     canvas: 'oklch(0.96 0.016 230)',
     ink: 'oklch(0.3 0.04 250)',
     accent: 'oklch(0.52 0.1 210)',
-    blueprint: 'oklch(0.58 0.12 220)',
+    blueprint: 'oklch(0.606 0.110 222)',
     desk: 'oklch(0.81 0.013 232)',
     deskGrain: '0.85',
     /* The same oak at its own lightness, which under a pale desk reads as bleached. */
     deskWood: 'oak-7760',
+    paper: 'oklch(0.955 0.015 235)',
     paperGrain: '0.40',
     paperSheetGrain: '0.52',
     paperBlend: 'multiply',
@@ -118,12 +121,13 @@ const THEMES = {
     canvas: 'oklch(0.17 0.035 145)',
     ink: 'oklch(0.9 0.035 110)',
     accent: 'oklch(0.72 0.1 95)',
-    blueprint: 'oklch(0.36 0.08 165)',
+    blueprint: 'oklch(0.370 0.089 156)',
     desk: 'oklch(0.225 0.03 75)',
     deskGrain: '0',
     /* The same oak smoked in the file: darker, and drained of red before the veil goes on. */
     deskWood: 'oak-7760-smoked',
     deskBase: 'rgb(76 68 62)',
+    paper: 'oklch(0.323 0.044 139)',
     paperGrain: '0.27',
     paperSheetGrain: '0.40',
     paperBlend: 'screen',
@@ -157,7 +161,8 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-accent: ${settings.accent};
       --theme-blueprint: ${settings.blueprint};
       --theme-desk: ${settings.desk};
-      --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}
+      --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}${settings.paper ? `
+      --theme-paper: ${settings.paper};` : ''}
       --theme-paper-grain: ${settings.paperGrain};
       --theme-paper-sheet-grain: ${settings.paperSheetGrain};
       --theme-paper-blend: ${settings.paperBlend};
@@ -320,15 +325,13 @@ aside {
   --theme-canvas: oklch(0.97 0.011 85);
   --theme-ink: oklch(0.24 0.025 260);
   --theme-accent: oklch(0.7 0.13 65);
-  --theme-blueprint: oklch(0.52 0.14 255);
+  --theme-blueprint: oklch(0.622 0.121 254);
   --theme-desk: oklch(0.76 0.05 68);
   --theme-desk-grain: 0.85;
   --theme-desk-tile: url("/desk/oak-7760-limed.webp");
-  --theme-paper-grain: 0.5;
-  --theme-paper-grain: 0.7;
-  --theme-paper-grain: 0.35;
-  --theme-paper-grain: 0.22;
-  --theme-paper-sheet-grain: 0.44;
+  --theme-paper: oklch(1 0 90);
+  --theme-paper-grain: 0.45;
+  --theme-paper-sheet-grain: 0.48;
   --theme-paper-blend: multiply;
   --theme-paper-invert: 0;
   --theme-mode: light;

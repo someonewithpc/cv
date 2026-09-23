@@ -248,8 +248,10 @@ section {
      It cannot simply be the canvas. The sheet carries no outer edge of its own, and the
      cutting mat it lies on is that same canvas lifted toward vellum, less than a level above
      it, so a sheet painted with the canvas would have nothing to read against. One step
-     instead of two puts the light sheet at L* 89, paper under the mat's vellum. */
-  --sheet-paper: light-dark(var(--surface-raised), var(--surface-sunken));
+     instead of two puts the light sheet at L* 89, paper under the mat's vellum.
+     A theme that names its own --theme-paper skips all of that and takes the colour
+     Hugo picked on the tuner instead. */
+  --sheet-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface-sunken)));
   background: var(--sheet-paper);
 
   /* The sheet is paper, so it carries the fibre tile. On the page face rather than on the
