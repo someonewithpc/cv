@@ -27,7 +27,7 @@
 }
 
 @mixin semantic-tokens {
-  --surface-page: var(--neutral-1);
+  --surface-page: var(--theme-paper, var(--neutral-1));
   --surface-raised: var(--neutral-2);
   --surface-sunken: var(--neutral-3);
 
