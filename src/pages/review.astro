@@ -8,12 +8,26 @@
  * on different themes, which is four ladders rather than one.
  */
 
-const THEMES = [
-  { id: 'light', name: 'Light', page: '0.22', sheet: '0.36', blend: 'multiply' },
-  { id: 'arctic', name: 'Arctic', page: '0.22', sheet: '0.36', blend: 'multiply' },
-  { id: 'dark', name: 'Dark', page: '0.26', sheet: '0.38', blend: 'screen on an inverted tile' },
-  { id: 'dark-forest', name: 'Forest', page: '0.24', sheet: '0.35', blend: 'screen on an inverted tile' },
-] as const;
+import picker from '@/components/ThemePicker.astro?raw';
+
+/* The numbers come out of ThemePicker at build time. This page used to keep its own copy
+ * and they drifted apart the first time the sliders changed anything. */
+const NAMES = { light: 'Light', arctic: 'Arctic', dark: 'Dark', 'dark-forest': 'Forest' } as const;
+
+const THEMES = (Object.keys(NAMES) as (keyof typeof NAMES)[]).map((id) => {
+  const block = picker.match(new RegExp(`'?${id}'?: \\{[^}]*?paperBlend: '(\\w+)'`, 's'));
+  const grain = picker.match(new RegExp(`'?${id}'?: \\{[^}]*?paperGrain: '([\\d.]+)'[^}]*?paperSheetGrain: '([\\d.]+)'`, 's'));
+  const paper = picker.match(new RegExp(`'?${id}'?: \\{[^}]*?paper: '([^']+)'`, 's'));
+  if (!block || !grain) throw new Error(`review: no paper settings for ${id} in ThemePicker.astro`);
+  return {
+    id,
+    name: NAMES[id],
+    page: grain[1],
+    sheet: grain[2],
+    paper: paper?.[1] ?? 'the neutral ramp',
+    blend: block[1] === 'screen' ? 'screen on an inverted tile' : 'multiply',
+  };
+});
 
 const TILES = [
   {
@@ -174,6 +188,7 @@ const TILES = [
             <th>theme</th>
             <th class="num">drawing sheets</th>
             <th class="num">contributions</th>
+            <th>paper</th>
           </tr>
         </thead>
         <tbody>
@@ -184,16 +199,19 @@ const TILES = [
               </td>
               <td class="num">{theme.page}</td>
               <td class="num">{theme.sheet}</td>
+              <td>
+                <code>{theme.paper}</code>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
     <p>
-      Those are what the branch paints today. On the light themes the contributions sheet reads
-      L* 91.7 against 96.5 bare, a spread of 2.60 levels, and a drawing sheet spreads 1.32. The
-      other three themes land within 0.15 levels of those. Nothing is forced: the mechanism is
-      the same one the site ships, and the sliders only write the two numbers.
+      Those are what the branch paints today, read straight out of ThemePicker so this page
+      cannot drift from it. The paper column is the sheet colour before any fibre goes on;
+      a theme with no pick of its own takes the neutral ramp step it always took. Nothing is
+      forced: the mechanism is the one the site ships, and the panel only writes the numbers.
     </p>
   </body>
 </html>
