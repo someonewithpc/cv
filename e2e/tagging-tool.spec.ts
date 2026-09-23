@@ -28,9 +28,14 @@ async function mountedTool(page: import('@playwright/test').Page) {
   // typing, switching property and replaying on its own.
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
-  // The walkthrough may have switched property before the handover landed; every test
-  // below starts from the property the page opens on.
-  await tool.locator('.property-select').selectOption('chair');
+  // The handover stops the walkthrough where it stands, and on a loaded machine it can land
+  // seconds in: after the walkthrough has typed into the gold row, or with one of its saves
+  // still orbiting, which commits its value once the ring closes. Let any save finish, then put
+  // the rows back the way the demo's own reset does, so every test below starts from the
+  // values and the property the page opens on.
+  await expect(tool.locator('.pending, .success')).toHaveCount(0, { timeout: 10_000 });
+  await tool.locator('.demo-reset').evaluate((button: HTMLButtonElement) => button.click());
+  await expect(tool.locator('.property-select')).toHaveValue('chair');
   return { stack, front, tool };
 }
 
