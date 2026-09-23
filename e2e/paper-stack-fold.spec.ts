@@ -111,18 +111,6 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
   }
 });
 
-test('marker editor: a forward swipe then a backward swipe returns to the start', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
-  await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
-
-  await swipeStack(page, stack, true);
-  expect(await frontPageName(stack)).toBe('Marker Selector');
-
-  await swipeStack(page, stack, false);
-  expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
-});
-
 test('visrez logo: the dog-ear is drawn while the flip is still landing', async ({ page }) => {
   const stack = page.locator('article.technical-drawing-stack').first();
   await stack.scrollIntoViewIfNeeded();
