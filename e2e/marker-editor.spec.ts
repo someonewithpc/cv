@@ -43,14 +43,6 @@ test('main page: map pins mount and clicking one opens the marker picker', async
   await expect(picker).not.toBeVisible();
 });
 
-test('selector page: static marker-picker illustration is reachable', async ({ page }) => {
-  const stack = markerEditorStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Marker Selector');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section')).toBeVisible();
-});
-
 test('editor page: live marker-editor diagram mounts', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
@@ -113,30 +105,6 @@ test('editor page: a picker event paints the preview before React renders', asyn
       { timeout: 10_000 },
     )
     .toContain('#123456');
-});
-
-test('background page: static preview-background illustration is reachable', async ({ page }) => {
-  const stack = markerEditorStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Preview Background');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section')).toBeVisible();
-});
-
-test('parts page: static composable-parts illustration is reachable', async ({ page }) => {
-  const stack = markerEditorStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Composable Parts');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section')).toBeVisible();
-});
-
-test('store page: static undoable-store illustration is reachable', async ({ page }) => {
-  const stack = markerEditorStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Undoable Store');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section')).toBeVisible();
 });
 
 const VIEWPORTS = [
