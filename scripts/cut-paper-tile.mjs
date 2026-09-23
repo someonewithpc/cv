@@ -20,6 +20,13 @@ import sharp from 'sharp';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const DEFAULTS = {
+  // Of the two itch.io packs this scan has the most fibre and no codec grid under it. Its
+  // luma quantiser runs 1 to 3 at 4:4:4, and the mean pixel step across an 8px block boundary
+  // over the step inside one is 1.002 across and 0.998 down. For scale, the shipped tile put
+  // back through jpeg q85 reads 1.396 and through webp q80 reads 1.299, and the second pack
+  // ships blocked, Paper Off White 2 at 6.163 down. So there is no JPEG artefact here to cut
+  // around: the only grid this tile ever carried was the one round 4 took out of its own
+  // encode.
   source: resolve(process.env.HOME ?? '', 'projects/cv-assets/Paper Texture3.jpg'),
   // A patch of plain sheet, and of every patch this size in the scan the one whose own
   // coarse structure is flattest: fine fibre averages out at reading distance, a blotch
