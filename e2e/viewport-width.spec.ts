@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
+import { settledAfter } from './support/paperStack';
+
 /**
  * Opening Chrome's responsive device mode is mobile emulation applied to a page that is
  * already laid out at desk width. The emulated frame becomes the initial containing block,
@@ -86,7 +88,7 @@ async function openAtDesk(page: Page): Promise<void> {
 }
 
 /** Runs `enter`, switches to every emulated frame, and checks the widths in each. */
-async function checkFrames(page: Page, enter: () => Promise<void>, leave?: () => Promise<void>) {
+async function checkFrames(page: Page, enter: () => Promise<void>) {
   await enter();
   for (const frame of FRAMES) {
     await deviceMode(page, frame.width, frame.height);
@@ -97,7 +99,6 @@ async function checkFrames(page: Page, enter: () => Promise<void>, leave?: () =>
     expect(reading.bodyScrollWidth, `${frame.name}: body`).toBeLessThanOrEqual(reading.innerWidth);
     expect(reading.documentScrollWidth, `${frame.name}: document`).toBeLessThanOrEqual(reading.innerWidth);
   }
-  if (leave) await leave();
 }
 
 test('a page nobody has touched fits the frame it is dropped into', async ({ page }) => {
@@ -123,15 +124,14 @@ for (let index = 0; index < 6; index += 1) {
 
     // The gesture happens at desk width: what this is watching for is state carried across
     // the switch, not state built up inside an emulated frame.
-    await page.keyboard.press('ArrowRight');
-    await checkFrames(page, async () => {
-      await page.waitForTimeout(200);
+    await settledAfter(stack, async () => {
+      await page.keyboard.press('ArrowRight');
+      await checkFrames(page, async () => {
+        await page.waitForTimeout(200);
+      });
+      await page.setViewportSize(DESKTOP);
     });
-
-    await page.setViewportSize(DESKTOP);
-    await checkFrames(page, async () => {
-      await page.waitForTimeout(2400);
-    });
+    await checkFrames(page, async () => {});
   });
 
   test(`stack ${index} fits the frame with the fold held open`, async ({ page }) => {
@@ -153,10 +153,8 @@ for (let index = 0; index < 6; index += 1) {
         await page.waitForTimeout(25);
       }
       await page.waitForTimeout(150);
-    }, async () => {
-      await page.mouse.up();
-      await page.waitForTimeout(1500);
     });
+    await page.mouse.up();
   });
 
   test(`stack ${index} fits the frame with a swipe in flight`, async ({ page }) => {
@@ -175,8 +173,6 @@ for (let index = 0; index < 6; index += 1) {
         await page.waitForTimeout(30);
       }
       await page.waitForTimeout(150);
-    }, async () => {
-      await page.waitForTimeout(2400);
     });
   });
 }
