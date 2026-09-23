@@ -393,15 +393,6 @@ const CARDS_FROM = 105 * 16;
 /** Every detail's card, its stack, its boundary and its leader, in page order. */
 const readCards = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
-    const px = (value: string) => {
-      const probe = document.createElement('div');
-      probe.style.width = value;
-      document.body.append(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
-
     const mat = document.querySelector('#demos .cutting-mat')!.getBoundingClientRect();
 
     return {
@@ -411,15 +402,14 @@ const readCards = (page: import('@playwright/test').Page) =>
         const leader = callout.querySelector<HTMLElement>('.callout-card-leader')!;
         const stack = callout.querySelector('article.technical-drawing-stack')!;
         const shown = getComputedStyle(card).display !== 'none';
-        const pad = px(getComputedStyle(callout).getPropertyValue('--callout-pad'));
-        const box = callout.getBoundingClientRect();
+        const box = callout.querySelector('.callout-view')!.getBoundingClientRect();
         const stackBox = stack.getBoundingClientRect();
 
         return {
           side: callout.dataset.card,
           shown,
-          // The chain-line boundary is drawn this far outside the view's own box.
-          boundary: { left: box.left - pad, right: box.right + pad },
+          // The chain-line boundary is the edge of the view's wrapper.
+          boundary: { left: box.left, right: box.right },
           stack: { left: stackBox.left, right: stackBox.right },
           // Zero wherever the card is not drawn: it then takes no room anywhere on the page,
           // beside the view or under it.

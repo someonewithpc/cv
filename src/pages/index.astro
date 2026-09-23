@@ -165,7 +165,9 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
        margin and not over it, and the folio's lane comes off the desk before either. One
        switch drives both the column here and the card itself (Callout.astro). */
     --card-width: 12rem;
-    --card-gap: 3rem;
+    /* The callout's boundary stands 3rem out past the view once the card is shown, and the
+       leader from the card to it is 1.5rem. */
+    --card-gap: 4.5rem;
     --card-lane: 0px;
     --card-display: none;
 

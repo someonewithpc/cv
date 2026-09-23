@@ -1,8 +1,8 @@
 ---
 /**
  * A drawing callout: a reference bubble with the detail's letter, its label, a leader down to a
- * chain-line boundary, and the view itself inside that boundary. The wrapper is a plain section
- * so the caller's own id and children sit directly in it.
+ * chain-line boundary, and the view itself inside that boundary. The boundary is the view's own
+ * wrapper, drawn on its edge, so it goes round whatever the view is and not a guess at it.
  */
 type Props = {
   id?: string;
@@ -47,17 +47,29 @@ const hasCard = Astro.slots.has('card');
     </div>
   )}
 
-  <slot />
+  <div class="callout-view">
+    <slot />
+  </div>
 </section>
 
 <style lang="scss">
 .callout {
   --callout-line: color-mix(in oklch, var(--ink), transparent 30%);
   --callout-pad: 1.5rem;
-  /* Below, the view writes a line outside its own box, the way a drawing stack writes its peel
-     hint just under the sheet. That line is part of what the boundary goes round, so the
-     clearance under it is the same as on the other three sides. */
-  --callout-hint: 1.5rem;
+  /* The clearance above and below the view. It has to take a line of text the view writes
+     outside its own box, the way a drawing stack writes its peel hints above and under the
+     sheet. */
+  --callout-room: calc(var(--callout-pad) + 1.5rem);
+  /* How far the side lines stand out past the column the callout is given. They are drawn in
+     the mat's slack rather than padded in, because a view made narrower scales its drawing
+     down and the drawing's own labels start to collide. Past 80rem the mat has the slack for
+     the full clearance, so the boundary stands the same distance off the view all round;
+     below that it has only its rim, and the sides keep to --callout-pad. */
+  --callout-out: var(--callout-pad);
+
+  @media (width > 80rem) {
+    --callout-out: var(--callout-room);
+  }
   --callout-lead: 1.75rem;
   /* The label's box; the bubble sits at its bottom, so the leader below it has a known length. */
   --callout-label: 3.75rem;
@@ -65,36 +77,38 @@ const hasCard = Astro.slots.has('card');
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  /* The boundary stands the same clearance off the view on all four sides, but the two sides
-     are drawn outside the box rather than padded in, so the view keeps the full width of the
-     column it was given. */
-  padding: calc(var(--callout-label) + var(--callout-lead) + var(--callout-pad)) 0 calc(var(--callout-hint) + var(--callout-pad));
-
-  /* The chain-line boundary of the view: long dash, gap, short dash, gap. */
-  &::before {
-    content: '';
-    position: absolute;
-    inset: calc(var(--callout-label) + var(--callout-lead)) calc(-1 * var(--callout-pad)) 0;
-    pointer-events: none;
-    --dash: repeating-linear-gradient(90deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
-    --dash-v: repeating-linear-gradient(180deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
-    background:
-      var(--dash) top / 100% 1px no-repeat,
-      var(--dash) bottom / 100% 1px no-repeat,
-      var(--dash-v) left / 1px 100% no-repeat,
-      var(--dash-v) right / 1px 100% no-repeat;
-  }
+  padding-top: calc(var(--callout-label) + var(--callout-lead));
 
   > :global(*) {
     min-width: 0;
   }
 
-  /* The side lines are drawn outside the box, and on a phone the only room out there is the
-     mat's rim, so the clearance shrinks to a few pixels rather than landing on the mat's edge. */
+  /* The side lines are drawn outside the column, and on a phone the only room out there is the
+     mat's rim, so they stand a few pixels out rather than landing on the mat's edge. */
   @media (max-width: 52rem) {
     --callout-pad: 0.375rem;
     --callout-lead: 1.5rem;
     --callout-label: 3rem;
+  }
+}
+
+/* The chain-line boundary of the view: long dash, gap, short dash, gap. The view's own wrapper
+   draws it, so it goes round the view and the lines the view writes outside itself. */
+.callout-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-inline: calc(-1 * var(--callout-out));
+  padding: var(--callout-room) var(--callout-out);
+  --dash: repeating-linear-gradient(90deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
+  --dash-v: repeating-linear-gradient(180deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
+  background:
+    var(--dash) top / 100% 1px no-repeat,
+    var(--dash) bottom / 100% 1px no-repeat,
+    var(--dash-v) left / 1px 100% no-repeat,
+    var(--dash-v) right / 1px 100% no-repeat;
+
+  > :global(*) {
+    min-width: 0;
   }
 }
 
@@ -137,7 +151,7 @@ const hasCard = Astro.slots.has('card');
   position: absolute;
   /* Level with the card's title cell, which is where a leader off a title block would start. */
   top: 1.75rem;
-  width: calc(var(--card-gap, 3rem) - var(--callout-pad));
+  width: calc(var(--card-gap, 3rem) - var(--callout-out));
   height: 0.5rem;
 
   &::before {
