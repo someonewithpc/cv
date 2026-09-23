@@ -1052,30 +1052,27 @@ test("the light sheet's paper is lighter than before the grain was added", async
   expect(lightness).toBeGreaterThanOrEqual(0.97);
 });
 
-for (const theme of ['light', 'arctic'] as const) {
-  test(`a ${theme} drawing sheet is paper, not a sunken panel`, async ({ page }) => {
+for (const theme of ['light', 'arctic', 'dark-forest'] as const) {
+  test(`a ${theme} drawing sheet is the paper Hugo picked for it`, async ({ page }) => {
     await withTheme(page, theme);
     await page.goto('/');
 
     const sheet = page.locator('article.technical-drawing-stack .paper-front > section').first();
     await sheet.scrollIntoViewIfNeeded();
 
-    const lightness = await sheet.evaluate((el) => {
-      // backgroundColor comes back as oklch() here, so a canvas fill does the conversion.
-      const cx = document.createElement('canvas').getContext('2d')!;
-      cx.fillStyle = getComputedStyle(el).backgroundColor;
-      cx.fillRect(0, 0, 1, 1);
-      const [r, g, b] = cx.getImageData(0, 0, 1, 1).data;
-      const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-      const y = 0.2126 * lin(r / 255) + 0.7152 * lin(g / 255) + 0.0722 * lin(b / 255);
-      return y > 216 / 24389 ? 116 * Math.cbrt(y) - 16 : (y * 24389) / 27;
+    const [painted, picked] = await sheet.evaluate((el) => {
+      // Both come back as oklch() here, so a canvas fill turns each into the pixel it paints.
+      const rgb = (colour: string) => {
+        const cx = document.createElement('canvas').getContext('2d')!;
+        cx.fillStyle = colour;
+        cx.fillRect(0, 0, 1, 1);
+        return [...cx.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+      };
+      const paper = getComputedStyle(document.documentElement).getPropertyValue('--theme-paper').trim();
+      return [rgb(getComputedStyle(el).backgroundColor), rgb(paper)];
     });
 
-    // --surface-sunken, which this was, steps from the canvas toward the ink, so on a light
-    // theme it put the sheet at L* 81, a clear grey, however far round 1 lifted the canvas.
-    // One step instead of two puts it at 89, under the cutting mat's 97 and well clear of it.
-    expect(lightness).toBeGreaterThan(86);
-    expect(lightness).toBeLessThan(93);
+    expect(painted).toEqual(picked);
   });
 }
 
