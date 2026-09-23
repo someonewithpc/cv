@@ -226,7 +226,7 @@
     inset: 0;
     z-index: -1;
     border-radius: #{$radius};
-    background-image: var(--theme-paper-tile, url('/paper.webp'));
+    background-image: var(--theme-paper-tile, url('/paper-fibre.webp'));
     background-size: 12rem 12rem;
     background-position: #{$offset};
     mix-blend-mode: var(--theme-paper-blend, multiply);
