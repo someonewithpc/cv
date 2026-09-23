@@ -18,7 +18,7 @@ const DESKS = {
 
 /** The veneer each theme wears, and the colour a dark desk subtracts that veneer from. */
 const WOODS = {
-  light: { file: 'ash-4186', base: null },
+  light: { file: 'oak-7760-limed', base: null },
   dark: { file: 'oak-7760-mid', base: 'rgb(128, 97, 73)' },
   arctic: { file: 'oak-7760', base: null },
   'dark-forest': { file: 'oak-7760-smoked', base: 'rgb(76, 68, 62)' },
