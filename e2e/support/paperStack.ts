@@ -105,13 +105,17 @@ export async function settledAfter(stack: Locator, act: () => Promise<void>, sta
     .toBe(0);
 }
 
-/** Swipes forward until `name` is the front page, or fails after a full lap (wrap-around). */
-export async function swipeToPage(page: Page, stack: Locator, name: string, maxPages = 6): Promise<void> {
+/**
+ * Turns forward until `name` is the front page, or fails after a full lap (wrap-around). It
+ * turns by arrow key: a spec that calls this wants a page, not a swipe, and a key turn skips
+ * the wheel gesture's scroll-idle wait. paper-stack-fold.spec.ts is where the swipe is tested.
+ */
+export async function turnToPage(stack: Locator, name: string, maxPages = 6): Promise<void> {
   for (let i = 0; i < maxPages; i += 1) {
     if ((await frontPageName(stack)) === name) return;
-    await swipeStack(page, stack, true);
+    await pressTurn(stack, 'ArrowRight');
   }
-  throw new Error(`Never reached page "${name}" after ${maxPages} forward swipes`);
+  throw new Error(`Never reached page "${name}" after ${maxPages} forward turns`);
 }
 
 /**

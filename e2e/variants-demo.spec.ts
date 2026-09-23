@@ -4,7 +4,7 @@ import {
   frontPage,
   frontPageIndex,
   frontPageName,
-  swipeToPage,
+  turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
 
@@ -329,7 +329,7 @@ test.describe('metric locale', () => {
     await expect.poll(() => frontPageName(stack)).toBe('Space Builder · Object Variants');
     await expect(stack.locator(':scope > div')).toHaveCount(3);
 
-    await swipeToPage(page, stack, 'Variant Groups');
+    await turnToPage(stack, 'Variant Groups');
     const groups = frontPage(stack, await frontPageIndex(stack));
     await expect(groups.locator('.drawn .option-item')).toHaveCount(2);
     await expect(groups.locator('.drawn ul.styles .style')).toHaveCount(5);
@@ -339,7 +339,7 @@ test.describe('metric locale', () => {
     await expect(callouts.filter({ hasText: /pip/i })).toHaveCount(1);
     await expect(callouts.filter({ hasText: /Seats/ })).toHaveCount(1);
 
-    await swipeToPage(page, stack, 'Missing Variants');
+    await turnToPage(stack, 'Missing Variants');
     const missing = frontPage(stack, await frontPageIndex(stack));
     await expect(missing.locator('.drawn details.object-pax')).toHaveAttribute('open', '');
     await expect(missing.locator('.drawn .object-pax li.unavailable')).toHaveCount(2);

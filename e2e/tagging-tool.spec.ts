@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, swipeStack, swipeToPage, waitForIslandMounted } from './support/paperStack';
+import { frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 
 const PAGES = ['Library Tagging Tool', 'Shared Value', 'Simulated Caret', 'Completed Objects'];
 
@@ -343,7 +343,7 @@ test('main page: the walkthrough takes the gold row from wrong values to the one
 test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Shared Value');
+  await turnToPage(stack, 'Shared Value');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
 });
@@ -351,7 +351,7 @@ test('shared value page: the mirroring blueprint diagram is shown', async ({ pag
 test('simulated caret page: the caret-math blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Simulated Caret');
+  await turnToPage(stack, 'Simulated Caret');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
 });
@@ -359,7 +359,7 @@ test('simulated caret page: the caret-math blueprint diagram is shown', async ({
 test('completed objects page: the leaving-the-list blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Completed Objects');
+  await turnToPage(stack, 'Completed Objects');
   const front = frontPage(stack, await frontPageIndex(stack));
   // This page also embeds a non-live Grid for illustration, which has its own
   // .grouped-objects blocks; scope to the page's own blueprint section.
@@ -477,7 +477,7 @@ for (const viewport of VIEWPORTS) {
       await stack.scrollIntoViewIfNeeded();
 
       for (const name of PAGES) {
-        await swipeToPage(page, stack, name);
+        await turnToPage(stack, name);
         const front = frontPage(stack, await frontPageIndex(stack));
         if (await front.locator('.tagging-grid-demo').count()) await waitForIslandMounted(front);
         await expect.poll(async () => (await clearSheet(front)).boxes).toBeGreaterThan(0);
@@ -491,7 +491,7 @@ for (const viewport of VIEWPORTS) {
     test('the completed objects callouts keep off the headline, the footnote and the title block', async ({ page }) => {
       const stack = taggingToolStack(page);
       await stack.scrollIntoViewIfNeeded();
-      await swipeToPage(page, stack, 'Completed Objects');
+      await turnToPage(stack, 'Completed Objects');
       const front = frontPage(stack, await frontPageIndex(stack));
       await expect(front.locator('svg[data-annotations="js"]')).toBeAttached();
 

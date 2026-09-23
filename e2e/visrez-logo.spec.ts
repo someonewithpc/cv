@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, swipeToPage } from './support/paperStack';
+import { frontPage, frontPageIndex, turnToPage } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -26,7 +26,7 @@ test('main page: the loading-logo SVG renders and its dash animation runs', asyn
 test('original-logo page: the unoptimized original SVG is shown', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Original Logo');
+  await turnToPage(stack, 'Original Logo');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('svg').first()).toBeVisible();
 });
@@ -34,7 +34,7 @@ test('original-logo page: the unoptimized original SVG is shown', async ({ page 
 test('cube page: the 3-face cube diagram is shown', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Cube :)');
+  await turnToPage(stack, 'Cube :)');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('svg').first()).toBeVisible();
 });
@@ -42,7 +42,7 @@ test('cube page: the 3-face cube diagram is shown', async ({ page }) => {
 test('authored-path page: the hand-authored path diagram is shown', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Authored Path');
+  await turnToPage(stack, 'Authored Path');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('svg.path-layer')).toBeVisible();
 });
@@ -50,7 +50,7 @@ test('authored-path page: the hand-authored path diagram is shown', async ({ pag
 test('path-data page: the annotated SVG source listing is shown', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Path Data');
+  await turnToPage(stack, 'Path Data');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('pre.path-data-layer')).toBeVisible();
   await expect(front.locator('pre.path-data-layer')).toContainText('<svg');
@@ -59,7 +59,7 @@ test('path-data page: the annotated SVG source listing is shown', async ({ page 
 test('all-together page: the combined face diagram is shown', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Putting it all together');
+  await turnToPage(stack, 'Putting it all together');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('svg.face')).toBeVisible();
 });
@@ -67,7 +67,7 @@ test('all-together page: the combined face diagram is shown', async ({ page }) =
 test('cube page: its diagram animation starts when the page is turned to', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Cube :)');
+  await turnToPage(stack, 'Cube :)');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   // Every page of a stack sits in the same grid cell, so this finite intro animation used
@@ -82,7 +82,7 @@ test('cube page: its diagram animation starts when the page is turned to', async
 test('cube page: twelve edges, drawn in ink that stands off the grid on every theme', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Cube :)');
+  await turnToPage(stack, 'Cube :)');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   // One element per edge. The bordered faces this replaced drew every edge twice.
@@ -121,7 +121,7 @@ test('cube page: twelve edges, drawn in ink that stands off the grid on every th
 test('cube page: every strip is cut to a point at each end, so the vertices join cleanly', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Cube :)');
+  await turnToPage(stack, 'Cube :)');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   // A square strip end pokes past the strips it meets at a vertex. The cut is four corner

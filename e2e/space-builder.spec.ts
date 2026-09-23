@@ -6,7 +6,7 @@ import {
   frontPageIndex,
   sceneDraws,
   swipeStack,
-  swipeToPage,
+  turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
 
@@ -52,7 +52,7 @@ test('main page: scene loads and the add-object tool opens the catalog', async (
 test('place page: select-area scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Place Area');
+  await turnToPage(stack, 'Place Area');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -62,7 +62,7 @@ test('place page: select-area scene loads', async ({ page }) => {
 test('parameters page: editing seat count updates the field', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Edit Parameters');
+  await turnToPage(stack, 'Edit Parameters');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -81,7 +81,7 @@ test('parameters page: editing seat count updates the field', async ({ page }) =
 test('layouts page: picking a different layout style selects it', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Layout Styles');
+  await turnToPage(stack, 'Layout Styles');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -96,7 +96,7 @@ test('layouts page: the scene draws and autoplay cycles the styles after the pag
   await armDrawCounter(page);
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Layout Styles');
+  await turnToPage(stack, 'Layout Styles');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -114,7 +114,7 @@ test('layouts page: the scene draws and autoplay cycles the styles after the pag
 test('badge page: capacity-badge scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Capacity Badge');
+  await turnToPage(stack, 'Capacity Badge');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);

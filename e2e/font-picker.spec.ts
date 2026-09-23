@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, swipeStack, swipeToPage, waitForIslandMounted } from './support/paperStack';
+import { frontPage, frontPageIndex, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -79,7 +79,7 @@ test('main page: the drawn cursor leaves when its page is no longer in front', a
 test('extraction page: the pipeline is drawn from the URL to the new row', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Font Extraction');
+  await turnToPage(stack, 'Font Extraction');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   // Four hops, in order, with the URL the walkthrough types at one end and the row it becomes
@@ -93,7 +93,7 @@ test('extraction page: the pipeline is drawn from the URL to the new row', async
 test('indicator page: the border runs by itself and the buttons take it over', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Loading Indicator');
+  await turnToPage(stack, 'Loading Indicator');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   await waitForIslandMounted(front);
@@ -114,7 +114,7 @@ test('indicator page: the border runs by itself and the buttons take it over', a
 test('held controls page: the drag leaves the plain column and holds the pinned one', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Held Controls');
+  await turnToPage(stack, 'Held Controls');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   await waitForIslandMounted(front);
@@ -176,7 +176,7 @@ test.describe('on a landscape phone', () => {
 test('held controls page: the drawn cursor rides each slider it drags', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Held Controls');
+  await turnToPage(stack, 'Held Controls');
   const front = frontPage(stack, await frontPageIndex(stack));
   await waitForIslandMounted(front);
 
@@ -297,7 +297,7 @@ for (const viewport of VIEWPORTS) {
       await stack.scrollIntoViewIfNeeded();
 
       for (const name of PAGES) {
-        if (name) await swipeToPage(page, stack, name);
+        if (name) await turnToPage(stack, name);
         const front = frontPage(stack, await frontPageIndex(stack));
         if (await front.locator('[data-boot-module]').count()) await waitForIslandMounted(front);
         await expect.poll(async () => (await clearSheet(front)).boxes).toBeGreaterThan(0);

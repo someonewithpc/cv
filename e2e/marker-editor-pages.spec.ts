@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, swipeToPage } from './support/paperStack';
+import { frontPage, frontPageIndex, turnToPage } from './support/paperStack';
 
 /**
  * Kept out of marker-editor.spec.ts: four other branches are editing that file, and a
@@ -20,7 +20,7 @@ test('parts and store pages: the diagram fills the sheet it sits on', async ({ p
   await stack.scrollIntoViewIfNeeded();
 
   for (const name of ['Composable Parts', 'Undoable Store']) {
-    await swipeToPage(page, stack, name);
+    await turnToPage(stack, name);
     const front = frontPage(stack, await frontPageIndex(stack));
     const diagram = front.locator('section .content > *').first();
     await expect(diagram).toBeVisible();
@@ -126,7 +126,7 @@ for (const [width, height] of [[1440, 900], [900, 760]]) {
 
     const stack = markerEditorStack(page);
     await stack.scrollIntoViewIfNeeded();
-    await swipeToPage(page, stack, 'Preview Background');
+    await turnToPage(stack, 'Preview Background');
 
     const front = frontPage(stack, await frontPageIndex(stack));
     const samples = front.locator('.background-layer .fail-both.debug');
