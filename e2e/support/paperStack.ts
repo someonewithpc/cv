@@ -38,20 +38,71 @@ export async function swipeStack(page: Page, stack: Locator, forward: boolean, f
   if (!box) throw new Error('PaperStack has no layout box to swipe');
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
+  // A back swipe with nothing turned has no page to bring back: fold-drag.ts's beginBack
+  // declines it without starting a gesture, so no settle is coming.
+  const starts = forward || (await stack.evaluate((el) => 'paperFlipped' in (el as HTMLElement).dataset));
   const diagonal = Math.hypot(box.width, box.height);
   const totalDeltaX = diagonal * fraction * (forward ? 1 : -1);
   const steps = 8;
-  for (let i = 0; i < steps; i += 1) {
-    await page.mouse.wheel(totalDeltaX / steps, 0);
-    await page.waitForTimeout(40);
+  await settledAfter(stack, async () => {
+    for (let i = 0; i < steps; i += 1) {
+      await page.mouse.wheel(totalDeltaX / steps, 0);
+      await page.waitForTimeout(40);
+    }
+  }, starts);
+}
+
+/** Presses an arrow key on the stack and waits for the turn it starts to land. */
+export async function pressTurn(stack: Locator, key: 'ArrowRight' | 'ArrowLeft'): Promise<void> {
+  await stack.focus();
+  await settledAfter(stack, () => stack.page().keyboard.press(key));
+}
+
+declare global {
+  interface Window { paperSettles?: WeakMap<Element, number> }
+}
+
+/**
+ * Runs `act`, then waits for the gesture it started to end. fold-drag.ts sets
+ * `data-paper-settled` on the stack when a turn lands or a fold eases back to rest, whichever
+ * way the gesture went, and nothing else sets it, so the attribute going on after `act` is the
+ * end of the gesture. That holds however long a starved renderer takes over the glide, which a
+ * fixed wait had to guess, and it cannot mistake a turn that has not started yet for one that
+ * is over, which polling `--page-index` did. After the settle, the stack's own transitions (the
+ * pile's 250ms drift, the corner cut's 300ms) and the new front page's dog-ear reveal still have
+ * to run out before anything is measured.
+ */
+export async function settledAfter(stack: Locator, act: () => Promise<void>, starts = true): Promise<void> {
+  await stack.evaluate((el) => {
+    const settles = (window.paperSettles ??= new WeakMap());
+    settles.set(el, 0);
+    const observer = new MutationObserver((records) => {
+      if (!records.some((record) => record.oldValue === null) || !el.hasAttribute('data-paper-settled')) return;
+      settles.set(el, 1);
+      observer.disconnect();
+    });
+    observer.observe(el, { attributes: true, attributeFilter: ['data-paper-settled'], attributeOldValue: true });
+  });
+  await act();
+  if (starts) {
+    await expect
+      .poll(() => stack.evaluate((el) => window.paperSettles?.get(el) ?? 0), {
+        message: 'the stack never settled after the gesture',
+        intervals: [100],
+        timeout: 15_000,
+      })
+      .toBe(1);
   }
-  // The gesture only releases once scrolling has fallen quiet (SCROLL_IDLE_MAX = 800ms) and
-  // the fold's own rAF-driven easing has caught up with it — under a loaded CPU (several
-  // Three.js scenes booting in another worker) that easing gets fewer frames and takes
-  // longer to finish, hence the generous margin. (A "wait until --page-index stops
-  // changing" polling loop looks more principled but isn't: it can't tell "clamped, never
-  // going to change" apart from "hasn't started changing yet", and exits on the wrong one.)
-  await page.waitForTimeout(2200);
+  await expect
+    .poll(() => stack.evaluate((el) => {
+      const own = new Set<Element>([el, ...el.children]);
+      return el.getAnimations({ subtree: true }).filter((animation) => {
+        const target = (animation.effect as KeyframeEffect | null)?.target;
+        return !!target && own.has(target) && animation.playState === 'running'
+          && Number.isFinite(Number(animation.effect!.getComputedTiming().endTime));
+      }).length;
+    }), { message: 'the stack\'s transitions never ran out', intervals: [100], timeout: 10_000 })
+    .toBe(0);
 }
 
 /** Swipes forward until `name` is the front page, or fails after a full lap (wrap-around). */
