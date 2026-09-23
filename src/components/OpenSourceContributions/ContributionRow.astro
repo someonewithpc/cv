@@ -177,7 +177,10 @@ if (number != null) citePieces.push(null, `#${number}`);
        across a replaced inline. */
     .title-text {
       text-decoration: underline;
-      text-underline-offset: 0.15em;
+      /* Drawn over the paper's own rule, one pixel down from the baseline, so a link inks in
+         the line it is written on instead of adding a second line just under it. */
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0;
     }
 
     /* A margin rather than a space in the markup: a space would take the
