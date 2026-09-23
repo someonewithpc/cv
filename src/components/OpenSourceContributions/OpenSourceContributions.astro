@@ -160,7 +160,10 @@ const statistics = {
     --tear: 1.5rem;
     --paper-x: 1.5rem;
     --margin-x: 3.25rem;
-    --paper-top: calc(var(--tear) + 1rem);
+    /* The paper above and below the writing is a whole number of lines too, so the sheet is
+       ruled from its own top edge and the rules run on evenly off both tears. */
+    --paper-top: round(up, var(--tear) + 0.5rem, var(--rule-pitch));
+    --paper-bottom: round(up, var(--tear) + 1rem, var(--rule-pitch));
 
     --paper: var(--surface-page);
     --rule-ink: light-dark(
@@ -181,7 +184,7 @@ const statistics = {
     padding:
       var(--paper-top)
       var(--paper-x)
-      calc(var(--tear) + 1.5rem)
+      var(--paper-bottom)
       calc(var(--margin-x) + 0.875rem);
     background-color: var(--paper);
     /* The ruling, then the margin line. The ruling is one pitch-tall tile repeated down the

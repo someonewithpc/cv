@@ -289,14 +289,22 @@ if (number != null) citePieces.push(null, `#${number}`);
     align-items: start;
 
     > ul {
-      /* A column of marks down the margin beside two written lines, so there is no single
-         line for them to stand on. */
-      translate: none;
-      height: auto;
-      padding-block: 0.4rem;
-      flex-direction: column;
+      /* A column of marks down the margin beside two written lines: one mark to a line, each
+         dropped onto its line the same way a single row drops its marks. The column is
+         exactly those two lines tall however many marks it holds, so it never makes the row
+         longer than its writing and pushes every row under it off the ruling. */
+      display: grid;
+      grid-auto-rows: var(--rule-pitch);
+      justify-items: center;
+      height: calc(var(--rule-pitch) * 2);
       align-self: start;
-      gap: 0.25rem;
+      gap: 0;
+
+      /* Three marks, the most a contribution carries, share the two lines between them. */
+      &:has(> :nth-child(3)) {
+        grid-auto-rows: calc(var(--rule-pitch) * 2 / 3);
+        translate: none;
+      }
 
       :global(svg) {
         width: 1rem;
