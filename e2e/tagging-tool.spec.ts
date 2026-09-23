@@ -476,7 +476,7 @@ for (const viewport of VIEWPORTS) {
   test.describe(`at ${viewport.width}x${viewport.height}`, () => {
     test.use({ viewport });
 
-    test('every sheet keeps the margin around its content', async ({ page }) => {
+    test('every sheet keeps the margin around its content, and the callouts keep off the text', async ({ page }) => {
       test.setTimeout(120_000);
       const stack = taggingToolStack(page);
       await stack.scrollIntoViewIfNeeded();
@@ -490,31 +490,28 @@ for (const viewport of VIEWPORTS) {
         const gaps = await clearSheet(front);
         expect.soft(gaps.toFrame, `${name}: to the frame line`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
         expect.soft(gaps.toPieces, `${name}: to the title block`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
-      }
-    });
 
-    test('the completed objects callouts keep off the headline, the footnote and the title block', async ({ page }) => {
-      const stack = taggingToolStack(page);
-      await stack.scrollIntoViewIfNeeded();
-      await turnToPage(stack, 'Completed Objects');
-      const front = frontPage(stack, await frontPageIndex(stack));
-      await expect(front.locator('svg[data-annotations="js"]')).toBeAttached();
-
-      const labels = await front.evaluate((wrapper) => {
-        const section = wrapper.querySelector('section')!;
-        const others = ['.point', '.footnote', ':scope > table'].map((s) => section.querySelector(s)!.getBoundingClientRect());
-        const hits = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-        return [...section.querySelectorAll<SVGGElement>('svg[data-annotations] [data-tip]')]
-          .filter((group) => group.getClientRects().length)
-          .map((group) => {
-            const text = group.querySelector('text')!;
-            const box = text.getBoundingClientRect();
-            return { label: text.textContent!.trim(), clear: others.every((other) => !hits(box, other)) };
+        // The completed objects sheet draws its callouts in JS; they have to keep off the
+        // headline, the footnote and the title block as well as the frame.
+        if (name === 'Completed Objects') {
+          await expect(front.locator('svg[data-annotations="js"]')).toBeAttached();
+          const labels = await front.evaluate((wrapper) => {
+            const section = wrapper.querySelector('section')!;
+            const others = ['.point', '.footnote', ':scope > table'].map((s) => section.querySelector(s)!.getBoundingClientRect());
+            const hits = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+            return [...section.querySelectorAll<SVGGElement>('svg[data-annotations] [data-tip]')]
+              .filter((group) => group.getClientRects().length)
+              .map((group) => {
+                const text = group.querySelector('text')!;
+                const box = text.getBoundingClientRect();
+                return { label: text.textContent!.trim(), clear: others.every((other) => !hits(box, other)) };
+              });
           });
-      });
-      expect(labels).toHaveLength(3);
-      for (const { label, clear } of labels) {
-        expect(clear, `"${label}" keeps off the headline, the footnote and the title block`).toBe(true);
+          expect(labels).toHaveLength(3);
+          for (const { label, clear } of labels) {
+            expect(clear, `"${label}" keeps off the headline, the footnote and the title block`).toBe(true);
+          }
+        }
       }
     });
   });
