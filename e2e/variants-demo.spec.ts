@@ -570,7 +570,7 @@ test.describe('without CSS scroll markers', () => {
     // the arrows and pips itself.
     await page.addInitScript(() => {
       const supports = CSS.supports.bind(CSS);
-      CSS.supports = ((...args: [string, string?]) => {
+      CSS.supports = ((...args: Parameters<typeof CSS.supports>) => {
         const query = args.join(':');
         if (query.includes('scroll-marker') || query.includes('animation-timeline')) return false;
         return supports(...args);
