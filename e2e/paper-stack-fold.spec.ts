@@ -179,9 +179,8 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
   expect(seen.flapCount).toBe(2);
 
   // And the stand-in gives way rather than piling up.
-  await page.waitForTimeout(2500);
-  expect(await stack.locator('.paper-fold').count()).toBe(1);
-  expect(await stack.locator('.paper-fold--stand-in').count()).toBe(0);
+  await expect(stack.locator('.paper-fold')).toHaveCount(1, { timeout: 2500 });
+  await expect(stack.locator('.paper-fold--stand-in')).toHaveCount(0);
 });
 
 // A point on the folded-back corner itself, to grab with a real pointer drag (see
@@ -276,9 +275,8 @@ test.describe('a drag that pulls the wrong way cancels', () => {
     // comfortably past it).
     await dragFold(page, stack, [{ dx: 5, dy: 5 }, { dx: -395, dy: -395 }]);
     await page.mouse.up();
-    await page.waitForTimeout(2500);
 
-    expect(await frontPageIndex(stack), 'the turn still committed').not.toBe(before);
+    await expect.poll(() => frontPageIndex(stack), { message: 'the turn still committed', timeout: 2500 }).not.toBe(before);
   });
 
   test('a normal forward drag still turns the page', async ({ page }) => {
@@ -290,8 +288,7 @@ test.describe('a drag that pulls the wrong way cancels', () => {
     const sheet = (await stack.locator('.paper-front').boundingBox())!;
     await dragFold(page, stack, [{ dx: -sheet.width * 0.6, dy: -sheet.height * 0.6 }]);
     await page.mouse.up();
-    await page.waitForTimeout(2500);
 
-    expect(await frontPageIndex(stack), 'the turn committed').not.toBe(before);
+    await expect.poll(() => frontPageIndex(stack), { message: 'the turn committed', timeout: 2500 }).not.toBe(before);
   });
 });
