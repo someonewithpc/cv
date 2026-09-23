@@ -319,11 +319,11 @@ $way-back-shown: '.technical-drawing-frame:has([data-paper-turned][data-paper-se
 
   // The tail crosses the fanned edges of the pages behind the sheet on its way in from the gap,
   // and marker ink on those stripes measured 1.4:1 at best. A pass in the page's own colour
-  // under the stroke brings the grid paper along with the line.
+  // under the stroke brings the grid paper along with the line. Opaque, because on the lighter
+  // dark-forest paper the stripes showing through a 0.9 halo held the arrow to 4.2:1.
   .hint-halo {
     stroke: var(--surface-page);
     stroke-width: 7px;
-    opacity: 0.9;
   }
 }
 
