@@ -111,7 +111,7 @@ export default defineConfig({
           './src/components/SpaceBuilderDemo/MockScene/ParametersSceneApp.vue',
           './src/components/SpaceBuilderDemo/MockScene/LayoutsSceneApp.vue',
           './src/components/SpaceBuilderDemo/MockScene/BadgeSceneApp.vue',
-          './src/components/SpaceBuilderDemo/MockScene/DnDSceneApp.vue',
+          './src/components/DragDropDemo/MockScene/DragDropSceneApp.vue',
           './src/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene.ts',
         ],
       },

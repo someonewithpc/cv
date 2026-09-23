@@ -42,3 +42,6 @@ tmp/
 /playwright/.cache/
 
 playwright.tmp.config.ts
+
+# claude code, per-machine settings
+.claude/settings.local.json
