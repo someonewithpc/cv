@@ -1,142 +1,32 @@
 ---
 /**
- * REVIEW ONLY, strip with the ?grain, ?tile and ?theme switches in Layout.astro before this
- * lands on main.
+ * REVIEW ONLY, strip with the ?grain, ?tile, ?theme and ?tune switches in Layout.astro before
+ * this lands on main.
  *
- * Every paper setting worth looking at, as a link, for every theme, above everything else on
- * the page. The numbers on each row are measured on the light theme by scratchpad/measure5.mjs
- * against the build this page ships with: the contributions sheet's rendered L*, which is 96.5
- * with no fibre on it at all, and the spread of the fibre on that sheet and on a drawing page,
- * in display levels. L* falls when the grain darkens the paper; spread rises when it roughens
- * it. They move separately and only one of them is roughness.
+ * Links first. The sliders do the work now, so the ladder of fixed settings this page used to
+ * list is gone: it made Hugo read a page per number, and the two sheets want different numbers
+ * on different themes, which is four ladders rather than one.
  */
-type Option = {
-  query: string;
-  label: string;
-  /** Measured on the light theme: contributions sheet L*, its spread, a drawing page's spread. */
-  sheetL: number;
-  sheetSpread: number;
-  pageSpread: number;
-  note?: string;
-};
 
 const THEMES = [
-  ['light', 'Light'],
-  ['arctic', 'Arctic'],
-  ['dark', 'Dark'],
-  ['dark-forest', 'Forest'],
+  { id: 'light', name: 'Light', page: '0.22', sheet: '0.36', blend: 'multiply' },
+  { id: 'arctic', name: 'Arctic', page: '0.22', sheet: '0.36', blend: 'multiply' },
+  { id: 'dark', name: 'Dark', page: '0.26', sheet: '0.38', blend: 'screen on an inverted tile' },
+  { id: 'dark-forest', name: 'Forest', page: '0.24', sheet: '0.35', blend: 'screen on an inverted tile' },
 ] as const;
 
-const OPTIONS: Option[] = [
+const TILES = [
   {
-    query: '',
-    label: 'The page as it stands, each theme on its own numbers',
-    sheetL: 91.7,
-    sheetSpread: 2.6,
-    pageSpread: 1.32,
-    note: 'Nothing forced. The numbers are the light theme; the other three are within 0.15 levels of it.',
+    query: '?tune&tile=lifted',
+    name: 'The lifted tile',
+    say: 'The same fibre centred on 232 rather than 216.4, so multiply darkens a light sheet less for the same spread.',
   },
   {
-    query: 'grain=0',
-    label: 'Bare paper, no fibre at all',
-    sheetL: 96.5,
-    sheetSpread: 0,
-    pageSpread: 0,
-    note: 'The reference every other row is measured against.',
+    query: '?tune&tile=patch-b',
+    name: 'A different patch',
+    say: 'Another crop of the same scan, coarser by half a level. The shipped one is the flattest of the 1,692 patches that size.',
   },
-  {
-    query: 'grain=0.22,0.44',
-    label: 'Round 4, the setting you called way too strong',
-    sheetL: 90.62,
-    sheetSpread: 3.2,
-    pageSpread: 1.32,
-    note: 'What the branch carried into this round.',
-  },
-  {
-    query: 'grain=0.22,0.36',
-    label: 'What the branch has now, four fifths of round 4 fibre',
-    sheetL: 91.7,
-    sheetSpread: 2.6,
-    pageSpread: 1.32,
-    note: 'Our current pick, not a decision: it sits between round 3, which you called too subtle at spread 2.02, and round 4.',
-  },
-  {
-    query: 'grain=0.22,0.30',
-    label: 'Two thirds of it',
-    sheetL: 92.51,
-    sheetSpread: 2.16,
-    pageSpread: 1.32,
-  },
-  {
-    query: 'grain=0.22,0.24',
-    label: 'Half of it',
-    sheetL: 93.37,
-    sheetSpread: 1.78,
-    pageSpread: 1.32,
-  },
-  {
-    query: 'grain=0.22,0.18',
-    label: 'A third of it',
-    sheetL: 94.19,
-    sheetSpread: 1.37,
-    pageSpread: 1.32,
-  },
-  {
-    query: 'grain=0.22,0.44&tile=lifted',
-    label: 'Round 4 roughness on a tile centred 232 rather than 216',
-    sheetL: 93.03,
-    sheetSpread: 3.15,
-    pageSpread: 1.44,
-    note: 'Same fibre, same spread, two fifths of the darkening.',
-  },
-  {
-    query: 'grain=0.22,0.30&tile=lifted',
-    label: 'Two thirds of that roughness on the same lifted tile',
-    sheetL: 94.17,
-    sheetSpread: 2.23,
-    pageSpread: 1.44,
-  },
-  {
-    query: 'grain=0.25,0.38',
-    label: 'Round 3 shortlist, louder page and quieter sheet',
-    sheetL: 91.43,
-    sheetSpread: 2.75,
-    pageSpread: 1.62,
-    note: 'Set aside on our own judgement in round 4.',
-  },
-  {
-    query: 'grain=0.19,0.49',
-    label: 'Round 3 shortlist, quieter page and louder sheet',
-    sheetL: 89.93,
-    sheetSpread: 3.44,
-    pageSpread: 1.09,
-    note: 'Set aside on our own judgement in round 4.',
-  },
-  {
-    query: 'grain=0.16,0.58',
-    label: 'Round 3 shortlist, the loudest sheet of them',
-    sheetL: 88.78,
-    sheetSpread: 4.09,
-    pageSpread: 0.99,
-    note: 'Set aside on our own judgement in round 4.',
-  },
-  {
-    query: 'grain=0.35,0.28',
-    label: 'Round 3 as it shipped, one number driving both sheets',
-    sheetL: 92.84,
-    sheetSpread: 2.02,
-    pageSpread: 2.19,
-    note: 'The pair you saw before round 4 moved them apart.',
-  },
-  {
-    query: 'grain=0.22,0.30&tile=patch-b',
-    label: 'A different patch of the same scan, coarser by half a level',
-    sheetL: 92.52,
-    sheetSpread: 2.18,
-    pageSpread: 1.27,
-    note: 'Round 4 cut the flattest of 1,692 patches. This is one of the others.',
-  },
-];
+] as const;
 ---
 
 <html lang="en">
@@ -144,145 +34,171 @@ const OPTIONS: Option[] = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>Paper review</title>
-    <style>
+    <title>Paper grain, by hand</title>
+    <style is:inline>
       :root {
         color-scheme: light dark;
-        --page: light-dark(#f6f4ee, #14171c);
-        --ink: light-dark(#1b1f24, #e6e8ea);
-        --faint: light-dark(#5d646c, #98a1aa);
-        --line: light-dark(#d3cec1, #2c333b);
-        --link: light-dark(#8a4b12, #f0b071);
+        --ink: #1b1a17;
+        --paper: #f6f3ee;
+        --faint: #6b6560;
+        --rule: #d8d1c7;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #ece7df;
+          --paper: #171614;
+          --faint: #9a938a;
+          --rule: #35322d;
+        }
       }
 
       body {
         margin: 0 auto;
-        padding: 2rem 1rem 4rem;
-        max-width: 60rem;
-        background: var(--page);
+        padding: 2rem 1rem 6rem;
+        max-width: 54rem;
+        background: var(--paper);
         color: var(--ink);
         font: 1rem/1.5 system-ui, sans-serif;
       }
 
       h1 {
-        margin: 0 0 1.5rem;
         font-size: 1.5rem;
+        margin: 0 0 0.5rem;
       }
 
-      ol {
-        margin: 0;
+      h2 {
+        font-size: 1.125rem;
+        margin: 2.25rem 0 0.25rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--rule);
+      }
+
+      p {
+        margin: 0.25rem 0 0.5rem;
+        color: var(--faint);
+      }
+
+      ul {
+        margin: 0.5rem 0 0;
         padding: 0;
         list-style: none;
       }
 
       li {
-        padding: 0.75rem 0;
-        border-top: 1px solid var(--line);
+        margin-bottom: 0.4rem;
       }
 
-      li:last-child {
-        border-bottom: 1px solid var(--line);
-      }
-
-      .label {
-        margin: 0;
+      li a {
         font-weight: 600;
       }
 
-      .numbers,
-      .note {
-        margin: 0.125rem 0 0;
+      .say {
         color: var(--faint);
-        font-size: 0.875rem;
       }
 
-      .links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin: 0.5rem 0 0;
-        padding: 0;
+      .scroll {
+        overflow-x: auto;
       }
 
-      .links a {
-        padding: 0.25rem 0.75rem;
-        border: 1px solid var(--line);
-        border-radius: 0.25rem;
-        color: var(--link);
-        text-decoration: none;
+      table {
+        width: 100%;
+        margin: 0.75rem 0 0;
+        border-collapse: collapse;
       }
 
-      .links a:hover,
-      .links a:focus-visible {
-        border-color: var(--link);
-        text-decoration: underline;
+      th,
+      td {
+        padding: 0.4rem 0.75rem 0.4rem 0;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--rule);
       }
 
-      footer {
-        margin-top: 2.5rem;
-        color: var(--faint);
-        font-size: 0.9375rem;
+      th {
+        font-weight: 600;
       }
 
-      footer h2 {
-        color: var(--ink);
-        font-size: 1.125rem;
+      td.num,
+      th.num {
+        text-align: right;
+        padding-right: 1rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
       }
 
       code {
         font-family: ui-monospace, monospace;
+        font-size: 0.875em;
       }
     </style>
   </head>
-
   <body>
-    <h1>Paper: every setting, on every theme</h1>
+    <h1>Paper grain, by hand</h1>
+    <p>
+      Each link opens the CV with two sliders on it: one for a drawing stack's sheets, one for the
+      contributions paper. They move the live page, they remember a number per theme, and the
+      panel hands the four themes back as a table to paste into the pull request.
+    </p>
 
-    <ol>
-      {OPTIONS.map((option) => (
+    <h2>Open the sliders</h2>
+    <ul>
+      {THEMES.map((theme) => (
         <li>
-          <p class="label">{option.label}</p>
-          <p class="numbers">
-            Contributions sheet L* {option.sheetL.toFixed(1)} against 96.5 bare, spread{' '}
-            {option.sheetSpread.toFixed(2)} levels. Drawing page spread {option.pageSpread.toFixed(2)}.
-          </p>
-          {option.note && <p class="note">{option.note}</p>}
-          <p class="links">
-            {THEMES.map(([id, name]) => (
-              <a href={option.query ? `../?theme=${id}&${option.query}` : `../?theme=${id}`}>{name}</a>
-            ))}
-          </p>
+          <a href={`../?tune&theme=${theme.id}`}>{theme.name}</a>{' '}
+          <span class="say">
+            Sheets {theme.page}, contributions {theme.sheet} on the branch. {theme.blend}.
+          </span>
         </li>
       ))}
-    </ol>
+      <li>
+        <a href="../?tune">Whatever theme you are on</a>{' '}
+        <span class="say">The panel switches theme itself, so one link does for all four.</span>
+      </li>
+    </ul>
 
-    <footer>
-      <h2>What the numbers are</h2>
-      <p>
-        L* is how light the paper renders, 100 being white. The contributions sheet is L* 96.5
-        with no fibre on it, and multiply can only take that down, never up. Spread is the
-        standard deviation of the fibre in display levels, measured as the difference between
-        two shots of the same sheet at the same scroll offset with the grain off and on, over
-        the pixels that are one flat colour with it off. Both numbers are from the light theme;
-        the other three land within 0.15 levels of spread of it.
-      </p>
-      <p>
-        Roughness and darkening are separate, and this is where they part. The paper is close
-        enough to white that a grain cannot modulate about its own level: at the current sheet
-        strength the fibre would have to lighten the paper past white on the light half, so
-        multiply takes the mean down with it. Paying that back by lifting the paper is only
-        arithmetically possible below about 0.24, and only by making the bare sheet pure white.
-        The lifted tile is the other way at it: the same fibre with the same spread, centred 232
-        instead of 216.4, so multiply has less to subtract in the first place.
-      </p>
+    <h2>The same sliders on the other two tiles</h2>
+    <ul>
+      {TILES.map((tile) => (
+        <li>
+          <a href={`../${tile.query}`}>{tile.name}</a> <span class="say">{tile.say}</span>
+        </li>
+      ))}
+    </ul>
 
-      <h2>What the links carry</h2>
-      <p>
-        <code>?grain=&lt;page&gt;,&lt;sheet&gt;</code> sets a drawing stack's pages and the torn
-        contributions paper separately, <code>?tile=</code> swaps the fibre tile, and
-        <code>?theme=</code> picks a theme through the same key the theme picker writes, so it
-        sticks until you pick another one.
-      </p>
-    </footer>
+    <h2>How to hand the numbers back</h2>
+    <p>
+      Set a theme, move both sliders until the two sheets read the way you want, switch theme, do
+      it again. Copy hands you the four rows below. Paste them into the pull request or the chat
+      and they get baked into ThemePicker.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>theme</th>
+            <th class="num">drawing sheets</th>
+            <th class="num">contributions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {THEMES.map((theme) => (
+            <tr>
+              <td>
+                <code>{theme.id}</code>
+              </td>
+              <td class="num">{theme.page}</td>
+              <td class="num">{theme.sheet}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Those are what the branch paints today. On the light themes the contributions sheet reads
+      L* 91.7 against 96.5 bare, a spread of 2.60 levels, and a drawing sheet spreads 1.32. The
+      other three themes land within 0.15 levels of those. Nothing is forced: the mechanism is
+      the same one the site ships, and the sliders only write the two numbers.
+    </p>
   </body>
 </html>
