@@ -21,11 +21,6 @@ const TILES = [
     name: 'The lifted tile',
     say: 'The same fibre centred on 232 rather than 216.4, so multiply darkens a light sheet less for the same spread.',
   },
-  {
-    query: '?tune&tile=patch-b',
-    name: 'A different patch',
-    say: 'Another crop of the same scan, coarser by half a level. The shipped one is the flattest of the 1,692 patches that size.',
-  },
 ] as const;
 ---
 
@@ -157,7 +152,7 @@ const TILES = [
       </li>
     </ul>
 
-    <h2>The same sliders on the other two tiles</h2>
+    <h2>The same sliders on the other tile</h2>
     <ul>
       {TILES.map((tile) => (
         <li>
