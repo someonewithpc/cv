@@ -498,7 +498,10 @@ function layoutUShape(area: AreaRect, options: LayoutOptions): ChairPose[] {
   const { poses, pushLocal } = makePusher(area);
 
   const cols = countFit(area.width, sizeX, options.distanceX);
-  const sideRows = countFit(Math.max(0, area.depth - sizeZ), sizeZ, options.distanceZ);
+  // The sides start one gap below the top row (sideStartZ), so that gap comes off the depth
+  // they have to fit in as well as the row itself; given the row alone, countFit's "one more
+  // without a trailing gap" admitted a chair whose far edge stood past the area.
+  const sideRows = countFit(Math.max(0, area.depth - sizeZ - options.distanceZ), sizeZ, options.distanceZ);
   const originX = -area.width / 2 + sizeX / 2;
   const topZ = -area.depth / 2 + sizeZ / 2;
   const sideStartZ = topZ + stepZ;
