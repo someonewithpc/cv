@@ -89,5 +89,6 @@
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
+- [x] Contributions paper torn along a fine edge, every line on its rule (#92)
 - [ ] Work History
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
