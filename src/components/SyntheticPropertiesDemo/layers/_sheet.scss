@@ -1,0 +1,60 @@
+// What the synthetic properties sheets share: the margin every layer keeps around its
+// content, and the type and panel the three blueprint sheets draw on.
+
+// Clear sheet between the content and the frame line, the title block and the corner pieces,
+// in em of the sheet's own type so it scales with the page. It goes on a layer's root and
+// nowhere else, so nothing inside has to be nudged on its own. The spec's floor is 0.5em.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// Keeps a layer's content clear of the title block. A landscape
+// sheet has the block in its bottom-right corner, reaching into the content column, so the
+// content is centred in what is left above it; Stack.astro measures the block's height.
+@mixin clear-of-title-block {
+  padding-bottom: calc(var(--title-block-block, 0px) + #{$sheet-margin});
+
+  @container technical-drawing (orientation: portrait) {
+    /* Portrait gives the title block its own row. */
+    padding-bottom: $sheet-margin;
+  }
+}
+
+@mixin blueprint-wrapper {
+  @include sheet-content;
+  @include clear-of-title-block;
+
+  max-width: min(92cqw, 100%);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+}
+
+// The sheet's type, keyed on the stack's orientation attribute rather than a container
+// query: a font size out of a query re-lays everything under it on each resize step that
+// crosses the breakpoint (see TechnicalDrawing/Stack.astro).
+@mixin sheet-type($landscape: 0.026, $portrait: 0.03) {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.625rem, $landscape * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, $portrait * min(var(--sheet-inline), var(--sheet-block)));
+  }
+}
+
+@mixin panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  display: grid;
+  gap: 0.625em;
+}

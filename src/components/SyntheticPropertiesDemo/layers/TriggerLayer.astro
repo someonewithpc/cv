@@ -1,0 +1,237 @@
+---
+// Where the one builder's SQL ends up. The shapes are the product's; the bodies are cut
+// down to the lines that show which relation the builder was handed.
+const targets = [
+  {
+    id: 'backfill',
+    title: 'Backfill',
+    when: 'migration, once',
+    source: 'library_objects',
+    sql: [
+      'INSERT INTO library_object_synthetic_properties',
+      '  (library_object_id, name, value)',
+      'size_synthetic_property_select_sql(',
+      '  LibraryObject.arel_table)',
+    ],
+  },
+  {
+    id: 'insert',
+    title: 'AFTER INSERT',
+    when: 'library_objects, each row',
+    source: 'NEW',
+    sql: [
+      'INSERT INTO library_object_synthetic_properties',
+      '  (library_object_id, name, value)',
+      'size_synthetic_property_select_sql(NEW)',
+    ],
+  },
+  {
+    id: 'update',
+    title: 'AFTER UPDATE',
+    when: 'library_objects, each row',
+    source: 'NEW',
+    sql: [
+      'DELETE FROM library_object_synthetic_properties',
+      '  WHERE library_object_id = OLD.id;',
+      'INSERT INTO … size_synthetic_property_select_sql(NEW)',
+    ],
+  },
+  {
+    id: 'delete',
+    title: 'AFTER DELETE',
+    when: 'library_objects, each row',
+    source: 'OLD',
+    sql: [
+      'DELETE FROM library_object_synthetic_properties',
+      '  WHERE library_object_id = OLD.id',
+    ],
+  },
+];
+---
+
+<div class="wrapper">
+  <div class="trigger-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <strong>One Ruby definition, four places its SQL runs</strong>
+        <span>The backfill and the trigger bodies are the same Arel, handed a different relation, so they cannot drift</span>
+      </header>
+
+      <div class="builder">
+        <span class="caption"><code>app/models/library_object.rb</code></span>
+        <pre><code><span class="k">def</span> self.size_synthetic_property_select_sql(<span class="hot">source</span>)
+  <span class="c"># WITH RECURSIVE split_sizes: SUBSTRING_INDEX takes the head,</span>
+  <span class="c"># CASE keeps the rest, one row per dimension</span>
+  <span class="c"># six projections, each GROUP_CONCAT(... SEPARATOR ' by ')</span>
+  <span class="c"># UNION ALL, then the same for pax as 'Pax' and 'Seats'</span>
+<span class="k">end</span></code></pre>
+      </div>
+
+      <svg class="wires" viewBox="0 0 400 24" preserveAspectRatio="none">
+        <path d="M200 0 V8 H100 V24" />
+        <path d="M200 8 H300 V24" />
+      </svg>
+
+      <ol class="targets">
+        {targets.map((target) => (
+          <li class="target" data-target={target.id}>
+            <span class="head">
+              <span class="title">{target.title}</span>
+              <span class="when">{target.when}</span>
+              <span class="source"><code>source</code> = <code class="hot">{target.source}</code></span>
+            </span>
+            <pre><code>{target.sql.join('\n')}</code></pre>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include blueprint-wrapper;
+}
+
+.trigger-layer {
+  @include sheet-type;
+
+  box-sizing: border-box;
+  width: min(100%, 50em);
+}
+
+.panel {
+  @include panel;
+
+  gap: 0.375em;
+}
+
+header {
+  display: grid;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.875em;
+  }
+
+  span {
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+}
+
+code,
+pre {
+  font-family: monospace, system-ui;
+}
+
+pre {
+  margin: 0;
+  padding: 0.375em 0.5em;
+  border: 1px solid var(--line);
+  border-radius: 0.25em;
+  background: var(--surface-sunken);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.builder {
+  display: grid;
+  gap: 0.25em;
+  justify-self: center;
+  width: min(100%, 34em);
+
+  .caption {
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+  }
+
+  pre {
+    font-size: 0.6875em;
+  }
+}
+
+.k {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.c {
+  color: var(--ink-muted);
+}
+
+.hot {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.wires {
+  display: block;
+  width: 100%;
+  height: 1.25em;
+  overflow: visible;
+
+  path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.25;
+    vector-effect: non-scaling-stroke;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    display: none;
+  }
+}
+
+.targets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.target {
+  display: grid;
+  align-content: start;
+  gap: 0.125em;
+  min-width: 0;
+  padding: 0.375em 0.5em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-raised);
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.75em;
+  }
+
+  .title {
+    font-family: monospace, system-ui;
+    font-size: 0.75em;
+    font-weight: 600;
+  }
+
+  .when,
+  .source {
+    font-size: 0.625em;
+    color: var(--ink-muted);
+  }
+
+  pre {
+    margin-top: 0.25em;
+    font-size: 0.625em;
+  }
+
+  &[data-target='backfill'] {
+    border-style: dashed;
+  }
+}
+</style>

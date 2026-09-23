@@ -1,0 +1,505 @@
+---
+import {
+  matches,
+  paxProperties,
+  primaryRenderings,
+  renderings,
+  sample,
+  sampleQueries,
+  searchableText,
+  sizeProperties,
+  splitSizes,
+  walkthrough,
+} from '../units';
+
+// The page opens on the sample, rendered here so the sheet reads in full before the
+// script arrives; the script rebuilds the same markup from the same functions.
+const dimensions = splitSizes(sample.size);
+const sizes = sizeProperties(sample.size);
+const pax = paxProperties(sample.pax);
+const text = searchableText([...sizes, ...pax]);
+const hidden = renderings.length - primaryRenderings.length;
+---
+
+<div
+  class="synthetic-demo"
+  data-synthetic-demo
+  data-walkthrough={JSON.stringify(walkthrough)}
+>
+  <div class="synthetic-tool" data-live data-autoplay="off" tabindex="-1">
+    <div class="column pipeline">
+      <div class="stage source">
+        <label class="field size-field">
+          <span class="field-name"><code>size</code></span>
+          <input
+            class="size-input"
+            type="text"
+            value={sample.size}
+            spellcheck="false"
+            autocomplete="off"
+            aria-label="Size, in centimetres, dimensions split by x"
+          />
+        </label>
+        <label class="field pax-field">
+          <span class="field-name"><code>pax</code></span>
+          <input
+            class="pax-input"
+            type="text"
+            inputmode="numeric"
+            value={sample.pax}
+            spellcheck="false"
+            autocomplete="off"
+            aria-label="Seats"
+          />
+        </label>
+      </div>
+
+      <div class="stage split">
+        <span class="stage-label"><code>split_sizes</code> · recursive CTE</span>
+        <ol class="chips" aria-label="Dimensions">
+          {dimensions.map((dimension, index) => (
+            <li class:list={['chip', { invalid: dimension.cm === null }]} data-dim={index} style={{ '--i': index }}>
+              {dimension.raw}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="stage render" data-more="false">
+        <span class="stage-label">six renderings · <code>GROUP_CONCAT(… SEPARATOR ' by ')</code></span>
+        <ul class="renderings">
+          {sizes.map((property, row) => (
+            <li
+              class="rendering"
+              data-unit={renderings[row].id}
+              data-primary={primaryRenderings.includes(renderings[row].id) ? '' : undefined}
+              style={{ '--row': row }}
+            >
+              <span class="name">{property.name}</span>
+              <span class="value">
+                {property.pieces.map((piece, index) => (
+                  <Fragment>
+                    {index > 0 && <span class="by"> by </span>}
+                    <span class="piece" data-dim={index} style={{ '--i': index }}>{piece}</span>
+                  </Fragment>
+                ))}
+              </span>
+            </li>
+          ))}
+          {pax.map((property, row) => (
+            <li class="rendering pax" data-primary style={{ '--row': sizes.length + row }}>
+              <span class="name">{property.name}</span>
+              <span class="value"><span class="piece">{property.value}</span></span>
+            </li>
+          ))}
+        </ul>
+        <button class="more" type="button" aria-expanded="false">
+          <span class="more-closed">+ {hidden} more renderings</span>
+          <span class="more-open">fewer renderings</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="column output">
+      <div class="stage index">
+        <span class="stage-label"><code>library_object_properties_concatenated.values</code></span>
+        <pre class="text" aria-label="Searchable text">{text}</pre>
+      </div>
+
+      <div class="stage search">
+        <label class="field query-field">
+          <span class="field-name">search</span>
+          <input
+            class="query-input"
+            type="search"
+            placeholder="try 5ft3in"
+            spellcheck="false"
+            autocomplete="off"
+            aria-label="Search the text"
+          />
+          <span class="query-result" aria-live="polite"></span>
+        </label>
+        <ul class="queries" aria-label="Queries against this text">
+          {sampleQueries.map((query) => {
+            const hit = matches(text, query);
+            return (
+              <li>
+                <button class="query" type="button" data-query={query} data-hit={String(hit)}>
+                  <span class="mark" aria-hidden="true">{hit ? '✓' : '✗'}</span>
+                  <span class="query-text">{query}</span>
+                  <span class="sr-only">{hit ? 'hits' : 'misses'}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from '../client/boot';
+
+bootIslands('[data-synthetic-demo]', boot);
+</script>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+:global(article.technical-drawing-stack > * > section .content:has(.synthetic-demo)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.synthetic-demo {
+  @include sheet-content;
+  @include clear-of-title-block;
+
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 0;
+}
+
+.synthetic-tool {
+  box-sizing: border-box;
+  width: min(100%, 56em);
+  max-height: 100%;
+  display: grid;
+  /* Landscape: the pipeline down the left, what it produces down the right. */
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1em;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.625rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+  outline: none;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625em;
+    font-size: min(1rem, 0.03 * min(var(--sheet-inline), var(--sheet-block)));
+  }
+}
+
+code,
+pre,
+input {
+  font-family: monospace, system-ui;
+}
+
+.column {
+  display: grid;
+  gap: 0.625em;
+  min-width: 0;
+}
+
+.stage {
+  display: grid;
+  align-content: start;
+  gap: 0.25em;
+  min-width: 0;
+}
+
+.stage-label {
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source {
+  grid-template-columns: minmax(0, 1fr) 6em;
+  gap: 0.5em;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 0.375em;
+  min-width: 0;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.25em 0.4em;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--surface-page);
+    color: var(--ink);
+    font-size: 1em;
+
+    &::placeholder {
+      color: var(--ink-faint);
+    }
+
+    &:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+  }
+}
+
+.field-name {
+  flex: none;
+  font-size: 0.75em;
+  color: var(--ink-muted);
+}
+
+/* The walkthrough marks the field it is typing into, since it has no pointer of its own. */
+.synthetic-tool[data-autoplay='playing'] input.typing {
+  outline: 2px dashed var(--accent);
+  outline-offset: 1px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375em;
+  min-height: 1.6em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 0.125em 0.5em;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  font-family: monospace, system-ui;
+  cursor: default;
+
+  &.invalid {
+    border-style: dashed;
+    color: var(--ink-faint);
+    text-decoration: line-through;
+  }
+}
+
+.renderings {
+  display: grid;
+  gap: 0.125em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rendering {
+  display: grid;
+  grid-template-columns: 9.5em minmax(0, 1fr);
+  gap: 0.5em;
+  align-items: baseline;
+  padding: 0.125em 0.375em;
+  border-radius: 2px;
+  background: var(--surface-sunken);
+
+  .name {
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  .value {
+    font-family: monospace, system-ui;
+    font-size: 0.875em;
+    overflow-wrap: anywhere;
+  }
+
+  .by {
+    color: var(--ink-faint);
+  }
+
+  /* Three renderings by default; the rest come out on hover, focus or the button. The
+     fan-out is the point, not reading all six. */
+  &:not([data-primary]) {
+    display: none;
+  }
+
+  &.pax {
+    margin-top: 0.25em;
+  }
+}
+
+.render:is(:hover, :focus-within, [data-more='true']) .rendering:not([data-primary]) {
+  display: grid;
+}
+
+.piece {
+  display: inline-block;
+  transition: color 0.15s ease;
+}
+
+/* Pointing at a chip lights the pieces it fanned out into. */
+.synthetic-tool[data-dim-hover='0'] .piece[data-dim='0'],
+.synthetic-tool[data-dim-hover='1'] .piece[data-dim='1'],
+.synthetic-tool[data-dim-hover='2'] .piece[data-dim='2'],
+.synthetic-tool[data-dim-hover='3'] .piece[data-dim='3'] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.more {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 0.6875em;
+  cursor: pointer;
+  text-decoration: underline dotted;
+
+  .more-open {
+    display: none;
+  }
+
+  .render:is(:hover, :focus-within, [data-more='true']) & {
+    .more-closed {
+      display: none;
+    }
+
+    .more-open {
+      display: inline;
+    }
+  }
+}
+
+.text {
+  margin: 0;
+  padding: 0.5em 0.625em;
+  border: 1px solid var(--line);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  font-size: 0.75em;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  /* A tint of the accent rather than --accent-muted, which is a light fill on the dark
+     themes and takes the light text with it. */
+  :global(mark) {
+    background: color-mix(in oklch, var(--accent) 30%, transparent);
+    color: inherit;
+    border-radius: 2px;
+    outline: 1px solid var(--accent);
+  }
+}
+
+.queries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.query {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0.125em 0.5em;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--surface-page);
+  color: var(--ink-muted);
+  font-family: monospace, system-ui;
+  font-size: 0.8125em;
+  cursor: pointer;
+
+  &[data-hit='true'] {
+    border-color: var(--accent);
+    color: var(--ink);
+
+    .mark {
+      color: var(--accent);
+    }
+  }
+
+  &[data-hit='false'] .query-text {
+    text-decoration: line-through;
+    text-decoration-color: var(--ink-faint);
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--accent);
+  }
+}
+
+.query-result {
+  flex: none;
+  min-width: 4.5em;
+  font-size: 0.75em;
+  color: var(--ink-muted);
+
+  &[data-hit='true'] {
+    color: var(--accent-text);
+  }
+}
+
+/* A run of the pipeline: the chips drop in one after another, each rendering fans out
+   behind them a row at a time, and the text flashes as it takes the new values. */
+.synthetic-tool.running {
+  .chip {
+    animation: chip-in 0.3s calc(var(--i) * 80ms) both cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .rendering .piece {
+    animation: piece-in 0.35s calc(240ms + var(--row) * 50ms + var(--i, 0) * 70ms) both ease-out;
+  }
+
+  .text {
+    animation: text-flash 0.9s 700ms both ease-out;
+  }
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.5em;
+  }
+}
+
+@keyframes piece-in {
+  from {
+    opacity: 0;
+    translate: -0.75em 0;
+  }
+}
+
+@keyframes text-flash {
+  from {
+    background: var(--accent-muted);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .synthetic-tool.running {
+    .chip,
+    .rendering .piece,
+    .text {
+      animation: none;
+    }
+  }
+
+  .piece {
+    transition: none;
+  }
+}
+</style>

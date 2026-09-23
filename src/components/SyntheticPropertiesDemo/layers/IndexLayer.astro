@@ -1,0 +1,175 @@
+---
+import { paxProperties, sample, searchableText, sizeProperties } from '../units';
+
+// The sample object's rows in the synthetic table, and what the second trigger layer folds
+// them into. The id is a placeholder.
+const objectId = 1024;
+const rows = [...sizeProperties(sample.size), ...paxProperties(sample.pax)];
+const text = searchableText(rows);
+---
+
+<div class="wrapper">
+  <div class="index-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <strong>Every row of the object, folded back into one searchable string</strong>
+        <span>A second layer of triggers, on the synthetic table itself, rebuilds the object's string on every insert, update and delete</span>
+      </header>
+
+      <div class="flow">
+        <div class="rows">
+          <span class="caption"><code>library_object_synthetic_properties</code></span>
+          <table>
+            <thead>
+              <tr><th scope="col">object</th><th scope="col">name</th><th scope="col">value</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr>
+                  <td class="id">{objectId}</td>
+                  <td>{row.name}</td>
+                  <td class="value">{row.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="upsert">
+          <span class="caption">AFTER INSERT / UPDATE / DELETE, each row</span>
+          <pre><code>INSERT INTO library_object_properties_concatenated
+  (library_object_id, `values`)
+SELECT library_object_id,
+  GROUP_CONCAT(CONCAT(name, ': ', value)
+    SEPARATOR '\n')
+FROM library_object_synthetic_properties
+WHERE library_object_id = NEW.library_object_id
+<span class="hot">ON DUPLICATE KEY UPDATE</span>
+  `values` = VALUES(`values`)</code></pre>
+          <span class="arrow" aria-hidden="true">↓</span>
+          <span class="caption"><code>library_object_properties_concatenated.values</code> · FULLTEXT</span>
+          <pre class="text">{text}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include blueprint-wrapper;
+}
+
+.index-layer {
+  @include sheet-type;
+
+  box-sizing: border-box;
+  width: min(100%, 52em);
+}
+
+.panel {
+  @include panel;
+}
+
+header {
+  display: grid;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.875em;
+  }
+
+  span {
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+}
+
+code,
+pre {
+  font-family: monospace, system-ui;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 0.75em;
+  align-items: start;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rows,
+.upsert {
+  display: grid;
+  gap: 0.25em;
+  min-width: 0;
+}
+
+.caption {
+  font-size: 0.625em;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.625em;
+}
+
+th,
+td {
+  padding: 0.2em 0.4em;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+thead th {
+  font-weight: 600;
+  color: var(--ink-muted);
+  border-bottom-color: var(--line-strong);
+}
+
+td.id,
+td.value {
+  font-family: monospace, system-ui;
+}
+
+td.id {
+  color: var(--ink-faint);
+}
+
+pre {
+  margin: 0;
+  padding: 0.375em 0.5em;
+  border: 1px solid var(--line);
+  border-radius: 0.25em;
+  background: var(--surface-sunken);
+  font-size: 0.5625em;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+pre.text {
+  border-color: var(--line-strong);
+}
+
+.hot {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.arrow {
+  justify-self: center;
+  line-height: 1;
+  color: var(--ink-muted);
+}
+</style>

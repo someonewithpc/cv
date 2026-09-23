@@ -14,6 +14,7 @@ import MarkerEditorDemo from '@/components/MarkerEditorDemo/Demo.astro';
 import SpaceBuilderDemo from '@/components/SpaceBuilderDemo/Demo.astro';
 import VariantsDemo from '@/components/VariantsDemo/Demo.astro';
 import TaggingToolDemo from '@/components/TaggingToolDemo/Demo.astro';
+import SyntheticPropertiesDemo from '@/components/SyntheticPropertiesDemo/Demo.astro';
 import FontPickerDemo from '@/components/FontPickerDemo/Demo.astro';
 import DragDropDemo from '@/components/DragDropDemo/Demo.astro';
 import SchemaDefDemo from '@/components/SchemaDefDemo/Demo.astro';
@@ -121,6 +122,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             GIF moving. Switch it off and ImageEncoder makes a still.
           </TitleCard>
           <EventBusDemo />
+        </Callout>
+        <Callout letter="J" title="Synthetic properties" titleJp="合成プロパティ" scale="1:1" headingId="detail-j" cardSide="end">
+          <TitleCard slot="card" title="Synthetic Properties" medium="Rails, MariaDB" year="2024">
+            A library object stores its size once, in centimetres. Database triggers wrote it
+            out six more ways, so a search for 5ft3in or 1.6m found the same table. The
+            triggers lived five weeks on a branch before Ruby callbacks took their place.
+          </TitleCard>
+          <SyntheticPropertiesDemo />
         </Callout>
       </div>
     </section>

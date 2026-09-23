@@ -1,0 +1,87 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import SplitLayer from './layers/SplitLayer.astro';
+import RenderLayer from './layers/RenderLayer.astro';
+import TriggerLayer from './layers/TriggerLayer.astro';
+import IndexLayer from './layers/IndexLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+const srcRoot = path.join(process.cwd(), 'src');
+const clientEntry = path.join(srcRoot, 'components/SyntheticPropertiesDemo/client/syntheticProperties.ts');
+
+const { outputFiles: [clientBundle] } = await esbuild.build({
+  entryPoints: [clientEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  alias: { '@': srcRoot },
+});
+
+const clientSize = toKiB(clientBundle.text);
+
+const layers = {
+  split: { name: null },
+  render: { name: 'Six Renderings', pageStyle: 'blueprint' },
+  trigger: { name: 'Trigger Bodies', pageStyle: 'blueprint' },
+  index: { name: 'Searchable Text', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Synthetic Properties"
+  scale="1:1"
+  size={clientSize}
+  date="2025"
+  tech={['ruby', 'rails', 'mysql']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      split: <SplitLayer />,
+      render: <RenderLayer />,
+      trigger: <TriggerLayer />,
+      index: <IndexLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      split: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over. Type a size in centimetres and watch it split, fan out
+          into units and land in the text search reads
+        </PostIt>
+      ),
+      render: (
+        <PostIt background="#cde" color="black">
+          Six ways to write one size, so a search in any of them finds it. Check the last
+          column: that is where the inches carry into the feet
+        </PostIt>
+      ),
+      trigger: (
+        <PostIt background="#fed" color="black">
+          One Ruby builder writes both the backfill and the trigger bodies, so the two can
+          never drift apart
+        </PostIt>
+      ),
+      index: (
+        <PostIt background="#dfd" color="black">
+          A second trigger folds every row back into one string per object. Writes stay
+          plain Rails writes; the index keeps itself
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
