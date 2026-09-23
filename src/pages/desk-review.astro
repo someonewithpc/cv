@@ -2,202 +2,70 @@
 /**
  * REVIEW ONLY, strip before this lands on main, along with the ?desk switch in Layout.astro.
  *
- * Every link Hugo needs, in one block, with nothing above it. Each link opens the CV with that
- * desk already painted and the theme already picked. Nothing here has been narrowed on our
- * judgement: every tile that was ever cut is on the dark lists, because the painting lands them
- * all at the same near black and only the grain is left to choose. The measurements, the
- * mechanism and the history of the rounds live in the pull request and the state file, not here.
+ * One question: whether the light desk keeps the ash boards or comes off the same oak scan as
+ * the other three. Links first, nothing above them. The wider list of every wood we ever cut is
+ * on the desk-review-switch branch, which is where round 8 parked it.
  */
 
-type Wood = {
+type Candidate = {
   file: string;
   name: string;
-  figure: string;
-  swing: string;
+  say: string;
   L: string;
   C: string;
+  h: string;
+  grain: string;
 };
 
-/* swing is the painted desk's L* standard deviation, read off the bare margin beside the
-   sheets at 1440x900, dark theme. The drawn boards this replaces measure 2.02 there. Forest
-   paints within 0.02 of dark on every tile, so one number does for both. L* and C* are the
-   tile file's own lightness and chroma, which is what a light desk shows through the veil. */
-const WOODS: readonly Wood[] = [
+/* L*, C* and hue are the tile file's own mean, which is what a light desk shows through a veil
+   of a sixth. grain is the file's L* standard deviation: how hard the figure reads. */
+const LIGHT: readonly Candidate[] = [
   {
-    file: 'ash-4186',
-    name: 'Ash boards',
-    figure: 'Sawn boards with the plank joints left in. Light wears this.',
-    swing: '3.11',
+    file: '',
+    name: 'Ash boards, your pick',
+    say: 'Sawn boards with the plank joints left in. A different scan from the other three.',
     L: '74.4',
     C: '19.7',
+    h: '73',
+    grain: '2.75',
   },
   {
     file: 'oak-7760',
-    name: 'Slip-match oak',
-    figure: 'Long cathedral figure across the page, no joint anywhere in it. Arctic wears this.',
-    swing: '2.84',
+    name: 'The oak, untouched',
+    say: 'Arctic’s tile as it stands. Long cathedral figure, no joint in it, and ten points of L* darker than the ash.',
     L: '64.2',
     C: '22.2',
+    h: '65',
+    grain: '2.56',
   },
   {
-    file: 'oak-7760-mid',
-    name: 'Slip-match oak, levelled',
-    figure: 'The same figure with the contrast pulled in to sit at mid grey. Dark wears this.',
-    swing: '2.45',
-    L: '54.8',
+    file: 'oak-7760-pale',
+    name: 'The oak, lifted',
+    say: 'The same file raised to the ash’s lightness and nothing else, so it keeps the oak’s own red.',
+    L: '74.4',
+    C: '22.3',
+    h: '65',
+    grain: '2.56',
+  },
+  {
+    file: 'oak-7760-limed',
+    name: 'The oak, limed',
+    say: 'Raised, drawn back to the ash’s chroma and turned 8° towards its yellow. All four numbers land within a tenth of the ash.',
+    L: '74.5',
     C: '19.7',
-  },
-  {
-    file: 'oak-7760-down',
-    name: 'Slip-match oak, turned',
-    figure: 'The same veneer with the grain running down the page instead of across it.',
-    swing: '2.83',
-    L: '64.2',
-    C: '22.2',
-  },
-  {
-    file: 'oak-7760-smoked',
-    name: 'Slip-match oak, smoked',
-    figure: 'The levelled oak darkened and drained of red in the file itself. Forest wears this.',
-    swing: '2.14',
-    L: '41.3',
-    C: '5.3',
-  },
-  {
-    file: 'oak-7760-ebonised',
-    name: 'Slip-match oak, ebonised',
-    figure: 'The same again, taken near black in the file.',
-    swing: '2.01',
-    L: '20.1',
-    C: '4.7',
-  },
-  {
-    file: 'cc0-oak-light',
-    name: 'Oak veneer 02',
-    figure: 'Fine straight lines, no figure and no joints. The quiet one.',
-    swing: '2.09',
-    L: '77.3',
-    C: '24.1',
-  },
-  {
-    file: 'cc0-oak-grey',
-    name: 'Grey oak veneer 02',
-    figure: 'Open ring-porous oak, coarse and streaky. The loud one, and the only one you can read across a room.',
-    swing: '4.14',
-    L: '60.4',
-    C: '8.0',
-  },
-  {
-    file: 'cc0-oak-black',
-    name: 'Black oak veneer',
-    figure: 'Cathedral figure again, olive rather than brown, between the levelled oak and the grey one.',
-    swing: '2.71',
-    L: '41.9',
-    C: '7.4',
-  },
-  {
-    file: 'cc0-black-flamed',
-    name: 'Flamed black veneer',
-    figure: 'Nearly featureless. The only tile that paints a desk quieter than the drawn boards.',
-    swing: '1.05',
-    L: '34.6',
-    C: '3.0',
-  },
-  {
-    file: 'cc0-oak-light-smoked',
-    name: 'Oak veneer 02, smoked',
-    figure: 'The fine lines darkened and drained of red in the file.',
-    swing: '1.45',
-    L: '40.9',
-    C: '5.0',
-  },
-  {
-    file: 'cc0-oak-light-ebonised',
-    name: 'Oak veneer 02, ebonised',
-    figure: 'The fine lines taken near black in the file.',
-    swing: '1.37',
-    L: '20.1',
-    C: '4.3',
+    h: '73',
+    grain: '2.76',
   },
 ];
 
-const woodByFile = Object.fromEntries(WOODS.map((wood) => [wood.file, wood]));
-
-/* The pale six. The other six were cut to carry a near-black tone in the file, which on a pale
-   desk paints a dark desk under a light page: a different question from the one being asked
-   here, and one link away by hand if it is ever wanted. */
-const PALE = [
-  'ash-4186',
-  'oak-7760',
-  'oak-7760-mid',
-  'oak-7760-down',
-  'cc0-oak-light',
-  'cc0-oak-grey',
-] as const;
-
-/* The polish grid. Down is how black the body of the desk goes, which is floor and gain
-   together; across is how much colour is left in the sheen, which is the chroma of the veil and
-   moves no lightness at all. black is the share of the bare margin under L* 1; sheen C* is the
-   mean chroma of its brightest twentieth. */
-const POLISH = [
-  {
-    levels: 'no floor, no gain',
-    black: '0.0',
-    brown: { gloss: '', name: 'None', sheen: '6.3' },
-    neutral: null,
-  },
-  {
-    levels: '239 / 112',
-    black: '8.6',
-    brown: { gloss: 'satin', name: 'Satin', sheen: '6.2' },
-    neutral: { gloss: 'neutral', name: 'Satin, neutral sheen', sheen: '2.0' },
-  },
-  {
-    levels: '235 / 135',
-    black: '18.2',
-    brown: { gloss: 'polished', name: 'Polished', sheen: '6.2' },
-    neutral: { gloss: 'polished-neutral', name: 'Polished, neutral sheen', sheen: '2.0' },
-  },
-  {
-    levels: '234 / 142',
-    black: '21.3',
-    brown: { gloss: 'blacker', name: 'Blacker', sheen: '6.2' },
-    neutral: { gloss: 'blacker-neutral', name: 'Blacker, neutral sheen', sheen: '2.0' },
-  },
-  {
-    levels: '231 / 162',
-    black: '33.3',
-    brown: { gloss: 'lacquer', name: 'Lacquer', sheen: '6.1' },
-    neutral: { gloss: 'blackest-neutral', name: 'Lacquer, sheen barely coloured', sheen: '0.8' },
-  },
-] as const;
-
-/* What each theme paints with no query on it at all. */
-const PICK = {
-  light: 'ash-4186',
-  arctic: 'oak-7760',
-  dark: 'oak-7760-mid',
-  'dark-forest': 'oak-7760-smoked',
-} as const;
-
-const PICKED = [
-  { theme: 'light', name: 'Light', say: 'Sawn ash under a light veil of the desk colour.' },
+/* The other three, so the set can be flipped through in one sitting. None of them moves. */
+const REST = [
   { theme: 'arctic', name: 'Arctic', say: 'The oak at its own lightness, which under a pale desk reads as bleached.' },
   { theme: 'dark', name: 'Dark', say: 'The levelled oak, no polish on it, the sheen at chroma 0.010.' },
   { theme: 'dark-forest', name: 'Forest', say: 'The same oak smoked in the file, under the theme’s own green.' },
 ] as const;
 
-/* How brown the dark desk reads, which is the veil's chroma and nothing else: it moves no
-   lightness at all, so the grain is the same the whole way down. */
-const CHROMA = ['0.018', '0.015', '0.012', '0.010', '0.008', '0.006', '0.004', '0.002'] as const;
-
-const deskUrl = (file: string, theme: string, veil: boolean) =>
-  `../?desk=${file}&theme=${theme}${veil ? '' : '&veil=0'}`;
-
-/* The unpolished link says its chroma out loud so the grid's first row keeps the wood's own
-   colour rather than picking up the one the dark theme now carries. */
-const glossUrl = (gloss: string) =>
-  `../?desk=ash-4186&theme=dark${gloss ? `&gloss=${gloss}` : '&chroma=0.018'}`;
+const lightUrl = (file: string) => (file ? `../?desk=${file}&theme=light` : '../?theme=light');
 ---
 
 <html lang="en">
@@ -205,7 +73,7 @@ const glossUrl = (gloss: string) =>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>Desk wood, every link</title>
+    <title>The light desk, ash or oak</title>
     <style is:inline>
       :root {
         color-scheme: light dark;
@@ -268,11 +136,6 @@ const glossUrl = (gloss: string) =>
         color: var(--faint);
       }
 
-      .pick {
-        color: var(--ink);
-        font-weight: 600;
-      }
-
       .scroll {
         overflow-x: auto;
       }
@@ -303,11 +166,6 @@ const glossUrl = (gloss: string) =>
         white-space: nowrap;
       }
 
-      td .say {
-        display: block;
-        font-size: 0.875rem;
-      }
-
       code {
         font-family: ui-monospace, monospace;
         font-size: 0.875em;
@@ -315,156 +173,63 @@ const glossUrl = (gloss: string) =>
     </style>
   </head>
   <body>
-    <h1>Desk wood, every link</h1>
+    <h1>The light desk, ash or oak</h1>
     <p>
-      The four desks you picked are what the site paints now, with no query on them at all. Every
-      other desk we ever cut or tried is below them, grouped by theme, and still one link away.
+      Arctic, dark and forest are all cut from one oak scan. Light is sawn ash, which is the odd
+      one out. These four links are the light desk as you picked it and the same desk cut from
+      the oak instead, treated to land on the ash’s tone.
     </p>
 
-    <h2>What the site paints</h2>
+    <h2>Light</h2>
     <ul>
-      {PICKED.map((pick) => (
+      {LIGHT.map((wood) => (
         <li>
-          <a href={`../?theme=${pick.theme}`}>{pick.name}</a>{' '}
-          <span class="say">{woodByFile[PICK[pick.theme]].name}. {pick.say}</span>
+          <a href={lightUrl(wood.file)}>{wood.name}</a> <span class="say">{wood.say}</span>
         </li>
       ))}
     </ul>
 
-    <h2>Dark: how brown</h2>
-    <p>
-      The one knob the dark desk still carries. It is the chroma of the veil, it moves no lightness
-      at all, and the grain is the same the whole way down the list.
-    </p>
+    <h2>The other three, unchanged</h2>
     <ul>
-      {CHROMA.map((chroma) => (
+      {REST.map((pick) => (
         <li>
-          <a href={`../?theme=dark&chroma=${chroma}`}>Chroma {chroma}</a>
-          {chroma === '0.010' ? <span class="pick"> What it paints now.</span> : null}
+          <a href={`../?theme=${pick.theme}`}>{pick.name}</a> <span class="say">{pick.say}</span>
         </li>
       ))}
     </ul>
 
-    <h2>Dark: how black, and how brown together</h2>
-    <p>
-      The polish that rounds 5 to 7 tuned. Nothing on this grid ships: you took the contrast all
-      the way off it. Down the table the body of the desk goes black; across it the colour comes
-      out of the sheen, and the two do not touch. All on the ash.
-    </p>
+    <h2>What the four files measure</h2>
     <div class="scroll">
       <table>
         <thead>
           <tr>
-            <th class="num">Black</th>
-            <th>Sheen the colour of the wood</th>
-            <th>Sheen closer to grey</th>
+            <th>tile</th>
+            <th class="num">L*</th>
+            <th class="num">C*</th>
+            <th class="num">hue</th>
+            <th class="num">grain</th>
           </tr>
         </thead>
         <tbody>
-          {POLISH.map((stop) => (
+          {LIGHT.map((wood) => (
             <tr>
-              <td class="num">
-                {stop.black}%
-                <span class="say">{stop.levels}</span>
-              </td>
               <td>
-                <a href={glossUrl(stop.brown.gloss)}>{stop.brown.name}</a>
-                <span class="say">sheen C* {stop.brown.sheen}</span>
+                <code>{wood.file || 'ash-4186'}</code>
               </td>
-              <td>
-                {stop.neutral ? (
-                  <>
-                    <a href={glossUrl(stop.neutral.gloss)}>{stop.neutral.name}</a>
-                    <span class="say">sheen C* {stop.neutral.sheen}</span>
-                  </>
-                ) : (
-                  <span class="say">nothing to take out yet</span>
-                )}
-              </td>
+              <td class="num">{wood.L}</td>
+              <td class="num">{wood.C}</td>
+              <td class="num">{wood.h}</td>
+              <td class="num">{wood.grain}</td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
-
-    <h2>Dark: the wood under it</h2>
     <p>
-      All twelve tiles cut so far, none of them ruled out. The painting takes every one of them to
-      the same near black, so the only thing that changes down this list is the grain. Swing is how
-      far that grain moves the desk's lightness, and the drawn boards these replace swing 2.0. No
-      polish on these links and the theme's own chroma over them, which is how the dark desk is
-      painted now.
-    </p>
-    <ul>
-      {WOODS.map((wood) => (
-        <li>
-          <a href={deskUrl(wood.file, 'dark', true)}>{wood.name}</a>{' '}
-          <span class="say">
-            swing {wood.swing}. {wood.figure}
-            {PICK.dark === wood.file ? <span class="pick"> What it paints now.</span> : null}
-          </span>
-        </li>
-      ))}
-    </ul>
-
-    <h2>Dark forest: the wood under it</h2>
-    <p>
-      Forest wears the smoked oak now. It paints exactly the way the dark desk above does, so the
-      same twelve are here if the grain is worth a second look.
-    </p>
-    <ul>
-      {WOODS.map((wood) => (
-        <li>
-          <a href={deskUrl(wood.file, 'dark-forest', true)}>{wood.name}</a>{' '}
-          <span class="say">
-            swing {wood.swing}. {wood.figure}
-            {PICK['dark-forest'] === wood.file ? <span class="pick"> What it paints now.</span> : null}
-          </span>
-        </li>
-      ))}
-    </ul>
-
-    <h2>Light: the wood</h2>
-    <p>
-      A light desk lays the tile under a veil of its own colour at 15 per cent, and the second link
-      on each line lifts the veil off. Here the tile keeps its own lightness and colour, so those
-      are the numbers that tell these apart: L* is how pale the wood is and C* how much colour is
-      in it, both off the file.
-    </p>
-    <ul>
-      {PALE.map((file) => (
-        <li>
-          <a href={deskUrl(file, 'light', true)}>{woodByFile[file].name}</a>{' '}
-          <a href={deskUrl(file, 'light', false)}>(no veil)</a>{' '}
-          <span class="say">
-            L* {woodByFile[file].L}, C* {woodByFile[file].C}. {woodByFile[file].figure}
-            {PICK.light === file ? <span class="pick"> What it paints now.</span> : null}
-          </span>
-        </li>
-      ))}
-    </ul>
-
-    <h2>Arctic: the wood</h2>
-    <p>Painted the same way as light, and the same six are the ones pale enough to sit under it.</p>
-    <ul>
-      {PALE.map((file) => (
-        <li>
-          <a href={deskUrl(file, 'arctic', true)}>{woodByFile[file].name}</a>{' '}
-          <a href={deskUrl(file, 'arctic', false)}>(no veil)</a>{' '}
-          <span class="say">
-            L* {woodByFile[file].L}, C* {woodByFile[file].C}. {woodByFile[file].figure}
-            {PICK.arctic === file ? <span class="pick"> What it paints now.</span> : null}
-          </span>
-        </li>
-      ))}
-    </ul>
-
-    <h2>What is not on this page</h2>
-    <p>
-      The six near-black cuts are missing from light and arctic only: they were made to carry the
-      desk's own tone in the file, so on a pale theme they paint a dark desk under a light page.
-      Say the word and they go up. Everything else that was ever cut or tried is linked above, and
-      the numbers, the reasoning and what each round changed are in the pull request.
+      Both oak variants are made from the 2K scan the site already ships, moved in Lab: lightness
+      is an affine ramp, chroma a scale on a and b, hue a rotation of the same pair. The limed one
+      also stretches the grain by 7 per cent, which is what puts its standard deviation on the
+      ash’s.
     </p>
   </body>
 </html>
