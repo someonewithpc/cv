@@ -81,6 +81,7 @@
 - [x] Run W3C validator (#28)
   - [x] Put CSS and JS out of line (#22)
 - [x] Turn off the Cloudflare image binding nothing here uses (#66)
+- [x] Docking DevTools holds the page zoomed in (#93)
 - [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
