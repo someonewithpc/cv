@@ -213,7 +213,8 @@ const hasCard = Astro.slots.has('card');
   width: 3rem;
   height: 3rem;
   margin-left: 0.625rem;
-  border: 2px solid var(--callout-line);
+  --bubble-ring: 2px;
+  border: var(--bubble-ring) solid var(--callout-line);
   border-radius: 50%;
   background: var(--mat-paper);
   font-size: 1.5rem;
@@ -234,22 +235,28 @@ const hasCard = Astro.slots.has('card');
     }
   }
 
-  /* The leader: straight down from the bubble to the boundary, ending in a dot on the line. */
+  /* The leader: straight down from the bubble to the boundary, ending in a dot centred on the
+     line. Both hang from the padding box, which stops the ring's width short of the bubble's
+     edge, and the boundary is a 1px line down from the view's top, so the dot's centre is the
+     ring, the leader and half that line below it. Across, the leader is 1px wide from the
+     middle, so the dot is centred half a pixel right of it too. */
+  --leader-end: calc(100% + var(--bubble-ring) + var(--callout-lead) + 0.5px);
+
   &::before {
     content: '';
     position: absolute;
     top: 100%;
     left: 50%;
     width: 1px;
-    height: var(--callout-lead);
+    height: calc(var(--leader-end) - 100%);
     background: var(--callout-line);
   }
 
   &::after {
     content: '';
     position: absolute;
-    top: calc(100% + var(--callout-lead) - 0.1875rem);
-    left: calc(50% - 0.1875rem);
+    top: calc(var(--leader-end) - 0.1875rem);
+    left: calc(50% + 0.5px - 0.1875rem);
     width: 0.375rem;
     height: 0.375rem;
     border-radius: 50%;
