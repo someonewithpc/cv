@@ -1,9 +1,8 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import Thumb from './Thumb.astro';
 import { mangledHtml } from './markup';
-import { categories, colours, detailsOf, initialQuery, libraryObjects } from './objects';
+import { categories, colors, detailsOf, initialQuery, libraryObjects } from './objects';
 import { formatScore, search, serialise, type Filters } from './search';
 
 type Props = {
@@ -53,10 +52,10 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
       </select>
     </label>
     <label class="filter">
-      <span>Colour</span>
-      <select class="filter-select" data-filter="colour" aria-label="Filter by colour">
+      <span>Color</span>
+      <select class="filter-select" data-filter="color" aria-label="Filter by color">
         <option value="">Any</option>
-        {colours.map((colour) => <option value={colour} selected={filters.colour === colour}>{colour}</option>)}
+        {colors.map((color) => <option value={color} selected={filters.color === color}>{color}</option>)}
       </select>
     </label>
   </div>
@@ -71,7 +70,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
   <ol class="results">
     {rows.map(({ object, score }) => (
       <li class="hit" data-object={object.id} hidden={!matched.has(object.id)}>
-        <span class="thumb-box"><Thumb category={object.category} /></span>
+        <img class="thumb" src={object.image} alt="" width="160" height="160" loading="lazy" />
         <span class="text">
           <span class="name">{object.name}</span>
           <span class="details">{detailsOf(object)}</span>
@@ -252,7 +251,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 
 .hit {
   display: grid;
-  grid-template-columns: 2.5em minmax(0, 1fr) minmax(6em, 30%);
+  grid-template-columns: 3em minmax(0, 1fr) minmax(6em, 30%);
   align-items: center;
   gap: 0.75em;
   padding: 0.357em 0.571em;
@@ -265,16 +264,17 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
   }
 }
 
-.thumb-box {
-  display: grid;
-  place-items: center;
-  width: 2.5em;
-  height: 2.5em;
-  padding: 0.35em;
+/* The product's render of the object, kept on the white it was rendered against so it
+   reads the same on a dark sheet. */
+.thumb {
+  display: block;
+  width: 3em;
+  height: 3em;
+  padding: 0.2em;
   box-sizing: border-box;
   border-radius: 0.357em;
-  background: var(--surface-sunken);
-  color: var(--ink-muted);
+  background: #fff;
+  object-fit: contain;
 }
 
 .text {
@@ -357,7 +357,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 
 :global([data-sheet-orientation='portrait']) {
   .hit {
-    grid-template-columns: 2.5em minmax(0, 1fr) minmax(5em, 35%);
+    grid-template-columns: 3em minmax(0, 1fr) minmax(5em, 35%);
   }
 
   .filter .filter-select {

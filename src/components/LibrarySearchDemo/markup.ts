@@ -1,3 +1,4 @@
+import { variantOf } from './objects';
 import {
   formatScore,
   mangle,
@@ -82,7 +83,7 @@ export function relevanceHtml(state: SearchState) {
         .join(' + ');
       const score = hit.score ?? 0;
       return `<tr>
-        <td class="name">${escapeHtml(hit.object.name)} <span class="colour">${escapeHtml(hit.object.colour)}</span></td>
+        <td class="name">${escapeHtml(hit.object.name)} <span class="variant">${escapeHtml(variantOf(hit.object))}</span></td>
         <td class="sum"><code>${sum}</code></td>
         <td class="num">${fixed(hit.relevance)}</td>
         <td class="score"><span class="meter"><span class="bar" style="--score: ${score}"></span><span class="value">${formatScore(hit.score)}</span></span></td>

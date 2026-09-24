@@ -1,114 +1,122 @@
-export type Category = 'Chair' | 'Table' | 'Set' | 'Linen' | 'Staging' | 'Lighting' | 'Decor';
+/** A library category: the key the product stores on `library_objects.category`. */
+export type Category = 'Banquet' | 'Reception' | 'Sofa' | 'Catering' | 'Outdoor' | 'Plants';
 
 export type LibraryObject = {
   id: string;
   name: string;
   category: Category;
-  colour: string;
-  material: string;
-  /** Feet and inches, the way the library stores a footprint. */
-  size: string;
-  /** Places at a table or a set; the concatenation writes it out as "N seats". */
-  seats?: number;
-  /** Whatever else a librarian typed against the object. */
-  notes?: string;
+  /** The render the product shows on the object's card. */
+  image: string;
+  /** The typed properties, in the order the librarian added them. The property schema is
+      per category, so a name means whatever that category's librarian meant by it. */
+  properties: readonly (readonly [name: string, value: string])[];
+  pax?: number;
+  /** Centimetres, `WxDxH`, as `library_objects.size` stores it. */
+  size?: string;
 };
 
-/* Mock rows, not the product's: an event furniture library of the kind the search runs
-   over, invented for this sheet. A few sizes are here on purpose. A bare 8 typed as a
-   prefix would match 8ft, 8in and 81, all wrong; the quoted "8" still finds the
-   candelabra's 8 arms, which is right, and "8 seats" does not. */
+const IMAGES = '/demos/library-search';
+
+/* Objects from the Space Builder library, the ones the other demos already carry renders
+   of: the 2800 Chiavari chair in five of its finishes, the banquet tables at their real
+   seat counts and sizes, and the rest of the catalogue. Each finish and each seat count
+   is its own object in the product, so it is here too. */
 export const libraryObjects: readonly LibraryObject[] = [
-  { id: '20101', name: 'Banquet Chair', category: 'Chair', colour: 'Silver', material: 'Steel', size: '1ft6in by 1ft8in', notes: 'padded stacking chair' },
-  { id: '20102', name: 'Chiavari Chair', category: 'Chair', colour: 'Gold', material: 'Resin', size: '1ft4in by 1ft4in', notes: 'wedding chair, cushion included' },
-  { id: '20103', name: 'Chiavari Chair', category: 'Chair', colour: 'Clear', material: 'Polycarbonate', size: '1ft4in by 1ft4in', notes: 'ghost finish' },
-  { id: '20104', name: 'Folding Chair', category: 'Chair', colour: 'White', material: 'Resin', size: '1ft6in by 1ft6in', notes: 'garden, ceremony' },
-  { id: '20105', name: 'Crossback Chair', category: 'Chair', colour: 'Wood', material: 'Oak', size: '1ft6in by 1ft8in', notes: 'rustic' },
-  { id: '20106', name: 'Bentwood Chair', category: 'Chair', colour: 'Wood', material: 'Beech', size: '1ft5in by 1ft7in' },
-  { id: '20107', name: 'Conference Chair', category: 'Chair', colour: 'Black', material: 'Mesh', size: '2ft by 2ft', notes: 'swivel, armrests' },
-  { id: '20108', name: 'Bar Stool', category: 'Chair', colour: 'Black', material: 'Steel', size: '1ft4in by 1ft4in', notes: 'high chair for cocktail tables' },
-  { id: '20109', name: 'Lounge Armchair', category: 'Chair', colour: 'Grey', material: 'Fabric', size: '2ft8in by 2ft10in' },
-  { id: '20110', name: 'Lounge Sofa', category: 'Chair', colour: 'Grey', material: 'Fabric', size: '6ft by 2ft10in', seats: 3 },
-
-  { id: '20201', name: 'Round Table', category: 'Table', colour: 'White', material: 'Laminate', size: '5ft round', seats: 8 },
-  { id: '20202', name: 'Round Table', category: 'Table', colour: 'White', material: 'Laminate', size: '6ft round', seats: 10 },
-  { id: '20203', name: 'Round Table', category: 'Table', colour: 'Wood', material: 'Birch', size: '6ft round', seats: 12 },
-  { id: '20204', name: 'Trestle Table', category: 'Table', colour: 'White', material: 'Laminate', size: '8ft by 2ft6in', seats: 10 },
-  { id: '20205', name: 'Trestle Table', category: 'Table', colour: 'White', material: 'Laminate', size: '6ft by 2ft6in', seats: 6 },
-  { id: '20206', name: 'Harvest Table', category: 'Table', colour: 'Wood', material: 'Oak', size: '8ft by 3ft', seats: 8, notes: 'farmhouse' },
-  { id: '20207', name: 'Conference Table', category: 'Table', colour: 'Wood', material: 'Walnut', size: '12ft by 4ft', seats: 12, notes: 'boardroom' },
-  { id: '20208', name: 'Cocktail Table', category: 'Table', colour: 'Black', material: 'Steel', size: '2ft round', notes: 'standing height, no chairs' },
-  { id: '20209', name: 'Sweetheart Table', category: 'Table', colour: 'Gold', material: 'Steel', size: '5ft by 2ft6in', seats: 2 },
-  { id: '20210', name: 'Buffet Table', category: 'Table', colour: 'White', material: 'Laminate', size: '6ft by 2ft6in' },
-
-  { id: '20301', name: 'Banquet Set', category: 'Set', colour: 'Gold', material: 'Laminate', size: '5ft round', seats: 8, notes: 'round table with gold chiavari chairs' },
-  { id: '20302', name: 'Banquet Set', category: 'Set', colour: 'White', material: 'Laminate', size: '6ft round', seats: 10, notes: 'round table with white folding chairs' },
-  { id: '20303', name: 'Banquet Set', category: 'Set', colour: 'Gold', material: 'Birch', size: '6ft round', seats: 12, notes: 'round table with gold chiavari chairs' },
-  { id: '20304', name: 'Boardroom Set', category: 'Set', colour: 'Black', material: 'Walnut', size: '12ft by 4ft', seats: 12, notes: 'conference table with mesh chairs' },
-  { id: '20305', name: 'Classroom Set', category: 'Set', colour: 'White', material: 'Laminate', size: '6ft by 2ft6in', seats: 3, notes: 'trestle table facing forward' },
-
-  { id: '20401', name: 'Round Tablecloth', category: 'Linen', colour: 'Ivory', material: 'Polyester', size: '10ft round', notes: 'fits a 5ft round table' },
-  { id: '20402', name: 'Table Runner', category: 'Linen', colour: 'Gold', material: 'Sequin', size: '9ft by 1ft' },
-  { id: '20403', name: 'Chair Cover', category: 'Linen', colour: 'White', material: 'Spandex', size: 'fits banquet chair' },
-  { id: '20404', name: 'Chair Sash', category: 'Linen', colour: 'Gold', material: 'Organza', size: '9ft by 8in', notes: 'tied round a chair back' },
-
-  { id: '20501', name: 'Stage Riser', category: 'Staging', colour: 'Black', material: 'Aluminium', size: '8ft by 4ft', notes: 'two foot high' },
-  { id: '20502', name: 'Stage Steps', category: 'Staging', colour: 'Black', material: 'Aluminium', size: '3ft by 2ft', notes: 'three treads' },
-  { id: '20503', name: 'Dance Floor', category: 'Staging', colour: 'Black and White', material: 'Vinyl', size: '27ft by 27ft', notes: '81 panels' },
-  { id: '20504', name: 'Pipe and Drape', category: 'Staging', colour: 'Black', material: 'Velour', size: '10ft by 8ft', notes: 'backdrop' },
-  { id: '20505', name: 'Lectern', category: 'Staging', colour: 'Wood', material: 'Oak', size: '2ft by 1ft8in' },
-
-  { id: '20601', name: 'Chandelier', category: 'Lighting', colour: 'Gold', material: 'Crystal', size: '3ft round' },
-  { id: '20602', name: 'Uplighter', category: 'Lighting', colour: 'Black', material: 'LED', size: '8in by 8in', notes: 'colour changing' },
-  { id: '20603', name: 'Festoon Lights', category: 'Lighting', colour: 'Warm White', material: 'LED', size: '50ft run' },
-  { id: '20604', name: 'Candelabra', category: 'Lighting', colour: 'Gold', material: 'Brass', size: '2ft6in high', notes: '8 arms' },
-
-  { id: '20701', name: 'Centrepiece Vase', category: 'Decor', colour: 'Clear', material: 'Glass', size: '1ft8in high' },
-  { id: '20702', name: 'Charger Plate', category: 'Decor', colour: 'Gold', material: 'Acrylic', size: '1ft1in round', notes: 'one per chair' },
-  { id: '20703', name: 'Floral Arch', category: 'Decor', colour: 'White', material: 'Steel', size: '8ft by 7ft', notes: 'ceremony' },
-  { id: '20704', name: 'Welcome Easel', category: 'Decor', colour: 'Gold', material: 'Brass', size: '5ft high' },
+  { id: '3121', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-natural.webp`, properties: [['chair', 'Chiavari'], ['color', 'Natural'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3122', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-gold.webp`, properties: [['chair', 'Chiavari'], ['color', 'Gold'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3123', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-silver.webp`, properties: [['chair', 'Chiavari'], ['color', 'Silver'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3124', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-white.webp`, properties: [['chair', 'Chiavari'], ['color', 'White'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3125', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-black.webp`, properties: [['chair', 'Chiavari'], ['color', 'Black'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3140', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-8.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 8, size: '243x121' },
+  { id: '3141', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-6.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 6, size: '243x121' },
+  { id: '3142', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-4.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 4, size: '243x121' },
+  { id: '3143', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-6-narrow.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 6, size: '182x76' },
+  { id: '3150', name: 'Round Table', category: 'Banquet', image: `${IMAGES}/round-table.webp`, properties: [['shape', 'Round'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 8, size: '152' },
+  { id: '3151', name: 'Round Table', category: 'Banquet', image: `${IMAGES}/round-table.webp`, properties: [['shape', 'Round'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 10, size: '183' },
+  { id: '3210', name: 'Cocktail Table', category: 'Reception', image: `${IMAGES}/cocktail-table.webp`, properties: [['shape', 'Round'], ['color', 'White'], ['material', 'Linen']], size: '76x76x110' },
+  { id: '3211', name: 'Barstool', category: 'Reception', image: `${IMAGES}/barstool.webp`, properties: [['color', 'Black'], ['material', 'Steel']], pax: 1, size: '40x40x75' },
+  { id: '3212', name: 'Bar', category: 'Reception', image: `${IMAGES}/bar.webp`, properties: [['color', 'White'], ['material', 'Wood']], pax: 10, size: '500x60x110' },
+  { id: '3310', name: 'Sofa', category: 'Sofa', image: `${IMAGES}/sofa.webp`, properties: [['color', 'Beige'], ['material', 'Fabric']], pax: 3, size: '210x90x85' },
+  { id: '3311', name: 'Side Chair', category: 'Sofa', image: `${IMAGES}/side-chair.webp`, properties: [['color', 'Beige'], ['material', 'Fabric']], pax: 1, size: '49x53x91' },
+  { id: '3410', name: 'Buffet Table', category: 'Catering', image: `${IMAGES}/buffet-table.webp`, properties: [['shape', 'Rectangular'], ['color', 'White'], ['material', 'Linen']], size: '183x76x76' },
+  { id: '3510', name: 'Outdoor Table With Umbrella', category: 'Outdoor', image: `${IMAGES}/umbrella-table.webp`, properties: [['color', 'Grey'], ['material', 'Aluminium']], pax: 4, size: '120x120x230' },
+  { id: '3610', name: 'Flower Pot', category: 'Plants', image: `${IMAGES}/flower-pot.webp`, properties: [['color', 'White'], ['material', 'Fibreglass']], size: '40x40x60' },
 ];
 
-/** What the concatenation triggers keep in one FULLTEXT-indexed column per object: every
-    property, the typed ones and the derived ones, flattened into a single string. The
-    category is a column of the object, not a property, so it is filtered on but never
-    matched. */
-export function concatenatedValues(object: LibraryObject) {
+const CM_PER_INCH = 2.54;
+
+/** The six renderings of a size, under the names the product stores them as (#124 draws
+    them in full): every dimension in each unit, joined with ' by '. */
+function sizeProperties(size: string): [string, string][] {
+  const cms = size.split('x').map(Number);
+  const inches = (cm: number) => Math.round(cm / CM_PER_INCH);
+  const feet = (cm: number) => [Math.floor(inches(cm) / 12), inches(cm) % 12] as const;
+  const each = (render: (cm: number) => string) => cms.map(render).join(' by ');
   return [
-    object.name,
-    object.colour,
-    object.material,
-    object.size,
-    object.seats === undefined ? null : `${object.seats} seats`,
-    object.notes,
-  ]
-    .filter(Boolean)
+    ['Size (centimeters)', each((cm) => `${cm}cm`)],
+    ['Size (meters)', each((cm) => `${cm / 100}m`)],
+    ['Size (inches)', each((cm) => `${inches(cm)}"`)],
+    ['Size (inches)', each((cm) => `${inches(cm)}in`)],
+    ['Size (feet-inches)', each((cm) => `${feet(cm)[0]}'${feet(cm)[1]}"`)],
+    ['Size (feet-inches)', each((cm) => `${feet(cm)[0]}ft${feet(cm)[1]}in`)],
+  ];
+}
+
+/** Every row of `library_object_synthetic_properties` for one object: the typed
+    properties, the seat count under both of its names, and the six size renderings. */
+export function syntheticProperties(object: LibraryObject): readonly (readonly [string, string])[] {
+  return [
+    ...object.properties,
+    ...(object.pax === undefined ? [] : [['Pax', String(object.pax)], ['Seats', String(object.pax)]] as const),
+    ...(object.size === undefined ? [] : sizeProperties(object.size)),
+  ];
+}
+
+/** What the trigger keeps in the one FULLTEXT-indexed column per object,
+    GROUP_CONCAT(CONCAT(value, ' ', name) SEPARATOR ' '): value then name, one space
+    between everything. The category is a column of the object, filtered on, never
+    matched; the name is not a property, so it is not matched either. */
+export function concatenatedValues(object: LibraryObject) {
+  return syntheticProperties(object)
+    .map(([name, value]) => `${value} ${name}`)
     .join(' ');
 }
 
 /** The line under a result's name. */
 export function detailsOf(object: LibraryObject) {
-  return [object.colour, object.material, object.size, object.seats === undefined ? null : `${object.seats} seats`]
+  return [
+    ...object.properties.filter(([name]) => name !== 'chair').map(([, value]) => value),
+    object.pax === undefined ? null : `${object.pax} pax`,
+    object.size === undefined ? null : `${object.size} cm`,
+  ]
     .filter(Boolean)
     .join(' · ');
 }
 
 export const categories: readonly Category[] = [...new Set(libraryObjects.map((object) => object.category))];
 
-/** The colour filter offers what is stored, the way a property filter lists the values
-    it has seen. */
-export const colours: readonly string[] = [...new Set(libraryObjects.map((object) => object.colour))].sort();
+/** The property filter offers the values already stored under the name, the way the
+    product's advanced search lists them. */
+export const colors: readonly string[] = [
+  ...new Set(libraryObjects.flatMap((object) => object.properties.filter(([name]) => name === 'color').map(([, value]) => value))),
+].sort();
 
-/** The query the page opens on, the one the proposal's wireframe draws. */
+/** The query the page opens on. */
 export const initialQuery = 'chair 8 seats';
 
 /** The walkthrough's script: each step is typed into the field, then held long enough to
-    read the bars. `colour` sets the colour filter instead of typing. */
-export const walkthrough: readonly { type?: string; clear?: boolean; colour?: string; hold: number }[] = [
+    read the bars. `color` sets the property filter instead of typing. */
+export const walkthrough: readonly { type?: string; clear?: boolean; color?: string; hold: number }[] = [
   { clear: true, type: 'chair', hold: 1800 },
   { type: ' 8', hold: 1800 },
   { type: ' seats', hold: 2600 },
-  { clear: true, type: 'round table', hold: 1800 },
-  { colour: 'Gold', hold: 2600 },
-  { colour: '', hold: 800 },
+  { color: 'Gold', hold: 2600 },
+  { color: '', hold: 800 },
+  { clear: true, type: 'round 10 seats', hold: 2600 },
 ];
+
+/** What tells two objects of one name apart on a sheet: the finish, and the seat count. */
+export function variantOf(object: LibraryObject) {
+  const color = object.properties.find(([name]) => name === 'color')?.[1];
+  return [color, object.pax === undefined ? null : `${object.pax} pax`].filter(Boolean).join(' · ');
+}

@@ -14,7 +14,7 @@ const LATENCY_MS = [90, 260] as const;
 /** Matches the bar's scale transition in SearchTool.astro. */
 const MOVE_MS = 350;
 
-type Step = { type?: string; clear?: boolean; colour?: string; hold: number };
+type Step = { type?: string; clear?: boolean; color?: string; hold: number };
 
 type Tool = {
   root: HTMLElement;
@@ -229,9 +229,9 @@ async function autoplay(tool: Tool, script: readonly Step[], onChange: () => voi
         onChange();
         await pause(char === ' ' ? 180 : 70 + Math.random() * 70);
       }
-      if (step.colour !== undefined && !stopped) {
-        const select = tool.selects.find((el) => el.dataset.filter === 'colour');
-        if (select) select.value = step.colour;
+      if (step.color !== undefined && !stopped) {
+        const select = tool.selects.find((el) => el.dataset.filter === 'color');
+        if (select) select.value = step.color;
         onChange();
       }
       await pause(step.hold);

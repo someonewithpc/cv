@@ -7,7 +7,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function filtersText(filters: Filters) {
   const set = [
     filters.category ? `category = ${filters.category}` : null,
-    filters.colour ? `colour = ${filters.colour}` : null,
+    filters.color ? `color = ${filters.color}` : null,
   ].filter(Boolean);
   return set.length ? `filtered to ${set.join(', ')}` : '';
 }

@@ -1,11 +1,11 @@
 ---
-import { initialQuery } from '../objects';
+import { initialQuery, variantOf } from '../objects';
 import { formatScore, mangle, search } from '../search';
 
 // One query, with and without a filter: the row that moves is the one that was best
 // among what the filter leaves, and it goes to 1.00 because the maximum moves with it.
 const query = initialQuery;
-const filter = { colour: 'Wood' } as const;
+const filter = { color: 'Gold' } as const;
 const TOP = 5;
 
 const all = search({ query, filters: {} });
@@ -14,7 +14,7 @@ const lead = filtered.hits[0]?.object.id;
 
 const columns = [
   { title: 'No filter', result: all, note: `${all.hits.length} rows, max ${all.max?.toFixed(3)}` },
-  { title: `colour = ${filter.colour}`, result: filtered, note: `${filtered.hits.length} rows, max ${filtered.max?.toFixed(3)}` },
+  { title: `color = ${filter.color}`, result: filtered, note: `${filtered.hits.length} rows, max ${filtered.max?.toFixed(3)}` },
 ];
 ---
 
@@ -35,7 +35,7 @@ const columns = [
               <ol>
                 {result.hits.slice(0, TOP).map((hit) => (
                   <li class:list={{ lead: hit.object.id === lead }}>
-                    <span class="name">{hit.object.name} <span class="colour">{hit.object.colour}</span></span>
+                    <span class="name">{hit.object.name} <span class="variant">{variantOf(hit.object)}</span></span>
                     <span class="bar" style={{ '--score': hit.score ?? 0 }}></span>
                     <span class="value">{formatScore(hit.score)}</span>
                   </li>
@@ -160,7 +160,7 @@ header {
     text-overflow: ellipsis;
   }
 
-  .colour {
+  .variant {
     color: var(--ink-muted);
   }
 

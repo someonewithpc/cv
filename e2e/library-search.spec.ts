@@ -102,27 +102,29 @@ test('main page: a bare number is quoted, and a seats after it folds into the ph
   await expect(mangled).toHaveText('chair* "8 seats"');
   await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"');
 
-  // Quoted, 8 is the token 8 alone: nothing sized in 8ft or 8in, and not the 81 panels.
+  // Quoted, 8 is the token 8 alone: the 8 pax tables and the 8ft ones, never the 182 wide.
   await search(tool, '8');
+  await expect(tool.locator('.hit:not([hidden])')).toHaveCount(9);
   const names = await tool.locator('.hit:not([hidden]) .name').allTextContents();
-  expect(names.sort()).toEqual(['Banquet Set', 'Candelabra', 'Harvest Table', 'Round Table']);
+  expect(names).not.toContain('Bar');
+  expect(names.filter((name) => name === 'Banquet Table')).toHaveLength(3);
 });
 
 test('main page: the rows come back ranked, normalised to the top hit', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
   await search(tool, 'chair 8 seats');
-  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Banquet Set');
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Banquet Table');
   const scores = await shownScores(tool);
   expect(scores[0]).toBe(1);
   expect(scores).toEqual([...scores].sort((a, b) => b - a));
-  await expect(tool.locator('.count')).toHaveText(`${scores.length} of 42 objects`);
+  await expect(tool.locator('.count')).toHaveText(`${scores.length} of 19 objects`);
 
   // A filter narrows the relation the maximum is taken over, so the best row it leaves
   // climbs to 1.00.
-  await tool.locator('.filter-select[data-filter="colour"]').selectOption('Wood');
-  await expect(tool.locator('.hit:not([hidden])')).toHaveCount(3);
-  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Harvest Table');
+  await tool.locator('.filter-select[data-filter="color"]').selectOption('Gold');
+  await expect(tool.locator('.hit:not([hidden])')).toHaveCount(1);
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Chiavari Chair');
   await expect(tool.locator('.hit:not([hidden]) .value').first()).toHaveText('1.00');
 });
 
@@ -142,7 +144,7 @@ test('main page: a query already on screen is dropped rather than sent again', a
 
 test('generated SQL page: all three copies of the fragment follow the query and the filters', async ({ page }) => {
   const { stack, tool } = await mountedTool(page);
-  await tool.locator('.filter-select[data-filter="category"]').selectOption('Table');
+  await tool.locator('.filter-select[data-filter="category"]').selectOption('Banquet');
 
   await turnTo(page, stack, 'Generated SQL');
   const front = frontPage(stack, await frontPageIndex(stack));
@@ -152,7 +154,7 @@ test('generated SQL page: all three copies of the fragment follow the query and 
 
   const frags = sheet.locator('.frag:not([data-mark="max"])');
   await expect(frags).toHaveCount(3);
-  await expect(sheet.locator('.sql')).toContainText("AND library_objects.category = 'Table'");
+  await expect(sheet.locator('.sql')).toContainText("AND library_objects.category = 'Banquet'");
 
   await sheet.locator('.sheet-query').fill('round 10 pax');
   for (const mark of ['where', 'select', 'order']) {

@@ -5,7 +5,7 @@ import { concatenatedValues, libraryObjects, type LibraryObject } from './object
    It runs at build time for the page's first paint and in the browser as the visitor
    types, over the same mock rows. */
 
-export type Filters = Readonly<{ category?: string; colour?: string }>;
+export type Filters = Readonly<{ category?: string; color?: string }>;
 
 export type SearchState = Readonly<{ query: string; filters: Filters }>;
 
@@ -128,7 +128,10 @@ export type SearchResult = {
 };
 
 export function passesFilters(object: LibraryObject, filters: Filters) {
-  return (!filters.category || object.category === filters.category) && (!filters.colour || object.colour === filters.colour);
+  return (
+    (!filters.category || object.category === filters.category)
+    && (!filters.color || object.properties.some(([name, value]) => name === 'color' && value === filters.color))
+  );
 }
 
 export function search({ query, filters }: SearchState): SearchResult {
@@ -177,7 +180,7 @@ export function search({ query, filters }: SearchState): SearchResult {
 export function serialise({ query, filters }: SearchState) {
   const form = new URLSearchParams({ q: query });
   if (filters.category) form.set('category', filters.category);
-  if (filters.colour) form.set('colour', filters.colour);
+  if (filters.color) form.set('color', filters.color);
   return form.toString();
 }
 
@@ -205,8 +208,8 @@ export function sqlSegments({ query, filters }: SearchState): SqlSegment[] {
 
   const predicates = [
     filters.category ? `library_objects.category = ${quote(filters.category)}` : null,
-    filters.colour
-      ? `library_objects.id IN (\n    SELECT library_object_id FROM library_object_properties\n    WHERE name = 'colour' AND value = ${quote(filters.colour)})`
+    filters.color
+      ? `library_objects.id IN (\n    SELECT library_object_id FROM library_object_properties\n    WHERE name = 'color' AND value = ${quote(filters.color)})`
       : null,
   ].filter((predicate): predicate is string => predicate !== null);
 
