@@ -1,23 +1,23 @@
 ---
 import { feetAndInches, renderDimension, renderings } from '../units';
 
-// Two of the sample's dimensions, and one chosen for its carry: 182.5cm is 71.85in, five
-// feet and 11.85in, and the 11.85 rounds up into a sixth foot.
-const columns = [160, 80, 182.5];
-const carry = 182.5;
+// Two of the sample's dimensions, and one that shows both corrections: 182cm rounds to
+// 180cm and 1.8m, and its 71.65in is five feet and 11.65in, which rounds up into a sixth foot.
+const columns = [160, 80, 182];
+const carry = 182;
 const carried = feetAndInches(carry);
 const carryInches = carry / 2.54;
 const wholeFeet = Math.floor(carryInches / 12);
 const rest = carryInches - wholeFeet * 12;
 
-// The rule each rendering applies to one row of split_sizes, as SQL would say it.
+// The rule each rendering applies to one row of split_sizes, as the corrected SQL says it.
 const rules: Record<(typeof renderings)[number]['id'], string> = {
-  cm: 'ROUND(cm)',
-  m: 'ROUND(cm / 100, 2)',
+  cm: 'ROUND(cm, 1 - FLOOR(LOG10(cm)))',
+  m: 'ROUND(cm / 100, 3 - FLOOR(LOG10(cm)))',
   'in-mark': 'ROUND(cm / 2.54)',
   in: 'ROUND(cm / 2.54)',
-  'ft-mark': 'FLOOR, then ROUND the rest',
-  'ft-in': 'FLOOR, then ROUND the rest',
+  'ft-mark': 'FLOOR(in / 12) + carry, ROUND(in MOD 12)',
+  'ft-in': 'FLOOR(in / 12) + carry, ROUND(in MOD 12)',
 };
 const feet = new Set(['ft-mark', 'ft-in']);
 ---
@@ -29,7 +29,8 @@ const feet = new Set(['ft-mark', 'ft-in']);
         <strong>One size, six ways to write it</strong>
         <span>Every row of <code>split_sizes</code> renders six times; each rendering is
           <code>GROUP_CONCAT</code>ed back with <code>' by '</code> and the six are
-          <code>UNION ALL</code>ed</span>
+          <code>UNION ALL</code>ed. Centimetres and metres keep two significant figures,
+          inches round to the whole inch.</span>
       </header>
 
       <table>
@@ -64,6 +65,13 @@ const feet = new Set(['ft-mark', 'ft-in']);
           <code>{wholeFeet}ft12in</code>
         </span>
       </p>
+      <p class="note">
+        <span>
+          As shipped, centimetres and metres did not round (<code>182.5cm</code>, <code>1.825m</code>)
+          and a rest of six inches or more already carried a foot, so 80cm read <code>3ft7in</code>.
+          The rules above are the corrected ones.
+        </span>
+      </p>
     </div>
   </div>
 </div>
@@ -79,7 +87,7 @@ const feet = new Set(['ft-mark', 'ft-in']);
   @include sheet-type;
 
   box-sizing: border-box;
-  width: min(100%, 40em);
+  width: min(100%, 44em);
 }
 
 .panel {

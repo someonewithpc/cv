@@ -13,7 +13,7 @@ const text = searchableText(rows);
     <div class="panel">
       <header>
         <strong>Every row of the object, folded back into one searchable string</strong>
-        <span>A second layer of triggers, on the synthetic table itself, rebuilds the object's string on every insert, update and delete</span>
+        <span>A second set of triggers, on the synthetic table itself, rebuilds the object's string on every insert, update and delete</span>
       </header>
 
       <div class="flow">
@@ -36,16 +36,18 @@ const text = searchableText(rows);
         </div>
 
         <div class="upsert">
-          <span class="caption">AFTER INSERT / UPDATE / DELETE, each row</span>
+          <span class="caption"><code>app/models/library_object_synthetic_property.rb</code> · AFTER INSERT, UPDATE and DELETE, each row</span>
           <pre><code>INSERT INTO library_object_properties_concatenated
-  (library_object_id, `values`)
-SELECT library_object_id,
-  GROUP_CONCAT(CONCAT(name, ': ', value)
-    SEPARATOR '\n')
-FROM library_object_synthetic_properties
-WHERE library_object_id = NEW.library_object_id
-<span class="hot">ON DUPLICATE KEY UPDATE</span>
-  `values` = VALUES(`values`)</code></pre>
+  (`library_object_id`, `values`)
+SELECT
+    lops.library_object_id,
+    GROUP_CONCAT(CONCAT(lops.`value`, ' ', lops.`name`)
+      SEPARATOR ' ')
+  FROM library_object_synthetic_properties lops
+  WHERE lops.library_object_id = NEW.library_object_id
+    AND `lops`.`value` IS NOT NULL
+  GROUP BY lops.library_object_id
+<span class="hot">ON DUPLICATE KEY UPDATE</span> `values` = VALUES(`values`);</code></pre>
           <span class="arrow" aria-hidden="true">↓</span>
           <span class="caption"><code>library_object_properties_concatenated.values</code> · FULLTEXT</span>
           <pre class="text">{text}</pre>
@@ -95,7 +97,7 @@ pre {
 
 .flow {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   gap: 0.75em;
   align-items: start;
 

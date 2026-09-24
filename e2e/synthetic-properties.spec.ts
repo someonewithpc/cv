@@ -51,14 +51,23 @@ test.describe('unit maths', () => {
     ]);
   });
 
-  test('inches that round up to twelve carry into the feet', () => {
-    // 182.5cm is 71.85in: five feet and 11.85in, which rounds to twelve.
-    expect(feetAndInches(182.5)).toEqual({ feet: 6, inches: 0 });
-    expect(renderDimension(182.5, 'ft-in')).toBe('6ft0in');
-    expect(renderDimension(182.5, 'ft-mark')).toBe(`6'0"`);
+  test('inches that round up to twelve carry into the feet, and no fewer do', () => {
+    // 182cm is 71.65in: five feet and 11.65in, which rounds to twelve.
+    expect(feetAndInches(182)).toEqual({ feet: 6, inches: 0 });
+    expect(renderDimension(182, 'ft-in')).toBe('6ft0in');
+    expect(renderDimension(182, 'ft-mark')).toBe(`6'0"`);
     // Just under the carry, and exactly a foot.
     expect(renderDimension(181, 'ft-in')).toBe('5ft11in');
     expect(renderDimension(30.48, 'ft-in')).toBe('1ft0in');
+    // Seven inches over is seven inches over, not a foot: the shipped SQL said 3ft7in.
+    expect(renderDimension(80, 'ft-in')).toBe('2ft7in');
+  });
+
+  test('centimetres and metres keep two significant figures', () => {
+    expect(renderDimension(182, 'cm')).toBe('180cm');
+    expect(renderDimension(182, 'm')).toBe('1.8m');
+    expect(renderDimension(74, 'cm')).toBe('74cm');
+    expect(renderDimension(74, 'm')).toBe('0.74m');
   });
 
   test('queries match whole phrases, not pieces of one', () => {
@@ -67,6 +76,8 @@ test.describe('unit maths', () => {
     expect(matches(text, `5'3"`)).toBe(true);
     expect(matches(text, '3"')).toBe(false);
     expect(matches(text, '1.6')).toBe(false);
+    // Value then name, one space between everything, the way the concatenation writes it.
+    expect(text).toContain('1.6m by 0.8m by 0.74m Size (meters) 63" by 31" by 29" Size (inches)');
   });
 });
 
@@ -118,7 +129,7 @@ test('main page: a new size splits, fans out and changes which queries hit', asy
   await expect(tool.locator('.chip')).toHaveText(['200', '100', '75']);
   await expect(tool.locator('.rendering[data-unit="m"] .value')).toHaveText('2m by 1m by 0.75m');
   await expect(tool.locator('.rendering[data-unit="ft-in"] .value')).toHaveText('6ft7in by 3ft3in by 2ft6in');
-  await expect(tool.locator('.text')).toContainText('Size (meters): 2m by 1m by 0.75m');
+  await expect(tool.locator('.text')).toContainText('2m by 1m by 0.75m Size (meters)');
 
   await expect(tool.locator('.query[data-query="2m"]')).toHaveAttribute('data-hit', 'true');
   await expect(tool.locator('.query[data-query="5ft3in"]')).toHaveAttribute('data-hit', 'false');
