@@ -290,7 +290,16 @@ export function MarkerEditor({
         role="dialog"
         aria-modal={!embed}
         aria-label="Marker editor"
-        onKeyDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          // Keys pressed in the editor stay in it: an arrow would otherwise turn the paper
+          // stack under the dialog. That also keeps them from the window listener above, so
+          // Escape is answered here, where focus is, before the event is stopped.
+          if (e.key === 'Escape' && !embed) {
+            e.preventDefault();
+            onClose();
+          }
+          e.stopPropagation();
+        }}
       >
         <div className="wrapper">
           <article>

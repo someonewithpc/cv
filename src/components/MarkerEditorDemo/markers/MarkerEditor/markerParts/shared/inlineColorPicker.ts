@@ -123,8 +123,12 @@ function openOnPress(field: HTMLElement, host: HTMLElement, input: HTMLInputElem
   const onPressOutside = (event: MouseEvent) => {
     if (!field.contains(event.target as Node)) close();
   };
+  // Stopped here, on the way down, so the Escape that closes the picker does not go on to
+  // reach the editor's own Escape handler and close the editor with it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') close();
+    if (event.key !== 'Escape') return;
+    event.stopPropagation();
+    close();
   };
   const open = () => {
     host.hidden = false;
