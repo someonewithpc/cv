@@ -1,0 +1,1740 @@
+{
+  "matContrast": {
+    "light": {
+      "pairs": [
+        {
+          "label": "callout kind",
+          "size": 10,
+          "ratio": 8.16,
+          "fg": [
+            123,
+            56,
+            0
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout scale",
+          "size": 10,
+          "ratio": 7.2,
+          "fg": [
+            69,
+            86,
+            89
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout title",
+          "size": 28,
+          "ratio": 15.34,
+          "fg": [
+            24,
+            32,
+            43
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout ja",
+          "size": 11,
+          "ratio": 4.4,
+          "fg": [
+            105,
+            118,
+            119
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos heading",
+          "size": 52,
+          "ratio": 15.34,
+          "fg": [
+            24,
+            32,
+            43
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "demos ja",
+          "size": 11,
+          "ratio": 4.4,
+          "fg": [
+            105,
+            118,
+            119
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos sheet code",
+          "size": 10,
+          "ratio": 8.16,
+          "fg": [
+            123,
+            56,
+            0
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "peel hint words",
+          "size": 16,
+          "ratio": 1,
+          "fg": [
+            250,
+            247,
+            241
+          ],
+          "bg": [
+            250,
+            247,
+            241
+          ],
+          "alpha": 0
+        },
+        {
+          "label": "card dt",
+          "size": 10,
+          "ratio": 4.69,
+          "fg": [
+            69,
+            86,
+            89
+          ],
+          "bg": [
+            201,
+            203,
+            193
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card dd",
+          "size": 13,
+          "ratio": 9.99,
+          "fg": [
+            24,
+            32,
+            43
+          ],
+          "bg": [
+            201,
+            203,
+            193
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card notes",
+          "size": 12,
+          "ratio": 8.09,
+          "fg": [
+            37,
+            49,
+            59
+          ],
+          "bg": [
+            201,
+            203,
+            193
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "os heading ja",
+          "size": 11,
+          "ratio": 4.58,
+          "fg": [
+            106,
+            120,
+            122
+          ],
+          "bg": [
+            255,
+            255,
+            255
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "bill label",
+          "size": 10,
+          "ratio": 7.7,
+          "fg": [
+            69,
+            86,
+            89
+          ],
+          "bg": [
+            255,
+            255,
+            255
+          ],
+          "alpha": 1
+        }
+      ],
+      "r": {
+        "mat paper": [
+          250,
+          247,
+          241
+        ],
+        "desk (main bg)": [
+          199,
+          172,
+          144
+        ],
+        "theme desk": [
+          199,
+          172,
+          144
+        ],
+        "mat minor rule vs mat": 1.07,
+        "mat major rule vs mat": 1.16,
+        "mat edge vs mat": 3.75,
+        "mat edge vs desk": 2.81,
+        "mat vs desk": 2.02,
+        "sheet paper vs desk": 2.16,
+        "sheet paper vs mat": 1.07,
+        "chain line vs mat": 6,
+        "ruled line vs paper": 1.32,
+        "margin line vs paper": 2.43,
+        "tear fibre vs paper": 1,
+        "card cell vs mat": 1.53,
+        "card hairline vs cell": 3.52,
+        "sheet edge vs paper": 3.37,
+        "minor rule alpha": 0.071,
+        "major rule alpha": 0.141,
+        "rule ink alpha": 0.141,
+        "parse ok": true,
+        "computed samples": {
+          "matPaper": "oklch(0.977199 0.00837195 85)",
+          "rule": "oklch(0.24 0.025 260 / 0.14)",
+          "desk": "oklch(0.76 0.05 68)"
+        }
+      }
+    },
+    "dark": {
+      "pairs": [
+        {
+          "label": "callout kind",
+          "size": 10,
+          "ratio": 7.67,
+          "fg": [
+            221,
+            174,
+            108
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout scale",
+          "size": 10,
+          "ratio": 6.38,
+          "fg": [
+            156,
+            167,
+            181
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout title",
+          "size": 28,
+          "ratio": 12.32,
+          "fg": [
+            219,
+            230,
+            242
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout ja",
+          "size": 11,
+          "ratio": 4.62,
+          "fg": [
+            129,
+            141,
+            158
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos heading",
+          "size": 52,
+          "ratio": 12.32,
+          "fg": [
+            219,
+            230,
+            242
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "demos ja",
+          "size": 11,
+          "ratio": 4.62,
+          "fg": [
+            129,
+            141,
+            158
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos sheet code",
+          "size": 10,
+          "ratio": 7.67,
+          "fg": [
+            221,
+            174,
+            108
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "peel hint words",
+          "size": 16,
+          "ratio": 1,
+          "fg": [
+            21,
+            35,
+            65
+          ],
+          "bg": [
+            21,
+            35,
+            65
+          ],
+          "alpha": 0
+        },
+        {
+          "label": "card dt",
+          "size": 10,
+          "ratio": 4.98,
+          "fg": [
+            156,
+            167,
+            181
+          ],
+          "bg": [
+            45,
+            54,
+            71
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card dd",
+          "size": 13,
+          "ratio": 9.6,
+          "fg": [
+            219,
+            230,
+            242
+          ],
+          "bg": [
+            45,
+            54,
+            71
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card notes",
+          "size": 12,
+          "ratio": 7.82,
+          "fg": [
+            197,
+            209,
+            221
+          ],
+          "bg": [
+            45,
+            54,
+            71
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "os heading ja",
+          "size": 11,
+          "ratio": 5.22,
+          "fg": [
+            128,
+            139,
+            152
+          ],
+          "bg": [
+            14,
+            22,
+            38
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "bill label",
+          "size": 10,
+          "ratio": 7.41,
+          "fg": [
+            156,
+            167,
+            181
+          ],
+          "bg": [
+            14,
+            22,
+            38
+          ],
+          "alpha": 1
+        }
+      ],
+      "r": {
+        "mat paper": [
+          21,
+          35,
+          65
+        ],
+        "desk (main bg)": [
+          128,
+          97,
+          73
+        ],
+        "theme desk": [
+          34,
+          29,
+          26
+        ],
+        "mat minor rule vs mat": 1.09,
+        "mat major rule vs mat": 1.21,
+        "mat edge vs mat": 8.05,
+        "mat edge vs desk": 8.62,
+        "mat vs desk": 1.07,
+        "sheet paper vs desk": 1.08,
+        "sheet paper vs mat": 1.16,
+        "chain line vs mat": 6.71,
+        "ruled line vs paper": 1.73,
+        "margin line vs paper": 1.63,
+        "tear fibre vs paper": 1.38,
+        "card cell vs mat": 1.28,
+        "card hairline vs cell": 3.89,
+        "sheet edge vs paper": 3.4,
+        "minor rule alpha": 0.2,
+        "major rule alpha": 0.4,
+        "rule ink alpha": 0.2,
+        "parse ok": true,
+        "computed samples": {
+          "matPaper": "oklch(0.26 0.0605 265)",
+          "rule": "oklch(0.92 0.02 250 / 0.2)",
+          "desk": "rgb(128, 97, 73)"
+        }
+      }
+    },
+    "arctic": {
+      "pairs": [
+        {
+          "label": "callout kind",
+          "size": 10,
+          "ratio": 7.22,
+          "fg": [
+            0,
+            90,
+            107
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout scale",
+          "size": 10,
+          "ratio": 5.98,
+          "fg": [
+            78,
+            96,
+            112
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout title",
+          "size": 28,
+          "ratio": 12.55,
+          "fg": [
+            30,
+            47,
+            65
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout ja",
+          "size": 11,
+          "ratio": 3.85,
+          "fg": [
+            109,
+            126,
+            140
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos heading",
+          "size": 52,
+          "ratio": 12.55,
+          "fg": [
+            30,
+            47,
+            65
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "demos ja",
+          "size": 11,
+          "ratio": 3.85,
+          "fg": [
+            109,
+            126,
+            140
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos sheet code",
+          "size": 10,
+          "ratio": 7.22,
+          "fg": [
+            0,
+            90,
+            107
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "peel hint words",
+          "size": 16,
+          "ratio": 1,
+          "fg": [
+            237,
+            247,
+            252
+          ],
+          "bg": [
+            237,
+            247,
+            252
+          ],
+          "alpha": 0
+        },
+        {
+          "label": "card dt",
+          "size": 10,
+          "ratio": 3.99,
+          "fg": [
+            78,
+            96,
+            112
+          ],
+          "bg": [
+            190,
+            205,
+            214
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card dd",
+          "size": 13,
+          "ratio": 8.38,
+          "fg": [
+            30,
+            47,
+            65
+          ],
+          "bg": [
+            190,
+            205,
+            214
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card notes",
+          "size": 12,
+          "ratio": 6.65,
+          "fg": [
+            45,
+            63,
+            80
+          ],
+          "bg": [
+            190,
+            205,
+            214
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "os heading ja",
+          "size": 11,
+          "ratio": 3.74,
+          "fg": [
+            108,
+            125,
+            139
+          ],
+          "bg": [
+            231,
+            242,
+            249
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "bill label",
+          "size": 10,
+          "ratio": 5.72,
+          "fg": [
+            78,
+            96,
+            112
+          ],
+          "bg": [
+            231,
+            242,
+            249
+          ],
+          "alpha": 1
+        }
+      ],
+      "r": {
+        "mat paper": [
+          237,
+          247,
+          252
+        ],
+        "desk (main bg)": [
+          185,
+          195,
+          200
+        ],
+        "theme desk": [
+          185,
+          195,
+          200
+        ],
+        "mat minor rule vs mat": 1.08,
+        "mat major rule vs mat": 1.17,
+        "mat edge vs mat": 3.31,
+        "mat edge vs desk": 2.68,
+        "mat vs desk": 1.65,
+        "sheet paper vs desk": 1.58,
+        "sheet paper vs mat": 1.05,
+        "chain line vs mat": 5.04,
+        "ruled line vs paper": 1.29,
+        "margin line vs paper": 2.33,
+        "tear fibre vs paper": 1.09,
+        "card cell vs mat": 1.5,
+        "card hairline vs cell": 3.1,
+        "sheet edge vs paper": 2.72,
+        "minor rule alpha": 0.071,
+        "major rule alpha": 0.141,
+        "rule ink alpha": 0.141,
+        "parse ok": true,
+        "computed samples": {
+          "matPaper": "oklch(0.969599 0.012172 230)",
+          "rule": "oklch(0.3 0.04 250 / 0.14)",
+          "desk": "oklch(0.81 0.013 232)"
+        }
+      }
+    },
+    "dark-forest": {
+      "pairs": [
+        {
+          "label": "callout kind",
+          "size": 10,
+          "ratio": 6.74,
+          "fg": [
+            184,
+            164,
+            87
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout scale",
+          "size": 10,
+          "ratio": 6.32,
+          "fg": [
+            156,
+            162,
+            138
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout title",
+          "size": 28,
+          "ratio": 12.49,
+          "fg": [
+            223,
+            225,
+            198
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "callout ja",
+          "size": 11,
+          "ratio": 4.54,
+          "fg": [
+            127,
+            137,
+            113
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos heading",
+          "size": 52,
+          "ratio": 12.49,
+          "fg": [
+            223,
+            225,
+            198
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "demos ja",
+          "size": 11,
+          "ratio": 4.54,
+          "fg": [
+            127,
+            137,
+            113
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "demos sheet code",
+          "size": 10,
+          "ratio": 6.74,
+          "fg": [
+            184,
+            164,
+            87
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "peel hint words",
+          "size": 16,
+          "ratio": 1,
+          "fg": [
+            9,
+            35,
+            14
+          ],
+          "bg": [
+            9,
+            35,
+            14
+          ],
+          "alpha": 0
+        },
+        {
+          "label": "card dt",
+          "size": 10,
+          "ratio": 5.03,
+          "fg": [
+            156,
+            162,
+            138
+          ],
+          "bg": [
+            38,
+            51,
+            34
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card dd",
+          "size": 13,
+          "ratio": 9.96,
+          "fg": [
+            223,
+            225,
+            198
+          ],
+          "bg": [
+            38,
+            51,
+            34
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "card notes",
+          "size": 12,
+          "ratio": 8.01,
+          "fg": [
+            200,
+            203,
+            178
+          ],
+          "bg": [
+            38,
+            51,
+            34
+          ],
+          "alpha": 1
+        },
+        {
+          "label": "os heading ja",
+          "size": 11,
+          "ratio": 3.57,
+          "fg": [
+            133,
+            141,
+            117
+          ],
+          "bg": [
+            40,
+            57,
+            35
+          ],
+          "alpha": 0.8
+        },
+        {
+          "label": "bill label",
+          "size": 10,
+          "ratio": 4.68,
+          "fg": [
+            156,
+            162,
+            138
+          ],
+          "bg": [
+            40,
+            57,
+            35
+          ],
+          "alpha": 1
+        }
+      ],
+      "r": {
+        "mat paper": [
+          9,
+          35,
+          14
+        ],
+        "desk (main bg)": [
+          76,
+          68,
+          62
+        ],
+        "theme desk": [
+          36,
+          26,
+          11
+        ],
+        "mat minor rule vs mat": 1.08,
+        "mat major rule vs mat": 1.2,
+        "mat edge vs mat": 8.46,
+        "mat edge vs desk": 8.67,
+        "mat vs desk": 1.03,
+        "sheet paper vs desk": 1.38,
+        "sheet paper vs mat": 1.35,
+        "chain line vs mat": 6.75,
+        "ruled line vs paper": 1.7,
+        "margin line vs paper": 1.51,
+        "tear fibre vs paper": 1.48,
+        "card cell vs mat": 1.25,
+        "card hairline vs cell": 3.89,
+        "sheet edge vs paper": 2.1,
+        "minor rule alpha": 0.2,
+        "major rule alpha": 0.4,
+        "rule ink alpha": 0.2,
+        "parse ok": true,
+        "computed samples": {
+          "matPaper": "oklch(0.23 0.0512 148.3)",
+          "rule": "oklch(0.9 0.035 110 / 0.2)",
+          "desk": "rgb(76, 68, 62)"
+        }
+      }
+    }
+  },
+  "titleBlock": {
+    "light": {
+      "height": 290.796875,
+      "width": 672,
+      "padding": "24px",
+      "topBlank": 24,
+      "bottomBlankBelowCheckbox": 86,
+      "audioBox": {
+        "top": 212.796875,
+        "h": 54,
+        "vis": "hidden"
+      },
+      "kids": [
+        {
+          "tag": "P",
+          "cls": "sheet-meta monospace",
+          "top": 24,
+          "bottom": 35,
+          "h": 11,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "H1",
+          "cls": "",
+          "top": 43,
+          "bottom": 121.796875,
+          "h": 78.796875,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "cls": "sheet-role monospace",
+          "top": 129.796875,
+          "bottom": 143.796875,
+          "h": 14,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "ADDRESS",
+          "cls": "contact monospace",
+          "top": 153.796875,
+          "bottom": 177.796875,
+          "h": 24,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "LABEL",
+          "cls": "bypass-contrast-check note-row",
+          "top": 185.796875,
+          "bottom": 204.796875,
+          "h": 19,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "AUDIO",
+          "cls": "",
+          "top": 212.796875,
+          "bottom": 266.796875,
+          "h": 54,
+          "vis": "hidden",
+          "display": "block"
+        }
+      ]
+    },
+    "dark": {
+      "height": 290.796875,
+      "width": 672,
+      "padding": "24px",
+      "topBlank": 24,
+      "bottomBlankBelowCheckbox": 86,
+      "audioBox": {
+        "top": 212.796875,
+        "h": 54,
+        "vis": "hidden"
+      },
+      "kids": [
+        {
+          "tag": "P",
+          "cls": "sheet-meta monospace",
+          "top": 24,
+          "bottom": 35,
+          "h": 11,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "H1",
+          "cls": "",
+          "top": 43,
+          "bottom": 121.796875,
+          "h": 78.796875,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "cls": "sheet-role monospace",
+          "top": 129.796875,
+          "bottom": 143.796875,
+          "h": 14,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "ADDRESS",
+          "cls": "contact monospace",
+          "top": 153.796875,
+          "bottom": 177.796875,
+          "h": 24,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "LABEL",
+          "cls": "bypass-contrast-check note-row",
+          "top": 185.796875,
+          "bottom": 204.796875,
+          "h": 19,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "AUDIO",
+          "cls": "",
+          "top": 212.796875,
+          "bottom": 266.796875,
+          "h": 54,
+          "vis": "hidden",
+          "display": "block"
+        }
+      ]
+    },
+    "arctic": {
+      "height": 290.796875,
+      "width": 672,
+      "padding": "24px",
+      "topBlank": 24,
+      "bottomBlankBelowCheckbox": 86,
+      "audioBox": {
+        "top": 212.796875,
+        "h": 54,
+        "vis": "hidden"
+      },
+      "kids": [
+        {
+          "tag": "P",
+          "cls": "sheet-meta monospace",
+          "top": 24,
+          "bottom": 35,
+          "h": 11,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "H1",
+          "cls": "",
+          "top": 43,
+          "bottom": 121.796875,
+          "h": 78.796875,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "cls": "sheet-role monospace",
+          "top": 129.796875,
+          "bottom": 143.796875,
+          "h": 14,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "ADDRESS",
+          "cls": "contact monospace",
+          "top": 153.796875,
+          "bottom": 177.796875,
+          "h": 24,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "LABEL",
+          "cls": "bypass-contrast-check note-row",
+          "top": 185.796875,
+          "bottom": 204.796875,
+          "h": 19,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "AUDIO",
+          "cls": "",
+          "top": 212.796875,
+          "bottom": 266.796875,
+          "h": 54,
+          "vis": "hidden",
+          "display": "block"
+        }
+      ]
+    },
+    "dark-forest": {
+      "height": 290.796875,
+      "width": 672,
+      "padding": "24px",
+      "topBlank": 24,
+      "bottomBlankBelowCheckbox": 86,
+      "audioBox": {
+        "top": 212.796875,
+        "h": 54,
+        "vis": "hidden"
+      },
+      "kids": [
+        {
+          "tag": "P",
+          "cls": "sheet-meta monospace",
+          "top": 24,
+          "bottom": 35,
+          "h": 11,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "H1",
+          "cls": "",
+          "top": 43,
+          "bottom": 121.796875,
+          "h": 78.796875,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "cls": "sheet-role monospace",
+          "top": 129.796875,
+          "bottom": 143.796875,
+          "h": 14,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "ADDRESS",
+          "cls": "contact monospace",
+          "top": 153.796875,
+          "bottom": 177.796875,
+          "h": 24,
+          "vis": "visible",
+          "display": "block"
+        },
+        {
+          "tag": "LABEL",
+          "cls": "bypass-contrast-check note-row",
+          "top": 185.796875,
+          "bottom": 204.796875,
+          "h": 19,
+          "vis": "visible",
+          "display": "flex"
+        },
+        {
+          "tag": "AUDIO",
+          "cls": "",
+          "top": 212.796875,
+          "bottom": 266.796875,
+          "h": 54,
+          "vis": "hidden",
+          "display": "block"
+        }
+      ]
+    }
+  },
+  "outline": [
+    {
+      "level": "H1",
+      "text": "Hugo([ˈuɡu]) Sales([ˈsaləʃ])",
+      "inCallout": false,
+      "inDrawing": false
+    },
+    {
+      "level": "H2",
+      "text": "デモ Demos",
+      "inCallout": false,
+      "inDrawing": false
+    },
+    {
+      "level": "H3",
+      "text": "A Detail A Scale 3:1 ローディングロゴ Loading logo",
+      "inCallout": true,
+      "inDrawing": false
+    },
+    {
+      "level": "H2",
+      "text": "Visrez Animated Loading Logo",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Original Logo",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Visrez Animated Loading Logo",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Cube :)",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Visrez Animated Loading Logo",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "We can represent the logo with the following comma",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Authored Path",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Visrez Animated Loading Logo",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Path Data",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Visrez Animated Loading Logo",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Putting it all together",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Visrez Animated Loading Logo",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "B Detail B Scale 1:1 マーカーエディター Marker editor",
+      "inCallout": true,
+      "inDrawing": false
+    },
+    {
+      "level": "H2",
+      "text": "Interactive Map Marker Editor",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Marker Selector",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Interactive Map Marker Editor",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Marker Editor",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Interactive Map Marker Editor",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Preview Background",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Interactive Map Marker Editor",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Composable Parts",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Interactive Map Marker Editor",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Undoable Store",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Interactive Map Marker Editor",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "C Detail C Scale 1:1 スペースビルダー Space builder",
+      "inCallout": true,
+      "inDrawing": false
+    },
+    {
+      "level": "H2",
+      "text": "Space Builder · Add Tool",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Place Area",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Space Builder · Add Tool",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Edit Parameters",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Space Builder · Add Tool",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Layout Styles",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Space Builder · Add Tool",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Capacity Badge",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "Space Builder · Add Tool",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H3",
+      "text": "D Detail D Scale 1:1 オブジェクトバリアント Object variants",
+      "inCallout": true,
+      "inDrawing": false
+    },
+    {
+      "level": "H3",
+      "text": "Select an Object",
+      "inCallout": true,
+      "inDrawing": true
+    },
+    {
+      "level": "H2",
+      "text": "Space Builder · Object Variants",
+      "inCallout": true,
+      "inDrawing": true
+    }
+  ],
+  "paintIsolation": {
+    "1440": {
+      "as is": {
+        "medians": [
+          59.6,
+          51,
+          48.3
+        ],
+        "best": 48.3
+      },
+      "no veneer": {
+        "medians": [
+          45.7,
+          40.2,
+          42.7
+        ],
+        "best": 40.2
+      },
+      "no torn-sheet drop-shadow": {
+        "medians": [
+          50,
+          49.9,
+          45.4
+        ],
+        "best": 45.4
+      },
+      "no torn-sheet mask": {
+        "medians": [
+          49.9,
+          50,
+          46.1
+        ],
+        "best": 46.1
+      },
+      "no paper fibre": {
+        "medians": [
+          51.8,
+          51.4,
+          59
+        ],
+        "best": 51.4
+      },
+      "no sheet lift shadow": {
+        "medians": [
+          50,
+          49.8,
+          50
+        ],
+        "best": 49.8
+      }
+    },
+    "2560": {
+      "as is": {
+        "medians": [
+          82.1,
+          81.9,
+          85.3
+        ],
+        "best": 81.9
+      },
+      "no veneer": {
+        "medians": [
+          87.7,
+          68.8,
+          80.3
+        ],
+        "best": 68.8
+      },
+      "no torn-sheet drop-shadow": {
+        "medians": [
+          77,
+          84.3,
+          83.4
+        ],
+        "best": 77
+      },
+      "no torn-sheet mask": {
+        "medians": [
+          80.5,
+          82.2,
+          83.6
+        ],
+        "best": 80.5
+      },
+      "no paper fibre": {
+        "medians": [
+          95.1,
+          91.6,
+          99.8
+        ],
+        "best": 91.6
+      },
+      "no sheet lift shadow": {
+        "medians": [
+          79.2,
+          82.1,
+          84.9
+        ],
+        "best": 79.2
+      }
+    }
+  },
+  "gaps": {
+    "1440": [
+      {
+        "folio": 1,
+        "numeralRight": 136,
+        "paperLeft": 384,
+        "gap": 248
+      },
+      {
+        "folio": 2,
+        "numeralRight": 148,
+        "paperLeft": 240,
+        "gap": 92
+      },
+      {
+        "folio": 3,
+        "numeralRight": 144,
+        "paperLeft": 160,
+        "gap": 16
+      },
+      {
+        "folio": 4,
+        "numeralRight": 149,
+        "paperLeft": 240,
+        "gap": 91
+      }
+    ],
+    "1920": [
+      {
+        "folio": 1,
+        "numeralRight": 148,
+        "paperLeft": 624,
+        "gap": 476
+      },
+      {
+        "folio": 2,
+        "numeralRight": 148,
+        "paperLeft": 480,
+        "gap": 332
+      },
+      {
+        "folio": 3,
+        "numeralRight": 148,
+        "paperLeft": 162,
+        "gap": 14
+      },
+      {
+        "folio": 4,
+        "numeralRight": 148,
+        "paperLeft": 480,
+        "gap": 332
+      }
+    ],
+    "2560": [
+      {
+        "folio": 1,
+        "numeralRight": 466,
+        "paperLeft": 944,
+        "gap": 478
+      },
+      {
+        "folio": 2,
+        "numeralRight": 466,
+        "paperLeft": 800,
+        "gap": 334
+      },
+      {
+        "folio": 3,
+        "numeralRight": 466,
+        "paperLeft": 480,
+        "gap": 14
+      },
+      {
+        "folio": 4,
+        "numeralRight": 466,
+        "paperLeft": 800,
+        "gap": 334
+      }
+    ]
+  },
+  "cardCopy": [
+    {
+      "words": 32,
+      "display": "none"
+    },
+    {
+      "words": 34,
+      "display": "none"
+    },
+    {
+      "words": 33,
+      "display": "none"
+    },
+    {
+      "words": 48,
+      "display": "none"
+    },
+    {
+      "words": 41,
+      "display": "none"
+    },
+    {
+      "words": 42,
+      "display": "none"
+    },
+    {
+      "words": 39,
+      "display": "none"
+    }
+  ]
+}

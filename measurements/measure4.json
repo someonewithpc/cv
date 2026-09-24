@@ -1,0 +1,238 @@
+{
+  "platformFonts": {
+    "1024": {
+      "fonts": {
+        "demos heading": "Special Elite:5",
+        "callout title": "Special Elite:12",
+        "stack h2": "Special Elite:28",
+        "folio number": "",
+        "folio label": "",
+        "name h1": "DejaVu Sans Mono (system):1",
+        "row title": "DejaVu Sans Mono (system):41, DejaVu Sans Mono (system):9",
+        "card dd": "",
+        "peel hint": "Special Elite:33"
+      },
+      "statuses": [
+        "Permanent Marker:loaded",
+        "Poppins:unloaded",
+        "Poppins:loaded",
+        "Special Elite:unloaded",
+        "Special Elite:loaded",
+        "Allerta Stencil:unloaded"
+      ]
+    },
+    "1280": {
+      "fonts": {
+        "demos heading": "Special Elite:5",
+        "callout title": "Special Elite:12",
+        "stack h2": "Special Elite:28",
+        "folio number": "DejaVu Sans (system):2",
+        "folio label": "Special Elite:9",
+        "name h1": "DejaVu Sans Mono (system):1",
+        "row title": "DejaVu Sans Mono (system):41, DejaVu Sans Mono (system):9",
+        "card dd": "",
+        "peel hint": "Special Elite:33"
+      },
+      "statuses": [
+        "Permanent Marker:loaded",
+        "Poppins:unloaded",
+        "Poppins:loaded",
+        "Poppins:error",
+        "Special Elite:unloaded",
+        "Special Elite:loaded"
+      ]
+    },
+    "1440": {
+      "fonts": {
+        "demos heading": "DejaVu Sans Mono (system):5",
+        "callout title": "DejaVu Sans Mono (system):12",
+        "stack h2": "DejaVu Sans Mono (system):28",
+        "folio number": "Allerta Stencil:2",
+        "folio label": "DejaVu Sans Mono (system):10",
+        "name h1": "DejaVu Sans Mono (system):1",
+        "row title": "DejaVu Sans Mono (system):41, DejaVu Sans Mono (system):9",
+        "card dd": "",
+        "peel hint": "DejaVu Sans Mono (system):34"
+      },
+      "statuses": [
+        "Allerta Stencil:loaded"
+      ]
+    }
+  },
+  "veneerRepeat": {
+    "light-2560": {
+      "strip": {
+        "left": 2100,
+        "width": 440,
+        "height": 5000
+      },
+      "autocorr": {
+        "100": 0.159,
+        "300": -0.054,
+        "500": -0.08,
+        "700": -0.196,
+        "710": -0.004,
+        "720": 0.996,
+        "730": -0.012,
+        "740": -0.205,
+        "900": -0.18,
+        "1440": 0.988
+      },
+      "pixelsEqualAt720": 1
+    },
+    "dark-1920": {
+      "strip": {
+        "left": 1770,
+        "width": 140,
+        "height": 5000
+      },
+      "autocorr": {
+        "100": -0.081,
+        "300": 0.057,
+        "500": -0.005,
+        "700": -0.224,
+        "710": -0.104,
+        "720": 0.998,
+        "730": -0.104,
+        "740": -0.222,
+        "900": -0.064,
+        "1440": 0.997
+      },
+      "pixelsEqualAt720": 1
+    },
+    "light-1920": {
+      "strip": {
+        "left": 1770,
+        "width": 140,
+        "height": 5000
+      },
+      "autocorr": {
+        "100": -0.072,
+        "300": 0.059,
+        "500": -0.019,
+        "700": -0.217,
+        "710": -0.097,
+        "720": 0.996,
+        "730": -0.105,
+        "740": -0.22,
+        "900": -0.051,
+        "1440": 0.99
+      },
+      "pixelsEqualAt720": 0.995
+    },
+    "arctic-1440": {
+      "strip": {
+        "left": 1290,
+        "width": 140,
+        "height": 5000
+      },
+      "autocorr": {
+        "100": 0.091,
+        "300": -0.023,
+        "500": 0.119,
+        "700": 0.004,
+        "710": -0.173,
+        "720": 0.997,
+        "730": -0.173,
+        "740": 0.003,
+        "900": 0.23,
+        "1440": 0.994
+      },
+      "pixelsEqualAt720": 0.993
+    },
+    "dark-1440": {
+      "strip": {
+        "left": 1290,
+        "width": 140,
+        "height": 5000
+      },
+      "autocorr": {
+        "100": 0.084,
+        "300": -0.021,
+        "500": 0.113,
+        "700": -0.001,
+        "710": -0.165,
+        "720": 1,
+        "730": -0.166,
+        "740": -0.003,
+        "900": 0.232,
+        "1440": 0.999
+      },
+      "pixelsEqualAt720": 1
+    }
+  },
+  "fibre": {
+    "light": {
+      "drawingSheet": {
+        "mean": 237.8,
+        "sd": 3.56
+      },
+      "contribSheet": {
+        "mean": 217.2,
+        "sd": 52.34
+      },
+      "mat": {
+        "mean": 243.5,
+        "sd": 15.29
+      },
+      "desk": {
+        "mean": 204.2,
+        "sd": 3.26
+      }
+    },
+    "dark": {
+      "drawingSheet": {
+        "mean": 64,
+        "sd": 2.13
+      },
+      "contribSheet": {
+        "mean": 54,
+        "sd": 50.82
+      },
+      "mat": {
+        "mean": 38.7,
+        "sd": 13.57
+      },
+      "desk": {
+        "mean": 27.9,
+        "sd": 4.77
+      }
+    },
+    "arctic": {
+      "drawingSheet": {
+        "mean": 225.6,
+        "sd": 3.22
+      },
+      "contribSheet": {
+        "mean": 204.2,
+        "sd": 44.78
+      },
+      "mat": {
+        "mean": 241.3,
+        "sd": 14.25
+      },
+      "desk": {
+        "mean": 204.9,
+        "sd": 2.41
+      }
+    },
+    "dark-forest": {
+      "drawingSheet": {
+        "mean": 61,
+        "sd": 1.73
+      },
+      "contribSheet": {
+        "mean": 80.8,
+        "sd": 41.29
+      },
+      "mat": {
+        "mean": 33.5,
+        "sd": 13.42
+      },
+      "desk": {
+        "mean": 28.1,
+        "sd": 4.17
+      }
+    }
+  }
+}
