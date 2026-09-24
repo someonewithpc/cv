@@ -466,7 +466,7 @@ test.describe('the strip through a turn', () => {
     test(`the strip stays on the moving page's crease through a turn at ${width}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.reload();
-      // Only the first stack is watched, and the other two demos' scenes, drawn in software
+      // Only the first stack is watched, and the other demos' scenes, drawn in software
       // here, would take most of the frames the turn has to be sampled in.
       await page.evaluate(() => {
         document.querySelectorAll('article.technical-drawing-stack').forEach((stack, i) => {
@@ -528,7 +528,7 @@ test.describe('the strip through a turn', () => {
 // the screenshots came from.
 for (const width of [390, 1440]) {
   test(`every stack keeps the fold a dog-ear and the pile inside its left edge at ${width}`, async ({ page }) => {
-    // Six stacks of piles no longer fit the default minute.
+    // Walking the piles of every stack takes longer than the default minute.
     test.slow();
     await page.setViewportSize({ width, height: 900 });
     await page.reload();
