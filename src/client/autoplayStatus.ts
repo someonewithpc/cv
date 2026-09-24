@@ -72,9 +72,12 @@ export function initAutoplayStatus(page: HTMLElement) {
     hint.textContent = state === 'playing' && touch ? TOUCH_HINT : HINT[state];
 
     keys.forEach((key) => {
-      const pressed = (key.dataset.demoKey === 'play' && state === 'playing')
-        || (key.dataset.demoKey === 'pause' && state === 'user');
-      key.setAttribute('aria-pressed', String(pressed));
+      // Play and pause are toggles; reset is a momentary action and carries no pressed state.
+      if (key.dataset.demoKey !== 'reset') {
+        const pressed = (key.dataset.demoKey === 'play' && state === 'playing')
+          || (key.dataset.demoKey === 'pause' && state === 'user');
+        key.setAttribute('aria-pressed', String(pressed));
+      }
       key.disabled = state === 'off';
     });
   };

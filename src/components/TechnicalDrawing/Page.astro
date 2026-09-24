@@ -156,7 +156,7 @@ const transportKeys = [
   <div class="demo-transport" data-demo-transport hidden>
     <span class="demo-keys">
       {transportKeys.map(({ id, label, glyph }) => (
-        <button class="demo-key" type="button" data-demo-key={id} title={label} aria-pressed="false">
+        <button class="demo-key" type="button" data-demo-key={id} title={label} aria-pressed={id === 'reset' ? undefined : 'false'}>
           <span class="sr-only">{label}</span>
           <svg viewBox="0 0 21 18" aria-hidden="true">
             <path class="key-bevel" d="M1 13 2.5 16.5h17L18 13Z" />
@@ -523,8 +523,10 @@ section {
     white-space: nowrap;
   }
 
+  /* The same selector as the rule that starts the pulse: a bare .demo-led loses to it on
+     specificity and never switches the animation off. */
   @media (prefers-reduced-motion: reduce) {
-    .demo-led { animation: none; }
+    .demo-transport[data-state='playing'] .demo-led { animation: none; }
   }
 
   .aside {
