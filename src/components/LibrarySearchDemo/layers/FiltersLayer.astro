@@ -30,7 +30,7 @@ const columns = [
         {columns.map(({ title, result, note }, index) => (
           <>
             {index > 0 && <span class="arrow">+ filter →</span>}
-            <section class="column">
+            <div class="column">
               <h3>{title}</h3>
               <ol>
                 {result.hits.slice(0, TOP).map((hit) => (
@@ -42,7 +42,7 @@ const columns = [
                 ))}
               </ol>
               <p class="note">{note}</p>
-            </section>
+            </div>
           </>
         ))}
       </div>
