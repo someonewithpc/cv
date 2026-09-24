@@ -425,6 +425,15 @@ function initStack(stack: HTMLElement) {
   // and Firefox 144 act on natively. A browser without the API leaves the tab inert, and
   // below 56em the tab is the only way to the note, so it gets a click of its own there.
   // Feature-detected: where the button has the property the browser already opens it.
+  // The popover attributes are the markup's fallback for pages without this script, so a
+  // scripted page drops them and always opens the note as a modal.
+  for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
+    tab.removeAttribute('popovertarget');
+    const id = tab.getAttribute('commandfor');
+    const note = id ? document.getElementById(id) : null;
+    note?.removeAttribute('popover');
+    note?.querySelector('.note-dismiss[popovertarget]')?.remove();
+  }
   if (!('commandForElement' in HTMLButtonElement.prototype)) {
     for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
       tab.addEventListener('click', () => {
