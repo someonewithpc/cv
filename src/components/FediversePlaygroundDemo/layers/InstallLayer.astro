@@ -97,14 +97,7 @@ const placed = steps.map((step, index) => {
 
 .wrapper {
   @include sheet-content;
-
-  @container technical-drawing-width (max-width: 56em) {
-    padding-bottom: calc(3.5em + $sheet-margin);
-  }
-
-  @container technical-drawing (orientation: portrait) {
-    padding-bottom: $sheet-margin;
-  }
+  @include clear-of-title-block;
 
   margin-inline: auto;
   display: grid;
