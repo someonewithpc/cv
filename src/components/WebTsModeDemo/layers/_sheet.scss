@@ -26,7 +26,6 @@ $sheet-margin: 0.75em;
   --buffer-mode-line: var(--neutral-4);
 
   --face-comment: var(--neutral-9);
-  --face-bracket: var(--neutral-10);
   --face-keyword: oklch(from var(--accent-12) l max(c, 0.1) h);
   --face-builtin: oklch(from var(--accent-12) l max(c, 0.1) calc(h + 150));
   --face-string: oklch(from var(--accent-12) l max(c, 0.1) calc(h + 85));
@@ -76,8 +75,6 @@ $sheet-margin: 0.75em;
   .f-tag { color: var(--face-tag); }
   .f-component { color: var(--face-component); }
   .f-literal { color: var(--face-literal); }
-  .f-bracket,
-  .f-delimiter { color: var(--face-bracket); }
   .f-selector { color: var(--face-function); }
   .f-selector.deep { @include depth-face; }
 }

@@ -27,8 +27,6 @@ export type Face =
   | 'tag' // web-ts-tag-face: known HTML/SVG tags
   | 'component' // web-ts-component-tag-face: PascalCase, dotted or hyphenated tags
   | 'literal' // web-ts-literal-tag-face: unknown lowercase tags, which Astro allows
-  | 'bracket'
-  | 'delimiter'
   | 'selector'; // a depth face from web-ts-treesit--css-selector-face-for-depth
 
 export type Range = {
@@ -124,8 +122,10 @@ function tagFace(name: string): Face {
 }
 
 // ----------------------------------------------------------------------------------------
-// TSX: the typescript-ts-mode features the Astro host enables (no tsx-operator, no
-// tsx-variable), so operators and plain identifiers stay in the default face.
+// TSX: the typescript-ts-mode features the Astro host enables at the default font-lock
+// level, 3. tsx-function, tsx-operator, tsx-bracket and tsx-delimiter sit at level 4, so
+// calls, operators and punctuation stay in the default face, as does a member expression's
+// property; its object is a type when it starts with a capital and a variable otherwise.
 
 const TS_KEYWORDS = new Set(
   (
@@ -209,7 +209,7 @@ function lexTsx(p: Paint, start: number, end: number, topLevel = false) {
 
       let face: Face = 'default';
       if (member) {
-        face = src[after] === '(' ? 'function' : 'variable'; // property-use / call face
+        // A property_identifier is painted by tsx-function alone, which is level 4.
       } else if (TS_KEYWORDS.has(word) && !(inType() && TS_TYPES.has(word))) {
         face = 'keyword';
       } else if (TS_CONSTANTS.has(word)) {
@@ -223,10 +223,11 @@ function lexTsx(p: Paint, start: number, end: number, topLevel = false) {
         face = 'variable'; // shorthand_property_identifier_pattern
       } else if (braces.at(-1) === 'object' && src[after] === ':') {
         face = 'variable'; // pair key: property-use face
+      } else if (src[after] === '.' || src.startsWith('?.', after)) {
+        // member_expression object: a static type by convention, else a variable in use
+        face = /^[A-Z_][0-9A-Za-z_]*$/.test(word) ? 'type' : 'variable';
       } else if (declaring) {
         face = 'variable'; // variable_declarator name
-      } else if (src[after] === '(') {
-        face = 'function';
       }
       paint(p, i, e, face);
 
@@ -249,15 +250,11 @@ function lexTsx(p: Paint, start: number, end: number, topLevel = false) {
       else if (EXPRESSION_BEFORE.has(prev) && prev !== '{') kind = prev === '' && topLevel ? 'block' : 'object';
       braces.push(kind);
       if (kind === 'type') typeMode = 0;
-      paint(p, i, i + 1, 'bracket');
       declaring = false;
     } else if (op === '}') {
       braces.pop();
-      paint(p, i, i + 1, 'bracket');
     } else if ('()[]'.includes(op)) {
-      paint(p, i, i + 1, 'bracket');
     } else if (',.;:'.includes(op)) {
-      paint(p, i, i + 1, 'delimiter');
       // A `:` outside an object or a type literal starts an annotation.
       if (op === ':' && braces.at(-1) !== 'object' && braces.at(-1) !== 'type') typeMode = 1;
       if (op === ';' || (op === ',' && braces.at(-1) !== 'type')) typeMode = 0;
@@ -309,7 +306,6 @@ function lexJsx(p: Paint, open: number, end: number): number {
     if (src[i] === '<') {
       const closing = src[i + 1] === '/';
       const nameStart = i + (closing ? 2 : 1);
-      paint(p, i, nameStart, 'bracket');
       let e = nameStart;
       while (e < end && /[\w.:-]/.test(src[e])) e += 1;
       const name = src.slice(nameStart, e);
@@ -320,7 +316,6 @@ function lexJsx(p: Paint, open: number, end: number): number {
       let selfClosing = false;
       while (i < end && src[i] !== '>') {
         if (src.startsWith('/>', i)) {
-          paint(p, i, i + 2, 'bracket');
           i += 2;
           selfClosing = true;
           break;
@@ -336,8 +331,6 @@ function lexJsx(p: Paint, open: number, end: number): number {
           i = s;
         } else if (src[i] === '{') {
           const close = matchBrace(src, i, end);
-          paint(p, i, i + 1, 'bracket');
-          paint(p, close, close + 1, 'bracket');
           lexTsx(p, i + 1, close);
           i = close + 1;
         } else {
@@ -345,7 +338,6 @@ function lexJsx(p: Paint, open: number, end: number): number {
         }
       }
       if (!selfClosing && src[i] === '>') {
-        paint(p, i, i + 1, 'bracket');
         i += 1;
         const isVoid = VOID_TAGS.has(name);
         if (closing) depth -= 1;
@@ -357,8 +349,6 @@ function lexJsx(p: Paint, open: number, end: number): number {
 
     if (src[i] === '{') {
       const close = matchBrace(src, i, end);
-      paint(p, i, i + 1, 'bracket');
-      paint(p, close, close + 1, 'bracket');
       lexTsx(p, i + 1, close);
       i = close + 1;
       continue;
@@ -502,16 +492,13 @@ function lexValues(p: Paint, s: number, e: number) {
       paint(p, i, c, 'string');
       i = c;
     } else if ('()[]'.includes(ch)) {
-      paint(p, i, i + 1, 'bracket');
       i += 1;
     } else if (src.startsWith('!important', i)) {
       paint(p, i, i + 10, 'builtin');
       i += 10;
     } else if (src.startsWith('#{', i)) {
       const c = matchBrace(src, i + 1, e);
-      paint(p, i + 1, i + 2, 'bracket');
       lexValues(p, i + 2, c);
-      paint(p, c, c + 1, 'bracket');
       i = c + 1;
     } else if (ch === '$') {
       let c = i + 1;
@@ -558,7 +545,6 @@ function lexScss(p: Paint, start: number, end: number) {
     }
     if (src[i] === '}' || src[i] === '{') {
       if (src[i] === '}') blocks.pop();
-      paint(p, i, i + 1, 'bracket');
       i += 1;
       continue;
     }
@@ -653,7 +639,6 @@ function lexTemplate(p: Paint, ranges: Range[], start: number, end: number) {
     if (ch === '<' && (isIdentStart(src[i + 1]) || src[i + 1] === '/' || src[i + 1] === '>')) {
       const closing = src[i + 1] === '/';
       const nameStart = i + (closing ? 2 : 1);
-      paint(p, i, nameStart, 'bracket');
       let e = nameStart;
       while (e < end && /[\w.:-]/.test(src[e])) e += 1;
       const name = src.slice(nameStart, e);
@@ -663,7 +648,6 @@ function lexTemplate(p: Paint, ranges: Range[], start: number, end: number) {
       let selfClosing = false;
       while (i < end && src[i] !== '>') {
         if (src.startsWith('/>', i)) {
-          paint(p, i, i + 2, 'bracket');
           i += 2;
           selfClosing = true;
           break;
@@ -671,8 +655,6 @@ function lexTemplate(p: Paint, ranges: Range[], start: number, end: number) {
         if (src[i] === '{') {
           // A spread or shorthand attribute: `{...props}`.
           const close = matchBrace(src, i, end);
-          paint(p, i, i + 1, 'bracket');
-          paint(p, close, close + 1, 'bracket');
           embed(p, ranges, {
             lang: 'tsx',
             node: 'attribute_js_expr',
@@ -696,8 +678,6 @@ function lexTemplate(p: Paint, ranges: Range[], start: number, end: number) {
               i = s;
             } else if (src[i] === '{') {
               const close = matchBrace(src, i, end);
-              paint(p, i, i + 1, 'bracket');
-              paint(p, close, close + 1, 'bracket');
               embed(p, ranges, {
                 lang: 'tsx',
                 node: 'attribute_js_expr',
@@ -722,7 +702,6 @@ function lexTemplate(p: Paint, ranges: Range[], start: number, end: number) {
       if (selfClosing) continue;
       const tagEnd = i;
       if (src[i] === '>') {
-        paint(p, i, i + 1, 'bracket');
         i += 1;
       }
 
@@ -768,8 +747,6 @@ function lexTemplate(p: Paint, ranges: Range[], start: number, end: number) {
 
     if (ch === '{') {
       const close = matchBrace(src, i, end);
-      paint(p, i, i + 1, 'bracket');
-      paint(p, close, close + 1, 'bracket');
       // Only element-owned interpolations get a range, and one range holds all of it:
       // any interpolation nested inside is part of the same TSX program.
       if (elementDepth > 0) {
