@@ -1,0 +1,15 @@
+// What the playground's four sheets share: the margin every layer keeps around its content.
+
+// Clear sheet between the content and the frame line, the title block and the corner pieces,
+// in em of the sheet's own type so it scales with the page. It goes on a layer's root and
+// nowhere else, so nothing inside has to be nudged on its own. The spec's floor is 0.5em.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// The monospace every file name, service and command on these sheets is set in.
+$code-font: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

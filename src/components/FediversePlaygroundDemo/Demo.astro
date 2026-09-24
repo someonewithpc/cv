@@ -1,0 +1,91 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import TopologyLayer from './layers/TopologyLayer.astro';
+import WorktreesLayer from './layers/WorktreesLayer.astro';
+import InstallLayer from './layers/InstallLayer.astro';
+import HostsLayer from './layers/HostsLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+const srcRoot = path.join(process.cwd(), 'src');
+const clientEntry = path.join(srcRoot, 'components/FediversePlaygroundDemo/client/playground.ts');
+
+const { outputFiles: [clientBundle] } = await esbuild.build({
+  entryPoints: [clientEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  alias: { '@': srcRoot },
+});
+
+const clientSize = toKiB(clientBundle.text);
+
+// The title block holds two icons a page, so the sheet's six tags are shared out by what each
+// page is about.
+const layers = {
+  topology: { name: null, tech: ['typescript', 'docker'] },
+  worktrees: { name: 'Mirrors & Worktrees', pageStyle: 'blueprint', tech: ['git', 'typescript'] },
+  install: { name: 'One-shot Installers', pageStyle: 'blueprint', tech: ['bash', 'postgresql'] },
+  hosts: { name: 'Hostnames → /etc/hosts', pageStyle: 'blueprint', tech: ['nixos', 'bash'] },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+{/* The subtitle credits the tool's ancestor, the private Visrez deployment tool, and that is
+    all the sheet says about it. */}
+<TechnicalDrawingStack
+  subtitle="Fediverse Playground · after Visrez"
+  scale="1:1"
+  size={clientSize}
+  date="2026"
+  tech={['typescript', 'docker']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      topology: <TopologyLayer />,
+      worktrees: <WorktreesLayer />,
+      install: <InstallLayer />,
+      hosts: <HostsLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      topology: (
+        <PostIt background="#e8e4dc" color="black">
+          Switch instances on and off. db and redis appear once however many nodes ask for them,
+          and web waits on every app. Open the YAML to see the file the builder writes
+        </PostIt>
+      ),
+      worktrees: (
+        <PostIt background="#cde" color="black">
+          Bob asks for v3, but Alice's worktree already has it. Follow the rename, then the
+          four ways the branch can be made
+        </PostIt>
+      ),
+      install: (
+        <PostIt background="#fed" color="black">
+          Read top to bottom: nothing starts until what it waits on is healthy, started or
+          finished
+        </PostIt>
+      ),
+      hosts: (
+        <PostIt background="#dfd" color="black">
+          Follow alice from the config into the hosts snippet, the Nix attribute set and the
+          NixOS module that reads it
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>

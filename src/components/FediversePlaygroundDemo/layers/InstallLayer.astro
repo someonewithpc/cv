@@ -1,0 +1,292 @@
+---
+import { buildComposeFile, DEV_PASSWORD } from '../compose';
+import { exampleConfig, withEnabled } from '../config';
+
+// The lifelines and the conditions on the arrows come out of the compose file the builder
+// writes for Alice alone; the steps inside the installer are install/social-v3.sh's own.
+const compose = buildComposeFile(withEnabled(exampleConfig, { 'gnusocial-bob': false, 'gnusocial-v2': false }));
+const app = 'gnusocial-alice';
+const installer = `${app}-install`;
+const condition = (service: string, dependency: string) =>
+  (compose.services[service].depends_on as Record<string, { condition: string }>)[dependency].condition;
+const healthcheck = compose.services.db.healthcheck as { test: string[]; interval: string; retries: number };
+
+const lifelines = ['db', installer, app, 'web'];
+const column = (service: string) => lifelines.indexOf(service) + 1;
+
+type Step =
+  | { kind: 'self'; on: string; text: string; code?: boolean }
+  | { kind: 'message'; from: string; to: string; text: string; gate?: boolean };
+
+const steps: Step[] = [
+  { kind: 'self', on: 'db', text: `${healthcheck.test[1]} · every ${healthcheck.interval}, ${healthcheck.retries} tries`, code: true },
+  { kind: 'message', from: 'db', to: installer, text: condition(installer, 'db') },
+  { kind: 'self', on: installer, text: '/wait_for_db.sh', code: true },
+  { kind: 'self', on: installer, text: 'composer install', code: true },
+  { kind: 'message', from: installer, to: 'db', text: 'doctrine:database:create · schema:create' },
+  { kind: 'self', on: installer, text: 'app:populate_initial_values', code: true },
+  { kind: 'self', on: installer, text: 'install_plugins.sh', code: true },
+  { kind: 'message', from: installer, to: 'db', text: 'seed-v3-admin.php boots the kernel: DB::persistWithSameId' },
+  { kind: 'message', from: installer, to: app, text: `exit 0 · ${condition(app, installer)}`, gate: true },
+  { kind: 'self', on: app, text: `/entrypoint.sh · redis ${condition(app, 'redis').replace('service_', '')}`, code: true },
+  { kind: 'message', from: app, to: 'web', text: 'web.depends_on lists every app' },
+];
+
+// Row 1 holds the heads, so step i sits on row i + 2. Every item is placed by hand: the
+// lifelines hold their columns for every row, and auto-placement would push the rest past them.
+const placed = steps.map((step, index) => {
+  const row = index + 2;
+  if (step.kind === 'self') return { ...step, row, start: column(step.on), end: column(step.on) + 1, reverse: false };
+  const [a, b] = [column(step.from), column(step.to)];
+  return { ...step, row, start: Math.min(a, b), end: Math.max(a, b) + 1, reverse: b < a };
+});
+---
+
+<div class="wrapper">
+  <div class="install-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <strong>Each instance is two containers: a one-shot installer gates the app</strong>
+      </header>
+
+      <div class="sequence" style={{ '--lifelines': lifelines.length, '--rows': steps.length + 1 }}>
+        {lifelines.map((_, index) => (
+          <span class="lifeline" style={{ 'grid-column': index + 1 }} />
+        ))}
+        {lifelines.map((name, index) => (
+          <code class="head" style={{ 'grid-column': index + 1 }}>{name}</code>
+        ))}
+
+        {placed.map((step) => step.kind === 'self' ? (
+          <span
+            class:list={['self', { first: step.start === 1, last: step.start === lifelines.length }]}
+            style={{ 'grid-row': step.row, 'grid-column': `${step.start} / ${step.end}` }}
+          >
+            {step.code ? <code>{step.text}</code> : step.text}
+          </span>
+        ) : (
+          <span
+            class:list={['message', { reverse: step.reverse, gate: step.gate }]}
+            style={{ 'grid-row': step.row, 'grid-column': `${step.start} / ${step.end}`, '--span': step.end - step.start }}
+          >
+            <span class="text">{step.text}</span>
+          </span>
+        ))}
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Run again</dt>
+          <dd>If the <code>language</code> table has rows the script only reseeds the admin and exits 0, so <code>up</code> is safe to repeat</dd>
+        </div>
+        <div>
+          <dt>Password</dt>
+          <dd><code>POSTGRES_PASSWORD={DEV_PASSWORD}</code> is the playground's dev default, in every compose file it writes</dd>
+        </div>
+        <div>
+          <dt>v2</dt>
+          <dd>The v2 node has the same pair, gated on <code>mariadb</code> instead of Postgres</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    padding-bottom: $sheet-margin;
+  }
+
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.install-layer {
+  box-sizing: border-box;
+  width: min(100%, 44em);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  /* Keyed on the stack's attributes, not the width query: a font size that comes out of a
+     container query re-lays everything under it on each resize step. See Stack.astro. */
+  :global([data-sheet-width='narrow']) & {
+    /* A short landscape sheet: the type gives a little, and the notes under the figure go. */
+    font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+
+    .rules {
+      display: none;
+    }
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+
+    .rules {
+      display: grid;
+    }
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  display: grid;
+  gap: 0.625em;
+}
+
+header strong {
+  font-size: 0.875em;
+}
+
+code {
+  font-family: $code-font;
+}
+
+.sequence {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--lifelines), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), auto);
+  row-gap: 0.3em;
+  font-size: 0.6875em;
+}
+
+/* Each lifeline runs the full height of the diagram, behind every row. */
+.lifeline {
+  grid-row: 1 / -1;
+  justify-self: center;
+  width: 0;
+  border-left: 1px dashed var(--line-strong);
+}
+
+.head {
+  grid-row: 1;
+  justify-self: center;
+  max-width: 100%;
+  padding: 0.25em 0.5em;
+  border: 1px solid var(--ink);
+  border-radius: 0.25em;
+  background: var(--surface-raised);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+/* A step on one lifeline may run wider than its column: the rows are one step each, so
+   nothing beside it competes. The end columns grow inwards, off the panel's edge. */
+.self {
+  justify-self: center;
+  width: max-content;
+  max-width: 190%;
+
+  &.first {
+    justify-self: start;
+  }
+
+  &.last {
+    justify-self: end;
+  }
+
+  padding: 0.125em 0.375em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.2em;
+  background: var(--surface-sunken);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* A message runs lifeline to lifeline: half a column in from each end of its span. */
+.message {
+  position: relative;
+  margin-inline: calc(50% / var(--span));
+  padding-bottom: 0.375em;
+  border-bottom: 1px solid var(--ink-muted);
+  text-align: center;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    bottom: -0.3em;
+    border-block: 0.3em solid transparent;
+    border-left: 0.5em solid var(--ink-muted);
+  }
+
+  &.reverse::after {
+    right: auto;
+    left: -1px;
+    border-left: 0;
+    border-right: 0.5em solid var(--ink-muted);
+  }
+
+  &.gate {
+    border-bottom: 2px solid var(--accent);
+
+    &::after {
+      bottom: -0.35em;
+      border-left-color: var(--accent);
+    }
+
+    .text {
+      color: var(--accent-text);
+      font-weight: 600;
+    }
+  }
+
+  .text {
+    display: inline-block;
+    padding-inline: 0.25em;
+    background: var(--surface-raised);
+    font-family: $code-font;
+    font-size: 0.95em;
+  }
+}
+
+.rules {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--line);
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+  }
+
+  dt {
+    font-size: 0.625em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+}
+</style>

@@ -1,0 +1,308 @@
+---
+import { exampleConfig, listInstances } from '../config';
+import { hostsNix, hostsSnippet, subjectAltName } from '../hosts';
+
+// One instance's name, followed through resolveHostnames into every file that carries it. The
+// two generated files list every instance; the name being followed is the one picked out.
+const alice = listInstances(exampleConfig).find((instance) => instance.key === 'gnusocial-alice')!;
+const [configured, alias] = alice.hostnames;
+const tld = exampleConfig.defaults?.local_tld;
+// Break points after the = and each comma, so the SAN wraps between names, not inside one.
+const san = subjectAltName(alice.hostnames).split(/(?<=[=,])/);
+
+const names = new RegExp(`\\b(${alice.hostnames.map((name) => name.replace(/\./g, '\\.')).join('|')})\\b`, 'g');
+
+// The followed name is picked out wherever it lands, and each comment line gets a span of its
+// own so a short sheet can fold the files' headers away.
+const mark = (text: string) =>
+  text
+    .split('\n')
+    .map((line) => {
+      const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(names, '<mark>$1</mark>');
+      return line.startsWith('#') ? `<span class="comment">${escaped}\n</span>` : `${escaped}\n`;
+    })
+    .join('')
+    .trimEnd();
+
+const outputs = [
+  { file: 'files/hosts.snippet', note: 'every name, for apply-hosts to merge into /etc/hosts', body: hostsSnippet(exampleConfig) },
+  { file: 'files/hosts.nix', note: 'only the *.fediverse names: *.localhost resolves already', body: hostsNix(exampleConfig) },
+  {
+    file: 'nix/hosts-module.nix',
+    note: 'exported by the flake as nixosModules.hosts',
+    body: `{ lib, ... }:
+let
+  hostsPath = ../files/hosts.nix;
+  hosts = if builtins.pathExists hostsPath then import hostsPath else { };
+in {
+  networking.hosts = hosts;
+}
+`,
+  },
+];
+---
+
+<div class="wrapper">
+  <div class="hosts-layer" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <strong>One configured name, two answers, three files</strong>
+      </header>
+
+      <div class="fan">
+        <div class="source">
+          <span class="caption">{alice.key} · hostname</span>
+          <code class="name">{configured}</code>
+          <span class="caption">defaults.local_tld: {tld}</span>
+          <code class="name alias">{alias}</code>
+        </div>
+
+        <svg class="wires" viewBox="0 0 40 100" preserveAspectRatio="none">
+          <path d="M0 50 C 18 50, 22 16, 40 16" />
+          <path d="M0 50 C 18 50, 22 50, 40 50" />
+          <path d="M0 50 C 18 50, 22 84, 40 84" />
+        </svg>
+
+        <ul class="targets">
+          {outputs.map(({ file, note, body }) => (
+            <li>
+              <span class="file"><code>{file}</code> <span class="note">{note}</span></span>
+              <pre><code set:html={mark(body.trimEnd())} /></pre>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>nginx</dt>
+          <dd>The server block's <code>server_name</code> lists both, so either name reaches the node</dd>
+        </div>
+        <div>
+          <dt>TLS</dt>
+          <dd>
+            One self-signed certificate per node, from <code>openssl req -addext</code>
+            <code class="san">{san.map((part) => <>{part}<wbr /></>)}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>Dev shell</dt>
+          <dd>Entering it checks every <code>*.{tld}</code> name with <code>getent</code> and prints one hint if one does not resolve</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    padding-bottom: $sheet-margin;
+  }
+
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+.hosts-layer {
+  box-sizing: border-box;
+  width: min(100%, 44em);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  /* Keyed on the stack's attributes, not the width query: a font size that comes out of a
+     container query re-lays everything under it on each resize step. See Stack.astro. */
+  :global([data-sheet-width='narrow']) & {
+    /* A short landscape sheet: the type gives a little, and the notes under the figure go. */
+    font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+
+    .rules {
+      display: none;
+    }
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+
+    .rules {
+      display: grid;
+    }
+  }
+}
+
+.panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  display: grid;
+  gap: 0.625em;
+}
+
+header strong {
+  font-size: 0.875em;
+}
+
+code {
+  font-family: $code-font;
+}
+
+.caption {
+  font-size: 0.625em;
+  color: var(--ink-muted);
+}
+
+.fan {
+  display: grid;
+  grid-template-columns: max-content 2.5em minmax(0, 1fr);
+  align-items: center;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5em;
+
+    .wires {
+      display: none;
+    }
+  }
+}
+
+.source {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25em;
+}
+
+.name {
+  padding: 0.125em 0.5em;
+  border: 1px solid var(--ink);
+  border-radius: 0.25em;
+  font-size: 0.8125em;
+
+  &.alias {
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+}
+
+.wires {
+  width: 100%;
+  height: 100%;
+  min-height: 7em;
+  overflow: visible;
+
+  path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.targets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.375em;
+  min-width: 0;
+
+  li {
+    display: grid;
+    gap: 0.125em;
+    min-width: 0;
+  }
+
+  .file {
+    font-size: 0.6875em;
+
+    code {
+      font-weight: 600;
+    }
+  }
+
+  .note {
+    color: var(--ink-muted);
+  }
+
+  pre {
+    margin: 0;
+    padding: 0.25em 0.5em;
+    border: 1px solid var(--line);
+    border-radius: 0.25em;
+    background: var(--surface-sunken);
+    font-size: 0.625em;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  pre :global(.comment) {
+    color: var(--ink-muted);
+
+    :global([data-sheet-width='narrow']) & {
+      display: none;
+    }
+
+    :global([data-sheet-orientation='portrait']) & {
+      display: inline;
+    }
+  }
+
+  pre :global(mark) {
+    background: none;
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+}
+
+.rules {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--line);
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+  }
+
+  dt {
+    font-size: 0.625em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+
+  .san {
+    display: block;
+  }
+}
+</style>

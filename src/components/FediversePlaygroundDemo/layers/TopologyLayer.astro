@@ -1,0 +1,419 @@
+---
+import { exampleConfig, initiallyEnabled, withEnabled } from '../config';
+import { buildComposeFile, RECIPES } from '../compose';
+import { renderGraph, summary } from '../graph';
+import { composeYaml } from '../yaml';
+
+// The opening state is built here by the same code the island runs, so the sheet reads the
+// same with scripts off, and the first toggle only redraws.
+const config = withEnabled(exampleConfig, initiallyEnabled);
+const compose = buildComposeFile(config);
+const yaml = composeYaml(compose);
+
+const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) => ({
+  key,
+  short: key.replace(/^gnusocial-/, ''),
+  meta: `${instance.software} · ${instance.hostname}`,
+}));
+---
+
+<div class="wrapper">
+  <div class="playground" data-fediverse-playground>
+    <form class="config" aria-label="Instances in playground.config.yaml">
+      <p class="file">
+        <span>playground.config.yaml</span>
+        <span>defaults.local_tld: {exampleConfig.defaults?.local_tld}</span>
+        <span>recipes: {Object.keys(RECIPES).join(', ')}</span>
+      </p>
+      <fieldset>
+        <legend class="sr-only">instances</legend>
+        {toggles.map(({ key, short, meta }) => (
+          <label class="toggle">
+            <input type="checkbox" name={key} checked={initiallyEnabled[key]} />
+            <span class="name">{short}</span>
+            <span class="meta">{meta}</span>
+          </label>
+        ))}
+      </fieldset>
+    </form>
+
+    <p class="status" aria-live="polite" data-status>{summary(compose)}</p>
+
+    <div class="graph" data-graph set:html={renderGraph(config, compose)} />
+
+    {/* Open, the file lies over the graph rather than pushing it off the sheet. */}
+    <details class="yaml">
+      <summary>
+        <span>docker-compose.yml</span>
+        <span class="lines" data-lines>{yaml.split('\n').length - 1} lines</span>
+      </summary>
+      <pre tabindex="0"><code data-yaml>{yaml}</code></pre>
+    </details>
+  </div>
+</div>
+
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from '../client/boot';
+
+bootIslands('[data-fediverse-playground]', boot);
+</script>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+:global(article.technical-drawing-stack > * > section .content:has(.playground)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.wrapper {
+  @include sheet-content;
+
+  height: 100%;
+  min-height: 0;
+
+  /* The title block claims the bottom-right corner: on a wide sheet it reaches into
+     the content column from the right, on a narrow one it takes a row off the bottom. */
+  padding-right: calc(3em + $sheet-margin);
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-right: $sheet-margin;
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    /* Portrait gives the title block its own row. */
+    padding-bottom: $sheet-margin;
+  }
+}
+
+.playground {
+  --bar: 2em;
+
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto var(--bar) minmax(0, 1fr);
+  row-gap: 0.5em;
+  color: var(--ink);
+  font-size: 0.8em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: 0.7em;
+  }
+}
+
+.config {
+  grid-row: 1;
+  grid-column: 1;
+  margin: 0;
+  display: grid;
+  gap: 0.25em;
+  padding: 0.5em 0.625em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-raised);
+  font-family: $code-font;
+}
+
+.file {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1.5em;
+  font-size: 0.75em;
+  color: var(--ink-muted);
+
+  span:first-child {
+    color: var(--ink);
+    font-weight: 600;
+  }
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25em;
+}
+
+.toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "box name"
+    "box meta";
+  column-gap: 0.5em;
+  align-items: center;
+  padding: 0.25em 0.375em;
+  border: 1px solid var(--line);
+  border-radius: 0.25em;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-sunken);
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid var(--control-accent);
+    outline-offset: 1px;
+  }
+
+  &:has(input:checked) {
+    border-color: var(--ink-muted);
+  }
+
+  input {
+    grid-area: box;
+    margin: 0;
+    width: 1.1em;
+    height: 1.1em;
+    accent-color: var(--control-accent);
+    cursor: inherit;
+  }
+
+  .name {
+    grid-area: name;
+    font-weight: 600;
+  }
+
+  .meta {
+    grid-area: meta;
+    font-size: 0.75em;
+    color: var(--ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:has(input:not(:checked)) .name {
+    color: var(--ink-muted);
+  }
+}
+
+.status {
+  grid-row: 2;
+  grid-column: 1;
+  margin: 0;
+  align-self: center;
+  /* Clear of the file's summary, which sits at the other end of the same bar. */
+  padding-right: 22em;
+  line-height: 1.2;
+  font-family: $code-font;
+  font-size: 0.75em;
+  color: var(--ink-muted);
+}
+
+/* Spans the status bar and the graph: the summary sits at the bar's right end, and the
+   open file covers the graph below it. Only those two take the pointer. */
+.yaml {
+  grid-row: 2 / 4;
+  grid-column: 1;
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+  pointer-events: none;
+  font-family: $code-font;
+
+  summary {
+    box-sizing: border-box;
+    height: var(--bar);
+    width: fit-content;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    padding: 0 0.75em;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.375em;
+    background: var(--surface-raised);
+    cursor: pointer;
+    pointer-events: auto;
+
+    span {
+      font-size: 0.8em;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--control-accent);
+      outline-offset: 1px;
+    }
+  }
+
+  .lines {
+    color: var(--ink-muted);
+  }
+
+  /* Sized in the playground's em, like the bar and the graph's clearance, so its top meets
+     the bar and its corner stays off the title block; only the text inside is set smaller. */
+  pre {
+    position: absolute;
+    inset: calc(var(--bar) + 0.5em) 4.5em 0 0;
+    margin: 0;
+    padding: 0.375em 0.5em;
+    overflow: auto;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.375em;
+    background: var(--surface-raised);
+    pointer-events: auto;
+
+    @container technical-drawing-width (max-width: 56em) {
+      right: 0;
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      right: 0;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--control-accent);
+      outline-offset: -2px;
+    }
+  }
+
+  code {
+    display: block;
+    width: max-content;
+    font-size: 0.7em;
+    line-height: 1.4;
+  }
+}
+
+.graph {
+  grid-row: 3;
+  grid-column: 1;
+  position: relative;
+  min-width: 0;
+  min-height: 8em;
+
+  /* Out of flow, so the row's height is whatever the sheet leaves and the drawing scales
+     into it (preserveAspectRatio keeps it to the left) instead of growing the row. */
+  :global(svg) {
+    position: absolute;
+    /* The graph's bottom row runs level with the title block, which on a wide sheet reaches
+       further into the column than the wrapper's own clearance allows for. */
+    top: 0;
+    left: 0;
+    width: calc(100% - 4.5em);
+    height: 100%;
+    font-family: $code-font;
+    overflow: visible;
+
+    @container technical-drawing-width (max-width: 56em) {
+      width: 100%;
+    }
+
+    @container technical-drawing (orientation: portrait) {
+      width: 100%;
+    }
+  }
+
+  :global(.node rect) {
+    fill: var(--surface-raised);
+    stroke: var(--line-strong);
+    stroke-width: 1;
+  }
+
+  :global(.node.shared rect) {
+    stroke: var(--ink);
+    stroke-width: 1.25;
+  }
+
+  :global(.node.install rect) {
+    fill: var(--surface-sunken);
+  }
+
+  :global(.node text) {
+    text-anchor: middle;
+    fill: var(--ink);
+  }
+
+  :global(.node .label) {
+    font-size: 9.5px;
+    font-weight: 600;
+  }
+
+  :global(.node .sub) {
+    font-size: 7px;
+    fill: var(--ink-muted);
+  }
+
+  :global(.node.ghost rect) {
+    fill: none;
+    stroke: var(--line);
+    stroke-dasharray: 3 3;
+  }
+
+  :global(.node.ghost text) {
+    fill: var(--ink-faint);
+    font-weight: 400;
+  }
+
+  :global(.node.fresh) {
+    animation: fediverse-appear 360ms ease-out both;
+  }
+
+  :global(.edge) {
+    fill: none;
+    stroke: var(--ink-muted);
+    stroke-width: 1;
+  }
+
+  :global(.edge.service_started) {
+    stroke-dasharray: 4 3;
+  }
+
+  :global(.edge.service_completed_successfully) {
+    stroke: var(--accent);
+    stroke-width: 1.75;
+  }
+
+  :global(.halo) {
+    fill: none;
+    stroke: var(--surface-sunken);
+    stroke-width: 5;
+  }
+
+  :global(.junction) {
+    fill: var(--ink-muted);
+  }
+
+  :global(#fediverse-arrow path) {
+    fill: var(--ink-muted);
+  }
+
+  :global(#fediverse-gate path) {
+    fill: var(--accent);
+  }
+
+  :global(.gate) {
+    font-size: 7px;
+    fill: var(--accent-text);
+  }
+}
+
+@keyframes fediverse-appear {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graph :global(.node.fresh) {
+    animation: none;
+  }
+}
+</style>
