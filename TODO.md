@@ -84,6 +84,7 @@
 - [x] Turn off the Cloudflare image binding nothing here uses (#66)
 - [x] Docking DevTools holds the page zoomed in (#93)
 - [x] Make the e2e suite faster by fixing or cutting cases that do not make sense (#115)
+- [x] Pinching out over a 3D scene in responsive mode leaves the page zoomed in (#133)
 - [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
