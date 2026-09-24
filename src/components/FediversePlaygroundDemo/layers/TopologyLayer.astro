@@ -25,7 +25,7 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
       tool writes the docker-compose.yml that starts them, redrawn below as each instance is
       switched on or off.
     </p>
-    <form class="config" aria-label="Instances in playground.config.yaml">
+    <div class="config" role="group" aria-label="Instances in playground.config.yaml">
       <p class="file">
         <span>playground.config.yaml</span>
         <span>defaults.local_tld: {exampleConfig.defaults?.local_tld}</span>
@@ -41,7 +41,7 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
           </label>
         ))}
       </fieldset>
-    </form>
+    </div>
 
     <p class="status" aria-live="polite" data-status>{summary(compose)}</p>
 

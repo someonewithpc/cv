@@ -5,7 +5,7 @@ import { composeYaml } from '../yaml';
 
 /** Each toggle flips its instance's `enabled`, and the builder runs again from the config. */
 export function initPlayground(host: HTMLElement) {
-  const form = host.querySelector<HTMLFormElement>('form.config');
+  const form = host.querySelector<HTMLElement>('.config');
   const graph = host.querySelector<HTMLElement>('[data-graph]');
   const yaml = host.querySelector<HTMLElement>('[data-yaml]');
   const lines = host.querySelector<HTMLElement>('[data-lines]');
