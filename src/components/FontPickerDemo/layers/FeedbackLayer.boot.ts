@@ -73,8 +73,9 @@ export function boot(host: HTMLElement) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   // Every page of the stack shares one grid cell, so intersection alone would keep this
-  // running behind whichever page the visitor turned to
-  return watchPageActive(host, (active) => {
+  // running behind whichever page the visitor turned to. Nothing ever unmounts an island,
+  // so the watcher's stop function has no caller and is not returned.
+  watchPageActive(host, (active) => {
     window.clearTimeout(timer);
     if (active && !userControl) run();
   });
