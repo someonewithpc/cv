@@ -216,6 +216,23 @@ const PRESETS: Preset[] = [
   { kind: 'build', style: 'u_shape', seats: 0, distanceX: 0.22, distanceZ: 0.35 },
 ];
 
+type FloorArea = { start: { x: number; z: number }; end: { x: number; z: number } };
+
+/**
+ * The rectangles the chair loop draws, largest first. It takes the first one whose four corners
+ * the camera has on screen, so a wide sheet fills most of its floor with chairs and a narrow
+ * one still draws a rectangle it can show whole.
+ */
+const FLOOR_AREAS: FloorArea[] = [
+  { start: { x: -4.6, z: -3.6 }, end: { x: 4.8, z: 4.2 } },
+  { start: { x: -4.0, z: -3.0 }, end: { x: 4.2, z: 3.6 } },
+  { start: { x: -3.2, z: -2.4 }, end: { x: 3.4, z: 3.0 } },
+];
+
+function areaCorners({ start, end }: FloorArea) {
+  return [start, end, { x: start.x, z: end.z }, { x: end.x, z: start.z }];
+}
+
 /**
  * The seat count the banquet loop takes off the card's variant picker. Six seats at the
  * same table size is its own library object, so the pick swaps the model in the scene.
@@ -248,6 +265,9 @@ export class AutoPlayController {
    * to finish and move the index on, so a resume goes to the next step, not the same one.
    */
   private generation = 0;
+  /** The rectangle this lap draws, picked from FLOOR_AREAS as the lap starts. The steps are
+   * built afresh for every tick, so it has to outlive them. */
+  private floorArea: FloorArea = FLOOR_AREAS[FLOOR_AREAS.length - 1];
   /** The generation of the step now running, so resume() leaves the next step to it. */
   private inFlight: number | null = null;
   /** True while the walkthrough focuses a field itself, so the app can tell that focusin from a visitor's. */
@@ -479,6 +499,22 @@ export class AutoPlayController {
     this.scheduleNext();
   }
 
+  /** The largest of FLOOR_AREAS on screen and clear of the tool rail, bringing the camera home
+   * first if none is. */
+  private async fittingArea(): Promise<FloorArea> {
+    const canvas = this.scene.renderer.domElement;
+    const rail = canvas.closest('.space-builder-app')?.querySelector('.rail');
+    // A rail tucked away on a narrow frame is translated off the canvas, so its edge is too.
+    const railEdge = rail?.getBoundingClientRect().right ?? -Infinity;
+    const fits = () => FLOOR_AREAS.find((area) =>
+      this.scene.groundInView(areaCorners(area))
+      && areaCorners(area).every((c) => (this.scene.groundToClient(c.x, c.z)?.x ?? -Infinity) > railEdge + 16));
+    const area = fits();
+    if (area) return area;
+    await this.scene.resetCamera();
+    return fits() ?? FLOOR_AREAS[FLOOR_AREAS.length - 1];
+  }
+
   private offCanvasCursor(): DemoCursorStep {
     const canvas = this.scene.renderer.domElement;
     const rect = canvas.getBoundingClientRect();
@@ -685,8 +721,6 @@ export class AutoPlayController {
   }
 
   private buildSteps(preset: Preset): Step[] {
-    const start = { x: -3.2, z: -2.4 };
-    const end = { x: 3.4, z: 3.0 };
     const blocksDemo = blocksDemoOf(preset);
 
     return [
@@ -697,7 +731,8 @@ export class AutoPlayController {
           this.scene.reset();
           this.onUi({ panel: 'closed', phase: 'idle' });
           // A viewer who moved the camera keeps the view unless the area about to be drawn is off screen.
-          if (!this.scene.groundInView([start, end])) await this.scene.resetCamera();
+          const smallest = FLOOR_AREAS[FLOOR_AREAS.length - 1];
+          if (!this.scene.groundInView([smallest.start, smallest.end])) await this.scene.resetCamera();
         },
       },
       {
@@ -719,14 +754,23 @@ export class AutoPlayController {
           this.onUi({ panel: 'options', phase: 'build' });
         },
       },
+      // The area is picked once Options is open, since the sidebar takes its width from the
+      // viewport and the camera reframes to what is left.
       {
         delay: 400,
-        cursor: () => this.groundCursor(start.x, start.z),
+        run: async () => {
+          this.floorArea = await this.fittingArea();
+        },
+      },
+      {
+        delay: 50,
+        cursor: () => this.groundCursor(this.floorArea.start.x, this.floorArea.start.z),
       },
       {
         delay: 200,
-        cursor: () => this.groundCursor(start.x, start.z, { dragging: true }),
+        cursor: () => this.groundCursor(this.floorArea.start.x, this.floorArea.start.z, { dragging: true }),
         run: async () => {
+          const { start, end } = this.floorArea;
           await this.scene.drawAreaAnimated(start, end, 950, (point) => {
             this.onCursor(this.groundCursor(point.x, point.z, { dragging: true }));
           });

@@ -183,6 +183,21 @@ type Layer = keyof typeof layers;
   }
 }
 
+// The first sheet's app runs the sheet's full height, and only its sidebar stops above the
+// title block. The sidebar takes the block's width, so its edge lines up with the block's and
+// the viewport fills everything left of both, with no strip of paper under it. Portrait gives
+// the block a row of its own, and there the sidebar keeps its own width.
+:global(.space-builder-demo article.technical-drawing-stack > * > section:not(.blueprint) .content:has(.mock-scene-demo)) {
+  padding-bottom: 2px;
+}
+
+@container technical-drawing not (orientation: portrait) {
+  :global(.space-builder-demo article.technical-drawing-stack > * > section:not(.blueprint) .space-builder-app .sidebar) {
+    width: calc(var(--title-block-inline) - 2px);
+    margin-bottom: var(--title-block-reach);
+  }
+}
+
 // Regular (non-portrait) layout only: reserve a gutter next to the drawing and centre the
 // PostIt in whatever space is left. Portrait mode already centres the aside below the
 // content with its own margin, untouched.

@@ -10,8 +10,12 @@ const VIEWPORT = { width: 1240, height: 620 };
 // A walkthrough that keeps moving cannot be measured; a still sheet can.
 test.use({ reducedMotion: 'reduce' });
 
-/** Whatever a demo fills its artwork cell with, and the title block it must not reach. */
-const APPS = '.mock-scene-demo, .space-builder-app';
+/**
+ * The app's controls, and the title block they must not reach. The 3D view itself runs the
+ * sheet's full height into the corner, where the block covers it as pasted paper covers a
+ * drawing. The sidebar stops above the block, and nothing else sits in that corner.
+ */
+const APPS = '.space-builder-app .rail, .space-builder-app .sidebar, .space-builder-app .restart-btn, .space-builder-app .toasts';
 
 async function settle(page: Page, selector: string) {
   const stack = page.locator(selector);
@@ -20,11 +24,15 @@ async function settle(page: Page, selector: string) {
   return stack;
 }
 
-test('the space builder app ends above the title block', async ({ page }) => {
+test('the space builder app shows nothing under the title block', async ({ page }) => {
   await page.setViewportSize(VIEWPORT);
   await page.goto('/');
 
   const stack = await settle(page, '.space-builder-demo article.technical-drawing-stack');
+  // Reduced motion leaves the sidebar shut, so open it the way a reader would.
+  await stack.locator('[data-demo-target="tool:add"]').first().click();
+  await expect(stack.locator('.space-builder-app .sidebar').first()).toBeVisible();
+  await page.waitForTimeout(500);
 
   const overlaps = await stack.evaluate((el, what) => {
     const section = el.querySelector('section');
