@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * A demo's stack, found by the title it carries as its region label rather than by its place
@@ -6,6 +6,42 @@ import { expect, type Locator, type Page } from '@playwright/test';
  */
 export function demoStack(page: Page, title: string): Locator {
   return page.locator(`article.technical-drawing-stack[aria-label="${title}"]`);
+}
+
+/** How many cases a per-stack spec splits the page's stacks over. */
+export const LANES = 4;
+
+/**
+ * Runs `check` on every stack in lane `lane`: the page's first, fifth, ninth stack and so on
+ * for lane 0, the second, sixth and so on for lane 1. A spec declares one case per lane, so
+ * every demo on the page is checked however many there are, and the cases still run side by
+ * side. Each stack gets a fresh tab that `open` has loaded, as it would in a case of its own.
+ */
+export async function forEachStackInLane(
+  page: Page,
+  lane: number,
+  open: (page: Page) => Promise<void>,
+  check: (page: Page, stack: Locator) => Promise<void>,
+): Promise<void> {
+  await open(page);
+  const titles = await page
+    .locator('article.technical-drawing-stack')
+    .evaluateAll((stacks) => stacks.map((stack) => stack.getAttribute('aria-label') ?? ''));
+  expect(titles.length, 'the page shows no demo stack').toBeGreaterThan(0);
+  const mine = titles.filter((_, index) => index % LANES === lane);
+  test.skip(mine.length === 0, 'fewer stacks than lanes');
+  test.setTimeout(test.info().timeout * mine.length);
+
+  let tab = page;
+  for (const [index, title] of mine.entries()) {
+    if (index > 0) {
+      const next = await page.context().newPage();
+      await tab.close();
+      tab = next;
+      await open(tab);
+    }
+    await test.step(title, () => check(tab, demoStack(tab, title)));
+  }
 }
 
 /**
