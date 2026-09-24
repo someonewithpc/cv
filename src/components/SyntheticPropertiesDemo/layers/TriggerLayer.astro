@@ -1,49 +1,57 @@
 ---
-// Where the one builder's SQL ends up. The shapes are the product's; the bodies are cut
-// down to the lines that show which relation the builder was handed.
+// Where the one builder's SQL ends up, the way app/models/library_object.rb wrote it on the
+// branch. The bodies are cut down to the lines that show what the builder was handed.
 const targets = [
   {
     id: 'backfill',
     title: 'Backfill',
-    when: 'migration, once',
-    source: 'library_objects',
+    when: 'rake data_migrations:initialize_library_object_properties_concatenated, once',
+    where: '"1=1"',
     sql: [
-      'INSERT INTO library_object_synthetic_properties',
+      'INSERT IGNORE INTO library_object_synthetic_properties',
       '  (library_object_id, name, value)',
-      'size_synthetic_property_select_sql(',
-      '  LibraryObject.arel_table)',
+      '#{size_synthetic_property_select_sql}',
+      'UNION ALL',
+      '#{pax_synthetic_property_select_sql};',
     ],
   },
   {
     id: 'insert',
-    title: 'AFTER INSERT',
+    title: 'trigger.after(:insert)',
     when: 'library_objects, each row',
-    source: 'NEW',
+    where: '"id = NEW.id"',
     sql: [
       'INSERT INTO library_object_synthetic_properties',
       '  (library_object_id, name, value)',
-      'size_synthetic_property_select_sql(NEW)',
+      '#{size_synthetic_property_select_sql("id = NEW.id")}',
+      'UNION ALL',
+      '#{pax_synthetic_property_select_sql("id = NEW.id")}',
     ],
   },
   {
     id: 'update',
-    title: 'AFTER UPDATE',
+    title: 'trigger.after(:update).of(:size)',
     when: 'library_objects, each row',
-    source: 'NEW',
+    where: '"id = NEW.id"',
     sql: [
-      'DELETE FROM library_object_synthetic_properties',
-      '  WHERE library_object_id = OLD.id;',
-      'INSERT INTO … size_synthetic_property_select_sql(NEW)',
+      'UPDATE library_object_synthetic_properties AS lops',
+      'JOIN (',
+      '  #{size_synthetic_property_select_sql("id = NEW.id")}',
+      ') AS temp',
+      'ON lops.library_object_id = temp.library_object_id',
+      '  AND lops.name = temp.name',
+      'SET lops.value = temp.value',
+      'WHERE lops.library_object_id = NEW.id;',
     ],
   },
   {
     id: 'delete',
-    title: 'AFTER DELETE',
+    title: 'trigger.after(:delete)',
     when: 'library_objects, each row',
-    source: 'OLD',
+    where: null,
     sql: [
       'DELETE FROM library_object_synthetic_properties',
-      '  WHERE library_object_id = OLD.id',
+      'WHERE library_object_synthetic_properties.library_object_id = OLD.id;',
     ],
   },
 ];
@@ -53,17 +61,26 @@ const targets = [
   <div class="trigger-layer" aria-hidden="true">
     <div class="panel">
       <header>
-        <strong>One Ruby definition, four places its SQL runs</strong>
-        <span>The backfill and the trigger bodies are the same Arel, handed a different relation, so they cannot drift</span>
+        <strong>One Ruby method, four places its SQL runs</strong>
+        <span>The backfill and the trigger bodies call the same method with a different
+          <code>where</code>, so they cannot drift apart. The hairtrigger gem writes the
+          triggers out as a migration.</span>
       </header>
 
       <div class="builder">
         <span class="caption"><code>app/models/library_object.rb</code></span>
-        <pre><code><span class="k">def</span> self.size_synthetic_property_select_sql(<span class="hot">source</span>)
-  <span class="c"># WITH RECURSIVE split_sizes: SUBSTRING_INDEX takes the head,</span>
-  <span class="c"># CASE keeps the rest, one row per dimension</span>
-  <span class="c"># six projections, each GROUP_CONCAT(... SEPARATOR ' by ')</span>
-  <span class="c"># UNION ALL, then the same for pax as 'Pax' and 'Seats'</span>
+        <pre><code><span class="k">def</span> self.size_synthetic_property_select_sql(<span class="hot">where</span> = <span class="s">"1=1"</span>)
+  <span class="k">&lt;&lt;~SQL</span>.chomp
+    <span class="c">-- one row per dimension: SUBSTRING_INDEX takes the head, the rest recurses</span>
+    WITH RECURSIVE split_sizes AS (…)
+
+    SELECT id AS library_object_id, 'Size (centimeters)' AS name,
+      GROUP_CONCAT(CONCAT(ROUND(size, 1 - FLOOR(LOG10(size))), 'cm') SEPARATOR ' by ') AS value
+    FROM split_sizes WHERE #{'#{'}<span class="hot">where</span>{'}'} AND size &lt;&gt; '' GROUP BY id
+
+    UNION ALL
+    <span class="c">-- five more of the same: meters, inches with " and with in, feet-inches with '" and with ft in</span>
+  <span class="k">SQL</span>
 <span class="k">end</span></code></pre>
       </div>
 
@@ -78,7 +95,9 @@ const targets = [
             <span class="head">
               <span class="title">{target.title}</span>
               <span class="when">{target.when}</span>
-              <span class="source"><code>source</code> = <code class="hot">{target.source}</code></span>
+              {target.where && (
+                <span class="source"><code>where</code> = <code class="hot">{target.where}</code></span>
+              )}
             </span>
             <pre><code>{target.sql.join('\n')}</code></pre>
           </li>
@@ -99,7 +118,7 @@ const targets = [
   @include sheet-type;
 
   box-sizing: border-box;
-  width: min(100%, 50em);
+  width: min(100%, 54em);
 }
 
 .panel {
@@ -143,7 +162,7 @@ pre {
   display: grid;
   gap: 0.25em;
   justify-self: center;
-  width: min(100%, 34em);
+  width: min(100%, 46em);
 
   .caption {
     font-size: 0.6875em;
@@ -151,7 +170,7 @@ pre {
   }
 
   pre {
-    font-size: 0.6875em;
+    font-size: 0.625em;
   }
 }
 
@@ -161,6 +180,10 @@ pre {
 }
 
 .c {
+  color: var(--ink-muted);
+}
+
+.s {
   color: var(--ink-muted);
 }
 
