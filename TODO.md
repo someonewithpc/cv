@@ -59,6 +59,7 @@
 - [ ] TechnicalDrawing
   - [ ] Paper texture
   - [x] Tucked note tab collides with the sheet content and toolbar (#16)
+  - [x] Post-it variations, used in turn (#135)
   - [x] Projection symbol sits beside the title and under the fold; own corner cell or nothing (#46)
   - [x] Title block logos sit left of their cell on a phone sheet (#136)
   - [ ] CSS Houdini grid border?
