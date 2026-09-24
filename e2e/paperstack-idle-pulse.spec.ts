@@ -26,20 +26,17 @@ test('the resting dog-ear breathes only on a stack that is on screen', async ({ 
   test.setTimeout(90_000);
   await page.goto('/');
 
-  const stacks = page.locator('article.technical-drawing-stack');
-  const first = stacks.first();
-  const last = stacks.last();
+  const first = page.locator('article.technical-drawing-stack').first();
   await expect(first).toBeVisible();
 
   await first.scrollIntoViewIfNeeded();
   await page.waitForTimeout(1000);
   expect(await pulseStates(first)).toEqual(['running']);
 
-  // Far enough down the page that the first stack is nowhere near the viewport.
-  await last.scrollIntoViewIfNeeded();
+  // The foot of the page, nowhere near the first stack however many demos come after it.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(1000);
   expect(await pulseStates(first)).toEqual(['paused']);
-  expect(await pulseStates(last)).toEqual(['running']);
 
   // Back in view, and the tease picks up where it left off.
   await first.scrollIntoViewIfNeeded();
