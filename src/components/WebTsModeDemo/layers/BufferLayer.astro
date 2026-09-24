@@ -22,6 +22,13 @@ const echo = [
 
 <div class="wrapper">
   <div class="buffer-layer" data-web-ts-buffer>
+    <p class="intro">
+      web-ts-mode is an Emacs major mode for files that hold several languages at once, such as
+      this Astro component: TypeScript between the fences, markup with expressions in it, and a
+      style block. Each language gets its own tree-sitter parser over the part of the file that
+      is its own, and the buffer is painted with all of them. Below, one of this CV's components
+      as the mode paints it.
+    </p>
     <div class="bar">
       <span class="caption">Captured buffer · static, not a live parser</span>
       <div class="controls">
@@ -71,7 +78,7 @@ const echo = [
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 0.375em;
   font-size: clamp(0.5rem, 0.0135 * var(--sheet-inline), 0.75rem);
   color: var(--ink);
@@ -79,6 +86,14 @@ const echo = [
   :global([data-sheet-orientation='portrait']) & {
     font-size: clamp(0.5rem, 0.024 * var(--sheet-inline), 0.75rem);
   }
+}
+
+.intro {
+  margin: 0 0 0.25em;
+  max-width: 64em;
+  font-size: 1.125em;
+  line-height: 1.35;
+  text-wrap: pretty;
 }
 
 .bar {

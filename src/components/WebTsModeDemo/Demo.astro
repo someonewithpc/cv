@@ -1,6 +1,5 @@
 ---
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
-import PostIt from '@/components/PostIt.astro';
 
 import BufferLayer from './layers/BufferLayer.astro';
 import RangesLayer from './layers/RangesLayer.astro';
@@ -39,48 +38,18 @@ type Layer = keyof typeof layers;
       doctor: <DoctorLayer />,
     }[layer])}
   </fragment>
-
-  <fragment slot="aside">
-    {(layer: Layer) => ({
-      buffer: (
-        <PostIt background="#dde8d4" color="black">
-          Point at a token to see which parser owns it. Flip the toggle to see where each
-          one's range starts and stops
-        </PostIt>
-      ),
-      ranges: (
-        <PostIt background="#cde" color="black">
-          Follow the braces: the whole interpolation minus its two braces is one TSX
-          program, so the nested one is left alone
-        </PostIt>
-      ),
-      depth: (
-        <PostIt background="#fed" color="black">
-          Read one selector left to right and watch the hue move toward green. Nesting in
-          the stylesheet starts it over
-        </PostIt>
-      ),
-      doctor: (
-        <PostIt background="#e8e4dc" color="black">
-          A missing grammar is a line in this report, not a broken buffer. Found is not
-          the same as fully supported
-        </PostIt>
-      ),
-    }[layer])}
-  </fragment>
 </TechnicalDrawingStack>
 </div>
 
 <style lang="scss">
-// Where the stack's sheets differ from the default: the note keeps a narrower column so the
-// buffers get the width their lines need, and the artwork cell takes the sheet's whole
-// height, so a window can show as much of a buffer as fits and cut the rest.
-$note-column: 14rem;
+// Where the stack differs from the default sheet: no page carries a note, so the artwork has
+// the sheet's whole width, and its cell takes the whole height too, so a window can show as
+// much of a buffer as fits and cut the rest.
 
-// The title block is absolutely placed in the sheet's bottom-right corner and reaches out of
-// the note's column into the artwork's. How far, across and up, for each layer to keep its
-// own content clear of: the live buffer gives up the width, the drawings the height.
-// Portrait gives the block a row of its own, so there both stay 0.
+// The title block is absolutely placed in the sheet's bottom-right corner, over the artwork.
+// How far it reaches, across and up, for each layer to keep its own content clear of: the
+// live buffer gives up the width, the drawings the height. Portrait gives the block a row of
+// its own, so there both stay 0.
 :global(.web-ts-mode-demo article.technical-drawing-stack > * > section) {
   --reach-inline: 0px;
   --reach-block: 0px;
@@ -90,10 +59,9 @@ $note-column: 14rem;
   // For a height inside the cell to mean anything the sheet's row has to be a measured
   // one: its own row is auto, and a percentage inside an auto row resolves to nothing.
   :global(.web-ts-mode-demo article.technical-drawing-stack > * > section) {
-    --reach-inline: max(0px, var(--title-block-inline) - #{$note-column} + 0.5em);
+    --reach-inline: calc(var(--title-block-inline) + 0.5em);
     --reach-block: var(--title-block-block);
 
-    grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, $note-column);
     grid-template-rows: minmax(0, 1fr);
   }
 }
