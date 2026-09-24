@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import {
   armDrawCounter,
@@ -8,6 +8,7 @@ import {
   turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
+import { expect, test } from './support/timeScale';
 
 /** Last stack on the page, after the logo, marker editor and the other Space Builder sheets. */
 function dragDropStack(page: Page) {
@@ -846,49 +847,51 @@ async function placementsAfter(app: Locator, count: number) {
   return placements(app);
 }
 
-test('two laps nobody touches put every object on the floor', async ({ page }) => {
-  test.slow();
-  const app = await openDemo(page);
-  await watchPlacements(app);
-  const half = await floorHalf(app);
+test.describe(() => {
+  test.use({ walkthroughRate: 4 });
 
-  // Three objects a lap: two drags and the double-click route.
-  const placed = await placementsAfter(app, 6);
-  for (const at of placed) {
-    expect(onFloor(at, half), `${JSON.stringify(at)} is off the floor`).toBe(true);
-  }
-});
+  test('two laps nobody touches put every object on the floor', async ({ page }) => {
+    const app = await openDemo(page);
+    await watchPlacements(app);
+    const half = await floorHalf(app);
 
-test('a page scroll under the demo still lands objects on their floor points', async ({ page }) => {
-  test.slow();
-  const app = await openDemo(page);
-  await watchPlacements(app);
-  const half = await floorHalf(app);
-
-  const aimed = (await placementsAfter(app, 3)).slice(0, 3);
-
-  // Nudging the page never touches the demo, but it moves the canvas under a drag in flight.
-  // The drop used to aim at a screen point taken before the drag, which after a scroll means
-  // some other floor point — on a phone-sized canvas, one past the floor's edge.
-  await page.evaluate(() => {
-    const store = window as typeof window & { __nudge?: number };
-    let down = true;
-    store.__nudge = window.setInterval(() => {
-      window.scrollBy(0, down ? 60 : -60);
-      down = !down;
-    }, 700);
+    // Three objects a lap: two drags and the double-click route.
+    const placed = await placementsAfter(app, 6);
+    for (const at of placed) {
+      expect(onFloor(at, half), `${JSON.stringify(at)} is off the floor`).toBe(true);
+    }
   });
 
-  const scrolled = (await placementsAfter(app, 6)).slice(3);
-  await page.evaluate(() => {
-    const store = window as typeof window & { __nudge?: number };
-    if (store.__nudge) window.clearInterval(store.__nudge);
-  });
+  test('a page scroll under the demo still lands objects on their floor points', async ({ page }) => {
+    const app = await openDemo(page);
+    await watchPlacements(app);
+    const half = await floorHalf(app);
 
-  // A lap always aims at the same three floor points, in order, however the page has moved.
-  for (const at of scrolled) {
-    expect(onFloor(at, half), `${JSON.stringify(at)} is off the floor`).toBe(true);
-    const match = aimed.some((p) => Math.abs(p.x - at.x) < 0.01 && Math.abs(p.z - at.z) < 0.01);
-    expect(match, `${JSON.stringify(at)} is none of ${JSON.stringify(aimed)}`).toBe(true);
-  }
+    const aimed = (await placementsAfter(app, 3)).slice(0, 3);
+
+    // Nudging the page never touches the demo, but it moves the canvas under a drag in flight.
+    // The drop used to aim at a screen point taken before the drag, which after a scroll means
+    // some other floor point — on a phone-sized canvas, one past the floor's edge.
+    await page.evaluate(() => {
+      const store = window as typeof window & { __nudge?: number };
+      let down = true;
+      store.__nudge = window.setInterval(() => {
+        window.scrollBy(0, down ? 60 : -60);
+        down = !down;
+      }, 700);
+    });
+
+    const scrolled = (await placementsAfter(app, 6)).slice(3);
+    await page.evaluate(() => {
+      const store = window as typeof window & { __nudge?: number };
+      if (store.__nudge) window.clearInterval(store.__nudge);
+    });
+
+    // A lap always aims at the same three floor points, in order, however the page has moved.
+    for (const at of scrolled) {
+      expect(onFloor(at, half), `${JSON.stringify(at)} is off the floor`).toBe(true);
+      const match = aimed.some((p) => Math.abs(p.x - at.x) < 0.01 && Math.abs(p.z - at.z) < 0.01);
+      expect(match, `${JSON.stringify(at)} is none of ${JSON.stringify(aimed)}`).toBe(true);
+    }
+  });
 });
