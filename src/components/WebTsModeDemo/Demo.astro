@@ -12,13 +12,11 @@ import DoctorLayer from './layers/DoctorLayer.astro';
 // to measure; the buffer is painted at build time.
 const packageSize = '138.2KiB';
 
-// The title block has room for two icons, so each sheet names the two it is about and the
-// four tags are spread over the stack.
 const layers = {
-  buffer: { name: null, tech: ['emacs', 'lisp'] },
-  ranges: { name: 'Parser Ranges', pageStyle: 'blueprint', tech: ['emacs', 'typescript'] },
-  depth: { name: 'Selector Depth Hue', pageStyle: 'blueprint', tech: ['emacs', 'css3'] },
-  doctor: { name: 'web-ts doctor', pageStyle: 'blueprint', tech: ['emacs', 'lisp'] },
+  buffer: { name: null },
+  ranges: { name: 'Parser Ranges', pageStyle: 'blueprint' },
+  depth: { name: 'Selector Depth Hue', pageStyle: 'blueprint' },
+  doctor: { name: 'web-ts doctor', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -30,7 +28,7 @@ type Layer = keyof typeof layers;
   scale="1:1"
   size={packageSize}
   date="2026"
-  tech={['emacs', 'lisp']}
+  tech="emacs"
   layers={layers}
 >
   <fragment slot="layers">
