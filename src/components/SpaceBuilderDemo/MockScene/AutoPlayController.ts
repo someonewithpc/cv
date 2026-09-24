@@ -239,14 +239,17 @@ export class AutoPlayController {
   /** Release an in-flight slider drag so takeover doesn't leave a stuck rAF. */
   private dragCleanup: (() => void) | null = null;
   /**
-   * Counts the pauses. A step in flight awaits presses, cursor travel and tweens the scene
-   * runs to the end whatever `paused` says, and pause() cannot reach into them. start() and
-   * resume() then clear `paused` again, and the suspended step, seeing it clear, carried on:
-   * it bumped the index start() had just reset and scheduled a timer of its own beside the
-   * new one, and two chains drove the demo from then on. So every step remembers the
-   * generation it started in and stands down at its next await once a pause has moved it on.
+   * Counts the starts. A step in flight awaits presses, cursor travel and tweens the scene
+   * runs to the end whatever `paused` says, and pause() cannot reach into them. start() then
+   * cleared `paused` again, and the suspended step, seeing it clear, carried on: it bumped
+   * the index start() had just reset and scheduled a timer of its own beside the new one,
+   * and two chains drove the demo from then on. So every step remembers the generation it
+   * started in and stands down once a start has moved it on. A pause alone leaves the step
+   * to finish and move the index on, so a resume goes to the next step, not the same one.
    */
   private generation = 0;
+  /** The generation of the step now running, so resume() leaves the next step to it. */
+  private inFlight: number | null = null;
   private readonly scene: SpaceBuilderScene;
   private readonly onCursor: DemoCursorHandler;
   private readonly onToast: DemoToastHandler;
@@ -267,6 +270,7 @@ export class AutoPlayController {
   /** Fresh beginning — initial appear, or re-appearing after being scrolled out of view. */
   start() {
     this.pause();
+    this.generation += 1;
     this.stepIndex = 0;
     this.presetIndex = 0;
     this.paused = false;
@@ -275,7 +279,6 @@ export class AutoPlayController {
 
   pause() {
     this.paused = true;
-    this.generation += 1;
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -292,7 +295,8 @@ export class AutoPlayController {
   resume() {
     if (!this.paused) return;
     this.paused = false;
-    this.scheduleNext();
+    // A step still running schedules the next one when it ends.
+    if (this.inFlight !== this.generation) this.scheduleNext();
   }
 
   destroy() {
@@ -353,6 +357,7 @@ export class AutoPlayController {
   private async runStep(step: Step) {
     if (this.paused) return;
     const generation = this.generation;
+    this.inFlight = generation;
     try {
       const cursor = typeof step.cursor === 'function' ? step.cursor() : step.cursor;
       const shouldClick = typeof step.domClick === 'function' ? step.domClick() : step.domClick;
@@ -458,14 +463,15 @@ export class AutoPlayController {
         this.onCursor({ ...aimed, click: true });
       }
 
-      // A pause during the press or the cursor's travel: the step's own work stays undone.
-      if (generation !== this.generation) return;
-      await step.run?.();
+      // A restart during the press or the cursor's travel: the step's own work stays undone.
+      if (generation === this.generation) await step.run?.();
     } catch (error) {
       console.debug('Space Builder autoplay step failed', error);
+    } finally {
+      // Also on the early returns for a pause, which leave the step for resume() to rerun.
+      if (this.inFlight === generation) this.inFlight = null;
     }
-    // Paused, started over or resumed while the step ran: whichever chain is current owns
-    // the index and the timer now, and this one is finished.
+    // Started over while the step ran: the new chain owns the index and the timer now.
     if (generation !== this.generation) return;
     this.stepIndex += 1;
     this.scheduleNext();
