@@ -1,6 +1,8 @@
 import $store, { spaceGlobalOrderSelector } from '@/store';
 import type { SpaceType } from '@/store';
 
+import { serializeKeyValue } from './MarkerEditor/markerParts/shared/serialization';
+
 const SPACE_TEXT_KINDS = new Set([
   'SpaceNumberMarkerDecoration',
   'UppercaseSpaceLetterMarkerDecoration',
@@ -30,8 +32,13 @@ function spaceLetter(space: SpaceType, offset: number, uppercase: boolean) {
   return uppercase ? letter.toUpperCase() : letter;
 }
 
+// The attribute name the editor writes on save, so a change to how serializeKeyValue spells
+// its keys (it snake_cases them: data-reactive_state-space_number_offset) cannot leave this
+// reading a name nothing sets any more.
+const [OFFSET_ATTRIBUTE] = serializeKeyValue('reactiveState', 'spaceNumberOffset', 0);
+
 function readOffset(el: Element): number {
-  const raw = el.getAttribute('data-reactive-state-space-number-offset');
+  const raw = el.getAttribute(OFFSET_ATTRIBUTE);
   if (!raw) return 0;
   const [, value] = raw.split(':');
   const parsed = Number(value);
