@@ -199,7 +199,9 @@ export function MarkerSelector({
                           // One undo step for the one click, as the other handlers here do.
                           groupedUndo.batch(() => {
                             dispatch(removeMarker(marker.id));
-                            dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
+                            if (space.markerId === marker.id) {
+                              dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
+                            }
                           });
                           setEditedMarkerId(undefined);
                         }
