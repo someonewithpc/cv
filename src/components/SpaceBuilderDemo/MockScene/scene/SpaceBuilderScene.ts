@@ -345,16 +345,51 @@ export class SpaceBuilderScene {
   }
 
   /**
-   * Free the WebGL context while this carousel page is off-screen.
-   * Scene graph / textures stay; {@link attachGpu} rebuilds the renderer on the same canvas.
+   * Free the GPU's copy of the scene while this carousel page is off-screen.
+   * Scene graph and CPU-side data stay; {@link attachGpu} rebuilds the renderer on the same
+   * canvas and the next render uploads what it draws.
    */
   releaseGpu() {
     if (this.disposed || this.gpuReleased) return;
     this.active = false;
     this.gpuReleased = true;
+    // renderer.dispose() alone frees nothing that matters: it drops the renderer's own map of
+    // what it uploaded and deletes its programs, and with the context kept alive every
+    // texture, buffer and shadow map stayed on the GPU while the next renderer, starting from
+    // an empty map, uploaded a second copy. Each object's own dispose() is what reaches the
+    // GL handles, through the listeners this renderer registered when it uploaded them, so it
+    // has to run before the renderer goes. The images and attribute arrays remain, and three
+    // re-uploads lazily from them.
+    this.releaseGpuCopies();
     // dispose() only — forceContextLoss() leaves the canvas unable to get a new context.
     this.renderer.dispose();
     this.resetUnpackState();
+  }
+
+  private releaseGpuCopies() {
+    const seen = new Set<object>();
+    const release = (item: { dispose(): void } | null | undefined) => {
+      if (!item || seen.has(item)) return;
+      seen.add(item);
+      item.dispose();
+    };
+    this.scene.traverse((obj) => {
+      const mesh = obj as Mesh;
+      if (mesh.isMesh) {
+        release(mesh.geometry);
+        for (const material of [mesh.material].flat()) {
+          for (const value of Object.values(material)) {
+            if ((value as Texture)?.isTexture) release(value as Texture);
+          }
+          release(material);
+        }
+        // An InstancedMesh keeps its matrices in a buffer of its own.
+        if ((mesh as InstancedMesh).isInstancedMesh) release(mesh as InstancedMesh);
+      }
+      const light = obj as DirectionalLight;
+      if (light.isLight && light.shadow) release(light.shadow.map);
+    });
+    this.textures.forEach((t) => release(t));
   }
 
   /** Recreate the WebGL renderer after {@link releaseGpu}. */
