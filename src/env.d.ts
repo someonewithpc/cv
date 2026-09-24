@@ -34,3 +34,25 @@ declare namespace astroHTML.JSX {
     'i:knockout'?: string;
   }
 }
+
+// The few Workers runtime types src/worker.ts uses. @cloudflare/workers-types would clash with
+// the DOM lib the rest of src/ is checked against.
+interface ExecutionContext {
+  waitUntil(promise: Promise<unknown>): void;
+}
+
+interface DurableObjectNamespace<T> {
+  getByName(name: string): { [K in keyof T]: T[K] extends (...args: infer A) => infer R ? (...args: A) => Promise<Awaited<R>> : never };
+}
+
+declare module 'cloudflare:workers' {
+  export abstract class DurableObject {
+    protected ctx: {
+      storage: {
+        get<T>(key: string): Promise<T | undefined>,
+        put(key: string, value: unknown): Promise<void>,
+      },
+    };
+    constructor(ctx: unknown, env: unknown);
+  }
+}

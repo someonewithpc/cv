@@ -3,9 +3,15 @@
   "compatibility_date": "2026-07-06",
   "workers_dev": false,
   "preview_urls": false,
+  "main": "./src/worker.ts",
   "assets": {
     "directory": "./dist/client",
     "not_found_handling": "404-page",
     "run_worker_first": ["/oembed.json"]
-  }
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "FONT_PROXY_BUDGET", "class_name": "FontProxyBudget" }]
+  },
+  // SQLite-backed, which Durable Objects need on Workers Free.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["FontProxyBudget"] }]
 }
