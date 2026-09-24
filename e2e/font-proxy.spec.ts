@@ -164,7 +164,7 @@ test.describe('font proxy', () => {
   });
 
   test('also serves a direct call with no sec-fetch-site header, and a typed-in one', async () => {
-    for (const headers of [{}, { 'sec-fetch-site': 'none' }]) {
+    for (const headers of [{}, { 'sec-fetch-site': 'none' }] as Record<string, string>[]) {
       const setup = harness(PUBLIC, { 'https://fonts.test/a.css': { headers: CSS, bytes: 10 } });
       expect((await proxy(setup, 'https://fonts.test/a.css', headers)).status).toBe(200);
     }
