@@ -49,7 +49,7 @@ async function turnTo(page: Page, stack: Locator, name: string) {
 async function search(tool: Locator, query: string) {
   const input = tool.locator('.query-input');
   await input.fill(query);
-  await expect(tool.locator('.requests .key')).toHaveText(`?q=${encodeURIComponent(query).replace(/%20/g, '+')}`);
+  await expect(tool.locator('.requests .key')).toHaveText(`?query=${encodeURIComponent(query).replace(/%20/g, '+')}`);
   await expect(tool).not.toHaveAttribute('data-loading', 'true');
 }
 
@@ -95,12 +95,12 @@ test('main page: a bare number is quoted, and a seats after it folds into the ph
   const mangled = tool.locator('.mangled');
 
   await search(tool, 'chair 8');
-  await expect(mangled).toHaveText('chair* "8"');
-  await expect(mangled.locator('.rule-quoted')).toHaveText('"8"');
+  await expect(mangled).toHaveText('chair "8"}');
+  await expect(mangled.locator('.rule-quoted')).toHaveText('"8"}');
 
   await search(tool, 'chair 8 seats');
-  await expect(mangled).toHaveText('chair* "8 seats"');
-  await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"');
+  await expect(mangled).toHaveText('chair "8 seats"}');
+  await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"}');
 
   // Quoted, 8 is the token 8 alone: the 8 pax tables and the 8ft ones, never the 182 wide.
   await search(tool, '8');
@@ -114,7 +114,7 @@ test('main page: the rows come back ranked, normalised to the top hit', async ({
   const { tool } = await mountedTool(page);
 
   await search(tool, 'chair 8 seats');
-  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Banquet Table');
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Round Table');
   const scores = await shownScores(tool);
   expect(scores[0]).toBe(1);
   expect(scores).toEqual([...scores].sort((a, b) => b - a));
@@ -154,15 +154,15 @@ test('generated SQL page: all three copies of the fragment follow the query and 
 
   const frags = sheet.locator('.frag:not([data-mark="max"])');
   await expect(frags).toHaveCount(3);
-  await expect(sheet.locator('.sql')).toContainText("AND library_objects.category = 'Banquet'");
+  await expect(sheet.locator('.sql')).toContainText("AND (`library_objects`.category = 'Banquet')");
 
-  await sheet.locator('.sheet-query').fill('round 10 pax');
+  await sheet.locator('.sheet-query').fill('round 10 seats');
   for (const mark of ['where', 'select', 'order']) {
-    await expect(sheet.locator(`.frag[data-mark="${mark}"]`)).toContainText(`AGAINST('round* "10 pax"' IN BOOLEAN MODE)`);
+    await expect(sheet.locator(`.frag[data-mark="${mark}"]`)).toContainText(`AGAINST('round "10 seats"}' IN BOOLEAN MODE)`);
   }
 
   // The main page's field follows, so turning back finds the same query there.
-  await expect(tool.locator('.query-input')).toHaveValue('round 10 pax');
+  await expect(tool.locator('.query-input')).toHaveValue('round 10 seats');
 });
 
 test('relevance page: the scoring table follows the query typed on it', async ({ page }) => {
@@ -174,7 +174,7 @@ test('relevance page: the scoring table follows the query typed on it', async ({
   await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
 
   await sheet.locator('.sheet-query').fill('gold chair');
-  await expect(sheet.locator('.mangled')).toHaveText('gold* chair*');
+  await expect(sheet.locator('.mangled')).toHaveText('gold chair');
   await expect(sheet.locator('table.terms tbody tr')).toHaveCount(2);
   await expect(sheet.locator('table.hits tbody tr').first().locator('.value')).toHaveText('1.00');
 });

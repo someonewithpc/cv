@@ -19,14 +19,11 @@ export function escapeHtml(text: string) {
 
 /** The mangled query, with each rewrite marked by the rule that made it. */
 export function mangledHtml(query: string) {
-  const { tokens } = mangle(query);
-  if (!tokens.length) return '<span class="empty">(nothing to match)</span>';
-  return tokens
-    .map(({ to, rule }) => {
-      if (rule === 'prefix') return `${escapeHtml(to.slice(0, -1))}<span class="rule-prefix">*</span>`;
-      return `<span class="rule-${rule}">${escapeHtml(to)}</span>`;
-    })
-    .join(' ');
+  const { text, segments } = mangle(query);
+  if (!text.trim()) return '<span class="empty">(nothing to match)</span>';
+  return segments
+    .map(({ text, rule }) => (rule === 'plain' ? escapeHtml(text) : `<span class="rule-${rule}">${escapeHtml(text)}</span>`))
+    .join('');
 }
 
 const BADGE: Record<SqlMark, string> = { where: '1', select: '2', order: '3', max: 'max', comment: '' };
@@ -44,8 +41,8 @@ export function sqlHtml(state: SearchState) {
 /** How many rows the query returns and the maximum they are measured against. */
 export function sqlResultHtml(result: SearchResult) {
   const rows = `${result.hits.length} ${result.hits.length === 1 ? 'row' : 'rows'}`;
-  if (result.max === null) return `${rows}, no relevance column`;
-  return `${rows}, <code>max_relevance</code> = ${result.max.toFixed(3)}`;
+  if (result.max === null) return `${rows}, no <code>search_relevance</code> column`;
+  return `${rows}, the subquery's <code>MAX()</code> = ${result.max.toFixed(3)}`;
 }
 
 const TOP = 6;

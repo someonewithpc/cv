@@ -4,9 +4,8 @@ import { initialQuery } from '../objects';
 import { mangle } from '../search';
 
 const state = { query: initialQuery, filters: {} };
-// The unquoted prefix the number rule stands in the way of, and what it would drag in.
-const bare = '8*';
 const quoted = mangle('8').text;
+const folded = mangle('8 seats').text;
 ---
 
 <div class="wrapper">
@@ -45,7 +44,7 @@ const quoted = mangle('8').text;
         </div>
         <div>
           <dt>Numbers</dt>
-          <dd><code>{bare}</code> would also match 8ft, 8in and 81; <code>{quoted}</code> matches the token 8 alone, and only indexes at all with <code>innodb_ft_min_token_size = 1</code></dd>
+          <dd>One <code>gsub</code> quotes every number before MySQL sees it, so 8 stops matching 81: <code>{quoted}</code> is the token 8 alone, and <code>{folded}</code> keeps a seat count as one phrase</dd>
         </div>
       </dl>
     </div>
@@ -110,10 +109,6 @@ header strong {
 }
 
 .mangled {
-  :global(.rule-prefix) {
-    color: var(--ink-faint);
-  }
-
   :global(.rule-quoted),
   :global(.rule-folded) {
     padding: 0 0.2em;

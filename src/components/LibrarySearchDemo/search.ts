@@ -3,15 +3,15 @@ import { concatenatedValues, libraryObjects, type LibraryObject } from './object
 /* A stand-in for the one MySQL feature the search leans on, MATCH ... AGAINST in boolean
    mode over one FULLTEXT column, so the bars on the sheet are computed rather than drawn.
    It runs at build time for the page's first paint and in the browser as the visitor
-   types, over the same mock rows. */
+   types, over the same mock rows. The query rewrite and the SQL are those of
+   Library::ObjectPropertiesController#search, visrez branch hs-1946-arel (Dec 2024). */
 
 export type Filters = Readonly<{ category?: string; color?: string }>;
 
 export type SearchState = Readonly<{ query: string; filters: Filters }>;
 
-/** One whitespace-separated piece of what was typed, what the mangling made of it, and
-    which rule did it. */
-export type MangledToken = { from: string; to: string; rule: 'prefix' | 'quoted' | 'folded' | 'phrase' };
+/** One piece of the query after the rewrite: left alone, or one of the gsub's matches. */
+export type MangledSegment = { text: string; rule: 'plain' | 'quoted' | 'folded' };
 
 /** Words InnoDB's full-text parser would split on: anything that is not a letter or a digit. */
 export function tokenize(text: string) {
@@ -21,52 +21,34 @@ export function tokenize(text: string) {
     .filter(Boolean);
 }
 
-const FOLDED = /^(seats|pax|size)$/i;
+/** The controller's one rewrite: `gsub(/(\d+)( seats?|pax|size)?/i, '"\1\2"}')`. */
+export const NUMBER_RULE = /(\d+)( seats?|pax|size)?/gi;
 
 /**
- * The query massaging that runs before MySQL sees anything. A word gets a trailing `*`, so
- * a half-typed word already matches; that is what would let `8` match `81`, so a bare
- * number is wrapped in quotes instead, and a `seats`, `pax` or `size` right after it goes
- * into the same quoted phrase. The boolean operators `+` and `-` are kept in front.
+ * The query massaging that runs before MySQL sees anything: a number is quoted so that 8
+ * stops matching 81, and a `seats`, `pax` or `size` right after it goes into the same
+ * phrase. Words are sent as typed, with no prefix `*`. The closing brace is in the
+ * controller's replacement string; MySQL's parser lets it through.
  */
-export function mangle(raw: string): { text: string; tokens: MangledToken[] } {
-  const pieces = raw.match(/[+-]?"[^"]*"?|\S+/g) ?? [];
-  const tokens: MangledToken[] = [];
-
-  for (let i = 0; i < pieces.length; i += 1) {
-    const from = pieces[i];
-    const [, op = '', body = ''] = /^([+-]?)(.*)$/s.exec(from) ?? [];
-
-    if (body.startsWith('"')) {
-      // A phrase typed in quotes stays one; an unclosed one is closed for it.
-      const inner = body.replace(/^"|"$/g, '').trim();
-      if (inner) tokens.push({ from, to: `${op}"${inner}"`, rule: 'phrase' });
-      continue;
-    }
-
-    if (/^\d+$/.test(body)) {
-      const next = pieces[i + 1];
-      if (next !== undefined && FOLDED.test(next)) {
-        tokens.push({ from: `${from} ${next}`, to: `${op}"${body} ${next.toLowerCase()}"`, rule: 'folded' });
-        i += 1;
-      } else {
-        tokens.push({ from, to: `${op}"${body}"`, rule: 'quoted' });
-      }
-      continue;
-    }
-
-    const word = body.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
-    if (word) tokens.push({ from, to: `${op}${word}*`, rule: 'prefix' });
+export function mangle(raw: string): { text: string; segments: MangledSegment[] } {
+  const segments: MangledSegment[] = [];
+  let at = 0;
+  for (const match of raw.matchAll(NUMBER_RULE)) {
+    const [whole, number, unit] = match;
+    if (match.index > at) segments.push({ text: raw.slice(at, match.index), rule: 'plain' });
+    segments.push({ text: `"${number}${unit ?? ''}"}`, rule: unit ? 'folded' : 'quoted' });
+    at = match.index + whole.length;
   }
-
-  return { text: tokens.map((token) => token.to).join(' '), tokens };
+  if (at < raw.length) segments.push({ text: raw.slice(at), rule: 'plain' });
+  return { text: raw.replace(NUMBER_RULE, '"$1$2"}'), segments };
 }
 
 export type Term = {
   /** As it appears in the mangled query. */
   text: string;
   op: '+' | '-' | '';
-  kind: 'prefix' | 'phrase';
+  /** A bare word matches a token whole; a `*` typed after it matches a prefix. */
+  kind: 'word' | 'prefix' | 'phrase';
   words: string[];
 };
 
@@ -75,17 +57,16 @@ export function parseTerms(mangled: string): Term[] {
   return pieces.flatMap((text): Term[] => {
     const op = (text[0] === '+' || text[0] === '-' ? text[0] : '') as Term['op'];
     const body = op ? text.slice(1) : text;
-    if (body.startsWith('"')) {
-      const words = tokenize(body);
-      return words.length ? [{ text, op, kind: 'phrase', words }] : [];
-    }
     const words = tokenize(body);
-    return words.length ? [{ text, op, kind: 'prefix', words: [words[0]] }] : [];
+    if (!words.length) return [];
+    if (body.startsWith('"')) return [{ text, op, kind: 'phrase', words }];
+    return [{ text, op, kind: body.endsWith('*') ? 'prefix' : 'word', words: [words[0]] }];
   });
 }
 
 /** How many times a term occurs in one object's tokens. */
 function occurrences(term: Term, tokens: readonly string[]) {
+  if (term.kind === 'word') return tokens.filter((token) => token === term.words[0]).length;
   if (term.kind === 'prefix') return tokens.filter((token) => token.startsWith(term.words[0])).length;
   let count = 0;
   for (let i = 0; i + term.words.length <= tokens.length; i += 1) {
@@ -114,7 +95,8 @@ export type Hit = {
   tf: number[];
   /** What MATCH ... AGAINST selects: InnoDB's rank, the sum of tf × idf² over the terms. */
   relevance: number;
-  /** The relevance over the query's maximum; null where the maximum is 0, as MySQL's x / 0 is. */
+  /** `search_relevance`: the relevance over the query's maximum; null where the maximum
+      is 0, as MySQL's x / 0 is. */
   score: number | null;
 };
 
@@ -165,8 +147,10 @@ export function search({ query, filters }: SearchState): SearchResult {
     hits.push({ object, tf, relevance, score: null });
   });
 
-  // ORDER BY the match fragment DESC, then the name; no terms at all is a plain listing.
-  hits.sort((a, b) => b.relevance - a.relevance || a.object.name.localeCompare(b.object.name) || a.object.id.localeCompare(b.object.id));
+  // ORDER BY the ratio DESC, then updated_at DESC from the `visible` scope; the mock has
+  // no timestamps, so the highest id stands in for the latest update. No terms at all is
+  // a plain listing.
+  hits.sort((a, b) => b.relevance - a.relevance || b.object.id.localeCompare(a.object.id));
 
   const max = terms.length && hits.length ? Math.max(...hits.map((hit) => hit.relevance)) : null;
   hits.forEach((hit) => {
@@ -176,11 +160,14 @@ export function search({ query, filters }: SearchState): SearchResult {
   return { mangled, terms, hits, max, total };
 }
 
-/** The request the search form would send, which is also what in-flight requests are keyed on. */
+/** The request the search form sends, which is also what in-flight requests are keyed on. */
 export function serialise({ query, filters }: SearchState) {
-  const form = new URLSearchParams({ q: query });
-  if (filters.category) form.set('category', filters.category);
-  if (filters.color) form.set('color', filters.color);
+  const form = new URLSearchParams({ query });
+  if (filters.category) form.set('category_id', filters.category);
+  if (filters.color) {
+    form.append('property_name[]', 'color');
+    form.append('property_value[]', filters.color);
+  }
   return form.toString();
 }
 
@@ -200,37 +187,48 @@ function quote(text: string) {
   return `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
+const JOIN = 'FROM `library_objects`\nINNER JOIN `library_object_properties_concatenated`\n  ON `library_object_properties_concatenated`.`library_object_id` = `library_objects`.`id`\n';
+
+/** What `LibraryObject.visible` adds: completed, not deprecated, newest first. */
+const VISIBLE = '`library_objects`.`image_processing` = FALSE\n  AND `library_objects`.`deprecated_at` IS NULL\n';
+
+const indent = (sql: string) => sql.replace(/^/gm, '  ');
+
 export function sqlSegments({ query, filters }: SearchState): SqlSegment[] {
   const { text } = mangle(query);
-  const match = `MATCH(lopc.values) AGAINST(${quote(text)} IN BOOLEAN MODE)`;
+  // The controller's query_fragment: sanitize_sql_array with the mangled query bound in.
+  const match = `MATCH(\`library_object_properties_concatenated\`.values) AGAINST(${quote(text)} IN BOOLEAN MODE)`;
   const out: SqlSegment[] = [];
   const add = (segment: string, mark?: SqlMark) => out.push({ text: segment, mark });
 
-  const predicates = [
-    filters.category ? `library_objects.category = ${quote(filters.category)}` : null,
-    filters.color
-      ? `library_objects.id IN (\n    SELECT library_object_id FROM library_object_properties\n    WHERE name = 'color' AND value = ${quote(filters.color)})`
-      : null,
-  ].filter((predicate): predicate is string => predicate !== null);
+  const category = filters.category ? `  AND (\`library_objects\`.category = ${quote(filters.category)})\n` : '';
+  const property = filters.color
+    ? `  AND \`library_objects\`.\`id\` IN (\n    SELECT \`library_object_synthetic_properties\`.\`library_object_id\`\n    FROM \`library_object_synthetic_properties\`\n    WHERE \`library_object_synthetic_properties\`.\`name\` = 'color'\n      AND \`library_object_synthetic_properties\`.\`value\` = ${quote(filters.color)})\n`
+    : '';
 
-  if (!text) {
-    add('-- Nothing to match: the fragment is left out and the objects are listed by name\n', 'comment');
-    add('SELECT library_objects.*\nFROM library_objects\n');
-    predicates.forEach((predicate, i) => add(`${i ? '  AND' : 'WHERE'} ${predicate}\n`));
-    add('ORDER BY library_objects.name');
+  if (!text.trim()) {
+    add('-- A blank query skips the search: load_objects lists the category, newest first\n', 'comment');
+    add(`SELECT \`library_objects\`.*\n${JOIN}WHERE ${VISIBLE}${category}${property}ORDER BY \`library_objects\`.\`updated_at\` DESC`);
     return out;
   }
 
-  add('SELECT library_objects.*,\n       ');
+  // objects_query.reselect("MAX(#{query_fragment})").to_sql: the relation again with the
+  // MAX as its only column, so the sanitised fragment is inside it twice more.
+  const maxQuery = indent(`SELECT MAX(${match})\n${JOIN}WHERE ${VISIBLE}${category}  AND (${match})\nLIMIT 250`).trimStart();
+
+  add('-- eager_load(:space_object, :properties, :styles) adds LEFT OUTER JOINs and their columns, left out here\n', 'comment');
+  add('SELECT `library_objects`.*,\n       ((');
   add(match, 'select');
-  add(' AS relevance,\n       ');
-  add('(SELECT MAX(copy.relevance) FROM (/* this relation, re-selected */) AS copy)', 'max');
-  add(' AS max_relevance\nFROM library_objects\nJOIN library_object_properties_concatenated lopc\n  ON lopc.library_object_id = library_objects.id\nWHERE ');
+  add(')\n        / (');
+  add(maxQuery, 'max');
+  add(')) AS search_relevance\n');
+  add(JOIN);
+  add(`WHERE ${VISIBLE}${category}  AND (`);
   add(match, 'where');
-  add('\n');
-  predicates.forEach((predicate) => add(`  AND ${predicate}\n`));
-  add('ORDER BY ');
+  add(`)\n${property}ORDER BY ((`);
   add(match, 'order');
-  add(' DESC,\n         library_objects.name');
+  add(')\n          / (');
+  add('SELECT MAX(...) ... -- the same subquery, in full, again', 'max');
+  add(')) DESC,\n         `library_objects`.`updated_at` DESC\nLIMIT 250');
   return out;
 }
