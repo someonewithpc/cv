@@ -14,6 +14,7 @@ export const TECH_ICONS: Tech[] = [
   { icon: 'docker', text: 'Docker' },
   { icon: 'postgresql', text: 'PostgreSQL' },
   { icon: 'mysql', text: 'MySQL' },
+  { icon: 'mariadb', text: 'MariaDB' },
   { icon: 'ruby', text: 'Ruby' },
   { icon: 'rails', text: 'Ruby on Rails' },
   { icon: 'php', text: 'PHP' },
