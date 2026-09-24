@@ -26,7 +26,7 @@ const STEP = 1.6;
 const UNIT = 5;
 
 type Edge = { mask: string; core: string; shade: string };
-/** A line or a curve as its points in order: from, to, or from, control, to. */
+/** A line or a curve as its points in order: from, to, or from, one or two controls, to. */
 type Stroke = number[];
 
 const random = (seed: number) => () => {
@@ -75,7 +75,7 @@ const draw = (strokes: Stroke[]) => {
   for (const stroke of [...strokes].sort((a, b) => a[0] - b[0])) {
     const [x0, y0, ...rest] = stroke.map(Math.round);
     d += `${d ? 'm' : 'M'}${numbers(d ? [x0 - x, y0 - y] : [x0, y0])}`;
-    d += `${rest.length === 4 ? 'q' : 'l'}${numbers(rest.map((value, index) => value - (index % 2 === 0 ? x0 : y0)))}`;
+    d += `${rest.length === 6 ? 'c' : rest.length === 4 ? 'q' : 'l'}${numbers(rest.map((value, index) => value - (index % 2 === 0 ? x0 : y0)))}`;
     [x, y] = rest.slice(-2);
   }
   return d;
@@ -149,7 +149,43 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
     const root = outline[sampleAt(x)] + inward * (0.8 + next()) * UNIT;
     hair.push(...fibre(x, root, (2 + next() * next() * 3.5) * UNIT, (next() - 0.5) * 1.8));
   }
+  /* Stray fibres the tear pulled out whole: thin strands that bend or kink as they go, in
+     tufts with bare stretches between. Most root in the band and lie out across the outer
+     line at a slant; now and then a long one trails along the edge. They are worked out in
+     pixels from the outside in, and no point of one goes nearer the tile's edge than
+     `margin`, so the curve, which stays inside its points, is never cut off. */
+  const margin = 0.8;
+  const px = (x: number, d: number) => [x * UNIT, flip(Math.min(depth - margin, Math.max(margin, d))) * UNIT];
+  const strays: Stroke[] = [];
+  const strand = (x: number, d: number, length: number, slant: number, way: number) => {
+    const dx = way * Math.cos(slant) * length;
+    const dd = -Math.sin(slant) * length;
+    const bend = (next() - 0.5) * 0.5;
+    const kink = next() < 0.35 ? -(0.6 + next()) : 0.5 + next();
+    const off = (t: number, by: number) => px(x + dx * t - dd * by, d + dd * t + dx * by);
+    strays.push(...wrap([...px(x, d), ...off(1 / 3, bend), ...off(2 / 3, bend * kink), ...px(x + dx, d + dd)]));
+  };
+  const rootAt = (x: number) => {
+    const i = Math.round(x / STEP) % samples;
+    return outer[i] + 0.4 + (inner[i] - outer[i]) * next();
+  };
+  for (let tuft = 0; tuft < TILE / 36; tuft++) {
+    const middle = next() * TILE;
+    const way = next() < 0.5 ? -1 : 1;
+    const slant = 0.3 + next() * 0.9;
+    for (let n = 2 + Math.floor(next() * 4); n > 0; n--) {
+      const x = (middle + (next() - 0.5) * 12 + TILE) % TILE;
+      strand(x, rootAt(x), 3 + next() * next() * 10, slant + (next() - 0.5) * 0.7, next() < 0.8 ? way : -way);
+    }
+  }
+  for (let n = 0; n < TILE / 90; n++) {
+    const x = next() * TILE;
+    strand(x, rootAt(x), 12 + next() * 12, 0.08 + next() * 0.3, next() < 0.5 ? -1 : 1);
+  }
+  const strayPath = draw(strays);
+
   const fibres =
+    `<path d='${strayPath}' stroke='#000' stroke-width='${0.5 * UNIT}' stroke-linecap='round' fill='none'/>` +
     `<path d='${draw(fuzz)}' stroke='#000' stroke-width='${0.3 * UNIT}' stroke-linecap='round' stroke-opacity='.6' fill='none'/>` +
     `<path d='${draw(hair)}' stroke='#000' stroke-width='${0.32 * UNIT}' stroke-linecap='round' stroke-opacity='.5' fill='none'/>`;
 
@@ -194,7 +230,8 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
     fibres;
 
   /* The face stands a layer's thickness proud of the band, so it throws a hairline of shadow
-     just outside its own edge wherever the band is wide enough to catch it. */
+     just outside its own edge wherever the band is wide enough to catch it. The strays are
+     drawn here again, faintly, so they stand out from the band, which is their own colour. */
   const wide = (i: number) => Math.abs(faceline[i] - outline[i]) > UNIT;
   const edge: Stroke[] = [];
   for (let i = 0; i < samples; i++) {
@@ -206,7 +243,8 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
   const shade =
     `<path d='${hairline}' stroke='#000' stroke-width='${1.4 * UNIT}' stroke-opacity='.07' fill='none'/>` +
     `<path d='${hairline}' stroke='#000' stroke-width='${0.45 * UNIT}' stroke-opacity='.2' fill='none'/>` +
-    `<path d='${draw(flecks)}' stroke='#000' stroke-width='${0.3 * UNIT}' stroke-linecap='round' stroke-opacity='.16' fill='none'/>`;
+    `<path d='${draw(flecks)}' stroke='#000' stroke-width='${0.3 * UNIT}' stroke-linecap='round' stroke-opacity='.16' fill='none'/>` +
+    `<path d='${strayPath}' stroke='#000' stroke-width='${0.5 * UNIT}' stroke-linecap='round' stroke-opacity='.14' fill='none'/>`;
 
   return {
     mask: encode(`${open}${paper}${fibres}</svg>`),
