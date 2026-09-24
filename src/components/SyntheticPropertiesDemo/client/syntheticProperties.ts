@@ -4,7 +4,6 @@ import { watchPageActive } from '@/client/frontPage';
 import {
   matches,
   paxProperties,
-  primaryRenderings,
   renderings,
   sample,
   searchableText,
@@ -31,8 +30,6 @@ type Tool = {
   queryResult: HTMLElement;
   chips: HTMLOListElement;
   renderings: HTMLUListElement;
-  render: HTMLElement;
-  more: HTMLButtonElement;
   text: HTMLElement;
   queries: HTMLButtonElement[];
   /** The component's scoped-style attributes, so markup built here is styled like the
@@ -71,9 +68,6 @@ function renderRow(tool: Tool, property: SyntheticProperty, row: number, unit?: 
   const item = el(tool, 'li', 'rendering');
   item.style.setProperty('--row', String(row));
   if (unit) item.dataset.unit = unit;
-  if (!unit || primaryRenderings.includes(unit as (typeof primaryRenderings)[number])) {
-    item.dataset.primary = '';
-  }
   if (!unit) item.classList.add('pax');
 
   const value = el(tool, 'span', 'value');
@@ -86,7 +80,9 @@ function renderRow(tool: Tool, property: SyntheticProperty, row: number, unit?: 
     }
     value.append(span);
   });
-  item.append(el(tool, 'span', 'name', property.name), value);
+  const name = el(tool, 'span', 'name', unit ? renderings.find((r) => r.id === unit)!.short : property.name);
+  if (unit) name.title = property.name;
+  item.append(name, value);
   return item;
 }
 
@@ -261,8 +257,6 @@ export function initSyntheticProperties(host: HTMLElement, root: HTMLElement) {
     queryResult: find('.query-result'),
     chips: find('.chips'),
     renderings: find('.renderings'),
-    render: find('.render'),
-    more: find('.more'),
     text: find('.text'),
     queries: [...root.querySelectorAll<HTMLButtonElement>('.query')],
     scope: [...root.attributes]
@@ -287,12 +281,6 @@ export function initSyntheticProperties(host: HTMLElement, root: HTMLElement) {
       tool.query.value = button.dataset.query ?? '';
       renderQueries(tool);
     });
-  });
-
-  tool.more.addEventListener('click', () => {
-    const open = tool.render.dataset.more !== 'true';
-    tool.render.dataset.more = String(open);
-    tool.more.setAttribute('aria-expanded', String(open));
   });
 
   // Pointing at a chip lights the pieces it became, row by row.

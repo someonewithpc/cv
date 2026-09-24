@@ -141,22 +141,6 @@ test('main page: a new size splits, fans out and changes which queries hit', asy
   await expect(tool.locator('.text mark')).toHaveText('6ft7in');
 });
 
-test('main page: three renderings show until asked for the rest', async ({ page }) => {
-  await page.goto('/');
-  const tool = await mountedTool(page);
-  // Off the renderings, so hover does not open them.
-  await tool.locator('.size-input').hover();
-
-  const sizes = tool.locator('.rendering:not(.pax)');
-  await expect(sizes).toHaveCount(6);
-  await expect(tool.locator('.rendering:not(.pax):visible')).toHaveCount(3);
-
-  await tool.locator('.more').click();
-  await expect(tool.locator('.more')).toHaveAttribute('aria-expanded', 'true');
-  await tool.locator('.size-input').hover();
-  await expect(tool.locator('.rendering:not(.pax):visible')).toHaveCount(6);
-});
-
 test('six renderings page: the carry is marked in the table', async ({ page }) => {
   await page.goto('/');
   const stack = syntheticStack(page);
