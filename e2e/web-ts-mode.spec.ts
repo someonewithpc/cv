@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
 
-const PAGES = ['web-ts-mode', 'Parser Ranges', 'Selector Depth Hue', 'web-ts doctor'];
+const PAGES = ['web-ts-mode', 'Parser Ranges', 'Selector Depth Hue', 'Doctor Report'];
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -113,18 +113,16 @@ test('depth page: each selector level gets its own hue, and nesting starts again
   expect(new Set(colours).size).toBe(6);
 });
 
-test('doctor page: the report keeps the real layout and says what is missing', async ({ page }) => {
+test('doctor page: the report keeps the real layout and says what is not on PATH', async ({ page }) => {
   const stack = webTsStack(page);
   const doctor = stack.locator(':scope > div').filter({
-    has: page.locator('h2.typewriter', { hasText: 'web-ts doctor' }),
+    has: page.locator('h2.typewriter', { hasText: 'Doctor Report' }),
   });
 
   const report = doctor.locator('.flow');
   await expect(report).toContainText('web-ts-mode doctor');
-  await expect(report).toContainText('jsdoc: MISSING');
-  await expect(report).toContainText('Install with: npm run grammars');
+  await expect(report).toContainText('jsdoc: ok');
   await expect(report).toContainText('client: eglot');
-  // Vue is found, and the sheet says in so many words that found is not complete.
-  await expect(report).toContainText('vue: found');
-  await expect(doctor.locator('.notes')).toContainText('Volar 3.x needs lsp-mode');
+  await expect(report).toContainText('astro-ls: found');
+  await expect(report).toContainText('vue: not found (tried vue-language-server, vls)');
 });
