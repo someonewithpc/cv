@@ -15,6 +15,7 @@ import VariantsDemo from '@/components/VariantsDemo/Demo.astro';
 import TaggingToolDemo from '@/components/TaggingToolDemo/Demo.astro';
 import FontPickerDemo from '@/components/FontPickerDemo/Demo.astro';
 import DragDropDemo from '@/components/DragDropDemo/Demo.astro';
+import SchemaDefDemo from '@/components/SchemaDefDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
 
@@ -93,6 +94,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             one instead and the next click on the floor places it.
           </TitleCard>
           <DragDropDemo />
+        </Callout>
+        <Callout letter="H" title="Schema driver" titleJp="スキーマドライバー" scale="1:1" headingId="detail-h" cardSide="end">
+          <TitleCard slot="card" title="schemaDef → Doctrine Metadata" medium="PHP, Symfony, Doctrine" year="2020">
+            GNU social v2 described each table as a PHP array on its class. For v3 a Doctrine
+            metadata driver reads those same arrays, so one definition serves the ORM, the
+            schema tool and the PHPStan extension that types DB::find('note') as Note.
+          </TitleCard>
+          <SchemaDefDemo />
         </Callout>
       </div>
     </section>
