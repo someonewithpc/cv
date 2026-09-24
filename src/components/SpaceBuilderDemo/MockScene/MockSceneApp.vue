@@ -278,6 +278,12 @@ function onPointerLeaveWindow(event: PointerEvent) {
   if (event.relatedTarget === null) pointerOver = false;
 }
 
+// The walkthrough focuses the Blocks fields itself; that focusin is not the visitor taking over.
+function onFocusIn() {
+  if (controllerRef.value?.focusing) return;
+  yieldToUser(true);
+}
+
 function onPointerDown(event: PointerEvent) {
   if (!event.isTrusted) return;
   if (!userControl.value) yieldToUser(true);
@@ -790,7 +796,7 @@ onBeforeUnmount(() => {
     :data-ready="ready ? 'true' : 'false'"
     :data-user-control="userControl ? 'true' : 'false'"
     :data-panel="panel"
-    @focusin="yieldToUser(true)"
+    @focusin="onFocusIn"
   >
     <aside class="rail" aria-label="Tools">
       <div class="rail-logo" aria-hidden="true" title="Visrez">

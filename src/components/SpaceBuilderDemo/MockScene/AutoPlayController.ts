@@ -250,6 +250,8 @@ export class AutoPlayController {
   private generation = 0;
   /** The generation of the step now running, so resume() leaves the next step to it. */
   private inFlight: number | null = null;
+  /** True while the walkthrough focuses a field itself, so the app can tell that focusin from a visitor's. */
+  focusing = false;
   private readonly scene: SpaceBuilderScene;
   private readonly onCursor: DemoCursorHandler;
   private readonly onToast: DemoToastHandler;
@@ -520,7 +522,12 @@ export class AutoPlayController {
     await this.waitForCursorTravel(client);
     if (this.paused) return;
 
-    input.focus({ preventScroll: true });
+    this.focusing = true;
+    try {
+      input.focus({ preventScroll: true });
+    } finally {
+      this.focusing = false;
+    }
     this.onCursor({ client, target: 'param:blocks', click: true, dragging: false });
     await wait(typingDelay(90));
     if (this.paused) return;
