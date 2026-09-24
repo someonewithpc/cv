@@ -1,6 +1,7 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { expect, test } from './support/timeScale';
 
 /** Real, loadable catalog objects; everything else in the catalog is a placeholder SVG. */
 const REAL_ITEMS = ['chair', 'armchair', 'table-round'];
@@ -133,22 +134,26 @@ test('the banquet card swaps the model for the seat count and table size picked'
   ]);
 });
 
-test('the walkthrough runs a banquet loop of its own', async ({ page }) => {
-  // The banquet preset is second, so a full grid build has to play out first.
-  test.setTimeout(240_000);
-  await page.goto('/');
-  const stack = spaceBuilderStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const app = await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
+test.describe(() => {
+  test.use({ walkthroughRate: 4 });
 
-  // The banquet set is the only object this page fetches on its own, so the request is
-  // the walkthrough reaching that preset.
-  await page.waitForFunction(
-    () => performance
-      .getEntriesByType('resource')
-      .some((entry) => entry.name.includes('banquet-8pax-243x121.glb')),
-    undefined,
-    { timeout: 210_000 },
-  );
-  await expect(app.locator('[data-catalog-item="table-round"]')).toHaveClass(/active/, { timeout: 30_000 });
+  test('the walkthrough runs a banquet loop of its own', async ({ page }) => {
+    // The banquet preset is second, so a full grid build has to play out first.
+    test.setTimeout(90_000);
+    await page.goto('/');
+    const stack = spaceBuilderStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const app = await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
+
+    // The banquet set is the only object this page fetches on its own, so the request is
+    // the walkthrough reaching that preset.
+    await page.waitForFunction(
+      () => performance
+        .getEntriesByType('resource')
+        .some((entry) => entry.name.includes('banquet-8pax-243x121.glb')),
+      undefined,
+      { timeout: 60_000 },
+    );
+    await expect(app.locator('[data-catalog-item="table-round"]')).toHaveClass(/active/, { timeout: 30_000 });
+  });
 });
