@@ -421,6 +421,20 @@ function initStack(stack: HTMLElement) {
 
   positionAnnotations(stack);
 
+  // The note tab is an invoker button (command="show-modal"), which Chrome 135, Safari 26
+  // and Firefox 144 act on natively. A browser without the API leaves the tab inert, and
+  // below 56em the tab is the only way to the note, so it gets a click of its own there.
+  // Feature-detected: where the button has the property the browser already opens it.
+  if (!('commandForElement' in HTMLButtonElement.prototype)) {
+    for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('commandfor');
+        const note = id ? document.getElementById(id) : null;
+        if (note instanceof HTMLDialogElement && !note.open) note.showModal();
+      });
+    }
+  }
+
   // The dog-ear's resting size, lifted from the stack onto the frame: the hint layer is the
   // stack's sibling, so the property PaperStack publishes does not reach it by inheritance, and
   // without it the arrow has no crease to aim at. It never changes, so once is enough.
