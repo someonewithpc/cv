@@ -934,18 +934,21 @@ section {
       display: block;
     }
 
-    /* The corner is only folded out on a sheet this narrow, and at the sheet's
-       bottom edge it covers the whole band. A deck drawn in the band starts past
-       its diagonal here, and keeps the same clearance from it as from the ends. */
-    .demo-transport {
-      left: calc(var(--note-fold-size) + var(--sheet-margin));
-    }
+    /* A sheet with no note has no tab, and keeps its corner. */
+    &:has(.note-card > *) {
+      /* The tab lies on the artwork, the way a note tucked under a sheet would.
+         What it must not do is cover a control or hide behind one, so it paints
+         over the cell (see .content's isolation) and every demo keeps its own
+         controls off this much of the bottom-left corner. */
+      --note-fold-reach: calc(var(--note-fold-size) - var(--sheet-margin));
 
-    /* The tab lies on the artwork, the way a note tucked under a sheet would.
-       What it must not do is cover a control or hide behind one, so it paints
-       over the cell (see .content's isolation) and every demo keeps its own
-       controls off this much of the bottom-left corner. */
-    --note-fold-reach: calc(var(--note-fold-size) - var(--sheet-margin));
+      /* The corner is only folded out on a sheet this narrow, and at the sheet's
+         bottom edge it covers the whole band. A deck drawn in the band starts past
+         its diagonal here, and keeps the same clearance from it as from the ends. */
+      .demo-transport {
+        left: calc(var(--note-fold-size) + var(--sheet-margin));
+      }
+    }
 
     /* The artwork keeps the sheet centre, so the corner block gives ground —
        the same size portrait uses. Its paper is the sheet's at every width now,
