@@ -92,7 +92,7 @@ const where = 'src/Core/ModuleManager.php:93';
   font-size: clamp(0.6875rem, 0.025 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
   color: var(--ink);
 
-  @container technical-drawing-width (max-width: 56em) {
+  @container technical-drawing-width (max-width: 40em) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'point'
@@ -103,7 +103,7 @@ const where = 'src/Core/ModuleManager.php:93';
   }
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: clamp(0.625rem, 0.03 * var(--sheet-inline), 0.9375rem);
+    font-size: clamp(0.625rem, min(0.03 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem);
   }
 }
 
@@ -215,7 +215,7 @@ figure {
     translate: 0 -50%;
   }
 
-  @container technical-drawing-width (max-width: 56em) {
+  @container technical-drawing-width (max-width: 40em) {
     &::before {
       top: 0;
       bottom: 0.375em;
@@ -294,5 +294,58 @@ figure {
   font-size: 0.6875em;
   color: var(--ink-muted);
   text-wrap: pretty;
+}
+
+/* A sheet between phone and desk widths is landscape and short: two columns still, but
+   only the source and the shell, with the block's own row under them. */
+@container technical-drawing-width (40em < width <= 56em) {
+  .point span,
+  .footnote {
+    display: none;
+  }
+
+  .guard-layer {
+    grid-template-areas:
+      'point point point'
+      'source stage terminal';
+  }
+}
+
+/* Narrower still but not yet portrait, the window band where the stack's max-height clamps
+   its 3/5 aspect: the sheet is a squat one, so the columns stay side by side and the block
+   keeps its corner. */
+@container technical-drawing-width (max-width: 40em) {
+  @container technical-drawing (orientation: landscape) {
+    .point span,
+    .footnote {
+      display: none;
+    }
+
+    .guard-layer {
+      grid-template-columns: minmax(0, 0.85fr) 2em minmax(0, 1.3fr);
+      grid-template-areas:
+        'point point point'
+        'source stage terminal';
+    }
+
+    .stage::before {
+      top: 50%;
+      bottom: auto;
+      left: 0;
+      right: 0.375em;
+      border-top: 2px solid var(--line-strong);
+      border-left: 0;
+      translate: 0 -1px;
+    }
+
+    .stage::after {
+      top: 50%;
+      bottom: auto;
+      left: auto;
+      right: 0.125em;
+      rotate: 45deg;
+      translate: 0 -50%;
+    }
+  }
 }
 </style>

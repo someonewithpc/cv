@@ -120,7 +120,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: clamp(0.625rem, 0.03 * var(--sheet-inline), 0.9375rem);
+    font-size: clamp(0.625rem, min(0.03 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem);
   }
 }
 
@@ -329,6 +329,29 @@ code {
   font-size: 0.6875em;
   color: var(--ink-muted);
   text-wrap: pretty;
+}
+
+/* A sheet between phone and desk widths is landscape and short: the listeners alone, with
+   the block's own row under them. */
+@container technical-drawing-width (40em < width <= 56em) {
+  .point span,
+  .footnote,
+  .row:not(.listener) {
+    display: none;
+  }
+}
+
+/* Narrower still but not yet portrait, the window band where the stack's max-height clamps
+   its 3/5 aspect: a squat sheet with the block in its corner, so only the listener rows. */
+@container technical-drawing-width (max-width: 40em) {
+  @container technical-drawing (orientation: landscape) {
+    .point span,
+    .scan,
+    .footnote,
+    .row:not(.listener) {
+      display: none;
+    }
+  }
 }
 
 /* A narrow sheet: each method over its entry, the arrow turned to point down. */

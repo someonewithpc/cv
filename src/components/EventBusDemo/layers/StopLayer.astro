@@ -78,7 +78,7 @@ const results = [
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: clamp(0.625rem, 0.029 * var(--sheet-inline), 0.875rem);
+    font-size: clamp(0.625rem, min(0.029 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.875rem);
   }
 }
 
@@ -100,14 +100,14 @@ code {
     color: var(--ink-muted);
     text-wrap: pretty;
 
-    @container technical-drawing-width (max-width: 40em) {
+    @container technical-drawing-width (max-width: 56em) {
       display: none;
     }
   }
 }
 
 .figure {
-  --bus-portrait-font: clamp(0.625rem, 0.029 * var(--sheet-inline), 0.875rem);
+  --bus-portrait-font: clamp(0.625rem, min(0.029 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.875rem);
 
   min-width: 0;
 }
@@ -131,7 +131,7 @@ code {
 
   /* A narrow sheet has the height for the three cases but not for what each one means;
      the bus above already shows stop doing it. */
-  @container technical-drawing-width (max-width: 40em) {
+  @container technical-drawing-width (max-width: 56em) {
     dt {
       flex-direction: column;
       margin: 0;

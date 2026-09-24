@@ -210,7 +210,7 @@ const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:
 
   :global([data-sheet-orientation='portrait']) & {
     /* A page that quotes the bus beside other things can hand it a smaller size. */
-    font-size: var(--bus-portrait-font, clamp(0.625rem, 0.029 * var(--sheet-inline), 0.9375rem));
+    font-size: var(--bus-portrait-font, clamp(0.625rem, min(0.029 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem));
   }
 }
 
