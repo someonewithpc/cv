@@ -64,6 +64,10 @@ export class MarkerPart {
       },
     } as this['reactiveState'];
 
+    // A drag writes `internal` directly and commits the same value through the setter once it
+    // settles, so the setter compares against what it last committed, not against `internal`.
+    const committed: Record<string, any> = { ...this.defaultReactiveState };
+
     Object.defineProperties(
       this.reactiveState,
       Object.fromEntries(
@@ -74,7 +78,8 @@ export class MarkerPart {
             set: (val: any) => {
               // The store handler writes every key on every dispatch; only a change is
               // worth a new snapshot, and the re-render of the whole editor it costs.
-              if (Object.is(this.reactiveState.internal[key], val)) return;
+              if (Object.is(committed[key], val)) return;
+              committed[key] = val;
               this.reactiveState.internal[key] = val;
               this.reactiveState.internal.callback?.();
             },
