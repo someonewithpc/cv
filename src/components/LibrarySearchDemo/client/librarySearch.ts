@@ -184,10 +184,12 @@ function showState(tool: Tool, state: SearchState) {
 /**
  * The walkthrough: the query is typed a few letters at a time, the way a visitor would, so
  * every keystroke goes through the same throttle and abort as theirs. It pauses whenever the
- * sheet is not the page on top, and hands over for good on the first hover or focus.
+ * sheet is not the page on top, and hands over for good on the first hover or focus, or
+ * when `handover` fires: the other sheets share the query, and a visitor typing on one of
+ * them must not find the script appending letters to their query later.
  * `data-autoplay` on the tool is the whole state, as `playing`, `user` or `off`.
  */
-async function autoplay(tool: Tool, script: readonly Step[], onChange: () => void) {
+async function autoplay(tool: Tool, script: readonly Step[], onChange: () => void, handover: AbortSignal) {
   const { root, input } = tool;
   if (reducedMotion.matches) {
     root.dataset.autoplay = 'off';
@@ -204,6 +206,11 @@ async function autoplay(tool: Tool, script: readonly Step[], onChange: () => voi
     stopPageWatch();
     root.dataset.autoplay = 'user';
   };
+  if (handover.aborted) {
+    stop();
+    return;
+  }
+  handover.addEventListener('abort', stop, { once: true });
   root.addEventListener('pointerenter', stop, { once: true });
   root.addEventListener('focusin', stop, { once: true });
 
@@ -274,19 +281,26 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
   input.addEventListener('input', onChange);
   tool.selects.forEach((select) => select.addEventListener('change', onChange));
 
+  // A query from another sheet is the visitor's, wherever they typed it.
+  const handover = new AbortController();
   store.subscribe((state, source) => {
-    if (source !== tool) showState(tool, state);
-    else if (tool.mangled) tool.mangled.innerHTML = mangledHtml(state.query);
+    if (source !== tool) {
+      handover.abort();
+      showState(tool, state);
+    } else if (tool.mangled) {
+      tool.mangled.innerHTML = mangledHtml(state.query);
+    }
     pipeline.request(state);
   });
 
   // Another sheet may have booted first and moved the query on.
   const state = store.get();
   if (serialise(state) !== serialise(initial)) {
+    handover.abort();
     showState(tool, state);
     pipeline.request(state);
   }
 
   const script = host.dataset.walkthrough;
-  if (script) void autoplay(tool, JSON.parse(script) as Step[], onChange);
+  if (script) void autoplay(tool, JSON.parse(script) as Step[], onChange, handover.signal);
 }
