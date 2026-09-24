@@ -3,6 +3,9 @@ import type { APIRoute } from 'astro';
 export const prerender = false;
 
 const MAX_BYTES = 8 * 1024 * 1024;
+// Google Fonts answers in one hop and a page's stylesheet in at most a couple; a chain past
+// this is not a font.
+const MAX_REDIRECTS = 5;
 
 // text/html and text/css for page/stylesheet extraction, the rest for the font files themselves
 const ALLOWED_CONTENT_TYPES = /^(text\/(css|html)|font\/|application\/(x-)?font|application\/octet-stream|binary\/octet-stream)/i;
@@ -29,6 +32,52 @@ function validateTarget(raw: string): URL {
   return target;
 }
 
+/**
+ * Fetches the target, following redirects by hand so every hop passes validateTarget: with
+ * redirect 'follow' only the first URL was checked, and the one it redirected to could be
+ * anything.
+ */
+async function fetchFollowingRedirects(target: URL, headers: HeadersInit): Promise<Response> {
+  for (let hop = 0; ; hop += 1) {
+    const upstream = await fetch(target, { headers, redirect: 'manual' });
+    const location = upstream.headers.get('location');
+    if (upstream.status < 300 || upstream.status > 399 || !location) return upstream;
+    if (hop === MAX_REDIRECTS) throw new Error('Too many redirects');
+    await upstream.body?.cancel();
+    target = validateTarget(new URL(location, target).toString());
+  }
+}
+
+/**
+ * Reads the body up to the cap. Past it the read is cancelled, so a chunked response with no
+ * content-length, which the header check cannot judge, costs the worker at most one chunk
+ * over the cap rather than the whole thing; arrayBuffer() pulled it all before measuring.
+ * null when the body was over the cap.
+ */
+async function readUpTo(body: ReadableStream<Uint8Array> | null, limit: number): Promise<ArrayBuffer | null> {
+  if (!body) return new ArrayBuffer(0);
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(new ArrayBuffer(total));
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out.buffer;
+}
+
 export const GET: APIRoute = async ({ url, request }) => {
   // The picker is the only caller, and it fetches from this origin. A browser says where a
   // request came from in sec-fetch-site; one from another site's page is not the picker's,
@@ -51,14 +100,11 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   let upstream: Response;
   try {
-    upstream = await fetch(target, {
-      headers: {
-        accept: request.headers.get('accept') ?? '*/*',
-        // Pass the browser's UA through so e.g. Google Fonts serves modern woff2 CSS
-        'user-agent': request.headers.get('user-agent') ?? 'cv-font-picker-demo',
-        'accept-language': request.headers.get('accept-language') ?? 'en',
-      },
-      redirect: 'follow',
+    upstream = await fetchFollowingRedirects(target, {
+      accept: request.headers.get('accept') ?? '*/*',
+      // Pass the browser's UA through so e.g. Google Fonts serves modern woff2 CSS
+      'user-agent': request.headers.get('user-agent') ?? 'cv-font-picker-demo',
+      'accept-language': request.headers.get('accept-language') ?? 'en',
     });
   } catch (e) {
     return new Response('Upstream fetch failed: ' + (e instanceof Error ? e.message : String(e)), { status: 502 });
@@ -71,11 +117,12 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   const declaredLength = Number(upstream.headers.get('content-length') ?? 0);
   if (declaredLength > MAX_BYTES) {
+    await upstream.body?.cancel();
     return new Response('Response too large', { status: 413 });
   }
 
-  const body = await upstream.arrayBuffer();
-  if (body.byteLength > MAX_BYTES) {
+  const body = await readUpTo(upstream.body, MAX_BYTES);
+  if (body === null) {
     return new Response('Response too large', { status: 413 });
   }
 
