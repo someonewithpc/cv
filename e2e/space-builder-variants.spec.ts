@@ -1,15 +1,14 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 
-/** Third stack on the page: logo, marker editor, then the space builder. */
 function spaceBuilderStack(page: Page) {
-  return page.locator('article.technical-drawing-stack').nth(2);
+  return demoStack(page, 'Space Builder · Add Tool');
 }
 
-/** Fourth stack: the object variants demo, whose picker this one reuses. */
+/** The object variants demo, whose picker this one reuses. */
 function variantsStack(page: Page) {
-  return page.locator('article.technical-drawing-stack').nth(3);
+  return demoStack(page, 'Space Builder · Object Variants');
 }
 
 async function waitForSceneReady(front: Locator): Promise<Locator> {

@@ -1,6 +1,7 @@
 import { devices, type Locator, type Page } from '@playwright/test';
 
 import {
+  demoStack,
   frontPage,
   frontPageIndex,
   frontPageName,
@@ -9,9 +10,8 @@ import {
 } from './support/paperStack';
 import { expect, test } from './support/timeScale';
 
-/** Fourth stack on the page: logo, marker editor, space builder, then this one. */
 function variantsStack(page: Page) {
-  return page.locator('article.technical-drawing-stack').nth(3);
+  return demoStack(page, 'Space Builder · Object Variants');
 }
 
 /** The panel on the front page, whether or not a script has run on it. */

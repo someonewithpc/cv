@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  demoStack,
   frontPage,
   frontPageIndex,
   swipeStack,
@@ -13,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function markerEditorStack(page: import('@playwright/test').Page) {
-  return page.locator('article.technical-drawing-stack').nth(1);
+  return demoStack(page, 'Interactive Map Marker Editor');
 }
 
 test('main page: map pins mount and clicking one opens the marker picker', async ({ page }) => {

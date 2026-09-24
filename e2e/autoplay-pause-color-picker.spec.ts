@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 
 /**
  * The live marker editor with its shape fill step open, taken over from the walkthrough
@@ -8,7 +8,7 @@ import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paper
  */
 async function shapeFillStep(page: import('@playwright/test').Page) {
   await page.goto('/');
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)));
 

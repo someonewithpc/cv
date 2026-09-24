@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 
 /**
  * The editor on the drawing stack's own "Marker Editor" page is `inert` on purpose, a
@@ -9,7 +9,7 @@ import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paper
  */
 async function liveEditor(page: import('@playwright/test').Page) {
   await page.goto('/');
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)));
 

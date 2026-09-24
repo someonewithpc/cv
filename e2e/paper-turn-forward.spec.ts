@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPageName, swipeStack } from './support/paperStack';
+import { demoStack, frontPageName, swipeStack } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
 test('marker editor: one flick turns the page away and the same flick brings it back', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

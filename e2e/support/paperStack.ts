@@ -1,6 +1,14 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
+ * A demo's stack, found by the title it carries as its region label rather than by its place
+ * on the page, so adding or moving a demo leaves the specs about the others alone.
+ */
+export function demoStack(page: Page, title: string): Locator {
+  return page.locator(`article.technical-drawing-stack[aria-label="${title}"]`);
+}
+
+/**
  * Each PaperStack page keeps its DOM position; a committed flip only renumbers which
  * wrapper's `--page-index` reads `1` (see PaperStack/fold-drag.ts). So "the front page" is
  * whichever direct child currently carries that custom property, not a fixed DOM index.

@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { frontPageName } from './support/paperStack';
+import { demoStack, frontPageName } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -46,7 +46,7 @@ async function turnTiming(page: Page, stack: Locator, key: string): Promise<{ co
 }
 
 test('marker editor: an arrow key commits the turn without waiting', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

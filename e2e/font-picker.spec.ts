@@ -1,17 +1,12 @@
-import { frontPage, frontPageIndex, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-// By the name in the title block, not by index: the tagging tool's spec holds nth(3) and the
-// next demo added to the page would move an index again.
 function fontPickerStack(page: import('@playwright/test').Page) {
-  return page
-    .locator('article.technical-drawing-stack')
-    .filter({ hasText: 'Interactive Map Font Picker' })
-    .first();
+  return demoStack(page, 'Interactive Map Font Picker');
 }
 
 test('main page: the picker mounts and a chosen face reaches the specimen', async ({ page }) => {

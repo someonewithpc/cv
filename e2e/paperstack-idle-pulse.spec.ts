@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { armDrawCounter, frontPage, frontPageIndex, frontPageName, sceneDraws } from './support/paperStack';
+import { armDrawCounter, demoStack, frontPage, frontPageIndex, frontPageName, sceneDraws } from './support/paperStack';
 
 /**
  * The resting dog-ear breathes on a loop (fold-reveal-pulse in PaperStack/index.astro), and
@@ -119,7 +119,7 @@ test('the demo under the paper plays until the turn is certain, then stops', asy
   await page.goto('/');
   await armDrawCounter(page);
 
-  const stack = page.locator('article.technical-drawing-stack').nth(2);
+  const stack = demoStack(page, 'Space Builder · Add Tool');
   await stack.scrollIntoViewIfNeeded();
   const started = await frontPageIndex(stack);
   const front = frontPage(stack, started);

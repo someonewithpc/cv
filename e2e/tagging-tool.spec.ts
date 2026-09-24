@@ -1,4 +1,4 @@
-import { frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
 const PAGES = ['Library Tagging Tool', 'Shared Value', 'Simulated Caret', 'Completed Objects'];
@@ -8,10 +8,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function taggingToolStack(page: import('@playwright/test').Page) {
-  // By title, not by position: the demos run gains stacks over time.
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'Library Tagging Tool' }),
-  });
+  return demoStack(page, 'Library Tagging Tool');
 }
 
 async function mountedTool(page: import('@playwright/test').Page) {

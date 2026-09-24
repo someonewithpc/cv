@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, turnToPage } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, turnToPage } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
 function visrezStack(page: import('@playwright/test').Page) {
-  return page.locator('article.technical-drawing-stack').nth(0);
+  return demoStack(page, 'Visrez Animated Loading Logo');
 }
 
 test('main page: the loading-logo SVG renders and its dash animation runs', async ({ page }) => {

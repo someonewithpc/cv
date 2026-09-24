@@ -1,6 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test';
 
-import { frontPageName, pressTurn } from './support/paperStack';
+import { demoStack, frontPageName, pressTurn } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -46,7 +46,7 @@ async function standing(stack: Locator) {
 
 
 test('marker editor: the pile behind the stack counts the pages turned', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
@@ -70,7 +70,7 @@ test('marker editor: the pile behind the stack counts the pages turned', async (
 });
 
 test('marker editor: a turned page goes to the back of the pile, on an arc', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

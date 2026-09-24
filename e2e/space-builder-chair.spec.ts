@@ -1,13 +1,13 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 import { expect, test } from './support/timeScale';
 
 /** Real, loadable catalog objects; everything else in the catalog is a placeholder SVG. */
 const REAL_ITEMS = ['chair', 'armchair', 'table-round'];
 
 function spaceBuilderStack(page: Page) {
-  return page.locator('article.technical-drawing-stack').nth(2);
+  return demoStack(page, 'Space Builder · Add Tool');
 }
 
 async function waitForSceneReady(front: Locator): Promise<Locator> {

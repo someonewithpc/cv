@@ -1,11 +1,10 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
+import { demoStack, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
 
 const DEMOS = [
   {
     label: 'Visrez logo animation',
-    stackIndex: 0,
     pages: [
       'Visrez Animated Loading Logo',
       'Original Logo',
@@ -17,7 +16,6 @@ const DEMOS = [
   },
   {
     label: 'Marker editor',
-    stackIndex: 1,
     pages: [
       'Interactive Map Marker Editor',
       'Marker Selector',
@@ -29,7 +27,6 @@ const DEMOS = [
   },
   {
     label: 'Space builder',
-    stackIndex: 2,
     pages: [
       'Space Builder · Add Tool',
       'Place Area',
@@ -40,7 +37,6 @@ const DEMOS = [
   },
   {
     label: 'Drag and drop',
-    stackIndex: 6,
     pages: [
       'Space Builder · Drag & Drop',
       'Picture to Model',
@@ -54,7 +50,7 @@ test.beforeEach(async ({ page }) => {
 
 for (const demo of DEMOS) {
   test(`${demo.label}: forward swipes visit every page in order, then wrap`, async ({ page }) => {
-    const stack = page.locator('article.technical-drawing-stack').nth(demo.stackIndex);
+    const stack = demoStack(page, demo.pages[0]);
     await stack.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
 
@@ -74,7 +70,7 @@ for (const demo of DEMOS) {
 }
 
 test('marker editor: backward swipe is clamped at the first page', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

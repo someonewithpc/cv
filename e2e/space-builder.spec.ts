@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import {
   armDrawCounter,
+  demoStack,
   frontPage,
   frontPageIndex,
   sceneDraws,
@@ -15,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function spaceBuilderStack(page: import('@playwright/test').Page) {
-  return page.locator('article.technical-drawing-stack').nth(2);
+  return demoStack(page, 'Space Builder · Add Tool');
 }
 
 /** Every scene app marks its own root `data-ready="true"` once Three.js has finished loading. */

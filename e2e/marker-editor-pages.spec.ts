@@ -1,4 +1,4 @@
-import { frontPage, frontPageIndex, turnToPage } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, turnToPage } from './support/paperStack';
 import { expect, test } from './support/timeScale';
 
 /**
@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function markerEditorStack(page: import('@playwright/test').Page) {
-  return page.locator('article.technical-drawing-stack').nth(1);
+  return demoStack(page, 'Interactive Map Marker Editor');
 }
 
 test('parts and store pages: the diagram fills the sheet it sits on', async ({ page }) => {

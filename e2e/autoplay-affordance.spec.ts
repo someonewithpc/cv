@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
 /**
@@ -14,11 +14,11 @@ const VIEWPORTS = [
 ];
 
 function markerEditorStack(page: Page) {
-  return page.locator('article.technical-drawing-stack').nth(1);
+  return demoStack(page, 'Interactive Map Marker Editor');
 }
 
 function spaceBuilderStack(page: Page) {
-  return page.locator('article.technical-drawing-stack').nth(2);
+  return demoStack(page, 'Space Builder · Add Tool');
 }
 
 async function playingDeck(stack: Locator): Promise<Locator> {

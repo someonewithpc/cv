@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 
 /**
  * A component under a PaperStack page carries its own <script> again (PaperStack keeps the
@@ -12,12 +12,11 @@ test('slotted components boot from their own scripts', async ({ page }) => {
 
   await expect(page.locator('[data-boot-module]')).toHaveCount(0);
 
-  const stacks = page.locator('article.technical-drawing-stack');
-  for (const [index, host] of [
-    [1, '[data-mock-map]'],
-    [2, '[data-space-builder-island]'],
+  for (const [title, host] of [
+    ['Interactive Map Marker Editor', '[data-mock-map]'],
+    ['Space Builder · Add Tool', '[data-space-builder-island]'],
   ] as const) {
-    const stack = stacks.nth(index);
+    const stack = demoStack(page, title);
     await stack.scrollIntoViewIfNeeded();
     const front = frontPage(stack, await frontPageIndex(stack));
     await expect(front.locator(host)).toHaveCount(1);

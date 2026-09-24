@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import {
   armDrawCounter,
+  demoStack,
   frontPage,
   frontPageIndex,
   sceneDraws,
@@ -10,9 +11,8 @@ import {
 } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
-/** Last stack on the page, after the logo, marker editor and the other Space Builder sheets. */
 function dragDropStack(page: Page) {
-  return page.locator('article.technical-drawing-stack').nth(6);
+  return demoStack(page, 'Space Builder · Drag & Drop');
 }
 
 /** The scene app marks its own root `data-ready="true"` once Three.js has finished loading. */
