@@ -1,6 +1,7 @@
 ---
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+
+import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 
@@ -13,14 +14,21 @@ function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
 }
 
-// The sheet's own source: the schema it reads and the port of the driver, and the script
-// that pairs the two panes.
-const here = path.join(process.cwd(), 'src/components/SchemaDefDemo');
-const sources = await Promise.all(
-  ['schema.ts', 'client/schemaDef.ts'].map((file) => readFile(path.join(here, file), 'utf8')),
-);
+// What the sheet ships: the script that pairs the two panes. The schema and the port of the
+// driver run at build time and never reach the browser.
+const srcRoot = path.join(process.cwd(), 'src');
+const clientEntry = path.join(srcRoot, 'components/SchemaDefDemo/client/schemaDef.ts');
 
-const sheetSize = toKiB(sources.join(''));
+const { outputFiles: [clientBundle] } = await esbuild.build({
+  entryPoints: [clientEntry],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  alias: { '@': srcRoot },
+});
+
+const sheetSize = toKiB(clientBundle.text);
 
 const layers = {
   transform: { name: null },
