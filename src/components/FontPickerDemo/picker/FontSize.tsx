@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 
@@ -6,12 +6,13 @@ import { Pinned } from './Pinned';
 
 export function FontSize({ size, setSize }: { size: number, setSize: (size: number) => void }) {
   const [interacting, setInteracting] = useState(false);
+  const id = useId();
 
   return (
     <Pinned interacting={interacting} onLeave={() => setInteracting(false)}>
-      <label>
+      <label htmlFor={id}>
         <span>
-          <span>Font Size</span>
+          <span id={`${id}-name`}>Font Size</span>
           <button
             type="button"
             className="reset"
@@ -23,6 +24,8 @@ export function FontSize({ size, setSize }: { size: number, setSize: (size: numb
           </button>
         </span>
         <input
+          id={id}
+          aria-labelledby={`${id}-name`}
           type="range"
           data-demo-target="size"
           min="0.5"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 
@@ -9,17 +9,19 @@ export function FontWeight(
   { enabled: boolean, weight: number, setWeight: (weight: number) => void }
 ) {
   const [interacting, setInteracting] = useState(false);
+  const id = useId();
 
   return (
     <Pinned interacting={interacting} onLeave={() => setInteracting(false)}>
       <label
+        htmlFor={id}
         title={enabled
           ? 'Select font weight. Note that different weights may not be supported by the selected font'
           : 'Font weight is not available because this font only provides specific weights. Use the dropdown below'
         }
       >
         <span>
-          <span>Font Weight</span>
+          <span id={`${id}-name`}>Font Weight</span>
           <button
             type="button"
             className="reset"
@@ -31,6 +33,8 @@ export function FontWeight(
           </button>
         </span>
         <input
+          id={id}
+          aria-labelledby={`${id}-name`}
           disabled={!enabled}
           type="range"
           data-demo-target="weight"
