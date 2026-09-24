@@ -32,6 +32,7 @@
     - [x] Place area
     - [x] Edit parameters
     - [x] Different layouts
+      - [x] Hollow and U-shape chairs face the table, side rows start at the corners (#111)
     - [x] Badge showing number of seats (positioning)
     - [x] Drag and drop from sidebar to 3D
     - [x] WebGL texImage3D FLIP_Y warnings on GPU re-attach (#52)
