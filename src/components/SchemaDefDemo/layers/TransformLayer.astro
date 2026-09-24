@@ -1,0 +1,315 @@
+---
+import { actor, actorRules, actorTable, type Line } from '../schema';
+
+// Walk order for the highlight, and the keyboard's: every keyed line of the source, once.
+const keys = [...new Set(actor.lines.map((line) => line.key).filter((key): key is string => Boolean(key)))];
+
+/** An id for a key's rule, so each keyed line can name the rule that describes it. */
+const ruleId = (key: string) => `schemadef-rule-${key.replace(/[^a-z0-9_-]+/gi, '-')}`;
+const described = new Set(actorRules.map((rule) => rule.key));
+
+/** Indent in levels, so a four-space PHP level and a two-space SQL one take the same room. */
+const levels = (line: Line, width: number) => Math.round(line.indent / width);
+
+// Without a script, hovering or focusing a line still lights its counterpart and its rule:
+// one :has() rule per key. The script marks the demo enhanced and takes over from these.
+const fallback = keys
+  .map((key) => {
+    const at = `[data-key="${key}"]`;
+    return `[data-schemadef]:not([data-enhanced]):has(${at}:is(:hover, :focus)) :is(${at}, [data-rule="${key}"]) { --lit: 1; }`
+      + `\n[data-schemadef]:not([data-enhanced]):has(${at}:is(:hover, :focus)) [data-rule="${key}"] { display: flex; }`
+      + `\n[data-schemadef]:not([data-enhanced]):has(${at}:is(:hover, :focus)) [data-rule-default] { display: none; }`;
+  })
+  .join('\n');
+
+const panes = [
+  {
+    id: 'php',
+    file: 'src/Entity/Actor.php',
+    what: 'Actor::schemaDef()',
+    lines: actor.lines,
+    width: 4,
+  },
+  {
+    id: 'sql',
+    file: 'schema:create --dump-sql',
+    what: 'MySQL',
+    lines: actorTable,
+    width: 2,
+  },
+];
+---
+
+<div class="schemadef-demo" data-schemadef-demo data-schemadef-sheet>
+  <div class="schemadef" data-schemadef data-keys={JSON.stringify(keys)}>
+    <div class="panes">
+      {panes.map((pane) => {
+        let first = true;
+        return (
+          <figure class:list={['pane', pane.id]} data-pane={pane.id}>
+            <figcaption>
+              <strong>{pane.what}</strong>
+              <code>{pane.file}</code>
+            </figcaption>
+            <div class="scroller" data-scroller>
+              <code class="code">
+                {pane.lines.map((line) => {
+                  const tabindex = line.key ? (first ? 0 : -1) : undefined;
+                  if (line.key) first = false;
+                  return (
+                    <span
+                      class="line"
+                      data-key={line.key}
+                      tabindex={tabindex}
+                      aria-describedby={line.key && described.has(line.key) ? ruleId(line.key) : undefined}
+                      style={{ '--indent': levels(line, pane.width) }}
+                    >{line.tokens.map((token) => token.kind
+                      ? <span class={token.kind}>{token.text}</span>
+                      : token.text)}{line.tokens.length === 0 && ' '}</span>
+                  );
+                })}
+              </code>
+            </div>
+          </figure>
+        );
+      })}
+    </div>
+
+    {/* Not a live region: the walk would read one out every two seconds. Each keyed line
+        points at its rule instead, so focusing a line reads the rule with it. */}
+    <ul class="rules">
+      <li data-rule-default>
+        <span class="label">Rule</span>
+        <span class="step">Hover or focus a line on either side to see what the driver did to it</span>
+      </li>
+      {actorRules.map((rule) => (
+        <li data-rule={rule.key} id={ruleId(rule.key)} hidden>
+          <code class="label">{rule.label}</code>
+          {rule.steps.map(([php, doctrine, sql]) => (
+            <span class="step">
+              <code class="php">{php}</code>
+              <span class="arrow">→</span>
+              <code class="doctrine">{doctrine}</code>
+              <span class="arrow">→</span>
+              <code class="sql">{sql}</code>
+            </span>
+          ))}
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>
+
+<style is:inline set:html={fallback}></style>
+
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { initSchemaDef } from '../client/schemaDef';
+
+bootIslands('[data-schemadef-demo]', (host) => {
+  const root = host.querySelector<HTMLElement>('[data-schemadef]');
+  if (root) initSchemaDef(root);
+});
+</script>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+@include fill-content-cell;
+
+.schemadef-demo {
+  @include sheet-content;
+
+  @include clear-title-block;
+
+  /* A definite height, so the panes scroll inside the sheet rather than growing it. */
+  height: 100%;
+  min-height: 0;
+}
+
+.schemadef {
+  container: schemadef / inline-size;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.5em;
+  color: var(--ink);
+}
+
+.panes {
+  min-height: 0;
+  display: grid;
+  /* The PHP runs longer a line than the SQL it becomes, so it gets the wider pane. */
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0.5em;
+
+  /* Two panes of wrapped code under about thirty characters a line stop reading as code,
+     so below that they stack, each keeping the full width and its own scroll. */
+  @container schemadef (max-width: 34rem) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pane {
+  margin: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+figcaption {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75em;
+  min-width: 0;
+  padding: 0.25em 0.625em;
+  border-bottom: 1px solid var(--line);
+  font-size: fs(0.625);
+  white-space: nowrap;
+
+  strong {
+    font-family: monospace, system-ui;
+  }
+
+  code {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--ink-muted);
+  }
+}
+
+.scroller {
+  position: relative;
+  min-height: 0;
+  /* Up and down only: sideways belongs to the stack, which turns the page on it. */
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-block: 0.375em;
+}
+
+.code {
+  @include code-face;
+
+  display: block;
+}
+
+.line {
+  --lit: 0;
+
+  display: block;
+  /* Wrapped lines hang under their own start, two characters in, like an editor's soft
+     wrap, so a field that runs to three rows still reads as one entry. */
+  padding-left: calc((var(--indent) * 2 + 2.75) * 1ch);
+  padding-right: 0.5em;
+  text-indent: -2ch;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: color-mix(in oklch, var(--accent) calc(var(--lit) * 26%), transparent);
+  box-shadow: inset calc(var(--lit) * 3px) 0 0 var(--accent);
+  transition: background-color 160ms ease;
+
+  &[data-key] {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  &:global(.lit) {
+    --lit: 1;
+  }
+}
+
+.str {
+  color: var(--accent-text);
+}
+
+.num {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.kw {
+  font-weight: 600;
+}
+
+.punct {
+  color: var(--ink-muted);
+}
+
+.com {
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.rules {
+  list-style: none;
+  margin: 0;
+  padding: 0.375em 0 0;
+  border-top: 1px solid var(--line);
+  font-size: fs(0.625);
+  line-height: 1.4;
+  /* Room for the longest rule, so the panes above do not jump as the highlight walks. */
+  min-height: calc(3 * 1.4em);
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25em 1em;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .label {
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  code.label {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+
+  .step {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.375em;
+  }
+
+  .arrow {
+    color: var(--ink-muted);
+  }
+
+  .doctrine {
+    color: var(--accent-text);
+  }
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line {
+    transition: none;
+  }
+}
+</style>

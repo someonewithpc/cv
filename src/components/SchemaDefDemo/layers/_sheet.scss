@@ -1,0 +1,75 @@
+// What the schemaDef sheets share: the margin every layer keeps around its content, and
+// the code face the panes and excerpts are set in.
+
+// Clear sheet between the content and the frame line, the title block and the corner pieces,
+// in em of the sheet's own type so it scales with the page. The spec's floor is 0.5em.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// Every layer takes the whole content cell rather than a box its own size, so it has a
+// definite height to divide up or to scroll within. Each layer root carries the attribute.
+@mixin fill-content-cell {
+  :global(article.technical-drawing-stack > * > section .content:has([data-schemadef-sheet])) {
+    place-self: stretch;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100%;
+    min-width: 0;
+    min-height: 0;
+    box-sizing: border-box;
+    padding-block: 0.5em;
+  }
+}
+
+// A blueprint layer's root: the figure centred on the sheet. It never scrolls: a scroll box
+// on the sheet takes the sideways wheel that turns the page (PaperStack's fold-drag.ts), so
+// each layer is cut to fit a phone's sheet instead.
+@mixin blueprint-root {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  /* One column the wrapper's width, not the content's: a wide table scrolls in its own box. */
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+
+  > * {
+    /* Auto margins centre the figure, and fall to zero rather than push it off the top. */
+    margin-block: auto;
+  }
+}
+
+// The title block claims the bottom-right corner: on a wide sheet it reaches into the
+// content column from the right, on a narrow one it takes a row off the bottom, and portrait
+// gives it a row of its own.
+@mixin clear-title-block {
+  padding-right: calc(3em + $sheet-margin);
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-right: $sheet-margin;
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    padding-bottom: $sheet-margin;
+  }
+}
+
+// Small print that stops shrinking with the sheet at its own size in rem: a phone's sheet
+// sets its type smaller than a desk's, and the labels here start small already.
+@function fs($size) {
+  @return max(#{$size}em, #{$size}rem);
+}
+
+// Code keeps one size whatever the sheet does: a narrow sheet stacks or scrolls it instead
+// of shrinking it past reading.
+@mixin code-face {
+  font-family: monospace, system-ui;
+  font-size: max(0.6875em, 0.6875rem);
+  line-height: 1.4;
+}

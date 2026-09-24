@@ -1,0 +1,203 @@
+---
+import { driverTypes, mysqlType } from '../schema';
+
+// The v2 names schemaDefs actually use, each with a column from the codebase that uses it.
+// `size` is what the field spells next to its type; the driver glues the two together.
+const used: { v2: string; size?: string; length?: number; precision?: number; scale?: number; example: string }[] = [
+  { v2: 'varchar', length: 64, example: 'actor.nickname' },
+  { v2: 'char', length: 88, example: 'rememberme_token.series' },
+  { v2: 'serial', example: 'actor.id' },
+  { v2: 'int', example: 'actor.roles' },
+  { v2: 'int', size: 'tiny', example: 'local_user.subscription_policy' },
+  { v2: 'int', size: 'big', example: 'foreign_user.id' },
+  { v2: 'bool', example: 'actor.is_local' },
+  { v2: 'numeric', precision: 10, scale: 7, example: 'actor.lat' },
+  { v2: 'text', example: 'actor.bio' },
+  { v2: 'datetime', example: 'actor.created' },
+  { v2: 'timestamp', example: 'actor.modified' },
+  { v2: 'phone_number', example: 'local_user.phone_number' },
+];
+
+const rows = used.map((row) => {
+  const lookup = `${row.size ?? ''}${row.v2}`;
+  const type = driverTypes[lookup];
+  const sql = mysqlType({
+    type,
+    length: row.length,
+    precision: row.precision,
+    scale: row.scale,
+    fixed: row.v2 === 'char',
+    autoincrement: row.v2 === 'serial',
+  });
+  return { ...row, lookup, type, sql };
+});
+
+// Mapped ahead of need: the rest of the table, which no v2 schema spelled.
+const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lookup === v2));
+---
+
+<div class="wrapper" data-schemadef-sheet>
+  <div class="typemap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">schemaDef</th>
+          <th scope="col">Doctrine</th>
+          <th scope="col">MySQL</th>
+          <th scope="col" class="example">e.g.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr>
+            <td>
+              {row.size && <><code>'{row.size}'</code> + </>}<code>'{row.v2}'</code>
+            </td>
+            <td><code>{row.type}</code></td>
+            <td><code>{row.sql ?? 'bundle type'}</code></td>
+            <td class="example">{row.example}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <dl class="rules">
+      <div>
+        <dt>Size</dt>
+        <dd>Glued onto the name before the lookup: <code>'tiny'</code> on an <code>int</code> looks up <code>tinyint</code>, which has no portable form, so <code>smallint</code></dd>
+      </div>
+      <div>
+        <dt>Null</dt>
+        <dd><code>'not null' =&gt; true</code> is inverted into <code>'nullable' =&gt; false</code>; a field that says nothing is nullable</dd>
+      </div>
+      <div>
+        <dt>Width</dt>
+        <dd><code>char</code> is the same string type as <code>varchar</code>, with <code>'fixed' =&gt; true</code></dd>
+      </div>
+      <div>
+        <dt>Serial</dt>
+        <dd>An integer plus <code>GENERATOR_TYPE_AUTO</code> on the class</dd>
+      </div>
+      <div>
+        <dt>Docs</dt>
+        <dd>Each <code>'description'</code> becomes a column comment: the documentation lands in the database</dd>
+      </div>
+      <div>
+        <dt>Keys</dt>
+        <dd><code>['idx' =&gt; [cols]]</code> is reshaped into <code>[['name' =&gt; 'idx', 'columns' =&gt; [cols]]]</code></dd>
+      </div>
+    </dl>
+
+    <p class="footnote">
+      Mapped ahead of need, unused by any v2 schema: {spare.map((v2, index) => (
+        <><code>{v2}</code>{index < spare.length - 1 ? ', ' : ''}</>
+      ))}
+    </p>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+@include fill-content-cell;
+
+.wrapper {
+  @include sheet-content;
+  @include clear-title-block;
+
+  @include blueprint-root;
+}
+
+.typemap {
+  box-sizing: border-box;
+  width: min(100%, 44em);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.625em;
+  color: var(--ink);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: fs(0.6875);
+  line-height: 1.3;
+
+  th {
+    padding: 0 0.5em 0.25em 0;
+    border-bottom: 1px solid var(--line-strong);
+    font-size: 0.875em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  td {
+    padding: 0.125em 0.5em 0.125em 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .example {
+    padding-right: 0;
+    color: var(--ink-muted);
+
+    /* A phone's sheet holds three columns, not four; the examples are the ones to go. */
+    :global([data-sheet-orientation='portrait']) & {
+      display: none;
+    }
+  }
+}
+
+.rules {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375em 0.75em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  div {
+    display: grid;
+    align-content: start;
+    gap: 0.0625em;
+  }
+
+  dt {
+    font-size: fs(0.5625);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: fs(0.5625);
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+}
+
+.footnote {
+  margin: 0;
+
+  /* The rest of the lookup table is the first thing a phone's sheet can spare. */
+  :global([data-sheet-orientation='portrait']) & {
+    display: none;
+  }
+
+  font-size: fs(0.5625);
+  line-height: 1.4;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+</style>

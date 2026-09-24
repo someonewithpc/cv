@@ -1,0 +1,83 @@
+---
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import TransformLayer from './layers/TransformLayer.astro';
+import TypeMapLayer from './layers/TypeMapLayer.astro';
+import PluginsLayer from './layers/PluginsLayer.astro';
+import PhpstanLayer from './layers/PhpstanLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+// The sheet's own source: the schema it reads and the port of the driver, and the script
+// that pairs the two panes.
+const here = path.join(process.cwd(), 'src/components/SchemaDefDemo');
+const sources = await Promise.all(
+  ['schema.ts', 'client/schemaDef.ts'].map((file) => readFile(path.join(here, file), 'utf8')),
+);
+
+const sheetSize = toKiB(sources.join(''));
+
+// The title block has room for two icons. The sheets that end in a table carry MySQL; the
+// ones about the container and the analyser carry Symfony.
+const layers = {
+  transform: { name: null, tech: ['php', 'mysql'] },
+  typemap: { name: 'Type Vocabulary', pageStyle: 'blueprint', tech: ['php', 'mysql'] },
+  plugins: { name: 'Plugin Entities', pageStyle: 'blueprint' },
+  phpstan: { name: 'Static Analysis', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="schemaDef → Doctrine Metadata"
+  scale="1:1"
+  size={sheetSize}
+  date="2021"
+  tech={['php', 'symfony']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      transform: <TransformLayer />,
+      typemap: <TypeMapLayer />,
+      plugins: <PluginsLayer />,
+      phpstan: <PhpstanLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      transform: (
+        <PostIt background="#f1e3b8" color="black">
+          Hover or focus a line on either side and its counterpart lights up. Arrow keys walk
+          the fields; left and right jump across
+        </PostIt>
+      ),
+      typemap: (
+        <PostIt background="#cde" color="black">
+          Read a row across: the v2 name, what Doctrine calls it, what MySQL gets. Size is
+          glued onto the name before the lookup
+        </PostIt>
+      ),
+      plugins: (
+        <PostIt background="#e2d9ef" color="black">
+          Look for the Entity/ directory. A plugin that ships one has tables; nothing else
+          registers them
+        </PostIt>
+      ),
+      phpstan: (
+        <PostIt background="#dfd" color="black">
+          Follow the string 'note' down to Note|null. Analysis boots the real kernel, so the
+          type comes from the same schemaDefs
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>

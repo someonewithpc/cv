@@ -1,0 +1,188 @@
+---
+// How a table name in a string comes out of analysis typed as its entity. Each step names
+// the file it happens in, and its code is cut into lines by hand so no box breaks a name.
+const steps = [
+  {
+    title: 'Boot flag',
+    file: 'phpstan.sh',
+    code: ['PHPSTAN_BOOT_KERNEL=1', 'vendor/bin/phpstan analyse'],
+    text: 'The analyser runs with the real kernel behind it, not a stub',
+  },
+  {
+    title: 'Real kernel',
+    file: 'GNUsocialProvider.php',
+    code: ['$kernel->boot();', '$gnu_social->initialize();'],
+    text: 'The container and every module start, as they would for a request',
+  },
+  {
+    title: 'Table map',
+    file: 'DB.php',
+    code: ['DB::initTableMap();', "'note' => 'App\\Entity\\Note'"],
+    text: 'Built from getAllMetadata(), so from the same schemaDefs the driver reads',
+  },
+  {
+    title: 'Return type',
+    file: 'ClassFromTableName….php',
+    code: ['new UnionType([', '    Note,', '    new NullType(),', '])'],
+    text: 'For find, getReference, getPartialReference and getRepository with a literal first argument',
+  },
+];
+---
+
+<div class="wrapper" data-schemadef-sheet>
+  <div class="phpstan">
+    <figure class="call">
+      <figcaption><code>components/Link/Entity/NoteToLink.php</code></figcaption>
+      <code class="code">
+        <span class="line">$note = DB::find(<mark>'note'</mark>, ['id' =&gt; $args['note_id']]);</span>
+        <span class="line inferred">// PHPStan: <mark>App\Entity\Note|null</mark></span>
+      </code>
+    </figure>
+
+    <ol class="steps">
+      {steps.map((step, index) => (
+        <li>
+          <span class="number">{index + 1}</span>
+          <strong>{step.title}</strong>
+          <code class="snippet">{step.code.map((line) => <span>{line}</span>)}</code>
+          <span class="text">{step.text}</span>
+          <code class="file">{step.file}</code>
+        </li>
+      ))}
+    </ol>
+
+    <p class="footnote">
+      Without the flag the extension steps aside and PHPStan types the call the ordinary way,
+      so a plain run still works; with it, whatever is called on <code>$note</code> next is
+      checked against <code>Note</code> like any other typed value.
+    </p>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+@include fill-content-cell;
+
+.wrapper {
+  @include sheet-content;
+  @include clear-title-block;
+
+  @include blueprint-root;
+}
+
+.phpstan {
+  box-sizing: border-box;
+  width: min(100%, 44em);
+  display: grid;
+  gap: 0.75em;
+  color: var(--ink);
+}
+
+.call {
+  justify-self: center;
+  margin: 0;
+  max-width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+
+  figcaption {
+    padding: 0.25em 0.75em;
+    border-bottom: 1px solid var(--line);
+    font-size: fs(0.5625);
+    color: var(--ink-muted);
+  }
+
+  .code {
+    @include code-face;
+
+    display: block;
+    padding: 0.375em 0.75em;
+  }
+
+  .line {
+    display: block;
+    padding-left: 2ch;
+    text-indent: -2ch;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .inferred {
+    color: var(--ink-muted);
+  }
+
+  mark {
+    padding-inline: 0.125em;
+    border-radius: 0.25em;
+    background: color-mix(in oklch, var(--accent) 30%, transparent);
+    color: var(--ink);
+  }
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* Two by two, read like text: four abreast leaves each box too narrow for its code. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5em;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    padding: 0.5em 0.625em;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.375em;
+    background: var(--surface-raised);
+  }
+
+  .number {
+    font-size: fs(0.5625);
+    font-weight: 600;
+    color: var(--ink-muted);
+  }
+
+  strong {
+    font-size: fs(0.6875);
+  }
+
+  .snippet {
+    font-size: fs(0.5625);
+
+    span {
+      display: block;
+      white-space: pre;
+    }
+  }
+
+  .text {
+    font-size: fs(0.5625);
+    line-height: 1.35;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  .file {
+    margin-top: auto;
+    font-size: fs(0.5);
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
+  }
+}
+
+.footnote {
+  margin: 0;
+  font-size: fs(0.5625);
+  line-height: 1.4;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+</style>
