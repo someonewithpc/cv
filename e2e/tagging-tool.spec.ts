@@ -1,6 +1,5 @@
-import { expect, test } from '@playwright/test';
-
 import { frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
+import { expect, test } from './support/timeScale';
 
 const PAGES = ['Library Tagging Tool', 'Shared Value', 'Simulated Caret', 'Completed Objects'];
 
@@ -302,47 +301,52 @@ test('main page: picking another property brings up the values already stored fo
   await expect(gold).toBeHidden();
 });
 
-test('main page: the walkthrough takes the gold row from wrong values to the ones the product holds', async ({ page }) => {
-  const stack = taggingToolStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('.tagging-grid-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
-  await expect(front.locator('.tagging-tool[data-live]')).toHaveAttribute('data-autoplay', 'playing');
+test.describe(() => {
+  // Twice as fast, not four times: at 4x the next step can empty a card before the row is read.
+  test.use({ walkthroughRate: 2 });
 
-  const gold = front.locator('.grouped-objects[data-group="gold"]');
-  const wood = front.locator('.grouped-objects[data-group="wood"]');
-  const objects = gold.locator('.object-value');
-  const shared = gold.locator('.shared-value');
-  const values = (row = objects) =>
-    row.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
-  // The wood row is the product's data and has no step in the script.
-  const woodValues = ['Cream', 'Cream', '', ''];
+  test('main page: the walkthrough takes the gold row from wrong values to the ones the product holds', async ({ page }) => {
+    const stack = taggingToolStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const front = frontPage(stack, await frontPageIndex(stack));
+    await expect(front.locator('.tagging-grid-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
+    await expect(front.locator('.tagging-tool[data-live]')).toHaveAttribute('data-autoplay', 'playing');
 
-  // Before: Ivory, Beige, Ivory, Champagne over the four cards, the product's Ivory on
-  // the base and 10631 and two wrong values beside them. The shared field is empty with
-  // the overrides in its placeholder and its tick is a warning.
-  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
-  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory, Beige, Champagne');
-  expect(await values()).toEqual(['Ivory', 'Beige', 'Ivory', 'Champagne']);
-  expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
+    const gold = front.locator('.grouped-objects[data-group="gold"]');
+    const wood = front.locator('.grouped-objects[data-group="wood"]');
+    const objects = gold.locator('.object-value');
+    const shared = gold.locator('.shared-value');
+    const values = (row = objects) =>
+      row.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+    // The wood row is the product's data and has no step in the script.
+    const woodValues = ['Cream', 'Cream', '', ''];
 
-  // After the shared save lands: Ivory on every object, and the field holds it. The row
-  // stays put, only its ring marks the save.
-  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'true', { timeout: 20_000 });
-  expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', 'Ivory']);
-  await expect(gold).not.toHaveClass(/\bcompleting\b/);
-  await expect(shared).toHaveValue('Ivory');
-  expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
+    // Before: Ivory, Beige, Ivory, Champagne over the four cards, the product's Ivory on
+    // the base and 10631 and two wrong values beside them. The shared field is empty with
+    // the overrides in its placeholder and its tick is a warning.
+    await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
+    await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory, Beige, Champagne');
+    expect(await values()).toEqual(['Ivory', 'Beige', 'Ivory', 'Champagne']);
+    expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
 
-  // Then the bare table, 10638, has its chair value emptied on its own card: the
-  // product's nil, which is what it holds. The placeholder lists the one value left.
-  await expect(gold.locator('.image-thumbnail[data-object="10638"]')).toHaveAttribute('data-missing', 'true', {
-    timeout: 20_000,
+    // After the shared save lands: Ivory on every object, and the field holds it. The row
+    // stays put, only its ring marks the save.
+    await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'true', { timeout: 20_000 });
+    expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', 'Ivory']);
+    await expect(gold).not.toHaveClass(/\bcompleting\b/);
+    await expect(shared).toHaveValue('Ivory');
+    expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
+
+    // Then the bare table, 10638, has its chair value emptied on its own card: the
+    // product's nil, which is what it holds. The placeholder lists the one value left.
+    await expect(gold.locator('.image-thumbnail[data-object="10638"]')).toHaveAttribute('data-missing', 'true', {
+      timeout: 20_000,
+    });
+    expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', '']);
+    await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
+    await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory');
+    expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
   });
-  expect(await values()).toEqual(['Ivory', 'Ivory', 'Ivory', '']);
-  await expect(gold.locator('.shared-form')).toHaveAttribute('data-shared', 'false');
-  await expect(shared).toHaveAttribute('placeholder', 'Overrides: Ivory');
-  expect(await values(wood.locator('.object-value'))).toEqual(woodValues);
 });
 
 test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
