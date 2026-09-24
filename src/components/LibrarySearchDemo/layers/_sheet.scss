@@ -34,9 +34,10 @@ $sheet-margin: 0.75em;
   height: 100%;
   min-height: 0;
 
-  /* The title block claims the bottom-right corner, and the panel is centred, so its
-     bottom edge has to clear that corner at every width. */
-  padding-bottom: calc(3.5em + $sheet-margin);
+  /* The title block claims the bottom-right corner and stands 5.5em of this type tall on a
+     blueprint page; the panel is centred, so its bottom edge has to clear that corner at
+     every width. */
+  padding-bottom: calc(5.75em + $sheet-margin);
 
   @container technical-drawing (orientation: portrait) {
     /* Portrait gives the title block its own row. */
