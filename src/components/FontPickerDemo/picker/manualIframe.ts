@@ -1,13 +1,21 @@
 import { proxiedFetch } from './proxiedFetch';
 
+/**
+ * The URL a sheet's own relative references resolve against: the sheet's, for one fetched
+ * and inlined here, and the page's for a <style> the page carried.
+ */
+export function stylesheetBase(style: HTMLStyleElement): string {
+  return style.dataset.href ?? style.ownerDocument.baseURI;
+}
+
 function findStyleImports(style: HTMLStyleElement) {
   return [...(style.sheet?.cssRules ?? [])]
     .filter((rule) => rule instanceof CSSImportRule)
-    // CSSImportRule.href is the raw URL as written; the parsed doc's <base> knows the real origin
-    .map((rule) => ({ href: new URL(rule.href, style.ownerDocument.baseURI).toString() }));
+    // CSSImportRule.href is the raw URL as written, relative to the sheet it sits in
+    .map((rule) => ({ href: new URL(rule.href, stylesheetBase(style)).toString() }));
 }
 
-type FetchedStylesheet = { contentType: string, text: string };
+type FetchedStylesheet = { href: string, contentType: string, text: string };
 
 const stylesheetCache = new Map<string, Promise<FetchedStylesheet | null>>();
 
@@ -17,6 +25,7 @@ async function fetchStylesheet(source: { href: string }, signal: AbortSignal): P
       .then(async (res) => {
         if (!res.ok) return null;
         return {
+          href: source.href,
           contentType: res.headers.get('content-type') ?? '',
           text: await res.text(),
         };
@@ -53,6 +62,10 @@ function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc
       if (!response.contentType.startsWith('text/css')) return null;
 
       const el = doc.createElement('style');
+      // Kept on the element: url() and @import inside the sheet are relative to the sheet,
+      // and inlined under the page's <base> they would resolve against the page instead
+      // (../fonts/x.woff2 from /assets/css/site.css landing at /fonts/ rather than /assets/fonts/).
+      el.dataset.href = response.href;
       el.innerHTML = response.text;
       doc.body.append(el);
 

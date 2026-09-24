@@ -1,5 +1,5 @@
 import loadFontFacesFromStyleElement, { mergeFaces } from './loadFontFacesFromStyleElement';
-import manualIframe from './manualIframe';
+import manualIframe, { stylesheetBase } from './manualIframe';
 import { proxiedFetch } from './proxiedFetch';
 
 export type LoadedFaces = Record<string, string>;
@@ -29,7 +29,7 @@ export async function loadPageFonts(url: string, signal: AbortSignal): Promise<L
   if (!result) throw new Error('Nothing to load');
 
   const maps = await Promise.all(
-    [...result.doc.querySelectorAll('style')].map((el) => loadFontFacesFromStyleElement(el, absolute)),
+    [...result.doc.querySelectorAll('style')].map((el) => loadFontFacesFromStyleElement(el, stylesheetBase(el))),
   );
   const faces: LoadedFaces = mergeFaces(maps);
 
