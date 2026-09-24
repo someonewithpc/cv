@@ -6,6 +6,8 @@ import { MarkerPart } from '../shared';
 
 import './DecorationFont.scss';
 
+const NO_FONT_FACES: Record<string, string> = {};
+
 export type FontFaceDescriptor = {
   family: string;
   style?: string;
@@ -33,7 +35,8 @@ export class DecorationFont extends MarkerPart {
   get reactiveStateStoreHandler() {
     return {
       get registeredFontFaces() {
-        return {} as Record<string, string>;
+        // One shared object: a fresh {} per read is a new value on every dispatch.
+        return NO_FONT_FACES;
       },
     };
   }

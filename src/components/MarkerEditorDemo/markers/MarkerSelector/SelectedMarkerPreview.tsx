@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { mapSpaceToMarkerSelector, useAppSelector, type SpaceType } from '@/store';
 
 import { resolveMarkerSvgForSpace } from '../resolveMarkerSvgForSpace';
@@ -14,9 +16,10 @@ export function SelectedMarkerPreview({
 }) {
   const mapSpaceToMarker = useAppSelector(mapSpaceToMarkerSelector);
   const marker = mapSpaceToMarker(space);
-  const svg = marker.resolvedSource
-    ? resolveMarkerSvgForSpace(marker.resolvedSource, space)
-    : undefined;
+  const svg = useMemo(
+    () => (marker.resolvedSource ? resolveMarkerSvgForSpace(marker.resolvedSource, space) : undefined),
+    [marker.resolvedSource, space],
+  );
 
   return (
     <div

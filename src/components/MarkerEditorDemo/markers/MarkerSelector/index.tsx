@@ -1,6 +1,6 @@
 import '../client-only';
 
-import { lazy, Suspense, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useMemo, useState, type CSSProperties } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -55,11 +55,15 @@ export function MarkerSelector({
   const [editedBaseMarkerId, setEditedBaseMarkerId] = useState<MarkerType['baseMarkerId']>(undefined);
   const [isNewMarker, setIsNewMarker] = useState(false);
 
+  // One object per space and marker: a literal here was a new prop on every render, and the
+  // editor re-runs its nine imperative roots whenever the space it is handed changes.
+  const editedSpace = useMemo(() => ({ ...space, markerId: editedMarkerId }), [space, editedMarkerId]);
+
   if (editedMarkerId) {
     return (
       <Suspense fallback={null}>
         <MarkerEditor
-          space={{ ...space, markerId: editedMarkerId }}
+          space={editedSpace}
           baseMarkerId={editedBaseMarkerId}
           isNewMarker={isNewMarker}
           portalHost={portalHost}

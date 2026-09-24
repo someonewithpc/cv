@@ -74,9 +74,9 @@ export class FreeTextMarkerDecoration extends TextMarkerDecoration {
         className="marker-decoration"
         {...extraProps}
       >
-        {lines.map((line) => (
+        {lines.map((line, index) => (
           <tspan
-            key={line}
+            key={index}
             x={this.center.x}
             dy={this.lineHeight}
           >

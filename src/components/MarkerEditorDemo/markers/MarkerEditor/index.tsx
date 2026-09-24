@@ -33,6 +33,9 @@ import { useUpdateDecorationSnapCenter } from "./useUpdateDecorationSnapCenter";
 
 import './MarkerEditor.scss';
 
+// Hoisted: the hook re-binds its listeners whenever this array is a new one.
+const KEY_EVENTS: ('keydown' | 'keyup')[] = ['keydown', 'keyup'];
+
 const MARKER_EDITING_CIRCLE_RADIUS = 0.0375;
 const MARKER_EDITING_CROSS_RADIUS = 0.0625;
 const CONTROL_POINT_INDICATOR_STROKE_WIDTH = 0.00625;
@@ -172,7 +175,7 @@ export function MarkerEditor({
   useSyncSnappingControlPointsState(state);
 
   useRootElementEvents(
-    ['keydown', 'keyup'],
+    KEY_EVENTS,
     useCallback(
       (e: KeyboardEvent) => {
         if (state.draggedControlPoint && e.key === 'Shift') {

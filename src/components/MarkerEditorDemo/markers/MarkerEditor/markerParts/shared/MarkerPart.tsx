@@ -72,6 +72,9 @@ export class MarkerPart {
           {
             get: () => this.reactiveState.internal[key],
             set: (val: any) => {
+              // The store handler writes every key on every dispatch; only a change is
+              // worth a new snapshot, and the re-render of the whole editor it costs.
+              if (Object.is(this.reactiveState.internal[key], val)) return;
               this.reactiveState.internal[key] = val;
               this.reactiveState.internal.callback?.();
             },
@@ -108,6 +111,9 @@ export class MarkerPart {
   // Constain `to` to be between `min` and `max` distance from `from`, in the direction of `value`
   constrainRadius(value: PointLiteral | Point, to: Point, from: Point, min: number, max: number) {
     const newRadius = from.distanceTo(value);
+    // A handle dropped exactly on its reference point has no direction; keep the last one
+    // rather than divide by zero and write NaN into the state.
+    if (newRadius === 0) return;
     to.x = (value.x - from.x) / newRadius * clamp(newRadius, min, max) + from.x;
     to.y = (value.y - from.y) / newRadius * clamp(newRadius, min, max) + from.y;
   }

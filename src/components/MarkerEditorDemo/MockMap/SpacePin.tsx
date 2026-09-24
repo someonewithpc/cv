@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { mapSpaceToMarkerSelector, useAppSelector, type SpaceType } from '@/store';
 
 import { InlineSVG } from '../markers/MarkerSelector/InlineSVG';
@@ -14,9 +16,12 @@ export function SpacePin({
 }) {
   const mapSpaceToMarker = useAppSelector(mapSpaceToMarkerSelector);
   const marker = mapSpaceToMarker(space);
-  const svg = marker.resolvedSource
-    ? resolveMarkerSvgForSpace(marker.resolvedSource, space)
-    : undefined;
+  // Parsed and serialised once per marker and space, not on every cursor step that
+  // re-renders the overlay.
+  const svg = useMemo(
+    () => (marker.resolvedSource ? resolveMarkerSvgForSpace(marker.resolvedSource, space) : undefined),
+    [marker.resolvedSource, space],
+  );
 
   return (
     <button
