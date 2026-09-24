@@ -1,0 +1,110 @@
+---
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import BufferLayer from './layers/BufferLayer.astro';
+import RangesLayer from './layers/RangesLayer.astro';
+import DepthLayer from './layers/DepthLayer.astro';
+import DoctorLayer from './layers/DoctorLayer.astro';
+
+// The package's Lisp, core and seven host files, at the commit the sheets were drawn from
+// (web-ts-mode 0c179b1): 141,504 bytes over 3,507 lines. The sheet ships no code of its own
+// to measure; the buffer is painted at build time.
+const packageSize = '138.2KiB';
+
+// The title block has room for two icons, so each sheet names the two it is about and the
+// four tags are spread over the stack.
+const layers = {
+  buffer: { name: null, tech: ['emacs', 'lisp'] },
+  ranges: { name: 'Parser Ranges', pageStyle: 'blueprint', tech: ['emacs', 'typescript'] },
+  depth: { name: 'Selector Depth Hue', pageStyle: 'blueprint', tech: ['emacs', 'css3'] },
+  doctor: { name: 'web-ts doctor', pageStyle: 'blueprint', tech: ['emacs', 'lisp'] },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<div class="web-ts-mode-demo">
+<TechnicalDrawingStack
+  subtitle="web-ts-mode"
+  scale="1:1"
+  size={packageSize}
+  date="2026"
+  tech={['emacs', 'lisp']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      buffer: <BufferLayer />,
+      ranges: <RangesLayer />,
+      depth: <DepthLayer />,
+      doctor: <DoctorLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      buffer: (
+        <PostIt background="#dde8d4" color="black">
+          Point at a token to see which parser owns it. Flip the toggle to see where each
+          one's range starts and stops
+        </PostIt>
+      ),
+      ranges: (
+        <PostIt background="#cde" color="black">
+          Follow the braces: the whole interpolation minus its two braces is one TSX
+          program, so the nested one is left alone
+        </PostIt>
+      ),
+      depth: (
+        <PostIt background="#fed" color="black">
+          Read one selector left to right and watch the hue move toward green. Nesting in
+          the stylesheet starts it over
+        </PostIt>
+      ),
+      doctor: (
+        <PostIt background="#e8e4dc" color="black">
+          A missing grammar is a line in this report, not a broken buffer. Found is not
+          the same as fully supported
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
+</div>
+
+<style lang="scss">
+// Where the stack's sheets differ from the default: the note keeps a narrower column so the
+// buffers get the width their lines need, and the artwork cell takes the sheet's whole
+// height, so a window can show as much of a buffer as fits and cut the rest.
+$note-column: 14rem;
+
+// The title block is absolutely placed in the sheet's bottom-right corner and reaches out of
+// the note's column into the artwork's. How far, across and up, for each layer to keep its
+// own content clear of: the live buffer gives up the width, the drawings the height.
+// Portrait gives the block a row of its own, so there both stay 0.
+:global(.web-ts-mode-demo article.technical-drawing-stack > * > section) {
+  --reach-inline: 0px;
+  --reach-block: 0px;
+}
+
+@container technical-drawing (orientation: landscape) {
+  // For a height inside the cell to mean anything the sheet's row has to be a measured
+  // one: its own row is auto, and a percentage inside an auto row resolves to nothing.
+  :global(.web-ts-mode-demo article.technical-drawing-stack > * > section) {
+    --reach-inline: max(0px, var(--title-block-inline) - #{$note-column} + 0.5em);
+    --reach-block: var(--title-block-block);
+
+    grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, $note-column);
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+:global(.web-ts-mode-demo article.technical-drawing-stack > * > section .content) {
+  place-self: stretch;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+</style>

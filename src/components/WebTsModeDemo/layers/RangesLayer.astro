@@ -1,0 +1,293 @@
+---
+/**
+ * The offset trick, drawn over one line of PostIt.astro. The Astro grammar splits an
+ * interpolation that holds JSX into text, an element, and a second interpolation inside
+ * that; web-ts-mode hands the TSX parser the whole outer interpolation minus its two
+ * braces instead, as one program, and leaves the nested one out so the ranges never
+ * overlap. The parse results quoted here were read off the real grammars once.
+ */
+import { captureAstro, type Token } from '../capture';
+import { interpolation } from '../samples';
+
+const { text, indent } = interpolation;
+const [, line] = captureAstro(`<aside>\n${' '.repeat(indent)}${text}\n</aside>\n`).lines;
+const tokens: Token[] = line.tokens.slice(1); // drop the indent
+
+// Columns, in characters from the outer brace.
+const close = text.length - 1;
+const element = text.indexOf('<h3>');
+const nestedOpen = text.indexOf('{', 1);
+const nestedClose = text.indexOf('}', nestedOpen);
+const span = (from: number, to: number) => `--from: ${from}; --to: ${to}`;
+
+const rules = [
+  { capture: 'frontmatter_js_block', lang: 'tsx', note: '' },
+  { capture: 'attribute_js_expr', lang: 'tsx', note: 'unless inside an interpolation' },
+  { capture: 'script_element raw_text', lang: 'tsx', note: '' },
+  { capture: 'element > html_interpolation', lang: 'tsx', note: "top level only, :offset '(1 . -1)" },
+  { capture: 'style_element raw_text', lang: 'scss | css', note: 'by lang="scss"' },
+];
+---
+
+<div class="wrapper">
+  <p class="point typewriter">One interpolation, one TSX program</p>
+
+  <figure class="figure" aria-label={`Parser ranges over ${interpolation.file}, line ${interpolation.line}`}>
+    <figcaption class="source">{interpolation.file} · line {interpolation.line}</figcaption>
+
+    <div class="plate" style={`--cols: ${text.length}`}>
+      <span class="track-label">buffer</span>
+      <code class="line">{tokens.map((token) => (
+        <span class={token.face === 'default' ? undefined : `f-${token.face}`}>{token.text}</span>
+      ))}</code>
+
+      <span class="track-label">astro</span>
+      <div class="track">
+        <span class="bar node" style={span(0, close + 1)}><span>html_interpolation</span></span>
+      </div>
+
+      <span class="track-label" aria-hidden="true"></span>
+      <div class="track">
+        <span class="bar node brace" style={span(0, 1)}></span>
+        <span class="bar node" style={span(1, element)}><span>permissible_text</span></span>
+        <span class="bar node" style={span(element, close)}><span>element</span></span>
+        <span class="bar node brace" style={span(close, close + 1)}></span>
+      </div>
+
+      <span class="track-label">tsx</span>
+      <div class="track">
+        <span class="bar cut" style={span(0, 1)} title="brace left out"></span>
+        <span class="bar range" style={span(1, close)}><span>one range · :offset '(1 . -1)</span></span>
+        <span class="bar cut" style={span(close, close + 1)} title="brace left out"></span>
+      </div>
+
+      <span class="track-label">skip</span>
+      <div class="track">
+        <span class="bar skipped" style={span(nestedOpen, nestedClose + 1)}><span>nested: skipped</span></span>
+      </div>
+    </div>
+
+    <div class="outcomes">
+      <div class="outcome good">
+        <span class="verdict">Whole</span>
+        <code>program › binary_expression</code>
+        <code class="tree">member_expression <b>&amp;&amp;</b> jsx_element</code>
+      </div>
+      <div class="outcome bad">
+        <span class="verdict">Text only</span>
+        <code>{`"${text.slice(1, element)}"`}</code>
+        <code class="tree">ERROR</code>
+      </div>
+    </div>
+  </figure>
+
+  <table class="rules">
+    <caption>Range rules, every one <code>:local t</code>: a parser per capture</caption>
+    <tbody>
+      {rules.map(({ capture, lang, note }) => (
+        <tr>
+          <th scope="row"><code>{capture}</code></th>
+          <td><code>{lang}</code></td>
+          <td>{note}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  row-gap: 0.625em;
+  height: 100%;
+  min-height: 0;
+  padding-bottom: calc($sheet-margin + var(--reach-block, 0px));
+  font-size: clamp(0.5rem, 0.0138 * var(--sheet-inline), 0.875rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.5rem, 0.026 * var(--sheet-inline), 0.875rem);
+  }
+}
+
+.point {
+  margin: 0;
+  font-size: 1.375em;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.figure {
+  @include buffer-faces;
+
+  display: grid;
+  justify-items: start;
+  gap: 0.5em;
+  margin: 0;
+  max-width: 100%;
+}
+
+.source {
+  font-family: monospace, system-ui;
+  font-size: 0.875em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+// One column per character of the line: every bar below is placed in ch of the same face.
+.plate {
+  display: grid;
+  grid-template-columns: max-content calc(var(--cols) * 1ch);
+  align-items: center;
+  column-gap: 1ch;
+  row-gap: 0.375em;
+  max-width: 100%;
+  overflow-x: auto;
+  font-family: monospace, system-ui;
+}
+
+.track-label {
+  font-size: 0.8em;
+  text-align: right;
+  color: var(--ink-muted);
+}
+
+.line {
+  display: block;
+  padding-block: 0.125em;
+  font: inherit;
+  white-space: pre;
+  background: var(--buffer-paper);
+  color: var(--buffer-ink);
+  box-shadow: 0 0 0 0.25em var(--buffer-paper);
+  border-radius: 0.125em;
+}
+
+.track {
+  position: relative;
+  height: 1.5em;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--from) * 1ch);
+  width: calc((var(--to) - var(--from)) * 1ch);
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+
+  span {
+    padding-inline: 0.5ch;
+    font-size: 0.75em;
+    white-space: nowrap;
+  }
+}
+
+.node {
+  border: 1px solid var(--line-strong);
+  border-top: none;
+  border-radius: 0 0 0.25em 0.25em;
+  color: var(--ink-muted);
+
+  &.brace {
+    border-style: dotted;
+  }
+}
+
+.range {
+  border: 1.5px solid var(--ink);
+  border-radius: 0.2em;
+  background: color-mix(in oklch, var(--ink) 14%, transparent);
+  color: var(--ink);
+}
+
+.cut {
+  background: repeating-linear-gradient(135deg, var(--ink-faint) 0 1px, transparent 1px 4px);
+}
+
+.skipped {
+  border: 1.5px dashed var(--accent);
+  border-radius: 0.2em;
+  color: var(--accent);
+}
+
+.outcomes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  gap: 0.5em 1.5em;
+  font-size: 0.875em;
+}
+
+.outcome {
+  display: grid;
+  gap: 0.125em;
+  padding: 0.375em 0.625em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+
+  code {
+    font-family: monospace, system-ui;
+    white-space: nowrap;
+  }
+
+  .tree {
+    color: var(--ink-muted);
+  }
+
+  &.bad {
+    border-style: dashed;
+
+    .tree {
+      color: var(--accent);
+    }
+  }
+}
+
+.verdict {
+  font-size: 0.75em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.rules {
+  border-collapse: collapse;
+  font-size: 0.8125em;
+
+  caption {
+    padding-bottom: 0.25em;
+    text-align: left;
+    color: var(--ink-muted);
+  }
+
+  th,
+  td {
+    padding: 0.2em 1ch 0.15em;
+    border-top: 1px solid var(--line);
+    text-align: left;
+    font-weight: normal;
+    white-space: nowrap;
+  }
+
+  td:last-child {
+    color: var(--ink-muted);
+  }
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+
+@include face-classes;
+</style>

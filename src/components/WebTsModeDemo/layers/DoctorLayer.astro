@@ -1,0 +1,245 @@
+---
+/**
+ * A mock `M-x web-ts-doctor` report, laid out line for line as web-ts-doctor.el inserts
+ * it: the same headings, underlines, indents and wording. The machine it describes is
+ * made up; one grammar is missing and one server is not on PATH, so the report has
+ * something to say. Three lines carry a note.
+ */
+type Row = { text: string; status?: 'ok' | 'missing' | 'found' | 'absent'; note?: number };
+
+const bin = '/usr/bin';
+const grammars = ['astro', 'css', 'tsx', 'typescript', 'javascript', 'html', 'scss', 'xml', 'jsdoc', 'vue'];
+const missing = ['jsdoc'];
+
+const head: Row[] = [
+  { text: 'web-ts-mode doctor' },
+  { text: '=================' },
+  { text: '' },
+  { text: 'Emacs: 31.0.91' },
+  { text: 'System type: gnu/linux' },
+  { text: '' },
+  { text: 'Grammars' },
+  { text: '--------' },
+  ...grammars.map((lang): Row => missing.includes(lang)
+    ? { text: `  ${lang}: MISSING`, status: 'missing', note: 1 }
+    : { text: `  ${lang}: ok`, status: 'ok' }),
+  { text: '' },
+  { text: `Missing: ${missing.join(', ')}` },
+  { text: 'Install with: npm run grammars  (or M-x web-ts-grammars-ensure)' },
+];
+
+const tail: Row[] = [
+  { text: '' },
+  { text: 'LSP' },
+  { text: '---' },
+  { text: '  client: eglot', note: 2 },
+  { text: '  auto-enable: t' },
+  { text: '' },
+  { text: 'Language servers on PATH' },
+  { text: '------------------------' },
+  { text: `  astro-ls: found (${bin}/astro-ls --stdio)`, status: 'found' },
+  { text: `  vue: found (${bin}/vue-language-server --stdio)`, status: 'found', note: 3 },
+  { text: `  html: found (${bin}/vscode-html-language-server --stdio)`, status: 'found' },
+  { text: '  xml: not found (tried lemminx, xml-language-server)', status: 'absent' },
+  { text: `  typescript: found (${bin}/typescript-language-server --stdio)`, status: 'found' },
+  { text: `  css: found (${bin}/vscode-css-language-server --stdio)`, status: 'found' },
+  { text: '' },
+  { text: 'CLI' },
+  { text: '---' },
+  { text: '  bin/web-ts grammars  — install pinned tree-sitter grammars' },
+  { text: '  bin/web-ts doctor    — this report (batch)' },
+  { text: '  bin/web-ts test      — ERT suite' },
+  { text: '  bin/web-ts compile   — byte-compile package .el files' },
+  { text: '  bin/web-ts bench     — soft perf timings' },
+];
+
+const notes = [
+  'A missing grammar is reported, not fatal: the host skips what needs it and the buffer still opens',
+  'Eglot by default, whole-file servers only: no virtual documents',
+  'Found is not complete: Volar 3.x needs lsp-mode; under Eglot, pin the Vue server to 2.x',
+];
+
+// The word that carries the status, so the sheet can pick out what went wrong.
+const statusWord = { ok: 'ok', missing: 'MISSING', found: 'found', absent: 'not found' } as const;
+function split(row: Row) {
+  if (!row.status) return [row.text];
+  const word = statusWord[row.status];
+  const at = row.text.indexOf(`: ${word}`) + 2;
+  return [row.text.slice(0, at), word, row.text.slice(at + word.length)];
+}
+---
+
+<div class="wrapper">
+  <p class="point typewriter">Degrade, report, never kill the buffer</p>
+
+  <div class="report" role="group" aria-label="web-ts-doctor report">
+    {/* One buffer in two windows, the second carrying on where the first stops, the way
+        follow-mode shows a buffer too long for one. The columns do the following: rows
+        flow into the second window once the first is full, and whatever still does not
+        fit is below the bottom of the second, as it would be in Emacs. */}
+    <pre class="flow">{[...head, ...tail].map((row) => {
+      const [before, word, after] = split(row);
+      return (
+        <span class:list={['row', { heading: /^[=-]+$/.test(row.text) }]}>{before || ' '}{word && <span class={`status ${row.status}`}>{word}</span>}{after}{row.note && <sup class="marker">{row.note}</sup>}</span>
+      );
+    })}</pre>
+    <div class="mode-lines" aria-hidden="true">
+      <span>U:%%-  *web-ts-doctor*   Top   (Special Follow)</span>
+      <span>U:%%-  *web-ts-doctor*         (Special Follow)</span>
+    </div>
+  </div>
+
+  <ol class="notes">
+    {notes.map((note) => <li>{note}</li>)}
+  </ol>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  justify-items: center;
+  row-gap: 0.625em;
+  height: 100%;
+  min-height: 0;
+  font-size: clamp(0.5rem, 0.0118 * var(--sheet-inline), 0.8125rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.5rem, 0.021 * var(--sheet-inline), 0.8125rem);
+  }
+}
+
+.point {
+  margin: 0;
+  font-size: 1.375em;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.report {
+  @include buffer-faces;
+
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  overflow: hidden;
+  background: var(--buffer-paper);
+  color: var(--buffer-ink);
+  font-family: monospace, system-ui;
+}
+
+.flow {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0.375em 0;
+  overflow: hidden;
+  columns: 2;
+  column-gap: 0;
+  column-fill: auto;
+  column-rule: 1px solid var(--buffer-line);
+  font: inherit;
+  line-height: 1.2;
+
+  @container technical-drawing (orientation: portrait) {
+    columns: 1;
+  }
+}
+
+.row {
+  display: block;
+  padding-inline: 1ch;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  break-inside: avoid;
+
+  &.heading {
+    color: var(--buffer-dim);
+  }
+}
+
+// The real buffer is plain text in special-mode. Only what went wrong is picked out.
+.status {
+  &.missing,
+  &.absent {
+    font-weight: 700;
+    text-decoration: underline wavy var(--accent-9);
+    text-underline-offset: 0.2em;
+  }
+}
+
+.marker {
+  margin-left: 0.5ch;
+  padding: 0 0.4em;
+  border-radius: 1em;
+  font-size: 0.75em;
+  background: var(--accent-9);
+  color: var(--theme-canvas);
+}
+
+.mode-lines {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--buffer-mode-line);
+
+  span {
+    padding: 0.125em 1ch;
+    overflow: hidden;
+    white-space: pre;
+    text-overflow: ellipsis;
+  }
+
+  span + span {
+    border-left: 1px solid var(--buffer-line);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    grid-template-columns: minmax(0, 1fr);
+
+    span + span {
+      display: none;
+    }
+  }
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25em 1.75em;
+  align-content: start;
+  width: 100%;
+  box-sizing: border-box;
+  /* The notes run along the bottom beside the title block, and the row is at least as
+     tall as the block, so the report above stops clear of it. */
+  min-height: var(--reach-block, 0px);
+  margin: 0;
+  padding-left: 1.25em;
+  padding-right: var(--reach-inline, 0px);
+  font-size: 0.875em;
+  line-height: 1.25;
+
+  li {
+    text-wrap: pretty;
+  }
+
+  li::marker {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

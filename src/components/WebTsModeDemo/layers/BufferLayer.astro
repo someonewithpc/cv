@@ -1,0 +1,260 @@
+---
+/**
+ * The live sheet: one of this CV's own components as web-ts-mode paints it, captured at
+ * build time. Nothing parses in the browser. The toggle outlines the ranges each embedded
+ * parser is handed, and pointing at a token lights up the range that owns it, with the
+ * echo area naming the parser and the rule. All of it is CSS: no script, no island.
+ */
+import Window from '../Window.astro';
+import { captureAstro } from '../capture';
+import { bufferFile, readBuffer } from '../samples';
+
+const { lines, ranges } = captureAstro(await readBuffer());
+const gutter = String(lines.length).length;
+const languages = [...new Set(['astro', ...ranges.map((range) => range.lang)])];
+
+const echo = [
+  { id: 'idle', text: 'Point at the buffer: which parser owns what is under it' },
+  { id: 'host', text: 'astro · the primary parser, over the whole buffer' },
+  ...ranges.map((range) => ({ id: range.id, text: `${range.lang} · ${range.rule} · :local t` })),
+];
+---
+
+<div class="wrapper">
+  <div class="buffer-layer" data-web-ts-buffer>
+    <div class="bar">
+      <span class="caption">Captured buffer · static, not a live parser</span>
+      <div class="controls">
+        <ul class="legend" aria-label="Parsers">
+          {languages.map((lang) => (
+            <li data-lang={lang}>{lang}</li>
+          ))}
+        </ul>
+        <label class="toggle">
+          <input type="checkbox" class="show-ranges" checked />
+          <span>show parser ranges</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="frame">
+      <Window
+        lines={lines}
+        ranges={ranges}
+        gutter={gutter}
+        modeLine={`-:%%-  ${bufferFile}    (Web-TS)`}
+      />
+      <p class="echo">
+        {echo.map(({ id, text }) => <span data-echo={id}>{text}</span>)}
+      </p>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  padding-right: calc($sheet-margin + var(--reach-inline, 0px));
+}
+
+.buffer-layer {
+  @include buffer-faces;
+
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.375em;
+  font-size: clamp(0.5rem, 0.0135 * var(--sheet-inline), 0.75rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.5rem, 0.024 * var(--sheet-inline), 0.75rem);
+  }
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.25em 1em;
+  font-family: monospace, system-ui;
+}
+
+.caption {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.875em;
+  color: var(--ink-muted);
+}
+
+.controls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25em 1.5em;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5ch;
+  cursor: pointer;
+
+  input {
+    margin: 0;
+    accent-color: var(--control-accent);
+  }
+}
+
+.frame {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  overflow: hidden;
+
+  :global(.emacs-window .text) {
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+}
+
+.echo {
+  margin: 0;
+  padding: 0.125em 0.5ch;
+  min-height: 1.3em;
+  background: var(--buffer-paper);
+  border-top: 1px solid var(--buffer-line);
+  font-family: monospace, system-ui;
+  color: var(--buffer-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  span {
+    display: none;
+  }
+
+  [data-echo='idle'] {
+    display: inline;
+    color: var(--buffer-dim);
+  }
+}
+
+.legend {
+  display: flex;
+  gap: 1em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: monospace, system-ui;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5ch;
+
+    &::before {
+      content: "";
+      width: 1.5em;
+      height: 0.75em;
+      border: 1px dashed var(--lang);
+      border-radius: 0.2em;
+    }
+  }
+}
+
+// Which parser a range, a block or a legend entry stands for.
+.buffer-layer :global([data-lang='astro']) { --lang: var(--lang-astro); }
+.buffer-layer :global([data-lang='tsx']) { --lang: var(--lang-tsx); }
+.buffer-layer :global([data-lang='scss']),
+.buffer-layer :global([data-lang='css']) { --lang: var(--lang-scss); }
+
+// The outlines, while the toggle is on.
+.buffer-layer:has(.show-ranges:checked) {
+  // The Astro parser's range is the whole buffer.
+  :global(.emacs-window .text) {
+    outline: 1px dashed var(--lang-astro);
+    outline-offset: -3px;
+  }
+
+  :global(.emacs-window .range) {
+    outline: 1px dashed var(--lang);
+    outline-offset: 1px;
+    border-radius: 0.15em;
+  }
+
+  :global(.emacs-window .block) {
+    outline: 1px dashed var(--lang);
+    outline-offset: -1px;
+  }
+
+  :global(.emacs-window .range-label) {
+    display: block;
+    position: absolute;
+    top: 0.2em;
+    right: 0.5ch;
+    padding: 0 0.5ch;
+    font-size: 0.85em;
+    color: var(--lang);
+    background: var(--buffer-paper);
+  }
+}
+
+// Pointing at a token lights its owner: the range around it, or the Astro parser when it
+// sits outside every embedded range. The echo area says which.
+.buffer-layer :global(.emacs-window .range),
+.buffer-layer :global(.emacs-window .block) {
+  outline-color: transparent;
+  transition: background-color 120ms ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--lang);
+  }
+}
+
+// Inside :has() nothing is scoped, so the window's own classes need no :global there.
+.buffer-layer:has(.emacs-window .text:hover):not(:has(.emacs-window .range:hover, .emacs-window .block:hover)) {
+  :global(.emacs-window .text) {
+    background: color-mix(in oklch, var(--lang-astro) 14%, var(--buffer-paper));
+  }
+
+  :global(.emacs-window .range),
+  :global(.emacs-window .block) {
+    background: var(--buffer-paper);
+  }
+
+  .echo [data-echo='idle'] { display: none; }
+  .echo [data-echo='host'] { display: inline; }
+}
+
+@for $i from 0 through 15 {
+  .buffer-layer:has([data-range='r#{$i}']:is(:hover, :focus-visible)) {
+    :global([data-range='r#{$i}']) {
+      background: color-mix(in oklch, var(--lang) 22%, var(--buffer-paper));
+      outline: 1px solid var(--lang);
+    }
+
+    .echo [data-echo='idle'] { display: none; }
+    .echo [data-echo='r#{$i}'] { display: inline; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buffer-layer :global(.emacs-window .range),
+  .buffer-layer :global(.emacs-window .block) {
+    transition: none;
+  }
+}
+</style>

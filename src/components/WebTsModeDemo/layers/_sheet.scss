@@ -1,0 +1,83 @@
+// What the web-ts-mode sheets share: the margin every layer keeps around its content, and
+// the faces a captured buffer is painted in.
+
+// Clear sheet between the content and the frame line, in em of the sheet's own type so it
+// scales with the page. It goes on a layer's root and nowhere else.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// The buffer's paper and its faces, from the theme's primitive ramps rather than the
+// semantic tokens: a blueprint sheet remaps --ink and --surface-* to its own blue, and a
+// buffer pasted onto one should read exactly as it does on the live sheet. Each face
+// stands for the Emacs face web-ts-mode paints with. They start from the accent and the
+// blueprint shaded most of the way to the ink, which is dark on a light theme and light on
+// a dark one, so each keeps its contrast; the shading greys them, so the chroma gets a
+// floor back, and the hue is the theme's own turned a set angle.
+@mixin buffer-faces {
+  --buffer-paper: var(--neutral-2);
+  --buffer-ink: var(--neutral-12);
+  --buffer-line: var(--neutral-7);
+  --buffer-dim: var(--neutral-9);
+  --buffer-mode-line: var(--neutral-4);
+
+  --face-comment: var(--neutral-9);
+  --face-bracket: var(--neutral-10);
+  --face-keyword: oklch(from var(--accent-12) l max(c, 0.1) h);
+  --face-builtin: oklch(from var(--accent-12) l max(c, 0.1) calc(h + 150));
+  --face-string: oklch(from var(--accent-12) l max(c, 0.1) calc(h + 85));
+  --face-variable: oklch(from var(--accent-12) l max(c, 0.1) calc(h - 40));
+  --face-function: oklch(from var(--blueprint-12) l max(c, 0.1) h);
+  --face-tag: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 35));
+  --face-component: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h + 55));
+  --face-type: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h + 90));
+  --face-constant: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 80));
+  --face-literal: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 100));
+
+  // Which parser owns a range, for the outlines and their labels.
+  --lang-astro: var(--neutral-10);
+  --lang-tsx: var(--blueprint-11);
+  --lang-scss: var(--accent-11);
+  --lang-css: var(--accent-11);
+}
+
+// The selector face at nesting level --depth, after web-ts-treesit--css-selector-face-for-depth.
+// Depth 0 is the base face itself (font-lock-function-name-face). Deeper levels move the
+// base's HSL hue toward web-ts-css-selector-end-hue (0.33, a green) along the shorter arc,
+// 0.22 of the way per level and never past it, and clamp the saturation to 0.35 to 0.85.
+// Emacs then lifts the lightness 0.03 a level inside 0.55 to 0.78, a window meant for dark
+// backgrounds; here the same small step goes toward the buffer's ink instead, so the deeper
+// levels gain contrast on light paper as well as dark.
+@mixin depth-face {
+  --end-hue: 118.8;
+  --amount: min(1, var(--depth) * 0.22);
+
+  color: color-mix(
+    in oklch,
+    hsl(from var(--face-function) calc(h + (mod(var(--end-hue) - h + 180, 360) - 180) * var(--amount)) clamp(35, s, 85) l),
+    var(--buffer-ink) calc(min(var(--depth), 5) * 4%)
+  );
+}
+
+// Faces, one class each, for a token span.
+@mixin face-classes {
+  .f-comment { color: var(--face-comment); }
+  .f-keyword { color: var(--face-keyword); }
+  .f-builtin { color: var(--face-builtin); }
+  .f-string { color: var(--face-string); }
+  .f-type { color: var(--face-type); }
+  .f-function { color: var(--face-function); }
+  .f-variable { color: var(--face-variable); }
+  .f-constant { color: var(--face-constant); }
+  .f-tag { color: var(--face-tag); }
+  .f-component { color: var(--face-component); }
+  .f-literal { color: var(--face-literal); }
+  .f-bracket,
+  .f-delimiter { color: var(--face-bracket); }
+  .f-selector { color: var(--face-function); }
+  .f-selector.deep { @include depth-face; }
+}

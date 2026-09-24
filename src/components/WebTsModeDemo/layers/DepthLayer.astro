@@ -1,0 +1,229 @@
+---
+/**
+ * Selector depth, painted the way web-ts-treesit.el paints it, over a nested stylesheet
+ * from this CV, next to the hue scale the faces come from. The deepest selector is taken
+ * apart below, one level at a time.
+ */
+import Window from '../Window.astro';
+import { captureScss, paintSelectorList } from '../capture';
+import { depthSample } from '../samples';
+
+const { lines } = captureScss(depthSample.text);
+
+// The one selector that reaches depth 4, cut into runs of one depth each.
+const deepest = '.aside:not(:has(.note-card > *)) .note-fold';
+const depths = Array<number | null>(deepest.length).fill(null);
+paintSelectorList(deepest, 0, deepest.length, 0, depths);
+const runs: { text: string; depth: number | null }[] = [];
+[...deepest].forEach((char, index) => {
+  const last = runs.at(-1);
+  if (last && last.depth === depths[index]) last.text += char;
+  else runs.push({ text: char, depth: depths[index] });
+});
+
+const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
+  depth,
+  amount: Math.min(1, depth * 0.22),
+}));
+---
+
+<div class="wrapper">
+  <p class="point typewriter">Each level moves the hue toward green</p>
+
+  <div class="figure">
+    <Window
+      lines={lines}
+      gutter={2}
+      class="snippet"
+      modeLine={`-:%%-  ${depthSample.file}    (Web-TS)`}
+    />
+
+    <div class="scale" role="group" aria-label="Depth hue scale">
+      <span class="scale-title">depth · share of the way to hue 0.33</span>
+      <ol>
+        {scale.map(({ depth, amount }) => (
+          <li>
+            <span class:list={['swatch', { deep: depth > 0 }]} style={`--depth: ${depth}`}></span>
+            <span class="n">{depth}</span>
+            <span class="amount">{depth === 0 ? 'base face' : amount === 1 ? '1.00 end hue' : amount.toFixed(2)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+
+  <div class="walk" role="group" aria-label={`${deepest}, taken apart by depth`}>
+    {runs.map(({ text, depth }) => (
+      <span class="run">
+        <code class:list={['f-selector', { deep: (depth ?? 0) > 0, gap: depth === null }]} style={depth ? `--depth: ${depth}` : undefined}>{text}</code>
+        <span class="level">{depth ?? ''}</span>
+      </span>
+    ))}
+  </div>
+
+  <dl class="rules">
+    <div><dt><code>a &gt; b</code></dt><dd>The right side starts one past the deepest level on the left</dd></div>
+    <div><dt><code>:not() :has()</code></dt><dd>Arguments go one deeper than the pseudo-class</dd></div>
+    <div><dt><code>a, b</code></dt><dd>Branches share a depth; nesting a rule starts it at 0</dd></div>
+  </dl>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+  @include buffer-faces;
+
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  row-gap: 0.625em;
+  height: 100%;
+  min-height: 0;
+  padding-bottom: calc($sheet-margin + var(--reach-block, 0px));
+  font-size: clamp(0.5rem, 0.0138 * var(--sheet-inline), 0.875rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.5rem, 0.023 * var(--sheet-inline), 0.875rem);
+  }
+}
+
+.point {
+  margin: 0;
+  font-size: 1.375em;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.figure {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  gap: 1em 1.5em;
+  max-width: 100%;
+
+  @container technical-drawing (orientation: portrait) {
+    grid-template-columns: auto;
+    justify-items: center;
+  }
+}
+
+.figure :global(.snippet) {
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  overflow: hidden;
+}
+
+.scale {
+  display: grid;
+  align-content: center;
+  gap: 0.375em;
+  font-family: monospace, system-ui;
+
+  ol {
+    display: grid;
+    gap: 0.25em;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 2.5em 1.5ch auto;
+    align-items: center;
+    gap: 1ch;
+  }
+}
+
+.scale-title {
+  font-size: 0.8em;
+  color: var(--ink-muted);
+}
+
+// Each swatch is painted in the very face a token at that depth gets.
+.swatch {
+  height: 1.1em;
+  border-radius: 0.2em;
+  box-shadow: 0 0 0 1px var(--buffer-paper);
+  background: currentColor;
+  color: var(--face-function);
+
+  &.deep {
+    @include depth-face;
+  }
+}
+
+.amount {
+  font-size: 0.85em;
+  color: var(--ink-muted);
+}
+
+.walk {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  padding: 0.375em 0.75em;
+  border-radius: 0.25em;
+  background: var(--buffer-paper);
+  font-family: monospace, system-ui;
+}
+
+.run {
+  display: grid;
+  justify-items: center;
+  padding-inline: 0.125ch;
+
+  code {
+    white-space: pre;
+  }
+
+  code.gap {
+    color: var(--buffer-ink);
+  }
+}
+
+.level {
+  min-height: 1.2em;
+  font-size: 0.75em;
+  color: var(--buffer-dim);
+}
+
+.rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75em;
+  max-width: 44em;
+  margin: 0;
+
+  div {
+    display: grid;
+    align-content: start;
+    gap: 0.125em;
+  }
+
+  dt code {
+    font-family: monospace, system-ui;
+    font-size: 0.875em;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.8125em;
+    line-height: 1.3;
+    text-wrap: pretty;
+    color: var(--ink-muted);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@include face-classes;
+</style>

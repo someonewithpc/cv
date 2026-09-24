@@ -1,0 +1,165 @@
+---
+/**
+ * One Emacs window onto a captured buffer: line numbers, the painted tokens, and a mode
+ * line. Embedded ranges come out as elements of their own, so a sheet can outline them
+ * and light one up: a range that runs over several whole lines wraps those lines in a
+ * block, one that sits inside a line wraps its tokens in a span.
+ */
+import type { Line, Range, Token } from './capture';
+
+type Props = {
+  lines: Line[];
+  ranges?: Range[];
+  modeLine: string;
+  /** How many digits the line-number gutter keeps room for. */
+  gutter?: number;
+  class?: string;
+};
+
+const { lines, ranges = [], modeLine, gutter = 2, class: className } = Astro.props;
+const byId = new Map(ranges.map((range) => [range.id, range]));
+
+// A range is a block when its tokens reach more than one line.
+const linesOfRange = new Map<string, Set<number>>();
+for (const line of lines) {
+  for (const token of line.tokens) {
+    if (token.range === 'host') continue;
+    const seen = linesOfRange.get(token.range) ?? new Set<number>();
+    seen.add(line.number);
+    linesOfRange.set(token.range, seen);
+  }
+}
+const isBlock = (id: string) => (linesOfRange.get(id)?.size ?? 0) > 1;
+
+// The block each line sits in, if all of it does. An empty line inside a block has no
+// tokens to say so, so it takes the block its neighbours agree on.
+const lineBlock = lines.map((line) => {
+  const owners = new Set(line.tokens.filter((token) => token.text.trim()).map((token) => token.range));
+  const [only] = owners;
+  return owners.size === 1 && only !== 'host' && isBlock(only) ? only : null;
+});
+lineBlock.forEach((id, index) => {
+  if (id !== null || lines[index].tokens.some((token) => token.text.trim())) return;
+  const before = lineBlock[index - 1];
+  const after = lineBlock.slice(index + 1).find((other) => other !== null);
+  if (before && before === after) lineBlock[index] = before;
+});
+
+type Row = { block: string | null; lines: Line[] };
+const rows: Row[] = [];
+lines.forEach((line, index) => {
+  const block = lineBlock[index];
+  const last = rows.at(-1);
+  if (last && last.block === block && block !== null) last.lines.push(line);
+  else rows.push({ block, lines: [line] });
+});
+
+// Within a line, tokens of one inline range go in one wrapper.
+type Segment = { range: string | null; tokens: Token[] };
+function segments(line: Line): Segment[] {
+  const out: Segment[] = [];
+  for (const token of line.tokens) {
+    const range = token.range !== 'host' && !isBlock(token.range) ? token.range : null;
+    const last = out.at(-1);
+    if (last && last.range === range) last.tokens.push(token);
+    else out.push({ range, tokens: [token] });
+  }
+  return out;
+}
+
+const faceClass = (token: Token) => {
+  if (token.face === 'default') return undefined;
+  return token.depth ? `f-${token.face} deep` : `f-${token.face}`;
+};
+const faceStyle = (token: Token) => (token.depth ? `--depth: ${token.depth}` : undefined);
+
+const label = (id: string) => {
+  const range = byId.get(id);
+  return range ? `${range.lang}: ${range.node}` : id;
+};
+---
+
+<div class:list={['emacs-window', className]} style={`--gutter: ${gutter}`}>
+  <div class="text">
+    {rows.map((row) => row.block ? (
+      <div class="block" data-range={row.block} data-lang={byId.get(row.block)?.lang} tabindex="0" role="group" aria-label={label(row.block)}>
+        <span class="range-label" aria-hidden="true">{byId.get(row.block)?.lang}</span>
+        {row.lines.map((line) => (
+          <div class="line"><span class="ln" aria-hidden="true">{line.number}</span><code>{line.tokens.map((token) => (
+            <span class={faceClass(token)} style={faceStyle(token)}>{token.text}</span>
+          ))}</code></div>
+        ))}
+      </div>
+    ) : row.lines.map((line) => (
+      <div class="line"><span class="ln" aria-hidden="true">{line.number}</span><code>{segments(line).map((segment) => segment.range ? (
+        <span class="range" data-range={segment.range} data-lang={byId.get(segment.range)?.lang} tabindex="0" role="group" aria-label={label(segment.range)}>{segment.tokens.map((token) => (
+          <span class={faceClass(token)} style={faceStyle(token)}>{token.text}</span>
+        ))}</span>
+      ) : segment.tokens.map((token) => (
+        <span class={faceClass(token)} style={faceStyle(token)}>{token.text}</span>
+      )))}</code></div>
+    )))}
+  </div>
+  <div class="mode-line" aria-hidden="true">{modeLine}</div>
+</div>
+
+<style lang="scss">
+@use "./layers/sheet" as *;
+
+.emacs-window {
+  @include buffer-faces;
+
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  background: var(--buffer-paper);
+  color: var(--buffer-ink);
+  font-family: monospace, system-ui;
+  line-height: 1.25;
+}
+
+.text {
+  min-height: 0;
+  padding-block: 0.25em;
+  overflow: hidden;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: calc(var(--gutter) * 1ch + 1.5ch) minmax(0, 1fr);
+  white-space: pre;
+}
+
+code {
+  font: inherit;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.ln {
+  padding-right: 1ch;
+  text-align: right;
+  color: var(--buffer-dim);
+  user-select: none;
+}
+
+.block {
+  position: relative;
+}
+
+.range-label {
+  display: none;
+}
+
+.mode-line {
+  padding: 0.125em 0.5ch;
+  overflow: hidden;
+  background: var(--buffer-mode-line);
+  color: var(--buffer-ink);
+  white-space: pre;
+  text-overflow: ellipsis;
+}
+
+@include face-classes;
+</style>
