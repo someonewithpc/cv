@@ -186,10 +186,20 @@ function applyCursor(step: DemoCursorStep) {
   }
 }
 
+// A deliberate interaction (a press, a wheel, focus) holds the scene until the deck's Play or
+// Reset hands it back. Without this the next mouse move, which yields without keepControl,
+// armed the resume anyway, and two seconds later the walkthrough took the floor back, with a
+// reset() for its next step on several presets that wiped what the visitor had placed.
+let heldByUser = false;
+// Whether the real pointer is on the demo. A parked mouse sends no more moves, so this is
+// what keeps the walkthrough from restarting under it and pausing again on the next twitch.
+let pointerOver = false;
+
 // Match Marker Editor: hovering pauses autoplay and resets the idle timer, while a
 // deliberate interaction keeps control until the visitor replays from the status chip.
 function yieldToUser(keepControl = false) {
   if (resumeTimer) clearTimeout(resumeTimer);
+  if (keepControl) heldByUser = true;
 
   if (cursorPhase.value === 'demo') {
     if (handoffTimer) clearTimeout(handoffTimer);
@@ -208,11 +218,22 @@ function yieldToUser(keepControl = false) {
     pushToast(autoplayPausedToast());
   }
 
-  if (keepControl) return;
+  if (heldByUser) return;
 
+  armResume();
+}
+
+// The resume after a hover, two seconds after the last move; a pointer still resting on the
+// demo puts it off for another two, since a parked mouse will send no move to refresh it.
+function armResume() {
+  if (resumeTimer) clearTimeout(resumeTimer);
   resumeTimer = setTimeout(() => {
     resumeTimer = null;
-    if (!inView.value || reducedMotion.value) return;
+    if (!inView.value || reducedMotion.value || heldByUser) return;
+    if (pointerOver) {
+      armResume();
+      return;
+    }
     userControl.value = false;
     cursorPhase.value = 'demo';
     controllerRef.value?.resume();
@@ -239,22 +260,14 @@ function onTrustedPointer(event: PointerEvent) {
       && event.clientY >= rect.top
       && event.clientY <= rect.bottom;
     if (!inside) {
+      pointerOver = false;
       // Still refresh the idle timer while the user is in control and may have left briefly.
-      if (userControl.value && resumeTimer) {
-        clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(() => {
-          resumeTimer = null;
-          if (!inView.value || reducedMotion.value) return;
-          userControl.value = false;
-          cursorPhase.value = 'demo';
-          controllerRef.value?.resume();
-          pushToast(autoplayStartedToast());
-        }, RESUME_DELAY_MS);
-      }
+      if (userControl.value && resumeTimer) armResume();
       return;
     }
   }
 
+  pointerOver = true;
   if (isTransportControl(event.target)) return;
   yieldToUser(event.type === 'pointerdown');
 }
@@ -584,6 +597,7 @@ async function restartDemo() {
   // and leaves it there: no fake cursor, and no "Demo paused" on the next hover.
   const walkthrough = !reducedMotion.value;
   if (walkthrough) {
+    heldByUser = false;
     userControl.value = false;
     cursorPhase.value = 'demo';
   }
@@ -710,6 +724,7 @@ onMounted(async () => {
         return;
       }
       if (command === 'play') {
+        heldByUser = false;
         userControl.value = false;
         startAutoplay(controller);
         return;
