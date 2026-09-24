@@ -37,6 +37,8 @@ function pressable(onPress: () => void) {
     tabIndex: 0,
     onClick: onPress,
     onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      // Keys from the Edit, Duplicate and Delete buttons inside the option bubble up here.
+      if (event.target !== event.currentTarget) return;
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
       onPress();
