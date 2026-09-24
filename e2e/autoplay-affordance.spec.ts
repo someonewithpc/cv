@@ -1,6 +1,7 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { expect, pageWait, test } from './support/timeScale';
 
 /**
  * The transport deck in the sheet's bottom band (see src/client/autoplayStatus.ts): cassette
@@ -119,7 +120,7 @@ for (const { name, viewport } of VIEWPORTS) {
   });
 }
 
-test('the deck drives the walkthrough from its keys', async ({ page }) => {
+test('the deck drives the walkthrough from its keys', { tag: '@handover' }, async ({ page }) => {
   await page.goto('/');
   const stack = markerEditorStack(page);
   const deck = await playingDeck(stack);
@@ -149,7 +150,7 @@ test('the deck drives the walkthrough from its keys', async ({ page }) => {
   // Pause is the explicit takeover, and it holds past the idle resume (2s).
   await pause.click();
   await expect(deck).toHaveAttribute('data-state', 'user');
-  await page.waitForTimeout(3000);
+  await pageWait(page, 3000);
   await expect(deck).toHaveAttribute('data-state', 'user');
 
   await reset.click();

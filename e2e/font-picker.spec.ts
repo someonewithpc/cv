@@ -1,6 +1,5 @@
-import { expect, test } from '@playwright/test';
-
 import { frontPage, frontPageIndex, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
+import { expect, pageWait, test } from './support/timeScale';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -90,7 +89,7 @@ test('extraction page: the pipeline is drawn from the URL to the new row', async
   await expect(front.locator('.select-row.new')).toHaveText('Alfa Slab One 400');
 });
 
-test('indicator page: the border runs by itself and the buttons take it over', async ({ page }) => {
+test('indicator page: the border runs by itself and the buttons take it over', { tag: '@handover' }, async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
   await turnToPage(stack, 'Loading Indicator');
@@ -104,7 +103,7 @@ test('indicator page: the border runs by itself and the buttons take it over', a
   // A press is the visitor taking it over, and it stays where they put it
   await front.getByRole('button', { name: 'error' }).click();
   await expect(fieldset).toHaveClass(/error/);
-  await page.waitForTimeout(4_000);
+  await pageWait(page, 4_000);
   await expect(fieldset).toHaveClass(/error/);
 
   // The easing is plotted from the same numbers the stylesheet animates with

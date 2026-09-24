@@ -1,4 +1,4 @@
-import { devices, expect, test, type Locator, type Page } from '@playwright/test';
+import { devices, type Locator, type Page } from '@playwright/test';
 
 import {
   frontPage,
@@ -7,6 +7,7 @@ import {
   turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
+import { expect, test } from './support/timeScale';
 
 /** Fourth stack on the page: logo, marker editor, space builder, then this one. */
 function variantsStack(page: Page) {
@@ -466,7 +467,7 @@ for (const [name, viewport] of Object.entries(PHONE_VIEWPORTS)) {
       return app;
     }
 
-    test('a finger scrolling the page over the cards leaves the walkthrough running', async ({ page }) => {
+    test('a finger scrolling the page over the cards leaves the walkthrough running', { tag: '@handover' }, async ({ page }) => {
       const app = await openPlaying(page);
       const set = card(app, 'table-round');
       const picture = await centre(set.locator('.object-icons'));

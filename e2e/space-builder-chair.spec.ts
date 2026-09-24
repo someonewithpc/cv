@@ -78,7 +78,7 @@ async function clickArrow(page: Page, styles: Locator, side: 'previous' | 'next'
   await page.mouse.click(x, box.y + box.height / 2);
 }
 
-test('the chair card steps through the library finishes', async ({ page }) => {
+test('the chair card steps through the library finishes', { tag: '@handover' }, async ({ page }) => {
   await page.goto('/');
   const app = await openCatalog(page);
 

@@ -8,7 +8,7 @@ import {
   turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
-import { expect, test } from './support/timeScale';
+import { expect, pageWait, test } from './support/timeScale';
 
 /** Last stack on the page, after the logo, marker editor and the other Space Builder sheets. */
 function dragDropStack(page: Page) {
@@ -205,7 +205,7 @@ test('autoplay runs and hands over to the visitor', async ({ page }) => {
   await expect(playing).toBeHidden();
 });
 
-test('a real pointer resting on the demo keeps the walkthrough off it', async ({ page }) => {
+test('a real pointer resting on the demo keeps the walkthrough off it', { tag: '@handover' }, async ({ page }) => {
   const app = await openDemo(page);
   const playing = app.locator('.demo-flash');
   const cursor = app.locator('[data-demo-cursor]');
@@ -223,7 +223,7 @@ test('a real pointer resting on the demo keeps the walkthrough off it', async ({
   await expect(app).toHaveAttribute('data-phase', 'idle');
 
   // And it stays down while the pointer rests there, past the spell that would resume it.
-  await page.waitForTimeout(4000);
+  await pageWait(page, 4000);
   await expect(playing).toBeHidden();
   await expect(cursor).toHaveCount(0);
 

@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 
 import { defineConfig, devices } from '@playwright/test';
 
+import type { PaceOptions } from './e2e/support/timeScale';
+
 const PORT = 4310;
 
 // Playwright's own downloaded Chromium build doesn't run on NixOS (no FHS-compatible
@@ -23,7 +25,7 @@ export function systemChrome(): string {
   );
 }
 
-export default defineConfig({
+export default defineConfig<PaceOptions>({
   testDir: './e2e',
   timeout: 60_000,
   fullyParallel: true,
@@ -58,6 +60,19 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: { executablePath: systemChrome() },
+      },
+    },
+    {
+      // The walkthrough specs watch their demos at up to four times real speed. The
+      // hand-over tests (tagged @handover) run here a second time at half speed, where a
+      // takeover is likelier to land in the middle of a walkthrough step.
+      name: 'slow-walkthroughs',
+      grep: /@handover/,
+      timeout: 120_000,
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: { executablePath: systemChrome() },
+        slowWalkthroughs: true,
       },
     },
   ],

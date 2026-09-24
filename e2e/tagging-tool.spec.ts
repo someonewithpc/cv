@@ -1,5 +1,5 @@
 import { frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
-import { expect, test } from './support/timeScale';
+import { expect, pageWait, test } from './support/timeScale';
 
 const PAGES = ['Library Tagging Tool', 'Shared Value', 'Simulated Caret', 'Completed Objects'];
 
@@ -55,7 +55,7 @@ test('tagging tool: forward swipes visit every page in order, then wrap', async 
   expect(await frontPageName(stack)).toBe(PAGES[0]);
 });
 
-test('main page: the walkthrough types with a drawn cursor and hands over on hover', async ({ page }) => {
+test('main page: the walkthrough types with a drawn cursor and hands over on hover', { tag: '@handover' }, async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
@@ -77,7 +77,7 @@ test('main page: the walkthrough types with a drawn cursor and hands over on hov
 
   // Handover means handover: nothing types itself after this.
   const settled = await gold.locator('.shared-value').inputValue();
-  await page.waitForTimeout(1_500);
+  await pageWait(page, 1_500);
   expect(await gold.locator('.shared-value').inputValue()).toBe(settled);
 });
 
