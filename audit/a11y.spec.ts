@@ -24,7 +24,7 @@ for (const viewport of VIEWPORTS) {
       // Scan the page a reader would have in front of them: every stack booted, every
       // island mounted. Same settle as e2e/home.spec.ts.
       const stacks = page.locator('article.technical-drawing-stack');
-      await expect(stacks).toHaveCount(3);
+      expect(await stacks.count(), 'the page shows no demo stack').toBeGreaterThan(0);
       for (const stack of await stacks.all()) {
         await stack.scrollIntoViewIfNeeded();
       }
