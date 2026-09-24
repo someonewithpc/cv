@@ -149,12 +149,12 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
     const root = outline[sampleAt(x)] + inward * (0.8 + next()) * UNIT;
     hair.push(...fibre(x, root, (2 + next() * next() * 3.5) * UNIT, (next() - 0.5) * 1.8));
   }
-  /* Stray fibres the tear pulled out whole: thin strands that bend or kink as they go, in
-     tufts with bare stretches between. Most root in the band and lie out across the outer
-     line at a slant; now and then a long one trails along the edge. They are worked out in
-     pixels from the outside in, and no point of one goes nearer the tile's edge than
-     `margin`, so the curve, which stays inside its points, is never cut off. */
-  const margin = 0.8;
+  /* Stray fibres the tear pulled out: short, fine strands that curl as they go, a few to a
+     tuft with long bare stretches between. They root near the outer line and lie out across
+     it at a slant, and a slight blur leaves them a soft fuzz rather than distinct hairs. They
+     are worked out in pixels from the outside in, and no point of one goes nearer the tile's
+     edge than `margin`, so the curve, which stays inside its points, is never cut off. */
+  const margin = 1.2;
   const px = (x: number, d: number) => [x * UNIT, flip(Math.min(depth - margin, Math.max(margin, d))) * UNIT];
   const strays: Stroke[] = [];
   const strand = (x: number, d: number, length: number, slant: number, way: number) => {
@@ -167,25 +167,23 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
   };
   const rootAt = (x: number) => {
     const i = Math.round(x / STEP) % samples;
-    return outer[i] + 0.4 + (inner[i] - outer[i]) * next();
+    return outer[i] + 0.3 + (inner[i] - outer[i]) * next() * 0.5;
   };
-  for (let tuft = 0; tuft < TILE / 36; tuft++) {
+  for (let tuft = 0; tuft < TILE / 56; tuft++) {
     const middle = next() * TILE;
     const way = next() < 0.5 ? -1 : 1;
     const slant = 0.3 + next() * 0.9;
-    for (let n = 2 + Math.floor(next() * 4); n > 0; n--) {
-      const x = (middle + (next() - 0.5) * 12 + TILE) % TILE;
-      strand(x, rootAt(x), 3 + next() * next() * 10, slant + (next() - 0.5) * 0.7, next() < 0.8 ? way : -way);
+    for (let n = 2 + Math.floor(next() * 3); n > 0; n--) {
+      const x = (middle + (next() - 0.5) * 8 + TILE) % TILE;
+      strand(x, rootAt(x), 2 + next() * next() * 4, slant + (next() - 0.5) * 0.7, next() < 0.8 ? way : -way);
     }
   }
-  for (let n = 0; n < TILE / 90; n++) {
-    const x = next() * TILE;
-    strand(x, rootAt(x), 12 + next() * 12, 0.08 + next() * 0.3, next() < 0.5 ? -1 : 1);
-  }
   const strayPath = draw(strays);
+  const soften = `<filter id='s'><feGaussianBlur stdDeviation='${0.35 * UNIT}'/></filter>`;
 
   const fibres =
-    `<path d='${strayPath}' stroke='#000' stroke-width='${0.5 * UNIT}' stroke-linecap='round' fill='none'/>` +
+    soften +
+    `<path d='${strayPath}' filter='url(#s)' stroke='#000' stroke-width='${0.6 * UNIT}' stroke-linecap='round' fill='none'/>` +
     `<path d='${draw(fuzz)}' stroke='#000' stroke-width='${0.3 * UNIT}' stroke-linecap='round' stroke-opacity='.6' fill='none'/>` +
     `<path d='${draw(hair)}' stroke='#000' stroke-width='${0.32 * UNIT}' stroke-linecap='round' stroke-opacity='.5' fill='none'/>`;
 
@@ -244,7 +242,8 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
     `<path d='${hairline}' stroke='#000' stroke-width='${1.4 * UNIT}' stroke-opacity='.07' fill='none'/>` +
     `<path d='${hairline}' stroke='#000' stroke-width='${0.45 * UNIT}' stroke-opacity='.2' fill='none'/>` +
     `<path d='${draw(flecks)}' stroke='#000' stroke-width='${0.3 * UNIT}' stroke-linecap='round' stroke-opacity='.16' fill='none'/>` +
-    `<path d='${strayPath}' stroke='#000' stroke-width='${0.5 * UNIT}' stroke-linecap='round' stroke-opacity='.14' fill='none'/>`;
+    soften +
+    `<path d='${strayPath}' stroke='#000' filter='url(#s)' stroke-width='${0.6 * UNIT}' stroke-linecap='round' stroke-opacity='.1' fill='none'/>`;
 
   return {
     mask: encode(`${open}${paper}${fibres}</svg>`),

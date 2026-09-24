@@ -788,7 +788,7 @@ test('each group is a sheet of ruled paper torn along the top and the bottom', a
     // edge is a tile laid side by side at its own size rather than one path stretched across
     // the sheet, so the tear is as fine on a phone as on a wide screen.
     expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
-    expect(sheet.mask.split('url(').length - 1, `${sheet.id} two tears`).toBe(2);
+    expect(sheet.mask.split('url("data:').length - 1, `${sheet.id} two tears`).toBe(2);
     expect(sheet.maskRepeat, `${sheet.id} tear tiles`).toBe('repeat-x, no-repeat, repeat-x');
     expect(sheet.maskSize[0], `${sheet.id} tile`).toBe(sheet.maskSize[2]);
     expect(sheet.maskSize[0], `${sheet.id} tile`).not.toMatch(/%/);
