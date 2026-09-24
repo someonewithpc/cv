@@ -218,6 +218,15 @@ export class AutoPlayController {
   private dragCleanup: (() => void) | null = null;
   private stepIndex = 0;
   private paused = false;
+  /**
+   * Counts the pauses. A step in flight awaits presses, drags and waits, and pause() cannot
+   * reach into those; it only sets `paused`. restart() and resume() then clear `paused` again,
+   * and the suspended step, seeing it clear, carried on: it bumped the index restart() had
+   * just reset and scheduled a timer of its own beside the new one, and two chains drove the
+   * demo from then on. So every step remembers the generation it started in and stands down
+   * at its next await once a pause has moved it on, whatever `paused` says by then.
+   */
+  private generation = 0;
   private presetIndex = 0;
   private demoMarkerIds: Array<MarkerType['id'] | null> = DEMO_PRESETS.map(() => null);
   private sessionIsCreate = false;
@@ -248,6 +257,7 @@ export class AutoPlayController {
 
   pause() {
     this.paused = true;
+    this.generation += 1;
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -982,13 +992,17 @@ export class AutoPlayController {
     }
 
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
+    // One timer at a time: a step that resumed into a fresh chain must not add a second.
+    if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
+      this.timer = null;
       void this.executeStep(step);
     }, delay);
   }
 
   private async executeStep(step: Step) {
     if (this.paused) return;
+    const generation = this.generation;
     const cursor = step.cursor
       ? (typeof step.cursor === 'function' ? step.cursor() : step.cursor)
       : undefined;
@@ -999,14 +1013,17 @@ export class AutoPlayController {
       const click = Boolean(typeof step.domClick === 'function' ? step.domClick() : step.domClick);
       const el = cursor.target == null ? null : queryDemoTarget(cursor.target);
       if (el) await press(el, click);
+      // A pause during the hold: the press has landed, but the step's own work stays undone.
+      if (generation !== this.generation) return;
     }
     await step.run?.(this.dispatch, this.getState);
+    // Paused, restarted or resumed while the step ran: whichever chain is current owns the
+    // index and the timer now, and this one is finished.
+    if (generation !== this.generation) return;
     this.stepIndex += 1;
     if (this.stepIndex >= this.steps.length) {
       this.stepIndex = 0;
     }
-    // Paused mid-step: wait here; resume() will schedule the following step.
-    if (this.paused) return;
     this.scheduleNext();
   }
 }
