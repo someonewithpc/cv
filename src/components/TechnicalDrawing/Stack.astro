@@ -381,14 +381,17 @@ function initStack(stack: HTMLElement) {
     const active = Boolean(onScreen.get(page)) && isFrontPage(page);
 
     page.getAnimations({ subtree: true }).forEach((animation) => {
-      if (!active && (animation.playState === 'running' || animation.playState === 'finished')) {
-        animation.cancel();
-        // Cancelled animations get removed, so start them, but pause immediately
+      if (active) {
         animation.play();
-        animation.pause();
-      } else {
-        animation.play();
+        return;
       }
+      // Already held at its start by an earlier pass: leave it there. Playing it here
+      // would run it off screen, which is the very thing this function is for.
+      if (animation.playState !== 'running' && animation.playState !== 'finished') return;
+      animation.cancel();
+      // Cancelled animations get removed, so start them, but pause immediately
+      animation.play();
+      animation.pause();
     });
 
     page.style[active ? 'removeProperty' : 'setProperty']('animation-play-state', 'paused');
@@ -404,7 +407,9 @@ function initStack(stack: HTMLElement) {
       apply(page);
     });
   }, { threshold: 0.25, scrollMargin: '25%' });
-  [...stack.querySelectorAll('section')].forEach((page) => {
+  // The pages only: a demo's own sections would otherwise get an observer, a front-page
+  // watcher and an inline animation-play-state of their own.
+  [...stack.querySelectorAll<HTMLElement>(':scope > * > section')].forEach((page) => {
     observer.observe(page);
     watchFrontPage(page, () => apply(page));
   });
