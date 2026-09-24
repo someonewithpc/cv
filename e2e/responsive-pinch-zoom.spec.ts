@@ -2,10 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 /**
  * DevTools' responsive mode is mobile emulation, so a trackpad pinch zooms the page itself
- * (visualViewport.scale), the way a finger does on a phone. At phone width a 3D scene fills the
- * zoomed-in view, and the scenes zoom their own camera on the wheel a pinch arrives as. When they
- * took that wheel whatever the page's zoom, the page stayed zoomed in with nowhere left to pinch
- * it back out from.
+ * (visualViewport.scale), the way a finger does on a phone. The pinch arrives as a ctrl wheel, and
+ * the 3D scenes used to take it to move their camera. At phone width a scene fills the zoomed-in
+ * view, so the page stayed zoomed in. A pinch over a scene now always goes to the page.
  */
 
 test.use({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
@@ -20,7 +19,7 @@ async function pinch(page: Page, x: number, y: number, scaleFactor: number) {
   await cdp.detach();
 }
 
-test('a page pinched in over a scene pinches back out', async ({ page }) => {
+test('a pinch over a scene zooms the page in and back out', async ({ page }) => {
   await page.goto('/');
   // The scenes boot once they come into view
   const canvas = page.locator('canvas.scene-canvas').first();
@@ -30,19 +29,20 @@ test('a page pinched in over a scene pinches back out', async ({ page }) => {
     await page.waitForTimeout(250);
   }
 
-  // Leave room above the scene for the pinch in, which has to land on the page and not the scene
   await canvas.evaluate((element) => {
-    window.scrollBy(0, element.getBoundingClientRect().top - 200);
+    window.scrollBy(0, element.getBoundingClientRect().top - 100);
   });
   await page.waitForTimeout(800);
-  const box = await canvas.evaluate((element) => {
+  const center = await canvas.evaluate((element) => {
     const rect = element.getBoundingClientRect();
-    return { left: rect.left, top: rect.top, width: rect.width };
+    return { x: rect.left + rect.width / 2, y: rect.top + Math.min(rect.height, 400) / 2 };
   });
-  expect(box.top).toBeGreaterThan(100);
-  const x = box.left + box.width / 2;
+  expect(
+    await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.matches('canvas.scene-canvas'), center),
+    'the pinch in lands on the scene',
+  ).toBe(true);
 
-  await pinch(page, x, box.top - 40, 3);
+  await pinch(page, center.x, center.y, 3);
   await page.waitForTimeout(400);
   expect(await scale(page)).toBeGreaterThan(2);
 
