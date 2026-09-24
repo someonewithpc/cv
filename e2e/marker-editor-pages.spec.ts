@@ -1,6 +1,5 @@
-import { expect, test } from '@playwright/test';
-
 import { frontPage, frontPageIndex, turnToPage } from './support/paperStack';
+import { expect, test } from './support/timeScale';
 
 /**
  * Kept out of marker-editor.spec.ts: four other branches are editing that file, and a
@@ -50,36 +49,40 @@ test('parts and store pages: the diagram fills the sheet it sits on', async ({ p
 /** Letter and number labels the walkthrough's presets put on a pin, in space order. */
 const LABEL_SEQUENCES = [['A', 'B'], ['1', '2']];
 
-test('the second space a marker is placed on takes its own label', async ({ page }) => {
-  // The walkthrough builds a marker, saves it, then assigns it to a second space; that
-  // is about twenty seconds in, and the browser here has no GPU.
-  test.setTimeout(150_000);
+test.describe(() => {
+  test.use({ walkthroughRate: 4 });
 
-  const stack = markerEditorStack(page);
-  // Scroll only: a mouse move hands control to the visitor and pauses the walkthrough.
-  await stack.scrollIntoViewIfNeeded();
+  test('the second space a marker is placed on takes its own label', async ({ page }) => {
+    // The walkthrough builds a marker, saves it, then assigns it to a second space; that
+    // is about twenty seconds in at real time.
+    test.setTimeout(60_000);
 
-  const readPins = () => page.evaluate(() => {
-    const byName: Record<string, string> = {};
-    document.querySelectorAll('.space-pin').forEach((pin) => {
-      const name = pin.getAttribute('aria-label')?.replace('Edit marker for ', '');
-      const text = pin.querySelector('text')?.textContent?.trim();
-      if (name && text) byName[name] = text;
+    const stack = markerEditorStack(page);
+    // Scroll only: a mouse move hands control to the visitor and pauses the walkthrough.
+    await stack.scrollIntoViewIfNeeded();
+
+    const readPins = () => page.evaluate(() => {
+      const byName: Record<string, string> = {};
+      document.querySelectorAll('.space-pin').forEach((pin) => {
+        const name = pin.getAttribute('aria-label')?.replace('Edit marker for ', '');
+        const text = pin.querySelector('text')?.textContent?.trim();
+        if (name && text) byName[name] = text;
+      });
+      return byName;
     });
-    return byName;
+
+    await expect
+      .poll(async () => Object.keys(await readPins()).length, { timeout: 40_000, intervals: [400] })
+      .toBeGreaterThan(1);
+
+    const pins = await readPins();
+
+    // The label belongs to the space, not to the marker: the same marker on Lobby and Cafe
+    // reads A then B. It read A twice while the saved SVG named its decoration by a class
+    // name the bundler had renamed, which is what the map matches on to relabel it.
+    expect(pins.Lobby).not.toBe(pins.Cafe);
+    expect(LABEL_SEQUENCES).toContainEqual([pins.Lobby, pins.Cafe]);
   });
-
-  await expect
-    .poll(async () => Object.keys(await readPins()).length, { timeout: 90_000, intervals: [400] })
-    .toBeGreaterThan(1);
-
-  const pins = await readPins();
-
-  // The label belongs to the space, not to the marker: the same marker on Lobby and Cafe
-  // reads A then B. It read A twice while the saved SVG named its decoration by a class
-  // name the bundler had renamed, which is what the map matches on to relabel it.
-  expect(pins.Lobby).not.toBe(pins.Cafe);
-  expect(LABEL_SEQUENCES).toContainEqual([pins.Lobby, pins.Cafe]);
 });
 
 /** Average distance between the stripe starts along a row and a column of the sample. */
