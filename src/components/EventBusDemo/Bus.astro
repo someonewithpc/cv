@@ -53,11 +53,11 @@ const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:
     {live ? (
       <button type="button" class="call" data-dispatch title="Dispatch again">
         <Icon name="lucide:play" class="replay" />
-        <code>Event::handle('<b>{EVENT}</b>', [$vars, &$res])</code>
+        <code>Event::handle('<b>{EVENT}</b>', [$vars, &amp;$res])</code>
       </button>
     ) : (
       <span class="call">
-        <code>Event::handle('<b>{EVENT}</b>', [$vars, &$res])</code>
+        <code>Event::handle('<b>{EVENT}</b>', [$vars, &amp;$res])</code>
       </span>
     )}
 

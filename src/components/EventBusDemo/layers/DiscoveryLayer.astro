@@ -36,7 +36,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
       </span>
     </p>
 
-    <div class="scan" aria-label="Modules the compiler pass finds">
+    <div class="scan" role="group" aria-label="Modules the compiler pass finds">
       <span class="scan-label"><code>components/*/</code></span>
       <ul class="modules">
         {components.map((module) => <li>{module}</li>)}
