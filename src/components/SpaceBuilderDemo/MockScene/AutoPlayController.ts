@@ -238,6 +238,15 @@ export class AutoPlayController {
   private dragRaf: number | null = null;
   /** Release an in-flight slider drag so takeover doesn't leave a stuck rAF. */
   private dragCleanup: (() => void) | null = null;
+  /**
+   * Counts the pauses. A step in flight awaits presses, cursor travel and tweens the scene
+   * runs to the end whatever `paused` says, and pause() cannot reach into them. start() and
+   * resume() then clear `paused` again, and the suspended step, seeing it clear, carried on:
+   * it bumped the index start() had just reset and scheduled a timer of its own beside the
+   * new one, and two chains drove the demo from then on. So every step remembers the
+   * generation it started in and stands down at its next await once a pause has moved it on.
+   */
+  private generation = 0;
   private readonly scene: SpaceBuilderScene;
   private readonly onCursor: DemoCursorHandler;
   private readonly onToast: DemoToastHandler;
@@ -266,6 +275,7 @@ export class AutoPlayController {
 
   pause() {
     this.paused = true;
+    this.generation += 1;
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -305,7 +315,10 @@ export class AutoPlayController {
     }
     const step = this.steps()[this.stepIndex];
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
+    // One timer at a time: a step that resumed into a fresh chain must not add a second.
+    if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
+      this.timer = null;
       void this.runStep(step);
     }, delay);
   }
@@ -339,6 +352,7 @@ export class AutoPlayController {
 
   private async runStep(step: Step) {
     if (this.paused) return;
+    const generation = this.generation;
     try {
       const cursor = typeof step.cursor === 'function' ? step.cursor() : step.cursor;
       const shouldClick = typeof step.domClick === 'function' ? step.domClick() : step.domClick;
@@ -444,10 +458,15 @@ export class AutoPlayController {
         this.onCursor({ ...aimed, click: true });
       }
 
+      // A pause during the press or the cursor's travel: the step's own work stays undone.
+      if (generation !== this.generation) return;
       await step.run?.();
     } catch (error) {
       console.debug('Space Builder autoplay step failed', error);
     }
+    // Paused, started over or resumed while the step ran: whichever chain is current owns
+    // the index and the timer now, and this one is finished.
+    if (generation !== this.generation) return;
     this.stepIndex += 1;
     this.scheduleNext();
   }
