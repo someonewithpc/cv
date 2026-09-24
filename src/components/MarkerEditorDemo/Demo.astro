@@ -76,7 +76,12 @@ type Layer = keyof typeof layers;
 
   <fragment slot="aside">
     {(layer: Layer) => ({
-      main: null,
+      main: (
+        <PostIt background="#e8e4dc" color="black">
+          Venues embed this map on their own site so guests can find each space. Every pin is a
+          marker the venue designs here, and one design can mark many spaces
+        </PostIt>
+      ),
       selector: (
         <PostIt background="#cde" color="black">
           Pick or create a marker for a space. If the decoration is a space number or letter, the
