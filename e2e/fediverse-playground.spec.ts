@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { frontPage, frontPageIndex, frontPageName } from './support/paperStack';
 
-const PAGES = ['Fediverse Playground · after Visrez', 'Mirrors & Worktrees', 'One-shot Installers', 'Hostnames → /etc/hosts'];
+const PAGES = ['Fediverse Playground', 'Mirrors & Worktrees', 'One-shot Installers', 'Hostnames → /etc/hosts'];
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
