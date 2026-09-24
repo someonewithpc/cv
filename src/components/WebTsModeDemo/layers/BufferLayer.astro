@@ -67,7 +67,16 @@ const echo = [
   display: grid;
   height: 100%;
   min-height: 0;
-  padding-right: calc($sheet-margin + var(--reach-inline, 0px));
+  /* The title block claims the bottom-right corner. Where the sheet is wide the words
+     stand over it in a column of their own, the block's width, and the window has the rest;
+     narrower, the words go above the window and the window stops clear of the block. */
+  padding-bottom: calc($sheet-margin + var(--reach-block, 0px));
+
+  @container technical-drawing-width (min-width: 56em) {
+    :global([data-sheet-orientation='landscape']) & {
+      padding-bottom: $sheet-margin;
+    }
+  }
 }
 
 .buffer-layer {
@@ -78,6 +87,7 @@ const echo = [
   height: 100%;
   min-height: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 0.375em;
   font-size: clamp(0.5rem, 0.0135 * var(--sheet-inline), 0.75rem);
@@ -85,6 +95,28 @@ const echo = [
 
   :global([data-sheet-orientation='portrait']) & {
     font-size: clamp(0.5rem, 0.024 * var(--sheet-inline), 0.75rem);
+  }
+
+  @container technical-drawing-width (min-width: 56em) {
+    :global([data-sheet-orientation='landscape']) & {
+      grid-template-columns: minmax(0, 1fr) var(--title-block-inline, 0px);
+      grid-template-rows: auto minmax(0, 1fr);
+      column-gap: 1.5em;
+
+      .intro {
+        grid-column: 2;
+        grid-row: 1 / -1;
+        align-self: start;
+        min-height: 0;
+        padding-bottom: calc(var(--reach-block, 0px) + 0.5em);
+        overflow: hidden;
+      }
+
+      .bar,
+      .frame {
+        grid-column: 1;
+      }
+    }
   }
 }
 

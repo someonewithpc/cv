@@ -47,11 +47,9 @@ type Layer = keyof typeof layers;
 // much of a buffer as fits and cut the rest.
 
 // The title block is absolutely placed in the sheet's bottom-right corner, over the artwork.
-// How far it reaches, across and up, for each layer to keep its own content clear of: the
-// live buffer gives up the width, the drawings the height. Portrait gives the block a row of
-// its own, so there both stay 0.
+// How far up it reaches, for each layer to keep its own content clear of. Portrait gives the
+// block a row of its own, so there it stays 0.
 :global(.web-ts-mode-demo article.technical-drawing-stack > * > section) {
-  --reach-inline: 0px;
   --reach-block: 0px;
 }
 
@@ -59,7 +57,6 @@ type Layer = keyof typeof layers;
   // For a height inside the cell to mean anything the sheet's row has to be a measured
   // one: its own row is auto, and a percentage inside an auto row resolves to nothing.
   :global(.web-ts-mode-demo article.technical-drawing-stack > * > section) {
-    --reach-inline: calc(var(--title-block-inline) + 0.5em);
     --reach-block: var(--title-block-block);
 
     grid-template-rows: minmax(0, 1fr);
