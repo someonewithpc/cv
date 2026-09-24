@@ -10,7 +10,12 @@ const refs = {
   'social-v2': { local: ['nightly'], remote: [] },
 };
 
-const plans = planWorktrees(exampleConfig, refs);
+// The example config puts Bob on main, which collides with nothing. The sheet is drawn for the
+// case the rename exists for, Bob asking for v3 while Alice's worktree holds it, and says so.
+const bob = exampleConfig.instances['gnusocial-bob'];
+const example = { ...exampleConfig, instances: { ...exampleConfig.instances, 'gnusocial-bob': { ...bob, branch: 'v3' } } };
+
+const plans = planWorktrees(example, refs);
 const mirrors = [...new Set(plans.map((plan) => plan.mirror))].map((mirror) => ({
   mirror,
   plans: plans.filter((plan) => plan.mirror === mirror),
@@ -33,6 +38,10 @@ const ladder = RUNGS.map((why, rung) => ({
     <div class="panel">
       <header>
         <strong>One bare mirror per software, one worktree per instance</strong>
+        <span class="caption">
+          An example: the shipped config puts bob on {bob.branch}. Here he asks for v3, which alice's
+          worktree already holds, so the branch is renamed after him.
+        </span>
       </header>
 
       <div class="mirrors">
@@ -127,8 +136,14 @@ const ladder = RUNGS.map((why, rung) => ({
   gap: 0.625em;
 }
 
-header strong {
-  font-size: 0.875em;
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.875em;
+  }
 }
 
 code {

@@ -1,6 +1,5 @@
 // The playground's config, as src/config/io.ts and src/config/hostnames.ts read it, minus the
-// filesystem. The instances are the repository's playground.config.example.yaml, with one change:
-// Bob asks for branch v3 like Alice does, so the worktree sheet has a collision to draw.
+// filesystem. The instances are the repository's playground.config.example.yaml as it stands.
 
 export type SoftwareId = 'social-v3' | 'social-v2';
 
@@ -46,7 +45,7 @@ export const exampleConfig: PlaygroundConfig = {
       name: "Bob's Node",
       instance_id: 'gnusocial-bob',
       source: V3_SOURCE,
-      branch: 'v3',
+      branch: 'main',
       worktree: 'instances/gnusocial-bob',
     },
     'gnusocial-v2': {
