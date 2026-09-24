@@ -42,8 +42,8 @@ async function fetchFollowingRedirects(target: URL, headers: HeadersInit): Promi
     const upstream = await fetch(target, { headers, redirect: 'manual' });
     const location = upstream.headers.get('location');
     if (upstream.status < 300 || upstream.status > 399 || !location) return upstream;
-    if (hop === MAX_REDIRECTS) throw new Error('Too many redirects');
     await upstream.body?.cancel();
+    if (hop === MAX_REDIRECTS) throw new Error('Too many redirects');
     target = validateTarget(new URL(location, target).toString());
   }
 }
@@ -112,6 +112,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   const contentType = upstream.headers.get('content-type') ?? '';
   if (!ALLOWED_CONTENT_TYPES.test(contentType)) {
+    await upstream.body?.cancel();
     return new Response('Unsupported content type', { status: 415 });
   }
 
