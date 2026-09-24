@@ -10,11 +10,20 @@ const MAX_REDIRECTS = 5;
 // text/html and text/css for page/stylesheet extraction, the rest for the font files themselves
 const ALLOWED_CONTENT_TYPES = /^(text\/(css|html)|font\/|application\/(x-)?font|application\/octet-stream|binary\/octet-stream)/i;
 
-function validateTarget(raw: string): URL {
-  const target = new URL(raw);
+// A target this endpoint will not fetch. The caller asked for it, so it answers 400 on any hop;
+// other errors on the way are the upstream's and answer 502.
+class Refused extends Error {}
+
+function validateTarget(raw: string, base?: URL): URL {
+  let target: URL;
+  try {
+    target = new URL(raw, base);
+  } catch {
+    throw new Refused('Invalid URL');
+  }
 
   if (!['http:', 'https:'].includes(target.protocol)) {
-    throw new Error('Only http(s) URLs are supported');
+    throw new Refused('Only http(s) URLs are supported');
   }
 
   const host = target.hostname.toLowerCase();
@@ -26,7 +35,7 @@ function validateTarget(raw: string): URL {
     || host.endsWith('.local')
     || host.endsWith('.internal')
   ) {
-    throw new Error('Refusing to fetch private addresses');
+    throw new Refused('Refusing to fetch private addresses');
   }
 
   return target;
@@ -44,7 +53,7 @@ async function fetchFollowingRedirects(target: URL, headers: HeadersInit): Promi
     if (upstream.status < 300 || upstream.status > 399 || !location) return upstream;
     await upstream.body?.cancel();
     if (hop === MAX_REDIRECTS) throw new Error('Too many redirects');
-    target = validateTarget(new URL(location, target).toString());
+    target = validateTarget(location, target);
   }
 }
 
@@ -95,7 +104,8 @@ export const GET: APIRoute = async ({ url, request }) => {
   try {
     target = validateTarget(raw);
   } catch (e) {
-    return new Response(e instanceof Error ? e.message : 'Invalid URL', { status: 400 });
+    if (e instanceof Refused) return new Response(e.message, { status: 400 });
+    throw e;
   }
 
   let upstream: Response;
@@ -107,6 +117,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       'accept-language': request.headers.get('accept-language') ?? 'en',
     });
   } catch (e) {
+    if (e instanceof Refused) return new Response(e.message, { status: 400 });
     return new Response('Upstream fetch failed: ' + (e instanceof Error ? e.message : String(e)), { status: 502 });
   }
 
