@@ -12,13 +12,21 @@ const all = search({ query, filters: {} });
 const filtered = search({ query, filters: filter });
 const lead = filtered.hits[0]?.object.id;
 
+/** The top rows, and the row that will climb wherever it sits below them. */
+function shown(result: typeof all) {
+  const rows = result.hits.slice(0, TOP).map((hit) => ({ hit, skipped: 0 }));
+  const at = result.hits.findIndex((hit) => hit.object.id === lead);
+  if (at >= TOP) rows.push({ hit: result.hits[at], skipped: at - TOP });
+  return rows;
+}
+
 const columns = [
   { title: 'No filter', result: all, note: `${all.hits.length} rows, max ${all.max?.toFixed(3)}` },
   { title: `color = ${filter.color}`, result: filtered, note: `${filtered.hits.length} rows, max ${filtered.max?.toFixed(3)}` },
 ];
 ---
 
-<div class="wrapper">
+<div class="wrapper" data-blueprint-sheet>
   <div class="filters-layer">
     <div class="panel">
       <header>
@@ -33,12 +41,15 @@ const columns = [
             <div class="column">
               <h3>{title}</h3>
               <ol>
-                {result.hits.slice(0, TOP).map((hit) => (
-                  <li class:list={{ lead: hit.object.id === lead }}>
-                    <span class="name">{hit.object.name} <span class="variant">{variantOf(hit.object)}</span></span>
-                    <span class="bar" style={{ '--score': hit.score ?? 0 }}></span>
-                    <span class="value">{formatScore(hit.score)}</span>
-                  </li>
+                {shown(result).map(({ hit, skipped }) => (
+                  <>
+                    {skipped > 0 && <li class="gap">{skipped} more</li>}
+                    <li class:list={{ lead: hit.object.id === lead }}>
+                      <span class="name">{hit.object.name} <span class="variant">{variantOf(hit.object)}</span></span>
+                      <span class="bar" style={{ '--score': hit.score ?? 0 }}></span>
+                      <span class="value">{formatScore(hit.score)}</span>
+                    </li>
+                  </>
                 ))}
               </ol>
               <p class="note">{note}</p>
@@ -67,6 +78,8 @@ const columns = [
 
 <style lang="scss">
 @use "./sheet" as *;
+
+@include blueprint-cell;
 
 .wrapper {
   @include blueprint-wrapper;
@@ -179,6 +192,14 @@ header {
 
   .note {
     margin: 0;
+    font-family: monospace, system-ui;
+    font-size: 0.625em;
+    color: var(--ink-muted);
+  }
+
+  .gap {
+    display: block;
+    padding: 0 0.25em;
     font-family: monospace, system-ui;
     font-size: 0.625em;
     color: var(--ink-muted);
