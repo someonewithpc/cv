@@ -245,7 +245,7 @@ const offLine = (p: Point, line: Point[]) => Math.abs(sideOf(p, line));
 // plain and the four behind it are blueprint sheets, so which page the strip takes its colour
 // from is visible there and nowhere else.
 test('logo demo: the strip is the turned page\'s paper, not the front page\'s', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').first();
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

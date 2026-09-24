@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName } from './support/paperStack';
 
 /** The sheet inside a page wrapper: the fold flap and its friends ride on top of it. */
 const SHEET = ':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)';
@@ -8,12 +8,12 @@ const SHEET = ':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-
 test('visrez logo animation: the keyboard focus ring sits on the front sheet and follows a page turn', async ({ page }) => {
   await page.goto('/');
 
-  const stack = page.locator('article.technical-drawing-stack').first();
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
   // Tab in rather than call focus(): :focus-visible only matches focus the keyboard gave.
-  for (let i = 0; i < 15; i += 1) {
+  for (let i = 0; i < 200; i += 1) {
     await page.keyboard.press('Tab');
     if (await stack.evaluate((el) => el === document.activeElement)) break;
   }

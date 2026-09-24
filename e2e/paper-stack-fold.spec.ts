@@ -84,7 +84,7 @@ test('marker editor: backward swipe is clamped at the first page', async ({ page
 });
 
 test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').first();
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
@@ -108,7 +108,7 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
 });
 
 test('visrez logo: the dog-ear is drawn while the flip is still landing', async ({ page }) => {
-  const stack = page.locator('article.technical-drawing-stack').first();
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
