@@ -4,7 +4,6 @@ import path from 'node:path';
 import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
-import PostIt from '@/components/PostIt.astro';
 
 import TopologyLayer from './layers/TopologyLayer.astro';
 import WorktreesLayer from './layers/WorktreesLayer.astro';
@@ -55,35 +54,6 @@ type Layer = keyof typeof layers;
       worktrees: <WorktreesLayer />,
       install: <InstallLayer />,
       hosts: <HostsLayer />,
-    }[layer])}
-  </fragment>
-
-  <fragment slot="aside">
-    {(layer: Layer) => ({
-      topology: (
-        <PostIt background="#e8e4dc" color="black">
-          Switch instances on and off. db and redis appear once however many nodes ask for them,
-          and web waits on every app. Open the YAML to see the file the builder writes
-        </PostIt>
-      ),
-      worktrees: (
-        <PostIt background="#cde" color="black">
-          Bob asks for v3, but Alice's worktree already has it. Follow the rename, then the
-          four ways the branch can be made
-        </PostIt>
-      ),
-      install: (
-        <PostIt background="#fed" color="black">
-          Read top to bottom: nothing starts until what it waits on is healthy, started or
-          finished
-        </PostIt>
-      ),
-      hosts: (
-        <PostIt background="#dfd" color="black">
-          Follow alice from the config into the hosts snippet, the Nix attribute set and the
-          NixOS module that reads it
-        </PostIt>
-      ),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>

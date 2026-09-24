@@ -19,6 +19,12 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
 
 <div class="wrapper">
   <div class="playground" data-fediverse-playground>
+    <p class="intro">
+      Fediverse Playground runs several GNU social instances on one machine, each on its own
+      branch, to test federation between versions. playground.config.yaml declares them; the
+      tool writes the docker-compose.yml that starts them, redrawn below as each instance is
+      switched on or off.
+    </p>
     <form class="config" aria-label="Instances in playground.config.yaml">
       <p class="file">
         <span>playground.config.yaml</span>
@@ -103,7 +109,7 @@ bootIslands('[data-fediverse-playground]', boot);
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto var(--bar) minmax(0, 1fr);
+  grid-template-rows: auto auto var(--bar) minmax(0, 1fr);
   row-gap: 0.5em;
   color: var(--ink);
   font-size: 0.8em;
@@ -113,8 +119,17 @@ bootIslands('[data-fediverse-playground]', boot);
   }
 }
 
-.config {
+.intro {
   grid-row: 1;
+  grid-column: 1;
+  margin: 0 0 0.25em;
+  max-width: 60em;
+  font-size: 0.9em;
+  line-height: 1.35;
+}
+
+.config {
+  grid-row: 2;
   grid-column: 1;
   margin: 0;
   display: grid;
@@ -204,7 +219,7 @@ fieldset {
 }
 
 .status {
-  grid-row: 2;
+  grid-row: 3;
   grid-column: 1;
   margin: 0;
   align-self: center;
@@ -219,7 +234,7 @@ fieldset {
 /* Spans the status bar and the graph: the summary sits at the bar's right end, and the
    open file covers the graph below it. Only those two take the pointer. */
 .yaml {
-  grid-row: 2 / 4;
+  grid-row: 3 / 5;
   grid-column: 1;
   position: relative;
   z-index: 1;
@@ -292,7 +307,7 @@ fieldset {
 }
 
 .graph {
-  grid-row: 3;
+  grid-row: 4;
   grid-column: 1;
   position: relative;
   min-width: 0;
