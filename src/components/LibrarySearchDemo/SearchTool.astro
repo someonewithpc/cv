@@ -65,7 +65,9 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
     <code class="mangled" set:html={mangledHtml(query)} />
   </p>
 
-  <p class="count" role="status">{countText(result.hits.length)}</p>
+  {/* A live region from the moment the visitor is the one typing (librarySearch.ts): while
+      the walkthrough types, a screen reader would hear the count on every keystroke. */}
+  <p class="count">{countText(result.hits.length)}</p>
 
   <ol class="results">
     {rows.map(({ object, score }) => (

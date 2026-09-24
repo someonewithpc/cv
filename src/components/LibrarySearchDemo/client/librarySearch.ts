@@ -193,6 +193,7 @@ async function autoplay(tool: Tool, script: readonly Step[], onChange: () => voi
   const { root, input } = tool;
   if (reducedMotion.matches) {
     root.dataset.autoplay = 'off';
+    announceCount(tool);
     return;
   }
 
@@ -205,6 +206,7 @@ async function autoplay(tool: Tool, script: readonly Step[], onChange: () => voi
     stopped = true;
     stopPageWatch();
     root.dataset.autoplay = 'user';
+    announceCount(tool);
   };
   if (handover.aborted) {
     stop();
@@ -303,4 +305,11 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
 
   const script = host.dataset.walkthrough;
   if (script) void autoplay(tool, JSON.parse(script) as Step[], onChange, handover.signal);
+  else announceCount(tool);
+}
+
+/** The count becomes a live region once every change to it is the visitor's own: while the
+    walkthrough types, a screen reader would hear it on every keystroke. */
+function announceCount(tool: Tool) {
+  tool.count?.setAttribute('role', 'status');
 }
