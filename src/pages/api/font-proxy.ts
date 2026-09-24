@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+import { isInternalAddress, resolveHost } from '../../server/internalAddress';
+
 export const prerender = false;
 
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -41,13 +43,28 @@ function validateTarget(raw: string, base?: URL): URL {
   return target;
 }
 
+// The hostname text above says nothing about where a public name points: one resolving to
+// 127.0.0.1 or 169.254.169.254 passed it. This looks the name up and refuses it if any address
+// is internal, or if there is none, as the Rails proxy did.
+//
+// fetch() then resolves the name again on its own, and Workers offer no way to pin it to the
+// address checked here. A name that answers this lookup with a public address and the next with
+// a private one (DNS rebinding, TTL 0) still gets through. Deployed Workers cannot reach
+// private addresses anyway, so the gap is open only under astro dev and preview.
+async function refuseInternal(target: URL): Promise<void> {
+  const addresses = await resolveHost(target.hostname);
+  if (addresses.length === 0) throw new Refused('Host does not resolve');
+  if (addresses.some(isInternalAddress)) throw new Refused('Refusing to fetch private addresses');
+}
+
 /**
- * Fetches the target, following redirects by hand so every hop passes validateTarget: with
- * redirect 'follow' only the first URL was checked, and the one it redirected to could be
- * anything.
+ * Fetches the target, following redirects by hand so every hop passes validateTarget and
+ * refuseInternal: with redirect 'follow' only the first URL was checked, and the one it
+ * redirected to could be anything.
  */
 async function fetchFollowingRedirects(target: URL, headers: HeadersInit): Promise<Response> {
   for (let hop = 0; ; hop += 1) {
+    await refuseInternal(target);
     const upstream = await fetch(target, { headers, redirect: 'manual' });
     const location = upstream.headers.get('location');
     if (upstream.status < 300 || upstream.status > 399 || !location) return upstream;
