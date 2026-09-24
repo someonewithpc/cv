@@ -20,6 +20,7 @@ import DragDropDemo from '@/components/DragDropDemo/Demo.astro';
 import SchemaDefDemo from '@/components/SchemaDefDemo/Demo.astro';
 import EventBusDemo from '@/components/EventBusDemo/Demo.astro';
 import FediversePlaygroundDemo from '@/components/FediversePlaygroundDemo/Demo.astro';
+import LibrarySearchDemo from '@/components/LibrarySearchDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
 
@@ -140,6 +141,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             own hostname, database and branch. One YAML file in, a Docker Compose stack out.
           </TitleCard>
           <FediversePlaygroundDemo />
+        </Callout>
+        <Callout letter="L" title="Library search" titleJp="ライブラリ検索" scale="1:1" headingId="detail-l" cardSide="end">
+          <TitleCard slot="card" title="Library Search & Relevance" medium="Rails, MySQL" year="2024">
+            One box searches every property of a library object, typed and derived alike.
+            MySQL scores each hit against the best hit for the same query, so the top row
+            always reads 1.00 and a filter ranks what it leaves afresh.
+          </TitleCard>
+          <LibrarySearchDemo />
         </Callout>
       </div>
     </section>

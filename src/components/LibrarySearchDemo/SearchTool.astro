@@ -1,0 +1,375 @@
+---
+import { Icon } from 'astro-icon/components';
+
+import Thumb from './Thumb.astro';
+import { mangledHtml } from './markup';
+import { categories, colours, detailsOf, initialQuery, libraryObjects } from './objects';
+import { formatScore, search, serialise, type Filters } from './search';
+
+type Props = {
+  /** Wire the tool up to the client script and the walkthrough. */
+  live?: boolean;
+  query?: string;
+  filters?: Filters;
+};
+
+const { live = false, query = initialQuery, filters = {} } = Astro.props;
+
+const result = search({ query, filters });
+const matched = new Set(result.hits.map((hit) => hit.object.id));
+// Hits in rank order, then every other object hidden behind them, so the client only
+// ever reorders and unhides rows the page already has.
+const rows = [
+  ...result.hits,
+  ...libraryObjects.filter((object) => !matched.has(object.id)).map((object) => ({ object, score: null })),
+];
+const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects`;
+---
+
+<div
+  class="library-search"
+  data-live={live ? '' : undefined}
+  data-query={query}
+  data-filters={JSON.stringify(filters)}
+>
+  <div class="search-form" role="search">
+    <label class="query">
+      <Icon name="lucide:search" />
+      <input
+        class="query-input"
+        type="search"
+        value={query}
+        placeholder="Search the library"
+        aria-label="Search the library"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </label>
+    <label class="filter">
+      <span>Category</span>
+      <select class="filter-select" data-filter="category" aria-label="Filter by category">
+        <option value="">Any</option>
+        {categories.map((category) => <option value={category} selected={filters.category === category}>{category}</option>)}
+      </select>
+    </label>
+    <label class="filter">
+      <span>Colour</span>
+      <select class="filter-select" data-filter="colour" aria-label="Filter by colour">
+        <option value="">Any</option>
+        {colours.map((colour) => <option value={colour} selected={filters.colour === colour}>{colour}</option>)}
+      </select>
+    </label>
+  </div>
+
+  <p class="sent">
+    <span class="label">Sent as</span>
+    <code class="mangled" set:html={mangledHtml(query)} />
+  </p>
+
+  <p class="count" role="status">{countText(result.hits.length)}</p>
+
+  <ol class="results">
+    {rows.map(({ object, score }) => (
+      <li class="hit" data-object={object.id} hidden={!matched.has(object.id)}>
+        <span class="thumb-box"><Thumb category={object.category} /></span>
+        <span class="text">
+          <span class="name">{object.name}</span>
+          <span class="details">{detailsOf(object)}</span>
+        </span>
+        <span class="relevance" style={{ '--score': score ?? 0 }}>
+          <span class="bar" aria-hidden="true"></span>
+          <span class="value">{result.terms.length ? formatScore(score) : ''}</span>
+        </span>
+      </li>
+    ))}
+    <li class="no-hits" hidden={result.hits.length > 0}>Nothing in the library matches</li>
+  </ol>
+
+  {live && (
+    <p class="requests" aria-hidden="true">
+      <span class="key">?{serialise({ query, filters })}</span>
+      <span class="tally"><span data-tally="sent">0</span> sent · <span data-tally="dropped">0</span> dropped · <span data-tally="aborted">0</span> aborted</span>
+    </p>
+  )}
+</div>
+
+<style lang="scss">
+/* The product's look, Bootstrap 3 at a 14px base, carried over in em so the whole tool
+   scales with the sheet. 1em here is the product's 14px. */
+.library-search {
+  --radius-panel: 0.714em;
+  --radius-control: 0.571em;
+  --gutter: 1.071em;
+  --highlight: color-mix(in oklch, var(--surface-raised), var(--ink) 5%);
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.625rem, 0.02 * min(var(--sheet-inline), var(--sheet-block)), 0.875rem);
+  line-height: 1.428;
+  color: var(--ink);
+
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+}
+
+.library-search :global(input),
+.library-search :global(select) {
+  font: inherit;
+  color: inherit;
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em 1em;
+  padding: 0.714em var(--gutter);
+  border-bottom: 1px solid var(--line);
+}
+
+.query {
+  flex: 1 1 14em;
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  :global(svg) {
+    position: absolute;
+    left: 0.75em;
+    width: 1.1em;
+    height: 1.1em;
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+}
+
+.query-input,
+.filter-select {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 2.429em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-page);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 85%);
+  }
+}
+
+.query-input {
+  width: 100%;
+  padding: 0.429em 0.857em 0.429em 2.3em;
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-weight: 700;
+
+  .filter-select {
+    width: 7.5em;
+    padding: 0 0.5em;
+    font-weight: 400;
+  }
+}
+
+/* What MySQL is handed, under the field that produced it. */
+.sent {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75em;
+  padding: 0.5em var(--gutter);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--line);
+
+  .label {
+    flex: none;
+    font-size: 0.786em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .mangled {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: monospace, system-ui;
+  }
+}
+
+.mangled {
+  :global(.rule-prefix) {
+    color: var(--ink-faint);
+  }
+
+  :global(.rule-quoted),
+  :global(.rule-folded) {
+    padding: 0 0.2em;
+    border-radius: 0.2em;
+    background: color-mix(in oklch, var(--accent), transparent 82%);
+    color: var(--ink);
+  }
+
+  :global(.empty) {
+    color: var(--ink-faint);
+  }
+}
+
+.count {
+  margin: 0;
+  padding: 0.5em var(--gutter) 0;
+  font-size: 0.857em;
+  color: var(--ink-muted);
+}
+
+.results {
+  min-height: 0;
+  margin: 0;
+  padding: 0.5em var(--gutter) var(--gutter);
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  display: grid;
+  align-content: start;
+  gap: 0.357em;
+}
+
+.hit {
+  display: grid;
+  grid-template-columns: 2.5em minmax(0, 1fr) minmax(6em, 30%);
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.357em 0.571em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-page);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.thumb-box {
+  display: grid;
+  place-items: center;
+  width: 2.5em;
+  height: 2.5em;
+  padding: 0.35em;
+  box-sizing: border-box;
+  border-radius: 0.357em;
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+
+.text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+
+  .name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .details {
+    font-size: 0.786em;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* The bar is scaled, not resized, so a re-rank animates on the compositor. */
+.relevance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.6em;
+  align-items: center;
+  gap: 0.5em;
+
+  .bar {
+    height: 0.5em;
+    border-radius: 0.25em;
+    background: var(--accent);
+    transform-origin: left center;
+    scale: var(--score) 1;
+    transition: scale 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent), transparent 70%);
+  }
+
+  .value {
+    font-family: monospace, system-ui;
+    font-size: 0.857em;
+    text-align: right;
+    color: var(--ink-muted);
+  }
+}
+
+.no-hits {
+  padding: 1em;
+  text-align: center;
+  color: var(--ink-muted);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+/* The request side of it: the key in-flight requests are held by, and what became of
+   them. */
+.requests {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25em 1em;
+  padding: 0.5em var(--gutter);
+  border-top: 1px dashed var(--line-strong);
+  font-family: monospace, system-ui;
+  font-size: 0.786em;
+  color: var(--ink-muted);
+
+  .key {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+:global([data-sheet-orientation='portrait']) {
+  .hit {
+    grid-template-columns: 2.5em minmax(0, 1fr) minmax(5em, 35%);
+  }
+
+  .filter .filter-select {
+    width: 6.5em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .relevance .bar,
+  .query-input,
+  .filter-select {
+    transition: none;
+  }
+}
+</style>

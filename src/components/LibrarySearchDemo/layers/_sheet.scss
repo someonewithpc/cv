@@ -1,0 +1,78 @@
+// What the library search's four sheets share: the margin every layer keeps around its
+// content, and the panel the blueprint sheets draw their diagrams on.
+
+// Clear sheet between the content and the frame line, the title block and the corner pieces,
+// in em of the sheet's own type so it scales with the page. It goes on a layer's root and
+// nowhere else, so nothing inside has to be nudged on its own. The spec's floor is 0.5em.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// A blueprint sheet's centred panel, clear of the title block wherever the block sits.
+@mixin blueprint-wrapper {
+  @include sheet-content;
+
+  @container technical-drawing-width (max-width: 56em) {
+    /* The title block claims the bottom-right corner on a narrow sheet, and the
+       panel is centred, so its bottom edge has to clear that corner. */
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    /* Portrait gives the title block its own row. */
+    padding-bottom: $sheet-margin;
+  }
+
+  margin-inline: auto;
+  display: grid;
+  /* An auto track takes the panel's max-content width and overflows the sheet on a
+     portrait page; 1fr pins it to the wrapper so the panel's own max-width bites. */
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+}
+
+@mixin blueprint-type {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    /* A phone sheet is tall enough to give the diagram the width's worth of type. */
+    font-size: min(1rem, 0.034 * var(--sheet-inline));
+  }
+}
+
+@mixin panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  display: grid;
+  gap: 0.625em;
+}
+
+// The query field the live blueprint sheets carry, synced with the main sheet's.
+@mixin query-field {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0.25em 0.5em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font: inherit;
+  font-family: monospace, system-ui;
+  font-size: 0.8125em;
+
+  &:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+}

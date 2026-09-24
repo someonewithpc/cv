@@ -1,0 +1,224 @@
+---
+import { initialQuery } from '../objects';
+import { formatScore, mangle, search } from '../search';
+
+// One query, with and without a filter: the row that moves is the one that was best
+// among what the filter leaves, and it goes to 1.00 because the maximum moves with it.
+const query = initialQuery;
+const filter = { colour: 'Wood' } as const;
+const TOP = 5;
+
+const all = search({ query, filters: {} });
+const filtered = search({ query, filters: filter });
+const lead = filtered.hits[0]?.object.id;
+
+const columns = [
+  { title: 'No filter', result: all, note: `${all.hits.length} rows, max ${all.max?.toFixed(3)}` },
+  { title: `colour = ${filter.colour}`, result: filtered, note: `${filtered.hits.length} rows, max ${filtered.max?.toFixed(3)}` },
+];
+---
+
+<div class="wrapper">
+  <div class="filters-layer">
+    <div class="panel">
+      <header>
+        <strong>A filter narrows the relation, and the maximum comes from what is left</strong>
+        <span class="query"><code>{query}</code> → <code>{mangle(query).text}</code></span>
+      </header>
+
+      <div class="compare">
+        {columns.map(({ title, result, note }, index) => (
+          <>
+            {index > 0 && <span class="arrow">+ filter →</span>}
+            <section class="column">
+              <h3>{title}</h3>
+              <ol>
+                {result.hits.slice(0, TOP).map((hit) => (
+                  <li class:list={{ lead: hit.object.id === lead }}>
+                    <span class="name">{hit.object.name} <span class="colour">{hit.object.colour}</span></span>
+                    <span class="bar" style={{ '--score': hit.score ?? 0 }}></span>
+                    <span class="value">{formatScore(hit.score)}</span>
+                  </li>
+                ))}
+              </ol>
+              <p class="note">{note}</p>
+            </section>
+          </>
+        ))}
+      </div>
+
+      <dl class="rules">
+        <div>
+          <dt>Predicate</dt>
+          <dd>Each filter is one more <code>AND</code> on the relation: a column compares directly, a property through its own rows</dd>
+        </div>
+        <div>
+          <dt>Maximum</dt>
+          <dd>The copy the maximum is taken from is the same relation, filters and all, so the best row left always reads 1.00</dd>
+        </div>
+        <div>
+          <dt>Options</dt>
+          <dd>A property filter offers the values already stored for it, so it never offers one that matches nothing</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include blueprint-wrapper;
+}
+
+.filters-layer {
+  @include blueprint-type;
+
+  width: min(100%, 46em);
+}
+
+.panel {
+  @include panel;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.875em;
+  }
+
+  .query {
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+  }
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.arrow {
+  font-family: monospace, system-ui;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.column {
+  display: grid;
+  gap: 0.375em;
+  padding: 0.5em 0.625em;
+  border: 1px solid var(--line);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+
+  h3 {
+    margin: 0;
+    font-family: monospace, system-ui;
+    font-size: 0.6875em;
+    font-weight: 400;
+    color: var(--ink-muted);
+  }
+
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.25em;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 30% 2.75em;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.125em 0.25em;
+    border-radius: 0.25em;
+    font-size: 0.6875em;
+
+    &.lead {
+      outline: 1px solid var(--accent);
+      background: color-mix(in oklch, var(--accent), transparent 85%);
+    }
+  }
+
+  .name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .colour {
+    color: var(--ink-muted);
+  }
+
+  .bar {
+    height: 0.625em;
+    border-radius: 0.3em;
+    background: var(--accent);
+    transform-origin: left center;
+    scale: var(--score) 1;
+  }
+
+  .value {
+    text-align: right;
+    font-family: monospace, system-ui;
+  }
+
+  .note {
+    margin: 0;
+    font-family: monospace, system-ui;
+    font-size: 0.625em;
+    color: var(--ink-muted);
+  }
+}
+
+.rules {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--line);
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+  }
+
+  dt {
+    font-size: 0.625em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+</style>

@@ -1,0 +1,277 @@
+---
+import { mangledHtml, sqlHtml, sqlResultHtml } from '../markup';
+import { initialQuery } from '../objects';
+import { search } from '../search';
+
+const state = { query: initialQuery, filters: {} };
+---
+
+<div class="wrapper">
+  <div class="sql-layer" data-library-search="sql" data-query={state.query} data-filters="{}">
+    <div class="panel">
+      <header>
+        <strong>One match fragment, built once, doing three jobs</strong>
+      </header>
+
+      <div class="query-row">
+        <input
+          class="sheet-query"
+          type="search"
+          value={state.query}
+          aria-label="Query"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <p class="sent">
+          <span class="label">Bound as</span>
+          <code class="mangled" set:html={mangledHtml(state.query)} />
+          <span class="filters-note"></span>
+        </p>
+      </div>
+
+      <pre class="sql"><code data-live-part set:html={sqlHtml(state)} /></pre>
+
+      <p class="sql-result" set:html={sqlResultHtml(search(state))} />
+
+      <ol class="legend">
+        <li data-mark="where"><span class="badge">1</span><span><code>WHERE</code> decides which rows come back at all</span></li>
+        <li data-mark="select"><span class="badge">2</span><span>selected as a column, it is where the score comes from; Rails' <code>#select</code> drops <code>library_objects.*</code> once a <code>MATCH</code> is in it, so it goes on <code>arel.projections</code></span></li>
+        <li data-mark="order"><span class="badge">3</span><span>the first <code>ORDER BY</code> term ranks them, the name breaks ties</span></li>
+        <li data-mark="max"><span class="badge">max</span><span><code>MAX()</code> would fold the rows into one, so the maximum comes from a copy of the same relation as a scalar subquery</span></li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from '../client/boot';
+
+bootIslands('[data-library-search="sql"]', boot);
+</script>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include blueprint-wrapper;
+}
+
+.sql-layer {
+  @include blueprint-type;
+
+  width: min(100%, 48em);
+}
+
+.panel {
+  @include panel;
+}
+
+header strong {
+  font-size: 0.875em;
+}
+
+.query-row {
+  display: grid;
+  gap: 0.375em;
+}
+
+.sheet-query {
+  @include query-field;
+}
+
+.sent {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25em 0.625em;
+  font-size: 0.75em;
+
+  .label {
+    font-size: 0.8333em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .filters-note {
+    color: var(--ink-muted);
+  }
+}
+
+.mangled {
+  :global(.rule-prefix) {
+    color: var(--ink-faint);
+  }
+
+  :global(.rule-quoted),
+  :global(.rule-folded) {
+    padding: 0 0.2em;
+    border-radius: 0.2em;
+    background: color-mix(in oklch, var(--accent), transparent 70%);
+  }
+
+  :global(.empty) {
+    color: var(--ink-faint);
+  }
+}
+
+/* Each job gets its own hue off the sheet's accent, so the three copies read as one
+   fragment wearing three labels. */
+.sql-layer {
+  --mark-where: var(--accent);
+  --mark-select: color-mix(in oklch, var(--accent), var(--ink) 45%);
+  --mark-order: color-mix(in oklch, var(--accent), var(--surface-sunken) 45%);
+  --mark-max: var(--ink-faint);
+}
+
+.sql {
+  margin: 0;
+  padding: 0.625em 0.75em;
+  border: 1px solid var(--line);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  font-family: monospace, system-ui;
+  font-size: 0.75em;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+
+  code {
+    font: inherit;
+  }
+
+  :global(.frag) {
+    padding: 0.05em 0.2em;
+    border-radius: 0.2em;
+    box-shadow: inset 0 -2px 0 var(--mark);
+    background: color-mix(in oklch, var(--mark), transparent 84%);
+    box-decoration-break: clone;
+  }
+
+  :global(.frag[data-mark='where']) {
+    --mark: var(--mark-where);
+  }
+
+  :global(.frag[data-mark='select']) {
+    --mark: var(--mark-select);
+  }
+
+  :global(.frag[data-mark='order']) {
+    --mark: var(--mark-order);
+  }
+
+  :global(.frag[data-mark='max']) {
+    --mark: var(--mark-max);
+  }
+
+  :global(.badge) {
+    margin-right: 0.4em;
+  }
+
+  :global(.sql-comment) {
+    color: var(--ink-muted);
+  }
+
+  /* Set by the client from the first keystroke on, never at build time: each redraw
+     starts the keyframes afresh on the new fragments. */
+  &:global(.flash) :global(.frag:not([data-mark='max'])) {
+    animation: fragment-flash 0.8s ease-out;
+  }
+}
+
+@keyframes fragment-flash {
+  from {
+    background: color-mix(in oklch, var(--mark), transparent 30%);
+  }
+}
+
+/* The number a copy of the fragment wears, in the SQL and in the legend alike. */
+.legend .badge,
+.sql :global(.badge) {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4em;
+  height: 1.4em;
+  padding: 0 0.3em;
+  box-sizing: border-box;
+  border-radius: 0.7em;
+  background: var(--mark);
+  color: var(--surface-page);
+  font-family: monospace, system-ui;
+  font-size: 0.8em;
+  line-height: 1;
+  vertical-align: 0.1em;
+}
+
+.sql-result {
+  margin: 0;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+
+  &::before {
+    content: '→ ';
+  }
+
+  :global(code) {
+    font-family: monospace, system-ui;
+    color: var(--ink);
+  }
+}
+
+.legend {
+  margin: 0;
+  padding: 0.5em 0 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375em 0.75em;
+  border-top: 1px solid var(--line);
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 2.25em minmax(0, 1fr);
+    align-items: start;
+    gap: 0.375em;
+    font-size: 0.6875em;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+
+  li[data-mark='where'] {
+    --mark: var(--mark-where);
+  }
+
+  li[data-mark='select'] {
+    --mark: var(--mark-select);
+  }
+
+  li[data-mark='order'] {
+    --mark: var(--mark-order);
+  }
+
+  li[data-mark='max'] {
+    --mark: var(--mark-max);
+  }
+
+  .badge {
+    justify-self: start;
+  }
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sql:global(.flash) :global(.frag) {
+    animation: none;
+  }
+}
+</style>

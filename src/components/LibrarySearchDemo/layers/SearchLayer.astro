@@ -1,0 +1,61 @@
+---
+import SearchTool from '../SearchTool.astro';
+import { walkthrough } from '../objects';
+---
+
+<div
+  class="library-search-demo"
+  data-walkthrough={JSON.stringify(walkthrough)}
+  data-library-search="search"
+>
+  <SearchTool live />
+</div>
+
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from '../client/boot';
+
+bootIslands('[data-library-search]', boot);
+</script>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+:global(article.technical-drawing-stack > * > section .content:has(.library-search-demo)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding-block: 0.5em;
+}
+
+.library-search-demo {
+  @include sheet-content;
+
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  /* A definite height, so the result list scrolls inside the sheet rather than
+     growing it. */
+  height: 100%;
+  min-height: 0;
+
+  /* The title block claims the bottom-right corner: on a wide sheet it reaches into
+     the content column from the right, on a narrow one it takes a row off the bottom. */
+  padding-right: calc(3em + $sheet-margin);
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-right: $sheet-margin;
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    /* Portrait gives the title block its own row. */
+    padding-bottom: $sheet-margin;
+  }
+}
+</style>

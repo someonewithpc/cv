@@ -1,0 +1,91 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import SearchLayer from './layers/SearchLayer.astro';
+import RelevanceLayer from './layers/RelevanceLayer.astro';
+import FiltersLayer from './layers/FiltersLayer.astro';
+import SqlLayer from './layers/SqlLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+const srcRoot = path.join(process.cwd(), 'src');
+const clientDir = path.join(srcRoot, 'components/LibrarySearchDemo/client');
+
+// Both halves the sheets load, the main tool and the relevance and SQL sheets' redraw,
+// split the way the page splits them so the search they share is weighed once.
+const { outputFiles } = await esbuild.build({
+  entryPoints: [path.join(clientDir, 'librarySearch.ts'), path.join(clientDir, 'querySheet.ts')],
+  bundle: true,
+  splitting: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  outdir: 'out',
+  alias: { '@': srcRoot },
+});
+
+const clientSize = toKiB(outputFiles.map((file) => file.text).join(''));
+
+const layers = {
+  search: { name: null },
+  relevance: { name: 'Relevance Scoring', pageStyle: 'blueprint' },
+  filters: { name: 'Property Filters', pageStyle: 'blueprint' },
+  sql: { name: 'Generated SQL', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Library Search & Relevance"
+  scale="1:1"
+  size={clientSize}
+  date="2025"
+  tech={['rails', 'mysql']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      search: <SearchLayer />,
+      relevance: <RelevanceLayer />,
+      filters: <FiltersLayer />,
+      sql: <SqlLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      search: (
+        <PostIt background="#e8e4dc" color="black">
+          Hover or focus to take over, then type. Watch a bare 8 get quoted, and the bars
+          sort themselves on every keystroke
+        </PostIt>
+      ),
+      relevance: (
+        <PostIt background="#fec" color="black">
+          Type here too. Each bar is the row's score over the best score for the same
+          query, so the top hit always reads 1.00
+        </PostIt>
+      ),
+      filters: (
+        <PostIt background="#dfd" color="black">
+          Compare the two columns. The filter shrinks what the maximum is taken over, so
+          the best row it leaves climbs to 1.00
+        </PostIt>
+      ),
+      sql: (
+        <PostIt background="#cde" color="black">
+          Type and see your query land in all three copies of the fragment at once, and a
+          filter from the first sheet appear as one more AND
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>

@@ -53,6 +53,7 @@
     - [x] Walkthrough stops for good under a resting mouse or a scroll swipe (#137)
     - [x] Sheet shows the restart, play and pause deck (#143)
   - [x] Visrez synthetic properties
+  - [x] Visrez library search and relevance (SH-04)
   - [x] Slotted components carry their own scripts; boot island removed
   - [x] Interactive map font picker (#25)
     - [x] Font proxy stops relaying for the day after 1 GB
