@@ -70,9 +70,8 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       main: (
         <PostIt background="#cde" color="black">
-          The dropdown is <code>document.fonts</code>: every face this page has
-          loaded, its Unicode subsets folded back into one entry per face. Nothing
-          in it is hardcoded, so a font loaded below is in the list a moment later
+          Venues set their map's font here to match the site it sits on. The picker pulls the
+          fonts from that site's address, or takes one from Google Fonts
         </PostIt>
       ),
       sources: null,
