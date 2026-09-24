@@ -8,7 +8,7 @@ const quoted = mangle('8').text;
 const folded = mangle('8 seats').text;
 ---
 
-<div class="wrapper">
+<div class="wrapper" data-blueprint-sheet>
   <div class="relevance-layer" data-library-search="relevance" data-query={state.query} data-filters="{}">
     <div class="panel">
       <header>
@@ -60,6 +60,8 @@ bootIslands('[data-library-search="relevance"]', boot);
 
 <style lang="scss">
 @use "./sheet" as *;
+
+@include blueprint-cell;
 
 .wrapper {
   @include blueprint-wrapper;
@@ -166,6 +168,12 @@ header strong {
   :global(.sum code) {
     color: var(--ink-muted);
     overflow-wrap: anywhere;
+  }
+
+  /* The sum wraps to three lines a row on a phone sheet and pushes the panel off the page;
+     the MATCH column beside it is the total anyway. */
+  :global([data-sheet-orientation='portrait']) & :global(.sum) {
+    display: none;
   }
 
   :global(.excluded) {

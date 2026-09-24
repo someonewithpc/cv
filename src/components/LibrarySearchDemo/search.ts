@@ -187,12 +187,10 @@ function quote(text: string) {
   return `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
-const JOIN = 'FROM `library_objects`\nINNER JOIN `library_object_properties_concatenated`\n  ON `library_object_properties_concatenated`.`library_object_id` = `library_objects`.`id`\n';
+const JOIN = 'FROM `library_objects`\nINNER JOIN `library_object_properties_concatenated` ON `library_object_properties_concatenated`.`library_object_id` = `library_objects`.`id`\n';
 
 /** What `LibraryObject.visible` adds: completed, not deprecated, newest first. */
-const VISIBLE = '`library_objects`.`image_processing` = FALSE\n  AND `library_objects`.`deprecated_at` IS NULL\n';
-
-const indent = (sql: string) => sql.replace(/^/gm, '  ');
+const VISIBLE = '`library_objects`.`image_processing` = FALSE AND `library_objects`.`deprecated_at` IS NULL\n';
 
 export function sqlSegments({ query, filters }: SearchState): SqlSegment[] {
   const { text } = mangle(query);
@@ -214,12 +212,12 @@ export function sqlSegments({ query, filters }: SearchState): SqlSegment[] {
 
   // objects_query.reselect("MAX(#{query_fragment})").to_sql: the relation again with the
   // MAX as its only column, so the sanitised fragment is inside it twice more.
-  const maxQuery = indent(`SELECT MAX(${match})\n${JOIN}WHERE ${VISIBLE}${category}  AND (${match})\nLIMIT 250`).trimStart();
+  const maxQuery = `SELECT MAX(${match}) ${JOIN}WHERE ${VISIBLE}${category}  AND (${match}) LIMIT 250`.replace(/\n/g, ' ').replace(/ +/g, ' ');
 
   add('-- eager_load(:space_object, :properties, :styles) adds LEFT OUTER JOINs and their columns, left out here\n', 'comment');
-  add('SELECT `library_objects`.*,\n       ((');
+  add('SELECT `library_objects`.*,\n  ((');
   add(match, 'select');
-  add(')\n        / (');
+  add(')\n   / (');
   add(maxQuery, 'max');
   add(')) AS search_relevance\n');
   add(JOIN);
@@ -227,8 +225,8 @@ export function sqlSegments({ query, filters }: SearchState): SqlSegment[] {
   add(match, 'where');
   add(`)\n${property}ORDER BY ((`);
   add(match, 'order');
-  add(')\n          / (');
+  add(')\n   / (');
   add('SELECT MAX(...) ... -- the same subquery, in full, again', 'max');
-  add(')) DESC,\n         `library_objects`.`updated_at` DESC\nLIMIT 250');
+  add(')) DESC,\n  `library_objects`.`updated_at` DESC\nLIMIT 250');
   return out;
 }

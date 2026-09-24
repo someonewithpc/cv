@@ -6,7 +6,7 @@ import { search } from '../search';
 const state = { query: initialQuery, filters: {} };
 ---
 
-<div class="wrapper">
+<div class="wrapper" data-blueprint-sheet>
   <div class="sql-layer" data-library-search="sql" data-query={state.query} data-filters="{}">
     <div class="panel">
       <header>
@@ -52,6 +52,8 @@ bootIslands('[data-library-search="sql"]', boot);
 
 <style lang="scss">
 @use "./sheet" as *;
+
+@include blueprint-cell;
 
 .wrapper {
   @include blueprint-wrapper;
@@ -125,6 +127,10 @@ header strong {
 .sql {
   margin: 0;
   padding: 0.625em 0.75em;
+  /* The subquery makes it long; the block scrolls before the panel outgrows the sheet. */
+  max-height: 19em;
+  overflow-y: auto;
+  scrollbar-width: thin;
   border: 1px solid var(--line);
   border-radius: 0.375em;
   background: var(--surface-sunken);

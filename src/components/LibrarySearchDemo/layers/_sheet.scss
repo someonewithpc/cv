@@ -12,15 +12,31 @@ $sheet-margin: 0.75em;
   padding: $sheet-margin;
 }
 
+// The content cell a blueprint sheet is given, stretched to the sheet so the wrapper has a
+// definite height to keep its panel inside. Included once at the top level of each layer.
+@mixin blueprint-cell {
+  :global(article.technical-drawing-stack > * > section .content:has([data-blueprint-sheet])) {
+    place-self: stretch;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100%;
+    min-width: 0;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+}
+
 // A blueprint sheet's centred panel, clear of the title block wherever the block sits.
 @mixin blueprint-wrapper {
   @include sheet-content;
 
-  @container technical-drawing-width (max-width: 56em) {
-    /* The title block claims the bottom-right corner on a narrow sheet, and the
-       panel is centred, so its bottom edge has to clear that corner. */
-    padding-bottom: calc(3.5em + $sheet-margin);
-  }
+  height: 100%;
+  min-height: 0;
+
+  /* The title block claims the bottom-right corner, and the panel is centred, so its
+     bottom edge has to clear that corner at every width. */
+  padding-bottom: calc(3.5em + $sheet-margin);
 
   @container technical-drawing (orientation: portrait) {
     /* Portrait gives the title block its own row. */
@@ -30,9 +46,20 @@ $sheet-margin: 0.75em;
   margin-inline: auto;
   display: grid;
   /* An auto track takes the panel's max-content width and overflows the sheet on a
-     portrait page; 1fr pins it to the wrapper so the panel's own max-width bites. */
+     portrait page; 1fr pins it to the wrapper so the panel's own max-width bites. The row
+     is pinned the same way, so a panel taller than the sheet scrolls instead of growing. */
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   place-items: center;
+
+  /* The layer takes the whole row as a one-row grid of its own, so the panel's
+     max-height has a definite height to resolve against. */
+  > * {
+    height: 100%;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+  }
 }
 
 @mixin blueprint-type {
@@ -49,6 +76,11 @@ $sheet-margin: 0.75em;
 @mixin panel {
   box-sizing: border-box;
   width: 100%;
+  /* The type has a floor of 0.75rem, so on a narrow landscape sheet the panel asks for more
+     height than the page has; it scrolls rather than running under the title block. */
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
   padding: 0.75em 0.875em;
   border: 1px solid var(--line-strong);
   border-radius: 0.5em;

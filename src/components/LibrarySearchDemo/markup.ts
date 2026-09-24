@@ -96,7 +96,7 @@ export function relevanceHtml(state: SearchState) {
       <tbody>${termRows}</tbody>
     </table>
     <table class="hits">
-      <thead><tr><th>Object</th><th>Σ tf × idf²</th><th class="num">MATCH</th><th class="score">÷ ${max === null ? 'NULL' : fixed(max)}</th></tr></thead>
+      <thead><tr><th>Object</th><th class="sum">Σ tf × idf²</th><th class="num">MATCH</th><th class="score">÷ ${max === null ? 'NULL' : fixed(max)}</th></tr></thead>
       <tbody>${hitRows}</tbody>
     </table>
     ${more}${empty}`;
