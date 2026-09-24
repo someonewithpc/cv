@@ -346,8 +346,10 @@ export function createTable(schema: Schema): Line[] {
       });
     }
   });
+  // The table options as AbstractMySQLPlatform::buildTableOptions joins them, in its order;
+  // the comment is the last of them, and the only one the schemaDef had a say in.
   clause(undefined, ') DEFAULT CHARACTER SET utf8 COLLATE `utf8_unicode_ci` ENGINE = InnoDB', 0);
-  clause('comment', `COMMENT ${quote(schema.description)};`, 0);
+  clause('comment', `COMMENT = ${quote(schema.description)};`, 0);
   return clauses;
 }
 
@@ -362,7 +364,7 @@ export function rulesFor(schema: Schema): Rule[] {
     {
       key: 'comment',
       label: `'description'`,
-      steps: [[`'description'`, `options.comment`, `COMMENT '…'`]],
+      steps: [[`'description'`, `options.comment`, `COMMENT = '…'`]],
     },
     {
       key: 'pk',
