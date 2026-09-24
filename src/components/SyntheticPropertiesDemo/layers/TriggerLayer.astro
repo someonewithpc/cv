@@ -5,7 +5,7 @@ const targets = [
   {
     id: 'backfill',
     title: 'Backfill',
-    when: 'rake data_migrations:initialize_library_object_properties_concatenated, once',
+    when: 'rake data_migrations:initialize_…, once',
     where: '"1=1"',
     sql: [
       'INSERT IGNORE INTO library_object_synthetic_properties',
@@ -57,7 +57,7 @@ const targets = [
 ];
 ---
 
-<div class="wrapper">
+<div class="wrapper synthetic-blueprint">
   <div class="trigger-layer" aria-hidden="true">
     <div class="panel">
       <header>
@@ -71,23 +71,15 @@ const targets = [
         <span class="caption"><code>app/models/library_object.rb</code></span>
         <pre><code><span class="k">def</span> self.size_synthetic_property_select_sql(<span class="hot">where</span> = <span class="s">"1=1"</span>)
   <span class="k">&lt;&lt;~SQL</span>.chomp
-    <span class="c">-- one row per dimension: SUBSTRING_INDEX takes the head, the rest recurses</span>
-    WITH RECURSIVE split_sizes AS (…)
-
+    WITH RECURSIVE split_sizes AS (…)  <span class="c">-- one row per dimension</span>
     SELECT id AS library_object_id, 'Size (centimeters)' AS name,
       GROUP_CONCAT(CONCAT(ROUND(size, 1 - FLOOR(LOG10(size))), 'cm') SEPARATOR ' by ') AS value
     FROM split_sizes WHERE #{'#{'}<span class="hot">where</span>{'}'} AND size &lt;&gt; '' GROUP BY id
-
     UNION ALL
-    <span class="c">-- five more of the same: meters, inches with " and with in, feet-inches with '" and with ft in</span>
+    <span class="c">-- five more: meters, inches twice, feet-inches twice</span>
   <span class="k">SQL</span>
 <span class="k">end</span></code></pre>
       </div>
-
-      <svg class="wires" viewBox="0 0 400 24" preserveAspectRatio="none">
-        <path d="M200 0 V8 H100 V24" />
-        <path d="M200 8 H300 V24" />
-      </svg>
 
       <ol class="targets">
         {targets.map((target) => (
@@ -118,7 +110,7 @@ const targets = [
   @include sheet-type;
 
   box-sizing: border-box;
-  width: min(100%, 54em);
+  width: min(100%, 60em);
 }
 
 .panel {
@@ -162,7 +154,7 @@ pre {
   display: grid;
   gap: 0.25em;
   justify-self: center;
-  width: min(100%, 46em);
+  width: min(100%, 50em);
 
   .caption {
     font-size: 0.6875em;
@@ -170,7 +162,7 @@ pre {
   }
 
   pre {
-    font-size: 0.625em;
+    font-size: 0.5625em;
   }
 }
 
@@ -190,24 +182,6 @@ pre {
 .hot {
   color: var(--accent-text);
   font-weight: 600;
-}
-
-.wires {
-  display: block;
-  width: 100%;
-  height: 1.25em;
-  overflow: visible;
-
-  path {
-    fill: none;
-    stroke: var(--line-strong);
-    stroke-width: 1.25;
-    vector-effect: non-scaling-stroke;
-  }
-
-  :global([data-sheet-orientation='portrait']) & {
-    display: none;
-  }
 }
 
 .targets {
@@ -250,7 +224,7 @@ pre {
 
   pre {
     margin-top: 0.25em;
-    font-size: 0.625em;
+    font-size: 0.5625em;
   }
 
   &[data-target='backfill'] {
