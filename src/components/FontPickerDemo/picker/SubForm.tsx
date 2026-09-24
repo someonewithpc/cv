@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
 
 import { useDebounce } from './useDebounce';
@@ -13,8 +13,11 @@ registerFontSettingsProperties();
 // after a reset puts its faces back on
 export function useSubFormInput<T>(name: string, load: (value: string, signal: AbortSignal) => Promise<T>, onLoaded: (result: T) => void) {
   const [raw, setRaw] = useState('');
-  const queryKey = useDebounce([name, raw.trim()], 250);
-  const value = queryKey[1];
+  // The string is what gets debounced, and the key is built from it once per value: a fresh
+  // array handed to useDebounce every render differed by reference each time, so its effect
+  // re-armed after every commit and re-rendered the subform every 250ms for good.
+  const value = useDebounce(raw.trim(), 250);
+  const queryKey = useMemo(() => [name, value], [name, value]);
 
   const { status, data } = useFontQuery({
     queryKey,
