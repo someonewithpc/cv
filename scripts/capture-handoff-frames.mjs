@@ -132,7 +132,8 @@ const page = await context.newPage();
 await page.emulateMedia({ reducedMotion: 'reduce' });
 await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
 
-const stack = page.locator('article.technical-drawing-stack').nth(4);
+// The stack that holds the drag and drop scene, wherever it sits in the page's order.
+const stack = page.locator('article.technical-drawing-stack').filter({ has: page.locator('.drag-drop-scene-app') });
 await stack.scrollIntoViewIfNeeded();
 const app = stack.locator('.drag-drop-scene-app');
 await app.waitFor();

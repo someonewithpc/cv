@@ -16,7 +16,7 @@
           packages = with pkgs; [
             git
             nodejs_22
-            # vnu, the W3C Nu HTML checker `npm run test:audit:w3c` calls.
+            # vnu, the W3C Nu HTML checker `npm run test:audit` calls.
             validator-nu
           ];
 
