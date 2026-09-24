@@ -227,6 +227,8 @@ export class AutoPlayController {
    * at its next await once a pause has moved it on, whatever `paused` says by then.
    */
   private generation = 0;
+  /** The generation of the step now running, or null between steps. */
+  private stepInFlight: number | null = null;
   private presetIndex = 0;
   private demoMarkerIds: Array<MarkerType['id'] | null> = DEMO_PRESETS.map(() => null);
   private sessionIsCreate = false;
@@ -257,6 +259,12 @@ export class AutoPlayController {
 
   pause() {
     this.paused = true;
+    // The step in flight stands down without advancing, so advance for it: resume() moves on
+    // to the next step, as it did before the generation count, instead of repeating this one.
+    if (this.stepInFlight === this.generation) {
+      this.stepIndex += 1;
+      this.stepInFlight = null;
+    }
     this.generation += 1;
     if (this.timer) {
       clearTimeout(this.timer);
@@ -1003,6 +1011,7 @@ export class AutoPlayController {
   private async executeStep(step: Step) {
     if (this.paused) return;
     const generation = this.generation;
+    this.stepInFlight = generation;
     const cursor = step.cursor
       ? (typeof step.cursor === 'function' ? step.cursor() : step.cursor)
       : undefined;
@@ -1013,13 +1022,15 @@ export class AutoPlayController {
       const click = Boolean(typeof step.domClick === 'function' ? step.domClick() : step.domClick);
       const el = cursor.target == null ? null : queryDemoTarget(cursor.target);
       if (el) await press(el, click);
-      // A pause during the hold: the press has landed, but the step's own work stays undone.
-      if (generation !== this.generation) return;
+      // A pause during the hold: a step that only points stands down. One whose click has
+      // landed still runs, since resume() moves past it and its bookkeeping would never happen.
+      if (generation !== this.generation && !click) return;
     }
     await step.run?.(this.dispatch, this.getState);
     // Paused, restarted or resumed while the step ran: whichever chain is current owns the
     // index and the timer now, and this one is finished.
     if (generation !== this.generation) return;
+    this.stepInFlight = null;
     this.stepIndex += 1;
     if (this.stepIndex >= this.steps.length) {
       this.stepIndex = 0;
