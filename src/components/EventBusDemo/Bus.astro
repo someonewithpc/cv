@@ -197,20 +197,20 @@ const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:
   max-width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.875em;
+  gap: 0.75em;
   align-content: center;
   outline: none;
   container-type: inline-size;
   container-name: event-bus;
 
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.6875rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
+  font-size: clamp(0.6875rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
   line-height: 1.35;
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
     /* A page that quotes the bus beside other things can hand it a smaller size. */
-    font-size: var(--bus-portrait-font, clamp(0.6875rem, 0.032 * var(--sheet-inline), 0.9375rem));
+    font-size: var(--bus-portrait-font, clamp(0.625rem, 0.029 * var(--sheet-inline), 0.9375rem));
   }
 }
 

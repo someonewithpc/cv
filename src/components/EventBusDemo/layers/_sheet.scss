@@ -11,16 +11,13 @@ $sheet-margin: 0.75em;
   padding: $sheet-margin;
 }
 
-// The title block claims the bottom-right corner: on a wide sheet it reaches into the
-// content column from the right, on a narrow one it takes a row off the bottom, and a
-// portrait sheet gives it a row of its own.
+// The title block claims the bottom-right corner. These sheets carry no note, so the content
+// runs the sheet's whole width and the rows that reach the bottom would run under the
+// block; a landscape sheet keeps clear of it by the block's own measured height
+// (--title-block-block, set on the sheet by Stack.astro), and a portrait sheet gives the
+// block a row of its own.
 @mixin clear-title-block {
-  padding-right: calc(3em + $sheet-margin);
-
-  @container technical-drawing-width (max-width: 56em) {
-    padding-right: $sheet-margin;
-    padding-bottom: calc(3.5em + $sheet-margin);
-  }
+  padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
 
   @container technical-drawing (orientation: portrait) {
     padding-bottom: $sheet-margin;

@@ -4,7 +4,6 @@ import path from 'node:path';
 import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
-import PostIt from '@/components/PostIt.astro';
 
 import BusLayer from './layers/BusLayer.astro';
 import StopLayer from './layers/StopLayer.astro';
@@ -55,35 +54,6 @@ type Layer = keyof typeof layers;
       stop: <StopLayer />,
       discovery: <DiscoveryLayer />,
       guard: <GuardLayer />,
-    }[layer])}
-  </fragment>
-
-  <fragment slot="aside">
-    {(layer: Layer) => ({
-      bus: (
-        <PostIt background="#e8e4dc" color="black">
-          Hover or focus to take over. Switch a plugin off and the chain closes up around
-          it; pick the GIF and see who claims it now
-        </PostIt>
-      ),
-      stop: (
-        <PostIt background="#fed" color="black">
-          The first handler to return stop ends the dispatch. The emitter asks one
-          question of the result, and skips its own default when the answer is stop
-        </PostIt>
-      ),
-      discovery: (
-        <PostIt background="#cde" color="black">
-          Nothing registers a listener by hand. Name a public method on&lt;Event&gt; and
-          the container build wires it up
-        </PostIt>
-      ),
-      guard: (
-        <PostIt background="#dfd" color="black">
-          A plugin with the wrong signature never reaches a request: the build that would
-          wire it up refuses to finish
-        </PostIt>
-      ),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
