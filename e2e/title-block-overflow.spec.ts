@@ -51,8 +51,22 @@ async function sheets(page: Page, selector: string): Promise<Sheet[]> {
         const over = (rect: DOMRect) => rect.right > box.left && rect.left < box.right
           && rect.bottom > box.top && rect.top < box.bottom;
 
+        // Only the part that shows: a list that scrolls inside the sheet keeps the rows
+        // scrolled out of it under its own clip, wherever their boxes say they are.
+        const shown = (node: Element) => {
+          const b = node.getBoundingClientRect();
+          let [left, top, right, bottom] = [b.left, b.top, b.right, b.bottom];
+          for (let a = node.parentElement; a && a !== cell; a = a.parentElement) {
+            const cs = getComputedStyle(a);
+            if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+            const c = a.getBoundingClientRect();
+            [left, top, right, bottom] = [Math.max(left, c.left), Math.max(top, c.top), Math.min(right, c.right), Math.min(bottom, c.bottom)];
+          }
+          return new DOMRect(left, top, Math.max(0, right - left), Math.max(0, bottom - top));
+        };
+
         const buried = [...cell.querySelectorAll(what)]
-          .map((node) => ({ node, rect: node.getBoundingClientRect() }))
+          .map((node) => ({ node, rect: shown(node) }))
           .filter(({ rect }) => rect.width > 0 && rect.height > 0)
           // The artwork itself can be focusable: a scene takes arrow keys, a map takes over
           // on focus. Anything that large is the backdrop, not something being buried.
