@@ -12,12 +12,15 @@ export function FontSize({ size, setSize }: { size: number, setSize: (size: numb
       <label>
         <span>
           <span>Font Size</span>
-          <FontAwesomeIcon
-            icon={faArrowsRotate}
-            onClick={() => setSize(1)}
+          <button
+            type="button"
+            className="reset"
+            aria-label="Reset to default"
             title="Reset to default"
-            style={{ float: 'right' }}
-          />
+            onClick={() => setSize(1)}
+          >
+            <FontAwesomeIcon icon={faArrowsRotate} />
+          </button>
         </span>
         <input
           type="range"

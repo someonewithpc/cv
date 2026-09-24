@@ -67,17 +67,20 @@ function Column({ side }: { side: Side }) {
                   </label>,
                 )}
 
-                <div className="unheld">
+                {/* The rows under the slider are there to be pushed down, not to be worked:
+                    inert keeps them out of the tab order and off the pointer without the
+                    greyed look disabled would give them. readonly does nothing on a range. */}
+                <div className="unheld" inert>
                   <label>
                     <span>
                       <span>Font Weight</span>
                       <FontAwesomeIcon icon={faArrowsRotate} title="Reset to default" style={{ float: 'right' }} />
                     </span>
-                    <input type="range" data-demo-target={`weight-${side}`} min="100" max="1000" step={100} defaultValue={400} readOnly />
+                    <input type="range" data-demo-target={`weight-${side}`} min="100" max="1000" step={100} defaultValue={400} />
                   </label>
                 </div>
 
-                <div className="unheld">
+                <div className="unheld" inert>
                   <label>
                     <span>Font Family</span>
                     <select data-demo-target={`family-${side}`} defaultValue="poppins">

@@ -278,8 +278,22 @@
       }
     }
 
-    svg[data-icon] {
+    // The reset arrows: a real button, so the keyboard reaches them, drawn as the bare icon
+    // they were.
+    button.reset {
+      float: right;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      line-height: 0;
       cursor: pointer;
+
+      &:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+      }
     }
 
     p {
@@ -288,7 +302,7 @@
       line-height: 1;
     }
 
-    p[role='alert'] {
+    p[role='note'] {
       padding-inline-start: 1ch;
       border-left: 3px solid orange;
 
@@ -324,7 +338,7 @@
       p {
         color: light-dark(#666, #a8a8a8);
 
-        &[role='alert'] {
+        &[role='note'] {
           color: inherit;
         }
       }

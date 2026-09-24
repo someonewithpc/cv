@@ -20,12 +20,15 @@ export function FontWeight(
       >
         <span>
           <span>Font Weight</span>
-          <FontAwesomeIcon
-            icon={faArrowsRotate}
-            onClick={() => setWeight(400)}
+          <button
+            type="button"
+            className="reset"
+            aria-label="Reset to default"
             title="Reset to default"
-            style={{ float: 'right' }}
-          />
+            onClick={() => setWeight(400)}
+          >
+            <FontAwesomeIcon icon={faArrowsRotate} />
+          </button>
         </span>
         <input
           disabled={!enabled}

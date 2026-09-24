@@ -27,7 +27,7 @@ export function EmbedURL({ visible, onLoaded }: { visible: boolean, onLoaded: (f
       <p>
         Enter a URL from which we will extract fonts. Typically, the URL where the map will be shown
       </p>
-      <p role="alert">
+      <p role="note">
         <FontAwesomeIcon icon={faTriangleExclamation} />&nbsp;
         Note: selecting a font this way requires that that font file extracted from the page remain
         available in the same location, meaning that if the font used on that page changes, you may
