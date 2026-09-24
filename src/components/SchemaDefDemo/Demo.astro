@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
-import PostIt from '@/components/PostIt.astro';
 
 import TransformLayer from './layers/TransformLayer.astro';
 import TypeMapLayer from './layers/TypeMapLayer.astro';
@@ -49,35 +48,6 @@ type Layer = keyof typeof layers;
       typemap: <TypeMapLayer />,
       plugins: <PluginsLayer />,
       phpstan: <PhpstanLayer />,
-    }[layer])}
-  </fragment>
-
-  <fragment slot="aside">
-    {(layer: Layer) => ({
-      transform: (
-        <PostIt background="#f1e3b8" color="black">
-          Hover or focus a line on either side and its counterpart lights up. Arrow keys walk
-          the fields; left and right jump across
-        </PostIt>
-      ),
-      typemap: (
-        <PostIt background="#cde" color="black">
-          Read a row across: the v2 name, what Doctrine calls it, what MySQL gets. Size is
-          glued onto the name before the lookup
-        </PostIt>
-      ),
-      plugins: (
-        <PostIt background="#e2d9ef" color="black">
-          Look for the Entity/ directory. A plugin that ships one has tables; nothing else
-          registers them
-        </PostIt>
-      ),
-      phpstan: (
-        <PostIt background="#dfd" color="black">
-          Follow the string 'note' down to Note|null. Analysis boots the real kernel, so the
-          type comes from the same schemaDefs
-        </PostIt>
-      ),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
