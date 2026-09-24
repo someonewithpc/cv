@@ -283,6 +283,14 @@ const rules = [
   td:last-child {
     color: var(--ink-muted);
   }
+
+  // A phone-wide sheet has no room for the notes on one line; the cut off the right edge
+  // was the end of the sentence.
+  @container technical-drawing (orientation: portrait) {
+    td:last-child {
+      white-space: normal;
+    }
+  }
 }
 
 code {
