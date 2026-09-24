@@ -10,9 +10,9 @@ const steps = [
   },
   {
     title: 'Real kernel',
-    file: 'GNUsocialProvider.php',
-    code: ['$kernel->boot();', '$gnu_social->initialize();'],
-    text: 'The container and every module start, as they would for a request',
+    file: 'config/phpstan-bootstrap.php',
+    code: ['$kernel->boot();', 'return $kernel;'],
+    text: 'GNUsocialProvider requires it, then starts every module as a request would',
   },
   {
     title: 'Table map',
