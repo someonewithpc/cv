@@ -44,16 +44,15 @@ test('main page: a captured buffer, cut into the ranges each parser is handed', 
   await expect(buffer).toContainText('Captured buffer');
   await expect(buffer).toContainText('not a live parser');
 
-  // The frontmatter and the style body are whole-line blocks; the interpolations and the
-  // attribute expression sit inside their lines.
+  // The frontmatter and the style body are whole-line blocks; the one interpolation sits
+  // inside its line.
   await expect(buffer.locator('.block[data-lang="tsx"]')).toContainText('type Props');
-  await expect(buffer.locator('.block[data-lang="scss"]').first()).toContainText('margin-bottom');
-  await expect(buffer.locator('.range[data-lang="tsx"]')).toHaveCount(4);
-  await expect(buffer.locator('.range[data-lang="tsx"]', { hasText: 'headingId' })).toHaveCount(1);
+  await expect(buffer.locator('.block[data-lang="scss"]').first()).toContainText('place-items');
+  await expect(buffer.locator('.range[data-lang="tsx"]')).toHaveCount(1);
 
   // The braces stay with the Astro parser: the offset leaves them out of the range.
-  const interpolation = buffer.locator('.range', { hasText: 'sheetCode' });
-  await expect(interpolation).toHaveText('sheetCode');
+  const interpolation = buffer.locator('.range', { hasText: 'label' });
+  await expect(interpolation).toHaveText('label');
 });
 
 test('main page: the toggle shows and hides the range outlines', async ({ page }) => {
@@ -76,7 +75,7 @@ test('main page: pointing at a token lights up the range that owns it', async ({
 
   await expect(visibleEcho()).toHaveText(/Point at the buffer/);
 
-  const interpolation = buffer.locator('.range', { hasText: 'sheetCode' });
+  const interpolation = buffer.locator('.range', { hasText: 'label' });
   const idle = await interpolation.evaluate((el) => getComputedStyle(el).backgroundColor);
   await interpolation.hover();
   await expect(visibleEcho()).toHaveText("tsx · element (html_interpolation), :offset '(1 . -1) · :local t");
@@ -86,7 +85,7 @@ test('main page: pointing at a token lights up the range that owns it', async ({
   await expect(visibleEcho()).toHaveText(/^scss · style_element \(raw_text\)/);
 
   // Markup outside every embedded range belongs to the Astro parser itself.
-  await buffer.locator('.line', { hasText: '<header>' }).first().hover();
+  await buffer.locator('.line', { hasText: 'aria-hidden="true"' }).first().hover();
   await expect(visibleEcho()).toHaveText(/^astro · the primary parser/);
 });
 
