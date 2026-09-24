@@ -18,7 +18,7 @@ const targets = [
   {
     id: 'insert',
     title: 'trigger.after(:insert)',
-    when: 'library_objects, each row',
+    when: null,
     where: '"id = NEW.id"',
     sql: [
       'INSERT INTO library_object_synthetic_properties',
@@ -31,7 +31,7 @@ const targets = [
   {
     id: 'update',
     title: 'trigger.after(:update).of(:size)',
-    when: 'library_objects, each row',
+    when: null,
     where: '"id = NEW.id"',
     sql: [
       'UPDATE library_object_synthetic_properties AS lops',
@@ -47,7 +47,7 @@ const targets = [
   {
     id: 'delete',
     title: 'trigger.after(:delete)',
-    when: 'library_objects, each row',
+    when: null,
     where: null,
     sql: [
       'DELETE FROM library_object_synthetic_properties',
@@ -62,9 +62,8 @@ const targets = [
     <div class="panel">
       <header>
         <strong>One Ruby method, four places its SQL runs</strong>
-        <span>The backfill and the trigger bodies call the same method with a different
-          <code>where</code>, so they cannot drift apart. The hairtrigger gem writes the
-          triggers out as a migration.</span>
+        <span>The backfill and the row triggers on <code>library_objects</code> call one method
+          with a different <code>where</code>; hairtrigger writes the triggers out as a migration.</span>
       </header>
 
       <div class="builder">
@@ -75,8 +74,7 @@ const targets = [
     SELECT id AS library_object_id, 'Size (centimeters)' AS name,
       GROUP_CONCAT(CONCAT(ROUND(size, 1 - FLOOR(LOG10(size))), 'cm') SEPARATOR ' by ') AS value
     FROM split_sizes WHERE #{'#{'}<span class="hot">where</span>{'}'} AND size &lt;&gt; '' GROUP BY id
-    UNION ALL
-    <span class="c">-- five more: meters, inches twice, feet-inches twice</span>
+    UNION ALL  <span class="c">-- five more: meters, inches twice, feet-inches twice</span>
   <span class="k">SQL</span>
 <span class="k">end</span></code></pre>
       </div>
@@ -86,7 +84,7 @@ const targets = [
           <li class="target" data-target={target.id}>
             <span class="head">
               <span class="title">{target.title}</span>
-              <span class="when">{target.when}</span>
+              {target.when && <span class="when">{target.when}</span>}
               {target.where && (
                 <span class="source"><code>where</code> = <code class="hot">{target.where}</code></span>
               )}
@@ -184,13 +182,21 @@ pre {
   font-weight: 600;
 }
 
+/* The four in one row, each as tall as its own body, so the row ends above the title block
+   on a landscape sheet as narrow as 40em; the update body has the longest lines, so its
+   column is the widest and it wraps the least. A portrait sheet stacks them. */
 .targets {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 0.85fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
   gap: 0.5em;
   margin: 0;
   padding: 0;
   list-style: none;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .target {

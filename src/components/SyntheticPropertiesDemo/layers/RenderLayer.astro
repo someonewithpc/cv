@@ -87,7 +87,7 @@ const feet = new Set(['ft-mark', 'ft-in']);
   @include sheet-type;
 
   box-sizing: border-box;
-  width: min(100%, 44em);
+  width: min(100%, 48em);
 }
 
 .panel {
@@ -133,17 +133,26 @@ thead th {
   border-bottom-color: var(--line-strong);
 }
 
+/* The rule after the name on one line, so seven rows stay clear of the title block on a
+   landscape sheet; a portrait sheet has the height to give the rule its own line. */
 tbody th {
   font-weight: 400;
 
-  .name {
-    display: block;
-  }
-
   .rule {
-    display: block;
+    margin-left: 0.5em;
     font-size: 0.8125em;
     color: var(--ink-faint);
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    .name,
+    .rule {
+      display: block;
+    }
+
+    .rule {
+      margin-left: 0;
+    }
   }
 }
 
