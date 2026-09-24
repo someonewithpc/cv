@@ -4,7 +4,6 @@ import path from 'node:path';
 import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
-import PostIt from '@/components/PostIt.astro';
 
 import SearchLayer from './layers/SearchLayer.astro';
 import RelevanceLayer from './layers/RelevanceLayer.astro';
@@ -57,35 +56,6 @@ type Layer = keyof typeof layers;
       relevance: <RelevanceLayer />,
       filters: <FiltersLayer />,
       sql: <SqlLayer />,
-    }[layer])}
-  </fragment>
-
-  <fragment slot="aside">
-    {(layer: Layer) => ({
-      search: (
-        <PostIt background="#e8e4dc" color="black">
-          Hover or focus to take over, then type. Watch a bare 8 get quoted, and the bars
-          sort themselves on every keystroke
-        </PostIt>
-      ),
-      relevance: (
-        <PostIt background="#fec" color="black">
-          Type here too. Each bar is the row's score over the best score for the same
-          query, so the top hit always reads 1.00
-        </PostIt>
-      ),
-      filters: (
-        <PostIt background="#dfd" color="black">
-          Compare the two columns. The filter shrinks what the maximum is taken over, so
-          the best row it leaves climbs to 1.00
-        </PostIt>
-      ),
-      sql: (
-        <PostIt background="#cde" color="black">
-          Type and see your query land in all three copies of the fragment at once, and a
-          filter from the first sheet appear as one more AND
-        </PostIt>
-      ),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
