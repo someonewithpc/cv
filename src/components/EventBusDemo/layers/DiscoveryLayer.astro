@@ -1,14 +1,18 @@
 ---
-// One module as the compiler pass reads it. Every public method is listed in source
-// order; the ones whose name starts with `on` become listeners, the event being the rest
-// of the name, and the others are left alone.
+// One module as the compiler pass reads it. Its public methods in source order, every
+// on-method among them; the ones whose name starts with `on` become listeners, the event
+// being the rest of the name, and the others are left alone. Two of the plain methods,
+// fileMeta and fileSanitize, are left out for room.
 const file = 'plugins/ImageEncoder/ImageEncoder.php';
 const methods = [
-  { name: 'version', signature: '(): string' },
+  { name: 'version', signature: '(): string', isStatic: true },
   { name: 'shouldHandle', signature: '(string $mimetype): bool', isStatic: true },
-  { name: 'onResizerAvailable', signature: '(array &$event_map, string $mimetype): EventResult' },
-  { name: 'onViewAttachmentImage', signature: '(array $vars, array &$res): EventResult' },
+  { name: 'onFileMetaAvailable', signature: '(array &$event_map, string $mimetype): EventResult' },
+  { name: 'onFileSanitizerAvailable', signature: '(array &$event_map, string $mimetype): EventResult' },
+  { name: 'onFileResizerAvailable', signature: '(array &$event_map, string $mimetype): EventResult' },
+  { name: 'onViewAttachment', signature: '(array $vars, array &$res): EventResult' },
   { name: 'resizeImagePath', signature: '(string $source, …): bool' },
+  { name: 'onPluginVersion', signature: '(array &$versions): EventResult' },
 ];
 
 const rows = methods.map((method) => ({
@@ -19,7 +23,7 @@ const rows = methods.map((method) => ({
 // What the pass walks: every module directory, components first, then plugins, each
 // alphabetically. A few of each, with the three from the bus among them.
 const components = ['Attachment', 'Avatar', 'Conversation', 'Feed', 'Posting', 'Tag'];
-const plugins = ['ActivityPub', 'Embed', 'ImageEncoder', 'VideoEncoder'];
+const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoEncoder'];
 ---
 
 <div class="wrapper">
@@ -43,7 +47,7 @@ const plugins = ['ActivityPub', 'Embed', 'ImageEncoder', 'VideoEncoder'];
         {plugins.map((module) => (
           <li class:list={{ current: module === 'ImageEncoder' }}>{module}</li>
         ))}
-        <li class="more">+30</li>
+        <li class="more">+29</li>
       </ul>
     </div>
 

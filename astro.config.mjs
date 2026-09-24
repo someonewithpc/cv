@@ -41,6 +41,7 @@ export default defineConfig({
           'film',
           'image',
           'link',
+          'music',
           'pencil',
           'play',
           'plus',

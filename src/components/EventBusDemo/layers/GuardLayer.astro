@@ -3,8 +3,12 @@
 // compiler pass reads is bool, not EventResult. The body is fine; only the signature
 // is checked, and the check is what fails the build.
 const file = 'plugins/ImageEncoder/ImageEncoder.php';
-const line = 182;
-const handler = 'ImageEncoder::onViewAttachmentImage';
+const line = 183;
+// What ModuleManager::preRegisterEvents throws (src/Core/ModuleManager.php:93). The
+// exception goes to the console and its text to the log, with the throw site appended.
+const handler = 'Plugin\\ImageEncoder\\ImageEncoder::onViewAttachment';
+const message = `Return type of ${handler} is not the required EventResult`;
+const where = 'src/Core/ModuleManager.php:93';
 ---
 
 <div class="wrapper">
@@ -20,12 +24,12 @@ const handler = 'ImageEncoder::onViewAttachmentImage';
 
     <figure class="source">
       <figcaption><code>{file}:{line}</code></figcaption>
-      <pre><code><span class="kw">public function</span> onViewAttachmentImage(
+      <pre><code><span class="kw">public function</span> onViewAttachment(
     array $vars,
     array &amp;$res,
 ): <mark>bool</mark> {'{'}
-    <span class="dim">if (!self::shouldHandle($mimetype)) {'{'}</span>
-        <span class="dim">return Event::unhandled;</span>
+    <span class="dim">if (!self::shouldHandle($vars['attachment']->getMimetype())) {'{'}</span>
+        <span class="dim">return Event::next;</span>
     <span class="dim">{'}'}</span>
     <span class="dim">…</span>
     <span class="dim">return Event::stop;</span>
@@ -39,23 +43,22 @@ const handler = 'ImageEncoder::onViewAttachmentImage';
         <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
         <span>shell, the container build</span>
       </figcaption>
-      <pre><code><span class="prompt">$</span> bin/console cache:clear -v
+      <pre><code><span class="prompt">$</span> bin/console cache:clear
 
  // Clearing the cache for the <b>dev</b> environment with debug <b>true</b>
 
-<span class="error-block"><span class="where">In ModuleManager.php line 104:</span>
+<span class="error-block"><span class="where">In ModuleManager.php line 93:</span>
 
-  [App\Util\Exception\BugFoundException]
-  {handler}
-  must return EventResult, declares bool
-  in {file}:{line}</span>
+  [App\Util\Exception\BugFoundException]</span>
 
-<span class="exit">exit 1</span></code></pre>
+<span class="prompt">$</span> tail -n 1 var/log/dev.log
+<span class="error-block">app.CRITICAL: {message} in {where}</span></code></pre>
     </figure>
 
     <p class="footnote">
-      A handler that declares nothing at all gets past the pass. It is caught the first time it
-      returns nothing, by a check in the dispatch that names the file it lives in.
+      A handler that declares no return type gets past the pass. The dispatch catches it the
+      first time it returns nothing (<code>src/Core/Event.php:93</code>): <i>Events must return
+      an \EventResult, which {'{file}'} for {'{event}'} does not</i>.
     </p>
   </div>
 </div>

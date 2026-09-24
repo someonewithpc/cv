@@ -83,7 +83,7 @@ test('main page: switching plugins re-runs the chain and moves the claim', async
   await settled(bus);
 
   // Start from the page's own state, whatever the walkthrough left behind.
-  for (const module of ['Embed', 'ImageEncoder', 'VideoEncoder']) {
+  for (const module of ['AudioEncoder', 'ImageEncoder', 'VideoEncoder']) {
     const toggle = listener(bus, module).locator('.load');
     if ((await toggle.getAttribute('aria-pressed')) === 'false') {
       await toggle.click();
@@ -93,29 +93,38 @@ test('main page: switching plugins re-runs the chain and moves the claim', async
   await bus.locator('.attachment[data-attachment="jpeg"]').click();
   await settled(bus);
   await expect(bus).toHaveAttribute('data-rendered', 'image');
+  await expect(listener(bus, 'AudioEncoder')).toHaveAttribute('data-result', 'next');
   await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'skipped');
 
-  // ImageEncoder off: it leaves the rail for the tray, nobody claims the JPEG, and the
-  // emitter's own default branch renders a link.
+  // ImageEncoder off: it leaves the rail for the tray, the two encoders left both answer
+  // next, and the template's own branch renders a link.
   await listener(bus, 'ImageEncoder').locator('.load').click();
   await expect(bus.locator('.tray .listener[data-module="ImageEncoder"]')).toHaveCount(1);
   await settled(bus);
-  await expect(bus).toHaveAttribute('data-result', 'unhandled');
+  await expect(bus).toHaveAttribute('data-result', 'next');
   await expect(bus).toHaveAttribute('data-rendered', 'link');
   await expect(bus.locator('.branch')).toHaveAttribute('data-taken', 'true');
 
-  // The GIF: VideoEncoder takes image/gif, and with ImageEncoder gone it is first to.
-  await bus.locator('.attachment[data-attachment="gif"]').click();
+  // The MP4: AudioEncoder passes, VideoEncoder claims it.
+  await bus.locator('.attachment[data-attachment="mp4"]').click();
   await settled(bus);
+  await expect(listener(bus, 'AudioEncoder')).toHaveAttribute('data-result', 'next');
   await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'stop');
   await expect(listener(bus, 'VideoEncoder').locator('.result')).toHaveText('stop');
   await expect(bus).toHaveAttribute('data-rendered', 'video');
   await expect(bus.locator('.branch')).toHaveAttribute('data-taken', 'false');
 
-  // ImageEncoder back on: it is ahead in discovery order, so it claims the GIF and
-  // VideoEncoder never hears the event.
+  // ImageEncoder back on: it is ahead of VideoEncoder in discovery order, but video is not
+  // its job, so it answers next and VideoEncoder still claims the MP4.
   await listener(bus, 'ImageEncoder').locator('.load').click();
   await expect(bus.locator('.chain .listener').nth(1)).toHaveAttribute('data-module', 'ImageEncoder');
+  await settled(bus);
+  await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'next');
+  await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'stop');
+  await expect(bus).toHaveAttribute('data-rendered', 'video');
+
+  // The JPEG again: ImageEncoder claims it and VideoEncoder never hears the event.
+  await bus.locator('.attachment[data-attachment="jpeg"]').click();
   await settled(bus);
   await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'stop');
   await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'skipped');

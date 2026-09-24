@@ -231,9 +231,10 @@ type Player = {
 
 /**
  * The walkthrough: the JPEG goes down the chain and ImageEncoder claims it. ImageEncoder is
- * switched off and the same event falls through to core's plain link. The GIF goes next,
- * and VideoEncoder, which takes image/gif as well, claims it now that nothing ahead of it
- * does. ImageEncoder is switched back on and takes the GIF first, VideoEncoder greyed out
+ * switched off and the same event falls through to the template's plain link. The MP4 goes
+ * next, past AudioEncoder's next to VideoEncoder's stop. ImageEncoder is switched back on
+ * and answers next to the MP4 like AudioEncoder does, so the chain shows two passes before
+ * a claim. The JPEG goes once more and ImageEncoder takes it, VideoEncoder greyed out
  * behind it. Every step is a control the visitor can press.
  *
  * A trusted pointer or focus on the demo hands it over at once; the loop picks up again
@@ -302,7 +303,7 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
       await bus.running;
       if (!(await hold(mine, 2400))) return;
 
-      if (!(await press(mine, attachmentButton('gif')))) return;
+      if (!(await press(mine, attachmentButton('mp4')))) return;
       await bus.running;
       if (!(await hold(mine, 2400))) return;
 

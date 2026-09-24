@@ -1,23 +1,24 @@
 ---
 import Bus from '../Bus.astro';
 
-// The three answers a handler can give, and what each one does to the chain and to the
-// emitter. The emitter only ever asks one question of the result: was it stop.
+// The three cases of the enum, and what each one does to the chain. Two are in use: the
+// tree returns next some 250 times, stop wherever a handler claims the job, and unhandled
+// nowhere.
 const results = [
   {
     value: 'next',
     chain: 'chain goes on',
-    meaning: 'Did its part, and others may add theirs: each encoder appends its resizer to one map',
+    meaning: 'Not this handler\'s job, or its part is done and others may add theirs. Every encoder answers next to a mimetype that is not its own',
   },
   {
     value: 'stop',
     chain: 'chain halts',
-    meaning: 'Claimed the job. Nothing after it hears the event, and the emitter skips its default',
+    meaning: 'Claimed the job. Nothing after it hears the event, and $res holds what it appended',
   },
   {
     value: 'unhandled',
     chain: 'chain goes on',
-    meaning: 'Not this handler\'s job, said out loud rather than left to a missing return',
+    meaning: 'Declared in the enum, returned by no handler in the tree: a handler with nothing to add says next',
   },
 ];
 ---
@@ -27,15 +28,15 @@ const results = [
     <p class="point">
       <strong>One handler returns <code>Event::stop</code>, and propagation ends there</strong>
       <span>
-        VideoEncoder takes <code>image/gif</code> too, but ImageEncoder is ahead of it in the chain
-        and claims the GIF first. VideoEncoder never hears the event.
+        AudioEncoder hears the JPEG first and answers next. ImageEncoder claims it and
+        appends its view to <code>$res</code>. VideoEncoder never hears the event.
       </span>
     </p>
 
     {/* inert: the bus's buttons are illustration here, and would otherwise sit in the Tab
         order with nothing to do. */}
     <div class="figure" aria-hidden="true" inert>
-      <Bus attachment="gif" tray={false} caption={false} />
+      <Bus attachment="jpeg" tray={false} caption={false} branch={false} />
     </div>
 
     <section class="results" aria-label="The three cases of EventResult">
