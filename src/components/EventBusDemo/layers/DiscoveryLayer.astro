@@ -1,0 +1,364 @@
+---
+// One module as the compiler pass reads it. Every public method is listed in source
+// order; the ones whose name starts with `on` become listeners, the event being the rest
+// of the name, and the others are left alone.
+const file = 'plugins/ImageEncoder/ImageEncoder.php';
+const methods = [
+  { name: 'version', signature: '(): string' },
+  { name: 'shouldHandle', signature: '(string $mimetype): bool', isStatic: true },
+  { name: 'onResizerAvailable', signature: '(array &$event_map, string $mimetype): EventResult' },
+  { name: 'onViewAttachmentImage', signature: '(array $vars, array &$res): EventResult' },
+  { name: 'resizeImagePath', signature: '(string $source, …): bool' },
+];
+
+const rows = methods.map((method) => ({
+  ...method,
+  event: method.name.startsWith('on') ? method.name.slice(2) : null,
+}));
+
+// What the pass walks: every module directory, components first, then plugins, each
+// alphabetically. A few of each, with the three from the bus among them.
+const components = ['Attachment', 'Avatar', 'Conversation', 'Feed', 'Posting', 'Tag'];
+const plugins = ['ActivityPub', 'Embed', 'ImageEncoder', 'VideoEncoder'];
+---
+
+<div class="wrapper">
+  <div class="discovery-layer">
+    <p class="point">
+      <strong>No module registers a listener</strong>
+      <span>
+        Every class in <code>components/*/</code> and <code>plugins/*/</code> is a module, and
+        every public <code>on&lt;EventName&gt;</code> method on it is a listener for that event.
+      </span>
+    </p>
+
+    <div class="scan" aria-label="Modules the compiler pass finds">
+      <span class="scan-label"><code>components/*/</code></span>
+      <ul class="modules">
+        {components.map((module) => <li>{module}</li>)}
+        <li class="more">+13</li>
+      </ul>
+      <span class="scan-label"><code>plugins/*/</code></span>
+      <ul class="modules">
+        {plugins.map((module) => (
+          <li class:list={{ current: module === 'ImageEncoder' }}>{module}</li>
+        ))}
+        <li class="more">+30</li>
+      </ul>
+    </div>
+
+    <div class="mapping" role="table" aria-label={`Listeners derived from ${file}`}>
+      <div class="head" role="row">
+        <span role="columnheader" class="file"><code>{file}</code></span>
+        <span role="columnheader" class="arrow-head"></span>
+        <span role="columnheader">listener table</span>
+      </div>
+
+      {rows.map((row) => (
+        <div class:list={['row', { listener: row.event }]} role="row">
+          <code class="method" role="cell">
+            <span class="kw">public {row.isStatic ? 'static ' : ''}function </span>
+            {row.event ? (
+              <>
+                <span class="prefix">on</span><span class="event">{row.event}</span>
+              </>
+            ) : (
+              <span class="name">{row.name}</span>
+            )}
+            <span class="sig">{row.signature}</span>
+          </code>
+          <span class="arrow" role="cell" aria-hidden={row.event ? undefined : 'true'}>
+            {row.event ? <span class="sr-only">becomes</span> : null}
+          </span>
+          <span class="entry" role="cell">
+            {row.event ? (
+              <>
+                <code class="event">{row.event}</code>
+                <code class="callable">[ImageEncoder, '{row.name}']</code>
+                <span class="prio">prio 0</span>
+              </>
+            ) : (
+              <span class="none">not a listener</span>
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+
+    <p class="footnote">
+      Found by reflection in a compiler pass, once, when the container is built. The table is
+      written into the compiled container, so a request pays nothing for the wiring.
+    </p>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+  @include clear-title-block;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  height: 100%;
+}
+
+.discovery-layer {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 60em;
+  display: grid;
+  gap: 0.75em;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.6875rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.6875rem, 0.032 * var(--sheet-inline), 0.9375rem);
+  }
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.point {
+  margin: 0;
+  display: grid;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.9375em;
+  }
+
+  span {
+    font-size: 0.75em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+}
+
+.scan {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.375em 0.75em;
+  align-items: center;
+  font-size: 0.75em;
+}
+
+.scan-label {
+  color: var(--ink-muted);
+}
+
+.modules {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25em;
+
+  li {
+    padding: 0.0625em 0.5em;
+    border: 1px solid var(--line);
+    border-radius: 0.25em;
+    background: var(--surface-raised);
+  }
+
+  .current {
+    border-color: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+
+  .more {
+    border-style: dashed;
+    background: transparent;
+    color: var(--ink-faint);
+  }
+}
+
+/* The class on the left and what the pass derives on the right, row for row, so each
+   on-method points straight at its own entry. */
+.mapping {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) 3em minmax(0, 1fr);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.head,
+.row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+.head {
+  padding: 0.375em 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-sunken);
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+
+  > * {
+    padding-inline: 0.75em;
+  }
+}
+
+.row {
+  padding: 0.3125em 0;
+  font-size: 0.75em;
+
+  & + & {
+    border-top: 1px dashed var(--line);
+  }
+
+  > * {
+    padding-inline: 0.75em;
+  }
+}
+
+.method {
+  overflow-wrap: anywhere;
+
+  .kw,
+  .sig {
+    color: var(--ink-faint);
+  }
+
+  .name {
+    color: var(--ink-muted);
+  }
+
+  .prefix {
+    padding: 0 0.125em;
+    border-radius: 0.1875em;
+    background: color-mix(in oklch, var(--accent), transparent 80%);
+    color: var(--accent-text);
+    font-weight: 700;
+  }
+
+  .event {
+    font-weight: 700;
+  }
+}
+
+.arrow {
+  position: relative;
+  align-self: stretch;
+  padding: 0;
+
+  .listener & {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0.25em;
+      right: 0.625em;
+      border-top: 2px solid var(--accent);
+      translate: 0 -1px;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 0.25em;
+      width: 0.5em;
+      height: 0.5em;
+      border-top: 2px solid var(--accent);
+      border-right: 2px solid var(--accent);
+      rotate: 45deg;
+      translate: 0 -50%;
+      transform-origin: center;
+    }
+  }
+}
+
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125em 0.5em;
+
+  .event {
+    font-weight: 700;
+  }
+
+  .callable {
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .prio {
+    font-family: monospace, system-ui;
+    color: var(--ink-faint);
+  }
+
+  .none {
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+}
+
+.row:not(.listener) .method {
+  opacity: 0.7;
+}
+
+.footnote {
+  margin: 0;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+/* A narrow sheet: each method over its entry, the arrow turned to point down. */
+@container technical-drawing-width (max-width: 40em) {
+  .mapping {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .head .arrow-head,
+  .head > :last-child {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.25em;
+  }
+
+  .arrow {
+    display: none;
+  }
+
+  .entry {
+    padding-left: 1.75em;
+
+    &::before {
+      content: '↳';
+      margin-left: -1.25em;
+      color: var(--accent);
+    }
+  }
+
+  .row:not(.listener) .entry {
+    display: none;
+  }
+}
+</style>

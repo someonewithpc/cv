@@ -16,6 +16,7 @@ import TaggingToolDemo from '@/components/TaggingToolDemo/Demo.astro';
 import FontPickerDemo from '@/components/FontPickerDemo/Demo.astro';
 import DragDropDemo from '@/components/DragDropDemo/Demo.astro';
 import SchemaDefDemo from '@/components/SchemaDefDemo/Demo.astro';
+import EventBusDemo from '@/components/EventBusDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
 
@@ -102,6 +103,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             array into the ORM mapping, the database schema and the types PHPStan checks.
           </TitleCard>
           <SchemaDefDemo />
+        </Callout>
+        <Callout letter="I" title="Event bus" titleJp="できごとをくばる" scale="1:1" headingId="detail-i" cardSide="start">
+          <TitleCard slot="card" title="GNU social · Event Dispatch" medium="PHP, Symfony" year="2022">
+            GNU social is a federated social network server. Its plugins never call each other:
+            a plugin listens for an event by naming a method after it, and the first one to
+            answer stop has the job. Switch a plugin off and watch who takes over.
+          </TitleCard>
+          <EventBusDemo />
         </Callout>
       </div>
     </section>

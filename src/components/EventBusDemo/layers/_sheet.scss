@@ -1,0 +1,28 @@
+// What the event bus's four sheets share: the margin every layer keeps around its content.
+
+// Clear sheet between the content and the frame line, the title block and the corner pieces,
+// in em of the sheet's own type so it scales with the page. It goes on a layer's root and
+// nowhere else, so nothing inside has to be nudged on its own.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// The title block claims the bottom-right corner: on a wide sheet it reaches into the
+// content column from the right, on a narrow one it takes a row off the bottom, and a
+// portrait sheet gives it a row of its own.
+@mixin clear-title-block {
+  padding-right: calc(3em + $sheet-margin);
+
+  @container technical-drawing-width (max-width: 56em) {
+    padding-right: $sheet-margin;
+    padding-bottom: calc(3.5em + $sheet-margin);
+  }
+
+  @container technical-drawing (orientation: portrait) {
+    padding-bottom: $sheet-margin;
+  }
+}

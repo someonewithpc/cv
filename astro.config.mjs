@@ -36,8 +36,13 @@ export default defineConfig({
       include: {
         lucide: [
           'check',
+          'circle-play',
           'external-link',
+          'film',
+          'image',
+          'link',
           'pencil',
+          'play',
           'plus',
           'search',
           'triangle-alert',

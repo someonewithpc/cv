@@ -1,0 +1,182 @@
+---
+import Bus from '../Bus.astro';
+
+// The three answers a handler can give, and what each one does to the chain and to the
+// emitter. The emitter only ever asks one question of the result: was it stop.
+const results = [
+  {
+    value: 'next',
+    chain: 'chain goes on',
+    meaning: 'Did its part, and others may add theirs: each encoder appends its resizer to one map',
+  },
+  {
+    value: 'stop',
+    chain: 'chain halts',
+    meaning: 'Claimed the job. Nothing after it hears the event, and the emitter skips its default',
+  },
+  {
+    value: 'unhandled',
+    chain: 'chain goes on',
+    meaning: 'Not this handler\'s job, said out loud rather than left to a missing return',
+  },
+];
+---
+
+<div class="wrapper">
+  <div class="stop-layer">
+    <p class="point">
+      <strong>One handler returns <code>Event::stop</code>, and propagation ends there</strong>
+      <span>
+        VideoEncoder takes <code>image/gif</code> too, but ImageEncoder is ahead of it in the chain
+        and claims the GIF first. VideoEncoder never hears the event.
+      </span>
+    </p>
+
+    {/* inert: the bus's buttons are illustration here, and would otherwise sit in the Tab
+        order with nothing to do. */}
+    <div class="figure" aria-hidden="true" inert>
+      <Bus attachment="gif" tray={false} caption={false} />
+    </div>
+
+    <section class="results" aria-label="The three cases of EventResult">
+      <code class="enum">enum EventResult</code>
+      <dl>
+        {results.map((row) => (
+          <div data-result={row.value}>
+            <dt><code>case {row.value}</code> <span class="chain">{row.chain}</span></dt>
+            <dd>{row.meaning}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+  @include clear-title-block;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  height: 100%;
+}
+
+.stop-layer {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 60em;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75em;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.6875rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.625rem, 0.029 * var(--sheet-inline), 0.875rem);
+  }
+}
+
+code {
+  font-family: monospace, system-ui;
+}
+
+.point {
+  margin: 0;
+  display: grid;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.9375em;
+  }
+
+  span {
+    font-size: 0.75em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+
+    @container technical-drawing-width (max-width: 40em) {
+      display: none;
+    }
+  }
+}
+
+.figure {
+  --bus-portrait-font: clamp(0.625rem, 0.029 * var(--sheet-inline), 0.875rem);
+
+  min-width: 0;
+}
+
+.results {
+  display: grid;
+  gap: 0.375em;
+  font-size: 0.6875em;
+  line-height: 1.35;
+
+  .enum {
+    font-weight: 700;
+  }
+
+  dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5em;
+  }
+
+  /* A narrow sheet has the height for the three cases but not for what each one means;
+     the bus above already shows stop doing it. */
+  @container technical-drawing-width (max-width: 40em) {
+    dt {
+      flex-direction: column;
+      margin: 0;
+    }
+
+    dd {
+      display: none;
+    }
+  }
+
+  dl > div {
+    padding: 0.375em 0.625em;
+    border: 1px solid var(--line);
+    border-radius: 0.375em;
+    background: var(--surface-raised);
+  }
+
+  dt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.5em;
+    margin-bottom: 0.125em;
+
+    code {
+      font-weight: 700;
+    }
+  }
+
+  .chain {
+    color: var(--ink-muted);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  [data-result='stop'] {
+    border-color: var(--accent);
+
+    dt code,
+    .chain {
+      color: var(--accent-text);
+    }
+  }
+}
+</style>

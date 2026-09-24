@@ -1,0 +1,295 @@
+---
+// The handler as a plugin author might write it, one word off: the return type the
+// compiler pass reads is bool, not EventResult. The body is fine; only the signature
+// is checked, and the check is what fails the build.
+const file = 'plugins/ImageEncoder/ImageEncoder.php';
+const line = 182;
+const handler = 'ImageEncoder::onViewAttachmentImage';
+---
+
+<div class="wrapper">
+  <div class="guard-layer">
+    <p class="point">
+      <strong>The wrong return type fails the build, not a request</strong>
+      <span>
+        The same compiler pass that finds a handler reads its declared return type, and anything
+        but <code>EventResult</code> throws <code>BugFoundException</code> before the container
+        is written.
+      </span>
+    </p>
+
+    <figure class="source">
+      <figcaption><code>{file}:{line}</code></figcaption>
+      <pre><code><span class="kw">public function</span> onViewAttachmentImage(
+    array $vars,
+    array &amp;$res,
+): <mark>bool</mark> {'{'}
+    <span class="dim">if (!self::shouldHandle($mimetype)) {'{'}</span>
+        <span class="dim">return Event::unhandled;</span>
+    <span class="dim">{'}'}</span>
+    <span class="dim">…</span>
+    <span class="dim">return Event::stop;</span>
+{'}'}</code></pre>
+    </figure>
+
+    <span class="stage" aria-hidden="true"></span>
+
+    <figure class="terminal">
+      <figcaption>
+        <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>shell, the container build</span>
+      </figcaption>
+      <pre><code><span class="prompt">$</span> bin/console cache:clear -v
+
+ // Clearing the cache for the <b>dev</b> environment with debug <b>true</b>
+
+<span class="error-block"><span class="where">In ModuleManager.php line 104:</span>
+
+  [App\Util\Exception\BugFoundException]
+  {handler}
+  must return EventResult, declares bool
+  in {file}:{line}</span>
+
+<span class="exit">exit 1</span></code></pre>
+    </figure>
+
+    <p class="footnote">
+      A handler that declares nothing at all gets past the pass. It is caught the first time it
+      returns nothing, by a check in the dispatch that names the file it lives in.
+    </p>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+  @include clear-title-block;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  height: 100%;
+}
+
+.guard-layer {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 64em;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) 2em minmax(0, 1.3fr);
+  grid-template-areas:
+    'point point point'
+    'source stage terminal'
+    'footnote footnote footnote';
+  gap: 0.75em 0.25em;
+  align-items: center;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.6875rem, 0.027 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
+  color: var(--ink);
+
+  @container technical-drawing-width (max-width: 56em) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'point'
+      'source'
+      'stage'
+      'terminal'
+      'footnote';
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: clamp(0.6875rem, 0.032 * var(--sheet-inline), 0.9375rem);
+  }
+}
+
+code,
+pre {
+  font-family: monospace, system-ui;
+}
+
+.point {
+  grid-area: point;
+  margin: 0;
+  display: grid;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.9375em;
+  }
+
+  span {
+    font-size: 0.75em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+}
+
+figure {
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  overflow: hidden;
+
+  figcaption {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.3125em 0.75em;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-sunken);
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+
+    code {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  pre {
+    margin: 0;
+    padding: 0.625em 0.75em;
+    font-size: 0.6875em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
+.source {
+  grid-area: source;
+  background: var(--surface-raised);
+
+  .kw,
+  .dim {
+    color: var(--ink-faint);
+  }
+
+  mark {
+    padding: 0 0.1875em;
+    border-radius: 0.1875em;
+    background: transparent;
+    color: var(--accent-text);
+    font-weight: 700;
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+  }
+}
+
+/* Between the source and the shell: the step where the check runs. */
+.stage {
+  grid-area: stage;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 2em;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0.375em;
+    border-top: 2px solid var(--line-strong);
+    translate: 0 -1px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0.125em;
+    width: 0.5em;
+    height: 0.5em;
+    border-top: 2px solid var(--line-strong);
+    border-right: 2px solid var(--line-strong);
+    rotate: 45deg;
+    translate: 0 -50%;
+  }
+
+  @container technical-drawing-width (max-width: 56em) {
+    &::before {
+      top: 0;
+      bottom: 0.375em;
+      left: 50%;
+      right: auto;
+      border-top: 0;
+      border-left: 2px solid var(--line-strong);
+      translate: -1px 0;
+    }
+
+    &::after {
+      top: auto;
+      bottom: 0.125em;
+      right: auto;
+      left: 50%;
+      rotate: 135deg;
+      translate: -50% 0;
+    }
+  }
+}
+
+.terminal {
+  grid-area: terminal;
+  background: var(--surface-sunken);
+
+  figcaption {
+    background: var(--surface-raised);
+  }
+
+  .dots {
+    display: inline-flex;
+    gap: 0.25em;
+
+    span {
+      width: 0.625em;
+      height: 0.625em;
+      border-radius: 50%;
+      border: 1px solid var(--line-strong);
+    }
+  }
+
+  .prompt {
+    color: var(--ink-faint);
+  }
+
+  b {
+    color: var(--ink);
+  }
+
+  pre {
+    color: var(--ink-muted);
+  }
+
+  .error-block {
+    display: block;
+    padding: 0.375em 0.5em;
+    margin-inline: -0.5em;
+    border-left: 3px solid var(--accent);
+    background: color-mix(in oklch, var(--accent), transparent 88%);
+    color: var(--ink);
+  }
+
+  .where {
+    color: var(--accent-text);
+    font-weight: 700;
+  }
+
+  .exit {
+    color: var(--accent-text);
+  }
+}
+
+.footnote {
+  grid-area: footnote;
+  margin: 0;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+</style>

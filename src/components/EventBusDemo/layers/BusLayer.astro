@@ -1,0 +1,65 @@
+---
+import Bus from '../Bus.astro';
+---
+
+<div class="event-bus-demo" data-event-bus-demo>
+  <Bus live />
+</div>
+
+<script>
+import { bootIslands } from '@/client/pageIsland';
+import { boot } from '../client/boot';
+
+bootIslands('[data-event-bus-demo]', boot);
+</script>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+:global(article.technical-drawing-stack > * > section .content:has(.event-bus-demo)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.event-bus-demo {
+  @include sheet-content;
+  @include clear-title-block;
+
+  /* The walkthrough's drawn cursor is placed inside this box. */
+  position: relative;
+  display: grid;
+  align-items: center;
+  height: 100%;
+  min-height: 0;
+
+  /* Placed by translate alone: cursorMotion.ts animates each hop with its own duration
+     and folds the hotspot, the arrow's tip, into every keyframe. */
+  :global(.event-bus-cursor) {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    left: 0;
+    width: 2.5em;
+    height: 2.5em;
+    transform-origin: 12% 8%;
+    pointer-events: none;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" fill="%23fff" stroke="%23222" stroke-width="1.6" stroke-linejoin="round"/></svg>') center / contain no-repeat;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+    transition: opacity 0.32s ease;
+
+    &[hidden] {
+      display: none;
+    }
+
+    &.fading {
+      opacity: 0;
+    }
+  }
+}
+</style>

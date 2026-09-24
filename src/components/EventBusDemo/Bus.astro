@@ -1,0 +1,843 @@
+---
+import { Icon } from 'astro-icon/components';
+
+import { EVENT, attachments, defaultAttachment, dispatch, listeners, type EventResult } from './events';
+
+type Props = {
+  /** Wire the bus up to the client script and the walkthrough. */
+  live?: boolean;
+  /** Which attachment the emitter is showing. */
+  attachment?: string;
+  /** Modules drawn as not loaded, off the rail. */
+  disabled?: readonly string[];
+  /** Draw the tray of modules that are switched off; a page that never switches one can drop it. */
+  tray?: boolean;
+  /** Draw the line under the emitter that says what a listener is. */
+  caption?: boolean;
+};
+
+const { live = false, attachment = defaultAttachment, disabled = [], tray = true, caption = true } = Astro.props;
+
+const enabled = (module: string) => !disabled.includes(module);
+const outcome = dispatch(attachment, enabled);
+const current = attachments.find((entry) => entry.id === attachment) ?? attachments[0];
+
+// The server draws the settled state, so the sheet reads the same before the script runs,
+// without it, and on the blueprint pages that quote it.
+const resultOf = (index: number): EventResult | 'skipped' => outcome.results[index] ?? 'skipped';
+const loaded = listeners.map((listener, index) => ({ listener, index })).filter(({ listener }) => enabled(listener.module));
+const unloaded = listeners.map((listener, index) => ({ listener, index })).filter(({ listener }) => !enabled(listener.module));
+const branchTaken = outcome.result !== 'stop';
+---
+
+<div
+  class="event-bus"
+  data-live={live ? '' : undefined}
+  data-attachment={current.id}
+  data-result={outcome.result}
+  data-rendered={outcome.rendered}
+  tabindex={live ? -1 : undefined}
+>
+  <div class="emitter">
+    {live ? (
+      <button type="button" class="call" data-dispatch title="Dispatch again">
+        <Icon name="lucide:play" class="replay" />
+        <code>Event::handle('<b>{EVENT}</b>', [$vars, &$res])</code>
+      </button>
+    ) : (
+      <span class="call">
+        <code>Event::handle('<b>{EVENT}</b>', [$vars, &$res])</code>
+      </span>
+    )}
+
+    {caption && (
+      <p class="caption">
+        Each listener is <code>[Module, 'on{EVENT}']</code>, in the order the modules were found
+      </p>
+    )}
+
+    <div class="attachments" role="group" aria-label="Attachment">
+      {attachments.map((entry) => (
+        <button
+          type="button"
+          class="attachment"
+          data-attachment={entry.id}
+          aria-pressed={entry.id === current.id ? 'true' : 'false'}
+          disabled={!live}
+        >
+          <Icon name={entry.id === 'gif' ? 'lucide:film' : 'lucide:image'} />
+          <span class="filename">{entry.filename}</span>
+          <span class="mimetype">{entry.mimetype}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="rail-frame">
+    <ol class="chain" aria-label={`Listeners for ${EVENT}, in dispatch order`}>
+      <li class="terminal start" aria-hidden="true">
+        <span class="port"><span class="node"></span></span>
+        <span class="terminal-label">dispatch</span>
+      </li>
+
+      {loaded.map(({ listener, index }) => (
+        <li class="listener" data-module={listener.module} data-index={index} data-result={resultOf(index)}>
+          <div class="chip">
+            <span class="module">{listener.module}</span>
+            <span class="meta">prio {listener.priority}</span>
+            <button
+              type="button"
+              class="load"
+              aria-pressed="true"
+              aria-label={`${listener.module} loaded`}
+              disabled={!live}
+            >
+              <span class="switch"></span>
+            </button>
+          </div>
+          <span class="port"><span class="node"></span></span>
+          <span class="result">{resultOf(index)}</span>
+        </li>
+      ))}
+
+      <li class="terminal end" aria-hidden="true">
+        <span class="port"><span class="node"></span></span>
+        <span class="terminal-label">returns <code class="returned">{outcome.result}</code></span>
+      </li>
+    </ol>
+
+    {live && <span class="token" aria-hidden="true" hidden></span>}
+  </div>
+
+  <div class="unloaded" data-empty={String(unloaded.length === 0)} hidden={!tray}>
+    <span class="unloaded-label">Not loaded</span>
+    <ul class="tray">
+      {unloaded.map(({ listener, index }) => (
+        <li class="listener" data-module={listener.module} data-index={index} data-result="off">
+          <div class="chip">
+            <span class="module">{listener.module}</span>
+            <span class="meta">prio {listener.priority}</span>
+            <button
+              type="button"
+              class="load"
+              aria-pressed="false"
+              aria-label={`${listener.module} loaded`}
+              disabled={!live}
+            >
+              <span class="switch"></span>
+            </button>
+          </div>
+          <span class="port"><span class="node"></span></span>
+          <span class="result">off</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="emitter-branch">
+    <pre class="branch" data-taken={String(branchTaken)}><code><span class="if">if ($result !== Event::stop) {'{'}</span>
+<span class="fallback">    $res[] = link($attachment);</span>
+<span class="if">{'}'}</span></code></pre>
+    <span class="branch-note" data-taken={String(branchTaken)}>
+      <span class="when-taken">default branch taken</span>
+      <span class="when-skipped">default branch not taken</span>
+    </span>
+
+    <figure class="res" aria-live={live ? 'polite' : undefined}>
+      <figcaption>$res</figcaption>
+      <span class="rendered" data-kind="pending" aria-hidden="true">…</span>
+      <span class="rendered" data-kind="image">
+        <Icon name="lucide:image" />
+        <span><code>&lt;img&gt;</code> thumbnail <span class="by">ImageEncoder</span></span>
+      </span>
+      <span class="rendered" data-kind="video">
+        <Icon name="lucide:circle-play" />
+        <span><code>&lt;video loop&gt;</code> <span class="by">VideoEncoder</span></span>
+      </span>
+      <span class="rendered" data-kind="link">
+        <Icon name="lucide:link" />
+        <span><u class="link-text">{current.filename}</u> <span class="by">core</span></span>
+      </span>
+    </figure>
+  </div>
+</div>
+
+<style lang="scss">
+/* 1em here is the sheet's body type at this scale, so every measurement below scales
+   with the page. */
+.event-bus {
+  --chip-inline: 10.5em;
+  --rail: var(--line-strong);
+  --stop: var(--accent);
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.875em;
+  align-content: center;
+  outline: none;
+  container-type: inline-size;
+  container-name: event-bus;
+
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.6875rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
+  line-height: 1.35;
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    /* A page that quotes the bus beside other things can hand it a smaller size. */
+    font-size: var(--bus-portrait-font, clamp(0.6875rem, 0.032 * var(--sheet-inline), 0.9375rem));
+  }
+}
+
+code,
+pre {
+  font-family: monospace, system-ui;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* The emitter: the call, which replays the dispatch, and the attachment it is about. */
+.emitter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em 1em;
+}
+
+.call {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 0;
+  padding: 0.375em 0.625em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-raised);
+  font-size: 0.875em;
+  overflow-wrap: anywhere;
+
+  b {
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+
+  .replay {
+    flex: none;
+    width: 1em;
+    height: 1em;
+    color: var(--ink-muted);
+  }
+}
+
+button.call {
+  cursor: pointer;
+
+  &:hover .replay,
+  &:focus-visible .replay {
+    color: var(--accent);
+  }
+}
+
+.attachments {
+  display: flex;
+  gap: 0.375em;
+}
+
+.caption {
+  order: 3;
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+}
+
+.attachment {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.375em;
+  align-items: center;
+  padding: 0.25em 0.625em;
+  border: 1px solid var(--line);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  svg {
+    grid-row: span 2;
+    width: 1.125em;
+    height: 1.125em;
+    color: var(--ink-muted);
+  }
+
+  .filename {
+    font-size: 0.8125em;
+    font-weight: 600;
+  }
+
+  .mimetype {
+    font-family: monospace, system-ui;
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+  }
+
+  &[aria-pressed='true'] {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 1px var(--accent);
+
+    svg {
+      color: var(--accent);
+    }
+  }
+}
+
+/* The rail: a start terminal, one stop per loaded listener, and the return. Each stop
+   draws its own stretch of line through its port, and the stops sit flush, so the line
+   reads as one. On a narrow sheet the whole chain turns to run down the page. */
+.rail-frame {
+  position: relative;
+}
+
+.chain {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  align-items: stretch;
+}
+
+.chain > li {
+  position: relative;
+  display: grid;
+  /* Fixed rows under the chips, so every port, the terminals' included, sits on one line. */
+  grid-template-rows: 1fr 2.25em 1.5em;
+  justify-items: center;
+  min-width: 0;
+}
+
+.listener {
+  flex: 1 1 var(--chip-inline);
+}
+
+.terminal {
+  flex: 0 0 auto;
+  width: 4.5em;
+}
+
+.port {
+  position: relative;
+  grid-row: 2;
+  align-self: stretch;
+  justify-self: stretch;
+  display: grid;
+  place-items: center;
+
+  /* The rail itself, across the whole stop. */
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 2px solid var(--rail);
+    translate: 0 -1px;
+  }
+
+  /* The stem from the chip down to the rail. */
+  .listener > &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 50%;
+    left: 50%;
+    border-left: 1px solid var(--rail);
+  }
+}
+
+.start .port::after {
+  left: 50%;
+}
+
+.end .port::after {
+  right: 50%;
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  width: 0.625em;
+  height: 0.625em;
+  border: 2px solid var(--rail);
+  border-radius: 50%;
+  background: var(--surface-page);
+  box-sizing: border-box;
+}
+
+.terminal .node {
+  width: 0.875em;
+  height: 0.875em;
+  border-radius: 0.125em;
+  background: var(--rail);
+}
+
+.terminal-label {
+  grid-row: 3;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+  text-align: center;
+
+  code {
+    display: block;
+    color: var(--ink);
+    font-weight: 600;
+  }
+}
+
+.event-bus[data-result='stop'] .returned {
+  color: var(--stop);
+}
+
+.chip {
+  grid-row: 1;
+  align-self: end;
+  position: relative;
+  box-sizing: border-box;
+  width: calc(100% - 0.75em);
+  max-width: var(--chip-inline);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.125em 0.5em;
+  padding: 0.5em 0.625em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-raised);
+  transition:
+    border-color 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
+
+  .module {
+    font-weight: 600;
+    font-size: 0.875em;
+  }
+
+  .meta {
+    grid-column: 1;
+    font-family: monospace, system-ui;
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+  }
+
+  .load {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+}
+
+/* The load switch: a module that is off is not in the container, so it never hears
+   the event. */
+.load {
+  padding: 0.25em;
+  margin: -0.25em;
+  border: 0;
+  background: none;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  .switch {
+    position: relative;
+    display: block;
+    width: 1.75em;
+    height: 1em;
+    border-radius: 0.5em;
+    border: 1px solid var(--line-strong);
+    background: var(--surface-sunken);
+    box-sizing: border-box;
+    transition: background-color 0.2s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0.0625em;
+      left: 0.0625em;
+      width: 0.75em;
+      height: 0.75em;
+      border-radius: 50%;
+      background: var(--ink-muted);
+      transition: translate 0.2s ease, background-color 0.2s ease;
+    }
+  }
+
+  &[aria-pressed='true'] .switch {
+    border-color: var(--accent);
+    background: color-mix(in oklch, var(--accent), transparent 75%);
+
+    &::after {
+      translate: 0.75em 0;
+      background: var(--accent);
+    }
+  }
+}
+
+.result {
+  grid-row: 3;
+  padding: 0.0625em 0.5em;
+  border: 1px solid var(--line);
+  border-radius: 1em;
+  font-family: monospace, system-ui;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+  background: var(--surface-raised);
+}
+
+.listener[data-result='stop'] {
+  .chip {
+    border-color: var(--stop);
+    box-shadow: inset 0 0 0 1px var(--stop);
+  }
+
+  .port::before {
+    border-left: 2px solid var(--stop);
+    translate: -0.5px 0;
+  }
+
+  .node {
+    border-color: var(--stop);
+    background: var(--stop);
+  }
+
+  .result {
+    border-color: var(--stop);
+    color: var(--stop);
+    font-weight: 600;
+  }
+}
+
+.listener[data-result='skipped'] {
+  .chip {
+    border-style: dashed;
+    opacity: 0.45;
+  }
+
+  .result {
+    border-style: dashed;
+    opacity: 0.6;
+  }
+}
+
+/* Hidden until the token reaches it on a live run, so the answer comes with the event. */
+.listener[data-result='pending'] .result {
+  visibility: hidden;
+}
+
+.listener.hearing .chip {
+  border-color: var(--ink);
+}
+
+.token {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  width: 1em;
+  height: 1em;
+  margin: -0.5em 0 0 -0.5em;
+  border-radius: 0.1875em;
+  background: var(--ink);
+  box-shadow: 0 0 0 0.1875em var(--surface-page);
+  pointer-events: none;
+
+  &[hidden] {
+    display: none;
+  }
+
+  &.stopped {
+    background: var(--stop);
+  }
+}
+
+/* The modules switched off, waiting to be loaded again. */
+.unloaded {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375em 0.75em;
+  min-height: 2.5em;
+  padding: 0.375em 0.625em;
+  border: 1px dashed var(--line);
+  border-radius: 0.375em;
+
+  &[data-empty='true'] .unloaded-label::after {
+    content: ': none';
+  }
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.unloaded-label {
+  font-size: 0.6875em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tray {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+
+  .listener {
+    flex: 0 0 auto;
+    padding: 0;
+  }
+
+  .chip {
+    width: var(--chip-inline);
+    border-style: dashed;
+    background: transparent;
+
+    .module,
+    .meta {
+      opacity: 0.6;
+    }
+  }
+
+  .port,
+  .result {
+    display: none;
+  }
+}
+
+/* The emitter's own default branch, and what the block ended up holding. */
+.emitter-branch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'branch res'
+    'note res';
+  gap: 0.25em 1em;
+  align-items: center;
+}
+
+.branch {
+  grid-area: branch;
+  margin: 0;
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--line);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  font-size: 0.75em;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  .fallback {
+    transition: opacity 0.2s ease;
+  }
+
+  &[data-taken='false'] .fallback {
+    opacity: 0.4;
+    text-decoration: line-through;
+    text-decoration-color: var(--stop);
+  }
+
+  &[data-taken='true'] .fallback {
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+}
+
+.branch-note {
+  grid-area: note;
+  font-size: 0.6875em;
+  color: var(--ink-muted);
+
+  &[data-taken='true'] .when-skipped,
+  &[data-taken='false'] .when-taken,
+  &[data-taken='pending'] > * {
+    display: none;
+  }
+
+  /* Holds its line while a run is out, so the page does not jump when the answer lands. */
+  &[data-taken='pending']::before {
+    content: '\2026';
+  }
+}
+
+.res {
+  grid-area: res;
+  margin: 0;
+  display: grid;
+  gap: 0.25em;
+  justify-items: start;
+
+  figcaption {
+    font-family: monospace, system-ui;
+    font-size: 0.6875em;
+    color: var(--ink-muted);
+  }
+}
+
+.rendered {
+  display: none;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-raised);
+  font-size: 0.8125em;
+
+  svg {
+    flex: none;
+    width: 1.5em;
+    height: 1.5em;
+    color: var(--ink-muted);
+  }
+
+  .by {
+    display: block;
+    font-size: 0.8125em;
+    color: var(--ink-muted);
+  }
+
+  .link-text {
+    color: var(--accent-text);
+  }
+}
+
+.event-bus[data-rendered='pending'] .rendered[data-kind='pending'],
+.event-bus[data-rendered='image'] .rendered[data-kind='image'],
+.event-bus[data-rendered='video'] .rendered[data-kind='video'],
+.event-bus[data-rendered='link'] .rendered[data-kind='link'] {
+  display: inline-flex;
+}
+
+/* A narrow sheet: the chain runs down the page, the rail on the left, each chip beside
+   its own port and its answer after it. */
+@container event-bus (max-width: 34em) {
+  .chain {
+    flex-direction: column;
+  }
+
+  .chain > li {
+    grid-template-rows: none;
+    grid-template-columns: 2.25em minmax(0, 1fr) 5.5em;
+    align-items: center;
+    justify-items: start;
+    padding-inline: 0;
+  }
+
+  .listener {
+    flex: none;
+    padding-block: 0.25em;
+  }
+
+  .terminal {
+    width: auto;
+    min-height: 2.25em;
+  }
+
+  .port {
+    grid-row: 1;
+    grid-column: 1;
+
+    &::after {
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      right: auto;
+      border-top: 0;
+      border-left: 2px solid var(--rail);
+      translate: -1px 0;
+    }
+
+    .listener > &::before {
+      top: 50%;
+      bottom: auto;
+      left: 50%;
+      right: 0;
+      border-left: 0;
+      border-top: 1px solid var(--rail);
+    }
+  }
+
+  .start .port::after {
+    left: 50%;
+    top: 50%;
+  }
+
+  .end .port::after {
+    right: auto;
+    bottom: 50%;
+  }
+
+  .listener[data-result='stop'] .port::before {
+    border-left: 0;
+    border-top: 2px solid var(--stop);
+    translate: 0 -0.5px;
+  }
+
+  .chip {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+    max-width: none;
+  }
+
+  .result {
+    grid-row: 1;
+    grid-column: 3;
+    justify-self: center;
+  }
+
+  .terminal-label {
+    grid-row: 1;
+    grid-column: 2 / span 2;
+    text-align: left;
+
+    code {
+      display: inline;
+    }
+  }
+
+  .emitter-branch {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'branch'
+      'note'
+      'res';
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip,
+  .load .switch,
+  .load .switch::after,
+  .branch .fallback {
+    transition: none;
+  }
+}
+</style>
