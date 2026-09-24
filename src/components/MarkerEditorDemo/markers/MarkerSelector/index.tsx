@@ -126,11 +126,14 @@ export function MarkerSelector({
                   groupedUndo.batch(() => {
                     if (space.markerId !== marker.id) {
                       // The marker this space is leaving goes with it unless another space
-                      // still shows it; a marker nobody shows has no way back to the map.
+                      // still shows it; a marker nobody shows has no way back to the map. Only
+                      // markers made in the editor go: the built-in `default` has no delete
+                      // button, and the walkthrough's reset points every space back at it.
                       const previous = space.markerId;
+                      const previousKind = markers.find((m) => m.id === previous)?.kind;
                       dispatch(setSpaceMarker({ spaceId: space.id, markerId: marker.id }));
 
-                      if (previous !== undefined && !usedElsewhere(previous)) {
+                      if (previous !== undefined && previousKind === 'editor' && !usedElsewhere(previous)) {
                         dispatch(removeMarker(previous));
                       }
                     }
