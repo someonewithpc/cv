@@ -173,8 +173,8 @@ export function MarkerSelector({
                             id: newMarkerId,
                           }));
                           dispatch(setSpaceMarker({ spaceId: space.id, markerId: newMarkerId }));
-                          if (space.markerId !== undefined && !deleteDisabled) {
-                            dispatch(removeMarker(space.markerId));
+                          if (space.markerId === marker.id && !deleteDisabled) {
+                            dispatch(removeMarker(marker.id));
                           }
 
                           setEditedMarkerId(newMarkerId);
