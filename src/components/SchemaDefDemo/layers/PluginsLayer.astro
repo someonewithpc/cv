@@ -1,19 +1,20 @@
 ---
-// Entity directories in the tree the sheet was drawn from, and how many classes in each
-// answer schemaDef(). Counted, not estimated: 17 in core, 29 across 12 components and
-// 24 across 13 plugins.
+// Entity directories in the v3 tree as of 2022-10-21 (49a80a3c), and how many classes in
+// each answer schemaDef(). Counted with grep, not estimated: 17 in core, 29 across 12
+// components and 28 across 16 plugins.
 const sources = [
   { path: 'src/Entity/', namespace: 'App\\Entity', count: '17', where: 'core' },
   { path: 'components/*/Entity/', namespace: 'Component\\<Name>\\Entity', count: '29', where: '12 components' },
-  { path: 'plugins/*/Entity/', namespace: 'Plugin\\<Name>\\Entity', count: '24', where: '13 plugins' },
+  { path: 'plugins/*/Entity/', namespace: 'Plugin\\<Name>\\Entity', count: '28', where: '16 plugins' },
 ];
 
-// ModuleManager::process, the loop that touches Doctrine. Lines are left out, never
-// rewritten: the one comment stands where the path parsing was, and the coverage markers go.
+// ModuleManager::process, the loop that touches Doctrine, from the same tree. Lines are left
+// out, never rewritten: the one comment stands where the path parsing was, and the coverage
+// markers go.
 const excerpt = String.raw`foreach ($module_paths as $path) {
     // … $type, $module and $dir from the path
-    if (!\is_null($container) && file_exists($dir = $dir . '/Entity') && is_dir($dir)) {
-        $entity_paths[] = $dir;
+    if (!\is_null($container) && file_exists($entity_dir = $dir . '/Entity') && is_dir($entity_dir)) {
+        $entity_paths[] = $entity_dir;
         $container->findDefinition('doctrine.orm.default_metadata_driver')->addMethodCall(
             'addDriver',
             [new Reference('app.schemadef_driver'), "{$type}\\{$module}\\Entity"],
@@ -47,7 +48,7 @@ const excerptLines = excerpt.split('\n').map((text) => ({
 
       <div class="chain">
         <code class="service">doctrine.orm.<wbr />default_metadata_driver</code>
-        <span>One driver chain, one <code>SchemaDefDriver</code>, 70 entities</span>
+        <span>One driver chain, one <code>SchemaDefDriver</code>, 74 entities as of October 2022</span>
         <code class="transient">isTransient($class) = !method_exists($class, 'schemaDef')</code>
       </div>
     </div>
