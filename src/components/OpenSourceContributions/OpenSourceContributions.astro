@@ -15,8 +15,10 @@ const edges = [
   `--tear-tile: ${TEAR_TILE}`,
   `--tear-top: ${top.mask}`,
   `--tear-bottom: ${bottom.mask}`,
-  `--fringe-top: ${top.fringe}`,
-  `--fringe-bottom: ${bottom.fringe}`,
+  `--core-top: ${top.core}`,
+  `--core-bottom: ${bottom.core}`,
+  `--shade-top: ${top.shade}`,
+  `--shade-bottom: ${bottom.shade}`,
 ].join('; ');
 
 const statistics = {
@@ -174,10 +176,12 @@ const statistics = {
       color-mix(in oklch, oklch(0.56 0.19 27), transparent 45%),
       color-mix(in oklch, oklch(0.66 0.17 27), transparent 66%)
     );
-    /* Torn paper frays pale along the break, where the fibres inside it come out. */
+    /* The inside of the paper, which a tear lays bare between the face and the back: whiter
+       than the face on a light sheet, where the face has the grain on it and the inside does
+       not, and a lighter, greyer fibre on a dark one. */
     --fibre: light-dark(
-      color-mix(in oklch, var(--paper), white 70%),
-      color-mix(in oklch, var(--paper), white 22%)
+      color-mix(in oklch, var(--paper), white 80%),
+      color-mix(in oklab, var(--paper), oklch(0.8 0.006 85) 40%)
     );
 
     display: block;
@@ -227,17 +231,24 @@ const statistics = {
       calc(var(--tear-shift, 0rem) - 6.5rem) bottom;
     mask-repeat: repeat-x, no-repeat, repeat-x;
 
-    /* The pale fringe along each tear, painted through the same tiles at the same place. */
+    /* Where the tear split the paper, the inside shows between the face and the back, with the
+       face's own shadow along it. Painted through the same tiles at the same place. */
     &::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: var(--fibre);
-      mask-image: var(--fringe-top), var(--fringe-bottom);
+      background-color: var(--fibre);
+      background-image: var(--shade-top), var(--shade-bottom);
+      mask-image: var(--core-top), var(--core-bottom);
+      background-size: var(--tear-tile) var(--tear);
       mask-size: var(--tear-tile) var(--tear);
+      background-position:
+        var(--tear-shift, 0rem) top,
+        calc(var(--tear-shift, 0rem) - 6.5rem) bottom;
       mask-position:
         var(--tear-shift, 0rem) top,
         calc(var(--tear-shift, 0rem) - 6.5rem) bottom;
+      background-repeat: repeat-x;
       mask-repeat: repeat-x;
       pointer-events: none;
     }
