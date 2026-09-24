@@ -39,6 +39,7 @@ const layers = {
 type Layer = keyof typeof layers;
 ---
 
+<div class="tagging-tool-demo">
 <TechnicalDrawingStack
   subtitle="Library Tagging Tool"
   scale="1:1"
@@ -81,3 +82,19 @@ type Layer = keyof typeof layers;
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
+</div>
+
+<style lang="scss">
+// The first sheet has no note, so its artwork runs the full width and into the corner the
+// title block takes on a wide sheet. Keep the block's height clear below it there. Portrait
+// gives the block a row of its own.
+:global(.tagging-tool-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
+  padding-bottom: var(--title-block-block, 0px);
+}
+
+@container technical-drawing (orientation: portrait) {
+  :global(.tagging-tool-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
+    padding-bottom: 0;
+  }
+}
+</style>

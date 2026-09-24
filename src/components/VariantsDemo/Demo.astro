@@ -83,4 +83,27 @@ type Layer = keyof typeof layers;
     padding-left: 0;
   }
 }
+
+// The first sheet has no note, so its artwork runs the full width and into the corner the
+// title block takes on a wide sheet. Keep the block's height clear below it there. Portrait
+// gives the block a row of its own.
+:global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
+  padding-bottom: var(--title-block-block, 0px);
+}
+
+@container technical-drawing (orientation: portrait) {
+  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
+    padding-bottom: 0;
+  }
+}
+
+// On a sheet this narrow the full-width card sits under the block's left edge, and the open
+// seat and size lists, which hang below the card, run under its lettering. Keep the artwork
+// to the two columns left of the block, as it was beside the note. Guarded above the portrait
+// breakpoint, which has one column.
+@container technical-drawing-width (min-width: 40.0625em) and (max-width: 56em) {
+  :global(.variants-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
+    grid-column: 1 / 3;
+  }
+}
 </style>
