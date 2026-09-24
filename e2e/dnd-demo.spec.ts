@@ -235,7 +235,7 @@ test('a real pointer resting on the demo keeps the walkthrough off it', { tag: '
 /** An ordinary desktop window, and the size the sheet is as wide as it ever gets at. */
 const DESKTOP_WINDOW = { width: 1366, height: 768 };
 
-test('the scene, the catalog and the note fit the artwork, clear of the title block', async ({ page }) => {
+test('the scene and the catalog fit the artwork, clear of the title block', async ({ page }) => {
   await page.setViewportSize(DESKTOP_WINDOW);
   await page.goto('/');
   const app = await openDemo(page);
@@ -260,15 +260,14 @@ test('the scene, the catalog and the note fit the artwork, clear of the title bl
       titleBlock: box(sheet.querySelector(':scope > table')!),
       canvas: box(root.querySelector('canvas[data-scene-canvas]')!),
       catalog: box(root.querySelector('.sidebar')!),
-      note: box(sheet.querySelector('.aside .note-card > aside')!),
     };
   });
 
   const SLACK = 1;
   // The title block is absolutely placed in the sheet's bottom-right corner, over the
-  // artwork column and the note's column both. Nothing else reaches into that corner: the
-  // demo once filled the whole cell and ran the catalog under the block's own lettering.
-  for (const part of ['canvas', 'catalog', 'note'] as const) {
+  // artwork. Nothing else reaches into that corner: the demo once filled the whole cell and
+  // ran the catalog under the block's own lettering.
+  for (const part of ['canvas', 'catalog'] as const) {
     const { left, top, right, bottom } = boxes[part];
     expect(left, `${part} past the mat's left edge`).toBeGreaterThanOrEqual(boxes.artwork.left - SLACK);
     expect(right, `${part} past the mat's right edge`).toBeLessThanOrEqual(boxes.artwork.right + SLACK);
@@ -277,8 +276,7 @@ test('the scene, the catalog and the note fit the artwork, clear of the title bl
     expect(bottom, `${part} over the title block`).toBeLessThanOrEqual(boxes.titleBlock.top + SLACK);
   }
 
-  // The scene and the catalog keep to the artwork cell rather than spilling into the note's
-  // column, and they still take most of the height the cell has above the block — fitting
+  // The scene and the catalog keep to the artwork cell, and they still take most of the height the cell has above the block — fitting
   // the corner by shrinking to nothing would pass everything above.
   for (const part of ['canvas', 'catalog'] as const) {
     expect(boxes[part].left, `${part} left of the artwork cell`).toBeGreaterThanOrEqual(boxes.cell.left - SLACK);

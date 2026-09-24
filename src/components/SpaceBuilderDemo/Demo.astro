@@ -67,13 +67,7 @@ type Layer = keyof typeof layers;
 
   <fragment slot="aside">
     {(layer: Layer) => ({
-      main: (
-        <PostIt background="#e8e4dc" color="black">
-          Auto-playing. Hover or tap to take over<br />
-          Drag a chair from the catalog to place one, or double click on it and draw a
-          rectangle to fill it
-        </PostIt>
-      ),
+      main: null,
       place: (
         <PostIt background="#cde" color="black">
           Blue handles resize the area, pink moves it, green rotates. Click and drag elsewhere
@@ -189,10 +183,9 @@ type Layer = keyof typeof layers;
   }
 }
 
-// Regular (non-portrait) layout only — reserve a gutter next to the demo
-// content (where a wide page like the Add tool can otherwise butt right up
-// against it) and center the PostIt in whatever space is left. Portrait mode
-// already centers the aside below the content with its own margin, untouched.
+// Regular (non-portrait) layout only: reserve a gutter next to the drawing and centre the
+// PostIt in whatever space is left. Portrait mode already centres the aside below the
+// content with its own margin, untouched.
 :global(.space-builder-demo article.technical-drawing-stack > * > section .aside) {
   display: flex;
   justify-content: center;
@@ -204,28 +197,6 @@ type Layer = keyof typeof layers;
   /* Portrait centres the aside itself now; only the landscape gutter has to go. */
   :global(.space-builder-demo article.technical-drawing-stack > * > section .aside) {
     padding-left: 0;
-  }
-}
-
-// Narrow but still landscape (a squeezed window, short of the portrait
-// breakpoint): the interactive page's aside column reserves a full third of
-// the sheet for a note a few characters wide, starving the 3D viewport next
-// to it. Give that page a slim, fixed-width aside instead — the static
-// blueprint pages (which have their own class) keep the even three-column
-// split. Guarded above the portrait breakpoint so it never fights that
-// layout's own column collapse.
-@container technical-drawing-width (min-width: 40.0625em) and (max-width: 64em) {
-  :global(.space-builder-demo article.technical-drawing-stack > * > section:not(.blueprint)) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem);
-  }
-
-  :global(.space-builder-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
-    grid-column: 1;
-  }
-
-  :global(.space-builder-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
-    grid-column: 2;
-    padding-left: 0.75em;
   }
 }
 

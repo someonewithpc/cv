@@ -4,7 +4,6 @@ import path from 'node:path';
 import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
-import PostIt from '@/components/PostIt.astro';
 
 import DragDropScene from './MockScene/DragDropScene.astro';
 import HandoffLayer from './layers/HandoffLayer.astro';
@@ -56,23 +55,12 @@ type Layer = keyof typeof layers;
       handoff: <HandoffLayer />,
     }[layer])}
   </fragment>
-
-  {/* Only the live scene has a note. The handoff page carries its own words. */}
-  <fragment slot="aside">
-    {(layer: Layer) => layer === 'main' && (
-      <PostIt background="#fed" color="black">
-        Hover to take over. Drag a card onto the floor, or double-click one and click where
-        it goes. Drag the ground to orbit
-      </PostIt>
-    )}
-  </fragment>
 </TechnicalDrawingStack>
 </div>
 
 <style lang="scss">
-// The title block is absolutely placed in the sheet's bottom-right corner, over the artwork
-// column and the note's column both. That corner is the block's: the demo and the note end
-// above it rather than running under its lettering.
+// The title block is absolutely placed in the sheet's bottom-right corner, over the artwork.
+// That corner is the block's: the demo ends above it rather than running under its lettering.
 :global(.drag-drop-demo article.technical-drawing-stack > * > section) {
   --title-block-reach: var(--title-block-block);
 }
@@ -113,43 +101,5 @@ type Layer = keyof typeof layers;
 
 :global(.drag-drop-demo article.technical-drawing-stack > * > section.blueprint .aside) {
   display: none;
-}
-
-// Regular (non-portrait) layout only — reserve a gutter next to the demo content and
-// centre the PostIt in whatever space is left, the same way the Space Builder stack does.
-// The note is centred in its column, so a bottom margin — not padding, which would leave the
-// column's own box reaching into the corner — lifts it by half of the block's height.
-:global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
-  display: flex;
-  justify-content: center;
-  padding-left: 1.75em;
-  margin-inline: 0;
-  margin-bottom: var(--title-block-reach, 0px);
-}
-
-@container technical-drawing (orientation: portrait) {
-  /* Portrait centres the aside itself; only the landscape gutter has to go. */
-  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
-    padding-left: 0;
-  }
-}
-
-// Narrow but still landscape (a squeezed window, short of the portrait breakpoint): the
-// interactive page's aside column would otherwise reserve a third of the sheet for a note
-// a few characters wide, starving the 3D viewport next to it. The static blueprint pages
-// keep the even three-column split.
-@container technical-drawing-width (min-width: 40.0625em) and (max-width: 64em) {
-  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint)) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem);
-  }
-
-  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .content) {
-    grid-column: 1;
-  }
-
-  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .aside) {
-    grid-column: 2;
-    padding-left: 0.75em;
-  }
 }
 </style>

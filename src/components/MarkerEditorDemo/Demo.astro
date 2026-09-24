@@ -76,12 +76,7 @@ type Layer = keyof typeof layers;
 
   <fragment slot="aside">
     {(layer: Layer) => ({
-      main: (
-        <PostIt background="#e8e4dc" color="black">
-          Auto-playing. Hover or tap to take over, then click a pin to open the marker picker.
-          Ctrl/Cmd+Z undoes
-        </PostIt>
-      ),
+      main: null,
       selector: (
         <PostIt background="#cde" color="black">
           Pick or create a marker for a space. If the decoration is a space number or letter, the

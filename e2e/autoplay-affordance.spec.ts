@@ -56,20 +56,15 @@ function placement(deck: Locator) {
 }
 
 /**
- * On a phone the deck is a row of its own above the title block, out of reach of the
- * dog-eared corner that the note folds out of. Measured as boxes: the corner's box may
- * not cross the deck's, and the title block sits below the deck, ruled off by clear paper.
+ * On a phone the deck is a row of its own above the title block. Measured as boxes: the
+ * title block sits below the deck, ruled off by clear paper.
  */
 function phoneRow(deck: Locator) {
   return deck.evaluate((el) => {
     const section = el.closest('section')!;
     const box = el.getBoundingClientRect();
-    const fold = section.querySelector('.note-fold')!.getBoundingClientRect();
     const title = section.querySelector('table')!.getBoundingClientRect();
     return {
-      foldVisible: fold.width > 0 && fold.height > 0,
-      clearOfFold: box.right <= fold.left || box.left >= fold.right
-        || box.bottom <= fold.top || box.top >= fold.bottom,
       gapToTitleBlock: Math.round(title.top - box.bottom),
       spansSheet: Math.round(box.width) >= Math.round(title.width),
     };
@@ -106,12 +101,11 @@ for (const { name, viewport } of VIEWPORTS) {
     });
 
     if (name === 'phone') {
-      test('the deck keeps clear of the dog-eared corner and the title block', async ({ page }) => {
+      test('the deck spans the sheet above the title block', async ({ page }) => {
         await page.goto('/');
 
         for (const stack of [markerEditorStack(page), spaceBuilderStack(page)]) {
           const row = await phoneRow(await playingDeck(stack));
-          expect(row).toMatchObject({ foldVisible: true, clearOfFold: true });
           expect(row.spansSheet, 'spans the sheet').toBe(true);
           expect(row.gapToTitleBlock).toBeGreaterThanOrEqual(4);
         }
