@@ -22,11 +22,9 @@ const sources = await Promise.all(
 
 const sheetSize = toKiB(sources.join(''));
 
-// The title block has room for two icons. The sheets that end in a table carry MySQL; the
-// ones about the container and the analyser carry Symfony.
 const layers = {
-  transform: { name: null, tech: ['php', 'mysql'] },
-  typemap: { name: 'Type Vocabulary', pageStyle: 'blueprint', tech: ['php', 'mysql'] },
+  transform: { name: null },
+  typemap: { name: 'Type Vocabulary', pageStyle: 'blueprint' },
   plugins: { name: 'Plugin Entities', pageStyle: 'blueprint' },
   phpstan: { name: 'Static Analysis', pageStyle: 'blueprint' },
 } as const;
@@ -39,7 +37,7 @@ type Layer = keyof typeof layers;
   scale="1:1"
   size={sheetSize}
   date="2021"
-  tech={['php', 'symfony']}
+  tech={['gnusocial', 'doctrine']}
   layers={layers}
 >
   <fragment slot="layers">

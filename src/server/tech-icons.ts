@@ -78,12 +78,21 @@ export const iconSuffix = (iconId: string): string => {
   return colon === -1 ? iconId : iconId.slice(colon + 1);
 };
 
+/** Projects a drawing's title block can name beside a tech; they are not skills, so the
+ *  cloud never lists them. Their SVGs come from the projects' own trees, under src/icons. */
+export const PROJECT_ICONS: Tech[] = [
+  { icon: 'gnusocial', text: 'GNU social' },
+  { icon: 'doctrine', text: 'Doctrine' },
+];
+
+const RESOLVABLE = [...TECH_ICONS, ...PROJECT_ICONS];
+
 const TECH_BY_TEXT = new Map(
-  TECH_ICONS.map((tech) => [tech.text.toLowerCase(), tech]),
+  RESOLVABLE.map((tech) => [tech.text.toLowerCase(), tech]),
 );
 
 const TECH_BY_ICON_SUFFIX = new Map(
-  TECH_ICONS.map((tech) => [iconSuffix(tech.icon).toLowerCase(), tech]),
+  RESOLVABLE.map((tech) => [iconSuffix(tech.icon).toLowerCase(), tech]),
 );
 
 export const resolveTech = (text: string | null | undefined): Tech | null => {
