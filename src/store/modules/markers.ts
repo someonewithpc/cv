@@ -17,7 +17,15 @@ type MarkersRoot = {
 // free-text decoration: outerHTML leaves a euro sign, an arrow or an emoji as it is, and
 // btoa throws on the first code point past U+00FF. So the text goes through UTF-8 bytes
 // in both directions.
-const toBase64 = (text: string) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+const toBase64 = (text: string) => {
+  const bytes = new TextEncoder().encode(text);
+  // Spreading, or apply, passes every byte as an argument, and engines cap those near 64k.
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+};
 const fromBase64 = (base64: string) => new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
 
 export function svgToDataUrl(svg: string): string {
