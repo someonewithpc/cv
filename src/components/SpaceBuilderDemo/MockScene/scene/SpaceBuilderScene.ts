@@ -1005,6 +1005,15 @@ export class SpaceBuilderScene {
     this.markCameraHome();
   }
 
+  /** Absolute orbit distance for initial framing, as {@link setCameraAngles} is for the angles.
+   * It becomes the camera home that {@link resetCamera} returns to. */
+  setCameraDistance(radius: number) {
+    this.spherical.radius = Math.min(ORBIT_RADIUS_MAX, Math.max(ORBIT_RADIUS_MIN, radius));
+    this.updateCamera();
+    this.updateTagPosition();
+    this.markCameraHome();
+  }
+
   private markCameraHome() {
     this.cameraHome = {
       radius: this.spherical.radius,

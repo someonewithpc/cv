@@ -38,10 +38,13 @@ type Phase = 'idle' | 'armed' | 'dragging';
 
 /** Floor points (scene units) autoplay cycles the drop between, so a moved camera still drops on the floor. */
 const DROP_POINTS: Array<{ x: number; z: number }> = [
-  { x: -3.6, z: -1.0 },
-  { x: 2.8, z: 0.5 },
-  { x: 2.3, z: 4.2 },
+  { x: -2.0, z: -0.6 },
+  { x: 1.6, z: 0.3 },
+  { x: 1.3, z: 2.3 },
 ];
+/** How far the camera starts from the floor's centre. The Add tool's 18 frames a whole block
+ * of chairs; this scene holds a few single objects, which read as specks from there. */
+const CAMERA_DISTANCE = 9;
 /** A drop point closer than this (fraction of the canvas per side) to the edge brings the camera home first. */
 const DROP_MARGIN = 0.08;
 
@@ -975,6 +978,7 @@ onMounted(async () => {
         else if (inView) startAutoplay();
       },
     });
+    scene.setCameraDistance(CAMERA_DISTANCE);
     scene.pause();
     registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
