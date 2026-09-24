@@ -31,7 +31,22 @@ async function fetchStylesheet(source: { href: string }, signal: AbortSignal): P
   return stylesheetCache.get(source.href)!;
 }
 
-function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc: Document, signal: AbortSignal): Promise<any> {
+type Source = { href: string };
+
+// Each sheet is inlined once, however many @imports name it: two sheets importing the same
+// fonts.css used to inline it twice and build every face in it twice, and a sheet that
+// imported itself, or two that imported each other, was inlined again on every turn of the
+// microtask loop until the tab hung (the cache answers repeats with a resolved promise, so
+// the signal never got a say).
+function unseen(sources: Source[], seen: Set<string>): Source[] {
+  return sources.filter((source) => {
+    if (seen.has(source.href)) return false;
+    seen.add(source.href);
+    return true;
+  });
+}
+
+function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc: Document, signal: AbortSignal, seen: Set<string>): Promise<any> {
   return Promise.all(
     responses.map(async (response) => {
       if (response === null) return null;
@@ -42,11 +57,11 @@ function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc
       doc.body.append(el);
 
       const subResponses = await Promise.all(
-        findStyleImports(el)
+        unseen(findStyleImports(el), seen)
           .map((source) => fetchStylesheet(source, signal).catch(() => null))
       );
 
-      return processStylesheetResponses(subResponses, doc, signal);
+      return processStylesheetResponses(subResponses, doc, signal, seen);
     })
   );
 }
@@ -76,14 +91,16 @@ export default async function manualIframe(url: string, signal: AbortSignal) {
   base.href = url;
   doc.head.prepend(base);
 
-  const stylesheetLinks = doc.querySelectorAll('link[rel="stylesheet"]') as NodeListOf<HTMLLinkElement>;
+  const stylesheetLinks = [...doc.querySelectorAll('link[rel="stylesheet"]') as NodeListOf<HTMLLinkElement>]
+    .map((link) => ({ href: link.href }));
   const styleImports = [...doc.querySelectorAll('style')].map(findStyleImports).flat();
 
+  const seen = new Set<string>();
   const stylesheetResponses = await Promise.all(
-    [...stylesheetLinks, ...styleImports].map((source) => fetchStylesheet(source, signal).catch(() => null))
+    unseen([...stylesheetLinks, ...styleImports], seen).map((source) => fetchStylesheet(source, signal).catch(() => null))
   );
 
-  await processStylesheetResponses(stylesheetResponses, doc, signal);
+  await processStylesheetResponses(stylesheetResponses, doc, signal, seen);
 
   return { doc };
 }
