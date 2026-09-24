@@ -790,7 +790,7 @@ onBeforeUnmount(() => {
     :data-ready="ready ? 'true' : 'false'"
     :data-user-control="userControl ? 'true' : 'false'"
     :data-panel="panel"
-    @focus="yieldToUser(true)"
+    @focusin="yieldToUser(true)"
   >
     <aside class="rail" aria-label="Tools">
       <div class="rail-logo" aria-hidden="true" title="Visrez">

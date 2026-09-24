@@ -227,7 +227,9 @@ export function createPlayer(host: HTMLElement) {
     window.addEventListener('pointercancel', settle);
   }
 
-  host.addEventListener('focus', yieldToUser);
+  // focusin, not focus: focus does not bubble, so a listener here would only hear the host
+  // itself (tabindex -1) and never the style strips and buttons a keyboard visitor lands on.
+  host.addEventListener('focusin', yieldToUser);
   window.addEventListener('pointerdown', onTrustedPointer);
   window.addEventListener('pointermove', onTrustedPointer);
 
@@ -254,7 +256,7 @@ export function createPlayer(host: HTMLElement) {
       if (resumeTimer) clearTimeout(resumeTimer);
       if (fadeTimer) clearTimeout(fadeTimer);
       if (clickTimer) clearTimeout(clickTimer);
-      host.removeEventListener('focus', yieldToUser);
+      host.removeEventListener('focusin', yieldToUser);
       window.removeEventListener('pointerdown', onTrustedPointer);
       window.removeEventListener('pointermove', onTrustedPointer);
       cursor.remove();
