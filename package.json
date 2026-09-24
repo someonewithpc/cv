@@ -1,5 +1,6 @@
 {
-  "name": "",
+  "name": "cv",
+  "private": true,
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -25,9 +26,6 @@
     "@fortawesome/free-regular-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/react-fontawesome": "^3.5.0",
-    "@iconify-json/boxicons": "^1.2.0",
-    "@iconify-json/devicon": "^1.2.64",
-    "@iconify-json/devicon-plain": "^1.2.58",
     "@iconify-json/lucide": "^1.2.133",
     "@reduxjs/toolkit": "^2.12.0",
     "astro": "^7.3.3",
@@ -48,26 +46,20 @@
     "@astrojs/cloudflare": "^14.3.2",
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
-    "@types/classnames": "^2.3.4",
     "@types/lodash": "^4.17.25",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
-    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vue/tsconfig": "^0.9.1",
     "chrome-launcher": "^1.2.1",
     "html-validate": "^11.16.0",
     "lighthouse": "^13.4.1",
     "sass": "^1.104.1",
+    "sharp": "^0.35.4",
     "stylelint": "^17.15.0",
     "stylelint-config-recommended": "^18.0.0",
     "typescript": "^6.0.3",
     "wrangler": "^4.133.0"
-  },
-  "overrides": {
-    "astro-icon": {
-      "@iconify/tools": "^5.0.12"
-    }
   }
 }
