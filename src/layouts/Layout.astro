@@ -218,10 +218,7 @@ body {
     color-mix(in oklch, var(--theme-canvas), white 24%),
     color-mix(in oklch, var(--theme-canvas), var(--theme-blueprint) 30%)
   );
-  --mat-grid-minor: light-dark(
-    color-mix(in oklch, var(--theme-blueprint), transparent 93%),
-    color-mix(in oklch, var(--theme-blueprint), transparent 80%)
-  );
+  /* The major lines' ink; the minor lines take half of it (cuttingMatGrid.ts). */
   --mat-grid-major: light-dark(
     color-mix(in oklch, var(--theme-blueprint), transparent 86%),
     color-mix(in oklch, var(--theme-blueprint), transparent 60%)

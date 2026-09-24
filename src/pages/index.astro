@@ -17,9 +17,12 @@ import FontPickerDemo from '@/components/FontPickerDemo/Demo.astro';
 import DragDropDemo from '@/components/DragDropDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
+
+import { MAT_GRID_CSS } from '@/cuttingMatGrid';
 ---
 
 <Layout>
+  <style is:global set:html={MAT_GRID_CSS} />
   <main id="main">
     {/* One folio per sheet, in page order. Each label is the heading that sheet already
         shows, so the margin and the paper say the same thing; the top sheet has no heading
@@ -150,9 +153,9 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
   /* The details lie on a cutting mat. Past 64rem it stops short of the viewport so the desk
      shows down both sides, and it is never wider than --mat-max (Layout.astro), so it hugs
      what lies on it. Below that there is no desk, so it runs edge to edge and its rim takes
-     the page gutter. The grid layers are laid out from the content box and clipped to it,
-     which is what leaves the rim unruled; the last layer is the mat's own colour, clipped to
-     the border box, so the rim is still mat and not desk. */
+     the page gutter. The ruling covers the content box only, which is what leaves the rim
+     unruled; the mat's own colour runs out to the border, so the rim is still mat and not
+     desk. */
   .cutting-mat {
     grid-column: full-width;
     justify-self: center;
@@ -174,21 +177,23 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     padding: var(--mat-rim);
     border: var(--mat-line) solid var(--mat-edge);
     border-radius: 0.25rem;
-    /* One ruling per axis, not a minor grid under a major one: where two of those crossed,
-       four coats of ink stacked up and the stacks' peel hints stopped reading against them. */
-    --mat-rule: var(--mat-grid-major) 0 1px, transparent 1px 0.5rem,
-      var(--mat-grid-minor) 0.5rem calc(0.5rem + 1px), transparent calc(0.5rem + 1px) 1rem,
-      var(--mat-grid-minor) 1rem calc(1rem + 1px), transparent calc(1rem + 1px) 1.5rem,
-      var(--mat-grid-minor) 1.5rem calc(1.5rem + 1px), transparent calc(1.5rem + 1px) 2rem,
-      var(--mat-grid-minor) 2rem calc(2rem + 1px), transparent calc(2rem + 1px) 2.5rem;
+    background: var(--mat-paper);
+    /* The ruling is drawn under the details and not over them, inside the mat's own layer. */
+    position: relative;
+    isolation: isolate;
 
-    background-color: transparent;
-    background-image:
-      repeating-linear-gradient(to right, var(--mat-rule)),
-      repeating-linear-gradient(to bottom, var(--mat-rule)),
-      linear-gradient(var(--mat-paper), var(--mat-paper));
-    background-origin: content-box, content-box, border-box;
-    background-clip: content-box, content-box, border-box;
+    /* A tile of the grid per device pixel ratio, set by cuttingMatGrid.ts, masks the theme's
+       ink: every line lands on whole device pixels, and every one of them is alike. The tile is
+       sized in px and not rem, because it is drawn to the pixel. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: var(--mat-rim);
+      z-index: -1;
+      background: var(--mat-grid-major);
+      mask: var(--mat-tile) 0 0 / var(--mat-tile-size) var(--mat-tile-size) repeat;
+      pointer-events: none;
+    }
 
     /* The ruled band down the mat is ruled mat, like the band across it, so it belongs inside
        the content box and not to the rim: the rim is the same plain band on all four sides. */

@@ -324,8 +324,10 @@ test('the cutting mat lies under every detail and leaves the desk showing at 144
       viewport: document.documentElement.clientWidth,
       padding: parseFloat(style.paddingLeft),
       border: parseFloat(style.borderTopWidth),
-      clip: style.backgroundClip,
-      layers: style.backgroundImage.split('linear-gradient(').length - 1,
+      paper: style.backgroundImage,
+      ruling: (({ maskImage, left, top, zIndex }) => ({ maskImage, left: parseFloat(left), top: parseFloat(top), zIndex }))(
+        getComputedStyle(el, '::before'),
+      ),
       stacks: stacks.map(({ left, right, top, bottom }) => ({ left, right, top: top + scrollY, bottom: bottom + scrollY })),
     };
   });
@@ -344,12 +346,15 @@ test('the cutting mat lies under every detail and leaves the desk showing at 144
     expect(stack.bottom).toBeLessThanOrEqual(box.bottom);
   }
 
-  // The rim is a plain margin closed by one line: the two rulings are clipped to the content
-  // box, and only the mat's own colour reaches the border box.
+  // The rim is a plain margin closed by one line: the ruling is an SVG tile laid over the
+  // content box alone, under the details, and only the mat's own colour reaches the border box.
   expect(box.padding).toBeGreaterThanOrEqual(12);
   expect(box.border).toBe(1);
-  expect(box.layers).toBe(3);
-  expect(box.clip).toBe('content-box, content-box, border-box');
+  expect(box.paper).toBe('none');
+  expect(box.ruling.maskImage).toContain('data:image/svg+xml');
+  expect(box.ruling.left).toBe(box.padding);
+  expect(box.ruling.top).toBe(box.padding);
+  expect(box.ruling.zIndex).toBe('-1');
 });
 
 test('each demo is a lettered detail and nothing else is called out', async ({ page }) => {
