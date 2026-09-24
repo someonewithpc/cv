@@ -56,16 +56,10 @@ export default defineConfig<PaceOptions>({
   },
   projects: [
     {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: { executablePath: systemChrome() },
-      },
-    },
-    {
       // The walkthrough specs watch their demos at up to four times real speed. The
       // hand-over tests (tagged @handover) run here a second time at half speed, where a
-      // takeover is likelier to land in the middle of a walkthrough step.
+      // takeover is likelier to land in the middle of a walkthrough step. Listed first so
+      // these long runs start first rather than holding the suite up at the end.
       name: 'slow-walkthroughs',
       grep: /@handover/,
       timeout: 120_000,
@@ -73,6 +67,13 @@ export default defineConfig<PaceOptions>({
         ...devices['Desktop Chrome'],
         launchOptions: { executablePath: systemChrome() },
         slowWalkthroughs: true,
+      },
+    },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: { executablePath: systemChrome() },
       },
     },
   ],
