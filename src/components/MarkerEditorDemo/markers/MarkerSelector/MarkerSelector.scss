@@ -61,6 +61,11 @@ $visrez-brand: #89ab24;
       border: 2px solid #666;
       border-radius: 0.5em;
 
+      &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+      }
+
       display: flex;
       align-items: center;
       justify-content: center;

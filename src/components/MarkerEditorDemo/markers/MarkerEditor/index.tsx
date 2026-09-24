@@ -438,7 +438,14 @@ export function MarkerEditor({
                                 aria-label={part.title}
                                 aria-selected={state.active[step] === type}
                                 data-demo-target={`editor:${step}:${type}`}
+                                tabIndex={0}
                                 onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
+                                onKeyDown={(event) => {
+                                  // A list item with a click is not a keyboard target on its own.
+                                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                                  event.preventDefault();
+                                  setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }));
+                                }}
                                 title={part.title}
                               >
                                 <Thumbnail space={space} />

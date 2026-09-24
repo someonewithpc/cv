@@ -1,6 +1,6 @@
 import '../client-only';
 
-import { lazy, Suspense, useMemo, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -26,6 +26,24 @@ import { InlineSVG } from './InlineSVG';
 import { SelectedMarkerPreview } from './SelectedMarkerPreview';
 
 import './MarkerSelector.scss';
+
+/**
+ * The keyboard half of an option that is a list item with a click handler: a stop for Tab,
+ * and Enter or Space doing what the click does. The item stays the element the click, the
+ * demo cursor and the specs all aim at.
+ */
+function pressable(onPress: () => void) {
+  return {
+    tabIndex: 0,
+    onClick: onPress,
+    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      onPress();
+    },
+  };
+}
+
 
 const MarkerEditor = lazy(async () => {
   const mod = await import('../MarkerEditor');
@@ -98,7 +116,7 @@ export function MarkerSelector({
                 aria-selected={marker.id === currentMarker.id}
                 data-demo-target={`selector:marker:${marker.id}`}
                 style={{ position: 'relative' }}
-                onClick={() => {
+                {...pressable(() => {
                   groupedUndo.batch(() => {
                     if (space.markerId !== marker.id) {
                       dispatch(setSpaceMarker({ spaceId: space.id, markerId: marker.id }));
@@ -111,7 +129,7 @@ export function MarkerSelector({
                     setEditedMarkerId(undefined);
                   });
                   onClose();
-                }}
+                })}
               >
                 {marker.resolvedSource === undefined
                   ? <img src={marker.source} alt="" />
@@ -189,10 +207,10 @@ export function MarkerSelector({
             aria-label="Create new marker"
             title="Create new marker"
             data-demo-target="selector:create"
-            onClick={() => {
+            {...pressable(() => {
               setEditedMarkerId(uuidv4());
               setIsNewMarker(true);
-            }}
+            })}
           >
             <FontAwesomeIcon icon={faPlus} size="3x" color="white" />
           </li>
@@ -211,7 +229,7 @@ export function MarkerSelector({
             aria-selected={false}
             aria-label="Close marker selector"
             data-demo-target="selector:close"
-            onClick={onClose}
+            {...pressable(onClose)}
             title="Close marker selector"
           >
             <FontAwesomeIcon icon={faXmark} size="3x" color="white" />
