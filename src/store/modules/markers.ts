@@ -13,14 +13,21 @@ type MarkersRoot = {
   };
 };
 
+// btoa and atob take Latin-1 only, and the SVG carries whatever the visitor typed into a
+// free-text decoration: outerHTML leaves a euro sign, an arrow or an emoji as it is, and
+// btoa throws on the first code point past U+00FF. So the text goes through UTF-8 bytes
+// in both directions.
+const toBase64 = (text: string) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+const fromBase64 = (base64: string) => new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
+
 export function svgToDataUrl(svg: string): string {
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  return `data:image/svg+xml;base64,${toBase64(svg)}`;
 }
 
 export function dataUrlToSvg(dataUrl: string): string {
   if (dataUrl.startsWith('data:image/svg+xml;base64,')) {
     const base64Data = dataUrl.replace(/^data:image\/svg\+xml;base64,/, '');
-    return atob(base64Data);
+    return fromBase64(base64Data);
   }
   if (dataUrl.startsWith('data:image/svg+xml,')) {
     return decodeURIComponent(dataUrl.replace(/^data:image\/svg\+xml,/, ''));
