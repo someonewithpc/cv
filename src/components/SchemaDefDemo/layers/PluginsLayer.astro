@@ -240,6 +240,12 @@ const excerptLines = excerpt.split('\n').map((text) => ({
 .footnote {
   grid-area: note;
   margin: 0;
+
+  /* What a small sheet can spare: the boxes above carry the point. */
+  @include narrow-sheet {
+    display: none;
+  }
+
   font-size: fs(0.5625);
   line-height: 1.4;
   color: var(--ink-muted);

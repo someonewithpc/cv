@@ -110,14 +110,31 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
 
 .typemap {
   box-sizing: border-box;
-  width: min(100%, 44em);
+  width: min(100%, 52em);
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.625em;
+  /* The rules read down one column beside the table: under it, the two together stand
+     taller than the room a sheet has above its title block. The table's cells never wrap,
+     so it takes the width it needs and the rules take the rest. A portrait sheet has the
+     height and not the width, so there they go back under. */
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-areas:
+    "table rules"
+    "note note";
+  gap: 0.625em 1.25em;
+  align-items: start;
   color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "table"
+      "rules"
+      "note";
+  }
 }
 
 table {
+  grid-area: table;
   width: 100%;
   border-collapse: collapse;
   font-size: fs(0.6875);
@@ -138,6 +155,11 @@ table {
     padding: 0.125em 0.5em 0.125em 0;
     border-bottom: 1px solid var(--line);
     white-space: nowrap;
+
+    /* Thirteen rows: a hair off each keeps the last one above the title block. */
+    @include narrow-sheet {
+      padding-block: 0.0625em;
+    }
   }
 
   .example {
@@ -148,13 +170,18 @@ table {
     :global([data-sheet-orientation='portrait']) & {
       display: none;
     }
+
+    @include narrow-sheet {
+      display: none;
+    }
   }
 }
 
 .rules {
+  grid-area: rules;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.375em 0.75em;
 
   :global([data-sheet-orientation='portrait']) & {
@@ -184,10 +211,15 @@ table {
 }
 
 .footnote {
+  grid-area: note;
   margin: 0;
 
-  /* The rest of the lookup table is the first thing a phone's sheet can spare. */
+  /* The rest of the lookup table is the first thing a small sheet can spare. */
   :global([data-sheet-orientation='portrait']) & {
+    display: none;
+  }
+
+  @include narrow-sheet {
     display: none;
   }
 

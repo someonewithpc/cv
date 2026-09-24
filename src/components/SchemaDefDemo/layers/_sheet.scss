@@ -57,6 +57,15 @@ $sheet-margin: 0.75em;
   }
 }
 
+// A sheet that is wider than tall but small with it: a 760px window draws one 720px wide and
+// 360px tall, and the small print, which stops shrinking at its rem floor, wants more of that
+// height than there is. What the sheet can spare goes here, as it does on a phone's sheet.
+@mixin narrow-sheet {
+  @container technical-drawing-width (max-width: 52em) {
+    @content;
+  }
+}
+
 // Small print that stops shrinking with the sheet at its own size in rem: a phone's sheet
 // sets its type smaller than a desk's, and the labels here start small already.
 @function fs($size) {
