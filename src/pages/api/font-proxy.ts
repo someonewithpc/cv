@@ -30,6 +30,15 @@ function validateTarget(raw: string): URL {
 }
 
 export const GET: APIRoute = async ({ url, request }) => {
+  // The picker is the only caller, and it fetches from this origin. A browser says where a
+  // request came from in sec-fetch-site; one from another site's page is not the picker's,
+  // and is turned away before the upstream fetch it would have cost. A client that sends no
+  // header at all (curl, an older browser) is not told apart here.
+  const site = request.headers.get('sec-fetch-site');
+  if (site !== null && site !== 'same-origin' && site !== 'none') {
+    return new Response('Cross-site requests are not served', { status: 403 });
+  }
+
   const raw = url.searchParams.get('url');
   if (!raw) return new Response('Missing url parameter', { status: 400 });
 
@@ -74,8 +83,15 @@ export const GET: APIRoute = async ({ url, request }) => {
     status: upstream.status,
     headers: {
       'content-type': contentType,
-      'access-control-allow-origin': '*',
       'cache-control': 'public, max-age=3600',
+      // The embed mode fetches whole pages, so text/html comes back through here, and a
+      // browser pointed straight at this URL would run that page's scripts as this origin.
+      // A sandboxed document gets an opaque origin instead. fetch().text() and FontFace
+      // loads, which are what the picker does with the body, never look at the policy.
+      'content-security-policy': 'sandbox',
+      'x-content-type-options': 'nosniff',
+      // No access-control-allow-origin: every caller is same-origin, and the wildcard let
+      // any page on the web read fetched bodies through this worker's quota.
     },
   });
 };
