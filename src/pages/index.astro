@@ -19,6 +19,7 @@ import FontPickerDemo from '@/components/FontPickerDemo/Demo.astro';
 import DragDropDemo from '@/components/DragDropDemo/Demo.astro';
 import SchemaDefDemo from '@/components/SchemaDefDemo/Demo.astro';
 import EventBusDemo from '@/components/EventBusDemo/Demo.astro';
+import FediversePlaygroundDemo from '@/components/FediversePlaygroundDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
 
@@ -131,6 +132,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             before Ruby callbacks replaced them.
           </TitleCard>
           <SyntheticPropertiesDemo />
+        </Callout>
+        <Callout letter="K" title="Fediverse playground" titleJp="フェディバース・プレイグラウンド" scale="1:1" headingId="detail-k" cardSide="start">
+          <TitleCard slot="card" title="Fediverse Playground" medium="TypeScript, Docker" year="2026">
+            A command-line tool that runs several GNU social instances side by side on one
+            machine, each on its own branch, so federation between versions can be tested before
+            a release. One YAML file in, a Docker Compose stack out.
+          </TitleCard>
+          <FediversePlaygroundDemo />
         </Callout>
       </div>
     </section>
