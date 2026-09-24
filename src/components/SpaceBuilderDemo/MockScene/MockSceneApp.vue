@@ -580,16 +580,19 @@ async function restartDemo() {
   if (!chairsReady.value) return;
   if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
   if (handoffTimer) { clearTimeout(handoffTimer); handoffTimer = null; }
-  userControl.value = false;
-  cursorPhase.value = 'demo';
+  // The deck reads "auto play off" under reduced motion, so Restart puts the scene back
+  // and leaves it there: no fake cursor, and no "Demo paused" on the next hover.
+  const walkthrough = !reducedMotion.value;
+  if (walkthrough) {
+    userControl.value = false;
+    cursorPhase.value = 'demo';
+  }
   sceneRef.value?.reset();
   panel.value = 'closed';
   phase.value = 'idle';
   // Bring the view home before the walkthrough aims at the floor again.
   await sceneRef.value?.resetCamera();
-  // The deck reads "auto play off" under reduced motion, so Restart puts the scene back
-  // and leaves it there rather than starting the walkthrough the deck says is off.
-  if (userControl.value || reducedMotion.value) return;
+  if (!walkthrough || userControl.value) return;
   controllerRef.value?.start();
 }
 
