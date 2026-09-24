@@ -91,8 +91,16 @@ $status-border-brand: #89ab24;
   // Soft edges on the arc, clamped so a full turn cannot overflow the range
   --status-border-color-gradient-width: clamp(0deg, 10deg, min(1turn - var(--status-border-colored-width), var(--status-border-colored-width)));
 
-  transition-property: --status-border-color-gradient-width, --status-border-color, --status-border-colored-width, --status-border-start#{if($transitions == "", "", ", " + $transitions)};
-  transition-duration: 250ms, 250ms, 250ms, 250ms#{if($transition-durations == "", "", ", " + $transition-durations)};
+  $transition-property: "--status-border-color-gradient-width, --status-border-color, --status-border-colored-width, --status-border-start";
+  $transition-duration: "250ms, 250ms, 250ms, 250ms";
+  @if $transitions != "" {
+    $transition-property: "#{$transition-property}, #{$transitions}";
+  }
+  @if $transition-durations != "" {
+    $transition-duration: "#{$transition-duration}, #{$transition-durations}";
+  }
+  transition-property: #{$transition-property};
+  transition-duration: #{$transition-duration};
   transition-timing-function: ease-in-out;
 
   background:
