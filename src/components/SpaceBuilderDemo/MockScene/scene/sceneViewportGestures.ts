@@ -61,6 +61,10 @@ export function applyWheelZoom(scene: SpaceBuilderScene, event: WheelEvent) {
   // Horizontal trackpad/shift-wheel scroll should reach the page (carousel paging)
   // instead of being swallowed here — only capture predominantly vertical scroll.
   if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+  // A trackpad pinch arrives as a wheel with ctrlKey set. Once the page itself is pinched in,
+  // that wheel is the page's: at phone width a scene fills the zoomed view, so taking it here
+  // left no spot to pinch the page back out from.
+  if (event.ctrlKey && (window.visualViewport?.scale ?? 1) > 1.001) return;
   event.preventDefault();
   // deltaY > 0 → zoom out (larger radius).
   const factor = Math.exp(event.deltaY * 0.0012);
