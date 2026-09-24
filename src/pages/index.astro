@@ -137,49 +137,36 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
   }
 
   /* The title is written on the mat, so it reads as the mat's own and not as a sheet of its own
-     above it. */
+     above it. Where the mat has the room for the boundaries, it runs as wide as they and the
+     cards do, --mat-boundary out past the drawing's column on either side. */
   .cutting-mat > :global(header) {
     margin-bottom: 0;
+
+    @media (width >= 76rem) {
+      margin-inline: calc(-1 * var(--mat-boundary));
+    }
   }
 
   /* The details lie on a cutting mat. Past 64rem it stops short of the viewport so the desk
-     shows down both sides; below that there is no desk, so it runs edge to edge and its rim
-     takes the page gutter. The four grid layers are laid out from the content box and clipped
-     to it, which is what leaves the rim unruled; the last layer is the mat's own colour,
-     clipped to the border box, so the rim is still mat and not desk. Edge to edge, the line
-     counts toward the gutter, so a stack is exactly as wide as it was without the mat. */
+     shows down both sides, and it is never wider than --mat-max (Layout.astro), so it hugs
+     what lies on it. Below that there is no desk, so it runs edge to edge and its rim takes
+     the page gutter. The grid layers are laid out from the content box and clipped to it,
+     which is what leaves the rim unruled; the last layer is the mat's own colour, clipped to
+     the border box, so the rim is still mat and not desk. */
   .cutting-mat {
-    --mat-line: 1px;
-    --mat-rim: calc(var(--page-gap) - var(--mat-line));
-    /* The mat a drawing lies on rather than fills: this much mat is kept clear on all four
-       sides of the widest thing laid down on it, and more than this beside it wherever the
-       mat has the width to spare, which is what makes the stack look put down on the mat
-       instead of cut to it. Across, it is taken from the mat's own slack and never from the
-       drawing, so nothing on it is narrower than it was; down, where there is no slack to
-       take it from, the mat is that much taller. */
-    --mat-margin: 0px;
-
-    /* The lane a detail's title card stands in, beside the view rather than under it. It is
-       open only where the mat is wide enough to hold a stack, a card and the mat's own
-       margin side by side, which now takes 105rem: the card and its gap stand inside that
-       margin and not over it, and the folio's lane comes off the desk before either. One
-       switch drives both the column here and the card itself (Callout.astro). */
-    --card-width: 12rem;
-    /* The callout's boundary stands 3rem out past the view once the card is shown, and the
-       leader from the card to it is 1.5rem. */
-    --card-gap: 4.5rem;
-    --card-lane: 0px;
-    --card-display: none;
-
     grid-column: full-width;
     justify-self: center;
-    /* --mat-inset and --mat-max are the desk's (Layout.astro): the folio's lane is measured
-       against the same edge. */
     width: min(100% - var(--mat-inset) * 2, var(--mat-max));
     min-width: 0;
     display: grid;
+    /* The drawing's column, with room past it for the boundary and the ruled band. Where the
+       mat is narrower than that the room comes out of the mat and never out of the drawing,
+       down to where the boundary would pass the rim onto the mat's edge line. */
     grid-template-columns: min(
-      max(100% - var(--mat-margin) * 2, min(100%, var(--breakout-max))),
+      max(
+        100% - (var(--mat-boundary, 0px) + var(--mat-clear)) * 2,
+        min(100% - max(0px, var(--mat-boundary, 0px) - var(--mat-rim)) * 2, var(--breakout-max))
+      ),
       calc(var(--breakout-max) + var(--card-lane))
     );
     justify-content: center;
@@ -203,25 +190,14 @@ import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSo
     background-origin: content-box, content-box, border-box;
     background-clip: content-box, content-box, border-box;
 
-    /* The margin down the mat is ruled mat, like the margin across it, so it belongs inside
-       the content box and not to the rim: the rim is the same plain band on all four sides
-       whatever the margin is. */
+    /* The ruled band down the mat is ruled mat, like the band across it, so it belongs inside
+       the content box and not to the rim: the rim is the same plain band on all four sides. */
     > :global(:first-child) {
-      margin-block-start: var(--mat-margin);
+      margin-block-start: var(--mat-clear);
     }
 
     > :global(:last-child) {
-      margin-block-end: var(--mat-margin);
-    }
-
-    @media (width > 64rem) {
-      --mat-rim: 1.5rem;
-      --mat-margin: 3rem;
-    }
-
-    @media (width >= 105rem) {
-      --card-lane: calc(var(--card-width) + var(--card-gap));
-      --card-display: block;
+      margin-block-end: var(--mat-clear);
     }
 
     @media (max-width: 52rem) {

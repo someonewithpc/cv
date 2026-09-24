@@ -27,19 +27,18 @@ const { number, label } = Astro.props;
 </div>
 
 <style lang="scss">
-/* 80rem is the width at which the margin holds the numeral with 1.5rem still clear of the
-   widest band the page lays down. Narrower than that the margin is a gutter, so there is no
-   folio at all.
+/* 76rem is the width from which the desk margin beside the mat holds a 3rem numeral with
+   1.5rem still clear of the mat (Layout.astro). Narrower than that the margin is a gutter, so
+   there is no folio at all.
 
-   The lane hangs off the paper's near edge and not the window's: the cutting mat stops
-   growing at its cap and is centred from there, so past about 1920px the desk's margin opens
-   faster than the lane, and a numeral pinned to the window is left behind in the corner —
-   342px from the mat it numbers at 2560. Narrower than that the mat reaches the lane and the
-   two edges are the same one, so nothing moves. */
+   The lane hangs off the paper's near edge and not the window's: the cutting mat is only as
+   wide as what lies on it and is centred from there, so once the lane is at its widest the
+   desk margin keeps opening and a numeral pinned to the window would be left behind in the
+   corner. Hung off the mat, it stays beside the paper it numbers at every width. */
 .folio-rail {
   display: none;
 
-  @media (width >= 80rem) {
+  @media (width >= 76rem) {
     display: block;
     position: absolute;
     grid-row: var(--folio-row);

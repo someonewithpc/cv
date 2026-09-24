@@ -241,33 +241,62 @@ main {
   /* The demo stacks sit in the breakout column, so this is what caps them. */
   --breakout-max: var(--content-max);
 
+  /* The cutting mat's geometry belongs to the desk and not to the mat, because the folio
+     stands in the margin the mat leaves and has to know where it ends (index.astro lays the
+     mat out from these, Callout.astro draws its boundary and card from them). Out from the
+     drawing, each side of the mat is: the callout's boundary, --mat-boundary past the view;
+     --mat-clear of ruled mat past that; the unruled rim; and the mat's edge line. Edge to
+     edge on a phone, the rim is the page gutter less the line, so a stack is exactly as wide
+     as it was without the mat. */
+  --mat-line: 1px;
+  --mat-rim: calc(var(--page-gap) - var(--mat-line));
+  --mat-clear: 0px;
+
+  /* The lane a detail's title card stands in, beside the view rather than under it. It is
+     open only from 105rem, where the desk holds a stack, a card and the folio side by side.
+     The card is --card-gap off the view, which is the boundary's clearance and a 1.5rem
+     leader, and the lane leaves the boundary's clearance out, because on the card's side the
+     card is what stands out past the view and on the other side the boundary is: both reach
+     the same distance out, so the mat hugs either the same. */
+  --card-width: 12rem;
+  --card-gap: calc(var(--mat-boundary, 0px) + 1.5rem);
+  --card-lane: 0px;
+  --card-display: none;
+
   /* The sheet number in the desk's left margin (Folio.astro). The lane it stands in is what
-     the desk can spare once the cutting mat has the width it needs to lay a full drawing
-     down with 3rem of mat clear on either side of it, and it never grows past what a 7.5rem
-     numeral asks for: the numeral's own width, about 1.15 of its size for two stencil
-     digits, and 1.5rem of desk left clear between it and whatever lies beside it. The
-     numeral is then sized from the lane, so it fits the margin at every width. Below 80rem
-     the desk can spare nothing and there is no folio, so no measurement moves for one. */
+     the desk can spare once the mat has the width it needs, and it never grows past what a
+     7.5rem numeral asks for: the numeral's own width, about 1.15 of its size for two stencil
+     digits, and 1.5rem of desk left clear between it and the paper beside it. The numeral is
+     then sized from the lane, so it fits the margin at every width. Below 76rem the lane
+     would be under 5rem and the numeral under 3rem, so there is no folio, and no measurement
+     moves for one. */
   --folio-gap: 1.5rem;
   --folio-lane: 0px;
   --type-folio: calc((var(--folio-lane) - var(--folio-gap)) / 1.15);
 
-  @media (width >= 80rem) {
+  /* --mat-max is as wide as the mat ever needs to be: the widest drawing, the card lane, and
+     the four bands above on either side. The mat stops there and is centred, so it hugs what
+     is laid on it and the rest is desk. --desk-edge is where the paper starts: the near edge
+     of the widest thing the desk lays down, which is always the mat, and the folio hangs off
+     it rather than off the window. */
+  --mat-inset: 0px;
+  --mat-max: calc(
+    var(--breakout-max) + var(--card-lane)
+      + (var(--mat-boundary, 0px) + var(--mat-clear) + var(--mat-rim) + var(--mat-line)) * 2
+  );
+  --desk-edge: max((100vw - var(--mat-max)) / 2, var(--mat-inset));
+
+  @media (width >= 76rem) {
     --folio-lane: min(
-      (100vw - var(--breakout-max) - 10rem) / 2,
+      (100vw - var(--mat-max)) / 2,
       calc(7.5rem * 1.15 + var(--folio-gap))
     );
   }
 
-  /* The cutting mat's width rule belongs to the desk and not to the mat, because the folio
-     stands in the margin the mat leaves and has to know where it ends (index.astro reads
-     both). --desk-edge is where the paper starts: the near edge of the widest thing the desk
-     lays down, which is always the mat. Past the mat's cap the desk keeps widening and the
-     mat does not, so the margin opens faster than the lane and the folio hangs off this
-     rather than off the window. */
-  --mat-inset: 0px;
-  --mat-max: 100rem;
-  --desk-edge: max((100vw - var(--mat-max)) / 2, var(--mat-inset));
+  @media (width >= 105rem) {
+    --card-lane: calc(var(--card-width) + var(--card-gap) - var(--mat-boundary));
+    --card-display: block;
+  }
 
   --full-width: minmax(var(--page-gap), 1fr);
   --breakout: minmax(0, calc((var(--breakout-max) - var(--content-max)) / 2));
@@ -360,6 +389,16 @@ main {
     /* The mat and the folio share the desk margin, so the mat stops at the far side of the
        lane the sheet number stands in whenever that is the wider of the two. */
     --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
+
+    /* On the desk the mat is a thin frame round what lies on it: 0.75rem of ruled mat past
+       the boundary, then a 0.75rem rim. The boundary stands 1.5rem off the view where the
+       desk is narrow, which is all of the rim and the ruled band, and opens to 3rem, the
+       clearance it keeps above and below the view, over the ten rem after the folio
+       appears. Each side of it takes 0.15 of every pixel the window gains and the folio lane
+       takes the rest, so neither the mat nor the numeral jumps at any width. */
+    --mat-rim: 0.75rem;
+    --mat-clear: 0.75rem;
+    --mat-boundary: clamp(1.5rem, 1.5rem + (100vw - 76rem) * 0.15, 3rem);
 
     row-gap: var(--desk-gap);
     padding-block: var(--desk-gap);

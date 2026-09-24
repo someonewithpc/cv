@@ -62,14 +62,11 @@ const hasCard = Astro.slots.has('card');
   --callout-room: calc(var(--callout-pad) + 1.5rem);
   /* How far the side lines stand out past the column the callout is given. They are drawn in
      the mat's slack rather than padded in, because a view made narrower scales its drawing
-     down and the drawing's own labels start to collide. Past 80rem the mat has the slack for
-     the full clearance, so the boundary stands the same distance off the view all round;
-     below that it has only its rim, and the sides keep to --callout-pad. */
-  --callout-out: var(--callout-pad);
-
-  @media (width > 80rem) {
-    --callout-out: var(--callout-room);
-  }
+     down and the drawing's own labels start to collide. On the desk the mat says how far
+     (--mat-boundary, Layout.astro): once the window is wide enough it is the full clearance,
+     so the boundary stands the same distance off the view all round. Off the desk the mat
+     has only its rim, and the sides keep to --callout-pad. */
+  --callout-out: var(--mat-boundary, var(--callout-pad));
   --callout-lead: 1.75rem;
   /* The label's box; the bubble sits at its bottom, so the leader below it has a known length. */
   --callout-label: 3.75rem;
@@ -133,14 +130,14 @@ const hasCard = Astro.slots.has('card');
   display: var(--card-display, none);
   position: absolute;
   top: calc(var(--callout-label) + var(--callout-lead));
-  width: var(--card-width, 12rem);
+  width: var(--card-width);
 
   .callout[data-card='start'] & {
-    inset-inline-end: calc(100% + var(--card-gap, 3rem));
+    inset-inline-end: calc(100% + var(--card-gap));
   }
 
   .callout[data-card='end'] & {
-    inset-inline-start: calc(100% + var(--card-gap, 3rem));
+    inset-inline-start: calc(100% + var(--card-gap));
   }
 }
 
@@ -151,7 +148,7 @@ const hasCard = Astro.slots.has('card');
   position: absolute;
   /* Level with the card's title cell, which is where a leader off a title block would start. */
   top: 1.75rem;
-  width: calc(var(--card-gap, 3rem) - var(--callout-out));
+  width: calc(var(--card-gap) - var(--callout-out));
   height: 0.5rem;
 
   &::before {

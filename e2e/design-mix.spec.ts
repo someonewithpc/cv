@@ -346,7 +346,7 @@ test('the cutting mat lies under every detail and leaves the desk showing at 144
 
   // The rim is a plain margin closed by one line: the two rulings are clipped to the content
   // box, and only the mat's own colour reaches the border box.
-  expect(box.padding).toBeGreaterThanOrEqual(16);
+  expect(box.padding).toBeGreaterThanOrEqual(12);
   expect(box.border).toBe(1);
   expect(box.layers).toBe(3);
   expect(box.clip).toBe('content-box, content-box, border-box');
@@ -540,7 +540,7 @@ const SHEETS = [
 ];
 
 /** The width from which Layout.astro has desk to spare for a folio. */
-const FOLIO_FROM = 80 * 16;
+const FOLIO_FROM = 76 * 16;
 
 const readFolios = (page: import('@playwright/test').Page) =>
   page.evaluate((sheets) => {
@@ -660,8 +660,8 @@ for (const [width, height] of [[FOLIO_FROM - 16, 900], [1024, 768], [390, 844]])
   });
 }
 
-for (const width of [1440, 1920]) {
-  test(`the mat keeps 3rem of itself clear around the drawings at ${width}px`, async ({ page }) => {
+for (const width of [FOLIO_FROM, 1440, 1920]) {
+  test(`the mat hugs what lies on it at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
 
@@ -669,15 +669,18 @@ for (const width of [1440, 1920]) {
       const mat = document.querySelector('#demos .cutting-mat')!;
       const style = getComputedStyle(mat);
       const box = mat.getBoundingClientRect();
+      const inset = (side: string) =>
+        parseFloat(style.getPropertyValue(`border-${side}-width`)) + parseFloat(style.getPropertyValue(`padding-${side}`));
       const inside = {
-        left: box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft),
-        right: box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight),
+        left: box.left + inset('left'),
+        right: box.right - inset('right'),
+        top: box.top + inset('top'),
+        bottom: box.bottom - inset('bottom'),
       };
-      const drawn = [...document.querySelectorAll('#demos .cutting-mat article.technical-drawing-stack, #demos .cutting-mat .callout-card')]
+      // What is laid on the mat reaches as far out as the callouts' boundaries and the cards.
+      const drawn = [...document.querySelectorAll('#demos .cutting-mat .callout-view, #demos .cutting-mat .callout-card')]
         .filter((el) => getComputedStyle(el).display !== 'none')
         .map((el) => el.getBoundingClientRect());
-      // Down the mat there is no slack to take a margin from, so the details themselves are
-      // held that far off the mat's own top and bottom edge.
       const details = [...mat.children].map((el) => el.getBoundingClientRect());
       const folio = document.querySelector<HTMLElement>('.folio-rail')!;
       return {
@@ -691,17 +694,24 @@ for (const width of [1440, 1920]) {
           top: Math.min(...details.map((rect) => rect.top)),
           bottom: Math.max(...details.map((rect) => rect.bottom)),
         },
-        edges: { top: box.top, bottom: box.bottom },
         folioRight: folio.getBoundingClientRect().right,
       };
     });
 
-    expect(room.widest.left - room.inside.left, 'mat clear on the left').toBeGreaterThanOrEqual(48);
-    expect(room.inside.right - room.widest.right, 'mat clear on the right').toBeGreaterThanOrEqual(48);
-    expect(room.tallest.top - room.edges.top, 'mat clear above').toBeGreaterThanOrEqual(48);
-    expect(room.edges.bottom - room.tallest.bottom, 'mat clear below').toBeGreaterThanOrEqual(48);
-    // The mat and the folio share the desk margin and never reach into each other.
-    expect(room.mat.left).toBeGreaterThanOrEqual(room.folioRight);
+    // 0.75rem of ruled mat past the outermost line on all four sides, and no more: the mat is
+    // only as wide as what lies on it.
+    for (const [side, clear] of [
+      ['left', room.widest.left - room.inside.left],
+      ['right', room.inside.right - room.widest.right],
+      ['top', room.tallest.top - room.inside.top],
+      ['bottom', room.inside.bottom - room.tallest.bottom],
+    ] as const) {
+      expect(clear, `mat clear ${side}`).toBeGreaterThanOrEqual(11.5);
+      expect(clear, `mat clear ${side}`).toBeLessThanOrEqual(12.5);
+    }
+    // The mat and the folio share the desk margin: the folio's lane ends at the mat's edge.
+    expect(room.mat.left).toBeGreaterThanOrEqual(room.folioRight - 0.5);
+    expect(room.mat.left - room.folioRight).toBeLessThanOrEqual(1);
   });
 }
 
