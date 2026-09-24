@@ -587,7 +587,9 @@ async function restartDemo() {
   phase.value = 'idle';
   // Bring the view home before the walkthrough aims at the floor again.
   await sceneRef.value?.resetCamera();
-  if (userControl.value) return;
+  // The deck reads "auto play off" under reduced motion, so Restart puts the scene back
+  // and leaves it there rather than starting the walkthrough the deck says is off.
+  if (userControl.value || reducedMotion.value) return;
   controllerRef.value?.start();
 }
 
@@ -674,12 +676,13 @@ onMounted(async () => {
         return;
       }
 
-      if (reducedMotion.value) {
-        scene.pause();
-        return;
-      }
-
+      // Claim first, whatever the motion setting: the claim is what attaches the renderer
+      // and resumes the loop, and without it the page kept the one frame drawn before the
+      // chair and the grass arrived, and nothing the visitor did repainted it. Reduced
+      // motion only keeps the walkthrough off, as the five sibling apps have it.
       claimSpaceBuilderGpu(scene);
+      if (reducedMotion.value) return;
+
       if (!wasActive && !userControl.value) {
         startAutoplay(controller);
       } else if (!userControl.value && chairsReady.value) {
