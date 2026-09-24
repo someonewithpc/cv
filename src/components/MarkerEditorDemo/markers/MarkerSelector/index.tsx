@@ -108,7 +108,11 @@ export function MarkerSelector({
       >
         <ul role="listbox" aria-label="Markers">
           {markers.map((marker) => {
-            const deleteDisabled = allSpaces.some((s) => (s.id === space.id) !== (s.markerId === marker.id));
+            // A marker is in use when a space other than this one carries it. This space's own
+            // choice is not a reason to keep the marker: picking another one, or deleting this
+            // one, is what the space is here to do.
+            const usedElsewhere = (markerId: typeof marker.id) => allSpaces.some((s) => s.id !== space.id && s.markerId === markerId);
+            const deleteDisabled = usedElsewhere(marker.id);
 
             return (
               <li
@@ -121,11 +125,13 @@ export function MarkerSelector({
                 {...pressable(() => {
                   groupedUndo.batch(() => {
                     if (space.markerId !== marker.id) {
+                      // The marker this space is leaving goes with it unless another space
+                      // still shows it; a marker nobody shows has no way back to the map.
+                      const previous = space.markerId;
                       dispatch(setSpaceMarker({ spaceId: space.id, markerId: marker.id }));
 
-                      if (space.markerId !== undefined && !deleteDisabled) {
-                        dispatch(removeMarker(space.markerId));
-                        dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
+                      if (previous !== undefined && !usedElsewhere(previous)) {
+                        dispatch(removeMarker(previous));
                       }
                     }
                     setEditedMarkerId(undefined);
@@ -190,8 +196,11 @@ export function MarkerSelector({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (!deleteDisabled) {
-                          dispatch(removeMarker(marker.id));
-                          dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
+                          // One undo step for the one click, as the other handlers here do.
+                          groupedUndo.batch(() => {
+                            dispatch(removeMarker(marker.id));
+                            dispatch(setSpaceMarker({ spaceId: space.id, markerId: undefined }));
+                          });
                           setEditedMarkerId(undefined);
                         }
                       }}
