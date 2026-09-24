@@ -226,6 +226,9 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     if (root.dataset.autoplay !== 'playing') return;
     token += 1;
     root.querySelectorAll('.typing').forEach((input) => input.classList.remove('typing'));
+    // A hover mid-word leaves the field half typed; the sheet is brought level with it so
+    // the chips, the renderings and the hits agree with what the field says.
+    runPipeline(tool, false);
     root.dataset.autoplay = 'user';
     reportAutoplayState(root, 'user');
   };
