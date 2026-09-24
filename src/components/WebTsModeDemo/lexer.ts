@@ -1,5 +1,5 @@
 /**
- * A web-ts-mode buffer, captured once at build time. Nothing here parses with tree-sitter:
+ * A web-ts-mode buffer, painted once at build time. Nothing here parses with tree-sitter:
  * the page must never run a parser, and the build has no grammars to run one with. This is
  * a small lexer that paints the faces web-ts-mode's font-lock rules would give each token
  * (web-ts-hosts/astro.el, web-ts-treesit.el, and the stock typescript-ts-mode rules they
@@ -54,7 +54,7 @@ export type Token = {
 
 export type Line = { number: number; tokens: Token[] };
 
-export type Capture = { lines: Line[]; ranges: Range[] };
+export type Painted = { lines: Line[]; ranges: Range[] };
 
 type Paint = {
   src: string;
@@ -831,8 +831,8 @@ function newPaint(src: string): Paint {
   };
 }
 
-/** Captures an `.astro` file the way web-ts-mode paints and splits it. */
-export function captureAstro(src: string): Capture {
+/** Paints an `.astro` file the way web-ts-mode does, and splits it the way its range rules do. */
+export function lexAstro(src: string): Painted {
   const p = newPaint(src);
   const ranges: Range[] = [];
 
@@ -859,8 +859,8 @@ export function captureAstro(src: string): Capture {
   return { lines: tokenize(p), ranges };
 }
 
-/** Captures a bare stylesheet, for the selector depth sheet. */
-export function captureScss(src: string): Capture {
+/** Paints a bare stylesheet, for the selector depth sheet. */
+export function lexStylesheet(src: string): Painted {
   const p = newPaint(src);
   lexScss(p, 0, src.length);
   return { lines: tokenize(p), ranges: [] };

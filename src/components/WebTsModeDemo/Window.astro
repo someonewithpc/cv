@@ -1,11 +1,11 @@
 ---
 /**
- * One Emacs window onto a captured buffer: line numbers, the painted tokens, and a mode
+ * One Emacs window onto a painted buffer: line numbers, the painted tokens, and a mode
  * line. Embedded ranges come out as elements of their own, so a sheet can outline them
  * and light one up: a range that runs over several whole lines wraps those lines in a
  * block, one that sits inside a line wraps its tokens in a span.
  */
-import type { Line, Range, Token } from './capture';
+import type { Line, Range, Token } from './lexer';
 
 type Props = {
   lines: Line[];

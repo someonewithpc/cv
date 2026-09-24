@@ -5,10 +5,10 @@
  * apart below, one level at a time.
  */
 import Window from '../Window.astro';
-import { captureScss, paintSelectorList } from '../capture';
+import { lexStylesheet, paintSelectorList } from '../lexer';
 import { depthSample } from '../samples';
 
-const { lines } = captureScss(depthSample.text);
+const { lines } = lexStylesheet(depthSample.text);
 
 // The one selector that reaches depth 4, cut into runs of one depth each.
 const deepest = '.aside:not(:has(.note-card > *)) .note-fold';

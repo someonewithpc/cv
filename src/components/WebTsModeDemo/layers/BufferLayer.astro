@@ -1,15 +1,15 @@
 ---
 /**
- * The live sheet: one of this CV's own components as web-ts-mode paints it, captured at
+ * The live sheet: one of this CV's own components as web-ts-mode would paint it, done at
  * build time. Nothing parses in the browser. The toggle outlines the ranges each embedded
  * parser is handed, and pointing at a token lights up the range that owns it, with the
  * echo area naming the parser and the rule. All of it is CSS: no script, no island.
  */
 import Window from '../Window.astro';
-import { captureAstro } from '../capture';
+import { lexAstro } from '../lexer';
 import { bufferFile, readBuffer } from '../samples';
 
-const { lines, ranges } = captureAstro(await readBuffer());
+const { lines, ranges } = lexAstro(await readBuffer());
 const gutter = String(lines.length).length;
 const languages = [...new Set(['astro', ...ranges.map((range) => range.lang)])];
 
@@ -30,7 +30,7 @@ const echo = [
       as the mode paints it.
     </p>
     <div class="bar">
-      <span class="caption">Captured buffer · static, not a live parser</span>
+      <span class="caption">Painted by rule at build time · not an Emacs capture</span>
       <div class="controls">
         <ul class="legend" aria-label="Parsers">
           {languages.map((lang) => (

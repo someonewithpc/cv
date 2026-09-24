@@ -38,11 +38,11 @@ test('web-ts-mode: forward swipes visit every page in order, then wrap', async (
   expect(await frontPageName(stack)).toBe(PAGES[0]);
 });
 
-test('main page: a captured buffer, cut into the ranges each parser is handed', async ({ page }) => {
+test('main page: a painted buffer, cut into the ranges each parser is handed', async ({ page }) => {
   const buffer = await liveBuffer(page);
 
-  await expect(buffer).toContainText('Captured buffer');
-  await expect(buffer).toContainText('not a live parser');
+  await expect(buffer).toContainText('Painted by rule at build time');
+  await expect(buffer).toContainText('not an Emacs capture');
 
   // The frontmatter and the style body are whole-line blocks; the one interpolation sits
   // inside its line.

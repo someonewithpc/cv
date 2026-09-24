@@ -6,11 +6,11 @@
  * braces instead, as one program, and leaves the nested one out so the ranges never
  * overlap. The parse results quoted here were read off the real grammars once.
  */
-import { captureAstro, type Token } from '../capture';
+import { lexAstro, type Token } from '../lexer';
 import { interpolation } from '../samples';
 
 const { text, indent } = interpolation;
-const [, line] = captureAstro(`<aside>\n${' '.repeat(indent)}${text}\n</aside>\n`).lines;
+const [, line] = lexAstro(`<aside>\n${' '.repeat(indent)}${text}\n</aside>\n`).lines;
 const tokens: Token[] = line.tokens.slice(1); // drop the indent
 
 // Columns, in characters from the outer brace.

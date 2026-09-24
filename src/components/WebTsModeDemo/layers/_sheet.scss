@@ -1,5 +1,5 @@
 // What the web-ts-mode sheets share: the margin every layer keeps around its content, and
-// the faces a captured buffer is painted in.
+// the faces a buffer is painted in.
 
 // Clear sheet between the content and the frame line, in em of the sheet's own type so it
 // scales with the page. It goes on a layer's root and nowhere else.
