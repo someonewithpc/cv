@@ -45,7 +45,9 @@ const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
 
 {/* The overlay below is the no-script placement. Stack.astro's script runs
     annotations-position.ts over it, which is what marks it data-annotations="js";
-    a script here would never reach the page (see bootIsland.ts). */}
+    a script here would never reach the page: the pages are rendered to a string
+    and concatenated, and Astro drops the scripts of a component rendered that
+    way (see the `pages` note in PaperStack/index.astro). */}
 <div class="content" style={`--annotation-reach: ${reach};`}>
   <slot name="content" />
   <svg

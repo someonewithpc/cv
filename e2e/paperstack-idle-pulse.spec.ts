@@ -6,7 +6,7 @@ import { armDrawCounter, demoStack, frontPage, frontPageIndex, frontPageName, sc
  * The resting dog-ear breathes on a loop (fold-reveal-pulse in PaperStack/index.astro), and
  * that loop animates --fold-x/--fold-y, which the front page's crease clip-path reads — so
  * every frame it advances costs a style resolve of that page and the whole demo printed on
- * it. Six stacks doing that at once ate better than half a 60fps frame, for ever, whether or
+ * it. Seven stacks doing that at once ate better than half a 60fps frame, for ever, whether or
  * not any of them was being looked at, which is time a page turn on one of them no longer
  * had. fold-drag.ts pauses the pulse while its stack is off screen.
  *

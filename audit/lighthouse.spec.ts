@@ -10,9 +10,8 @@ import desktopConfig from 'lighthouse/core/config/desktop-config.js';
 import { systemChrome } from '../playwright.config';
 
 // Floors under where the site already is, not targets. Performance keeps the slack: it
-// is the only score that reads the machine, and this one renders the demos' WebGL in
-// software. Five runs here give desktop 0.96 to 0.97 and mobile 0.66 to 0.67, with every
-// other category flat at 1.
+// is the only score that reads the machine. Five runs here give desktop 0.96 to 0.97 and
+// mobile 0.66 to 0.67, with every other category flat at 1.
 //
 // Mobile performance is low because of the first paint, not the demos: blocking time and
 // layout shift both score 1, while first contentful paint lands at 5.3 s on a simulated

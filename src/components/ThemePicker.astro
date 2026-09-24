@@ -203,16 +203,13 @@ ${themeVars(settings)}
 
 const THEME_IDS = Object.keys(THEMES) as ThemeId[];
 
-/* How the picker behaves below 52rem, where it sits over the content and there
-   is no hover to lean on. `compact` only trims the chrome, `autohide` also
-   slides away while scrolling down, `collapse` also shows just the active
-   theme until tapped. Append ?theme-picker=<mode> to compare them on device. */
-const DEFAULT_MOBILE_MODE: 'compact' | 'autohide' | 'collapse' = 'compact';
+/* Below 52rem the picker sits over the content with no hover to lean on, so the
+   rules under that width only trim its chrome. */
 ---
 
 <div id="theme-picker-transition-background" />
 
-<aside id="theme-picker" aria-label="Theme" data-mobile-mode={DEFAULT_MOBILE_MODE}>
+<aside id="theme-picker" aria-label="Theme">
   {THEME_IDS.map((id) => {
     const settings = THEMES[id];
     return (
@@ -291,7 +288,6 @@ aside {
     color: var(--ink-muted);
     background: color-mix(in oklch, var(--surface-raised), transparent 18%);
     backdrop-filter: blur(6px);
-    transition: translate 220ms ease;
 
     label {
       gap: 0;

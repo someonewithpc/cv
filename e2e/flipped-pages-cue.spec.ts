@@ -459,15 +459,15 @@ function expectStripToFollow(frames: Frame[], label: string) {
 
 test.describe('the strip through a turn', () => {
   // One turn at a time: two of these side by side starve each other of the frames the sampler
-  // needs, on a machine that draws the demos' scenes in software.
+  // needs.
   test.describe.configure({ mode: 'serial' });
 
   for (const width of [390, 1440]) {
     test(`the strip stays on the moving page's crease through a turn at ${width}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.reload();
-      // Only the first stack is watched, and the other demos' scenes, drawn in software
-      // here, would take most of the frames the turn has to be sampled in.
+      // Only the first stack is watched, and the other demos' scenes would take most of the
+      // frames the turn has to be sampled in.
       await page.evaluate(() => {
         document.querySelectorAll('article.technical-drawing-stack').forEach((stack, i) => {
           if (i > 0) (stack as HTMLElement).style.display = 'none';

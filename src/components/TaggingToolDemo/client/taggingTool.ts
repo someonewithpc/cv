@@ -74,8 +74,7 @@ function chWidth(input: HTMLInputElement) {
     keep the caret in view, and tells the ::before how far that was. */
 function mirror(group: Group, eventType = 'keyup') {
   const { shared } = group;
-  const selectionStart = shared.selectionStart ?? shared.value.length;
-  const caret = Math.max(selectionStart, shared.value.lastIndexOf(' ', selectionStart));
+  const caret = shared.selectionStart ?? shared.value.length;
 
   group.cards.forEach(({ form, input }) => {
     form.style.setProperty('--caret', String(caret));
@@ -352,7 +351,8 @@ async function press(cursor: Cursor) {
  * It only runs while the sheet is on screen and its page is the one drawn on top, which
  * `--page-index` answers and an IntersectionObserver cannot: every page of a stack shares
  * one grid cell. `data-autoplay` on the tool is the whole state, as `playing`, `user` or
- * `off`, so a sheet-level transport deck can read or report it without new plumbing.
+ * `off`; this demo draws its own status and does not report to the sheet's transport deck,
+ * which listens for `data-autoplay-state` (src/client/autoplayStatus.ts).
  */
 async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Walkthrough) {
   const { root } = tool;
