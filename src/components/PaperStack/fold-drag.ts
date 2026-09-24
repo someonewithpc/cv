@@ -2059,8 +2059,13 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     touch = null;
     if (swipe) endSwipe(e.timeStamp);
   };
-  stack.addEventListener('pointerup', liftTouch);
-  stack.addEventListener('pointercancel', liftTouch);
+  // On the window, not the stack: a finger has implicit capture, so its lift always reaches
+  // the stack, but a pen has none until a swipe takes capture (above), and a pen pressed on
+  // the stack, moved less than SWIPE_START and lifted off it delivers its pointerup elsewhere.
+  // With the listener on the stack that left `touch` set and every later swipe returning at
+  // the pointerdown check, for the rest of the session.
+  window.addEventListener('pointerup', liftTouch);
+  window.addEventListener('pointercancel', liftTouch);
 };
 
 // Re-registering a name throws — harmless in production (each property is only ever declared
