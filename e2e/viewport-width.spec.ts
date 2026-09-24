@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { settledAfter } from './support/paperStack';
+import { forEachStackInLane, LANES, settledAfter } from './support/paperStack';
 
 /**
  * Opening Chrome's responsive device mode is mobile emulation applied to a page that is
@@ -114,65 +114,65 @@ test('the foot of the page fits the frame', async ({ page }) => {
   });
 });
 
-for (let index = 0; index < 6; index += 1) {
-  test(`stack ${index} fits the frame mid-turn and once it has settled`, async ({ page }) => {
-    await openAtDesk(page);
-    const stack = page.locator('article.technical-drawing-stack').nth(index);
-    await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1200);
-    await stack.focus();
+for (let lane = 0; lane < LANES; lane += 1) {
+  test(`the stacks in lane ${lane} fit the frame mid-turn and once they have settled`, async ({ page }) => {
+    await forEachStackInLane(page, lane, openAtDesk, async (page, stack) => {
+      await stack.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(1200);
+      await stack.focus();
 
-    // The gesture happens at desk width: what this is watching for is state carried across
-    // the switch, not state built up inside an emulated frame.
-    await settledAfter(stack, async () => {
-      await page.keyboard.press('ArrowRight');
-      await checkFrames(page, async () => {
-        await page.waitForTimeout(200);
+      // The gesture happens at desk width: what this is watching for is state carried across
+      // the switch, not state built up inside an emulated frame.
+      await settledAfter(stack, async () => {
+        await page.keyboard.press('ArrowRight');
+        await checkFrames(page, async () => {
+          await page.waitForTimeout(200);
+        });
+        await page.setViewportSize(DESKTOP);
       });
-      await page.setViewportSize(DESKTOP);
+      await checkFrames(page, async () => {});
     });
-    await checkFrames(page, async () => {});
   });
 
-  test(`stack ${index} fits the frame with the fold held open`, async ({ page }) => {
-    await openAtDesk(page);
-    const stack = page.locator('article.technical-drawing-stack').nth(index);
-    await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1200);
-    const box = await stack.boundingBox();
-    expect(box).not.toBeNull();
-    const grab = await flapPoint(stack);
+  test(`the stacks in lane ${lane} fit the frame with the fold held open`, async ({ page }) => {
+    await forEachStackInLane(page, lane, openAtDesk, async (page, stack) => {
+      await stack.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(1200);
+      const box = await stack.boundingBox();
+      expect(box).not.toBeNull();
+      const grab = await flapPoint(stack);
 
-    // The flap's own box is the page's, mirrored across the crease, so a deep fold throws it
-    // hundreds of pixels past the page, invisibly but not weightlessly.
-    await checkFrames(page, async () => {
-      await page.mouse.move(grab.x, grab.y);
-      await page.mouse.down();
-      for (let step = 1; step <= 8; step += 1) {
-        await page.mouse.move(grab.x - (box!.width * 0.5 * step) / 8, grab.y - (box!.height * 0.3 * step) / 8);
-        await page.waitForTimeout(25);
-      }
-      await page.waitForTimeout(150);
+      // The flap's own box is the page's, mirrored across the crease, so a deep fold throws it
+      // hundreds of pixels past the page, invisibly but not weightlessly.
+      await checkFrames(page, async () => {
+        await page.mouse.move(grab.x, grab.y);
+        await page.mouse.down();
+        for (let step = 1; step <= 8; step += 1) {
+          await page.mouse.move(grab.x - (box!.width * 0.5 * step) / 8, grab.y - (box!.height * 0.3 * step) / 8);
+          await page.waitForTimeout(25);
+        }
+        await page.waitForTimeout(150);
+      });
+      await page.mouse.up();
     });
-    await page.mouse.up();
   });
 
-  test(`stack ${index} fits the frame with a swipe in flight`, async ({ page }) => {
-    await openAtDesk(page);
-    const stack = page.locator('article.technical-drawing-stack').nth(index);
-    await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1200);
-    const box = await stack.boundingBox();
-    expect(box).not.toBeNull();
+  test(`the stacks in lane ${lane} fit the frame with a swipe in flight`, async ({ page }) => {
+    await forEachStackInLane(page, lane, openAtDesk, async (page, stack) => {
+      await stack.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(1200);
+      const box = await stack.boundingBox();
+      expect(box).not.toBeNull();
 
-    await checkFrames(page, async () => {
-      await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-      const travel = Math.hypot(box!.width, box!.height) * 0.4;
-      for (let step = 0; step < 8; step += 1) {
-        await page.mouse.wheel(travel / 8, 0);
-        await page.waitForTimeout(30);
-      }
-      await page.waitForTimeout(150);
+      await checkFrames(page, async () => {
+        await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+        const travel = Math.hypot(box!.width, box!.height) * 0.4;
+        for (let step = 0; step < 8; step += 1) {
+          await page.mouse.wheel(travel / 8, 0);
+          await page.waitForTimeout(30);
+        }
+        await page.waitForTimeout(150);
+      });
     });
   });
 }
