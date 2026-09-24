@@ -293,7 +293,10 @@ for (const viewport of VIEWPORTS) {
       for (const name of PAGES) {
         if (name) await turnToPage(stack, name);
         const front = frontPage(stack, await frontPageIndex(stack));
-        if (await front.locator('[data-boot-module]').count()) await waitForIslandMounted(front);
+        // The picker, held controls and feedback sheets mount an island each; the sources
+        // sheet has none, so measure it as it is.
+        const islands = '[data-font-picker-island], [data-held-controls-island], [data-feedback-island]';
+        if (await front.locator(islands).count()) await waitForIslandMounted(front, islands);
         await expect.poll(async () => (await clearSheet(front)).boxes).toBeGreaterThan(0);
 
         const check = async (when: string) => {
