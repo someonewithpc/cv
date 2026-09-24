@@ -272,6 +272,12 @@ function onTrustedPointer(event: PointerEvent) {
   yieldToUser(event.type === 'pointerdown');
 }
 
+// A pointer that leaves the window from over the demo, for the tab strip or another screen,
+// sends no move outside the demo's rect, so the window's own pointerout clears the flag.
+function onPointerLeaveWindow(event: PointerEvent) {
+  if (event.relatedTarget === null) pointerOver = false;
+}
+
 function onPointerDown(event: PointerEvent) {
   if (!event.isTrusted) return;
   if (!userControl.value) yieldToUser(true);
@@ -735,6 +741,7 @@ onMounted(async () => {
     // Marker Editor pattern: any trusted pointer over the page takes over.
     window.addEventListener('pointermove', onTrustedPointer, { passive: true });
     window.addEventListener('pointerdown', onTrustedPointer, { passive: true });
+    document.addEventListener('pointerout', onPointerLeaveWindow, { passive: true });
     root.addEventListener('pointermove', onPointerMove);
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('wheel', onWheel, { passive: false });
@@ -762,6 +769,7 @@ onBeforeUnmount(() => {
   if (clickTimer) clearTimeout(clickTimer);
   window.removeEventListener('pointermove', onTrustedPointer);
   window.removeEventListener('pointerdown', onTrustedPointer);
+  document.removeEventListener('pointerout', onPointerLeaveWindow);
   rootRef.value?.removeEventListener('pointermove', onPointerMove);
   rootRef.value?.removeEventListener('pointerdown', onPointerDown);
   rootRef.value?.removeEventListener('wheel', onWheel);
