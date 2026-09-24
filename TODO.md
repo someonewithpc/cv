@@ -64,6 +64,7 @@
     - [x] Framed as a federated network, compose file trimmed and coloured, sheets 3 and 4 redrawn (#129)
     - [x] A Mastodon server beside GNU social, the compose file without volumes or environment (#129)
     - [x] One line per server to each shared service, nginx named, search and media added (#129)
+  - [x] web-ts-mode: captured buffer, parser ranges, selector depth hue, doctor (SH-11)
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding

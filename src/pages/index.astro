@@ -21,6 +21,7 @@ import SchemaDefDemo from '@/components/SchemaDefDemo/Demo.astro';
 import EventBusDemo from '@/components/EventBusDemo/Demo.astro';
 import FediversePlaygroundDemo from '@/components/FediversePlaygroundDemo/Demo.astro';
 import LibrarySearchDemo from '@/components/LibrarySearchDemo/Demo.astro';
+import WebTsModeDemo from '@/components/WebTsModeDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
 
@@ -149,6 +150,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             filter only drops rows, so the rows it keeps keep their scores.
           </TitleCard>
           <LibrarySearchDemo />
+        </Callout>
+        <Callout letter="M" title="web-ts-mode" titleJp="ウェブTSモード" scale="1:1" headingId="detail-m" cardSide="start">
+          <TitleCard slot="card" title="web-ts-mode" medium="Emacs Lisp, tree-sitter" year="2026">
+            An Emacs mode for web templates such as Astro and Vue, where one file mixes markup,
+            TypeScript and styles. Each language gets its own tree-sitter parser over the part
+            of the file that is its own, so the whole file is highlighted and indented as one.
+          </TitleCard>
+          <WebTsModeDemo />
         </Callout>
       </div>
     </section>
