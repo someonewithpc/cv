@@ -102,6 +102,11 @@ bootIslands('[data-fediverse-playground]', boot);
 
 .playground {
   --bar: 2em;
+  /* The panels and the graph's boxes are a step off the sheet's own paper toward its ink,
+     whichever way the theme's paper lies: --surface-raised is the paper itself on the light
+     themes, and a box painted with it vanished. */
+  --panel: color-mix(in oklch, var(--sheet-paper), var(--ink) 6%);
+  --panel-sunken: color-mix(in oklch, var(--sheet-paper), var(--ink) 12%);
 
   position: relative;
   box-sizing: border-box;
@@ -137,7 +142,7 @@ bootIslands('[data-fediverse-playground]', boot);
   padding: 0.5em 0.625em;
   border: 1px solid var(--line-strong);
   border-radius: 0.375em;
-  background: var(--surface-raised);
+  background: var(--panel);
   font-family: $code-font;
 }
 
@@ -178,7 +183,7 @@ fieldset {
   cursor: pointer;
 
   &:hover {
-    background: var(--surface-sunken);
+    background: var(--panel-sunken);
   }
 
   &:has(input:focus-visible) {
@@ -253,7 +258,7 @@ fieldset {
     padding: 0 0.75em;
     border: 1px solid var(--line-strong);
     border-radius: 0.375em;
-    background: var(--surface-raised);
+    background: var(--panel);
     cursor: pointer;
     pointer-events: auto;
 
@@ -281,7 +286,7 @@ fieldset {
     overflow: auto;
     border: 1px solid var(--line-strong);
     border-radius: 0.375em;
-    background: var(--surface-raised);
+    background: var(--panel);
     pointer-events: auto;
 
     @container technical-drawing-width (max-width: 56em) {
@@ -336,7 +341,7 @@ fieldset {
   }
 
   :global(.node rect) {
-    fill: var(--surface-raised);
+    fill: var(--panel);
     stroke: var(--line-strong);
     stroke-width: 1;
   }
@@ -347,7 +352,7 @@ fieldset {
   }
 
   :global(.node.install rect) {
-    fill: var(--surface-sunken);
+    fill: var(--panel-sunken);
   }
 
   :global(.node text) {
@@ -395,9 +400,10 @@ fieldset {
     stroke-width: 1.75;
   }
 
+  /* A wire crossing another paints a gap of paper into it. */
   :global(.halo) {
     fill: none;
-    stroke: var(--surface-sunken);
+    stroke: var(--sheet-paper);
     stroke-width: 5;
   }
 
