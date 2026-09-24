@@ -24,7 +24,8 @@ async function mountedPlayground(page: Page) {
   return host;
 }
 
-const node = (host: Locator, service: string) => host.locator(`.service-graph .node[data-service="${service}"]`);
+// The sheet holds a landscape and a portrait drawing and shows one; the other's nodes are hidden.
+const node = (host: Locator, service: string) => host.locator(`.service-graph:visible .node[data-service="${service}"]`);
 
 /** One page on with the arrow key: no hand on the paper, so the turn commits on the spot and
     does not hang on how quickly the wheel events come through. */
@@ -66,7 +67,7 @@ test('main page: the toggles rebuild the graph, and shared services appear once'
   await toggle('gnusocial-v2').check();
   await expect(node(host, 'mariadb')).toHaveClass(/emitted/);
   await expect(node(host, 'gnusocial-v2-install')).toHaveClass(/emitted/);
-  await expect(host.locator('.service-graph .node[data-service="db"]')).toHaveCount(1);
+  await expect(host.locator('.service-graph:visible .node[data-service="db"]')).toHaveCount(1);
 
   // With only v2 left, nothing asks for Postgres or Redis, and the builder does not emit them.
   await toggle('gnusocial-alice').uncheck();

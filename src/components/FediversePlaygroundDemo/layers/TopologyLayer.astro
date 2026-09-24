@@ -1,7 +1,7 @@
 ---
 import { exampleConfig, initiallyEnabled, withEnabled } from '../config';
 import { buildComposeFile, RECIPES } from '../compose';
-import { renderGraph, summary } from '../graph';
+import { renderGraphs, summary } from '../graph';
 import { composeYaml } from '../yaml';
 
 // The opening state is built here by the same code the island runs, so the sheet reads the
@@ -45,7 +45,7 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
 
     <p class="status" aria-live="polite" data-status>{summary(compose)}</p>
 
-    <div class="graph" data-graph set:html={renderGraph(config, compose)} />
+    <div class="graph" data-graph set:html={renderGraphs(config, compose)} />
 
     {/* Open, the file lies over the graph rather than pushing it off the sheet. */}
     <details class="yaml">
@@ -319,7 +319,28 @@ fieldset {
   min-height: 8em;
 
   /* Out of flow, so the row's height is whatever the sheet leaves and the drawing scales
-     into it (preserveAspectRatio keeps it to the left) instead of growing the row. */
+     into it (preserveAspectRatio keeps it to the left) instead of growing the row. Two
+     drawings come in and the sheet's orientation picks one: the portrait one is laid out
+     for a sheet about 340px wide, where the landscape one scaled down was too small to read.
+     Keyed on the stack's attribute, not a container query, following Stack.astro. */
+  :global(svg.portrait) {
+    display: none;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    :global(svg.landscape) {
+      display: none;
+    }
+
+    :global(svg.portrait) {
+      display: block;
+    }
+
+    :global(.node .label) {
+      font-size: 10px;
+    }
+  }
+
   :global(svg) {
     position: absolute;
     /* The graph's bottom row runs level with the title block, which on a wide sheet reaches

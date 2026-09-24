@@ -1,6 +1,6 @@
 import { exampleConfig, withEnabled } from '../config';
 import { buildComposeFile } from '../compose';
-import { renderGraph, summary } from '../graph';
+import { renderGraphs, summary } from '../graph';
 import { composeYaml } from '../yaml';
 
 /** Each toggle flips its instance's `enabled`, and the builder runs again from the config. */
@@ -34,7 +34,7 @@ export function initPlayground(host: HTMLElement) {
     previous = services;
 
     const text = composeYaml(compose);
-    graph.innerHTML = renderGraph(config, compose, { fresh });
+    graph.innerHTML = renderGraphs(config, compose, { fresh });
     yaml.textContent = text;
     lines.textContent = `${text.split('\n').length - 1} lines`;
     status.textContent = summary(compose);
