@@ -412,7 +412,7 @@ function onWheel(event: WheelEvent) {
   const target = event.target as HTMLElement | null;
   if (target?.closest('.rail, .sidebar, .flash, .toasts, button, input, label, details')) return;
   const scene = sceneRef.value;
-  if (!scene) return;
+  if (!scene || event.ctrlKey) return;
   if (!userControl.value) yieldToUser(true);
   applyWheelZoom(scene, event);
 }
