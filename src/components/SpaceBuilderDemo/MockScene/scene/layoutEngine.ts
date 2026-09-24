@@ -320,24 +320,44 @@ function layoutOffset(area: AreaRect, options: LayoutOptions): ChairPose[] {
   return poses;
 }
 
-function layoutHollow(area: AreaRect, options: LayoutOptions): ChairPose[] {
+/**
+ * Space Builder Hollow.arrangeObjects: a top row, a column down each side, a bottom row, every
+ * chair facing the middle. The product reads a bare chair as all table (findClassroomTable picks
+ * its largest mesh), so chairDepth is 0: the top row starts at the area's edge and each side
+ * column sits under one end of it, flush with that end. Side chairs are turned a quarter, so they
+ * step by their width plus distanceZ, one gap below the row above.
+ */
+function layoutTableRing(area: AreaRect, options: LayoutOptions, bottomRow: boolean): ChairPose[] {
   const sizeX = CHAIR_FOOTPRINT.width;
   const sizeZ = CHAIR_FOOTPRINT.depth;
-  const stepX = sizeX + options.distanceX;
-  const stepZ = sizeZ + options.distanceZ;
-  const cols = countFit(area.width, sizeX, options.distanceX);
-  const rows = countFit(area.depth, sizeZ, options.distanceZ);
-  const { poses, pushLocal } = makePusher(area);
-  const originX = -area.width / 2 + sizeX / 2;
-  const originZ = -area.depth / 2 + sizeZ / 2;
+  const { distanceX, distanceZ } = options;
+  const rows = bottomRow ? 2 : 1;
+  if (area.width < sizeX || area.depth < rows * sizeZ + sizeX) return [];
 
-  for (let r = 0; r < rows; r += 1) {
-    for (let c = 0; c < cols; c += 1) {
-      const edge = r === 0 || r === rows - 1 || c === 0 || c === cols - 1;
-      if (edge) pushLocal(originX + c * stepX, originZ + r * stepZ);
-    }
+  const big = Math.floor((area.width + distanceX) / (sizeX + distanceX));
+  const sideSpace = bottomRow ? area.depth - 2 * sizeZ - distanceZ : area.depth - sizeZ;
+  const span = big * (sizeX + distanceX) - distanceX;
+  // Narrower than two chair depths, the two columns would stand in each other.
+  const little = span < 2 * sizeZ ? 0 : Math.floor(sideSpace / (sizeX + distanceZ));
+
+  const { poses, pushLocal } = makePusher(area);
+  const left = -area.width / 2;
+  const top = -area.depth / 2;
+  const rowX = (i: number) => left + i * (sizeX + distanceX) + sizeX / 2;
+  const sideZ = (j: number) => top + sizeZ + (j + 1) * distanceZ + j * sizeX + sizeX / 2;
+
+  for (let i = 0; i < big; i += 1) pushLocal(rowX(i), top + sizeZ / 2, 0);
+  for (let j = 0; j < little; j += 1) pushLocal(left + sizeZ / 2, sideZ(j), Math.PI / 2);
+  for (let j = 0; j < little; j += 1) pushLocal(left + span - sizeZ / 2, sideZ(j), -Math.PI / 2);
+  if (bottomRow) {
+    const bottomZ = top + sizeZ + little * (sizeX + distanceZ) + distanceZ + sizeZ / 2;
+    for (let i = 0; i < big; i += 1) pushLocal(rowX(i), bottomZ, Math.PI);
   }
   return poses;
+}
+
+function layoutHollow(area: AreaRect, options: LayoutOptions): ChairPose[] {
+  return layoutTableRing(area, options, true);
 }
 
 /**
@@ -490,31 +510,9 @@ function layoutCircle(area: AreaRect, options: LayoutOptions, arc: number): Chai
   return poses;
 }
 
+/** Space Builder UShape: the Hollow ring without its bottom row (UShape.inferArrangement). */
 function layoutUShape(area: AreaRect, options: LayoutOptions): ChairPose[] {
-  const sizeX = CHAIR_FOOTPRINT.width;
-  const sizeZ = CHAIR_FOOTPRINT.depth;
-  const stepX = sizeX + options.distanceX;
-  const stepZ = sizeZ + options.distanceZ;
-  const { poses, pushLocal } = makePusher(area);
-
-  const cols = countFit(area.width, sizeX, options.distanceX);
-  // The sides start one gap below the top row (sideStartZ), so that gap comes off the depth
-  // they have to fit in as well as the row itself; given the row alone, countFit's "one more
-  // without a trailing gap" admitted a chair whose far edge stood past the area.
-  const sideRows = countFit(Math.max(0, area.depth - sizeZ - options.distanceZ), sizeZ, options.distanceZ);
-  const originX = -area.width / 2 + sizeX / 2;
-  const topZ = -area.depth / 2 + sizeZ / 2;
-  const sideStartZ = topZ + stepZ;
-
-  for (let c = 0; c < cols; c += 1) {
-    pushLocal(originX + c * stepX, topZ, Math.PI);
-  }
-  for (let r = 0; r < sideRows; r += 1) {
-    const lz = sideStartZ + r * stepZ;
-    pushLocal(-area.width / 2 + sizeX / 2, lz, Math.PI / 2);
-    pushLocal(area.width / 2 - sizeX / 2, lz, -Math.PI / 2);
-  }
-  return poses;
+  return layoutTableRing(area, options, false);
 }
 
 /**
