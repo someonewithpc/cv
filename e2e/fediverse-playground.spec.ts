@@ -28,28 +28,26 @@ async function mountedPlayground(page: Page) {
 const node = (host: Locator, service: string) => host.locator(`.service-graph:visible .node[data-service="${service}"]`);
 
 /** One page on with the arrow key: no hand on the paper, so the turn commits on the spot and
-    does not hang on how quickly the wheel events come through. */
-async function turnForward(page: Page, stack: Locator) {
+    does not hang on how quickly the wheel events come through. Waits until the named page is
+    in front, rather than a fixed time the flip may or may not take under load. */
+async function turnForwardTo(page: Page, stack: Locator, name: string, note: string) {
   await stack.focus();
   await page.keyboard.press('ArrowRight');
-  await page.waitForTimeout(2500);
+  await expect.poll(() => frontPageName(stack), { message: note, timeout: 10_000 }).toBe(name);
 }
 
 test('fediverse playground: the arrow key visits every page in order, then wraps', async ({ page }) => {
   const stack = playgroundStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
 
   expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
-  expect(await frontPageName(stack)).toBe(PAGES[0]);
+  await expect.poll(() => frontPageName(stack)).toBe(PAGES[0]);
 
   for (let i = 1; i < PAGES.length; i += 1) {
-    await turnForward(page, stack);
-    expect(await frontPageName(stack), `page ${i} after ${i} turn(s)`).toBe(PAGES[i]);
+    await turnForwardTo(page, stack, PAGES[i], `page ${i} after ${i} turn(s)`);
   }
 
-  await turnForward(page, stack);
-  expect(await frontPageName(stack)).toBe(PAGES[0]);
+  await turnForwardTo(page, stack, PAGES[0], 'wrapped to the first page');
 });
 
 test('main page: the toggles rebuild the graph, and shared services appear once', async ({ page }) => {
