@@ -1,7 +1,7 @@
 ---
 import { exampleConfig, initiallyEnabled, withEnabled } from '../config';
 import { buildComposeFile, PLANNED_RECIPES, RECIPES } from '../compose';
-import { composeView, lineCount } from '../composeView';
+import { composeView, LEFT_OUT, lineCount } from '../composeView';
 import { renderGraphs, summary } from '../graph';
 import { composeHtml } from '../yaml';
 
@@ -56,7 +56,7 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
         <span>docker-compose.yml</span>
         <span class="lines" data-lines>{lineCount(compose)}</span>
       </summary>
-      <pre tabindex="0"><code data-yaml set:html={yaml} /></pre>
+      <pre tabindex="0"><code data-yaml set:html={yaml} /><span class="left-out">{LEFT_OUT}</span></pre>
     </details>
   </div>
 </div>
@@ -333,6 +333,17 @@ fieldset {
     width: max-content;
     font-size: 0.75em;
     line-height: 1.4;
+  }
+
+  /* One line under the file for everything the sheet leaves out of it. */
+  .left-out {
+    display: block;
+    margin-top: 0.5em;
+    padding-top: 0.375em;
+    border-top: 1px solid var(--line);
+    font-size: 0.75em;
+    color: var(--ink-muted);
+    white-space: normal;
   }
 
   /* yaml.ts tags every token as it writes it. Keys take the accent, plain values the ink,
