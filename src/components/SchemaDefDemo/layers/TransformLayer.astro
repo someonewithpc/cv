@@ -126,11 +126,22 @@ bootIslands('[data-schemadef-demo]', (host) => {
 .schemadef-demo {
   @include sheet-content;
 
-  @include clear-title-block;
-
   /* A definite height, so the panes scroll inside the sheet rather than growing it. */
   height: 100%;
   min-height: 0;
+
+  /* The text beside the title block ends on the block's bottom line, so on a landscape sheet
+     nothing pads the bottom: the cell ends where the block does. */
+  @include landscape-sheet {
+    padding-bottom: 0;
+  }
+}
+
+// The class twice: the other layers' fill-content-cell rules come later in the bundle.
+@include landscape-sheet {
+  :global(article.technical-drawing-stack > * > section .content.content:has([data-schemadef-demo])) {
+    padding-bottom: 0;
+  }
 }
 
 .schemadef {
@@ -139,18 +150,63 @@ bootIslands('[data-schemadef-demo]', (host) => {
   height: 100%;
   min-height: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "intro"
+    "panes"
+    "rules";
   gap: 0.5em;
   color: var(--ink);
+
+  /* The cards run down to the title block, and the intro and the rule take the band to its
+     left. The block is the sheet's, pasted over the corner, so an empty item stands in for it
+     here: its height holds the band open to the block's top, and its column keeps the text a
+     gutter clear of the block's left edge. A portrait sheet gives the block a row of its own
+     under all of this, so there the text goes above and below the cards instead. */
+  @include landscape-sheet {
+    grid-template-columns: minmax(0, 1fr) calc(var(--title-block-inline, 0px) - #{$sheet-margin});
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "panes panes"
+      "intro block"
+      "rules block";
+    column-gap: $sheet-margin;
+
+    &::after {
+      content: '';
+      grid-area: block;
+      height: var(--title-block-block, 0px);
+    }
+
+    /* Half the band's width, where the intro alone takes four lines: it goes back over the
+       cards, and the rules keep the band. */
+    @include narrow-sheet {
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "intro intro"
+        "panes panes"
+        "rules block";
+    }
+  }
 }
 
 .intro {
+  grid-area: intro;
+  align-self: start;
   margin: 0;
   font-size: fs(0.625);
   line-height: 1.4;
+  text-wrap: pretty;
+
+  @include landscape-sheet {
+    font-size: fs(0.5625);
+    line-height: 1.3;
+  }
 }
 
 .panes {
+  grid-area: panes;
   min-height: 0;
   display: grid;
   /* The PHP runs longer a line than the SQL it becomes, so it gets the wider pane. */
@@ -266,14 +322,31 @@ figcaption {
 }
 
 .rules {
+  grid-area: rules;
+  align-self: end;
   list-style: none;
   margin: 0;
   padding: 0.375em 0 0;
   border-top: 1px solid var(--line);
   font-size: fs(0.625);
   line-height: 1.4;
-  /* Room for the longest rule, so the panes above do not jump as the highlight walks. */
+  /* Room for the longest rule, so the panes above do not jump as the highlight walks. Beside
+     the title block the band is the block's height already, and every rule fits in it. */
   min-height: calc(3 * 1.4em);
+
+  /* Beside the title block, in the band's smaller type: three lines take the longest rule on
+     a desktop sheet, five on a narrow one. */
+  @include landscape-sheet {
+    padding-top: 0;
+    border-top: 0;
+    font-size: fs(0.5625);
+    line-height: 1.3;
+    min-height: calc(3 * 1.3em + 2 * 0.25em);
+
+    @include narrow-sheet {
+      min-height: calc(5 * 1.3em + 4 * 0.25em);
+    }
+  }
 
   li {
     display: flex;

@@ -79,3 +79,11 @@ $sheet-margin: 0.75em;
   font-size: max(0.6875em, 0.6875rem);
   line-height: 1.4;
 }
+
+// A sheet wider than tall, where the title block sits over the content's bottom-right corner
+// rather than in a row of its own.
+@mixin landscape-sheet {
+  @container technical-drawing (orientation: landscape) {
+    @content;
+  }
+}
