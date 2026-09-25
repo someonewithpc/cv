@@ -187,7 +187,10 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 .results {
   min-height: 0;
   margin: 0;
-  padding: 0.5em var(--gutter) var(--gutter);
+  /* The title block lies over the list's bottom corner on a landscape sheet, so the rows
+     scroll on past it by its height (SearchLayer.astro sets the reach) and the last one
+     reads clear of it. */
+  padding: 0.5em var(--gutter) calc(var(--gutter) + var(--title-block-reach, 0px));
   list-style: none;
   overflow-y: auto;
   scrollbar-width: thin;

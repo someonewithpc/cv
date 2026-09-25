@@ -34,9 +34,11 @@ bootIslands('[data-library-search="search"]', boot);
 </script>
 
 <style lang="scss">
-@use "./sheet" as *;
-
+// The tool fills the sheet inside the shared --demo-inset (Page.astro), as the Space Builder
+// and Drag and drop apps do. The 2px keeps the frame line clear.
 :global(article.technical-drawing-stack > * > section .content:has(.library-search-demo)) {
+  --demo-pad: calc(2px + var(--demo-inset, 0px));
+
   place-self: stretch;
   width: auto;
   max-width: 100%;
@@ -45,30 +47,29 @@ bootIslands('[data-library-search="search"]', boot);
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
-  padding-block: 0.5em;
+  padding: var(--demo-pad);
 }
 
 .library-search-demo {
-  @include sheet-content;
+  // A landscape sheet lays its title block over the tool's bottom-right corner, and the
+  // result list scrolls on past it by this much (SearchTool.astro). Portrait gives the block
+  // a row of its own, so the reach goes back to 0. The query is the one Page.astro moves the
+  // block with, not the sheet's orientation attribute.
+  --title-block-reach: var(--title-block-block, 0px);
 
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
+  @container technical-drawing (orientation: portrait) {
+    --title-block-reach: 0px;
+  }
+
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
   /* A definite height, so the result list scrolls inside the sheet rather than
      growing it. */
   height: 100%;
   min-height: 0;
-  position: relative;
-
-  /* The title block claims the bottom-right corner, 4.6em of this type tall and a third of
-     the sheet wide, so the tool stops above it: the rows and the request line run the
-     whole width. */
-  padding-bottom: calc(5em + $sheet-margin);
-
-  @container technical-drawing (orientation: portrait) {
-    /* Portrait gives the title block its own row. */
-    padding-bottom: $sheet-margin;
-  }
+  display: flex;
+  align-items: stretch;
 }
 
 // Placed by translate alone: cursorMotion.ts animates each hop with its own duration and
