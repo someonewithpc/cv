@@ -589,7 +589,7 @@ section {
     height: auto;
     max-height: none;
     margin: 0;
-    padding: calc(var(--sheet-margin) + 1.25em) 1.25em;
+    padding: calc(var(--sheet-margin) + 1.25em) calc(var(--sheet-margin) + 0.5em);
     border: 0;
     border-radius: 0.5em;
     background: rgba(0, 0, 0, 0.45);
@@ -631,9 +631,10 @@ section {
       max-height: 100%;
       max-width: 100%;
       overflow: auto;
-      /* Room for the tilt and for the tape or pin over the note's top edge,
-         which the scroll box would otherwise cut off. */
-      padding-block: 0.75em;
+      /* Room for the tilt, the tape over the note's top edge and the shadow,
+         which the scroll box would otherwise cut off, and it keeps the note
+         clear of the frame line. */
+      padding: 0.75em;
 
       /* The note is the whole point once opened — let it use the sheet. */
       --note-width: min(34ch, 100%);
