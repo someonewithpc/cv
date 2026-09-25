@@ -211,7 +211,10 @@ header {
       width: fit-content;
     }
 
+    /* The player is 300px wide by default and still takes its room while hidden, so on a
+       phone narrower than that it pushed the page past the screen. */
     audio {
+      max-width: 100%;
       opacity: 0;
       visibility: hidden;
       transition: opacity 250ms ease, visibility 0s 250ms;
