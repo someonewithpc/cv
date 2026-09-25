@@ -27,7 +27,7 @@
       "title": "Blender GSoC 2019",
       "role": "GSoC student",
       "roleJp": "GSoCの学生",
-      "description": "Proposed replacing Blender's Python OBJ, STL, and PLY importers/exporters with a shared C/C++ IO framework using memory-mapped files and optional parallelization. Patch D4575 made OBJ and STL import and export about 3× faster, and the proposal was accepted into the GSoC programme.",
+      "description": "Proposed replacing Blender's Python OBJ, STL, and PLY importers/exporters with a shared C/C++ IO framework using memory-mapped files and optional parallelization. A prototype patch made OBJ and STL import and export about 3× faster, and the proposal was accepted into the GSoC programme.",
       "repository": "blender/blender",
       "period": "2019",
       "links": [
