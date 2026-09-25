@@ -393,6 +393,23 @@
       "label": "Open",
       "items": [
         {
+          "repository": "FreeCAD/FreeCAD",
+          "title": "Quarter: scale pointer position to device pixels before flipping Y",
+          "description": "Fixed picking in the 3D view on fractional-scale screens. `toDevicePixelPosition()` flipped the Y axis in logical pixels and only then scaled to device pixels, so on a 2.67x panel a click landed 1 to 4 device pixels below the cursor.",
+          "url": "https://github.com/FreeCAD/FreeCAD/pull/32899",
+          "number": 32899,
+          "updatedAt": "2026-09-24T05:58:34Z",
+          "stats": {
+            "additions": 7,
+            "deletions": 2,
+            "changed_files": 1
+          },
+          "tags": [
+            "freecad",
+            "cplusplus"
+          ]
+        },
+        {
           "repository": "wispr-flow-linux/helper",
           "title": "feat: omit listed VK codes from the global key monitor",
           "description": "Added `WISPR_CAPTURE_IGNORE_VK`, a list of virtual-key codes the Linux helper leaves out of its global key monitor, so a push-to-talk bind on Right Ctrl stops firing on Left Ctrl as well. Skipped keys do not take a sequence index, so the app never sees a gap, and paste injection is untouched.",
