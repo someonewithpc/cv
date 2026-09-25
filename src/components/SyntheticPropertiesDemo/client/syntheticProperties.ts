@@ -1,5 +1,7 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { watchPageActive } from '@/client/frontPage';
+import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
   matches,
@@ -15,11 +17,13 @@ import {
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-/** How long the input rests before the pipeline runs: one run per edit rather than one
-    per keystroke, which would restart the animation on every letter. */
-const SETTLE_MS = 220;
 /** The longest delay in SplitLayer.astro's `.running` animations, plus its duration. */
 const RUN_MS = 1700;
+/** The tip of the drawn arrow, as fractions of the cursor's box. */
+const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
+/** Where on a field the cursor clicks before it types: near the start of the text. */
+const FIELD_AIM = { x: 0.2, y: 0.55 };
+const CURSOR_FADE_MS = 420;
 
 type Step = { size: string; query: string };
 
@@ -32,7 +36,7 @@ type Tool = {
   chips: HTMLOListElement;
   renderings: HTMLUListElement;
   text: HTMLElement;
-  queries: HTMLButtonElement[];
+  queries: HTMLElement[];
   /** The component's scoped-style attributes, so markup built here is styled like the
       markup Astro rendered. */
   scope: [string, string][];
@@ -110,11 +114,11 @@ function renderText(tool: Tool, text: string, query: string) {
 
 function renderQueries(tool: Tool) {
   const text = tool.current;
-  tool.queries.forEach((button) => {
-    const hit = matches(text, button.dataset.query ?? '');
-    button.dataset.hit = String(hit);
-    button.querySelector('.mark')!.textContent = hit ? '✓' : '✗';
-    button.querySelector('.sr-only')!.textContent = hit ? 'hits' : 'misses';
+  tool.queries.forEach((query) => {
+    const hit = matches(text, query.dataset.query ?? '');
+    query.dataset.hit = String(hit);
+    query.querySelector('.mark')!.textContent = hit ? '✓' : '✗';
+    query.querySelector('.sr-only')!.textContent = hit ? 'hits' : 'misses';
   });
 
   const query = tool.query.value.trim();
@@ -154,11 +158,12 @@ function wait(ms: number) {
 }
 
 /**
- * The walkthrough types into the fields a visitor would: a query that finds the sample,
- * then each size in turn with a query that finds it. It runs only while the sheet is on
- * screen and its page is on top, and stops the moment a real pointer or focus arrives,
- * until the transport deck's play key hands it back. `data-autoplay` on the tool is its
- * state, and the deck is told the same through reportAutoplayState.
+ * The walkthrough types into the fields itself: a query that finds the sample, then each
+ * size in turn with a query that finds it. A drawn cursor clicks each field before it
+ * types. The fields are read-only, so the walkthrough is the only thing that changes them.
+ * It runs only while the sheet is on screen and its page is on top. The transport deck's
+ * keys pause it, play it and start it over; `data-autoplay` on the tool is its state, and
+ * the deck is told the same through reportAutoplayState.
  */
 function autoplay(tool: Tool, steps: readonly Step[]) {
   const { root } = tool;
@@ -169,21 +174,76 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     return;
   }
 
+  const cursor = document.createElement('span');
+  cursor.className = 'demo-cursor';
+  cursor.setAttribute('aria-hidden', 'true');
+  cursor.dataset.demoCursor = '';
+  cursor.hidden = true;
+  root.append(cursor);
+  const mover = createCursorMover(cursor, { hotspot: CURSOR_HOTSPOT });
+  let fadeTimer = 0;
+
+  const showCursor = () => {
+    window.clearTimeout(fadeTimer);
+    cursor.hidden = false;
+    cursor.classList.remove('demo-cursor--fading');
+  };
+
+  const hideCursor = () => {
+    window.clearTimeout(fadeTimer);
+    if (cursor.hidden) return;
+    cursor.classList.add('demo-cursor--fading');
+    fadeTimer = window.setTimeout(() => {
+      cursor.hidden = true;
+      cursor.classList.remove('demo-cursor--fading');
+    }, CURSOR_FADE_MS);
+  };
+
   let token = 0;
   let active = false;
-  watchPageActive(root, (next) => {
-    active = next;
-  });
+  let held = false;
 
   const pause = async (ms: number, run: number) => {
     await wait(ms);
     while (run === token && (!active || document.hidden)) await wait(250);
   };
 
-  /** Types `text` into `input` a key at a time. The size field runs the pipeline once
-      it is done rather than per key; the query answers as it goes, as it does for a
-      visitor. */
+  /** Scrolls the tool so `el` sits in the part the title block leaves clear. */
+  const reveal = (el: HTMLElement) => {
+    const box = root.getBoundingClientRect();
+    const style = getComputedStyle(root);
+    const top = box.top + parseFloat(style.paddingTop);
+    const bottom = box.bottom - parseFloat(style.paddingBottom);
+    const rect = el.getBoundingClientRect();
+    if (rect.top >= top && rect.bottom <= bottom) return;
+    root.scrollTop += rect.top - top - (bottom - top) / 4;
+  };
+
+  /** Where the cursor's tip goes to point at `at` on `el`, in the tool's scrolled box. */
+  const pointOn = (el: HTMLElement, at = FIELD_AIM): Point => {
+    const rect = el.getBoundingClientRect();
+    const box = root.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width * at.x - box.left - root.clientLeft + root.scrollLeft,
+      y: rect.top + rect.height * at.y - box.top - root.clientTop + root.scrollTop,
+    };
+  };
+
+  /** Moves the cursor onto `input` and clicks it, then types `text` a key at a time. The
+      size field runs the pipeline once it is done rather than per key; the query answers
+      as it goes. */
   const type = async (input: HTMLInputElement, text: string, run: number, onKey: () => void) => {
+    reveal(input);
+    const hop = mover.moveTo(pointOn(input));
+    showCursor();
+    await hop;
+    if (run !== token) return;
+    const rect = input.getBoundingClientRect();
+    await demoPress(input, {
+      x: rect.left + rect.width * FIELD_AIM.x,
+      y: rect.top + rect.height * FIELD_AIM.y,
+    });
+    if (run !== token) return;
     input.classList.add('typing');
     input.value = '';
     onKey();
@@ -224,21 +284,38 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
   };
 
   const stop = () => {
-    if (root.dataset.autoplay !== 'playing') return;
     token += 1;
+    mover.cancel();
+    hideCursor();
     root.querySelectorAll('.typing').forEach((input) => input.classList.remove('typing'));
-    // A hover mid-word leaves the field half typed; the sheet is brought level with it so
+    // A pause mid-word leaves the field half typed; the sheet is brought level with it so
     // the chips, the renderings and the hits agree with what the field says.
     runPipeline(tool, false);
-    root.dataset.autoplay = 'user';
-    reportAutoplayState(root, 'user');
   };
 
-  root.addEventListener('pointerenter', stop);
-  root.addEventListener('focusin', stop);
+  watchPageActive(root, (next) => {
+    active = next;
+    if (!next) {
+      window.clearTimeout(fadeTimer);
+      cursor.hidden = true;
+    } else if (!held && root.dataset.autoplay === 'playing') {
+      showCursor();
+    }
+  });
+
   onAutoplayCommand(root, (command) => {
-    if (command === 'pause') stop();
-    else void play();
+    if (command === 'pause') {
+      if (root.dataset.autoplay !== 'playing') return;
+      held = true;
+      stop();
+      root.dataset.autoplay = 'user';
+      reportAutoplayState(root, 'user');
+      return;
+    }
+    if (command === 'play' && root.dataset.autoplay === 'playing') return;
+    held = false;
+    stop();
+    void play();
   });
 
   void play();
@@ -262,29 +339,20 @@ export function initSyntheticProperties(host: HTMLElement, root: HTMLElement) {
     chips: find('.chips'),
     renderings: find('.renderings'),
     text: find('.text'),
-    queries: [...root.querySelectorAll<HTMLButtonElement>('.query')],
+    queries: [...root.querySelectorAll<HTMLElement>('.query')],
     scope: [...root.attributes]
       .filter((attribute) => attribute.name.startsWith('data-astro-cid-'))
       .map((attribute) => [attribute.name, attribute.value]),
     current: '',
   };
 
-  let timer = 0;
-  const schedule = (animate = true) => {
-    window.clearTimeout(timer);
-    timer = window.setTimeout(() => runPipeline(tool, animate), SETTLE_MS);
-  };
-
-  tool.size.addEventListener('input', () => schedule());
-  tool.pax.addEventListener('input', () => schedule());
-  // A query does not change the text, so it answers at once and nothing replays.
-  tool.query.addEventListener('input', () => renderQueries(tool));
-
-  tool.queries.forEach((button) => {
-    button.addEventListener('click', () => {
-      tool.query.value = button.dataset.query ?? '';
-      renderQueries(tool);
-    });
+  // The fields are read-only. A click on one points the visitor at the line that says so.
+  const note = root.querySelector<HTMLElement>('.inert-note');
+  root.addEventListener('pointerdown', (event) => {
+    if (!event.isTrusted || !note || !(event.target as Element).closest('input')) return;
+    note.classList.remove('nudge');
+    void note.offsetWidth;
+    note.classList.add('nudge');
   });
 
   // Pointing at a chip lights the pieces it became, row by row.

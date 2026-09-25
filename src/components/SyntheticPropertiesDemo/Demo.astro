@@ -24,6 +24,8 @@ const { outputFiles: [clientBundle] } = await esbuild.build({
   write: false,
   format: 'esm',
   alias: { '@': srcRoot },
+  // The cursor press styles ship with the stack, not with this bundle.
+  loader: { '.css': 'empty' },
 });
 
 const clientSize = toKiB(clientBundle.text);

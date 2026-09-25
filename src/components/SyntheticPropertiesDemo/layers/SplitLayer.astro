@@ -34,6 +34,7 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
         a search for <code>5ft3in</code> or <code>1.6m</code> finds it.
       </p>
     </header>
+    <p class="inert-note">Only the walkthrough types here. The demo doesn't run your own sizes or searches.</p>
 
     <ol class="stages">
       <li class="stage source">
@@ -45,6 +46,8 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
               class="size-input"
               type="text"
               value={sample.size}
+              readonly
+              tabindex="-1"
               spellcheck="false"
               autocomplete="off"
               aria-label="Size, in centimetres, dimensions split by x"
@@ -57,6 +60,8 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
               type="text"
               inputmode="numeric"
               value={sample.pax}
+              readonly
+              tabindex="-1"
               spellcheck="false"
               autocomplete="off"
               aria-label="Seats"
@@ -106,6 +111,8 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
             class="query-input"
             type="search"
             placeholder="try 5ft3in"
+            readonly
+            tabindex="-1"
             spellcheck="false"
             autocomplete="off"
             aria-label="Search the text"
@@ -116,12 +123,10 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
           {sampleQueries.map((query) => {
             const hit = matches(text, query);
             return (
-              <li>
-                <button class="query" type="button" data-query={query} data-hit={String(hit)}>
-                  <span class="mark" aria-hidden="true">{hit ? '✓' : '✗'}</span>
-                  <span class="query-text">{query}</span>
-                  <span class="sr-only">{hit ? 'hits' : 'misses'}</span>
-                </button>
+              <li class="query" data-query={query} data-hit={String(hit)}>
+                <span class="mark" aria-hidden="true">{hit ? '✓' : '✗'}</span>
+                <span class="query-text">{query}</span>
+                <span class="sr-only">{hit ? 'hits' : 'misses'}</span>
               </li>
             );
           })}
@@ -347,15 +352,57 @@ input {
     color: var(--ink);
     font-size: 1em;
 
+    /* Read-only: no caret and no text cursor, so nothing offers to take typing. */
+    caret-color: transparent;
+    cursor: default;
+
     &::placeholder {
       color: var(--ink-faint);
     }
-
-    &:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: -1px;
-    }
   }
+}
+
+.inert-note {
+  margin: 0;
+  font-size: max(0.5rem, 0.75em);
+  color: var(--ink-muted);
+
+  /* A click on a field flashes the line that says it takes no typing. */
+  &:global(.nudge) {
+    animation: nudge 1.2s ease-out;
+  }
+}
+
+@keyframes nudge {
+  from {
+    color: var(--accent-text);
+  }
+}
+
+/* The walkthrough's hand, drawn as the other demos draw it and placed by translate alone:
+   cursorMotion.ts animates each hop and folds the arrow's tip into every keyframe. */
+.synthetic-tool :global(.demo-cursor) {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  width: 2em;
+  height: 2em;
+  transform-origin: 12% 8%;
+  pointer-events: none;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" fill="%23fff" stroke="%23222" stroke-width="1.6" stroke-linejoin="round"/></svg>') center / contain no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25));
+  transition:
+    opacity 0.32s ease,
+    scale 0.12s ease;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.synthetic-tool :global(.demo-cursor--fading) {
+  opacity: 0;
 }
 
 .field-name {
@@ -364,7 +411,7 @@ input {
   color: var(--ink-muted);
 }
 
-/* The walkthrough marks the field it is typing into, since it has no pointer of its own. */
+/* The field the walkthrough is typing into. */
 .synthetic-tool[data-autoplay='playing'] input.typing {
   outline: 2px dashed var(--accent);
   outline-offset: 1px;
@@ -508,7 +555,6 @@ input {
   color: var(--ink-muted);
   font-family: monospace, system-ui;
   font-size: max(0.5rem, 0.8125em);
-  cursor: pointer;
 
   &[data-hit='true'] {
     border-color: var(--accent);
@@ -524,10 +570,6 @@ input {
     text-decoration-color: var(--ink-faint);
   }
 
-  &:hover,
-  &:focus-visible {
-    border-color: var(--accent);
-  }
 }
 
 .query-result {
@@ -588,6 +630,10 @@ input {
 
   .piece {
     transition: none;
+  }
+
+  .inert-note:global(.nudge) {
+    animation: none;
   }
 }
 </style>
