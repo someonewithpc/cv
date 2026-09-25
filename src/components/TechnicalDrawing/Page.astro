@@ -1084,14 +1084,14 @@ section {
 
       td header {
         /* Caps the cell's min-content too, so a long title cannot widen the
-           block past the sheet. */
+           block past the sheet. A title longer than that takes a second line
+           rather than an ellipsis. */
         max-width: 58cqw;
 
         h2,
         h3 {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          text-wrap: balance;
+          overflow-wrap: anywhere;
         }
 
         h2 {
