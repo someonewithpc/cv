@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import { EVENT, attachments, defaultAttachment, dispatch, listeners, resize, resizers, type EventResult } from './events';
+import { EVENT, RESIZE_EVENT, attachments, defaultAttachment, dispatch, listeners, resize, resizers, type EventResult } from './events';
 
 type Props = {
   /** Wire the bus up to the client script and the walkthrough. */
@@ -50,13 +50,15 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
   data-result={outcome.result}
   data-rendered={outcome.rendered}
   data-thumbnail={resized.by ?? undefined}
+  data-stage="view"
   tabindex={live ? -1 : undefined}
 >
   <div class="emitter">
     {live ? (
       <button type="button" class="call" data-dispatch title="Dispatch again">
         <Icon name="lucide:play" class="replay" />
-        <code>Event::handle('<b>{EVENT}</b>', [$vars, &amp;$res])</code>
+        <code data-stage="view">Event::handle('<b>{EVENT}</b>', [$vars, &amp;$res])</code>
+        <code data-stage="resize">Event::handle('<b>{RESIZE_EVENT}</b>', [&amp;$event_map, $mimetype])</code>
       </button>
     ) : (
       <span class="call">
@@ -66,8 +68,21 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 
     {caption && (
       <p class="caption">
-        Each listener is <code>[Module, 'on{EVENT}']</code>, in the order the modules were found
+        <span data-stage="view">
+          Each listener is <code>[Module, 'on{EVENT}']</code>, in the order the modules were found
+        </span>
+        <span data-stage="resize">
+          ImageEncoder's view asks for the GIF's thumbnail, and <code>getOrCreate</code> raises
+          this. Each listener is <code>[Module, 'on{RESIZE_EVENT}']</code>
+        </span>
       </p>
+    )}
+
+    {live && (
+      <div class="stages" role="group" aria-label="Event for loop.gif">
+        <button type="button" class="stage" data-stage="view" aria-pressed="true">{EVENT}</button>
+        <button type="button" class="stage" data-stage="resize" aria-pressed="false">{RESIZE_EVENT}</button>
+      </div>
     )}
 
     <div class="attachments" role="group" aria-label="Attachment">
@@ -95,7 +110,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
       </li>
 
       {loaded.map(({ listener, index }) => (
-        <li class="listener" data-module={listener.module} data-index={index} data-result={resultOf(index)}>
+        <li class="listener" data-module={listener.module} data-index={index} data-resizes={String(listener.resizes)} data-result={resultOf(index)}>
           <div class="chip">
             <span class="module">{listener.module}</span>
             <span class="meta">prio {listener.priority}</span>
@@ -127,7 +142,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
     <span class="unloaded-label">Not loaded</span>
     <ul class="tray">
       {unloaded.map(({ listener, index }) => (
-        <li class="listener" data-module={listener.module} data-index={index} data-result="off">
+        <li class="listener" data-module={listener.module} data-index={index} data-resizes={String(listener.resizes)} data-result="off">
           <div class="chip">
             <span class="module">{listener.module}</span>
             <span class="meta">prio {listener.priority}</span>
@@ -166,7 +181,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 
     {branch && (
     <div class="resize" role="group" aria-label="How the GIF's thumbnail is made">
-      <span class="resize-label">thumbnail, after <code>FileResizerAvailable</code></span>
+      <span class="resize-label">then <code>getOrCreate</code> tries the resizers in this order</span>
       <code class="merge">array_merge($event_map['image/gif'], $event_map['image'])</code>
       <ol class="resizers">
         {resizers.map((resizer, index) => (
@@ -185,14 +200,17 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
     )}
 
     <figure class="res" aria-live={live ? 'polite' : undefined}>
-      <figcaption>$res</figcaption>
+      <figcaption><span data-stage="view">$res</span><span data-stage="resize">$event_map</span></figcaption>
+      <span class="event-map">
+        {resizers.map((resizer, index) => (
+          <code class="entry" data-module={resizer.module} data-on={String(resized.results[index] !== 'off')}>'{resizer.key}' =&gt; [<span class="callable">{resizer.module}</span>]</code>
+        ))}
+      </span>
       <span class="rendered" data-kind="pending" aria-hidden="true">…</span>
       <span class="rendered" data-kind="image">
         <Icon name="lucide:image" />
         <span>
           <code>&lt;img class="u-photo"&gt;</code> <span class="by">ImageEncoder</span>
-          <span class="thumb" data-by="VideoEncoder">animated thumbnail from VideoEncoder</span>
-          <span class="thumb" data-by="ImageEncoder">still thumbnail from ImageEncoder</span>
         </span>
       </span>
       <span class="rendered" data-kind="video">
@@ -298,6 +316,44 @@ button.call {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375em;
+}
+
+/* The words that belong to one event show only while the sheet dispatches that one. */
+.event-bus[data-stage='view'] :is(.call, .caption, figcaption) > [data-stage='resize'],
+.event-bus[data-stage='resize'] :is(.call, .caption, figcaption) > [data-stage='view'] {
+  display: none;
+}
+
+/* The GIF has two events to pick from: the view, and the thumbnail request inside it. */
+.stages {
+  order: 4;
+  flex-basis: 100%;
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.375em;
+}
+
+.event-bus[data-attachment='gif'] .stages {
+  display: flex;
+}
+
+.stage {
+  padding: 0.25em 0.625em;
+  border: 1px solid var(--line);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  font-family: monospace, system-ui;
+  font-size: max(0.5rem, 0.75em);
+  color: var(--ink-muted);
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+  }
 }
 
 .caption {
@@ -759,9 +815,8 @@ button.call {
   }
 }
 
-/* The GIF's thumbnail, made before ImageEncoder's view can show it: the resizers in the
-   order the core merges them, the exact mimetype's first. It takes the template's place,
-   which has nothing to show for a GIF that ImageEncoder always claims. */
+/* FileResizerAvailable for the GIF: the resizers in the order the core merges them, the
+   exact mimetype's first. It takes the template's place, which only the view raises. */
 .resize {
   grid-column: 1;
   grid-row: 1 / span 2;
@@ -772,9 +827,14 @@ button.call {
   line-height: 1.4;
 }
 
-.event-bus[data-attachment='gif'] {
+.event-bus[data-stage='resize'] {
   .branch,
   .branch-note {
+    display: none;
+  }
+
+  /* AudioEncoder has no onFileResizerAvailable, so it is not on this event's rail. */
+  .listener[data-resizes='false'] {
     display: none;
   }
 
@@ -911,17 +971,6 @@ button.call {
   .link-text {
     color: var(--accent-text);
   }
-
-  .thumb {
-    display: none;
-    font-size: max(0.5rem, 0.8125em);
-    color: var(--ink-muted);
-  }
-}
-
-.event-bus[data-attachment='gif'][data-thumbnail='VideoEncoder'] .thumb[data-by='VideoEncoder'],
-.event-bus[data-attachment='gif'][data-thumbnail='ImageEncoder'] .thumb[data-by='ImageEncoder'] {
-  display: block;
 }
 
 .event-bus[data-rendered='pending'] .rendered[data-kind='pending'],
@@ -930,6 +979,35 @@ button.call {
 .event-bus[data-rendered='audio'] .rendered[data-kind='audio'],
 .event-bus[data-rendered='link'] .rendered[data-kind='link'] {
   display: inline-flex;
+}
+
+/* The $event_map FileResizerAvailable hands back: a module that is not loaded leaves its
+   list empty. */
+.event-map {
+  display: none;
+  gap: 0.25em;
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375em;
+  background: var(--surface-raised);
+  font-size: 0.8125em;
+
+  .entry {
+    font-family: monospace, system-ui;
+    white-space: nowrap;
+  }
+
+  .callable {
+    font-weight: 600;
+  }
+
+  .entry[data-on='false'] .callable {
+    display: none;
+  }
+}
+
+.event-bus[data-rendered='event-map'] .event-map {
+  display: grid;
 }
 
 /* A narrow sheet: the chain runs down the page, the rail on the left, each chip beside

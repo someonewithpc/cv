@@ -32,9 +32,15 @@ export type Listener = {
   returns: Record<string, EventResult>;
   /** What a handler that stops appends to $res, by attachment id. */
   renders?: Record<string, Rendered>;
+  /** Whether the module also has onFileResizerAvailable. */
+  resizes: boolean;
 };
 
 export const EVENT = 'ViewAttachment';
+export const RESIZE_EVENT = 'FileResizerAvailable';
+
+/** Which event the sheet dispatches: the view, or the thumbnail request made inside it. */
+export type Stage = 'view' | 'resize';
 
 export const attachments: Attachment[] = [
   { id: 'jpeg', filename: 'harbour.jpg', mimetype: 'image/jpeg' },
@@ -56,6 +62,7 @@ export const listeners: Listener[] = [
     kind: 'plugin',
     method: `on${EVENT}`,
     priority: 0,
+    resizes: false,
     returns: { jpeg: 'next', mp4: 'next', ogg: 'stop', gif: 'next' },
     renders: { ogg: 'audio' },
   },
@@ -64,6 +71,7 @@ export const listeners: Listener[] = [
     kind: 'plugin',
     method: `on${EVENT}`,
     priority: 0,
+    resizes: true,
     returns: { jpeg: 'stop', mp4: 'next', ogg: 'next', gif: 'stop' },
     renders: { jpeg: 'image', gif: 'image' },
   },
@@ -72,6 +80,7 @@ export const listeners: Listener[] = [
     kind: 'plugin',
     method: `on${EVENT}`,
     priority: 0,
+    resizes: true,
     returns: { jpeg: 'next', mp4: 'stop', ogg: 'next', gif: 'next' },
     renders: { mp4: 'video' },
   },
@@ -118,8 +127,9 @@ export function dispatch(attachmentId: string, enabled: (module: string) => bool
 }
 
 /**
- * Where the GIF's thumbnail comes from. AttachmentThumbnail::getOrCreate raises
- * FileResizerAvailable, and each encoder that can resize the file adds a resizer to
+ * Where the GIF's thumbnail comes from. ImageEncoder's view asks for it
+ * (ImageEncoder.php:189), and AttachmentThumbnail::getOrCreate raises FileResizerAvailable.
+ * AudioEncoder has no handler for it. Each encoder that can resize the file adds a resizer to
  * $event_map and answers next: ImageEncoder under the major, image, and VideoEncoder under
  * image/gif itself, to keep a GIF moving. ModuleManager.php:202 adds every module handler
  * at priority 0, so the dispatcher does not choose between them. The core does:
@@ -151,4 +161,11 @@ export function resize(enabled: (module: string) => boolean = () => true) {
     return 'true';
   });
   return { results, by: by as string | null };
+}
+
+/** FileResizerAvailable on the rail: only the modules with a handler for it hear it, each
+    adds its resizer and answers next, so the dispatcher hands back next. */
+export function dispatchResize(enabled: (module: string) => boolean = () => true): Outcome {
+  const results = listeners.map((listener) => (listener.resizes && enabled(listener.module) ? ('next' as const) : null));
+  return { results, result: 'next', claimedBy: null, rendered: 'link' };
 }

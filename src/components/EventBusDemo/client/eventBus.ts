@@ -4,7 +4,18 @@ import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
-import { defaultAttachment, dispatch, listeners, resize, resizers, type ResizeResult } from '../events';
+import {
+  EVENT,
+  RESIZE_EVENT,
+  defaultAttachment,
+  dispatch,
+  dispatchResize,
+  listeners,
+  resize,
+  resizers,
+  type ResizeResult,
+  type Stage,
+} from '../events';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -31,12 +42,17 @@ type Bus = {
   items: Map<string, HTMLElement>;
   /** The GIF's resizers, in the order the core merges them. */
   resizerRows: HTMLElement[];
+  /** The $event_map entries FileResizerAvailable hands back, one per resizer. */
+  mapEntries: HTMLElement[];
+  stageButtons: HTMLButtonElement[];
   attachmentButtons: HTMLButtonElement[];
   dispatchButton: HTMLButtonElement;
   branch: HTMLElement;
   branchNote: HTMLElement;
   returned: HTMLElement;
   attachment: string;
+  /** Which event the sheet dispatches: only the GIF has the second one. */
+  stage: Stage;
   enabled: Set<string>;
   /** Bumped by every dispatch, so a run that has been overtaken stops where it is. */
   run: number;
@@ -89,8 +105,9 @@ async function hop(bus: Bus, to: Point, ms: number) {
  * discovery order, the rest in the tray. The chips that move slide from where they were,
  * so the chain is seen closing up or making room.
  */
-function placeListeners(bus: Bus) {
+function placeListeners(bus: Bus, change?: () => void) {
   const before = new Map([...bus.items].map(([module, item]) => [module, item.getBoundingClientRect()]));
+  change?.();
 
   listeners.forEach(({ module }) => {
     const item = bus.items.get(module)!;
@@ -101,18 +118,27 @@ function placeListeners(bus: Bus) {
     toggle.setAttribute('aria-pressed', String(on));
     if (!on) answer(item, 'off');
   });
-  bus.unloaded.dataset.empty = String(bus.enabled.size === listeners.length);
+  bus.unloaded.dataset.empty = String(
+    !listeners.some(({ module }, index) => !bus.enabled.has(module) && hears(bus, index)),
+  );
 
   if (reducedMotion.matches) return;
   bus.items.forEach((item, module) => {
     const was = before.get(module);
     const now = item.getBoundingClientRect();
-    if (!was || (Math.abs(was.left - now.left) < 1 && Math.abs(was.top - now.top) < 1)) return;
+    // A chip that was or is hidden, off this event's rail, has no box to slide from.
+    if (!was || !was.width || !now.width) return;
+    if (Math.abs(was.left - now.left) < 1 && Math.abs(was.top - now.top) < 1) return;
     item.animate(
       [{ translate: `${was.left - now.left}px ${was.top - now.top}px` }, { translate: '0 0' }],
       { duration: RESORT_MS, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
     );
   });
+}
+
+/** Whether the listener at `index` has a handler for the event the sheet is dispatching. */
+function hears(bus: Bus, index: number) {
+  return bus.stage === 'view' || listeners[index].resizes;
 }
 
 const resizeLabel: Record<ResizeResult, string> = { true: 'true', unused: 'not called', off: 'off' };
@@ -127,6 +153,8 @@ function showResize(bus: Bus, pending: boolean) {
     const result = results[index];
     row.dataset.result = pending && result !== 'off' ? 'pending' : result;
     row.querySelector<HTMLElement>('.answer')!.textContent = resizeLabel[result];
+    const entry = bus.mapEntries[index];
+    if (entry) entry.dataset.on = String(result !== 'off');
   });
   if (pending || !by) delete bus.root.dataset.thumbnail;
   else bus.root.dataset.thumbnail = by;
@@ -136,7 +164,7 @@ function showOutcome(bus: Bus, outcome: ReturnType<typeof dispatch>) {
   showResize(bus, false);
   const taken = String(outcome.result !== 'stop');
   bus.root.dataset.result = outcome.result;
-  bus.root.dataset.rendered = outcome.rendered;
+  bus.root.dataset.rendered = bus.stage === 'resize' ? 'event-map' : outcome.rendered;
   bus.returned.textContent = outcome.result;
   bus.branch.dataset.taken = taken;
   bus.branchNote.dataset.taken = taken;
@@ -150,10 +178,15 @@ function showOutcome(bus: Bus, outcome: ReturnType<typeof dispatch>) {
  */
 function runDispatch(bus: Bus): Promise<void> {
   const run = ++bus.run;
-  const outcome = dispatch(bus.attachment, (module) => bus.enabled.has(module));
+  const on = (module: string) => bus.enabled.has(module);
+  const outcome = bus.stage === 'resize' ? dispatchResize(on) : dispatch(bus.attachment, on);
   const chain = listeners
     .map((listener, index) => ({ listener, index, item: bus.items.get(listener.module)! }))
-    .filter(({ listener }) => bus.enabled.has(listener.module));
+    .filter(({ listener, index }) => on(listener.module) && hears(bus, index));
+  bus.chain.setAttribute(
+    'aria-label',
+    `Listeners for ${bus.stage === 'resize' ? RESIZE_EVENT : EVENT}, in dispatch order`,
+  );
 
   bus.root.dataset.attachment = bus.attachment;
   bus.attachmentButtons.forEach((button) => {
@@ -227,8 +260,27 @@ function runDispatch(bus: Bus): Promise<void> {
   return bus.running;
 }
 
+/** Switches the event the sheet dispatches. AudioEncoder leaves the rail for
+    FileResizerAvailable, and the chips around it close up. */
+function setStage(bus: Bus, stage: Stage) {
+  placeListeners(bus, () => {
+    bus.stage = stage;
+    bus.root.dataset.stage = stage;
+    bus.stageButtons.forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.stage === stage));
+    });
+  });
+}
+
 function setAttachment(bus: Bus, id: string) {
   bus.attachment = id;
+  // Only the GIF has the second event on this sheet.
+  if (id !== 'gif' && bus.stage !== 'view') setStage(bus, 'view');
+  return runDispatch(bus);
+}
+
+function chooseStage(bus: Bus, stage: Stage) {
+  setStage(bus, stage);
   return runDispatch(bus);
 }
 
@@ -242,7 +294,7 @@ function toggleModule(bus: Bus, module: string) {
 function restore(bus: Bus) {
   bus.attachment = defaultAttachment;
   listeners.forEach(({ module }) => bus.enabled.add(module));
-  placeListeners(bus);
+  setStage(bus, 'view');
 }
 
 type Player = {
@@ -256,9 +308,10 @@ type Player = {
  * next, past AudioEncoder's next to VideoEncoder's stop. ImageEncoder is switched back on
  * and answers next to the MP4 like AudioEncoder does, so the chain shows two passes before
  * a claim. The JPEG goes once more and ImageEncoder takes it, VideoEncoder greyed out
- * behind it. Then the GIF: ImageEncoder claims the view, and its thumbnail comes from
- * VideoEncoder, whose image/gif resizer the core tries before ImageEncoder's image one.
- * VideoEncoder is switched off and ImageEncoder's resizer makes a still instead. Every step
+ * behind it. Then the GIF: ImageEncoder claims the view, as it does any image. The sheet
+ * switches to FileResizerAvailable, the event that view raises for its thumbnail: VideoEncoder's
+ * image/gif resizer goes ahead of ImageEncoder's image one. VideoEncoder is switched off and
+ * ImageEncoder's resizer makes a still instead. Every step
  * is a control the visitor can press.
  *
  * A trusted pointer or focus on the demo hands it over at once; the loop picks up again
@@ -314,6 +367,7 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     bus.attachmentButtons.find((button) => button.dataset.attachment === id)!;
   const imageEncoderSwitch = () => loadSwitch(bus.items.get('ImageEncoder')!);
   const videoEncoderSwitch = () => loadSwitch(bus.items.get('VideoEncoder')!);
+  const stageButton = (stage: Stage) => bus.stageButtons.find((button) => button.dataset.stage === stage)!;
 
   async function play() {
     const mine = ++token;
@@ -341,6 +395,10 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
       if (!(await hold(mine, 2400))) return;
 
       if (!(await press(mine, attachmentButton('gif')))) return;
+      await bus.running;
+      if (!(await hold(mine, 2800))) return;
+
+      if (!(await press(mine, stageButton('resize')))) return;
       await bus.running;
       if (!(await hold(mine, 2800))) return;
 
@@ -477,12 +535,15 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
     token,
     items,
     resizerRows: [...root.querySelectorAll<HTMLElement>('.resizer')],
+    mapEntries: [...root.querySelectorAll<HTMLElement>('.event-map .entry')],
+    stageButtons: [...root.querySelectorAll<HTMLButtonElement>('.stage')],
     attachmentButtons: [...root.querySelectorAll<HTMLButtonElement>('.attachment')],
     dispatchButton: root.querySelector<HTMLButtonElement>('[data-dispatch]')!,
     branch: root.querySelector<HTMLElement>('.branch')!,
     branchNote: root.querySelector<HTMLElement>('.branch-note')!,
     returned: root.querySelector<HTMLElement>('.returned')!,
     attachment: root.dataset.attachment ?? defaultAttachment,
+    stage: 'view',
     enabled: new Set(listeners.map(({ module }) => module).filter((module) => {
       const item = items.get(module);
       return item?.querySelector('.load')?.getAttribute('aria-pressed') === 'true';
@@ -496,6 +557,9 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
   });
   bus.attachmentButtons.forEach((button) => {
     button.addEventListener('click', () => void setAttachment(bus, button.dataset.attachment!));
+  });
+  bus.stageButtons.forEach((button) => {
+    button.addEventListener('click', () => void chooseStage(bus, button.dataset.stage as Stage));
   });
   bus.dispatchButton.addEventListener('click', () => void runDispatch(bus));
 
