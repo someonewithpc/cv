@@ -29,7 +29,7 @@ for (const width of [390, 1024, 1440]) {
         const stack = el.querySelector('article.technical-drawing-stack')!.getBoundingClientRect();
         const view = el.querySelector('.callout-view')!.getBoundingClientRect();
         // Every line of the card's text is the card's to paint, not a sheet's over it.
-        const covered = [...card.querySelectorAll('dt, dd')].filter((cell) => {
+        const covered = [...card.querySelectorAll('dt, dd')].filter((cell) => cell.getClientRects().length > 0).filter((cell) => {
           const r = cell.getBoundingClientRect();
           const hit = document.elementFromPoint(r.left + 4, r.top + r.height / 2);
           return !hit || !card.contains(hit);
@@ -52,14 +52,19 @@ for (const width of [390, 1024, 1440]) {
         }
         const hint = el.querySelector('.technical-drawing-frame[data-hint-show] .flip-hint--fwd.hint-words')?.getBoundingClientRect();
         if (hint && hint.bottom > box.top && hint.left < box.right) over = Math.max(over, hint.bottom);
+        const entries = [...card.querySelectorAll('dt')]
+          .filter((dt) => dt.getClientRects().length > 0)
+          .map((dt) => dt.textContent!.trim());
         const { rotate, transform } = getComputedStyle(card);
-        return { box, stack, view, covered, smallest: Math.min(...sizes), rotate, transform, lead: first.top - over };
+        return { box, stack, view, covered, smallest: Math.min(...sizes), entries, rotate, transform, lead: first.top - over };
       });
       expect(geometry.box.top, 'tucked under the stack').toBeLessThan(geometry.stack.bottom);
       expect(geometry.box.bottom, 'sticks out below it').toBeGreaterThan(geometry.stack.bottom);
       expect(geometry.box.bottom, 'inside the boundary').toBeLessThanOrEqual(geometry.view.bottom);
       expect(geometry.covered, 'lines covered by the sheets').toBe(0);
       expect(geometry.smallest).toBeGreaterThanOrEqual(8);
+      // Stacked, the slip keeps to the title and the notes.
+      expect(geometry.entries).toEqual(['Title', 'Notes']);
       expect(geometry.rotate, 'square to the stack').toBe('none');
       expect(geometry.transform, 'square to the stack').toBe('none');
       // Only the entries show below the stack: they start just under the fan, or the hint.
