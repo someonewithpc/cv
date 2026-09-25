@@ -8,7 +8,7 @@ import {
   turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
-import { expect, test } from './support/timeScale';
+import { expect, pageWait, test } from './support/timeScale';
 
 function variantsStack(page: Page) {
   return demoStack(page, 'Space Builder · Object Variants');
@@ -344,6 +344,66 @@ test.describe('metric locale', () => {
     const missing = frontPage(stack, await frontPageIndex(stack));
     await expect(missing.locator('.drawn details.object-pax')).toHaveAttribute('open', '');
     await expect(missing.locator('.drawn .object-pax li.unavailable')).toHaveCount(2);
+  });
+});
+
+test.describe('transport deck', () => {
+  // The quiet spell before the walkthrough comes back is 6 s of page time.
+  test.use({ locale: 'pt-PT', walkthroughRate: 3 });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('the sheet shows the transport deck, and its keys drive the walkthrough', async ({ page }) => {
+    const stack = variantsStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const front = frontPage(stack, await frontPageIndex(stack));
+    const app = front.locator('.variants-stage');
+    await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 30_000 });
+    await expect(app).toHaveAttribute('data-user-control', 'false');
+
+    const deck = front.locator('[data-demo-transport]');
+    const play = deck.locator('[data-demo-key="play"]');
+    const pause = deck.locator('[data-demo-key="pause"]');
+    const reset = deck.locator('[data-demo-key="reset"]');
+
+    await expect(deck).toBeVisible();
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(deck.locator('[data-demo-caption]')).toHaveText('AUTO PLAYING');
+    await expect(play).toHaveAttribute('aria-pressed', 'true');
+
+    // Moving over the cards takes over, and the deck says so.
+    await app.hover();
+    await expect(app).toHaveAttribute('data-user-control', 'true');
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    await expect(pause).toHaveAttribute('aria-pressed', 'true');
+
+    await play.click();
+    await expect(app).toHaveAttribute('data-user-control', 'false');
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(app.locator('.demo-cursor')).toBeVisible();
+
+    // Pause holds the cards past the 6 s quiet spell that hands a hover back.
+    await pause.click();
+    await expect(app).toHaveAttribute('data-user-control', 'true');
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    await expect(app.locator('.demo-cursor')).toBeHidden();
+    await pageWait(page, 9_000);
+    await expect(app).toHaveAttribute('data-user-control', 'true');
+    await expect(deck).toHaveAttribute('data-state', 'user');
+
+    // Reset starts the walkthrough over from the library's default: the chair is the pick.
+    const chair = card(app, 'chair');
+    const set = card(app, 'table-round');
+    await set.locator('.object-icons').click();
+    await expect(set).toHaveClass(/active/);
+    await reset.click();
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(app).toHaveAttribute('data-user-control', 'false');
+    await expect(set).not.toHaveClass(/active/);
+    await expect(chair.locator('ul.styles')).toHaveAttribute('data-index', '0');
+    await expect(set).toHaveAttribute('data-variant', 'table-8-243');
   });
 });
 
