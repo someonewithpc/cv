@@ -134,6 +134,25 @@ export function sizeProperties(size: string): SyntheticProperty[] {
   });
 }
 
+/** A number as it was stored, the way CONCAT prints it: `182`, `182.5`, `1.825`. */
+function exact(value: number) {
+  return String(Number(value.toPrecision(12)));
+}
+
+/** The size rows the synthetic table holds: the six renderings, and next to the rounded
+    centimetres and metres the exact ones, wherever rounding moved a dimension. A 182cm
+    table reads 180cm and 1.8m, and a search for 182cm or 1.82m still finds it. */
+export function storedSizeProperties(size: string): SyntheticProperty[] {
+  const dimensions = splitSizes(size).filter((dimension) => dimension.cm !== null);
+  return sizeProperties(size).flatMap((row, index) => {
+    const unit = renderings[index].id;
+    if (unit !== 'cm' && unit !== 'm') return [row];
+    const pieces = dimensions.map(({ cm }) => (unit === 'cm' ? `${exact(cm!)}cm` : `${exact(cm! / 100)}m`));
+    if (pieces.every((piece, at) => piece === row.pieces[at])) return [row];
+    return [row, { name: row.name, value: pieces.join(' by '), pieces }];
+  });
+}
+
 /** The seat count under both of its names. The value is the bare count; the name is what
     makes it read as `8 Pax` and `8 Seats` once the two are concatenated. */
 export function paxProperties(pax: string): SyntheticProperty[] {

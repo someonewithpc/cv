@@ -8,6 +8,7 @@ import {
   searchableText,
   sizeProperties,
   splitSizes,
+  storedSizeProperties,
   walkthrough,
 } from '../units';
 
@@ -16,7 +17,7 @@ import {
 const dimensions = splitSizes(sample.size);
 const sizes = sizeProperties(sample.size);
 const pax = paxProperties(sample.pax);
-const text = searchableText([...sizes, ...pax]);
+const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
 ---
 
 <div

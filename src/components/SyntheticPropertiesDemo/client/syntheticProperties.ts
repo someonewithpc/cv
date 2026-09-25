@@ -9,6 +9,7 @@ import {
   searchableText,
   sizeProperties,
   splitSizes,
+  storedSizeProperties,
   type SyntheticProperty,
 } from '../units';
 
@@ -138,7 +139,7 @@ function runPipeline(tool: Tool, animate = true) {
     ...sizes.map((property, row) => renderRow(tool, property, row, renderings[row].id)),
     ...pax.map((property, row) => renderRow(tool, property, sizes.length + row)),
   );
-  tool.current = searchableText([...sizes, ...pax]);
+  tool.current = searchableText([...storedSizeProperties(tool.size.value), ...pax]);
   renderQueries(tool);
 
   if (!animate || reducedMotion.matches) return;

@@ -1,10 +1,10 @@
 ---
-import { paxProperties, sample, searchableText, sizeProperties } from '../units';
+import { paxProperties, sample, searchableText, storedSizeProperties } from '../units';
 
 // The sample object's rows in the synthetic table, and what the second trigger layer folds
 // them into. The id is a placeholder.
 const objectId = 1024;
-const rows = [...sizeProperties(sample.size), ...paxProperties(sample.pax)];
+const rows = [...storedSizeProperties(sample.size), ...paxProperties(sample.pax)];
 const text = searchableText(rows);
 ---
 

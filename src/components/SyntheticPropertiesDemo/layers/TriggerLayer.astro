@@ -74,7 +74,7 @@ const targets = [
     SELECT id AS library_object_id, 'Size (centimeters)' AS name,
       GROUP_CONCAT(CONCAT(ROUND(size, 1 - FLOOR(LOG10(size))), 'cm') SEPARATOR ' by ') AS value
     FROM split_sizes WHERE #{'#{'}<span class="hot">where</span>{'}'} AND size &lt;&gt; '' GROUP BY id
-    UNION ALL  <span class="c">-- five more: meters, inches twice, feet-inches twice</span>
+    UNION ALL  <span class="c">-- five more, and the exact cm and m where they round</span>
   <span class="k">SQL</span>
 <span class="k">end</span></code></pre>
       </div>

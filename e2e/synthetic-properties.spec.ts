@@ -9,6 +9,7 @@ import {
   searchableText,
   sizeProperties,
   splitSizes,
+  storedSizeProperties,
 } from '../src/components/SyntheticPropertiesDemo/units';
 
 const PAGES = ['Synthetic Properties', 'Six Renderings', 'Trigger Bodies', 'Searchable Text'];
@@ -65,6 +66,26 @@ test.describe('unit maths', () => {
     expect(renderDimension(182, 'm')).toBe('1.8m');
     expect(renderDimension(74, 'cm')).toBe('74cm');
     expect(renderDimension(74, 'm')).toBe('0.74m');
+  });
+
+  test('the stored rows keep the exact size next to a rounded one', () => {
+    const rounded = storedSizeProperties('182x45');
+    expect(rounded.map((row) => row.value)).toEqual([
+      '180cm by 45cm',
+      '182cm by 45cm',
+      '1.8m by 0.45m',
+      '1.82m by 0.45m',
+      '72" by 18"',
+      '72in by 18in',
+      `6'0" by 1'6"`,
+      '6ft0in by 1ft6in',
+    ]);
+    const text = searchableText(rounded);
+    expect(matches(text, '182cm')).toBe(true);
+    expect(matches(text, '180cm')).toBe(true);
+    expect(matches(text, '1.82m')).toBe(true);
+    // Nothing rounds on the sample, so it keeps six rows.
+    expect(storedSizeProperties('160x80x74')).toEqual(sizeProperties('160x80x74'));
   });
 
   test('queries match whole phrases, not pieces of one', () => {
@@ -146,6 +167,12 @@ test('main page: a new size splits, fans out and changes which queries hit', asy
   await tool.locator('.query-input').fill('6ft7in');
   await expect(tool.locator('.query-result')).toHaveAttribute('data-hit', 'true');
   await expect(tool.locator('.text mark')).toHaveText('6ft7in');
+
+  // 182 reads 180cm, and a search for the size it was stored at still finds it.
+  await tool.locator('.size-input').fill('182x45');
+  await expect(tool.locator('.rendering[data-unit="cm"] .value')).toHaveText('180cm by 45cm');
+  await tool.locator('.query-input').fill('182cm');
+  await expect(tool.locator('.query-result')).toHaveAttribute('data-hit', 'true');
 });
 
 test('six renderings page: the carry is marked in the table', async ({ page }) => {

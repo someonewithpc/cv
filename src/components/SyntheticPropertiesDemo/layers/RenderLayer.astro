@@ -69,7 +69,8 @@ const feet = new Set(['ft-mark', 'ft-in']);
         <span>
           As shipped, centimetres and metres did not round (<code>182.5cm</code>, <code>1.825m</code>)
           and a rest of six inches or more already carried a foot, so 80cm read <code>3ft7in</code>.
-          The rules above are the corrected ones.
+          The rules above are the corrected ones. Where rounding moves a size, its exact
+          centimetres and metres go in the table too, so a search for <code>182cm</code> still finds it.
         </span>
       </p>
     </div>
