@@ -166,16 +166,17 @@ if (number != null) citePieces.push(null, `#${number}`);
     word-break: normal;
     hyphens: none;
     text-wrap: pretty;
+    /* The link's own underline would reach the text inside as well and draw a second, heavier
+       line a pixel under the one .title-text draws. */
+    text-decoration: none;
 
     /* The rule sits on the text, not on .title: an underline inherited from
        the wrapper would run under the mark as well in engines that paint it
        across a replaced inline. */
     .title-text {
       text-decoration: underline;
-      /* Drawn over the paper's own rule, one pixel down from the baseline, so a link inks in
-         the line it is written on instead of adding a second line just under it. */
       text-decoration-thickness: 1px;
-      text-underline-offset: 0;
+      text-underline-offset: 0.125em;
     }
 
     /* A margin rather than a space in the markup: a space would take the
