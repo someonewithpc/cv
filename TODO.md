@@ -8,7 +8,7 @@
   - [ ] Collapse after delay (prefers-reduced-motion)
   - [x] Avoid transition to already active theme (#4)
   - [x] Theme Picker animation switching doesn't work (#4)
-  - [x] Desk base colour matches the wood veneer's own average (#145)
+  - [~] Desk base colour matches the wood veneer's own average (#145): reverted, it moved the loaded wood; needs a pre-composited tile per theme to do without touching the wood
 - [x] Tech icon cloud
   - [x] SVG icon in light mode broken
   - [x] More tools (Cursor, Claude Code, Cloudflare, AWS, K8s, LE, TreeSitter, …)
