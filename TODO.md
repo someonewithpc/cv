@@ -60,6 +60,7 @@
     - [x] Cards run down to the title block, intro and rule beside it (#153)
   - [x] GNU social event dispatch and module discovery (SH-07)
   - [x] Fediverse playground compose graph (SH-09)
+    - [x] Framed as a federated network, compose file trimmed and coloured, sheets 3 and 4 redrawn (#129)
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
