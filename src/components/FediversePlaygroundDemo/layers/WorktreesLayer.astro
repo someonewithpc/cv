@@ -114,7 +114,7 @@ const ladder = RUNGS.map((why, rung) => ({
   }
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+    font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   }
 }
 
@@ -144,7 +144,7 @@ code {
 }
 
 .caption {
-  font-size: 0.625em;
+  font-size: 0.6875em;
   color: var(--ink-muted);
 }
 
@@ -223,7 +223,7 @@ code {
   }
 
   .held {
-    font-size: 0.85em;
+    font-size: 0.9em;
     color: var(--ink-muted);
   }
 

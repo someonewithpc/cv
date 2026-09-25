@@ -123,10 +123,12 @@ const placed = steps.map((step, index) => {
   }
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+    /* A phone's sheet: the type keeps to 8px or more there, so the notes under the figure go,
+       as they do on a short sheet. */
+    font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
 
     .rules {
-      display: grid;
+      display: none;
     }
   }
 }
@@ -246,7 +248,7 @@ code {
     padding-inline: 0.25em;
     background: var(--surface-raised);
     font-family: $code-font;
-    font-size: 0.95em;
+    font-size: 1em;
   }
 }
 
@@ -258,10 +260,6 @@ code {
   padding-top: 0.5em;
   border-top: 1px solid var(--line);
 
-  :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   div {
     display: flex;
     flex-direction: column;
@@ -269,7 +267,7 @@ code {
   }
 
   dt {
-    font-size: 0.625em;
+    font-size: 0.6875em;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-muted);
