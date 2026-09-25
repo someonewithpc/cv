@@ -171,3 +171,66 @@ test('doctor page: the report keeps the real layout and says what is not on PATH
   await expect(report).toContainText('astro-ls: found');
   await expect(report).toContainText('vue: not found (tried vue-language-server, vls)');
 });
+
+for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+  test(`depth page: every level stands out from the paper and from the next level, ${theme} theme`, async ({ page }) => {
+    await page.addInitScript((id) => {
+      try {
+        localStorage.setItem('cv-theme', id);
+      } catch {
+        /* ignore */
+      }
+    }, theme);
+    await page.goto('/');
+
+    const scale = webTsStack(page).locator('.scale');
+    const measured = await scale.evaluate((plate) => {
+      // Any CSS colour to sRGB bytes, the way it lands on the screen.
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d', { willReadFrequently: true })!;
+      const bytes = (color: string) => {
+        context.clearRect(0, 0, 1, 1);
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const linear = (v: number) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      const luminance = (c: number[]) => 0.2126 * linear(c[0]) + 0.7152 * linear(c[1]) + 0.0722 * linear(c[2]);
+      const contrast = (a: number[], b: number[]) => {
+        const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+      };
+      const oklab = (c: number[]) => {
+        const [r, g, b] = c.map(linear);
+        const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+        const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+        const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+        return [
+          0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+          1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+          0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+        ];
+      };
+      const distance = (a: number[], b: number[]) => {
+        const [p, q] = [oklab(a), oklab(b)];
+        return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+      };
+
+      const paper = bytes(getComputedStyle(plate).backgroundColor);
+      const levels = [...plate.querySelectorAll('.swatch')].map((swatch) => bytes(getComputedStyle(swatch).backgroundColor));
+      return levels.map((level, depth) => ({
+        depth,
+        onPaper: contrast(level, paper),
+        fromPrevious: depth ? distance(level, levels[depth - 1]) : null,
+      }));
+    });
+
+    expect(measured).toHaveLength(6);
+    for (const { depth, onPaper, fromPrevious } of measured) {
+      expect(onPaper, `level ${depth} against the paper`).toBeGreaterThanOrEqual(3);
+      // About one just noticeable difference in OKLab is 0.02.
+      if (fromPrevious !== null) expect(fromPrevious, `level ${depth} against level ${depth - 1}`).toBeGreaterThanOrEqual(0.02);
+    }
+  });
+}
