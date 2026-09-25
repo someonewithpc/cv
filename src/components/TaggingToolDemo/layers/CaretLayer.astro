@@ -86,7 +86,7 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+    font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   }
 }
 
@@ -139,7 +139,7 @@ header {
   }
 
   .index {
-    font-size: 0.625em;
+    font-size: max(0.5rem, 0.625em);
     color: var(--ink-faint);
   }
 
@@ -167,7 +167,7 @@ header {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.375em;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   color: var(--ink-muted);
 
   strong {

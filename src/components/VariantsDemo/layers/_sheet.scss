@@ -16,7 +16,7 @@
     color: var(--ink);
 
     :global([data-sheet-orientation='portrait']) & {
-      font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+      font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
     }
   }
 
@@ -43,7 +43,7 @@
 
   .eyebrow {
     font-family: monospace, system-ui;
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-muted);
@@ -72,7 +72,7 @@
     }
 
     dt {
-      font-size: 0.75em;
+      font-size: max(0.5rem, 0.75em);
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--ink-muted);

@@ -202,7 +202,7 @@ const rows = {
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: min(1rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)));
+    font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   }
 
   :global(.tagging-tool) {

@@ -98,7 +98,7 @@ $op-slot: 0.85em;
   display: grid;
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.8rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
+  font-size: clamp(0.75rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: #f4f0ea;
 
   /* A wide sheet has room this coefficient left empty: the timeline stopped under half
@@ -107,7 +107,7 @@ $op-slot: 0.85em;
      Keyed on the stack's attribute, not the width query, for the same reason the
      orientation is: see Stack.astro's script. */
   :global([data-sheet-width='wide']) & {
-    font-size: clamp(0.8rem, 0.034 * min(var(--sheet-inline), var(--sheet-block)), 1.5rem);
+    font-size: clamp(0.75rem, 0.034 * min(var(--sheet-inline), var(--sheet-block)), 1.5rem);
   }
 
   /* The timeline runs down the sheet, and portrait stacks a note under it —
@@ -137,7 +137,7 @@ header {
   gap: 0.08em;
 
   .eyebrow {
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     opacity: 0.7;
@@ -168,7 +168,7 @@ $lane: 9.75em;
   box-sizing: border-box;
 
   figcaption {
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -182,7 +182,7 @@ $lane: 9.75em;
     list-style: none;
     display: grid;
     gap: 0.25em;
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     line-height: 1.25;
   }
 
@@ -231,7 +231,7 @@ $lane: 9.75em;
 
   span {
     opacity: 0.7;
-    font-size: 0.875em;
+    font-size: max(0.5rem, 0.875em);
   }
 }
 
@@ -258,7 +258,7 @@ $lane: 9.75em;
 }
 
 .batch-label {
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -281,7 +281,7 @@ $lane: 9.75em;
   border: 1px solid #555;
   background: color-mix(in oklab, #000 22%, transparent);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   line-height: 1.2;
   color: #e8e4dc;
 }
@@ -293,7 +293,7 @@ $lane: 9.75em;
   border-radius: 0.22em;
   background: color-mix(in oklab, $accent 40%, #333);
   color: #e8f5b8;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;

@@ -86,7 +86,7 @@ bootIslands('[data-editor-layer-island]', boot);
   align-items: center;
 
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.62rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
+  font-size: clamp(0.625rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: #f4f0ea;
 
   /* The chrome needs 32em by 60em even in its stacked layout, which is more of a phone
@@ -98,13 +98,13 @@ bootIslands('[data-editor-layer-island]', boot);
      stack's attribute too, and written above portrait so that one still has the last
      word: a portrait sheet is narrow by definition, so the two never both apply. */
   :global([data-sheet-width='wide']) & {
-    font-size: clamp(0.85rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.25rem);
+    font-size: clamp(0.875rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.25rem);
   }
 
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5em;
-    font-size: clamp(0.8rem, 0.04 * min(var(--sheet-inline), var(--sheet-block)), 1.15rem);
+    font-size: clamp(0.75rem, 0.04 * min(var(--sheet-inline), var(--sheet-block)), 1.125rem);
   }
 }
 
@@ -127,7 +127,7 @@ header {
   gap: 0.15em;
 
   .eyebrow {
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     opacity: 0.7;
@@ -136,7 +136,7 @@ header {
 
 p {
   margin: 0;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   opacity: 0.85;
 }
 
@@ -145,7 +145,7 @@ ol {
   padding-left: 1.15em;
   display: grid;
   gap: 0.3em;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   opacity: 0.85;
 }
 
@@ -160,7 +160,7 @@ code {
   list-style: none;
   display: grid;
   gap: 0.25em;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   border-top: 1px solid color-mix(in oklab, #f4f0ea 22%, transparent);
 
   li {

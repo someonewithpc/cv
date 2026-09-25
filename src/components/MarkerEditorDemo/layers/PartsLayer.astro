@@ -147,7 +147,7 @@ $op-slot: 1.1em;
   display: grid;
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.8rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1.05rem);
+  font-size: clamp(0.75rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: #f4f0ea;
 
   // A wide sheet has room this coefficient left empty: the card stopped just past half
@@ -155,13 +155,13 @@ $op-slot: 1.1em;
   // breakpoint the title block sits far enough left that a bigger card runs under it.
   // Keyed on the stack's attribute, not the width query: see Stack.astro's script.
   :global([data-sheet-width='wide']) & {
-    font-size: clamp(0.8rem, 0.03 * min(var(--sheet-inline), var(--sheet-block)), 1.375rem);
+    font-size: clamp(0.75rem, 0.03 * min(var(--sheet-inline), var(--sheet-block)), 1.375rem);
   }
 
   // Keyed on the stack's attribute, not the orientation query: see Stack.astro's script.
   :global([data-sheet-orientation='portrait']) & {
     width: 100%;
-    font-size: clamp(0.7rem, 0.036 * var(--sheet-inline), 1rem);
+    font-size: clamp(0.75rem, 0.036 * var(--sheet-inline), 1rem);
   }
 }
 
@@ -191,7 +191,7 @@ header {
   gap: 0.08em;
 
   .eyebrow {
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     opacity: 0.7;
@@ -220,7 +220,7 @@ header {
 }
 
 .caption {
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   font-weight: 600;
   opacity: 0.8;
   text-align: center;
@@ -343,7 +343,7 @@ header {
 }
 
 .serialize-label {
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -391,7 +391,7 @@ header {
 }
 
 .flow-title {
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -426,7 +426,7 @@ header {
   code {
     display: block;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     line-height: 1.4;
     color: #e8e4dc;
     white-space: pre;
