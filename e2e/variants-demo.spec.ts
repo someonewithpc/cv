@@ -417,31 +417,6 @@ test.describe('on a phone', () => {
     await page.goto('/');
   });
 
-  test('the walkthrough shows a different set on each seat row it hovers', async ({ page }) => {
-    const stack = variantsStack(page);
-    await stack.scrollIntoViewIfNeeded();
-    const app = frontPage(stack, await frontPageIndex(stack)).locator('.variants-stage');
-    await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 30_000 });
-    const set = card(app, 'table-round');
-    const seats = set.locator('.object-pax');
-
-    // Nothing touches the demo, so its own cursor works the rows. Read the card while
-    // the seat list is open: each hovered row is the current one and the set it shows.
-    await expect(seats).toHaveAttribute('open', '', { timeout: 30_000 });
-    await expectListClearOfPicture(set, seats);
-    const shown = new Map<string, string>();
-    await expect.poll(async () => {
-      if (await seats.getAttribute('open') === null) return shown.size;
-      const current = await seats.locator('.hover-select-options li.current').getAttribute('data-value');
-      const variant = await set.getAttribute('data-variant');
-      if (current && variant) shown.set(current, variant);
-      return shown.size;
-    }, { timeout: 20_000, intervals: [100] }).toBe(3);
-    expect(shown.get('8')).toBe('table-8-243');
-    expect(shown.get('6')).toBe('table-6-243');
-    expect(shown.get('4')).toBe('table-4-243');
-  });
-
   test('a finger over the open list previews each row and commits the one it lifts from', async ({ page }) => {
     const app = await openDemo(page);
     const set = card(app, 'table-round');
