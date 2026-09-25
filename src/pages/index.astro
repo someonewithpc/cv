@@ -97,9 +97,9 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
         </Callout>
         <Callout letter="H" title="Schema driver" titleJp="スキーマドライバー" scale="1:1" headingId="detail-h" cardSide="end">
           <TitleCard slot="card" title="schemaDef → Doctrine ORM" medium="PHP, Symfony, Doctrine" year="2020">
-            GNU social v2 described each table as a PHP array on its class. For v3 a Doctrine
-            metadata driver reads those same arrays, so one definition serves the ORM, the
-            schema tool and the PHPStan extension that types DB::find('note') as Note.
+            GNU social is a federated social network server, written in PHP. Each of its
+            tables is one PHP array on the entity class, and a Doctrine driver turns that
+            array into the ORM mapping, the database schema and the types PHPStan checks.
           </TitleCard>
           <SchemaDefDemo />
         </Callout>

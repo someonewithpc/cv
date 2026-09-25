@@ -42,6 +42,12 @@ const panes = [
 
 <div class="schemadef-demo" data-schemadef-demo data-schemadef-sheet>
   <div class="schemadef" data-schemadef data-keys={JSON.stringify(keys)}>
+    <p class="intro">
+      GNU social is a federated social network server. Each table is a PHP array on its entity
+      class, and this driver turns that array into Doctrine's mapping, printed here as the SQL
+      it creates.
+    </p>
+
     <div class="panes">
       {panes.map((pane) => {
         let first = true;
@@ -133,9 +139,15 @@ bootIslands('[data-schemadef-demo]', (host) => {
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 0.5em;
   color: var(--ink);
+}
+
+.intro {
+  margin: 0;
+  font-size: fs(0.625);
+  line-height: 1.4;
 }
 
 .panes {
