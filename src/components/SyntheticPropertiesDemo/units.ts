@@ -45,7 +45,7 @@ export type Dimension = {
 };
 
 /** What the recursive CTE does: SUBSTRING_INDEX takes the head up to the first `x`, the
-    remainder recurses, one row per piece. MySQL's default collation matches `X` too. */
+    remainder recurses, one row per piece. MariaDB's default collation matches `X` too. */
 export function splitSizes(size: string): Dimension[] {
   const pieces: string[] = [];
   let rest = size;
@@ -67,7 +67,7 @@ export function splitSizes(size: string): Dimension[] {
     });
 }
 
-/** MySQL's ROUND(x, places): half away from zero, and a negative `places` rounds to tens
+/** MariaDB's ROUND(x, places): half away from zero, and a negative `places` rounds to tens
     and hundreds the way ROUND(182, -1) gives 180. */
 function round(value: number, places = 0) {
   const scale = 10 ** places;
