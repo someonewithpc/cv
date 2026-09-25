@@ -143,7 +143,11 @@ bootIslands('[data-synthetic-demo]', boot);
 <style lang="scss">
 @use "./sheet" as *;
 
+/* The tool fills the sheet inside the shared --demo-inset (Page.astro), under the title
+   block. The 2px keeps the frame line clear. */
 :global(article.technical-drawing-stack > * > section .content:has(.synthetic-demo)) {
+  --demo-pad: calc(2px + var(--demo-inset, 0px));
+
   place-self: stretch;
   width: auto;
   max-width: 100%;
@@ -152,14 +156,13 @@ bootIslands('[data-synthetic-demo]', boot);
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
+  padding: var(--demo-pad);
 }
 
 .synthetic-demo {
-  @include sheet-content;
-  @include clear-of-title-block;
-
-  display: grid;
-  place-items: center;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
   height: 100%;
   min-height: 0;
 }
@@ -167,23 +170,35 @@ bootIslands('[data-synthetic-demo]', boot);
 .synthetic-tool {
   @include sheet-type(0.03, 0.031);
 
+  --gutter: 1em;
+
+  position: relative;
   box-sizing: border-box;
-  width: min(100%, 64em);
-  max-height: 100%;
-  /* A phone-height sheet is the one place the three stages may not all fit; the panel
-     scrolls rather than run under the title block. */
+  width: 100%;
+  height: 100%;
   overflow-y: auto;
   display: grid;
+  align-content: start;
   gap: 0.75em;
-  padding: 0.875em 1em;
+  padding: 0.875em var(--gutter);
+  /* The title block lies over the tool's bottom-right corner, so the stages scroll on past
+     it by the block's height and the last line can be read clear of it. */
+  padding-bottom: calc(var(--gutter) + var(--title-block-block, 0px));
   border: 1px solid var(--line-strong);
   border-radius: 0.5em;
   background: var(--surface-raised);
   outline: none;
 
   :global([data-sheet-orientation='portrait']) & {
+    --gutter: 0.75em;
+
     gap: 0.5em;
-    padding: 0.625em 0.75em;
+    padding-top: 0.625em;
+  }
+
+  /* Portrait gives the title block a row of its own. */
+  @container technical-drawing (orientation: portrait) {
+    padding-bottom: var(--gutter);
   }
 }
 
