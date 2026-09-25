@@ -338,14 +338,14 @@ main {
     --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
 
     /* On the desk the mat is a thin frame round what lies on it: 0.75rem of ruled mat past
-       the boundary, then a 0.75rem rim. The boundary stands 1.5rem off the view where the
-       desk is narrow, which is all of the rim and the ruled band, and opens to 3rem, the
-       clearance it keeps above and below the view, over the ten rem after the folio
-       appears. Each side of it takes 0.15 of every pixel the window gains and the folio lane
-       takes the rest, so neither the mat nor the numeral jumps at any width. */
+       the boundary, then a 0.75rem rim. The boundary stands 1.75rem off the view where the
+       desk is narrow, the least that holds a stack's hint line above or under it
+       (Callout.astro), and opens to 3rem after the folio appears. Each side of it takes 0.15
+       of every pixel the window gains and the folio lane takes the rest, so neither the mat
+       nor the numeral jumps at any width. */
     --mat-rim: 0.75rem;
     --mat-clear: 0.75rem;
-    --mat-boundary: clamp(1.5rem, 1.5rem + (100vw - 76rem) * 0.15, 3rem);
+    --mat-boundary: clamp(1.75rem, 1.75rem + (100vw - 76rem) * 0.15, 3rem);
 
     row-gap: var(--desk-gap);
     padding-block: var(--desk-gap);

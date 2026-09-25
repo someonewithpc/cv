@@ -55,18 +55,18 @@ const hasCard = Astro.slots.has('card');
 <style lang="scss">
 .callout {
   --callout-line: color-mix(in oklch, var(--ink), transparent 30%);
-  --callout-pad: 1.5rem;
-  /* The clearance above and below the view. It has to take a line of text the view writes
-     outside its own box, the way a drawing stack writes its peel hints above and under the
-     sheet. */
-  --callout-room: calc(var(--callout-pad) + 1.5rem);
+  /* The least clearance that takes a line of text the view writes outside its own box, the
+     way a drawing stack writes its peel hints above and under the sheet. */
+  --callout-pad: 1.75rem;
   /* How far the side lines stand out past the column the callout is given. They are drawn in
      the mat's slack rather than padded in, because a view made narrower scales its drawing
      down and the drawing's own labels start to collide. On the desk the mat says how far
-     (--mat-boundary, Layout.astro): once the window is wide enough it is the full clearance,
-     so the boundary stands the same distance off the view all round. Off the desk the mat
-     has only its rim, and the sides keep to --callout-pad. */
+     (--mat-boundary, Layout.astro). Off the desk the mat has only its rim, and the sides keep
+     to --callout-pad. */
   --callout-out: var(--mat-boundary, var(--callout-pad));
+  /* Above and below the view the boundary stands as far off as it does at the sides, so it
+     is the same distance from the view all round. */
+  --callout-room: var(--callout-out);
   --callout-lead: 1.75rem;
   /* The label's box; the bubble sits at its bottom, so the leader below it has a known length. */
   --callout-label: 3.75rem;
@@ -86,6 +86,9 @@ const hasCard = Astro.slots.has('card');
     --callout-pad: 0.375rem;
     --callout-lead: 1.5rem;
     --callout-label: 3rem;
+    /* That is too close for the line a drawing stack writes above or under its sheet, its peel
+       hint, so the stack writes it on the mat past the boundary instead (Stack.astro). */
+    --hint-clear: calc(var(--callout-pad) + 0.25rem);
   }
 }
 
