@@ -123,3 +123,4 @@
 - [x] Section numbers crowding the cutting mat on wide screens (#157)
 - [ ] N5 Japanese glosses across the page (#148)
 - [x] Copy says what every theme and layout shows: no blue sheets in Forest, no click on a phone (#158)
+- [ ] Show the demo title card's text on narrower desks (#151)
