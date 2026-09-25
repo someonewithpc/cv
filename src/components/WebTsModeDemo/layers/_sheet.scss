@@ -37,12 +37,13 @@ $sheet-margin: 0.75em;
   --face-constant: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 80));
   --face-literal: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 100));
 
-  // Which parser owns a range, for the outlines and their labels.
+  // Which parser owns a range, for the outlines, the brackets and their labels. Each is a
+  // quarter of the way to the ink, which keeps it 3:1 or more on the paper in every theme.
   --lang-astro: var(--neutral-10);
-  --lang-html: oklch(from var(--accent-11) l max(c, 0.1) calc(h + 150));
-  --lang-tsx: var(--blueprint-11);
-  --lang-scss: var(--accent-11);
-  --lang-css: var(--accent-11);
+  --lang-html: color-mix(in oklch, oklch(from var(--accent-11) l max(c, 0.1) calc(h + 150)), var(--buffer-ink) 25%);
+  --lang-tsx: color-mix(in oklch, var(--blueprint-11), var(--buffer-ink) 25%);
+  --lang-scss: color-mix(in oklch, var(--accent-11), var(--buffer-ink) 25%);
+  --lang-css: var(--lang-scss);
 }
 
 // The selector face at nesting level --depth, after web-ts-treesit--css-selector-face-for-depth.
