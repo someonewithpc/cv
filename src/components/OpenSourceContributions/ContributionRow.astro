@@ -63,7 +63,7 @@ if (number != null) citePieces.push(null, `#${number}`);
   </ul>
 
   <div class="meta">
-    <cite>{citePieces.map((piece) => (piece === null ? <wbr /> : piece))}</cite>
+    <cite>{citePieces.map((piece) => (piece === null ? <wbr /> : <span class="word">{piece}</span>))}</cite>
 
     <a class="title" href={url} rel="noopener noreferrer" target="_blank"><span class="title-text"><BacktickText text={title} /></span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" /><span class="sr-only"> ({repository}), opens in a new tab</span></a>
   </div>
@@ -147,7 +147,12 @@ if (number != null) citePieces.push(null, `#${number}`);
     font-family: monospace, system-ui;
     font-style: normal;
     color: var(--ink-muted);
-    overflow-wrap: break-word;
+
+    /* Only at the declared points: with overflow-wrap on, bootstrap-vue-next and the react-native
+       names broke at a hyphen mid-word on every width from 768 to 1728. */
+    .word {
+      white-space: nowrap;
+    }
   }
 
   .title {
@@ -280,6 +285,15 @@ if (number != null) citePieces.push(null, `#${number}`);
 
     .files {
       color: var(--accent-text);
+    }
+  }
+
+  /* Narrower than the longest name, react-native-template-typescript at 12px beside its marks,
+     the words give up nowrap and break wherever they must, so a 224px frame still fits. */
+  @container (max-width: 17rem) {
+    cite .word {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
   }
 
