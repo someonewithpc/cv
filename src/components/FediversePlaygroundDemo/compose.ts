@@ -1,7 +1,8 @@
 // src/compose/builder.ts and the two recipes in src/recipes/gnu-social.ts, ported to run in a
-// browser. What is left out is what touches the disk: each recipe's configure() (nginx rewrite,
-// certificates, .env.local) and the file write. The merge, the shared-service dedupe, the web
-// volumes and depends_on, and the validation are the builder's own, line for line.
+// browser, with a Mastodon recipe the tool does not have yet (see `mastodon` below). What is
+// left out is what touches the disk: each recipe's configure() (nginx rewrite, certificates,
+// .env.local) and the file write. The merge, the shared-service dedupe, the web volumes and
+// depends_on, and the validation are the builder's own, line for line.
 
 import { listInstances, type InstanceContext, type PlaygroundConfig } from './config';
 
@@ -189,13 +190,79 @@ const gnuSocialV2: Recipe = {
   },
 };
 
-/** registry.ts's FUTURE_RECIPES: software it names, with a source repository, and has no recipe for yet. */
-export const PLANNED_RECIPES = ['mastodon', 'lemmy', 'friendica', 'gnu-social-v1'] as const;
+const mastodonEnvironment = (instance: InstanceContext) => [
+  'RAILS_ENV=production',
+  `LOCAL_DOMAIN=${instance.hostname}`,
+  'DB_HOST=db',
+  'DB_USER=postgres',
+  `DB_NAME=${instance.instance_id}`,
+  `DB_PASS=${DEV_PASSWORD}`,
+  'REDIS_HOST=redis',
+];
 
-/** The registry holds these two and nothing else. */
+/**
+ * The tool's registry names Mastodon, on github.com/mastodon/mastodon at main, and has no recipe
+ * for it yet. This one is Mastodon's own docker-compose.yml fitted to the GNU social recipes:
+ * its web (puma), streaming and sidekiq services, built from the worktree as that file's
+ * commented `build:` lines do, on the playground's shared Postgres, Redis and nginx instead of
+ * its own. The one-shot installer runs `rails db:setup`, the step Mastodon's docs run by hand
+ * before `up`, and nginx waits on web and streaming, the two it proxies to.
+ */
+const mastodon: Recipe = {
+  id: 'mastodon',
+  displayName: 'Mastodon',
+  dependencies: [
+    { type: 'web', shared: true },
+    { type: 'db', shared: true },
+    { type: 'redis', shared: true },
+  ],
+  buildContribution: (instance) => {
+    const installer = installServiceName(instance.instance_id);
+    const streaming = `${instance.instance_id}-streaming`;
+    const sidekiq = `${instance.instance_id}-sidekiq`;
+    const data = {
+      db: { condition: 'service_healthy' },
+      redis: { condition: 'service_started' },
+    };
+    const process = (build: unknown, command: string) => ({
+      build,
+      restart: 'always',
+      depends_on: { ...data, ...completedInstall(installer) },
+      environment: mastodonEnvironment(instance),
+      volumes: [`./${instance.worktree}/public/system:/mastodon/public/system`],
+      command,
+    });
+
+    return {
+      appServiceNames: [instance.instance_id, streaming],
+      services: {
+        [installer]: {
+          build: instance.worktree,
+          restart: 'no',
+          depends_on: data,
+          environment: mastodonEnvironment(instance),
+          command: 'bundle exec rails db:setup',
+        },
+        [instance.instance_id]: process(instance.worktree, 'bundle exec puma -C config/puma.rb'),
+        [streaming]: process({ context: instance.worktree, dockerfile: 'streaming/Dockerfile' }, 'node ./streaming/index.js'),
+        [sidekiq]: process(instance.worktree, 'bundle exec sidekiq'),
+      },
+      webVolumes: [
+        `./files/${instance.instance_id}.nginx.conf:/etc/nginx/conf.d/${instance.instance_id}.nginx.conf`,
+        `./files/${instance.hostname}/:/etc/letsencrypt/live/${instance.hostname}`,
+      ],
+    };
+  },
+};
+
+/** registry.ts's FUTURE_RECIPES, less Mastodon, which the sheet draws a recipe for. */
+export const PLANNED_RECIPES = ['lemmy', 'friendica', 'gnu-social-v1'] as const;
+
+/** The registry's two GNU social recipes, and Mastodon beside them. */
 export const RECIPES: Record<string, Recipe> = {
   'social-v3': gnuSocialV3,
   'social-v2': gnuSocialV2,
+  mastodon,
 };
 
 function getRecipe(software: string): Recipe {

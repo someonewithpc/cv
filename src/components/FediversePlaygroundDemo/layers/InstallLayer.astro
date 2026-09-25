@@ -6,7 +6,7 @@ import { renderSequence, type Lane, type Layout, type Step } from '../sequence';
 // The lanes and the conditions on the arrows come out of the compose file the builder writes
 // for Alice alone; the steps inside the installer are install/social-v3.sh's own, and the last
 // row is the server block the recipe writes for her.
-const compose = buildComposeFile(withEnabled(exampleConfig, { 'gnusocial-bob': false, 'gnusocial-v2': false }));
+const compose = buildComposeFile(withEnabled(exampleConfig, { 'gnusocial-bob': false, 'gnusocial-v2': false, 'mastodon-carol': false }));
 const alice = listInstances(exampleConfig).find((instance) => instance.key === 'gnusocial-alice')!;
 const app = alice.instance_id;
 const installer = `${app}-install`;

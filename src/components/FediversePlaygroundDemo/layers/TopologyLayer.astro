@@ -13,8 +13,9 @@ const yaml = composeHtml(composeView(compose));
 
 const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) => ({
   key,
-  short: key.replace(/^gnusocial-/, ''),
-  meta: `${instance.software} · ${instance.hostname}`,
+  short: key.replace(/^(gnusocial|mastodon)-/, ''),
+  software: instance.software,
+  hostname: instance.hostname,
 }));
 ---
 
@@ -36,11 +37,11 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
       </p>
       <fieldset>
         <legend class="sr-only">instances</legend>
-        {toggles.map(({ key, short, meta }) => (
+        {toggles.map(({ key, short, software, hostname }) => (
           <label class="toggle">
             <input type="checkbox" name={key} checked={initiallyEnabled[key]} />
             <span class="name">{short}</span>
-            <span class="meta">{meta}</span>
+            <span class="meta"><span>{software}</span><span class="host">{hostname}</span></span>
           </label>
         ))}
       </fieldset>
@@ -195,8 +196,14 @@ fieldset {
   grid-template-columns: minmax(0, 1fr);
   gap: 0.25em;
 
+  /* Four servers: a short landscape sheet takes them two a row, and portrait all four in one,
+     each with its software over its hostname where there is room. */
+  :global([data-sheet-width='narrow']) & {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -247,6 +254,34 @@ fieldset {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    .host::before {
+      content: " · ";
+    }
+  }
+
+  :global(:is([data-sheet-width='narrow'], [data-sheet-orientation='portrait'])) & .meta {
+    display: grid;
+
+    > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .host::before {
+      content: none;
+    }
+  }
+
+  /* A phone's column is too narrow for a hostname; the graph's box carries it. */
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-areas:
+      "box name"
+      "meta meta";
+
+    .host {
+      display: none;
+    }
   }
 
   &:has(input:not(:checked)) .name {

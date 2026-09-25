@@ -5,12 +5,13 @@
 // the shared data services along the bottom. Every edge comes out of depends_on. An app's edges
 // to the data services leave by the gutters beside its column and meet the service on a bus,
 // the way a schematic joins wires, so shared services read as one box however many ask for it.
+// Mastodon runs three processes where GNU social runs one: its box names all three, as an
+// installer's names its `-install`, and their edges are the app's own.
 //
 // The drawing comes in two widths, with the same rows. Every box puts its small print one part
-// a line and an installer's name on two, so the type can stay at 8px or more on the sheet. The
-// landscape one, 400 wide, fills the column beside the config panel on a wide sheet. A portrait
-// sheet is about 340 wide, so the portrait one is laid out at that width, and scaling it barely
-// shrinks the type.
+// a line and splits its names at the hyphen, so the type can stay at 8px or more on the sheet.
+// The landscape one fills the column beside the config panel on a wide sheet. The portrait one
+// is laid out near a phone's sheet width, so scaling it barely shrinks the type.
 
 import type { PlaygroundConfig } from './config';
 import { dependenciesOf, type ComposeFile, type Service } from './compose';
@@ -31,33 +32,21 @@ type Metrics = {
   row: { web: number; app: number; install: number; data: number };
   /** Where each data service's bus runs. */
   lane: Record<'db' | 'redis' | 'mariadb', number>;
-  /** Box heights, from the lines each kind carries in this layout. */
-  height: Record<Kind, number>;
+};
+
+const ROWS = {
+  row: { web: 4, app: 62, install: 144, data: 248 },
+  lane: { db: 203, redis: 217, mariadb: 231 },
 };
 
 const METRICS: Record<Layout, Metrics> = {
-  landscape: {
-    w: 400,
-    h: 310,
-    column: 130,
-    box: 120,
-    web: 140,
-    gutter: 64,
-    row: { web: 8, app: 76, install: 140, data: 262 },
-    lane: { db: 205, redis: 221, mariadb: 237 },
-    height: { web: 40, app: 40, install: 51, shared: 40 },
-  },
-  portrait: {
-    w: 340,
-    h: 310,
-    column: 110,
-    box: 104,
-    web: 120,
-    gutter: 55,
-    row: { web: 8, app: 76, install: 140, data: 262 },
-    lane: { db: 205, redis: 221, mariadb: 237 },
-    height: { web: 40, app: 40, install: 51, shared: 40 },
-  },
+  landscape: { w: 528, h: 290, column: 128, box: 118, web: 140, gutter: 62, ...ROWS },
+  portrait: { w: 400, h: 290, column: 98, box: 92, web: 120, gutter: 47.5, ...ROWS },
+};
+
+/** The services a recipe runs beside its app, each drawn as a name in the app's box. */
+const COMPANIONS: Record<string, readonly string[]> = {
+  mastodon: ['streaming', 'sidekiq'],
 };
 
 const DATA = [
@@ -96,38 +85,45 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const labels: string[] = [];
   const marker = (name: string) => `fediverse-${name}-${layout}`;
 
-  const columnX = (index: number) => (m.w - 3 * m.column) / 2 + m.column / 2 + index * m.column;
+  const instances = Object.values(config.instances);
+  const columnX = (index: number) => (m.w - instances.length * m.column) / 2 + m.column / 2 + index * m.column;
   const webX = m.w / 2;
 
-  /** The lines in a box: its name, an installer's split at its last hyphen, then the small print, one part a line. */
-  const linesOf = (kind: Kind, label: string, sub: string) => {
-    const names = kind === 'install' && label.lastIndexOf('-') > 0
-      ? [label.slice(0, label.lastIndexOf('-')), label.slice(label.lastIndexOf('-'))]
-      : [label];
+  /** The lines in a box: its names, an installer's split at its last hyphen, then the small print, one part a line. */
+  const linesOf = (kind: Kind, names: string[], sub: string) => {
+    const split = kind === 'install' && names[0].lastIndexOf('-') > 0
+      ? [names[0].slice(0, names[0].lastIndexOf('-')), names[0].slice(names[0].lastIndexOf('-'))]
+      : names;
     const subs = sub.split(' · ');
-    return [...names.map((text) => ({ text, kind: 'label' as const })), ...subs.map((text) => ({ text, kind: 'sub' as const }))];
+    return [...split.map((text) => ({ text, kind: 'label' as const })), ...subs.map((text) => ({ text, kind: 'sub' as const }))];
   };
+
+  /** A box's height from the lines it carries when emitted, so a ghost keeps its size. */
+  const heightOf = (lines: { kind: keyof typeof LINE }[]) => lines.reduce((total, line) => total + LINE[line.kind], 8);
 
   const box = (
     id: string,
     kind: Kind,
     x: number,
     y: number,
-    label: string,
+    label: string | string[],
     sub: string,
-    { emitted, fresh: isNew }: { emitted: boolean; fresh: boolean },
+    { emitted, fresh: isNew, also = [] }: { emitted: boolean; fresh: boolean; also?: string[] },
   ) => {
     const w = kind === 'web' ? m.web : m.box;
+    const names = Array.isArray(label) ? label : [label];
     const classes = ['node', kind, emitted ? 'emitted' : 'ghost', isNew && emitted ? 'fresh' : ''].filter(Boolean).join(' ');
-    const lines = linesOf(kind, label, emitted ? sub : 'not emitted');
+    const height = heightOf(linesOf(kind, names, sub));
+    const lines = linesOf(kind, names, emitted ? sub : 'not emitted');
     let baseline = y + 12.5;
     const text = lines.map((line) => {
       const markup = `<text class="${line.kind}" x="${x}" y="${baseline}">${escape(line.text)}</text>`;
       baseline += LINE[line.kind];
       return markup;
     });
-    return `<g class="${classes}" data-service="${escape(id)}">`
-      + `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${m.height[kind]}" rx="3" />`
+    const companions = also.length ? ` data-also="${escape(also.join(' '))}"` : '';
+    return `<g class="${classes}" data-service="${escape(id)}"${companions}>`
+      + `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${height}" rx="3" />`
       + text.join('')
       + '</g>';
   };
@@ -140,14 +136,23 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     return `${under}<path class="edge ${condition}" d="${d}"${head} />`;
   };
 
-  const instances = Object.values(config.instances);
   const appX = new Map(instances.map((instance, index) => [instance.instance_id, columnX(index)]));
   const installX = new Map(instances.map((instance, index) => [`${instance.instance_id}-install`, columnX(index)]));
-  const dataSlot = new Map(DATA.map((data, index) => [data.id as string, { ...data, lane: m.lane[data.id], x: columnX(index) }]));
+  // The data services sit centred under the columns, one column apart.
+  const dataSlot = new Map(DATA.map((data, index) => [data.id as string, { ...data, lane: m.lane[data.id], x: webX + (index - 1) * m.column }]));
+
+  /** Each instance's services beside its app, and the height of its app's box. */
+  const companionsOf = (instance: (typeof instances)[number]) =>
+    (COMPANIONS[instance.software] ?? []).map((suffix) => `${instance.instance_id}-${suffix}`);
+  const appSub = (instance: (typeof instances)[number]) => `${instance.software} · ${instance.hostname}`;
+  const appNames = (instance: (typeof instances)[number]) => [instance.instance_id, ...companionsOf(instance).map((name) => name.slice(instance.instance_id.length))];
+  const appHeight = new Map(instances.map((instance) => [instance.instance_id, heightOf(linesOf('app', appNames(instance), appSub(instance)))]));
+  const webHeight = heightOf(linesOf('web', ['web'], 'nginx:alpine · 8080 8443'));
+  const installHeight = heightOf(linesOf('install', ['x-install'], 'one-shot · restart: no'));
 
   // Web fans out to every app it waits on.
   const web = services.web;
-  const webBottom = m.row.web + m.height.web;
+  const webBottom = m.row.web + webHeight;
   dependenciesOf(web ?? {}).forEach((dependency) => {
     const x = appX.get(dependency);
     if (x === undefined) return;
@@ -161,8 +166,7 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     drops.set(dependency, [...(drops.get(dependency) ?? []), { x, condition }]);
   };
 
-  const appBottom = m.row.app + m.height.app;
-  const installBottom = m.row.install + m.height.install;
+  const installBottom = m.row.install + installHeight;
 
   Object.entries(services).forEach(([name, service]) => {
     const app = appX.get(name);
@@ -177,7 +181,8 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
       if (!slot) {
         // The installer gate: straight down the column.
         const x = installX.get(dependency);
-        if (x === undefined) return;
+        if (x === undefined || app === undefined) return;
+        const appBottom = m.row.app + appHeight.get(name)!;
         wires.push(wire(`M${x} ${appBottom} V${m.row.install - 2}`, condition, { arrow: true }));
         labels.push(`<text class="gate" x="${x + 4}" y="${(appBottom + m.row.install) / 2 + 3}">completed</text>`);
         return;
@@ -196,7 +201,8 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
       const side = dataDependencies.indexOf(dependency) === 0 ? -1 : 1;
       const edge = app! + side * (m.box / 2);
       const gutter = app! + side * m.gutter;
-      const y = m.row.app + m.height.app / 2;
+      // Half way down a one-name app box, the same height on every column.
+      const y = m.row.app + 20;
       wires.push(wire(`M${edge} ${y} H${gutter - side * 3} Q${gutter} ${y} ${gutter} ${y + 3} V${slot.lane}`, condition, {
         halo: `M${gutter} ${y + 6} V${slot.lane - 4}`,
       }));
@@ -228,9 +234,10 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     const id = instance.instance_id;
     const x = appX.get(id)!;
     const install = `${id}-install`;
-    nodes.push(box(id, 'app', x, m.row.app, id, `${instance.software} · ${instance.hostname}`, {
+    nodes.push(box(id, 'app', x, m.row.app, appNames(instance), appSub(instance), {
       emitted: Boolean(services[id]),
       fresh: isFresh(id),
+      also: companionsOf(instance),
     }));
     nodes.push(box(install, 'install', x, m.row.install, install, 'one-shot · restart: no', {
       emitted: Boolean(services[install]),

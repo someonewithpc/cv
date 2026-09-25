@@ -1,7 +1,9 @@
 // The playground's config, as src/config/io.ts and src/config/hostnames.ts read it, minus the
-// filesystem. The instances are the repository's playground.config.example.yaml as it stands.
+// filesystem. The GNU social instances are the repository's playground.config.example.yaml as
+// it stands. Carol's Mastodon server is written in the same shape, on the source the tool's
+// registry names for Mastodon.
 
-export type SoftwareId = 'social-v3' | 'social-v2';
+export type SoftwareId = 'social-v3' | 'social-v2' | 'mastodon';
 
 export type InstanceConfig = {
   software: SoftwareId;
@@ -57,14 +59,24 @@ export const exampleConfig: PlaygroundConfig = {
       branch: 'nightly',
       worktree: 'instances/gnusocial-v2',
     },
+    'mastodon-carol': {
+      software: 'mastodon',
+      hostname: 'carol.localhost',
+      name: "Carol's Mastodon",
+      instance_id: 'mastodon-carol',
+      source: { url: 'https://github.com/mastodon/mastodon.git', ref: 'main' },
+      branch: 'main',
+      worktree: 'instances/mastodon-carol',
+    },
   },
 };
 
-/** The live sheet's starting point: the two v3 nodes up, the v2 node off. */
+/** The live sheet's starting point: the two v3 nodes and Mastodon up, the v2 node off. */
 export const initiallyEnabled: Readonly<Record<string, boolean>> = {
   'gnusocial-alice': true,
   'gnusocial-bob': true,
   'gnusocial-v2': false,
+  'mastodon-carol': true,
 };
 
 /** The config with each instance's `enabled` set from a toggle map. */

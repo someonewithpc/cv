@@ -16,20 +16,22 @@ const toggle = (name: string) => `.toggle:has(input[name="${name}"]) input`;
 
 /**
  * One loop, from the config the page opens on: v2 joins and brings MariaDB, the file is
- * opened on it, then the v3 pair leaves and takes Postgres and Redis with them, v2 leaves
- * and the file has no services, and the pair comes back. Every step is a control a visitor
- * can work too.
+ * opened on it, then Mastodon leaves and takes its three services, the v3 pair leaves and
+ * takes Postgres and Redis with them, v2 leaves and the file has no services, and the three
+ * come back. Every step is a control a visitor can work too.
  */
 export const WALKTHROUGH: Step[] = [
   { aim: toggle('gnusocial-v2'), delay: 1600, act: 'click' },
   { aim: '.yaml summary', delay: 2600, act: 'click' },
   { aim: '.yaml pre', delay: 900 },
   { aim: '.yaml summary', delay: 3000, act: 'click' },
-  { aim: toggle('gnusocial-alice'), delay: 1400, act: 'click' },
+  { aim: toggle('mastodon-carol'), delay: 1400, act: 'click' },
+  { aim: toggle('gnusocial-alice'), delay: 2000, act: 'click' },
   { aim: toggle('gnusocial-bob'), delay: 1400, act: 'click' },
   { aim: toggle('gnusocial-v2'), delay: 2600, act: 'click' },
   { aim: toggle('gnusocial-alice'), delay: 2600, act: 'click' },
   { aim: toggle('gnusocial-bob'), delay: 1200, act: 'click' },
+  { aim: toggle('mastodon-carol'), delay: 1200, act: 'click' },
   { aim: '[data-status]', delay: 1400 },
 ];
 

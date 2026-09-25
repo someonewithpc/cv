@@ -8,6 +8,7 @@ import { planWorktrees, RUNGS, worktreeCommand } from '../worktrees';
 const refs = {
   'social-v3': { local: ['main', 'v3'], remote: [] },
   'social-v2': { local: ['nightly'], remote: [] },
+  mastodon: { local: ['main'], remote: [] },
 };
 
 // The example config puts Bob on main, which collides with nothing. The sheet is drawn for the
@@ -176,6 +177,12 @@ code {
   code {
     font-size: 0.75em;
     font-weight: 600;
+  }
+
+  /* Three mirrors and the ladder under them overrun a short sheet; the first mirror says what
+     every one of them does. */
+  :global([data-sheet-width='narrow']:not([data-sheet-orientation='portrait'])) .mirror:not(:first-child) & .caption {
+    display: none;
   }
 }
 
