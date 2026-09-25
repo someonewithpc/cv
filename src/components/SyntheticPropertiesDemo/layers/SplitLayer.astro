@@ -35,14 +35,14 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
     tabindex="-1"
   >
     <header class="lede">
-      <strong>Stored once, in centimetres. Found in any unit.</strong>
+      <strong>One table's size, split, converted and searched</strong>
       <p>
-        A library object keeps one size, <code>{sample.size}</code>. Each time it is saved,
-        database triggers write that size out as centimetres, metres, inches and feet, and
-        a search for <code>5ft3in</code> or <code>1.6m</code> finds it.
+        The table's size is stored as <code>{sample.size}</code>, in centimetres. When the
+        row is saved, triggers split it on <code>x</code>, write each piece in centimetres,
+        metres, inches and feet, and store every form in the text that search reads.
       </p>
     </header>
-    <p class="inert-note">Only the walkthrough types here. The demo doesn't run your own sizes or searches.</p>
+    <p class="inert-note">The walkthrough types in these fields. They don't take your own typing.</p>
 
     <ol class="stages">
       <li class="stage source">
@@ -76,7 +76,7 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
             />
           </label>
         </div>
-        <span class="split-label">split on <code>x</code>, one row a dimension</span>
+        <span class="split-label">split on <code>x</code>, one row per dimension</span>
         <ol class="chips" aria-label="Dimensions">
           {dimensions.map((dimension, index) => (
             <li class:list={['chip', { invalid: dimension.cm === null }]} data-dim={index} style={{ '--i': index }}>
@@ -87,7 +87,7 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
       </li>
 
       <li class="stage render">
-        <span class="stage-label"><span class="step">2</span> Written six ways <code>library_object_synthetic_properties</code></span>
+        <span class="stage-label"><span class="step">2</span> Converted <code>library_object_synthetic_properties</code></span>
         <ul class="renderings">
           {sizes.map((property, row) => (
             <li class="rendering" data-unit={renderings[row].id} style={{ '--row': row }}>
@@ -128,12 +128,12 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
         </label>
         <div class="text-row">
           <span class="row-head">
-            <span class="row-name">the object's row</span>
+            <span class="row-name">this table's search text</span>
             <span class="row-verdict"></span>
           </span>
           <pre class="text">{text}</pre>
         </div>
-        <ul class="queries" aria-label="Other searches against this row">
+        <ul class="queries" aria-label="Other searches against this text">
           {sampleQueries.map((query) => {
             const hit = matches(text, query);
             return (

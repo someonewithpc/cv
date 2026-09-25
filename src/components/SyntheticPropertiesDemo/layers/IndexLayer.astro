@@ -12,8 +12,8 @@ const text = searchableText(rows);
   <div class="index-layer" aria-hidden="true">
     <div class="panel">
       <header>
-        <strong>Every row of the object, folded back into one searchable string</strong>
-        <span>A second set of triggers, on the synthetic table itself, rebuilds the object's string on every insert, update and delete</span>
+        <strong>An object's rows joined into one string for FULLTEXT search</strong>
+        <span>Triggers on <code>library_object_synthetic_properties</code> rebuild the string whenever one of the object's rows changes.</span>
       </header>
 
       <div class="flow">

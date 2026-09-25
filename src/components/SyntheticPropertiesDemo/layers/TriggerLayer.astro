@@ -61,9 +61,10 @@ const targets = [
   <div class="trigger-layer" aria-hidden="true">
     <div class="panel">
       <header>
-        <strong>One Ruby method, four places its SQL runs</strong>
-        <span>The backfill and the row triggers on <code>library_objects</code> call one method
-          with a different <code>where</code>; hairtrigger writes the triggers out as a migration.</span>
+        <strong>The same SQL in the backfill and three triggers</strong>
+        <span>The backfill and the three row triggers on <code>library_objects</code> all call
+          one Ruby method, each with its own <code>where</code>. The hairtrigger gem writes the
+          triggers into a migration.</span>
       </header>
 
       <div class="builder">

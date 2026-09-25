@@ -25,17 +25,16 @@ const feet = new Set(['ft-mark', 'ft-in']);
   <div class="render-layer" aria-hidden="true">
     <div class="panel">
       <header>
-        <strong>One size, six ways to write it</strong>
-        <span>Every row of <code>split_sizes</code> renders six times; each rendering is
-          <code>GROUP_CONCAT</code>ed back with <code>' by '</code> and the six are
-          <code>UNION ALL</code>ed. Centimetres and metres keep two significant figures,
-          inches round to the whole inch.</span>
+        <strong>Each dimension in six units</strong>
+        <span>Each row of <code>split_sizes</code> goes through six <code>SELECT</code>s, one
+          per unit, and <code>GROUP_CONCAT</code> joins a unit's pieces with <code>' by '</code>.
+          Centimetres and metres keep two significant figures. Inches round to the whole inch.</span>
       </header>
 
       <table>
         <thead>
           <tr>
-            <th scope="col">Rendering</th>
+            <th scope="col">Unit</th>
             {columns.map((cm) => <th scope="col" class="num">{cm}</th>)}
           </tr>
         </thead>
@@ -59,18 +58,18 @@ const feet = new Set(['ft-mark', 'ft-in']);
       <p class="note">
         <span class="swatch" aria-hidden="true"></span>
         <span>
-          {carry}cm is {carryInches.toFixed(2)}in: {wholeFeet}ft and {rest.toFixed(2)}in left.
-          The rest rounds to 12, so it carries: <code>{renderDimension(carry, 'ft-in')}</code>, never
-          <code>{wholeFeet}ft12in</code>
+          {carry}cm is {carryInches.toFixed(2)}in, or {wholeFeet}ft and {rest.toFixed(2)}in. The
+          {rest.toFixed(2)}in rounds to 12, so it carries and prints as
+          <code>{renderDimension(carry, 'ft-in')}</code>, not <code>{wholeFeet}ft12in</code>.
         </span>
       </p>
       <p class="note">
         <span>
-          As shipped, centimetres and metres did not round (<code>182.5cm</code>, <code>1.825m</code>),
-          a rest of six inches or more already carried a foot, so 80cm read <code>3ft7in</code>, and
-          whole feet kept their zero inches, <code>6ft0in</code>.
-          The rules above are the corrected ones. Where rounding moves a size, its exact
-          centimetres and metres go in the table too, so a search for <code>182cm</code> still finds it.
+          The shipped SQL did not round, so 182.5 printed as <code>182.5cm</code> and
+          <code>1.825m</code>. It added a foot from six leftover inches, so 80cm read
+          <code>3ft7in</code>, and it wrote whole feet as <code>6ft0in</code>. The rules above fix
+          all three. When rounding changes a size, the exact centimetres and metres are kept
+          too, so a search for <code>182cm</code> still finds it.
         </span>
       </p>
     </div>
