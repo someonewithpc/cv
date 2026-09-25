@@ -194,6 +194,11 @@ const wrap = (text: string, width: number): string[] => {
 const text = (x: number, y: number, s: string, cls = '', extra = '') =>
   `<text x="${x}" y="${y}" class="${cls}" ${extra}>${esc(s)}</text>`;
 
+/* Sizes are in drawing units, so they scale with the drawing: 12 for all lettering, set on the
+   svg, and 13 for the first line of a label. */
+const lettering = (x: number, y: number, s: string, first: boolean) =>
+  first ? text(x, y, s, 'label typewriter', 'font-size="13"') : text(x, y, s, 'small monospace');
+
 /* An architectural tick: a short stroke through the dimension line at 45 degrees. */
 const tick = (x: number, y: number) => `<path class="tick" d="M${x - 3.5} ${y + 3.5} l7 -7"/>`;
 
@@ -340,7 +345,7 @@ const wide = (() => {
       ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}
       <polyline class="leader" points="${leader}" marker-end="url(#h-arrow)"/>
       ${bubble(job.ax, by, job)}
-      ${job.lines.map((line, i) => text(job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
+      ${job.lines.map((line, i) => lettering(job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0)).join('')}
     </g>`;
   });
 
@@ -353,7 +358,7 @@ const wide = (() => {
     <line class="ext" x1="${x(T1)}" y1="${G + 12}" x2="${x(T1)}" y2="${AXIS + 5}"/>${tick(x(T1), AXIS)}`;
 
   const height = AXIS + 24;
-  return `<svg class="drawing wide" viewBox="0 0 ${W} ${height}" aria-hidden="true">
+  return `<svg class="drawing wide" viewBox="0 0 ${W} ${height}" font-size="12" aria-hidden="true">
     ${defs('h')}
     ${bars.join('')}
     ${axis}
@@ -454,7 +459,7 @@ const tall = (() => {
       ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
       <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${leg}" marker-end="url(#v-arrow)"/>
       ${bubble(LX, by, job)}
-      ${job.text.map((line, i) => text(LX + 15, job.top + 11 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
+      ${job.text.map((line, i) => lettering(LX + 15, job.top + 11 + i * 14, line, i === 0)).join('')}
     </g>`;
   });
 
@@ -465,7 +470,7 @@ const tall = (() => {
     ${tick(DX, y(T1))}`;
 
   const height = Math.max(y(T1) + 16, bottom + 8);
-  return `<svg class="drawing tall" viewBox="0 0 ${W} ${height}" aria-hidden="true">
+  return `<svg class="drawing tall" viewBox="0 0 ${W} ${height}" font-size="12" aria-hidden="true">
     ${defs('v')}
     ${bars.join('')}
     ${axis}
@@ -690,10 +695,10 @@ const tall = (() => {
   }
 
   /* Lettering: 12 drawing units is the floor, so the wide drawing at 44rem lands at 8.8px.
-     The paper-coloured stroke behind each word is what breaks a line where text crosses it,
-     as dimension text breaks its dimension line. */
+     The sizes are attributes in the drawing's own units, not CSS. The paper-coloured stroke
+     behind each word is what breaks a line where text crosses it, as dimension text breaks
+     its dimension line. */
   :global(text) {
-    font-size: 12px;
     fill: var(--ink-muted);
     paint-order: stroke;
     stroke: var(--surface-page);
@@ -702,7 +707,6 @@ const tall = (() => {
   }
 
   :global(.label) {
-    font-size: 13px;
     fill: var(--ink);
   }
 
