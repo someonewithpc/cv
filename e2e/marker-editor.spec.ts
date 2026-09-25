@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function markerEditorStack(page: import('@playwright/test').Page) {
-  return demoStack(page, 'Interactive Map Marker Editor');
+  return demoStack(page, 'Interactive map marker editor');
 }
 
 test('main page: map pins mount and clicking one opens the marker picker', async ({ page }) => {
@@ -47,7 +47,7 @@ test('main page: map pins mount and clicking one opens the marker picker', async
 test('editor page: live marker-editor diagram mounts', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Marker Editor');
+  await turnToPage(stack, 'Marker editor');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   await waitForIslandMounted(front);
@@ -84,7 +84,7 @@ function paintShapeFill(page: import('@playwright/test').Page) {
 test('editor page: a picker event paints the preview before React renders', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Marker Editor');
+  await turnToPage(stack, 'Marker editor');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   await waitForIslandMounted(front);

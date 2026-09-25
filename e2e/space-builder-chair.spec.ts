@@ -7,7 +7,7 @@ import { expect, test } from './support/timeScale';
 const REAL_ITEMS = ['chair', 'armchair', 'table-round'];
 
 function spaceBuilderStack(page: Page) {
-  return demoStack(page, 'Space Builder · Add Tool');
+  return demoStack(page, 'Space Builder add tool');
 }
 
 async function waitForSceneReady(front: Locator): Promise<Locator> {

@@ -12,7 +12,7 @@ import {
 import { expect, pageWait, test } from './support/timeScale';
 
 function dragDropStack(page: Page) {
-  return demoStack(page, 'Space Builder · Drag & Drop');
+  return demoStack(page, 'Space Builder drag and drop');
 }
 
 /** The scene app marks its own root `data-ready="true"` once Three.js has finished loading. */
@@ -285,7 +285,7 @@ test('the second sheet shows the handoff in four frames of the demo and few word
   await stack.scrollIntoViewIfNeeded();
   await expect(stack.locator(':scope > div')).toHaveCount(2);
 
-  await turnToPage(stack, 'Picture to Model', 2);
+  await turnToPage(stack, 'Picture to model', 2);
   const front = frontPage(stack, await frontPageIndex(stack));
   const layer = front.locator('[data-handoff-layer]');
   await expect(layer).toBeVisible();
@@ -323,7 +323,7 @@ for (const phone of [false, true]) {
     }
     const stack = dragDropStack(page);
     await stack.scrollIntoViewIfNeeded();
-    await turnToPage(stack, 'Picture to Model', 2);
+    await turnToPage(stack, 'Picture to model', 2);
     const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
     await expect(layer).toBeVisible();
 
@@ -372,7 +372,7 @@ test('the handoff panel stays out of the title block and the note', async ({ pag
   await page.goto('/');
   const stack = dragDropStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Picture to Model', 2);
+  await turnToPage(stack, 'Picture to model', 2);
   const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
   await expect(layer).toBeVisible();
 
@@ -416,7 +416,7 @@ test('every frame is the same size, and big enough to read', async ({ page }) =>
   await page.goto('/');
   const stack = dragDropStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Picture to Model', 2);
+  await turnToPage(stack, 'Picture to model', 2);
   const layer = frontPage(stack, await frontPageIndex(stack)).locator('[data-handoff-layer]');
   await expect(layer).toBeVisible();
 

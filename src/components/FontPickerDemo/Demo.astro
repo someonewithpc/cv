@@ -41,16 +41,16 @@ const fontPickerSize = toKiB(fontPickerBundle.text);
 
 const layers = {
   main: { name: null },
-  sources: { name: 'Font Extraction', pageStyle: 'blueprint' },
-  feedback: { name: 'Loading Indicator', pageStyle: 'blueprint' },
-  pinned: { name: 'Held Controls', pageStyle: 'blueprint' },
+  sources: { name: 'Font extraction', pageStyle: 'blueprint' },
+  feedback: { name: 'Loading indicator', pageStyle: 'blueprint' },
+  pinned: { name: 'Held controls', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
 ---
 
 <TechnicalDrawingStack
-  subtitle="Interactive Map Font Picker"
+  subtitle="Interactive map font picker"
   scale="1:1"
   size={fontPickerSize}
   date="2026"

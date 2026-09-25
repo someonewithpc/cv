@@ -16,7 +16,7 @@ const WIDTHS = [760, 1024, 1440];
  * sheet-width ladder cannot answer them. Space Builder's cover page hands its scene the whole
  * sheet; the Visrez listing is a full-width code block.
  */
-const OVERRUNS_ITS_COLUMN = ['Space Builder · Add Tool', 'Path Data'];
+const OVERRUNS_ITS_COLUMN = ['Space Builder add tool', 'Path data'];
 
 // The walkthroughs move panels around while they play; a still page is what can be measured.
 test.use({ reducedMotion: 'reduce' });

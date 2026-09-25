@@ -14,11 +14,11 @@ const VIEWPORTS = [
 ];
 
 function markerEditorStack(page: Page) {
-  return demoStack(page, 'Interactive Map Marker Editor');
+  return demoStack(page, 'Interactive map marker editor');
 }
 
 function spaceBuilderStack(page: Page) {
-  return demoStack(page, 'Space Builder · Add Tool');
+  return demoStack(page, 'Space Builder add tool');
 }
 
 async function playingDeck(stack: Locator): Promise<Locator> {

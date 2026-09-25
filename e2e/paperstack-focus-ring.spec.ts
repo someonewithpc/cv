@@ -8,7 +8,7 @@ const SHEET = ':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-
 test('visrez logo animation: the keyboard focus ring sits on the front sheet and follows a page turn', async ({ page }) => {
   await page.goto('/');
 
-  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  const stack = demoStack(page, 'Visrez animated loading logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

@@ -116,7 +116,7 @@ test('the demo under the paper plays until the turn is certain, then stops', asy
   await page.goto('/');
   await armDrawCounter(page);
 
-  const stack = demoStack(page, 'Space Builder · Add Tool');
+  const stack = demoStack(page, 'Space Builder add tool');
   await stack.scrollIntoViewIfNeeded();
   const started = await frontPageIndex(stack);
   const front = frontPage(stack, started);

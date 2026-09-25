@@ -34,7 +34,7 @@ const sceneSize = toKiB(sceneBundle.text);
 
 const layers = {
   main: { name: null },
-  handoff: { name: 'Picture to Model', pageStyle: 'blueprint' },
+  handoff: { name: 'Picture to model', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -42,7 +42,7 @@ type Layer = keyof typeof layers;
 
 <div class="drag-drop-demo">
 <TechnicalDrawingStack
-  subtitle="Space Builder · Drag & Drop"
+  subtitle="Space Builder drag and drop"
   scale="1:1"
   size={sceneSize}
   date="2023"

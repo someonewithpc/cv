@@ -13,8 +13,8 @@ test('slotted components boot from their own scripts', async ({ page }) => {
   await expect(page.locator('[data-boot-module]')).toHaveCount(0);
 
   for (const [title, host] of [
-    ['Interactive Map Marker Editor', '[data-mock-map]'],
-    ['Space Builder · Add Tool', '[data-space-builder-island]'],
+    ['Interactive map marker editor', '[data-mock-map]'],
+    ['Space Builder add tool', '[data-space-builder-island]'],
   ] as const) {
     const stack = demoStack(page, title);
     await stack.scrollIntoViewIfNeeded();

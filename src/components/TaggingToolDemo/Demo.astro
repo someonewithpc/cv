@@ -31,16 +31,16 @@ const clientSize = toKiB(clientBundle.text);
 
 const layers = {
   grid: { name: null },
-  shared: { name: 'Shared Value', pageStyle: 'blueprint' },
-  caret: { name: 'Simulated Caret', pageStyle: 'blueprint' },
-  missing: { name: 'Completed Objects', pageStyle: 'blueprint' },
+  shared: { name: 'Shared value', pageStyle: 'blueprint' },
+  caret: { name: 'Simulated caret', pageStyle: 'blueprint' },
+  missing: { name: 'Completed objects', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
 ---
 
 <TechnicalDrawingStack
-  subtitle="Library Tagging Tool"
+  subtitle="Library tagging tool"
   scale="1:1"
   size={clientSize}
   date="2025"

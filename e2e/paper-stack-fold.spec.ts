@@ -6,40 +6,40 @@ const DEMOS = [
   {
     label: 'Visrez logo animation',
     pages: [
-      'Visrez Animated Loading Logo',
-      'Original Logo',
+      'Visrez animated loading logo',
+      'Original logo',
       'Cube :)',
-      'Authored Path',
-      'Path Data',
+      'Authored path',
+      'Path data',
       'Putting it all together',
     ],
   },
   {
     label: 'Marker editor',
     pages: [
-      'Interactive Map Marker Editor',
-      'Marker Selector',
-      'Marker Editor',
-      'Preview Background',
-      'Composable Parts',
-      'Undoable Store',
+      'Interactive map marker editor',
+      'Marker selector',
+      'Marker editor',
+      'Preview background',
+      'Composable parts',
+      'Undoable store',
     ],
   },
   {
     label: 'Space builder',
     pages: [
-      'Space Builder · Add Tool',
-      'Place Area',
-      'Edit Parameters',
-      'Layout Styles',
-      'Capacity Badge',
+      'Space Builder add tool',
+      'Place area',
+      'Edit parameters',
+      'Layout styles',
+      'Capacity badge',
     ],
   },
   {
     label: 'Drag and drop',
     pages: [
-      'Space Builder · Drag & Drop',
-      'Picture to Model',
+      'Space Builder drag and drop',
+      'Picture to model',
     ],
   },
 ];
@@ -70,21 +70,21 @@ for (const demo of DEMOS) {
 }
 
 test('marker editor: backward swipe is clamped at the first page', async ({ page }) => {
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
-  expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
+  expect(await frontPageName(stack)).toBe('Interactive map marker editor');
 
   // Nothing behind the front page — a backward swipe here is a no-op, not a wrap.
   await swipeStack(page, stack, false);
-  expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
+  expect(await frontPageName(stack)).toBe('Interactive map marker editor');
   await swipeStack(page, stack, false);
-  expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
+  expect(await frontPageName(stack)).toBe('Interactive map marker editor');
 });
 
 test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }) => {
-  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  const stack = demoStack(page, 'Visrez animated loading logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
@@ -108,7 +108,7 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
 });
 
 test('visrez logo: the dog-ear is drawn while the flip is still landing', async ({ page }) => {
-  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  const stack = demoStack(page, 'Visrez animated loading logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

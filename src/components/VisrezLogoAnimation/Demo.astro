@@ -25,10 +25,10 @@ const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);
 
 const layers = {
   main: { name: null, size: visrezLogoAnimationSize },
-  original: { name: 'Original Logo', size: originalVisrezLogoSize, pageStyle: 'blueprint' },
+  original: { name: 'Original logo', size: originalVisrezLogoSize, pageStyle: 'blueprint' },
   cube: { name: 'Cube :)', pageStyle: 'blueprint' },
-  path: { name: 'Authored Path', pageStyle: 'blueprint' },
-  pathData: { name: 'Path Data', pageStyle: 'blueprint' },
+  path: { name: 'Authored path', pageStyle: 'blueprint' },
+  pathData: { name: 'Path data', pageStyle: 'blueprint' },
   allTogether: { name: 'Putting it all together' },
 } as const;
 
@@ -36,7 +36,7 @@ type Layer = keyof typeof layers;
 ---
 
 <TechnicalDrawingStack
-  subtitle="Visrez Animated Loading Logo"
+  subtitle="Visrez animated loading logo"
   scale="3:1"
   size={visrezLogoAnimationSize}
   date="2023"

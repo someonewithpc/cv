@@ -36,10 +36,10 @@ const sceneSize = toKiB(sceneBundle.text);
 
 const layers = {
   main: { name: null },
-  place: { name: 'Place Area', pageStyle: 'blueprint' },
-  parameters: { name: 'Edit Parameters', pageStyle: 'blueprint' },
-  layouts: { name: 'Layout Styles', pageStyle: 'blueprint' },
-  badge: { name: 'Capacity Badge', pageStyle: 'blueprint' },
+  place: { name: 'Place area', pageStyle: 'blueprint' },
+  parameters: { name: 'Edit parameters', pageStyle: 'blueprint' },
+  layouts: { name: 'Layout styles', pageStyle: 'blueprint' },
+  badge: { name: 'Capacity badge', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -47,7 +47,7 @@ type Layer = keyof typeof layers;
 
 <div class="space-builder-demo">
 <TechnicalDrawingStack
-  subtitle="Space Builder · Add Tool"
+  subtitle="Space Builder add tool"
   hint="there is more underneath, turn the page"
   scale="1:1"
   size={sceneSize}

@@ -11,14 +11,14 @@ test.beforeEach(async ({ page }) => {
 });
 
 function markerEditorStack(page: import('@playwright/test').Page) {
-  return demoStack(page, 'Interactive Map Marker Editor');
+  return demoStack(page, 'Interactive map marker editor');
 }
 
 test('parts and store pages: the diagram fills the sheet it sits on', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
 
-  for (const name of ['Composable Parts', 'Undoable Store']) {
+  for (const name of ['Composable parts', 'Undoable store']) {
     await turnToPage(stack, name);
     const front = frontPage(stack, await frontPageIndex(stack));
     const diagram = front.locator('section .content > *').first();
@@ -129,7 +129,7 @@ for (const [width, height] of [[1440, 900], [900, 760]]) {
 
     const stack = markerEditorStack(page);
     await stack.scrollIntoViewIfNeeded();
-    await turnToPage(stack, 'Preview Background');
+    await turnToPage(stack, 'Preview background');
 
     const front = frontPage(stack, await frontPageIndex(stack));
     const samples = front.locator('.background-layer .fail-both.debug');

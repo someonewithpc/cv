@@ -3,12 +3,12 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 
 function spaceBuilderStack(page: Page) {
-  return demoStack(page, 'Space Builder · Add Tool');
+  return demoStack(page, 'Space Builder add tool');
 }
 
 /** The object variants demo, whose picker this one reuses. */
 function variantsStack(page: Page) {
-  return demoStack(page, 'Space Builder · Object Variants');
+  return demoStack(page, 'Space Builder object variants');
 }
 
 async function waitForSceneReady(front: Locator): Promise<Locator> {

@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('marker editor: one flick turns the page away and the same flick brings it back', async ({ page }) => {
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
@@ -15,8 +15,8 @@ test('marker editor: one flick turns the page away and the same flick brings it 
   // directions commit on a quarter of it. Sending a page away used to ask for half, so this
   // turned the pages back but never forward.
   await swipeStack(page, stack, true, 0.35);
-  expect(await frontPageName(stack)).toBe('Marker Selector');
+  expect(await frontPageName(stack)).toBe('Marker selector');
 
   await swipeStack(page, stack, false, 0.35);
-  expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
+  expect(await frontPageName(stack)).toBe('Interactive map marker editor');
 });

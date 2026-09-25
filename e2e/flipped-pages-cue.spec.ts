@@ -46,7 +46,7 @@ async function standing(stack: Locator) {
 
 
 test('marker editor: the pile behind the stack counts the pages turned', async ({ page }) => {
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
@@ -58,7 +58,7 @@ test('marker editor: the pile behind the stack counts the pages turned', async (
 
   await pressTurn(stack, 'ArrowRight');
   expect(await pile(stack)).toEqual({ turned: '2', standing: 2, showing: 2 });
-  expect(await frontPageName(stack)).toBe('Marker Editor');
+  expect(await frontPageName(stack)).toBe('Marker editor');
 
   // The pile comes back down page by page, the same way it went up.
   await pressTurn(stack, 'ArrowLeft');
@@ -66,11 +66,11 @@ test('marker editor: the pile behind the stack counts the pages turned', async (
 
   await pressTurn(stack, 'ArrowLeft');
   expect(await pile(stack)).toEqual({ turned: '0', standing: 0, showing: 0 });
-  expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
+  expect(await frontPageName(stack)).toBe('Interactive map marker editor');
 });
 
 test('marker editor: a turned page goes to the back of the pile, on an arc', async ({ page }) => {
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
@@ -245,7 +245,7 @@ const offLine = (p: Point, line: Point[]) => Math.abs(sideOf(p, line));
 // plain and the four behind it are blueprint sheets, so which page the strip takes its colour
 // from is visible there and nowhere else.
 test('logo demo: the strip is the turned page\'s paper, not the front page\'s', async ({ page }) => {
-  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  const stack = demoStack(page, 'Visrez animated loading logo');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 

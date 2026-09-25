@@ -24,8 +24,8 @@ const cardSize = toKiB(cardSources.join(''));
 
 const layers = {
   main: { name: null },
-  groups: { name: 'Variant Groups', pageStyle: 'blueprint' },
-  missing: { name: 'Missing Variants', pageStyle: 'blueprint' },
+  groups: { name: 'Variant groups', pageStyle: 'blueprint' },
+  missing: { name: 'Missing variants', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -33,7 +33,7 @@ type Layer = keyof typeof layers;
 
 <div class="variants-demo">
 <TechnicalDrawingStack
-  subtitle="Space Builder · Object Variants"
+  subtitle="Space Builder object variants"
   scale="1:1"
   size={cardSize}
   date="2024"

@@ -3,13 +3,13 @@ import { expect, test } from '@playwright/test';
 import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 
 /**
- * The editor on the drawing stack's own "Marker Editor" page is `inert` on purpose, a
+ * The editor on the drawing stack's own "Marker editor" page is `inert` on purpose, a
  * diagram rather than a control. The one a visitor can actually use is the live session the
  * map opens, so that is where the picker has to work.
  */
 async function liveEditor(page: import('@playwright/test').Page) {
   await page.goto('/');
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)));
 

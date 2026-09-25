@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function spaceBuilderStack(page: import('@playwright/test').Page) {
-  return demoStack(page, 'Space Builder · Add Tool');
+  return demoStack(page, 'Space Builder add tool');
 }
 
 /** Every scene app marks its own root `data-ready="true"` once Three.js has finished loading. */
@@ -53,7 +53,7 @@ test('main page: scene loads and the add-object tool opens the catalog', async (
 test('place page: select-area scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Place Area');
+  await turnToPage(stack, 'Place area');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -63,7 +63,7 @@ test('place page: select-area scene loads', async ({ page }) => {
 test('parameters page: editing seat count updates the field', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Edit Parameters');
+  await turnToPage(stack, 'Edit parameters');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -82,7 +82,7 @@ test('parameters page: editing seat count updates the field', async ({ page }) =
 test('layouts page: picking a different layout style selects it', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Layout Styles');
+  await turnToPage(stack, 'Layout styles');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -97,7 +97,7 @@ test('layouts page: the scene draws and autoplay cycles the styles after the pag
   await armDrawCounter(page);
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Layout Styles');
+  await turnToPage(stack, 'Layout styles');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);
@@ -115,7 +115,7 @@ test('layouts page: the scene draws and autoplay cycles the styles after the pag
 test('badge page: capacity-badge scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Capacity Badge');
+  await turnToPage(stack, 'Capacity badge');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   const app = await waitForSceneReady(front);

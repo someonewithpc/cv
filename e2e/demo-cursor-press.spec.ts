@@ -7,7 +7,7 @@ import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './su
 // a pulse on the drawn cursor and a flare at the event point, and ignores trusted presses.
 test('walkthrough presses pulse the drawn cursor and flare; the visitor\'s own do not', async ({ page }) => {
   await page.goto('/');
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
   const island = await waitForIslandMounted(front);
@@ -49,7 +49,7 @@ test('walkthrough presses pulse the drawn cursor and flare; the visitor\'s own d
 // click, and the release ring lands after it.
 test('the cursor presses before the widget acts and releases after', async ({ page }) => {
   await page.goto('/');
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
   const island = await waitForIslandMounted(front);
@@ -107,7 +107,7 @@ test('every walkthrough click pulses the cursor and rings, drags and the colour 
   // slider, so both kinds of drag and all three colour steps are in the log.
   test.setTimeout(150_000);
   await page.goto('/');
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
   const island = await waitForIslandMounted(front);

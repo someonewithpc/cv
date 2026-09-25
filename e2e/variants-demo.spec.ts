@@ -11,7 +11,7 @@ import {
 import { expect, pageWait, test } from './support/timeScale';
 
 function variantsStack(page: Page) {
-  return demoStack(page, 'Space Builder · Object Variants');
+  return demoStack(page, 'Space Builder object variants');
 }
 
 /** The panel on the front page, whether or not a script has run on it. */
@@ -327,10 +327,10 @@ test.describe('metric locale', () => {
   test('the sheets draw the real card and are three pages in all', async ({ page }) => {
     const stack = variantsStack(page);
     await stack.scrollIntoViewIfNeeded();
-    await expect.poll(() => frontPageName(stack)).toBe('Space Builder · Object Variants');
+    await expect.poll(() => frontPageName(stack)).toBe('Space Builder object variants');
     await expect(stack.locator(':scope > div')).toHaveCount(3);
 
-    await turnToPage(stack, 'Variant Groups');
+    await turnToPage(stack, 'Variant groups');
     const groups = frontPage(stack, await frontPageIndex(stack));
     await expect(groups.locator('.drawn .option-item')).toHaveCount(2);
     await expect(groups.locator('.drawn ul.styles .style')).toHaveCount(5);
@@ -340,7 +340,7 @@ test.describe('metric locale', () => {
     await expect(callouts.filter({ hasText: /pip/i })).toHaveCount(1);
     await expect(callouts.filter({ hasText: /Seats/ })).toHaveCount(1);
 
-    await turnToPage(stack, 'Missing Variants');
+    await turnToPage(stack, 'Missing variants');
     const missing = frontPage(stack, await frontPageIndex(stack));
     await expect(missing.locator('.drawn details.object-pax')).toHaveAttribute('open', '');
     await expect(missing.locator('.drawn .object-pax li.unavailable')).toHaveCount(2);

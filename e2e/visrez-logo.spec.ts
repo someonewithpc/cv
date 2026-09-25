@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function visrezStack(page: import('@playwright/test').Page) {
-  return demoStack(page, 'Visrez Animated Loading Logo');
+  return demoStack(page, 'Visrez animated loading logo');
 }
 
 test('main page: the loading-logo SVG renders and its dash animation runs', async ({ page }) => {
@@ -32,10 +32,10 @@ test('every inner page carries its drawing', async ({ page }) => {
     has: page.locator('h2.typewriter', { hasText: name }),
   });
 
-  await expect(pageNamed('Original Logo').locator('svg').first()).toBeVisible();
+  await expect(pageNamed('Original logo').locator('svg').first()).toBeVisible();
   await expect(pageNamed('Cube :)').locator('svg').first()).toBeVisible();
-  await expect(pageNamed('Authored Path').locator('svg.path-layer')).toBeVisible();
-  const listing = pageNamed('Path Data').locator('pre.path-data-layer');
+  await expect(pageNamed('Authored path').locator('svg.path-layer')).toBeVisible();
+  const listing = pageNamed('Path data').locator('pre.path-data-layer');
   await expect(listing).toBeVisible();
   await expect(listing).toContainText('<svg');
   await expect(pageNamed('Putting it all together').locator('svg.face')).toBeVisible();

@@ -44,18 +44,18 @@ const markerEditorSize = toKiB(markerEditorBundle.text);
 
 const layers = {
   main: { name: null },
-  selector: { name: 'Marker Selector', pageStyle: 'blueprint' },
-  editor: { name: 'Marker Editor', pageStyle: 'blueprint' },
-  background: { name: 'Preview Background', pageStyle: 'blueprint' },
-  parts: { name: 'Composable Parts', pageStyle: 'blueprint' },
-  store: { name: 'Undoable Store', pageStyle: 'blueprint' },
+  selector: { name: 'Marker selector', pageStyle: 'blueprint' },
+  editor: { name: 'Marker editor', pageStyle: 'blueprint' },
+  background: { name: 'Preview background', pageStyle: 'blueprint' },
+  parts: { name: 'Composable parts', pageStyle: 'blueprint' },
+  store: { name: 'Undoable store', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
 ---
 
 <TechnicalDrawingStack
-  subtitle="Interactive Map Marker Editor"
+  subtitle="Interactive map marker editor"
   hint="flip the corner for the next sheet"
   scale="1:1"
   size={markerEditorSize}

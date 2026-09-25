@@ -8,7 +8,7 @@ import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './su
  */
 async function shapeFillStep(page: import('@playwright/test').Page) {
   await page.goto('/');
-  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  const stack = demoStack(page, 'Interactive map marker editor');
   await stack.scrollIntoViewIfNeeded();
   await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)));
 

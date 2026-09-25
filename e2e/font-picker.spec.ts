@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function fontPickerStack(page: import('@playwright/test').Page) {
-  return demoStack(page, 'Interactive Map Font Picker');
+  return demoStack(page, 'Interactive map font picker');
 }
 
 test('main page: the picker mounts and a chosen face reaches the specimen', async ({ page }) => {
@@ -73,7 +73,7 @@ test('main page: the drawn cursor leaves when its page is no longer in front', a
 test('extraction page: the pipeline is drawn from the URL to the new row', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Font Extraction');
+  await turnToPage(stack, 'Font extraction');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   // Four hops, in order, with the URL the walkthrough types at one end and the row it becomes
@@ -87,7 +87,7 @@ test('extraction page: the pipeline is drawn from the URL to the new row', async
 test('indicator page: the border runs by itself and the buttons take it over', { tag: '@handover' }, async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Loading Indicator');
+  await turnToPage(stack, 'Loading indicator');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   await waitForIslandMounted(front);
@@ -108,7 +108,7 @@ test('indicator page: the border runs by itself and the buttons take it over', {
 test('held controls page: the drag leaves the plain column and holds the pinned one', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Held Controls');
+  await turnToPage(stack, 'Held controls');
   const front = frontPage(stack, await frontPageIndex(stack));
 
   await waitForIslandMounted(front);
@@ -170,7 +170,7 @@ test.describe('on a landscape phone', () => {
 test('held controls page: the drawn cursor rides each slider it drags', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Held Controls');
+  await turnToPage(stack, 'Held controls');
   const front = frontPage(stack, await frontPageIndex(stack));
   await waitForIslandMounted(front);
 
@@ -206,7 +206,7 @@ test('held controls page: the drawn cursor rides each slider it drags', async ({
 // layers/_sheet.scss, in em of the sheet's own type, so whatever it paints stays off the
 // frame line, the title block and the note's tab. The floor here is what the review asked for.
 const SHEET_MARGIN_EM = 0.5;
-const PAGES = [null, 'Font Extraction', 'Loading Indicator', 'Held Controls'] as const;
+const PAGES = [null, 'Font extraction', 'Loading indicator', 'Held controls'] as const;
 const VIEWPORTS = [
   { width: 390, height: 844 },
   { width: 844, height: 390 },
@@ -310,7 +310,7 @@ for (const viewport of VIEWPORTS) {
 
         // The held controls sheet is at its tallest while the walkthrough holds each column's
         // size at the top of its drag (HeldControlsApp's DRAG_TO): measure it there too
-        if (name === 'Held Controls') {
+        if (name === 'Held controls') {
           const top = (await stack.getAttribute('data-sheet-orientation')) === 'portrait' ? 1.5 : 1.75;
           for (const side of ['plain', 'held']) {
             // Read off the DOM, not a strict locator: the held column keeps a spacer clone of the
