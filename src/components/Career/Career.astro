@@ -28,6 +28,289 @@ const { experience, education, tagline, languages, location, interests, refs } =
 
 /* Revisions count up from the first job, so the newest row, listed first, carries the highest number. */
 const revision = (index: number) => String(experience.length - index).padStart(2, '0');
+
+/* Under the table, the same jobs drawn as an elevation: the years run along a dimension string
+   under the ground line, every job is a bar as long as it lasted, standing on the ground or
+   stacked over a bar it overlapped, with its own dimension over it and a leader from its
+   revision number. Wide, time runs left to right; under 44rem of sheet the drawing stands on
+   end, oldest at the bottom, so the labels get the sheet's width. */
+
+/* A date as a fraction of a year. A bare year whose label says "Summer" is June to September. */
+const at = (edge: Edge, end = false): number => {
+  const [year, month] = edge.date.split('-').map(Number);
+  if (month) return year + (end ? month : month - 1) / 12;
+  if (edge.label.startsWith('Summer')) return year + (end ? 0.7 : 0.45);
+  return year + (end ? 1 : 0);
+};
+
+type Job = Entry & {
+  n: string;
+  start: number;
+  end: number;
+  seasonal: boolean;
+  span: string;
+  lane: number;
+  /* Where along the bar a leader may land, as fractions of its length, best first. */
+  anchors: number[];
+  lines: string[];
+};
+
+const jobs: Job[] = experience
+  .map((entry, index) => {
+    const start = at(entry.from);
+    const end = at(entry.to, true);
+    const seasonal = entry.from.label.startsWith('Summer');
+    const months = Math.round((end - start) * 12);
+    const span = seasonal
+      ? `${Number(entry.to.date) - Number(entry.from.date) + 1} summers`
+      : [months >= 12 && `${Math.floor(months / 12)}y`, months % 12 && `${months % 12}m`].filter(Boolean).join(' ');
+    const org = entry.place ? `${entry.org}, ${entry.place}` : entry.org;
+    const lines = entry.role ? [entry.role, org] : [org];
+    return { ...entry, start, end, seasonal, span, lines, n: revision(index), lane: 0, anchors: [] };
+  })
+  .sort((a, b) => a.start - b.start);
+
+/* Lanes: a bar takes the lowest lane that is clear for it, so overlapping jobs stack. A bar
+   whose whole length ends up under a higher bar could not take a leader, so it moves above
+   the bars that cover it. */
+const CLEAR = 0.15;
+const laneEnds: number[] = [];
+for (const job of jobs) {
+  let lane = laneEnds.findIndex((end) => end + CLEAR <= job.start);
+  if (lane < 0) lane = laneEnds.length;
+  laneEnds[lane] = job.end;
+  job.lane = lane;
+}
+
+const ANCHORS = [0.3, 0.7, 0.5, 0.15, 0.85];
+const MARGIN = 0.12;
+const above = (job: Job) => jobs.filter((other) => other.lane > job.lane && other.start - MARGIN <= job.end && job.start <= other.end + MARGIN);
+const covered = (job: Job, t: number) => above(job).some((other) => other.start - MARGIN <= t && t <= other.end + MARGIN);
+for (let moved = true; moved; ) {
+  moved = false;
+  for (const job of jobs) {
+    job.anchors = ANCHORS.filter((f) => !covered(job, job.start + f * (job.end - job.start)));
+    if (job.anchors.length) continue;
+    job.lane = Math.max(...above(job).map((other) => other.lane)) + 1;
+    moved = true;
+  }
+}
+const lanes = Math.max(...jobs.map((job) => job.lane)) + 1;
+
+const T0 = 2015;
+const T1 = 2027;
+const years = Array.from({ length: T1 - T0 }, (_, i) => T0 + i);
+
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/* Width of a monospace character at the drawing's 12 unit size. */
+const CH = 7.2;
+
+/* Word wrap by character count: the drawing cannot measure its text at build time. */
+const wrap = (text: string, width: number): string[] => {
+  const lines: string[] = [];
+  for (const word of text.split(' ')) {
+    const last = lines[lines.length - 1];
+    if (last !== undefined && `${last} ${word}`.length <= width) lines[lines.length - 1] = `${last} ${word}`;
+    else lines.push(word);
+  }
+  return lines;
+};
+
+const text = (x: number, y: number, s: string, cls = '', extra = '') =>
+  `<text x="${x}" y="${y}" class="${cls}" ${extra}>${esc(s)}</text>`;
+
+/* An architectural tick: a short stroke through the dimension line at 45 degrees. */
+const tick = (x: number, y: number) => `<path class="tick" d="M${x - 3.5} ${y + 3.5} l7 -7"/>`;
+
+const defs = (id: string) =>
+  `<defs>
+    <pattern id="${id}-hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <line class="hatch-line" x1="0" y1="0" x2="0" y2="6"/>
+    </pattern>
+    <pattern id="${id}-earth" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-45)">
+      <line class="earth-line" x1="0" y1="0" x2="0" y2="7"/>
+    </pattern>
+    <marker id="${id}-arrow" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+      <path class="arrow" d="M0 0.5 L8 4 L0 7.5 z"/>
+    </marker>
+  </defs>`;
+
+/* The bubble carries the job's revision number from the table. */
+const bubble = (x: number, y: number, n: string) =>
+  `<circle class="bubble" cx="${x}" cy="${y}" r="10"/>${text(x, y + 4, n, 'bubble-number monospace', 'text-anchor="middle"')}`;
+
+/* A heading with its gloss before it and a rule under it, as a schedule on a drawing is titled. */
+const heading = (x: number, y: number, gloss: string, title: string, rule: number) =>
+  `${text(x, y + 10, gloss, 'gloss')}${text(x + gloss.length * 13.5 + 8, y + 10, title, 'head monospace')}
+    <line class="rule" x1="${x}" y1="${y + 16}" x2="${x + rule}" y2="${y + 16}"/>`;
+
+/* The level marker the degree hangs from: a triangle on the line, a stem down past whatever
+   the line carries, and the lines beside the stem's foot. */
+const degreeLines = (width: number) => [education.degree, education.minor, education.school].flatMap((line) => wrap(line, width));
+const degree = (x: number, y: number, drop: number, width: number) => {
+  const lines = degreeLines(width);
+  return `<g class="degree">
+    <path class="level" d="M${x - 5} ${y - 8} h10 l-5 8 z"/>
+    <line class="leader" x1="${x}" y1="${y}" x2="${x}" y2="${y + drop + 14 + lines.length * 14}"/>
+    ${heading(x + 8, y + drop, '学校', education.year, 0)}
+    ${lines.map((line, i) => text(x + 8, y + drop + 26 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
+  </g>`;
+};
+const degreeHeight = (width: number) => 26 + degreeLines(width).length * 14;
+
+/* ----- Wide: time runs left to right. ----- */
+const wide = (() => {
+  const W = 960;
+  const L = 28;
+  const R = 24;
+  const PX = (W - L - R) / (T1 - T0);
+  const x = (t: number) => L + (t - T0) * PX;
+  const LANE = 48;
+  const BAR = 20;
+  const ROW = 34;
+
+  type Placed = Job & { ax: number; row: number; textEnd: number };
+  const placed: Placed[] = [];
+
+  /* Label rows, nearest the bars first. A label takes the lowest row and the best anchor at
+     which its text stays on the sheet and clear of its neighbours in that row, no leader
+     from a higher row runs through its text, and its own leader runs through no text in the
+     rows below it. */
+  let rows = 0;
+  for (const job of jobs) {
+    const width = 25 + Math.max(...job.lines.map((line) => line.length)) * CH;
+    const fits = (row: number, ax: number) =>
+      ax + width <= W - 4 &&
+      placed.every((other) => {
+        if (other.row === row) return other.textEnd + 16 <= ax - 10 || ax + width + 16 <= other.ax - 10;
+        if (other.row < row) return ax + 12 < other.ax - 12 || other.textEnd + 4 < ax - 12;
+        return other.ax + 12 < ax - 12 || ax + width + 4 < other.ax - 12;
+      });
+    let choice: { row: number; ax: number } | undefined;
+    for (let row = 0; row <= rows && !choice; row += 1) {
+      for (const anchor of job.anchors) {
+        const ax = x(job.start + anchor * (job.end - job.start));
+        if (fits(row, ax)) {
+          choice = { row, ax };
+          break;
+        }
+      }
+    }
+    const { row, ax } = choice ?? { row: rows, ax: x(job.start + job.anchors[0] * (job.end - job.start)) };
+    rows = Math.max(rows, row + 1);
+    placed.push({ ...job, ax, row, textEnd: ax + width });
+  }
+
+  const TOP = 8;
+  const rowY = (row: number) => TOP + 17 + (rows - 1 - row) * ROW;
+  const lanesTop = TOP + rows * ROW + 8;
+  const G = lanesTop + lanes * LANE;
+  const barTop = (lane: number) => G - lane * LANE - BAR;
+
+  const bars = placed.map((job) => {
+    const x0 = x(job.start);
+    const x1 = x(job.end);
+    const top = barTop(job.lane);
+    const dim = top - 12;
+    const mid = (x0 + x1) / 2;
+    const by = rowY(job.row);
+    return `<g class="job" data-job="${job.id}" data-lane="${job.lane}">
+      <rect class="bar${job.seasonal ? ' seasonal' : ''}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" fill="url(#h-hatch)"/>
+      <line class="ext" x1="${x0}" y1="${top - 3}" x2="${x0}" y2="${dim - 5}"/>
+      <line class="ext" x1="${x1}" y1="${top - 3}" x2="${x1}" y2="${dim - 5}"/>
+      <line class="dim" x1="${x0 - 4}" y1="${dim}" x2="${x1 + 4}" y2="${dim}"/>
+      ${tick(x0, dim)}${tick(x1, dim)}
+      ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}
+      <line class="leader" x1="${job.ax}" y1="${by + 10}" x2="${job.ax}" y2="${top - 1}" marker-end="url(#h-arrow)"/>
+      ${bubble(job.ax, by, job.n)}
+      ${job.lines.map((line, i) => text(job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
+    </g>`;
+  });
+
+  const AXIS = G + 34;
+  const axis = `
+    <line class="ground" x1="${L - 8}" y1="${G}" x2="${W - R + 8}" y2="${G}"/>
+    <rect class="earth" x="${L - 8}" y="${G}" width="${W - L - R + 16}" height="8" fill="url(#h-earth)"/>
+    <line class="dim" x1="${x(T0)}" y1="${AXIS}" x2="${x(T1)}" y2="${AXIS}"/>
+    ${years.map((year) => `<line class="ext" x1="${x(year)}" y1="${G + 12}" x2="${x(year)}" y2="${AXIS + 5}"/>${tick(x(year), AXIS)}${text(x(year + 0.5), AXIS + 16, String(year), 'year monospace', 'text-anchor="middle"')}`).join('')}
+    <line class="ext" x1="${x(T1)}" y1="${G + 12}" x2="${x(T1)}" y2="${AXIS + 5}"/>${tick(x(T1), AXIS)}`;
+
+  const BELOW = AXIS + 34;
+  const height = BELOW + degreeHeight(30) + 8;
+  return `<svg class="drawing wide" viewBox="0 0 ${W} ${height}" aria-hidden="true">
+    ${defs('h')}
+    ${bars.join('')}
+    ${axis}
+    ${degree(x(Number(education.year) + 0.75), AXIS, BELOW - AXIS, 30)}
+  </svg>`;
+})();
+
+/* ----- Narrow: the same drawing on end, the ground a datum down the left. ----- */
+const tall = (() => {
+  const W = 360;
+  const DX = 44;
+  const S = 28;
+  const TOP = 12;
+  const y = (t: number) => TOP + (T1 - t) * S;
+  /* Each lane is its bar with the bar's dimension on the datum side of it, so the leaders,
+     which leave on the other side, cross nothing but the lanes above. */
+  const LANE = 34;
+  const BAR = 12;
+  const LANE0 = DX + 8 + LANE - BAR;
+  const LX = LANE0 + lanes * LANE + 5;
+  const width = Math.floor((W - 4 - LX - 15) / CH);
+
+  type Placed = Job & { ay: number; top: number; text: string[] };
+  const placed: Placed[] = jobs.map((job) => ({
+    ...job,
+    ay: y(job.start + job.anchors[0] * (job.end - job.start)),
+    top: 0,
+    text: job.lines.flatMap((line) => wrap(line, width)),
+  }));
+
+  /* Labels down the right, each pushed below the one before it when the bars are closer
+     together than the labels are tall. */
+  let bottom = TOP;
+  for (const job of [...placed].sort((a, b) => a.ay - b.ay)) {
+    job.top = Math.max(job.ay - 7, bottom + 8);
+    bottom = job.top + job.text.length * 14;
+  }
+
+  const bars = placed.map((job) => {
+    const x0 = LANE0 + job.lane * LANE;
+    const y0 = y(job.end);
+    const y1 = y(job.start);
+    const dim = x0 - 10;
+    const mid = (y0 + y1) / 2;
+    const by = job.top + 7;
+    return `<g class="job" data-job="${job.id}" data-lane="${job.lane}">
+      <rect class="bar${job.seasonal ? ' seasonal' : ''}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" fill="url(#v-hatch)"/>
+      <line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>
+      <line class="ext" x1="${x0 - 3}" y1="${y1}" x2="${dim - 5}" y2="${y1}"/>
+      <line class="dim" x1="${dim}" y1="${y0 - 4}" x2="${dim}" y2="${y1 + 4}"/>
+      ${tick(dim, y0)}${tick(dim, y1)}
+      ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
+      <line class="leader" x1="${LX - 11}" y1="${by}" x2="${x0 + BAR + 1}" y2="${job.ay}" marker-end="url(#v-arrow)"/>
+      ${bubble(LX, by, job.n)}
+      ${job.text.map((line, i) => text(LX + 15, job.top + 11 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
+    </g>`;
+  });
+
+  const axis = `
+    <line class="ground" x1="${DX}" y1="${y(T1) - 8}" x2="${DX}" y2="${y(T0) + 8}"/>
+    <rect class="earth" x="${DX - 8}" y="${y(T1) - 8}" width="8" height="${y(T0) - y(T1) + 16}" fill="url(#v-earth)"/>
+    ${years.map((year) => `${tick(DX, y(year))}${text(DX - 14, y(year + 0.5) + 4, String(year), 'year monospace', 'text-anchor="end"')}`).join('')}
+    ${tick(DX, y(T1))}`;
+
+  const degreeTop = Math.max(y(T0) + 24, bottom + 16);
+  const height = degreeTop + degreeHeight(30) + 8;
+  return `<svg class="drawing tall" viewBox="0 0 ${W} ${height}" aria-hidden="true">
+    ${defs('v')}
+    ${bars.join('')}
+    ${axis}
+    ${degree(33, degreeTop, 0, 30)}
+  </svg>`;
+})();
 ---
 
 <section id="career" aria-labelledby="career-heading">
@@ -133,6 +416,15 @@ const revision = (index: number) => String(experience.length - index).padStart(2
       </div>
     </dl>
   </div>
+
+  <figure class="elevation">
+    <Fragment set:html={wide} />
+    <Fragment set:html={tall} />
+    <figcaption class="monospace">
+      <span class="sheet-ref">ELEVATION A</span>
+      <span>The same jobs to scale. One bar per job, stacked where two ran at once, each numbered as in the table.</span>
+    </figcaption>
+  </figure>
 </section>
 
 <style lang="scss">
@@ -206,6 +498,157 @@ const revision = (index: number) => String(experience.length - index).padStart(2
       grid-template-columns: minmax(0, 1fr) 15rem;
       gap: 2.5rem;
     }
+  }
+}
+
+/* The drawing. Which of the two shows is the sheet's width: the wide one needs 44rem for its
+   smallest lettering to stay above 8px, and the tall one is capped so its lettering never
+   outgrows the notes'. */
+.elevation {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  margin: 3rem 0 0;
+
+  :global(.drawing) {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  :global(.wide) {
+    display: none;
+  }
+
+  :global(.tall) {
+    max-width: 24rem;
+  }
+
+  @container (width >= 44rem) {
+    :global(.wide) {
+      display: block;
+    }
+
+    :global(.tall) {
+      display: none;
+    }
+  }
+
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1ch;
+    justify-content: center;
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    text-align: center;
+    text-wrap: balance;
+
+    .sheet-ref {
+      letter-spacing: 0.14em;
+      color: var(--accent-text);
+    }
+  }
+
+  /* Lettering: 12 drawing units is the floor, so the wide drawing at 44rem lands at 8.8px.
+     The paper-coloured stroke behind each word is what breaks a line where text crosses it,
+     as dimension text breaks its dimension line. */
+  :global(text) {
+    font-size: 12px;
+    fill: var(--ink-muted);
+    paint-order: stroke;
+    stroke: var(--surface-page);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+
+  :global(.label) {
+    font-size: 13px;
+    fill: var(--ink);
+  }
+
+  :global(.small),
+  :global(.span),
+  :global(.year) {
+    letter-spacing: 0.02em;
+  }
+
+  :global(.head) {
+    letter-spacing: 0.14em;
+    fill: var(--ink-faint);
+  }
+
+  :global(.gloss) {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.12em;
+    fill: color-mix(in oklch, var(--ink-faint), transparent 20%);
+  }
+
+  :global(.remark) {
+    font-style: italic;
+    fill: var(--ink-faint);
+  }
+
+  :global(.bubble-number) {
+    fill: var(--accent-text);
+    stroke: none;
+  }
+
+  /* Line weights as on a drawing: the ground heavy, the bars medium, dimensions and leaders
+     thin. */
+  :global(.ground) {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  :global(.bar) {
+    stroke: var(--ink);
+    stroke-width: 1.25;
+  }
+
+  :global(.seasonal) {
+    stroke-dasharray: 4 3;
+    fill: none;
+  }
+
+  :global(.hatch-line) {
+    stroke: var(--accent-muted);
+    stroke-width: 1;
+  }
+
+  :global(.earth-line) {
+    stroke: var(--ink-muted);
+    stroke-width: 0.75;
+  }
+
+  :global(.dim),
+  :global(.ext),
+  :global(.leader),
+  :global(.rule) {
+    stroke: var(--ink-muted);
+    stroke-width: 0.75;
+    fill: none;
+  }
+
+  :global(.ext) {
+    stroke: var(--ink-faint);
+  }
+
+  :global(.tick) {
+    stroke: var(--ink);
+    stroke-width: 1.25;
+  }
+
+  :global(.arrow),
+  :global(.level) {
+    fill: var(--ink);
+  }
+
+  :global(.bubble) {
+    fill: var(--surface-page);
+    stroke: var(--ink);
+    stroke-width: 1;
   }
 }
 

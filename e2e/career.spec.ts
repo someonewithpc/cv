@@ -13,9 +13,17 @@ type Site = {
 // Read rather than imported: Node's ESM loader wants an import attribute on a JSON module.
 const site: Site = JSON.parse(readFileSync(new URL('../src/components/Career/site.json', import.meta.url), 'utf8'));
 
+/** A date as the drawing reads it: a bare year labelled "Summer" is June to September. */
+const at = ({ date, label }: Edge, end = false) => {
+  const [year, month] = date.split('-').map(Number);
+  if (month) return year + (end ? month : month - 1) / 12;
+  return year + (label.startsWith('Summer') ? (end ? 0.7 : 0.45) : end ? 1 : 0);
+};
+
 /**
  * The Career sheet is drawn from site.json, so what could break is the drawing itself: a row
- * that the data has and the sheet does not, or a sheet that no longer fits a phone.
+ * or a bar that the data has and the sheet does not, a bar the wrong length, or a sheet that
+ * no longer fits a phone.
  */
 
 test('the revision table lists every role in the data, newest first', async ({ page }) => {
@@ -54,6 +62,42 @@ test('the title block cells carry the degree, the languages and the reference sh
   }
 });
 
+test('the elevation under the table draws one bar per job, as long as the job lasted', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const wide = page.locator('#career svg.wide');
+  await expect(wide).toBeVisible();
+  await expect(page.locator('#career svg.tall')).toBeHidden();
+
+  for (const drawing of ['wide', 'tall']) {
+    await expect(page.locator(`#career svg.${drawing} .job`)).toHaveCount(site.experience.length);
+  }
+
+  // Bar lengths against the axis: the wide drawing lays 12 years over its 908 units.
+  const unit = 908 / 12;
+  for (const [index, entry] of site.experience.entries()) {
+    const job = wide.locator(`.job[data-job="${entry.id}"]`);
+    const width = Number(await job.locator('.bar').getAttribute('width'));
+    expect(width, `${entry.id} is the wrong length`).toBeCloseTo((at(entry.to, true) - at(entry.from)) * unit, 0);
+    // The bubble carries the job's revision from the table.
+    await expect(job.locator('.bubble-number')).toHaveText(String(site.experience.length - index).padStart(2, '0'));
+  }
+
+  // The jobs that ran at once stand in different lanes.
+  const lanes = await wide.locator('.job').evaluateAll((jobs) => jobs.map((job) => [job.getAttribute('data-job'), job.getAttribute('data-lane')]));
+  const lane = Object.fromEntries(lanes);
+  expect(lane['gnu-social']).not.toBe(lane['protosyn']);
+  expect(lane['gnu-social']).not.toBe(lane['leb']);
+
+  // The drawing sits under the table and the cells, not beside them.
+  const drawingTop = (await wide.boundingBox())!.y;
+  for (const block of ['.table', '.cells']) {
+    const box = (await page.locator(`#career ${block}`).boundingBox())!;
+    expect(drawingTop, `the drawing starts above the end of ${block}`).toBeGreaterThan(box.y + box.height);
+  }
+});
+
 for (const width of [390, 768, 1440]) {
   test(`at ${width}px the sheet fits the window and writes nothing under 8px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -61,6 +105,9 @@ for (const width of [390, 768, 1440]) {
 
     const sheet = page.locator('#career');
     await sheet.scrollIntoViewIfNeeded();
+
+    // Under 44rem of sheet the drawing stands on end; 768 leaves the sheet 645px.
+    await expect(sheet.locator(width < 900 ? 'svg.tall' : 'svg.wide')).toBeVisible();
 
     const measured = await sheet.evaluate((el) => {
       const right = el.getBoundingClientRect().right;
@@ -71,10 +118,13 @@ for (const width of [390, 768, 1440]) {
         const size = parseFloat(getComputedStyle(node).fontSize);
         if (node.textContent?.trim()) smallest = Math.min(smallest, size);
       }
+      // The drawing scales with the sheet, and its smallest lettering is 12 of its units.
+      const shown = [...el.querySelectorAll('svg.drawing')].find((svg) => svg.getBoundingClientRect().width > 0)!;
+      const scale = shown.getBoundingClientRect().width / Number(shown.getAttribute('viewBox')!.split(' ')[2]);
       return {
         right,
         widest,
-        smallest,
+        smallest: Math.min(smallest, 12 * scale),
         clientWidth: document.documentElement.clientWidth,
         scrollWidth: document.documentElement.scrollWidth,
       };
