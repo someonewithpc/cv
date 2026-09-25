@@ -1,3 +1,4 @@
+import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { mangledHtml } from '../markup';
@@ -184,68 +185,95 @@ function showState(tool: Tool, state: SearchState) {
 /**
  * The walkthrough: the query is typed a few letters at a time, the way a visitor would, so
  * every keystroke goes through the same throttle and abort as theirs. It pauses whenever the
- * sheet is not the page on top, and hands over for good on the first hover or focus, or
- * when `handover` fires: the other sheets share the query, and a visitor typing on one of
- * them must not find the script appending letters to their query later.
- * `data-autoplay` on the tool is the whole state, as `playing`, `user` or `off`.
+ * sheet is not the page on top, and hands over on the first hover or focus, or when a
+ * visitor types on one of the other sheets, which share the query: the script must not
+ * append letters to a query that is theirs. It never takes the tool back on its own.
+ * `data-autoplay` on the tool is the whole state, as `playing`, `user` or `off`, and the
+ * sheet's transport deck shows the same (src/client/autoplayStatus.ts). Its keys drive it:
+ * pause takes over as a visitor does, play hands back and reset starts again, both from the
+ * query the page opens on.
  */
-async function autoplay(tool: Tool, script: readonly Step[], onChange: () => void, handover: AbortSignal) {
+function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onChange: () => void) {
   const { root, input } = tool;
   if (reducedMotion.matches) {
     root.dataset.autoplay = 'off';
-    announceCount(tool);
-    return;
+    reportAutoplayState(root, 'off');
+    listenCount(tool, true);
+    return null;
   }
 
-  let stopped = false;
+  let run = 0;
   let active = false;
-  const stopPageWatch = watchPageActive(root, (next) => {
+  watchPageActive(root, (next) => {
     active = next;
   });
-  const stop = () => {
-    stopped = true;
-    stopPageWatch();
-    root.dataset.autoplay = 'user';
-    announceCount(tool);
-  };
-  if (handover.aborted) {
-    stop();
-    return;
-  }
-  handover.addEventListener('abort', stop, { once: true });
-  root.addEventListener('pointerenter', stop, { once: true });
-  root.addEventListener('focusin', stop, { once: true });
 
-  const pause = async (ms: number) => {
-    await wait(ms);
-    while (!stopped && (!active || document.hidden)) await wait(250);
+  const setState = (state: 'playing' | 'user') => {
+    root.dataset.autoplay = state;
+    reportAutoplayState(root, state);
   };
 
-  root.dataset.autoplay = 'playing';
-  await pause(1600);
+  // Stops the script where it stands and leaves the tool to the visitor.
+  const hold = () => {
+    run += 1;
+    setState('user');
+    listenCount(tool, true);
+  };
+  const takeOver = () => {
+    if (root.dataset.autoplay === 'playing') hold();
+  };
+  root.addEventListener('pointerenter', takeOver);
+  root.addEventListener('focusin', takeOver);
 
-  while (!stopped) {
-    for (const step of script) {
-      if (stopped) break;
-      if (step.clear) {
-        input.value = '';
-        onChange();
-        await pause(400);
+  onAutoplayCommand(root, (command) => {
+    if (command === 'pause') takeOver();
+    else if (command === 'reset' || root.dataset.autoplay !== 'playing') void walk();
+  });
+
+  async function walk() {
+    run += 1;
+    const mine = run;
+    const stopped = () => mine !== run;
+    const pause = async (ms: number) => {
+      await wait(ms);
+      while (!stopped() && (!active || document.hidden)) await wait(250);
+    };
+
+    // Back to the query the page opens on; one already showing is left alone, as the
+    // request pipeline would drop it anyway.
+    if (serialise({ query: input.value, filters: readFilters(tool) }) !== serialise(initial)) {
+      showState(tool, initial);
+      onChange();
+    }
+    listenCount(tool, false);
+    setState('playing');
+    await pause(1600);
+
+    while (!stopped()) {
+      for (const step of script) {
+        if (stopped()) break;
+        if (step.clear) {
+          input.value = '';
+          onChange();
+          await pause(400);
+        }
+        for (const char of step.type ?? '') {
+          if (stopped()) break;
+          input.value += char;
+          onChange();
+          await pause(char === ' ' ? 180 : 70 + Math.random() * 70);
+        }
+        if (step.color !== undefined && !stopped()) {
+          const select = tool.selects.find((el) => el.dataset.filter === 'color');
+          if (select) select.value = step.color;
+          onChange();
+        }
+        await pause(step.hold);
       }
-      for (const char of step.type ?? '') {
-        if (stopped) break;
-        input.value += char;
-        onChange();
-        await pause(char === ' ' ? 180 : 70 + Math.random() * 70);
-      }
-      if (step.color !== undefined && !stopped) {
-        const select = tool.selects.find((el) => el.dataset.filter === 'color');
-        if (select) select.value = step.color;
-        onChange();
-      }
-      await pause(step.hold);
     }
   }
+
+  return { takeOver, hold, walk };
 }
 
 export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
@@ -283,11 +311,13 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
   input.addEventListener('input', onChange);
   tool.selects.forEach((select) => select.addEventListener('change', onChange));
 
+  const script = host.dataset.walkthrough;
+  const walkthrough = script ? autoplay(tool, JSON.parse(script) as Step[], initial, onChange) : null;
+
   // A query from another sheet is the visitor's, wherever they typed it.
-  const handover = new AbortController();
   store.subscribe((state, source) => {
     if (source !== tool) {
-      handover.abort();
+      walkthrough?.takeOver();
       showState(tool, state);
     } else if (tool.mangled) {
       tool.mangled.innerHTML = mangledHtml(state.query);
@@ -297,19 +327,20 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
 
   // Another sheet may have booted first and moved the query on.
   const state = store.get();
-  if (serialise(state) !== serialise(initial)) {
-    handover.abort();
+  const movedOn = serialise(state) !== serialise(initial);
+  if (movedOn) {
     showState(tool, state);
     pipeline.request(state);
   }
 
-  const script = host.dataset.walkthrough;
-  if (script) void autoplay(tool, JSON.parse(script) as Step[], onChange, handover.signal);
-  else announceCount(tool);
+  if (!walkthrough) listenCount(tool, true);
+  else if (movedOn) walkthrough.hold();
+  else void walkthrough.walk();
 }
 
-/** The count becomes a live region once every change to it is the visitor's own: while the
-    walkthrough types, a screen reader would hear it on every keystroke. */
-function announceCount(tool: Tool) {
-  tool.count?.setAttribute('role', 'status');
+/** The count is a live region only while every change to it is the visitor's own: while
+    the walkthrough types, a screen reader would hear it on every keystroke. */
+function listenCount(tool: Tool, listen: boolean) {
+  if (listen) tool.count?.setAttribute('role', 'status');
+  else tool.count?.removeAttribute('role');
 }

@@ -90,6 +90,57 @@ test('main page: the walkthrough types on its own and hands over on hover', asyn
   expect(await input.inputValue()).toBe(settled);
 });
 
+test('main page: the sheet shows the transport deck, and its keys drive the walkthrough', async ({ page }) => {
+  const stack = librarySearchStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await waitForIslandMounted(front, '[data-library-search="search"]');
+
+  const tool = front.locator('.library-search[data-live]');
+  const input = tool.locator('.query-input');
+  const sent = tool.locator('[data-tally="sent"]');
+  const deck = front.locator('[data-demo-transport]');
+  const play = deck.locator('[data-demo-key="play"]');
+  const pause = deck.locator('[data-demo-key="pause"]');
+  const reset = deck.locator('[data-demo-key="reset"]');
+
+  await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+  await expect(deck).toBeVisible();
+  await expect(deck).toHaveAttribute('data-state', 'playing');
+  await expect(deck.locator('[data-demo-caption]')).toHaveText('AUTO PLAYING');
+  await expect(play).toHaveAttribute('aria-pressed', 'true');
+
+  // Moving over the tool takes over, and the deck says so.
+  await tool.hover();
+  await expect(tool).toHaveAttribute('data-autoplay', 'user');
+  await expect(deck).toHaveAttribute('data-state', 'user');
+  await expect(pause).toHaveAttribute('aria-pressed', 'true');
+
+  // Play hands back: the script starts over from the opening query and sends again.
+  const before = await sent.textContent();
+  await play.click();
+  await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+  await expect(deck).toHaveAttribute('data-state', 'playing');
+  await expect(sent).not.toHaveText(before!, { timeout: 10_000 });
+
+  // Pause holds: a query typed after it goes out and comes back as typed.
+  await pause.click();
+  await expect(tool).toHaveAttribute('data-autoplay', 'user');
+  await expect(deck).toHaveAttribute('data-state', 'user');
+  await search(tool, 'wood chair');
+  await tool.locator('.filter-select[data-filter="category"]').selectOption('Banquet');
+  await expect(input).toHaveValue('wood chair');
+  await expect(tool).toHaveAttribute('data-autoplay', 'user');
+
+  // Reset starts the walkthrough over from the query and filters the page opens on.
+  await reset.click();
+  await expect(deck).toHaveAttribute('data-state', 'playing');
+  await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+  await expect(tool.locator('.filter-select[data-filter="category"]')).toHaveValue('');
+  await expect(input).not.toHaveValue('wood chair');
+});
+
+
 test('main page: a bare number is quoted, and a seats after it folds into the phrase', async ({ page }) => {
   const { tool } = await mountedTool(page);
   const mangled = tool.locator('.mangled');
