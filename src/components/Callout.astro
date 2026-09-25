@@ -376,6 +376,11 @@ const hasCard = Astro.slots.has('card');
       border-bottom: 1px solid color-mix(in oklch, var(--line-strong), transparent 45%);
     }
 
+    /* Medium and Year are the two narrow cells. The slip keeps to Title and Notes. */
+    :global(.title-cell:not(.title-cell-wide)) {
+      display: none;
+    }
+
     :global(.title-cell-notes) {
       border-bottom: 0;
     }
