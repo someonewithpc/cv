@@ -283,9 +283,11 @@ $way-back-shown: '.technical-drawing-frame:has([data-paper-turned][data-paper-se
 }
 
 // Under the fan rather than over it: the frame's own bottom edge is where the reserve for the
-// fanned pages ends, and the words are hard to read across their stripes.
+// fanned pages ends, and the words are hard to read across their stripes. Where what the stack
+// lies in draws a line too close round it for a line of words, it says how far out that line
+// is (--hint-clear, Callout.astro), and both lines of words stand past it.
 .flip-hint--fwd.hint-words {
-  top: calc(100% + 0.125em);
+  top: calc(100% + var(--hint-clear, 0px) + 0.125em);
   right: 3.5em;
   text-align: right;
 }
@@ -295,7 +297,7 @@ $way-back-shown: '.technical-drawing-frame:has([data-paper-turned][data-paper-se
   left: 0.5em;
   // Off the frame's top edge, then a touch further up and right, so the line stands clear of
   // the sheet's rim instead of resting on it.
-  translate: 0.375em calc(-100% - 0.375em);
+  translate: 0.375em calc(-100% - 0.375em - var(--hint-clear, 0px));
 
   // Portrait swings the way back's arrow up over the frame's top edge instead of out past its
   // left one, through where these words would otherwise sit.
