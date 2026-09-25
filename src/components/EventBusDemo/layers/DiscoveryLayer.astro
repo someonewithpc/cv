@@ -147,7 +147,7 @@ code {
   }
 
   span {
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     color: var(--ink-muted);
     text-wrap: pretty;
   }
@@ -158,7 +158,7 @@ code {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.375em 0.75em;
   align-items: center;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
 }
 
 .scan-label {
@@ -216,7 +216,7 @@ code {
   padding: 0.375em 0;
   border-bottom: 1px solid var(--line);
   background: var(--surface-sunken);
-  font-size: 0.6875em;
+  font-size: max(0.5rem, 0.6875em);
   color: var(--ink-muted);
 
   > * {
@@ -226,7 +226,7 @@ code {
 
 .row {
   padding: 0.3125em 0;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
 
   & + & {
     border-top: 1px dashed var(--line);
@@ -326,7 +326,7 @@ code {
 
 .footnote {
   margin: 0;
-  font-size: 0.6875em;
+  font-size: max(0.5rem, 0.6875em);
   color: var(--ink-muted);
   text-wrap: pretty;
 }
