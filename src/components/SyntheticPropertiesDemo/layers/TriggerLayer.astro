@@ -194,6 +194,12 @@ pre {
   padding: 0;
   list-style: none;
 
+  /* On a narrow landscape sheet the title block sits under the last two columns, so they
+     get the width and stay short. */
+  @container technical-drawing (width < 47.5rem) {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 0.85fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
   }
