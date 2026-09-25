@@ -189,7 +189,10 @@ const gnuSocialV2: Recipe = {
   },
 };
 
-/** The registry holds these two and nothing else. Other software is a plan, not a recipe. */
+/** registry.ts's FUTURE_RECIPES: software it names, with a source repository, and has no recipe for yet. */
+export const PLANNED_RECIPES = ['mastodon', 'lemmy', 'friendica', 'gnu-social-v1'] as const;
+
+/** The registry holds these two and nothing else. */
 export const RECIPES: Record<string, Recipe> = {
   'social-v3': gnuSocialV3,
   'social-v2': gnuSocialV2,

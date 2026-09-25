@@ -1,6 +1,6 @@
 ---
 import { exampleConfig, initiallyEnabled, withEnabled } from '../config';
-import { buildComposeFile, RECIPES } from '../compose';
+import { buildComposeFile, PLANNED_RECIPES, RECIPES } from '../compose';
 import { renderGraphs, summary } from '../graph';
 import { composeYaml } from '../yaml';
 
@@ -20,16 +20,18 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
 <div class="wrapper">
   <div class="playground" data-fediverse-playground>
     <p class="intro">
-      Fediverse Playground runs several GNU social instances on one machine, each on its own
-      branch, to test federation between versions. playground.config.yaml declares them; the
-      tool writes the docker-compose.yml that starts them, redrawn below as each instance is
-      switched on or off.
+      Fediverse Playground runs a small federated network on one machine, to test how
+      fediverse servers talk to each other. Switch servers on and off to redraw the
+      docker-compose.yml it writes.
     </p>
     <div class="config" role="group" aria-label="Instances in playground.config.yaml">
       <p class="file">
         <span>playground.config.yaml</span>
         <span>defaults.local_tld: {exampleConfig.defaults?.local_tld}</span>
         <span>recipes: {Object.keys(RECIPES).join(', ')}</span>
+        <span>planned: {PLANNED_RECIPES.map((id, index) => (
+          <>{index > 0 && ' '}<span class="id">{id}{index < PLANNED_RECIPES.length - 1 && ','}</span></>
+        ))}</span>
       </p>
       <fieldset>
         <legend class="sr-only">instances</legend>
@@ -173,9 +175,14 @@ bootIslands('[data-fediverse-playground]', boot);
   font-size: 0.75em;
   color: var(--ink-muted);
 
-  span:first-child {
+  > span:first-child {
     color: var(--ink);
     font-weight: 600;
+  }
+
+  /* A list wraps between names, never inside one. */
+  .id {
+    white-space: nowrap;
   }
 }
 
