@@ -32,9 +32,9 @@ const clientSize = toKiB(clientBundle.text);
 // page is about.
 const layers = {
   topology: { name: null, tech: ['typescript', 'docker'] },
-  worktrees: { name: 'Mirrors & Worktrees', pageStyle: 'blueprint', tech: ['git', 'typescript'] },
-  install: { name: 'One-shot Installers', pageStyle: 'blueprint', tech: ['bash', 'postgresql'] },
-  hosts: { name: 'Hostnames → /etc/hosts', pageStyle: 'blueprint', tech: ['nixos', 'bash'] },
+  worktrees: { name: 'A Branch for Every Server', pageStyle: 'blueprint', tech: ['git', 'typescript'] },
+  install: { name: 'Bringing a Server Up', pageStyle: 'blueprint', tech: ['bash', 'postgresql'] },
+  hosts: { name: 'Names on the Network', pageStyle: 'blueprint', tech: ['nixos', 'bash'] },
 } as const;
 
 type Layer = keyof typeof layers;
