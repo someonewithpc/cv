@@ -162,3 +162,50 @@ test('main page: reduced motion stands the walkthrough down and answers at once'
   // No run in flight to wait out: the answer is there on the next frame.
   await expect(bus).toHaveAttribute('data-rendered', 'link', { timeout: 500 });
 });
+
+/** How far each answer pill's word sits from the pill's middle, in px: the x-height band
+    up and down, since the answers are lowercase, and the ink across. */
+function labelOffsets(bus: Locator) {
+  return bus.locator('.chain .result').evaluateAll((pills) => {
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    return pills.map((pill) => {
+      const style = getComputedStyle(pill);
+      const box = pill.getBoundingClientRect();
+      const text = pill.textContent!.trim();
+      const range = document.createRange();
+      range.selectNodeContents(pill);
+      const start = range.getBoundingClientRect().left;
+      const probe = document.createElement('span');
+      probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+      pill.append(probe);
+      const baseline = probe.getBoundingClientRect().top;
+      probe.remove();
+      ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const ink = ctx.measureText(text);
+      const xHeight = ctx.measureText('x').actualBoundingBoxAscent;
+      const top = box.top + parseFloat(style.borderTopWidth);
+      const bottom = box.bottom - parseFloat(style.borderBottomWidth);
+      return {
+        text,
+        across: start + (ink.actualBoundingBoxRight - ink.actualBoundingBoxLeft) / 2 - (box.left + box.right) / 2,
+        down: baseline - xHeight / 2 - (top + bottom) / 2,
+      };
+    });
+  });
+}
+
+for (const width of [390, 1024, 1440]) {
+  test(`main page: the answers sit in the middle of their pills at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const { bus } = await mountedBus(page);
+
+    const offsets = await labelOffsets(bus);
+    expect(offsets.map(({ text }) => text)).toEqual(['next', 'stop', 'skipped']);
+    for (const { text, across, down } of offsets) {
+      expect(Math.abs(across), `"${text}" across`).toBeLessThanOrEqual(1);
+      expect(Math.abs(down), `"${text}" up and down`).toBeLessThanOrEqual(1);
+    }
+  });
+}
