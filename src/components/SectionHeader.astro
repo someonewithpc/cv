@@ -39,6 +39,9 @@ header {
       text-transform: uppercase;
       line-height: 1.05;
       color: var(--ink);
+      /* MATERIALS at 2.25rem is 218px, wider than a 224px frame's column; a word breaks only
+         where it would otherwise widen the page. */
+      overflow-wrap: anywhere;
     }
   }
 }

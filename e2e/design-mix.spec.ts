@@ -519,7 +519,7 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
 const SHEETS = [
   // The ruby bases, without the pronunciation the rt annotations carry.
   { number: '01', id: 'profile', heading: '#profile h1 ruby span' },
-  { number: '02', id: 'bill-of-materials', heading: '#tech-icon-cloud-label' },
+  { number: '02', id: 'bill-of-materials', heading: '#bill-of-materials-heading .typewriter' },
   { number: '03', id: 'demos', heading: '#demos-heading .typewriter' },
   { number: '04', id: 'open-source', heading: '#open-source-heading .typewriter' },
 ];

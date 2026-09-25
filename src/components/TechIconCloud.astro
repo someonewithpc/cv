@@ -1,4 +1,5 @@
 ---
+import SectionHeader from '@/components/SectionHeader.astro';
 import TechIcon from '@/components/TechIcon.astro';
 
 import { TECH_ICONS } from '@/server/tech-icons';
@@ -7,8 +8,8 @@ const hardwareCount = TECH_ICONS.filter((tech) => tech.hardware).length;
 const softwareCount = TECH_ICONS.length - hardwareCount;
 ---
 
-<section id="bill-of-materials" aria-labelledby="tech-icon-cloud-label">
-  <p id="tech-icon-cloud-label" class="cloud-label monospace">Bill of materials</p>
+<section id="bill-of-materials" aria-labelledby="bill-of-materials-heading">
+  <SectionHeader headingId="bill-of-materials-heading" titleJp="どうぐ" title="Bill of materials" />
 
   <div class="filter-bar">
     <fieldset class="filter-toggle">
@@ -44,15 +45,6 @@ section {
   max-width: 80ch;
   margin-inline: auto;
   margin-top: 1.5rem;
-
-  .cloud-label {
-    margin: 0 0 0.75rem;
-    font-size: 0.625rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    text-align: center;
-  }
 
   .sr-only {
     position: absolute;
