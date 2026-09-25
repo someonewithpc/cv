@@ -74,7 +74,7 @@
     "cooking and bread"
   ],
   "refs": [
-    { "label": "Bill of materials", "href": "#bill-of-materials" },
+    { "label": "Skills", "href": "#bill-of-materials" },
     { "label": "Demos", "href": "#demos" },
     { "label": "Open Source", "href": "#open-source" }
   ]
