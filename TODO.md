@@ -56,6 +56,7 @@
   - [x] Interactive map font picker (#25)
     - [x] Font proxy stops relaying for the day after 1 GB
   - [x] GNU social schemaDef to Doctrine metadata, two panes with a cross-highlight (SH-08)
+    - [x] Cards run down to the title block, intro and rule beside it (#153)
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
