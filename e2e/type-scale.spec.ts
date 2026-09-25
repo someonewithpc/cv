@@ -71,3 +71,55 @@ for (const reader of [16, 20]) {
     }
   });
 }
+
+const CAREER_COPY = {
+  'a Career summary': '#career .description > p:not(.see)',
+  'a Career note': '#career .description li',
+};
+
+test('the Career sheet sets its copy at the root size', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await setDefaultFontSize(page, 20);
+  await page.goto('/');
+  for (const [what, selector] of Object.entries(CAREER_COPY)) {
+    const size = await page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(size, what).toBe(20);
+  }
+});
+
+for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+  for (const width of [390, 768, 1440]) {
+    test(`with a 20px default the Career sheet fits ${width}px in the ${theme} theme`, async ({ page }) => {
+      await page.addInitScript((id) => localStorage.setItem('cv-theme', id), theme);
+      await page.setViewportSize({ width, height: 900 });
+      await setDefaultFontSize(page, 20);
+      await page.goto('/');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+      const sheet = page.locator('#career');
+      await sheet.scrollIntoViewIfNeeded();
+      const measured = await sheet.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        let widest = 0;
+        for (const node of el.querySelectorAll('*')) widest = Math.max(widest, node.getBoundingClientRect().right);
+        const titleBlock = document.querySelector('.title-block')!.getBoundingClientRect();
+        const shown = [...el.querySelectorAll('svg.drawing')].find((svg) => svg.getBoundingClientRect().width > 0)!;
+        const scale = shown.getBoundingClientRect().width / Number(shown.getAttribute('viewBox')!.split(' ')[2]);
+        return {
+          right: box.right,
+          top: box.top,
+          titleBlockBottom: titleBlock.bottom,
+          widest,
+          lettering: 12 * scale,
+          clientWidth: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+        };
+      });
+
+      expect(measured.scrollWidth, 'the page scrolls sideways').toBeLessThanOrEqual(measured.clientWidth);
+      expect(measured.widest, 'something reaches past the sheet').toBeLessThanOrEqual(measured.right + 1);
+      expect(measured.top, 'the sheet starts under the title block').toBeGreaterThanOrEqual(measured.titleBlockBottom);
+      expect(measured.lettering, 'the drawing lettering is under 8px').toBeGreaterThanOrEqual(8);
+    });
+  }
+}
