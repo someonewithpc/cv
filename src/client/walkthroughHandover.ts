@@ -14,16 +14,24 @@ type HandoverOptions = {
  * Who drives a demo, its walkthrough or the visitor. A pointer moving over the host, a tap
  * on it or focus landing in it takes over; a resting pointer does not, so a page scrolling
  * under a still mouse leaves the walkthrough going. It starts again once the host has been
- * left alone for RESUME_DELAY_MS.
+ * left alone for RESUME_DELAY_MS, but not while keyboard focus is still inside it: a
+ * keyboard or screen reader visitor keeps the demo until they leave it.
  */
 export function watchHandover(host: HTMLElement, options: HandoverOptions) {
   let userControl = false;
   let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  function keyboardFocusInside() {
+    const focused = document.activeElement;
+    return focused instanceof Element && host.contains(focused) && focused.matches(':focus-visible');
+  }
+
   function restartResumeTimer() {
     if (resumeTimer) clearTimeout(resumeTimer);
     resumeTimer = setTimeout(() => {
       resumeTimer = null;
+      // Leaving the host restarts the count, from onFocusOut.
+      if (keyboardFocusInside()) return;
       if (options.handBack()) userControl = false;
     }, RESUME_DELAY_MS);
   }
@@ -59,9 +67,16 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
     window.addEventListener('pointercancel', settle);
   }
 
+  function onFocusOut(event: FocusEvent) {
+    if (!userControl) return;
+    if (event.relatedTarget instanceof Node && host.contains(event.relatedTarget)) return;
+    restartResumeTimer();
+  }
+
   // focusin, not focus: focus does not bubble, so a listener here would only hear the host
   // itself and never the fields and buttons a keyboard visitor lands on.
   host.addEventListener('focusin', takeOver);
+  host.addEventListener('focusout', onFocusOut);
   window.addEventListener('pointerdown', onPointer);
   window.addEventListener('pointermove', onPointer);
 
@@ -72,6 +87,7 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
     dispose() {
       if (resumeTimer) clearTimeout(resumeTimer);
       host.removeEventListener('focusin', takeOver);
+      host.removeEventListener('focusout', onFocusOut);
       window.removeEventListener('pointerdown', onPointer);
       window.removeEventListener('pointermove', onPointer);
     },
