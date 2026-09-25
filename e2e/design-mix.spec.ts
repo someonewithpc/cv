@@ -817,8 +817,8 @@ test('the ruled sheets fit a phone without scrolling sideways', async ({ page })
   for (const sheet of sheets) {
     expect(sheet.layers, `${sheet.id} paper`).toBe(2);
     expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
-    // Wider ruling for a thumb.
-    expect(sheet.pitch, `${sheet.id} pitch`).toBeGreaterThan(32);
+    // The desk's own pitch, 1.25rem lines at 1.5, on a phone too.
+    expect(sheet.pitch, `${sheet.id} pitch`).toBeCloseTo(30, 0);
     for (const height of sheet.rows) {
       expect(Math.abs(height - Math.round(height / sheet.pitch) * sheet.pitch), `${sheet.id} row`)
         .toBeLessThanOrEqual(1);
