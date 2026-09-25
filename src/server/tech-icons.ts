@@ -79,7 +79,7 @@ export const iconSuffix = (iconId: string): string => {
 };
 
 /** Projects a drawing's title block can name beside a tech; they are not skills, so the
- *  cloud never lists them. Their SVGs come from the projects' own trees, under src/icons. */
+ *  cloud never lists them. Their SVGs sit under src/icons. */
 export const PROJECT_ICONS: Tech[] = [
   { icon: 'gnusocial', text: 'GNU social' },
   { icon: 'doctrine', text: 'Doctrine' },
