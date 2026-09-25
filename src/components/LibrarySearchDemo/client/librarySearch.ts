@@ -1,5 +1,6 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
+import { watchHandover } from '@/client/walkthroughHandover';
 
 import { libraryObjects } from '../objects';
 import { formatScore, search, serialise, type Filters, type SearchResult, type SearchState } from '../search';
@@ -193,13 +194,13 @@ function showState(tool: Tool, state: SearchState) {
 /**
  * The walkthrough: the query is typed a few letters at a time, the way a visitor would, so
  * every keystroke goes through the same throttle and abort as theirs. It pauses whenever the
- * sheet is not the page on top, and hands over on the first hover or focus, or when a
- * visitor types on one of the other sheets, which share the query: the script must not
- * append letters to a query that is theirs. It never takes the tool back on its own.
- * `data-autoplay` on the tool is the whole state, as `playing`, `user` or `off`, and the
- * sheet's transport deck shows the same (src/client/autoplayStatus.ts). Its keys drive it:
- * pause takes over as a visitor does, play hands back and reset starts again, both from the
- * query the page opens on.
+ * sheet is not the page on top. The visitor takes the tool over as watchHandover decides (a
+ * moving pointer, a tap or focus; a resting pointer does not), and so does a query typed on
+ * one of the other sheets, which share it. After a quiet spell the script starts again from
+ * the query the page opens on. `data-autoplay` on the tool is the whole state, as `playing`,
+ * `user` or `off`, and the sheet's transport deck shows the same (src/client/autoplayStatus.ts).
+ * Its keys drive it: pause holds the tool for the visitor, play and reset start the script
+ * again from the opening query.
  */
 function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onChange: () => void) {
   const { root, input } = tool;
@@ -212,6 +213,7 @@ function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onC
 
   let run = 0;
   let active = false;
+  let held = false;
   watchPageActive(root, (next) => {
     active = next;
   });
@@ -221,21 +223,31 @@ function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onC
     reportAutoplayState(root, state);
   };
 
-  // Stops the script where it stands and leaves the tool to the visitor.
-  const hold = () => {
-    run += 1;
-    setState('user');
-    listenCount(tool, true);
-  };
-  const takeOver = () => {
-    if (root.dataset.autoplay === 'playing') hold();
-  };
-  root.addEventListener('pointerenter', takeOver);
-  root.addEventListener('focusin', takeOver);
+  const handover = watchHandover(root, {
+    listening: () => active,
+    // Stops the script where it stands and leaves the tool to the visitor.
+    takeOver() {
+      run += 1;
+      setState('user');
+      listenCount(tool, true);
+    },
+    handBack() {
+      if (held || !active) return false;
+      void walk();
+      return true;
+    },
+  });
 
   onAutoplayCommand(root, (command) => {
-    if (command === 'pause') takeOver();
-    else if (command === 'reset' || root.dataset.autoplay !== 'playing') void walk();
+    if (command === 'pause') {
+      held = true;
+      handover.takeOver();
+      return;
+    }
+    held = false;
+    handover.release();
+    if (command === 'play' && root.dataset.autoplay === 'playing') return;
+    void walk();
   });
 
   async function walk() {
@@ -247,8 +259,8 @@ function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onC
       while (!stopped() && (!active || document.hidden)) await wait(250);
     };
 
-    // Back to the query the page opens on; one already showing is left alone, as the
-    // request pipeline would drop it anyway.
+    // Back to the query the page opens on. Only the deck's keys and the hand back after a
+    // quiet spell get here with another query showing, and they are its cause.
     if (serialise({ query: input.value, filters: readFilters(tool) }) !== serialise(initial)) {
       showState(tool, initial);
       onChange();
@@ -281,7 +293,11 @@ function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onC
     }
   }
 
-  return { takeOver, hold, walk };
+  return {
+    /** A query typed on another sheet: the visitor has the tool now. */
+    takeOver: () => handover.takeOver(),
+    walk,
+  };
 }
 
 export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
@@ -333,7 +349,7 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
   }
 
   if (!walkthrough) listenCount(tool, true);
-  else if (movedOn) walkthrough.hold();
+  else if (movedOn) walkthrough.takeOver();
   else void walkthrough.walk();
 }
 
