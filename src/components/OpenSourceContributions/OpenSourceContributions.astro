@@ -86,7 +86,10 @@ const statistics = {
     box-shadow: none;
   }
 
+  /* Narrow, the intro is paper with no rim of its own, so it takes the page gutter: the inset
+     the cutting mat gives the Demos title. */
   .intro {
+    padding: var(--page-gap);
     border-radius: 0.25rem;
     background: var(--surface-page);
     box-shadow: var(--sheet-lift);
