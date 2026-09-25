@@ -129,7 +129,7 @@ bootIslands('[data-fediverse-playground]', boot);
   /* Portrait: one column, the graph under the rows. */
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto var(--bar) minmax(0, 1fr);
+    grid-template-rows: auto auto auto var(--bar) minmax(0, 1fr);
   }
 }
 
@@ -266,14 +266,12 @@ fieldset {
 
   :global([data-sheet-orientation='portrait']) & {
     grid-column: 1;
-    /* Clear of the file's summary, which sits at the other end of the same bar. */
-    padding-right: 22em;
   }
 }
 
 /* Landscape: the summary sits under the status, and the open file covers the graph in the
-   other column. Portrait: the summary sits at the status bar's right end, and the file
-   covers the graph below it. Only those two take the pointer. */
+   other column. Portrait: the summary has a row under the status, and the file covers
+   the graph below it. Only those two take the pointer. */
 .yaml {
   grid-row: 4;
   grid-column: 2;
@@ -358,7 +356,7 @@ fieldset {
   }
 
   :global([data-sheet-orientation='portrait']) & {
-    grid-row: 3 / 5;
+    grid-row: 4 / 6;
     grid-column: 1;
     position: relative;
     z-index: 1;
@@ -499,7 +497,7 @@ fieldset {
   }
 
   :global([data-sheet-orientation='portrait']) & {
-    grid-row: 4;
+    grid-row: 5;
   }
 }
 
