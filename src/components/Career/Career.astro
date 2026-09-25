@@ -1,0 +1,447 @@
+---
+/**
+ * The CV proper, drawn the way a sheet records its own history: the roles are the rows of a
+ * revision table, oldest revision first by number and newest at the top, and the rest of the
+ * CV (degree, languages, where Hugo is, what else he does) fills title block cells beside it.
+ * Everything on the sheet comes from site.json; the skills and the upstream work have sheets
+ * of their own and are only referred to from here.
+ */
+import SectionHeader from '@/components/SectionHeader.astro';
+
+import site from './site.json';
+
+type Edge = { date: string; label: string };
+type Link = { label: string; href: string };
+type Entry = {
+  id: string;
+  org: string;
+  place?: string;
+  role?: string;
+  from: Edge;
+  to: Edge;
+  summary: string;
+  items?: string[];
+  see?: Link[];
+};
+
+const { experience, education, languages, location, interests, refs } = site as typeof site & { experience: Entry[] };
+
+/* Revisions count up from the first job, so the newest row, listed first, carries the highest number. */
+const revision = (index: number) => String(experience.length - index).padStart(2, '0');
+---
+
+<section id="career" aria-labelledby="career-heading">
+  <SectionHeader headingId="career-heading" titleJp="キャリア" title="Career" sheetCode="SH-CV" />
+
+  <div class="sheet-body">
+    <div class="revisions">
+      <h3 id="career-experience">
+        <small lang="ja">エクスペリエンス</small>
+        <span class="typewriter">Experience</span>
+      </h3>
+
+      <div class="table">
+        <p class="head monospace" aria-hidden="true">
+          <span>Rev</span>
+          <span>Period</span>
+          <span>Description</span>
+        </p>
+
+        <ol reversed aria-labelledby="career-experience">
+          {experience.map((entry, index) => (
+            <li class="row" id={`career-${entry.id}`}>
+              <span class="rev monospace" aria-hidden="true">{revision(index)}</span>
+
+              <p class="period monospace">
+                <time datetime={entry.from.date}>{entry.from.label}</time>
+                <span class="to"><span class="to-word">to</span> <time datetime={entry.to.date}>{entry.to.label}</time></span>
+              </p>
+
+              <div class="description">
+                <h4>
+                  {entry.role && <span class="role typewriter">{entry.role}</span>}
+                  <span class="org monospace">
+                    {entry.role && <span class="at">at </span>}{entry.org}{entry.place && <span class="place">, {entry.place}</span>}
+                  </span>
+                </h4>
+
+                <p>{entry.summary}</p>
+
+                {entry.items && (
+                  <ul>
+                    {entry.items.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {entry.see && (
+                  <p class="see monospace">
+                    See {entry.see.map((link, i) => (
+                      <>{i > 0 && ', '}<a href={link.href}>{link.label}</a></>
+                    ))}
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+
+    <dl class="cells">
+      <div class="cell">
+        <dt class="monospace"><small lang="ja">エデュケーション</small>Education</dt>
+        <dd>
+          <span class="typewriter">{education.degree}</span>
+          <span>{education.minor}</span>
+          <span>{education.school}, <time datetime={education.year}>{education.year}</time></span>
+        </dd>
+      </div>
+
+      <div class="cell">
+        <dt class="monospace"><small lang="ja">ランゲージ</small>Languages</dt>
+        <dd>
+          <ul class="languages">
+            {languages.map(({ name, level }) => (
+              <li><span class="typewriter">{name}</span> <span class="level monospace">{level}</span></li>
+            ))}
+          </ul>
+        </dd>
+      </div>
+
+      <div class="cell">
+        <dt class="monospace"><small lang="ja">ロケーション</small>Location</dt>
+        <dd><span class="typewriter">{location}</span></dd>
+      </div>
+
+      <div class="cell">
+        <dt class="monospace"><small lang="ja">インタレスト</small>Interests</dt>
+        <dd><span>{interests.join(', ')}</span></dd>
+      </div>
+
+      <div class="cell">
+        <dt class="monospace"><small lang="ja">リファレンス</small>Ref sheets</dt>
+        <dd>
+          <ul class="refs monospace">
+            {refs.map(({ label, href }) => (
+              <li><a href={href}>{label}</a></li>
+            ))}
+          </ul>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<style lang="scss">
+#career {
+  container-type: inline-size;
+  margin-top: 1.5rem;
+  padding: var(--page-gap);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink);
+
+  /* Every heading and label on the sheet takes its gloss the way the Demos and Open Source
+     sheets do. */
+  :global([lang='ja']) {
+    display: block;
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: color-mix(in oklch, var(--ink-faint), transparent 20%);
+    margin-inline-start: -0.125rem;
+  }
+
+  a {
+    color: var(--ink-muted);
+    text-decoration: underline dotted;
+    text-decoration-color: var(--accent-muted);
+    text-underline-offset: 0.25em;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent-text);
+      text-decoration-style: solid;
+      text-decoration-color: currentColor;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 0.125rem;
+      border-radius: 0.125rem;
+    }
+  }
+
+  h3 {
+    display: grid;
+    justify-items: start;
+    gap: 0.125rem;
+    margin-bottom: 1rem;
+
+    [lang='ja'] {
+      font-size: 0.6875rem;
+    }
+
+    .typewriter {
+      font-size: 1.25rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+  }
+
+  /* The revision table takes the sheet and the cells stand in a column down its right, the
+     way a title block does. Below 52rem of sheet the cells go under the table, two to a line
+     while there is room and one below that. */
+  .sheet-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+
+    @container (width >= 52rem) {
+      grid-template-columns: minmax(0, 1fr) 15rem;
+      gap: 2.5rem;
+    }
+  }
+}
+
+/* The hairlines are the grid's gaps over the block's own line colour, as on a title card. */
+.table {
+  /* The period column holds "to Summer 2018" on one line, its longest label. */
+  --grid: 2.25rem 7.75rem minmax(0, 1fr);
+  --cell-pad: 0.5rem 0.625rem 0.625rem;
+
+  display: grid;
+  gap: 1px;
+  background: var(--line-strong);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.125rem;
+
+  ol {
+    display: grid;
+    gap: 1px;
+  }
+
+  .head,
+  .row {
+    display: grid;
+    grid-template-columns: var(--grid);
+    gap: 1px;
+
+    > * {
+      min-width: 0;
+      padding: var(--cell-pad);
+      background: var(--surface-page);
+    }
+  }
+
+  .head {
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+
+    > * {
+      background: var(--surface-sunken);
+    }
+  }
+
+  .rev {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--accent-text);
+    text-align: center;
+  }
+
+  .period {
+    display: grid;
+    align-content: start;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    color: var(--ink-muted);
+
+    .to-word {
+      color: var(--ink-faint);
+    }
+  }
+
+  .description {
+    display: grid;
+    gap: 0.375rem;
+
+    h4 {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0 0.5ch;
+      font-size: inherit;
+    }
+
+    .role {
+      font-size: 0.9375rem;
+      letter-spacing: 0.03em;
+    }
+
+    .org {
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      color: var(--ink-muted);
+    }
+
+    .at,
+    .place {
+      color: var(--ink-faint);
+    }
+
+    p {
+      color: var(--ink-muted);
+      text-wrap: pretty;
+    }
+
+    ul {
+      display: grid;
+      gap: 0.25rem;
+      color: var(--ink-muted);
+
+      li {
+        position: relative;
+        padding-inline-start: 1rem;
+        text-wrap: pretty;
+
+        /* A short dash for a marker, the way a note on a sheet is listed. */
+        &::before {
+          content: '';
+          position: absolute;
+          inset-inline-start: 0;
+          top: 0.7em;
+          width: 0.5rem;
+          height: 1px;
+          background: var(--ink-faint);
+        }
+      }
+    }
+
+    .see {
+      font-size: 0.6875rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+  }
+
+  /* On a narrow sheet the description would have half the width of a phone, so the revision
+     and the period take one line and the description the whole width under it. */
+  @container (width < 36rem) {
+    --grid: 2.25rem minmax(0, 1fr);
+
+    .head {
+      display: none;
+    }
+
+    .row {
+      grid-template-rows: auto auto;
+    }
+
+    .period {
+      grid-template-columns: repeat(2, auto);
+      justify-content: start;
+      column-gap: 0.5ch;
+    }
+
+    .description {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.cells {
+  display: grid;
+  gap: 1px;
+  background: var(--line-strong);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.125rem;
+
+  @container (width < 52rem) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @container (width < 30rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* An odd cell out at the end of two columns would leave a blank slot of line colour beside
+     it, so it takes the whole last line instead. */
+  .cell:nth-child(odd):last-child {
+    grid-column: 1 / -1;
+  }
+
+  .cell {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.4375rem 0.625rem 0.625rem;
+    background: var(--surface-sunken);
+  }
+
+  dt {
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+
+    [lang='ja'] {
+      font-size: 0.625rem;
+      letter-spacing: 0.08em;
+      text-transform: none;
+    }
+  }
+
+  dd {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    overflow-wrap: break-word;
+
+    > .typewriter {
+      font-size: 0.8125rem;
+      color: var(--ink);
+    }
+  }
+
+  .languages,
+  .refs {
+    display: grid;
+    gap: 0.125rem;
+
+    li {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75ch;
+    }
+  }
+
+  .languages .typewriter {
+    font-size: 0.8125rem;
+    color: var(--ink);
+  }
+
+  .level {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .refs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+  }
+}
+</style>

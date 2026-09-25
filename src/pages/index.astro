@@ -3,6 +3,7 @@ import Layout from '@/layouts/Layout.astro';
 
 import Folio from '@/components/Folio.astro';
 import Name from '@/components/Name.astro';
+import Career from '@/components/Career/Career.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
 import SectionHeader from '@/components/SectionHeader.astro';
 import Callout from '@/components/Callout.astro';
@@ -32,10 +33,15 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
     <Folio number={1} label="Hugo Sales" />
     <Name />
 
-    <Folio number={2} label="Bill of materials" />
+    {/* The CV itself sits right behind the title block, where a drawing keeps its revision
+        table, and before the bill of materials the roles refer to. */}
+    <Folio number={2} label="Career" />
+    <Career />
+
+    <Folio number={3} label="Bill of materials" />
     <TechIconCloud />
 
-    <Folio number={3} label="Demos" />
+    <Folio number={4} label="Demos" />
     <section id="demos" class="full-width" aria-labelledby="demos-heading">
       <div class="cutting-mat">
         <SectionHeader
@@ -119,7 +125,7 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
       </div>
     </section>
 
-    <Folio number={4} label="Open Source" />
+    <Folio number={5} label="Open Source" />
     <OpenSourceContributions />
   </main>
 </Layout>

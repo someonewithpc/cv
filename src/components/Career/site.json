@@ -1,0 +1,76 @@
+{
+  "experience": [
+    {
+      "id": "visrez",
+      "org": "Visrez",
+      "place": "Ireland, remote",
+      "role": "Full stack web developer",
+      "from": { "date": "2022-04", "label": "Apr 2022" },
+      "to": { "date": "2026-07", "label": "Jul 2026" },
+      "summary": "Three products for hotels and resorts, and the Rails backend that ran production behind them.",
+      "items": [
+        "A Vue and Three.js app that lays an event space out in 3D. Blocks of tables and chairs fill a drawn area, guests get seats and the plan exports to PDF.",
+        "A React map of the resort with custom pins, a virtual tour, step by step wayfinding and an embed that takes the client site's own fonts and colours.",
+        "The Ruby backend behind both. 3D model orders and their review, invoices, subscriptions, Google and Apple sign-in, and a library of over 8,000 placeable objects."
+      ],
+      "see": [{ "label": "Demos", "href": "#demos" }]
+    },
+    {
+      "id": "protosyn",
+      "org": "ProtoSyn",
+      "role": "European Innovation Academy finalist",
+      "from": { "date": "2021-06", "label": "Jun 2021" },
+      "to": { "date": "2021-09", "label": "Sep 2021" },
+      "summary": "A startup so that scientists can design and run protein folding simulations without writing the code. A node based editor in Vue and TypeScript wires up inputs, algorithms, outputs and plots, and the app writes the Julia that runs them."
+    },
+    {
+      "id": "gnu-social",
+      "org": "GNU social",
+      "role": "Core maintainer",
+      "from": { "date": "2021-02", "label": "Feb 2021" },
+      "to": { "date": "2022-04", "label": "Apr 2022" },
+      "summary": "The v3 rewrite of the federated social network, in PHP. An event driven modular architecture, low system requirements, and a deployment a sysadmin can run without much time for it.",
+      "see": [{ "label": "GNU social v3", "href": "#highlight-gnu-social-v3" }]
+    },
+    {
+      "id": "leb",
+      "org": "Leb Mobility",
+      "role": "Software engineering intern",
+      "from": { "date": "2021-01", "label": "Jan 2021" },
+      "to": { "date": "2021-03", "label": "Mar 2021" },
+      "summary": "Brought an acquired ride sharing platform's PHP backend up to date and its iOS and Android apps onto current versions, then built a driver and vehicle management platform with a React Native app."
+    },
+    {
+      "id": "catering",
+      "org": "Table service and catering",
+      "from": { "date": "2015", "label": "Summer 2015" },
+      "to": { "date": "2018", "label": "Summer 2018" },
+      "summary": "Summer jobs waiting tables and working catering."
+    }
+  ],
+  "education": {
+    "degree": "BSc Computer Science",
+    "minor": "Minor in Mathematics",
+    "school": "Faculdade de Ciências, Universidade do Porto",
+    "year": "2022"
+  },
+  "languages": [
+    { "name": "Portuguese", "level": "Native" },
+    { "name": "English", "level": "C2" },
+    { "name": "Spanish", "level": "C1" }
+  ],
+  "location": "Porto, Portugal",
+  "interests": [
+    "Open source",
+    "Rubik's cubes",
+    "languages",
+    "motorcycles",
+    "the gym",
+    "cooking and bread"
+  ],
+  "refs": [
+    { "label": "Bill of materials", "href": "#bill-of-materials" },
+    { "label": "Demos", "href": "#demos" },
+    { "label": "Open Source", "href": "#open-source" }
+  ]
+}

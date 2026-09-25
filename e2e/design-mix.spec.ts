@@ -519,9 +519,10 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
 const SHEETS = [
   // The ruby bases, without the pronunciation the rt annotations carry.
   { number: '01', id: 'profile', heading: '#profile h1 ruby span' },
-  { number: '02', id: 'bill-of-materials', heading: '#tech-icon-cloud-label' },
-  { number: '03', id: 'demos', heading: '#demos-heading .typewriter' },
-  { number: '04', id: 'open-source', heading: '#open-source-heading .typewriter' },
+  { number: '02', id: 'career', heading: '#career-heading .typewriter' },
+  { number: '03', id: 'bill-of-materials', heading: '#tech-icon-cloud-label' },
+  { number: '04', id: 'demos', heading: '#demos-heading .typewriter' },
+  { number: '05', id: 'open-source', heading: '#open-source-heading .typewriter' },
 ];
 
 /** The width from which Layout.astro has desk to spare for a folio. */
@@ -548,7 +549,7 @@ const readFolios = (page: import('@playwright/test').Page) =>
       sheets: sheets.map(({ id }) => box(document.querySelector(`#${id}`)!.getBoundingClientRect())),
       // Every piece of paper the page lays down, and the mat with its stacks: what a folio
       // must stay clear of. #demos itself is the whole viewport wide and holds no ink.
-      paper: [...document.querySelectorAll('#profile, #bill-of-materials, #demos > *, #open-source .intro, #open-source section[data-group], article.technical-drawing-stack')]
+      paper: [...document.querySelectorAll('#profile, #career, #bill-of-materials, #demos > *, #open-source .intro, #open-source section[data-group], article.technical-drawing-stack')]
         .map((band) => ({ name: band.id || band.className, ...box(band.getBoundingClientRect()) })),
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
@@ -612,7 +613,8 @@ test('a folio rides along while its sheet scrolls past', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
-  const before = (await readFolios(page)).folios[2];
+  const demosFolio = SHEETS.findIndex(({ id }) => id === 'demos');
+  const before = (await readFolios(page)).folios[demosFolio];
   // The demos sheet is the tall one: 400px into it the folio has travelled but not left.
   await page.evaluate(() => {
     const demos = document.querySelector('#demos')!.getBoundingClientRect();
@@ -621,7 +623,7 @@ test('a folio rides along while its sheet scrolls past', async ({ page }) => {
   await page.waitForTimeout(200);
 
   const { folios, clientWidth } = await readFolios(page);
-  const after = folios[2];
+  const after = folios[demosFolio];
   expect(after.numeral.top).toBeLessThan(before.numeral.top);
   // Stuck 1.5rem down the screen, and still on it.
   expect(after.numeral.top).toBeCloseTo(24, 0);
