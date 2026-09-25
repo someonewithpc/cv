@@ -47,6 +47,7 @@
     - [x] Space builder shows the variant picker in place (#51)
     - [ ] Showcase the carousel? With the animated pips
   - [x] Visrez library tagging tool (#21)
+    - [x] Walkthrough stops for good under a resting mouse or a scroll swipe (#137)
   - [x] Slotted components carry their own scripts; boot island removed
   - [x] Interactive map font picker (#25)
   - [ ] Own theme picker
