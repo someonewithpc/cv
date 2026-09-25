@@ -410,23 +410,6 @@
           ]
         },
         {
-          "repository": "NixOS/nixpkgs",
-          "title": "gtk4: 4.22.4 -> 4.22.5",
-          "description": "Bumped gtk4 to 4.22.5 for upstream's munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged.",
-          "url": "https://github.com/NixOS/nixpkgs/pull/561695",
-          "number": 561695,
-          "updatedAt": "2026-09-16T10:27:21Z",
-          "stats": {
-            "additions": 2,
-            "deletions": 11,
-            "changed_files": 1
-          },
-          "tags": [
-            "nixos",
-            "c"
-          ]
-        },
-        {
           "repository": "Alexays/Waybar",
           "title": "feat(modules): add on-enter and on-leave events",
           "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignores GTK's inferior crossings and latches on a hover flag so each command runs once per hover, and mirrors the `on-click` guard that keeps built-in actions from also running as shell commands.",
@@ -832,6 +815,23 @@
           },
           "tags": [
             "typescript"
+          ]
+        },
+        {
+          "repository": "NixOS/nixpkgs",
+          "title": "gtk4: 4.22.4 -> 4.22.5",
+          "description": "Bumped gtk4 to 4.22.5 for upstream's munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged. Closed as a duplicate of #559510, the GNOME 51 update on staging, which takes gtk4 to 4.24.0.",
+          "url": "https://github.com/NixOS/nixpkgs/pull/561695",
+          "number": 561695,
+          "updatedAt": "2026-09-21T21:36:00Z",
+          "stats": {
+            "additions": 2,
+            "deletions": 16,
+            "changed_files": 1
+          },
+          "tags": [
+            "nixos",
+            "c"
           ]
         },
         {
