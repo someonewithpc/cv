@@ -84,6 +84,14 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
     get userControl() {
       return userControl;
     },
+    /** The deck's pause key: take over the way a visitor does, without a pointer or focus. */
+    takeOver,
+    /** The deck's play or reset key: the walkthrough is back, so the next move takes over again. */
+    release() {
+      if (resumeTimer) clearTimeout(resumeTimer);
+      resumeTimer = null;
+      userControl = false;
+    },
     dispose() {
       if (resumeTimer) clearTimeout(resumeTimer);
       host.removeEventListener('focusin', takeOver);

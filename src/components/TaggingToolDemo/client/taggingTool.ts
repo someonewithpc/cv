@@ -1,3 +1,4 @@
+import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 import { registerStatusBorderProperties } from '@/client/registerStatusBorderProperties';
 import { watchHandover } from '@/client/walkthroughHandover';
@@ -352,10 +353,10 @@ async function press(cursor: Cursor) {
  * It only runs while the sheet is on screen and its page is the one drawn on top, which
  * `--page-index` answers and an IntersectionObserver cannot: every page of a stack shares
  * one grid cell. `data-autoplay` on the tool is the whole state, as `playing`, `user` or
- * `off`; this demo draws its own status and does not report to the sheet's transport deck,
- * which listens for `data-autoplay-state` (src/client/autoplayStatus.ts). The visitor
- * takes the tool over and hands it back as watchHandover decides, and the walkthrough then
- * starts again from the rows the page opens on.
+ * `off`, and the sheet's transport deck shows the same state (src/client/autoplayStatus.ts).
+ * The visitor takes the tool over and hands it back as watchHandover decides, and the
+ * walkthrough then starts again from the rows the page opens on. The deck's keys do this
+ * by hand: pause holds the tool past the quiet spell, play and reset start it again.
  */
 async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Walkthrough) {
   const { root } = tool;
@@ -363,30 +364,50 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
 
   if (reducedMotion.matches || !cursorEl) {
     root.dataset.autoplay = 'off';
+    reportAutoplayState(root, 'off');
     return;
   }
 
   const cursor: Cursor = { el: cursorEl, host, at: null };
   let run = 0;
   let active = false;
+  let held = false;
+
+  const setState = (state: 'playing' | 'user') => {
+    root.dataset.autoplay = state;
+    reportAutoplayState(root, state);
+  };
 
   watchPageActive(root, (next) => {
     active = next;
   });
 
-  watchHandover(root, {
+  const handover = watchHandover(root, {
     listening: () => active,
     takeOver() {
       run += 1;
       cursorEl.hidden = true;
       cursor.at = null;
       group.root.classList.remove('autoplay');
-      root.dataset.autoplay = 'user';
+      setState('user');
     },
     handBack() {
+      if (held) return false;
       void walk();
       return true;
     },
+  });
+
+  onAutoplayCommand(root, (command) => {
+    if (command === 'pause') {
+      held = true;
+      handover.takeOver();
+      return;
+    }
+    held = false;
+    handover.release();
+    if (command === 'play' && root.dataset.autoplay === 'playing') return;
+    void walk();
   });
 
   await walk();
@@ -409,7 +430,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
       }
     };
 
-    root.dataset.autoplay = 'playing';
+    setState('playing');
     await pause(1200);
 
     while (!stopped()) {
