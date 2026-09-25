@@ -106,3 +106,4 @@
 - [x] Refresh the contributions list: move the PRs that closed or merged, add the new ones (#140)
 - [ ] Work History
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
+- [ ] N5 Japanese glosses across the page (#148)
