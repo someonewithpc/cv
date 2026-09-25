@@ -19,9 +19,9 @@ async function mountedTool(page: import('@playwright/test').Page) {
   const mount = front.locator('.tagging-grid-demo');
   await expect(mount).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
   const tool = front.locator('.tagging-tool[data-live]');
-  // Hovering the tool is how a real visitor takes it over from the walkthrough
-  // (taggingTool.ts's pointerenter/focusin -> stop); without it the first row keeps
-  // typing, switching property and replaying on its own.
+  // A pointer moving over the tool is how a real visitor takes it over from the walkthrough
+  // (src/client/walkthroughHandover.ts); without it the first row keeps typing, switching
+  // property and replaying on its own.
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
   // The handover stops the walkthrough where it stands, and on a loaded machine it can land
@@ -76,6 +76,90 @@ test('main page: the walkthrough types with a drawn cursor and hands over on hov
   const settled = await gold.locator('.shared-value').inputValue();
   await pageWait(page, 1_500);
   expect(await gold.locator('.shared-value').inputValue()).toBe(settled);
+});
+
+test.describe('handover', () => {
+  // The quiet spell before the walkthrough comes back is 6 s of page time.
+  test.use({ walkthroughRate: 3 });
+
+  async function playingTool(page: import('@playwright/test').Page) {
+    const stack = taggingToolStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const front = frontPage(stack, await frontPageIndex(stack));
+    await expect(front.locator('.tagging-grid-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
+    const tool = front.locator('.tagging-tool[data-live]');
+    await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+    return tool;
+  }
+
+  test('a mouse resting while the page scrolls the tool under it leaves the walkthrough running', async ({ page }) => {
+    const tool = await playingTool(page);
+
+    // Park the pointer just above the tool, then scroll the tool up under it.
+    await tool.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - window.innerHeight * 0.6));
+    const box = (await tool.boundingBox())!;
+    const rest = { x: box.x + box.width / 2, y: box.y - 20 };
+    await page.mouse.move(rest.x, rest.y);
+    await page.mouse.wheel(0, 240);
+    await expect
+      .poll(() => tool.evaluate((el, at) => el.contains(document.elementFromPoint(at.x, at.y)), rest))
+      .toBe(true);
+    await pageWait(page, 1_500);
+    await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+
+    // Moving is taking over, and leaving it alone hands it back.
+    await page.mouse.move(rest.x + 10, rest.y + 10);
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
+    await page.mouse.move(0, 0);
+    await expect(tool).toHaveAttribute('data-autoplay', 'playing', { timeout: 10_000 });
+  });
+
+  test('keyboard focus in the tool holds it until focus leaves', async ({ page }) => {
+    const tool = await playingTool(page);
+    const field = tool.locator('.grouped-objects[data-group="wood"] .shared-value');
+
+    await field.focus();
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
+    await pageWait(page, 9_000);
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
+    await expect(field).toBeFocused();
+
+    await field.blur();
+    await expect(tool).toHaveAttribute('data-autoplay', 'playing', { timeout: 10_000 });
+  });
+
+  test.describe('touch at 390', () => {
+    test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+
+    test('a swipe that starts on the tool scrolls and leaves the walkthrough running; a tap takes over', async ({ page }) => {
+      const tool = await playingTool(page);
+      const thumb = tool.locator('.grouped-objects[data-group="wood"] .thumbnail-image-container img').first();
+      await thumb.scrollIntoViewIfNeeded();
+      const box = (await thumb.boundingBox())!;
+      const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      // A phone scrolls the tool's own list first and the page once the list runs out.
+      const scrolled = () =>
+        tool.evaluate((el) => window.scrollY + el.querySelector<HTMLElement>(':scope > .body')!.scrollTop);
+      const before = await scrolled();
+
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+      for (const dy of [30, 80, 140, 200]) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: start.x, y: start.y - dy }] });
+        await page.waitForTimeout(80);
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await cdp.detach();
+
+      await expect.poll(scrolled).not.toBe(before);
+      await pageWait(page, 1_500);
+      await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+
+      const tap = await thumb.boundingBox();
+      await page.touchscreen.tap(tap!.x + tap!.width / 2, tap!.y + tap!.height / 2);
+      await expect(tool).toHaveAttribute('data-autoplay', 'user');
+    });
+  });
 });
 
 test('main page: the walkthrough puts its pointer on the tick before the row saves', async ({ page }) => {

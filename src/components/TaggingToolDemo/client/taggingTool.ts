@@ -1,5 +1,6 @@
 import { watchPageActive } from '@/client/frontPage';
 import { registerStatusBorderProperties } from '@/client/registerStatusBorderProperties';
+import { watchHandover } from '@/client/walkthroughHandover';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -352,7 +353,9 @@ async function press(cursor: Cursor) {
  * `--page-index` answers and an IntersectionObserver cannot: every page of a stack shares
  * one grid cell. `data-autoplay` on the tool is the whole state, as `playing`, `user` or
  * `off`; this demo draws its own status and does not report to the sheet's transport deck,
- * which listens for `data-autoplay-state` (src/client/autoplayStatus.ts).
+ * which listens for `data-autoplay-state` (src/client/autoplayStatus.ts). The visitor
+ * takes the tool over and hands it back as watchHandover decides, and the walkthrough then
+ * starts again from the rows the page opens on.
  */
 async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Walkthrough) {
   const { root } = tool;
@@ -364,99 +367,115 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
   }
 
   const cursor: Cursor = { el: cursorEl, host, at: null };
-  let stopped = false;
+  let run = 0;
   let active = false;
 
-  const stopPageWatch = watchPageActive(root, (next) => {
+  watchPageActive(root, (next) => {
     active = next;
   });
 
-  const stop = () => {
-    stopped = true;
-    stopPageWatch();
-    cursorEl.hidden = true;
-    group.root.classList.remove('autoplay');
-    root.dataset.autoplay = 'user';
-  };
-  root.addEventListener('pointerenter', stop, { once: true });
-  root.addEventListener('focusin', stop, { once: true });
+  watchHandover(root, {
+    listening: () => active,
+    takeOver() {
+      run += 1;
+      cursorEl.hidden = true;
+      cursor.at = null;
+      group.root.classList.remove('autoplay');
+      root.dataset.autoplay = 'user';
+    },
+    handBack() {
+      void walk();
+      return true;
+    },
+  });
 
-  const pause = async (ms: number) => {
-    await wait(ms);
-    while (!stopped && (!active || document.hidden)) await wait(250);
-  };
+  await walk();
 
-  const type = async (input: HTMLInputElement, text: string, onKey: () => void) => {
-    for (let i = 1; i <= text.length && !stopped; i += 1) {
-      input.value = text.slice(0, i);
-      input.setSelectionRange(i, i);
-      onKey();
-      await pause(text[i - 1] === ' ' ? 200 : 85 + Math.random() * 60);
-    }
-  };
+  async function walk() {
+    const token = ++run;
+    const stopped = () => token !== run;
 
-  root.dataset.autoplay = 'playing';
-  await pause(1200);
+    const pause = async (ms: number) => {
+      await wait(ms);
+      while (!stopped() && (!active || document.hidden)) await wait(250);
+    };
 
-  while (!stopped) {
-    restore(tool);
-    await pause(500);
-    if (stopped) break;
+    const type = async (input: HTMLInputElement, text: string, onKey: () => void) => {
+      for (let i = 1; i <= text.length && !stopped(); i += 1) {
+        input.value = text.slice(0, i);
+        input.setSelectionRange(i, i);
+        onKey();
+        await pause(text[i - 1] === ' ' ? 200 : 85 + Math.random() * 60);
+      }
+    };
 
-    // The row disagrees with itself: three chair values over four objects. A pause on
-    // the warning is what gives the placeholder time to be read.
-    group.root.classList.add('autoplay');
-    await aim(cursor, group.sharedSave);
-    if (stopped) break;
-    await pause(1400);
-    if (stopped) break;
-
-    // One value in the shared field tags the base object and every variant at once.
-    await aim(cursor, group.shared, true);
-    if (stopped) break;
-    await press(cursor);
-    await type(group.shared, script.value, () => mirror(group));
-    await pause(700);
-    if (stopped) break;
-
-    // The save is a click on the row's tick, not a silent commit: without the pointer
-    // landing on the button, the values just change and nothing says why.
-    await aim(cursor, group.sharedSave);
-    if (stopped) break;
-    await press(cursor);
-    // The ring orbits for the round trip and closes before the values land. The ring is
-    // the whole cue: the row does not fade out and back the way a row leaving the
-    // product's list would, since here it stays for the next step.
-    await submitShared(tool, group, false);
-    if (stopped) break;
-    group.root.classList.remove('autoplay');
-    await pause(1100);
-    if (stopped) break;
-
-    // The row now agrees, so the shared field holds the value and the tick is back.
-    await aim(cursor, group.sharedSave);
-    if (stopped) break;
+    root.dataset.autoplay = 'playing';
     await pause(1200);
-    if (stopped) break;
 
-    // One object is set on its own card, and the shared field goes back to listing
-    // the overrides. An empty script value leaves the field cleared, which is how the
-    // product's per-object input stores nil.
-    const card = group.cards[script.overrideIndex] ?? group.cards[0];
-    await aim(cursor, card.input, true);
-    if (stopped) break;
-    await press(cursor);
-    card.input.value = '';
-    await pause(260);
-    await type(card.input, script.overrideValue ?? '', () => {});
-    await pause(600);
-    if (stopped) break;
+    while (!stopped()) {
+      restore(tool);
+      await pause(500);
+      if (stopped()) break;
 
-    await aim(cursor, card.save);
-    if (stopped) break;
-    await press(cursor);
-    await submitCard(tool, group, card, false);
-    await pause(2600);
+      // The row disagrees with itself: three chair values over four objects. A pause on
+      // the warning is what gives the placeholder time to be read.
+      group.root.classList.add('autoplay');
+      await aim(cursor, group.sharedSave);
+      if (stopped()) break;
+      await pause(1400);
+      if (stopped()) break;
+
+      // One value in the shared field tags the base object and every variant at once.
+      await aim(cursor, group.shared, true);
+      if (stopped()) break;
+      await press(cursor);
+      if (stopped()) break;
+      await type(group.shared, script.value, () => mirror(group));
+      await pause(700);
+      if (stopped()) break;
+
+      // The save is a click on the row's tick, not a silent commit: without the pointer
+      // landing on the button, the values just change and nothing says why.
+      await aim(cursor, group.sharedSave);
+      if (stopped()) break;
+      await press(cursor);
+      if (stopped()) break;
+      // The ring orbits for the round trip and closes before the values land. The ring is
+      // the whole cue: the row does not fade out and back the way a row leaving the
+      // product's list would, since here it stays for the next step.
+      await submitShared(tool, group, false);
+      if (stopped()) break;
+      group.root.classList.remove('autoplay');
+      await pause(1100);
+      if (stopped()) break;
+
+      // The row now agrees, so the shared field holds the value and the tick is back.
+      await aim(cursor, group.sharedSave);
+      if (stopped()) break;
+      await pause(1200);
+      if (stopped()) break;
+
+      // One object is set on its own card, and the shared field goes back to listing
+      // the overrides. An empty script value leaves the field cleared, which is how the
+      // product's per-object input stores nil.
+      const card = group.cards[script.overrideIndex] ?? group.cards[0];
+      await aim(cursor, card.input, true);
+      if (stopped()) break;
+      await press(cursor);
+      if (stopped()) break;
+      card.input.value = '';
+      await pause(260);
+      await type(card.input, script.overrideValue ?? '', () => {});
+      await pause(600);
+      if (stopped()) break;
+
+      await aim(cursor, card.save);
+      if (stopped()) break;
+      await press(cursor);
+      if (stopped()) break;
+      await submitCard(tool, group, card, false);
+      await pause(2600);
+    }
   }
 }
 
