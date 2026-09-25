@@ -11,6 +11,54 @@ $sheet-margin: 0.75em;
   padding: $sheet-margin;
 }
 
+// A drawing's general notes, lettered the way the title block is: a ruled box on the sheet's
+// own paper, its heading in the block's small label face, the notes numbered and set in the
+// typewriter face of the block's values. Markup: .notes > .notes-heading + ol > li.
+@mixin drawing-notes {
+  margin: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--sheet-paper);
+  color: var(--ink);
+
+  .notes-heading {
+    display: block;
+    padding: 0.125em 0.75em;
+    border-bottom: 1px solid var(--line-strong);
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.75em);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  ol {
+    display: grid;
+    gap: 0.25em 1.5em;
+    margin: 0;
+    padding: 0.375em 0.75em;
+  }
+
+  li {
+    // Each note keeps room for its own number, so notes set in columns do not run into
+    // the next one's.
+    margin-inline-start: 1.75em;
+    padding-inline-start: 0.25em;
+    list-style: decimal outside;
+    font-family: "Special Elite", monospace, system-ui;
+    line-height: 1.25;
+    text-wrap: pretty;
+
+    &::marker {
+      font-family: monospace, system-ui;
+      color: var(--ink-muted);
+    }
+  }
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+
 // The buffer's paper and its faces, from the theme's primitive ramps rather than the
 // semantic tokens: a blueprint sheet remaps --ink and --surface-* to its own blue, and a
 // buffer pasted onto one should read exactly as it does on the live sheet. Each face

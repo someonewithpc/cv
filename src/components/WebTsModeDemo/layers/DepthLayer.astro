@@ -61,11 +61,14 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
     ))}
   </div>
 
-  <dl class="rules">
-    <div><dt><code>a &gt; b</code></dt><dd>The right side starts one level past the deepest on its left.</dd></div>
-    <div><dt><code>:not() :has()</code></dt><dd>The arguments sit one level deeper than the pseudo-class.</dd></div>
-    <div><dt><code>a, b</code></dt><dd>Branches share a depth. A nested rule starts again at 0.</dd></div>
-  </dl>
+  <section class="notes" aria-label="Notes">
+    <span class="notes-heading">Notes</span>
+    <ol>
+      <li>In <code>a &gt; b</code> the right side starts one level past the deepest on its left.</li>
+      <li>The arguments of <code>:not()</code> and <code>:has()</code> sit one level deeper than the pseudo-class.</li>
+      <li>The branches of <code>a, b</code> share a depth. A nested rule starts again at 0.</li>
+    </ol>
+  </section>
 </div>
 
 <style lang="scss">
@@ -196,34 +199,18 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   color: var(--buffer-dim);
 }
 
-.rules {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75em;
-  max-width: 44em;
-  margin: 0;
+.notes {
+  @include drawing-notes;
 
-  div {
-    display: grid;
-    align-content: start;
-    gap: 0.125em;
-  }
+  max-width: 48em;
+  font-size: max(0.5rem, 0.8125em);
 
-  dt code {
-    font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.875em);
-  }
+  ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 
-  dd {
-    margin: 0;
-    font-size: max(0.5rem, 0.8125em);
-    line-height: 1.3;
-    text-wrap: pretty;
-    color: var(--ink-muted);
-  }
-
-  @container technical-drawing (orientation: portrait) {
-    grid-template-columns: minmax(0, 1fr);
+    @container technical-drawing (orientation: portrait) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 }
 

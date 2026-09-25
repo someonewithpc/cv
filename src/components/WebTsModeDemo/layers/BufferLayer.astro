@@ -35,7 +35,6 @@ const bands: Band[] = [
     .map((range): Band => ({ lang: range.lang, lane: 2, ...span(range.start, range.end) })),
 ];
 const gutter = String(lines.length).length;
-const languages = [...new Set(['astro', ...ranges.map((range) => range.lang)])];
 
 const echo = [
   { id: 'idle', text: 'Point at the code to see which parser owns it' },
@@ -46,26 +45,29 @@ const echo = [
 
 <div class="wrapper">
   <div class="buffer-layer" data-web-ts-buffer>
-    <p class="intro">
-      web-ts-mode is an Emacs major mode for files that mix languages. This Astro component
-      from the CV has TypeScript in its frontmatter, markup with an expression in it, and a SCSS
-      style block. The astro parser reads the whole file, markup included. The TypeScript and the
-      SCSS each get a parser of their own that sees only its range.
-    </p>
-    <div class="bar">
-      <span class="caption">The site's build colours the code with a small lexer that follows the mode's faces. The ranges are the ones Emacs 31.1 hands each parser for this file.</span>
-      <div class="controls">
-        <ul class="legend" aria-label="Parsers">
-          {languages.map((lang) => (
-            <li data-lang={lang}>{lang}</li>
-          ))}
-        </ul>
-        <label class="toggle">
-          <input type="checkbox" class="show-ranges" checked />
-          <span>Outline the ranges in the buffer</span>
-        </label>
-      </div>
-    </div>
+    <section class="notes" aria-label="Notes">
+      <span class="notes-heading">Notes</span>
+      <ol>
+        <li>
+          web-ts-mode is an Emacs major mode for files that mix languages. This Astro component
+          from the CV has TypeScript in its frontmatter, markup with an expression in it, and a
+          SCSS style block.
+        </li>
+        <li>
+          The astro parser reads the whole file, markup included. The TypeScript and the SCSS
+          each get a parser of their own that sees only its range. The brackets left of the line
+          numbers show how the ranges nest.
+        </li>
+        <li>
+          The site's build colours the code with a small lexer that follows the mode's faces.
+          The ranges are the ones Emacs 31.1 hands each parser for this file.
+        </li>
+      </ol>
+    </section>
+    <label class="toggle">
+      <input type="checkbox" class="show-ranges" checked />
+      <span>Outline the ranges in the buffer</span>
+    </label>
 
     <div class="frame">
       <Window
@@ -127,16 +129,15 @@ const echo = [
       grid-template-rows: auto minmax(0, 1fr);
       column-gap: 1.5em;
 
-      .intro {
+      .notes {
         grid-column: 2;
         grid-row: 1 / -1;
         align-self: start;
-        min-height: 0;
-        padding-bottom: calc(var(--reach-block, 0px) + 0.5em);
+        max-height: calc(100% - var(--reach-block, 0px) - 0.75em);
         overflow: hidden;
       }
 
-      .bar,
+      .toggle,
       .frame {
         grid-column: 1;
       }
@@ -144,41 +145,22 @@ const echo = [
   }
 }
 
-.intro {
-  margin: 0 0 0.25em;
-  max-width: 64em;
-  font-size: 1.125em;
-  line-height: 1.35;
-  text-wrap: pretty;
+.notes {
+  @include drawing-notes;
+
+  font-size: 1.0625em;
 }
 
-.bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.25em 1em;
-  font-family: monospace, system-ui;
-}
-
-.caption {
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: max(0.5rem, 0.875em);
-  color: var(--ink-muted);
-}
-
-.controls {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25em 1.5em;
-}
-
+// The switch reads like one of the title block's labels.
 .toggle {
   display: inline-flex;
+  justify-self: start;
   align-items: center;
-  gap: 0.5ch;
+  gap: 0.75ch;
+  font-family: monospace, system-ui;
+  font-size: max(0.5rem, 0.875em);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
   cursor: pointer;
 
   input {
@@ -223,30 +205,7 @@ const echo = [
   }
 }
 
-.legend {
-  display: flex;
-  gap: 1em;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-family: monospace, system-ui;
-
-  li {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5ch;
-
-    &::before {
-      content: "";
-      width: 1.5em;
-      height: 0.75em;
-      border: 1px dashed var(--lang);
-      border-radius: 0.2em;
-    }
-  }
-}
-
-// Which parser a range, a block or a legend entry stands for.
+// Which parser a range, a block or a bracket stands for.
 .buffer-layer :global([data-lang='astro']) { --lang: var(--lang-astro); }
 .buffer-layer :global([data-lang='html']) { --lang: var(--lang-html); }
 .buffer-layer :global([data-lang='tsx']) { --lang: var(--lang-tsx); }

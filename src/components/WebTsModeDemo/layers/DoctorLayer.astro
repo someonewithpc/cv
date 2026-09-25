@@ -54,13 +54,23 @@ function split(row: Row) {
 
 <div class="wrapper">
   <p class="point typewriter">One command says what is installed and what is not</p>
-  <p class="lead">
-    Each language needs a tree-sitter grammar, and completion and error checks need a language
-    server on PATH. <code>M-x web-ts-doctor</code> lists both. A missing grammar shows up as a
-    line here. When a file opens, the mode leaves that language unhighlighted and carries on.
-    This is the report from the machine that builds this CV. Every grammar is installed, and
-    one server, astro-ls.
-  </p>
+  <section class="notes" aria-label="Notes">
+    <span class="notes-heading">Notes</span>
+    <ol>
+      <li>
+        Each language needs a tree-sitter grammar, and completion and error checks need a
+        language server on PATH. <code>M-x web-ts-doctor</code> lists both.
+      </li>
+      <li>
+        A missing grammar shows up as a line here. When a file opens, the mode leaves that
+        language unhighlighted and carries on.
+      </li>
+      <li>
+        This is the report from the machine that builds this CV. Every grammar is installed,
+        and one server, astro-ls.
+      </li>
+    </ol>
+  </section>
 
   <div class="report" role="group" aria-label="web-ts-doctor report">
     {/* One buffer in two windows, the second carrying on where the first stops, the way
@@ -110,15 +120,19 @@ function split(row: Row) {
   text-wrap: balance;
 }
 
-.lead {
-  margin: 0;
-  max-width: 64em;
-  font-size: 1.0625em;
-  line-height: 1.35;
-  text-wrap: pretty;
+.notes {
+  @include drawing-notes;
 
-  code {
-    font-family: monospace, system-ui;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: max(0.5rem, 0.9375em);
+
+  ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    @container technical-drawing (orientation: portrait) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 }
 

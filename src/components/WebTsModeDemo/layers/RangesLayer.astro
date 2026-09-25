@@ -82,7 +82,7 @@ const rules = [
   </figure>
 
   <table class="rules">
-    <caption>Range rules. Each is <code>:local t</code>, so every capture gets a parser of its own.</caption>
+    <caption>Range rules</caption>
     <tbody>
       {rules.map(({ capture, lang, note }) => (
         <tr>
@@ -92,6 +92,11 @@ const rules = [
         </tr>
       ))}
     </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">Each rule is <code>:local t</code>, so every capture gets a parser of its own.</td>
+      </tr>
+    </tfoot>
   </table>
 </div>
 
@@ -261,27 +266,52 @@ const rules = [
   color: var(--ink-muted);
 }
 
+// Ruled like the title block: one box on the sheet's paper, the heading in its label face.
 .rules {
   border-collapse: collapse;
+  background: var(--sheet-paper);
   font-size: max(0.5rem, 0.8125em);
 
   caption {
-    padding-bottom: 0.25em;
+    padding: 0.25em 0.75em;
+    border: 1px solid var(--line-strong);
+    border-bottom: none;
+    background: var(--sheet-paper);
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.875em);
+    letter-spacing: 0.08em;
     text-align: left;
+    text-transform: uppercase;
     color: var(--ink-muted);
   }
 
   th,
   td {
     padding: 0.2em 1ch 0.15em;
-    border-top: 1px solid var(--line);
+    border: 1px solid var(--line-strong);
+    border-inline-width: 0;
     text-align: left;
     font-weight: normal;
     white-space: nowrap;
   }
 
+  tr > :first-child {
+    border-inline-start-width: 1px;
+  }
+
+  tr > :last-child {
+    border-inline-end-width: 1px;
+  }
+
   td:last-child {
     color: var(--ink-muted);
+  }
+
+  tfoot td {
+    padding-block: 0.3em;
+    font-family: "Special Elite", monospace, system-ui;
+    white-space: normal;
+    color: var(--ink);
   }
 
   // A phone-wide sheet has no room for the notes on one line; the cut off the right edge
