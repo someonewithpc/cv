@@ -60,7 +60,7 @@ type Layer = keyof typeof layers;
 
 <style lang="scss">
 // The title block is absolutely placed in the sheet's bottom-right corner, over the artwork.
-// That corner is the block's: the demo ends above it rather than running under its lettering.
+// The handoff sheet ends above it, and the live sheet's catalog does.
 :global(.drag-drop-demo article.technical-drawing-stack > * > section) {
   --title-block-reach: var(--title-block-block);
 }
@@ -101,5 +101,18 @@ type Layer = keyof typeof layers;
 
 :global(.drag-drop-demo article.technical-drawing-stack > * > section.blueprint .aside) {
   display: none;
+}
+
+// The live sheet's app runs under the title block, as the Space Builder's does. The catalog
+// takes the block's width and stops above it, so the two share an edge and the ground has
+// the rest.
+@container technical-drawing not (orientation: portrait) {
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .drag-drop-scene-app) {
+    grid-template-columns: minmax(0, 1fr) calc(var(--title-block-inline) - var(--demo-pad));
+  }
+
+  :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .drag-drop-scene-app .sidebar) {
+    margin-bottom: calc(var(--title-block-reach) - var(--demo-pad));
+  }
 }
 </style>

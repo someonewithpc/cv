@@ -235,7 +235,7 @@ test('a real pointer resting on the demo keeps the walkthrough off it', { tag: '
 /** An ordinary desktop window, and the size the sheet is as wide as it ever gets at. */
 const DESKTOP_WINDOW = { width: 1366, height: 768 };
 
-test('the scene and the catalog fit the artwork, clear of the title block', async ({ page }) => {
+test('the scene fills the artwork and the catalog stops above the title block', async ({ page }) => {
   await page.setViewportSize(DESKTOP_WINDOW);
   await page.goto('/');
   const app = await openDemo(page);
@@ -256,7 +256,6 @@ test('the scene and the catalog fit the artwork, clear of the title block', asyn
         right: edge.right - mat,
         bottom: edge.bottom - mat,
       },
-      cell: box(sheet.querySelector(':scope > .content')!),
       titleBlock: box(sheet.querySelector(':scope > table')!),
       canvas: box(root.querySelector('canvas[data-scene-canvas]')!),
       catalog: box(root.querySelector('.sidebar')!),
@@ -264,26 +263,21 @@ test('the scene and the catalog fit the artwork, clear of the title block', asyn
   });
 
   const SLACK = 1;
-  // The title block is absolutely placed in the sheet's bottom-right corner, over the
-  // artwork. Nothing else reaches into that corner: the demo once filled the whole cell and
-  // ran the catalog under the block's own lettering.
   for (const part of ['canvas', 'catalog'] as const) {
     const { left, top, right, bottom } = boxes[part];
     expect(left, `${part} past the mat's left edge`).toBeGreaterThanOrEqual(boxes.artwork.left - SLACK);
     expect(right, `${part} past the mat's right edge`).toBeLessThanOrEqual(boxes.artwork.right + SLACK);
     expect(top, `${part} above the mat`).toBeGreaterThanOrEqual(boxes.artwork.top - SLACK);
     expect(bottom, `${part} below the mat`).toBeLessThanOrEqual(boxes.artwork.bottom + SLACK);
-    expect(bottom, `${part} over the title block`).toBeLessThanOrEqual(boxes.titleBlock.top + SLACK);
   }
 
-  // The scene and the catalog keep to the artwork cell, and they still take most of the height the cell has above the block — fitting
-  // the corner by shrinking to nothing would pass everything above.
-  for (const part of ['canvas', 'catalog'] as const) {
-    expect(boxes[part].left, `${part} left of the artwork cell`).toBeGreaterThanOrEqual(boxes.cell.left - SLACK);
-    expect(boxes[part].right, `${part} right of the artwork cell`).toBeLessThanOrEqual(boxes.cell.right + SLACK);
-  }
-  const room = boxes.titleBlock.top - boxes.cell.top;
-  expect(boxes.canvas.bottom - boxes.canvas.top).toBeGreaterThan(0.8 * room);
+  // The scene runs under the block, as the Space Builder's does, and takes most of the
+  // artwork's height. The catalog is the block's width and ends above it, so the block
+  // covers ground and never a card.
+  const height = boxes.artwork.bottom - boxes.artwork.top;
+  expect(boxes.canvas.bottom - boxes.canvas.top).toBeGreaterThan(0.85 * height);
+  expect(boxes.catalog.bottom, 'catalog over the title block').toBeLessThanOrEqual(boxes.titleBlock.top + SLACK);
+  expect(Math.abs(boxes.catalog.left - boxes.titleBlock.left), 'catalog edge off the block edge').toBeLessThanOrEqual(2);
 });
 
 test('the second sheet shows the handoff in four frames of the demo and few words', async ({ page }) => {
