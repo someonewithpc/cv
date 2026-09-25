@@ -215,6 +215,28 @@ test('main page: a narrow sheet scrolls the list rather than squashing the thumb
   expect(list.scroll).toBeGreaterThan(list.client);
 });
 
+test('main page: the list scrolls its last row clear of the title block lying over it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.reload();
+  const { tool } = await mountedTool(page);
+
+  const gap = await tool.evaluate(async (root) => {
+    const body = root.querySelector<HTMLElement>(':scope > .body')!;
+    body.scrollTop = body.scrollHeight;
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const rows = [...body.querySelectorAll<HTMLElement>('.grouped-objects:not([hidden])')];
+    const block = root.closest('section')!.querySelector(':scope > table')!.getBoundingClientRect();
+    const tool = root.getBoundingClientRect();
+    return {
+      overlap: tool.bottom - block.top,
+      clearance: block.top - rows[rows.length - 1].getBoundingClientRect().bottom,
+    };
+  });
+  // The block lies over the tool's corner, and the rows scroll on past it.
+  expect(gap.overlap).toBeGreaterThan(0);
+  expect(gap.clearance).toBeGreaterThanOrEqual(0);
+});
+
 test('main page: the shared value mirrors onto the base and every variant, and Enter saves them all', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
@@ -574,7 +596,11 @@ for (const viewport of VIEWPORTS) {
 
         const gaps = await clearSheet(front);
         expect.soft(gaps.toFrame, `${name}: to the frame line`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
-        expect.soft(gaps.toPieces, `${name}: to the title block`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+        // The live tool lies under the title block, and its list scrolls clear of it (see
+        // the scroll spec above), so only the drawn sheets keep off the block.
+        if (name !== PAGES[0]) {
+          expect.soft(gaps.toPieces, `${name}: to the title block`).toBeGreaterThanOrEqual(gaps.margin - 0.5);
+        }
 
         // The completed objects sheet draws its callouts in JS; they have to keep off the
         // headline, the footnote and the title block as well as the frame.

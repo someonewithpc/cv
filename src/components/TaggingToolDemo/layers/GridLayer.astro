@@ -58,19 +58,16 @@ bootIslands('[data-tagging-grid-demo]', boot);
      against their own content. */
   height: 100%;
   min-height: 0;
+}
 
-  /* The title block claims the bottom-right corner: on a wide sheet it reaches into
-     the content column from the right, on a narrow one it takes a row off the bottom. */
-  padding-right: calc(3em + $sheet-margin);
-
-  @container technical-drawing-width (max-width: 56em) {
-    padding-right: $sheet-margin;
-    padding-bottom: calc(3.5em + $sheet-margin);
-  }
+/* The title block lies over the tool's bottom-right corner, so the rows scroll on past it
+   by the block's height and the last one can be read clear of it. Portrait gives the block
+   a row of its own. */
+:global(article.technical-drawing-stack) .tagging-grid-demo :global(.tagging-tool > .body) {
+  padding-bottom: calc(var(--gutter) + var(--title-block-block, 0px));
 
   @container technical-drawing (orientation: portrait) {
-    /* Portrait gives the title block its own row. */
-    padding-bottom: $sheet-margin;
+    padding-bottom: var(--gutter);
   }
 }
 
