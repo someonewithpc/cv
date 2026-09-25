@@ -14,9 +14,10 @@ const WIDTHS = [760, 1024, 1440];
  * Pages whose artwork asks for more room than the column it was given, so it runs under the
  * block wherever the block is. Nothing about the sheet's own width says so, which is why the
  * sheet-width ladder cannot answer them. Space Builder's cover page hands its scene the whole
- * sheet; the Visrez listing is a full-width code block.
+ * sheet; the Visrez listing is a full-width code block. The synthetic properties tool fills
+ * its sheet too and scrolls its last line clear of the block (synthetic-properties.spec.ts).
  */
-const OVERRUNS_ITS_COLUMN = ['Space Builder · Add Tool', 'Path Data'];
+const OVERRUNS_ITS_COLUMN = ['Space Builder · Add Tool', 'Path Data', 'Synthetic Properties'];
 
 // The walkthroughs move panels around while they play; a still page is what can be measured.
 test.use({ reducedMotion: 'reduce' });
