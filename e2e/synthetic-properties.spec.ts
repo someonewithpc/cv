@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 
@@ -12,22 +12,36 @@ import {
   storedSizeProperties,
 } from '../src/components/SyntheticPropertiesDemo/units';
 
-const PAGES = ['Synthetic Properties', 'Six Renderings', 'Trigger Bodies', 'Searchable Text'];
+const PAGES = ['Synthetic Properties', 'Unit Conversions', 'Database Triggers', 'Searchable Text'];
 
 function syntheticStack(page: Page) {
   return demoStack(page, 'Synthetic Properties');
 }
 
-async function mountedTool(page: Page) {
+/** The first sheet, mounted, and the walkthrough on it. With `clock` the spec drives the
+    page's timers: the typing runs as fast as it is polled and nothing waits on the wall. */
+async function mountedTool(page: Page, { clock = false } = {}) {
+  if (clock) await page.clock.install();
+  await page.goto('/');
   const stack = syntheticStack(page);
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('.synthetic-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
-  const tool = front.locator('.synthetic-tool[data-live]');
-  // Hovering is how a visitor takes the sheet over from the walkthrough.
-  await tool.hover();
-  await expect(tool).toHaveAttribute('data-autoplay', 'user');
-  return tool;
+  return { front, tool: front.locator('.synthetic-tool[data-live]') };
+}
+
+function value(tool: Locator, field: string) {
+  return () => tool.locator(field).inputValue();
+}
+
+/** Runs the page clock on until `read` returns `want`. */
+async function playUntil<T>(page: Page, read: () => Promise<T>, want: T) {
+  await expect
+    .poll(async () => {
+      await page.clock.fastForward(250);
+      return read();
+    }, { intervals: [20], timeout: 30_000 })
+    .toEqual(want);
 }
 
 test.describe('unit maths', () => {
@@ -119,69 +133,118 @@ test('synthetic properties: forward swipes visit every page in order, then wrap'
   expect(await frontPageName(stack)).toBe(PAGES[0]);
 });
 
-test('main page: the walkthrough types on its own and hands over on hover', async ({ page }) => {
-  // The spec drives the page's clock: it jumps the typing along and runs the timers on
-  // after the handover, so nothing waits on the wall clock.
-  await page.clock.install();
-  await page.goto('/');
-  const stack = syntheticStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('.synthetic-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
-
-  const tool = front.locator('.synthetic-tool[data-live]');
+test('main page: the fields are read-only and say so', async ({ page }) => {
+  const { front, tool } = await mountedTool(page);
   await expect(tool).toHaveAttribute('data-autoplay', 'playing');
-  // The first step asks for the sample in feet and inches.
-  await expect
-    .poll(async () => {
-      await page.clock.fastForward(500);
-      return tool.locator('.query-input').inputValue();
-    }, { intervals: [50] })
-    .toBe('5ft3in');
+
+  for (const input of await tool.locator('input').all()) {
+    await expect(input).toHaveAttribute('readonly', '');
+    await expect(input).toHaveAttribute('tabindex', '-1');
+    expect(await input.evaluate((el) => getComputedStyle(el).caretColor)).toBe('rgba(0, 0, 0, 0)');
+  }
+  await expect(tool.locator('.inert-note')).toHaveText("The walkthrough types in these fields. They don't take your own typing.");
+  await expect(front.locator('[data-demo-hint]')).toHaveText('the sheet types by itself');
+
+  // Neither a pointer on the sheet nor a click and typing takes it over or changes a field.
+  await tool.hover();
+  const before = await tool.locator('.pax-input').inputValue();
+  await tool.locator('.pax-input').click();
+  await page.keyboard.type('12');
+  expect(await tool.locator('.pax-input').inputValue()).toBe(before);
+  await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+  await expect(tool.locator('.inert-note')).toHaveClass(/nudge/);
+});
+
+test('main page: the cursor clicks each field, and every search says hit or no match', async ({ page }) => {
+  const { tool } = await mountedTool(page, { clock: true });
+  const cursor = tool.locator('.demo-cursor');
+
+  // The sample, found in feet and inches.
+  await playUntil(page, async () => (await tool.locator('.text-row').getAttribute('data-hit')), 'true');
+  await expect(tool.locator('.query-input')).toHaveValue('5ft3in');
+  await expect(cursor).toBeVisible();
+  await expect(tool.locator('.row-verdict')).toHaveText('✓ 5ft3in found');
+  await expect(tool.locator('.query-result')).toHaveText('✓ found');
   await expect(tool.locator('.text mark')).toHaveText('5ft3in');
 
-  await tool.hover();
+  // A new size: the old search no longer matches, and the row says so.
+  await playUntil(page, async () => (await tool.locator('.chip').allTextContents()).join('x'), '200x100x75');
+  await playUntil(page, async () => (await tool.locator('.text-row').getAttribute('data-hit')), 'false');
+  await expect(cursor).toBeVisible();
+  await expect(tool.locator('.row-verdict')).toHaveText('✗ no match for 5ft3in');
+  await expect(tool.locator('.query-result')).toHaveText('✗ no match');
+  await expect(tool.locator('.text mark')).toHaveCount(0);
+  await expect(tool.locator('.rendering[data-unit="m"] .value')).toHaveText('2m by 1m by 0.75m');
+  await expect(tool.locator('.rendering[data-unit="ft-in"] .value')).toHaveText('6ft7in by 3ft3in by 2ft6in');
+  await expect(tool.locator('.query[data-query="5ft3in"]')).toHaveAttribute('data-hit', 'false');
+  await expect(tool.locator('.query[data-query="5ft3in"] .verdict')).toHaveText('✗ no match');
+  await expect(tool.locator('.query[data-query="2m"]')).toHaveAttribute('data-hit', 'true');
+  await expect(tool.locator('.query[data-query="2m"] .verdict')).toHaveText('✓ found');
+  // The seat count did not change, so it still hits under its other name.
+  await expect(tool.locator('.query[data-query="8 seats"]')).toHaveAttribute('data-hit', 'true');
+
+  await playUntil(page, value(tool, '.query-input'), '2m');
+  await playUntil(page, async () => (await tool.locator('.text-row').getAttribute('data-hit')), 'true');
+  await expect(tool.locator('.row-verdict')).toHaveText('✓ 2m found');
+
+  // 182 reads 180cm, and its feet carry to a whole 6ft.
+  await playUntil(page, value(tool, '.size-input'), '182x45');
+  await playUntil(page, value(tool, '.query-input'), '6ft');
+  await playUntil(page, async () => (await tool.locator('.text-row').getAttribute('data-hit')), 'true');
+  await expect(tool.locator('.rendering[data-unit="cm"] .value')).toHaveText('180cm by 45cm');
+  await expect(tool.locator('.rendering[data-unit="ft-in"] .value')).toHaveText('6ft by 1ft6in');
+  await expect(tool.locator('.text mark')).toHaveText('6ft');
+  await expect(tool.locator('.text')).not.toContainText('0in');
+});
+
+test('main page: the deck pauses the walkthrough and plays it on', async ({ page }) => {
+  const { front, tool } = await mountedTool(page, { clock: true });
+  await playUntil(page, value(tool, '.query-input'), '5ft3in');
+
+  await front.locator('[data-demo-key="pause"]').click();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
-  const settled = await tool.locator('.size-input').inputValue();
+  await expect(front.locator('[data-demo-caption]')).toHaveText('PAUSED');
+  const size = await tool.locator('.size-input').inputValue();
   const query = await tool.locator('.query-input').inputValue();
   // A walkthrough still running would change a field on its next timer. Every step
   // waits under 3 s, so three jumps of that fire whatever it had pending.
   for (let i = 0; i < 3; i += 1) await page.clock.fastForward(3_000);
-  expect(await tool.locator('.size-input').inputValue()).toBe(settled);
+  expect(await tool.locator('.size-input').inputValue()).toBe(size);
   expect(await tool.locator('.query-input').inputValue()).toBe(query);
+  await expect(tool.locator('.demo-cursor')).toBeHidden();
+
+  await front.locator('[data-demo-key="play"]').click();
+  await expect(tool).toHaveAttribute('data-autoplay', 'playing');
 });
 
-test('main page: a new size splits, fans out and changes which queries hit', async ({ page }) => {
-  await page.goto('/');
-  const tool = await mountedTool(page);
-
-  await tool.locator('.size-input').fill('200x100x75');
-  await expect(tool.locator('.chip')).toHaveText(['200', '100', '75']);
-  await expect(tool.locator('.rendering[data-unit="m"] .value')).toHaveText('2m by 1m by 0.75m');
-  await expect(tool.locator('.rendering[data-unit="ft-in"] .value')).toHaveText('6ft7in by 3ft3in by 2ft6in');
-  await expect(tool.locator('.text')).toContainText('2m by 1m by 0.75m Size (meters)');
-
-  await expect(tool.locator('.query[data-query="2m"]')).toHaveAttribute('data-hit', 'true');
-  await expect(tool.locator('.query[data-query="5ft3in"]')).toHaveAttribute('data-hit', 'false');
-  // The seat count did not change, so it still hits under its other name.
-  await expect(tool.locator('.query[data-query="8 seats"]')).toHaveAttribute('data-hit', 'true');
-
-  await tool.locator('.query-input').fill('6ft7in');
-  await expect(tool.locator('.query-result')).toHaveAttribute('data-hit', 'true');
-  await expect(tool.locator('.text mark')).toHaveText('6ft7in');
-
-  // 182 reads 180cm, and a search for the size it was stored at still finds it.
-  await tool.locator('.size-input').fill('182x45');
-  await expect(tool.locator('.rendering[data-unit="cm"] .value')).toHaveText('180cm by 45cm');
-  await tool.locator('.query-input').fill('182cm');
-  await expect(tool.locator('.query-result')).toHaveAttribute('data-hit', 'true');
+test('main page: the tool fills the sheet and its last line scrolls clear of the title block', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+  const layout = await tool.evaluate((el) => {
+    const section = el.closest('section')!;
+    const block = section.querySelector(':scope > table')!.getBoundingClientRect();
+    const sheet = section.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    el.scrollTop = el.scrollHeight;
+    const last = el.querySelector('.stages')!.getBoundingClientRect();
+    return {
+      overlapsBlock: box.bottom > block.top && box.right > block.left,
+      clearOfBlock: block.top - last.bottom,
+      widthShare: box.width / sheet.width,
+      heightShare: box.height / sheet.height,
+    };
+  });
+  // The tool runs under the title block, as the other demos do, and takes most of the sheet.
+  expect(layout.overlapsBlock).toBe(true);
+  expect(layout.widthShare).toBeGreaterThan(0.85);
+  expect(layout.heightShare).toBeGreaterThan(0.75);
+  expect(layout.clearOfBlock).toBeGreaterThanOrEqual(8);
 });
 
-test('six renderings page: the carry is marked in the table', async ({ page }) => {
+test('unit conversions page: the carry is marked in the table', async ({ page }) => {
   await page.goto('/');
   const stack = syntheticStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Six Renderings');
+  await turnToPage(stack, 'Unit Conversions');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
   await expect(front.locator('td.carry')).toHaveText([`6'`, '6ft']);
