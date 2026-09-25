@@ -128,6 +128,21 @@ test('main page: the rows come back ranked, normalised to the top hit', async ({
   await expect(tool.locator('.hit:not([hidden]) .value').first()).toHaveText('1.00');
 });
 
+test('main page: a property filter narrows the rows but keeps the maximum', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+
+  // The rarer word weighs more, so the chairs rise over the tables that only list one.
+  await search(tool, 'wood chair');
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Chiavari Chair');
+
+  // The 8 seat tables set the maximum, and the gold chair keeps its small share of it.
+  await search(tool, 'chiavari 8 seats');
+  await tool.locator('.filter-select[data-filter="color"]').selectOption('Gold');
+  await expect(tool.locator('.hit:not([hidden])')).toHaveCount(1);
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Chiavari Chair');
+  expect((await shownScores(tool))[0]).toBeLessThan(1);
+});
+
 test('main page: a query already on screen is dropped rather than sent again', async ({ page }) => {
   const { tool } = await mountedTool(page);
   const sent = tool.locator('[data-tally="sent"]');

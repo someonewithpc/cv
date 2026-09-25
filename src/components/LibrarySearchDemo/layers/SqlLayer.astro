@@ -37,7 +37,7 @@ const state = { query: initialQuery, filters: {} };
         <li data-mark="where"><span class="badge">1</span><span><code>WHERE</code> decides which rows come back at all</span></li>
         <li data-mark="select"><span class="badge">2</span><span>divided by the maximum, it is the <code>search_relevance</code> column; Rails' <code>#select</code> drops <code>library_objects.*</code> once a <code>MATCH</code> is in it, so it goes on <code>arel.projections</code></span></li>
         <li data-mark="order"><span class="badge">3</span><span>the same ratio is the first <code>ORDER BY</code> term; <code>updated_at</code>, inherited from the <code>visible</code> scope, breaks ties</span></li>
-        <li data-mark="max"><span class="badge">max</span><span><code>MAX()</code> would fold the rows into one, so the maximum comes from the same relation <code>reselect</code>ed as a scalar subquery, filters and <code>LIMIT 250</code> included</span></li>
+        <li data-mark="max"><span class="badge">max</span><span><code>MAX()</code> would fold the rows into one, so the maximum comes from the same relation <code>reselect</code>ed as a scalar subquery, category and <code>LIMIT 250</code> included. The property filter comes after, so it never moves the maximum</span></li>
       </ol>
     </div>
   </div>

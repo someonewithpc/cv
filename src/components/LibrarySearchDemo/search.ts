@@ -132,7 +132,7 @@ export function search({ query, filters }: SearchState): SearchResult {
 
   const hits: Hit[] = [];
   index.forEach(({ object, tokens }) => {
-    if (!passesFilters(object, filters)) return;
+    if (!passesFilters(object, { category: filters.category })) return;
     const tf = terms.map((term) => occurrences(term, tokens));
     const has = (term: TermStat) => tf[terms.indexOf(term)] > 0;
 
@@ -153,12 +153,15 @@ export function search({ query, filters }: SearchState): SearchResult {
   // a plain listing.
   hits.sort((a, b) => b.relevance - a.relevance || b.object.id.localeCompare(a.object.id));
 
+  // The controller takes the maximum before it adds the property filter, so a property
+  // narrows the rows but never the maximum they are divided by; the category does both.
   const max = terms.length && hits.length ? Math.max(...hits.map((hit) => hit.relevance)) : null;
   hits.forEach((hit) => {
     hit.score = max ? hit.relevance / max : null;
   });
+  const shown = hits.filter((hit) => passesFilters(hit.object, filters));
 
-  return { mangled, terms, hits, max, total };
+  return { mangled, terms, hits: shown, max, total };
 }
 
 /** The request the search form sends, which is also what in-flight requests are keyed on. */
