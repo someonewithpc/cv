@@ -7,16 +7,25 @@
  */
 import type { Line, Range, Token } from './lexer';
 
+/**
+ * A bracket beside the buffer over lines `from` to `to`, in lane `lane` counted from the
+ * outside in, so a range drawn in a deeper lane sits inside the one around it.
+ */
+export type Band = { lang: string; lane: number; from: number; to: number };
+
 type Props = {
   lines: Line[];
   ranges?: Range[];
   modeLine: string;
   /** How many digits the line-number gutter keeps room for. */
   gutter?: number;
+  bands?: Band[];
   class?: string;
 };
 
-const { lines, ranges = [], modeLine, gutter = 2, class: className } = Astro.props;
+const { lines, ranges = [], modeLine, gutter = 2, bands = [], class: className } = Astro.props;
+const lanes = bands.length ? Math.max(...bands.map((band) => band.lane)) + 1 : 0;
+const lineSpan = ({ from, to }: Band) => (from === to ? `${from}` : `${from}-${to}`);
 const byId = new Map(ranges.map((range) => [range.id, range]));
 
 // A range is a block when its tokens reach more than one line.
@@ -79,8 +88,25 @@ const label = (id: string) => {
 };
 ---
 
-<div class:list={['emacs-window', className]} style={`--gutter: ${gutter}`}>
+<div class:list={['emacs-window', className]} style={`--gutter: ${gutter}; --lanes: ${lanes}`}>
   <div class="text">
+    {bands.length > 0 && (
+      <ol class="bands" aria-label="Parser ranges, outermost first">
+        {bands.map((band) => (
+          <li
+            class="band"
+            data-lang={band.lang}
+            data-lane={band.lane}
+            data-from={band.from}
+            data-to={band.to}
+            style={`--lane: ${band.lane}; --from: ${band.from}; --to: ${band.to}`}
+            aria-label={`${band.lang}, ${band.from === band.to ? `line ${band.from}` : `lines ${band.from} to ${band.to}`}`}
+          >
+            <span class="band-label" aria-hidden="true">{band.lang} {lineSpan(band)}</span>
+          </li>
+        ))}
+      </ol>
+    )}
     {rows.map((row) => row.block ? (
       <div class="block" data-range={row.block} data-lang={byId.get(row.block)?.lang} tabindex="0" role="group" aria-label={label(row.block)}>
         <span class="range-label" aria-hidden="true">{byId.get(row.block)?.lang}</span>
@@ -120,9 +146,53 @@ const label = (id: string) => {
 }
 
 .text {
+  --line: 1.25em;
+  --pad: 0.25em;
+  // One lane per level of nesting: a label set on its side, then the bracket's line and ticks.
+  --label: max(0.5rem, 0.75em);
+  --lane-width: calc(var(--label) * 2);
+
+  position: relative;
   min-height: 0;
-  padding-block: 0.25em;
+  padding-block: var(--pad);
+  padding-inline-start: calc(var(--lanes) * var(--lane-width));
   overflow: hidden;
+}
+
+// The brackets, drawn the way a drawing marks a span: a line down the lane with a tick at
+// each end turned toward the code, and the language and its lines set along it from the top,
+// where the range starts.
+.bands {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.band {
+  position: absolute;
+  top: calc(var(--pad) + (var(--from) - 1) * var(--line) + 0.125em);
+  left: calc(var(--lane) * var(--lane-width) + var(--label) * 1.35);
+  width: calc(var(--label) * 0.55);
+  height: calc((var(--to) - var(--from) + 1) * var(--line) - 0.25em);
+  box-sizing: border-box;
+  border: 1.5px solid var(--lang);
+  border-inline-end: none;
+  border-radius: 0.2em 0 0 0.2em;
+}
+
+.band-label {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 0.1em);
+  font-size: max(0.5rem, 0.75em);
+  line-height: 1.15;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  color: var(--lang);
 }
 
 .line {
