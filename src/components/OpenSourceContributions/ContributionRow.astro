@@ -161,6 +161,9 @@ if (number != null) citePieces.push(null, `#${number}`);
     min-width: 0;
     display: block;
     width: fit-content;
+    /* fit-content never goes under the longest identifier in the title, so without a cap one
+       like assertStringable ran past a narrow column instead of breaking. */
+    max-width: 100%;
     color: var(--ink);
     overflow-wrap: break-word;
     word-break: normal;
