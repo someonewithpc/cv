@@ -442,17 +442,22 @@ test('a title card stands beside every detail at 1728px, alternating sides', asy
 });
 
 for (const width of [CARDS_FROM - 16, 1440, 1280, 390]) {
-  test(`no title card at ${width}px, and none of it under the stack`, async ({ page }) => {
+  test(`the title card is a slip under the stack at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width < 800 ? 844 : 800 });
     await page.goto('/');
     await page.waitForTimeout(1000);
 
-    const { details } = await readCards(page);
+    const { mat, details } = await readCards(page);
     expect(details.length).toBeGreaterThan(0);
 
     for (const [index, detail] of details.entries()) {
-      expect(detail.shown, `${letter(index)} hidden`).toBe(false);
-      expect(detail.room, `${letter(index)} takes no room`).toBe(0);
+      expect(detail.shown, `${letter(index)} shown`).toBe(true);
+      const card = detail.card!;
+      // Inside the boundary, not in a lane beside it.
+      expect(card.left, `${letter(index)} card inside the boundary`).toBeGreaterThanOrEqual(detail.boundary.left);
+      expect(card.right, `${letter(index)} card inside the boundary`).toBeLessThanOrEqual(detail.boundary.right);
+      expect(card.left, `${letter(index)} card inside the mat`).toBeGreaterThanOrEqual(mat.left);
+      expect(card.right, `${letter(index)} card inside the mat`).toBeLessThanOrEqual(mat.right);
     }
 
     const overflow = await page.evaluate(() => ({
