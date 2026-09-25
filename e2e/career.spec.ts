@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
 type Edge = { date: string; label: string };
 type Site = {
   experience: { id: string; org: string; from: Edge; to: Edge }[];
+  learning: { label: string; from: string };
   education: { degree: string; minor: string; school: string; short: string; from: string; year: string };
   languages: { name: string }[];
   refs: { label: string; href: string }[];
@@ -24,6 +25,12 @@ const at = ({ date, label }: Edge, end = false) => {
 const extent = (bars: SVGGraphicsElement[]) => {
   const boxes = bars.map((bar) => bar.getBBox());
   return { from: Math.min(...boxes.map((b) => b.x)), to: Math.max(...boxes.map((b) => b.x + b.width)) };
+};
+
+/** The axis ticks, one a year: where the first year starts and how long a year is. */
+const axis = (svg: SVGSVGElement) => {
+  const ticks = [...svg.querySelectorAll<SVGPathElement>(':scope > path.tick')].map((tick) => tick.getBBox().x + 3.5);
+  return { origin: ticks[0], unit: ticks[1] - ticks[0] };
 };
 
 /**
@@ -80,8 +87,7 @@ test('the elevation under the table draws one bar per job, as long as the job la
     await expect(page.locator(`#career svg.${drawing} .job`)).toHaveCount(site.experience.length);
   }
 
-  // Bar lengths against the axis: the wide drawing lays 12 years over its 908 units.
-  const unit = 908 / 12;
+  const { unit } = await wide.evaluate(axis);
   for (const [index, entry] of site.experience.entries()) {
     const job = wide.locator(`.job[data-job="${entry.id}"]`);
     const { from, to } = await job.locator('.bar').evaluateAll(extent);
@@ -107,12 +113,12 @@ test('the elevation under the table draws one bar per job, as long as the job la
   await expect(page.locator('#career')).not.toContainText('ELEVATION A');
 });
 
-test('the degree is an outline bar in the ground lane, under the jobs of its years', async ({ page }) => {
+test('the degree is an outline bar in the lowest lane, under the jobs of its years', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
   const { degree, minor, short, from, year } = site.education;
-  const unit = 908 / 12;
+  const { unit } = await page.locator('#career svg.wide').evaluate(axis);
 
   const study = page.locator('#career svg.wide g.study');
   await expect(study).toHaveCount(1);
@@ -206,6 +212,42 @@ for (const [drawing, width] of [['wide', 1440], ['wide', 900], ['tall', 390], ['
   });
 }
 
+test('the continuous learning line starts the axis and stays open at the present', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const { label, from } = site.learning;
+  const svg = page.locator('#career svg.wide');
+  const { origin } = await svg.evaluate(axis);
+  await expect(svg.locator('.year').first()).toHaveText(from);
+
+  const line = svg.locator('g.learning');
+  await expect(line).toHaveCount(1);
+  await expect(line.locator('text.label')).toHaveText(label);
+  await expect(line.locator('.leader')).toHaveCount(1);
+  await expect(line).toContainText(`since ${from}`);
+
+  const { from: left, to: right } = await line.locator('.bar').evaluateAll(extent);
+  expect(left, 'the line starts where the axis starts').toBeCloseTo(origin, 0);
+  // It runs past the newest job's end, to the present, and ends in an arrowhead: one tick
+  // at its start and none at its end.
+  const newest = await svg.locator('.job').evaluateAll((jobs) => Math.max(...jobs.flatMap((job) => [...job.querySelectorAll<SVGGraphicsElement>('.bar')].map((bar) => bar.getBBox().x + bar.getBBox().width))));
+  expect(right).toBeGreaterThan(newest);
+  await expect(line.locator('.tick')).toHaveCount(1);
+  const tip = await line.locator('.bar').evaluate((path) => (path as SVGPathElement).getAttribute('d')!.split(' L').length);
+  expect(tip, 'an arrowhead at the open end').toBe(7);
+
+  // Under every job and the degree.
+  const lineTop = (await line.locator('.bar').boundingBox())!.y;
+  for (const bar of await svg.locator('.job .bar, .study .bar').all()) {
+    const box = (await bar.boundingBox())!;
+    expect(box.y + box.height).toBeLessThan(lineTop);
+  }
+
+  // The drawing gives the year Hugo started, never the year he was born.
+  await expect(page.locator('body')).not.toContainText('1999');
+});
+
 test('the table service summers break off at each winter with a break line', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
@@ -221,10 +263,7 @@ test('the table service summers break off at each winter with a break line', asy
   }
 
   // In the wide drawing each break falls inside the winter between two summers.
-  const unit = await page.locator('#career svg.wide').evaluate((svg) => {
-    const ticks = [...svg.querySelectorAll<SVGPathElement>(':scope > path.tick')];
-    return (ticks[1].getBBox().x - ticks[0].getBBox().x);
-  });
+  const { unit } = await page.locator('#career svg.wide').evaluate(axis);
   const gaps = await page.locator(`#career svg.wide .job[data-job="${catering.id}"] .bar`).evaluateAll((paths) => {
     const boxes = paths.map((path) => (path as SVGGraphicsElement).getBBox());
     return boxes.slice(1).map((box, i) => [boxes[i].x + boxes[i].width, box.x]);

@@ -56,6 +56,7 @@
     "from": "2017",
     "year": "2022"
   },
+  "learning": { "label": "Continuous learning", "from": "2012" },
   "tagline": "Coding since age 13, always learning",
   "languages": [
     { "name": "Portuguese", "level": "Native" },

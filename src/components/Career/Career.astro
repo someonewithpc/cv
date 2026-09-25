@@ -24,7 +24,7 @@ type Entry = {
   see?: Link[];
 };
 
-const { experience, education, tagline, languages, location, interests, refs } = site as typeof site & { experience: Entry[] };
+const { experience, education, learning, tagline, languages, location, interests, refs } = site as typeof site & { experience: Entry[] };
 
 /* Revisions count up from the first job, so the newest row, listed first, carries the highest number. */
 const revision = (index: number) => String(experience.length - index).padStart(2, '0');
@@ -32,8 +32,9 @@ const revision = (index: number) => String(experience.length - index).padStart(2
 /* Under the table, the same jobs drawn as an elevation: the years run along a dimension string
    under the ground line, every job is a bar as long as it lasted, standing on the ground or
    stacked over a bar it overlapped, with its own dimension over it and a leader from its
-   revision number. The degree is an outline bar in the ground lane, under the jobs of those
-   years. Wide, time runs left to right; under 44rem of sheet the drawing stands on
+   revision number. The degree is an outline bar in the lowest lane, under the jobs of those
+   years. Under everything, on the ground, runs the continuous learning line, from the year
+   Hugo started coding and still going, so it ends in an arrow instead of a tick. Wide, time runs left to right; under 44rem of sheet the drawing stands on
    end, oldest at the bottom, so the labels get the sheet's width. */
 
 /* A date as a fraction of a year. A bare year whose label says "Summer" is June to September. */
@@ -47,6 +48,7 @@ const at = (edge: Edge, end = false): number => {
 type Job = Entry & {
   n: string;
   study?: boolean;
+  open?: boolean;
   start: number;
   end: number;
   seasonal: boolean;
@@ -125,8 +127,36 @@ for (let moved = true; moved; ) {
 }
 const lanes = Math.max(...jobs.map((job) => job.lane)) + 1;
 
-const T0 = 2015;
-const T1 = 2027;
+/* The learning line has not ended: it runs to the day of the build. */
+const today = new Date();
+const NOW = today.getFullYear() + (today.getMonth() + (today.getDate() - 1) / 31) / 12;
+
+/* It lies under every lane, so its anchor is any point before the first job. Placed first,
+   it takes the lowest label row. */
+jobs.unshift({
+  id: 'learning',
+  org: learning.label,
+  from: { date: learning.from, label: learning.from },
+  to: { date: '', label: 'now' },
+  summary: '',
+  n: '∞',
+  open: true,
+  start: Number(learning.from),
+  end: NOW,
+  seasonal: false,
+  span: `since ${learning.from}`,
+  lane: -1,
+  anchors: [],
+  lines: [learning.label],
+});
+{
+  const first = Math.min(...jobs.filter((job) => !job.open).map((job) => job.start));
+  const learner = jobs[0];
+  learner.anchors = ANCHORS.filter((f) => learner.start + f * (learner.end - learner.start) < first - MARGIN - 0.2);
+}
+
+const T0 = Number(learning.from);
+const T1 = Math.floor(NOW) + 1;
 const years = Array.from({ length: T1 - T0 }, (_, i) => T0 + i);
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -167,7 +197,7 @@ const defs = (id: string) =>
 const bubble = (x: number, y: number, job: Job) =>
   `<circle class="bubble" cx="${x}" cy="${y}" r="10"/>${text(x, y + 4, job.n, job.study ? 'bubble-number bubble-study' : 'bubble-number monospace', 'text-anchor="middle"')}`;
 
-const group = (job: Job) => `<g class="${job.study ? 'study' : 'job'}" data-job="${job.id}" data-lane="${job.lane}">`;
+const group = (job: Job) => `<g class="${job.open ? 'learning' : job.study ? 'study' : 'job'}" data-job="${job.id}" data-lane="${job.lane}">`;
 /* A seasonal bar is drawn in pieces, cut at its breaks with the drafting break line:
    straight across, a Z through the middle, straight again. `pos` places a time along the
    bar and `pt` writes an (along, across) pair as x y. */
@@ -187,6 +217,13 @@ const cutBar = (job: Job, pos: (t: number) => number, c0: number, c1: number, pt
     const points = [pt(a, c0), pt(b, c0), ...edge(b, c0, c1, i < pieces - 1), pt(a, c1), ...edge(a, c1, c0, i > 0)];
     return `<path ${attrs} d="M${points.join(' L')} Z"/>`;
   }).join('');
+};
+
+/* The learning line: a thin bar with an arrowhead at the present instead of an end. */
+const openBar = (a0: number, ae: number, c: number, pt: (a: number, c: number) => string) => {
+  const head = ae - Math.sign(ae - a0) * 9;
+  const points = [pt(a0, c - 2), pt(head, c - 2), pt(head, c - 5), pt(ae, c), pt(head, c + 5), pt(head, c + 2), pt(a0, c + 2)];
+  return `<path class="bar learning" d="M${points.join(' L')} Z"/>`;
 };
 
 const barClass = (job: Job) => `bar${job.seasonal ? ' seasonal' : ''}${job.study ? ' study' : ''}`;
@@ -241,8 +278,11 @@ const wide = (() => {
   const TOP = 8;
   const rowY = (row: number) => TOP + 17 + (rows - 1 - row) * ROW;
   const lanesTop = TOP + rows * ROW + 8;
-  const G = lanesTop + lanes * LANE;
-  const barTop = (lane: number) => G - lane * LANE - BAR;
+  const BASE = 36;
+  const G = lanesTop + BASE + lanes * LANE;
+  /* The learning line lies on the ground and the lanes stand on it. */
+  const LY = G - 7;
+  const barTop = (lane: number) => (lane < 0 ? LY - 2 : G - BASE - lane * LANE - BAR);
 
   const bars = placed.map((job) => {
     const x0 = x(job.start);
@@ -254,15 +294,18 @@ const wide = (() => {
     const half = (job.span.length * CH) / 2 + 8;
     let mid = (x0 + x1) / 2;
     if (Math.abs(job.ax - mid) < half) mid = job.ax + (job.ax - x0 > x1 - job.ax ? -half : half);
-    return `${group(job)}
-      ${job.seasonal
+    const shape = job.open
+      ? openBar(x0, x1, LY, (a, c) => `${a} ${c}`)
+      : job.seasonal
         ? cutBar(job, x, top, top + BAR, (a, c) => `${a} ${c}`, `class="${barClass(job)}" ${fill(job, 'h')}`)
-        : `<rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" ${fill(job, 'h')}/>`}
+        : `<rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" ${fill(job, 'h')}/>`;
+    return `${group(job)}
+      ${shape}
       ${job.study ? `<line class="centre" x1="${x0 + 4}" y1="${top + BAR / 2}" x2="${x1 - 4}" y2="${top + BAR / 2}"/>` : ''}
       <line class="ext" x1="${x0}" y1="${top - 3}" x2="${x0}" y2="${dim - 5}"/>
-      <line class="ext" x1="${x1}" y1="${top - 3}" x2="${x1}" y2="${dim - 5}"/>
-      <line class="dim" x1="${x0 - 4}" y1="${dim}" x2="${x1 + 4}" y2="${dim}"/>
-      ${tick(x0, dim)}${tick(x1, dim)}
+      ${job.open ? '' : `<line class="ext" x1="${x1}" y1="${top - 3}" x2="${x1}" y2="${dim - 5}"/>`}
+      <line class="dim" x1="${x0 - 4}" y1="${dim}" x2="${job.open ? x1 : x1 + 4}" y2="${dim}"/>
+      ${tick(x0, dim)}${job.open ? '' : tick(x1, dim)}
       ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}
       <polyline class="leader" points="${job.ax} ${by + 10} ${job.ax} ${top - 1}" marker-end="url(#h-arrow)"/>
       ${bubble(job.ax, by, job)}
@@ -288,8 +331,9 @@ const wide = (() => {
 
 /* ----- Narrow: the same drawing on end, the ground a datum down the left. ----- */
 const tall = (() => {
-  /* 384 rather than 360: the degree adds a lane, and the labels keep their width. */
-  const W = 384;
+  /* Wider than the 360 the jobs alone took: the degree's lane and the learning line's
+     would otherwise narrow the labels. */
+  const W = 410;
   const DX = 44;
   const S = 28;
   const TOP = 12;
@@ -298,7 +342,8 @@ const tall = (() => {
      which leave on the other side, cross nothing but the lanes above. */
   const LANE = 34;
   const BAR = 12;
-  const LANE0 = DX + 8 + LANE - BAR;
+  const LC = DX + 8 + LANE - BAR + 2;
+  const LANE0 = LC + 24;
   /* Past the last lane each leader bends from its bubble's height to its bar's. */
   const BEND = LANE0 + (lanes - 1) * LANE + BAR + 8;
   const LX = BEND + 28;
@@ -321,23 +366,27 @@ const tall = (() => {
   }
 
   const bars = placed.map((job) => {
-    const x0 = LANE0 + job.lane * LANE;
+    const x0 = job.open ? LC - 2 : LANE0 + job.lane * LANE;
+    const right = job.open ? LC + 2 : x0 + BAR;
     const y0 = y(job.end);
     const y1 = y(job.start);
     const dim = x0 - 10;
     const mid = (y0 + y1) / 2;
     const by = job.top + 7;
-    return `${group(job)}
-      ${job.seasonal
+    const shape = job.open
+      ? openBar(y1, y0, LC, (a, c) => `${c} ${a}`)
+      : job.seasonal
         ? cutBar(job, y, x0, x0 + BAR, (a, c) => `${c} ${a}`, `class="${barClass(job)}" ${fill(job, 'v')}`)
-        : `<rect class="${barClass(job)}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" ${fill(job, 'v')}/>`}
+        : `<rect class="${barClass(job)}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" ${fill(job, 'v')}/>`;
+    return `${group(job)}
+      ${shape}
       ${job.study ? `<line class="centre" x1="${x0 + BAR / 2}" y1="${y0 + 4}" x2="${x0 + BAR / 2}" y2="${y1 - 4}"/>` : ''}
-      <line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>
+      ${job.open ? '' : `<line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>`}
       <line class="ext" x1="${x0 - 3}" y1="${y1}" x2="${dim - 5}" y2="${y1}"/>
-      <line class="dim" x1="${dim}" y1="${y0 - 4}" x2="${dim}" y2="${y1 + 4}"/>
-      ${tick(dim, y0)}${tick(dim, y1)}
+      <line class="dim" x1="${dim}" y1="${job.open ? y0 : y0 - 4}" x2="${dim}" y2="${y1 + 4}"/>
+      ${job.open ? '' : tick(dim, y0)}${tick(dim, y1)}
       ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
-      <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${x0 + BAR + 1} ${job.ay}" marker-end="url(#v-arrow)"/>
+      <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${right + 1} ${job.ay}" marker-end="url(#v-arrow)"/>
       ${bubble(LX, by, job)}
       ${job.text.map((line, i) => text(LX + 15, job.top + 11 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
     </g>`;
@@ -561,7 +610,7 @@ const tall = (() => {
   }
 
   :global(.tall) {
-    max-width: 24rem;
+    max-width: 25.625rem;
   }
 
   @container (width >= 44rem) {
@@ -615,6 +664,11 @@ const tall = (() => {
   }
 
   /* The degree is study, not a job: an outline with a chain centre line instead of a hatch. */
+  :global(.bar.learning) {
+    fill: var(--accent);
+    stroke: none;
+  }
+
   :global(.bar.study) {
     fill: var(--surface-page);
   }
