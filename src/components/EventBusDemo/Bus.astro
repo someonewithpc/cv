@@ -518,9 +518,20 @@ button.call {
   }
 }
 
+/* The answers are lowercase, so the pill centres the x-height band: the line box is
+   trimmed to it and the padding is even above and below. Without the trim the line box
+   is the font's, whose ascent and descent differ, and the word sits high. The pill keeps
+   its own height rather than stretching to the row, or the word sits at the row's top. */
 .result {
   grid-row: 3;
+  align-self: center;
   padding: 0.0625em 0.5em;
+
+  @supports (text-box-trim: trim-both) {
+    padding-block: 0.45em;
+    text-box: trim-both ex alphabetic;
+  }
+
   border: 1px solid var(--line);
   border-radius: 1em;
   font-family: monospace, system-ui;
