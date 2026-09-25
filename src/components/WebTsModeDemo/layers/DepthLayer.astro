@@ -5,7 +5,7 @@
  * apart below, one level at a time.
  */
 import Window from '../Window.astro';
-import { lexStylesheet, paintSelectorList } from '../lexer';
+import { depthHue, lexStylesheet, paintSelectorList } from '../lexer';
 import { depthSample } from '../samples';
 
 const { lines } = lexStylesheet(depthSample.text);
@@ -43,7 +43,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
       <ol>
         {scale.map(({ depth, amount }) => (
           <li>
-            <span class="swatch" style={`--depth: ${depth}`}></span>
+            <span class="swatch" style={`--depth: ${depth}; --hue: ${depthHue(depth)}`}></span>
             <span class="n">{depth}</span>
             <span class="amount">{depth === 0 ? 'base face' : amount === 1 ? '1.00 end hue' : amount.toFixed(2)}</span>
           </li>
@@ -55,7 +55,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   <div class="walk" role="group" aria-label={`${deepest}, taken apart by depth`}>
     {runs.map(({ text, depth }) => (
       <span class="run">
-        <code class:list={['f-selector', { deep: (depth ?? 0) > 0, gap: depth === null }]} style={depth ? `--depth: ${depth}` : undefined}>{text}</code>
+        <code class:list={['f-selector', { deep: (depth ?? 0) > 0, gap: depth === null }]} style={depth ? `--depth: ${depth}; --hue: ${depthHue(depth)}` : undefined}>{text}</code>
         <span class="level">{depth ?? ''}</span>
       </span>
     ))}

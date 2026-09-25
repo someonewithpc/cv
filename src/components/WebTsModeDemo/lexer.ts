@@ -842,3 +842,42 @@ export function lexStylesheet(src: string): Painted {
   lexScss(p, 0, src.length);
   return { lines: tokenize(p), ranges: [] };
 }
+
+// ----------------------------------------------------------------------------------------
+// The hue of each selector depth, as web-ts-treesit--css-selector-face-for-depth works it
+// out: in HSL, from the fallback blue (0.62) toward web-ts-css-selector-end-hue (0.33) along
+// the shorter arc, 0.22 of the way per level and never past it, at the saturation and
+// lightness the mode clamps to. The sheets take the result's OKLCH hue and set the
+// lightness and chroma per theme.
+
+const START_HUE = 0.62;
+const END_HUE = 0.33;
+const HUE_STEP = 0.22;
+
+function hslToRgb(h: number, s: number, l: number): number[] {
+  const k = (n: number) => (n + h * 12) % 12;
+  const a = s * Math.min(l, 1 - l);
+  return [0, 8, 4].map((n) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)));
+}
+
+function oklchHue([r, g, b]: number[]): number {
+  const linear = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const [lr, lg, lb] = [r, g, b].map(linear);
+  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return ((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360;
+}
+
+/** The OKLCH hue, in degrees, of the selector face at `depth`. */
+export function depthHue(depth: number): number {
+  let delta = END_HUE - START_HUE;
+  if (delta > 0.5) delta -= 1;
+  else if (delta < -0.5) delta += 1;
+  const amount = Math.min(1, Math.max(0, depth * HUE_STEP));
+  const h = (((START_HUE + delta * amount) % 1) + 1) % 1;
+  const l = Math.max(0.55, Math.min(0.78, 0.755 + 0.03 * depth));
+  return Math.round(oklchHue(hslToRgb(h, 0.85, l)) * 10) / 10;
+}

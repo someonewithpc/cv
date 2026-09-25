@@ -85,7 +85,7 @@ $sheet-margin: 0.75em;
   --face-constant: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 80));
   --face-literal: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 100));
 
-  // Which parser owns a range, for the outlines, the brackets and their labels. Each is a
+  // Which parser owns a range, for the outlines and their labels. Each is a
   // quarter of the way to the ink, which keeps it 3:1 or more on the paper in every theme.
   --lang-astro: var(--neutral-10);
   --lang-html: color-mix(in oklch, oklch(from var(--accent-11) l max(c, 0.1) calc(h + 150)), var(--buffer-ink) 25%);
@@ -95,25 +95,25 @@ $sheet-margin: 0.75em;
 }
 
 // The selector face at nesting level --depth, after web-ts-treesit--css-selector-face-for-depth.
-// Depth 0 is the base face. Deeper levels move its hue toward web-ts-css-selector-end-hue
-// (0.33, a green) along the shorter arc, 0.22 of the way per level and never past it, and
-// lift the lightness a step a level.
+// Depth 0 is the base face. --hue is the level's OKLCH hue, worked out at build time the way
+// the mode does it (depthHue in lexer.ts): from its fallback blue toward green, 0.22 of the
+// way per level, reaching green at level 5.
 //
-// The base is the blue web-ts-mode falls back to (HSL hue 0.62), at the lightness and chroma
-// of the theme's function face, rather than the function face itself: a theme whose function
-// face is already green, as Forest's is, would leave no distance to travel and every level
-// the same colour. The hues are OKLCH, where 262 and 142 are that blue and that green. The
-// lightness step goes toward the buffer's ink rather than always up, so the deeper levels
-// gain contrast on light paper as well as dark.
+// The base is that blue at the lightness and chroma of the theme's function face, rather
+// than the function face itself: a theme whose function face is already green, as Forest's
+// is, would leave no distance to travel. The lightness steps toward the buffer's ink, so the
+// deeper levels gain contrast on light paper as well as dark. Mixing in the ink would pull
+// the hue toward the ink's own, so the hue is set again after the mix.
 @mixin depth-face {
-  --start-hue: 262;
-  --end-hue: 142;
-  --amount: min(1, var(--depth) * 0.22);
+  --level-hue: var(--hue, 267.3);
 
-  color: color-mix(
-    in oklch,
-    oklch(from var(--face-function) l max(c, 0.12) calc(var(--start-hue) + (var(--end-hue) - var(--start-hue)) * var(--amount))),
-    var(--buffer-ink) calc(min(var(--depth), 5) * 11%)
+  color: oklch(
+    from color-mix(
+      in oklch,
+      oklch(from var(--face-function) l max(c, 0.12) var(--level-hue)),
+      var(--buffer-ink) calc(min(var(--depth), 5) * 11%)
+    )
+    l max(c, 0.11) var(--level-hue)
   );
 }
 

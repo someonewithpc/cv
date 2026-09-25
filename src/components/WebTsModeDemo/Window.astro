@@ -5,7 +5,7 @@
  * and light one up: a range that runs over several whole lines wraps those lines in a
  * block, one that sits inside a line wraps its tokens in a span.
  */
-import type { Line, Range, Token } from './lexer';
+import { depthHue, type Line, type Range, type Token } from './lexer';
 
 /**
  * A dashed box over lines `from` to `to`, at nesting level `lane` counted from the outside
@@ -80,7 +80,7 @@ const faceClass = (token: Token) => {
   if (token.face === 'default') return undefined;
   return token.depth ? `f-${token.face} deep` : `f-${token.face}`;
 };
-const faceStyle = (token: Token) => (token.depth ? `--depth: ${token.depth}` : undefined);
+const faceStyle = (token: Token) => (token.depth ? `--depth: ${token.depth}; --hue: ${depthHue(token.depth)}` : undefined);
 
 const label = (id: string) => {
   const range = byId.get(id);

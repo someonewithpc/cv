@@ -195,7 +195,7 @@ test('doctor page: the report keeps the real layout and says what is not on PATH
 });
 
 for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
-  test(`depth page: every level stands out from the paper and from the next level, ${theme} theme`, async ({ page }) => {
+  test(`depth page: every level stands out from the paper and from the next level, and the last is green, ${theme} theme`, async ({ page }) => {
     await page.addInitScript((id) => {
       try {
         localStorage.setItem('cv-theme', id);
@@ -245,10 +245,15 @@ for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
         depth,
         onPaper: contrast(level, paper),
         fromPrevious: depth ? distance(level, levels[depth - 1]) : null,
+        hue: ((Math.atan2(oklab(level)[2], oklab(level)[1]) * 180) / Math.PI + 360) % 360,
       }));
     });
 
     expect(measured).toHaveLength(6);
+    // The scale starts blue and ends green, as the mode's end hue 0.33 is, in every theme.
+    expect(measured[0].hue, 'level 0 hue').toBeGreaterThan(220);
+    expect(measured[5].hue, 'level 5 hue').toBeGreaterThanOrEqual(120);
+    expect(measured[5].hue, 'level 5 hue').toBeLessThanOrEqual(160);
     for (const { depth, onPaper, fromPrevious } of measured) {
       expect(onPaper, `level ${depth} against the paper`).toBeGreaterThanOrEqual(3);
       // About one just noticeable difference in OKLab is 0.02.
