@@ -116,7 +116,9 @@ in {
   /* Keyed on the stack's attributes, not the width query: a font size that comes out of a
      container query re-lays everything under it on each resize step. See Stack.astro. */
   :global([data-sheet-width='narrow']) & {
-    /* A short landscape sheet: the type gives a little, and the notes under the figure go. */
+    /* A short landscape sheet: the type gives a little, the notes under the figure go, and
+       the panel takes the width, so the files wrap less. */
+    width: min(100%, 60em);
     font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
 
     .rules {

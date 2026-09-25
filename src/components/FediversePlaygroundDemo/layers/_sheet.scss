@@ -14,16 +14,16 @@ $sheet-margin: 0.75em;
 // The title block sits in the sheet's bottom-right corner. On a wide landscape sheet it
 // reaches into the content column from the right, so the content keeps to the left of it,
 // by the width Stack.astro measures. A short landscape sheet gives it a row off the bottom
-// instead, and portrait a row of its own.
+// instead, and portrait a row of its own. Keyed on the attributes Stack.astro sets.
 @mixin clear-of-title-block {
   padding-right: calc(var(--title-block-inline, 0px) + $sheet-margin);
 
-  @container technical-drawing-width (max-width: 56em) {
+  :global([data-sheet-width='narrow']) & {
     padding-right: $sheet-margin;
     padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
   }
 
-  @container technical-drawing (orientation: portrait) {
+  :global([data-sheet-orientation='portrait']) & {
     padding-right: $sheet-margin;
     padding-bottom: $sheet-margin;
   }
