@@ -434,6 +434,32 @@ fieldset {
   }
 }
 
+/* The walkthrough's hand, drawn as VariantsDemo draws it and placed by translate alone:
+   cursorMotion.ts animates each hop and folds the arrow's tip into every keyframe. */
+.playground :global(.demo-cursor) {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 0;
+  width: 2.5em;
+  height: 2.5em;
+  transform-origin: 12% 8%;
+  pointer-events: none;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" fill="%23fff" stroke="%23222" stroke-width="1.6" stroke-linejoin="round"/></svg>') center / contain no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25));
+  transition:
+    opacity 0.32s ease,
+    scale 0.12s ease;
+}
+
+.playground :global(.demo-cursor--fading) {
+  opacity: 0;
+}
+
+.playground :global(.demo-cursor--clicking) {
+  scale: 0.88;
+}
+
 @keyframes fediverse-appear {
   from {
     opacity: 0;

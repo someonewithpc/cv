@@ -1,24 +1,27 @@
-import { exampleConfig, withEnabled } from '../config';
+import { exampleConfig, initiallyEnabled, withEnabled } from '../config';
 import { buildComposeFile } from '../compose';
 import { renderGraphs, summary } from '../graph';
 import { composeYaml } from '../yaml';
 
-/** Each toggle flips its instance's `enabled`, and the builder runs again from the config. */
+/**
+ * Each toggle flips its instance's `enabled`, and the builder runs again from the config.
+ * Returns what puts the page back the way it opens: the opening toggles, the file closed.
+ */
 export function initPlayground(host: HTMLElement) {
   const form = host.querySelector<HTMLElement>('.config');
   const graph = host.querySelector<HTMLElement>('[data-graph]');
+  const file = host.querySelector<HTMLDetailsElement>('details.yaml');
   const yaml = host.querySelector<HTMLElement>('[data-yaml]');
   const lines = host.querySelector<HTMLElement>('[data-lines]');
   const status = host.querySelector<HTMLElement>('[data-status]');
-  if (!form || !graph || !yaml || !lines || !status) return;
+  if (!form || !graph || !file || !yaml || !lines || !status) return null;
 
-  const enabled = () => Object.fromEntries(
-    [...form.querySelectorAll<HTMLInputElement>('input[type=checkbox]')].map((input) => [input.name, input.checked]),
-  );
+  const inputs = [...form.querySelectorAll<HTMLInputElement>('input[type=checkbox]')];
+  const enabled = () => Object.fromEntries(inputs.map((input) => [input.name, input.checked]));
 
   let previous = new Set(Object.keys(buildComposeFile(withEnabled(exampleConfig, enabled())).services));
 
-  form.addEventListener('change', () => {
+  const rebuild = () => {
     const config = withEnabled(exampleConfig, enabled());
     let compose;
     try {
@@ -38,5 +41,16 @@ export function initPlayground(host: HTMLElement) {
     yaml.textContent = text;
     lines.textContent = `${text.split('\n').length - 1} lines`;
     status.textContent = summary(compose);
-  });
+  };
+
+  form.addEventListener('change', rebuild);
+
+  return () => {
+    file.open = false;
+    const changed = inputs.filter((input) => input.checked !== Boolean(initiallyEnabled[input.name]));
+    changed.forEach((input) => {
+      input.checked = Boolean(initiallyEnabled[input.name]);
+    });
+    if (changed.length) rebuild();
+  };
 }
