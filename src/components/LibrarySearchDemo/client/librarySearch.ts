@@ -1,6 +1,8 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { watchPageActive } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
+import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import { libraryObjects } from '../objects';
 import { formatScore, search, serialise, type Filters, type SearchResult, type SearchState } from '../search';
@@ -14,6 +16,12 @@ const THROTTLE_MS = 50;
 const LATENCY_MS = [90, 260] as const;
 /** Matches the bar's scale transition in SearchTool.astro. */
 const MOVE_MS = 350;
+/** The tip of the drawn arrow, as fractions of the cursor's box. */
+const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
+/** A hand rests a moment on a control before it presses. */
+const PRESS_DELAY_MS = 160;
+/** One backspace, while the script empties the field. */
+const BACKSPACE_MS = 35;
 
 type Step = { type?: string; clear?: boolean; color?: string; hold: number };
 
@@ -192,6 +200,61 @@ function showState(tool: Tool, state: SearchState) {
 }
 
 /**
+ * The walkthrough's hand: the drawn cursor the other demos use, moved by cursorMotion.ts and
+ * pressed through demoPress, so it pulses and flares the same way theirs does. Every change
+ * the script makes starts with it: it clicks into the field before it types or empties it,
+ * and clicks a filter before that filter's value changes. The control it works wears the
+ * focus ring while it does, without the focus, which would hand the tool to the visitor.
+ */
+function drawnHand(host: HTMLElement, el: HTMLElement) {
+  const mover = createCursorMover(el, { hotspot: CURSOR_HOTSPOT });
+  let working: HTMLElement | null = null;
+
+  /** Where on the host the tip lands to be at `at` on `target`. The sheet may be drawn
+      scaled, and the cursor moves in the host's own pixels. */
+  const pointOn = (target: HTMLElement, at: Point): Point => {
+    const box = target.getBoundingClientRect();
+    const frame = host.getBoundingClientRect();
+    const scale = frame.width / (host.offsetWidth || frame.width) || 1;
+    return {
+      x: (box.left + box.width * at.x - frame.left) / scale,
+      y: (box.top + box.height * at.y - frame.top) / scale,
+    };
+  };
+
+  const work = (target: HTMLElement | null) => {
+    if (working === target) return;
+    working?.removeAttribute('data-demo-focus');
+    working = target;
+    working?.setAttribute('data-demo-focus', '');
+  };
+
+  return {
+    /** Moves onto `target`, rests, and presses it. Resolves once the press is over. */
+    async press(target: HTMLElement, at: Point, stopped: () => boolean) {
+      const to = pointOn(target, at);
+      if (el.hidden) {
+        mover.jumpTo(to);
+        el.hidden = false;
+      } else {
+        await mover.moveTo(to);
+      }
+      if (stopped()) return;
+      await wait(PRESS_DELAY_MS);
+      if (stopped()) return;
+      const box = target.getBoundingClientRect();
+      await demoPress(target, { x: box.left + box.width * at.x, y: box.top + box.height * at.y }, { click: false });
+      if (!stopped()) work(target);
+    },
+    hide() {
+      mover.cancel();
+      el.hidden = true;
+      work(null);
+    },
+  };
+}
+
+/**
  * The walkthrough: the query is typed a few letters at a time, the way a visitor would, so
  * every keystroke goes through the same throttle and abort as theirs. It pauses whenever the
  * sheet is not the page on top. The visitor takes the tool over as watchHandover decides (a
@@ -202,15 +265,17 @@ function showState(tool: Tool, state: SearchState) {
  * Its keys drive it: pause holds the tool for the visitor, play and reset start the script
  * again from the opening query.
  */
-function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onChange: () => void) {
+function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initial: SearchState, onChange: () => void) {
   const { root, input } = tool;
-  if (reducedMotion.matches) {
+  const cursorEl = host.querySelector<HTMLElement>('[data-demo-cursor]');
+  if (reducedMotion.matches || !cursorEl) {
     root.dataset.autoplay = 'off';
     reportAutoplayState(root, 'off');
     listenCount(tool, true);
     return null;
   }
 
+  const hand = drawnHand(host, cursorEl);
   let run = 0;
   let active = false;
   let held = false;
@@ -228,6 +293,7 @@ function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onC
     // Stops the script where it stands and leaves the tool to the visitor.
     takeOver() {
       run += 1;
+      hand.hide();
       setState('user');
       listenCount(tool, true);
     },
@@ -272,10 +338,18 @@ function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onC
     while (!stopped()) {
       for (const step of script) {
         if (stopped()) break;
+        if (step.clear || step.type) {
+          // Aimed right of the text, so the arrow never covers what it types.
+          await hand.press(input, { x: 0.8, y: 0.55 }, stopped);
+          if (stopped()) break;
+        }
         if (step.clear) {
-          input.value = '';
-          onChange();
-          await pause(400);
+          while (input.value && !stopped()) {
+            input.value = input.value.slice(0, -1);
+            onChange();
+            await pause(BACKSPACE_MS);
+          }
+          await pause(300);
         }
         for (const char of step.type ?? '') {
           if (stopped()) break;
@@ -283,9 +357,11 @@ function autoplay(tool: Tool, script: readonly Step[], initial: SearchState, onC
           onChange();
           await pause(char === ' ' ? 180 : 70 + Math.random() * 70);
         }
-        if (step.color !== undefined && !stopped()) {
-          const select = tool.selects.find((el) => el.dataset.filter === 'color');
-          if (select) select.value = step.color;
+        const select = tool.selects.find((el) => el.dataset.filter === 'color');
+        if (step.color !== undefined && select && !stopped()) {
+          await hand.press(select, { x: 0.5, y: 0.55 }, stopped);
+          if (stopped()) break;
+          select.value = step.color;
           onChange();
         }
         await pause(step.hold);
@@ -329,7 +405,7 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
   tool.selects.forEach((select) => select.addEventListener('change', onChange));
 
   const script = host.dataset.walkthrough;
-  const walkthrough = script ? autoplay(tool, JSON.parse(script) as Step[], initial, onChange) : null;
+  const walkthrough = script ? autoplay(tool, host, JSON.parse(script) as Step[], initial, onChange) : null;
 
   // A query from another sheet is the visitor's, wherever they typed it.
   store.subscribe((state, source) => {

@@ -9,6 +9,21 @@ import { walkthrough } from '../objects';
   data-library-search="search"
 >
   <SearchTool live />
+
+  {/* The walkthrough's hand, the arrow the other demos draw. It sits outside the tool,
+      which clips its own overflow, so the tip still reads on a control at the edge. */}
+  <div class="demo-cursor" data-demo-cursor aria-hidden="true" hidden>
+    <svg viewBox="0 0 32 32" width="56" height="56">
+      <path
+        d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
+        fill="#fff"
+        stroke="var(--accent, #222)"
+        stroke-width="1.6"
+        stroke-linejoin="round"
+      />
+    </svg>
+    <span class="demo-cursor-label">demo</span>
+  </div>
 </div>
 
 <script>
@@ -43,6 +58,7 @@ bootIslands('[data-library-search="search"]', boot);
      growing it. */
   height: 100%;
   min-height: 0;
+  position: relative;
 
   /* The title block claims the bottom-right corner, 4.6em of this type tall and a third of
      the sheet wide, so the tool stops above it: the rows and the request line run the
@@ -52,6 +68,46 @@ bootIslands('[data-library-search="search"]', boot);
   @container technical-drawing (orientation: portrait) {
     /* Portrait gives the title block its own row. */
     padding-bottom: $sheet-margin;
+  }
+}
+
+// Placed by translate alone: cursorMotion.ts animates each hop with its own duration and
+// folds the hotspot, the arrow's tip, into every keyframe. demo-cursor-press.css scales it
+// on a press, around the tip.
+.demo-cursor {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  width: 56px;
+  height: 56px;
+  transform-origin: 12% 8%;
+  pointer-events: none;
+  transition: scale 0.12s ease;
+
+  &[hidden] {
+    display: none;
+  }
+
+  svg {
+    display: block;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  }
+
+  // Says out loud that this arrow is the walkthrough's, not the visitor's pointer.
+  .demo-cursor-label {
+    position: absolute;
+    left: 2.25em;
+    top: 2em;
+    padding: 0 0.25em;
+    border: 1px solid var(--accent, #222);
+    border-radius: 0.25em;
+    background: #fff;
+    color: #222;
+    font-family: monospace, system-ui;
+    font-size: 0.625rem;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
   }
 }
 </style>

@@ -150,7 +150,9 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
   background: var(--surface-page);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
-  &:focus {
+  /* The walkthrough's hand wears the ring on the control it works, without taking focus. */
+  &:focus,
+  &[data-demo-focus] {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 85%);
