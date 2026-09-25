@@ -79,11 +79,13 @@ export const iconSuffix = (iconId: string): string => {
   return colon === -1 ? iconId : iconId.slice(colon + 1);
 };
 
-/** Projects a drawing's title block can name beside a tech; they are not skills, so the
- *  cloud never lists them. Their SVGs sit under src/icons. */
+/** Logos a drawing's title block can name that the cloud never lists: projects, which
+ *  are not skills, and the Rails badge, since the bare Rails track reads as a red blot at
+ *  the logo cell's size. Their SVGs sit under src/icons. */
 export const PROJECT_ICONS: Tech[] = [
   { icon: 'gnusocial', text: 'GNU social' },
   { icon: 'doctrine', text: 'Doctrine' },
+  { icon: 'rails-wordmark', text: 'Rails wordmark' },
 ];
 
 const RESOLVABLE = [...TECH_ICONS, ...PROJECT_ICONS];
