@@ -766,7 +766,8 @@ section {
           height: $title-tech-size;
           aspect-ratio: 1;
           overflow: hidden;
-          /* A phone sheet stretches the block to its width and the cell with it. */
+          /* The cell fits the stack at every width today. If a row ever widens it, the
+             logos stay in its middle. */
           margin-inline: auto;
 
           :global(.tech-icon) {
@@ -1008,9 +1009,8 @@ section {
          and the ruling are painted on a pseudo-element that has to measure from the
          block's box and not from the sheet's.
 
-         No background-position of its own. The block runs the width of the grid here,
-         which is the sheet's padding box less a margin at each end, so --title-block-origin
-         resolves to one margin back on both axes, which is exactly where the row starts.
+         No background-position of its own. The block ends a margin short of the padding
+         box's right and bottom edges here too, which is all --title-block-origin assumes.
          An override that read the block off the padding box instead put the ruling a
          margin out of step with the sheet's, on both axes. */
       position: relative;
@@ -1019,7 +1019,11 @@ section {
       inset: auto;
       grid-column: 1;
       grid-row: 3;
-      width: 100%;
+      /* The row is the block's alone, but the block keeps the size of its own lettering
+         and sits in the corner, as it does on a landscape sheet. Stretched to the row, its
+         cells grew wide and empty, and the logo cell reached under the note's corner. */
+      justify-self: end;
+      max-width: 100%;
       font-size: 0.7em;
 
       td {
