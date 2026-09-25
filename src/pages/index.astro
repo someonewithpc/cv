@@ -212,6 +212,20 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
     @media (max-width: 52rem) {
       row-gap: 2.5em;
     }
+
+    /* With no desk beside it the mat is as wide as the window, so its sides are only a plain
+       strip and a line down each edge of the screen. They go, and the ruling runs out to the
+       window's edges as if the mat went on past them. The padding takes the line's width
+       back, so the details keep the width they had. */
+    @media (width <= 64rem) {
+      border-inline: 0;
+      border-radius: 0;
+      padding-inline: calc(var(--mat-rim) + var(--mat-line));
+
+      &::before {
+        inset-inline: 0;
+      }
+    }
   }
 
   :global([lang='ja']) {
