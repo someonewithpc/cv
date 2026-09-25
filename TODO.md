@@ -95,5 +95,6 @@
 - [x] Contributions link icon missing (#10)
 - [x] Contributions paper torn along a fine edge, every line on its rule (#92)
 - [x] Open Source intro card has no inset below 1024px, text sits on the card's edges (#139)
+- [x] Refresh the contributions list: move the PRs that closed or merged, add the new ones (#140)
 - [ ] Work History
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
