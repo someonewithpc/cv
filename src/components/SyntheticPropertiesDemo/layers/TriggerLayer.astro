@@ -55,6 +55,10 @@ const targets = [
     ],
   },
 ];
+
+// A long name may wrap after an underscore, a dot or an opening bracket, never inside a word,
+// and never to leave a stub such as `id` alone on the next line.
+const breakable = (line: string) => line.split(/(?<=[_.(])(?![a-z]{1,3}\b)/i);
 ---
 
 <div class="wrapper synthetic-blueprint">
@@ -90,7 +94,11 @@ const targets = [
                 <span class="source"><code>where</code> = <code class="hot">{target.where}</code></span>
               )}
             </span>
-            <pre><code>{target.sql.join('\n')}</code></pre>
+            <pre><code>{target.sql.map((line) => (
+              <span class="line">{breakable(line).map((part, index) => (
+                <Fragment>{index > 0 && <wbr />}{part}</Fragment>
+              ))}</span>
+            ))}</code></pre>
           </li>
         ))}
       </ol>
@@ -145,7 +153,6 @@ pre {
   border-radius: 0.25em;
   background: var(--surface-sunken);
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
   line-height: 1.25;
 }
 
@@ -162,6 +169,7 @@ pre {
 
   pre {
     @include small-type(0.5625);
+    overflow-wrap: anywhere;
   }
 }
 
@@ -183,33 +191,43 @@ pre {
   font-weight: 600;
 }
 
-/* The four in one row, each as tall as its own body, so the row ends above the title block
-   on a landscape sheet as narrow as 40em; the update body has the longest lines, so its
-   column is the widest and it wraps the least. A portrait sheet stacks them. */
+/* The four in one row of equal cards: each card spans a heading row and a code row the
+   four share, so the code blocks start on one line and end on another. The row is as tall
+   as its longest body, so the widths are set to make that one short: the update body has
+   the longest lines and gets the widest column.
+   A portrait sheet stacks them. */
 .targets {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
-  align-items: start;
-  gap: 0.5em;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.85fr) minmax(0, 1.4fr) minmax(0, 0.8fr);
+  grid-template-rows: auto 1fr;
+  gap: 0 0.5em;
   margin: 0;
   padding: 0;
   list-style: none;
 
-  /* On a narrow landscape sheet the title block sits under the last two columns, so they
-     get the width and stay short. */
+  /* On a narrow landscape sheet the title block sits under the last two columns, so the
+     row has to end above it; the update body takes more of the width there. */
   @container technical-drawing (width < 47.5rem) {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 0.85fr) minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 0.55fr);
   }
 
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    row-gap: 0.5em;
   }
 }
 
 .target {
   display: grid;
-  align-content: start;
-  gap: 0.125em;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 0.125em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-row: auto;
+    grid-template-rows: auto auto;
+  }
   min-width: 0;
   padding: 0.375em 0.5em;
   border: 1px solid var(--line-strong);
@@ -235,9 +253,21 @@ pre {
     color: var(--ink-muted);
   }
 
+  .head {
+    align-self: start;
+  }
+
   pre {
     margin-top: 0.25em;
     @include small-type(0.5625);
+    overflow-wrap: break-word;
+  }
+
+  /* A wrapped line hangs under its own start, so it reads as one line of SQL. */
+  .line {
+    display: block;
+    padding-inline-start: 2ch;
+    text-indent: -2ch;
   }
 
   &[data-target='backfill'] {
