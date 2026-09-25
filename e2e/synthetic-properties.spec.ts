@@ -52,11 +52,11 @@ test.describe('unit maths', () => {
   test('inches that round up to twelve carry into the feet, and no fewer do', () => {
     // 182cm is 71.65in: five feet and 11.65in, which rounds to twelve.
     expect(feetAndInches(182)).toEqual({ feet: 6, inches: 0 });
-    expect(renderDimension(182, 'ft-in')).toBe('6ft0in');
-    expect(renderDimension(182, 'ft-mark')).toBe(`6'0"`);
+    expect(renderDimension(182, 'ft-in')).toBe('6ft');
+    expect(renderDimension(182, 'ft-mark')).toBe(`6'`);
     // Just under the carry, and exactly a foot.
     expect(renderDimension(181, 'ft-in')).toBe('5ft11in');
-    expect(renderDimension(30.48, 'ft-in')).toBe('1ft0in');
+    expect(renderDimension(30.48, 'ft-in')).toBe('1ft');
     // Seven inches over is seven inches over, not a foot: the shipped SQL said 3ft7in.
     expect(renderDimension(80, 'ft-in')).toBe('2ft7in');
   });
@@ -77,13 +77,15 @@ test.describe('unit maths', () => {
       '1.82m by 0.45m',
       '72" by 18"',
       '72in by 18in',
-      `6'0" by 1'6"`,
-      '6ft0in by 1ft6in',
+      `6' by 1'6"`,
+      '6ft by 1ft6in',
     ]);
     const text = searchableText(rounded);
     expect(matches(text, '182cm')).toBe(true);
     expect(matches(text, '180cm')).toBe(true);
     expect(matches(text, '1.82m')).toBe(true);
+    expect(matches(text, '6ft')).toBe(true);
+    expect(text).not.toContain('0in');
     // Nothing rounds on the sample, so it keeps six rows.
     expect(storedSizeProperties('160x80x74')).toEqual(sizeProperties('160x80x74'));
   });
@@ -182,5 +184,5 @@ test('six renderings page: the carry is marked in the table', async ({ page }) =
   await turnToPage(stack, 'Six Renderings');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
-  await expect(front.locator('td.carry')).toHaveText([`6'0"`, '6ft0in']);
+  await expect(front.locator('td.carry')).toHaveText([`6'`, '6ft']);
 });

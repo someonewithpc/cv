@@ -5,7 +5,7 @@
  * A port of LibraryObject.size_synthetic_property_select_sql, visrez branch
  * hs-1946-library-object-tags (Dec 2024). A library object stores its size as one string
  * of centimetres, `160x80x74`. A recursive CTE splits it, six SELECTs render every piece,
- * and GROUP_CONCAT joins each rendering's pieces back with ' by '. Two rules are
+ * and GROUP_CONCAT joins each rendering's pieces back with ' by '. Three rules are
  * corrections, not a port, and the sheets show the SQL with them in:
  *
  * - Shipped cm and m did not round: 182.5 printed as `182.5cm` and `1.825m`. Here a
@@ -13,6 +13,8 @@
  *   `0.74m`.
  * - Shipped feet added a foot whenever the leftover inches came to six or more, so 80cm
  *   printed as `3ft7in`. Here only a rest that rounds to twelve carries: `2ft7in`.
+ * - Shipped feet always printed the inches, `6ft0in`. Here a whole number of feet prints
+ *   alone, `6ft` and `6'`.
  *
  * Inches were right as shipped: centimetres over 2.54, rounded to the whole inch.
  */
@@ -112,11 +114,11 @@ export function renderDimension(cm: number, unit: RenderingId): string {
       return `${trim(round(cm / CM_PER_INCH))}in`;
     case 'ft-mark': {
       const { feet, inches } = feetAndInches(cm);
-      return `${feet}'${inches}"`;
+      return inches === 0 ? `${feet}'` : `${feet}'${inches}"`;
     }
     case 'ft-in': {
       const { feet, inches } = feetAndInches(cm);
-      return `${feet}ft${inches}in`;
+      return inches === 0 ? `${feet}ft` : `${feet}ft${inches}in`;
     }
   }
 }
@@ -190,5 +192,5 @@ export const sampleQueries = ['5ft3in', '1.6m', '63"', '8 seats', '2m'] as const
 export const walkthrough = [
   { size: '160x80x74', query: '5ft3in' },
   { size: '200x100x75', query: '2m' },
-  { size: '182x45', query: '6ft0in' },
+  { size: '182x45', query: '6ft' },
 ] as const;
