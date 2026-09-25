@@ -18,6 +18,7 @@
   - [x] Filter?
 - [ ] Access Keys
 - [ ] ARIA roles
+- [x] Every font size in rem or em, off px, on the eighths grid, following the reader's own default (#152)
 - [ ] Demos
   - [x] Drawn cursor pulses and flares on press and release, shared by every demo
   - [x] Logo cube: edges drawn once, visible on every theme
