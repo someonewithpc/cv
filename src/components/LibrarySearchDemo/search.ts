@@ -1,6 +1,6 @@
 import { concatenatedValues, libraryObjects, type LibraryObject } from './objects';
 
-/* A stand-in for the one MySQL feature the search leans on, MATCH ... AGAINST in boolean
+/* A stand-in for the one MariaDB feature the search leans on, MATCH ... AGAINST in boolean
    mode over one FULLTEXT column, so the bars on the sheet are computed rather than drawn.
    It runs at build time for the page's first paint and in the browser as the visitor
    types, over the same mock rows. The SQL is Library::ObjectPropertiesController#search on
@@ -27,7 +27,7 @@ export function tokenize(text: string) {
 export const NUMBER_RULE = /(\d+)( seats?|pax|size)?/gi;
 
 /**
- * The query massaging that runs before MySQL sees anything: a number is quoted so that 8
+ * The query massaging that runs before MariaDB sees anything: a number is quoted so that 8
  * stops matching 81, and a `seats`, `pax` or `size` right after it goes into the same
  * phrase. Words are sent as typed, with no prefix `*`.
  */
@@ -97,7 +97,7 @@ export type Hit = {
   /** What MATCH ... AGAINST selects: InnoDB's rank, the sum of tf × idf² over the terms. */
   relevance: number;
   /** `search_relevance`: the relevance over the query's maximum; null where the maximum
-      is 0, as MySQL's x / 0 is. */
+      is 0, as MariaDB's x / 0 is. */
   score: number | null;
 };
 
@@ -186,7 +186,7 @@ export type SqlMark = 'where' | 'select' | 'order' | 'max' | 'comment';
 
 export type SqlSegment = { text: string; mark?: SqlMark };
 
-/** MySQL's quoting for a string literal. */
+/** MariaDB's quoting for a string literal. */
 function quote(text: string) {
   return `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
