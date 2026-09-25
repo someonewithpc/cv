@@ -432,7 +432,7 @@
           "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignores GTK's inferior crossings and latches on a hover flag so each command runs once per hover, and mirrors the `on-click` guard that keeps built-in actions from also running as shell commands.",
           "url": "https://github.com/Alexays/Waybar/pull/5312",
           "number": 5312,
-          "updatedAt": "2026-09-08T17:01:02Z",
+          "updatedAt": "2026-09-23T20:51:37Z",
           "stats": {
             "additions": 312,
             "deletions": 1,
