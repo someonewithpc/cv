@@ -116,7 +116,13 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
     padding: 0.25em 0.375em;
     border-left: 2px solid var(--accent);
     background: var(--surface-sunken);
-    font-size: 0.6875em;
+    font-size: 1em;
+
+    // A tall sheet leaves the list too narrow for two columns of prose.
+    :global([data-sheet-orientation='portrait']) & {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.125em;
+    }
   }
 
   .head {

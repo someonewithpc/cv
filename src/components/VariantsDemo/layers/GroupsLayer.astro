@@ -116,7 +116,12 @@ const countLabelShort = `${banquet.length} objects`;
 
   @container technical-drawing (orientation: portrait) {
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
+
+    /* Shorter pictures leave the rules room to be read at the sheet's body size. */
+    :global(.option-item .object-icons) {
+      height: 5rem;
+    }
   }
 }
 </style>
