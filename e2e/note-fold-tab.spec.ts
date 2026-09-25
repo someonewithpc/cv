@@ -31,8 +31,8 @@ for (let lane = 0; lane < LANES; lane += 1) {
 
 async function checkStack(page: Page, stack: Locator): Promise<void> {
   let pagesChecked = 0;
-  // Centred, not merely in view: the page's own desktop-hint footer is fixed to
-  // the bottom of the viewport and would answer the hit tests below.
+  // Centred, not merely in view, so nothing fixed to the viewport's edges answers the hit
+  // tests below.
   await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await page.waitForTimeout(2000);
 
