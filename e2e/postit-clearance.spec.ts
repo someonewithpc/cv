@@ -96,9 +96,12 @@ test('an opened note stays clear of its sheet\'s edges on a phone', async ({ pag
   for (const stack of await page.locator('article.technical-drawing-stack').all()) {
     const fold = frontPage(stack, await frontPageIndex(stack)).locator('.note-fold');
     if (!(await fold.isVisible())) continue;
-    // Centred, so the page's own footer hint is not over the corner.
+    // Centred, so nothing fixed to the viewport is over the corner.
     await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    await fold.click();
+    // The tab is a triangle clipped from its box, so aim inside it: the box's centre sits on
+    // the diagonal and lands on the tab or the sheet by the sub-pixel.
+    const box = (await fold.boundingBox())!;
+    await fold.click({ position: { x: box.width * 0.25, y: box.height * 0.75 } });
     break;
   }
   const note = page.locator('dialog:modal aside.marker-font, dialog:popover-open aside.marker-font');
