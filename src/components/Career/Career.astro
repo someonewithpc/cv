@@ -35,7 +35,7 @@ const revision = (index: number) => String(experience.length - index).padStart(2
    revision number. The degree is an outline bar in the lowest lane, under the jobs of those
    years. Under everything, on the ground, runs the continuous learning line, from the year
    Hugo started coding and still going, so it ends in an arrow instead of a tick. Wide, time runs left to right; under 44rem of sheet the drawing stands on
-   end, oldest at the bottom, so the labels get the sheet's width. */
+   end and time flows down the page, oldest at the top, so the labels get the sheet's width. */
 
 /* A date as a fraction of a year. A bare year whose label says "Summer" is June to September. */
 const at = (edge: Edge, end = false): number => {
@@ -337,7 +337,7 @@ const tall = (() => {
   const DX = 44;
   const S = 28;
   const TOP = 12;
-  const y = (t: number) => TOP + (T1 - t) * S;
+  const y = (t: number) => TOP + (t - T0) * S;
   /* Each lane is its bar with the bar's dimension on the datum side of it, so the leaders,
      which leave on the other side, cross nothing but the lanes above. */
   const LANE = 34;
@@ -365,26 +365,39 @@ const tall = (() => {
     bottom = job.top + job.text.length * 14;
   }
 
+  /* Two short jobs in one lane can have spans longer than their bars; those move apart. */
+  const spanAt = new Map(placed.map((job) => [job.id, (y(job.start) + y(job.end)) / 2]));
+  for (const lane of new Set(placed.map((job) => job.lane))) {
+    const inLane = placed.filter((job) => job.lane === lane).sort((a, b) => spanAt.get(a.id)! - spanAt.get(b.id)!);
+    for (const [i, b] of inLane.slice(1).entries()) {
+      const a = inLane[i];
+      const short = ((a.span.length + b.span.length) * CH) / 2 + 6 - (spanAt.get(b.id)! - spanAt.get(a.id)!);
+      if (short <= 0) continue;
+      spanAt.set(a.id, spanAt.get(a.id)! - short / 2);
+      spanAt.set(b.id, spanAt.get(b.id)! + short / 2);
+    }
+  }
+
   const bars = placed.map((job) => {
     const x0 = job.open ? LC - 2 : LANE0 + job.lane * LANE;
     const right = job.open ? LC + 2 : x0 + BAR;
-    const y0 = y(job.end);
-    const y1 = y(job.start);
+    const y0 = y(job.start);
+    const y1 = y(job.end);
     const dim = x0 - 10;
-    const mid = (y0 + y1) / 2;
+    const mid = spanAt.get(job.id)!;
     const by = job.top + 7;
     const shape = job.open
-      ? openBar(y1, y0, LC, (a, c) => `${c} ${a}`)
+      ? openBar(y0, y1, LC, (a, c) => `${c} ${a}`)
       : job.seasonal
         ? cutBar(job, y, x0, x0 + BAR, (a, c) => `${c} ${a}`, `class="${barClass(job)}" ${fill(job, 'v')}`)
         : `<rect class="${barClass(job)}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" ${fill(job, 'v')}/>`;
     return `${group(job)}
       ${shape}
       ${job.study ? `<line class="centre" x1="${x0 + BAR / 2}" y1="${y0 + 4}" x2="${x0 + BAR / 2}" y2="${y1 - 4}"/>` : ''}
-      ${job.open ? '' : `<line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>`}
-      <line class="ext" x1="${x0 - 3}" y1="${y1}" x2="${dim - 5}" y2="${y1}"/>
-      <line class="dim" x1="${dim}" y1="${job.open ? y0 : y0 - 4}" x2="${dim}" y2="${y1 + 4}"/>
-      ${job.open ? '' : tick(dim, y0)}${tick(dim, y1)}
+      <line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>
+      ${job.open ? '' : `<line class="ext" x1="${x0 - 3}" y1="${y1}" x2="${dim - 5}" y2="${y1}"/>`}
+      <line class="dim" x1="${dim}" y1="${y0 - 4}" x2="${dim}" y2="${job.open ? y1 : y1 + 4}"/>
+      ${tick(dim, y0)}${job.open ? '' : tick(dim, y1)}
       ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
       <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${right + 1} ${job.ay}" marker-end="url(#v-arrow)"/>
       ${bubble(LX, by, job)}
@@ -393,12 +406,12 @@ const tall = (() => {
   });
 
   const axis = `
-    <line class="ground" x1="${DX}" y1="${y(T1) - 8}" x2="${DX}" y2="${y(T0) + 8}"/>
-    <rect class="earth" x="${DX - 8}" y="${y(T1) - 8}" width="8" height="${y(T0) - y(T1) + 16}" fill="url(#v-earth)"/>
+    <line class="ground" x1="${DX}" y1="${y(T0) - 8}" x2="${DX}" y2="${y(T1) + 8}"/>
+    <rect class="earth" x="${DX - 8}" y="${y(T0) - 8}" width="8" height="${y(T1) - y(T0) + 16}" fill="url(#v-earth)"/>
     ${years.map((year) => `${tick(DX, y(year))}${text(DX - 14, y(year + 0.5) + 4, String(year), 'year monospace', 'text-anchor="end"')}`).join('')}
     ${tick(DX, y(T1))}`;
 
-  const height = Math.max(y(T0) + 16, bottom + 8);
+  const height = Math.max(y(T1) + 16, bottom + 8);
   return `<svg class="drawing tall" viewBox="0 0 ${W} ${height}" aria-hidden="true">
     ${defs('v')}
     ${bars.join('')}

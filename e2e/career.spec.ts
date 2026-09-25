@@ -248,6 +248,36 @@ test('the continuous learning line starts the axis and stays open at the present
   await expect(page.locator('body')).not.toContainText('1999');
 });
 
+test('on a narrow sheet the drawing stands on end and time flows down', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/');
+
+  const svg = page.locator('#career svg.tall');
+  await expect(svg).toBeVisible();
+
+  const years = await svg.locator('.year').evaluateAll((labels) => labels.map((label) => [Number(label.textContent), (label as SVGGraphicsElement).getBBox().y]));
+  expect(years[0][0]).toBe(Number(site.learning.from));
+  for (const [i, [year, top]] of years.slice(1).entries()) expect(top, `${year} sits below ${years[i][0]}`).toBeGreaterThan(years[i][1]);
+
+  // The oldest job is nearest the top, the newest nearest the bottom.
+  const top = async (id: string) => (await svg.locator(`g[data-job="${id}"] .bar`).first().boundingBox())!.y;
+  const oldest = site.experience[site.experience.length - 1].id;
+  const newest = site.experience[0].id;
+  expect(await top(oldest)).toBeLessThan(await top(newest));
+
+  // The learning line starts at the top and its arrowhead points down at the present.
+  const line = svg.locator('g.learning .bar');
+  const box = (await line.boundingBox())!;
+  const first = (await svg.locator('.year').first().boundingBox())!;
+  expect(box.y).toBeLessThan(first.y);
+  const tip = await line.evaluate((path) => {
+    const points = path.getAttribute('d')!.slice(1).split(' L').map((pair) => pair.trim().split(' ').map(Number));
+    return { tip: points[3][1], lowest: Math.max(...points.map(([, y]) => y)) };
+  });
+  expect(tip.tip, 'the arrowhead is the lowest point').toBe(tip.lowest);
+  await expect(svg.locator('g.learning .tick')).toHaveCount(1);
+});
+
 test('the table service summers break off at each winter with a break line', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
