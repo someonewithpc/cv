@@ -85,21 +85,14 @@ bootIslands('[data-fediverse-playground]', boot);
   height: 100%;
   min-height: 0;
 
-  /* The title block claims the bottom-right corner. On a wide sheet it reaches into the
-     content column from the right, and only the graph and the open file reach down to it,
-     so those two keep to its left (--clear) and the rows above run the full width. On a
-     narrow one it takes a row off the bottom. */
-  --clear: calc(var(--title-block-inline, 0px) + 0.5em);
-
-  @container technical-drawing-width (max-width: 56em) {
-    --clear: 0px;
-
+  /* The title block claims the bottom-right corner. On a wide sheet it reaches up into the
+     side column, whose rows stop short of it. On a narrow one it takes a row off the bottom.
+     Keyed on the stack's attributes, as Stack.astro sets them. */
+  :global([data-sheet-width='narrow']) & {
     padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
   }
 
-  @container technical-drawing (orientation: portrait) {
-    --clear: 0px;
-
+  :global([data-sheet-orientation='portrait']) & {
     /* Portrait gives the title block its own row. */
     padding-bottom: $sheet-margin;
   }
@@ -107,6 +100,9 @@ bootIslands('[data-fediverse-playground]', boot);
 
 .playground {
   --bar: 2em;
+  /* The side column is as wide as the title block under it. */
+  --side: max(20em, var(--title-block-inline, 0px));
+  --gap: 1em;
   /* The panels and the graph's boxes are a step off the sheet's own paper toward its ink,
      whichever way the theme's paper lies: --surface-raised is the paper itself on the light
      themes, and a box painted with it vanished. */
@@ -118,29 +114,43 @@ bootIslands('[data-fediverse-playground]', boot);
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto var(--bar) minmax(0, 1fr);
+  /* Landscape: the graph takes the sheet's height on the left, and the intro, the config and
+     the status stack in a column on the right, over the title block. */
+  grid-template-columns: minmax(0, 1fr) var(--side);
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  column-gap: var(--gap);
   row-gap: 0.5em;
   color: var(--ink);
   font-size: 0.8em;
 
+  /* Portrait: one column, the graph under the rows. */
   :global([data-sheet-orientation='portrait']) & {
-    font-size: 0.7em;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto var(--bar) minmax(0, 1fr);
   }
 }
 
 .intro {
   grid-row: 1;
-  grid-column: 1;
+  grid-column: 2;
   margin: 0 0 0.25em;
   max-width: 60em;
   font-size: 0.9em;
   line-height: 1.35;
+
+  /* A narrow landscape sheet has too little height for the intro in the side column. */
+  :global([data-sheet-width='narrow']) & {
+    grid-column: 1 / -1;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-column: 1;
+  }
 }
 
 .config {
   grid-row: 2;
-  grid-column: 1;
+  grid-column: 2;
   margin: 0;
   display: grid;
   gap: 0.25em;
@@ -149,6 +159,10 @@ bootIslands('[data-fediverse-playground]', boot);
   border-radius: 0.375em;
   background: var(--panel);
   font-family: $code-font;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-column: 1;
+  }
 }
 
 .file {
@@ -170,8 +184,12 @@ fieldset {
   padding: 0;
   border: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.25em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .toggle {
@@ -230,24 +248,28 @@ fieldset {
 
 .status {
   grid-row: 3;
-  grid-column: 1;
+  grid-column: 2;
   margin: 0;
   align-self: center;
-  /* Clear of the file's summary, which sits at the other end of the same bar. */
-  padding-right: 22em;
   line-height: 1.2;
   font-family: $code-font;
   font-size: 0.75em;
   color: var(--ink-muted);
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-column: 1;
+    /* Clear of the file's summary, which sits at the other end of the same bar. */
+    padding-right: 22em;
+  }
 }
 
-/* Spans the status bar and the graph: the summary sits at the bar's right end, and the
-   open file covers the graph below it. Only those two take the pointer. */
+/* Landscape: the summary sits under the status, and the open file covers the graph in the
+   other column. Portrait: the summary sits at the status bar's right end, and the file
+   covers the graph below it. Only those two take the pointer. */
 .yaml {
-  grid-row: 3 / 5;
-  grid-column: 1;
-  position: relative;
-  z-index: 1;
+  grid-row: 4;
+  grid-column: 2;
+  min-width: 0;
   min-height: 0;
   pointer-events: none;
   font-family: $code-font;
@@ -256,7 +278,6 @@ fieldset {
     box-sizing: border-box;
     height: var(--bar);
     width: fit-content;
-    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 0.75em;
@@ -281,11 +302,12 @@ fieldset {
     color: var(--ink-muted);
   }
 
-  /* Sized in the playground's em, like the bar, so its top meets the bar; its right edge
-     keeps off the title block; only the text inside is set smaller. */
+  /* Placed against the playground in landscape and against the bar in portrait, in the
+     playground's em; only the text inside is set smaller. */
   pre {
     position: absolute;
-    inset: calc(var(--bar) + 0.5em) var(--clear) 0 0;
+    z-index: 1;
+    inset: 0 calc(var(--side) + var(--gap)) 0 0;
     margin: 0;
     padding: 0.375em 0.5em;
     overflow: auto;
@@ -303,23 +325,39 @@ fieldset {
   code {
     display: block;
     width: max-content;
-    font-size: 0.7em;
+    font-size: 0.75em;
     line-height: 1.4;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-row: 3 / 5;
+    grid-column: 1;
+    position: relative;
+    z-index: 1;
+
+    summary {
+      margin-left: auto;
+    }
+
+    pre {
+      inset: calc(var(--bar) + 0.5em) 0 0 0;
+    }
   }
 }
 
 .graph {
-  grid-row: 4;
+  grid-row: 1 / -1;
   grid-column: 1;
+
   position: relative;
   min-width: 0;
   min-height: 8em;
 
-  /* Out of flow, so the row's height is whatever the sheet leaves and the drawing scales
-     into it (preserveAspectRatio keeps it to the left) instead of growing the row. Two
-     drawings come in and the sheet's orientation picks one: the portrait one is laid out
-     for a sheet about 340px wide, where the landscape one scaled down was too small to read.
-     Keyed on the stack's attribute, not a container query, following Stack.astro. */
+  /* Out of flow, so the column's height is whatever the sheet leaves and the drawing scales
+     into it instead of growing the row. Two drawings come in and the sheet's orientation
+     picks one: the portrait one is laid out for a sheet about 340px wide. Keyed on the
+     stack's attribute, not a container query, following Stack.astro. The type is set in
+     the drawing's own units, and neither drawing is shown much below 1:1. */
   :global(svg.portrait) {
     display: none;
   }
@@ -332,18 +370,13 @@ fieldset {
     :global(svg.portrait) {
       display: block;
     }
-
-    :global(.node .label) {
-      font-size: 10px;
-    }
   }
 
   :global(svg) {
     position: absolute;
-    /* The graph's bottom row runs level with the title block. */
     top: 0;
     left: 0;
-    width: calc(100% - var(--clear));
+    width: 100%;
     height: 100%;
     font-family: $code-font;
     overflow: visible;
@@ -370,12 +403,12 @@ fieldset {
   }
 
   :global(.node .label) {
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 600;
   }
 
   :global(.node .sub) {
-    font-size: 7px;
+    font-size: 9.75px;
     fill: var(--ink-muted);
   }
 
@@ -429,8 +462,16 @@ fieldset {
   }
 
   :global(.gate) {
-    font-size: 7px;
+    font-size: 9.75px;
     fill: var(--accent-text);
+  }
+
+  :global([data-sheet-width='narrow']) & {
+    grid-row: 2 / -1;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-row: 4;
   }
 }
 

@@ -6,10 +6,11 @@
 // to the data services leave by the gutters beside its column and meet the service on a bus,
 // the way a schematic joins wires, so shared services read as one box however many ask for it.
 //
-// The drawing comes in two sizes. The landscape one is 518 wide with every name on one line.
-// A portrait sheet is about 340 wide, and that drawing scaled down put the small print near
-// 4.5px, so the portrait one is laid out at that width instead: narrower columns, the long
-// names wrapped onto a second line, and the type a size the reader can make out at 1:1.
+// The drawing comes in two widths, with the same rows. Every box puts its small print one part
+// a line and an installer's name on two, so the type can stay at 8px or more on the sheet. The
+// landscape one, 400 wide, fills the column beside the config panel on a wide sheet. A portrait
+// sheet is about 340 wide, so the portrait one is laid out at that width, and scaling it barely
+// shrinks the type.
 
 import type { PlaygroundConfig } from './config';
 import { dependenciesOf, type ComposeFile, type Service } from './compose';
@@ -32,34 +33,30 @@ type Metrics = {
   lane: Record<'db' | 'redis' | 'mariadb', number>;
   /** Box heights, from the lines each kind carries in this layout. */
   height: Record<Kind, number>;
-  /** Wrap an installer's name and an app's sub-label onto two lines. */
-  wrap: boolean;
 };
 
 const METRICS: Record<Layout, Metrics> = {
   landscape: {
-    w: 518,
-    h: 292,
-    column: 166,
-    box: 140,
-    web: 170,
-    gutter: 78,
-    row: { web: 8, app: 76, install: 132, data: 252 },
-    lane: { db: 186, redis: 204, mariadb: 222 },
-    height: { web: 30, app: 30, install: 30, shared: 30 },
-    wrap: false,
+    w: 400,
+    h: 310,
+    column: 130,
+    box: 120,
+    web: 140,
+    gutter: 64,
+    row: { web: 8, app: 76, install: 140, data: 262 },
+    lane: { db: 205, redis: 221, mariadb: 237 },
+    height: { web: 40, app: 40, install: 51, shared: 40 },
   },
   portrait: {
     w: 340,
-    h: 296,
+    h: 310,
     column: 110,
     box: 104,
     web: 120,
     gutter: 55,
-    row: { web: 8, app: 68, install: 138, data: 258 },
-    lane: { db: 199, redis: 215, mariadb: 231 },
-    height: { web: 30, app: 39, install: 41, shared: 30 },
-    wrap: true,
+    row: { web: 8, app: 76, install: 140, data: 262 },
+    lane: { db: 205, redis: 221, mariadb: 237 },
+    height: { web: 40, app: 40, install: 51, shared: 40 },
   },
 };
 
@@ -70,7 +67,7 @@ const DATA = [
 ] as const;
 
 /** A line of a box's text: the name, or the small print under it. */
-const LINE = { label: 11, sub: 9 };
+const LINE = { label: 11, sub: 10.5 };
 
 type Condition = 'service_healthy' | 'service_started' | 'service_completed_successfully' | 'listed';
 
@@ -102,12 +99,12 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const columnX = (index: number) => (m.w - 3 * m.column) / 2 + m.column / 2 + index * m.column;
   const webX = m.w / 2;
 
-  /** The lines in a box: its name, then the small print, each wrapped as the layout asks. */
+  /** The lines in a box: its name, an installer's split at its last hyphen, then the small print, one part a line. */
   const linesOf = (kind: Kind, label: string, sub: string) => {
-    const names = m.wrap && kind === 'install' && label.lastIndexOf('-') > 0
+    const names = kind === 'install' && label.lastIndexOf('-') > 0
       ? [label.slice(0, label.lastIndexOf('-')), label.slice(label.lastIndexOf('-'))]
       : [label];
-    const subs = m.wrap && kind === 'app' ? sub.split(' · ') : [sub];
+    const subs = sub.split(' · ');
     return [...names.map((text) => ({ text, kind: 'label' as const })), ...subs.map((text) => ({ text, kind: 'sub' as const }))];
   };
 
@@ -244,7 +241,7 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const arrow = (name: string) =>
     `<marker id="${marker(name)}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 8 4 0 8z" /></marker>`;
 
-  return `<svg class="service-graph ${layout}" viewBox="0 0 ${m.w} ${m.h}" preserveAspectRatio="xMinYMid meet" role="img" aria-labelledby="fediverse-graph-title-${layout}">`
+  return `<svg class="service-graph ${layout}" viewBox="0 0 ${m.w} ${m.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="fediverse-graph-title-${layout}">`
     + `<title id="fediverse-graph-title-${layout}">${escape(describe(compose))}</title>`
     + `<defs>${arrow('arrow')}${arrow('gate')}</defs>`
     + `<g class="buses">${buses.join('')}</g>`
