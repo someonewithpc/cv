@@ -176,11 +176,12 @@ const statistics = {
     );
 
     display: block;
+    /* With no margin the writing starts where the paper's own edge room ends. */
     padding:
       var(--paper-top)
       var(--paper-x)
       var(--paper-bottom)
-      calc(var(--margin-x) + 0.875rem);
+      max(var(--paper-x), var(--margin-x) + 0.875rem);
     background-color: var(--paper);
     /* The ruling, then the margin line. The ruling is one pitch-tall tile repeated down the
        sheet from the top of the first band, with its rule in the tile's last pixel, so a rule
@@ -363,13 +364,23 @@ const statistics = {
       }
     }
 
+    /* A narrowing sheet gives its margin up first. It closes to half its width, then goes,
+       red rule and all. */
+    @container (max-width: 50rem) {
+      --margin-x: 1.75rem;
+    }
+
+    @container (max-width: 40rem) {
+      --margin-x: 0rem;
+      --margin-ink: transparent;
+    }
+
     /* A narrow sheet: wider ruling, so a title link stays a comfortable thing to hit with a
-       thumb, and a narrower left margin, so the writing keeps its room. */
+       thumb. */
     @container (max-width: 34rem) {
       --line-height: 1.5rem;
       --tear: 1rem;
       --paper-x: 0.875rem;
-      --margin-x: 1.75rem;
     }
   }
 }

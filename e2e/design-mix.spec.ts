@@ -1070,7 +1070,9 @@ for (const theme of ['light', 'dark-forest'] as const) {
         probe.style.width = style.getPropertyValue('--rule-pitch');
         const pitch = probe.getBoundingClientRect().width;
         probe.remove();
-        return { from: 4, to: Math.floor(margin) - 6, pitch };
+        // Left of the margin line, or on a sheet too narrow for a margin, the paper's own edge.
+        const to = margin > 0 ? Math.floor(margin) - 6 : Math.floor(parseFloat(style.paddingLeft)) - 2;
+        return { from: margin > 0 ? 4 : 2, to, pitch };
       });
       // A clip of the full page in document coordinates; an element screenshot of a sheet this
       // tall lands a few pixels off its box.
