@@ -14,7 +14,7 @@ test('neighbouring notes are on different papers', async ({ page }) => {
   expect(stacks.length).toBeGreaterThan(0);
 
   for (const papers of stacks) {
-    for (const paper of papers) expect(['peeled', 'taped', 'pinned']).toContain(paper);
+    for (const paper of papers) expect(['peeled', 'taped']).toContain(paper);
     for (let i = 1; i < papers.length; i++) {
       expect(papers[i], `sheet ${i + 1} of ${papers.join(', ')}`).not.toBe(papers[i - 1]);
     }
