@@ -313,7 +313,7 @@ const hasCard = Astro.slots.has('card');
 
 /* Below the width the lane opens at (Layout.astro) the card has nowhere to stand beside the
    drawing, so it goes under it: a slip of the sheets' paper tucked under the stack, its top
-   hidden by the sheets and the rest sticking out below them, the way a note sheet is filed
+   hidden by the sheets and only its entries showing below them, the way a note sheet is filed
    with a set. It is part of the drawing, so the boundary goes round it too. It is first in the
    view so a screen reader meets it before the demo; `order` lays it down after the stack. */
 @media (width < 105rem) {
@@ -321,8 +321,22 @@ const hasCard = Astro.slots.has('card');
     isolation: isolate;
   }
 
+  /* The stack fans its sheets out about a pin at its top-left corner, each turned by 1.5deg
+     times the log of its place (PaperStack), so the hindmost one drops below the front sheet by
+     the sine of its turn times how far along it is. The slip reads the stack's page count to
+     know how far that is at its own right-hand corner. */
+  @for $pages from 2 through 8 {
+    .callout-view:has([data-page-count='#{$pages}']) {
+      --slip-pages: #{$pages};
+    }
+  }
+
   .callout[data-card] .callout-card {
-    --slip-tuck: 1.5rem;
+    --slip-tuck: 1rem;
+    --slip-inset: 1.25rem;
+    /* Clear of the peel hint the stack writes under its right-hand corner. */
+    --slip-width: min(34rem, 100% - 24rem);
+    --slip-sine: sin(1.5deg * log(var(--slip-pages, 6)));
     --slip-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface-sunken)));
 
     order: 1;
@@ -332,19 +346,18 @@ const hasCard = Astro.slots.has('card');
     top: auto;
     inset-inline: auto;
     justify-self: start;
-    /* Clear of the peel hint the stack writes under its right-hand corner. */
-    width: min(34rem, 100% - 24rem);
-    /* The stack splays its sheets out below its top one by up to 5% of its width (PaperStack),
-       and a percentage margin is a share of the width, so this reaches past the splay. */
-    margin-top: calc(-5% - var(--slip-tuck));
-    margin-inline-start: 1.25rem;
-    padding: calc(5% + var(--slip-tuck) + 0.25rem) 1rem 0.75rem;
+    width: var(--slip-width);
+    /* Up past the room the stack keeps below it for its fan, which is its width times that sine
+       (a percentage margin is a share of the width too), and a little under the front sheet. */
+    margin-top: calc(-100% * var(--slip-sine) - var(--slip-tuck));
+    margin-inline-start: var(--slip-inset);
+    /* The entries start just below the fan where it hangs lowest over the slip, its right-hand
+       corner. */
+    padding: calc(var(--slip-tuck) + (var(--slip-inset) + var(--slip-width)) * var(--slip-sine)) 1rem 0.75rem;
     background: var(--slip-paper);
     border: 1px solid var(--line-strong);
     border-radius: 0.25rem;
     box-shadow: 0 1px 1px rgb(0 0 0 / 10%), 0 0.375rem 0.875rem rgb(0 0 0 / 14%);
-    rotate: -0.7deg;
-    transform-origin: 0 0;
 
     /* The slip is a typed sheet, not a title block: no cells, each entry on its own rule. */
     > :global(.title-card) {
@@ -381,15 +394,15 @@ const hasCard = Astro.slots.has('card');
 @media (max-width: 52rem) {
   .callout[data-card] .callout-card {
     --slip-tuck: 0.75rem;
-    width: calc(100% - 1.5rem);
-    margin-inline-start: 0.75rem;
+    --slip-inset: 0.75rem;
+    --slip-width: calc(100% - 1.5rem);
     padding-inline: 0.75rem;
   }
 
   /* A phone has no room beside the peel hint the top stack writes under its sheet
-     (Stack.astro), so there the hint lands on the slip's top and the entries start under it. */
+     (Stack.astro), so there the entries start a line further down, under the hint. */
   .callout[data-card]:has([data-hint-show]) .callout-card {
-    padding-top: calc(5% + var(--slip-tuck) + 1.75rem);
+    padding-top: calc(100% * var(--slip-sine) + var(--slip-tuck) + var(--hint-clear) + 1.375rem);
   }
 }
 </style>
