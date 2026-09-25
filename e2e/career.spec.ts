@@ -20,6 +20,12 @@ const at = ({ date, label }: Edge, end = false) => {
   return year + (label.startsWith('Summer') ? (end ? 0.7 : 0.45) : end ? 1 : 0);
 };
 
+/** How far a job's bar, or the pieces of a broken one, reach along the time axis. */
+const extent = (bars: SVGGraphicsElement[]) => {
+  const boxes = bars.map((bar) => bar.getBBox());
+  return { from: Math.min(...boxes.map((b) => b.x)), to: Math.max(...boxes.map((b) => b.x + b.width)) };
+};
+
 /**
  * The Career sheet is drawn from site.json, so what could break is the drawing itself: a row
  * or a bar that the data has and the sheet does not, a bar the wrong length, or a sheet that
@@ -78,8 +84,8 @@ test('the elevation under the table draws one bar per job, as long as the job la
   const unit = 908 / 12;
   for (const [index, entry] of site.experience.entries()) {
     const job = wide.locator(`.job[data-job="${entry.id}"]`);
-    const width = Number(await job.locator('.bar').getAttribute('width'));
-    expect(width, `${entry.id} is the wrong length`).toBeCloseTo((at(entry.to, true) - at(entry.from)) * unit, 0);
+    const { from, to } = await job.locator('.bar').evaluateAll(extent);
+    expect(to - from, `${entry.id} is the wrong length`).toBeCloseTo((at(entry.to, true) - at(entry.from)) * unit, 0);
     // The bubble carries the job's revision from the table.
     await expect(job.locator('.bubble-number')).toHaveText(String(site.experience.length - index).padStart(2, '0'));
   }
@@ -112,7 +118,8 @@ test('the degree is an outline bar in the ground lane, under the jobs of its yea
   await expect(study).toHaveCount(1);
   await expect(study).toHaveAttribute('data-lane', '0');
   // Bare years, drawn as whole years: 2017 to 2022 is six of them.
-  const width = Number(await study.locator('.bar').getAttribute('width'));
+  const { from: left, to: right } = await study.locator('.bar').evaluateAll(extent);
+  const width = right - left;
   expect(width).toBeCloseTo((Number(year) + 1 - Number(from)) * unit, 0);
   await expect(study.locator('.bar')).not.toHaveAttribute('fill', /hatch/);
   await expect(study).toContainText(`${from} to ${year}`);
@@ -198,6 +205,38 @@ for (const [drawing, width] of [['wide', 1440], ['wide', 900], ['tall', 390], ['
     expect(await svg.evaluate(collisions)).toEqual([]);
   });
 }
+
+test('the table service summers break off at each winter with a break line', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const catering = site.experience.find((entry) => entry.from.label.startsWith('Summer'))!;
+  const summers = Number(catering.to.date) - Number(catering.from.date) + 1;
+  for (const drawing of ['wide', 'tall']) {
+    const pieces = page.locator(`#career svg.${drawing} .job[data-job="${catering.id}"] .bar`);
+    await expect(pieces, `${drawing}: one piece per summer`).toHaveCount(summers);
+    // Every cut edge carries the Z of a break line: four more corners than a straight edge.
+    const corners = await pieces.evaluateAll((paths) => paths.map((path) => (path.getAttribute('d')!.match(/L/g) ?? []).length + 1));
+    expect(corners, drawing).toEqual(corners.map((_, i) => 5 + 4 * ((i > 0 ? 1 : 0) + (i < corners.length - 1 ? 1 : 0))));
+  }
+
+  // In the wide drawing each break falls inside the winter between two summers.
+  const unit = await page.locator('#career svg.wide').evaluate((svg) => {
+    const ticks = [...svg.querySelectorAll<SVGPathElement>(':scope > path.tick')];
+    return (ticks[1].getBBox().x - ticks[0].getBBox().x);
+  });
+  const gaps = await page.locator(`#career svg.wide .job[data-job="${catering.id}"] .bar`).evaluateAll((paths) => {
+    const boxes = paths.map((path) => (path as SVGGraphicsElement).getBBox());
+    return boxes.slice(1).map((box, i) => [boxes[i].x + boxes[i].width, box.x]);
+  });
+  const start = await page.locator(`#career svg.wide .job[data-job="${catering.id}"] .bar`).first().evaluate((path) => (path as SVGGraphicsElement).getBBox().x);
+  for (const [i, [end, next]] of gaps.entries()) {
+    const year = Number(catering.from.date) + i;
+    const toYears = (v: number) => at(catering.from) + (v - start) / unit;
+    expect(toYears(end), `break ${i + 1} starts before summer ${year} ends`).toBeGreaterThan(year + 0.7);
+    expect(toYears(next), `break ${i + 1} ends after summer ${year + 1} starts`).toBeLessThan(year + 1.45);
+  }
+});
 
 for (const width of [390, 768, 1440]) {
   test(`at ${width}px the sheet fits the window and writes nothing under 8px`, async ({ page }) => {

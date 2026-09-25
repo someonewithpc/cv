@@ -104,6 +104,10 @@ for (const job of jobs) {
   job.lane = lane;
 }
 
+/* A seasonal job breaks off midway through each winter between its summers. */
+const breaks = (job: Job) =>
+  job.seasonal ? Array.from({ length: Number(job.to.date) - Number(job.from.date) }, (_, i) => Number(job.from.date) + i + 1.075) : [];
+
 const ANCHORS = [0.3, 0.7, 0.5, 0.15, 0.85];
 const MARGIN = 0.12;
 const above = (job: Job) => jobs.filter((other) => other.lane > job.lane && other.start - MARGIN <= job.end && job.start <= other.end + MARGIN);
@@ -111,7 +115,9 @@ const covered = (job: Job, t: number) => above(job).some((other) => other.start 
 for (let moved = true; moved; ) {
   moved = false;
   for (const job of jobs) {
-    job.anchors = ANCHORS.filter((f) => !covered(job, job.start + f * (job.end - job.start)));
+    job.anchors = ANCHORS.map((f) => job.start + f * (job.end - job.start))
+      .filter((t) => !covered(job, t) && breaks(job).every((b) => Math.abs(t - b) > 0.2))
+      .map((t) => (t - job.start) / (job.end - job.start));
     if (job.anchors.length) continue;
     job.lane = Math.max(...above(job).map((other) => other.lane)) + 1;
     moved = true;
@@ -162,6 +168,27 @@ const bubble = (x: number, y: number, job: Job) =>
   `<circle class="bubble" cx="${x}" cy="${y}" r="10"/>${text(x, y + 4, job.n, job.study ? 'bubble-number bubble-study' : 'bubble-number monospace', 'text-anchor="middle"')}`;
 
 const group = (job: Job) => `<g class="${job.study ? 'study' : 'job'}" data-job="${job.id}" data-lane="${job.lane}">`;
+/* A seasonal bar is drawn in pieces, cut at its breaks with the drafting break line:
+   straight across, a Z through the middle, straight again. `pos` places a time along the
+   bar and `pt` writes an (along, across) pair as x y. */
+const GAP = 4;
+const cutBar = (job: Job, pos: (t: number) => number, c0: number, c1: number, pt: (a: number, c: number) => string, attrs: string) => {
+  const dir = Math.sign(pos(job.end) - pos(job.start));
+  const ends = [pos(job.start), ...breaks(job).flatMap((t) => [pos(t) - dir * GAP, pos(t) + dir * GAP]), pos(job.end)];
+  const edge = (a: number, from: number, to: number, cut: boolean) => {
+    if (!cut) return [pt(a, to)];
+    const m = (from + to) / 2;
+    const d = (to - from) / 4;
+    return [pt(a, m - d), pt(a + 3.5, m - 0.3 * d), pt(a - 3.5, m + 0.3 * d), pt(a, m + d), pt(a, to)];
+  };
+  const pieces = ends.length / 2;
+  return Array.from({ length: pieces }, (_, i) => {
+    const [a, b] = [ends[2 * i], ends[2 * i + 1]];
+    const points = [pt(a, c0), pt(b, c0), ...edge(b, c0, c1, i < pieces - 1), pt(a, c1), ...edge(a, c1, c0, i > 0)];
+    return `<path ${attrs} d="M${points.join(' L')} Z"/>`;
+  }).join('');
+};
+
 const barClass = (job: Job) => `bar${job.seasonal ? ' seasonal' : ''}${job.study ? ' study' : ''}`;
 const fill = (job: Job, id: string) => (job.study ? '' : `fill="url(#${id}-hatch)"`);
 
@@ -228,7 +255,9 @@ const wide = (() => {
     let mid = (x0 + x1) / 2;
     if (Math.abs(job.ax - mid) < half) mid = job.ax + (job.ax - x0 > x1 - job.ax ? -half : half);
     return `${group(job)}
-      <rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" ${fill(job, 'h')}/>
+      ${job.seasonal
+        ? cutBar(job, x, top, top + BAR, (a, c) => `${a} ${c}`, `class="${barClass(job)}" ${fill(job, 'h')}`)
+        : `<rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" ${fill(job, 'h')}/>`}
       ${job.study ? `<line class="centre" x1="${x0 + 4}" y1="${top + BAR / 2}" x2="${x1 - 4}" y2="${top + BAR / 2}"/>` : ''}
       <line class="ext" x1="${x0}" y1="${top - 3}" x2="${x0}" y2="${dim - 5}"/>
       <line class="ext" x1="${x1}" y1="${top - 3}" x2="${x1}" y2="${dim - 5}"/>
@@ -299,7 +328,9 @@ const tall = (() => {
     const mid = (y0 + y1) / 2;
     const by = job.top + 7;
     return `${group(job)}
-      <rect class="${barClass(job)}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" ${fill(job, 'v')}/>
+      ${job.seasonal
+        ? cutBar(job, y, x0, x0 + BAR, (a, c) => `${c} ${a}`, `class="${barClass(job)}" ${fill(job, 'v')}`)
+        : `<rect class="${barClass(job)}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" ${fill(job, 'v')}/>`}
       ${job.study ? `<line class="centre" x1="${x0 + BAR / 2}" y1="${y0 + 4}" x2="${x0 + BAR / 2}" y2="${y1 - 4}"/>` : ''}
       <line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>
       <line class="ext" x1="${x0 - 3}" y1="${y1}" x2="${dim - 5}" y2="${y1}"/>
@@ -581,11 +612,6 @@ const tall = (() => {
   :global(.bar) {
     stroke: var(--ink);
     stroke-width: 1.25;
-  }
-
-  :global(.seasonal) {
-    stroke-dasharray: 4 3;
-    fill: none;
   }
 
   /* The degree is study, not a job: an outline with a chain centre line instead of a hatch. */
