@@ -1,3 +1,4 @@
+import { onAutoplayCommand, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { watchHandover } from '@/client/walkthroughHandover';
 
@@ -78,7 +79,10 @@ function runStep(el: HTMLElement, act: AutoplayStep['act']) {
 
 /**
  * The demo's own hand: a drawn cursor that works the cards through AUTOPLAY_STEPS. The
- * visitor takes the cards over and hands them back as watchHandover decides.
+ * visitor takes the cards over and hands them back as watchHandover decides, and the
+ * sheet's transport deck shows the same state (src/client/autoplayStatus.ts). Its keys do
+ * this by hand: pause holds the cards past the quiet spell, play hands them back, and reset
+ * starts the walkthrough over from the library's default.
  */
 export function createPlayer(host: HTMLElement) {
   const cursor = document.createElement('span');
@@ -91,6 +95,7 @@ export function createPlayer(host: HTMLElement) {
   let playToken = 0;
   let active = false;
   let noteOpen = false;
+  let held = false;
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
   let clickTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -166,6 +171,10 @@ export function createPlayer(host: HTMLElement) {
     }
   }
 
+  function report(state: AutoplayState) {
+    reportAutoplayState(host, state);
+  }
+
   function stopPlaying() {
     playToken += 1;
     mover.cancel();
@@ -175,12 +184,14 @@ export function createPlayer(host: HTMLElement) {
     listening: () => active,
     takeOver() {
       host.dataset.userControl = 'true';
+      report('user');
       stopPlaying();
       hideCursor(true);
     },
     handBack() {
-      if (!active || noteOpen || reducedMotion()) return false;
+      if (held || !active || noteOpen || reducedMotion()) return false;
       host.dataset.userControl = 'false';
+      report('playing');
       void play();
       return true;
     },
@@ -190,9 +201,30 @@ export function createPlayer(host: HTMLElement) {
     return active && !noteOpen && !handover.userControl && !reducedMotion();
   }
 
+  const stopCommands = onAutoplayCommand(host, (command) => {
+    if (reducedMotion()) return;
+    if (command === 'pause') {
+      held = true;
+      handover.takeOver();
+      return;
+    }
+    const wasPlaying = !handover.userControl;
+    held = false;
+    handover.release();
+    host.dataset.userControl = 'false';
+    report('playing');
+    if (command === 'play' && wasPlaying) return;
+    if (command === 'reset') {
+      stopPlaying();
+      resetCards();
+    }
+    if (canPlay()) void play();
+  });
+
   return {
     setActive(value: boolean) {
       active = value;
+      if (value) report(reducedMotion() ? 'off' : handover.userControl ? 'user' : 'playing');
       if (!value) {
         stopPlaying();
         hideCursor(false);
@@ -210,6 +242,7 @@ export function createPlayer(host: HTMLElement) {
     },
     dispose() {
       stopPlaying();
+      stopCommands();
       handover.dispose();
       if (fadeTimer) clearTimeout(fadeTimer);
       if (clickTimer) clearTimeout(clickTimer);
