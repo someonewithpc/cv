@@ -24,7 +24,6 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
       </div>
     </fieldset>
     <p class="filter-count monospace" role="status">
-      <span class="count-all">{TECH_ICONS.length} skills</span>
       <span class="count-software">{softwareCount} software</span>
       <span class="count-hardware">{hardwareCount} hardware &amp; CAD</span>
     </p>
@@ -61,7 +60,6 @@ section {
   .filter-bar {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.85rem;
     flex-wrap: wrap;
     margin: 0 0 1.1rem;
@@ -74,11 +72,11 @@ section {
     border: none;
 
     .filter-toggle-track {
-      $radius: 0.45rem;
-
       display: inline-flex;
+      flex-wrap: wrap;
+      max-width: 100%;
       border: 1px solid var(--line-strong);
-      border-radius: $radius;
+      border-radius: 0.125rem;
       overflow: hidden;
       font-size: 0.75rem;
     }
@@ -99,7 +97,7 @@ section {
       font-family: monospace, system-ui;
       letter-spacing: 0.03em;
       color: var(--ink-faint);
-      background: var(--surface-raised);
+      background: var(--surface-page);
       user-select: none;
 
       &:hover {
@@ -112,16 +110,12 @@ section {
     }
 
     input:checked + label {
-      color: color-mix(in oklch, white 90%, var(--blueprint));
-      background: color-mix(in oklch, var(--blueprint), black 18%);
-
-      &:hover {
-        color: white;
-      }
+      color: var(--ink);
+      background: var(--surface-sunken);
     }
 
     input:focus-visible + label {
-      // Checked option always owns focus in a radio group; --ink contrasts on --blueprint.
+      // Checked option always owns focus in a radio group.
       outline: 2px solid var(--ink);
       outline-offset: -2px;
       position: relative;
@@ -139,9 +133,6 @@ section {
     }
   }
 
-  &:has(#tech-filter-all:checked) .filter-count .count-all {
-    display: inline;
-  }
   &:has(#tech-filter-software:checked) .filter-count .count-software {
     display: inline;
   }
@@ -151,7 +142,6 @@ section {
 
   ul {
     display: flex;
-    justify-content: center;
     gap: 0.5em;
     flex-wrap: wrap;
 
@@ -160,9 +150,10 @@ section {
     }
   }
 
+  /* A chip is a cell of the title block, hairline and near square, and not a status pill. */
   li {
     padding: 0.375em 0.6em;
-    border-radius: 0.55em;
+    border-radius: 0.125rem;
     display: inline-flex;
     gap: 0.75ch;
     align-items: center;
@@ -172,14 +163,14 @@ section {
     contain-intrinsic-size: auto 2.25rem;
 
     color: var(--ink);
-    background-color: var(--surface-raised);
-    border: 1px solid color-mix(in oklch, var(--line-strong), var(--accent-muted) 35%);
+    background-color: var(--surface-sunken);
+    border: 1px solid var(--line-strong);
 
     font-family: monospace, system-ui;
     font-size: 0.8125rem;
     letter-spacing: 0.02em;
 
-    transition: opacity 0.2s ease, filter 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    transition: opacity 0.2s ease, filter 0.2s ease;
 
     @media (max-width: 52rem) {
       padding: 0.3em 0.5em;
@@ -195,13 +186,6 @@ section {
   &:has(#tech-filter-hardware:checked) li:not(.hw) {
     opacity: 0.3;
     filter: grayscale(70%);
-  }
-  &:has(#tech-filter-software:checked) li:not(.hw) {
-    border-color: color-mix(in oklch, var(--line-strong), var(--accent) 45%);
-  }
-  &:has(#tech-filter-hardware:checked) li.hw {
-    border-color: var(--blueprint);
-    background-color: color-mix(in oklch, var(--surface-raised), var(--blueprint) 10%);
   }
 
   @media (prefers-reduced-motion: reduce) {
