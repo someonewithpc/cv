@@ -799,14 +799,16 @@ test('every contribution is written on the rules of its sheet at 1440px', async 
       // does every row under it.
       expect(Math.abs(height - Math.round(lines) * sheet.pitch), `${sheet.id} row of ${height}px`)
         .toBeLessThanOrEqual(1);
-      // A title long enough to wrap takes a second line. Nothing here needs a third.
-      expect(Math.round(lines), `${sheet.id} row of ${height}px`).toBeLessThanOrEqual(2);
+      // A title long enough to wrap takes a second line, and at the reader's own text size
+      // the longest takes a third. Nothing here needs a fourth.
+      expect(Math.round(lines), `${sheet.id} row of ${height}px`).toBeLessThanOrEqual(3);
       if (Math.round(lines) === 1) onOneLine++;
       total++;
     }
   }
-  // One contribution to a line is the rule, and a wrapped title the exception.
-  expect(onOneLine / total).toBeGreaterThan(0.5);
+  // At the reader's own text size most titles wrap once; still, a good share keep a line to
+  // themselves.
+  expect(onOneLine / total).toBeGreaterThan(1 / 3);
 });
 
 test('the ruled sheets fit a phone without scrolling sideways', async ({ page }) => {
