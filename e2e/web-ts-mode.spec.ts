@@ -69,7 +69,7 @@ test('main page: brackets beside the buffer nest astro around html around the em
     const found = bands.and(buffer.locator(`[data-lang="${lang}"][data-lane="${lane}"]`));
     await expect(found).toHaveCount(1);
     const [from, to] = await found.evaluate((el) => [Number(el.dataset.from), Number(el.dataset.to)]);
-    return { from, to, box: (await found.boundingBox())!, label: await found.innerText() };
+    return { from, to, box: (await found.boundingBox())!, label: await found.locator('.band-label').innerText() };
   };
 
   const astro = await band('astro', 0);

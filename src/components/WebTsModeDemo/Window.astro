@@ -100,9 +100,9 @@ const label = (id: string) => {
             data-from={band.from}
             data-to={band.to}
             style={`--lane: ${band.lane}; --from: ${band.from}; --to: ${band.to}`}
-            aria-label={`${band.lang}, ${band.from === band.to ? `line ${band.from}` : `lines ${band.from} to ${band.to}`}`}
           >
             <span class="band-label" aria-hidden="true">{band.lang} {lineSpan(band)}</span>
+            <span class="sr-only">{band.lang}, {band.from === band.to ? `line ${band.from}` : `lines ${band.from} to ${band.to}`}</span>
           </li>
         ))}
       </ol>
