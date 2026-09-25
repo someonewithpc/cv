@@ -3,8 +3,10 @@ import { concatenatedValues, libraryObjects, type LibraryObject } from './object
 /* A stand-in for the one MySQL feature the search leans on, MATCH ... AGAINST in boolean
    mode over one FULLTEXT column, so the bars on the sheet are computed rather than drawn.
    It runs at build time for the page's first paint and in the browser as the visitor
-   types, over the same mock rows. The query rewrite and the SQL are those of
-   Library::ObjectPropertiesController#search, visrez branch hs-1946-arel (Dec 2024). */
+   types, over the same mock rows. The SQL is Library::ObjectPropertiesController#search on
+   visrez branch hs-1946-arel (Dec 2024). The rewrite follows face962ef,
+   the pushed copy of that commit on hs-1946-library-object-tags. The arel branch copy
+   has a stray `}` after the closing quote. */
 
 export type Filters = Readonly<{ category?: string; color?: string }>;
 
@@ -21,14 +23,13 @@ export function tokenize(text: string) {
     .filter(Boolean);
 }
 
-/** The controller's one rewrite: `gsub(/(\d+)( seats?|pax|size)?/i, '"\1\2"}')`. */
+/** The controller's one rewrite: `gsub(/(\d+)( seats?|pax|size)?/i, '"\1\2"')`. */
 export const NUMBER_RULE = /(\d+)( seats?|pax|size)?/gi;
 
 /**
  * The query massaging that runs before MySQL sees anything: a number is quoted so that 8
  * stops matching 81, and a `seats`, `pax` or `size` right after it goes into the same
- * phrase. Words are sent as typed, with no prefix `*`. The closing brace is in the
- * controller's replacement string; MySQL's parser lets it through.
+ * phrase. Words are sent as typed, with no prefix `*`.
  */
 export function mangle(raw: string): { text: string; segments: MangledSegment[] } {
   const segments: MangledSegment[] = [];
@@ -36,11 +37,11 @@ export function mangle(raw: string): { text: string; segments: MangledSegment[] 
   for (const match of raw.matchAll(NUMBER_RULE)) {
     const [whole, number, unit] = match;
     if (match.index > at) segments.push({ text: raw.slice(at, match.index), rule: 'plain' });
-    segments.push({ text: `"${number}${unit ?? ''}"}`, rule: unit ? 'folded' : 'quoted' });
+    segments.push({ text: `"${number}${unit ?? ''}"`, rule: unit ? 'folded' : 'quoted' });
     at = match.index + whole.length;
   }
   if (at < raw.length) segments.push({ text: raw.slice(at), rule: 'plain' });
-  return { text: raw.replace(NUMBER_RULE, '"$1$2"}'), segments };
+  return { text: raw.replace(NUMBER_RULE, '"$1$2"'), segments };
 }
 
 export type Term = {

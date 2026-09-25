@@ -95,12 +95,12 @@ test('main page: a bare number is quoted, and a seats after it folds into the ph
   const mangled = tool.locator('.mangled');
 
   await search(tool, 'chair 8');
-  await expect(mangled).toHaveText('chair "8"}');
-  await expect(mangled.locator('.rule-quoted')).toHaveText('"8"}');
+  await expect(mangled).toHaveText('chair "8"');
+  await expect(mangled.locator('.rule-quoted')).toHaveText('"8"');
 
   await search(tool, 'chair 8 seats');
-  await expect(mangled).toHaveText('chair "8 seats"}');
-  await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"}');
+  await expect(mangled).toHaveText('chair "8 seats"');
+  await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"');
 
   // Quoted, 8 is the token 8 alone: the 8 pax tables and the 8ft ones, never the 182 wide.
   await search(tool, '8');
@@ -158,7 +158,7 @@ test('generated SQL page: all three copies of the fragment follow the query and 
 
   await sheet.locator('.sheet-query').fill('round 10 seats');
   for (const mark of ['where', 'select', 'order']) {
-    await expect(sheet.locator(`.frag[data-mark="${mark}"]`)).toContainText(`AGAINST('round "10 seats"}' IN BOOLEAN MODE)`);
+    await expect(sheet.locator(`.frag[data-mark="${mark}"]`)).toContainText(`AGAINST('round "10 seats"' IN BOOLEAN MODE)`);
   }
 
   // The main page's field follows, so turning back finds the same query there.
