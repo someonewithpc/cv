@@ -55,11 +55,11 @@ function split(row: Row) {
 <div class="wrapper">
   <p class="point typewriter">One command says what is installed and what is not</p>
   <p class="lead">
-    Each language needs its tree-sitter grammar, and completion and errors need a language
-    server on PATH. <code>M-x web-ts-doctor</code> lists both. A grammar that is missing is a
-    line in this report, not an error when a file opens: the mode leaves that language plain and
-    carries on. This is the report from the machine this CV was built on, every grammar
-    installed and one server.
+    Each language needs a tree-sitter grammar, and completion and error checks need a language
+    server on PATH. <code>M-x web-ts-doctor</code> lists both. A missing grammar shows up as a
+    line here. When a file opens, the mode leaves that language unhighlighted and carries on.
+    This is the report from the machine that builds this CV. Every grammar is installed, and
+    one server, astro-ls.
   </p>
 
   <div class="report" role="group" aria-label="web-ts-doctor report">

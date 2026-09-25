@@ -33,7 +33,7 @@ const rules = [
   <p class="point typewriter">One interpolation, one TSX program</p>
 
   <figure class="figure" aria-label={`Parser ranges over ${interpolation.file}, line ${interpolation.line}`}>
-    <figcaption class="source">{interpolation.file} · line {interpolation.line}</figcaption>
+    <figcaption class="source">{interpolation.file}, line {interpolation.line}</figcaption>
 
     <div class="plate" style={`--cols: ${text.length}`}>
       <span class="track-label">buffer</span>
@@ -57,13 +57,13 @@ const rules = [
       <span class="track-label">tsx</span>
       <div class="track">
         <span class="bar cut" style={span(0, 1)} title="brace left out"></span>
-        <span class="bar range" style={span(1, close)}><span>one range · :offset '(1 . -1)</span></span>
+        <span class="bar range" style={span(1, close)}><span>one range, :offset '(1 . -1)</span></span>
         <span class="bar cut" style={span(close, close + 1)} title="brace left out"></span>
       </div>
 
       <span class="track-label">skip</span>
       <div class="track">
-        <span class="bar skipped" style={span(nestedOpen, nestedClose + 1)}><span>nested: skipped</span></span>
+        <span class="bar skipped" style={span(nestedOpen, nestedClose + 1)}><span>nested, left out</span></span>
       </div>
     </div>
 
@@ -82,7 +82,7 @@ const rules = [
   </figure>
 
   <table class="rules">
-    <caption>Range rules, every one <code>:local t</code>: a parser per capture</caption>
+    <caption>Range rules. Each is <code>:local t</code>, so every capture gets a parser of its own.</caption>
     <tbody>
       {rules.map(({ capture, lang, note }) => (
         <tr>

@@ -49,8 +49,7 @@ test('web-ts-mode: forward swipes visit every page in order, then wrap', async (
 test('main page: a painted buffer, cut into the ranges each parser is handed', async ({ page }) => {
   const buffer = await liveBuffer(page);
 
-  await expect(buffer).toContainText('Painted by rule at build time');
-  await expect(buffer).toContainText('not an Emacs capture');
+  await expect(buffer).toContainText('colours the code with a small lexer');
 
   // The frontmatter and the style body are whole-line blocks; the one interpolation sits
   // inside its line.
@@ -81,20 +80,20 @@ test('main page: pointing at a token lights up the range that owns it', async ({
   const echo = buffer.locator('.echo');
   const visibleEcho = () => echo.locator('span').filter({ visible: true });
 
-  await expect(visibleEcho()).toHaveText(/Point at the buffer/);
+  await expect(visibleEcho()).toHaveText(/Point at the code/);
 
   const interpolation = buffer.locator('.range', { hasText: 'label' });
   const idle = await interpolation.evaluate((el) => getComputedStyle(el).backgroundColor);
   await interpolation.hover();
-  await expect(visibleEcho()).toHaveText("tsx · element (html_interpolation), :offset '(1 . -1) · :local t");
+  await expect(visibleEcho()).toHaveText("tsx: element (html_interpolation), :offset '(1 . -1), :local t");
   expect(await interpolation.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(idle);
 
   await buffer.locator('.block[data-lang="scss"]').first().hover();
-  await expect(visibleEcho()).toHaveText(/^scss · style_element \(raw_text\)/);
+  await expect(visibleEcho()).toHaveText(/^scss: style_element \(raw_text\)/);
 
   // Markup outside every embedded range belongs to the Astro parser itself.
   await buffer.locator('.line', { hasText: 'aria-hidden="true"' }).first().hover();
-  await expect(visibleEcho()).toHaveText(/^astro · the primary parser/);
+  await expect(visibleEcho()).toHaveText(/^astro: the host parser/);
 });
 
 test('depth page: each selector level gets its own hue, and nesting starts again at 0', async ({ page }) => {

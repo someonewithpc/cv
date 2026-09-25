@@ -39,7 +39,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
     />
 
     <div class="scale" role="group" aria-label="Depth hue scale">
-      <span class="scale-title">depth · share of the way to hue 0.33</span>
+      <span class="scale-title">Depth, and the share of the way to hue 0.33</span>
       <ol>
         {scale.map(({ depth, amount }) => (
           <li>
@@ -62,9 +62,9 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   </div>
 
   <dl class="rules">
-    <div><dt><code>a &gt; b</code></dt><dd>The right side starts one past the deepest level on the left</dd></div>
-    <div><dt><code>:not() :has()</code></dt><dd>Arguments go one deeper than the pseudo-class</dd></div>
-    <div><dt><code>a, b</code></dt><dd>Branches share a depth; nesting a rule starts it at 0</dd></div>
+    <div><dt><code>a &gt; b</code></dt><dd>The right side starts one level past the deepest on its left.</dd></div>
+    <div><dt><code>:not() :has()</code></dt><dd>The arguments sit one level deeper than the pseudo-class.</dd></div>
+    <div><dt><code>a, b</code></dt><dd>Branches share a depth. A nested rule starts again at 0.</dd></div>
   </dl>
 </div>
 
