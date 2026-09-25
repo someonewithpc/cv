@@ -31,12 +31,12 @@ const revision = (index: number) => String(experience.length - index).padStart(2
 ---
 
 <section id="career" aria-labelledby="career-heading">
-  <SectionHeader headingId="career-heading" titleJp="キャリア" title="Career" sheetCode="SH-CV" />
+  <SectionHeader headingId="career-heading" titleJp="経歴" title="Career" sheetCode="SH-CV" />
 
   <div class="sheet-body">
     <div class="revisions">
       <h3 id="career-experience">
-        <small lang="ja">エクスペリエンス</small>
+        <small lang="ja">職歴</small>
         <span class="typewriter">Experience</span>
       </h3>
 
@@ -91,7 +91,7 @@ const revision = (index: number) => String(experience.length - index).padStart(2
 
     <dl class="cells">
       <div class="cell">
-        <dt class="monospace"><small lang="ja">エデュケーション</small>Education</dt>
+        <dt class="monospace"><small lang="ja">学歴</small>Education</dt>
         <dd>
           <span class="typewriter">{education.degree}</span>
           <span>{education.minor}</span>
@@ -101,7 +101,7 @@ const revision = (index: number) => String(experience.length - index).padStart(2
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">ランゲージ</small>Languages</dt>
+        <dt class="monospace"><small lang="ja">言語</small>Languages</dt>
         <dd>
           <ul class="languages">
             {languages.map(({ name, level }) => (
@@ -112,17 +112,17 @@ const revision = (index: number) => String(experience.length - index).padStart(2
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">ロケーション</small>Location</dt>
+        <dt class="monospace"><small lang="ja">場所</small>Location</dt>
         <dd><span class="typewriter">{location}</span></dd>
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">インタレスト</small>Interests</dt>
+        <dt class="monospace"><small lang="ja">趣味</small>Interests</dt>
         <dd><span>{interests.join(', ')}</span></dd>
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">リファレンス</small>Ref sheets</dt>
+        <dt class="monospace"><small lang="ja">参照</small>Ref sheets</dt>
         <dd>
           <ul class="refs monospace">
             {refs.map(({ label, href }) => (
