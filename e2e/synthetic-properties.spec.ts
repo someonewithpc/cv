@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, swipeStack, swipeToPage } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 
 import {
   feetAndInches,
@@ -14,10 +14,7 @@ import {
 const PAGES = ['Synthetic Properties', 'Six Renderings', 'Trigger Bodies', 'Searchable Text'];
 
 function syntheticStack(page: Page) {
-  // By title, not by position: the demos run gains stacks over time.
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'Synthetic Properties' }),
-  });
+  return demoStack(page, 'Synthetic Properties');
 }
 
 async function mountedTool(page: Page) {
@@ -85,7 +82,7 @@ test('synthetic properties: forward swipes visit every page in order, then wrap'
   await page.goto('/');
   const stack = syntheticStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)), '.synthetic-demo');
 
   expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
   expect(await frontPageName(stack)).toBe(PAGES[0]);
@@ -100,6 +97,9 @@ test('synthetic properties: forward swipes visit every page in order, then wrap'
 });
 
 test('main page: the walkthrough types on its own and hands over on hover', async ({ page }) => {
+  // The spec drives the page's clock: it jumps the typing along and runs the timers on
+  // after the handover, so nothing waits on the wall clock.
+  await page.clock.install();
   await page.goto('/');
   const stack = syntheticStack(page);
   await stack.scrollIntoViewIfNeeded();
@@ -109,14 +109,21 @@ test('main page: the walkthrough types on its own and hands over on hover', asyn
   const tool = front.locator('.synthetic-tool[data-live]');
   await expect(tool).toHaveAttribute('data-autoplay', 'playing');
   // The first step asks for the sample in feet and inches.
-  await expect(tool.locator('.query-input')).toHaveValue('5ft3in', { timeout: 15_000 });
+  await expect
+    .poll(async () => {
+      await page.clock.fastForward(500);
+      return tool.locator('.query-input').inputValue();
+    }, { intervals: [50] })
+    .toBe('5ft3in');
   await expect(tool.locator('.text mark')).toHaveText('5ft3in');
 
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
   const settled = await tool.locator('.size-input').inputValue();
   const query = await tool.locator('.query-input').inputValue();
-  await page.waitForTimeout(1_500);
+  // A walkthrough still running would change a field on its next timer. Every step
+  // waits under 3 s, so three jumps of that fire whatever it had pending.
+  for (let i = 0; i < 3; i += 1) await page.clock.fastForward(3_000);
   expect(await tool.locator('.size-input').inputValue()).toBe(settled);
   expect(await tool.locator('.query-input').inputValue()).toBe(query);
 });
@@ -145,7 +152,7 @@ test('six renderings page: the carry is marked in the table', async ({ page }) =
   await page.goto('/');
   const stack = syntheticStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await swipeToPage(page, stack, 'Six Renderings');
+  await turnToPage(stack, 'Six Renderings');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
   await expect(front.locator('td.carry')).toHaveText([`6'0"`, '6ft0in']);
