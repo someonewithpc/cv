@@ -2,10 +2,10 @@
 import { initialQuery, variantOf } from '../objects';
 import { formatScore, mangle, search } from '../search';
 
-// One query, with and without a filter: the row that moves is the one that was best
-// among what the filter leaves, and it goes to 1.00 because the maximum moves with it.
+// One query, with and without a category: the best row the category leaves goes to 1.00,
+// because the maximum is taken inside the category too.
 const query = initialQuery;
-const filter = { color: 'Gold' } as const;
+const filter = { category: 'Catering' } as const;
 const TOP = 5;
 
 const all = search({ query, filters: {} });
@@ -22,7 +22,7 @@ function shown(result: typeof all) {
 
 const columns = [
   { title: 'No filter', result: all, note: `${all.hits.length} rows, max ${all.max?.toFixed(3)}` },
-  { title: `color = ${filter.color}`, result: filtered, note: `${filtered.hits.length} rows, max ${filtered.max?.toFixed(3)}` },
+  { title: `category = ${filter.category}`, result: filtered, note: `${filtered.hits.length} rows, max ${filtered.max?.toFixed(3)}` },
 ];
 ---
 

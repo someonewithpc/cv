@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { frontPage, frontPageIndex, frontPageName, swipeStack, waitForIslandMounted } from './support/paperStack';
 
-const PAGES = ['Library Search & Relevance', 'Relevance Scoring', 'Property Filters', 'Generated SQL'];
+const PAGES = ['Library Search & Relevance', 'Relevance Scoring', 'Filters', 'Generated SQL'];
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -80,7 +80,7 @@ test('main page: the walkthrough types on its own and hands over on hover', asyn
   const input = tool.locator('.query-input');
   await expect(tool).toHaveAttribute('data-autoplay', 'playing');
   // It clears the opening query and starts typing its own.
-  await expect(input).not.toHaveValue('chair 8 seats', { timeout: 10_000 });
+  await expect(input).not.toHaveValue('rectangular 8 seats', { timeout: 10_000 });
   await expect(tool.locator('[data-tally="sent"]')).not.toHaveText('0', { timeout: 10_000 });
 
   await tool.hover();
@@ -94,12 +94,12 @@ test('main page: a bare number is quoted, and a seats after it folds into the ph
   const { tool } = await mountedTool(page);
   const mangled = tool.locator('.mangled');
 
-  await search(tool, 'chair 8');
-  await expect(mangled).toHaveText('chair "8"');
+  await search(tool, 'rectangular 8');
+  await expect(mangled).toHaveText('rectangular "8"');
   await expect(mangled.locator('.rule-quoted')).toHaveText('"8"');
 
-  await search(tool, 'chair 8 seats');
-  await expect(mangled).toHaveText('chair "8 seats"');
+  await search(tool, 'rectangular 8 seats');
+  await expect(mangled).toHaveText('rectangular "8 seats"');
   await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"');
 
   // Quoted, 8 is the token 8 alone: the 8 pax tables and the 8ft ones, never the 182 wide.
@@ -113,18 +113,18 @@ test('main page: a bare number is quoted, and a seats after it folds into the ph
 test('main page: the rows come back ranked, normalised to the top hit', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
-  await search(tool, 'chair 8 seats');
-  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Round Table');
+  await search(tool, 'rectangular 8 seats');
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Banquet Table');
   const scores = await shownScores(tool);
   expect(scores[0]).toBe(1);
   expect(scores).toEqual([...scores].sort((a, b) => b - a));
   await expect(tool.locator('.count')).toHaveText(`${scores.length} of 19 objects`);
 
-  // A filter narrows the relation the maximum is taken over, so the best row it leaves
-  // climbs to 1.00.
-  await tool.locator('.filter-select[data-filter="color"]').selectOption('Gold');
+  // The category narrows the relation the maximum is taken over, so the best row it
+  // leaves climbs to 1.00.
+  await tool.locator('.filter-select[data-filter="category"]').selectOption('Catering');
   await expect(tool.locator('.hit:not([hidden])')).toHaveCount(1);
-  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Chiavari Chair');
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Buffet Table');
   await expect(tool.locator('.hit:not([hidden]) .value').first()).toHaveText('1.00');
 });
 
@@ -182,7 +182,7 @@ test('relevance page: the scoring table follows the query typed on it', async ({
 test('property filters page: the filtered column renormalises to its own best row', async ({ page }) => {
   const stack = librarySearchStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnTo(page, stack, 'Property Filters');
+  await turnTo(page, stack, 'Filters');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
 

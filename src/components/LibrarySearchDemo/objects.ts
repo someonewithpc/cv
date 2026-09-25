@@ -101,18 +101,21 @@ export const colors: readonly string[] = [
   ...new Set(libraryObjects.flatMap((object) => object.properties.filter(([name]) => name === 'color').map(([, value]) => value))),
 ].sort();
 
-/** The query the page opens on. */
-export const initialQuery = 'chair 8 seats';
+/** The query the page opens on: a shape and a seat count, where the object with both
+    comes first and the one with the rarer term comes next. */
+export const initialQuery = 'rectangular 8 seats';
 
 /** The walkthrough's script: each step is typed into the field, then held long enough to
-    read the bars. `color` sets the property filter instead of typing. */
+    read the bars. `color` sets the property filter instead of typing. Each step shows one
+    thing: two plain words, where the rarer weighs more; a property filter; one word; a seat
+    count the rewrite quotes into a phrase. A bare `chair` would also match, just as
+    strongly, every table that lists the chairs set round it. */
 export const walkthrough: readonly { type?: string; clear?: boolean; color?: string; hold: number }[] = [
-  { clear: true, type: 'chair', hold: 1800 },
-  { type: ' 8', hold: 1800 },
-  { type: ' seats', hold: 2600 },
+  { clear: true, type: 'wood chair', hold: 2600 },
   { color: 'Gold', hold: 2600 },
   { color: '', hold: 800 },
-  { clear: true, type: 'round 10 seats', hold: 2600 },
+  { clear: true, type: 'rectangular', hold: 2200 },
+  { type: ' 8 seats', hold: 3000 },
 ];
 
 /** What tells two objects of one name apart on a sheet: the finish, and the seat count. */
