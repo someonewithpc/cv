@@ -316,5 +316,29 @@ article {
       grid-row: 4;
     }
   }
+
+  /* Beside the marks, a one-word title like BLENDER no longer fits and runs off the card. */
+  @container (max-width: 16rem) {
+    > ul,
+    > header {
+      grid-column: 1 / -1;
+    }
+
+    > header {
+      grid-row: 2;
+    }
+
+    > dl {
+      grid-row: 3;
+    }
+
+    > p {
+      grid-row: 4;
+    }
+
+    > nav {
+      grid-row: 5;
+    }
+  }
 }
 </style>
