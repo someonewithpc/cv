@@ -272,9 +272,10 @@ test('main page: every change the walkthrough makes shows the drawn cursor on it
 
   // Every write to the field or a filter is logged with where the cursor's tip was, and so is
   // every redraw of the rows; a redraw with no write shortly before it would be a change the
-  // visitor could not trace to anything on screen.
+  // visitor could not trace to anything on screen. A filter is written while its drawn list
+  // is open, with the tip on the lit option that carries the new value.
   await host.evaluate((el) => {
-    const log: { what: string; value: string; shown: boolean; inside: boolean; ring: boolean; at: number }[] = [];
+    const log: { what: string; value: string; shown: boolean; inside: boolean; ring: boolean; listed: boolean; at: number }[] = [];
     const redraws: number[] = [];
     const cursor = el.querySelector<HTMLElement>('[data-demo-cursor]')!;
     const watch = (control: HTMLInputElement | HTMLSelectElement, what: string) => {
@@ -284,7 +285,10 @@ test('main page: every change the walkthrough makes shows the drawn cursor on it
         configurable: true,
         get() { return desc.get!.call(this); },
         set(value: string) {
-          const box = control.getBoundingClientRect();
+          const list = el.querySelector<HTMLElement>('[data-demo-options]')!;
+          const lit = list.querySelector<HTMLElement>('li[data-hover]');
+          const listed = what === 'query' || (!list.hidden && lit?.dataset.value === value);
+          const box = (what === 'query' ? control : lit ?? control).getBoundingClientRect();
           const tip = cursor.getBoundingClientRect();
           const x = tip.left + tip.width * 0.12;
           const y = tip.top + tip.height * 0.08;
@@ -294,6 +298,7 @@ test('main page: every change the walkthrough makes shows the drawn cursor on it
             shown: !cursor.hidden && tip.width > 0,
             inside: x >= box.left - 2 && x <= box.right + 2 && y >= box.top - 2 && y <= box.bottom + 2,
             ring: control.hasAttribute('data-demo-focus'),
+            listed,
             at: performance.now(),
           });
           desc.set!.call(this, value);
@@ -315,19 +320,83 @@ test('main page: every change the walkthrough makes shows the drawn cursor on it
   }), { timeout: 60_000, intervals: [500] }).toBe(true);
 
   const { log, redraws } = await page.evaluate(() => {
-    const w = window as unknown as { __searchLog: { what: string; value: string; shown: boolean; inside: boolean; ring: boolean; at: number }[]; __searchRedraws: number[] };
+    const w = window as unknown as { __searchLog: { what: string; value: string; shown: boolean; inside: boolean; ring: boolean; listed: boolean; at: number }[]; __searchRedraws: number[] };
     return { log: w.__searchLog, redraws: w.__searchRedraws };
   });
   const colors = log.filter((entry) => entry.what === 'color').map((entry) => entry.value);
   expect(colors).toEqual(expect.arrayContaining(['Gold', '']));
   for (const entry of log) {
-    expect(entry, `${entry.what} set to "${entry.value}"`).toMatchObject({ shown: true, inside: true, ring: true });
+    expect(entry, `${entry.what} set to "${entry.value}"`).toMatchObject({ shown: true, inside: true, ring: true, listed: true });
   }
   // The mock server answers within 260 ms of the last write, behind a 50 ms throttle, and the
   // rows slide for 350 ms after it.
   const writes = log.map((entry) => entry.at);
   const unexplained = redraws.filter((at) => !writes.some((write) => write <= at && at - write < 800));
   expect(unexplained).toEqual([]);
+});
+
+test('main page: the walkthrough opens the Color list, lights Gold and closes on it', async ({ page }) => {
+  test.setTimeout(60_000);
+  const stack = librarySearchStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await waitForIslandMounted(front, '[data-library-search="search"]');
+  const tool = front.locator('.library-search[data-live]');
+  const list = tool.locator('[data-demo-options]');
+
+  // Drawn for the eye only: the visitor and a screen reader get the native select.
+  await expect(list).toHaveAttribute('aria-hidden', 'true');
+
+  // Each change to the drawn list is logged in the page, since the lit option only shows for
+  // a few hundred ms: whether it is open, what it lists, which option is lit and which is
+  // current, the select's value, and whether the list fits inside the tool, under the select.
+  await tool.evaluate((root) => {
+    type Frame = { open: boolean; options: string[]; lit?: string; current?: string; value: string; fits: boolean };
+    const el = root.querySelector<HTMLElement>('[data-demo-options]')!;
+    const select = root.querySelector<HTMLSelectElement>('.filter-select[data-filter="color"]')!;
+    const frames: Frame[] = [];
+    const record = () => {
+      const box = el.getBoundingClientRect();
+      const outer = root.getBoundingClientRect();
+      const under = select.getBoundingClientRect();
+      const frame: Frame = {
+        open: !el.hidden,
+        options: [...el.children].map((li) => li.textContent!),
+        lit: el.querySelector('[data-hover]')?.textContent ?? undefined,
+        current: el.querySelector('[data-selected]')?.textContent ?? undefined,
+        value: select.value,
+        fits: el.hidden || (box.top >= under.bottom && box.left >= outer.left && box.right <= outer.right
+          && box.bottom <= outer.bottom && el.scrollHeight <= el.clientHeight),
+      };
+      if (JSON.stringify(frames.at(-1)) !== JSON.stringify(frame)) frames.push(frame);
+    };
+    new MutationObserver(record).observe(el, { subtree: true, childList: true, attributes: true });
+    Object.assign(window, { __listFrames: frames });
+  });
+
+  const frames = () => page.evaluate(() => (window as unknown as { __listFrames: { open: boolean; options: string[]; lit?: string; current?: string; value: string; fits: boolean }[] }).__listFrames);
+  // Two openings: Any to Gold, then Gold back to Any.
+  await expect.poll(async () => (await frames()).filter((f, i, all) => !f.open && all[i - 1]?.open).length, { timeout: 45_000, intervals: [500] }).toBeGreaterThanOrEqual(2);
+
+  const all = await frames();
+  const options = await tool.locator('.filter-select[data-filter="color"] option').allTextContents();
+  const openings: typeof all[] = [];
+  for (const frame of all) {
+    if (!frame.open) continue;
+    if (!openings.length || !all[all.indexOf(frame) - 1]?.open) openings.push([]);
+    openings.at(-1)!.push(frame);
+  }
+  const closes = all.filter((f, i) => !f.open && all[i - 1]?.open);
+  for (const [n, [from, to]] of [['Any', 'Gold'], ['Gold', 'Any']].entries()) {
+    const shown = openings[n].filter((f) => f.options.length);
+    // It opens with every option the select has, the current one lit.
+    expect(shown[0], `opening ${n + 1}`).toMatchObject({ options, lit: from, current: from, fits: true });
+    // The hand lights its pick before it clicks.
+    expect(shown.some((f) => f.lit === to), `opening ${n + 1}`).toBe(true);
+    expect(shown.every((f) => f.fits), `opening ${n + 1}`).toBe(true);
+    // Then the list closes on the new value.
+    expect(closes[n].value, `closing ${n + 1}`).toBe(to === 'Any' ? '' : to);
+  }
 });
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 900 }, { width: 1440, height: 900 }]) {
@@ -363,6 +432,29 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 900 
     expect(numbers.fill.h).toBeGreaterThan(0.85);
     expect(numbers.scrolls).toBe(true);
     expect(numbers.overlaps, JSON.stringify(numbers)).toBe(false);
+  });
+}
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1680, height: 1050 }]) {
+  test(`blueprint pages: each card fits whole beside the title block at ${viewport.width}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const stack = librarySearchStack(page);
+    await stack.scrollIntoViewIfNeeded();
+
+    for (const name of PAGES.slice(1)) {
+      await turnTo(page, stack, name);
+      const front = frontPage(stack, await frontPageIndex(stack));
+      const fit = await front.locator(':scope > section').evaluate((section) => {
+        const panel = section.querySelector<HTMLElement>('.panel')!;
+        const box = panel.getBoundingClientRect();
+        const block = section.querySelector<HTMLElement>(':scope > table')!.getBoundingClientRect();
+        return {
+          hidden: panel.scrollHeight - panel.clientHeight,
+          clear: box.right <= block.left || box.bottom <= block.top,
+        };
+      });
+      expect(fit, name).toEqual({ hidden: 0, clear: true });
+    }
   });
 }
 
