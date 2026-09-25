@@ -1,269 +1,282 @@
 ---
-import { buildComposeFile, DEV_PASSWORD } from '../compose';
-import { exampleConfig, withEnabled } from '../config';
+import { buildComposeFile } from '../compose';
+import { exampleConfig, listInstances, withEnabled } from '../config';
+import { renderSequence, type Lane, type Layout, type Step } from '../sequence';
 
-// The lifelines and the conditions on the arrows come out of the compose file the builder
-// writes for Alice alone; the steps inside the installer are install/social-v3.sh's own.
+// The lanes and the conditions on the arrows come out of the compose file the builder writes
+// for Alice alone; the steps inside the installer are install/social-v3.sh's own, and the last
+// row is the server block the recipe writes for her.
 const compose = buildComposeFile(withEnabled(exampleConfig, { 'gnusocial-bob': false, 'gnusocial-v2': false }));
-const app = 'gnusocial-alice';
+const alice = listInstances(exampleConfig).find((instance) => instance.key === 'gnusocial-alice')!;
+const app = alice.instance_id;
 const installer = `${app}-install`;
 const condition = (service: string, dependency: string) =>
   (compose.services[service].depends_on as Record<string, { condition: string }>)[dependency].condition;
 const healthcheck = compose.services.db.healthcheck as { test: string[]; interval: string; retries: number };
 
-const lifelines = ['db', installer, app, 'web'];
-const column = (service: string) => lifelines.indexOf(service) + 1;
-
-type Step =
-  | { kind: 'self'; on: string; text: string; code?: boolean }
-  | { kind: 'message'; from: string; to: string; text: string; gate?: boolean };
+const prefix = 'gnusocial-';
+const lanes = ['db', installer, app, 'web'];
+const lane = (service: string) => lanes.indexOf(service);
+// A lane is too narrow for a whole instance's name, so it breaks after the prefix.
+const heads: Lane[] = lanes.map((id) => ({
+  id,
+  head: id.startsWith(prefix) ? [prefix, id.slice(prefix.length)] : [id],
+}));
 
 const steps: Step[] = [
-  { kind: 'self', on: 'db', text: `${healthcheck.test[1]} · every ${healthcheck.interval}, ${healthcheck.retries} tries`, code: true },
-  { kind: 'message', from: 'db', to: installer, text: condition(installer, 'db') },
-  { kind: 'self', on: installer, text: '/wait_for_db.sh', code: true },
-  { kind: 'self', on: installer, text: 'composer install', code: true },
-  { kind: 'message', from: installer, to: 'db', text: 'doctrine:database:create · schema:create' },
-  { kind: 'self', on: installer, text: 'app:populate_initial_values', code: true },
-  { kind: 'self', on: installer, text: 'install_plugins.sh', code: true },
-  { kind: 'message', from: installer, to: 'db', text: 'seed-v3-admin.php boots the kernel: DB::persistWithSameId' },
-  { kind: 'message', from: installer, to: app, text: `exit 0 · ${condition(app, installer)}`, gate: true },
-  { kind: 'self', on: app, text: `/entrypoint.sh · redis ${condition(app, 'redis').replace('service_', '')}`, code: true },
-  { kind: 'message', from: app, to: 'web', text: 'web.depends_on lists every app' },
+  { kind: 'self', lane: lane('db'), text: `${healthcheck.test[1].split(' ')[0]} every ${healthcheck.interval}` },
+  { kind: 'message', from: lane('db'), to: lane(installer), text: condition(installer, 'db') },
+  { kind: 'self', lane: lane(installer), text: 'composer install' },
+  { kind: 'message', from: lane(installer), to: lane('db'), text: 'doctrine:schema:create' },
+  { kind: 'self', lane: lane(installer), text: 'app:populate_initial_values' },
+  { kind: 'message', from: lane(installer), to: lane('db'), text: 'seed-v3-admin.php' },
+  { kind: 'end', lane: lane(installer), text: 'exit 0' },
+  { kind: 'message', from: lane(installer), to: lane(app), text: condition(app, installer), gate: true },
+  { kind: 'self', lane: lane(app), text: 'entrypoint.sh' },
+  { kind: 'message', from: lane(app), to: lane('web'), text: 'web.depends_on' },
+  { kind: 'self', lane: lane('web'), text: `server_name ${alice.hostnames.join(' ')}` },
 ];
 
-// Row 1 holds the heads, so step i sits on row i + 2. Every item is placed by hand: the
-// lifelines hold their columns for every row, and auto-placement would push the rest past them.
-const placed = steps.map((step, index) => {
-  const row = index + 2;
-  if (step.kind === 'self') return { ...step, row, start: column(step.on), end: column(step.on) + 1, reverse: false };
-  const [a, b] = [column(step.from), column(step.to)];
-  return { ...step, row, start: Math.min(a, b), end: Math.max(a, b) + 1, reverse: b < a };
-});
+const layouts: Layout[] = ['landscape', 'short', 'portrait'];
+const drawings = layouts.map((layout) => renderSequence(heads, steps, layout)).join('');
 ---
 
 <div class="wrapper">
   <div class="install-layer" aria-hidden="true">
-    <div class="panel">
-      <header>
-        <strong>Each instance is two containers: a one-shot installer gates the app</strong>
-      </header>
+    <header>
+      <strong>A one-shot installer brings each server up</strong>
+      <span class="caption">{app}'s containers, in the order the compose file starts them</span>
+    </header>
 
-      <div class="sequence" style={{ '--lifelines': lifelines.length, '--rows': steps.length + 1 }}>
-        {lifelines.map((_, index) => (
-          <span class="lifeline" style={{ 'grid-column': index + 1 }} />
-        ))}
-        {lifelines.map((name, index) => (
-          <code class="head" style={{ 'grid-column': index + 1 }}>{name}</code>
-        ))}
+    <div class="figure" set:html={drawings} />
 
-        {placed.map((step) => step.kind === 'self' ? (
-          <span
-            class:list={['self', { first: step.start === 1, last: step.start === lifelines.length }]}
-            style={{ 'grid-row': step.row, 'grid-column': `${step.start} / ${step.end}` }}
-          >
-            {step.code ? <code>{step.text}</code> : step.text}
-          </span>
-        ) : (
-          <span
-            class:list={['message', { reverse: step.reverse, gate: step.gate }]}
-            style={{ 'grid-row': step.row, 'grid-column': `${step.start} / ${step.end}`, '--span': step.end - step.start }}
-          >
-            <span class="text">{step.text}</span>
-          </span>
-        ))}
+    <dl class="rules">
+      <div>
+        <dt>One shot</dt>
+        <dd>The installer has <code>restart: no</code>. Its lane stops at <code>exit 0</code>, and only then does the app start.</dd>
       </div>
-
-      <dl class="rules">
-        <div>
-          <dt>Run again</dt>
-          <dd>If the <code>language</code> table has rows the script only reseeds the admin and exits 0, so <code>up</code> is safe to repeat</dd>
-        </div>
-        <div>
-          <dt>Password</dt>
-          <dd><code>POSTGRES_PASSWORD={DEV_PASSWORD}</code> is the playground's dev default, in every compose file it writes</dd>
-        </div>
-        <div>
-          <dt>v2</dt>
-          <dd>The v2 node has the same pair, gated on <code>mariadb</code> instead of Postgres</dd>
-        </div>
-      </dl>
-    </div>
+      <div>
+        <dt>Run again</dt>
+        <dd>If the <code>language</code> table has rows, the script only seeds the admin again and exits 0, so <code>up</code> is safe to repeat.</dd>
+      </div>
+      <div>
+        <dt>Its name</dt>
+        <dd><code>CONFIG_DOMAIN={alice.hostname}</code> tells the server who it is on the network. Its admin is <code>admin@{alice.hostname}</code>.</dd>
+      </div>
+      <div>
+        <dt>v2</dt>
+        <dd>The v2 server has the same pair, gated on <code>mariadb</code> instead of Postgres.</dd>
+      </div>
+    </dl>
   </div>
 </div>
 
 <style lang="scss">
 @use "./sheet" as *;
 
+/* The sheet centres its content by default; this one takes the whole sheet, as the live one does. */
+:global(article.technical-drawing-stack > * > section .content:has(.install-layer)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
 .wrapper {
   @include sheet-content;
-  @include clear-of-title-block;
 
-  margin-inline: auto;
-  display: grid;
-  place-items: center;
+  height: 100%;
+  min-height: 0;
+
+  /* The title block takes a row off the bottom of a short sheet; a portrait one gives it a
+     row of its own. On a wide sheet it sits under the notes' column. */
+  :global([data-sheet-width='narrow']) & {
+    padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    padding-bottom: $sheet-margin;
+  }
 }
 
 .install-layer {
+  /* The notes' column is as wide as the title block under it, as on the live sheet. */
+  --side: max(18em, var(--title-block-inline, 0px));
+
   box-sizing: border-box;
-  width: min(100%, 44em);
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side);
+  grid-template-rows: auto minmax(0, 1fr);
+  column-gap: 1.5em;
+  row-gap: 0.75em;
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
 
   /* Keyed on the stack's attributes, not the width query: a font size that comes out of a
      container query re-lays everything under it on each resize step. See Stack.astro. */
-  :global([data-sheet-width='narrow']) & {
-    /* A short landscape sheet: the type gives a little, and the notes under the figure go. */
-    font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
-
-    .rules {
-      display: none;
-    }
-  }
-
+  :global([data-sheet-width='narrow']) &,
   :global([data-sheet-orientation='portrait']) & {
-    /* A phone's sheet: the type keeps to 8px or more there, so the notes under the figure go,
-       as they do on a short sheet. */
-    font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+    grid-template-columns: minmax(0, 1fr);
 
+    /* The notes need a column of their own, and a short or a phone's sheet has none. */
     .rules {
       display: none;
     }
   }
 }
 
-.panel {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 0.75em 0.875em;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.5em;
-  background: var(--surface-raised);
+header {
+  grid-column: 1;
   display: grid;
-  gap: 0.625em;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.9375em;
+  }
 }
 
-header strong {
-  font-size: 0.875em;
+.caption {
+  font-size: 0.75em;
+  color: var(--ink-muted);
+
+  /* A short sheet keeps its height for the drawing. */
+  :global([data-sheet-width='narrow']:not([data-sheet-orientation='portrait'])) & {
+    display: none;
+  }
 }
 
 code {
   font-family: $code-font;
 }
 
-.sequence {
+.figure {
+  grid-column: 1;
+  grid-row: 2;
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(var(--lifelines), minmax(0, 1fr));
-  grid-template-rows: repeat(var(--rows), auto);
-  row-gap: 0.3em;
-  font-size: 0.6875em;
-}
+  min-height: 12em;
 
-/* Each lifeline runs the full height of the diagram, behind every row. */
-.lifeline {
-  grid-row: 1 / -1;
-  justify-self: center;
-  width: 0;
-  border-left: 1px dashed var(--line-strong);
-}
-
-.head {
-  grid-row: 1;
-  justify-self: center;
-  max-width: 100%;
-  padding: 0.25em 0.5em;
-  border: 1px solid var(--ink);
-  border-radius: 0.25em;
-  background: var(--surface-raised);
-  font-weight: 600;
-  overflow-wrap: anywhere;
-  text-align: center;
-}
-
-/* A step on one lifeline may run wider than its column: the rows are one step each, so
-   nothing beside it competes. The end columns grow inwards, off the panel's edge. */
-.self {
-  justify-self: center;
-  width: max-content;
-  max-width: 190%;
-
-  &.first {
-    justify-self: start;
-  }
-
-  &.last {
-    justify-self: end;
-  }
-
-  padding: 0.125em 0.375em;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.2em;
-  background: var(--surface-sunken);
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-
-/* A message runs lifeline to lifeline: half a column in from each end of its span. */
-.message {
-  position: relative;
-  margin-inline: calc(50% / var(--span));
-  padding-bottom: 0.375em;
-  border-bottom: 1px solid var(--ink-muted);
-  text-align: center;
-
-  &::after {
-    content: "";
+  :global(svg) {
     position: absolute;
-    right: -1px;
-    bottom: -0.3em;
-    border-block: 0.3em solid transparent;
-    border-left: 0.5em solid var(--ink-muted);
-  }
-
-  &.reverse::after {
-    right: auto;
-    left: -1px;
-    border-left: 0;
-    border-right: 0.5em solid var(--ink-muted);
-  }
-
-  &.gate {
-    border-bottom: 2px solid var(--accent);
-
-    &::after {
-      bottom: -0.35em;
-      border-left-color: var(--accent);
-    }
-
-    .text {
-      color: var(--accent-text);
-      font-weight: 600;
-    }
-  }
-
-  .text {
-    display: inline-block;
-    padding-inline: 0.25em;
-    background: var(--surface-raised);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     font-family: $code-font;
-    font-size: 1em;
+    overflow: visible;
+  }
+
+  :global(svg:is(.short, .portrait)) {
+    display: none;
+  }
+
+  :global([data-sheet-width='narrow']) & {
+    :global(svg.landscape) {
+      display: none;
+    }
+
+    :global(svg.short) {
+      display: block;
+    }
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    :global(svg:is(.landscape, .short)) {
+      display: none;
+    }
+
+    :global(svg.portrait) {
+      display: block;
+    }
+  }
+
+  :global(text) {
+    fill: var(--ink);
+    text-anchor: middle;
+  }
+
+  :global(rect.head) {
+    fill: var(--sheet-paper);
+    stroke: var(--ink);
+    stroke-width: 1.25;
+  }
+
+  :global(text.head) {
+    font-weight: 600;
+  }
+
+  :global(text.head.prefix) {
+    font-weight: 400;
+    fill: var(--ink-muted);
+  }
+
+  :global(.lifeline) {
+    stroke: var(--ink-muted);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+  }
+
+  :global(rect.step) {
+    fill: var(--sheet-paper);
+    stroke: var(--ink-muted);
+    stroke-width: 1;
+  }
+
+  :global(rect.step.end) {
+    stroke: var(--ink);
+  }
+
+  :global(.message) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.message.gate) {
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+
+  :global([id^='install-arrow-'] path) {
+    fill: var(--ink);
+  }
+
+  :global([id^='install-gate-'] path) {
+    fill: var(--accent);
+  }
+
+  /* A label crossing a lifeline paints a gap of paper into it. */
+  :global(text.label) {
+    paint-order: stroke;
+    stroke: var(--sheet-paper);
+    stroke-width: 4;
+    stroke-linejoin: round;
+  }
+
+  :global(text.label.gate) {
+    fill: var(--accent-text);
+    font-weight: 600;
   }
 }
 
 .rules {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: start;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5em;
-  padding-top: 0.5em;
-  border-top: 1px solid var(--line);
+  gap: 0.75em;
 
   div {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 0.125em;
+    padding-left: 0.625em;
+    border-left: 1px solid var(--line-strong);
   }
 
   dt {
@@ -275,8 +288,8 @@ code {
 
   dd {
     margin: 0;
-    font-size: 0.6875em;
-    line-height: 1.35;
+    font-size: 0.75em;
+    line-height: 1.4;
     text-wrap: pretty;
   }
 }
