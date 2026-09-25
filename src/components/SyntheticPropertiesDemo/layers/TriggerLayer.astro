@@ -108,7 +108,7 @@ const targets = [
   @include sheet-type;
 
   box-sizing: border-box;
-  width: min(100%, 60em);
+  width: min(100%, 72em);
 }
 
 .panel {
@@ -122,11 +122,11 @@ header {
   gap: 0.125em;
 
   strong {
-    font-size: 0.875em;
+    font-size: max(0.5rem, 0.875em);
   }
 
   span {
-    font-size: 0.6875em;
+    font-size: max(0.5rem, 0.6875em);
     color: var(--ink-muted);
     text-wrap: pretty;
   }
@@ -145,22 +145,22 @@ pre {
   background: var(--surface-sunken);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.35;
+  line-height: 1.25;
 }
 
 .builder {
   display: grid;
   gap: 0.25em;
   justify-self: center;
-  width: min(100%, 50em);
+  width: min(100%, 64em);
 
   .caption {
-    font-size: 0.6875em;
+    font-size: max(0.5rem, 0.6875em);
     color: var(--ink-muted);
   }
 
   pre {
-    font-size: 0.5625em;
+    font-size: max(0.5rem, 0.5625em);
   }
 }
 
@@ -187,7 +187,7 @@ pre {
    column is the widest and it wraps the least. A portrait sheet stacks them. */
 .targets {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 0.85fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
   align-items: start;
   gap: 0.5em;
   margin: 0;
@@ -218,19 +218,19 @@ pre {
 
   .title {
     font-family: monospace, system-ui;
-    font-size: 0.75em;
+    font-size: max(0.5rem, 0.75em);
     font-weight: 600;
   }
 
   .when,
   .source {
-    font-size: 0.625em;
+    font-size: max(0.5rem, 0.625em);
     color: var(--ink-muted);
   }
 
   pre {
     margin-top: 0.25em;
-    font-size: 0.5625em;
+    font-size: max(0.5rem, 0.5625em);
   }
 
   &[data-target='backfill'] {

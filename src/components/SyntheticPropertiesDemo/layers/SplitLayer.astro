@@ -204,7 +204,7 @@ input {
 
   p {
     margin: 0;
-    font-size: 0.8125em;
+    font-size: max(0.5rem, 0.8125em);
     line-height: 1.4;
     color: var(--ink-muted);
   }
@@ -269,7 +269,7 @@ input {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: baseline;
   column-gap: 0.375em;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   font-weight: 600;
   line-height: 1.3;
 
@@ -294,12 +294,12 @@ input {
   border-radius: 50%;
   background: var(--accent);
   color: var(--surface-page);
-  font-size: 0.875em;
+  font-size: max(0.5rem, 0.875em);
   line-height: 1;
 }
 
 .split-label {
-  font-size: 0.6875em;
+  font-size: max(0.5rem, 0.6875em);
   color: var(--ink-muted);
 
   /* A phone-height sheet has no room for the asides. */
@@ -344,7 +344,7 @@ input {
 
 .field-name {
   flex: none;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   color: var(--ink-muted);
 }
 
@@ -401,14 +401,14 @@ input {
   background: var(--surface-sunken);
 
   .name {
-    font-size: 0.6875em;
+    font-size: max(0.5rem, 0.6875em);
     color: var(--ink-muted);
     white-space: nowrap;
   }
 
   .value {
     font-family: monospace, system-ui;
-    font-size: 0.875em;
+    font-size: max(0.5rem, 0.875em);
     overflow-wrap: anywhere;
   }
 
@@ -453,13 +453,13 @@ input {
   border: 1px solid var(--line);
   border-radius: 0.375em;
   background: var(--surface-sunken);
-  font-size: 0.6875em;
+  font-size: max(0.5rem, 0.6875em);
   line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: 0.625em;
+    font-size: max(0.5rem, 0.625em);
   }
 
   /* A tint of the accent rather than --accent-muted, which is a light fill on the dark
@@ -491,7 +491,7 @@ input {
   background: var(--surface-page);
   color: var(--ink-muted);
   font-family: monospace, system-ui;
-  font-size: 0.8125em;
+  font-size: max(0.5rem, 0.8125em);
   cursor: pointer;
 
   &[data-hit='true'] {
@@ -517,7 +517,7 @@ input {
 .query-result {
   flex: none;
   min-width: 4.5em;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   color: var(--ink-muted);
 
   &[data-hit='true'] {
