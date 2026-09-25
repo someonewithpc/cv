@@ -30,6 +30,10 @@ for (let lane = 0; lane < LANES; lane += 1) {
 }
 
 async function checkStack(page: Page, stack: Locator): Promise<void> {
+  // Page.astro hides the tab of a sheet with an empty note, so a stack none of whose sheets
+  // carries a note has no tab to check.
+  if ((await stack.locator('.note-card > *').count()) === 0) return;
+
   let pagesChecked = 0;
   // Centred, not merely in view: the page's own desktop-hint footer is fixed to
   // the bottom of the viewport and would answer the hit tests below.
