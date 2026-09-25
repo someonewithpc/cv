@@ -56,7 +56,9 @@ async function search(tool: Locator, query: string) {
 test('library search: forward swipes visit every page in order, then wrap', async ({ page }) => {
   const stack = librarySearchStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  // The front sheet's script has run once its island is up, and the stack sits in view.
+  await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)), '[data-library-search="search"]');
+  await expect(stack).toBeInViewport();
 
   expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
   expect(await frontPageName(stack)).toBe(PAGES[0]);
@@ -85,9 +87,12 @@ test('main page: the walkthrough types on its own and hands over on hover', asyn
 
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
-  const settled = await input.inputValue();
-  await page.waitForTimeout(1_500);
-  expect(await input.inputValue()).toBe(settled);
+  // A query of the visitor's own goes out and comes back, and the script adds nothing to it
+  // in the meantime.
+  await search(tool, 'wood chair');
+  await expect(input).toHaveValue('wood chair');
+  await expect(tool.locator('.hit:not([hidden]) .name').first()).toHaveText('Chiavari Chair');
+  await expect(tool).toHaveAttribute('data-autoplay', 'user');
 });
 
 test('main page: the sheet shows the transport deck, and its keys drive the walkthrough', async ({ page }) => {
