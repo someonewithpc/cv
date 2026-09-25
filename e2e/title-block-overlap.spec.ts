@@ -57,6 +57,32 @@ test('the space builder app shows nothing under the title block', async ({ page 
 });
 
 /**
+ * The Space Builder and the Drag and drop apps fill their first sheets inside one shared
+ * margin, which a phone sheet gives up.
+ */
+test('the space builder and drag and drop apps share one margin, gone on a phone', async ({ page }) => {
+  const insets = async () => page.evaluate(() => ['.mock-scene-demo', '.drag-drop-scene-demo'].map((frame) => {
+    const app = document.querySelector(frame)!;
+    const cell = app.closest('.content')!.getBoundingClientRect();
+    const box = app.getBoundingClientRect();
+    return Math.round(box.left - cell.left);
+  }));
+
+  await page.setViewportSize(VIEWPORT);
+  await page.goto('/');
+  const [builder, dragDrop] = await insets();
+  expect(builder).toBe(dragDrop);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(500);
+  const phone = await insets();
+  expect(phone[0]).toBe(phone[1]);
+  // What is left is the 2px that keeps the frame line clear.
+  expect(phone[0]).toBeLessThanOrEqual(2);
+  expect(builder).toBeGreaterThan(phone[0]);
+});
+
+/**
  * Every page of every stack. A block's paper is a computed colour, the same whether its stack
  * has been scrolled to or not, so all of them are read in one pass without scrolling.
  */
