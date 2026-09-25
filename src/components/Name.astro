@@ -44,11 +44,8 @@ header {
   }
 
   .title-block {
-    $radius: 1rem;
-    $accent-length: $radius + 0.4rem;
-    $frame-width: 1px;
-    $accent-width: 3px;
-    $accent-outset: ($accent-width - $frame-width) * 0.5;
+    /* The corner every other sheet on the desk is cut with. */
+    $radius: 0.25rem;
 
     position: relative;
     padding: 1.5rem;
@@ -69,36 +66,7 @@ header {
     background: var(--surface-page);
     box-shadow: var(--sheet-lift);
 
-    /* Frame + corner accents share one rounded path; accent is wider and
-       outset so its stroke stays centered on the frame. */
-    &::before,
-    &::after {
-      content: '';
-      position: absolute;
-      border-style: solid;
-      pointer-events: none;
-    }
-
-    &::before {
-      inset: 0;
-      border-width: $frame-width;
-      border-color: var(--line-strong);
-      border-radius: inherit;
-    }
-
-    &::after {
-      top: -$accent-outset;
-      right: -$accent-outset;
-      bottom: -$accent-outset + 0.5px;
-      left: -$accent-outset;
-      border-width: $accent-width;
-      border-color: var(--accent);
-      border-radius: calc(#{$radius} + #{$accent-outset});
-      mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
-      mask-size: $accent-length $accent-length;
-      mask-position: 0 0, 100% 100%;
-      mask-repeat: no-repeat;
-    }
+    border: 1px solid var(--line-strong);
 
     h1 {
       margin: 0;
