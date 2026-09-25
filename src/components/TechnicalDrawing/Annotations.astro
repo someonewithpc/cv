@@ -54,7 +54,7 @@ const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
     viewBox="-2 -2 4 4"
     preserveAspectRatio={preserveAspectRatio}
     data-annotations="css"
-    style={`--annotation-stroke-width: ${strokeWidth}; --annotation-font-size: ${fontSize}px; --annotation-marker: url(#${arrowId});`}
+    style={`--annotation-stroke-width: ${strokeWidth}; --annotation-marker: url(#${arrowId});`}
   >
     <defs>
       <marker
@@ -75,7 +75,9 @@ const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
       </marker>
     </defs>
 
-    <slot name="annotations" />
+    <g font-size={fontSize}>
+      <slot name="annotations" />
+    </g>
   </svg>
 </div>
 <slot name="aside" />
@@ -118,7 +120,6 @@ svg {
   }
 
   :global(text) {
-    font-size: var(--annotation-font-size, 0.1px);
     fill: var(--ink);
   }
 

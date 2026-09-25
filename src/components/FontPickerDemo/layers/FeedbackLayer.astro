@@ -57,15 +57,15 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
       <svg viewBox="-20 -12 136 130" role="presentation">
         <g class="axes">
           <path d="M0 0 V100 H100" />
-          <text x="-4" y="4" class="tick">1 turn</text>
-          <text x="-4" y="100" class="tick">0</text>
-          <text x="100" y="112" class="tick end">1s</text>
+          <text x="-4" y="4" class="tick" font-size="7">1 turn</text>
+          <text x="-4" y="100" class="tick" font-size="7">0</text>
+          <text x="100" y="112" class="tick end" font-size="7">1s</text>
         </g>
         <path class="curve" d={curve} />
         <path class="linear" d={`M ${plot(swap.x, swap.y)} L ${plot(1, 1)}`} />
         <path class="swap" d={`M ${plot(SWAP_AT, 0)} L ${plot(SWAP_AT, 1.06)}`} />
         <circle class="knot" cx={swap.x * 100} cy={100 - swap.y * 100} r="2.5" />
-        <text class="swap-label" x={SWAP_AT * 100 + 4} y="-2">750ms: go linear</text>
+        <text class="swap-label" font-size="8" x={SWAP_AT * 100 + 4} y="-2">750ms: go linear</text>
       </svg>
       <figcaption>
         <code>cubic-bezier(0.75, 0.25, 0.2, 0.2)</code> gives the orbit a push and lets it
@@ -81,15 +81,15 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
           <g class="layer">
             <rect x="14" y="4" width="120" height="26" rx="8" />
             <rect x="14" y="4" width="120" height="26" rx="8" class="arc" />
-            <text x="146" y="21">conic-gradient, on the border box</text>
+            <text x="146" y="21" font-size="10">conic-gradient, on the border box</text>
           </g>
           <g class="layer">
             <rect x="14" y="44" width="120" height="26" rx="8" class="fill" />
-            <text x="146" y="61">the field's own colour, on the padding box</text>
+            <text x="146" y="61" font-size="10">the field's own colour, on the padding box</text>
           </g>
           <g class="layer">
             <rect x="14" y="84" width="120" height="26" rx="8" class="dashed" />
-            <text x="146" y="101">2px of transparent border, which lets it through</text>
+            <text x="146" y="101" font-size="10">2px of transparent border, which lets it through</text>
           </g>
           <path class="centre" d="M74 0 V118" />
         </svg>
@@ -322,7 +322,6 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
     @include sheet-prose-svg;
 
     font-family: var(--font-poppins), system-ui, sans-serif;
-    font-size: 10px;
     fill: var(--ink-muted);
     text-anchor: start;
   }
@@ -355,7 +354,6 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
     @include sheet-prose-svg(2px);
 
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 7px;
     fill: var(--ink-muted);
     text-anchor: end;
 
@@ -392,7 +390,6 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
     @include sheet-prose-svg(2.5px);
 
     font-family: var(--font-poppins), system-ui, sans-serif;
-    font-size: 8px;
     fill: var(--ink);
     text-anchor: end;
   }
