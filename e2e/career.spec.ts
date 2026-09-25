@@ -96,6 +96,9 @@ test('the elevation under the table draws one bar per job, as long as the job la
     const box = (await page.locator(`#career ${block}`).boundingBox())!;
     expect(drawingTop, `the drawing starts above the end of ${block}`).toBeGreaterThan(box.y + box.height);
   }
+
+  await expect(page.locator('#career .elevation figcaption')).toHaveCount(0);
+  await expect(page.locator('#career')).not.toContainText('ELEVATION A');
 });
 
 test('the degree is an outline bar in the ground lane, under the jobs of its years', async ({ page }) => {
