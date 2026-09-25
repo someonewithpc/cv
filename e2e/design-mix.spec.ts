@@ -817,7 +817,7 @@ test('every contribution is written on the rules of its sheet at 1440px', async 
   for (const sheet of sheets) {
     for (const height of sheet.rows) {
       const lines = height / sheet.pitch;
-      // A row is a whole number of ruled lines, so every line of it sits on a rule and so
+      // A row is a whole number of bands, so every line of it sits in a band and so
       // does every row under it.
       expect(Math.abs(height - Math.round(lines) * sheet.pitch), `${sheet.id} row of ${height}px`)
         .toBeLessThanOrEqual(1);
@@ -861,19 +861,25 @@ type WrittenLine = {
   kind: string;
   text: string;
   size: number;
-  /** The line's baseline, from the top of its sheet. */
-  baseline: number;
-  /** How far the baseline is from the top of the nearest rule the sheet's ruling draws. */
+  /** The middle of the line's writing, from the top of its sheet. */
+  centre: number;
+  /** How far that middle is from the midpoint between the two rules around it. */
   offset: number;
+  /** The node's line boxes one after another, a wrapped line one band under the last. */
+  steps: number[];
 };
 
 /**
- * Every line of writing on every sheet, wrapped lines included, against the ruling.
+ * Every line of writing on every sheet, wrapped lines included, against the bands between the
+ * rules.
  *
- * A text node's line boxes come from a Range, one rectangle per line it covers. The top of each
- * is the face's ascent above its baseline; that ascent is measured once per node, by setting a
- * zero-height mark down after the node and reading off where its own baseline puts it, so
- * every face and size is measured with its own number rather than one that suits the rows.
+ * A text node's line boxes come from a Range, one rectangle per line it covers. The top of
+ * each is the face's ascent above its baseline; that ascent is measured once per face, by
+ * setting a zero-height mark down beside the node and reading off where its baseline puts it.
+ * The middle of the writing is halfway between the baseline and the average of the face's
+ * x-height and cap height, both read off the ink of an "x" and an "H" drawn in that face, so
+ * a line of lowercase and capitals reads as centred. Writing set in capitals is centred on
+ * its capitals. None of it comes from the CSS that places the writing.
  */
 const readWrittenLines = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
@@ -892,18 +898,18 @@ const readWrittenLines = (page: import('@playwright/test').Page) =>
       ['title', '.title'],
       ['note', '.body'],
     ];
+    const context = document.createElement('canvas').getContext('2d')!;
 
     // One mark per face and size: setting one down makes the page lay itself out again.
-    const ascents = new Map<string, number>();
+    const faces = new Map<string, { ascent: number; cap: number; ex: number }>();
     const lines: WrittenLine[] = [];
     for (const sheet of document.querySelectorAll<HTMLElement>('#open-source section[data-group]')) {
       const style = getComputedStyle(sheet);
       const box = sheet.getBoundingClientRect();
       const pitch = px(style.getPropertyValue('--rule-pitch'), sheet);
-      // The ruling's tile starts here and draws its rule in the tile's last pixel.
-      const origin = parseFloat(style.borderTopWidth)
-        + px(style.getPropertyValue('--paper-top'), sheet)
-        + px(style.getPropertyValue('--rule-shift'), sheet);
+      // The ruling's tile starts at the top of the first band and draws its rule in the
+      // tile's last pixel, so the rules' own middles are half a pixel above each band's top.
+      const origin = parseFloat(style.borderTopWidth) + px(style.getPropertyValue('--paper-top'), sheet) - 0.5;
 
       const walker = document.createTreeWalker(sheet, NodeFilter.SHOW_TEXT);
       for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
@@ -916,29 +922,38 @@ const readWrittenLines = (page: import('@playwright/test').Page) =>
 
         const font = getComputedStyle(parent);
         const face = `${font.fontStyle} ${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
-        if (!ascents.has(face)) {
+        const caps = font.textTransform === 'uppercase';
+        if (!faces.has(face)) {
           const mark = document.createElement('span');
           mark.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
           node.after(mark);
-          ascents.set(face, mark.getBoundingClientRect().bottom - rects[rects.length - 1].top);
+          const ascent = mark.getBoundingClientRect().bottom - rects[rects.length - 1].top;
           mark.remove();
+          context.font = face;
+          const cap = context.measureText('H').actualBoundingBoxAscent;
+          const ex = context.measureText('x').actualBoundingBoxAscent;
+          faces.set(face, { ascent, cap, ex });
         }
-        const ascent = ascents.get(face)!;
+        const { ascent, cap, ex } = faces.get(face)!;
+        const middle = caps ? cap / 2 : (cap + ex) / 4;
 
         const kind = kinds.find(([, selector]) => parent.closest(selector))?.[0] ?? parent.tagName;
+        const tops = [...new Set(rects.map((rect) => Math.round(rect.top * 100) / 100))];
+        const steps = tops.slice(1).map((top, i) => top - tops[i]);
         const seen = new Set<number>();
         for (const rect of rects) {
-          const baseline = rect.top + ascent - box.top;
-          if (seen.has(Math.round(baseline))) continue;
-          seen.add(Math.round(baseline));
-          const rule = origin - 1 + Math.round((baseline - origin + 1) / pitch) * pitch;
+          const centre = rect.top + ascent - middle - box.top;
+          if (seen.has(Math.round(centre))) continue;
+          seen.add(Math.round(centre));
+          const band = Math.floor((centre - origin) / pitch);
           lines.push({
             sheet: sheet.dataset.group!,
             kind,
             text: node.data.trim().slice(0, 32),
             size: parseFloat(font.fontSize),
-            baseline,
-            offset: baseline - rule,
+            centre,
+            offset: centre - (origin + (band + 0.5) * pitch),
+            steps,
           });
         }
       }
@@ -955,32 +970,55 @@ const blockWebfonts = (page: import('@playwright/test').Page) =>
     return route.continue();
   });
 
-const expectOnTheRules = (lines: WrittenLine[]) => {
-  for (const { sheet, kind, text, size, offset } of lines) {
-    expect(Math.abs(offset), `${sheet} ${kind} "${text}" at ${size}px is ${offset.toFixed(2)}px off its rule`)
+const expectCentred = (lines: WrittenLine[], pitch: number) => {
+  for (const { sheet, kind, text, size, offset, steps } of lines) {
+    expect(Math.abs(offset), `${sheet} ${kind} "${text}" at ${size}px is ${offset.toFixed(2)}px off the middle of its band`)
       .toBeLessThanOrEqual(1);
+    for (const step of steps) {
+      expect(Math.abs(step - pitch), `${sheet} ${kind} "${text}" wraps ${step}px down`).toBeLessThanOrEqual(0.5);
+    }
   }
 };
 
-// The layout changes at each of these: three columns, two, the marks down the margin, a
+/** The ruling's pitch and the line the writing would take on its own, on the first sheet. */
+const readPitch = (page: import('@playwright/test').Page) =>
+  page.locator('#open-source section[data-group]').first().evaluate((sheet) => {
+    const style = getComputedStyle(sheet);
+    const px = (value: string) => {
+      const probe = document.createElement('div');
+      probe.style.width = value;
+      sheet.append(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width;
+    };
+    return { pitch: px(style.getPropertyValue('--rule-pitch')), line: px(style.getPropertyValue('--line-height')) };
+  });
+
+// The layout changes at each of these: three columns, two, the marks down the margin and a
 // narrower sheet with a wider pitch. A row that grows by a pixel anywhere pushes every line
-// under it off the ruling, so each width is walked to the last line of the last sheet.
-for (const width of [1440, 1280, 1024, 900, 768, 640, 560, 480, 430, 390, 360, 320]) {
-  test(`every line on a ruled sheet sits on a rule at ${width}px`, async ({ page }) => {
+// under it out of its band, so each width is walked to the last line of the last sheet.
+for (const width of [1440, 1024, 768, 390]) {
+  test(`every line on a ruled sheet is centred between two rules at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
+
+    // The ruling is half as wide again as the line the writing would take on its own.
+    const { pitch, line } = await readPitch(page);
+    expect(pitch, `a ${pitch}px pitch for a ${line}px line`).toBeCloseTo(line * 1.5, 1);
 
     const lines = await readWrittenLines(page);
     const rows = await page.locator('#open-source .row').count();
     // Every row has a repository and a title, and some of them run onto a second line.
     expect(lines.length).toBeGreaterThan(rows * 2);
-    expectOnTheRules(lines);
+    expect(lines.some(({ steps }) => steps.length > 0), 'some line wraps').toBe(true);
+    expectCentred(lines, pitch);
   });
 }
 
 for (const width of [1440, 390]) {
-  test(`every line sits on a rule with the webfonts blocked at ${width}px`, async ({ page }) => {
+  test(`every line is centred between two rules with the webfonts blocked at ${width}px`, async ({ page }) => {
     await blockWebfonts(page);
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
@@ -990,11 +1028,11 @@ for (const width of [1440, 390]) {
     expect(new Set(lines.map(({ kind }) => kind))).toEqual(
       new Set(width > 480 ? ['group', 'head', 'repo', 'title'] : ['group', 'repo', 'title']),
     );
-    expectOnTheRules(lines);
+    expectCentred(lines, (await readPitch(page)).pitch);
   });
 }
 
-test('an opened row writes its note on the rules and keeps the rows under it there', async ({ page }) => {
+test('an opened row writes its note between the rules and keeps the rows under it there', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.evaluate(() => {
@@ -1005,17 +1043,17 @@ test('an opened row writes its note on the rules and keeps the rows under it the
 
   const lines = await readWrittenLines(page);
   expect(lines.filter(({ kind }) => kind === 'note').length).toBeGreaterThan(20);
-  expectOnTheRules(lines);
+  expectCentred(lines, (await readPitch(page)).pitch);
 });
 
 /**
  * The rules the page really paints, found in a screenshot of the strip of paper left of the
- * margin line where nothing is written, against the baselines of the writing. The tests above
+ * margin line where nothing is written, against the middles of the writing. The tests above
  * trust the ruling's own numbers; this one looks at the pixels.
  */
 for (const theme of ['light', 'dark-forest'] as const) {
   for (const width of [1440, 390]) {
-    test(`the painted rules run under the writing in ${theme} at ${width}px`, async ({ page }) => {
+    test(`the painted rules run either side of the writing in ${theme} at ${width}px`, async ({ page }) => {
       await withTheme(page, theme);
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
@@ -1065,78 +1103,96 @@ for (const theme of ['light', 'dark-forest'] as const) {
         });
       }, { png: shot.toString('base64'), from: strip.from, to: strip.to });
 
-      // The painted rule nearest each baseline: the row that stands out most within a few
-      // pixels of it. It must be the row right under the writing, and it must stand out.
+      // The painted rule half a pitch above each line's middle and the one half a pitch below:
+      // the row that stands out most within a few pixels of each. Both must stand out, and
+      // the writing's middle must be halfway between them.
       const noise = [...profile].sort((a, b) => a - b)[Math.floor(profile.length / 2)];
-      const rules: number[] = [];
-      for (const { kind, text, baseline } of lines) {
-        const near = Math.round(baseline);
-        let best = near;
-        for (let y = near - 4; y <= near + 4; y++) if (profile[y] > profile[best]) best = y;
-        expect(profile[best], `no rule painted near ${kind} "${text}"`).toBeGreaterThan(noise * 3 + 2);
-        expect(Math.abs(best - baseline), `${kind} "${text}" is ${(best - baseline).toFixed(2)}px from the painted rule`)
+      const rule = (near: number) => {
+        let best = Math.round(near);
+        for (let y = best - 4; y <= best + 4; y++) if (profile[y] > profile[best]) best = y;
+        return best;
+      };
+      for (const { kind, text, centre } of lines) {
+        const above = rule(centre - strip.pitch / 2 - 0.5);
+        const below = rule(centre + strip.pitch / 2 - 0.5);
+        expect(profile[above], `no rule painted above ${kind} "${text}"`).toBeGreaterThan(noise * 3 + 2);
+        expect(profile[below], `no rule painted below ${kind} "${text}"`).toBeGreaterThan(noise * 3 + 2);
+        expect(Math.abs(below - above - strip.pitch), `rules ${below - above}px apart around ${kind} "${text}"`)
           .toBeLessThanOrEqual(1);
-        rules.push(best);
-      }
-
-      // The rules under the writing are a pitch apart, the same pitch the writing is spaced at.
-      const painted = [...new Set(rules)].sort((a, b) => a - b);
-      for (let i = 1; i < painted.length; i++) {
-        const gap = painted[i] - painted[i - 1];
-        expect(Math.abs(gap - Math.round(gap / strip.pitch) * strip.pitch), `rule gap of ${gap}px`).toBeLessThanOrEqual(1);
+        // A rule fills the pixel row it is found at, so its own middle is half a pixel down.
+        const midpoint = (above + below) / 2 + 0.5;
+        expect(Math.abs(centre - midpoint), `${kind} "${text}" is ${(centre - midpoint).toFixed(2)}px off the middle of its band`)
+          .toBeLessThanOrEqual(1);
       }
     });
   }
 }
 
+test('a linked title carries one underline, not the link\'s as well', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const decorations = await page.locator('#open-source .row a.title').first().evaluate((title) => ({
+    link: getComputedStyle(title).textDecorationLine,
+    text: getComputedStyle(title.querySelector('.title-text')!).textDecorationLine,
+  }));
+  expect(decorations).toEqual({ link: 'none', text: 'underline' });
+});
+
 /**
- * Each row's technology marks, against the writing they stand beside. The writing sits on
- * the rule, so its middle is half a cap height above the baseline; a mark centred in the
- * pitch instead floats a third of a line over the row it marks.
+ * Each row's technology marks, against the band they stand in: the middle of the marks is the
+ * middle of the row's first band, the same middle the writing beside them is centred on.
  */
 const readMarks = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
     const marks: { repo: string; offset: number }[] = [];
 
-    for (const row of document.querySelectorAll('#open-source .lines .row')) {
-      const list = row.querySelector('ul');
-      const cite = row.querySelector('cite');
-      const drawn = [...(list?.querySelectorAll('svg') ?? [])].map((svg) => svg.getBoundingClientRect());
-      if (!cite || drawn.length === 0) continue;
+    for (const sheet of document.querySelectorAll<HTMLElement>('#open-source section[data-group]')) {
+      const style = getComputedStyle(sheet);
+      const probe = document.createElement('div');
+      probe.style.width = style.getPropertyValue('--rule-pitch');
+      sheet.append(probe);
+      const pitch = probe.getBoundingClientRect().width;
+      probe.remove();
 
-      // Prepended, not appended: a repository too long for its line takes a second one, and
-      // the marks stand on the first.
-      const baselineProbe = document.createElement('span');
-      baselineProbe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
-      cite.prepend(baselineProbe);
-      const baseline = baselineProbe.getBoundingClientRect().bottom;
-      baselineProbe.remove();
+      for (const row of sheet.querySelectorAll('.lines .row')) {
+        const list = row.querySelector('ul');
+        const cite = row.querySelector('cite');
+        const drawn = [...(list?.querySelectorAll('svg') ?? [])].map((svg) => svg.getBoundingClientRect());
+        // Three marks share a narrow row's two bands between them rather than one to a band.
+        if (!cite || drawn.length === 0 || drawn.length === 3) continue;
 
-      const capProbe = document.createElement('div');
-      capProbe.style.width = '1cap';
-      cite.append(capProbe);
-      const cap = capProbe.getBoundingClientRect().width;
-      capProbe.remove();
-
-      const middle = (Math.min(...drawn.map((rect) => rect.top)) + Math.max(...drawn.map((rect) => rect.bottom))) / 2;
-      marks.push({ repo: cite.textContent?.trim().slice(0, 40) ?? '', offset: middle - (baseline - cap / 2) });
+        const top = row.getBoundingClientRect().top;
+        // Beside each other on a wide row, one to a band down the margin on a narrow one.
+        const bands = new Set(drawn.map((rect) => Math.floor(((rect.top + rect.bottom) / 2 - top) / pitch)));
+        for (const band of bands) {
+          const inBand = drawn.filter((rect) => Math.floor(((rect.top + rect.bottom) / 2 - top) / pitch) === band);
+          const middle = (Math.min(...inBand.map((rect) => rect.top)) + Math.max(...inBand.map((rect) => rect.bottom))) / 2;
+          marks.push({
+            repo: cite.textContent?.trim().slice(0, 40) ?? '',
+            // The band's middle, half a pixel up to the midpoint between the rules' own middles.
+            offset: middle - (top + (band + 0.5) * pitch - 0.5),
+          });
+        }
+      }
     }
 
     return marks;
   });
 
-test('every row wears its marks on the line it is written on', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  await page.waitForTimeout(500);
+for (const width of [1440, 390]) {
+  test(`every row's marks are centred in the band they stand in at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page.waitForTimeout(500);
 
-  const marks = await readMarks(page);
-  expect(marks.length).toBeGreaterThan(50);
+    const marks = await readMarks(page);
+    expect(marks.length).toBeGreaterThan(50);
 
-  for (const { repo, offset } of marks) {
-    expect(Math.abs(offset), `${repo} marks are ${offset}px off its line`).toBeLessThanOrEqual(1.5);
-  }
-});
+    for (const { repo, offset } of marks) {
+      expect(Math.abs(offset), `${repo} marks are ${offset.toFixed(2)}px off the middle of their band`).toBeLessThanOrEqual(1);
+    }
+  });
+}
 
 /** The letter's ink against the circle drawn round it. */
 const readBubbles = (page: import('@playwright/test').Page) =>
