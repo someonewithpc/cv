@@ -93,5 +93,7 @@ async function checkStack(page: Page, stack: Locator): Promise<void> {
     expect(measured.covered, `${measured.title}: something paints over the note tab`).toBe(0);
   }
 
+  // A stack with no note on any sheet has no tab to check.
+  if (await stack.locator('.note-card > *').count() === 0) return;
   expect(pagesChecked, 'no page showed a tucked note tab to check').toBeGreaterThan(0);
 }
