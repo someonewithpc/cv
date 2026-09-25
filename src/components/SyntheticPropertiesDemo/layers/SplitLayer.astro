@@ -118,7 +118,6 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
           <input
             class="query-input"
             type="search"
-            placeholder="try 5ft3in"
             readonly
             tabindex="-1"
             spellcheck="false"
@@ -127,20 +126,24 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
           />
           <span class="query-result" aria-live="polite"></span>
         </label>
-        <ul class="queries" aria-label="Queries against this text">
+        <div class="text-row">
+          <span class="row-head">
+            <span class="row-name">the object's row</span>
+            <span class="row-verdict"></span>
+          </span>
+          <pre class="text">{text}</pre>
+        </div>
+        <ul class="queries" aria-label="Other searches against this row">
           {sampleQueries.map((query) => {
             const hit = matches(text, query);
             return (
               <li class="query" data-query={query} data-hit={String(hit)}>
-                <span class="mark" aria-hidden="true">{hit ? '✓' : '✗'}</span>
                 <span class="query-text">{query}</span>
-                <span class="sr-only">{hit ? 'hits' : 'misses'}</span>
+                <span class="verdict">{hit ? '✓ found' : '✗ no match'}</span>
               </li>
             );
           })}
         </ul>
-        <span class="split-label">what the search reads, one string an object</span>
-        <pre class="text">{text}</pre>
       </li>
     </ol>
   </div>
@@ -518,12 +521,57 @@ input {
   font-size: 1.0625em;
 }
 
-.text {
-  margin: 0;
-  padding: 0.5em 0.625em;
+/* The object's row in the searchable table, and what the current search made of it. A hit
+   draws it solid in the accent with the match marked; a miss draws it dashed and faded,
+   with the query named in the corner, so the two read apart at a glance. */
+.text-row {
+  display: grid;
   border: 1px solid var(--line);
   border-radius: 0.375em;
   background: var(--surface-sunken);
+  overflow: hidden;
+
+  &[data-hit='true'] {
+    border-color: var(--accent);
+    box-shadow: inset 0.25em 0 0 var(--accent);
+  }
+
+  &[data-hit='false'] {
+    border-style: dashed;
+    border-color: var(--ink-muted);
+
+    .text {
+      color: var(--ink-faint);
+    }
+  }
+}
+
+.row-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25em 0.75em;
+  padding: 0.25em 0.625em;
+  border-bottom: 1px solid var(--line);
+  font-size: max(0.5rem, 0.6875em);
+  color: var(--ink-muted);
+}
+
+.row-verdict {
+  font-weight: 600;
+
+  [data-hit='true'] > .row-head > & {
+    color: var(--accent-text);
+  }
+
+  [data-hit='false'] > .row-head > & {
+    color: var(--ink);
+  }
+}
+
+.text {
+  margin: 0;
+  padding: 0.5em 0.625em;
   font-size: max(0.5rem, 0.6875em);
   line-height: 1.45;
   white-space: pre-wrap;
@@ -543,6 +591,8 @@ input {
   }
 }
 
+/* The sample searches, each asked of the same row: a hit is filled and solid, a miss is
+   dashed and faded, and both say which in words. */
 .queries {
   display: flex;
   flex-wrap: wrap;
@@ -554,40 +604,53 @@ input {
 
 .query {
   display: inline-flex;
-  align-items: center;
-  gap: 0.25em;
+  align-items: baseline;
+  gap: 0.5em;
   padding: 0.125em 0.5em;
   border: 1px solid var(--line);
   border-radius: 2px;
-  background: var(--surface-page);
-  color: var(--ink-muted);
-  font-family: monospace, system-ui;
   font-size: max(0.5rem, 0.8125em);
+
+  .query-text {
+    font-family: monospace, system-ui;
+  }
+
+  .verdict {
+    font-size: max(0.5rem, 0.8em);
+    white-space: nowrap;
+  }
 
   &[data-hit='true'] {
     border-color: var(--accent);
+    background: color-mix(in oklch, var(--accent) 18%, transparent);
     color: var(--ink);
 
-    .mark {
-      color: var(--accent);
+    .verdict {
+      color: var(--accent-text);
+      font-weight: 600;
     }
   }
 
-  &[data-hit='false'] .query-text {
-    text-decoration: line-through;
-    text-decoration-color: var(--ink-faint);
+  &[data-hit='false'] {
+    border-style: dashed;
+    border-color: var(--ink-faint);
+    color: var(--ink-muted);
   }
-
 }
 
 .query-result {
   flex: none;
-  min-width: 4.5em;
+  min-width: 5.5em;
   font-size: max(0.5rem, 0.75em);
-  color: var(--ink-muted);
+  font-weight: 600;
+  white-space: nowrap;
 
   &[data-hit='true'] {
     color: var(--accent-text);
+  }
+
+  &[data-hit='false'] {
+    color: var(--ink);
   }
 }
 

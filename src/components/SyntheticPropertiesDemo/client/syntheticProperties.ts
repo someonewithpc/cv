@@ -33,6 +33,8 @@ type Tool = {
   pax: HTMLInputElement;
   query: HTMLInputElement;
   queryResult: HTMLElement;
+  row: HTMLElement;
+  rowVerdict: HTMLElement;
   chips: HTMLOListElement;
   renderings: HTMLUListElement;
   text: HTMLElement;
@@ -117,18 +119,21 @@ function renderQueries(tool: Tool) {
   tool.queries.forEach((query) => {
     const hit = matches(text, query.dataset.query ?? '');
     query.dataset.hit = String(hit);
-    query.querySelector('.mark')!.textContent = hit ? '✓' : '✗';
-    query.querySelector('.sr-only')!.textContent = hit ? 'hits' : 'misses';
+    query.querySelector('.verdict')!.textContent = hit ? '✓ found' : '✗ no match';
   });
 
   const query = tool.query.value.trim();
   if (!query) {
     tool.queryResult.textContent = '';
+    tool.rowVerdict.textContent = '';
     delete tool.queryResult.dataset.hit;
+    delete tool.row.dataset.hit;
   } else {
     const hit = matches(text, query);
     tool.queryResult.dataset.hit = String(hit);
-    tool.queryResult.textContent = hit ? '✓ hit' : '✗ no hit';
+    tool.row.dataset.hit = String(hit);
+    tool.queryResult.textContent = hit ? '✓ found' : '✗ no match';
+    tool.rowVerdict.textContent = hit ? `✓ ${query} found` : `✗ no match for ${query}`;
   }
   renderText(tool, text, query);
 }
@@ -230,8 +235,7 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
   };
 
   /** Moves the cursor onto `input` and clicks it, then types `text` a key at a time. The
-      size field runs the pipeline once it is done rather than per key; the query answers
-      as it goes. */
+      size field runs the pipeline and the query runs its search once each is typed. */
   const type = async (input: HTMLInputElement, text: string, run: number, onKey: () => void) => {
     reveal(input);
     const hop = mover.moveTo(pointOn(input));
@@ -275,8 +279,14 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
           await pause(RUN_MS + 900, run);
           if (run !== token) return;
         }
-        await type(tool.query, step.query, run, () => renderQueries(tool));
+        // The search runs once the query is typed, the way a search box sends it, so the
+        // row does not flicker through a miss for every half-typed word.
+        await type(tool.query, step.query, run, () => {
+          tool.queryResult.textContent = '';
+          delete tool.queryResult.dataset.hit;
+        });
         if (run !== token) return;
+        renderQueries(tool);
         await pause(2600, run);
         if (run !== token) return;
       }
@@ -336,6 +346,8 @@ export function initSyntheticProperties(host: HTMLElement, root: HTMLElement) {
     pax: find('.pax-input'),
     query: find('.query-input'),
     queryResult: find('.query-result'),
+    row: find('.text-row'),
+    rowVerdict: find('.row-verdict'),
     chips: find('.chips'),
     renderings: find('.renderings'),
     text: find('.text'),
