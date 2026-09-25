@@ -1,4 +1,5 @@
 import { createCursorMover, type Point } from '@/client/cursorMotion';
+import { watchHandover } from '@/client/walkthroughHandover';
 
 import { scrollToStyle } from './panel';
 import { BANQUET_CARD, CHAIR_CARD } from './variantsCatalog';
@@ -64,7 +65,6 @@ const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
 const PRESS_DELAY_MS = 160;
 const CURSOR_CLICK_MS = 260;
 const CURSOR_FADE_MS = 420;
-const RESUME_DELAY_MS = 6000;
 
 function reducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -77,9 +77,8 @@ function runStep(el: HTMLElement, act: AutoplayStep['act']) {
 }
 
 /**
- * The demo's own hand: a drawn cursor that works the cards through AUTOPLAY_STEPS. A
- * trusted pointer or focus inside the host hands the cards over to the visitor; the loop
- * resumes after a quiet spell.
+ * The demo's own hand: a drawn cursor that works the cards through AUTOPLAY_STEPS. The
+ * visitor takes the cards over and hands them back as watchHandover decides.
  */
 export function createPlayer(host: HTMLElement) {
   const cursor = document.createElement('span');
@@ -91,17 +90,11 @@ export function createPlayer(host: HTMLElement) {
 
   let playToken = 0;
   let active = false;
-  let userControl = false;
   let noteOpen = false;
-  let resumeTimer: ReturnType<typeof setTimeout> | null = null;
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
   let clickTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const setUserControl = (value: boolean) => {
-    userControl = value;
-    host.dataset.userControl = value ? 'true' : 'false';
-  };
-  setUserControl(false);
+  host.dataset.userControl = 'false';
 
   function showCursor() {
     if (fadeTimer) clearTimeout(fadeTimer);
@@ -178,60 +171,24 @@ export function createPlayer(host: HTMLElement) {
     mover.cancel();
   }
 
-  function canPlay() {
-    return active && !noteOpen && !userControl && !reducedMotion();
-  }
-
-  function restartIdleTimer() {
-    if (resumeTimer) clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(() => {
-      resumeTimer = null;
-      if (!active || noteOpen || reducedMotion()) return;
-      setUserControl(false);
+  const handover = watchHandover(host, {
+    listening: () => active,
+    takeOver() {
+      host.dataset.userControl = 'true';
+      stopPlaying();
+      hideCursor(true);
+    },
+    handBack() {
+      if (!active || noteOpen || reducedMotion()) return false;
+      host.dataset.userControl = 'false';
       void play();
-    }, RESUME_DELAY_MS);
-  }
+      return true;
+    },
+  });
 
-  function yieldToUser() {
-    if (userControl) {
-      restartIdleTimer();
-      return;
-    }
-    setUserControl(true);
-    stopPlaying();
-    hideCursor(true);
-    restartIdleTimer();
+  function canPlay() {
+    return active && !noteOpen && !handover.userControl && !reducedMotion();
   }
-
-  // A finger on the cards is not yet a visitor taking over: on a phone the same touch
-  // starts a page scroll, and the browser cancels the pointer once it does. Only a
-  // touch that lifts, a tap or a drag the open list kept, hands the demo over. Every
-  // scroll used to, and the walkthrough then sat still for the idle spell and started
-  // again from the chair, so a phone saw nothing happen to the seats for 16 s.
-  function onTrustedPointer(event: PointerEvent) {
-    if (!event.isTrusted || !active) return;
-    const target = event.target;
-    if (!(target instanceof Node) || !host.contains(target)) return;
-    if (event.pointerType !== 'touch') {
-      yieldToUser();
-      return;
-    }
-    if (event.type !== 'pointerdown') return;
-    const settle = (outcome: PointerEvent) => {
-      if (outcome.pointerId !== event.pointerId) return;
-      window.removeEventListener('pointerup', settle);
-      window.removeEventListener('pointercancel', settle);
-      if (outcome.type === 'pointerup') yieldToUser();
-    };
-    window.addEventListener('pointerup', settle);
-    window.addEventListener('pointercancel', settle);
-  }
-
-  // focusin, not focus: focus does not bubble, so a listener here would only hear the host
-  // itself (tabindex -1) and never the style strips and buttons a keyboard visitor lands on.
-  host.addEventListener('focusin', yieldToUser);
-  window.addEventListener('pointerdown', onTrustedPointer);
-  window.addEventListener('pointermove', onTrustedPointer);
 
   return {
     setActive(value: boolean) {
@@ -253,12 +210,9 @@ export function createPlayer(host: HTMLElement) {
     },
     dispose() {
       stopPlaying();
-      if (resumeTimer) clearTimeout(resumeTimer);
+      handover.dispose();
       if (fadeTimer) clearTimeout(fadeTimer);
       if (clickTimer) clearTimeout(clickTimer);
-      host.removeEventListener('focusin', yieldToUser);
-      window.removeEventListener('pointerdown', onTrustedPointer);
-      window.removeEventListener('pointermove', onTrustedPointer);
       cursor.remove();
     },
   };
