@@ -10,6 +10,11 @@ export interface Budgets {
   getByName(name: string): Budget;
 }
 
+// Namespaced so other Durable Objects can share this binding's name space later.
+export function dailyBudgetName(now: Date): string {
+  return `font-proxy-bytes:${now.toISOString().slice(0, 10)}`;
+}
+
 export async function withBudget(
   request: Request,
   budgets: Budgets | undefined,
@@ -19,7 +24,7 @@ export async function withBudget(
 ): Promise<Response> {
   if (!budgets || new URL(request.url).pathname !== '/api/font-proxy') return next();
 
-  const budget = budgets.getByName(now.toISOString().slice(0, 10));
+  const budget = budgets.getByName(dailyBudgetName(now));
   if (await budget.spent() >= DAILY_BYTES) {
     return new Response('The font proxy has spent its budget for today', { status: 503 });
   }
