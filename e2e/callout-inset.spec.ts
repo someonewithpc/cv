@@ -16,9 +16,25 @@ for (const viewport of [PHONE, NO_DESK, DESK]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
 
+    // Layout boxes, not painted ones: the title card is laid in the view as a slip, a little
+    // turned, below 105rem, and beside it above that, out of the flow.
     const insets = await page.locator('.callout-view').evaluateAll((views) => views.map((view) => {
-      const outer = view.getBoundingClientRect();
-      const inner = view.firstElementChild!.getBoundingClientRect();
+      const box = (el: HTMLElement) => ({
+        top: el.offsetTop,
+        left: el.offsetLeft,
+        bottom: el.offsetTop + el.offsetHeight,
+        right: el.offsetLeft + el.offsetWidth,
+      });
+      const outer = box(view as HTMLElement);
+      const parts = [...view.children]
+        .filter((child) => (child as HTMLElement).offsetHeight > 0 && getComputedStyle(child).position !== 'absolute')
+        .map((child) => box(child as HTMLElement));
+      const inner = {
+        top: Math.min(...parts.map((part) => part.top)),
+        left: Math.min(...parts.map((part) => part.left)),
+        bottom: Math.max(...parts.map((part) => part.bottom)),
+        right: Math.max(...parts.map((part) => part.right)),
+      };
       return {
         top: inner.top - outer.top,
         right: outer.right - inner.right,
@@ -68,9 +84,11 @@ test('on a phone the peel hints are written past the boundary, not across it', a
     const view = el.closest('.callout-view')!.getBoundingClientRect();
     const fwd = el.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
     const back = el.querySelector('.flip-hint--back.hint-words')!.getBoundingClientRect();
-    return { viewTop: view.top, viewBottom: view.bottom, fwdTop: fwd.top, backBottom: back.bottom };
+    return { viewTop: view.top, viewBottom: view.bottom, fwdTop: fwd.top, fwdBottom: fwd.bottom, backBottom: back.bottom };
   });
-  expect(hints.fwdTop).toBeGreaterThanOrEqual(hints.viewBottom);
+  // Under the sheet the hint lands on the title card's slip, which is inside the boundary, so it
+  // only has to keep off the line: wholly past it or wholly inside it.
+  expect(hints.fwdTop >= hints.viewBottom || hints.fwdBottom <= hints.viewBottom - 1).toBe(true);
   expect(hints.backBottom).toBeLessThanOrEqual(hints.viewTop);
 });
 
