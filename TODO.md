@@ -94,6 +94,7 @@
 - [x] Pinching out over a 3D scene in responsive mode leaves the page zoomed in (#133)
 - [x] Cutting mat edges show on a phone, and the callout box has more room top and bottom than at the sides (#138)
 - [x] Turn off the cv worker's workers.dev and preview URLs (#142)
+- [x] Drop the flaky phone seat-row hover test in the variants demo e2e spec (#144)
 - [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
