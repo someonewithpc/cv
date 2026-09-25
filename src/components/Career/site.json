@@ -9,9 +9,9 @@
       "to": { "date": "2026-07", "label": "Jul 2026" },
       "summary": "Three products for hotels and resorts, and the Rails backend that ran production behind them.",
       "items": [
-        "A Vue and Three.js app that lays an event space out in 3D. Blocks of tables and chairs fill a drawn area, guests get seats and the plan exports to PDF.",
-        "A React map of the resort with custom pins, a virtual tour, step by step wayfinding and an embed that takes the client site's own fonts and colours.",
-        "The Ruby backend behind both. 3D model orders and their review, invoices, subscriptions, Google and Apple sign-in, and a library of over 8,000 placeable objects."
+        "A Vue and Three.js app that lays an event space out in 3D. Blocks of tables and chairs fill a drawn area and guests get seats.",
+        "A React map of the resort with custom pins, a virtual tour and step by step wayfinding.",
+        "The Ruby backend behind both. 3D model orders, subscriptions, Google and Apple sign-in, a library of over 8,000 placeable objects, SQL query and index optimization, and system administration for the production infrastructure."
       ],
       "see": [{ "label": "Demos", "href": "#demos" }]
     },
@@ -54,6 +54,7 @@
     "school": "Faculdade de Ciências, Universidade do Porto",
     "year": "2022"
   },
+  "tagline": "Coding since age 13, always learning",
   "languages": [
     { "name": "Portuguese", "level": "Native" },
     { "name": "English", "level": "C2" },

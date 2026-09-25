@@ -24,7 +24,7 @@ type Entry = {
   see?: Link[];
 };
 
-const { experience, education, languages, location, interests, refs } = site as typeof site & { experience: Entry[] };
+const { experience, education, tagline, languages, location, interests, refs } = site as typeof site & { experience: Entry[] };
 
 /* Revisions count up from the first job, so the newest row, listed first, carries the highest number. */
 const revision = (index: number) => String(experience.length - index).padStart(2, '0');
@@ -96,6 +96,7 @@ const revision = (index: number) => String(experience.length - index).padStart(2
           <span class="typewriter">{education.degree}</span>
           <span>{education.minor}</span>
           <span>{education.school}, <time datetime={education.year}>{education.year}</time></span>
+          {tagline && <span class="tagline">{tagline}</span>}
         </dd>
       </div>
 
@@ -411,6 +412,12 @@ const revision = (index: number) => String(experience.length - index).padStart(2
     > .typewriter {
       font-size: 0.8125rem;
       color: var(--ink);
+    }
+
+    > .tagline {
+      margin-top: 0.125rem;
+      font-style: italic;
+      color: var(--ink-faint);
     }
   }
 
