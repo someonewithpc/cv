@@ -38,7 +38,6 @@ type Tool = {
   chips: HTMLOListElement;
   renderings: HTMLUListElement;
   text: HTMLElement;
-  queries: HTMLElement[];
   /** The component's scoped-style attributes, so markup built here is styled like the
       markup Astro rendered. */
   scope: [string, string][];
@@ -116,12 +115,6 @@ function renderText(tool: Tool, text: string, query: string) {
 
 function renderQueries(tool: Tool) {
   const text = tool.current;
-  tool.queries.forEach((query) => {
-    const hit = matches(text, query.dataset.query ?? '');
-    query.dataset.hit = String(hit);
-    query.querySelector('.verdict')!.textContent = hit ? '✓ found' : '✗ no match';
-  });
-
   const query = tool.query.value.trim();
   if (!query) {
     tool.queryResult.textContent = '';
@@ -138,7 +131,7 @@ function renderQueries(tool: Tool) {
   renderText(tool, text, query);
 }
 
-/** One run of the pipeline: split, fan out, concatenate, and ask the queries again. */
+/** One run of the pipeline: split, fan out, concatenate, and run the search again. */
 function runPipeline(tool: Tool, animate = true) {
   const sizes = sizeProperties(tool.size.value);
   const pax = paxProperties(tool.pax.value);
@@ -351,7 +344,6 @@ export function initSyntheticProperties(host: HTMLElement, root: HTMLElement) {
     chips: find('.chips'),
     renderings: find('.renderings'),
     text: find('.text'),
-    queries: [...root.querySelectorAll<HTMLElement>('.query')],
     scope: [...root.attributes]
       .filter((attribute) => attribute.name.startsWith('data-astro-cid-'))
       .map((attribute) => [attribute.name, attribute.value]),

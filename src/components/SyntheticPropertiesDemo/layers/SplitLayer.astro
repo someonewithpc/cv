@@ -4,7 +4,6 @@ import {
   paxProperties,
   renderings,
   sample,
-  sampleQueries,
   searchableText,
   sizeProperties,
   splitSizes,
@@ -133,17 +132,6 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
           </span>
           <pre class="text">{text}</pre>
         </div>
-        <ul class="queries" aria-label="Other searches against this text">
-          {sampleQueries.map((query) => {
-            const hit = matches(text, query);
-            return (
-              <li class="query" data-query={query} data-hit={String(hit)}>
-                <span class="query-text">{query}</span>
-                <span class="verdict">{hit ? '✓ found' : '✗ no match'}</span>
-              </li>
-            );
-          })}
-        </ul>
       </li>
     </ol>
   </div>
@@ -588,53 +576,6 @@ input {
     color: inherit;
     border-radius: 2px;
     outline: 1px solid var(--accent);
-  }
-}
-
-/* The sample searches, each asked of the same row: a hit is filled and solid, a miss is
-   dashed and faded, and both say which in words. */
-.queries {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375em;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.query {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.5em;
-  padding: 0.125em 0.5em;
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  font-size: max(0.5rem, 0.8125em);
-
-  .query-text {
-    font-family: monospace, system-ui;
-  }
-
-  .verdict {
-    font-size: max(0.5rem, 0.8em);
-    white-space: nowrap;
-  }
-
-  &[data-hit='true'] {
-    border-color: var(--accent);
-    background: color-mix(in oklch, var(--accent) 18%, transparent);
-    color: var(--ink);
-
-    .verdict {
-      color: var(--accent-text);
-      font-weight: 600;
-    }
-  }
-
-  &[data-hit='false'] {
-    border-style: dashed;
-    border-color: var(--ink-faint);
-    color: var(--ink-muted);
   }
 }
 

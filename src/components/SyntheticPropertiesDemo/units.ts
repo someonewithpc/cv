@@ -171,7 +171,7 @@ export function searchableText(properties: readonly SyntheticProperty[]) {
   return properties.map(({ name, value }) => `${value} ${name}`).join(' ');
 }
 
-/** A stand-in for SH-04's FULLTEXT match, so the sheet can say which queries hit: the
+/** A stand-in for SH-04's FULLTEXT match, so the sheet can say whether the search hits: the
     query as a phrase, case-insensitive, bounded by whitespace or the ends of the text so
     `3"` does not hit inside `5'3"`. */
 export function matches(text: string, query: string) {
@@ -181,10 +181,8 @@ export function matches(text: string, query: string) {
   return new RegExp(`(?<!\\S)${escaped}(?!\\S)`, 'i').test(text);
 }
 
-/** What the live layer opens on, and the queries it tries against it. */
+/** What the live layer opens on. */
 export const sample = { size: '160x80x74', pax: '8' };
-
-export const sampleQueries = ['5ft3in', '1.6m', '63"', '8 seats', '2m'] as const;
 
 /** What the walkthrough types in turn: a size, then a query that finds it. The sample
     first, then a round two metres, then one that rounds to 180cm and whose feet and
