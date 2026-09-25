@@ -1235,7 +1235,7 @@ $scene-bg: #212121;
     text-align: center;
     background: #212121;
     color: #ced4da;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 
     &.error {
       background: #292929;
@@ -1274,7 +1274,7 @@ $scene-bg: #212121;
       background: #d9edf7;
       border: 1px solid #bce8f1;
       color: #31708f;
-      font-size: 0.85rem;
+      font-size: 0.875rem;
       text-align: center;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     }
@@ -1293,7 +1293,7 @@ $scene-bg: #212121;
     border-radius: 0.25rem;
     background: color-mix(in oklab, $visrez-brand 25%, #171717);
     color: #f4ffe8;
-    font: 700 0.68rem/1.3 var(--font-poppins, system-ui, sans-serif);
+    font: 700 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
     cursor: pointer;
     white-space: nowrap;
 
@@ -1324,7 +1324,7 @@ $scene-bg: #212121;
     border-radius: 0.25rem;
     background: rgba(26, 179, 148, 0.92);
     color: #fff;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: opacity 0.3s ease, translate 0.3s ease;
@@ -1380,7 +1380,7 @@ $scene-bg: #212121;
   .sidebar-title {
     margin: 0;
     flex: 1;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     text-align: right;
   }
@@ -1407,7 +1407,7 @@ $scene-bg: #212121;
 
   .dnd-hint {
     margin-right: auto;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #ced4da;
     white-space: nowrap;
 
@@ -1471,7 +1471,7 @@ $scene-bg: #212121;
   .action--save {
     flex: 1.4;
     padding-block: 0.55rem;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
   }
 
   // Narrow frame (phone-portrait or a squeezed tablet window): the sidebar's
@@ -1506,7 +1506,7 @@ $scene-bg: #212121;
   background: rgba(25, 41, 21, 0.85);
   color: #fff;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 800;
   white-space: nowrap;
   pointer-events: none;

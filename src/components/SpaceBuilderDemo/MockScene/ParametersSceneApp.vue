@@ -563,7 +563,7 @@ $scene-bg: #212121;
   gap: 0.65rem;
   background: $scene-bg;
   color: #adb5bd;
-  font: 0.85rem/1.3 system-ui, sans-serif;
+  font: 0.875rem/1.3 system-ui, sans-serif;
 
   &.error {
     color: #f1aeb5;
@@ -595,7 +595,7 @@ $scene-bg: #212121;
   border-radius: 0.25rem;
   background: rgba(26, 179, 148, 0.92);
   color: #fff;
-  font: 700 0.72rem/1.3 var(--font-poppins, system-ui, sans-serif);
+  font: 700 0.75rem/1.3 var(--font-poppins, system-ui, sans-serif);
   white-space: nowrap;
   pointer-events: none;
 }
@@ -622,7 +622,7 @@ $scene-bg: #212121;
   border-radius: 0.25rem;
   background: color-mix(in oklab, $visrez-brand 25%, #171717);
   color: #f4ffe8;
-  font: 700 0.68rem/1.3 var(--font-poppins, system-ui, sans-serif);
+  font: 700 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
   cursor: pointer;
   white-space: nowrap;
 
@@ -637,7 +637,7 @@ $scene-bg: #212121;
   border-radius: 0.25rem;
   background: rgba(18, 22, 18, 0.72);
   color: #e8e4dc;
-  font: 0.62rem/1.3 var(--font-poppins, system-ui, sans-serif);
+  font: 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
   letter-spacing: 0.02em;
   pointer-events: none;
   text-align: center;
@@ -674,7 +674,7 @@ $scene-bg: #212121;
 .sidebar-title {
   margin: 0;
   flex: 1;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -737,6 +737,6 @@ $scene-bg: #212121;
 .action--save {
   flex: 1.4;
   padding-block: 0.55rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 </style>

@@ -344,7 +344,7 @@ onBeforeUnmount(() => {
     gap: 0.65rem;
     background: #212121;
     color: #adb5bd;
-    font: 0.85rem/1.3 system-ui, sans-serif;
+    font: 0.875rem/1.3 system-ui, sans-serif;
 
     &.error {
       color: #f1aeb5;
@@ -376,7 +376,7 @@ onBeforeUnmount(() => {
     border-radius: 0.25rem;
     background: rgba(18, 22, 18, 0.72);
     color: #e8e4dc;
-    font: 0.62rem/1.3 var(--font-poppins, system-ui, sans-serif);
+    font: 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
     letter-spacing: 0.02em;
     pointer-events: none;
     white-space: nowrap;
@@ -405,7 +405,7 @@ onBeforeUnmount(() => {
   background: color-mix(in oklab, #3a3d42 72%, transparent);
   color: #f4f0ea;
   font-family: sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -420,7 +420,7 @@ onBeforeUnmount(() => {
   background: rgba(25, 41, 21, 0.85);
   color: #fff;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 800;
   white-space: nowrap;
   pointer-events: none;

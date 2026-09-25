@@ -378,7 +378,7 @@ $scene-bg: #212121;
   gap: 0.65rem;
   background: $scene-bg;
   color: #adb5bd;
-  font: 0.85rem/1.3 system-ui, sans-serif;
+  font: 0.875rem/1.3 system-ui, sans-serif;
 
   &.error {
     color: #f1aeb5;
@@ -416,7 +416,7 @@ $scene-bg: #212121;
   border-radius: 0.25rem;
   background: color-mix(in oklab, $visrez-brand 25%, #171717);
   color: #f4ffe8;
-  font: 700 0.68rem/1.3 var(--font-poppins, system-ui, sans-serif);
+  font: 700 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
   cursor: pointer;
   white-space: nowrap;
 
@@ -436,7 +436,7 @@ $scene-bg: #212121;
   border-radius: 0.25rem;
   background: rgba(18, 22, 18, 0.72);
   color: #e8e4dc;
-  font: 0.62rem/1.3 var(--font-poppins, system-ui, sans-serif);
+  font: 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
   letter-spacing: 0.02em;
   pointer-events: none;
   white-space: nowrap;
@@ -462,7 +462,7 @@ $scene-bg: #212121;
     align-items: center;
     gap: 0.3rem;
     margin-bottom: 0.35rem;
-    font-size: 0.58rem;
+    font-size: 0.625rem;
     font-weight: 600;
     line-height: 1.2;
   }
@@ -473,7 +473,7 @@ $scene-bg: #212121;
     border-radius: 0.2rem;
     background: color-mix(in oklab, #f76d65 75%, #111);
     color: #fff5f4;
-    font-size: 0.46rem;
+    font-size: 0.625rem;
     font-weight: 800;
     letter-spacing: 0.03em;
     text-transform: uppercase;
@@ -512,7 +512,7 @@ $scene-bg: #212121;
   border: 1.5px solid rgba(162, 206, 59, 0.7);
   background: rgba(25, 41, 21, 0.85);
   color: #fff;
-  font-size: 0.44rem;
+  font-size: 0.625rem;
   font-weight: 800;
   white-space: nowrap;
   opacity: 0.55;
@@ -521,7 +521,7 @@ $scene-bg: #212121;
 
 .fail-note {
   margin: 0.3rem 0 0;
-  font-size: 0.46rem;
+  font-size: 0.625rem;
   line-height: 1.35;
   color: #adb5bd;
 }
@@ -542,7 +542,7 @@ $scene-bg: #212121;
   .math-title {
     margin: 0 0 0.3rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.6rem;
+    font-size: 0.625rem;
     font-weight: 700;
     letter-spacing: 0.01em;
     white-space: nowrap;
@@ -569,7 +569,7 @@ $scene-bg: #212121;
   }
 
   dt {
-    font-size: 0.5rem;
+    font-size: 0.625rem;
     color: #adb5bd;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -577,7 +577,7 @@ $scene-bg: #212121;
 
   dd {
     margin: 0;
-    font-size: 0.62rem;
+    font-size: 0.625rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: #a2ce3b;

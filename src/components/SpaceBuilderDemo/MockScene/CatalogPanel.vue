@@ -92,7 +92,7 @@ $brand: #89ab24;
     background: #212529;
     color: #f3f3f4;
     font: inherit;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 
     &::placeholder {
       color: #adb5bd;
@@ -108,7 +108,7 @@ $brand: #89ab24;
 
 .catalog-empty {
   margin: 1rem 0 0;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #adb5bd;
 }
 

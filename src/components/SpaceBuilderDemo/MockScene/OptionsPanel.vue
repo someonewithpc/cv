@@ -343,7 +343,7 @@ $nav-second-bg: #151515;
     padding: 0.25rem 0.1rem 0.45rem;
     margin-bottom: 0.55rem;
     border-bottom: 1px solid $light-grey;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     list-style: none;
@@ -363,7 +363,7 @@ $nav-second-bg: #151515;
   display: grid;
   gap: 0.3rem;
   margin-bottom: 0.75rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #ced4da;
 
   input[type='number'],
@@ -447,7 +447,7 @@ $nav-second-bg: #151515;
     border: 1px solid $light-grey;
     border-radius: 0.2rem;
     background: $nav-second-bg;
-    font-size: 0.68rem;
+    font-size: 0.625rem;
   }
 }
 
@@ -468,7 +468,7 @@ $nav-second-bg: #151515;
   color: #fff;
   padding: 0.4rem 0.5rem;
   border-radius: 0.5rem;
-  font-size: 0.68rem;
+  font-size: 0.625rem;
   font-weight: 600;
 }
 
@@ -500,7 +500,7 @@ $nav-second-bg: #151515;
     padding: 0.3rem 0.25rem;
     background: #212529;
     text-align: center;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: #f3f3f4;
   }
