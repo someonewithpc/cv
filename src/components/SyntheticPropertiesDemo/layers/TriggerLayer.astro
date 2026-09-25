@@ -122,11 +122,11 @@ header {
   gap: 0.125em;
 
   strong {
-    font-size: max(0.5rem, 0.875em);
+    @include small-type(0.875);
   }
 
   span {
-    font-size: max(0.5rem, 0.6875em);
+    @include small-type(0.6875);
     color: var(--ink-muted);
     text-wrap: pretty;
   }
@@ -155,12 +155,12 @@ pre {
   width: min(100%, 64em);
 
   .caption {
-    font-size: max(0.5rem, 0.6875em);
+    @include small-type(0.6875);
     color: var(--ink-muted);
   }
 
   pre {
-    font-size: max(0.5rem, 0.5625em);
+    @include small-type(0.5625);
   }
 }
 
@@ -218,19 +218,19 @@ pre {
 
   .title {
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.75em);
+    @include small-type(0.75);
     font-weight: 600;
   }
 
   .when,
   .source {
-    font-size: max(0.5rem, 0.625em);
+    @include small-type(0.625);
     color: var(--ink-muted);
   }
 
   pre {
     margin-top: 0.25em;
-    font-size: max(0.5rem, 0.5625em);
+    @include small-type(0.5625);
   }
 
   &[data-target='backfill'] {

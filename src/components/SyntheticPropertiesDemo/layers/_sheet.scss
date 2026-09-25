@@ -76,3 +76,15 @@ $sheet-margin: 0.75em;
   display: grid;
   gap: 0.625em;
 }
+
+// Small type on the two densest sheets. A wide landscape sheet sets it at 8px or more and a
+// portrait one never goes under 8px, while a narrow landscape sheet, where 8px would push the
+// content under the title block, keeps the plain em size. 0.0168 of the sheet's short side
+// is 8px on a 1440px screen.
+@mixin small-type($em) {
+  font-size: max(#{$em}em, 0.0168 * min(var(--sheet-inline), var(--sheet-block)));
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: max(0.5rem, #{$em}em);
+  }
+}
