@@ -68,8 +68,11 @@ export function initAutoplayStatus(page: HTMLElement) {
     source = root;
     deck.hidden = false;
     deck.dataset.state = state;
-    caption.textContent = CAPTION[state];
-    hint.textContent = state === 'playing' && touch ? TOUCH_HINT : HINT[state];
+    // A demo that takes no input says so in its own words: data-autoplay-caption-<state>
+    // and data-autoplay-hint-<state> on its root.
+    caption.textContent = root.getAttribute(`data-autoplay-caption-${state}`) ?? CAPTION[state];
+    hint.textContent = root.getAttribute(`data-autoplay-hint-${state}`)
+      ?? (state === 'playing' && touch ? TOUCH_HINT : HINT[state]);
 
     keys.forEach((key) => {
       // Play and pause are toggles; reset is a momentary action and carries no pressed state.

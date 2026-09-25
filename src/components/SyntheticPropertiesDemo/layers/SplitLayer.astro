@@ -25,7 +25,15 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
   data-synthetic-demo
   data-walkthrough={JSON.stringify(walkthrough)}
 >
-  <div class="synthetic-tool" data-live data-autoplay="off" tabindex="-1">
+  <div
+    class="synthetic-tool"
+    data-live
+    data-autoplay="off"
+    data-autoplay-hint-playing="the sheet types by itself"
+    data-autoplay-caption-user="PAUSED"
+    data-autoplay-hint-user="press play to go on"
+    tabindex="-1"
+  >
     <header class="lede">
       <strong>Stored once, in centimetres. Found in any unit.</strong>
       <p>
