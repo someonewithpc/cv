@@ -134,25 +134,46 @@ aside {
     }
   }
 
-  /* Torn off a pad: the top edge is ragged where it came away from the
-     glue. The paper below the tear is the background, the tear itself a band
-     cut by the mask. */
+  /* Torn off a pad along its glue line. Behind the text sit two layers:
+     the pale broken fibres of the tear, and the paper face, whose own edge
+     runs a little lower and coarser. Both edges are displaced noise tiles, so
+     the tear does not repeat within a note. */
   &[data-paper='torn'] {
-    --tear: 0.4em;
-    rotate: 0.5deg;
-    /* A hairline of shade along the tear, or it is lost on a pale sheet. */
+    --tear: 1em;
+    --lip: oklch(from var(--background) calc(l + (1 - l) * 0.6) calc(c * 0.4) h);
+    --glue: oklch(from var(--background) calc(l - 0.025) calc(c + 0.01) h);
+    rotate: -0.75deg;
+    background: none;
     filter:
-      drop-shadow(0 -0.5px 0.5px rgba(0,0,0,0.35))
-      drop-shadow(0 0.25em 0.3em rgba(0,0,0,0.3));
-    background: linear-gradient(var(--background), var(--background)) bottom / 100% calc(100% - var(--tear)) no-repeat;
+      drop-shadow(0 -0.5px 0.5px rgba(0,0,0,0.3))
+      drop-shadow(0 0.125em 0.125em rgba(0,0,0,0.15))
+      drop-shadow(0.125em 0.375em 0.5em rgba(0,0,0,0.25));
 
-    &:before {
-      top: 0;
+    &:before,
+    &:after {
+      z-index: -1;
       left: 0;
       width: 100%;
-      height: calc(var(--tear) + 1px);
-      background: var(--background);
-      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8' preserveAspectRatio='none'%3E%3Cpath d='M0 3L2 5L3.5 2.5L5 4.5L7 1.5L8.5 4L10 3L11 6L13 2L14.5 4.5L16 3.5L18 5.5L19 2L21 4L22.5 1L24 4.5L25.5 3L27 5L29 2.5L30 4L32 1.5L33.5 5L35 3L37 4.5L38.5 2L40 3.5V8H0Z'/%3E%3C/svg%3E") top left / 3em 100% repeat-x;
+      top: 0;
+    }
+
+    &:before {
+      height: var(--tear);
+      background: var(--lip);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 16' preserveAspectRatio='none'%3E%3Cfilter id='t' filterUnits='userSpaceOnUse' x='0' y='-8' width='320' height='40'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045 0.015' numOctaves='5' seed='3' stitchTiles='stitch'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='9' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Cpath d='M-40 7C20 4 60 4 100 7S190 10 230 7S300 4 360 7V40H-40Z' filter='url(%23t)'/%3E%3C/svg%3E") top left / calc(20 * var(--tear)) var(--tear) repeat-x;
+    }
+
+    /* A band of dried glue along the tear, and the top of the sheet a shade
+       lighter where it lifts off the page. */
+    &:after {
+      bottom: 0;
+      background:
+        linear-gradient(var(--glue) calc(var(--tear) * 0.9), transparent calc(var(--tear) * 1.4)),
+        linear-gradient(rgba(255,255,255,0.12), transparent 40%),
+        var(--background);
+      mask:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 16' preserveAspectRatio='none'%3E%3Cfilter id='t' filterUnits='userSpaceOnUse' x='0' y='-8' width='320' height='40'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03 0.02' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='6' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Cpath d='M-40 10C20 11.5 60 11.5 100 10S190 8.5 230 10S300 11.5 360 10V40H-40Z' filter='url(%23t)'/%3E%3C/svg%3E") top left / calc(20 * var(--tear)) var(--tear) repeat-x,
+        linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--tear) + 1px) no-repeat;
     }
   }
 }
