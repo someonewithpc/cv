@@ -59,6 +59,11 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
     </label>
   </div>
 
+  {/* The option list the walkthrough draws under a select as it picks a value. A native
+      <select> cannot be opened by script, so this stands in for its drop-down; the visitor
+      still gets the native select, with its own list and keyboard. */}
+  {live && <ul class="demo-options" data-demo-options aria-hidden="true" hidden></ul>}
+
   {/* A live region from the moment the visitor is the one typing (librarySearch.ts): while
       the walkthrough types, a screen reader would hear the count on every keystroke. */}
   <p class="count">{countText(result.hits.length)}</p>
@@ -90,6 +95,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
   --gutter: 1.071em;
   --highlight: color-mix(in oklch, var(--surface-raised), var(--ink) 5%);
 
+  position: relative;
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
@@ -174,6 +180,52 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
     width: 7.5em;
     padding: 0 0.5em;
     font-weight: 400;
+  }
+}
+
+/* Drawn like the select it hangs from: the same border, radius and ring, with the option
+   under the cursor lit the way a native list lights it. */
+.demo-options {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.25em 0;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  background: var(--surface-page);
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--accent), transparent 85%),
+    0 0.5em 1.25em rgb(0 0 0 / 0.25);
+  pointer-events: none;
+  transform-origin: top center;
+  animation: demo-options-open 0.12s ease-out;
+
+  &[hidden] {
+    display: none;
+  }
+
+  :global(li) {
+    padding: 0.286em 0.714em;
+    white-space: nowrap;
+  }
+
+  :global(li[data-selected]) {
+    font-weight: 600;
+  }
+
+  :global(li[data-hover]) {
+    background: color-mix(in oklch, var(--accent), transparent 70%);
+  }
+}
+
+@keyframes demo-options-open {
+  from {
+    opacity: 0;
+    scale: 1 0.9;
   }
 }
 
@@ -295,6 +347,10 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .demo-options {
+    animation: none;
+  }
+
   .relevance .bar,
   .query-input,
   .filter-select {

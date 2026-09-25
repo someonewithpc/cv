@@ -22,8 +22,10 @@ const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
 const PRESS_DELAY_MS = 160;
 /** One backspace, while the script empties the field. */
 const BACKSPACE_MS = 35;
+/** How long an opened list shows before the hand heads for its option. */
+const LIST_OPEN_MS = 450;
 
-type Step = { type?: string; clear?: boolean; color?: string; hold: number };
+type Step = { type?: string; clear?: boolean; color?: string; category?: string; hold: number };
 
 type Tool = {
   root: HTMLElement;
@@ -33,6 +35,7 @@ type Tool = {
   rows: Map<string, HTMLElement>;
   empty: HTMLElement | null;
   count: HTMLElement | null;
+  options: HTMLUListElement | null;
 };
 
 function wait(ms: number, signal?: AbortSignal) {
@@ -203,10 +206,11 @@ function showState(tool: Tool, state: SearchState) {
  * The walkthrough's hand: the drawn cursor the other demos use, moved by cursorMotion.ts and
  * pressed through demoPress, so it pulses and flares the same way theirs does. Every change
  * the script makes starts with it: it clicks into the field before it types or empties it,
- * and clicks a filter before that filter's value changes. The control it works wears the
- * focus ring while it does, without the focus, which would hand the tool to the visitor.
+ * and clicks a filter open, then the option in its drawn list, before that filter changes.
+ * The control it works wears the focus ring while it does, without the focus, which would
+ * hand the tool to the visitor.
  */
-function drawnHand(host: HTMLElement, el: HTMLElement) {
+function drawnHand(host: HTMLElement, el: HTMLElement, list: HTMLUListElement | null) {
   const mover = createCursorMover(el, { hotspot: CURSOR_HOTSPOT });
   let working: HTMLElement | null = null;
 
@@ -229,26 +233,94 @@ function drawnHand(host: HTMLElement, el: HTMLElement) {
     working?.setAttribute('data-demo-focus', '');
   };
 
-  return {
-    /** Moves onto `target`, rests, and presses it. Resolves once the press is over. */
-    async press(target: HTMLElement, at: Point, stopped: () => boolean) {
-      const to = pointOn(target, at);
-      if (el.hidden) {
-        mover.jumpTo(to);
-        el.hidden = false;
-      } else {
-        await mover.moveTo(to);
+  /** Moves onto `target`, rests, and presses it. Resolves once the press is over. */
+  const press = async (target: HTMLElement, at: Point, stopped: () => boolean) => {
+    const to = pointOn(target, at);
+    if (el.hidden) {
+      mover.jumpTo(to);
+      el.hidden = false;
+    } else {
+      await mover.moveTo(to);
+    }
+    if (stopped()) return;
+    await wait(PRESS_DELAY_MS);
+    if (stopped()) return;
+    const box = target.getBoundingClientRect();
+    await demoPress(target, { x: box.left + box.width * at.x, y: box.top + box.height * at.y }, { click: false });
+  };
+
+  const close = () => {
+    if (!list) return;
+    list.hidden = true;
+    list.replaceChildren();
+  };
+
+  /** Draws `select`'s options under it, the current one lit, as its own list would. */
+  const open = (select: HTMLSelectElement) => {
+    if (!list) return [];
+    const items = [...select.options].map((option) => {
+      const item = document.createElement('li');
+      item.textContent = option.text;
+      item.dataset.value = option.value;
+      if (option.selected) {
+        item.dataset.selected = '';
+        item.dataset.hover = '';
       }
-      if (stopped()) return;
-      await wait(PRESS_DELAY_MS);
-      if (stopped()) return;
-      const box = target.getBoundingClientRect();
-      await demoPress(target, { x: box.left + box.width * at.x, y: box.top + box.height * at.y }, { click: false });
+      return item;
+    });
+    list.replaceChildren(...items);
+    list.hidden = false;
+
+    // In the tool's own pixels: the sheet may be drawn scaled.
+    const root = list.offsetParent as HTMLElement;
+    const frame = root.getBoundingClientRect();
+    const scale = frame.width / (root.offsetWidth || frame.width) || 1;
+    const box = select.getBoundingClientRect();
+    const top = (box.bottom - frame.top) / scale - root.clientTop + 2;
+    list.style.minWidth = `${select.offsetWidth}px`;
+    list.style.maxHeight = `${Math.max(0, root.clientHeight - top - 4)}px`;
+    list.style.top = `${top}px`;
+    const left = (box.left - frame.left) / scale - root.clientLeft;
+    list.style.left = `${Math.max(4, Math.min(left, root.clientWidth - list.offsetWidth - 4))}px`;
+    return items;
+  };
+
+  return {
+    press: async (target: HTMLElement, at: Point, stopped: () => boolean) => {
+      await press(target, at, stopped);
       if (!stopped()) work(target);
     },
+    /** Clicks `select` open, moves down its list to `value` and clicks that, which is
+        when `pick` sets it, then closes the list. Resolves false if the run stopped first. */
+    async choose(select: HTMLSelectElement, value: string, stopped: () => boolean, pick: () => void) {
+      await press(select, { x: 0.5, y: 0.55 }, stopped);
+      if (stopped()) return false;
+      work(select);
+      const items = open(select);
+      const item = items.find((option) => option.dataset.value === value);
+      if (!item) {
+        close();
+        return false;
+      }
+      await wait(LIST_OPEN_MS);
+      if (stopped()) return false;
+      if (list && (item.offsetTop < list.scrollTop || item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight)) {
+        list.scrollTop = item.offsetTop - list.clientHeight / 2;
+      }
+      await mover.moveTo(pointOn(item, { x: 0.35, y: 0.6 }));
+      if (stopped()) return false;
+      items.forEach((option) => option.toggleAttribute('data-hover', option === item));
+      await press(item, { x: 0.35, y: 0.6 }, stopped);
+      if (stopped()) return false;
+      pick();
+      close();
+      return true;
+    },
+    close,
     hide() {
       mover.cancel();
       el.hidden = true;
+      close();
       work(null);
     },
   };
@@ -275,7 +347,7 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
     return null;
   }
 
-  const hand = drawnHand(host, cursorEl);
+  const hand = drawnHand(host, cursorEl, tool.options);
   let run = 0;
   let active = false;
   let held = false;
@@ -325,6 +397,7 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
       while (!stopped() && (!active || document.hidden)) await wait(250);
     };
 
+    hand.close();
     // Back to the query the page opens on. Only the deck's keys and the hand back after a
     // quiet spell get here with another query showing, and they are its cause.
     if (serialise({ query: input.value, filters: readFilters(tool) }) !== serialise(initial)) {
@@ -357,13 +430,17 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
           onChange();
           await pause(char === ' ' ? 180 : 70 + Math.random() * 70);
         }
-        const select = tool.selects.find((el) => el.dataset.filter === 'color');
-        if (step.color !== undefined && select && !stopped()) {
-          await hand.press(select, { x: 0.5, y: 0.55 }, stopped);
-          if (stopped()) break;
-          select.value = step.color;
-          onChange();
+        for (const filter of ['category', 'color'] as const) {
+          const value = step[filter];
+          const select = tool.selects.find((el) => el.dataset.filter === filter);
+          if (value === undefined || !select || stopped()) continue;
+          const picked = await hand.choose(select, value, stopped, () => {
+            select.value = value;
+            onChange();
+          });
+          if (!picked) break;
         }
+        if (stopped()) break;
         await pause(step.hold);
       }
     }
@@ -389,6 +466,7 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
     rows: new Map([...list.querySelectorAll<HTMLElement>('.hit')].map((row) => [row.dataset.object!, row])),
     empty: list.querySelector<HTMLElement>('.no-hits'),
     count: root.querySelector<HTMLElement>('.count'),
+    options: root.querySelector<HTMLUListElement>('[data-demo-options]'),
   };
 
   const initial = initialState(root);

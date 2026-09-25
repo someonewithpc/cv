@@ -106,11 +106,11 @@ export const colors: readonly string[] = [
 export const initialQuery = 'rectangular 8 seats';
 
 /** The walkthrough's script: each step is typed into the field, then held long enough to
-    read the bars. `color` sets the property filter instead of typing. Each step shows one
-    thing: two plain words, where the rarer weighs more; a property filter; one word; a seat
-    count the rewrite quotes into a phrase. A bare `chair` would also match, just as
+    read the bars. `color` (or `category`) picks that filter from its list instead. Each
+    step shows one thing: two plain words, where the rarer weighs more; a property filter;
+    one word; a seat count the rewrite quotes into a phrase. A bare `chair` would also match, just as
     strongly, every table that lists the chairs set round it. */
-export const walkthrough: readonly { type?: string; clear?: boolean; color?: string; hold: number }[] = [
+export const walkthrough: readonly { type?: string; clear?: boolean; category?: string; color?: string; hold: number }[] = [
   { clear: true, type: 'wood chair', hold: 2600 },
   { color: 'Gold', hold: 2600 },
   { color: '', hold: 800 },
