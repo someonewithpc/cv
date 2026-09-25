@@ -46,20 +46,25 @@ $sheet-margin: 0.75em;
 }
 
 // The selector face at nesting level --depth, after web-ts-treesit--css-selector-face-for-depth.
-// Depth 0 is the base face itself (font-lock-function-name-face). Deeper levels move the
-// base's HSL hue toward web-ts-css-selector-end-hue (0.33, a green) along the shorter arc,
-// 0.22 of the way per level and never past it, and clamp the saturation to 0.35 to 0.85.
-// Emacs then lifts the lightness 0.03 a level inside 0.55 to 0.78, a window meant for dark
-// backgrounds; here the same small step goes toward the buffer's ink instead, so the deeper
-// levels gain contrast on light paper as well as dark.
+// Depth 0 is the base face. Deeper levels move its hue toward web-ts-css-selector-end-hue
+// (0.33, a green) along the shorter arc, 0.22 of the way per level and never past it, and
+// lift the lightness a step a level.
+//
+// The base is the blue web-ts-mode falls back to (HSL hue 0.62), at the lightness and chroma
+// of the theme's function face, rather than the function face itself: a theme whose function
+// face is already green, as Forest's is, would leave no distance to travel and every level
+// the same colour. The hues are OKLCH, where 262 and 142 are that blue and that green. The
+// lightness step goes toward the buffer's ink rather than always up, so the deeper levels
+// gain contrast on light paper as well as dark.
 @mixin depth-face {
-  --end-hue: 118.8;
+  --start-hue: 262;
+  --end-hue: 142;
   --amount: min(1, var(--depth) * 0.22);
 
   color: color-mix(
     in oklch,
-    hsl(from var(--face-function) calc(h + (mod(var(--end-hue) - h + 180, 360) - 180) * var(--amount)) clamp(35, s, 85) l),
-    var(--buffer-ink) calc(min(var(--depth), 5) * 4%)
+    oklch(from var(--face-function) l max(c, 0.12) calc(var(--start-hue) + (var(--end-hue) - var(--start-hue)) * var(--amount))),
+    var(--buffer-ink) calc(min(var(--depth), 5) * 11%)
   );
 }
 
@@ -76,6 +81,5 @@ $sheet-margin: 0.75em;
   .f-tag { color: var(--face-tag); }
   .f-component { color: var(--face-component); }
   .f-literal { color: var(--face-literal); }
-  .f-selector { color: var(--face-function); }
-  .f-selector.deep { @include depth-face; }
+  .f-selector { --depth: 0; @include depth-face; }
 }

@@ -43,7 +43,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
       <ol>
         {scale.map(({ depth, amount }) => (
           <li>
-            <span class:list={['swatch', { deep: depth > 0 }]} style={`--depth: ${depth}`}></span>
+            <span class="swatch" style={`--depth: ${depth}`}></span>
             <span class="n">{depth}</span>
             <span class="amount">{depth === 0 ? 'base face' : amount === 1 ? '1.00 end hue' : amount.toFixed(2)}</span>
           </li>
@@ -122,6 +122,11 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   display: grid;
   align-content: center;
   gap: 0.375em;
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  background: var(--buffer-paper);
+  color: var(--buffer-ink);
   font-family: monospace, system-ui;
 
   ol {
@@ -142,25 +147,22 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 
 .scale-title {
   font-size: max(0.5rem, 0.8em);
-  color: var(--ink-muted);
+  color: var(--buffer-dim);
 }
 
-// Each swatch is painted in the very face a token at that depth gets.
+// Each swatch is painted in the very face a token at that depth gets, on the buffer's paper
+// like the tokens, so it reads against the same ground in every theme.
 .swatch {
   height: 1.1em;
   border-radius: 0.2em;
-  box-shadow: 0 0 0 1px var(--buffer-paper);
   background: currentColor;
-  color: var(--face-function);
 
-  &.deep {
-    @include depth-face;
-  }
+  @include depth-face;
 }
 
 .amount {
   font-size: max(0.5rem, 0.85em);
-  color: var(--ink-muted);
+  color: var(--buffer-dim);
 }
 
 .walk {
