@@ -16,8 +16,8 @@ for (const viewport of [PHONE, NO_DESK, DESK]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
 
-    // Layout boxes, not painted ones: the title card is laid in the view as a slip, a little
-    // turned, below 105rem, and beside it above that, out of the flow.
+    // Layout boxes, not painted ones: the title card is laid in the view as a slip below 105rem,
+    // and beside it above that, out of the flow.
     const insets = await page.locator('.callout-view').evaluateAll((views) => views.map((view) => {
       const box = (el: HTMLElement) => ({
         top: el.offsetTop,

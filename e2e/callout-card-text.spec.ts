@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Below 1680px there is no lane beside the drawing for a detail's title card, so the card is
- * a slip tucked under the stack (Callout.astro): its top under the sheets, its text below
- * them, inside the detail's boundary. The text has to be on the page, readable and not
- * covered by the sheets at every width.
+ * a slip tucked under the stack (Callout.astro), square to it: its top under the sheets, only
+ * its text below them, inside the detail's boundary. The text has to be on the page, readable
+ * and not covered by the sheets at every width.
  */
 
 for (const width of [390, 1024, 1440]) {
@@ -37,13 +37,34 @@ for (const width of [390, 1024, 1440]) {
         const sizes = [...card.querySelectorAll('.title-card *')]
           .filter((node) => node.childNodes.length > 0)
           .map((node) => parseFloat(getComputedStyle(node).fontSize));
-        return { box, stack, view, covered, smallest: Math.min(...sizes) };
+        // How far the entries start below what is over the slip: the lowest sheet of the fan
+        // along the slip, or on a phone the peel hint the top stack writes on it.
+        const first = card.querySelector('dt')!.getBoundingClientRect();
+        let over = -Infinity;
+        for (let x = Math.ceil(box.left + 2); x < box.right - 2; x += 4) {
+          for (let y = Math.floor(first.top); y > box.top; y--) {
+            const hit = document.elementFromPoint(x, y);
+            if (hit && !card.contains(hit) && !hit.matches('.callout-view, .callout, .technical-drawing-frame, .technical-drawing-stack')) {
+              over = Math.max(over, y);
+              break;
+            }
+          }
+        }
+        const hint = el.querySelector('.technical-drawing-frame[data-hint-show] .flip-hint--fwd.hint-words')?.getBoundingClientRect();
+        if (hint && hint.bottom > box.top && hint.left < box.right) over = Math.max(over, hint.bottom);
+        const { rotate, transform } = getComputedStyle(card);
+        return { box, stack, view, covered, smallest: Math.min(...sizes), rotate, transform, lead: first.top - over };
       });
       expect(geometry.box.top, 'tucked under the stack').toBeLessThan(geometry.stack.bottom);
       expect(geometry.box.bottom, 'sticks out below it').toBeGreaterThan(geometry.stack.bottom);
       expect(geometry.box.bottom, 'inside the boundary').toBeLessThanOrEqual(geometry.view.bottom);
       expect(geometry.covered, 'lines covered by the sheets').toBe(0);
       expect(geometry.smallest).toBeGreaterThanOrEqual(8);
+      expect(geometry.rotate, 'square to the stack').toBe('none');
+      expect(geometry.transform, 'square to the stack').toBe('none');
+      // Only the entries show below the stack: they start just under the fan, or the hint.
+      expect(geometry.lead, 'gap over the first entry').toBeGreaterThanOrEqual(2);
+      expect(geometry.lead, 'gap over the first entry').toBeLessThanOrEqual(16);
     }
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
