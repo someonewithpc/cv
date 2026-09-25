@@ -183,18 +183,21 @@ type Layer = keyof typeof layers;
   }
 }
 
-// The first sheet's app runs the sheet's full height, and only its sidebar stops above the
-// title block. The sidebar takes the block's width, so its edge lines up with the block's and
-// the viewport fills everything left of both, with no strip of paper under it. Portrait gives
-// the block a row of its own, and there the sidebar keeps its own width.
+// The first sheet's app fills the sheet inside the shared --demo-inset (Page.astro), and only
+// its sidebar stops above the title block. The sidebar takes the block's width, so its edge
+// lines up with the block's and the viewport fills everything left of both. The 2px keeps the
+// frame line clear. Portrait gives the block a row of its own, and there the sidebar keeps its
+// own width.
 :global(.space-builder-demo article.technical-drawing-stack > * > section:not(.blueprint) .content:has(.mock-scene-demo)) {
-  padding-bottom: 2px;
+  --demo-pad: calc(2px + var(--demo-inset));
+
+  padding: var(--demo-pad);
 }
 
 @container technical-drawing not (orientation: portrait) {
   :global(.space-builder-demo article.technical-drawing-stack > * > section:not(.blueprint) .space-builder-app .sidebar) {
-    width: calc(var(--title-block-inline) - 2px);
-    margin-bottom: var(--title-block-reach);
+    width: calc(var(--title-block-inline) - var(--demo-pad));
+    margin-bottom: calc(var(--title-block-reach) - var(--demo-pad));
   }
 }
 
