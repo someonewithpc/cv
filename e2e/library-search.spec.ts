@@ -22,12 +22,15 @@ async function mountedTool(page: Page) {
   await waitForIslandMounted(front, '[data-library-search="search"]');
 
   const tool = front.locator('.library-search[data-live]');
-  // Hovering is how a visitor takes the tool over from the walkthrough; without it the
-  // field keeps typing on its own under the test.
-  await tool.hover();
+  // The deck's pause holds the tool for the test; a moving pointer would take it too, but
+  // hands it back after a quiet spell, and the script would start over under the test.
+  await front.locator('[data-demo-transport] [data-demo-key="pause"]').click();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
   return { stack, front, tool };
 }
+
+/** The form a query is sent as, the way search.ts serialises it with no filters. */
+const form = (query: string) => `query=${encodeURIComponent(query).replace(/%20/g, '+')}`;
 
 /** The scores of the rows on show, top to bottom. */
 function shownScores(tool: Locator) {
@@ -49,8 +52,7 @@ async function turnTo(page: Page, stack: Locator, name: string) {
 async function search(tool: Locator, query: string) {
   const input = tool.locator('.query-input');
   await input.fill(query);
-  await expect(tool.locator('.requests .key')).toHaveText(`?query=${encodeURIComponent(query).replace(/%20/g, '+')}`);
-  await expect(tool).not.toHaveAttribute('data-loading', 'true');
+  await expect(tool).toHaveAttribute('data-answered', form(query));
 }
 
 test('library search: forward swipes visit every page in order, then wrap', async ({ page }) => {
@@ -72,7 +74,7 @@ test('library search: forward swipes visit every page in order, then wrap', asyn
   expect(await frontPageName(stack)).toBe(PAGES[0]);
 });
 
-test('main page: the walkthrough types on its own and hands over on hover', async ({ page }) => {
+test('main page: the walkthrough types on its own and hands over to a moving pointer', async ({ page }) => {
   const stack = librarySearchStack(page);
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
@@ -83,7 +85,7 @@ test('main page: the walkthrough types on its own and hands over on hover', asyn
   await expect(tool).toHaveAttribute('data-autoplay', 'playing');
   // It clears the opening query and starts typing its own.
   await expect(input).not.toHaveValue('rectangular 8 seats', { timeout: 10_000 });
-  await expect(tool.locator('[data-tally="sent"]')).not.toHaveText('0', { timeout: 10_000 });
+  await expect(tool).toHaveAttribute('data-answered', /./, { timeout: 10_000 });
 
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
@@ -103,7 +105,6 @@ test('main page: the sheet shows the transport deck, and its keys drive the walk
 
   const tool = front.locator('.library-search[data-live]');
   const input = tool.locator('.query-input');
-  const sent = tool.locator('[data-tally="sent"]');
   const deck = front.locator('[data-demo-transport]');
   const play = deck.locator('[data-demo-key="play"]');
   const pause = deck.locator('[data-demo-key="pause"]');
@@ -121,12 +122,12 @@ test('main page: the sheet shows the transport deck, and its keys drive the walk
   await expect(deck).toHaveAttribute('data-state', 'user');
   await expect(pause).toHaveAttribute('aria-pressed', 'true');
 
-  // Play hands back: the script starts over from the opening query and sends again.
-  const before = await sent.textContent();
+  // Play hands back: the script starts over from the opening query and types again.
   await play.click();
   await expect(tool).toHaveAttribute('data-autoplay', 'playing');
   await expect(deck).toHaveAttribute('data-state', 'playing');
-  await expect(sent).not.toHaveText(before!, { timeout: 10_000 });
+  await expect(input).toHaveValue('rectangular 8 seats');
+  await expect(input).not.toHaveValue('rectangular 8 seats', { timeout: 10_000 });
 
   // Pause holds: a query typed after it goes out and comes back as typed.
   await pause.click();
@@ -146,20 +147,28 @@ test('main page: the sheet shows the transport deck, and its keys drive the walk
 });
 
 
-test('main page: a bare number is quoted, and a seats after it folds into the phrase', async ({ page }) => {
-  const { tool } = await mountedTool(page);
-  const mangled = tool.locator('.mangled');
+test('generated SQL page: a bare number is quoted, and a seats after it folds into the phrase', async ({ page }) => {
+  const { stack, tool } = await mountedTool(page);
+  // The bound query is printed on the Generated SQL sheet, not beside the tool.
+  await turnTo(page, stack, 'Generated SQL');
+  const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
+  await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
+  const mangled = sheet.locator('.sent .mangled');
+  const type = async (query: string) => {
+    await sheet.locator('.sheet-query').fill(query);
+    await expect(tool).toHaveAttribute('data-answered', form(query));
+  };
 
-  await search(tool, 'rectangular 8');
+  await type('rectangular 8');
   await expect(mangled).toHaveText('rectangular "8"');
   await expect(mangled.locator('.rule-quoted')).toHaveText('"8"');
 
-  await search(tool, 'rectangular 8 seats');
+  await type('rectangular 8 seats');
   await expect(mangled).toHaveText('rectangular "8 seats"');
   await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"');
 
   // Quoted, 8 is the token 8 alone: the 8 pax tables and the 8ft ones, never the 182 wide.
-  await search(tool, '8');
+  await type('8');
   await expect(tool.locator('.hit:not([hidden])')).toHaveCount(9);
   const names = await tool.locator('.hit:not([hidden]) .name').allTextContents();
   expect(names).not.toContain('Bar');
@@ -199,19 +208,163 @@ test('main page: a property filter narrows the rows but keeps the maximum', asyn
   expect((await shownScores(tool))[0]).toBeLessThan(1);
 });
 
-test('main page: a query already on screen is dropped rather than sent again', async ({ page }) => {
-  const { tool } = await mountedTool(page);
-  const sent = tool.locator('[data-tally="sent"]');
-  const dropped = tool.locator('[data-tally="dropped"]');
+test('generated SQL page: the request line shows the form sent, and a repeat is dropped', async ({ page }) => {
+  const { stack, tool } = await mountedTool(page);
+  await turnTo(page, stack, 'Generated SQL');
+  const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
+  await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
+  const field = sheet.locator('.sheet-query');
+  const sent = sheet.locator('[data-tally="sent"]');
+  const dropped = sheet.locator('[data-tally="dropped"]');
 
-  await search(tool, 'table');
+  await field.fill('table');
+  await expect(sheet.locator('.requests .key')).toHaveText(`?${form('table')}`);
+  await expect(tool).toHaveAttribute('data-answered', form('table'));
   const before = { sent: Number(await sent.textContent()), dropped: Number(await dropped.textContent()) };
+  expect(before.sent).toBeGreaterThan(0);
 
   // The same serialised form again: identical to what is showing, so it never goes out.
-  await tool.locator('.query-input').dispatchEvent('input');
+  await field.dispatchEvent('input');
   await expect(dropped).toHaveText(String(before.dropped + 1));
   await expect(sent).toHaveText(String(before.sent));
 });
+
+test('main page: the first sheet carries neither the bound query nor the request line', async ({ page }) => {
+  const { front, tool } = await mountedTool(page);
+  await expect(tool.locator('.mangled, .requests, [data-tally]')).toHaveCount(0);
+  await expect(front.locator(':scope > section .content')).not.toContainText(/sent as|bound as|\?query=/i);
+});
+
+test('main page: a visitor typing with the keyboard searches for real', async ({ page }) => {
+  const stack = librarySearchStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await waitForIslandMounted(front, '[data-library-search="search"]');
+  const tool = front.locator('.library-search[data-live]');
+  const input = tool.locator('.query-input');
+  await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+
+  // A click in the field takes it, and real keystrokes go through the same pipeline.
+  await input.click();
+  await expect(tool).toHaveAttribute('data-autoplay', 'user');
+  await expect(front.locator('[data-demo-cursor]')).toBeHidden();
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.type('gold chair', { delay: 40 });
+  await expect(input).toHaveValue('gold chair');
+  await expect(tool).toHaveAttribute('data-answered', form('gold chair'));
+  await expect(tool.locator('.hit:not([hidden]) .details').first()).toContainText('Gold');
+  await expect(tool.locator('.count')).toHaveAttribute('role', 'status');
+  // Focus stays in the field, so the quiet spell never hands it back to the script.
+  await page.waitForTimeout(7_000);
+  await expect(tool).toHaveAttribute('data-autoplay', 'user');
+  await expect(input).toHaveValue('gold chair');
+});
+
+test('main page: every change the walkthrough makes shows the drawn cursor on its control', async ({ page }) => {
+  test.setTimeout(90_000);
+  const stack = librarySearchStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  await waitForIslandMounted(front, '[data-library-search="search"]');
+  const host = front.locator('[data-library-search="search"]');
+  await expect(host.locator('.library-search')).toHaveAttribute('data-autoplay', 'playing');
+
+  // Every write to the field or a filter is logged with where the cursor's tip was, and so is
+  // every redraw of the rows; a redraw with no write shortly before it would be a change the
+  // visitor could not trace to anything on screen.
+  await host.evaluate((el) => {
+    const log: { what: string; value: string; shown: boolean; inside: boolean; ring: boolean; at: number }[] = [];
+    const redraws: number[] = [];
+    const cursor = el.querySelector<HTMLElement>('[data-demo-cursor]')!;
+    const watch = (control: HTMLInputElement | HTMLSelectElement, what: string) => {
+      const proto = Object.getPrototypeOf(control);
+      const desc = Object.getOwnPropertyDescriptor(proto, 'value')!;
+      Object.defineProperty(control, 'value', {
+        configurable: true,
+        get() { return desc.get!.call(this); },
+        set(value: string) {
+          const box = control.getBoundingClientRect();
+          const tip = cursor.getBoundingClientRect();
+          const x = tip.left + tip.width * 0.12;
+          const y = tip.top + tip.height * 0.08;
+          log.push({
+            what,
+            value,
+            shown: !cursor.hidden && tip.width > 0,
+            inside: x >= box.left - 2 && x <= box.right + 2 && y >= box.top - 2 && y <= box.bottom + 2,
+            ring: control.hasAttribute('data-demo-focus'),
+            at: performance.now(),
+          });
+          desc.set!.call(this, value);
+        },
+      });
+    };
+    watch(el.querySelector('.query-input')!, 'query');
+    el.querySelectorAll<HTMLSelectElement>('.filter-select').forEach((select) => watch(select, select.dataset.filter!));
+    new MutationObserver(() => redraws.push(performance.now()))
+      .observe(el.querySelector('.results')!, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+    Object.assign(window, { __searchLog: log, __searchRedraws: redraws });
+  });
+
+  // One whole pass: through the gold filter and back, and on to the seat count.
+  await expect.poll(() => page.evaluate(() => {
+    const log = (window as unknown as { __searchLog: { what: string; value: string }[] }).__searchLog;
+    const cleared = log.findIndex((entry) => entry.what === 'color' && entry.value === '');
+    return cleared >= 0 && log.slice(cleared).some((entry) => entry.value === 'rectangular 8 seats');
+  }), { timeout: 60_000, intervals: [500] }).toBe(true);
+
+  const { log, redraws } = await page.evaluate(() => {
+    const w = window as unknown as { __searchLog: { what: string; value: string; shown: boolean; inside: boolean; ring: boolean; at: number }[]; __searchRedraws: number[] };
+    return { log: w.__searchLog, redraws: w.__searchRedraws };
+  });
+  const colors = log.filter((entry) => entry.what === 'color').map((entry) => entry.value);
+  expect(colors).toEqual(expect.arrayContaining(['Gold', '']));
+  for (const entry of log) {
+    expect(entry, `${entry.what} set to "${entry.value}"`).toMatchObject({ shown: true, inside: true, ring: true });
+  }
+  // The mock server answers within 260 ms of the last write, behind a 50 ms throttle, and the
+  // rows slide for 350 ms after it.
+  const writes = log.map((entry) => entry.at);
+  const unexplained = redraws.filter((at) => !writes.some((write) => write <= at && at - write < 800));
+  expect(unexplained).toEqual([]);
+});
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 900 }, { width: 1440, height: 900 }]) {
+  test(`main page: the tool fills the sheet and its last row scrolls clear of the title block at ${viewport.width}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const { front, tool } = await mountedTool(page);
+    // Every object on show, so the list is long enough to scroll.
+    await tool.locator('.query-input').fill('');
+    await expect(tool).toHaveAttribute('data-answered', form(''));
+
+    const numbers = await front.locator(':scope > section').evaluate((section) => {
+      const content = section.querySelector<HTMLElement>(':scope > .content')!.getBoundingClientRect();
+      const block = section.querySelector<HTMLElement>(':scope > table')!.getBoundingClientRect();
+      const tool = section.querySelector<HTMLElement>('.library-search')!;
+      const list = tool.querySelector<HTMLElement>('.results')!;
+      list.scrollTop = list.scrollHeight;
+      const rows = [...list.querySelectorAll<HTMLElement>('.hit:not([hidden])')];
+      const last = rows.at(-1)!.getBoundingClientRect();
+      const box = tool.getBoundingClientRect();
+      const overlaps = last.right > block.left && last.left < block.right && last.bottom > block.top && last.top < block.bottom;
+      return {
+        fill: { w: box.width / content.width, h: box.height / content.height },
+        scrolls: list.scrollHeight > list.clientHeight,
+        overlaps,
+        lastBottom: last.bottom,
+        blockTop: block.top,
+        listBottom: list.getBoundingClientRect().bottom,
+      };
+    });
+    console.log('layout', viewport.width, JSON.stringify(numbers));
+    // Wall to wall inside the inset: nothing but the padding between the tool and the cell.
+    expect(numbers.fill.w).toBeGreaterThan(0.9);
+    expect(numbers.fill.h).toBeGreaterThan(0.85);
+    expect(numbers.scrolls).toBe(true);
+    expect(numbers.overlaps, JSON.stringify(numbers)).toBe(false);
+  });
+}
 
 test('generated SQL page: all three copies of the fragment follow the query and the filters', async ({ page }) => {
   const { stack, tool } = await mountedTool(page);
