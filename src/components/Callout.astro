@@ -28,7 +28,7 @@ const hasCard = Astro.slots.has('card');
   data-card={hasCard ? (cardSide ?? 'start') : undefined}
   aria-labelledby={headingId}
 >
-  <h3 id={headingId} class="callout-label">
+  <h2 id={headingId} class="callout-label">
     <span class="callout-bubble typewriter" aria-hidden="true"><span class="callout-letter">{letter}</span></span>
     <span class="callout-text">
       <span class="callout-kind monospace">
@@ -40,7 +40,7 @@ const hasCard = Astro.slots.has('card');
         {titleJp && <small lang="ja">{titleJp}</small>}
       </span>
     </span>
-  </h3>
+  </h2>
 
   {hasCard && (
     <div class="callout-card">
