@@ -132,7 +132,7 @@ test('the degree is an outline bar in the lowest lane, under the jobs of its yea
   for (const part of [degree, minor, short]) await expect(study).toContainText(part);
 
   // Labelled as the jobs are: a bubble and a leader to lettering outside the bar.
-  await expect(study.locator('.bubble-number')).toHaveText('学');
+  await expect(study.locator('.bubble-number')).toHaveText('B');
   await expect(study.locator('.leader')).toHaveCount(1);
   const bar = (await study.locator('.bar').boundingBox())!;
   const label = (await study.locator('text.label').boundingBox())!;
@@ -143,7 +143,7 @@ test('the degree is an outline bar in the lowest lane, under the jobs of its yea
   const lanes = await page.locator('#career svg.wide .job').evaluateAll((jobs) => jobs.map((job) => Number(job.getAttribute('data-lane'))));
   expect(Math.min(...lanes)).toBeGreaterThan(0);
 
-  await expect(page.locator('#career svg.tall g.study .bubble-number')).toHaveText('学');
+  await expect(page.locator('#career svg.tall g.study .bubble-number')).toHaveText('B');
 });
 
 /** Leaders that cross a bar or a label, and labels that overlap, in the drawing on show. */

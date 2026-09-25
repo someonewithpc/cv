@@ -83,7 +83,7 @@ jobs.unshift({
   from: { date: education.from, label: education.from },
   to: { date: education.year, label: education.year },
   summary: '',
-  n: '学',
+  n: 'B',
   study: true,
   start: Number(education.from),
   end: Number(education.year) + 1,
@@ -139,7 +139,7 @@ jobs.unshift({
   from: { date: learning.from, label: learning.from },
   to: { date: '', label: 'now' },
   summary: '',
-  n: '∞',
+  n: 'A',
   open: true,
   start: Number(learning.from),
   end: NOW,
@@ -193,9 +193,10 @@ const defs = (id: string) =>
     </marker>
   </defs>`;
 
-/* The bubble carries the job's revision number from the table. */
+/* The bubble carries the job's revision number from the table, or the fixed letter given to
+   the degree or the continuous learning line. */
 const bubble = (x: number, y: number, job: Job) =>
-  `<circle class="bubble" cx="${x}" cy="${y}" r="10"/>${text(x, y + 4, job.n, job.study ? 'bubble-number bubble-study' : 'bubble-number monospace', 'text-anchor="middle"')}`;
+  `<circle class="bubble" cx="${x}" cy="${y}" r="10"/>${text(x, y + 4, job.n, 'bubble-number monospace', 'text-anchor="middle"')}`;
 
 const group = (job: Job) => `<g class="${job.open ? 'learning' : job.study ? 'study' : 'job'}" data-job="${job.id}" data-lane="${job.lane}">`;
 /* A seasonal bar is drawn in pieces, cut at its breaks with the drafting break line:
@@ -690,10 +691,6 @@ const tall = (() => {
     stroke: var(--accent-muted);
     stroke-width: 1;
     stroke-dasharray: 10 3 2 3;
-  }
-
-  :global(.bubble-study) {
-    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
   }
 
   :global(.hatch-line) {
