@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
+import { frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack } from './support/paperStack';
 
 const PAGES = ['web-ts-mode', 'Parser Ranges', 'Selector Depth Hue', 'Doctor Report'];
 
@@ -24,7 +24,15 @@ async function liveBuffer(page: Page): Promise<Locator> {
 test('web-ts-mode: forward swipes visit every page in order, then wrap', async ({ page }) => {
   const stack = webTsStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  // fold-drag.ts has taken the stack over (the wheel turns pages only then), the scroll has
+  // stopped under it and its own transitions have run out.
+  await expect(stack).toHaveAttribute('aria-roledescription', 'paper stack');
+  await expect.poll(async () => {
+    const before = await stack.evaluate((el) => el.getBoundingClientRect().top);
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    return before === (await stack.evaluate((el) => el.getBoundingClientRect().top));
+  }).toBe(true);
+  await settledAfter(stack, async () => {}, false);
 
   expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
   expect(await frontPageName(stack)).toBe(PAGES[0]);
