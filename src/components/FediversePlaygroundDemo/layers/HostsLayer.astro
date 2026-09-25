@@ -1,281 +1,315 @@
 ---
 import { exampleConfig, listInstances } from '../config';
-import { hostsNix, hostsSnippet, subjectAltName } from '../hosts';
+import { collectFediverseHostnames, collectHostnames, subjectAltName } from '../hosts';
 
-// One instance's name, followed through resolveHostnames into every file that carries it. The
-// two generated files list every instance; the name being followed is the one picked out.
-const alice = listInstances(exampleConfig).find((instance) => instance.key === 'gnusocial-alice')!;
-const [configured, alias] = alice.hostnames;
+// Every server's names, and each place `generate` writes them. The marks come out of the same
+// functions that write the files, so a name is marked in a column only if that file holds it.
+const instances = listInstances(exampleConfig);
 const tld = exampleConfig.defaults?.local_tld;
-// Break points after the = and each comma, so the SAN wraps between names, not inside one.
-const san = subjectAltName(alice.hostnames).split(/(?<=[=,])/);
+const inSnippet = new Set(collectHostnames(exampleConfig));
+const inNix = new Set(collectFediverseHostnames(exampleConfig));
 
-const names = new RegExp(`\\b(${alice.hostnames.map((name) => name.replace(/\./g, '\\.')).join('|')})\\b`, 'g');
-
-// The followed name is picked out wherever it lands, and each comment line gets a span of its
-// own so a short sheet can fold the files' headers away.
-const mark = (text: string) =>
-  text
-    .split('\n')
-    .map((line) => {
-      const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(names, '<mark>$1</mark>');
-      return line.startsWith('#') ? `<span class="comment">${escaped}\n</span>` : `${escaped}\n`;
-    })
-    .join('')
-    .trimEnd();
-
-const outputs = [
-  { file: 'files/hosts.snippet', note: 'every name, for apply-hosts to merge into /etc/hosts', body: hostsSnippet(exampleConfig) },
-  { file: 'files/hosts.nix', note: 'only the *.fediverse names: *.localhost resolves already', body: hostsNix(exampleConfig) },
-  {
-    file: 'nix/hosts-module.nix',
-    note: 'exported by the flake as nixosModules.hosts',
-    body: `{ lib, ... }:
-let
-  hostsPath = ../files/hosts.nix;
-  hosts = if builtins.pathExists hostsPath then import hostsPath else { };
-in {
-  networking.hosts = hosts;
-}
-`,
-  },
+const columns = [
+  { file: 'hosts.snippet', short: 'snippet', where: 'apply-hosts → /etc/hosts', has: (_: string[], name: string) => inSnippet.has(name) },
+  { file: 'hosts.nix', short: '.nix', where: 'NixOS networking.hosts', has: (_: string[], name: string) => inNix.has(name) },
+  { file: 'server_name', short: 'nginx', where: "the server's nginx block", has: (names: string[], name: string) => names.includes(name) },
+  { file: 'subjectAltName', short: 'SAN', where: "the server's certificate", has: (names: string[], name: string) => subjectAltName(names).includes(`DNS:${name}`) },
 ];
+
+const servers = instances.map((instance) => ({
+  key: instance.key,
+  software: instance.software,
+  names: instance.hostnames.map((name) => ({
+    name,
+    alias: name !== instance.hostname,
+    marks: columns.map((column) => column.has(instance.hostnames, name)),
+  })),
+}));
 ---
 
 <div class="wrapper">
   <div class="hosts-layer" aria-hidden="true">
-    <div class="panel">
-      <header>
-        <strong>One configured name, two answers, three files</strong>
-      </header>
+    <header>
+      <strong>Every server answers to two names</strong>
+      <span class="caption">
+        Its hostname, and a <code>.{tld}</code> twin from <code>defaults.local_tld</code>, each written
+        everywhere it has to resolve or be served
+      </span>
+    </header>
 
-      <div class="fan">
-        <div class="source">
-          <span class="caption">{alice.key} · hostname</span>
-          <code class="name">{configured}</code>
-          <span class="caption">defaults.local_tld: {tld}</span>
-          <code class="name alias">{alias}</code>
-        </div>
-
-        <svg class="wires" viewBox="0 0 40 100" preserveAspectRatio="none">
-          <path d="M0 50 C 18 50, 22 16, 40 16" />
-          <path d="M0 50 C 18 50, 22 50, 40 50" />
-          <path d="M0 50 C 18 50, 22 84, 40 84" />
-        </svg>
-
-        <ul class="targets">
-          {outputs.map(({ file, note, body }) => (
-            <li>
-              <span class="file"><code>{file}</code> <span class="note">{note}</span></span>
-              <pre><code set:html={mark(body.trimEnd())} /></pre>
-            </li>
+    <table>
+      <thead>
+        <tr>
+          <th class="name" scope="col">name</th>
+          {columns.map(({ file, short, where }) => (
+            <th scope="col"><code class="file">{file}</code><code class="short">{short}</code><span class="where">{where}</span></th>
           ))}
-        </ul>
-      </div>
+        </tr>
+      </thead>
+      {servers.map(({ key, software, names }) => (
+        <tbody>
+          <tr class="server">
+            <th colspan={columns.length + 1} scope="rowgroup">{key} <span class="where">{software}</span></th>
+          </tr>
+          {names.map(({ name, alias, marks }) => (
+            <tr>
+              <th class:list={['name', { alias }]} scope="row"><code>{name}</code></th>
+              {marks.map((mark) => (
+                <td class:list={{ mark }} />
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      ))}
+    </table>
 
-      <dl class="rules">
-        <div>
-          <dt>nginx</dt>
-          <dd>The server block's <code>server_name</code> lists both, so either name reaches the node</dd>
-        </div>
-        <div>
-          <dt>TLS</dt>
-          <dd>
-            One self-signed certificate per node, from <code>openssl req -addext</code>
-            <code class="san">{san.map((part) => <>{part}<wbr /></>)}</code>
-          </dd>
-        </div>
-        <div>
-          <dt>Dev shell</dt>
-          <dd>Entering it checks every <code>*.{tld}</code> name with <code>getent</code> and prints one hint if one does not resolve</dd>
-        </div>
-      </dl>
-    </div>
+    <p class="key">
+      {columns.map(({ file, short }) => <span><code>{short}</code> <code class="full">{file}</code></span>)}
+    </p>
+
+    <dl class="rules">
+      <div>
+        <dt>Why two</dt>
+        <dd><code>*.localhost</code> already resolves to 127.0.0.1, so <code>hosts.nix</code> leaves it out. <code>*.{tld}</code> needs an entry.</dd>
+      </div>
+      <div>
+        <dt>apply-hosts</dt>
+        <dd>Merges the marked block from <code>files/hosts.snippet</code> into <code>/etc/hosts</code>.</dd>
+      </div>
+      <div>
+        <dt>NixOS</dt>
+        <dd>The flake exports <code>nixosModules.hosts</code>, which reads <code>files/hosts.nix</code>.</dd>
+      </div>
+      <div>
+        <dt>Dev shell</dt>
+        <dd>Entering it checks every <code>*.{tld}</code> name with <code>getent</code> and prints one hint if one does not resolve.</dd>
+      </div>
+    </dl>
   </div>
 </div>
 
 <style lang="scss">
 @use "./sheet" as *;
 
+/* The sheet centres its content by default; this one takes the whole sheet, as the live one does. */
+:global(article.technical-drawing-stack > * > section .content:has(.hosts-layer)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
 .wrapper {
   @include sheet-content;
-  @include clear-of-title-block;
 
-  margin-inline: auto;
-  display: grid;
-  place-items: center;
+  height: 100%;
+  min-height: 0;
+
+  /* The title block takes a row off the bottom of a short sheet; a portrait one gives it a
+     row of its own. On a wide sheet it sits under the notes' column. */
+  :global([data-sheet-width='narrow']) & {
+    padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    padding-bottom: $sheet-margin;
+  }
 }
 
 .hosts-layer {
+  /* The notes' column is as wide as the title block under it, as on the live sheet. */
+  --side: max(18em, var(--title-block-inline, 0px));
+
   box-sizing: border-box;
-  width: min(100%, 44em);
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side);
+  grid-template-rows: auto auto auto;
+  align-content: start;
+  column-gap: 1.5em;
+  row-gap: 0.75em;
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
 
   /* Keyed on the stack's attributes, not the width query: a font size that comes out of a
      container query re-lays everything under it on each resize step. See Stack.astro. */
-  :global([data-sheet-width='narrow']) & {
-    /* A short landscape sheet: the type gives a little, the notes under the figure go, and
-       the panel takes the width, so the files wrap less. */
-    width: min(100%, 60em);
-    font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
-
-    .rules {
-      display: none;
-    }
-  }
-
+  :global([data-sheet-width='narrow']) &,
   :global([data-sheet-orientation='portrait']) & {
-    /* A phone's sheet: the type keeps to 8px or more there, so the notes under the figure go,
-       as they do on a short sheet. */
-    font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+    grid-template-columns: minmax(0, 1fr);
 
+    /* The notes need a column of their own, and a short or a phone's sheet has none. */
     .rules {
       display: none;
     }
   }
+
+  /* A phone's columns are too narrow for the file names; each takes a short one. */
+  .short {
+    display: none;
+  }
+
+  .key {
+    display: none;
+  }
+
+  :global([data-sheet-orientation='portrait']) & .key {
+    grid-row: 3;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25em 1em;
+    font-size: 0.75em;
+    color: var(--ink-muted);
+
+    code {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .full {
+      color: inherit;
+      font-weight: 400;
+    }
+  }
+
+  :global([data-sheet-orientation='portrait']) & thead {
+    .where,
+    .file {
+      display: none;
+    }
+
+    .short {
+      display: inline;
+    }
+  }
 }
 
-.panel {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 0.75em 0.875em;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.5em;
-  background: var(--surface-raised);
+header {
+  grid-column: 1;
   display: grid;
-  gap: 0.625em;
+  gap: 0.125em;
+
+  strong {
+    font-size: 0.9375em;
+  }
 }
 
-header strong {
-  font-size: 0.875em;
+.caption {
+  font-size: 0.75em;
+  line-height: 1.4;
+  color: var(--ink-muted);
+
+  /* A short sheet keeps its height for the table. */
+  :global([data-sheet-width='narrow']:not([data-sheet-orientation='portrait'])) & {
+    display: none;
+  }
 }
 
 code {
   font-family: $code-font;
 }
 
-.caption {
-  font-size: 0.6875em;
-  color: var(--ink-muted);
-}
-
-.fan {
-  display: grid;
-  grid-template-columns: max-content 2.5em minmax(0, 1fr);
-  align-items: center;
-
-  :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.5em;
-
-    .wires {
-      display: none;
-    }
-  }
-}
-
-.source {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25em;
-}
-
-.name {
-  padding: 0.125em 0.5em;
-  border: 1px solid var(--ink);
-  border-radius: 0.25em;
-  font-size: 0.8125em;
-
-  &.alias {
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
-}
-
-.wires {
+table {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
   width: 100%;
-  height: 100%;
-  min-height: 7em;
-  overflow: visible;
+  border-collapse: collapse;
+  font-size: 0.75em;
 
-  path {
-    fill: none;
-    stroke: var(--line-strong);
-    stroke-width: 1.5;
-    vector-effect: non-scaling-stroke;
-  }
-}
-
-.targets {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.375em;
-  min-width: 0;
-
-  li {
-    display: grid;
-    gap: 0.125em;
-    min-width: 0;
+  th,
+  td {
+    padding: 0.375em 0.5em;
+    border-bottom: 1px solid var(--line);
   }
 
-  .file {
-    font-size: 0.6875em;
+  thead th {
+    vertical-align: bottom;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 1px solid var(--ink);
 
-    code {
-      font-weight: 600;
+    &.name {
+      text-align: left;
     }
   }
 
-  .note {
+  .where {
+    display: block;
+    font-weight: 400;
+    font-size: 0.9em;
     color: var(--ink-muted);
   }
 
-  pre {
-    margin: 0;
-    padding: 0.25em 0.5em;
-    border: 1px solid var(--line);
-    border-radius: 0.25em;
-    background: var(--surface-sunken);
-    font-size: 0.6875em;
-    line-height: 1.35;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
+  /* A short sheet has the width for the file names but not the height for a second line. */
+  :global([data-sheet-width='narrow']:not([data-sheet-orientation='portrait'])) & {
+    th,
+    td {
+      padding-block: 0.25em;
+    }
 
-  pre :global(.comment) {
-    color: var(--ink-muted);
-
-    /* A short or a phone's sheet folds the files' headers away. */
-    :global([data-sheet-width='narrow']) &,
-    :global([data-sheet-orientation='portrait']) & {
+    thead .where {
       display: none;
     }
   }
 
-  pre :global(mark) {
-    background: none;
-    color: var(--accent-text);
+  .server th {
+    padding-top: 0.625em;
+    text-align: left;
     font-weight: 600;
+    border-bottom-color: var(--line-strong);
+
+    .where {
+      display: inline;
+      margin-left: 0.5em;
+    }
+  }
+
+  th.name {
+    text-align: left;
+    font-weight: 400;
+    white-space: nowrap;
+
+    &.alias code {
+      color: var(--accent-text);
+    }
+  }
+
+  td {
+    text-align: center;
+  }
+
+  /* A mark is a dot drawn in the ink, the same size in every cell. */
+  td.mark::before {
+    content: "";
+    display: inline-block;
+    width: 0.625em;
+    height: 0.625em;
+    border-radius: 50%;
+    background: var(--ink);
+    vertical-align: middle;
   }
 }
 
 .rules {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: start;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5em;
-  padding-top: 0.5em;
-  border-top: 1px solid var(--line);
+  gap: 0.75em;
 
   div {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 0.125em;
+    padding-left: 0.625em;
+    border-left: 1px solid var(--line-strong);
   }
 
   dt {
@@ -287,13 +321,9 @@ code {
 
   dd {
     margin: 0;
-    font-size: 0.6875em;
-    line-height: 1.35;
+    font-size: 0.75em;
+    line-height: 1.4;
     text-wrap: pretty;
-  }
-
-  .san {
-    display: block;
   }
 }
 </style>
