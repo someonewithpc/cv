@@ -62,6 +62,44 @@ test('main page: a painted buffer, cut into the ranges each parser is handed', a
   await expect(interpolation).toHaveText('label');
 });
 
+test('main page: brackets beside the buffer nest astro around html around the embedded ranges', async ({ page }) => {
+  const buffer = await liveBuffer(page);
+  const bands = buffer.locator('.bands .band');
+  const band = async (lang: string, lane: number) => {
+    const found = bands.and(buffer.locator(`[data-lang="${lang}"][data-lane="${lane}"]`));
+    await expect(found).toHaveCount(1);
+    const [from, to] = await found.evaluate((el) => [Number(el.dataset.from), Number(el.dataset.to)]);
+    return { from, to, box: (await found.boundingBox())!, label: await found.innerText() };
+  };
+
+  const astro = await band('astro', 0);
+  const frontmatter = await band('tsx', 1);
+  const html = await band('html', 1);
+  const expression = await band('tsx', 2);
+  const style = await band('scss', 2);
+
+  // The lines Emacs 31.1 gives each parser in WipStamp.astro.
+  expect([astro.from, astro.to]).toEqual([1, 79]);
+  expect([frontmatter.from, frontmatter.to]).toEqual([2, 10]);
+  expect([html.from, html.to]).toEqual([13, 79]);
+  expect([expression.from, expression.to]).toEqual([16, 16]);
+  expect([style.from, style.to]).toEqual([23, 78]);
+  expect(html.label).toBe('html 13-79');
+
+  const inside = (inner: typeof astro, outer: typeof astro) => {
+    expect(inner.from).toBeGreaterThanOrEqual(outer.from);
+    expect(inner.to).toBeLessThanOrEqual(outer.to);
+    // Drawn inside too: a lane further in, and within the outer bracket's height.
+    expect(inner.box.x).toBeGreaterThan(outer.box.x);
+    expect(inner.box.y).toBeGreaterThanOrEqual(outer.box.y - 1);
+    expect(inner.box.y + inner.box.height).toBeLessThanOrEqual(outer.box.y + outer.box.height + 1);
+  };
+  inside(frontmatter, astro);
+  inside(html, astro);
+  inside(expression, html);
+  inside(style, html);
+});
+
 test('main page: the toggle shows and hides the range outlines', async ({ page }) => {
   const buffer = await liveBuffer(page);
   const toggle = buffer.locator('.show-ranges');
