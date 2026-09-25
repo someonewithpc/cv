@@ -538,12 +538,28 @@ section {
     .demo-transport[data-state='playing'] .demo-led { animation: none; }
   }
 
+  /* The note keeps clear of the frame line and of the title block below it,
+     tilt, tape and shadow included: its room is the column less that
+     clearance, and it sits in the middle of what is left. A little wider than
+     the marker column's own measure, so a long note takes some of the room
+     beside it rather than running down onto the block. */
   .aside {
+    --note-clearance: 1.5rem;
+    --note-width: min(18ch, 100%);
+
     max-height: 100%;
     max-width: 100%;
     min-width: 0;
     grid-column: 3;
     margin-inline: auto;
+
+    box-sizing: border-box;
+    align-self: stretch;
+    display: grid;
+    align-content: safe center;
+    /* Also centres the note in the demos that make this a row of their own. */
+    align-items: safe center;
+    padding: var(--note-clearance) var(--note-clearance) calc(var(--title-block-block) + var(--note-clearance)) 0;
   }
 
   /* Wherever the note is shown in place, the dialog and its chrome are inert
@@ -1015,6 +1031,11 @@ section {
       max-width: 100%;
       justify-self: stretch;
       align-self: center;
+    }
+
+    /* The title block has a row of its own here. */
+    .aside {
+      padding-bottom: var(--note-clearance);
     }
 
     & > table {
