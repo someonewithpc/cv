@@ -262,3 +262,30 @@ test('property filters page: the filtered column renormalises to its own best ro
   expect(Number(await leads.nth(0).textContent())).toBeLessThan(1);
   await expect(leads.nth(1)).toHaveText('1.00');
 });
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  test(`every sheet's type is at least 8px at ${viewport.width}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const stack = librarySearchStack(page);
+    await stack.scrollIntoViewIfNeeded();
+
+    for (const name of PAGES) {
+      await turnTo(page, stack, name);
+      const front = frontPage(stack, await frontPageIndex(stack));
+      const small = await front.locator(':scope > section .content').evaluate((content) => {
+        // Rendered size is the computed size times whatever scale the sheet is drawn at, read
+        // off the whole sheet: offsetWidth rounds, which skews a small box's ratio.
+        const scale = content.getBoundingClientRect().width / content.offsetWidth;
+        const found = new Set<string>();
+        for (const el of content.querySelectorAll<HTMLElement>('*')) {
+          const own = [...el.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent!.trim());
+          if (!own || !el.checkVisibility() || el.offsetWidth === 0) continue;
+          const size = parseFloat(getComputedStyle(el).fontSize) * scale;
+          if (size < 8) found.add(`${el.className || el.tagName} ${size.toFixed(2)}px`);
+        }
+        return [...found];
+      });
+      expect.soft(small, name).toEqual([]);
+    }
+  });
+}
