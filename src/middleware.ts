@@ -5,7 +5,7 @@ import { defineMiddleware } from 'astro:middleware';
    Each drawing stack with notes starts one paper further along than the one before, and
    its sheets take the papers in turn, so the front notes down the page differ and so do
    the notes met while turning sheets. No demo picks one; a new demo needs no change. */
-const PAPERS = ['peeled', 'taped'];
+const PAPERS = ['peeled', 'taped', 'peeled-right', 'torn', 'folded'];
 const MARK = 'data-paper="next"';
 const STACK_OR_MARK = /class="technical-drawing-frame\b|data-paper="next"/g;
 

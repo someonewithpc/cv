@@ -8,11 +8,14 @@
 aside {
   color-scheme: only light;
 
+  --pad-top: 0.75em;
+  --pad-inline: 1em;
+
   /* The open note dialog (TechnicalDrawing/Page.astro) hands down its own
      measure and type size; anywhere else the narrow marker column applies. */
   max-width: var(--note-width, min(16ch, 100%));
   position: relative;
-  padding: 0.75em 1em;
+  padding: var(--pad-top) var(--pad-inline);
   border-radius: 0 0 0 2em/3em;
   box-shadow:
     0 0.25em 0.375em 0.25em rgba(0,0,0,0.2);
@@ -24,11 +27,14 @@ aside {
   text-wrap: pretty;
 
   @container technical-drawing (orientation: portrait) {
+    --pad-top: 0.55em;
+    --pad-inline: 0.7em;
+
     font-size: var(--note-font-size, clamp(0.85rem, 3.8cqw, 1.1rem));
     line-height: 1.2;
     /* Clears the peeled corner, which sits 1.5em tall in the bottom left and
        otherwise eats the start of the last line. */
-    padding: 0.55em 0.7em 1.6em;
+    padding: var(--pad-top) var(--pad-inline) 1.6em;
   }
 
   h3 {
@@ -46,22 +52,38 @@ aside {
 
   /* The peel stays inside the note's own box: the mask cuts the curl's
      outer shadow, and the note's, to the paper. */
-  &[data-paper='peeled'] {
+  &[data-paper='peeled'],
+  &[data-paper='peeled-right'] {
     mask-image: linear-gradient(#000, #000);
+
+    &:before {
+      width: 1.25em;
+      height: 1.5em;
+      background: var(--background);
+      bottom: 0;
+      z-index: 2;
+    }
   }
 
   &[data-paper='peeled']:before {
-    width: 1.25em;
-    height: 1.5em;
     box-shadow:
       3px -2px 10px rgba(0,0,0,0.2),
       inset 15px -15px 15px rgba(0,0,0,0.3);
-
-    background: var(--background);
     left: 0;
-    bottom: 0;
-    z-index: 2;
     transform: skewX(25deg);
+  }
+
+  /* The same peel on the other corner. */
+  &[data-paper='peeled-right'] {
+    border-radius: 0 0 2em 0/3em;
+
+    &:before {
+      box-shadow:
+        -3px -2px 10px rgba(0,0,0,0.2),
+        inset -15px -15px 15px rgba(0,0,0,0.3);
+      right: 0;
+      transform: skewX(-25deg);
+    }
   }
 
   /* A strip of matte tape over the top edge, half on the note and half on
@@ -82,6 +104,55 @@ aside {
         rgba(196, 186, 156, 0.7);
       /* Torn ends */
       clip-path: polygon(0 0, 100% 0, 96% 25%, 100% 50%, 96% 75%, 100% 100%, 0 100%, 4% 75%, 0 50%, 4% 25%);
+    }
+  }
+
+  /* The next two are not rectangles, so the shadow follows the paper's
+     outline instead of the box. */
+  &[data-paper='folded'],
+  &[data-paper='torn'] {
+    border-radius: 0.125em;
+    box-shadow: none;
+    filter: drop-shadow(0 0.25em 0.3em rgba(0,0,0,0.3));
+  }
+
+  /* The top right corner folded down over the front. The flap is a float, so
+     the first lines run short of it instead of under it. */
+  &[data-paper='folded'] {
+    --fold: 1.5em;
+    rotate: -1deg;
+    background: linear-gradient(225deg, transparent calc(var(--fold) / 1.4142), var(--background) 0);
+
+    &:before {
+      position: static;
+      float: right;
+      width: var(--fold);
+      height: var(--fold);
+      margin: calc(-1 * var(--pad-top)) calc(-1 * var(--pad-inline)) 0 0.125em;
+      background: linear-gradient(45deg, oklch(from var(--background) calc(l - 0.07) c h) 50%, transparent 0);
+      filter: drop-shadow(-0.0625em 0.125em 0.125em rgba(0,0,0,0.3));
+    }
+  }
+
+  /* Torn off a pad: the top edge is ragged where it came away from the
+     glue. The paper below the tear is the background, the tear itself a band
+     cut by the mask. */
+  &[data-paper='torn'] {
+    --tear: 0.4em;
+    rotate: 0.5deg;
+    /* A hairline of shade along the tear, or it is lost on a pale sheet. */
+    filter:
+      drop-shadow(0 -0.5px 0.5px rgba(0,0,0,0.35))
+      drop-shadow(0 0.25em 0.3em rgba(0,0,0,0.3));
+    background: linear-gradient(var(--background), var(--background)) bottom / 100% calc(100% - var(--tear)) no-repeat;
+
+    &:before {
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: calc(var(--tear) + 1px);
+      background: var(--background);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8' preserveAspectRatio='none'%3E%3Cpath d='M0 3L2 5L3.5 2.5L5 4.5L7 1.5L8.5 4L10 3L11 6L13 2L14.5 4.5L16 3.5L18 5.5L19 2L21 4L22.5 1L24 4.5L25.5 3L27 5L29 2.5L30 4L32 1.5L33.5 5L35 3L37 4.5L38.5 2L40 3.5V8H0Z'/%3E%3C/svg%3E") top left / 3em 100% repeat-x;
     }
   }
 }
