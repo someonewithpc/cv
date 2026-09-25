@@ -1,14 +1,15 @@
 ---
 import { exampleConfig, initiallyEnabled, withEnabled } from '../config';
 import { buildComposeFile, PLANNED_RECIPES, RECIPES } from '../compose';
+import { composeView, lineCount } from '../composeView';
 import { renderGraphs, summary } from '../graph';
-import { composeYaml } from '../yaml';
+import { composeHtml } from '../yaml';
 
 // The opening state is built here by the same code the island runs, so the sheet reads the
 // same with scripts off, and the first toggle only redraws.
 const config = withEnabled(exampleConfig, initiallyEnabled);
 const compose = buildComposeFile(config);
-const yaml = composeYaml(compose);
+const yaml = composeHtml(composeView(compose));
 
 const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) => ({
   key,
@@ -53,9 +54,9 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
     <details class="yaml">
       <summary>
         <span>docker-compose.yml</span>
-        <span class="lines" data-lines>{yaml.split('\n').length - 1} lines</span>
+        <span class="lines" data-lines>{lineCount(compose)}</span>
       </summary>
-      <pre tabindex="0"><code data-yaml>{yaml}</code></pre>
+      <pre tabindex="0"><code data-yaml set:html={yaml} /></pre>
     </details>
   </div>
 </div>
@@ -334,6 +335,26 @@ fieldset {
     width: max-content;
     font-size: 0.75em;
     line-height: 1.4;
+  }
+
+  /* yaml.ts tags every token as it writes it. Keys take the accent, plain values the ink,
+     quoted strings and numbers a blue mixed half into the ink, so it is dark on the light
+     papers and light on the dark ones, and the header and every cut the muted ink. */
+  code :global(.y-key) {
+    color: var(--accent-text);
+  }
+
+  code :global(:is(.y-string, .y-number)) {
+    color: color-mix(in oklch, var(--ink) 50%, oklch(0.6 0.17 245));
+  }
+
+  code :global(.y-punct) {
+    color: var(--ink-muted);
+  }
+
+  code :global(.y-comment) {
+    color: var(--ink-muted);
+    font-style: italic;
   }
 
   :global([data-sheet-orientation='portrait']) & {
