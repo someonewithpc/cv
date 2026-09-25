@@ -155,7 +155,7 @@ test('main page: the fields are read-only and say so', async ({ page }) => {
   await expect(tool.locator('.inert-note')).toHaveClass(/nudge/);
 });
 
-test('main page: the cursor clicks each field, and every search says hit or no match', async ({ page }) => {
+test('main page: the cursor clicks each field, and the search says hit or no match', async ({ page }) => {
   const { tool } = await mountedTool(page, { clock: true });
   const cursor = tool.locator('.demo-cursor');
 
@@ -176,12 +176,8 @@ test('main page: the cursor clicks each field, and every search says hit or no m
   await expect(tool.locator('.text mark')).toHaveCount(0);
   await expect(tool.locator('.rendering[data-unit="m"] .value')).toHaveText('2m by 1m by 0.75m');
   await expect(tool.locator('.rendering[data-unit="ft-in"] .value')).toHaveText('6ft7in by 3ft3in by 2ft6in');
-  await expect(tool.locator('.query[data-query="5ft3in"]')).toHaveAttribute('data-hit', 'false');
-  await expect(tool.locator('.query[data-query="5ft3in"] .verdict')).toHaveText('✗ no match');
-  await expect(tool.locator('.query[data-query="2m"]')).toHaveAttribute('data-hit', 'true');
-  await expect(tool.locator('.query[data-query="2m"] .verdict')).toHaveText('✓ found');
-  // The seat count did not change, so it still hits under its other name.
-  await expect(tool.locator('.query[data-query="8 seats"]')).toHaveAttribute('data-hit', 'true');
+  // Only the current search is shown, no list of sample searches beside it.
+  await expect(tool.locator('.queries, .query')).toHaveCount(0);
 
   await playUntil(page, value(tool, '.query-input'), '2m');
   await playUntil(page, async () => (await tool.locator('.text-row').getAttribute('data-hit')), 'true');
@@ -249,3 +245,60 @@ test('unit conversions page: the carry is marked in the table', async ({ page })
   await expect(front.locator('section.blueprint')).toBeVisible();
   await expect(front.locator('td.carry')).toHaveText([`6'`, '6ft']);
 });
+
+for (const [width, height] of [[1440, 900], [1024, 768]]) {
+  test(`database triggers page: the four cards are one row of equal height at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    const stack = syntheticStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await turnToPage(stack, 'Database Triggers');
+    const front = frontPage(stack, await frontPageIndex(stack));
+    const cards = front.locator('.target');
+    await expect(cards).toHaveCount(4);
+
+    const boxes = await cards.evaluateAll((all) => all.map((card) => {
+      const box = card.getBoundingClientRect();
+      const code = card.querySelector('pre')!;
+      return {
+        top: box.top,
+        height: box.height,
+        codeTop: code.getBoundingClientRect().top,
+        scrolls: code.scrollWidth > code.clientWidth,
+      };
+    }));
+    const spread = (key: 'top' | 'height' | 'codeTop') =>
+      Math.max(...boxes.map((b) => b[key])) - Math.min(...boxes.map((b) => b[key]));
+    expect(spread('top')).toBeLessThanOrEqual(1);
+    expect(spread('height')).toBeLessThanOrEqual(1);
+    expect(spread('codeTop')).toBeLessThanOrEqual(1);
+    expect(boxes.map((b) => b.scrolls)).toEqual([false, false, false, false]);
+
+    // A name wraps at an underscore, a dot or a bracket, never inside a word.
+    const broken = await front.locator('.target pre .line').evaluateAll((lines) => lines.flatMap((line) => {
+      const range = document.createRange();
+      const found: string[] = [];
+      let lastTop: number | null = null;
+      let before = '';
+      const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const text = node.textContent ?? '';
+        for (let i = 0; i < text.length; i += 1) {
+          range.setStart(node, i);
+          range.setEnd(node, i + 1);
+          const rect = range.getClientRects()[0];
+          if (!rect) continue;
+          if (lastTop !== null && rect.top > lastTop + 1 && /[a-z0-9]/i.test(before) && /[a-z0-9]/i.test(text[i])) {
+            found.push(`${line.textContent}: breaks before "${text.slice(i, i + 8)}"`);
+          }
+          if (rect.width > 0) {
+            lastTop = rect.top;
+            before = text[i];
+          }
+        }
+      }
+      return found;
+    }));
+    expect(broken).toEqual([]);
+  });
+}
