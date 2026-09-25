@@ -177,37 +177,39 @@ const wide = (() => {
   const ROW = 34;
 
   type Placed = Job & { ax: number; row: number; textEnd: number };
-  const placed: Placed[] = [];
 
-  /* Label rows, nearest the bars first. A label takes the lowest row and the best anchor at
-     which its text stays on the sheet and clear of its neighbours in that row, no leader
-     from a higher row runs through its text, and its own leader runs through no text in the
-     rows below it. The degree takes no row: its bar is long enough to carry its own lettering,
-     and a leader down to it would cross the labels of the jobs of those years. */
-  let rows = 0;
-  for (const job of jobs.filter((job) => !job.study)) {
+  /* Label rows, nearest the bars first. Two labels in a row keep clear of each other, a
+     leader coming down from a higher row keeps clear of the text in the rows it passes, and
+     no text runs off the sheet. The search tries one row, then two and so on, and keeps the
+     first layout that fits, each label at its best anchor that allows it. */
+  const options = jobs.map((job) => {
     const width = 25 + Math.max(...job.lines.map((line) => line.length)) * CH;
-    const fits = (row: number, ax: number) =>
-      ax + width <= W - 4 &&
-      placed.every((other) => {
-        if (other.row === row) return other.textEnd + 16 <= ax - 10 || ax + width + 16 <= other.ax - 10;
-        if (other.row < row) return ax + 12 < other.ax - 12 || other.textEnd + 4 < ax - 12;
-        return other.ax + 12 < ax - 12 || ax + width + 4 < other.ax - 12;
-      });
-    let choice: { row: number; ax: number } | undefined;
-    for (let row = 0; row <= rows && !choice; row += 1) {
-      for (const anchor of job.anchors) {
-        const ax = x(job.start + anchor * (job.end - job.start));
-        if (fits(row, ax)) {
-          choice = { row, ax };
-          break;
-        }
+    return job.anchors.map((f) => x(job.start + f * (job.end - job.start))).filter((ax) => ax + width <= W - 4).map((ax) => ({ ax, textEnd: ax + width }));
+  });
+  const clear = (a: { row: number; ax: number; textEnd: number }, b: { row: number; ax: number; textEnd: number }) => {
+    if (a.row === b.row) return a.textEnd + 16 <= b.ax - 10 || b.textEnd + 16 <= a.ax - 10;
+    const [high, low] = a.row > b.row ? [a, b] : [b, a];
+    return high.ax + 12 < low.ax - 12 || low.textEnd + 4 < high.ax - 12;
+  };
+  const search = (rows: number, chosen: { row: number; ax: number; textEnd: number }[]): typeof chosen | undefined => {
+    if (chosen.length === jobs.length) return chosen;
+    for (let row = 0; row < rows; row += 1) {
+      for (const option of options[chosen.length]) {
+        const next = { ...option, row };
+        if (!chosen.every((other) => clear(other, next))) continue;
+        const found = search(rows, [...chosen, next]);
+        if (found) return found;
       }
     }
-    const { row, ax } = choice ?? { row: rows, ax: x(job.start + job.anchors[0] * (job.end - job.start)) };
-    rows = Math.max(rows, row + 1);
-    placed.push({ ...job, ax, row, textEnd: ax + width });
+    return undefined;
+  };
+  let layout: { row: number; ax: number; textEnd: number }[] | undefined;
+  for (let rows = 1; !layout; rows += 1) {
+    if (rows > jobs.length) throw new Error('Career elevation: no label layout keeps every leader clear');
+    layout = search(rows, []);
   }
+  const placed: Placed[] = jobs.map((job, i) => ({ ...job, ...layout![i] }));
+  const rows = Math.max(...placed.map((job) => job.row)) + 1;
 
   const TOP = 8;
   const rowY = (row: number) => TOP + 17 + (rows - 1 - row) * ROW;
@@ -215,29 +217,25 @@ const wide = (() => {
   const G = lanesTop + lanes * LANE;
   const barTop = (lane: number) => G - lane * LANE - BAR;
 
-  const study = jobs.find((job) => job.study);
-  const bars = [...(study ? [{ ...study, ax: 0, row: 0, textEnd: 0 }] : []), ...placed].map((job) => {
+  const bars = placed.map((job) => {
     const x0 = x(job.start);
     const x1 = x(job.end);
     const top = barTop(job.lane);
     const dim = top - 12;
-    const mid = (x0 + x1) / 2;
     const by = rowY(job.row);
-    const ends = `<line class="ext" x1="${x0}" y1="${top - 3}" x2="${x0}" y2="${dim - 5}"/>
+    /* The span sits mid-bar unless the leader lands there, then beside the leader. */
+    const half = (job.span.length * CH) / 2 + 8;
+    let mid = (x0 + x1) / 2;
+    if (Math.abs(job.ax - mid) < half) mid = job.ax + (job.ax - x0 > x1 - job.ax ? -half : half);
+    return `${group(job)}
+      <rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" ${fill(job, 'h')}/>
+      ${job.study ? `<line class="centre" x1="${x0 + 4}" y1="${top + BAR / 2}" x2="${x1 - 4}" y2="${top + BAR / 2}"/>` : ''}
+      <line class="ext" x1="${x0}" y1="${top - 3}" x2="${x0}" y2="${dim - 5}"/>
       <line class="ext" x1="${x1}" y1="${top - 3}" x2="${x1}" y2="${dim - 5}"/>
       <line class="dim" x1="${x0 - 4}" y1="${dim}" x2="${x1 + 4}" y2="${dim}"/>
       ${tick(x0, dim)}${tick(x1, dim)}
-      ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}`;
-    if (job.study)
-      return `${group(job)}
-      <rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}"/>
-      ${ends}
-      <text x="${x0 + 10}" y="${top + 14}" class="small monospace"><tspan class="bubble-number bubble-study">学</tspan> <tspan class="label typewriter">${esc(job.lines[0])}</tspan>, ${esc(job.lines[1])}</text>
-    </g>`;
-    return `${group(job)}
-      <rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" ${fill(job, 'h')}/>
-      ${ends}
-      <line class="leader" x1="${job.ax}" y1="${by + 10}" x2="${job.ax}" y2="${top - 1}" marker-end="url(#h-arrow)"/>
+      ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}
+      <polyline class="leader" points="${job.ax} ${by + 10} ${job.ax} ${top - 1}" marker-end="url(#h-arrow)"/>
       ${bubble(job.ax, by, job)}
       ${job.lines.map((line, i) => text(job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
     </g>`;
@@ -272,7 +270,9 @@ const tall = (() => {
   const LANE = 34;
   const BAR = 12;
   const LANE0 = DX + 8 + LANE - BAR;
-  const LX = LANE0 + lanes * LANE + 5;
+  /* Past the last lane each leader bends from its bubble's height to its bar's. */
+  const BEND = LANE0 + (lanes - 1) * LANE + BAR + 8;
+  const LX = BEND + 28;
   const width = Math.floor((W - 4 - LX - 15) / CH);
 
   type Placed = Job & { ay: number; top: number; text: string[] };
@@ -306,7 +306,7 @@ const tall = (() => {
       <line class="dim" x1="${dim}" y1="${y0 - 4}" x2="${dim}" y2="${y1 + 4}"/>
       ${tick(dim, y0)}${tick(dim, y1)}
       ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
-      <line class="leader" x1="${LX - 11}" y1="${by}" x2="${x0 + BAR + 1}" y2="${job.ay}" marker-end="url(#v-arrow)"/>
+      <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${x0 + BAR + 1} ${job.ay}" marker-end="url(#v-arrow)"/>
       ${bubble(LX, by, job)}
       ${job.text.map((line, i) => text(LX + 15, job.top + 11 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
     </g>`;

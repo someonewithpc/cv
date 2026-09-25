@@ -118,12 +118,86 @@ test('the degree is an outline bar in the ground lane, under the jobs of its yea
   await expect(study).toContainText(`${from} to ${year}`);
   for (const part of [degree, minor, short]) await expect(study).toContainText(part);
 
+  // Labelled as the jobs are: a bubble and a leader to lettering outside the bar.
+  await expect(study.locator('.bubble-number')).toHaveText('学');
+  await expect(study.locator('.leader')).toHaveCount(1);
+  const bar = (await study.locator('.bar').boundingBox())!;
+  const label = (await study.locator('text.label').boundingBox())!;
+  expect(label.y + label.height, 'the degree is lettered inside its bar').toBeLessThanOrEqual(bar.y);
+  await expect(study.locator('text.label')).toHaveClass(/typewriter/);
+
   // The jobs of those years stand above it.
   const lanes = await page.locator('#career svg.wide .job').evaluateAll((jobs) => jobs.map((job) => Number(job.getAttribute('data-lane'))));
   expect(Math.min(...lanes)).toBeGreaterThan(0);
 
   await expect(page.locator('#career svg.tall g.study .bubble-number')).toHaveText('学');
 });
+
+/** Leaders that cross a bar or a label, and labels that overlap, in the drawing on show. */
+const collisions = (svg: SVGSVGElement) => {
+  type Box = { left: number; top: number; right: number; bottom: number };
+  const inset = (r: DOMRect, by: number): Box => ({ left: r.left + by, top: r.top + by, right: r.right - by, bottom: r.bottom - by });
+  const overlap = (a: Box, b: Box) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  // Liang-Barsky: does the segment enter the box?
+  const crosses = ([x1, y1, x2, y2]: number[], box: Box) => {
+    let t0 = 0;
+    let t1 = 1;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    for (const [p, q] of [[-dx, x1 - box.left], [dx, box.right - x1], [-dy, y1 - box.top], [dy, box.bottom - y1]]) {
+      if (p === 0) {
+        if (q < 0) return false;
+        continue;
+      }
+      const t = q / p;
+      if (p < 0) t0 = Math.max(t0, t);
+      else t1 = Math.min(t1, t);
+      if (t0 > t1) return false;
+    }
+    return true;
+  };
+  const ctm = svg.getScreenCTM()!;
+  const point = (x: number, y: number) => new DOMPoint(x, y).matrixTransform(ctm);
+  const groups = [...svg.querySelectorAll<SVGGElement>('g[data-job]')];
+  const found: string[] = [];
+  const labels = groups.flatMap((g) => [...g.querySelectorAll('text.label, text.small, circle.bubble')].map((el) => ({ id: g.dataset.job!, box: inset(el.getBoundingClientRect(), 1) })));
+  const spans = groups.flatMap((g) => [...g.querySelectorAll('text.span')].map((el) => ({ id: g.dataset.job!, box: inset(el.getBoundingClientRect(), 1) })));
+  const bars = groups.flatMap((g) => [...g.querySelectorAll('.bar')].map((el) => ({ id: g.dataset.job!, box: inset(el.getBoundingClientRect(), 1) })));
+  for (const g of groups) {
+    const leader = g.querySelector<SVGPolylineElement>('polyline.leader')!;
+    const points = [...leader.points].map(({ x, y }) => point(x, y));
+    // Trimmed at both ends: it starts at its bubble and its arrow touches its own bar.
+    const trim = (from: DOMPoint, to: DOMPoint, by: number) => {
+      const len = Math.hypot(to.x - from.x, to.y - from.y);
+      return new DOMPoint(from.x + ((to.x - from.x) * by) / len, from.y + ((to.y - from.y) * by) / len);
+    };
+    points[0] = trim(points[0], points[1], 12);
+    points[points.length - 1] = trim(points[points.length - 1], points[points.length - 2], 3);
+    for (const [i, a] of points.slice(0, -1).entries()) {
+      const b = points[i + 1];
+      const segment = [a.x, a.y, b.x, b.y];
+      for (const bar of bars) if (crosses(segment, bar.box)) found.push(`${g.dataset.job} leader crosses the ${bar.id} bar`);
+      for (const label of labels) if (label.id !== g.dataset.job && crosses(segment, label.box)) found.push(`${g.dataset.job} leader crosses the ${label.id} label`);
+      for (const span of spans) if (crosses(segment, span.box)) found.push(`${g.dataset.job} leader crosses the ${span.id} span`);
+    }
+  }
+  for (const [i, one] of labels.entries()) {
+    for (const other of labels.slice(i + 1)) if (one.id !== other.id && overlap(one.box, other.box)) found.push(`${one.id} and ${other.id} labels overlap`);
+    for (const bar of bars) if (overlap(one.box, bar.box)) found.push(`${one.id} label overlaps the ${bar.id} bar`);
+  }
+  return found;
+};
+
+for (const [drawing, width] of [['wide', 1440], ['wide', 900], ['tall', 390], ['tall', 768]] as const) {
+  test(`in the ${drawing} drawing at ${width}px no leader crosses a bar or a label`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const svg = page.locator(`#career svg.${drawing}`);
+    await expect(svg).toBeVisible();
+    await svg.scrollIntoViewIfNeeded();
+    expect(await svg.evaluate(collisions)).toEqual([]);
+  });
+}
 
 for (const width of [390, 768, 1440]) {
   test(`at ${width}px the sheet fits the window and writes nothing under 8px`, async ({ page }) => {
