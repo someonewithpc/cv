@@ -8,19 +8,13 @@ type ThemeSettings = {
   ink: string;
   accent: string;
   blueprint: string;
-  /** The desk top the page lies on at wide viewports, and how much of its grain shows. */
-  desk: string;
-  deskGrain: string;
-  /** The veneer that desk is cut from: one scan per theme, in public/desk. */
-  deskWood: string;
   /**
-   * A dark desk subtracts its veneer from this base rather than laying it over the desk
-   * colour, because overlay scales every step by base * (1 - base) and near black that
-   * leaves the tone and eats the fibre. The base is the scan's own mean colour less 28 of
-   * 255, which is the lightness the desk keeps; the veil then goes opaque and hands the
-   * desk its hue and chroma back while the subtraction holds the grain at full size.
+   * The desk the page lies on: public/desk/<deskTile>.webp, which scripts/bake-desk-tiles.mjs
+   * bakes from a veneer scan with this theme's colour and blend already in it, and `desk`,
+   * that tile's average, which shows until the tile loads.
    */
-  deskBase?: string;
+  desk: string;
+  deskTile: string;
   /**
    * The plain paper, which the drawing sheets and the contributions page both take. Hugo
    * picked one per theme on the tuner. A theme without one sets it to initial, so the
@@ -57,10 +51,8 @@ const THEMES = {
     ink: 'oklch(0.24 0.025 260)',
     accent: 'oklch(0.7 0.13 65)',
     blueprint: 'oklch(0.622 0.121 254)',
-    desk: 'oklch(0.76 0.05 68)',
-    deskGrain: '0.85',
-    /* The same oak as the other three, raised to the ash boards' tone and limed. */
-    deskWood: 'oak-7760-limed',
+    desk: 'rgb(229 200 160)',
+    deskTile: 'light',
     paper: 'oklch(1 0 90)',
     paperGrain: '0.45',
     paperSheetGrain: '0.48',
@@ -79,11 +71,8 @@ const THEMES = {
     ink: 'oklch(0.92 0.02 250)',
     accent: 'oklch(0.78 0.1 75)',
     blueprint: 'oklch(0.4 0.12 265)',
-    desk: 'oklch(0.235 0.01 55)',
-    deskGrain: '0',
-    /* Slip-matched oak, levelled: cathedral figure across the page and no joint in it. */
-    deskWood: 'oak-7760-mid',
-    deskBase: 'rgb(128 97 73)',
+    desk: 'rgb(31 28 24)',
+    deskTile: 'dark',
     paperGrain: '0.33',
     paperSheetGrain: '0.35',
     paperBlend: 'screen',
@@ -101,10 +90,8 @@ const THEMES = {
     ink: 'oklch(0.3 0.04 250)',
     accent: 'oklch(0.52 0.1 210)',
     blueprint: 'oklch(0.606 0.110 222)',
-    desk: 'oklch(0.81 0.013 232)',
-    deskGrain: '0.85',
-    /* The same oak at its own lightness, which under a pale desk reads as bleached. */
-    deskWood: 'oak-7760',
+    desk: 'rgb(212 203 197)',
+    deskTile: 'arctic',
     paper: 'oklch(0.955 0.015 235)',
     paperGrain: '0.40',
     paperSheetGrain: '0.52',
@@ -123,11 +110,8 @@ const THEMES = {
     ink: 'oklch(0.9 0.035 110)',
     accent: 'oklch(0.72 0.1 95)',
     blueprint: 'oklch(0.370 0.089 156)',
-    desk: 'oklch(0.225 0.03 75)',
-    deskGrain: '0',
-    /* The same oak smoked in the file: darker, and drained of red before the veil goes on. */
-    deskWood: 'oak-7760-smoked',
-    deskBase: 'rgb(76 68 62)',
+    desk: 'rgb(37 27 12)',
+    deskTile: 'dark-forest',
     paper: 'oklch(0.323 0.044 139)',
     paperGrain: '0.27',
     paperSheetGrain: '0.40',
@@ -150,19 +134,13 @@ const OS_THEMES = {
   dark: THEMES.dark,
 } as const;
 
-const deskWood = (settings: ThemeSettings) => `
-      --theme-desk-tile: url("/desk/${settings.deskWood}.webp");${settings.deskBase ? `
-      --theme-desk-base: ${settings.deskBase};
-      --theme-desk-blend: difference;
-      --theme-desk-veil-blend: color;` : ''}`;
-
 const themeVars = (settings: ThemeSettings) => `
       --theme-canvas: ${settings.canvas};
       --theme-ink: ${settings.ink};
       --theme-accent: ${settings.accent};
       --theme-blueprint: ${settings.blueprint};
       --theme-desk: ${settings.desk};
-      --theme-desk-grain: ${settings.deskGrain};${deskWood(settings)}
+      --theme-desk-tile: url("/desk/${settings.deskTile}.webp");
       --theme-paper: ${settings.paper ?? 'initial'};
       --theme-paper-grain: ${settings.paperGrain};
       --theme-paper-sheet-grain: ${settings.paperSheetGrain};
@@ -323,9 +301,8 @@ aside {
   --theme-ink: oklch(0.24 0.025 260);
   --theme-accent: oklch(0.7 0.13 65);
   --theme-blueprint: oklch(0.622 0.121 254);
-  --theme-desk: oklch(0.76 0.05 68);
-  --theme-desk-grain: 0.85;
-  --theme-desk-tile: url("/desk/oak-7760-limed.webp");
+  --theme-desk: rgb(229 200 160);
+  --theme-desk-tile: url("/desk/light.webp");
   --theme-paper: oklch(1 0 90);
   --theme-paper-grain: 0.45;
   --theme-paper-sheet-grain: 0.48;

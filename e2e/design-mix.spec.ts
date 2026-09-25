@@ -8,20 +8,12 @@ const DESK_FROM = 1024;
 /** The side the desk lays a scan down at: 45rem at a 16px root, as ThemePicker.astro sets it. */
 const TILE = 720;
 
-/** --theme-desk per theme, as ThemePicker.astro writes it. */
+/** Each theme's baked tile in public/desk, and its average, which shows until the tile loads. */
 const DESKS = {
-  light: 'oklch(0.76 0.05 68)',
-  dark: 'oklch(0.235 0.01 55)',
-  arctic: 'oklch(0.81 0.013 232)',
-  'dark-forest': 'oklch(0.225 0.03 75)',
-} as const;
-
-/** The veneer each theme wears, and the colour a dark desk subtracts that veneer from. */
-const WOODS = {
-  light: { file: 'oak-7760-limed', base: null },
-  dark: { file: 'oak-7760-mid', base: 'rgb(128, 97, 73)' },
-  arctic: { file: 'oak-7760', base: null },
-  'dark-forest': { file: 'oak-7760-smoked', base: 'rgb(76, 68, 62)' },
+  light: 'rgb(229, 200, 160)',
+  dark: 'rgb(31, 28, 24)',
+  arctic: 'rgb(212, 203, 197)',
+  'dark-forest': 'rgb(37, 27, 12)',
 } as const;
 
 const withTheme = async (page: import('@playwright/test').Page, theme: string) => {
@@ -34,37 +26,21 @@ const withTheme = async (page: import('@playwright/test').Page, theme: string) =
   }, theme);
 };
 
-/** Serialised the way the browser serialises it, so the two sides compare like with like. */
-const asComputedColor = (page: import('@playwright/test').Page, color: string) =>
-  page.evaluate((value) => {
-    const probe = document.createElement('div');
-    probe.style.backgroundColor = value;
-    document.body.append(probe);
-    const computed = getComputedStyle(probe).backgroundColor;
-    probe.remove();
-    return computed;
-  }, color);
-
 for (const [theme, desk] of Object.entries(DESKS)) {
   test(`the ${theme} desk fills main past ${DESK_FROM}px`, async ({ page }) => {
     await withTheme(page, theme);
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
 
-    const main = page.locator('main');
-    await expect(main).toHaveCSS('--theme-desk', desk);
-
-    const background = await main.evaluate((el) => {
+    const background = await page.locator('main').evaluate((el) => {
       const style = getComputedStyle(el);
-      return { image: style.backgroundImage, color: style.backgroundColor };
+      return { image: style.backgroundImage, color: style.backgroundColor, blend: style.backgroundBlendMode };
     });
 
-    // The grain is a scan of real veneer, one file per theme, laid down at its own size.
-    expect(background.image).toContain(`/desk/${WOODS[theme as keyof typeof WOODS].file}.webp`);
-    // A dark desk subtracts its scan from a base cut to that wood's own mean; a pale one
-    // lays the scan over the desk colour itself.
-    const base = WOODS[theme as keyof typeof WOODS].base;
-    expect(background.color).toBe(base ?? (await asComputedColor(page, desk)));
+    // One baked tile per theme, laid down as it is, over the colour it averages to.
+    expect(background.image).toContain(`/desk/${theme}.webp`);
+    expect(background.blend).toBe('normal');
+    expect(background.color).toBe(desk);
   });
 }
 
@@ -90,11 +66,11 @@ for (const { width, height } of NARROW) {
       };
     });
 
-    // The same two layers the wide desk has: the veil of theme colour, and the scan under it.
-    expect(background.image).toContain(`/desk/${WOODS.light.file}.webp`);
-    expect(background.blend).toBe('normal, overlay');
-    expect(background.size).toContain(`${TILE}px ${TILE}px`);
-    expect(background.color).toBe(await asComputedColor(page, DESKS.light));
+    // The same tile the wide desk has, at the same size.
+    expect(background.image).toContain('/desk/light.webp');
+    expect(background.blend).toBe('normal');
+    expect(background.size).toBe(`${TILE}px ${TILE}px`);
+    expect(background.color).toBe(DESKS.light);
 
     const fit = await page.evaluate(() => ({
       scrollWidth: document.body.scrollWidth,
@@ -273,15 +249,15 @@ test('each theme brings its own wood, not one scan recoloured', async ({ page })
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
-  const woods = Object.entries(WOODS);
+  const themes = Object.keys(DESKS);
   const tiles = await page.evaluate((names) => names.map((name) => {
     document.documentElement.dataset.theme = name;
     return getComputedStyle(document.querySelector('main')!).backgroundImage;
-  }), woods.map(([theme]) => theme));
+  }), themes);
 
   expect(new Set(tiles).size, 'four themes, four grains').toBe(tiles.length);
-  woods.forEach(([theme, wood], index) => {
-    expect(tiles[index], `${theme} wears ${wood.file}`).toContain(`/desk/${wood.file}.webp`);
+  themes.forEach((theme, index) => {
+    expect(tiles[index], `${theme} wears its own tile`).toContain(`/desk/${theme}.webp`);
   });
 });
 

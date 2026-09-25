@@ -270,31 +270,17 @@ main {
   }
 
   /* The page lies on a desk at every width. The desk is veneer: --theme-desk-tile is one
-     scan of it, a different wood per theme, under a veil of the theme's own colour.
-     --theme-desk-grain is how far that veil is faded out, so 1 is no veil at all. Every band of
-     content keeps the page's own surface, so the desk is only ever seen in the side margins
-     and in the gaps between bands, never behind text. A phone has only the page gutter to
-     spare, so there the wood is a strip down each edge and a band between every two sections,
-     which is all Hugo asked it for. */
-  --desk-veil: color-mix(in oklch, var(--theme-desk), transparent calc(var(--theme-desk-grain) * 100%));
+     scan of oak per theme with the theme's colour already baked into it (see
+     scripts/bake-desk-tiles.mjs), and --theme-desk is that tile's average, so the desk is the
+     same tone before the tile loads as after. Every band of content keeps the page's own
+     surface, so the desk is only ever seen in the side margins and in the gaps between
+     bands, never behind text. A phone has only the page gutter to spare, so there the wood
+     is a strip down each edge and a band between every two sections, which is all Hugo
+     asked it for. The tiles are 1440px square and the desk lays them down at half that,
+     which is the side round 2 cut the drawn boards to. */
   --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
 
-  /* How the tile meets the desk colour is a per-theme choice, because no one blend carries
-     grain the whole way down the lightness scale. Overlay scales every step the tile has by
-     base * (1 - base), which is at its strongest on a mid tone and collapses to nothing as the
-     base nears black or white: on a near black desk it leaves the tone and eats the fibre. A
-     theme whose desk is that dark sets --theme-desk-base to a colour a little above the tile's
-     own mean, --theme-desk-blend to difference so the tile is subtracted from it rather than
-     scaled by it, which keeps each step at its full size however dark the result lands, and
-     --theme-desk-veil-blend to color so the opaque veil hands the desk its hue and chroma back
-     while the subtraction keeps the lightness. The scans are 1440px square and the desk lays
-     them down at half that, which is the side round 2 cut the drawn boards to. */
-  background-color: var(--theme-desk-base, var(--theme-desk));
-  background-image:
-    linear-gradient(var(--desk-veil), var(--desk-veil)),
-    var(--theme-desk-tile);
-  background-size: auto, 45rem 45rem;
-  background-blend-mode: var(--theme-desk-veil-blend, normal), var(--theme-desk-blend, overlay);
+  background: var(--theme-desk-tile) 0 0 / 45rem 45rem var(--theme-desk);
 
   /* Every band on the desk is a sheet of the same paper, with the small radius and the lift
      the drawing stacks have. Narrow, that is all it is: the band keeps the width, the margins
