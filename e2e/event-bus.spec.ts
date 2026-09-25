@@ -1,6 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
+import { expect, pageWait, SLOW_RATE, test } from './support/timeScale';
 
 const PAGES = ['GNU social · Event Dispatch', 'EventResult', 'Module Discovery', 'Build-Time Guard'];
 
@@ -21,13 +22,22 @@ async function mountedBus(page: Page) {
   return { stack, front, bus };
 }
 
-/** Waits out the token's run: the answer lands once it reaches the return. A run is a few
-    seconds of timers, which a crowded box stretches, hence the margin. */
-async function settled(bus: import('@playwright/test').Locator) {
-  await expect(bus).not.toHaveAttribute('data-result', 'pending', { timeout: 20_000 });
+/** A dispatch down the whole chain, about 3 s of page time, and the walkthrough's longest
+    step, a 2.8 s hold and the cursor's move to the next control. */
+const RUN_MS = 3_000;
+const STEP_MS = 4_000;
+
+/** Page time as a wall-clock expect timeout at the pace this test plays at. */
+function within(pageMs: number, rate: number) {
+  return { timeout: pageMs / rate + 5_000 };
 }
 
-function listener(bus: import('@playwright/test').Locator, module: string) {
+/** Waits out the token's run: the answer lands once it reaches the return. */
+async function settled(bus: Locator, rate: number) {
+  await expect(bus).not.toHaveAttribute('data-result', 'pending', within(RUN_MS, rate));
+}
+
+function listener(bus: Locator, module: string) {
   return bus.locator(`.listener[data-module="${module}"]`);
 }
 
@@ -35,9 +45,10 @@ test('event bus: forward swipes visit every page in order, then wrap', async ({ 
   await page.goto('/');
   const stack = eventBusStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  // fold-drag.ts sets the role description as it wires the stack, wheel listener included.
+  await expect(stack).toHaveAttribute('aria-roledescription', 'paper stack');
 
-  expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
+  await expect(stack.locator(':scope > div')).toHaveCount(PAGES.length);
   expect(await frontPageName(stack)).toBe(PAGES[0]);
 
   for (let i = 1; i < PAGES.length; i += 1) {
@@ -49,87 +60,94 @@ test('event bus: forward swipes visit every page in order, then wrap', async ({ 
   expect(await frontPageName(stack)).toBe(PAGES[0]);
 });
 
-test('main page: the walkthrough plays, then hands over on hover', async ({ page }) => {
-  test.slow();
-  await page.goto('/');
-  const { front, bus } = await mountedBus(page);
+test.describe(() => {
+  // A run is 3 s of timers and a walkthrough step up to 4 s; at four times the pace the
+  // tests below take seconds, where they took most of a minute at real speed.
+  test.use({ walkthroughRate: 4 });
 
-  await expect(bus).toHaveAttribute('data-autoplay-state', 'playing');
-  // The token goes out: a run is seen in flight before it settles on ImageEncoder's stop.
-  await expect(bus).toHaveAttribute('data-result', 'pending', { timeout: 20_000 });
-  await expect(front.locator('.token')).toBeVisible();
-  await settled(bus);
-  await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'stop');
-  await expect(front.locator('.event-bus-cursor')).toBeVisible({ timeout: 20_000 });
+  test('main page: the walkthrough plays, then hands over on hover', { tag: '@handover' }, async ({ page, walkthroughRate, slowWalkthroughs }) => {
+    const rate = slowWalkthroughs ? SLOW_RATE : walkthroughRate;
+    await page.goto('/');
+    const { front, bus } = await mountedBus(page);
 
-  await bus.hover();
-  await expect(bus).toHaveAttribute('data-autoplay-state', 'user');
-  await expect(front.locator('.event-bus-cursor')).toBeHidden();
+    await expect(bus).toHaveAttribute('data-autoplay-state', 'playing');
+    // The token goes out: a run is seen in flight before it settles on ImageEncoder's stop.
+    await expect(bus).toHaveAttribute('data-result', 'pending', within(RUN_MS, rate));
+    await expect(front.locator('.token')).toBeVisible();
+    await settled(bus, rate);
+    await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'stop');
+    await expect(front.locator('.event-bus-cursor')).toBeVisible(within(STEP_MS, rate));
 
-  // Handover means handover: once the last run lands, nothing changes on its own.
-  await settled(bus);
-  const state = await bus.evaluate((el) => [el.dataset.result, el.dataset.rendered, el.dataset.attachment].join());
-  await page.waitForTimeout(3_000);
-  expect(await bus.evaluate((el) => [el.dataset.result, el.dataset.rendered, el.dataset.attachment].join())).toBe(state);
-});
+    await bus.hover();
+    await expect(bus).toHaveAttribute('data-autoplay-state', 'user');
+    await expect(front.locator('.event-bus-cursor')).toBeHidden();
 
-test('main page: switching plugins re-runs the chain and moves the claim', async ({ page }) => {
-  // Five dispatches in a row, each waited out.
-  test.slow();
-  await page.goto('/');
-  const { bus } = await mountedBus(page);
-  await bus.hover();
-  await expect(bus).toHaveAttribute('data-autoplay-state', 'user');
-  await settled(bus);
+    // Handover means handover: once the last run lands, a whole walkthrough step goes by
+    // on the page's clock and nothing changes on its own.
+    await settled(bus, rate);
+    const state = () => bus.evaluate((el) => [el.dataset.result, el.dataset.rendered, el.dataset.attachment].join());
+    const before = await state();
+    await pageWait(page, STEP_MS);
+    expect(await state()).toBe(before);
+  });
 
-  // Start from the page's own state, whatever the walkthrough left behind.
-  for (const module of ['AudioEncoder', 'ImageEncoder', 'VideoEncoder']) {
-    const toggle = listener(bus, module).locator('.load');
-    if ((await toggle.getAttribute('aria-pressed')) === 'false') {
-      await toggle.click();
-      await settled(bus);
+  test('main page: switching plugins re-runs the chain and moves the claim', async ({ page, walkthroughRate }) => {
+    const rate = walkthroughRate;
+    await page.goto('/');
+    const { bus } = await mountedBus(page);
+    await bus.hover();
+    await expect(bus).toHaveAttribute('data-autoplay-state', 'user');
+    await settled(bus, rate);
+
+    // Start from the page's own state, whatever the walkthrough left behind.
+    for (const module of ['AudioEncoder', 'ImageEncoder', 'VideoEncoder']) {
+      const toggle = listener(bus, module).locator('.load');
+      if ((await toggle.getAttribute('aria-pressed')) === 'false') {
+        await toggle.click();
+        await settled(bus, rate);
+      }
     }
-  }
-  await bus.locator('.attachment[data-attachment="jpeg"]').click();
-  await settled(bus);
-  await expect(bus).toHaveAttribute('data-rendered', 'image');
-  await expect(listener(bus, 'AudioEncoder')).toHaveAttribute('data-result', 'next');
-  await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'skipped');
+    await bus.locator('.attachment[data-attachment="jpeg"]').click();
+    await settled(bus, rate);
+    await expect(bus).toHaveAttribute('data-rendered', 'image');
+    await expect(listener(bus, 'AudioEncoder')).toHaveAttribute('data-result', 'next');
+    await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'skipped');
 
-  // ImageEncoder off: it leaves the rail for the tray, the two encoders left both answer
-  // next, and the template's own branch renders a link.
-  await listener(bus, 'ImageEncoder').locator('.load').click();
-  await expect(bus.locator('.tray .listener[data-module="ImageEncoder"]')).toHaveCount(1);
-  await settled(bus);
-  await expect(bus).toHaveAttribute('data-result', 'next');
-  await expect(bus).toHaveAttribute('data-rendered', 'link');
-  await expect(bus.locator('.branch')).toHaveAttribute('data-taken', 'true');
+    // ImageEncoder off: it leaves the rail for the tray, the two encoders left both answer
+    // next, and the template's own branch renders a link.
+    await listener(bus, 'ImageEncoder').locator('.load').click();
+    await expect(bus.locator('.tray .listener[data-module="ImageEncoder"]')).toHaveCount(1);
+    await settled(bus, rate);
+    await expect(bus).toHaveAttribute('data-result', 'next');
+    await expect(bus).toHaveAttribute('data-rendered', 'link');
+    await expect(bus.locator('.branch')).toHaveAttribute('data-taken', 'true');
 
-  // The MP4: AudioEncoder passes, VideoEncoder claims it.
-  await bus.locator('.attachment[data-attachment="mp4"]').click();
-  await settled(bus);
-  await expect(listener(bus, 'AudioEncoder')).toHaveAttribute('data-result', 'next');
-  await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'stop');
-  await expect(listener(bus, 'VideoEncoder').locator('.result')).toHaveText('stop');
-  await expect(bus).toHaveAttribute('data-rendered', 'video');
-  await expect(bus.locator('.branch')).toHaveAttribute('data-taken', 'false');
+    // The MP4: AudioEncoder passes, VideoEncoder claims it.
+    await bus.locator('.attachment[data-attachment="mp4"]').click();
+    await settled(bus, rate);
+    await expect(listener(bus, 'AudioEncoder')).toHaveAttribute('data-result', 'next');
+    await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'stop');
+    await expect(listener(bus, 'VideoEncoder').locator('.result')).toHaveText('stop');
+    await expect(bus).toHaveAttribute('data-rendered', 'video');
+    await expect(bus.locator('.branch')).toHaveAttribute('data-taken', 'false');
 
-  // ImageEncoder back on: it is ahead of VideoEncoder in discovery order, but video is not
-  // its job, so it answers next and VideoEncoder still claims the MP4.
-  await listener(bus, 'ImageEncoder').locator('.load').click();
-  await expect(bus.locator('.chain .listener').nth(1)).toHaveAttribute('data-module', 'ImageEncoder');
-  await settled(bus);
-  await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'next');
-  await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'stop');
-  await expect(bus).toHaveAttribute('data-rendered', 'video');
+    // ImageEncoder back on: it is ahead of VideoEncoder in discovery order, but video is not
+    // its job, so it answers next and VideoEncoder still claims the MP4.
+    await listener(bus, 'ImageEncoder').locator('.load').click();
+    await expect(bus.locator('.chain .listener').nth(1)).toHaveAttribute('data-module', 'ImageEncoder');
+    await settled(bus, rate);
+    await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'next');
+    await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'stop');
+    await expect(bus).toHaveAttribute('data-rendered', 'video');
 
-  // The JPEG again: ImageEncoder claims it and VideoEncoder never hears the event.
-  await bus.locator('.attachment[data-attachment="jpeg"]').click();
-  await settled(bus);
-  await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'stop');
-  await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'skipped');
-  await expect(listener(bus, 'VideoEncoder').locator('.result')).toHaveText('skipped');
-  await expect(bus).toHaveAttribute('data-rendered', 'image');
+    // The JPEG again: ImageEncoder claims it and VideoEncoder never hears the event.
+    await bus.locator('.attachment[data-attachment="jpeg"]').click();
+    await settled(bus, rate);
+    await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'stop');
+    await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'skipped');
+    await expect(listener(bus, 'VideoEncoder').locator('.result')).toHaveText('skipped');
+    await expect(bus).toHaveAttribute('data-rendered', 'image');
+  });
 });
 
 test('main page: reduced motion stands the walkthrough down and answers at once', async ({ page }) => {
