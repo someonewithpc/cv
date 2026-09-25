@@ -40,6 +40,7 @@ export default defineConfig({
           'external-link',
           'film',
           'image',
+          'image-play',
           'link',
           'music',
           'pencil',

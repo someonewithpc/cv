@@ -40,6 +40,7 @@ export const attachments: Attachment[] = [
   { id: 'jpeg', filename: 'harbour.jpg', mimetype: 'image/jpeg' },
   { id: 'mp4', filename: 'clip.mp4', mimetype: 'video/mp4' },
   { id: 'ogg', filename: 'voice.ogg', mimetype: 'audio/ogg' },
+  { id: 'gif', filename: 'loop.gif', mimetype: 'image/gif' },
 ];
 
 export const defaultAttachment = 'jpeg';
@@ -55,7 +56,7 @@ export const listeners: Listener[] = [
     kind: 'plugin',
     method: `on${EVENT}`,
     priority: 0,
-    returns: { jpeg: 'next', mp4: 'next', ogg: 'stop' },
+    returns: { jpeg: 'next', mp4: 'next', ogg: 'stop', gif: 'next' },
     renders: { ogg: 'audio' },
   },
   {
@@ -63,15 +64,15 @@ export const listeners: Listener[] = [
     kind: 'plugin',
     method: `on${EVENT}`,
     priority: 0,
-    returns: { jpeg: 'stop', mp4: 'next', ogg: 'next' },
-    renders: { jpeg: 'image' },
+    returns: { jpeg: 'stop', mp4: 'next', ogg: 'next', gif: 'stop' },
+    renders: { jpeg: 'image', gif: 'image' },
   },
   {
     module: 'VideoEncoder',
     kind: 'plugin',
     method: `on${EVENT}`,
     priority: 0,
-    returns: { jpeg: 'next', mp4: 'stop', ogg: 'next' },
+    returns: { jpeg: 'next', mp4: 'stop', ogg: 'next', gif: 'next' },
     renders: { mp4: 'video' },
   },
 ];
@@ -114,4 +115,40 @@ export function dispatch(attachmentId: string, enabled: (module: string) => bool
 
   // Nobody appended a block, so the template's own branch renders a plain link.
   return { results, result, claimedBy, rendered };
+}
+
+/**
+ * Where the GIF's thumbnail comes from. AttachmentThumbnail::getOrCreate raises
+ * FileResizerAvailable, and each encoder that can resize the file adds a resizer to
+ * $event_map and answers next: ImageEncoder under the major, image, and VideoEncoder under
+ * image/gif itself, to keep a GIF moving. ModuleManager.php:202 adds every module handler
+ * at priority 0, so the dispatcher does not choose between them. The core does:
+ * array_merge puts the exact mimetype's list ahead of the major's ("Always prefer specific
+ * encoders", AttachmentThumbnail.php:231), and the first resizer to return true wins.
+ */
+export type Resizer = {
+  module: string;
+  method: string;
+  /** The $event_map key the module files its resizer under. */
+  key: string;
+};
+
+export const resizers: Resizer[] = [
+  { module: 'VideoEncoder', method: 'resizeVideoPath', key: 'image/gif' },
+  { module: 'ImageEncoder', method: 'resizeImagePath', key: 'image' },
+];
+
+/** Per resizer, in merged order: 'true' when it made the thumbnail, 'unused' when the loop
+    broke before it, 'off' when its module is not loaded and never added it. */
+export type ResizeResult = 'true' | 'unused' | 'off';
+
+export function resize(enabled: (module: string) => boolean = () => true) {
+  let by: string | null = null;
+  const results: ResizeResult[] = resizers.map(({ module }) => {
+    if (!enabled(module)) return 'off';
+    if (by) return 'unused';
+    by = module;
+    return 'true';
+  });
+  return { results, by: by as string | null };
 }

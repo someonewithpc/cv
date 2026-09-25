@@ -4,7 +4,7 @@ import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
-import { defaultAttachment, dispatch, listeners } from '../events';
+import { defaultAttachment, dispatch, listeners, resize, resizers, type ResizeResult } from '../events';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -29,6 +29,8 @@ type Bus = {
   frame: HTMLElement;
   token: HTMLElement;
   items: Map<string, HTMLElement>;
+  /** The GIF's resizers, in the order the core merges them. */
+  resizerRows: HTMLElement[];
   attachmentButtons: HTMLButtonElement[];
   dispatchButton: HTMLButtonElement;
   branch: HTMLElement;
@@ -113,7 +115,25 @@ function placeListeners(bus: Bus) {
   });
 }
 
+const resizeLabel: Record<ResizeResult, string> = { true: 'true', unused: 'not called', off: 'off' };
+
+/** The GIF's resizers: a module that is not loaded never added its own, and the first one
+    left makes the thumbnail. A pending run hides the answers of the ones still in the list. */
+function showResize(bus: Bus, pending: boolean) {
+  const { results, by } = resize((module) => bus.enabled.has(module));
+  resizers.forEach((_, index) => {
+    const row = bus.resizerRows[index];
+    if (!row) return;
+    const result = results[index];
+    row.dataset.result = pending && result !== 'off' ? 'pending' : result;
+    row.querySelector<HTMLElement>('.answer')!.textContent = resizeLabel[result];
+  });
+  if (pending || !by) delete bus.root.dataset.thumbnail;
+  else bus.root.dataset.thumbnail = by;
+}
+
 function showOutcome(bus: Bus, outcome: ReturnType<typeof dispatch>) {
+  showResize(bus, false);
   const taken = String(outcome.result !== 'stop');
   bus.root.dataset.result = outcome.result;
   bus.root.dataset.rendered = outcome.rendered;
@@ -167,6 +187,7 @@ function runDispatch(bus: Bus): Promise<void> {
     bus.returned.textContent = '…';
     bus.branch.dataset.taken = 'pending';
     bus.branchNote.dataset.taken = 'pending';
+    showResize(bus, true);
     bus.token.classList.remove('stopped');
     bus.token.hidden = false;
     placeToken(bus, nodeAt(bus, bus.chain.querySelector<HTMLElement>('.start')!));
@@ -235,7 +256,10 @@ type Player = {
  * next, past AudioEncoder's next to VideoEncoder's stop. ImageEncoder is switched back on
  * and answers next to the MP4 like AudioEncoder does, so the chain shows two passes before
  * a claim. The JPEG goes once more and ImageEncoder takes it, VideoEncoder greyed out
- * behind it. Every step is a control the visitor can press.
+ * behind it. Then the GIF: ImageEncoder claims the view, and its thumbnail comes from
+ * VideoEncoder, whose image/gif resizer the core tries before ImageEncoder's image one.
+ * VideoEncoder is switched off and ImageEncoder's resizer makes a still instead. Every step
+ * is a control the visitor can press.
  *
  * A trusted pointer or focus on the demo hands it over at once; the loop picks up again
  * a quiet spell after the pointer has left, unless the deck's pause key was what stopped
@@ -289,6 +313,7 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   const attachmentButton = (id: string) =>
     bus.attachmentButtons.find((button) => button.dataset.attachment === id)!;
   const imageEncoderSwitch = () => loadSwitch(bus.items.get('ImageEncoder')!);
+  const videoEncoderSwitch = () => loadSwitch(bus.items.get('VideoEncoder')!);
 
   async function play() {
     const mine = ++token;
@@ -313,7 +338,15 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
 
       if (!(await press(mine, attachmentButton('jpeg')))) return;
       await bus.running;
-      if (!(await hold(mine, 1600))) return;
+      if (!(await hold(mine, 2400))) return;
+
+      if (!(await press(mine, attachmentButton('gif')))) return;
+      await bus.running;
+      if (!(await hold(mine, 2800))) return;
+
+      if (!(await press(mine, videoEncoderSwitch()))) return;
+      await bus.running;
+      if (!(await hold(mine, 2800))) return;
     }
   }
 
@@ -443,6 +476,7 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
     frame: root.querySelector<HTMLElement>('.rail-frame')!,
     token,
     items,
+    resizerRows: [...root.querySelectorAll<HTMLElement>('.resizer')],
     attachmentButtons: [...root.querySelectorAll<HTMLButtonElement>('.attachment')],
     dispatchButton: root.querySelector<HTMLButtonElement>('[data-dispatch]')!,
     branch: root.querySelector<HTMLElement>('.branch')!,

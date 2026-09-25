@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import { EVENT, attachments, defaultAttachment, dispatch, listeners, type EventResult } from './events';
+import { EVENT, attachments, defaultAttachment, dispatch, listeners, resize, resizers, type EventResult } from './events';
 
 type Props = {
   /** Wire the bus up to the client script and the walkthrough. */
@@ -29,6 +29,7 @@ const {
 
 const enabled = (module: string) => !disabled.includes(module);
 const outcome = dispatch(attachment, enabled);
+const resized = resize(enabled);
 const current = attachments.find((entry) => entry.id === attachment) ?? attachments[0];
 
 // The server draws the settled state, so the sheet reads the same before the script runs,
@@ -38,7 +39,8 @@ const loaded = listeners.map((listener, index) => ({ listener, index })).filter(
 const unloaded = listeners.map((listener, index) => ({ listener, index })).filter(({ listener }) => !enabled(listener.module));
 // The template's own branch runs when no listener appended a block.
 const branchTaken = outcome.rendered === 'link';
-const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:music' } as const;
+const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:music', gif: 'lucide:image-play' } as const;
+const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 ---
 
 <div
@@ -47,6 +49,7 @@ const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:
   data-attachment={current.id}
   data-result={outcome.result}
   data-rendered={outcome.rendered}
+  data-thumbnail={resized.by ?? undefined}
   tabindex={live ? -1 : undefined}
 >
   <div class="emitter">
@@ -161,12 +164,36 @@ const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:
     </span>
     )}
 
+    {branch && (
+    <div class="resize" role="group" aria-label="How the GIF's thumbnail is made">
+      <span class="resize-label">thumbnail, after <code>FileResizerAvailable</code></span>
+      <code class="merge">array_merge($event_map['image/gif'], $event_map['image'])</code>
+      <ol class="resizers">
+        {resizers.map((resizer, index) => (
+          <li class="resizer" data-module={resizer.module} data-result={resized.results[index]}>
+            <code class="key">'{resizer.key}'</code>
+            <span class="method">{resizer.module}::{resizer.method}</span>
+            <span class="answer">{resizeLabel[resized.results[index]]}</span>
+          </li>
+        ))}
+      </ol>
+      <span class="resize-note">
+        Every module handler registers at the same priority, so GNU social orders these by how
+        specific the mimetype is.
+      </span>
+    </div>
+    )}
+
     <figure class="res" aria-live={live ? 'polite' : undefined}>
       <figcaption>$res</figcaption>
       <span class="rendered" data-kind="pending" aria-hidden="true">…</span>
       <span class="rendered" data-kind="image">
         <Icon name="lucide:image" />
-        <span><code>&lt;img class="u-photo"&gt;</code> <span class="by">ImageEncoder</span></span>
+        <span>
+          <code>&lt;img class="u-photo"&gt;</code> <span class="by">ImageEncoder</span>
+          <span class="thumb" data-by="VideoEncoder">animated thumbnail from VideoEncoder</span>
+          <span class="thumb" data-by="ImageEncoder">still thumbnail from ImageEncoder</span>
+        </span>
       </span>
       <span class="rendered" data-kind="video">
         <Icon name="lucide:circle-play" />
@@ -269,6 +296,7 @@ button.call {
 
 .attachments {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.375em;
 }
 
@@ -731,6 +759,118 @@ button.call {
   }
 }
 
+/* The GIF's thumbnail, made before ImageEncoder's view can show it: the resizers in the
+   order the core merges them, the exact mimetype's first. It takes the template's place,
+   which has nothing to show for a GIF that ImageEncoder always claims. */
+.resize {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: none;
+  gap: 0.25em;
+  min-width: 0;
+  font-size: max(0.5rem, 0.75em);
+  line-height: 1.4;
+}
+
+.event-bus[data-attachment='gif'] {
+  .branch,
+  .branch-note {
+    display: none;
+  }
+
+  .resize {
+    display: grid;
+  }
+}
+
+.resize-label,
+.resize-note {
+  font-size: max(0.5rem, 0.9167em);
+  color: var(--ink-muted);
+}
+
+.merge {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.resizers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25em;
+}
+
+.resizer {
+  display: grid;
+  grid-template-columns: 6.5em minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.375em 0.625em;
+  border: 1px solid var(--line);
+  border-radius: 0.375em;
+  background: var(--surface-sunken);
+  transition: opacity 0.2s ease;
+
+  .key {
+    color: var(--ink-muted);
+  }
+
+  .method {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+  }
+
+  /* Centred like the chain's answers: the line box trimmed to the x-height band. */
+  .answer {
+    padding: 0.0625em 0.5em;
+
+    @supports (text-box-trim: trim-both) {
+      padding-block: 0.45em;
+      text-box: trim-both ex alphabetic;
+    }
+
+    border: 1px solid var(--line);
+    border-radius: 1em;
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.9167em);
+    white-space: nowrap;
+    color: var(--ink-muted);
+    background: var(--surface-raised);
+  }
+
+  &[data-result='true'] {
+    border-color: var(--stop);
+    box-shadow: inset 0 0 0 1px var(--stop);
+
+    .answer {
+      border-color: var(--stop);
+      color: var(--stop);
+      font-weight: 600;
+    }
+  }
+
+  &[data-result='unused'] {
+    border-style: dashed;
+    opacity: 0.55;
+  }
+
+  &[data-result='off'] {
+    border-style: dashed;
+    opacity: 0.45;
+
+    .method {
+      text-decoration: line-through;
+    }
+  }
+
+  &[data-result='pending'] .answer {
+    visibility: hidden;
+  }
+}
+
 .res {
   grid-area: res;
   margin: 0;
@@ -771,6 +911,17 @@ button.call {
   .link-text {
     color: var(--accent-text);
   }
+
+  .thumb {
+    display: none;
+    font-size: max(0.5rem, 0.8125em);
+    color: var(--ink-muted);
+  }
+}
+
+.event-bus[data-attachment='gif'][data-thumbnail='VideoEncoder'] .thumb[data-by='VideoEncoder'],
+.event-bus[data-attachment='gif'][data-thumbnail='ImageEncoder'] .thumb[data-by='ImageEncoder'] {
+  display: block;
 }
 
 .event-bus[data-rendered='pending'] .rendered[data-kind='pending'],
@@ -784,6 +935,31 @@ button.call {
 /* A narrow sheet: the chain runs down the page, the rail on the left, each chip beside
    its own port and its answer after it. */
 @container event-bus (max-width: 34em) {
+  /* Four files in one row: the mimetype under each name already says what it is. */
+  .attachments {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .attachment {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 0.375em;
+
+    svg {
+      display: none;
+    }
+
+    .filename,
+    .mimetype {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .resize-label {
+    display: none;
+  }
+
   .chain {
     flex-direction: column;
   }
@@ -882,7 +1058,8 @@ button.call {
   .chip,
   .load .switch,
   .load .switch::after,
-  .branch .fallback {
+  .branch .fallback,
+  .resizer {
     transition: none;
   }
 }
