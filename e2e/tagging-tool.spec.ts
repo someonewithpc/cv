@@ -128,6 +128,48 @@ test.describe('handover', () => {
     await expect(tool).toHaveAttribute('data-autoplay', 'playing', { timeout: 10_000 });
   });
 
+  test('the sheet shows the transport deck, and its keys drive the walkthrough', async ({ page }) => {
+    const tool = await playingTool(page);
+    const deck = tool.locator('xpath=ancestor::section[1]').locator('[data-demo-transport]');
+    const play = deck.locator('[data-demo-key="play"]');
+    const pause = deck.locator('[data-demo-key="pause"]');
+    const reset = deck.locator('[data-demo-key="reset"]');
+
+    await expect(deck).toBeVisible();
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(deck.locator('[data-demo-caption]')).toHaveText('AUTO PLAYING');
+    await expect(play).toHaveAttribute('aria-pressed', 'true');
+
+    // Moving over the tool takes over, and the deck says so.
+    await tool.hover();
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    await expect(pause).toHaveAttribute('aria-pressed', 'true');
+
+    await play.click();
+    await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+
+    // Pause holds the tool past the 6 s quiet spell that hands a hover back.
+    await pause.click();
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    await expect(tool.locator('.tagging-cursor')).toBeHidden();
+    await pageWait(page, 9_000);
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
+
+    // Reset starts the walkthrough over from the rows the page opens on.
+    const select = tool.locator('.property-select');
+    const other = await select.evaluate((el: HTMLSelectElement) =>
+      [...el.options].map((option) => option.value).find((value) => value !== el.value)!);
+    await select.selectOption(other);
+    await expect(select).toHaveValue(other);
+    await reset.click();
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+    await expect(select).toHaveValue('chair');
+  });
+
   test.describe('touch at 390', () => {
     test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
 
