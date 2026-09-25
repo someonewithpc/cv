@@ -32,7 +32,8 @@ async function mountedPanes(page: Page) {
 test('schemaDef: forward swipes visit every page in order', async ({ page }) => {
   const stack = schemaDefStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  // fold-drag.ts labels the stack as it attaches the swipe handlers, so a swipe after this lands.
+  await expect(stack).toHaveAttribute('aria-roledescription', 'paper stack');
 
   expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
   expect(await frontPageName(stack)).toBe(PAGES[0]);
