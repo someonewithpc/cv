@@ -27,9 +27,9 @@ const { number, label } = Astro.props;
 </div>
 
 <style lang="scss">
-/* 76rem is the width from which the desk margin beside the mat holds a 3rem numeral with
-   1.5rem still clear of the mat (Layout.astro). Narrower than that the margin is a gutter, so
-   there is no folio at all.
+/* 80rem is the width from which the desk margin beside the mat holds a 3rem numeral with
+   1.5rem clear of the window on one side and of the mat on the other (Layout.astro). Narrower
+   than that the margin is a gutter, so there is no folio at all.
 
    The lane hangs off the paper's near edge and not the window's: the cutting mat is only as
    wide as what lies on it and is centred from there, so once the lane is at its widest the
@@ -38,7 +38,7 @@ const { number, label } = Astro.props;
 .folio-rail {
   display: none;
 
-  @media (width >= 76rem) {
+  @media (width >= 80rem) {
     display: block;
     position: absolute;
     grid-row: var(--folio-row);
@@ -46,7 +46,6 @@ const { number, label } = Astro.props;
     inset-block: 0;
     inset-inline-start: max(0px, calc(var(--desk-edge) - var(--folio-lane)));
     inline-size: var(--folio-lane);
-    color: color-mix(in oklch, var(--ink), transparent 45%);
   }
 }
 
@@ -56,7 +55,7 @@ const { number, label } = Astro.props;
   display: grid;
   justify-items: end;
   gap: 0.5rem;
-  padding-inline-end: var(--folio-gap);
+  padding-inline: var(--folio-gap);
   text-align: right;
   line-height: 1;
 }
@@ -64,10 +63,19 @@ const { number, label } = Astro.props;
 .folio-number {
   font-size: var(--type-folio);
   letter-spacing: -0.02em;
+  color: color-mix(in oklch, var(--ink), transparent 45%);
 }
 
+/* The label is small type on the desk, where --ink-faint measures 4.07 on arctic's wood, so it
+   takes the muted ink, and it is written only where the lane holds it on a line or two. */
 .folio-label {
-  font-size: 0.75rem;
+  display: none;
+  font-size: 0.8125rem;
   letter-spacing: 0.06em;
+  color: var(--ink-muted);
+
+  @media (width >= 90rem) {
+    display: block;
+  }
 }
 </style>

@@ -525,7 +525,7 @@ const SHEETS = [
 ];
 
 /** The width from which Layout.astro has desk to spare for a folio. */
-const FOLIO_FROM = 76 * 16;
+const FOLIO_FROM = 80 * 16;
 
 const readFolios = (page: import('@playwright/test').Page) =>
   page.evaluate((sheets) => {

@@ -190,13 +190,13 @@ main {
   /* The sheet number in the desk's left margin (Folio.astro). The lane it stands in is what
      the desk can spare once the mat has the width it needs, and it never grows past what a
      7.5rem numeral asks for: the numeral's own width, about 1.15 of its size for two stencil
-     digits, and 1.5rem of desk left clear between it and the paper beside it. The numeral is
-     then sized from the lane, so it fits the margin at every width. Below 76rem the lane
-     would be under 5rem and the numeral under 3rem, so there is no folio, and no measurement
-     moves for one. */
+     digits, and 1.5rem of desk clear on either side of it, off the window's edge and off the
+     paper beside it. The numeral is then sized from the lane, so it fits the margin at every
+     width. At 80rem the lane is 6rem and the numeral 2.7rem; narrower, both shrink fast, so
+     there is no folio, and no measurement moves for one. */
   --folio-gap: 1.5rem;
   --folio-lane: 0px;
-  --type-folio: calc((var(--folio-lane) - var(--folio-gap)) / 1.15);
+  --type-folio: calc((var(--folio-lane) - var(--folio-gap) * 2) / 1.15);
 
   /* --mat-max is as wide as the mat ever needs to be: the widest drawing, the card lane, and
      the four bands above on either side. The mat stops there and is centred, so it hugs what
@@ -210,10 +210,10 @@ main {
   );
   --desk-edge: max((100vw - var(--mat-max)) / 2, var(--mat-inset));
 
-  @media (width >= 76rem) {
+  @media (width >= 80rem) {
     --folio-lane: min(
       (100vw - var(--mat-max)) / 2,
-      calc(7.5rem * 1.15 + var(--folio-gap))
+      calc(7.5rem * 1.15 + var(--folio-gap) * 2)
     );
   }
 
