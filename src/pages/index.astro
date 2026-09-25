@@ -109,8 +109,9 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             GNU social is a federated social network server. Its plugins never call each other:
             a plugin listens for an event by naming a method after it, and the first one to
             answer stop has the job. Switch ImageEncoder off and no other plugin claims the JPEG,
-            so the template draws a plain link. A GIF's thumbnail has two takers at the same
-            priority. VideoEncoder asked for image/gif by name, so it goes first and keeps the
+            so the template draws a plain link. ImageEncoder shows a GIF too, then asks for its
+            thumbnail with a second event, FileResizerAvailable. That one has two takers at the
+            same priority. VideoEncoder asked for image/gif by name, so it goes first and keeps the
             GIF moving. Switch it off and ImageEncoder makes a still.
           </TitleCard>
           <EventBusDemo />
