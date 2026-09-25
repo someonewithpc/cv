@@ -58,7 +58,8 @@
   "languages": [
     { "name": "Portuguese", "level": "Native" },
     { "name": "English", "level": "C2" },
-    { "name": "Spanish", "level": "C1" }
+    { "name": "Spanish", "level": "C1" },
+    { "name": "Japanese", "level": "A1" }
   ],
   "location": "Porto, Portugal",
   "interests": [
