@@ -1,46 +1,12 @@
----
-const { statistics } = Astro.props;
----
-
 <header>
-  <div class="title">
-    <h2 id="open-source-heading">
-      <span class="typewriter">Open Source</span>
-      <small lang="ja">オープンソース</small>
-    </h2>
-  </div>
-
-  <dl>
-    <div>
-      <dt>
-        <small lang="ja">マージ</small>
-        Merged
-      </dt>
-      <dd>{statistics.merged}</dd>
-    </div>
-    <div>
-      <dt>
-        <small lang="ja">オープン</small>
-        Open
-      </dt>
-      <dd>{statistics.open}</dd>
-    </div>
-    <div>
-      <dt>
-        <small lang="ja">クローズ</small>
-        Closed
-      </dt>
-      <dd>{statistics.closed}</dd>
-    </div>
-  </dl>
+  <h2 id="open-source-heading">
+    <span class="typewriter">Open Source</span>
+    <small lang="ja">オープンソース</small>
+  </h2>
 </header>
 
 <style lang="scss">
 header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 2rem 3rem;
-  align-items: end;
   margin-bottom: 2.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--line);
@@ -63,54 +29,6 @@ header {
       text-transform: uppercase;
       line-height: 1.05;
       color: var(--ink);
-    }
-  }
-
-  dl {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem 2.5rem;
-    padding-top: 0.25rem;
-
-    div {
-      display: grid;
-      gap: 0.35rem;
-      min-width: 4.5rem;
-    }
-
-    dt {
-      display: grid;
-      justify-items: start;
-      gap: 0.1rem;
-      font-family: monospace, system-ui;
-      font-size: 0.625rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--ink-faint);
-
-      [lang='ja'] {
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-      }
-    }
-
-    dd {
-      font-family: monospace, system-ui;
-      font-size: 1.5rem;
-      font-weight: 600;
-      line-height: 1;
-      color: var(--accent-text);
-      border-bottom: 1px dashed var(--line);
-      padding-bottom: 0.15rem;
-    }
-  }
-
-  @container (max-width: 50rem) {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-
-    dl {
-      gap: 1.25rem 2rem;
     }
   }
 }

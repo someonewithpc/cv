@@ -20,17 +20,11 @@ const edges = [
   `--shade-top: ${top.shade}`,
   `--shade-bottom: ${bottom.shade}`,
 ].join('; ');
-
-const statistics = {
-  merged: groups.find((group) => group.id === 'merged')?.items.length ?? 0,
-  open: groups.find((group) => group.id === 'open')?.items.length ?? 0,
-  closed: groups.find((group) => group.id === 'closed')?.items.length ?? 0,
-};
 ---
 
 <section id="open-source" aria-labelledby="open-source-heading" style={edges}>
   <div class="intro">
-    <SectionHeader statistics={statistics} />
+    <SectionHeader />
 
     <Highlights highlights={highlights} />
   </div>
