@@ -34,17 +34,17 @@ $sheet-margin: 0.75em;
   height: 100%;
   min-height: 0;
 
-  /* The title block claims the bottom-right corner and stands 5.5em of this type tall on a
-     blueprint page; the panel is centred, so its bottom edge has to clear that corner at
-     every width. */
-  padding-bottom: calc(5.75em + $sheet-margin);
+  /* The title block claims the bottom-right corner of a landscape sheet. The panel keeps to
+     the free space left of it, where it has the sheet's whole height: a panel centred on the
+     sheet had to clear the block's top instead, and scrolled at every desktop size. Stack.astro
+     sets the block's width. */
+  padding-right: calc(var(--title-block-inline, 0px) + $sheet-margin);
 
   @container technical-drawing (orientation: portrait) {
     /* Portrait gives the title block its own row. */
-    padding-bottom: $sheet-margin;
+    padding-right: $sheet-margin;
   }
 
-  margin-inline: auto;
   display: grid;
   /* An auto track takes the panel's max-content width and overflows the sheet on a
      portrait page; 1fr pins it to the wrapper so the panel's own max-width bites. The row
