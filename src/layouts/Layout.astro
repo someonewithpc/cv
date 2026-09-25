@@ -298,19 +298,6 @@ main {
        the last. */
     --desk-gap: 2.5rem;
     --sheet-pad: 1.5rem;
-    /* The mat and the folio share the desk margin, so the mat stops at the far side of the
-       lane the sheet number stands in whenever that is the wider of the two. */
-    --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
-
-    /* On the desk the mat is a thin frame round what lies on it: 0.75rem of ruled mat past
-       the boundary, then a 0.75rem rim. The boundary stands 1.75rem off the view where the
-       desk is narrow, the least that holds a stack's hint line above or under it
-       (Callout.astro), and opens to 3rem after the folio appears. Each side of it takes 0.15
-       of every pixel the window gains and the folio lane takes the rest, so neither the mat
-       nor the numeral jumps at any width. */
-    --mat-rim: 0.75rem;
-    --mat-clear: 0.75rem;
-    --mat-boundary: clamp(1.75rem, 1.75rem + (100vw - 76rem) * 0.15, 3rem);
 
     row-gap: var(--desk-gap);
     padding-block: var(--desk-gap);
@@ -331,6 +318,26 @@ main {
       padding: 0;
       border: 0;
     }
+  }
+
+  /* The mat keeps its phone geometry until the folio's width: as wide as the drawing and the
+     page gutters, or the window if that is narrower. Framed for the desk from 64rem it took
+     59px off every drawing at 1025 and gave it back at 1216, and its boundary ran 1px inside
+     the mat's edge in between. */
+  @media (width >= 76rem) {
+    /* The mat and the folio share the desk margin, so the mat stops at the far side of the
+       lane the sheet number stands in whenever that is the wider of the two. */
+    --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
+
+    /* On the desk the mat is a thin frame round what lies on it: 0.75rem of ruled mat past
+       the boundary, then a 0.75rem rim. The boundary stands 1.75rem off the view where the
+       desk is narrow, the least that holds a stack's hint line above or under it
+       (Callout.astro), and opens to 3rem as the desk widens. Each side of it takes 0.15 of
+       every pixel the window gains and the folio lane takes the rest, so neither the mat nor
+       the numeral jumps at any width. */
+    --mat-rim: 0.75rem;
+    --mat-clear: 0.75rem;
+    --mat-boundary: clamp(1.75rem, 1.75rem + (100vw - 76rem) * 0.15, 3rem);
   }
 
   > :not(.full-width, .breakout, .folio-rail) {

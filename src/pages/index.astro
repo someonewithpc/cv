@@ -153,12 +153,11 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
     }
   }
 
-  /* The details lie on a cutting mat. Past 64rem it stops short of the viewport so the desk
-     shows down both sides, and it is never wider than --mat-max (Layout.astro), so it hugs
-     what lies on it. Below that there is no desk, so it runs edge to edge and its rim takes
-     the page gutter. The ruling covers the content box only, which is what leaves the rim
-     unruled; the mat's own colour runs out to the border, so the rim is still mat and not
-     desk. */
+  /* The details lie on a cutting mat. It is never wider than --mat-max (Layout.astro), so it
+     hugs what lies on it and the desk shows down both sides once the window is wider than
+     that. Narrower, it runs edge to edge and its rim takes the page gutter. The ruling covers
+     the content box only, which is what leaves the rim unruled; the mat's own colour runs out
+     to the border, so the rim is still mat and not desk. */
   .cutting-mat {
     grid-column: full-width;
     justify-self: center;
@@ -212,11 +211,11 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
       row-gap: 2.5em;
     }
 
-    /* With no desk beside it the mat is as wide as the window, so its sides are only a plain
-       strip and a line down each edge of the screen. They go, and the ruling runs out to the
-       window's edges as if the mat went on past them. The padding takes the line's width
-       back, so the details keep the width they had. */
-    @media (width <= 64rem) {
+    /* Up to 65rem, the drawing and its two page gutters, the mat is as wide as the window, so
+       its sides are only a plain strip and a line down each edge of the screen. They go, and
+       the ruling runs out to the window's edges as if the mat went on past them. The padding
+       takes the line's width back, so the details keep the width they had. */
+    @media (width <= 65rem) {
       border-inline: 0;
       border-radius: 0;
       padding-inline: calc(var(--mat-rim) + var(--mat-line));
