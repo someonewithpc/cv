@@ -812,6 +812,16 @@ section {
               overflow: visible;
             }
 
+            /* The elephant fills its whole box where every other mark leaves a margin, and
+               its hairline outline vanishes at this size, so beside a second logo it read as
+               a blue blob over its neighbour. Here it keeps to the others' optical size and
+               takes an outline in the sheet's ink. */
+            :global(svg[data-icon='postgresql']) {
+              --postgres-stroke: var(--ink);
+              --postgres-stroke-width: 7;
+              scale: 0.8;
+            }
+
             &:first-child {
               top: 0.2em;
               left: 0.2em;
