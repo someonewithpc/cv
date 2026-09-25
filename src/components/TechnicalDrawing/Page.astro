@@ -217,6 +217,10 @@ section {
   --note-fold-size: 3.5rem;
   --note-fold-reach: 0px;
 
+  /* The gap between the frame line and an app that fills the sheet (Space Builder, Drag
+     and drop). It narrows with the sheet and is gone on a phone. */
+  --demo-inset: 1rem;
+
   /* The title block's own box in pixels, written here by Stack.astro's observer once there
      is one to measure. Zero until then, and zero is what the sheets whose artwork never
      reaches that corner want anyway. */
@@ -919,6 +923,8 @@ section {
      over the title block. Tuck it under the dog-eared corner instead; 56em is
      the same threshold EditorLayer uses to hand the gutters to the chrome. */
   @container technical-drawing-width (max-width: 56em) {
+    --demo-inset: 0.5rem;
+
     .aside {
       /* Only the dog-ear lives here; the note itself is in the dialog, and the
          fold positions itself against the sheet, so the wrapper adds no box. */
@@ -965,6 +971,7 @@ section {
   @container technical-drawing (orientation: portrait) {
     /* A phone sheet cannot spare a 1rem mat on all four edges. */
     --sheet-margin: 0.625rem;
+    --demo-inset: 0px;
 
     grid-template-columns: minmax(0, 1fr);
     /* Artwork, then the deck, then the title block. The note is tucked under the
