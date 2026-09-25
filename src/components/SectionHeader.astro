@@ -3,18 +3,12 @@ type Props = {
   headingId: string;
   titleJp: string;
   title: string;
-  sheetCode?: string;
 };
 
-const { headingId, titleJp, title, sheetCode = 'SH' } = Astro.props;
+const { headingId, titleJp, title } = Astro.props;
 ---
 
 <header>
-  <p class="sheet-code monospace" aria-hidden="true">
-    <span>{sheetCode}</span>
-    <span>/</span>
-    <span>REV A</span>
-  </p>
   <h2 id={headingId}>
     <small lang="ja">{titleJp}</small>
     <span class="typewriter">{title}</span>
@@ -26,16 +20,6 @@ header {
   margin-bottom: 2.5rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid color-mix(in oklch, var(--line), transparent 25%);
-
-  .sheet-code {
-    display: flex;
-    gap: 0.5ch;
-    margin: 0 0 0.35rem;
-    font-size: 0.625rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--accent-text);
-  }
 
   h2 {
     display: grid;
