@@ -856,6 +856,38 @@ test('the ruled sheets fit a phone without scrolling sideways', async ({ page })
   expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
 });
 
+// A narrowing sheet gives its margin up first, so the writing keeps the width.
+test('the margin goes before the writing loses any room', async ({ page }) => {
+  const read = () =>
+    page.locator('#open-source section[data-group="open"]').evaluate((sheet) => {
+      const style = getComputedStyle(sheet);
+      const probe = document.createElement('div');
+      probe.style.width = style.getPropertyValue('--margin-x');
+      sheet.append(probe);
+      const margin = probe.getBoundingClientRect().width;
+      probe.remove();
+      const left = sheet.getBoundingClientRect().left;
+      return {
+        margin,
+        writing: sheet.querySelector('.lines')!.getBoundingClientRect().left - left,
+        title: sheet.querySelector('.row .title')!.getBoundingClientRect().left - left,
+      };
+    });
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  expect((await read()).margin).toBeGreaterThan(40);
+
+  for (const width of [640, 506, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    const { margin, writing, title } = await read();
+    expect(margin, `margin at ${width}px`).toBe(0);
+    expect(writing, `writing at ${width}px`).toBeLessThanOrEqual(24);
+    // The marks' column and its gap are all that stand before a title.
+    expect(title - writing, `title at ${width}px`).toBeLessThanOrEqual(width < 500 ? 30 : 40);
+  }
+});
+
 type WrittenLine = {
   sheet: string;
   kind: string;
@@ -995,10 +1027,11 @@ const readPitch = (page: import('@playwright/test').Page) =>
     return { pitch: px(style.getPropertyValue('--rule-pitch')), line: px(style.getPropertyValue('--line-height')) };
   });
 
-// The layout changes at each of these: three columns, two, the marks down the margin and a
-// narrower sheet with a wider pitch. A row that grows by a pixel anywhere pushes every line
-// under it out of its band, so each width is walked to the last line of the last sheet.
-for (const width of [1440, 1024, 768, 390]) {
+// The layout changes at each of these: three columns, two, the repository over the title
+// with no margin, and a narrower sheet with a wider pitch and a tighter column of marks. A row
+// that grows by a pixel anywhere pushes every line under it out of its band, so each width is
+// walked to the last line of the last sheet.
+for (const width of [1440, 1024, 768, 640, 390]) {
   test(`every line on a ruled sheet is centred between two rules at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
