@@ -23,6 +23,12 @@ const FRAMES = [
   { name: 'tablet landscape', width: 1024, height: 768 },
 ];
 
+/** Narrower than any phone sold today, but one box too wide and the page scrolls sideways. */
+const NARROW = [
+  { name: 'narrow phone', width: 280, height: 919 },
+  { name: 'narrowest frame', width: 224, height: 919 },
+];
+
 /** One session per page: a fresh one per switch outlives its usefulness and costs a round trip. */
 const sessions = new WeakMap<Page, Promise<Awaited<ReturnType<typeof newSession>>>>();
 const newSession = (page: Page) => page.context().newCDPSession(page);
@@ -88,9 +94,9 @@ async function openAtDesk(page: Page): Promise<void> {
 }
 
 /** Runs `enter`, switches to every emulated frame, and checks the widths in each. */
-async function checkFrames(page: Page, enter: () => Promise<void>) {
+async function checkFrames(page: Page, enter: () => Promise<void>, frames = FRAMES) {
   await enter();
-  for (const frame of FRAMES) {
+  for (const frame of frames) {
     await deviceMode(page, frame.width, frame.height);
     await page.waitForTimeout(300);
     const reading = await widths(page);
@@ -104,6 +110,14 @@ async function checkFrames(page: Page, enter: () => Promise<void>) {
 test('a page nobody has touched fits the frame it is dropped into', async ({ page }) => {
   await openAtDesk(page);
   await checkFrames(page, async () => {});
+});
+
+test('a frame narrower than any phone fits, theme picker and all', async ({ page }) => {
+  await openAtDesk(page);
+  await checkFrames(page, async () => {}, NARROW);
+  const picker = await page.locator('#theme-picker').boundingBox();
+  expect(picker).not.toBeNull();
+  expect(picker!.x + picker!.width).toBeLessThanOrEqual(NARROW.at(-1)!.width);
 });
 
 test('the foot of the page fits the frame', async ({ page }) => {
