@@ -94,16 +94,17 @@ jobs.unshift({
   lines: [education.degree, `${education.minor}, ${education.short}`],
 });
 
-/* Lanes: a bar takes the lowest lane that is clear for it, so overlapping jobs stack. A bar
-   whose whole length ends up under a higher bar could not take a leader, so it moves above
-   the bars that cover it. */
+/* Lanes: where two bars overlap, the one that started later sits lower. The degree keeps the
+   lowest lane; then, latest start first, each job goes one lane above the highest bar it
+   overlaps. */
 const CLEAR = 0.15;
-const laneEnds: number[] = [];
-for (const job of jobs) {
-  let lane = laneEnds.findIndex((end) => end + CLEAR <= job.start);
-  if (lane < 0) lane = laneEnds.length;
-  laneEnds[lane] = job.end;
-  job.lane = lane;
+const overlaps = (a: Job, b: Job) => a.start < b.end + CLEAR && b.start < a.end + CLEAR;
+{
+  const stacked = [jobs[0]];
+  for (const job of jobs.slice(1).sort((a, b) => b.start - a.start)) {
+    job.lane = Math.max(-1, ...stacked.filter((other) => overlaps(other, job)).map((other) => other.lane)) + 1;
+    stacked.push(job);
+  }
 }
 
 /* A seasonal job breaks off midway through each winter between its summers. */
@@ -114,18 +115,34 @@ const ANCHORS = [0.3, 0.7, 0.5, 0.15, 0.85];
 const MARGIN = 0.12;
 const above = (job: Job) => jobs.filter((other) => other.lane > job.lane && other.start - MARGIN <= job.end && job.start <= other.end + MARGIN);
 const covered = (job: Job, t: number) => above(job).some((other) => other.start - MARGIN <= t && t <= other.end + MARGIN);
-for (let moved = true; moved; ) {
-  moved = false;
-  for (const job of jobs) {
-    job.anchors = ANCHORS.map((f) => job.start + f * (job.end - job.start))
-      .filter((t) => !covered(job, t) && breaks(job).every((b) => Math.abs(t - b) > 0.2))
-      .map((t) => (t - job.start) / (job.end - job.start));
-    if (job.anchors.length) continue;
-    job.lane = Math.max(...above(job).map((other) => other.lane)) + 1;
-    moved = true;
-  }
+for (const job of jobs) {
+  job.anchors = ANCHORS.map((f) => job.start + f * (job.end - job.start))
+    .filter((t) => !covered(job, t) && breaks(job).every((b) => Math.abs(t - b) > 0.2))
+    .map((t) => (t - job.start) / (job.end - job.start));
 }
 const lanes = Math.max(...jobs.map((job) => job.lane)) + 1;
+
+/* A bar with no clear anchor lies wholly under the bars over it. Its leader leaves the bar's
+   end along its lane, runs out past the bars over it and turns up to its bubble there. These
+   are the times it may turn at, nearest the bar first; `margin` is how far it keeps from any
+   bar over it, in years. */
+const elbows = (job: Job, margin: number): number[] => {
+  const over = jobs.filter((other) => other.lane > job.lane);
+  const beside = jobs.filter((other) => other !== job && other.lane === job.lane);
+  const blocked = (t: number) => over.some((other) => other.start - margin < t && t < other.end + margin);
+  const turns: { t: number; far: number }[] = [];
+  for (const dir of [-1, 1]) {
+    const end = dir < 0 ? job.start : job.end;
+    let t = end + dir * margin;
+    for (let other; (other = over.find((o) => o.start - margin < t && t < o.end + margin)); ) t = (dir < 0 ? other.start : other.end) + dir * margin;
+    for (let step = 0; step <= 10; step += 1, t += dir * 0.1) {
+      const [from, to] = dir < 0 ? [t, end] : [end, t];
+      if (t < T0 || t > T1 || blocked(t) || beside.some((other) => other.start - margin < to && from < other.end + margin)) break;
+      turns.push({ t, far: Math.abs(t - end) });
+    }
+  }
+  return turns.sort((a, b) => a.far - b.far).map(({ t }) => t);
+};
 
 /* The learning line has not ended: it runs to the day of the build. */
 const today = new Date();
@@ -241,22 +258,33 @@ const wide = (() => {
   const BAR = 20;
   const ROW = 34;
 
-  type Placed = Job & { ax: number; row: number; textEnd: number };
+  /* `leg` is where a bent leader runs along its lane: from its turn to the bar's end. */
+  type Option = { ax: number; textEnd: number; lane: number; leg?: [number, number] };
+  type Spot = Option & { row: number };
+  type Placed = Job & Spot;
 
   /* Label rows, nearest the bars first. Two labels in a row keep clear of each other, a
-     leader coming down from a higher row keeps clear of the text in the rows it passes, and
+     leader coming down from a higher row keeps clear of the text in the rows it passes, a
+     leader coming down to a lower lane keeps clear of a bent leader's run along its lane, and
      no text runs off the sheet. The search tries one row, then two and so on, and keeps the
      first layout that fits, each label at its best anchor that allows it. */
-  const options = jobs.map((job) => {
+  const options: Option[][] = jobs.map((job) => {
     const width = 25 + Math.max(...job.lines.map((line) => line.length)) * CH;
-    return job.anchors.map((f) => x(job.start + f * (job.end - job.start))).filter((ax) => ax + width <= W - 4).map((ax) => ({ ax, textEnd: ax + width }));
+    const straight = job.anchors.map((f): Option => ({ ax: x(job.start + f * (job.end - job.start)), textEnd: 0, lane: job.lane }));
+    const bent = job.anchors.length
+      ? []
+      : elbows(job, 0.2).map((t): Option => ({ ax: x(t), textEnd: 0, lane: job.lane, leg: [x(t), t < job.start ? x(job.start) - 1 : x(job.end) + 1] }));
+    return [...straight, ...bent].filter((o) => o.ax + width <= W - 4).map((o) => ({ ...o, textEnd: o.ax + width }));
   });
-  const clear = (a: { row: number; ax: number; textEnd: number }, b: { row: number; ax: number; textEnd: number }) => {
+  const passes = (down: Spot, bent: Spot) =>
+    !!bent.leg && down.lane < bent.lane && Math.min(...bent.leg) - 8 < down.ax && down.ax < Math.max(...bent.leg) + 8;
+  const clear = (a: Spot, b: Spot) => {
+    if (passes(a, b) || passes(b, a)) return false;
     if (a.row === b.row) return a.textEnd + 16 <= b.ax - 10 || b.textEnd + 16 <= a.ax - 10;
     const [high, low] = a.row > b.row ? [a, b] : [b, a];
     return high.ax + 12 < low.ax - 12 || low.textEnd + 4 < high.ax - 12;
   };
-  const search = (rows: number, chosen: { row: number; ax: number; textEnd: number }[]): typeof chosen | undefined => {
+  const search = (rows: number, chosen: Spot[]): Spot[] | undefined => {
     if (chosen.length === jobs.length) return chosen;
     for (let row = 0; row < rows; row += 1) {
       for (const option of options[chosen.length]) {
@@ -268,7 +296,7 @@ const wide = (() => {
     }
     return undefined;
   };
-  let layout: { row: number; ax: number; textEnd: number }[] | undefined;
+  let layout: Spot[] | undefined;
   for (let rows = 1; !layout; rows += 1) {
     if (rows > jobs.length) throw new Error('Career elevation: no label layout keeps every leader clear');
     layout = search(rows, []);
@@ -294,7 +322,9 @@ const wide = (() => {
     /* The span sits mid-bar unless the leader lands there, then beside the leader. */
     const half = (job.span.length * CH) / 2 + 8;
     let mid = (x0 + x1) / 2;
-    if (Math.abs(job.ax - mid) < half) mid = job.ax + (job.ax - x0 > x1 - job.ax ? -half : half);
+    if (!job.leg && Math.abs(job.ax - mid) < half) mid = job.ax + (job.ax - x0 > x1 - job.ax ? -half : half);
+    /* A bent leader turns once, at a right angle, and meets the bar's end at half its height. */
+    const leader = job.leg ? `${job.ax} ${by + 10} ${job.ax} ${top + BAR / 2} ${job.leg[1]} ${top + BAR / 2}` : `${job.ax} ${by + 10} ${job.ax} ${top - 1}`;
     const shape = job.open
       ? openBar(x0, x1, LY, (a, c) => `${a} ${c}`)
       : job.seasonal
@@ -308,7 +338,7 @@ const wide = (() => {
       <line class="dim" x1="${x0 - 4}" y1="${dim}" x2="${job.open ? x1 : x1 + 4}" y2="${dim}"/>
       ${tick(x0, dim)}${job.open ? '' : tick(x1, dim)}
       ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}
-      <polyline class="leader" points="${job.ax} ${by + 10} ${job.ax} ${top - 1}" marker-end="url(#h-arrow)"/>
+      <polyline class="leader" points="${leader}" marker-end="url(#h-arrow)"/>
       ${bubble(job.ax, by, job)}
       ${job.lines.map((line, i) => text(job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
     </g>`;
@@ -350,10 +380,30 @@ const tall = (() => {
   const LX = BEND + 28;
   const width = Math.floor((W - 4 - LX - 15) / CH);
 
+  /* A bar under others takes a bent leader: it comes in past the lanes at its turn, runs across
+     to the bar's centre line and down or up it to the bar's end. A leader to a lower lane keeps
+     off that run. */
+  const turns = new Map(
+    jobs
+      .filter((job) => !job.anchors.length)
+      .map((job) => {
+        const t = elbows(job, 0.3)[0];
+        if (t === undefined) throw new Error(`Career elevation: no way for the ${job.id} leader around the bars over it`);
+        return [job.id, { t, lane: job.lane, run: t < job.start ? [t, job.start] : [job.end, t] }];
+      }),
+  );
+  const onRun = (job: Job, t: number) => [...turns.values()].some(({ lane, run }) => job.lane < lane && run[0] - 0.3 < t && t < run[1] + 0.3);
+  const anchor = (job: Job) => {
+    const turn = turns.get(job.id);
+    if (turn) return turn.t;
+    const times = job.anchors.map((f) => job.start + f * (job.end - job.start));
+    return times.find((t) => !onRun(job, t)) ?? times[0];
+  };
+
   type Placed = Job & { ay: number; top: number; text: string[] };
   const placed: Placed[] = jobs.map((job) => ({
     ...job,
-    ay: y(job.start + job.anchors[0] * (job.end - job.start)),
+    ay: y(anchor(job)),
     top: 0,
     text: job.lines.flatMap((line) => wrap(line, width)),
   }));
@@ -387,6 +437,8 @@ const tall = (() => {
     const dim = x0 - 10;
     const mid = spanAt.get(job.id)!;
     const by = job.top + 7;
+    const turn = turns.get(job.id);
+    const leg = turn ? `${x0 + BAR / 2} ${job.ay} ${x0 + BAR / 2} ${turn.t < job.start ? y0 - 1 : y1 + 1}` : `${right + 1} ${job.ay}`;
     const shape = job.open
       ? openBar(y0, y1, LC, (a, c) => `${c} ${a}`)
       : job.seasonal
@@ -400,7 +452,7 @@ const tall = (() => {
       <line class="dim" x1="${dim}" y1="${y0 - 4}" x2="${dim}" y2="${job.open ? y1 : y1 + 4}"/>
       ${tick(dim, y0)}${job.open ? '' : tick(dim, y1)}
       ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
-      <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${right + 1} ${job.ay}" marker-end="url(#v-arrow)"/>
+      <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${leg}" marker-end="url(#v-arrow)"/>
       ${bubble(LX, by, job)}
       ${job.text.map((line, i) => text(LX + 15, job.top + 11 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
     </g>`;

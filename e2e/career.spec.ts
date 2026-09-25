@@ -96,12 +96,6 @@ test('the elevation under the table draws one bar per job, as long as the job la
     await expect(job.locator('.bubble-number')).toHaveText(String(site.experience.length - index).padStart(2, '0'));
   }
 
-  // The jobs that ran at once stand in different lanes.
-  const lanes = await wide.locator('.job').evaluateAll((jobs) => jobs.map((job) => [job.getAttribute('data-job'), job.getAttribute('data-lane')]));
-  const lane = Object.fromEntries(lanes);
-  expect(lane['gnu-social']).not.toBe(lane['protosyn']);
-  expect(lane['gnu-social']).not.toBe(lane['leb']);
-
   // The drawing sits under the table and the cells, not beside them.
   const drawingTop = (await wide.boundingBox())!.y;
   for (const block of ['.table', '.cells']) {
@@ -146,7 +140,72 @@ test('the degree is an outline bar in the lowest lane, under the jobs of its yea
   await expect(page.locator('#career svg.tall g.study .bubble-number')).toHaveText('B');
 });
 
-/** Leaders that cross a bar or a label, and labels that overlap, in the drawing on show. */
+test('where two bars overlap, the one that started later sits lower', async ({ page }) => {
+  for (const [drawing, width] of [['wide', 1440], ['tall', 390]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const svg = page.locator(`#career svg.${drawing}`);
+    await expect(svg).toBeVisible();
+
+    // Wide, a lower lane is further down; tall, it is nearer the datum on the left.
+    const height = async (id: string) => {
+      const box = (await svg.locator(`g[data-job="${id}"] .bar`).first().boundingBox())!;
+      return drawing === 'wide' ? -box.y : box.x;
+    };
+    const jobs = site.experience.map((entry) => ({ id: entry.id, from: at(entry.from), to: at(entry.to, true) }));
+    for (const [i, a] of jobs.entries()) {
+      for (const b of jobs.slice(i + 1)) {
+        if (!(a.from < b.to && b.from < a.to)) continue;
+        const [early, late] = a.from < b.from ? [a, b] : [b, a];
+        expect(await height(late.id), `${drawing}: ${late.id} started after ${early.id} and sits lower`).toBeLessThan(await height(early.id));
+      }
+    }
+    expect(await height('protosyn'), drawing).toBeLessThan(await height('gnu-social'));
+    expect(await height('gnu-social'), drawing).toBeLessThan(await height('leb'));
+  }
+});
+
+test('the leader to a bar under another bends around it at right angles', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const svg = page.locator('#career svg.wide');
+  const bar = (id: string) =>
+    svg.locator(`g[data-job="${id}"] .bar`).first().evaluate((el) => {
+      const b = (el as SVGGraphicsElement).getBBox();
+      return { left: b.x, right: b.x + b.width, top: b.y, bottom: b.y + b.height };
+    });
+  const over = await bar('gnu-social');
+  const under = await bar('protosyn');
+  expect(under.left).toBeGreaterThan(over.left);
+  expect(under.right).toBeLessThan(over.right);
+
+  // Down from the bubble clear of the GNU social bar, then along the lane to ProtoSyn's end.
+  const points = await svg.locator('g[data-job="protosyn"] .leader').evaluate((el) => [...(el as SVGPolylineElement).points].map(({ x, y }) => [x, y]));
+  expect(points).toHaveLength(3);
+  const [[downX], [turnX, turnY], [tipX, tipY]] = points;
+  expect(downX).toBe(turnX);
+  expect(turnY).toBe(tipY);
+  expect(turnX < over.left || turnX > over.right, 'the leader turns clear of the GNU social bar').toBe(true);
+  expect(tipY).toBeCloseTo((under.top + under.bottom) / 2, 0);
+  expect(Math.min(Math.abs(tipX - under.left), Math.abs(tipX - under.right))).toBeLessThanOrEqual(2);
+
+  // Tall, it comes in across the lanes and down the bar's centre line to its end.
+  await page.setViewportSize({ width: 390, height: 900 });
+  const tall = page.locator('#career svg.tall');
+  await expect(tall).toBeVisible();
+  const end = await tall.locator('g[data-job="protosyn"] .leader').evaluate((el) => [...(el as SVGPolylineElement).points].slice(-3).map(({ x, y }) => [x, y]));
+  const box = await tall.locator('g[data-job="protosyn"] .bar').evaluate((el) => {
+    const { x, y, width, height } = (el as SVGGraphicsElement).getBBox();
+    return { x, y, width, height };
+  });
+  expect(end[0][1]).toBe(end[1][1]);
+  expect(end[1][0]).toBe(end[2][0]);
+  expect(end[2][0]).toBeCloseTo(box.x + box.width / 2, 0);
+  expect(Math.min(Math.abs(end[2][1] - box.y), Math.abs(end[2][1] - box.y - box.height))).toBeLessThanOrEqual(2);
+});
+
+/** Leaders that cross a bar, a label or each other, and labels that overlap, in the drawing on show. */
 const collisions = (svg: SVGSVGElement) => {
   type Box = { left: number; top: number; right: number; bottom: number };
   const inset = (r: DOMRect, by: number): Box => ({ left: r.left + by, top: r.top + by, right: r.right - by, bottom: r.bottom - by });
@@ -176,6 +235,11 @@ const collisions = (svg: SVGSVGElement) => {
   const labels = groups.flatMap((g) => [...g.querySelectorAll('text.label, text.small, circle.bubble')].map((el) => ({ id: g.dataset.job!, box: inset(el.getBoundingClientRect(), 1) })));
   const spans = groups.flatMap((g) => [...g.querySelectorAll('text.span')].map((el) => ({ id: g.dataset.job!, box: inset(el.getBoundingClientRect(), 1) })));
   const bars = groups.flatMap((g) => [...g.querySelectorAll('.bar')].map((el) => ({ id: g.dataset.job!, box: inset(el.getBoundingClientRect(), 1) })));
+  // Do two segments cross, strictly?
+  const side = (ax: number, ay: number, bx: number, by: number, cx: number, cy: number) => Math.sign((bx - ax) * (cy - ay) - (by - ay) * (cx - ax));
+  const cut = ([a, b, c, d]: number[], [e, f, g, h]: number[]) =>
+    side(a, b, c, d, e, f) * side(a, b, c, d, g, h) < 0 && side(e, f, g, h, a, b) * side(e, f, g, h, c, d) < 0;
+  const legs: { id: string; segment: number[] }[] = [];
   for (const g of groups) {
     const leader = g.querySelector<SVGPolylineElement>('polyline.leader')!;
     const points = [...leader.points].map(({ x, y }) => point(x, y));
@@ -192,7 +256,11 @@ const collisions = (svg: SVGSVGElement) => {
       for (const bar of bars) if (crosses(segment, bar.box)) found.push(`${g.dataset.job} leader crosses the ${bar.id} bar`);
       for (const label of labels) if (label.id !== g.dataset.job && crosses(segment, label.box)) found.push(`${g.dataset.job} leader crosses the ${label.id} label`);
       for (const span of spans) if (crosses(segment, span.box)) found.push(`${g.dataset.job} leader crosses the ${span.id} span`);
+      legs.push({ id: g.dataset.job!, segment });
     }
+  }
+  for (const [i, one] of legs.entries()) {
+    for (const other of legs.slice(i + 1)) if (one.id !== other.id && cut(one.segment, other.segment)) found.push(`${one.id} and ${other.id} leaders cross`);
   }
   for (const [i, one] of labels.entries()) {
     for (const other of labels.slice(i + 1)) if (one.id !== other.id && overlap(one.box, other.box)) found.push(`${one.id} and ${other.id} labels overlap`);
@@ -202,7 +270,7 @@ const collisions = (svg: SVGSVGElement) => {
 };
 
 for (const [drawing, width] of [['wide', 1440], ['wide', 900], ['tall', 390], ['tall', 768]] as const) {
-  test(`in the ${drawing} drawing at ${width}px no leader crosses a bar or a label`, async ({ page }) => {
+  test(`in the ${drawing} drawing at ${width}px no leader crosses a bar, a label or another leader`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     const svg = page.locator(`#career svg.${drawing}`);
