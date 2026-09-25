@@ -115,3 +115,14 @@ test('schemaDef: the keyboard walks the lines and jumps across', async ({ page }
   await page.keyboard.press('ArrowLeft');
   await expect(id).toBeFocused();
 });
+
+test('schemaDef: the sheet says what GNU social is, and the title fits at 390', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { root } = await mountedPanes(page);
+  await expect(root.locator('.intro')).toContainText('GNU social is a federated social network server');
+
+  const stack = schemaDefStack(page);
+  const title = frontPage(stack, await frontPageIndex(stack)).locator('h2.typewriter').first();
+  const [scroll, client] = await title.evaluate((el) => [el.scrollWidth, el.clientWidth]);
+  expect(scroll, 'the title block cuts the title').toBeLessThanOrEqual(client);
+});
