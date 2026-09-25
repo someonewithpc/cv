@@ -149,20 +149,26 @@ test.describe(() => {
     await expect(bus).toHaveAttribute('data-rendered', 'image');
   });
 
-  test('main page: the walkthrough shows the GIF, then its fallback', async ({ page, walkthroughRate }) => {
+  test('main page: the walkthrough shows the GIF, one event at a time', async ({ page, walkthroughRate }) => {
     const rate = walkthroughRate;
     await page.goto('/');
     const { bus } = await mountedBus(page);
     await expect(bus).toHaveAttribute('data-autoplay-state', 'playing');
 
-    // Six steps in: the GIF, with VideoEncoder's resizer first.
+    // Six steps in: the GIF on ViewAttachment, which ImageEncoder claims.
     await expect(bus).toHaveAttribute('data-attachment', 'gif', within(8 * STEP_MS, rate));
-    await expect(bus).toHaveAttribute('data-thumbnail', 'VideoEncoder', within(RUN_MS, rate));
+    await expect(bus).toHaveAttribute('data-stage', 'view');
+    await expect(bus).toHaveAttribute('data-rendered', 'image', within(RUN_MS, rate));
+
+    // Then FileResizerAvailable, with VideoEncoder's resizer first.
+    await expect(bus).toHaveAttribute('data-stage', 'resize', within(2 * STEP_MS, rate));
+    await expect(bus).toHaveAttribute('data-rendered', 'event-map', within(RUN_MS, rate));
     await expect(resizer(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'true');
     await expect(resizer(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'unused');
 
     // Then VideoEncoder off, and ImageEncoder's resizer makes the thumbnail.
     await expect(bus).toHaveAttribute('data-thumbnail', 'ImageEncoder', within(2 * STEP_MS, rate));
+    await expect(bus).toHaveAttribute('data-stage', 'resize');
     await expect(bus.locator('.tray .listener[data-module="VideoEncoder"]')).toHaveCount(1);
     await expect(resizer(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'off');
     await expect(resizer(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'true');
@@ -186,23 +192,55 @@ function resizer(bus: Locator, module: string) {
   return bus.locator(`.resizer[data-module="${module}"]`);
 }
 
-// Every module handler is added at priority 0, so the order of the GIF's resizers comes from
+// The GIF raises two events, and the sheet shows one at a time. On ViewAttachment it is an
+// image like any other. FileResizerAvailable is the thumbnail request inside ImageEncoder's view:
+// every module handler is added at priority 0, so the order of the GIF's resizers comes from
 // the core, which puts $event_map['image/gif'] ahead of $event_map['image'].
-test('main page: the GIF goes to the specific encoder first, and falls back to the generic one', async ({ page }) => {
+test('main page: the GIF shows one event at a time, the specific resizer first', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const { bus } = await mountedBus(page);
+  const stage = (name: string) => bus.locator(`.stage[data-stage="${name}"]`);
 
+  // Only the GIF has the second event.
+  await expect(bus.locator('.stages')).toBeHidden();
   await bus.locator('.attachment[data-attachment="gif"]').click();
   await expect(bus).toHaveAttribute('data-attachment', 'gif');
-  // The view is still ImageEncoder's: image/gif is an image to onViewAttachment.
+  await expect(bus.locator('.stages')).toBeVisible();
+  await expect(stage('view')).toHaveAttribute('aria-pressed', 'true');
+
+  // ViewAttachment: ImageEncoder takes it, VideoEncoder never hears it, and nothing on the
+  // sheet speaks of resizers.
+  await expect(bus.locator('.call code:visible')).toContainText("'ViewAttachment'");
   await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'stop');
   await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'skipped');
   await expect(bus).toHaveAttribute('data-rendered', 'image');
+  await expect(bus.locator('.res figcaption span:visible')).toHaveText('$res');
+  await expect(bus.locator('.rendered[data-kind="image"]')).toHaveText(/ImageEncoder/);
+  await expect(bus.locator('.rendered[data-kind="image"]')).not.toHaveText(/VideoEncoder|thumbnail/);
+  await expect(bus.locator('.branch')).toBeVisible();
+  await expect(bus.locator('.resize')).toBeHidden();
   await expect(bus.locator('.chain .listener .meta')).toHaveText(['prio 0', 'prio 0', 'prio 0']);
 
-  await expect(bus.locator('.resize')).toBeVisible();
+  // FileResizerAvailable: AudioEncoder has no handler for it, the two encoders each add a
+  // resizer and answer next, and the box is the $event_map they filled.
+  await stage('resize').click();
+  await expect(bus).toHaveAttribute('data-stage', 'resize');
+  await expect(stage('resize')).toHaveAttribute('aria-pressed', 'true');
+  await expect(bus.locator('.call code:visible')).toContainText("'FileResizerAvailable'");
+  await expect(bus.locator('.chain .listener:visible')).toHaveCount(2);
+  await expect(listener(bus, 'AudioEncoder')).toBeHidden();
+  await expect(listener(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'next');
+  await expect(listener(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'next');
+  await expect(bus.locator('.returned')).toHaveText('next');
+  await expect(bus).toHaveAttribute('data-rendered', 'event-map');
+  await expect(bus.locator('.res figcaption span:visible')).toHaveText('$event_map');
+  await expect(bus.locator('.event-map .entry')).toHaveText(["'image/gif' => [VideoEncoder]", "'image' => [ImageEncoder]"]);
+  await expect(bus.locator('.rendered:visible')).toHaveCount(0);
   await expect(bus.locator('.branch')).toBeHidden();
+
+  await expect(bus.locator('.resize')).toBeVisible();
+  await expect(bus.locator('.resize-note')).toBeVisible();
   await expect(bus.locator('.resizer')).toHaveCount(2);
   await expect(bus.locator('.resizer').nth(0)).toHaveAttribute('data-module', 'VideoEncoder');
   await expect(bus.locator('.resizer').nth(1)).toHaveAttribute('data-module', 'ImageEncoder');
@@ -210,21 +248,28 @@ test('main page: the GIF goes to the specific encoder first, and falls back to t
   await expect(resizer(bus, 'VideoEncoder').locator('.answer')).toHaveText('true');
   await expect(resizer(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'unused');
   await expect(resizer(bus, 'ImageEncoder').locator('.answer')).toHaveText('not called');
-  await expect(bus).toHaveAttribute('data-thumbnail', 'VideoEncoder');
-  await expect(bus.locator('.thumb[data-by="VideoEncoder"]')).toBeVisible();
 
+  // VideoEncoder off: its list stays empty and ImageEncoder's resizer makes the thumbnail.
   await listener(bus, 'VideoEncoder').locator('.load').click();
   await expect(bus.locator('.tray .listener[data-module="VideoEncoder"]')).toHaveCount(1);
+  await expect(bus.locator('.chain .listener:visible')).toHaveCount(1);
+  await expect(bus.locator('.event-map .entry').nth(0)).toHaveAttribute('data-on', 'false');
+  await expect(bus.locator('.event-map .entry').nth(0).locator('.callable')).toBeHidden();
   await expect(resizer(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'off');
   await expect(resizer(bus, 'ImageEncoder')).toHaveAttribute('data-result', 'true');
   await expect(bus).toHaveAttribute('data-thumbnail', 'ImageEncoder');
-  await expect(bus.locator('.thumb[data-by="ImageEncoder"]')).toBeVisible();
-  await expect(bus.locator('.thumb[data-by="VideoEncoder"]')).toBeHidden();
 
   // Back on, it is first again.
   await bus.locator('.tray .listener[data-module="VideoEncoder"] .load').click();
   await expect(resizer(bus, 'VideoEncoder')).toHaveAttribute('data-result', 'true');
   await expect(bus).toHaveAttribute('data-thumbnail', 'VideoEncoder');
+
+  // Another file goes back to ViewAttachment, with AudioEncoder on the rail again.
+  await bus.locator('.attachment[data-attachment="jpeg"]').click();
+  await expect(bus).toHaveAttribute('data-stage', 'view');
+  await expect(bus.locator('.stages')).toBeHidden();
+  await expect(bus.locator('.chain .listener:visible')).toHaveCount(3);
+  await expect(bus).toHaveAttribute('data-rendered', 'image');
 });
 
 /** How far each answer pill's word sits from the pill's middle, in px: the x-height band
@@ -268,7 +313,8 @@ for (const width of [390, 1024, 1440]) {
     const chain = await labelOffsets(bus.locator('.chain .result'));
     expect(chain.map(({ text }) => text)).toEqual(['next', 'stop', 'skipped']);
     await bus.locator('.attachment[data-attachment="gif"]').click();
-    await expect(bus).toHaveAttribute('data-thumbnail', 'VideoEncoder');
+    await bus.locator('.stage[data-stage="resize"]').click();
+    await expect(bus).toHaveAttribute('data-rendered', 'event-map');
     const gif = await labelOffsets(bus.locator('.resizer .answer'));
     expect(gif.map(({ text }) => text)).toEqual(['true', 'not called']);
     for (const { text, across, down } of [...chain, ...gif]) {
