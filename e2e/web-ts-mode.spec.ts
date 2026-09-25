@@ -62,7 +62,7 @@ test('main page: a painted buffer, cut into the ranges each parser is handed', a
   await expect(interpolation).toHaveText('label');
 });
 
-test('main page: brackets beside the buffer nest astro around html around the embedded ranges', async ({ page }) => {
+test('main page: dashed boxes over the buffer nest astro around html around the embedded ranges', async ({ page }) => {
   const buffer = await liveBuffer(page);
   const bands = buffer.locator('.bands .band');
   const band = async (lang: string, lane: number) => {
@@ -86,11 +86,20 @@ test('main page: brackets beside the buffer nest astro around html around the em
   expect([style.from, style.to]).toEqual([23, 78]);
   expect(html.label).toBe('html 13-79');
 
+  // One style for every range: a dashed box, and nothing else outlines the code.
+  const styles = await bands.evaluateAll((all) => all.map((el) => getComputedStyle(el).borderTopStyle));
+  expect(styles).toEqual(Array(5).fill('dashed'));
+  const otherOutlines = await buffer.locator('.block, .range').evaluateAll((all) =>
+    all.map((el) => getComputedStyle(el).outlineStyle).filter((style) => style !== 'none'),
+  );
+  expect(otherOutlines).toEqual([]);
+
   const inside = (inner: typeof astro, outer: typeof astro) => {
     expect(inner.from).toBeGreaterThanOrEqual(outer.from);
     expect(inner.to).toBeLessThanOrEqual(outer.to);
-    // Drawn inside too: a lane further in, and within the outer bracket's height.
+    // Drawn inside too, inset on the left and on the right so both outlines show.
     expect(inner.box.x).toBeGreaterThan(outer.box.x);
+    expect(inner.box.x + inner.box.width).toBeLessThan(outer.box.x + outer.box.width);
     expect(inner.box.y).toBeGreaterThanOrEqual(outer.box.y - 1);
     expect(inner.box.y + inner.box.height).toBeLessThanOrEqual(outer.box.y + outer.box.height + 1);
   };
@@ -100,17 +109,30 @@ test('main page: brackets beside the buffer nest astro around html around the em
   inside(style, html);
 });
 
+test('main page: the code keeps clear of the scrollbar', async ({ page }) => {
+  const buffer = await liveBuffer(page);
+  const text = buffer.locator('.emacs-window .text');
+  const gap = await text.evaluate((el) => {
+    const style = getComputedStyle(el);
+    const code = el.querySelector('.line code')!.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    // Where the scrollbar starts, or the edge when there is none.
+    const scrollbarStart = box.left + el.clientLeft + el.clientWidth;
+    return { gap: scrollbarStart - code.right, em: parseFloat(style.fontSize) };
+  });
+  expect(gap.gap).toBeGreaterThanOrEqual(gap.em * 0.5);
+});
+
 test('main page: the toggle shows and hides the range outlines', async ({ page }) => {
   const buffer = await liveBuffer(page);
   const toggle = buffer.locator('.show-ranges');
-  const block = buffer.locator('.block[data-lang="tsx"]');
-  const outline = () => block.evaluate((el) => getComputedStyle(el).outlineStyle);
+  const bands = buffer.locator('.bands');
 
   await expect(toggle).toBeChecked();
-  expect(await outline()).toBe('dashed');
+  await expect(bands).toBeVisible();
 
   await toggle.uncheck();
-  expect(await outline()).not.toBe('dashed');
+  await expect(bands).toBeHidden();
 });
 
 test('main page: pointing at a token lights up the range that owns it', async ({ page }) => {

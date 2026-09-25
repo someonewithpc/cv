@@ -8,8 +8,8 @@
 import type { Line, Range, Token } from './lexer';
 
 /**
- * A bracket beside the buffer over lines `from` to `to`, in lane `lane` counted from the
- * outside in, so a range drawn in a deeper lane sits inside the one around it.
+ * A dashed box over lines `from` to `to`, at nesting level `lane` counted from the outside
+ * in. Each level is inset from the one around it, so every outline stays in view.
  */
 export type Band = { lang: string; lane: number; from: number; to: number };
 
@@ -109,7 +109,6 @@ const label = (id: string) => {
     )}
     {rows.map((row) => row.block ? (
       <div class="block" data-range={row.block} data-lang={byId.get(row.block)?.lang} tabindex="0" role="group" aria-label={label(row.block)}>
-        <span class="range-label" aria-hidden="true">{byId.get(row.block)?.lang}</span>
         {row.lines.map((line) => (
           <div class="line"><span class="ln" aria-hidden="true">{line.number}</span><code>{line.tokens.map((token) => (
             <span class={faceClass(token)} style={faceStyle(token)}>{token.text}</span>
@@ -148,51 +147,53 @@ const label = (id: string) => {
 .text {
   --line: 1.25em;
   --pad: 0.25em;
-  // One lane per level of nesting: a label set on its side, then the bracket's line and ticks.
-  --label: max(0.5rem, 0.75em);
-  --lane-width: calc(var(--label) * 2);
+  // How far each level of nesting sits in from the one around it. Across, each level steps
+  // in; down, the innermost boxes sit on the line edges and each outer level steps out into
+  // the gap between lines, so no dashed edge crosses the letters.
+  --inset-inline: 0.625ch;
+  --inset-block: 0.125em;
+  // Clear space between the code and the scrollbar.
+  --gap-end: 1ch;
 
   position: relative;
   min-height: 0;
   padding-block: var(--pad);
-  padding-inline-start: calc(var(--lanes) * var(--lane-width));
+  padding-inline: calc(var(--lanes) * var(--inset-inline)) calc(var(--lanes) * var(--inset-inline) + var(--gap-end));
   overflow: hidden;
 }
 
-// The brackets, drawn the way a drawing marks a span: a line down the lane with a tick at
-// each end turned toward the code, and the language and its lines set along it from the top,
-// where the range starts.
+// The ranges, one dashed box each, with the language and its lines in the top right corner.
 .bands {
   position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
+  inset: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  pointer-events: none;
 }
 
 .band {
+  --out: calc((var(--lanes) - 1 - var(--lane)) * var(--inset-block));
+
   position: absolute;
-  top: calc(var(--pad) + (var(--from) - 1) * var(--line) + 0.125em);
-  left: calc(var(--lane) * var(--lane-width) + var(--label) * 1.35);
-  width: calc(var(--label) * 0.55);
-  height: calc((var(--to) - var(--from) + 1) * var(--line) - 0.25em);
+  top: calc(var(--pad) + (var(--from) - 1) * var(--line) - var(--out));
+  left: calc(var(--lane) * var(--inset-inline));
+  right: calc(var(--lane) * var(--inset-inline) + var(--gap-end) / 2);
+  height: calc((var(--to) - var(--from) + 1) * var(--line) + 2 * var(--out));
   box-sizing: border-box;
-  border: 1.5px solid var(--lang);
-  border-inline-end: none;
-  border-radius: 0.2em 0 0 0.2em;
+  border: 1px dashed var(--lang);
 }
 
 .band-label {
   position: absolute;
-  top: 0;
-  right: calc(100% + 0.1em);
-  font-size: max(0.5rem, 0.75em);
-  line-height: 1.15;
+  top: 0.125em;
+  right: 0.5ch;
+  padding: 0 0.5ch;
+  font-size: max(0.5rem, 0.8em);
+  line-height: 1.2;
   white-space: nowrap;
-  writing-mode: vertical-rl;
-  rotate: 180deg;
   color: var(--lang);
+  background: var(--buffer-paper);
 }
 
 .line {
@@ -216,10 +217,6 @@ code {
 
 .block {
   position: relative;
-}
-
-.range-label {
-  display: none;
 }
 
 .mode-line {

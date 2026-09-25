@@ -12,7 +12,7 @@ import { bufferFile, readBuffer } from '../samples';
 const source = await readBuffer();
 const { lines, ranges } = lexAstro(source);
 
-// The brackets beside the buffer, one lane per level of nesting. The astro parser reads the
+// The dashed boxes over the buffer, one level per step of nesting. The astro parser reads the
 // whole file. The template is markup the astro grammar parses itself, so it has no parser of
 // its own, but it is the part of the file the inner ranges sit in. Each span runs from the
 // first line with code in it to the last.
@@ -55,8 +55,8 @@ const echo = [
         </li>
         <li>
           The astro parser reads the whole file, markup included. The TypeScript and the SCSS
-          each get a parser of their own that sees only its range. The brackets left of the line
-          numbers show how the ranges nest.
+          each get a parser of their own that sees only its range. Each dashed box is one range,
+          drawn inside the range that holds it.
         </li>
         <li>
           The site's build colours the code with a small lexer that follows the mode's faces.
@@ -205,36 +205,16 @@ const echo = [
   }
 }
 
-// Which parser a range, a block or a bracket stands for.
+// Which parser a range, a block or an outline stands for.
 .buffer-layer :global([data-lang='astro']) { --lang: var(--lang-astro); }
 .buffer-layer :global([data-lang='html']) { --lang: var(--lang-html); }
 .buffer-layer :global([data-lang='tsx']) { --lang: var(--lang-tsx); }
 .buffer-layer :global([data-lang='scss']),
 .buffer-layer :global([data-lang='css']) { --lang: var(--lang-scss); }
 
-// The outlines, while the toggle is on.
-.buffer-layer:has(.show-ranges:checked) {
-  :global(.emacs-window .range) {
-    outline: 1px dashed var(--lang);
-    outline-offset: 1px;
-    border-radius: 0.15em;
-  }
-
-  :global(.emacs-window .block) {
-    outline: 1px dashed var(--lang);
-    outline-offset: -1px;
-  }
-
-  :global(.emacs-window .range-label) {
-    display: block;
-    position: absolute;
-    top: 0.2em;
-    right: 0.5ch;
-    padding: 0 0.5ch;
-    font-size: max(0.5rem, 0.85em);
-    color: var(--lang);
-    background: var(--buffer-paper);
-  }
+// The outlines show while the toggle is on.
+.buffer-layer:not(:has(.show-ranges:checked)) :global(.emacs-window .bands) {
+  display: none;
 }
 
 // Pointing at a token lights its owner: the range around it, or the Astro parser when it
@@ -268,7 +248,6 @@ const echo = [
   .buffer-layer:has([data-range='r#{$i}']:is(:hover, :focus-visible)) {
     :global([data-range='r#{$i}']) {
       background: color-mix(in oklch, var(--lang) 22%, var(--buffer-paper));
-      outline: 1px solid var(--lang);
     }
 
     .echo [data-echo='idle'] { display: none; }
