@@ -1,22 +1,29 @@
-/* Writing that lands on the ruling of a sheet of ruled paper, whatever face renders it.
+/* Writing centred in the band between two rules of a sheet of ruled paper, one band to a line.
  *
- * A line box puts its baseline at half the leading plus the ascender from its top, which is
- * a measurement only the font knows, so a ruling drawn at a fixed offset can only be right
- * for the one face and size it was measured against. Trimming the block to its cap height at
- * the top and to its baseline at the bottom takes the leading out of the question: what is
- * left is (lines - 1) pitches plus one cap. Adding the pitch less that cap back as padding
- * makes the block a whole number of pitches again and puts its first baseline exactly one
- * rule down, its last on the block's own bottom edge. Both measurements are the face's own.
+ * The line height is the pitch, so a block of n lines is n bands tall and a wrapped line
+ * drops exactly one band. Where a line's glyphs sit inside its line box depends on the face's
+ * ascent and descent, so the block is trimmed to its cap height at the top and its baseline
+ * at the bottom and padded back out to whole bands. The padding puts the middle of the
+ * lowercase-and-capitals box, halfway between the baseline and the average of the x-height
+ * and cap height, in the middle of the band. Both measurements are the face's own. Writing
+ * set in capitals has no lowercase to balance, so `$caps: true` centres the capitals instead.
  *
- * Where the trim is unsupported the block keeps its line box and the sheet falls back to
- * --rule-shift, which is measured from the pitch and the size the rows are written at.
+ * Where the trim is unsupported the block keeps its line box, and the face's own half-leading
+ * centres it in the band instead, a pixel or so from the optical middle.
  */
-@mixin on-the-rule {
+@mixin between-the-rules($caps: false) {
   line-height: var(--rule-pitch);
 
   @supports (text-box-trim: trim-both) {
     text-box-trim: trim-both;
     text-box-edge: cap alphabetic;
-    padding-top: calc(var(--rule-pitch) - 1cap);
+
+    @if $caps {
+      padding-block: calc((var(--rule-pitch) - 1cap) / 2);
+    } @else {
+      padding-block:
+        calc(var(--rule-pitch) / 2 + (1ex - 3cap) / 4)
+        calc(var(--rule-pitch) / 2 - (1cap + 1ex) / 4);
+    }
   }
 }

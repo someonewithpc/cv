@@ -110,8 +110,8 @@ if (number != null) citePieces.push(null, `#${number}`);
     z-index: 1;
     /* The summary underneath is the toggle; only the title link takes clicks. */
     pointer-events: none;
-    /* The row is one ruled line tall, so the marks stand in that line and never wrap onto a
-       second one. Three is the most any contribution carries. */
+    /* The row is one band tall, so the marks stand centred in that band beside the writing
+       and never wrap onto a second one. Three is the most any contribution carries. */
     height: var(--rule-pitch);
     display: flex;
     flex-wrap: nowrap;
@@ -119,11 +119,6 @@ if (number != null) citePieces.push(null, `#${number}`);
     justify-content: center;
     gap: 0.3rem;
     list-style: none;
-    /* The writing beside them is trimmed to sit on the rule, which puts its capitals in the
-       bottom of the pitch; a mark centred in the pitch itself floats a third of a line above
-       what it marks. Dropping it by half the difference stands it on the same middle. The
-       face's own cap height, so no size or face needs a constant of its own. */
-    translate: 0 calc((var(--rule-pitch) - 1cap) / 2);
 
     li {
       display: flex;
@@ -143,7 +138,7 @@ if (number != null) citePieces.push(null, `#${number}`);
   }
 
   cite {
-    @include ruled.on-the-rule;
+    @include ruled.between-the-rules;
 
     grid-area: 1 / 2;
     position: relative;
@@ -156,9 +151,9 @@ if (number != null) citePieces.push(null, `#${number}`);
   }
 
   .title {
-    /* A title that fits is one ruled line; a title that wraps is two, both of them on the
-       rules, because the line height is the ruling's own pitch. */
-    @include ruled.on-the-rule;
+    /* A title that fits is one band; a title that wraps is two, each line in its own band,
+       because the line height is the ruling's own pitch. */
+    @include ruled.between-the-rules;
 
     grid-area: 1 / 3;
     position: relative;
@@ -247,7 +242,7 @@ if (number != null) citePieces.push(null, `#${number}`);
   }
 
   /* The disclosed note is written on the same ruling as the rows: every line in it is one
-     pitch tall and it carries no padding, margin or rule of its own, so opening a row still
+     band tall and it carries no padding, margin or rule of its own, so opening a row still
      leaves every row under it sitting on a line. */
   .body > p,
   .body > footer {
@@ -256,7 +251,7 @@ if (number != null) citePieces.push(null, `#${number}`);
   }
 
   .body > p {
-    @include ruled.on-the-rule;
+    @include ruled.between-the-rules;
 
     margin: 0;
     color: var(--ink-muted);
@@ -264,7 +259,7 @@ if (number != null) citePieces.push(null, `#${number}`);
   }
 
   .body > footer {
-    @include ruled.on-the-rule;
+    @include ruled.between-the-rules;
 
     font-family: monospace, system-ui;
     font-size: 0.75rem;
@@ -285,17 +280,17 @@ if (number != null) citePieces.push(null, `#${number}`);
     }
   }
 
-  /* A narrow sheet stands the repository over the title, so the row is two ruled lines and
-     the marks run down the margin beside them. */
+  /* A narrow sheet stands the repository over the title, so the row is two bands and the
+     marks run down the margin beside them. */
   @container (max-width: 28rem) {
     column-gap: 0.65rem;
     align-items: start;
 
     > ul {
-      /* A column of marks down the margin beside two written lines: one mark to a line, each
-         dropped onto its line the same way a single row drops its marks. The column is
-         exactly those two lines tall however many marks it holds, so it never makes the row
-         longer than its writing and pushes every row under it off the ruling. */
+      /* A column of marks down the margin beside two written lines: one mark to a band,
+         centred in it. The column is exactly those two bands tall however many marks it
+         holds, so it never makes the row longer than its writing and pushes every row under
+         it off the ruling. */
       display: grid;
       grid-auto-rows: var(--rule-pitch);
       justify-items: center;
@@ -306,7 +301,6 @@ if (number != null) citePieces.push(null, `#${number}`);
       /* Three marks, the most a contribution carries, share the two lines between them. */
       &:has(> :nth-child(3)) {
         grid-auto-rows: calc(var(--rule-pitch) * 2 / 3);
-        translate: none;
       }
 
       :global(svg) {

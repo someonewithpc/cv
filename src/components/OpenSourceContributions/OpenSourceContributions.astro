@@ -143,26 +143,17 @@ const statistics = {
   }
 
   section[data-group] {
-    /* One contribution to a line. The pitch is the line height every cell in a row carries,
-       so a row is one pitch tall, a row whose title wraps is two, and either way every one
-       of its lines sits on a rule. */
-    --rule-pitch: 2rem;
-    /* How far the ruling is slid down from the first written line's top. Every written block
-       is trimmed to its own baseline (src/scss/_ruled.scss), so the rule falls in the pixel
-       directly under it and the shift is one pixel. Where the trim is unsupported the block
-       keeps its line box, whose baseline sits half the leading plus a descender above the
-       bottom: about half the pitch less 0.43 of the size the rows are written at, measured
-       against the monospace they use. */
-    --rule-shift: calc(1px - var(--rule-pitch) / 2 + var(--line-size) * 0.43);
-
-    @supports (text-box-trim: trim-both) {
-      --rule-shift: 1px;
-    }
+    /* One contribution to a line, each written in the band between two rules. The ruling is
+       half as wide again as the line the writing would take on its own, so every band has
+       room above and below its line; a row is one band tall, a row whose title wraps is two,
+       and every line in it is centred in its band (src/scss/_ruled.scss). */
+    --line-height: 1.25rem;
+    --rule-pitch: calc(var(--line-height) * 1.5);
     /* How deep the tear eats into the sheet, top and bottom. */
     --tear: 1.5rem;
     --paper-x: 1.5rem;
     --margin-x: 3.25rem;
-    /* The paper above and below the writing is a whole number of lines too, so the sheet is
+    /* The paper above and below the writing is a whole number of bands too, so the sheet is
        ruled from its own top edge and the rules run on evenly off both tears. */
     --paper-top: round(up, var(--tear) + 0.5rem, var(--rule-pitch));
     --paper-bottom: round(up, var(--tear) + 1rem, var(--rule-pitch));
@@ -192,8 +183,8 @@ const statistics = {
       calc(var(--margin-x) + 0.875rem);
     background-color: var(--paper);
     /* The ruling, then the margin line. The ruling is one pitch-tall tile repeated down the
-       sheet from the first written line, so it runs on past the writing and off both torn
-       edges the way ruled paper does. */
+       sheet from the top of the first band, with its rule in the tile's last pixel, so a rule
+       closes every band and the ruling runs on past the writing and off both torn edges. */
     background-image:
       linear-gradient(
         to bottom,
@@ -209,7 +200,7 @@ const statistics = {
         transparent 0
       );
     background-size: 100% var(--rule-pitch), 100% 100%;
-    background-position: 0 calc(var(--paper-top) + var(--rule-shift)), 0 0;
+    background-position: 0 var(--paper-top), 0 0;
     background-repeat: repeat, no-repeat;
 
     // The grain sits on its own pseudo-element (see the mixin), so it never has to join this
@@ -265,7 +256,11 @@ const statistics = {
       --row-accent: var(--ink-faint);
     }
 
-    /* The group's name is written on the first rule, the way a heading is on a page. */
+    /* The group's name is written in the first band, the way a heading is on a page. The
+       count is centred in the band and the name stands on the count's baseline. Special
+       Elite gives its cap height as about half the real one, so trimming the name to its own
+       cap height would centre it two pixels high. Its line box is kept short so that standing
+       it on the count never makes the heading taller than its band. */
     h3 {
       display: flex;
       align-items: baseline;
@@ -276,12 +271,14 @@ const statistics = {
       text-transform: uppercase;
       color: var(--ink-muted);
 
-      /* The trim belongs to the blocks that hold the writing, and a flex item is one. */
-      > * {
-        @include ruled.on-the-rule;
+      > :not(data) {
+        line-height: 1;
       }
 
       data {
+        @include ruled.between-the-rules($caps: true);
+
+
         font-family: monospace, system-ui;
         font-size: 0.8125rem;
         color: var(--ink-faint);
@@ -323,7 +320,7 @@ const statistics = {
         color: var(--ink-faint);
 
         span {
-          @include ruled.on-the-rule;
+          @include ruled.between-the-rules($caps: true);
 
           overflow-wrap: break-word;
         }
@@ -369,7 +366,7 @@ const statistics = {
     /* A narrow sheet: wider ruling, so a title link stays a comfortable thing to hit with a
        thumb, and a narrower left margin, so the writing keeps its room. */
     @container (max-width: 34rem) {
-      --rule-pitch: 2.25rem;
+      --line-height: 1.5rem;
       --tear: 1rem;
       --paper-x: 0.875rem;
       --margin-x: 1.75rem;
