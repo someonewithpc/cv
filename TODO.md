@@ -85,6 +85,7 @@
 - [x] Docking DevTools holds the page zoomed in (#93)
 - [x] Make the e2e suite faster by fixing or cutting cases that do not make sense (#115)
 - [x] Pinching out over a 3D scene in responsive mode leaves the page zoomed in (#133)
+- [x] Cutting mat edges show on a phone, and the callout box has more room top and bottom than at the sides (#138)
 - [x] Make demos more usable without JS (#19)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
