@@ -1,7 +1,7 @@
 ---
 import { mangledHtml, sqlHtml, sqlResultHtml } from '../markup';
 import { initialQuery } from '../objects';
-import { search } from '../search';
+import { search, serialise } from '../search';
 
 const state = { query: initialQuery, filters: {} };
 ---
@@ -26,6 +26,11 @@ const state = { query: initialQuery, filters: {} };
           <span class="label">Bound as</span>
           <code class="mangled" set:html={mangledHtml(state.query)} />
           <span class="filters-note"></span>
+        </p>
+        <p class="requests">
+          <span class="label">Request</span>
+          <code class="key">?{serialise(state)}</code>
+          <span class="tally"><span data-tally="sent">0</span> sent · <span data-tally="dropped">0</span> dropped · <span data-tally="aborted">0</span> aborted</span>
         </p>
       </div>
 
@@ -82,7 +87,8 @@ header strong {
   @include query-field;
 }
 
-.sent {
+.sent,
+.requests {
   margin: 0;
   display: flex;
   flex-wrap: wrap;
@@ -98,6 +104,24 @@ header strong {
   }
 
   .filters-note {
+    color: var(--ink-muted);
+  }
+}
+
+/* The main sheet's request pipeline: the form it last sent and what became of each request. */
+.requests {
+  font-family: monospace, system-ui;
+
+  .label {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+  }
+
+  .key {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .tally {
     color: var(--ink-muted);
   }
 }

@@ -1,9 +1,8 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-import { mangledHtml } from './markup';
 import { categories, colors, detailsOf, initialQuery, libraryObjects } from './objects';
-import { formatScore, search, serialise, type Filters } from './search';
+import { formatScore, search, type Filters } from './search';
 
 type Props = {
   /** Wire the tool up to the client script and the walkthrough. */
@@ -60,11 +59,6 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
     </label>
   </div>
 
-  <p class="sent">
-    <span class="label">Sent as</span>
-    <code class="mangled" set:html={mangledHtml(query)} />
-  </p>
-
   {/* A live region from the moment the visitor is the one typing (librarySearch.ts): while
       the walkthrough types, a screen reader would hear the count on every keystroke. */}
   <p class="count">{countText(result.hits.length)}</p>
@@ -85,13 +79,6 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
     ))}
     <li class="no-hits" hidden={result.hits.length > 0}>Nothing in the library matches</li>
   </ol>
-
-  {live && (
-    <p class="requests" aria-hidden="true">
-      <span class="key">?{serialise({ query, filters })}</span>
-      <span class="tally"><span data-tally="sent">0</span> sent · <span data-tally="dropped">0</span> dropped · <span data-tally="aborted">0</span> aborted</span>
-    </p>
-  )}
 </div>
 
 <style lang="scss">
@@ -109,7 +96,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
 
   font-family: var(--font-poppins), system-ui, sans-serif;
@@ -185,45 +172,6 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
     width: 7.5em;
     padding: 0 0.5em;
     font-weight: 400;
-  }
-}
-
-/* What MariaDB is handed, under the field that produced it. */
-.sent {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 0.75em;
-  padding: 0.5em var(--gutter);
-  background: var(--surface-sunken);
-  border-bottom: 1px solid var(--line);
-
-  .label {
-    flex: none;
-    font-size: 0.875em;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-  }
-
-  .mangled {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    font-family: monospace, system-ui;
-  }
-}
-
-.mangled {
-  :global(.rule-quoted),
-  :global(.rule-folded) {
-    padding: 0 0.2em;
-    border-radius: 0.2em;
-    background: color-mix(in oklch, var(--accent), transparent 82%);
-    color: var(--ink);
-  }
-
-  :global(.empty) {
-    color: var(--ink-faint);
   }
 }
 
@@ -328,28 +276,6 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 
   &[hidden] {
     display: none;
-  }
-}
-
-/* The request side of it: the key in-flight requests are held by, and what became of
-   them. */
-.requests {
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.25em 1em;
-  padding: 0.5em var(--gutter);
-  border-top: 1px dashed var(--line-strong);
-  font-family: monospace, system-ui;
-  font-size: 0.875em;
-  color: var(--ink-muted);
-
-  .key {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 

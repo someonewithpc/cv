@@ -1,10 +1,9 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
-import { mangledHtml } from '../markup';
 import { libraryObjects } from '../objects';
 import { formatScore, search, serialise, type Filters, type SearchResult, type SearchState } from '../search';
-import { initialState, searchStore } from './store';
+import { initialState, searchStore, type RequestLog } from './store';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -25,9 +24,6 @@ type Tool = {
   rows: Map<string, HTMLElement>;
   empty: HTMLElement | null;
   count: HTMLElement | null;
-  mangled: HTMLElement | null;
-  key: HTMLElement | null;
-  tally: Record<'sent' | 'dropped' | 'aborted', HTMLElement | null>;
 };
 
 function wait(ms: number, signal?: AbortSignal) {
@@ -102,19 +98,25 @@ function render(tool: Tool, result: SearchResult) {
  * searches on every keystroke: requests in flight are held in a map keyed by the serialised
  * form, a query identical to one in flight (or to the one on screen) is dropped outright, a
  * superseded one is aborted, and the survivor goes out behind a 50 ms leading-edge throttle.
+ * What it does is reported to `onLog`, which the Generated SQL sheet prints.
  */
-function requests(tool: Tool, onResult: (result: SearchResult) => void) {
+function requests(
+  tool: Tool,
+  initial: SearchState,
+  onResult: (result: SearchResult) => void,
+  onLog: (log: RequestLog) => void,
+) {
   const inFlight = new Map<string, AbortController>();
-  const counts = { sent: 0, dropped: 0, aborted: 0 };
+  const log: RequestLog = { key: serialise(initial), sent: 0, dropped: 0, aborted: 0 };
   let onScreen = '';
   let lastSent = -Infinity;
   let pending: SearchState | null = null;
   let timer = 0;
 
-  const tallied = (name: keyof typeof counts) => {
-    counts[name] += 1;
-    const el = tool.tally[name];
-    if (el) el.textContent = String(counts[name]);
+  const report = () => onLog({ ...log });
+  const tallied = (name: 'sent' | 'dropped' | 'aborted') => {
+    log[name] += 1;
+    report();
   };
 
   const send = async (state: SearchState) => {
@@ -128,6 +130,7 @@ function requests(tool: Tool, onResult: (result: SearchResult) => void) {
       const result = await mockServer(state, controller.signal);
       onScreen = key;
       onResult(result);
+      tool.root.dataset.answered = key;
     } catch {
       // Aborted: a newer query has taken its place.
     } finally {
@@ -145,16 +148,17 @@ function requests(tool: Tool, onResult: (result: SearchResult) => void) {
 
   const request = (state: SearchState) => {
     const key = serialise(state);
-    if (tool.key) tool.key.textContent = `?${key}`;
+    log.key = key;
     if (inFlight.has(key) || (!inFlight.size && !pending && key === onScreen)) {
       tallied('dropped');
       return;
     }
     inFlight.forEach((controller) => {
       controller.abort();
-      tallied('aborted');
+      log.aborted += 1;
     });
     inFlight.clear();
+    report();
 
     pending = state;
     const early = lastSent + THROTTLE_MS - performance.now();
@@ -162,7 +166,12 @@ function requests(tool: Tool, onResult: (result: SearchResult) => void) {
     else if (!timer) timer = window.setTimeout(flush, Math.max(0, early));
   };
 
-  return { request, shown: (state: SearchState) => (onScreen = serialise(state)) };
+  const shown = (state: SearchState) => {
+    onScreen = serialise(state);
+    tool.root.dataset.answered = onScreen;
+  };
+
+  return { request, shown };
 }
 
 function readFilters(tool: Tool): Filters {
@@ -179,7 +188,6 @@ function showState(tool: Tool, state: SearchState) {
     const value = state.filters[select.dataset.filter as keyof Filters] ?? '';
     if (select.value !== value) select.value = value;
   });
-  if (tool.mangled) tool.mangled.innerHTML = mangledHtml(state.query);
 }
 
 /**
@@ -289,18 +297,11 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
     rows: new Map([...list.querySelectorAll<HTMLElement>('.hit')].map((row) => [row.dataset.object!, row])),
     empty: list.querySelector<HTMLElement>('.no-hits'),
     count: root.querySelector<HTMLElement>('.count'),
-    mangled: root.querySelector<HTMLElement>('.mangled'),
-    key: root.querySelector<HTMLElement>('.requests .key'),
-    tally: {
-      sent: root.querySelector<HTMLElement>('[data-tally="sent"]'),
-      dropped: root.querySelector<HTMLElement>('[data-tally="dropped"]'),
-      aborted: root.querySelector<HTMLElement>('[data-tally="aborted"]'),
-    },
   };
 
   const initial = initialState(root);
   const store = searchStore(host, initial);
-  const pipeline = requests(tool, (result) => render(tool, result));
+  const pipeline = requests(tool, initial, (result) => render(tool, result), (log) => store.setLog(log));
   // The build already drew the opening query's answer.
   pipeline.shown(initial);
 
@@ -319,8 +320,6 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
     if (source !== tool) {
       walkthrough?.takeOver();
       showState(tool, state);
-    } else if (tool.mangled) {
-      tool.mangled.innerHTML = mangledHtml(state.query);
     }
     pipeline.request(state);
   });

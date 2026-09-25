@@ -1,6 +1,6 @@
 import { mangledHtml, relevanceHtml, sqlHtml, sqlResultHtml } from '../markup';
 import { search, type Filters, type SearchState } from '../search';
-import { initialState, searchStore } from './store';
+import { initialState, searchStore, type RequestLog } from './store';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -58,6 +58,19 @@ export function initQuerySheet(host: HTMLElement) {
 
   input.addEventListener('input', () => store.set({ query: input.value }, host));
   store.subscribe((state) => render(state));
+
+  const key = host.querySelector<HTMLElement>('.requests .key');
+  const tally = (name: string) => host.querySelector<HTMLElement>(`[data-tally="${name}"]`);
+  const tallies = { sent: tally('sent'), dropped: tally('dropped'), aborted: tally('aborted') };
+  const showLog = (log: RequestLog) => {
+    if (key) key.textContent = `?${log.key}`;
+    for (const name of ['sent', 'dropped', 'aborted'] as const) {
+      const el = tallies[name];
+      if (el) el.textContent = String(log[name]);
+    }
+  };
+  store.subscribeLog(showLog);
+  showLog(store.log());
 
   // The query may have moved on while this page was face down.
   drawn = JSON.stringify(initialState(host));

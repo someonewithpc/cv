@@ -1,12 +1,19 @@
-import type { SearchState } from '../search';
+import { serialise, type SearchState } from '../search';
 
 type Listener = (state: SearchState, source: unknown) => void;
+
+/** What the main sheet's request pipeline has done so far, for the Generated SQL sheet to print. */
+export type RequestLog = { key: string; sent: number; dropped: number; aborted: number };
+type LogListener = (log: RequestLog) => void;
 
 export type SearchStore = {
   get: () => SearchState;
   /** `source` comes back to every listener, so the field that typed can leave itself alone. */
   set: (next: Partial<SearchState>, source: unknown) => void;
   subscribe: (listener: Listener) => () => void;
+  log: () => RequestLog;
+  setLog: (log: RequestLog) => void;
+  subscribeLog: (listener: LogListener) => () => void;
 };
 
 /* One query per stack. Each of the stack's live sheets is its own island and boots only
@@ -22,6 +29,8 @@ export function searchStore(host: Element, initial: SearchState): SearchStore {
 
   let state = initial;
   const listeners = new Set<Listener>();
+  let log: RequestLog = { key: serialise(initial), sent: 0, dropped: 0, aborted: 0 };
+  const logListeners = new Set<LogListener>();
   const store: SearchStore = {
     get: () => state,
     set(next, source) {
@@ -31,6 +40,15 @@ export function searchStore(host: Element, initial: SearchState): SearchStore {
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    log: () => log,
+    setLog(next) {
+      log = next;
+      logListeners.forEach((listener) => listener(log));
+    },
+    subscribeLog(listener) {
+      logListeners.add(listener);
+      return () => logListeners.delete(listener);
     },
   };
   stores.set(key, store);
