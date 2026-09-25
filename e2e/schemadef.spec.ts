@@ -126,3 +126,36 @@ test('schemaDef: the sheet says what GNU social is, and the title fits at 390', 
   const [scroll, client] = await title.evaluate((el) => [el.scrollWidth, el.clientWidth]);
   expect(scroll, 'the title block cuts the title').toBeLessThanOrEqual(client);
 });
+
+for (const width of [1024, 1440]) {
+  test(`schemaDef: at ${width} the cards reach the title block and the text sits beside it`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const { root } = await mountedPanes(page);
+
+    const layout = () => root.evaluate((el) => {
+      const box = (node: Element | null) => node?.getBoundingClientRect() ?? null;
+      const block = box(el.closest('section')?.querySelector(':scope > table') ?? null);
+      const gutter = parseFloat(getComputedStyle(el).rowGap);
+      const cards = [...el.querySelectorAll('[data-pane]')].map((pane) => box(pane)!);
+      const text = [el.querySelector('.intro'), el.querySelector('.rules')].map((node) => box(node)!);
+      if (!block) return 'no title block';
+      return {
+        cardsShort: cards.map((card) => Math.round(block.top - card.bottom)),
+        gutter,
+        textRightOfBlockLeft: text.map((t) => Math.round(t.right - block.left)),
+        textAboveBlockTop: text.map((t) => Math.round(block.top - t.top)),
+        textBelowBlockBottom: text.map((t) => Math.round(t.bottom - block.bottom)),
+      };
+    });
+
+    await expect.poll(async () => {
+      const l = await layout();
+      if (typeof l === 'string') return l;
+      const reach = l.cardsShort.every((short) => short >= 0 && short <= l.gutter);
+      const beside = l.textRightOfBlockLeft.every((d) => d <= 0)
+        && l.textAboveBlockTop.every((d) => d <= 0)
+        && l.textBelowBlockBottom.every((d) => d <= 0);
+      return reach && beside ? 'fits' : JSON.stringify(l);
+    }).toBe('fits');
+  });
+}
