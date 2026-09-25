@@ -14,23 +14,13 @@ type ThemeSettings = {
   /** The veneer that desk is cut from: one scan per theme, in public/desk. */
   deskWood: string;
   /**
-   * The flat colour #main paints before the veneer scan has loaded (background-color,
-   * under the tile in background-image): the wood's own average colour as it renders in
-   * this theme, tile and veil both applied, measured with a headless-Chrome canvas read
-   * of the rendered desk. Every theme sets one, so the flash before the texture pops in is
-   * the same colour the texture settles into rather than a jump.
-   */
-  deskBase: string;
-  /**
-   * A dark desk subtracts its veneer from deskBase rather than laying it over the desk
+   * A dark desk subtracts its veneer from this base rather than laying it over the desk
    * colour, because overlay scales every step by base * (1 - base) and near black that
-   * leaves the tone and eats the fibre; difference keeps each step at full size however
-   * dark the result lands. Paired with deskVeilBlend: 'color' so the opaque veil hands the
-   * desk its hue and chroma back while the subtraction holds the grain. A light desk
-   * leaves both unset and keeps the plain overlay/normal pair.
+   * leaves the tone and eats the fibre. The base is the scan's own mean colour less 28 of
+   * 255, which is the lightness the desk keeps; the veil then goes opaque and hands the
+   * desk its hue and chroma back while the subtraction holds the grain at full size.
    */
-  deskBlend?: 'difference';
-  deskVeilBlend?: 'color';
+  deskBase?: string;
   /**
    * The plain paper, which the drawing sheets and the contributions page both take. Hugo
    * picked one per theme on the tuner. A theme without one sets it to initial, so the
@@ -71,9 +61,6 @@ const THEMES = {
     deskGrain: '0.85',
     /* The same oak as the other three, raised to the ash boards' tone and limed. */
     deskWood: 'oak-7760-limed',
-    /* The limed oak's own average as it renders (tile over --theme-desk with overlay), read
-       off a headless-Chrome canvas so the flash before the scan loads matches the wood. */
-    deskBase: 'rgb(228 199 159)',
     paper: 'oklch(1 0 90)',
     paperGrain: '0.45',
     paperSheetGrain: '0.48',
@@ -96,11 +83,7 @@ const THEMES = {
     deskGrain: '0',
     /* Slip-matched oak, levelled: cathedral figure across the page and no joint in it. */
     deskWood: 'oak-7760-mid',
-    /* The rendered desk's own average (tile difference-blended into this, veil recolouring
-       it back to --theme-desk), read off a headless-Chrome canvas -- see the type above. */
-    deskBase: 'rgb(32 27 24)',
-    deskBlend: 'difference',
-    deskVeilBlend: 'color',
+    deskBase: 'rgb(128 97 73)',
     paperGrain: '0.33',
     paperSheetGrain: '0.35',
     paperBlend: 'screen',
@@ -122,8 +105,6 @@ const THEMES = {
     deskGrain: '0.85',
     /* The same oak at its own lightness, which under a pale desk reads as bleached. */
     deskWood: 'oak-7760',
-    /* The bleached oak's own average as it renders, read off a headless-Chrome canvas. */
-    deskBase: 'rgb(211 203 197)',
     paper: 'oklch(0.955 0.015 235)',
     paperGrain: '0.40',
     paperSheetGrain: '0.52',
@@ -146,11 +127,7 @@ const THEMES = {
     deskGrain: '0',
     /* The same oak smoked in the file: darker, and drained of red before the veil goes on. */
     deskWood: 'oak-7760-smoked',
-    /* The smoked oak's own rendered average (difference-blended, veil recoloured), read
-       off a headless-Chrome canvas -- see the type above. */
-    deskBase: 'rgb(37 27 12)',
-    deskBlend: 'difference',
-    deskVeilBlend: 'color',
+    deskBase: 'rgb(76 68 62)',
     paper: 'oklch(0.323 0.044 139)',
     paperGrain: '0.27',
     paperSheetGrain: '0.40',
@@ -174,10 +151,10 @@ const OS_THEMES = {
 } as const;
 
 const deskWood = (settings: ThemeSettings) => `
-      --theme-desk-tile: url("/desk/${settings.deskWood}.webp");
-      --theme-desk-base: ${settings.deskBase};${settings.deskBlend ? `
-      --theme-desk-blend: ${settings.deskBlend};` : ''}${settings.deskVeilBlend ? `
-      --theme-desk-veil-blend: ${settings.deskVeilBlend};` : ''}`;
+      --theme-desk-tile: url("/desk/${settings.deskWood}.webp");${settings.deskBase ? `
+      --theme-desk-base: ${settings.deskBase};
+      --theme-desk-blend: difference;
+      --theme-desk-veil-blend: color;` : ''}`;
 
 const themeVars = (settings: ThemeSettings) => `
       --theme-canvas: ${settings.canvas};
@@ -349,7 +326,6 @@ aside {
   --theme-desk: oklch(0.76 0.05 68);
   --theme-desk-grain: 0.85;
   --theme-desk-tile: url("/desk/oak-7760-limed.webp");
-  --theme-desk-base: rgb(228 199 159);
   --theme-paper: oklch(1 0 90);
   --theme-paper-grain: 0.45;
   --theme-paper-sheet-grain: 0.48;
