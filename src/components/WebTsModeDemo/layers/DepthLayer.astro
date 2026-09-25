@@ -141,7 +141,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 }
 
 .scale-title {
-  font-size: 0.8em;
+  font-size: max(0.5rem, 0.8em);
   color: var(--ink-muted);
 }
 
@@ -159,7 +159,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 }
 
 .amount {
-  font-size: 0.85em;
+  font-size: max(0.5rem, 0.85em);
   color: var(--ink-muted);
 }
 
@@ -190,7 +190,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 
 .level {
   min-height: 1.2em;
-  font-size: 0.75em;
+  font-size: max(0.5rem, 0.75em);
   color: var(--buffer-dim);
 }
 
@@ -209,12 +209,12 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 
   dt code {
     font-family: monospace, system-ui;
-    font-size: 0.875em;
+    font-size: max(0.5rem, 0.875em);
   }
 
   dd {
     margin: 0;
-    font-size: 0.8125em;
+    font-size: max(0.5rem, 0.8125em);
     line-height: 1.3;
     text-wrap: pretty;
     color: var(--ink-muted);
