@@ -32,7 +32,8 @@ const revision = (index: number) => String(experience.length - index).padStart(2
 /* Under the table, the same jobs drawn as an elevation: the years run along a dimension string
    under the ground line, every job is a bar as long as it lasted, standing on the ground or
    stacked over a bar it overlapped, with its own dimension over it and a leader from its
-   revision number. Wide, time runs left to right; under 44rem of sheet the drawing stands on
+   revision number. The degree is an outline bar in the ground lane, under the jobs of those
+   years. Wide, time runs left to right; under 44rem of sheet the drawing stands on
    end, oldest at the bottom, so the labels get the sheet's width. */
 
 /* A date as a fraction of a year. A bare year whose label says "Summer" is June to September. */
@@ -45,6 +46,7 @@ const at = (edge: Edge, end = false): number => {
 
 type Job = Entry & {
   n: string;
+  study?: boolean;
   start: number;
   end: number;
   seasonal: boolean;
@@ -69,6 +71,26 @@ const jobs: Job[] = experience
     return { ...entry, start, end, seasonal, span, lines, n: revision(index), lane: 0, anchors: [] };
   })
   .sort((a, b) => a.start - b.start);
+
+/* The degree goes first, so it takes the ground lane and the jobs of those years stand on it.
+   Its dates are bare years, drawn as whole years to line up with the axis's year labels. */
+jobs.unshift({
+  id: 'education',
+  org: education.school,
+  role: education.degree,
+  from: { date: education.from, label: education.from },
+  to: { date: education.year, label: education.year },
+  summary: '',
+  n: '学',
+  study: true,
+  start: Number(education.from),
+  end: Number(education.year) + 1,
+  seasonal: false,
+  span: `${education.from} to ${education.year}`,
+  lane: 0,
+  anchors: [],
+  lines: [education.degree, `${education.minor}, ${education.short}`],
+});
 
 /* Lanes: a bar takes the lowest lane that is clear for it, so overlapping jobs stack. A bar
    whose whole length ends up under a higher bar could not take a leader, so it moves above
@@ -136,27 +158,12 @@ const defs = (id: string) =>
   </defs>`;
 
 /* The bubble carries the job's revision number from the table. */
-const bubble = (x: number, y: number, n: string) =>
-  `<circle class="bubble" cx="${x}" cy="${y}" r="10"/>${text(x, y + 4, n, 'bubble-number monospace', 'text-anchor="middle"')}`;
+const bubble = (x: number, y: number, job: Job) =>
+  `<circle class="bubble" cx="${x}" cy="${y}" r="10"/>${text(x, y + 4, job.n, job.study ? 'bubble-number bubble-study' : 'bubble-number monospace', 'text-anchor="middle"')}`;
 
-/* A heading with its gloss before it and a rule under it, as a schedule on a drawing is titled. */
-const heading = (x: number, y: number, gloss: string, title: string, rule: number) =>
-  `${text(x, y + 10, gloss, 'gloss')}${text(x + gloss.length * 13.5 + 8, y + 10, title, 'head monospace')}
-    <line class="rule" x1="${x}" y1="${y + 16}" x2="${x + rule}" y2="${y + 16}"/>`;
-
-/* The level marker the degree hangs from: a triangle on the line, a stem down past whatever
-   the line carries, and the lines beside the stem's foot. */
-const degreeLines = (width: number) => [education.degree, education.minor, education.school].flatMap((line) => wrap(line, width));
-const degree = (x: number, y: number, drop: number, width: number) => {
-  const lines = degreeLines(width);
-  return `<g class="degree">
-    <path class="level" d="M${x - 5} ${y - 8} h10 l-5 8 z"/>
-    <line class="leader" x1="${x}" y1="${y}" x2="${x}" y2="${y + drop + 14 + lines.length * 14}"/>
-    ${heading(x + 8, y + drop, '学校', education.year, 0)}
-    ${lines.map((line, i) => text(x + 8, y + drop + 26 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
-  </g>`;
-};
-const degreeHeight = (width: number) => 26 + degreeLines(width).length * 14;
+const group = (job: Job) => `<g class="${job.study ? 'study' : 'job'}" data-job="${job.id}" data-lane="${job.lane}">`;
+const barClass = (job: Job) => `bar${job.seasonal ? ' seasonal' : ''}${job.study ? ' study' : ''}`;
+const fill = (job: Job, id: string) => (job.study ? '' : `fill="url(#${id}-hatch)"`);
 
 /* ----- Wide: time runs left to right. ----- */
 const wide = (() => {
@@ -175,9 +182,10 @@ const wide = (() => {
   /* Label rows, nearest the bars first. A label takes the lowest row and the best anchor at
      which its text stays on the sheet and clear of its neighbours in that row, no leader
      from a higher row runs through its text, and its own leader runs through no text in the
-     rows below it. */
+     rows below it. The degree takes no row: its bar is long enough to carry its own lettering,
+     and a leader down to it would cross the labels of the jobs of those years. */
   let rows = 0;
-  for (const job of jobs) {
+  for (const job of jobs.filter((job) => !job.study)) {
     const width = 25 + Math.max(...job.lines.map((line) => line.length)) * CH;
     const fits = (row: number, ax: number) =>
       ax + width <= W - 4 &&
@@ -207,22 +215,30 @@ const wide = (() => {
   const G = lanesTop + lanes * LANE;
   const barTop = (lane: number) => G - lane * LANE - BAR;
 
-  const bars = placed.map((job) => {
+  const study = jobs.find((job) => job.study);
+  const bars = [...(study ? [{ ...study, ax: 0, row: 0, textEnd: 0 }] : []), ...placed].map((job) => {
     const x0 = x(job.start);
     const x1 = x(job.end);
     const top = barTop(job.lane);
     const dim = top - 12;
     const mid = (x0 + x1) / 2;
     const by = rowY(job.row);
-    return `<g class="job" data-job="${job.id}" data-lane="${job.lane}">
-      <rect class="bar${job.seasonal ? ' seasonal' : ''}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" fill="url(#h-hatch)"/>
-      <line class="ext" x1="${x0}" y1="${top - 3}" x2="${x0}" y2="${dim - 5}"/>
+    const ends = `<line class="ext" x1="${x0}" y1="${top - 3}" x2="${x0}" y2="${dim - 5}"/>
       <line class="ext" x1="${x1}" y1="${top - 3}" x2="${x1}" y2="${dim - 5}"/>
       <line class="dim" x1="${x0 - 4}" y1="${dim}" x2="${x1 + 4}" y2="${dim}"/>
       ${tick(x0, dim)}${tick(x1, dim)}
-      ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}
+      ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}`;
+    if (job.study)
+      return `${group(job)}
+      <rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}"/>
+      ${ends}
+      <text x="${x0 + 10}" y="${top + 14}" class="small monospace"><tspan class="bubble-number bubble-study">学</tspan> <tspan class="label typewriter">${esc(job.lines[0])}</tspan>, ${esc(job.lines[1])}</text>
+    </g>`;
+    return `${group(job)}
+      <rect class="${barClass(job)}" x="${x0}" y="${top}" width="${x1 - x0}" height="${BAR}" ${fill(job, 'h')}/>
+      ${ends}
       <line class="leader" x1="${job.ax}" y1="${by + 10}" x2="${job.ax}" y2="${top - 1}" marker-end="url(#h-arrow)"/>
-      ${bubble(job.ax, by, job.n)}
+      ${bubble(job.ax, by, job)}
       ${job.lines.map((line, i) => text(job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
     </g>`;
   });
@@ -235,19 +251,18 @@ const wide = (() => {
     ${years.map((year) => `<line class="ext" x1="${x(year)}" y1="${G + 12}" x2="${x(year)}" y2="${AXIS + 5}"/>${tick(x(year), AXIS)}${text(x(year + 0.5), AXIS + 16, String(year), 'year monospace', 'text-anchor="middle"')}`).join('')}
     <line class="ext" x1="${x(T1)}" y1="${G + 12}" x2="${x(T1)}" y2="${AXIS + 5}"/>${tick(x(T1), AXIS)}`;
 
-  const BELOW = AXIS + 34;
-  const height = BELOW + degreeHeight(30) + 8;
+  const height = AXIS + 24;
   return `<svg class="drawing wide" viewBox="0 0 ${W} ${height}" aria-hidden="true">
     ${defs('h')}
     ${bars.join('')}
     ${axis}
-    ${degree(x(Number(education.year) + 0.75), AXIS, BELOW - AXIS, 30)}
   </svg>`;
 })();
 
 /* ----- Narrow: the same drawing on end, the ground a datum down the left. ----- */
 const tall = (() => {
-  const W = 360;
+  /* 384 rather than 360: the degree adds a lane, and the labels keep their width. */
+  const W = 384;
   const DX = 44;
   const S = 28;
   const TOP = 12;
@@ -283,15 +298,16 @@ const tall = (() => {
     const dim = x0 - 10;
     const mid = (y0 + y1) / 2;
     const by = job.top + 7;
-    return `<g class="job" data-job="${job.id}" data-lane="${job.lane}">
-      <rect class="bar${job.seasonal ? ' seasonal' : ''}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" fill="url(#v-hatch)"/>
+    return `${group(job)}
+      <rect class="${barClass(job)}" x="${x0}" y="${y0}" width="${BAR}" height="${y1 - y0}" ${fill(job, 'v')}/>
+      ${job.study ? `<line class="centre" x1="${x0 + BAR / 2}" y1="${y0 + 4}" x2="${x0 + BAR / 2}" y2="${y1 - 4}"/>` : ''}
       <line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>
       <line class="ext" x1="${x0 - 3}" y1="${y1}" x2="${dim - 5}" y2="${y1}"/>
       <line class="dim" x1="${dim}" y1="${y0 - 4}" x2="${dim}" y2="${y1 + 4}"/>
       ${tick(dim, y0)}${tick(dim, y1)}
       ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
       <line class="leader" x1="${LX - 11}" y1="${by}" x2="${x0 + BAR + 1}" y2="${job.ay}" marker-end="url(#v-arrow)"/>
-      ${bubble(LX, by, job.n)}
+      ${bubble(LX, by, job)}
       ${job.text.map((line, i) => text(LX + 15, job.top + 11 + i * 14, line, i === 0 ? 'label typewriter' : 'small monospace')).join('')}
     </g>`;
   });
@@ -302,13 +318,11 @@ const tall = (() => {
     ${years.map((year) => `${tick(DX, y(year))}${text(DX - 14, y(year + 0.5) + 4, String(year), 'year monospace', 'text-anchor="end"')}`).join('')}
     ${tick(DX, y(T1))}`;
 
-  const degreeTop = Math.max(y(T0) + 24, bottom + 16);
-  const height = degreeTop + degreeHeight(30) + 8;
+  const height = Math.max(y(T0) + 16, bottom + 8);
   return `<svg class="drawing tall" viewBox="0 0 ${W} ${height}" aria-hidden="true">
     ${defs('v')}
     ${bars.join('')}
     ${axis}
-    ${degree(33, degreeTop, 0, 30)}
   </svg>`;
 })();
 ---
@@ -422,7 +436,7 @@ const tall = (() => {
     <Fragment set:html={tall} />
     <figcaption class="monospace">
       <span class="sheet-ref">ELEVATION A</span>
-      <span>The same jobs to scale. One bar per job, stacked where two ran at once, each numbered as in the table.</span>
+      <span>The jobs to scale, numbered as in the table and stacked where two ran at once. The outline bar on the ground is the degree.</span>
     </figcaption>
   </figure>
 </section>
@@ -574,22 +588,6 @@ const tall = (() => {
     letter-spacing: 0.02em;
   }
 
-  :global(.head) {
-    letter-spacing: 0.14em;
-    fill: var(--ink-faint);
-  }
-
-  :global(.gloss) {
-    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
-    letter-spacing: 0.12em;
-    fill: color-mix(in oklch, var(--ink-faint), transparent 20%);
-  }
-
-  :global(.remark) {
-    font-style: italic;
-    fill: var(--ink-faint);
-  }
-
   :global(.bubble-number) {
     fill: var(--accent-text);
     stroke: none;
@@ -612,6 +610,21 @@ const tall = (() => {
     fill: none;
   }
 
+  /* The degree is study, not a job: an outline with a chain centre line instead of a hatch. */
+  :global(.bar.study) {
+    fill: var(--surface-page);
+  }
+
+  :global(.centre) {
+    stroke: var(--accent-muted);
+    stroke-width: 1;
+    stroke-dasharray: 10 3 2 3;
+  }
+
+  :global(.bubble-study) {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+  }
+
   :global(.hatch-line) {
     stroke: var(--accent-muted);
     stroke-width: 1;
@@ -624,8 +637,7 @@ const tall = (() => {
 
   :global(.dim),
   :global(.ext),
-  :global(.leader),
-  :global(.rule) {
+  :global(.leader) {
     stroke: var(--ink-muted);
     stroke-width: 0.75;
     fill: none;
@@ -640,8 +652,7 @@ const tall = (() => {
     stroke-width: 1.25;
   }
 
-  :global(.arrow),
-  :global(.level) {
+  :global(.arrow) {
     fill: var(--ink);
   }
 

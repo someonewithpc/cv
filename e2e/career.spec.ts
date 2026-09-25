@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 type Edge = { date: string; label: string };
 type Site = {
   experience: { id: string; org: string; from: Edge; to: Edge }[];
-  education: { degree: string; school: string };
+  education: { degree: string; minor: string; school: string; short: string; from: string; year: string };
   languages: { name: string }[];
   refs: { label: string; href: string }[];
 };
@@ -96,6 +96,30 @@ test('the elevation under the table draws one bar per job, as long as the job la
     const box = (await page.locator(`#career ${block}`).boundingBox())!;
     expect(drawingTop, `the drawing starts above the end of ${block}`).toBeGreaterThan(box.y + box.height);
   }
+});
+
+test('the degree is an outline bar in the ground lane, under the jobs of its years', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const { degree, minor, short, from, year } = site.education;
+  const unit = 908 / 12;
+
+  const study = page.locator('#career svg.wide g.study');
+  await expect(study).toHaveCount(1);
+  await expect(study).toHaveAttribute('data-lane', '0');
+  // Bare years, drawn as whole years: 2017 to 2022 is six of them.
+  const width = Number(await study.locator('.bar').getAttribute('width'));
+  expect(width).toBeCloseTo((Number(year) + 1 - Number(from)) * unit, 0);
+  await expect(study.locator('.bar')).not.toHaveAttribute('fill', /hatch/);
+  await expect(study).toContainText(`${from} to ${year}`);
+  for (const part of [degree, minor, short]) await expect(study).toContainText(part);
+
+  // The jobs of those years stand above it.
+  const lanes = await page.locator('#career svg.wide .job').evaluateAll((jobs) => jobs.map((job) => Number(job.getAttribute('data-lane'))));
+  expect(Math.min(...lanes)).toBeGreaterThan(0);
+
+  await expect(page.locator('#career svg.tall g.study .bubble-number')).toHaveText('学');
 });
 
 for (const width of [390, 768, 1440]) {
