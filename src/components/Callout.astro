@@ -20,6 +20,13 @@ type Props = {
 const { id, class: className, letter, title, titleJp, scale, headingId, cardSide } = Astro.props;
 
 const hasCard = Astro.slots.has('card');
+
+/* The card is rendered once here, because the callout reads its Notes cell: below the width
+   the card's lane opens at (Layout.astro), that sentence is the most specific copy on the page
+   and would otherwise never be seen. The card's medium and year are on the sheet's own title
+   block, so the note is the one line that has to travel. */
+const cardHtml = hasCard ? await Astro.slots.render('card') : '';
+const note = cardHtml.match(/title-cell-notes[^>]*>[\s\S]*?<dd[^>]*>([\s\S]*?)<\/dd>/)?.[1]?.trim();
 ---
 
 <section
@@ -28,23 +35,26 @@ const hasCard = Astro.slots.has('card');
   data-card={hasCard ? (cardSide ?? 'start') : undefined}
   aria-labelledby={headingId}
 >
-  <h2 id={headingId} class="callout-label">
+  <div class="callout-label">
     <span class="callout-bubble typewriter" aria-hidden="true"><span class="callout-letter">{letter}</span></span>
-    <span class="callout-text">
-      <span class="callout-kind monospace">
-        <span>Detail {letter}</span>
-        {scale && <span class="callout-scale">Scale {scale}</span>}
-      </span>
-      <span class="callout-name">
-        <span class="callout-title typewriter">{title}</span>
-        {titleJp && <small lang="ja">{titleJp}</small>}
-      </span>
-    </span>
-  </h2>
+    <div class="callout-text">
+      <h2 id={headingId}>
+        <span class="callout-kind monospace">
+          <span>Detail {letter}</span>
+          {scale && <span class="callout-scale">Scale {scale}</span>}
+        </span>
+        <span class="callout-name">
+          <span class="callout-title typewriter">{title}</span>
+          {titleJp && <small lang="ja">{titleJp}</small>}
+        </span>
+      </h2>
+      {note && <p class="callout-note" set:html={note} />}
+    </div>
+  </div>
 
   {hasCard && (
     <div class="callout-card">
-      <slot name="card" />
+      <Fragment set:html={cardHtml} />
       <span class="callout-card-leader" aria-hidden="true"></span>
     </div>
   )}
@@ -70,13 +80,15 @@ const hasCard = Astro.slots.has('card');
      is the same distance from the view all round. */
   --callout-room: var(--callout-out);
   --callout-lead: 1.75rem;
-  /* The label's box; the bubble sits at its bottom, so the leader below it has a known length. */
+  /* The least the label's box is; the bubble sits at its bottom, so the leader below it has a
+     known length. Where the card's lane is open the label is exactly this, which is what the
+     card hangs from; where it is not, the note under the title makes the box taller and the
+     view follows it down. */
   --callout-label: 3.75rem;
 
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  padding-top: calc(var(--callout-label) + var(--callout-lead));
 
   > :global(*) {
     min-width: 0;
@@ -192,11 +204,8 @@ const hasCard = Astro.slots.has('card');
 }
 
 .callout-label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--callout-label);
+  min-height: var(--callout-label);
+  margin-bottom: var(--callout-lead);
   display: flex;
   align-items: flex-end;
   gap: 0.875rem;
@@ -204,6 +213,26 @@ const hasCard = Astro.slots.has('card');
 
   @media (max-width: 52rem) {
     gap: 0.625rem;
+  }
+
+  h2 {
+    display: grid;
+    gap: 0.125rem;
+    font-size: 1rem;
+  }
+}
+
+/* The card's note, printed under the title wherever the card itself is not drawn. */
+.callout-note {
+  margin: 0.375rem 0 0;
+  max-width: 52ch;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+
+  @media (width >= 105rem) {
+    display: none;
   }
 }
 
