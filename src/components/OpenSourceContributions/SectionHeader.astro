@@ -5,8 +5,8 @@ const { statistics } = Astro.props;
 <header>
   <div class="title">
     <h2 id="open-source-heading">
-      <small lang="ja">オープンソース</small>
       <span class="typewriter">Open Source</span>
+      <small lang="ja">オープンソース</small>
     </h2>
   </div>
 
@@ -45,10 +45,13 @@ header {
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--line);
 
+  /* The gloss is lettered beside the title on its baseline, the way a bilingual drawing sets
+     its second language, and wraps under it where the title takes the width. */
   h2 {
-    display: grid;
-    justify-items: start;
-    gap: 0.125rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 1rem;
 
     [lang='ja'] {
       font-size: 0.75rem;

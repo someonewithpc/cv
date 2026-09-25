@@ -10,8 +10,8 @@ const { headingId, titleJp, title } = Astro.props;
 
 <header>
   <h2 id={headingId}>
-    <small lang="ja">{titleJp}</small>
     <span class="typewriter">{title}</span>
+    <small lang="ja">{titleJp}</small>
   </h2>
 </header>
 
@@ -21,10 +21,13 @@ header {
   padding-bottom: 0.5rem;
   border-bottom: 1px solid color-mix(in oklch, var(--line), transparent 25%);
 
+  /* The gloss is lettered beside the title on its baseline, the way a bilingual drawing sets
+     its second language, and wraps under it where the title takes the width. */
   h2 {
-    display: grid;
-    justify-items: start;
-    gap: 0.125rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 1rem;
 
     [lang='ja'] {
       font-size: 0.75rem;

@@ -35,8 +35,10 @@ const hasCard = Astro.slots.has('card');
         <span>Detail {letter}</span>
         {scale && <span class="callout-scale">Scale {scale}</span>}
       </span>
-      {titleJp && <small lang="ja">{titleJp}</small>}
-      <span class="callout-title typewriter">{title}</span>
+      <span class="callout-name">
+        <span class="callout-title typewriter">{title}</span>
+        {titleJp && <small lang="ja">{titleJp}</small>}
+      </span>
     </span>
   </h3>
 
@@ -294,6 +296,14 @@ const hasCard = Astro.slots.has('card');
 
 .callout-scale {
   color: var(--ink-faint);
+}
+
+/* The gloss sits on the title's baseline and wraps under it on a phone. */
+.callout-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125rem 0.875rem;
 }
 
 .callout-title {
