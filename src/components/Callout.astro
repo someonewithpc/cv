@@ -126,8 +126,12 @@ const hasCard = Astro.slots.has('card');
           clearHint(r.bottom - rule, r.left, r.right, pad);
         }
       }
-      // To a hundredth of a pixel, so the same width always writes the same value back.
-      return Number.isFinite(need) ? `${Math.round(need * 100) / 100}px` : null;
+      if (!Number.isFinite(need)) return null;
+      // To the nearest whole pixel of the slip's height, so what follows it on the page stands
+      // on whole pixels: a fraction there moved the open-source sheet's ruling off its writing.
+      // Then to the 1/64px layout unit, so the same width always writes the same value back.
+      const rest = card.getBoundingClientRect().height - now;
+      return `${Math.round((Math.round(need + rest) - rest) * 64) / 64}px`;
     }
 
     const cards = [...document.querySelectorAll<HTMLElement>('.callout[data-card] .callout-card')];
