@@ -5,8 +5,8 @@
 // the shared data services along the bottom. Every edge comes out of depends_on. An app's edges
 // to the data services leave by the gutters beside its column and meet the service on a bus,
 // the way a schematic joins wires, so shared services read as one box however many ask for it.
-// Mastodon runs three processes where GNU social runs one: its box names all three, as an
-// installer's names its `-install`, and their edges are the app's own.
+// Mastodon runs three processes where GNU social runs one: its box keeps the server's name and
+// says how many, and their edges are the app's own.
 //
 // The drawing comes in two widths, with the same rows. Every box puts its small print one part
 // a line and splits its names at the hyphen, so the type can stay at 8px or more on the sheet.
@@ -44,7 +44,7 @@ const METRICS: Record<Layout, Metrics> = {
   portrait: { w: 400, h: 290, column: 98, box: 92, web: 120, gutter: 47.5, ...ROWS },
 };
 
-/** The services a recipe runs beside its app, each drawn as a name in the app's box. */
+/** The services a recipe runs beside its app; the app's box counts them. */
 const COMPANIONS: Record<string, readonly string[]> = {
   mastodon: ['streaming', 'sidekiq'],
 };
@@ -144,8 +144,11 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   /** Each instance's services beside its app, and the height of its app's box. */
   const companionsOf = (instance: (typeof instances)[number]) =>
     (COMPANIONS[instance.software] ?? []).map((suffix) => `${instance.instance_id}-${suffix}`);
-  const appSub = (instance: (typeof instances)[number]) => `${instance.software} · ${instance.hostname}`;
-  const appNames = (instance: (typeof instances)[number]) => [instance.instance_id, ...companionsOf(instance).map((name) => name.slice(instance.instance_id.length))];
+  const appSub = (instance: (typeof instances)[number]) => {
+    const companions = companionsOf(instance).length;
+    return [instance.software, instance.hostname, ...(companions ? [`${companions + 1} processes`] : [])].join(' · ');
+  };
+  const appNames = (instance: (typeof instances)[number]) => [instance.instance_id];
   const appHeight = new Map(instances.map((instance) => [instance.instance_id, heightOf(linesOf('app', appNames(instance), appSub(instance)))]));
   const webHeight = heightOf(linesOf('web', ['nginx'], 'nginx:alpine · 8080 8443'));
   const installHeight = heightOf(linesOf('install', ['x-install'], 'one-shot · restart: no'));
