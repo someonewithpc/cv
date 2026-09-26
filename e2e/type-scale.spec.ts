@@ -78,13 +78,13 @@ const CAREER_COPY = {
   'a Career note': '#career .description li',
 };
 
-test('the Career sheet sets its copy at the root size', async ({ page }) => {
+test('the Career sheet sets its copy at 0.875 of the root size', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await setDefaultFontSize(page, 20);
   await page.goto('/');
   for (const [what, selector] of Object.entries(CAREER_COPY)) {
     const size = await page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    expect(size, what).toBe(20);
+    expect(size, what).toBe(20 * 0.875);
   }
 });
 
