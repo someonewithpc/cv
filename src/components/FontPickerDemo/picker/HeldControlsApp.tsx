@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 
+import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
@@ -103,7 +104,11 @@ function Column({ side }: { side: Side }) {
   );
 }
 
-/** Drags each column's size slider in turn, with the pointer held where a hand would hold it. */
+/**
+ * Drags each column's size slider in turn, with the pointer held where a hand would hold it.
+ * The sheet's transport deck shows who drives it: pause holds the sliders until play or
+ * reset, play hands them back, and reset puts both at 1 and starts from the plain column.
+ */
 function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> }) {
   const [cursor, setCursor] = useState<DrawnCursorState>(CURSOR_GONE);
   const [grab, setGrab] = useState<{ top: number; left: number; width: number; gutter: number; thumb: number; side: Side } | null>(null);
@@ -112,7 +117,11 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
 
   useEffect(() => {
     const el = root.current;
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      reportAutoplayState(el, 'off');
+      return;
+    }
 
     // The carousel page: positioned, so a cursor drawn into it rides along with the page
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
@@ -220,21 +229,33 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
 
     let active = false;
     let userControl = false;
+    // Set by the deck's pause: the sliders stay the visitor's past the quiet spell
+    let held = false;
     let resumeTimer = 0;
 
     const play = () => {
-      if (!active || userControl || controller.running) return;
+      if (!active) return;
+      if (held || userControl) {
+        reportAutoplayState(el, 'user');
+        return;
+      }
+      reportAutoplayState(el, 'playing');
+      if (controller.running) return;
       controller.start();
       setNotice(null);
     };
 
+    const stop = (handoff: Element | null = null) => {
+      if (!controller.running) return;
+      controller.pause(handoff);
+      setGrab(null);
+      setNotice('Demo paused');
+    };
+
     const yieldToUser = (handoff: Element | null) => {
       window.clearTimeout(resumeTimer);
-      if (controller.running) {
-        controller.pause(handoff);
-        setGrab(null);
-        setNotice('Demo paused');
-      }
+      stop(handoff);
+      reportAutoplayState(el, 'user');
       resumeTimer = window.setTimeout(play, RESUME_DELAY_MS);
     };
 
@@ -251,9 +272,10 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     });
 
     // Only a real pointer, and only over the sheet: the scripted values never come through
-    // pointer events
+    // pointer events. The deck's keys are the sheet's own chrome, not the visitor reaching in
     const onPointer = (e: PointerEvent) => {
-      if (e.isTrusted && active) yieldToUser(e.target instanceof Element ? e.target : null);
+      if (!e.isTrusted || !active || isTransportControl(e.target)) return;
+      yieldToUser(e.target instanceof Element ? e.target : null);
     };
     page.addEventListener('pointermove', onPointer, { passive: true });
     page.addEventListener('pointerdown', onPointer, { passive: true });
@@ -265,6 +287,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       controller.pause();
       setGrab(null);
       setNotice('Demo paused');
+      reportAutoplayState(el, 'user');
     };
     const onFocusOut = (e: FocusEvent) => {
       if (!e.isTrusted || controller.scriptedFocus) return;
@@ -275,7 +298,30 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     el.addEventListener('focusin', onFocusIn);
     el.addEventListener('focusout', onFocusOut);
 
+    const stopCommands = onAutoplayCommand(el, (command) => {
+      window.clearTimeout(resumeTimer);
+      if (command === 'pause') {
+        held = true;
+        stop();
+        reportAutoplayState(el, 'user');
+        return;
+      }
+      held = false;
+      userControl = false;
+      if (command === 'reset') {
+        controller.pause();
+        controller.rewind();
+        setGrab(null);
+        for (const side of ['plain', 'held'] as const) {
+          const input = slider(side);
+          if (input) setNativeValue(input, '1');
+        }
+      }
+      play();
+    });
+
     return () => {
+      stopCommands();
       stopPageWatch();
       page.removeEventListener('pointermove', onPointer);
       page.removeEventListener('pointerdown', onPointer);
