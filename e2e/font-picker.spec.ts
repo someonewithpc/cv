@@ -327,3 +327,74 @@ for (const viewport of VIEWPORTS) {
     });
   });
 }
+
+test.describe('transport deck', () => {
+  // A pointer's takeover is handed back after 2.5 s of page time; the waits below outlast it.
+  test.use({ walkthroughRate: 2 });
+
+  test('main page: the deck shows, and pause stops the walkthrough until play', async ({ page }) => {
+    const stack = fontPickerStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const front = frontPage(stack, await frontPageIndex(stack));
+    await waitForIslandMounted(front);
+
+    const deck = front.locator('[data-demo-transport]');
+    const cursor = front.locator('.font-picker-cursor');
+    await expect(deck).toBeVisible({ timeout: 20_000 });
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(deck.locator('[data-demo-caption]')).toHaveText('AUTO PLAYING');
+    await expect(cursor).toBeVisible({ timeout: 20_000 });
+
+    // Reaching for the key is not a takeover of its own; the press is what pauses.
+    await deck.locator('[data-demo-key="pause"]').click();
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    await expect(deck.locator('[data-demo-key="pause"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(cursor).toHaveCount(0);
+    await pageWait(page, 6_000);
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    expect(await cursor.count()).toBe(0);
+
+    await deck.locator('[data-demo-key="play"]').click();
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(cursor).toBeVisible({ timeout: 20_000 });
+  });
+
+  test('held controls page: pause keeps the sliders where they stand', async ({ page }) => {
+    const stack = fontPickerStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await turnToPage(stack, 'Held Controls');
+    const front = frontPage(stack, await frontPageIndex(stack));
+
+    const deck = front.locator('[data-demo-transport]');
+    const cursor = front.locator('.font-picker-cursor');
+    await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
+    await expect(cursor).toBeVisible({ timeout: 20_000 });
+
+    await deck.locator('[data-demo-key="pause"]').click();
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    await expect(cursor).toHaveCount(0);
+    await pageWait(page, 6_000);
+    expect(await cursor.count()).toBe(0);
+  });
+
+  test('loading indicator page: pause holds the border on its state', async ({ page }) => {
+    const stack = fontPickerStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await turnToPage(stack, 'Loading Indicator');
+    const front = frontPage(stack, await frontPageIndex(stack));
+
+    const deck = front.locator('[data-demo-transport]');
+    const fieldset = front.locator('[data-border-demo]');
+    await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
+
+    await deck.locator('[data-demo-key="pause"]').click();
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    const held = await fieldset.getAttribute('class');
+    // Longer than the whole request cycle, so a running walkthrough would have moved it.
+    await pageWait(page, 12_000);
+    expect(await fieldset.getAttribute('class')).toBe(held);
+
+    await deck.locator('[data-demo-key="reset"]').click();
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+  });
+});
