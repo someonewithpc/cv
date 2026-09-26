@@ -1,5 +1,5 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate } from '@/client/frontPage';
 import { registerStatusBorderProperties } from '@/client/registerStatusBorderProperties';
 import { watchHandover } from '@/client/walkthroughHandover';
 
@@ -378,7 +378,8 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     reportAutoplayState(root, state);
   };
 
-  watchPageActive(root, (next) => {
+  const gate = demoGate(root);
+  gate.onChange((next) => {
     active = next;
   });
 
@@ -416,10 +417,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     const token = ++run;
     const stopped = () => token !== run;
 
-    const pause = async (ms: number) => {
-      await wait(ms);
-      while (!stopped() && (!active || document.hidden)) await wait(250);
-    };
+    const pause = (ms: number) => gate.wait(ms);
 
     const type = async (input: HTMLInputElement, text: string, onKey: () => void) => {
       for (let i = 1; i <= text.length && !stopped(); i += 1) {

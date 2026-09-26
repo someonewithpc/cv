@@ -1,6 +1,6 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
@@ -250,7 +250,8 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
   let run = 0;
   let active = false;
   let held = false;
-  watchPageActive(root, (next) => {
+  const gate = demoGate(root);
+  gate.onChange((next) => {
     active = next;
   });
 
@@ -291,10 +292,7 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
     run += 1;
     const mine = run;
     const stopped = () => mine !== run;
-    const pause = async (ms: number) => {
-      await wait(ms);
-      while (!stopped() && (!active || document.hidden)) await wait(250);
-    };
+    const pause = (ms: number) => gate.wait(ms);
 
     hand.close();
     // Back to the query the page opens on. Only the deck's keys and the hand back after a

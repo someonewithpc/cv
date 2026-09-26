@@ -1,6 +1,6 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate } from '@/client/frontPage';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
@@ -151,10 +151,6 @@ function runPipeline(tool: Tool, animate = true) {
   tool.root.classList.add('running');
 }
 
-function wait(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
 /**
  * The walkthrough types into the fields itself: a query that finds the sample, then each
  * size in turn with a query that finds it. A drawn cursor clicks each field before it
@@ -201,10 +197,8 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
   let active = false;
   let held = false;
 
-  const pause = async (ms: number, run: number) => {
-    await wait(ms);
-    while (run === token && (!active || document.hidden)) await wait(250);
-  };
+  const gate = demoGate(root);
+  const pause = (ms: number) => gate.wait(ms);
 
   /** Scrolls the tool so `el` sits in the part the title block leaves clear. */
   const reveal = (el: HTMLElement) => {
@@ -244,11 +238,11 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     input.classList.add('typing');
     input.value = '';
     onKey();
-    await pause(260, run);
+    await pause(260);
     for (let i = 1; i <= text.length && run === token; i += 1) {
       input.value = text.slice(0, i);
       onKey();
-      await pause(90 + Math.random() * 60, run);
+      await pause(90 + Math.random() * 60);
     }
     input.classList.remove('typing');
   };
@@ -258,7 +252,7 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     root.dataset.autoplay = 'playing';
     reportAutoplayState(root, 'playing');
     restore(tool);
-    await pause(1200, run);
+    await pause(1200);
 
     // Each step types a size, lets the pipeline run, then asks for it in one of the
     // units it now carries. The old query stays up while the new size lands, so the
@@ -269,7 +263,7 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
           await type(tool.size, step.size, run, () => {});
           if (run !== token) return;
           runPipeline(tool);
-          await pause(RUN_MS + 900, run);
+          await pause(RUN_MS + 900);
           if (run !== token) return;
         }
         // The search runs once the query is typed, the way a search box sends it, so the
@@ -280,7 +274,7 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
         });
         if (run !== token) return;
         renderQueries(tool);
-        await pause(2600, run);
+        await pause(2600);
         if (run !== token) return;
       }
     }
@@ -296,7 +290,7 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     runPipeline(tool, false);
   };
 
-  watchPageActive(root, (next) => {
+  gate.onChange((next) => {
     active = next;
     if (!next) {
       window.clearTimeout(fadeTimer);
