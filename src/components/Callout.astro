@@ -73,20 +73,18 @@ const hasCard = Astro.slots.has('card');
     // "TITLE five more sheets".
     const BESIDE = 3;
 
-    // Lifts the slip's entries as high as the sheets and the peel hint over them allow. Each entry
-    // keeps the slip's own inset below the fan over its text, so the gap above the first entry
-    // matches the slip's sides and foot. Each piece of an entry, its label, each line of its text and
-    // the rule under it, keeps the inset below the hint only where the hint is over it, so a short
-    // title rises beside the hint and what runs under the hint follows below it.
-    function lift(card: HTMLElement) {
-      if (!stacked.matches) {
-        card.style.removeProperty('--slip-lead');
-        return;
-      }
+    // Works out where the slip's entries start: as high as the sheets and the peel hint over them
+    // allow. Each entry keeps the slip's own inset below the fan over its text, so the gap above
+    // the first entry matches the slip's sides and foot. Each piece of an entry, its label, each
+    // line of its text and the rule under it, keeps the inset below the hint only where the hint
+    // is over it, so a short title rises beside the hint and what runs under the hint follows
+    // below it. Every piece is measured from where it would stand with no lead at all, so the
+    // answer depends on the width alone and never on the lead it set last time.
+    function lead(card: HTMLElement) {
       const view = card.parentElement!;
       const stack = view.querySelector<HTMLElement>('[data-paper-stack]');
       const sheet = stack?.firstElementChild as HTMLElement | null;
-      if (!stack || !sheet) return;
+      if (!stack || !sheet) return null;
 
       // The hindmost sheet's bottom edge, turned about the pin every sheet turns on.
       const box = stack.getBoundingClientRect();
@@ -107,16 +105,18 @@ const hasCard = Astro.slots.has('card');
 
       const style = getComputedStyle(card);
       const pad = parseFloat(style.paddingLeft);
+      // What the lead in force now adds to every piece's top.
+      const now = parseFloat(style.paddingTop);
       const beside = BESIDE * parseFloat(getComputedStyle(document.documentElement).fontSize);
-      let lift = -Infinity;
+      let need = -Infinity;
       const clearHint = (top: number, left: number, right: number, gap: number) => {
-        if (hint && right + gap > hint.left && left - pad < hint.right) lift = Math.max(lift, hint.bottom + pad - top);
+        if (hint && right + gap > hint.left && left - pad < hint.right) need = Math.max(need, hint.bottom + pad - (top - now));
       };
       for (const cell of card.querySelectorAll('.title-cell')) {
         if (!cell.getClientRects().length) continue;
         const { left, right } = textSpan(cell);
         const top = cell.querySelector('dt')!.getBoundingClientRect().top;
-        lift = Math.max(lift, Math.max(edge(left), edge(right)) + pad - top);
+        need = Math.max(need, Math.max(edge(left), edge(right)) + pad - (top - now));
         // The label is trimmed to its cap line; its box top is where its text starts.
         for (const r of textRects(cell.querySelector('dt')!)) clearHint(top, r.left, r.right, Math.max(pad, beside));
         for (const r of textRects(cell.querySelector('dd')!)) clearHint(r.top, r.left, r.right, Math.max(pad, beside));
@@ -126,22 +126,40 @@ const hasCard = Astro.slots.has('card');
           clearHint(r.bottom - rule, r.left, r.right, pad);
         }
       }
-      if (!Number.isFinite(lift) || Math.abs(lift) < 0.25) return;
-      card.style.setProperty('--slip-lead', `${parseFloat(style.paddingTop) + lift}px`);
+      // To a hundredth of a pixel, so the same width always writes the same value back.
+      return Number.isFinite(need) ? `${Math.round(need * 100) / 100}px` : null;
     }
 
     const cards = [...document.querySelectorAll<HTMLElement>('.callout[data-card] .callout-card')];
-    const liftAll = () => cards.forEach(lift);
+    // Everything read before anything is written, and a value written only when it changes.
+    const liftAll = () => {
+      const leads = cards.map((card) => (stacked.matches ? lead(card) : null));
+      cards.forEach((card, i) => {
+        const value = leads[i];
+        if (value === null) card.style.removeProperty('--slip-lead');
+        else if (card.style.getPropertyValue('--slip-lead') !== value) card.style.setProperty('--slip-lead', value);
+      });
+    };
+    let queued = 0;
+    const later = () => {
+      queued ||= requestAnimationFrame(() => {
+        queued = 0;
+        liftAll();
+      });
+    };
+    // The frames, not the slips: a frame's size follows the width alone, while the slip's own size
+    // follows the lead this writes, and watching it would answer every write with another pass.
+    // A resize lays out and reports in the same frame, so the lead lands before that frame paints.
     const watch = new ResizeObserver(liftAll);
     for (const card of cards) {
-      watch.observe(card);
       const frame = card.parentElement!.querySelector('.technical-drawing-frame');
-      if (frame) watch.observe(frame);
+      if (!frame) continue;
+      watch.observe(frame);
       // The top stack arms its peel hint once its own script runs.
-      if (frame) new MutationObserver(liftAll).observe(frame, { attributeFilter: ['data-hint-show'] });
+      new MutationObserver(later).observe(frame, { attributeFilter: ['data-hint-show'] });
     }
-    stacked.addEventListener('change', liftAll);
-    document.fonts.ready.then(liftAll);
+    stacked.addEventListener('change', later);
+    document.fonts.ready.then(later);
   </script>
 </section>
 
