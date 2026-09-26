@@ -2,6 +2,7 @@ import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus'
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { demoGate, type DemoGate } from '@/client/frontPage';
+import { settledResizeObserver } from '@/client/settledResize';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
@@ -573,7 +574,7 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
   bus.dispatchButton.addEventListener('click', () => void runDispatch(bus));
 
   // The token rests on the return between runs; a resized sheet moves the return.
-  new ResizeObserver(() => {
+  settledResizeObserver(() => {
     if (!bus.token.hidden && bus.root.dataset.result !== 'pending') placeToken(bus, nodeAt(bus, bus.end));
   }).observe(bus.frame);
 
