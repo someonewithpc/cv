@@ -784,7 +784,25 @@ const pages = await Promise.all(
         --flap-flat: calc(0.12 - 0.06 * var(--fold-lift));
         --flap-fold: calc(0.38 - 0.04 * var(--fold-lift));
         --flap-curl: calc(var(--fold-shade-w) * 0.8);
+        // A landing, forward or a back-drag's approach, folds the sheet a second time, at a
+        // crease that travels between the resting crease and the tip. In this box's own
+        // coordinates that crease is another corner fold, which fold-drag.ts writes here as
+        // --land-x/-y (renderLanding) in the same terms as --fold-x/-y, so it takes the same
+        // darkening. The crease closes into the corner as the landing completes and the first
+        // fold's rendering takes over, so the shade fades out over its last 3em; unset, it is
+        // 0 by 0 and paints nothing.
+        --land-angle: atan2(max(var(--land-y), 1px), max(var(--land-x), 1px));
+        --land-crease: calc(var(--land-x) * sin(var(--land-angle)));
+        --land-curl: calc(clamp(0.5em, var(--land-crease) * 0.6, 5em) * 0.8);
+        --land-fade: min(1, tan(atan2(var(--land-crease), 3em)));
+        --land-fold: calc((var(--flap-fold) - var(--flap-flat)) * var(--land-fade));
         background:
+          linear-gradient(
+            calc(-1 * var(--land-angle)),
+            rgb(0 0 0 / 0) calc(var(--land-crease) - var(--land-curl)),
+            rgb(0 0 0 / var(--land-fold)) var(--land-crease),
+            rgb(0 0 0 / 0) calc(var(--land-crease) + var(--land-curl))
+          ),
           linear-gradient(
             calc(-1 * var(--flap-angle)),
             rgb(255 255 255 / var(--flap-sheen)) 0px,

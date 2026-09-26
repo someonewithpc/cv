@@ -501,11 +501,27 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
   fold.style.clipPath = '';
   fold.style.transform = '';
   fold.style.transformOrigin = '';
+  clearLandingShade(fold);
   const hint = hintOf.get(fold);
   if (hint) {
     hint.style.left = '';
     hint.style.top = '';
   }
+};
+
+// The landing's second crease, handed to the flap's shading (see --land-x in index.astro) in
+// --fold-x/-y's terms: in the flap's own coordinates, before its reflection across the first
+// crease, it is the corner fold whose tip is the corner's target pulled back through that
+// reflection.
+const landingShade = (fold: HTMLElement, w: number, h: number, tipBack: Vec): void => {
+  const size = foldSizeFromTip(tipBack.x - w, tipBack.y - h);
+  fold.style.setProperty('--land-x', `${size.x}px`);
+  fold.style.setProperty('--land-y', `${size.y}px`);
+};
+
+const clearLandingShade = (fold: HTMLElement): void => {
+  fold.style.removeProperty('--land-x');
+  fold.style.removeProperty('--land-y');
 };
 
 const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
@@ -850,6 +866,7 @@ const renderLanding = (
     section.style.transform = '';
     section.style.transformOrigin = '';
     fold.style.clipPath = packet.length < 3 ? HIDDEN_CLIP : polygonClip(packet);
+    clearLandingShade(fold);
     return;
   }
 
@@ -862,6 +879,8 @@ const renderLanding = (
   const dot = n2.x * n.x + n2.y * n.y;
   const n2Back = { x: n2.x - 2 * dot * n.x, y: n2.y - 2 * dot * n.y };
   const { kept: band, hole: landed } = splitPolygon(packet, mid2Back, n2Back);
+  const projT = (t.x - mid.x) * n.x + (t.y - mid.y) * n.y;
+  landingShade(fold, w, h, { x: t.x - 2 * projT * n.x, y: t.y - 2 * projT * n.y });
 
   // The landed material paints through both folds composed, Ref2·Ref1 — linear part a rotation,
   // written as an explicit matrix about the page origin
@@ -1259,6 +1278,7 @@ const promoteFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement
   sheet.style.setProperty('--fold-x', `${size.x}px`);
   sheet.style.setProperty('--fold-y', `${size.y}px`);
   renderFold(section, fold, w, h, seed, backCut);
+  clearLandingShade(fold);
   sheet.style.rotate = '';
   bringToFront(sheet.parentElement!);
   sheet.getAnimations().forEach((animation) => animation.cancel());
@@ -1702,6 +1722,12 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // that box — a page-sized slab of flap colour on a sheet whose top-left corner shows through
     // the front page's cut. Render the reverse landing's flat start now so it begins hidden.
     const seed = restSeed(sheetMetrics);
+    // The flap shades the resting crease from the sheet's --fold-x/-y, which a page behind the
+    // stack no longer has. The approach ends with promoteFold writing the seed there; writing
+    // it now keeps the crease shaded the same on both sides of that hand-over.
+    const seedSize = foldSizeFromTip(seed.x, seed.y);
+    sheet.style.setProperty('--fold-x', `${seedSize.x}px`);
+    sheet.style.setProperty('--fold-y', `${seedSize.y}px`);
     renderLanding(section, fold, w, h, seed, backCut, { x: w, y: h }, drift);
     // The pull direction: the resting crease's normal, which the seed lies opposite along
     const seedLength = Math.hypot(seed.x, seed.y);
@@ -2087,6 +2113,8 @@ const registerFoldProperties = () => {
     // A turned page's own step out, transitioned on the page so its cut, band and translate
     // climb together.
     '--turned-drift', '--turned-rise',
+    // A landing's second crease, written on the flap by renderLanding for its shading.
+    '--land-x', '--land-y',
   ]) {
     registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
   }
