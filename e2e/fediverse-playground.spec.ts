@@ -27,6 +27,9 @@ async function mountedPlayground(page: Page) {
 
 // The sheet holds a landscape and a portrait drawing and shows one; the other's nodes are hidden.
 const node = (host: Locator, service: string) => host.locator(`.service-graph:visible .node[data-service="${service}"]`);
+const links = (host: Locator, server: string) => host.locator(`.service-graph:visible .link[data-from="${server}"]`);
+const linkTargets = (host: Locator, server: string) => links(host, server).evaluateAll((paths) =>
+  paths.map((path) => (path as SVGPathElement).dataset.to).sort());
 
 /** One page on with the arrow key: no hand on the paper, so the turn commits on the spot and
     does not hang on how quickly the wheel events come through. Waits until the named page is
@@ -119,36 +122,49 @@ test.describe('with reduced motion', () => {
     // The opening state: the two v3 nodes and Mastodon up, the v2 node off.
     await expect(host.locator('.toggle input')).toHaveCount(4);
     await expect(toggle('mastodon-carol')).toBeChecked();
-    for (const service of ['web', 'db', 'redis', 'gnusocial-alice', 'gnusocial-alice-install', 'gnusocial-bob', 'mastodon-carol', 'mastodon-carol-install']) {
+    for (const service of ['nginx', 'db', 'redis', 'search', 'media', 'gnusocial-alice', 'gnusocial-alice-install', 'gnusocial-bob', 'mastodon-carol', 'mastodon-carol-install']) {
       await expect(node(host, service)).toHaveClass(/emitted/);
     }
     // Mastodon's box names its streaming and sidekiq services too.
     await expect(node(host, 'mastodon-carol')).toHaveAttribute('data-also', 'mastodon-carol-streaming mastodon-carol-sidekiq');
     await expect(node(host, 'mariadb')).toHaveClass(/ghost/);
-    await expect(host.locator('[data-status]')).toHaveText('11 services · 23 depends_on, all defined');
+    await expect(host.locator('[data-status]')).toHaveText('13 services · 28 depends_on, all defined');
 
-    // Mastodon off takes its four services, and leaves the GNU social pair on Postgres and Redis.
+    // One line from each server to each shared service it uses, and only Mastodon searches.
+    await expect(node(host, 'mastodon-carol').locator('text')).toHaveText(['mastodon-carol', 'mastodon', 'carol.localhost', '3 processes']);
+    expect(await linkTargets(host, 'gnusocial-alice')).toEqual(['db', 'media', 'redis']);
+    expect(await linkTargets(host, 'gnusocial-bob')).toEqual(['db', 'media', 'redis']);
+    expect(await linkTargets(host, 'mastodon-carol')).toEqual(['db', 'media', 'redis', 'search']);
+    await expect(links(host, 'gnusocial-v2')).toHaveCount(0);
+
+    // Mastodon off takes its four services and search, and leaves the GNU social pair on
+    // Postgres, Redis and media.
     await toggle('mastodon-carol').uncheck();
     await expect(node(host, 'mastodon-carol')).toHaveClass(/ghost/);
+    await expect(node(host, 'search')).toHaveClass(/ghost/);
     await expect(node(host, 'db')).toHaveClass(/emitted/);
-    await expect(host.locator('[data-status]')).toHaveText('7 services · 10 depends_on, all defined');
+    await expect(node(host, 'media')).toHaveClass(/emitted/);
+    await expect(links(host, 'mastodon-carol')).toHaveCount(0);
+    await expect(host.locator('[data-status]')).toHaveText('8 services · 12 depends_on, all defined');
 
     // The v2 node brings mariadb with it; db is still drawn once.
     await toggle('gnusocial-v2').check();
     await expect(node(host, 'mariadb')).toHaveClass(/emitted/);
     await expect(node(host, 'gnusocial-v2-install')).toHaveClass(/emitted/);
     await expect(host.locator('.service-graph:visible .node[data-service="db"]')).toHaveCount(1);
+    expect(await linkTargets(host, 'gnusocial-v2')).toEqual(['mariadb']);
 
-    // With only v2 left, nothing asks for Postgres or Redis, and the builder does not emit them.
+    // With only v2 left, nothing asks for Postgres, Redis or media, and the builder does not emit them.
     await toggle('mastodon-carol').uncheck();
     await toggle('gnusocial-alice').uncheck();
     await toggle('gnusocial-bob').uncheck();
     await expect(node(host, 'db')).toHaveClass(/ghost/);
     await expect(node(host, 'redis')).toHaveClass(/ghost/);
-    await expect(node(host, 'web')).toHaveClass(/emitted/);
+    await expect(node(host, 'media')).toHaveClass(/ghost/);
+    await expect(node(host, 'nginx')).toHaveClass(/emitted/);
 
     await toggle('gnusocial-v2').uncheck();
-    await expect(node(host, 'web')).toHaveClass(/ghost/);
+    await expect(node(host, 'nginx')).toHaveClass(/ghost/);
     await expect(host.locator('[data-status]')).toHaveText('No instances: services is empty');
   });
 
@@ -173,6 +189,10 @@ test.describe('with reduced motion', () => {
       await expect(code).toContainText(service);
     }
     await expect(code).toContainText('dockerfile: streaming/Dockerfile');
+    for (const line of ['nginx:', 'search:', 'image: elasticsearch:7.17.4', 'media:', 'image: darthsim/imgproxy']) {
+      await expect(code).toContainText(line);
+    }
+    await expect(code).not.toContainText('web:');
 
     // Highlighted by the emitter itself: keys, values, quoted strings and comments are spans.
     await expect(code.locator('.y-key', { hasText: /^services$/ })).toHaveCount(1);
@@ -185,7 +205,7 @@ test.describe('with reduced motion', () => {
 
     await host.locator('input[name="gnusocial-v2"]').check();
     await expect(code).toContainText('gnusocial-v2-install:');
-    // web waits on every app, and only on apps.
+    // nginx waits on every app, and only on apps.
     await expect(code).toContainText('depends_on:\n      - gnusocial-alice\n      - gnusocial-bob\n      - gnusocial-v2\n      - mastodon-carol\n      - mastodon-carol-streaming\n');
   });
 });
