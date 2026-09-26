@@ -59,3 +59,90 @@ test('every title block fills its rows with cells at every width', async ({ page
 
   expect(gaps).toEqual([]);
 });
+
+/**
+ * Widths where the ladder sheds cells. On a sheet whose artwork leaves room in the corner, the
+ * block keeps them, so wherever a cell is shed, the block with that cell back would run into
+ * the artwork (or the note's tab), half a rem of clear paper kept.
+ */
+const SHED_WIDTHS = [688, 704, 720, 744, 768, 800, 832, 856];
+
+test('the title block sheds a cell only where the artwork leaves no room for it', async ({ page }) => {
+  // Every cell shows here, in the block's narrow type, so each one's natural width can be read.
+  await page.setViewportSize({ width: 880, height: 900 });
+  await page.goto('/');
+  await expect(page.locator('article.technical-drawing-stack').first()).toBeVisible();
+  await expect(page.locator('[data-paper-stack-root]:not([aria-roledescription="paper stack"])')).toHaveCount(0);
+  await page.evaluate(() => document.fonts.ready);
+
+  const natural = await page.locator('section > table').evaluateAll((tables) => tables.map((table) => {
+    const range = document.createRange();
+    return Object.fromEntries([...table.querySelectorAll<HTMLElement>('td')].map((cell) => {
+      const name = [...cell.classList].find((c) => c.startsWith('title-'))?.slice(6) ?? '?';
+      const style = getComputedStyle(cell);
+      let content = 0;
+      for (const text of cell.querySelectorAll('span:not(.sr-only), h2, h3, svg')) {
+        range.selectNodeContents(text);
+        content = Math.max(content, text instanceof SVGElement ? text.getBoundingClientRect().width : range.getBoundingClientRect().width);
+      }
+      return [name, content + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + 1];
+    }));
+  }));
+
+  const crowded: string[] = [];
+  for (const width of SHED_WIDTHS) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(done)))));
+
+    const found = await page.locator('section > table').evaluateAll((tables, cells) => tables.flatMap((table, index) => {
+      const sheet = table.parentElement as HTMLElement;
+      // The front page only: it lies square, so its client rects are its layout.
+      if (!sheet.closest('.paper-front')) return [];
+      const shown = (name: string) => {
+        const cell = table.querySelector<HTMLElement>(`td.title-${name}`);
+        return cell !== null && getComputedStyle(cell).display !== 'none';
+      };
+      // The one the block would take back first: the ladder sheds Proj., then Scale, then Weight.
+      const back = ['weight', 'scale', 'proj'].find((name) => !shown(name) && name in cells[index]);
+      if (!back) return [];
+
+      const block = table.getBoundingClientRect();
+      const em = parseFloat(getComputedStyle(table).fontSize);
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      // The tallest the block runs when it takes a cell back: logo and title stacked, the
+      // title on two lines.
+      const top = block.bottom - 10 * em - 0.5 * rem;
+      const range = document.createRange();
+      const inkBoxes: DOMRect[] = [];
+      const tab = sheet.querySelector(':scope > .aside .note-fold');
+      if (tab) inkBoxes.push(tab.getBoundingClientRect());
+      for (const el of sheet.querySelectorAll(':scope > .content *')) {
+        if (el instanceof SVGElement) {
+          if (el.parentElement instanceof SVGSVGElement && !(el instanceof SVGSVGElement)) inkBoxes.push(el.getBoundingClientRect());
+          continue;
+        }
+        if (el.children.length === 0 || [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim())) {
+          range.selectNodeContents(el);
+          inkBoxes.push(el.children.length === 0 && !el.textContent?.trim() ? el.getBoundingClientRect() : range.getBoundingClientRect());
+        }
+        const style = getComputedStyle(el);
+        if (parseFloat(style.borderLeftWidth) > 0 || parseFloat(style.borderRightWidth) > 0
+          || !/^(transparent|rgba\(.*,\s*0\))$/.test(style.backgroundColor)) inkBoxes.push(el.getBoundingClientRect());
+      }
+      const sheetBox = sheet.getBoundingClientRect();
+      const edge = Math.max(sheetBox.left, ...inkBoxes
+        .filter((box) => box.width > 0 && box.height > 0)
+        .filter((box) => !(box.width > sheetBox.width * 0.9 && box.height > sheetBox.height * 0.9))
+        .filter((box) => box.bottom > top && box.top < block.bottom && box.left < block.right)
+        .map((box) => Math.min(box.right, block.right)));
+      const room = block.right - edge - 0.5 * rem;
+      const wanted = block.width + cells[index][back];
+
+      // Two pixels for the canvas and the range measuring the same words a little apart.
+      return wanted > room - 2 ? [] : [`${table.querySelector('h2')?.textContent?.trim()}: sheds ${back} with ${Math.round(room - block.width)}px to spare, the cell is ${Math.round(cells[index][back])}px`];
+    }), natural);
+    crowded.push(...found.map((line) => `${width}px ${line}`));
+  }
+
+  expect(crowded).toEqual([]);
+});
