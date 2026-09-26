@@ -512,16 +512,20 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
 // The landing's second crease, handed to the flap's shading (see --land-x in index.astro) in
 // --fold-x/-y's terms: in the flap's own coordinates, before its reflection across the first
 // crease, it is the corner fold whose tip is the corner's target pulled back through that
-// reflection.
+// reflection. The class puts the layer in the flap's background list for the landing's length.
+const LANDING = 'paper-fold--landing';
+
 const landingShade = (fold: HTMLElement, w: number, h: number, tipBack: Vec): void => {
   const size = foldSizeFromTip(tipBack.x - w, tipBack.y - h);
   fold.style.setProperty('--land-x', `${size.x}px`);
   fold.style.setProperty('--land-y', `${size.y}px`);
+  fold.classList.add(LANDING);
 };
 
 const clearLandingShade = (fold: HTMLElement): void => {
   fold.style.removeProperty('--land-x');
   fold.style.removeProperty('--land-y');
+  fold.classList.remove(LANDING);
 };
 
 const HIDDEN_CLIP = 'polygon(0px 0px, 0px 0px, 0px 0px)';
