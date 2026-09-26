@@ -44,6 +44,8 @@ section {
   max-width: 80ch;
   margin-inline: auto;
   margin-top: 1.5rem;
+  /* The same inset as the Career sheet; past 64rem the desk's --sheet-pad takes over. */
+  padding: var(--page-gap);
 
   .cloud-label {
     margin: 0 0 0.75rem;
@@ -109,6 +111,11 @@ section {
       color: var(--ink-faint);
       background: var(--surface-raised);
       user-select: none;
+
+      /* Under 18rem the sheet's padding leaves the three options too little room. */
+      @media (max-width: 18rem) {
+        padding-inline: 0.5em;
+      }
 
       &:hover {
         color: var(--ink);
