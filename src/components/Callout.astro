@@ -42,129 +42,15 @@ const hasCard = Astro.slots.has('card');
 
   <div class="callout-view">
     {hasCard && (
-      <div class="callout-card">
-        <slot name="card" />
-        <span class="callout-card-leader" aria-hidden="true"></span>
+      <div class="callout-slip">
+        <div class="callout-card">
+          <slot name="card" />
+          <span class="callout-card-leader" aria-hidden="true"></span>
+        </div>
       </div>
     )}
     <slot />
   </div>
-
-  {/* Inside the section: a script at the top of the template is a sibling of the details it
-     lies among, and the mat reads its children as what lies on it. */}
-  <script>
-    // How far the stack turns its hindmost sheet for each step down the fan (PaperStack's
-    // $per-page-splay), times the log of its place.
-    const SPLAY = (1.5 * Math.PI) / 180;
-    const stacked = window.matchMedia('(width < 105rem)');
-
-    const textRects = (el: Element) => {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      return [...range.getClientRects()].filter((r) => r.width > 0);
-    };
-
-    const textSpan = (cell: Element) => {
-      const rects = [...cell.querySelectorAll('dt, dd')].flatMap(textRects);
-      return { left: Math.min(...rects.map((r) => r.left)), right: Math.max(...rects.map((r) => r.right)) };
-    };
-
-    // Text beside the peel hint keeps this many rem from its words, or the two read as one line:
-    // "TITLE five more sheets".
-    const BESIDE = 3;
-
-    // Works out where the slip's entries start: as high as the sheets and the peel hint over them
-    // allow. Each entry keeps the slip's own inset below the fan over its text, so the gap above
-    // the first entry matches the slip's sides and foot. Each piece of an entry, its label, each
-    // line of its text and the rule under it, keeps the inset below the hint only where the hint
-    // is over it, so a short title rises beside the hint and what runs under the hint follows
-    // below it. Every piece is measured from where it would stand with no lead at all, so the
-    // answer depends on the width alone and never on the lead it set last time.
-    function lead(card: HTMLElement) {
-      const view = card.parentElement!;
-      const stack = view.querySelector<HTMLElement>('[data-paper-stack]');
-      const sheet = stack?.firstElementChild as HTMLElement | null;
-      if (!stack || !sheet) return null;
-
-      // The hindmost sheet's bottom edge, turned about the pin every sheet turns on.
-      const box = stack.getBoundingClientRect();
-      const [pinX, pinY] = getComputedStyle(sheet).transformOrigin.split(' ').map(parseFloat);
-      const turn = SPLAY * Math.log(Number(stack.dataset.pageCount) || 1);
-      const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
-      const corner = (x: number) => [
-        box.left + pinX + (x - pinX) * cos - (box.height - pinY) * sin,
-        box.top + pinY + (x - pinX) * sin + (box.height - pinY) * cos,
-      ];
-      const [ax, ay] = corner(0);
-      const [bx, by] = corner(box.width);
-      const edge = (x: number) => ay + ((x - ax) * (by - ay)) / (bx - ax);
-
-      // The peel hint: its words, and the arrow that runs on from their end to the sheet's corner.
-      const words = view.querySelector('.technical-drawing-frame[data-hint-show] .flip-hint--fwd.hint-words');
-      const hint = words && { left: words.getBoundingClientRect().left, right: box.right, bottom: words.getBoundingClientRect().bottom };
-
-      const style = getComputedStyle(card);
-      const pad = parseFloat(style.paddingLeft);
-      // What the lead in force now adds to every piece's top.
-      const now = parseFloat(style.paddingTop);
-      const beside = BESIDE * parseFloat(getComputedStyle(document.documentElement).fontSize);
-      let need = -Infinity;
-      const clearHint = (top: number, left: number, right: number, gap: number) => {
-        if (hint && right + gap > hint.left && left - pad < hint.right) need = Math.max(need, hint.bottom + pad - (top - now));
-      };
-      for (const cell of card.querySelectorAll('.title-cell')) {
-        if (!cell.getClientRects().length) continue;
-        const { left, right } = textSpan(cell);
-        const top = cell.querySelector('dt')!.getBoundingClientRect().top;
-        need = Math.max(need, Math.max(edge(left), edge(right)) + pad - (top - now));
-        // The label is trimmed to its cap line; its box top is where its text starts.
-        for (const r of textRects(cell.querySelector('dt')!)) clearHint(top, r.left, r.right, Math.max(pad, beside));
-        for (const r of textRects(cell.querySelector('dd')!)) clearHint(r.top, r.left, r.right, Math.max(pad, beside));
-        const rule = parseFloat(getComputedStyle(cell).borderBottomWidth);
-        if (rule) {
-          const r = cell.getBoundingClientRect();
-          clearHint(r.bottom - rule, r.left, r.right, pad);
-        }
-      }
-      if (!Number.isFinite(need)) return null;
-      // To the nearest whole pixel of the slip's height, so what follows it on the page stands
-      // on whole pixels: a fraction there moved the open-source sheet's ruling off its writing.
-      // Then to the 1/64px layout unit, so the same width always writes the same value back.
-      const rest = card.getBoundingClientRect().height - now;
-      return `${Math.round((Math.round(need + rest) - rest) * 64) / 64}px`;
-    }
-
-    const cards = [...document.querySelectorAll<HTMLElement>('.callout[data-card] .callout-card')];
-    // Everything read before anything is written, and a value written only when it changes.
-    const liftAll = () => {
-      const leads = cards.map((card) => (stacked.matches ? lead(card) : null));
-      cards.forEach((card, i) => {
-        const value = leads[i];
-        if (value === null) card.style.removeProperty('--slip-lead');
-        else if (card.style.getPropertyValue('--slip-lead') !== value) card.style.setProperty('--slip-lead', value);
-      });
-    };
-    let queued = 0;
-    const later = () => {
-      queued ||= requestAnimationFrame(() => {
-        queued = 0;
-        liftAll();
-      });
-    };
-    // The frames, not the slips: a frame's size follows the width alone, while the slip's own size
-    // follows the lead this writes, and watching it would answer every write with another pass.
-    // A resize lays out and reports in the same frame, so the lead lands before that frame paints.
-    const watch = new ResizeObserver(liftAll);
-    for (const card of cards) {
-      const frame = card.parentElement!.querySelector('.technical-drawing-frame');
-      if (!frame) continue;
-      watch.observe(frame);
-      // The top stack arms its peel hint once its own script runs.
-      new MutationObserver(later).observe(frame, { attributeFilter: ['data-hint-show'] });
-    }
-    stacked.addEventListener('change', later);
-    document.fonts.ready.then(later);
-  </script>
 </section>
 
 <style lang="scss">
@@ -427,6 +313,13 @@ const hasCard = Astro.slots.has('card');
   color: color-mix(in oklch, var(--ink-faint), transparent 20%);
 }
 
+/* On the desk the wrapper has no box of its own. Below the lane it is the slip's row in the
+   view, as wide as the view, so the slip can measure against the stack's width (cqi) from
+   inside a box narrower than it. */
+.callout-slip {
+  display: contents;
+}
+
 /* Below the width the lane opens at (Layout.astro) the card has nowhere to stand beside the
    drawing, so it goes under it: a slip of the sheets' paper tucked under the stack, its top
    hidden by the sheets and only its entries showing below them, the way a note sheet is filed
@@ -440,14 +333,17 @@ const hasCard = Astro.slots.has('card');
   /* The stack fans its sheets out about a pin at its top-left corner, each turned by 1.5deg
      times the log of its place (PaperStack), so the hindmost one drops below the front sheet by
      the sine of its turn times how far along it is. The slip reads the stack's page count to
-     know how far that is at its own right-hand corner. */
+     know how far that is, and the peel hint Stack.astro writes for a stack that deep. */
+  $in-words: 'one', 'two', 'three', 'four', 'five', 'six', 'seven';
+
   @for $pages from 2 through 8 {
     .callout-view:has([data-page-count='#{$pages}']) {
       --slip-pages: #{$pages};
+      --slip-hint: '#{nth($in-words, $pages - 1)} more sheets, peel this corner';
     }
   }
 
-  .callout[data-card] .callout-card {
+  .callout[data-card] .callout-slip {
     --slip-tuck: 1rem;
     --slip-inset: 1.25rem;
     /* The text's inset from every edge of the slip that shows: its sides, its foot, and at the
@@ -455,42 +351,87 @@ const hasCard = Astro.slots.has('card');
     --slip-pad: 1rem;
     /* Clear of the peel hint the stack writes under its right-hand corner. */
     --slip-width: min(34rem, 100% - 24rem);
-    --slip-sine: sin(1.5deg * log(var(--slip-pages, 6)));
+    --slip-turn: calc(1.5deg * log(var(--slip-pages, 6)));
+    --slip-sine: sin(var(--slip-turn));
     --slip-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface-sunken)));
 
     order: 1;
     display: block;
     position: relative;
     z-index: -1;
-    top: auto;
-    inset-inline: auto;
-    justify-self: start;
-    width: var(--slip-width);
+    container-type: inline-size;
     /* Up past the room the stack keeps below it for its fan, which is its width times that sine
        (a percentage margin is a share of the width too), and a little under the front sheet. */
     margin-top: calc(-100% * var(--slip-sine) - var(--slip-tuck));
+    pointer-events: none;
+  }
+
+  /* The entries start as high as the fan and the peel hint over them allow, with the slip's
+     own inset below whatever is over their text, so the gap above the first entry matches the
+     slip's sides and foot. The entries stand below the slip's lead row, and the grid makes
+     that row as deep as the deepest limit asks: the fan's, and the peel hint's piece by piece.
+     Rounding the slip's height to a whole pixel leaves the lead row the difference. */
+  .callout[data-card] .callout-card {
+    /* 1 on a landscape sheet, 0 on a portrait one: the stack turns at 40em (Stack.astro). */
+    --slip-land: max(0, sign(100cqi - 40rem));
+    --slip-tan: tan(var(--slip-turn));
+    /* The pin every sheet turns on, from the paper clip's reach (Stack.astro, PaperStack). */
+    --slip-reach: clamp(2.75rem, 7.5cqi, 4.5rem);
+    --slip-pin-x: calc(var(--slip-reach) / (2 + 2 * var(--slip-land)));
+    --slip-pin-y: calc(var(--slip-reach) / (4 - 2 * var(--slip-land)));
+    --slip-sheet: calc(var(--slip-land) * 50cqi + (1 - var(--slip-land)) * min(500cqi / 3, 36rem, 85svh));
+
+    display: grid;
+    grid-template-columns: [title-start] fit-content(100%) [title-end] minmax(0, 1fr);
+    grid-template-rows: [lead] minmax(0, 1fr) [label] auto 0.125rem [text] auto [notes] auto;
+    position: relative;
+    top: auto;
+    inset-inline: auto;
+    width: var(--slip-width);
+    /* What follows the slip stands on whole pixels: a fraction moved the open-source sheet's
+       ruling off its writing. */
+    height: calc-size(auto, round(nearest, size, 1px));
     margin-inline-start: var(--slip-inset);
-    /* The entries start below the fan where it hangs lowest over the slip, its right-hand
-       corner. The script below lifts them to the lowest point over their own text instead
-       (--slip-lead). */
-    padding: var(--slip-lead, calc(var(--slip-tuck) + (var(--slip-inset) + var(--slip-width)) * var(--slip-sine) + var(--slip-pad))) var(--slip-pad) var(--slip-pad);
+    padding: 0 var(--slip-pad) var(--slip-pad);
     background: var(--slip-paper);
     border: 1px solid var(--line-strong);
     border-radius: 0.25rem;
     box-shadow: 0 1px 1px rgb(0 0 0 / 10%), 0 0.375rem 0.875rem rgb(0 0 0 / 14%);
+    pointer-events: auto;
 
-    /* The slip is a typed sheet, not a title block: no cells, each entry on its own rule. */
+    /* The slip is a typed sheet, not a title block: no cells, each entry on its own rule. The
+       card and its list lend the slip's grid to the entries. */
     > :global(.title-card) {
+      display: grid;
+      grid-template: subgrid / subgrid;
+      grid-area: 1 / 1 / -1 / -1;
       background: none;
       border: 0;
       border-radius: 0;
     }
 
+    /* The fan's lowest sheet runs down to the right, so how far down it is over the title
+       depends on where the title's text ends: the width of the title column, times the slope.
+       The rest depends on the stack's width alone: from the pin to the text's left edge along
+       the slope, and how far the turn drops the sheet's edge. */
+    > :global(.title-card::before) {
+      content: '';
+      grid-area: lead / title;
+      padding-top: calc(
+        var(--slip-tuck) + var(--slip-pad) - 1px
+        + (var(--slip-sheet) - var(--slip-pin-y)) * (1 / cos(var(--slip-turn)) - 1)
+        + (var(--slip-inset) + 1px + var(--slip-pad) - var(--slip-pin-x) + 100%) * var(--slip-tan)
+      );
+    }
+
     :global(.title-card dl) {
-      gap: 0 1.25rem;
+      grid-template: subgrid / subgrid;
+      grid-area: label / 1 / -1 / -1;
+      gap: 0;
     }
 
     :global(.title-cell) {
+      grid-column: 1 / -1;
       padding: 0.375rem 0 0.4375rem;
       background: none;
       border-bottom: 1px solid color-mix(in oklch, var(--line-strong), transparent 45%);
@@ -501,7 +442,23 @@ const hasCard = Astro.slots.has('card');
       display: none;
     }
 
+    /* The title's label and text stand in the title column, which is as wide as they run. */
+    :global(.title-cell:first-child) {
+      grid-row: label / notes;
+      grid-template: subgrid / subgrid;
+      gap: 0;
+    }
+
+    :global(.title-cell:first-child dt) {
+      grid-area: label / title;
+    }
+
+    :global(.title-cell:first-child dd) {
+      grid-area: text / title;
+    }
+
     :global(.title-cell-notes) {
+      grid-row: notes;
       border-bottom: 0;
     }
 
@@ -529,6 +486,103 @@ const hasCard = Astro.slots.has('card');
     }
   }
 
+  /* The peel hint the top stack writes under its corner: a piece of the title (its label, its
+     text, the rule under it) keeps the inset below the hint only where the hint's words, or
+     the arrow that runs on from them to the sheet's corner, are over it. Text beside the hint
+     keeps 3rem from its words, or the two read as one line: "TITLE five more sheets".
+
+     Each probe lays the piece's span and the hint's span side by side across the stack's
+     width, as tall as the piece has to stand below the slip's top. Where they meet, the hint
+     wraps under the piece and the probe is twice as tall; its negative margin takes one height
+     back off, so the probe asks for that depth only when the hint is over the piece. */
+  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe) {
+    /* The hint's type (Stack.astro): smaller on a portrait sheet. */
+    --probe-hint: calc(0.875rem + 0.125rem * var(--slip-land));
+    /* The hint's foot below the slip's top: the stack's fan reserve, the tuck, the room the
+       view keeps it from its boundary, then its offset and its line, each cut to the layout
+       unit (1/64px) the way layout cuts them where the stack and the hint are laid out. */
+    --probe-foot: calc(
+      round(down, var(--slip-sine) * 100cqi, 1px / 64) + var(--slip-tuck) + var(--hint-clear, 0px)
+      + round(down, 0.125 * var(--probe-hint), 1px / 64) + round(down, 1.2 * var(--probe-hint), 1px / 64)
+    );
+    --probe-depth: calc(var(--probe-foot) + var(--slip-pad) - 1px);
+
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    grid-column: 1 / -1;
+    grid-row-start: lead;
+    justify-self: start;
+    align-self: start;
+    width: 100cqi;
+    margin-inline-start: calc(-1 * (var(--slip-inset) + 1px + var(--slip-pad)));
+    margin-bottom: calc(-1 * var(--probe-depth));
+    font-size: var(--probe-hint);
+    visibility: hidden;
+    pointer-events: none;
+
+    &::before,
+    &::after {
+      flex: none;
+      height: 0;
+      padding-top: var(--probe-depth);
+      white-space: nowrap;
+    }
+
+    &::before {
+      content: attr(data-text) / '';
+      padding-inline-start: calc(var(--slip-inset) + 1px + var(--slip-pad));
+    }
+
+    &::after {
+      content: var(--slip-hint) / '';
+      padding-inline: 3rem 3.5em;
+      font-family: 'Special Elite', monospace, system-ui;
+    }
+  }
+
+  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe[data-probe='label']) {
+    grid-row-end: label;
+
+    &::before {
+      font-family: monospace, system-ui;
+      font-size: 0.625rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+  }
+
+  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe[data-probe='title']) {
+    grid-row-end: text;
+
+    /* A line of text counts from the top of its letters, not of its line box: less the half
+       leading over them, which trimming the same line to its text edge takes off. */
+    &::before {
+      height: auto;
+      padding-top: calc(var(--probe-depth) - round(down, 1.45 * 0.875rem, 1px / 64));
+      font-family: 'Special Elite', monospace, system-ui;
+      font-size: 0.875rem;
+      line-height: 1.45;
+      letter-spacing: 0.02em;
+      text-box: trim-start text;
+    }
+  }
+
+  /* The rule is the cell's bottom edge, a pixel above the row's end, and runs the slip's
+     width. The hint keeps only the inset from it, not the 3rem it keeps from text. */
+  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe[data-probe='rule']) {
+    grid-row-end: notes;
+    --probe-depth: calc(var(--probe-foot) + var(--slip-pad));
+
+    &::before {
+      padding-inline-start: calc(var(--slip-inset) + var(--slip-width) - 1px - var(--slip-pad));
+    }
+
+    &::after {
+      padding-inline-start: var(--slip-pad);
+    }
+  }
+
   .callout[data-card] .callout-card-leader {
     display: none;
   }
@@ -536,7 +590,7 @@ const hasCard = Astro.slots.has('card');
   /* The frame's box, and the box of any demo wrapped round it, runs on through the room kept
      for the fan, over the slip's first entry, and would take its clicks and text selection.
      Only what the frame holds takes the pointer. */
-  .callout[data-card] .callout-view > :global(:not(.callout-card)),
+  .callout[data-card] .callout-view > :global(:not(.callout-slip)),
   .callout[data-card] .callout-view :global(.technical-drawing-frame) {
     pointer-events: none;
   }
@@ -547,7 +601,7 @@ const hasCard = Astro.slots.has('card');
 }
 
 @media (max-width: 52rem) {
-  .callout[data-card] .callout-card {
+  .callout[data-card] .callout-slip {
     --slip-tuck: 0.75rem;
     --slip-inset: 0.75rem;
     --slip-width: calc(100% - 1.5rem);

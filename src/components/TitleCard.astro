@@ -35,6 +35,11 @@ const { title, medium, year } = Astro.props;
       <dd><slot /></dd>
     </div>
   </dl>
+
+  {/* Measures for the slip a detail files this card as below the lane (Callout.astro). */}
+  <span class="title-probe" data-probe="label" data-text="Title" aria-hidden="true"></span>
+  <span class="title-probe" data-probe="title" data-text={title} aria-hidden="true"></span>
+  <span class="title-probe" data-probe="rule" aria-hidden="true"></span>
 </div>
 
 <style lang="scss">
@@ -87,6 +92,10 @@ const { title, medium, year } = Astro.props;
 .title-cell-wide dd.typewriter {
   font-size: 0.875rem;
   letter-spacing: 0.02em;
+}
+
+.title-probe {
+  display: none;
 }
 
 .title-cell-notes dd {
