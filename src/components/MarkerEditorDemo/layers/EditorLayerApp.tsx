@@ -10,6 +10,7 @@ import {
 import { StoreProvider } from '@/store/StoreProvider';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { watchPageActive } from '@/client/frontPage';
 
 import { MarkerEditor } from '../markers/MarkerEditor';
 import { useLiveMarkerEditorSessionCount } from '../markers/liveMarkerEditorSession';
@@ -42,6 +43,8 @@ function EditorLayerInner() {
   const liveSessions = useLiveMarkerEditorSessionCount();
   const space = spaces.find((s) => s.id === 'space-cafe') ?? spaces[0];
   const [pageVisible, setPageVisible] = useState(false);
+  const [pageActive, setPageActive] = useState(false);
+  const stepRef = useRef(0);
 
   // Once PaperStack's script takes over, every page shares the same grid cell (only the
   // fold's clip-path says which one is drawn on top), so an IntersectionObserver — even
@@ -67,6 +70,12 @@ function EditorLayerInner() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    return watchPageActive(host, (active) => setPageActive(active));
+  }, []);
+
   // While this slide is active, close the live map editor so its session
   // lock releases and we can mount the embed.
   useLayoutEffect(() => {
@@ -84,16 +93,15 @@ function EditorLayerInner() {
   // Scoped to this host so the live map editor's own targets are never touched.
   useEffect(() => {
     const host = hostRef.current;
-    if (!ready || !host) return;
+    if (!ready || !pageActive || !host) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    let index = 0;
     let held = false;
 
     const id = window.setInterval(() => {
       if (held) return;
-      const target = AUTOPLAY_TARGETS[index % AUTOPLAY_TARGETS.length];
-      index += 1;
+      const target = AUTOPLAY_TARGETS[stepRef.current % AUTOPLAY_TARGETS.length];
+      stepRef.current += 1;
       host.querySelector<HTMLElement>(`[data-demo-target="${target}"]`)?.click();
     }, AUTOPLAY_STEP_MS);
 
@@ -103,7 +111,7 @@ function EditorLayerInner() {
       window.clearInterval(id);
       stopNoteWatch();
     };
-  }, [ready]);
+  }, [ready, pageActive]);
 
   return (
     <div ref={hostRef} className="editor-layer-host">
