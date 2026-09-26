@@ -15,13 +15,20 @@ const { lines, ranges } = lexAstro(source);
 // The dashed boxes over the buffer, one level per step of nesting. The astro parser reads the
 // whole file. The template is markup the astro grammar parses itself, so it has no parser of
 // its own, but it is the part of the file the inner ranges sit in. Each span runs from the
-// first line with code in it to the last.
+// first line with code in it to the last. A range inside one line, like an expression in
+// the markup, is boxed around its own characters only.
 const lineAt = (offset: number) => source.slice(0, offset).split('\n').length;
 function span(start: number, end: number) {
   const text = source.slice(start, end);
   const first = start + text.search(/\S/);
   const last = start + text.trimEnd().length - 1;
-  return { from: lineAt(first), to: lineAt(last) };
+  const from = lineAt(first);
+  const to = lineAt(last);
+  const lineStart = source.lastIndexOf('\n', start - 1) + 1;
+  const lineEnd = source.indexOf('\n', start);
+  const wholeLine = !source.slice(lineStart, start).trim() && !source.slice(end, lineEnd).trim();
+  if (from !== to || wholeLine) return { from, to };
+  return { from, to, column: start - lineStart, width: end - start };
 }
 const templateStart = source.startsWith('---') ? source.indexOf('\n---', 3) + 4 : 0;
 const bands: Band[] = [

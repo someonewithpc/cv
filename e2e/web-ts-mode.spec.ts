@@ -85,6 +85,15 @@ test('main page: dashed boxes over the buffer nest astro around html around the 
   expect([expression.from, expression.to]).toEqual([16, 16]);
   expect([style.from, style.to]).toEqual([23, 31]);
   expect(html.label).toBe('html 13-32');
+  expect(expression.label).toBe('tsx 16');
+
+  // The expression's box covers what is inside the braces, not the rest of its line.
+  const inner = (await buffer.locator('.range', { hasText: 'label' }).boundingBox())!;
+  const ch = inner.width / 'label'.length;
+  expect(expression.box.x).toBeLessThanOrEqual(inner.x);
+  expect(expression.box.x).toBeGreaterThan(inner.x - ch / 2);
+  expect(expression.box.x + expression.box.width).toBeGreaterThanOrEqual(inner.x + inner.width);
+  expect(expression.box.x + expression.box.width).toBeLessThan(inner.x + inner.width + ch / 2);
 
   // One style for every range: a dashed box, and nothing else outlines the code.
   const styles = await bands.evaluateAll((all) => all.map((el) => getComputedStyle(el).borderTopStyle));

@@ -9,9 +9,11 @@ import { depthHue, type Line, type Range, type Token } from './lexer';
 
 /**
  * A dashed box over lines `from` to `to`, at nesting level `lane` counted from the outside
- * in. Each level is inset from the one around it, so every outline stays in view.
+ * in. Each level is inset from the one around it, so every outline stays in view. A range
+ * that sits inside one line gives `column` and `width`, in characters, and its box covers
+ * only those.
  */
-export type Band = { lang: string; lane: number; from: number; to: number };
+export type Band = { lang: string; lane: number; from: number; to: number; column?: number; width?: number };
 
 type Props = {
   lines: Line[];
@@ -26,6 +28,10 @@ type Props = {
 const { lines, ranges = [], modeLine, gutter = 2, bands = [], class: className } = Astro.props;
 const lanes = bands.length ? Math.max(...bands.map((band) => band.lane)) + 1 : 0;
 const lineSpan = ({ from, to }: Band) => (from === to ? `${from}` : `${from}-${to}`);
+const bandStyle = (band: Band) =>
+  [`--lane: ${band.lane}`, `--from: ${band.from}`, `--to: ${band.to}`]
+    .concat(band.column === undefined ? [] : [`--column: ${band.column}`, `--width: ${band.width}`])
+    .join('; ');
 const byId = new Map(ranges.map((range) => [range.id, range]));
 
 // A range is a block when its tokens reach more than one line.
@@ -94,12 +100,12 @@ const label = (id: string) => {
       <ol class="bands" aria-label="Parser ranges, outermost first">
         {bands.map((band) => (
           <li
-            class="band"
+            class:list={['band', { inline: band.column !== undefined }]}
             data-lang={band.lang}
             data-lane={band.lane}
             data-from={band.from}
             data-to={band.to}
-            style={`--lane: ${band.lane}; --from: ${band.from}; --to: ${band.to}`}
+            style={bandStyle(band)}
           >
             <span class="band-label" aria-hidden="true">{band.lang} {lineSpan(band)}</span>
             <span class="sr-only">{band.lang}, {band.from === band.to ? `line ${band.from}` : `lines ${band.from} to ${band.to}`}</span>
@@ -182,6 +188,21 @@ const label = (id: string) => {
   height: calc((var(--to) - var(--from) + 1) * var(--line) + 2 * var(--out));
   box-sizing: border-box;
   border: 1px dashed var(--lang);
+}
+
+// A range inside one line: a box around its characters, with the label on the line above,
+// clear of the code on either side.
+.band.inline {
+  left: calc(var(--lanes) * var(--inset-inline) + var(--gutter) * 1ch + 1.5ch + var(--column) * 1ch - 0.25ch);
+  right: auto;
+  width: calc(var(--width) * 1ch + 0.5ch);
+
+  .band-label {
+    top: auto;
+    right: auto;
+    bottom: 100%;
+    left: 0;
+  }
 }
 
 .band-label {
