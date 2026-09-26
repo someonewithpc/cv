@@ -107,6 +107,39 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
   }
 });
 
+test('visrez logo: the dog-ear is lit at its tip and shaded along the crease', async ({ page }) => {
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+
+  // The flap's darkening gradient runs along the crease's normal from the page's bottom-right
+  // corner, where the crease lies fold-x·sin(a) in. Its darkest stop has to sit on the crease
+  // with a lighter stop either side of it: the corner is where the sheet lies flat and catches
+  // the light, whichever of the flap's two renderings puts the corner nearer 0 or 2·crease.
+  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+    await page.locator(`#theme-picker input[value="${theme}"]`).click({ force: true });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+    const shade = await stack.evaluate((el) => {
+      const fold = el.querySelector<HTMLElement>('.paper-fold')!;
+      const sheet = getComputedStyle(fold.parentElement!);
+      const x = Number.parseFloat(sheet.getPropertyValue('--fold-x'));
+      const y = Number.parseFloat(sheet.getPropertyValue('--fold-y'));
+      const stops = [...getComputedStyle(fold).backgroundImage.matchAll(/rgba\(0, 0, 0, ([\d.]+)\) ([\d.]+)px/g)]
+        .map((match) => ({ alpha: Number(match[1]), at: Number(match[2]) }))
+        .sort((a, b) => a.at - b.at);
+      return { crease: x * Math.sin(Math.atan2(y, x)), stops };
+    });
+    expect(shade.stops, `dark stops under the ${theme} theme`).toHaveLength(3);
+    const [near, crease, far] = shade.stops;
+    expect(Math.abs(crease.at - shade.crease)).toBeLessThan(1);
+    expect(near.at).toBeLessThan(shade.crease);
+    expect(far.at).toBeGreaterThan(shade.crease);
+    expect(crease.alpha).toBeGreaterThan(near.alpha);
+    expect(crease.alpha).toBeGreaterThan(far.alpha);
+  }
+});
+
 test('visrez logo: the dog-ear is drawn while the flip is still landing', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
