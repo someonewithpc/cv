@@ -67,10 +67,57 @@ function watchStackTurning(stack: Element, onChange: () => void): () => void {
 }
 
 /**
- * Combines the three parts of "a visitor can see this page and it is holding still": its stack
- * is on screen, the page is the one drawn on top, and no committed turn is under way on that
- * stack. `onChange` fires on every change, starting from inactive — the first call is the one
- * that says the page has come alive.
+ * Why a demo is standing still. It runs only while none applies. The first four are read from
+ * the page itself; the rest are held from outside, through a gate's `hold` or `holdAll`.
+ */
+export type PauseReason = 'offscreen' | 'back-page' | 'turning' | 'hidden' | 'resize' | 'user';
+
+export interface DemoGate {
+  readonly running: boolean;
+  readonly reasons: ReadonlySet<PauseReason>;
+  hold(reason: PauseReason): void;
+  release(reason: PauseReason): void;
+  /** Fires on every change of `running`, never for the initial state. */
+  onChange(listener: (running: boolean, reasons: ReadonlySet<PauseReason>) => void): () => void;
+  /** Resolves at once while running, else the next time the gate opens. */
+  whenRunning(): Promise<void>;
+  /** Like setTimeout, but its clock stops while the gate is held. */
+  wait(ms: number): Promise<void>;
+  /** Milliseconds the gate has been open, for tweens that pick up where they were held. */
+  now(): number;
+  /** The next animation frame once the gate is open. */
+  frame(): Promise<void>;
+  dispose(): void;
+}
+
+const gates = new Set<{ set(reason: PauseReason, on: boolean): void }>();
+const heldEverywhere = new Set<PauseReason>();
+const tabHidden = () => document.visibilityState === 'hidden';
+
+let watchingTab = false;
+function watchTab() {
+  if (watchingTab) return;
+  watchingTab = true;
+  document.addEventListener('visibilitychange', () => {
+    for (const gate of gates) gate.set('hidden', tabHidden());
+  });
+}
+
+/** Holds every demo on the page for `reason`, including ones created while it is held. */
+export function holdAll(reason: PauseReason): void {
+  heldEverywhere.add(reason);
+  for (const gate of gates) gate.set(reason, true);
+}
+
+export function releaseAll(reason: PauseReason): void {
+  heldEverywhere.delete(reason);
+  for (const gate of gates) gate.set(reason, false);
+}
+
+/**
+ * Whether a visitor can see this page and it is holding still: its stack is on screen, the
+ * page is the one drawn on top, no committed turn is under way on that stack, and the tab is
+ * showing. Starts held for `offscreen` until the first intersection report says otherwise.
  *
  * The turn is in it because a demo playing under a page that is folding away costs the turn
  * its frames, and re-resolves the style of everything printed on that page as it goes. It only
@@ -80,41 +127,108 @@ function watchStackTurning(stack: Element, onChange: () => void): () => void {
  * front waits for the settle in the same way, rather than coming alive under a sheet still
  * gliding over it.
  */
-export function watchPageActive(el: Element, onChange: (active: boolean) => void): () => void {
+export function demoGate(el: Element): DemoGate {
   const stack = el.closest<HTMLElement>('[data-paper-stack-root]') ?? el;
+  const reasons = new Set<PauseReason>(['offscreen', ...heldEverywhere]);
+  if (!isFrontPage(el)) reasons.add('back-page');
+  if (turningStacks.has(stack)) reasons.add('turning');
+  if (tabHidden()) reasons.add('hidden');
 
-  let front = isFrontPage(el);
-  let onScreen = false;
-  let active = false;
+  const listeners = new Set<(running: boolean, reasons: ReadonlySet<PauseReason>) => void>();
+  let waiters: Array<() => void> = [];
+  let running = false;
+  let openFor = 0;
+  let openedAt = 0;
 
-  const update = () => {
-    const next = front && onScreen && !turningStacks.has(stack);
-    if (next === active) return;
-    active = next;
-    onChange(active);
+  const set = (reason: PauseReason, on: boolean) => {
+    if (reasons.has(reason) === on) return;
+    if (on) reasons.add(reason);
+    else reasons.delete(reason);
+    const next = reasons.size === 0;
+    if (next === running) return;
+    running = next;
+    if (running) openedAt = performance.now();
+    else openFor += performance.now() - openedAt;
+    if (running) {
+      const woken = waiters;
+      waiters = [];
+      woken.forEach((wake) => wake());
+    }
+    for (const listener of [...listeners]) listener(running, reasons);
   };
 
-  const stopFrontWatch = watchFrontPage(el, (next) => {
-    front = next;
-    update();
-  });
+  const stopFrontWatch = watchFrontPage(el, (front) => set('back-page', !front));
 
   // Viewport root, not the stack: with root:stack a page reads as intersecting even while
   // the whole stack is still below the fold (see TechnicalDrawing/Stack.astro).
   const observer = new IntersectionObserver(
-    (entries) => {
-      onScreen = Boolean(entries[0]?.isIntersecting);
-      update();
-    },
+    (entries) => set('offscreen', !entries[entries.length - 1]?.isIntersecting),
     { threshold: 0.2 },
   );
   observer.observe(stack);
 
-  const stopTurnWatch = watchStackTurning(stack, update);
+  const stopTurnWatch = watchStackTurning(stack, () => set('turning', turningStacks.has(stack)));
 
-  return () => {
-    stopFrontWatch();
-    stopTurnWatch();
-    observer.disconnect();
+  const whenRunning = () => (running ? Promise.resolve() : new Promise<void>((wake) => waiters.push(wake)));
+
+  const entry = { set };
+  gates.add(entry);
+  watchTab();
+
+  const gate: DemoGate = {
+    get running() {
+      return running;
+    },
+    reasons,
+    hold: (reason) => set(reason, true),
+    release: (reason) => set(reason, false),
+    onChange(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    whenRunning,
+    now: () => openFor + (running ? performance.now() - openedAt : 0),
+    frame: () => whenRunning().then(() => new Promise<void>((next) => requestAnimationFrame(() => next()))),
+    wait(ms) {
+      return new Promise<void>((resolve) => {
+        let left = ms;
+        let since = 0;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const start = () => {
+          since = performance.now();
+          timer = setTimeout(finish, left);
+        };
+        const stop = () => {
+          clearTimeout(timer);
+          left -= performance.now() - since;
+        };
+        const off = gate.onChange((open) => (open ? start() : stop()));
+        function finish() {
+          off();
+          resolve();
+        }
+        if (running) start();
+      });
+    },
+    dispose() {
+      stopFrontWatch();
+      stopTurnWatch();
+      observer.disconnect();
+      listeners.clear();
+      gates.delete(entry);
+    },
   };
+  return gate;
+}
+
+/** `onChange` fires on every change of the page's gate, starting from inactive. */
+export function watchPageActive(
+  el: Element,
+  onChange: (active: boolean, reasons: ReadonlySet<PauseReason>) => void,
+): () => void {
+  const gate = demoGate(el);
+  gate.onChange(onChange);
+  return () => gate.dispose();
 }
