@@ -1,11 +1,12 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
-import { Playthrough } from './playthrough';
+import { Playthrough, setNativeValue } from './playthrough';
 import { entranceFor, scenesFor } from './scenes';
 import { demoPicker } from './demoPicker';
 
@@ -19,7 +20,9 @@ type Toast = { id: number; text: string; leaving: boolean };
 /**
  * Plays the picker by itself while its sheet is the one in front, with a drawn cursor, and
  * hands over the moment a real pointer moves over the sheet or focus lands in the form. It
- * comes back after a pause with nothing going on.
+ * comes back after a pause with nothing going on. The sheet's transport deck shows the same
+ * state (src/client/autoplayStatus.ts): pause holds the picker until play or reset, play
+ * hands it back, and reset clears the picker and starts again from the first scene.
  */
 export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
   const [cursor, setCursor] = useState<DrawnCursorState>(CURSOR_GONE);
@@ -29,7 +32,11 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
 
   useEffect(() => {
     const el = root.current;
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      reportAutoplayState(el, 'off');
+      return;
+    }
 
     // The carousel page: positioned, so cursor and toasts drawn into it ride along with it
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
@@ -66,12 +73,20 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     let userControl = false;
     let noteOpen = false;
     let everPlayed = false;
+    // Set by the deck's pause: the picker stays the visitor's past the quiet spell
+    let held = false;
     let resumeTimer = 0;
 
-    const play = () => {
-      if (!pageActive || userControl || noteOpen || controller.running) return;
+    const play = (message?: string) => {
+      if (!pageActive) return;
+      if (held || userControl) {
+        reportAutoplayState(el, 'user');
+        return;
+      }
+      reportAutoplayState(el, 'playing');
+      if (noteOpen || controller.running) return;
       controller.start();
-      toast(everPlayed ? 'Demo resumed' : 'Demo playing · move to take over');
+      toast(message ?? (everPlayed ? 'Demo resumed' : 'Demo playing · move to take over'));
       everPlayed = true;
     };
 
@@ -87,6 +102,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
         controller.pause(handoff);
         toast('Demo paused');
       }
+      reportAutoplayState(el, 'user');
       resumeTimer = window.setTimeout(play, RESUME_DELAY_MS);
     };
 
@@ -102,9 +118,11 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     });
 
     // Only a real pointer, and only over the sheet: the scripted values never come through
-    // pointer events, and a pointer elsewhere on the page is reading, not reaching in
+    // pointer events, and a pointer elsewhere on the page is reading, not reaching in. The
+    // deck is the sheet's own chrome, so reaching for its keys is not taking over
     const onPointer = (e: PointerEvent) => {
-      if (e.isTrusted && pageActive) yieldToUser(e.target instanceof Element ? e.target : null);
+      if (!e.isTrusted || !pageActive || isTransportControl(e.target)) return;
+      yieldToUser(e.target instanceof Element ? e.target : null);
     };
     page.addEventListener('pointermove', onPointer, { passive: true });
     page.addEventListener('pointerdown', onPointer, { passive: true });
@@ -116,6 +134,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       window.clearTimeout(resumeTimer);
       userControl = true;
       hold('Demo paused');
+      reportAutoplayState(el, 'user');
     };
     const onFocusOut = (e: FocusEvent) => {
       if (!e.isTrusted || controller.scriptedFocus) return;
@@ -134,7 +153,38 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       else play();
     });
 
+    // Reset puts the picker back as the page opens it, as the last scene does, and the run
+    // starts again from the first
+    const restart = () => {
+      controller.pause();
+      controller.rewind();
+      el.querySelector<HTMLElement>('[data-demo-target="reset"]')?.click();
+      for (const name of ['google', 'embed']) {
+        const input = el.querySelector<HTMLInputElement>(`[data-demo-target="${name}"]`);
+        if (input && input.value !== '') setNativeValue(input, '');
+      }
+    };
+
+    const stopCommands = onAutoplayCommand(el, (command) => {
+      window.clearTimeout(resumeTimer);
+      if (command === 'pause') {
+        held = true;
+        hold('Demo paused');
+        reportAutoplayState(el, 'user');
+        return;
+      }
+      held = false;
+      userControl = false;
+      if (command === 'reset') {
+        restart();
+        play('Demo restarted');
+        return;
+      }
+      play();
+    });
+
     return () => {
+      stopCommands();
       unwatchNote();
       stopPageWatch();
       page.removeEventListener('pointermove', onPointer);

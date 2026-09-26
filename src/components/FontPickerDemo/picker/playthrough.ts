@@ -272,6 +272,11 @@ export class Playthrough {
     this.cursor(null);
   }
 
+  /** Start the next run from the first scene, as the loop does after its last */
+  rewind() {
+    this.sceneIndex = 0;
+  }
+
   /** Put the run's focus on an element, or take it back off; the events fire as the browser's own */
   focus(el: HTMLElement | null) {
     this.scriptedFocus = true;
