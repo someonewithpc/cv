@@ -1,5 +1,5 @@
 import { watchDrawingNote } from '@/client/drawingNote';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate } from '@/client/frontPage';
 import { variantsOf } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 
 import { createPlayer } from './autoplay';
@@ -21,8 +21,9 @@ export function boot(host: HTMLElement) {
     image.src = url;
   }
 
-  const player = createPlayer(host);
   const page = host.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? host;
-  watchPageActive(page, (visible) => player.setActive(visible));
+  const gate = demoGate(page);
+  const player = createPlayer(host, gate);
+  gate.onChange((visible) => player.setActive(visible));
   watchDrawingNote(page, (open) => player.setNoteOpen(open));
 }

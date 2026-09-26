@@ -1,5 +1,6 @@
 import { onAutoplayCommand, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
+import type { DemoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
 
 import { scrollToStyle } from './panel';
@@ -84,7 +85,7 @@ function runStep(el: HTMLElement, act: AutoplayStep['act']) {
  * this by hand: pause holds the cards past the quiet spell, play hands them back, and reset
  * starts the walkthrough over from the library's default.
  */
-export function createPlayer(host: HTMLElement) {
+export function createPlayer(host: HTMLElement, gate: DemoGate) {
   const cursor = document.createElement('span');
   cursor.className = 'demo-cursor';
   cursor.setAttribute('aria-hidden', 'true');
@@ -137,9 +138,7 @@ export function createPlayer(host: HTMLElement) {
   }
 
   function wait(ms: number, token: number) {
-    return new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), token === playToken ? ms : 0);
-    });
+    return token === playToken ? gate.wait(ms) : Promise.resolve();
   }
 
   function resetCards() {
@@ -147,8 +146,20 @@ export function createPlayer(host: HTMLElement) {
     host.dispatchEvent(new CustomEvent('variants:reset'));
   }
 
+  /** The walkthrough run still under way, held or not. */
+  let playing = 0;
+
   async function play() {
     const token = ++playToken;
+    playing = token;
+    try {
+      await walk(token);
+    } finally {
+      if (playing === token) playing = 0;
+    }
+  }
+
+  async function walk(token: number) {
     showCursor();
     for (let index = 0; token === playToken; index += 1) {
       const step = AUTOPLAY_STEPS[index % AUTOPLAY_STEPS.length];
@@ -225,11 +236,9 @@ export function createPlayer(host: HTMLElement) {
     setActive(value: boolean) {
       active = value;
       if (value) report(reducedMotion() ? 'off' : handover.userControl ? 'user' : 'playing');
-      if (!value) {
-        stopPlaying();
-        hideCursor(false);
-        return;
-      }
+      // Off screen, under another page or in a hidden tab, the walkthrough's waits hold it
+      // where it stands, and it carries on from there when the page is back.
+      if (!value || (playing && playing === playToken)) return;
       if (canPlay()) void play();
     },
     setNoteOpen(value: boolean) {
