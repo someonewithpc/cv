@@ -205,6 +205,33 @@ test('the leader to a bar under another bends around it at right angles', async 
   expect(Math.min(Math.abs(end[2][1] - box.y), Math.abs(end[2][1] - box.y - box.height))).toBeLessThanOrEqual(2);
 });
 
+test(`every leader but ProtoSyn's ends on its bar's dimension line`, async ({ page }) => {
+  for (const [drawing, width] of [['wide', 1440], ['tall', 390]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const svg = page.locator(`#career svg.${drawing}`);
+    await expect(svg).toBeVisible();
+    const tips = await svg.locator('g[data-job]').evaluateAll((groups) =>
+      groups.map((g) => {
+        const points = [...(g.querySelector('polyline.leader') as SVGPolylineElement).points];
+        const { x, y } = points[points.length - 1];
+        const dim = g.querySelector('line.dim') as SVGLineElement;
+        const [x1, y1, x2, y2] = [dim.x1, dim.y1, dim.x2, dim.y2].map((v) => v.baseVal.value);
+        return { id: (g as SVGGElement).dataset.job!, x, y, x1, y1, x2, y2 };
+      }),
+    );
+    expect(tips).toHaveLength(site.experience.length + 2);
+    for (const { id, x, y, x1, y1, x2, y2 } of tips) {
+      // ProtoSyn's leader bends round the bar over it into the bar's end instead.
+      if (id === 'protosyn') continue;
+      const [along, across, from, to] = drawing === 'wide' ? [x, y, x1, x2] : [y, x, y1, y2];
+      expect(across, `${drawing}: the ${id} leader ends on its dimension line`).toBeCloseTo(drawing === 'wide' ? y1 : x1, 1);
+      expect(along, `${drawing}: the ${id} leader lands within its dimension`).toBeGreaterThan(from);
+      expect(along, `${drawing}: the ${id} leader lands within its dimension`).toBeLessThan(to);
+    }
+  }
+});
+
 /** Leaders that cross a bar, a label or each other, and labels that overlap, in the drawing on show. */
 const collisions = (svg: SVGSVGElement) => {
   type Box = { left: number; top: number; right: number; bottom: number };
@@ -243,7 +270,7 @@ const collisions = (svg: SVGSVGElement) => {
   for (const g of groups) {
     const leader = g.querySelector<SVGPolylineElement>('polyline.leader')!;
     const points = [...leader.points].map(({ x, y }) => point(x, y));
-    // Trimmed at both ends: it starts at its bubble and its arrow touches its own bar.
+    // Trimmed at both ends: it starts at its bubble and its arrow touches its own dimension line or bar.
     const trim = (from: DOMPoint, to: DOMPoint, by: number) => {
       const len = Math.hypot(to.x - from.x, to.y - from.y);
       return new DOMPoint(from.x + ((to.x - from.x) * by) / len, from.y + ((to.y - from.y) * by) / len);

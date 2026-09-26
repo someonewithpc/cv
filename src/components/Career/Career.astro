@@ -336,8 +336,9 @@ const wide = (() => {
     const half = (job.span.length * CH) / 2 + 8;
     let mid = (x0 + x1) / 2;
     if (!job.leg && Math.abs(job.ax - mid) < half) mid = job.ax + (job.ax - x0 > x1 - job.ax ? -half : half);
-    /* A bent leader turns once, at a right angle, and meets the bar's end at half its height. */
-    const leader = job.leg ? `${job.ax} ${by + 10} ${job.ax} ${top + BAR / 2} ${job.leg[1]} ${top + BAR / 2}` : `${job.ax} ${by + 10} ${job.ax} ${top - 1}`;
+    /* A leader points at its bar's dimension line. A bent one turns once, at a right angle, and
+       meets the bar's end at half its height instead. */
+    const leader = job.leg ? `${job.ax} ${by + 10} ${job.ax} ${top + BAR / 2} ${job.leg[1]} ${top + BAR / 2}` : `${job.ax} ${by + 10} ${job.ax} ${dim}`;
     const shape = job.open
       ? openBar(x0, x1, LY, (a, c) => `${a} ${c}`)
       : job.seasonal
@@ -376,20 +377,21 @@ const wide = (() => {
 /* ----- Narrow: the same drawing on end, the ground a datum down the left. ----- */
 const tall = (() => {
   /* Wider than the 360 the jobs alone took: the degree's lane and the learning line's
-     would otherwise narrow the labels. */
-  const W = 410;
+     and the dimensions beside each lane would otherwise narrow the labels. */
+  const W = 440;
   const DX = 44;
   const S = 28;
   const TOP = 12;
   const y = (t: number) => TOP + (t - T0) * S;
-  /* Each lane is its bar with the bar's dimension on the datum side of it, so the leaders,
-     which leave on the other side, cross nothing but the lanes above. */
-  const LANE = 34;
+  /* Each lane is its bar with the bar's dimension on the side away from the datum, as the wide
+     drawing has it over the bar, so a leader coming in from the labels ends on the dimension
+     line and crosses nothing but the lanes above. */
+  const LANE = 40;
   const BAR = 12;
-  const LC = DX + 8 + LANE - BAR + 2;
-  const LANE0 = LC + 24;
+  const LC = DX + 14;
+  const LANE0 = LC + 28;
   /* Past the last lane each leader bends from its bubble's height to its bar's. */
-  const BEND = LANE0 + (lanes - 1) * LANE + BAR + 8;
+  const BEND = LANE0 + (lanes - 1) * LANE + BAR + 28;
   const LX = BEND + 28;
   const width = Math.floor((W - 4 - LX - 15) / CH);
 
@@ -442,16 +444,26 @@ const tall = (() => {
     }
   }
 
+  /* A span keeps off the leaders that cross its lane beside the dimension line: its own, and
+     those running in to a lower lane. */
+  for (const job of placed) {
+    const half = (job.span.length * CH) / 2 + 5;
+    const mid = spanAt.get(job.id)!;
+    const across = placed.filter((other) => other === job || other.lane < job.lane).map((other) => other.ay);
+    const spots = [mid, ...across.flatMap((ay) => [ay - half, ay + half])].filter((at) => across.every((ay) => Math.abs(ay - at) >= half - 0.01));
+    spanAt.set(job.id, spots.sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))[0] ?? mid);
+  }
+
   const bars = placed.map((job) => {
     const x0 = job.open ? LC - 2 : LANE0 + job.lane * LANE;
     const right = job.open ? LC + 2 : x0 + BAR;
     const y0 = y(job.start);
     const y1 = y(job.end);
-    const dim = x0 - 10;
+    const dim = right + 10;
     const mid = spanAt.get(job.id)!;
     const by = job.top + 7;
     const turn = turns.get(job.id);
-    const leg = turn ? `${x0 + BAR / 2} ${job.ay} ${x0 + BAR / 2} ${turn.t < job.start ? y0 - 1 : y1 + 1}` : `${right + 1} ${job.ay}`;
+    const leg = turn ? `${x0 + BAR / 2} ${job.ay} ${x0 + BAR / 2} ${turn.t < job.start ? y0 - 1 : y1 + 1}` : `${dim} ${job.ay}`;
     const shape = job.open
       ? openBar(y0, y1, LC, (a, c) => `${c} ${a}`)
       : job.seasonal
@@ -460,11 +472,11 @@ const tall = (() => {
     return `${group(job)}
       ${shape}
       ${job.study ? `<line class="centre" x1="${x0 + BAR / 2}" y1="${y0 + 4}" x2="${x0 + BAR / 2}" y2="${y1 - 4}"/>` : ''}
-      <line class="ext" x1="${x0 - 3}" y1="${y0}" x2="${dim - 5}" y2="${y0}"/>
-      ${job.open ? '' : `<line class="ext" x1="${x0 - 3}" y1="${y1}" x2="${dim - 5}" y2="${y1}"/>`}
+      <line class="ext" x1="${right + 3}" y1="${y0}" x2="${dim + 5}" y2="${y0}"/>
+      ${job.open ? '' : `<line class="ext" x1="${right + 3}" y1="${y1}" x2="${dim + 5}" y2="${y1}"/>`}
       <line class="dim" x1="${dim}" y1="${y0 - 4}" x2="${dim}" y2="${job.open ? y1 : y1 + 4}"/>
       ${tick(dim, y0)}${job.open ? '' : tick(dim, y1)}
-      ${text(dim - 4, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim - 4} ${mid})"`)}
+      ${text(dim + 13, mid, job.span, 'span monospace', `text-anchor="middle" transform="rotate(-90 ${dim + 13} ${mid})"`)}
       <polyline class="leader" points="${LX - 11} ${by} ${BEND} ${job.ay} ${leg}" marker-end="url(#v-arrow)"/>
       ${bubble(LX, by, job)}
       ${job.text.map((line, i) => lettering(LX + 15, job.top + 11 + i * 14, line, i === 0)).join('')}
@@ -689,7 +701,7 @@ const tall = (() => {
   }
 
   :global(.tall) {
-    max-width: 25.625rem;
+    max-width: 27.5rem;
   }
 
   @container (width >= 44rem) {
