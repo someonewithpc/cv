@@ -58,6 +58,7 @@
   - [x] Slotted components carry their own scripts; boot island removed
   - [x] Interactive map font picker (#25)
     - [x] Font proxy stops relaying for the day after 1 GB
+    - [x] Picker, Held Controls and Loading Indicator sheets show the restart, play and pause deck (#160)
   - [x] GNU social schemaDef to Doctrine metadata, two panes with a cross-highlight (SH-08)
     - [x] Cards run down to the title block, intro and rule beside it (#153)
   - [x] GNU social event dispatch and module discovery (SH-07)
