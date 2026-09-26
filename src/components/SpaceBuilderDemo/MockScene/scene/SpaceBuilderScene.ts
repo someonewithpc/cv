@@ -319,25 +319,32 @@ export class SpaceBuilderScene {
     this.startLoop();
   }
 
+  // Only runs while active: a loop left spinning on a paused scene still asks the browser for
+  // a frame every vsync, and six of them kept an idle page producing frames.
   private startLoop() {
     cancelAnimationFrame(this.animationId);
     const tick = () => {
-      if (this.disposed) return;
+      if (this.disposed || !this.active) {
+        this.animationId = 0;
+        return;
+      }
       this.animationId = requestAnimationFrame(tick);
-      if (!this.active) return;
       this.renderer.render(this.scene, this.camera);
       this.labelRenderer.render(this.scene, this.camera);
     };
-    tick();
+    this.animationId = requestAnimationFrame(tick);
   }
 
   pause() {
     this.active = false;
+    cancelAnimationFrame(this.animationId);
+    this.animationId = 0;
   }
 
   resume() {
     if (this.disposed || this.gpuReleased) return;
     this.active = true;
+    if (!this.animationId) this.startLoop();
   }
 
   isActive() {
@@ -351,7 +358,7 @@ export class SpaceBuilderScene {
    */
   releaseGpu() {
     if (this.disposed || this.gpuReleased) return;
-    this.active = false;
+    this.pause();
     this.gpuReleased = true;
     // renderer.dispose() alone frees nothing that matters: it drops the renderer's own map of
     // what it uploaded and deletes its programs, and with the context kept alive every
