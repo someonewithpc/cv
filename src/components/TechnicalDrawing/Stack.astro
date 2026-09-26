@@ -104,6 +104,7 @@ const arrow = {
 
     {['rest-x', 'rest-y', 'lean-x', 'lean-y'].map((length) => <span class="crease-length" data-length={length} />)}
   </div>
+  <span class="sheet-probe" aria-hidden="true"></span>
 </div>
 
 <style lang="scss">
@@ -197,6 +198,23 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 
 .technical-drawing-frame[data-hint-show] .flip-hints {
   display: block;
+}
+
+// The sheet's em and its orientation as a box, for the script's observer to read instead of
+// computed style: one em wide, and a pixel taller where the width query picks portrait. The
+// same em as the stack's, since both inherit the frame's type.
+.sheet-probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1em;
+  height: 1px;
+  visibility: hidden;
+  pointer-events: none;
+
+  @container technical-drawing-width (max-width: 40em) {
+    height: 2px;
+  }
 }
 
 // The creases' resting intercepts as boxes, for flip-hint.ts to read in pixels.
@@ -487,8 +505,10 @@ function initStack(stack: HTMLElement) {
   // same thing, but a font-size that comes out of them, by unit, by rule, or by an inherited
   // variable, inside the deep grids of some layers makes every em in them depend on this
   // container, and Chrome's layout of that runs seconds per pass: a resize, or docking
-  // DevTools, froze the page for twenty. The orientation is read back from the aspect the
-  // width query picked.
+  // DevTools, froze the page for twenty. The orientation and the em come off the frame's probe
+  // (.sheet-probe), observed first so its entry is read before the stack's.
+  const probe = stack.parentElement?.querySelector<HTMLElement>(':scope > .sheet-probe');
+  if (probe) measure.observe(probe);
   measure.observe(stack);
 
   // The title block's own size, in plain pixels on its sheet. On a landscape sheet the block
@@ -514,26 +534,34 @@ function put(el: HTMLElement, name: string, value: string) {
   if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value);
 }
 
-// One observer for every stack and title block, so a resize is answered with all the reads
-// before any of the writes: a write to one stack followed by a read from the next would make
-// the browser redo style in between, once per stack.
+// Each frame's probe as last observed: its width is the sheet's em and its height says whether
+// the width query picked portrait. The probe only reports when one of those changes, so a
+// step that resizes the stack alone reads the kept values.
+const probes = new WeakMap<HTMLElement, { em: number, portrait: boolean }>();
+
+// One observer for every stack, probe and title block, so a resize is answered with all the
+// reads before any of the writes: a write to one stack followed by a read from the next would
+// make the browser redo style in between, once per stack. Nothing here asks for computed
+// style: every number comes off an entry.
 const measure = new ResizeObserver((entries) => {
   const stacks = [];
   const blocks = [];
   for (const entry of entries) {
     const target = entry.target as HTMLElement;
-    if (target.matches('article.technical-drawing-stack')) {
+    if (target.matches('.sheet-probe')) {
+      const [{ inlineSize, blockSize }] = entry.borderBoxSize;
+      probes.set(target.parentElement as HTMLElement, { em: inlineSize || 16, portrait: blockSize > 1.5 });
+    } else if (target.matches('article.technical-drawing-stack')) {
       const [{ inlineSize, blockSize }] = entry.contentBoxSize;
-      const style = getComputedStyle(target);
-      const [w, h] = style.aspectRatio.split('/').map(Number);
-      const em = parseFloat(style.fontSize) || 16;
-      stacks.push({ stack: target, inlineSize, blockSize, portrait: h > w, wide: inlineSize >= SHEET_WIDE_EM * em });
+      stacks.push({ stack: target, inlineSize, blockSize });
     } else {
       const [{ inlineSize, blockSize }] = entry.borderBoxSize;
       blocks.push({ sheet: target.parentElement as HTMLElement, inlineSize, blockSize });
     }
   }
-  for (const { stack, inlineSize, blockSize, portrait, wide } of stacks) {
+  for (const { stack, inlineSize, blockSize } of stacks) {
+    const { em, portrait } = probes.get(stack.parentElement as HTMLElement) ?? { em: 16, portrait: false };
+    const wide = inlineSize >= SHEET_WIDE_EM * em;
     put(stack, '--sheet-inline', `${inlineSize}px`);
     put(stack, '--sheet-block', `${blockSize}px`);
     // Both only when they actually change. Writing the same value back is still an attribute
