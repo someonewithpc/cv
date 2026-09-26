@@ -583,6 +583,22 @@ const renderFold = (
   }
 };
 
+// The page carries the mark too, for the flip hint's commit feedback to key on (index.astro).
+// Read through :has() on the flap instead, each flip of it restyled the whole document.
+const markWillCommit = (fold: HTMLElement, willCommit: boolean) => {
+  fold.classList.toggle('paper-fold--will-commit', willCommit);
+  fold.parentElement?.classList.toggle('paper-will-commit', willCommit);
+};
+
+// The flap in hand, dragged or hovered: the page carries paper-in-hand for the lift rules in
+// index.astro, for the same reason. Hover and drag each hold it on their own, so a release
+// under the pointer keeps the flap lifted until the pointer leaves.
+const hoveredFolds = new WeakSet<HTMLElement>();
+const markInHand = (fold: HTMLElement, active: boolean) => {
+  fold.classList.toggle('paper-fold--active', active);
+  fold.parentElement?.classList.toggle('paper-in-hand', active || hoveredFolds.has(fold));
+};
+
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
   // Once per gesture the metrics are taken fresh rather than trusted from the cache — the
   // ResizeObserver keeps them current across resizes, but this is what catches anything that
@@ -632,7 +648,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // shut one frame after this very handler eased it. settleFold keys off the class to know
   // whether a grab ever became a drag, so it must be added here and not at the grab.
   if (!fold.classList.contains('paper-fold--active')) {
-    fold.classList.add('paper-fold--active');
+    markInHand(fold, true);
     unsettle(sheet.parentElement!);
     // Cancelling the reveal/pulse animation below drops whatever size it was mid-playing, and
     // nothing else here is guaranteed to write a fresh one this frame: a cancel further down
@@ -743,7 +759,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     ? along >= backReach(sheet)
     : sheet.parentElement!.childElementCount > 1
       && pointFolded(commitPoint(w, h), w, h, tip);
-  fold.classList.toggle('paper-fold--will-commit', willCommit);
+  markWillCommit(fold, willCommit);
   // Same threshold, the other thing it decides: past it the turn is going to happen, so the
   // demo on the paper stops playing (see commitTurn).
   if (willCommit) commitTurn(sheet.parentElement!);
@@ -1089,7 +1105,7 @@ const restFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): 
   // after the class below has come off is one that re-resolves the whole document — the page's
   // :has() rules see to that. Both land in the same frame either way, so the order is free.
   restIdleFold(sheet);
-  fold.classList.remove('paper-fold--active');
+  markInHand(fold, false);
   clearFoldRender(section, fold);
 
   sheet.parentElement!.style.removeProperty('--flip-progress');
@@ -1106,7 +1122,7 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   const glide = glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, thrown, () => {
     restFold(sheet, section, fold);
   });
-  fold.classList.remove('paper-fold--will-commit');
+  markWillCommit(fold, false);
   return glide;
 };
 
@@ -1161,7 +1177,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   // index.astro): back to 0 without a transition, then eased to 1 in the same recalc that
   // renumbers the pages, so it runs on the page's own clock.
   restartTurn(stack, '--turn-ease', '0');
-  fold.classList.remove('paper-fold--will-commit');
+  markWillCommit(fold, false);
   // Renumbering starts every page's 250ms drift transition.
   stirLanding(stack);
   for (const page of pages) {
@@ -1209,7 +1225,9 @@ const clearFrontFold = (sheet: HTMLElement): void => {
 // the front starts fresh — and the fold rejoins the new front page's companions.
 const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement): void => {
   const stack = sheet.parentElement!;
-  fold.classList.remove('paper-fold--active');
+  // The flap leaves this sheet below, so a hover it still holds goes with it.
+  hoveredFolds.delete(fold);
+  markInHand(fold, false);
   clearFoldRender(section, fold);
   clearFrontFold(sheet);
   // A back-drag's grab squares this sheet up with the front page; letting go of the inline
@@ -1588,6 +1606,15 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   syncPaperSurface(sheet, section);
   const clearTease = attachBackFoldTease(stack, () => gesture !== null);
 
+  fold.addEventListener('pointerenter', () => {
+    hoveredFolds.add(fold);
+    markInHand(fold, fold.classList.contains('paper-fold--active'));
+  });
+  fold.addEventListener('pointerleave', () => {
+    hoveredFolds.delete(fold);
+    markInHand(fold, fold.classList.contains('paper-fold--active'));
+  });
+
   fold.addEventListener('pointerdown', (e) => {
     if (gesture !== null || e.button !== 0 || !e.isPrimary) return;
     e.preventDefault();
@@ -1720,7 +1747,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // in play, and a read after them resolves every element on the page.
     const { back: backCut, drift } = currentLanding(sheet);
     sheet.append(fold);
-    fold.classList.add('paper-fold--active');
+    markInHand(fold, true);
     unsettle(stack);
     // Active mode sizes the flap to the whole page, and the idle clip-path it still carries fills
     // that box — a page-sized slab of flap colour on a sheet whose top-left corner shows through
@@ -2117,10 +2144,12 @@ const registerFoldProperties = () => {
     // A turned page's own step out, transitioned on the page so its cut, band and translate
     // climb together.
     '--turned-drift', '--turned-rise',
-    // A landing's second crease, written on the flap by renderLanding for its shading.
-    '--land-x', '--land-y',
   ]) {
     registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
+  }
+  // A landing's second crease, written on the flap by renderLanding and read there alone.
+  for (const name of ['--land-x', '--land-y']) {
+    registerProperty({ name, syntax: '<length>', inherits: false, initialValue: '0px' });
   }
   registerProperty({ name: '--pile-lean', syntax: '<angle>', inherits: true, initialValue: '0deg' });
   registerProperty({ name: '--page-index', syntax: '<number>', inherits: true, initialValue: '1' });
@@ -2128,8 +2157,9 @@ const registerFoldProperties = () => {
   // The strip's turn clock (see --pile-rise in index.astro): at rest by default.
   registerProperty({ name: '--turn-ease', syntax: '<number>', inherits: true, initialValue: '1' });
   // How far the flap is off the page (see index.astro), registered so its tone eases between
-  // rest, in hand and past the commit point.
-  registerProperty({ name: '--fold-lift', syntax: '<number>', inherits: true, initialValue: '0' });
+  // rest, in hand and past the commit point. Set on the flap and the cast shadow themselves,
+  // so nothing inherits it while it eases.
+  registerProperty({ name: '--fold-lift', syntax: '<number>', inherits: false, initialValue: '0' });
 };
 
 export function initPaperStackFold(): void {
