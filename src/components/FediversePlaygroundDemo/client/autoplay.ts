@@ -16,9 +16,9 @@ const toggle = (name: string) => `.toggle:has(input[name="${name}"]) input`;
 
 /**
  * One loop, from the config the page opens on: v2 joins and brings MariaDB, the file is
- * opened on it, then Mastodon leaves and takes its three services, the v3 pair leaves and
- * takes Postgres and Redis with them, v2 leaves and the file has no services, and the three
- * come back. Every step is a control a visitor can work too.
+ * opened on it, then Mastodon leaves and takes its three services and search, the v3 pair
+ * leaves and takes Postgres, Redis and media with them, v2 leaves and the file has no
+ * services, and the three come back. Every step is a control a visitor can work too.
  */
 export const WALKTHROUGH: Step[] = [
   { aim: toggle('gnusocial-v2'), delay: 1600, act: 'click' },

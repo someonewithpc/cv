@@ -1,5 +1,6 @@
 // src/compose/builder.ts and the two recipes in src/recipes/gnu-social.ts, ported to run in a
-// browser, with a Mastodon recipe the tool does not have yet (see `mastodon` below). What is
+// browser, with a Mastodon recipe the tool does not have yet (see `mastodon` below), and two
+// shared services it does not have either, search and media (see SHARED_SERVICES). What is
 // left out is what touches the disk: each recipe's configure() (nginx rewrite, certificates,
 // .env.local) and the file write. The merge, the shared-service dedupe, the web volumes and
 // depends_on, and the validation are the builder's own, line for line.
@@ -33,8 +34,12 @@ type Recipe = {
 /** The dev default every install script and the db container agree on; it is not a secret. */
 export const DEV_PASSWORD = 'fediverse-playground';
 
-/** The builder's shared services. The tool names its nginx `web`; the sheet calls it `nginx`,
-    after what it runs. */
+/**
+ * The builder's shared services. The tool names its nginx `web`; the sheet calls it `nginx`,
+ * after what it runs. `search` and `media` are not in the tool: they show where a search
+ * index and an image worker would sit if its recipes asked for them. Search is Elasticsearch
+ * as Mastodon's own compose file runs it; media is imgproxy.
+ */
 export const SHARED_SERVICES: Record<string, Service> = {
   nginx: {
     image: 'nginx:alpine',
@@ -72,6 +77,20 @@ export const SHARED_SERVICES: Record<string, Service> = {
     command: 'mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_bin',
     healthcheck: { test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost'], interval: '3s', timeout: '3s', retries: 30 },
   },
+  search: {
+    image: 'elasticsearch:7.17.4',
+    restart: 'always',
+    tty: false,
+    environment: ['discovery.type=single-node', 'xpack.security.enabled=false', 'ES_JAVA_OPTS=-Xms512m -Xmx512m'],
+    volumes: ['search:/usr/share/elasticsearch/data'],
+  },
+  media: {
+    image: 'darthsim/imgproxy',
+    restart: 'always',
+    tty: false,
+    environment: ['IMGPROXY_LOCAL_FILESYSTEM_ROOT=/media'],
+    volumes: ['./instances:/media:ro'],
+  },
 };
 
 const installServiceName = (instanceId: string) => `${instanceId}-install`;
@@ -100,6 +119,7 @@ const gnuSocialV3: Recipe = {
     { type: 'nginx', shared: true },
     { type: 'db', shared: true },
     { type: 'redis', shared: true },
+    { type: 'media', shared: true },
     { type: 'social-v3-php', shared: false },
   ],
   buildContribution: (instance) => {
@@ -128,6 +148,7 @@ const gnuSocialV3: Recipe = {
           depends_on: {
             db: { condition: 'service_healthy' },
             redis: { condition: 'service_started' },
+            media: { condition: 'service_started' },
             ...completedInstall(installer),
           },
           environment: v3Environment(instance),
@@ -200,6 +221,9 @@ const mastodonEnvironment = (instance: InstanceContext) => [
   `DB_NAME=${instance.instance_id}`,
   `DB_PASS=${DEV_PASSWORD}`,
   'REDIS_HOST=redis',
+  'ES_ENABLED=true',
+  'ES_HOST=search',
+  'ES_PORT=9200',
 ];
 
 /**
@@ -208,7 +232,9 @@ const mastodonEnvironment = (instance: InstanceContext) => [
  * its web (puma), streaming and sidekiq services, built from the worktree as that file's
  * commented `build:` lines do, on the playground's shared Postgres, Redis and nginx instead of
  * its own. The one-shot installer runs `rails db:setup`, the step Mastodon's docs run by hand
- * before `up`, and nginx waits on web and streaming, the two it proxies to.
+ * before `up`, and nginx waits on web and streaming, the two it proxies to. Web and sidekiq
+ * search through Elasticsearch, as Mastodon's ES_ENABLED does; sidekiq, which processes
+ * uploads, also waits on the media worker.
  */
 const mastodon: Recipe = {
   id: 'mastodon',
@@ -217,6 +243,8 @@ const mastodon: Recipe = {
     { type: 'nginx', shared: true },
     { type: 'db', shared: true },
     { type: 'redis', shared: true },
+    { type: 'search', shared: true },
+    { type: 'media', shared: true },
   ],
   buildContribution: (instance) => {
     const installer = installServiceName(instance.instance_id);
@@ -226,10 +254,12 @@ const mastodon: Recipe = {
       db: { condition: 'service_healthy' },
       redis: { condition: 'service_started' },
     };
-    const process = (build: unknown, command: string) => ({
+    const search = { search: { condition: 'service_started' } };
+    const media = { media: { condition: 'service_started' } };
+    const process = (build: unknown, command: string, uses: Record<string, unknown> = {}) => ({
       build,
       restart: 'always',
-      depends_on: { ...data, ...completedInstall(installer) },
+      depends_on: { ...data, ...uses, ...completedInstall(installer) },
       environment: mastodonEnvironment(instance),
       volumes: [`./${instance.worktree}/public/system:/mastodon/public/system`],
       command,
@@ -245,9 +275,9 @@ const mastodon: Recipe = {
           environment: mastodonEnvironment(instance),
           command: 'bundle exec rails db:setup',
         },
-        [instance.instance_id]: process(instance.worktree, 'bundle exec puma -C config/puma.rb'),
+        [instance.instance_id]: process(instance.worktree, 'bundle exec puma -C config/puma.rb', search),
         [streaming]: process({ context: instance.worktree, dockerfile: 'streaming/Dockerfile' }, 'node ./streaming/index.js'),
-        [sidekiq]: process(instance.worktree, 'bundle exec sidekiq'),
+        [sidekiq]: process(instance.worktree, 'bundle exec sidekiq', { ...search, ...media }),
       },
       webVolumes: [
         `./files/${instance.instance_id}.nginx.conf:/etc/nginx/conf.d/${instance.instance_id}.nginx.conf`,
@@ -316,7 +346,7 @@ export function buildComposeFile(config: PlaygroundConfig): ComposeFile {
     version: '3',
     name: 'fediverse-playground',
     services: {},
-    volumes: { database: {}, mariadb: {} },
+    volumes: { database: {}, mariadb: {}, search: {} },
   };
 
   const sharedAdded = new Set<string>();
