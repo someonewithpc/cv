@@ -54,7 +54,7 @@ test('main page: a painted buffer, cut into the ranges each parser is handed', a
   // The frontmatter and the style body are whole-line blocks; the one interpolation sits
   // inside its line.
   await expect(buffer.locator('.block[data-lang="tsx"]')).toContainText('type Props');
-  await expect(buffer.locator('.block[data-lang="scss"]').first()).toContainText('place-items');
+  await expect(buffer.locator('.block[data-lang="scss"]').first()).toContainText('letter-spacing');
   await expect(buffer.locator('.range[data-lang="tsx"]')).toHaveCount(1);
 
   // The braces stay with the Astro parser: the offset leaves them out of the range.
@@ -78,13 +78,13 @@ test('main page: dashed boxes over the buffer nest astro around html around the 
   const expression = await band('tsx', 2);
   const style = await band('scss', 2);
 
-  // The lines Emacs 31.1 gives each parser in WipStamp.astro.
-  expect([astro.from, astro.to]).toEqual([1, 79]);
+  // The lines Emacs 31.1 gives each parser in WipStamp.astro, its style block cut to one rule.
+  expect([astro.from, astro.to]).toEqual([1, 32]);
   expect([frontmatter.from, frontmatter.to]).toEqual([2, 10]);
-  expect([html.from, html.to]).toEqual([13, 79]);
+  expect([html.from, html.to]).toEqual([13, 32]);
   expect([expression.from, expression.to]).toEqual([16, 16]);
-  expect([style.from, style.to]).toEqual([23, 78]);
-  expect(html.label).toBe('html 13-79');
+  expect([style.from, style.to]).toEqual([23, 31]);
+  expect(html.label).toBe('html 13-32');
 
   // One style for every range: a dashed box, and nothing else outlines the code.
   const styles = await bands.evaluateAll((all) => all.map((el) => getComputedStyle(el).borderTopStyle));

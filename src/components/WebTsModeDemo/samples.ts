@@ -4,11 +4,25 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-/** The live sheet's buffer: a whole component, frontmatter, markup and a SCSS style block. */
+/**
+ * The live sheet's buffer: a whole component, frontmatter, markup and a SCSS style block.
+ * The style block has no ranges inside it, so it keeps only the rule for the element that
+ * holds the expression. The rest of the file is as it stands.
+ */
 export const bufferFile = 'WipStamp.astro';
+const keptRule = '.wip-stamp__text {';
 
 export async function readBuffer() {
-  return readFile(path.join(process.cwd(), 'src/components', bufferFile), 'utf8');
+  const source = await readFile(path.join(process.cwd(), 'src/components', bufferFile), 'utf8');
+  const styleTag = '<style lang="scss">\n';
+  const open = source.indexOf(styleTag) + styleTag.length;
+  const close = source.indexOf('</style>', open);
+  const start = source.indexOf(keptRule, open);
+  const end = source.indexOf('\n}\n', start) + 3;
+  if (open < styleTag.length || start < 0 || end > close) {
+    throw new Error(`${bufferFile}: no ${keptRule} rule in its style block`);
+  }
+  return source.slice(0, open) + source.slice(start, end) + source.slice(close);
 }
 
 /**
