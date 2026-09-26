@@ -411,6 +411,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
 <script>
 import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
+import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
 import './demo-cursor-press';
 
 import { positionAnnotations } from './annotations-position';
@@ -423,12 +424,26 @@ function initStack(stack: HTMLElement) {
   // intersection says nothing about which one is drawn on top. Without the --page-index
   // half, a page's intro animation ran (and finished) while it was still covered, and the
   // visitor who turned to it got the end state instead of the animation.
+  const isActive = (page: HTMLElement) => Boolean(onScreen.get(page)) && isFrontPage(page);
+
+  // While the window is being resized (src/client/resizeHold.ts) the front page's loops,
+  // the dog-ear pulse among them, stop where they are and carry on once the size settles.
+  // This has to be done here: once play() or pause() has run on an animation, CSS
+  // animation-play-state no longer moves it.
+  const heldByResize = new WeakSet<Animation>();
+  const holdForResize = (animation: Animation) => {
+    if (animation.playState !== 'running' && animation.playState !== 'paused') return;
+    animation.pause();
+    heldByResize.add(animation);
+  };
+
   const apply = (page: HTMLElement) => {
-    const active = Boolean(onScreen.get(page)) && isFrontPage(page);
+    const active = isActive(page);
 
     page.getAnimations({ subtree: true }).forEach((animation) => {
       if (active) {
-        animation.play();
+        if (isResizeHeld()) holdForResize(animation);
+        else animation.play();
         return;
       }
       // Already held at its start by an earlier pass: leave it there. Playing it here
@@ -455,10 +470,18 @@ function initStack(stack: HTMLElement) {
   }, { threshold: 0.25, scrollMargin: '25%' });
   // The pages only: a demo's own sections would otherwise get an observer, a front-page
   // watcher and an inline animation-play-state of their own.
-  [...stack.querySelectorAll<HTMLElement>(':scope > * > section')].forEach((page) => {
+  const pages = [...stack.querySelectorAll<HTMLElement>(':scope > * > section')];
+  pages.forEach((page) => {
     observer.observe(page);
     watchFrontPage(page, () => apply(page));
   });
+
+  onResizeHold((holding) => pages.filter(isActive).forEach((page) => {
+    page.getAnimations({ subtree: true }).forEach((animation) => {
+      if (holding) holdForResize(animation);
+      else if (heldByResize.delete(animation)) animation.play();
+    });
+  }));
 
   // A demo island boots only once its page is on screen, so the deck is listening long
   // before the first state is reported. One that beat it to it is read back instead.

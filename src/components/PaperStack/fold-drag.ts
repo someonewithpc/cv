@@ -7,6 +7,7 @@
 // styles (in index.astro) key off of.
 
 import { setStackTurning } from '@/client/frontPage';
+import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
 
 type Vec = { x: number, y: number };
 
@@ -1068,9 +1069,10 @@ const pulsesOf = (stack: HTMLElement): Animation[] =>
     .filter((animation) => (animation as CSSAnimation).animationName === PULSE);
 
 // Re-applies the hold after anything that restarts the pulse — a flip hands it to the next page,
-// a settle starts it again. Free on a stack in view, which is the only kind a turn happens on.
-const holdPulseOffScreen = (stack: HTMLElement): void => {
-  if (!stillStacks.has(stack)) return;
+// a settle starts it again. Free on a stack in view, which is the only kind a turn happens on,
+// unless the window is being resized (src/client/resizeHold.ts), which holds every pulse.
+const holdPulse = (stack: HTMLElement): void => {
+  if (!stillStacks.has(stack) && !isResizeHeld()) return;
   for (const pulse of pulsesOf(stack)) pulse.pause();
 };
 
@@ -1082,11 +1084,18 @@ const watchStackPulse = (stack: HTMLElement): void => {
       if (entry.isIntersecting) stillStacks.delete(stack);
       else stillStacks.add(stack);
       for (const pulse of pulsesOf(stack)) {
-        if (entry.isIntersecting) pulse.play();
+        if (entry.isIntersecting && !isResizeHeld()) pulse.play();
         else pulse.pause();
       }
     }
   }, { rootMargin: '25%' });
+  onResizeHold((holding) => {
+    if (stillStacks.has(stack)) return;
+    for (const pulse of pulsesOf(stack)) {
+      if (holding) pulse.pause();
+      else pulse.play();
+    }
+  });
   observer.observe(stack);
 };
 
@@ -1102,7 +1111,7 @@ const restIdleFold = (sheet: HTMLElement): void => {
   sheet.style.animationName = 'none, none';
   void sheet.offsetWidth;
   sheet.style.animationName = `none, ${PULSE}`;
-  holdPulseOffScreen(sheet.parentElement!);
+  holdPulse(sheet.parentElement!);
 };
 
 // What a page that has come to rest at the front hands back: index.astro's own rules take the
@@ -1211,7 +1220,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   syncInert(stack);
   // The dog-ear's pulse goes with the front-page role, so an off-screen stack has to hold the
   // new page's still too.
-  holdPulseOffScreen(stack);
+  holdPulse(stack);
 };
 
 // Drops everything the front-page role leaves behind on a sheet, so its next turn at the front
@@ -1291,7 +1300,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   updateFlippedState(stack);
   syncPaperSurface(prev, sectionOf(prev));
   // The pulse travels with the front-page role; off screen it stays held.
-  holdPulseOffScreen(stack);
+  holdPulse(stack);
   return prev;
 };
 
