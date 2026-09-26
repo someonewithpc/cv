@@ -2213,9 +2213,16 @@ export function initPaperStackFold(): void {
     watchThemePaperSurface();
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run, { once: true });
-  } else {
+  // After every other script on the page, not as soon as this one runs. A module script runs
+  // before DOMContentLoaded, and this one is hoisted ahead of the drawing stack's, so the
+  // observers above used to be the first ones the browser created. It delivers resize
+  // observations in that order, and these observers write: --fold-page-w/-h on every page,
+  // which dirtied the style of the whole document before the annotation observer got its turn
+  // to read client rects, at about 40ms of forced style resolution on every resize step. Created
+  // last, they are delivered last, after every observer that reads.
+  if (document.readyState === 'complete') {
     run();
+  } else {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
   }
 }
