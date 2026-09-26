@@ -3,7 +3,7 @@ import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate, type DemoGate } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import OptionsPanel from './OptionsPanel.vue';
@@ -56,6 +56,8 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
+/** Off screen, under another page or in a hidden tab, the walkthrough's waits hold it where it stands. */
+let pageGate: DemoGate | null = null;
 
 function updateSeatsInvalid(snap: SceneSnapshot | null) {
   seatsInvalid.value = Boolean(
@@ -64,26 +66,25 @@ function updateSeatsInvalid(snap: SceneSnapshot | null) {
 }
 
 function wait(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+  return pageGate ? pageGate.wait(ms) : new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-/** Ease + rAF tween of a single numeric option; resolves early if `token` goes stale. */
-function tween(token: number, from: number, to: number, ms: number, onFrame: (v: number) => void) {
-  return new Promise<void>((resolve) => {
-    const start = performance.now();
-    const step = (now: number) => {
-      if (token !== autoplayToken) {
-        resolve();
-        return;
-      }
-      const t = Math.min(1, (now - start) / ms);
-      const eased = t * t * (3 - 2 * t);
-      onFrame(from + (to - from) * eased);
-      if (t < 1) requestAnimationFrame(step);
-      else resolve();
-    };
-    requestAnimationFrame(step);
-  });
+/**
+ * Ease + rAF tween of a single numeric option; resolves early if `token` goes stale. It runs
+ * on the page gate's clock, so a tween held off screen resumes where it stopped.
+ */
+async function tween(token: number, from: number, to: number, ms: number, onFrame: (v: number) => void) {
+  const gate = pageGate;
+  const now = () => (gate ? gate.now() : performance.now());
+  const start = now();
+  for (;;) {
+    await (gate ? gate.frame() : new Promise<void>((next) => requestAnimationFrame(() => next())));
+    if (token !== autoplayToken) return;
+    const t = Math.min(1, (now() - start) / ms);
+    const eased = t * t * (3 - 2 * t);
+    onFrame(from + (to - from) * eased);
+    if (t >= 1) return;
+  }
 }
 
 async function runAutoplay() {
@@ -360,17 +361,18 @@ onMounted(async () => {
 
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
-    stopPageWatch = watchPageActive(visibilityRoot, (active, reasons) => {
+    const gate = demoGate(visibilityRoot);
+    pageGate = gate;
+    gate.onChange((active, reasons) => {
       inView = active;
       if (!active) {
         releaseSpaceBuilderGpu(scene, reasons);
-        autoplayToken += 1;
-        demoPlaying.value = false;
         return;
       }
       claimSpaceBuilderGpu(scene);
-      startAutoplay();
+      if (!demoPlaying.value) startAutoplay();
     });
+    stopPageWatch = () => gate.dispose();
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {

@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate, type DemoGate } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import { LAYOUT_ICONS } from './layoutIcons';
@@ -56,11 +56,13 @@ let userControl = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
+/** Off screen, under another page or in a hidden tab, the walkthrough's waits hold it where it stands. */
+let pageGate: DemoGate | null = null;
 
 const activeStyle = computed(() => snapshot.value?.options.style ?? 'grid');
 
 function wait(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+  return pageGate ? pageGate.wait(ms) : new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
 async function runAutoplay() {
@@ -239,17 +241,18 @@ onMounted(async () => {
 
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
-    stopPageWatch = watchPageActive(visibilityRoot, (active, reasons) => {
+    const gate = demoGate(visibilityRoot);
+    pageGate = gate;
+    gate.onChange((active, reasons) => {
       inView = active;
       if (!active) {
         releaseSpaceBuilderGpu(scene, reasons);
-        autoplayToken += 1;
-        demoPlaying.value = false;
         return;
       }
       claimSpaceBuilderGpu(scene);
-      startAutoplay();
+      if (!demoPlaying.value) startAutoplay();
     });
+    stopPageWatch = () => gate.dispose();
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
