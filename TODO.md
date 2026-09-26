@@ -120,3 +120,4 @@
 - [x] Work History (#146)
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
 - [ ] N5 Japanese glosses across the page (#148)
+- [x] Copy says what every theme and layout shows: no blue sheets in Forest, no click on a phone (#158)
