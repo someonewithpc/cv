@@ -49,10 +49,11 @@ async function setDefaultFontSize(page: Page, px: number): Promise<void> {
   await cdp.send('Page.setFontSizes', { fontSizes: { standard: px, fixed: px } });
 }
 
-const COPY = {
-  'a highlight paragraph': '#open-source article > p',
-  'a contribution title': '#open-source .title-text',
-  'a skill in the bill of materials': '#bill-of-materials li',
+/** Each selector with its size as a share of the root. */
+const COPY: Record<string, [string, number]> = {
+  'a highlight paragraph': ['#open-source article > p', 1],
+  'a contribution title': ['#open-source .title-text', 1],
+  'a skill in the bill of materials': ['#bill-of-materials li', 0.875],
 };
 
 for (const reader of [16, 20]) {
@@ -65,9 +66,9 @@ for (const reader of [16, 20]) {
     const root = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
     expect(root).toBe(reader);
 
-    for (const [what, selector] of Object.entries(COPY)) {
+    for (const [what, [selector, share]] of Object.entries(COPY)) {
       const size = await page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-      expect(size, what).toBe(root);
+      expect(size, what).toBe(root * share);
     }
   });
 }
