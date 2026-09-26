@@ -3,7 +3,7 @@ import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate, type DemoGate } from '@/client/frontPage';
 
 import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
 import CatalogPanel from '@/components/SpaceBuilderDemo/MockScene/CatalogPanel.vue';
@@ -138,6 +138,8 @@ let pointerOver = false;
 let chairsReady = false;
 let reducedMotion = false;
 let autoplayToken = 0;
+/** Off screen, under another page or in a hidden tab, the walkthrough's waits hold it where it stands. */
+let pageGate: DemoGate | null = null;
 let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function showToast(message: string) {
@@ -506,8 +508,12 @@ function onKeyDown(event: KeyboardEvent) {
 // --- Autoplay: a demo cursor drives the same scene calls a real drag would. ---
 
 function wait(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+  return pageGate ? pageGate.wait(ms) : new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
+
+/** The page gate's clock and frames, so a tween held off screen resumes where it stopped. */
+const gateNow = () => (pageGate ? pageGate.now() : performance.now());
+const gateFrame = () => (pageGate ? pageGate.frame() : new Promise<void>((next) => requestAnimationFrame(() => next())));
 
 /** Client coords → position relative to root, since the cursor element lives inside it. */
 function toRootPoint(clientX: number, clientY: number) {
@@ -569,22 +575,18 @@ function tweenPoint(
   ms: number,
   onFrame: (p: { x: number; y: number }) => void,
 ) {
-  return new Promise<void>((resolve) => {
-    const start = performance.now();
-    const step = (now: number) => {
-      if (token !== autoplayToken) {
-        resolve();
-        return;
-      }
+  return (async () => {
+    const start = gateNow();
+    for (;;) {
+      await gateFrame();
+      if (token !== autoplayToken) return;
       const target = typeof to === 'function' ? to() : to;
-      const t = Math.min(1, (now - start) / ms);
+      const t = Math.min(1, (gateNow() - start) / ms);
       const eased = t * t * (3 - 2 * t);
       onFrame({ x: from.x + (target.x - from.x) * eased, y: from.y + (target.y - from.y) * eased });
-      if (t < 1) requestAnimationFrame(step);
-      else resolve();
-    };
-    requestAnimationFrame(step);
-  });
+      if (t >= 1) return;
+    }
+  })();
 }
 
 function elementCenter(el: Element | null) {
@@ -606,29 +608,25 @@ async function pulseClick(token: number) {
  * `SpaceBuilderScene.orbit()`'s `theta -= dx * 0.005`, so the same eased curve that drives
  * the camera also drives the cursor. */
 function orbitTween(token: number, deltaTheta: number, ms: number, startClient: { x: number; y: number }) {
-  return new Promise<void>((resolve) => {
-    const start = performance.now();
+  return (async () => {
+    const start = gateNow();
     const totalDx = -deltaTheta / 0.005;
     let applied = 0;
     cursorInstant.value = true;
     cursorClicking.value = true;
-    const step = (now: number) => {
+    for (;;) {
+      await gateFrame();
       const scene = sceneRef.value;
-      if (token !== autoplayToken || !scene) {
-        resolve();
-        return;
-      }
-      const t = Math.min(1, (now - start) / ms);
+      if (token !== autoplayToken || !scene) return;
+      const t = Math.min(1, (gateNow() - start) / ms);
       const eased = t * t * (3 - 2 * t);
       const target = deltaTheta * eased;
       scene.orbitBy(target - applied);
       applied = target;
       moveCursorTo(startClient.x + totalDx * eased, startClient.y);
-      if (t < 1) requestAnimationFrame(step);
-      else resolve();
-    };
-    requestAnimationFrame(step);
-  });
+      if (t >= 1) return;
+    }
+  })();
 }
 
 /**
@@ -999,16 +997,18 @@ onMounted(async () => {
 
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
-    stopPageWatch = watchPageActive(visibilityRoot, (active, reasons) => {
+    const gate = demoGate(visibilityRoot);
+    pageGate = gate;
+    gate.onChange((active, reasons) => {
       inView = active;
       if (!active) {
         releaseSpaceBuilderGpu(scene, reasons);
-        stopAutoplay();
         return;
       }
       claimSpaceBuilderGpu(scene);
-      startAutoplay();
+      if (!demoPlaying.value) startAutoplay();
     });
+    stopPageWatch = () => gate.dispose();
 
     // Hold the demo still while the note dialog covers this page.
     stopNoteWatch = watchDrawingNote(visibilityRoot, (open) => {
