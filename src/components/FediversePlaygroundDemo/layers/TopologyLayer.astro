@@ -514,15 +514,11 @@ fieldset {
     stroke-width: 1.75;
   }
 
-  /* A wire crossing another paints a gap of paper into it. */
+  /* A line crossing an earlier one paints a gap of paper into it. */
   :global(.halo) {
     fill: none;
     stroke: var(--sheet-paper);
     stroke-width: 5;
-  }
-
-  :global(.junction) {
-    fill: var(--ink-muted);
   }
 
   :global([id^='fediverse-arrow-'] path) {

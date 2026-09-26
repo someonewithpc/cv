@@ -1,17 +1,22 @@
 // Draws a compose file's depends_on graph as SVG markup. The server renders the opening state
 // with it and the island redraws with it on every toggle, so there is one drawing, not two.
 //
-// Layout, top to bottom: nginx, one column per configured instance (app over its installer), and
-// the shared data services along the bottom. Every edge comes out of depends_on. An app's edges
-// to the data services leave by the gutters beside its column and meet the service on a bus,
-// the way a schematic joins wires, so shared services read as one box however many ask for it.
-// Mastodon runs three processes where GNU social runs one: its box keeps the server's name and
-// says how many, and their edges are the app's own.
+// Layout, top to bottom: nginx, one column per configured instance (app over its installer),
+// and the shared services along the bottom. Every edge comes out of depends_on. nginx fans out
+// to the apps it waits on, and each app waits on its installer. Under each column, one line
+// runs to each shared service any of that server's containers waits on, so every line has
+// one server at the top and one service at the bottom, and nothing joins on the way. A server's
+// lines leave its column side by side and land on each service in column order, so two lines
+// from one server never cross, and where two servers' lines do, the later one cuts a gap in
+// the earlier. Mastodon runs three containers where GNU social runs one; its box is one server
+// and says how many.
 //
 // The drawing comes in two widths, with the same rows. Every box puts its small print one part
 // a line and splits its names at the hyphen, so the type can stay at 8px or more on the sheet.
-// The landscape one fills the column beside the config panel on a wide sheet. The portrait one
-// is laid out near a phone's sheet width, so scaling it barely shrinks the type.
+// The landscape one fills the column beside the config panel on a wide sheet and sets the five
+// shared services in one row. The portrait one is laid out near a phone's sheet width, so
+// scaling it barely shrinks the type, and sets them three over two, the lower two in the gaps
+// of the upper row, so their lines drop between boxes and never through one.
 
 import type { PlaygroundConfig } from './config';
 import { dependenciesOf, type ComposeFile, type Service } from './compose';
@@ -20,28 +25,31 @@ export type Layout = 'landscape' | 'portrait';
 
 type Kind = 'web' | 'app' | 'install' | 'shared';
 
+type SharedId = 'db' | 'redis' | 'media' | 'mariadb' | 'search';
+
 type Metrics = {
   w: number;
-  h: number;
   column: number;
-  /** A column's box, and web's wider one. */
+  /** A column's box, nginx's wider one, and a shared service's. */
   box: number;
   web: number;
-  /** How far off a column's centre its two gutters run. */
-  gutter: number;
-  row: { web: number; app: number; install: number; data: number };
-  /** Where each data service's bus runs. */
-  lane: Record<'db' | 'redis' | 'mariadb', number>;
+  shared: number;
+  /** The shared services by row, left to right. A lower row sits in the gaps of the first. */
+  sharedRows: SharedId[][];
+  /** Where the first row of shared services starts: high enough to keep the type up, since
+      the sheet scales a taller drawing down, and low enough for the lines to part. */
+  data: number;
 };
 
-const ROWS = {
-  row: { web: 4, app: 62, install: 144, data: 248 },
-  lane: { db: 203, redis: 217, mariadb: 231 },
-};
+const ROW = { web: 4, app: 62, install: 132 };
+/** Between the first row of shared services and the second. */
+const ROW_GAP = 8;
+/** How far apart the lines sit where they leave a column or land on a service. */
+const SPREAD = 10;
 
 const METRICS: Record<Layout, Metrics> = {
-  landscape: { w: 528, h: 290, column: 128, box: 118, web: 140, gutter: 62, ...ROWS },
-  portrait: { w: 400, h: 290, column: 98, box: 92, web: 120, gutter: 47.5, ...ROWS },
+  landscape: { w: 528, column: 128, box: 118, web: 140, shared: 96, sharedRows: [['db', 'redis', 'media', 'mariadb', 'search']], data: 244 },
+  portrait: { w: 400, column: 98, box: 92, web: 120, shared: 92, sharedRows: [['db', 'redis', 'media'], ['mariadb', 'search']], data: 236 },
 };
 
 /** The services a recipe runs beside its app; the app's box counts them. */
@@ -49,14 +57,19 @@ const COMPANIONS: Record<string, readonly string[]> = {
   mastodon: ['streaming', 'sidekiq'],
 };
 
-const DATA = [
-  { id: 'db', image: 'postgres:alpine' },
-  { id: 'redis', image: 'redis:alpine' },
-  { id: 'mariadb', image: 'mariadb:10.3' },
-] as const;
+const IMAGES: Record<SharedId, string> = {
+  db: 'postgres:alpine',
+  redis: 'redis:alpine',
+  media: 'darthsim/imgproxy',
+  mariadb: 'mariadb:10.3',
+  search: 'elasticsearch:7.17.4',
+};
 
 /** A line of a box's text: the name, or the small print under it. */
 const LINE = { label: 11, sub: 10.5 };
+
+/** The most characters of small print a shared box takes on one line. */
+const SHARED_LINE = 15;
 
 type Condition = 'service_healthy' | 'service_started' | 'service_completed_successfully' | 'listed';
 
@@ -67,6 +80,33 @@ function conditionOf(service: Service, dependency: string): Condition {
   if (Array.isArray(dependsOn)) return 'listed';
   const entry = (dependsOn as Record<string, { condition?: Condition }>)[dependency];
   return entry?.condition ?? 'listed';
+}
+
+/** An image too long for a shared box breaks before its tag, or after its namespace. */
+function imageLines(image: string): string[] {
+  if (image.length <= SHARED_LINE) return [image];
+  const tag = image.lastIndexOf(':');
+  if (tag > 0) return [image.slice(0, tag), image.slice(tag)];
+  const slash = image.lastIndexOf('/');
+  return slash > 0 ? [image.slice(0, slash + 1), image.slice(slash + 1)] : [image];
+}
+
+const SHARED_HEIGHT = 8 + LINE.label + 2 * LINE.sub;
+
+/** Each server and the shared services its containers wait on, with the app's condition first. */
+function uses(config: PlaygroundConfig, compose: ComposeFile, shared: ReadonlySet<string>) {
+  return Object.values(config.instances).map((instance) => {
+    const id = instance.instance_id;
+    const own = [id, `${id}-install`, ...(COMPANIONS[instance.software] ?? []).map((suffix) => `${id}-${suffix}`)]
+      .filter((name) => compose.services[name]);
+    const found = new Map<string, Condition>();
+    own.forEach((name) => {
+      dependenciesOf(compose.services[name]).filter((dependency) => shared.has(dependency)).forEach((dependency) => {
+        if (!found.has(dependency)) found.set(dependency, conditionOf(compose.services[name], dependency));
+      });
+    });
+    return { id, services: found };
+  });
 }
 
 export type GraphOptions = {
@@ -81,7 +121,7 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const isFresh = (id: string) => fresh.has(id);
   const nodes: string[] = [];
   const wires: string[] = [];
-  const buses: string[] = [];
+  const links: string[] = [];
   const labels: string[] = [];
   const marker = (name: string) => `fediverse-${name}-${layout}`;
 
@@ -89,13 +129,11 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const columnX = (index: number) => (m.w - instances.length * m.column) / 2 + m.column / 2 + index * m.column;
   const webX = m.w / 2;
 
-  /** The lines in a box: its names, an installer's split at its last hyphen, then the small print, one part a line. */
-  const linesOf = (kind: Kind, names: string[], sub: string) => {
-    const split = kind === 'install' && names[0].lastIndexOf('-') > 0
-      ? [names[0].slice(0, names[0].lastIndexOf('-')), names[0].slice(names[0].lastIndexOf('-'))]
-      : names;
-    const subs = sub.split(' · ');
-    return [...split.map((text) => ({ text, kind: 'label' as const })), ...subs.map((text) => ({ text, kind: 'sub' as const }))];
+  /** The lines in a box: its name, an installer's split at its last hyphen, then the small print, one part a line. */
+  const linesOf = (kind: Kind, name: string, subs: string[]) => {
+    const cut = name.lastIndexOf('-');
+    const names = kind === 'install' && cut > 0 ? [name.slice(0, cut), name.slice(cut)] : [name];
+    return [...names.map((text) => ({ text, kind: 'label' as const })), ...subs.map((text) => ({ text, kind: 'sub' as const }))];
   };
 
   /** A box's height from the lines it carries when emitted, so a ghost keeps its size. */
@@ -106,15 +144,13 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     kind: Kind,
     x: number,
     y: number,
-    label: string | string[],
-    sub: string,
-    { emitted, fresh: isNew, also = [] }: { emitted: boolean; fresh: boolean; also?: string[] },
+    subs: string[],
+    { emitted, fresh: isNew, also = [], height: fixed }: { emitted: boolean; fresh: boolean; also?: string[]; height?: number },
   ) => {
-    const w = kind === 'web' ? m.web : m.box;
-    const names = Array.isArray(label) ? label : [label];
+    const w = { web: m.web, shared: m.shared, app: m.box, install: m.box }[kind];
     const classes = ['node', kind, emitted ? 'emitted' : 'ghost', isNew && emitted ? 'fresh' : ''].filter(Boolean).join(' ');
-    const height = heightOf(linesOf(kind, names, sub));
-    const lines = linesOf(kind, names, emitted ? sub : 'not emitted');
+    const height = fixed ?? heightOf(linesOf(kind, id, subs));
+    const lines = linesOf(kind, id, emitted ? subs : ['not emitted']);
     let baseline = y + 12.5;
     const text = lines.map((line) => {
       const markup = `<text class="${line.kind}" x="${x}" y="${baseline}">${escape(line.text)}</text>`;
@@ -128,121 +164,115 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
       + '</g>';
   };
 
-  /** A line that paints a gap into whatever it crosses, then itself. `halo` trims the gap short
-      of the far end, so the wire it lands on stays whole at the junction. */
-  const wire = (d: string, condition: Condition, { halo, arrow }: { halo?: string; arrow?: boolean } = {}) => {
-    const under = halo ? `<path class="halo" d="${halo}" />` : '';
-    const head = arrow ? ` marker-end="url(#${marker(condition === 'service_completed_successfully' ? 'gate' : 'arrow')})"` : '';
-    return `${under}<path class="edge ${condition}" d="${d}"${head} />`;
+  const wire = (d: string, condition: Condition) => {
+    const head = marker(condition === 'service_completed_successfully' ? 'gate' : 'arrow');
+    return `<path class="edge ${condition}" d="${d}" marker-end="url(#${head})" />`;
   };
 
   const appX = new Map(instances.map((instance, index) => [instance.instance_id, columnX(index)]));
-  const installX = new Map(instances.map((instance, index) => [`${instance.instance_id}-install`, columnX(index)]));
-  // The data services sit centred under the columns, one column apart.
-  const dataSlot = new Map(DATA.map((data, index) => [data.id as string, { ...data, lane: m.lane[data.id], x: webX + (index - 1) * m.column }]));
 
-  /** Each instance's services beside its app, and the height of its app's box. */
   const companionsOf = (instance: (typeof instances)[number]) =>
     (COMPANIONS[instance.software] ?? []).map((suffix) => `${instance.instance_id}-${suffix}`);
-  const appSub = (instance: (typeof instances)[number]) => {
+  const appSubs = (instance: (typeof instances)[number]) => {
     const companions = companionsOf(instance).length;
-    return [instance.software, instance.hostname, ...(companions ? [`${companions + 1} processes`] : [])].join(' · ');
+    return [instance.software, instance.hostname, ...(companions ? [`${companions + 1} processes`] : [])];
   };
-  const appNames = (instance: (typeof instances)[number]) => [instance.instance_id];
-  const appHeight = new Map(instances.map((instance) => [instance.instance_id, heightOf(linesOf('app', appNames(instance), appSub(instance)))]));
-  const webHeight = heightOf(linesOf('web', ['nginx'], 'nginx:alpine · 8080 8443'));
-  const installHeight = heightOf(linesOf('install', ['x-install'], 'one-shot · restart: no'));
+  const appHeight = new Map(instances.map((instance) => [instance.instance_id, heightOf(linesOf('app', instance.instance_id, appSubs(instance)))]));
+  const webSubs = ['nginx:alpine', '8080 8443'];
+  const webHeight = heightOf(linesOf('web', 'nginx', webSubs));
+  const installSubs = ['one-shot', 'restart: no'];
+  const installBottom = ROW.install + heightOf(linesOf('install', 'x-install', installSubs));
+
+  // The shared services: the first row spread evenly, a lower row centred in the first's gaps.
+  const [first, ...lower] = m.sharedRows;
+  const gap = (m.w - first.length * m.shared) / (first.length + 1);
+  const firstX = first.map((_, index) => gap + m.shared / 2 + index * (m.shared + gap));
+  const slots = new Map<string, { x: number; y: number; row: number }>();
+  first.forEach((id, index) => slots.set(id, { x: firstX[index], y: m.data, row: 0 }));
+  lower.forEach((row, rowIndex) => row.forEach((id, index) => slots.set(id, {
+    x: (firstX[index] + firstX[index + 1]) / 2,
+    y: m.data + (rowIndex + 1) * (SHARED_HEIGHT + ROW_GAP),
+    row: rowIndex + 1,
+  })));
+  const height = m.data + m.sharedRows.length * SHARED_HEIGHT + (m.sharedRows.length - 1) * ROW_GAP + 4;
 
   // nginx fans out to every app it waits on.
   const web = services.nginx;
-  const webBottom = m.row.web + webHeight;
+  const webBottom = ROW.web + webHeight;
   dependenciesOf(web ?? {}).forEach((dependency) => {
     const x = appX.get(dependency);
     if (x === undefined) return;
-    const mid = (webBottom + m.row.app) / 2;
-    wires.push(wire(`M${webX} ${webBottom} C${webX} ${mid} ${x} ${mid} ${x} ${m.row.app - 2}`, 'listed', { arrow: true }));
+    const mid = (webBottom + ROW.app) / 2;
+    wires.push(wire(`M${webX} ${webBottom} C${webX} ${mid} ${x} ${mid} ${x} ${ROW.app - 2}`, 'listed'));
   });
 
-  // Every bus, keyed by the data service it feeds: the x of each wire that drops onto it.
-  const drops = new Map<string, { x: number; condition: Condition }[]>();
-  const addDrop = (dependency: string, x: number, condition: Condition) => {
-    drops.set(dependency, [...(drops.get(dependency) ?? []), { x, condition }]);
-  };
-
-  const installBottom = m.row.install + installHeight;
-
-  Object.entries(services).forEach(([name, service]) => {
-    const app = appX.get(name);
-    const installer = installX.get(name);
-    if (app === undefined && installer === undefined) return;
-
-    const dataDependencies = dependenciesOf(service).filter((dependency) => dataSlot.has(dependency));
-    dependenciesOf(service).forEach((dependency) => {
-      const condition = conditionOf(service, dependency);
-      const slot = dataSlot.get(dependency);
-
-      if (!slot) {
-        // The installer gate: straight down the column.
-        const x = installX.get(dependency);
-        if (x === undefined || app === undefined) return;
-        const appBottom = m.row.app + appHeight.get(name)!;
-        wires.push(wire(`M${x} ${appBottom} V${m.row.install - 2}`, condition, { arrow: true }));
-        labels.push(`<text class="gate" x="${x + 4}" y="${(appBottom + m.row.install) / 2 + 3}">completed</text>`);
-        return;
-      }
-
-      if (installer !== undefined) {
-        const end = slot.lane;
-        wires.push(wire(`M${installer} ${installBottom} V${end}`, condition, {
-          halo: `M${installer} ${installBottom + 2} V${end - 4}`,
-        }));
-        addDrop(dependency, installer, condition);
-        return;
-      }
-
-      // An app leaves by its left gutter for its first data service and its right for the next.
-      const side = dataDependencies.indexOf(dependency) === 0 ? -1 : 1;
-      const edge = app! + side * (m.box / 2);
-      const gutter = app! + side * m.gutter;
-      // Half way down a one-name app box, the same height on every column.
-      const y = m.row.app + 20;
-      wires.push(wire(`M${edge} ${y} H${gutter - side * 3} Q${gutter} ${y} ${gutter} ${y + 3} V${slot.lane}`, condition, {
-        halo: `M${gutter} ${y + 6} V${slot.lane - 4}`,
-      }));
-      addDrop(dependency, gutter, condition);
-    });
+  // Each app waits on its installer: straight down the column.
+  instances.forEach((instance) => {
+    const id = instance.instance_id;
+    const app = services[id];
+    const installer = `${id}-install`;
+    if (!app || !dependenciesOf(app).includes(installer)) return;
+    const x = appX.get(id)!;
+    const appBottom = ROW.app + appHeight.get(id)!;
+    wires.push(wire(`M${x} ${appBottom} V${ROW.install - 2}`, conditionOf(app, installer)));
+    labels.push(`<text class="gate" x="${x + 4}" y="${(appBottom + ROW.install) / 2 + 3}">completed</text>`);
   });
 
-  DATA.forEach((data) => {
-    const slot = dataSlot.get(data.id)!;
-    const onBus = drops.get(data.id) ?? [];
-    const emitted = Boolean(services[data.id]);
-    if (emitted && onBus.length) {
-      const xs = [...onBus.map((drop) => drop.x), slot.x];
-      const condition = onBus[0].condition;
-      buses.push(wire(`M${Math.min(...xs)} ${slot.lane} H${Math.max(...xs)}`, condition));
-      buses.push(wire(`M${slot.x} ${slot.lane} V${m.row.data - 2}`, condition, { arrow: true }));
-      onBus.forEach(({ x }) => buses.push(`<circle class="junction" cx="${x}" cy="${slot.lane}" r="2" />`));
-    }
-    const sub = emitted ? `${data.image} · ×1` : '';
-    nodes.push(box(data.id, 'shared', slot.x, m.row.data, data.id, sub, { emitted, fresh: isFresh(data.id) }));
+  // One line from each server to each shared service it uses. Where a server's lines leave its
+  // column and where a service's lines land are both spread in the order of the other end.
+  const emittedShared = new Set([...slots.keys()].filter((id) => services[id]));
+  const pairs = uses(config, compose, emittedShared).flatMap(({ id, services: used }) =>
+    [...used].map(([shared, condition]) => ({ from: id, to: shared, condition })));
+  const spread = (count: number, index: number) => (index - (count - 1) / 2) * SPREAD;
+  const starts = new Map<string, number>();
+  const ends = new Map<string, number>();
+  const byTarget = (a: { to: string }, b: { to: string }) => slots.get(a.to)!.x - slots.get(b.to)!.x;
+  const byColumn = (a: { from: string }, b: { from: string }) => appX.get(a.from)! - appX.get(b.from)!;
+  instances.forEach(({ instance_id: id }) => {
+    const own = pairs.filter((pair) => pair.from === id).sort(byTarget);
+    own.forEach((pair, index) => starts.set(`${pair.from} ${pair.to}`, appX.get(id)! + spread(own.length, index)));
+  });
+  emittedShared.forEach((shared) => {
+    const into = pairs.filter((pair) => pair.to === shared).sort(byColumn);
+    into.forEach((pair, index) => ends.set(`${pair.from} ${pair.to}`, slots.get(shared)!.x + spread(into.length, index)));
   });
 
-  nodes.push(box('nginx', 'web', webX, m.row.web, 'nginx', 'nginx:alpine · 8080 8443', {
-    emitted: Boolean(web),
-    fresh: isFresh('nginx'),
-  }));
+  const bend = (m.data + installBottom) / 2;
+  pairs.sort(byColumn).forEach(({ from, to, condition }) => {
+    const key = `${from} ${to}`;
+    const sx = starts.get(key)!;
+    const ex = ends.get(key)!;
+    const slot = slots.get(to)!;
+    // Above the first row the curve only descends, so it meets that row at its own end and
+    // nowhere else; a lower row's line then drops straight through the gap.
+    const curve = `M${sx} ${installBottom} C${sx} ${bend} ${ex} ${bend} ${ex} ${slot.row ? m.data : m.data - 2}`;
+    const d = slot.row ? `${curve} V${slot.y - 2}` : curve;
+    const head = marker('arrow');
+    links.push(`<path class="halo" d="${d}" />`
+      + `<path class="edge link ${condition}" data-from="${escape(from)}" data-to="${escape(to)}" d="${d}" marker-end="url(#${head})" />`);
+  });
+
+  slots.forEach((slot, id) => {
+    const emitted = Boolean(services[id]);
+    nodes.push(box(id, 'shared', slot.x, slot.y, imageLines(IMAGES[id as SharedId]), {
+      emitted,
+      fresh: isFresh(id),
+      height: SHARED_HEIGHT,
+    }));
+  });
+
+  nodes.push(box('nginx', 'web', webX, ROW.web, webSubs, { emitted: Boolean(web), fresh: isFresh('nginx') }));
 
   instances.forEach((instance) => {
     const id = instance.instance_id;
     const x = appX.get(id)!;
     const install = `${id}-install`;
-    nodes.push(box(id, 'app', x, m.row.app, appNames(instance), appSub(instance), {
+    nodes.push(box(id, 'app', x, ROW.app, appSubs(instance), {
       emitted: Boolean(services[id]),
       fresh: isFresh(id),
       also: companionsOf(instance),
     }));
-    nodes.push(box(install, 'install', x, m.row.install, install, 'one-shot · restart: no', {
+    nodes.push(box(install, 'install', x, ROW.install, installSubs, {
       emitted: Boolean(services[install]),
       fresh: isFresh(install),
     }));
@@ -251,11 +281,11 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const arrow = (name: string) =>
     `<marker id="${marker(name)}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 8 4 0 8z" /></marker>`;
 
-  return `<svg class="service-graph ${layout}" viewBox="0 0 ${m.w} ${m.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="fediverse-graph-title-${layout}">`
+  return `<svg class="service-graph ${layout}" viewBox="0 0 ${m.w} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="fediverse-graph-title-${layout}">`
     + `<title id="fediverse-graph-title-${layout}">${escape(describe(compose))}</title>`
     + `<defs>${arrow('arrow')}${arrow('gate')}</defs>`
-    + `<g class="buses">${buses.join('')}</g>`
     + `<g class="wires">${wires.join('')}</g>`
+    + `<g class="links">${links.join('')}</g>`
     + `<g class="gates">${labels.join('')}</g>`
     + `<g class="nodes">${nodes.join('')}</g>`
     + '</svg>';
