@@ -104,11 +104,11 @@ function split(row: Row) {
   min-height: 0;
   /* The title block claims the bottom-right corner, so the report stops clear of it. */
   padding-bottom: calc($sheet-margin + var(--reach-block, 0px));
-  font-size: clamp(0.5rem, 0.0118 * var(--sheet-inline), 0.8125rem);
+  font-size: clamp(0.5rem, 0.0118 * var(--sheet-inline), 0.875rem);
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
-    font-size: clamp(0.5rem, 0.021 * var(--sheet-inline), 0.8125rem);
+    font-size: clamp(0.5rem, 0.021 * var(--sheet-inline), 0.875rem);
   }
 }
 
@@ -125,7 +125,7 @@ function split(row: Row) {
 
   width: 100%;
   box-sizing: border-box;
-  font-size: max(0.5rem, 0.9375em);
+  font-size: max(0.5rem, 1em);
 
   ol {
     grid-template-columns: repeat(3, minmax(0, 1fr));
