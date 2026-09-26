@@ -15,19 +15,33 @@ test('walkthrough presses pulse the drawn cursor and flare; the visitor\'s own d
   await expect(overlay).toBeVisible({ timeout: 15_000 });
 
   // The first press: the cursor gains data-pressed and a flare is drawn where the press was.
+  // Both are read in the page the moment the press lands. Other demos on the page press
+  // things too and their flares share one layer, so a later read can find another demo's
+  // flare, or this cursor already on its way to the next control.
   const pressed = stack.locator('[data-demo-cursor][data-pressed]');
-  await expect(pressed).toHaveCount(1, { timeout: 30_000 });
-  const cursor = await pressed.boundingBox();
   const flares = page.locator('.demo-cursor-flare');
-  await expect(flares.first()).toBeAttached();
-  const at = await flares.first().evaluate((el) => ({
-    x: parseFloat((el as HTMLElement).style.left),
-    y: parseFloat((el as HTMLElement).style.top),
+  const { cursor, at } = await stack.evaluate((el) => new Promise<{
+    cursor: { x: number; y: number; width: number; height: number };
+    at: { x: number; y: number };
+  }>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error('the walkthrough never pressed')), 30_000);
+    const observer = new MutationObserver(() => {
+      const cursor = el.querySelector<HTMLElement>('[data-demo-cursor][data-pressed]');
+      if (!cursor) return;
+      const flare = [...document.querySelectorAll<HTMLElement>('.demo-cursor-flare--down')].at(-1)!;
+      const box = cursor.getBoundingClientRect();
+      observer.disconnect();
+      window.clearTimeout(timer);
+      resolve({
+        cursor: { x: box.x, y: box.y, width: box.width, height: box.height },
+        at: { x: parseFloat(flare.style.left), y: parseFloat(flare.style.top) },
+      });
+    });
+    observer.observe(el, { subtree: true, attributes: true, attributeFilter: ['data-pressed'] });
   }));
-  expect(cursor).not.toBeNull();
   // The hot spot is the arrow tip near the box's top-left corner.
-  expect(Math.abs(at.x - cursor!.x)).toBeLessThan(cursor!.width);
-  expect(Math.abs(at.y - cursor!.y)).toBeLessThan(cursor!.height);
+  expect(Math.abs(at.x - cursor.x)).toBeLessThan(cursor.width);
+  expect(Math.abs(at.y - cursor.y)).toBeLessThan(cursor.height);
 
   // The pulse ends with the release and the flares clean up after themselves.
   await expect(pressed).toHaveCount(0, { timeout: 2_000 });
