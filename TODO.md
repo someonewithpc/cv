@@ -67,6 +67,7 @@
   - [x] Projection symbol sits beside the title and under the fold; own corner cell or nothing (#46)
   - [x] Title block logos sit left of their cell on a phone sheet (#136)
   - [x] Long title block titles end in an ellipsis on a phone sheet (#147)
+  - [x] Title block rows split and the dog-ear covers the block at mid widths (#154)
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
