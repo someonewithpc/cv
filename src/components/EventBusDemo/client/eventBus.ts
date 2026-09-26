@@ -1,7 +1,7 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { watchPageActive } from '@/client/frontPage';
+import { demoGate, type DemoGate } from '@/client/frontPage';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
@@ -58,11 +58,9 @@ type Bus = {
   run: number;
   /** The dispatch in flight, which the walkthrough waits on before its next step. */
   running: Promise<void>;
+  /** Off screen, under another page or in a hidden tab, every wait holds where it is. */
+  gate: DemoGate;
 };
-
-function wait(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
 
 /** What a listener answered, on its chip and in the tag under its port. A pending tag keeps
     its old word, hidden, so the row does not change height while the token is out. */
@@ -224,7 +222,7 @@ function runDispatch(bus: Bus): Promise<void> {
     bus.token.classList.remove('stopped');
     bus.token.hidden = false;
     placeToken(bus, nodeAt(bus, bus.chain.querySelector<HTMLElement>('.start')!));
-    await wait(200);
+    await bus.gate.wait(200);
 
     let stopped = false;
     for (const { item, index } of chain) {
@@ -237,7 +235,7 @@ function runDispatch(bus: Bus): Promise<void> {
       await hop(bus, nodeAt(bus, item), HOP_MS);
       if (run !== bus.run) return;
       item.classList.add('hearing');
-      await wait(HEAR_MS);
+      await bus.gate.wait(HEAR_MS);
       if (run !== bus.run) return;
       item.classList.remove('hearing');
       const result = outcome.results[index] ?? 'skipped';
@@ -249,7 +247,7 @@ function runDispatch(bus: Bus): Promise<void> {
         chain.filter((entry) => entry.index > index).forEach((entry) => {
           answer(entry.item, 'skipped');
         });
-        await wait(HEAR_MS);
+        await bus.gate.wait(HEAR_MS);
       }
     }
     if (run !== bus.run) return;
@@ -351,7 +349,7 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     cursor.classList.remove('fading');
     await hopTo;
     if (!live(mine)) return false;
-    await wait(220);
+    await bus.gate.wait(220);
     if (!live(mine)) return false;
     const box = el.getBoundingClientRect();
     await demoPress(el, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
@@ -359,7 +357,7 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   };
 
   const hold = async (mine: number, ms: number) => {
-    await wait(ms);
+    await bus.gate.wait(ms);
     return live(mine);
   };
 
@@ -369,10 +367,22 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   const videoEncoderSwitch = () => loadSwitch(bus.items.get('VideoEncoder')!);
   const stageButton = (stage: Stage) => bus.stageButtons.find((button) => button.dataset.stage === stage)!;
 
+  /** The walkthrough run still under way, held or not. */
+  let playing = 0;
+
   async function play() {
     const mine = ++token;
+    playing = mine;
+    try {
+      await walk(mine);
+    } finally {
+      if (playing === mine) playing = 0;
+    }
+  }
+
+  async function walk(mine: number) {
     reportAutoplayState(bus.root, 'playing');
-    await wait(600);
+    await bus.gate.wait(600);
     while (live(mine)) {
       restore(bus);
       await runDispatch(bus);
@@ -499,13 +509,11 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   });
 
   return {
+    // Leaving the page only holds the walkthrough: its waits stop the clock, and it carries on
+    // from the same step when the page is back.
     setActive(value) {
       active = value;
-      if (!value) {
-        stop();
-        return;
-      }
-      start();
+      if (value && !(playing && live(playing))) start();
     },
     setNoteOpen(value) {
       noteOpen = value;
@@ -550,6 +558,7 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
     })),
     run: 0,
     running: Promise.resolve(),
+    gate: demoGate(host.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? host),
   };
 
   items.forEach((item, module) => {
@@ -571,7 +580,7 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
   root.dataset.ready = 'true';
   const player = createPlayer(bus, host);
   const page = host.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? host;
-  watchPageActive(page, (active) => player.setActive(active));
+  bus.gate.onChange((active) => player.setActive(active));
   watchDrawingNote(page, (open) => player.setNoteOpen(open));
   if (reducedMotion.matches) {
     reportAutoplayState(root, 'off');
