@@ -31,10 +31,11 @@ const { number, label } = Astro.props;
    1.5rem still clear of the mat (Layout.astro). Narrower than that the margin is a gutter, so
    there is no folio at all.
 
-   The lane hangs off the paper's near edge and not the window's: the cutting mat is only as
-   wide as what lies on it and is centred from there, so once the lane is at its widest the
-   desk margin keeps opening and a numeral pinned to the window would be left behind in the
-   corner. Hung off the mat, it stays beside the paper it numbers at every width. */
+   The rail is the desk between the window's left edge and the paper it numbers, and the
+   numeral and its label stand centred in it. A sheet's paper starts at the content column; a
+   full-width section's paper is the cutting mat, which starts at --desk-edge. The rail ends
+   where the paper starts, so the numeral stays in the middle of the desk left beside it at
+   every width. */
 .folio-rail {
   display: none;
 
@@ -44,9 +45,13 @@ const { number, label } = Astro.props;
     grid-row: var(--folio-row);
     grid-column: full-width-start / content-start;
     inset-block: 0;
-    inset-inline-start: max(0px, calc(var(--desk-edge) - var(--folio-lane)));
-    inline-size: var(--folio-lane);
+    inset-inline: 0;
     color: color-mix(in oklch, var(--ink), transparent 45%);
+
+    &:has(+ .full-width) {
+      inset-inline-end: auto;
+      inline-size: var(--desk-edge);
+    }
   }
 }
 
@@ -54,10 +59,9 @@ const { number, label } = Astro.props;
   position: sticky;
   top: 1.5rem;
   display: grid;
-  justify-items: end;
+  justify-items: center;
   gap: 0.5rem;
-  padding-inline-end: var(--folio-gap);
-  text-align: right;
+  text-align: center;
   line-height: 1;
 }
 

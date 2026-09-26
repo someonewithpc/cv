@@ -543,6 +543,20 @@ const readFolios = (page: import('@playwright/test').Page) =>
         shown: getComputedStyle(rail).display !== 'none',
         box: box(rail.getBoundingClientRect()),
         numeral: box(rail.querySelector('.folio-number')!.getBoundingClientRect()),
+        // The numeral and its label together, which is all of the folio that draws.
+        ink: [rail.querySelector('.folio-number')!, rail.querySelector('.folio-label')!]
+          .map((el) => el.getBoundingClientRect())
+          .reduce((a, b) => ({
+            left: Math.min(a.left, b.left),
+            right: Math.max(a.right, b.right),
+            top: Math.min(a.top, b.top),
+            bottom: Math.max(a.bottom, b.bottom),
+          })),
+        // Where its own paper starts: the sheet, or the cutting mat for the full-width Demos.
+        paperLeft: (() => {
+          const section = rail.nextElementSibling!;
+          return (section.querySelector(':scope > .cutting-mat') ?? section).getBoundingClientRect().left;
+        })(),
       })),
       headings: sheets.map(({ heading }) =>
         [...document.querySelectorAll(heading)].map(text).join(' ')),
@@ -586,26 +600,26 @@ test('every folio stands in the desk margin beside its own sheet', async ({ page
     // Beside its own sheet, top to bottom, and never over anything written on the page.
     expect(folio.box.top, `${folio.number} top`).toBeCloseTo(sheet.top, 0);
     expect(folio.box.bottom, `${folio.number} bottom`).toBeCloseTo(sheet.bottom, 0);
-    for (const band of paper) {
-      expect(folio.box.right, `${folio.number} clear of ${band.name}`).toBeLessThanOrEqual(band.left);
+    for (const band of paper.filter((band) => band.top < folio.ink.bottom && band.bottom > folio.ink.top)) {
+      expect(folio.ink.right, `${folio.number} clear of ${band.name}`).toBeLessThanOrEqual(band.left);
     }
   }
 });
 
-test('a folio keeps to the paper once the mat stops growing', async ({ page }) => {
-  // Past the mat's 100rem cap the desk's margin opens faster than the folio's lane, so a
-  // lane measured from the window is left behind in the corner.
+test('a folio stays centred beside its paper once the mat stops growing', async ({ page }) => {
+  // Past the mat's 100rem cap the desk's margin keeps opening while the numeral stays at
+  // 7.5rem, so a numeral pinned to either edge would drift away from the middle.
   await page.setViewportSize({ width: 2560, height: 1440 });
   await page.goto('/');
 
-  const { folios, paper } = await readFolios(page);
+  const { folios } = await readFolios(page);
   expect(folios).toHaveLength(SHEETS.length);
-  const nearest = Math.min(...paper.map((band) => band.left));
-  expect(nearest).toBeGreaterThan(0);
 
   for (const folio of folios) {
-    expect(folio.box.left, `${folio.number} follows the paper in`).toBeGreaterThan(0);
-    expect(nearest - folio.box.right, `${folio.number} lane ends at the paper`).toBeLessThanOrEqual(1);
+    expect(folio.numeral.left, `${folio.number} follows the paper in`).toBeGreaterThan(0);
+    const left = folio.numeral.left;
+    const right = folio.paperLeft - folio.numeral.right;
+    expect(Math.abs(left - right), `${folio.number} centred: ${left} left, ${right} right`).toBeLessThanOrEqual(1);
   }
 });
 
@@ -669,7 +683,7 @@ for (const width of [FOLIO_FROM, 1440, 1920]) {
         .filter((el) => getComputedStyle(el).display !== 'none')
         .map((el) => el.getBoundingClientRect());
       const details = [...mat.children].map((el) => el.getBoundingClientRect());
-      const folio = document.querySelector<HTMLElement>('.folio-rail')!;
+      const folio = document.querySelector<HTMLElement>('.folio-rail:has(+ #demos)')!;
       return {
         mat: { left: box.left, right: box.right },
         inside,
@@ -696,7 +710,7 @@ for (const width of [FOLIO_FROM, 1440, 1920]) {
       expect(clear, `mat clear ${side}`).toBeGreaterThanOrEqual(11.5);
       expect(clear, `mat clear ${side}`).toBeLessThanOrEqual(12.5);
     }
-    // The mat and the folio share the desk margin: the folio's lane ends at the mat's edge.
+    // The mat and the Demos folio share the desk margin: the folio's rail ends at the mat's edge.
     expect(room.mat.left).toBeGreaterThanOrEqual(room.folioRight - 0.5);
     expect(room.mat.left - room.folioRight).toBeLessThanOrEqual(1);
   });
