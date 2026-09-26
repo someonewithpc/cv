@@ -117,4 +117,4 @@
 - [x] Work History (#146)
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
 - [ ] N5 Japanese glosses across the page (#148)
-- [ ] Show the demo title card's text on narrower desks (#151)
+- [x] Show the demo title card's text on narrower desks (#151)
