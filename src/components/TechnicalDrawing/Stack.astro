@@ -232,7 +232,11 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 // has come up past the quarter mark of the viewport, so the words are written out in front of
 // the reader instead of being found already written. The mark stays, so scrolling back does not
 // start the line over. And a turned page has nothing left to peel.
-$peel-shown: '.technical-drawing-frame[data-hint-seen]:not(:has([data-paper-turned])) .flip-hint--fwd';
+//
+// Both rules read the stack's marks through the sibling combinator rather than :has() on the
+// frame: with :has(), every mark the stack took or dropped during a turn restyled the whole
+// document, about 12,000 elements, and a turn does that four times.
+$peel-shown: '.technical-drawing-frame[data-hint-seen] > :global(article.technical-drawing-stack:not([data-paper-turned])) ~ .flip-hints .flip-hint--fwd';
 
 #{$peel-shown} {
   opacity: 1;
@@ -243,7 +247,7 @@ $peel-shown: '.technical-drawing-frame[data-hint-seen]:not(:has([data-paper-turn
 // And once the reader has found the way back it stays down: the stack keeps its turned mark
 // after the return, so the return has to be part of the show rule, or the settle at the end of
 // the way back would bring the callout up again.
-$way-back-shown: '.technical-drawing-frame:has([data-paper-turned][data-paper-settled]:not([data-paper-returned])) .flip-hint--back';
+$way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][data-paper-settled]:not([data-paper-returned])) ~ .flip-hints .flip-hint--back';
 
 #{$way-back-shown} {
   opacity: 1;
