@@ -1,5 +1,6 @@
 import { onAutoplayCommand, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
+import type { DemoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
 
 import { initiallyEnabled } from '../config';
@@ -51,7 +52,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * hands back as watchHandover decides. Pause holds the playground past the quiet spell,
  * play hands it back, and reset puts the opening config back and starts over.
  */
-export function createPlayer(host: HTMLElement, restore: () => void) {
+export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoGate) {
   const cursor = document.createElement('span');
   cursor.className = 'demo-cursor';
   cursor.setAttribute('aria-hidden', 'true');
@@ -92,8 +93,7 @@ export function createPlayer(host: HTMLElement, restore: () => void) {
     return { x: rect.left + rect.width / 2 - hostRect.left, y: rect.top + rect.height / 2 - hostRect.top };
   }
 
-  const wait = (ms: number, run: number) =>
-    new Promise<void>((resolve) => setTimeout(resolve, run === token ? ms : 0));
+  const wait = (ms: number, run: number) => (run === token ? gate.wait(ms) : Promise.resolve());
 
   function click(el: HTMLElement) {
     cursor.classList.add('demo-cursor--clicking');
@@ -101,8 +101,20 @@ export function createPlayer(host: HTMLElement, restore: () => void) {
     el.click();
   }
 
+  /** The walkthrough run still under way, held or not. */
+  let playing = 0;
+
   async function play() {
     const run = ++token;
+    playing = run;
+    try {
+      await walk(run);
+    } finally {
+      if (playing === run) playing = 0;
+    }
+  }
+
+  async function walk(run: number) {
     setState('playing');
     restore();
     for (let index = 0; run === token; index += 1) {
@@ -175,12 +187,9 @@ export function createPlayer(host: HTMLElement, restore: () => void) {
   return {
     setActive(value: boolean) {
       active = value;
-      if (!value) {
-        // Off screen or under another page: stop where it stands, and pick up from the
-        // opening config when it is back, as the visitor never saw the rest.
-        if (host.dataset.autoplay === 'playing') stop();
-        return;
-      }
+      // Off screen, under another page or in a hidden tab, the walkthrough's waits hold it
+      // where it stands, and it carries on from there when the page is back.
+      if (!value || (playing && playing === token)) return;
       if (canPlay() && host.dataset.autoplay === 'playing') void play();
     },
     setNoteOpen(value: boolean) {
