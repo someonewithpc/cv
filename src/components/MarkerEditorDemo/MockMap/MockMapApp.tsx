@@ -393,7 +393,8 @@ function MockMapOverlayInner() {
           pushToastRef.current(autoplayStartedToast());
         }
       } else {
-        const wasPlaying = !userControlRef.current && autoplayStartedRef.current;
+        // No "paused" toast: nobody is looking at the page that just went away, and its
+        // dismiss timer would keep the map busy off screen.
         controller.pause();
         clearResumeTimer();
         clearTargetRetry();
@@ -402,9 +403,6 @@ function MockMapOverlayInner() {
         setCursorClicking(false);
         setCursorDragging(false);
         setCursorPhase('gone');
-        if (wasPlaying) {
-          pushToastRef.current(autoplayPausedToast());
-        }
       }
     });
 
