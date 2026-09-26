@@ -177,3 +177,40 @@ for (const [width, place] of [[390, 'under'], [560, 'level'], [768, 'beside']] a
     expect(Math.abs(held - pad), `held the inset below the hint (${held} against ${pad})`).toBeLessThanOrEqual(1.5);
   });
 }
+
+// The slip's lead is worked out from the width alone, so a resize settles at once and stays put:
+// read twice a few frames apart, every slip is the same height at every step of the way, and the
+// same on the way back down as on the way up.
+test('every slip holds its height while the window is resized', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 400, height: 900 });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+
+  const widths = Array.from({ length: 51 }, (_, i) => 400 + i * 10);
+  const up = new Map<number, number[]>();
+  const moved: string[] = [];
+  for (const width of [...widths, ...widths.slice(0, -1).reverse()]) {
+    await page.setViewportSize({ width, height: 900 });
+    const [first, second] = await page.evaluate(
+      () =>
+        new Promise<[number[], number[]]>((done) => {
+          const heights = () => [...document.querySelectorAll('#demos .callout[data-card] .callout-card')].map((card) => card.getBoundingClientRect().height);
+          const frames = (n: number, then: () => void): unknown => (n ? requestAnimationFrame(() => frames(n - 1, then)) : then());
+          frames(2, () => {
+            const first = heights();
+            frames(4, () => done([first, heights()]));
+          });
+        }),
+    );
+    first.forEach((height, index) => {
+      if (Math.abs(height - second[index]) > 0.1) moved.push(`${width}px slip ${index}: ${height} then ${second[index]}`);
+    });
+    const before = up.get(width);
+    if (!before) up.set(width, second);
+    else second.forEach((height, index) => {
+      if (Math.abs(height - before[index]) > 0.1) moved.push(`${width}px slip ${index}: ${before[index]} up, ${height} down`);
+    });
+  }
+  expect(moved).toEqual([]);
+});
