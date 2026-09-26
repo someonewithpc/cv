@@ -58,18 +58,26 @@ const hasCard = Astro.slots.has('card');
     const SPLAY = (1.5 * Math.PI) / 180;
     const stacked = window.matchMedia('(width < 105rem)');
 
-    const textSpan = (cell: Element) => {
+    const textRects = (el: Element) => {
       const range = document.createRange();
-      const rects = [...cell.querySelectorAll('dt, dd')].flatMap((el) => {
-        range.selectNodeContents(el);
-        return [...range.getClientRects()].filter((r) => r.width > 0);
-      });
+      range.selectNodeContents(el);
+      return [...range.getClientRects()].filter((r) => r.width > 0);
+    };
+
+    const textSpan = (cell: Element) => {
+      const rects = [...cell.querySelectorAll('dt, dd')].flatMap(textRects);
       return { left: Math.min(...rects.map((r) => r.left)), right: Math.max(...rects.map((r) => r.right)) };
     };
 
-    // Lifts the slip's entries as high as the sheets and the peel hint over them allow, each kept
-    // the slip's own inset below whatever lies over its text, so the gap above the first entry
-    // matches the slip's sides and foot.
+    // Text beside the peel hint keeps this many rem from its words, or the two read as one line:
+    // "TITLE five more sheets".
+    const BESIDE = 3;
+
+    // Lifts the slip's entries as high as the sheets and the peel hint over them allow. Each entry
+    // keeps the slip's own inset below the fan over its text, so the gap above the first entry
+    // matches the slip's sides and foot. Each piece of an entry, its label, each line of its text and
+    // the rule under it, keeps the inset below the hint only where the hint is over it, so a short
+    // title rises beside the hint and what runs under the hint follows below it.
     function lift(card: HTMLElement) {
       if (!stacked.matches) {
         card.style.removeProperty('--slip-lead');
@@ -99,14 +107,24 @@ const hasCard = Astro.slots.has('card');
 
       const style = getComputedStyle(card);
       const pad = parseFloat(style.paddingLeft);
+      const beside = BESIDE * parseFloat(getComputedStyle(document.documentElement).fontSize);
       let lift = -Infinity;
+      const clearHint = (top: number, left: number, right: number, gap: number) => {
+        if (hint && right + gap > hint.left && left - pad < hint.right) lift = Math.max(lift, hint.bottom + pad - top);
+      };
       for (const cell of card.querySelectorAll('.title-cell')) {
         if (!cell.getClientRects().length) continue;
         const { left, right } = textSpan(cell);
-        let over = Math.max(edge(left), edge(right));
-        if (hint && right + pad > hint.left && left - pad < hint.right) over = Math.max(over, hint.bottom);
         const top = cell.querySelector('dt')!.getBoundingClientRect().top;
-        lift = Math.max(lift, over + pad - top);
+        lift = Math.max(lift, Math.max(edge(left), edge(right)) + pad - top);
+        // The label is trimmed to its cap line; its box top is where its text starts.
+        for (const r of textRects(cell.querySelector('dt')!)) clearHint(top, r.left, r.right, Math.max(pad, beside));
+        for (const r of textRects(cell.querySelector('dd')!)) clearHint(r.top, r.left, r.right, Math.max(pad, beside));
+        const rule = parseFloat(getComputedStyle(cell).borderBottomWidth);
+        if (rule) {
+          const r = cell.getBoundingClientRect();
+          clearHint(r.bottom - rule, r.left, r.right, pad);
+        }
       }
       if (!Number.isFinite(lift) || Math.abs(lift) < 0.25) return;
       card.style.setProperty('--slip-lead', `${parseFloat(style.paddingTop) + lift}px`);

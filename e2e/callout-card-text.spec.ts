@@ -109,11 +109,13 @@ for (const width of [390, 1024, 1440]) {
   });
 }
 
-// The title rises beside the peel hint where its text is clear of the hint's words and arrow,
-// and stays under them where they are over it. On a phone they are; at 768px the title is short
-// enough to stand left of them, and the notes, which run the slip's width, go under them.
-for (const [width, under] of [[390, true], [768, false]] as const) {
-  test(`the title ${under ? 'stays under' : 'rises beside'} the peel hint at ${width}px`, async ({ page }) => {
+// The slip rises as far as the peel hint allows piece by piece: the title's label, each line of
+// text and each rule keep the slip's inset below the hint only where the hint's words and arrow
+// are over them. On a phone the label would crowd the words, so the title stays under them; at
+// 560px the label stands level with the hint, left of it, with its text under it; at 768px the
+// title's text fits beside it too, and the notes and the rule over them run on under it.
+for (const [width, place] of [[390, 'under'], [560, 'level'], [768, 'beside']] as const) {
+  test(`the title stands ${place === 'under' ? 'under' : 'beside'} the peel hint at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
     const callout = page.locator('#demos .callout[data-card]:has(.technical-drawing-frame[data-hint-show])');
@@ -121,24 +123,57 @@ for (const [width, under] of [[390, true], [768, false]] as const) {
     await callout.locator('.callout-card').evaluate((el) => el.scrollIntoView({ block: 'center' }));
     await page.evaluate(() => document.fonts.ready);
 
-    const result = await callout.evaluate((el, entryTextSource) => {
-      const entryText = new Function(`return ${entryTextSource}`)() as (cell: Element) => { left: number; right: number; top: number; bottom: number };
+    const { pad, beside, hint, label, pieces } = await callout.evaluate((el) => {
       const card = el.querySelector<HTMLElement>('.callout-card')!;
-      const pad = parseFloat(getComputedStyle(card).paddingLeft);
-      const hint = el.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
+      const words = el.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
       const frame = el.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
-      return [...card.querySelectorAll('.title-cell')]
-        .filter((cell) => cell.getClientRects().length > 0)
-        .map(entryText)
-        .map((t) => ({ top: t.top, overlaps: t.right + pad > hint.left && t.left - pad < frame.right, clear: t.top - hint.bottom, pad }));
-    }, entryText.toString());
+      const range = document.createRange();
+      const lines = (node: Element) => {
+        range.selectNodeContents(node);
+        return [...range.getClientRects()].filter((r) => r.width > 0);
+      };
+      const cells = [...card.querySelectorAll('.title-cell')].filter((cell) => cell.getClientRects().length > 0);
+      const pieces = cells.flatMap((cell) => {
+        const dt = cell.querySelector('dt')!.getBoundingClientRect();
+        const box = cell.getBoundingClientRect();
+        const rule = parseFloat(getComputedStyle(cell).borderBottomWidth);
+        return [
+          { top: dt.top, left: dt.left, right: dt.left + Math.max(...lines(cell.querySelector('dt')!).map((r) => r.width)) },
+          ...lines(cell.querySelector('dd')!).map((r) => ({ top: r.top, left: r.left, right: r.right })),
+          ...(rule ? [{ top: box.bottom - rule, left: box.left, right: box.right }] : []),
+        ];
+      });
+      const [label] = pieces;
+      const dt = cells[0].querySelector('dt')!.getBoundingClientRect();
+      return {
+        pad: parseFloat(getComputedStyle(card).paddingLeft),
+        // Text beside the hint keeps 3rem from its words (Callout.astro).
+        beside: 3 * parseFloat(getComputedStyle(document.documentElement).fontSize),
+        hint: { top: words.top, bottom: words.bottom, left: words.left, right: frame.right },
+        label: { ...label, bottom: dt.bottom },
+        pieces,
+      };
+    });
 
-    const [title, ...rest] = result;
-    expect(title.overlaps, 'the hint is over the title').toBe(under);
-    if (under) expect(title.clear, 'title under the hint').toBeGreaterThanOrEqual(title.pad - 1);
-    else expect(title.clear, 'title risen beside the hint').toBeLessThan(0);
-    for (const entry of rest.filter((e) => e.overlaps)) {
-      expect(entry.clear, 'entry under the hint').toBeGreaterThanOrEqual(entry.pad - 1);
+    if (place === 'under') {
+      expect(label.top - hint.bottom, 'title under the hint').toBeGreaterThanOrEqual(pad - 1);
+    } else {
+      expect(label.top, 'title risen beside the hint').toBeLessThan(hint.bottom);
+      expect(label.right + pad, 'label left of the hint').toBeLessThanOrEqual(hint.left);
     }
+    if (place === 'level') {
+      expect(label.top, 'label on the hint line').toBeLessThan(hint.bottom);
+      expect(label.bottom, 'label on the hint line').toBeGreaterThan(hint.top);
+    }
+    for (const piece of pieces) {
+      // Clear of the words and of the arrow that runs on from their end.
+      if (piece.top < hint.bottom + pad - 1) expect(piece.right + beside, 'text beside the hint stays left of it').toBeLessThanOrEqual(hint.left + 1);
+      if (piece.right + pad > hint.left && piece.left - pad < hint.right) {
+        expect(piece.top - hint.bottom, 'under the hint by the inset').toBeGreaterThanOrEqual(pad - 1);
+      }
+    }
+    // It rises as far as that allows: whatever holds it down is the inset below the hint.
+    const held = Math.min(...pieces.filter((p) => p.right + Math.max(pad, beside) > hint.left).map((p) => p.top - hint.bottom));
+    expect(Math.abs(held - pad), `held the inset below the hint (${held} against ${pad})`).toBeLessThanOrEqual(1.5);
   });
 }
