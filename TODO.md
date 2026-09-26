@@ -124,3 +124,4 @@
 - [ ] N5 Japanese glosses across the page (#148)
 - [x] Copy says what every theme and layout shows: no blue sheets in Forest, no click on a phone (#158)
 - [x] Show the demo title card's text on narrower desks (#151)
+- [x] Lay out the title card's slip in CSS, with no script (#161)
