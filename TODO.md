@@ -89,6 +89,7 @@
       - [x] Dogear doesn't follow theme (#5)
       - [x] Dogear doesn't appear until next page animation finished (#6)
       - [x] Strip behind the crease paints the turned page's back, not the front page's (#49)
+      - [x] Dog-ear shaded backwards, lit at the crease; flat sheet while a page turns (#155)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
