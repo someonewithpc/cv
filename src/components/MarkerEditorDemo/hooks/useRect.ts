@@ -2,6 +2,8 @@ import '../markers/client-only';
 
 import { type MutableRefObject, useCallback, useLayoutEffect, useRef, useState } from 'react';
 
+import { type SettledResizeObserver, settledResizeObserver } from '@/client/settledResize';
+
 export function useRect<T extends Element | SVGElement>(
   ref_: MutableRefObject<T | null> | undefined = undefined,
   deps: unknown[] = [],
@@ -27,7 +29,7 @@ export function useRect<T extends Element | SVGElement>(
     const element = ref.current;
     if (!element) return;
 
-    let resizeObserver: ResizeObserver | undefined = new ResizeObserver(() => resize());
+    let resizeObserver: SettledResizeObserver | undefined = settledResizeObserver(resize);
     resizeObserver.observe(element);
 
     return () => {
