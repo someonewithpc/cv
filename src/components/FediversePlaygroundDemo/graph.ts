@@ -1,7 +1,7 @@
 // Draws a compose file's depends_on graph as SVG markup. The server renders the opening state
 // with it and the island redraws with it on every toggle, so there is one drawing, not two.
 //
-// Layout, top to bottom: web, one column per configured instance (app over its installer), and
+// Layout, top to bottom: nginx, one column per configured instance (app over its installer), and
 // the shared data services along the bottom. Every edge comes out of depends_on. An app's edges
 // to the data services leave by the gutters beside its column and meet the service on a bus,
 // the way a schematic joins wires, so shared services read as one box however many ask for it.
@@ -147,11 +147,11 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const appSub = (instance: (typeof instances)[number]) => `${instance.software} · ${instance.hostname}`;
   const appNames = (instance: (typeof instances)[number]) => [instance.instance_id, ...companionsOf(instance).map((name) => name.slice(instance.instance_id.length))];
   const appHeight = new Map(instances.map((instance) => [instance.instance_id, heightOf(linesOf('app', appNames(instance), appSub(instance)))]));
-  const webHeight = heightOf(linesOf('web', ['web'], 'nginx:alpine · 8080 8443'));
+  const webHeight = heightOf(linesOf('web', ['nginx'], 'nginx:alpine · 8080 8443'));
   const installHeight = heightOf(linesOf('install', ['x-install'], 'one-shot · restart: no'));
 
-  // Web fans out to every app it waits on.
-  const web = services.web;
+  // nginx fans out to every app it waits on.
+  const web = services.nginx;
   const webBottom = m.row.web + webHeight;
   dependenciesOf(web ?? {}).forEach((dependency) => {
     const x = appX.get(dependency);
@@ -225,9 +225,9 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     nodes.push(box(data.id, 'shared', slot.x, m.row.data, data.id, sub, { emitted, fresh: isFresh(data.id) }));
   });
 
-  nodes.push(box('web', 'web', webX, m.row.web, 'web', 'nginx:alpine · 8080 8443', {
+  nodes.push(box('nginx', 'web', webX, m.row.web, 'nginx', 'nginx:alpine · 8080 8443', {
     emitted: Boolean(web),
-    fresh: isFresh('web'),
+    fresh: isFresh('nginx'),
   }));
 
   instances.forEach((instance) => {

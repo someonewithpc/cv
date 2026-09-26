@@ -33,8 +33,10 @@ type Recipe = {
 /** The dev default every install script and the db container agree on; it is not a secret. */
 export const DEV_PASSWORD = 'fediverse-playground';
 
+/** The builder's shared services. The tool names its nginx `web`; the sheet calls it `nginx`,
+    after what it runs. */
 export const SHARED_SERVICES: Record<string, Service> = {
-  web: {
+  nginx: {
     image: 'nginx:alpine',
     restart: 'always',
     tty: false,
@@ -95,7 +97,7 @@ const gnuSocialV3: Recipe = {
   id: 'social-v3',
   displayName: 'GNU social v3',
   dependencies: [
-    { type: 'web', shared: true },
+    { type: 'nginx', shared: true },
     { type: 'db', shared: true },
     { type: 'redis', shared: true },
     { type: 'social-v3-php', shared: false },
@@ -151,7 +153,7 @@ const gnuSocialV2: Recipe = {
   id: 'social-v2',
   displayName: 'GNU social v2',
   dependencies: [
-    { type: 'web', shared: true },
+    { type: 'nginx', shared: true },
     { type: 'mariadb', shared: true },
   ],
   buildContribution: (instance) => {
@@ -212,7 +214,7 @@ const mastodon: Recipe = {
   id: 'mastodon',
   displayName: 'Mastodon',
   dependencies: [
-    { type: 'web', shared: true },
+    { type: 'nginx', shared: true },
     { type: 'db', shared: true },
     { type: 'redis', shared: true },
   ],
@@ -347,10 +349,10 @@ export function buildComposeFile(config: PlaygroundConfig): ComposeFile {
   }
 
   // nginx mounts every instance's config and certificate, and waits on every app.
-  if (compose.services.web) {
-    compose.services.web = {
-      ...compose.services.web,
-      volumes: [...((compose.services.web.volumes as string[]) ?? []), ...webVolumes],
+  if (compose.services.nginx) {
+    compose.services.nginx = {
+      ...compose.services.nginx,
+      volumes: [...((compose.services.nginx.volumes as string[]) ?? []), ...webVolumes],
       depends_on: [...new Set(webDependsOn.filter((name) => compose.services[name]))],
     };
   }

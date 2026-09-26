@@ -15,7 +15,7 @@ const condition = (service: string, dependency: string) =>
 const healthcheck = compose.services.db.healthcheck as { test: string[]; interval: string; retries: number };
 
 const prefix = 'gnusocial-';
-const lanes = ['db', installer, app, 'web'];
+const lanes = ['db', installer, app, 'nginx'];
 const lane = (service: string) => lanes.indexOf(service);
 // A lane is too narrow for a whole instance's name, so it breaks after the prefix.
 const heads: Lane[] = lanes.map((id) => ({
@@ -33,8 +33,8 @@ const steps: Step[] = [
   { kind: 'end', lane: lane(installer), text: 'exit 0' },
   { kind: 'message', from: lane(installer), to: lane(app), text: condition(app, installer), gate: true },
   { kind: 'self', lane: lane(app), text: 'entrypoint.sh' },
-  { kind: 'message', from: lane(app), to: lane('web'), text: 'web.depends_on' },
-  { kind: 'self', lane: lane('web'), text: `server_name ${alice.hostnames.join(' ')}` },
+  { kind: 'message', from: lane(app), to: lane('nginx'), text: 'nginx.depends_on' },
+  { kind: 'self', lane: lane('nginx'), text: `server_name ${alice.hostnames.join(' ')}` },
 ];
 
 const layouts: Layout[] = ['landscape', 'short', 'portrait'];
