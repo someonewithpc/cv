@@ -963,7 +963,11 @@ const pageIndex = (page: HTMLElement): number => parseFloat(page.style.getProper
 // inert, not the wrapper: the fold chrome stays a sibling of it and keeps its pointer capture.
 const syncInert = (stack: HTMLElement): void => {
   for (const page of stack.children as HTMLCollectionOf<HTMLElement>) {
-    sectionOf(page).inert = pageIndex(page) !== 1;
+    // Only the two pages whose state changes get written: setting the attribute again on the
+    // others re-resolves the style of everything printed on them.
+    const section = sectionOf(page);
+    const covered = pageIndex(page) !== 1;
+    if (section.inert !== covered) section.inert = covered;
   }
   stack.dispatchEvent(new CustomEvent('paper-flip'));
 };
