@@ -19,7 +19,7 @@ type Entry = {
   role?: string;
   from: Edge;
   to: Edge;
-  summary: string;
+  summary?: string;
   items?: string[];
   see?: Link[];
 };
@@ -533,7 +533,7 @@ const tall = (() => {
                   </span>
                 </h4>
 
-                <p>{entry.summary}</p>
+                {entry.summary && <p>{entry.summary}</p>}
 
                 {entry.items && (
                   <ul>

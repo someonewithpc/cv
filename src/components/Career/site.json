@@ -7,11 +7,10 @@
       "role": "Full stack web developer",
       "from": { "date": "2022-04", "label": "Apr 2022" },
       "to": { "date": "2026-07", "label": "Jul 2026" },
-      "summary": "Three products for hotels and resorts, and the Rails backend that ran production behind them.",
       "items": [
         "A Vue and Three.js app that lays an event space out in 3D. Blocks of tables and chairs fill a drawn area and guests get seats.",
         "A React map of the resort with custom pins, a virtual tour and step by step wayfinding.",
-        "The Ruby backend behind both. 3D model orders, subscriptions, Google and Apple sign-in, a library of about 11,000 3D objects, SQL query and index optimization, and system administration for the production infrastructure."
+        "The Ruby backend behind both. 3D model orders, subscriptions, Google and Apple sign-in and a library of about 11,000 3D objects."
       ],
       "see": [{ "label": "Demos", "href": "#demos" }]
     },
@@ -21,7 +20,7 @@
       "role": "European Innovation Academy finalist",
       "from": { "date": "2021-06", "label": "Jun 2021" },
       "to": { "date": "2021-09", "label": "Sep 2021" },
-      "summary": "A startup so that scientists can design and run protein folding simulations without writing the code. A node based editor in Vue and TypeScript wires up inputs, algorithms, outputs and plots, and the app writes the Julia that runs them."
+      "summary": "A startup enabling researchers to design and run protein folding simulations without requiring coding expertise. A node based editor in Vue and TypeScript wires up inputs, algorithms, outputs and plots, and the app writes the Julia that runs them."
     },
     {
       "id": "gnu-social",
