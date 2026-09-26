@@ -659,6 +659,17 @@ section {
     }
   }
 
+  /* Without script nothing sets the mark, so the sheet asks the dialog itself. Only a page
+     whose script never ran pays for the :has(): the rule is outside the cascade otherwise. */
+  @media (scripting: none) {
+    &:has(.drawing-note:is(:modal, :popover-open)) {
+      .content,
+      .content :global(*) {
+        animation-play-state: paused;
+      }
+    }
+  }
+
   /* The note's own corner peeking out from under the sheet, in the sheet's
      bottom-left: it wears the note's paper hue — softened into the same
      pastel range for every note, so a saturated postit does not shout from
