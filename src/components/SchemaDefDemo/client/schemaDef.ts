@@ -70,7 +70,7 @@ export function initSchemaDef(root: HTMLElement) {
 
   const schedule = () => {
     window.clearTimeout(timer);
-    if (!playing || !active || document.hidden) return;
+    if (!playing || !active) return;
     timer = window.setTimeout(() => {
       step = (step + 1) % keys.length;
       light(keys[step]);
@@ -158,7 +158,6 @@ export function initSchemaDef(root: HTMLElement) {
     active = next;
     schedule();
   });
-  document.addEventListener('visibilitychange', schedule);
 
   reducedMotion.addEventListener('change', () => setPlaying(playing));
 
