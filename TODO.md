@@ -123,6 +123,7 @@
 - [x] Refresh the contributions list: move the PRs that closed or merged, add the new ones (#140)
 - [x] Match the Blender GSoC highlight to the cover letter (#149)
 - [x] Work History (#146)
+- [x] Resizing the window is glacially slow: cut the style recalc on resize and page turns (#159)
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
 - [x] Section numbers crowding the cutting mat on wide screens (#157)
 - [ ] N5 Japanese glosses across the page (#148)
