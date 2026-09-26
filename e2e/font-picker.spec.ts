@@ -259,10 +259,10 @@ function clearSheet(front: import('@playwright/test').Locator) {
 
     // Every run of the layer's text, wherever it is drawn from: the walkthrough's drag
     // readout is portalled into the section, past the root the boxes above come from. The
-    // section's own furniture (title block, note tab, the screen-reader labels) is not the
-    // layer's
+    // section's own furniture (title block, note tab, transport deck, the screen-reader labels)
+    // is not the layer's
     const outside: string[] = [];
-    const furniture = '.sr-only, table, .aside, .note-fold, [data-demo-cursor], .font-picker-toasts';
+    const furniture = '.sr-only, table, .aside, .note-fold, [data-demo-transport], [data-demo-cursor], .font-picker-toasts';
     const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT);
     const range = document.createRange();
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
