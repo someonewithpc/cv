@@ -346,13 +346,34 @@ const pages = await Promise.all(
       );
       translate: calc(-1 * var(--turned-drift)) calc(-1 * var(--turned-rise));
 
-      // The sheet's back in three tones, for the bend behind the crease and the flap: the
-      // paper's own colour (lifted onto the sheet by fold-drag.ts), lit a little along a bend's
-      // apex and darkened a little where it turns away. Mixed from the one colour so every
-      // theme keeps its own paper.
+      // The sheet's back is the paper's own colour (lifted onto the sheet by fold-drag.ts), and
+      // every shade on it is a translucent black or white laid over that, so one set of
+      // gradients serves every theme's paper.
       --bend-paper: var(--paper-surface, var(--surface-sunken));
       --bend-light: color-mix(in oklab, var(--bend-paper) 86%, white);
       --bend-dark: color-mix(in oklab, var(--bend-paper) 88%, black);
+
+      // The one light in the drawing: what a fold shows is the sheet's back lit flat where it
+      // lies down, in shadow where it curls up out of the crease, and casting a shadow on the
+      // page under it beside the crease. Both the flap and the cast shadow measure their
+      // gradients from the page's bottom-right corner along the crease's normal, where the
+      // crease itself lies --flap-crease in (fold-x·sin a, a being the crease's angle). The
+      // shade widens with the fold: a resting dog-ear casts a sliver, a sheet lifted across
+      // the page a broad soft band, capped so a page-sized fold does not go grey to the middle.
+      // max() keeps atan2 off (0, 0) during the reveal's delay, where the fold is 0 by 0.
+      --flap-angle: atan2(var(--fold-y), max(var(--fold-x), 1px));
+      --flap-crease: calc(var(--fold-x) * sin(var(--flap-angle)));
+      --fold-shade-w: clamp(0.5em, var(--flap-crease) * 0.6, 5em);
+
+      // How far the flap is off the page: 0 lying flat, 1 in hand (hovered or dragged, and the
+      // outgoing sheet's flap folding away after a flip), 2 past the commit point. The flap
+      // brightens and its cast shadow deepens with it, in place of the brightness and
+      // drop-shadow filters this used to run through, which re-filtered a page-sized layer on
+      // every frame of a drag. Set by the same :has() conditions the hint and the pulse already
+      // key off, so no new invalidation reaches the document.
+      --fold-lift: 0;
+      &:has(> .paper-fold:is(:hover, .paper-fold--active)) { --fold-lift: 1; }
+      &:has(> .paper-fold--will-commit) { --fold-lift: 2; }
       // The drift and the rise are what ease, not the translate they feed: the corner cut and
       // the band below read the same two numbers, so cut, band and translate arrive together
       // and the page's left edge stays on the stack's while it climbs. Easing the translate on
@@ -360,7 +381,13 @@ const pages = await Promise.all(
       // opened a hairline of page background at the top of the crease, between the strip and
       // the band, for the length of the turn. fold-drag.ts registers both as lengths.
       // TODO transition rotate at startup isn't working
-      transition: rotate 250ms ease-in-out, --turned-drift 250ms ease-in-out, --turned-rise 250ms ease-in-out;
+      transition:
+        rotate 250ms ease-in-out, --turned-drift 250ms ease-in-out, --turned-rise 250ms ease-in-out,
+        --fold-lift var(--fold-lift-ms, 200ms) ease-out;
+
+      @media (prefers-reduced-motion: reduce) {
+        --fold-lift-ms: 0s;
+      }
 
       // The front page. A class rather than :first-child: fold-drag.ts hands it to the next
       // page when a completed drag flips this one onto the back of the stack, without touching
@@ -610,6 +637,28 @@ const pages = await Promise.all(
           );
         }
 
+        // The shadow the lifted corner casts on the page under it: a soft band on the far side
+        // of the crease from the flap, darkest along the crease, gone --fold-shade-w in towards
+        // the corner. It rides the clip's wrapper because that is the one page-sized layer
+        // between the sheet and the flap, and it already wears the folded-back corner cut,
+        // which keeps the shadow off the strip that paints there. The sheet's content is
+        // clipped away on this side of the crease, so what the band darkens is whatever page
+        // shows through the hole. The gradient stops with the crease; the flap covers the near
+        // side. Nothing here changes per frame that the flap does not change too, its stops
+        // read the same --fold-x/-y.
+        & > .paper-clip::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: $border-radius;
+          background: linear-gradient(
+            calc(-1 * var(--flap-angle)),
+            rgb(0 0 0 / 0) calc(var(--flap-crease) - var(--fold-shade-w)),
+            rgb(0 0 0 / calc(0.22 + 0.1 * var(--fold-lift))) var(--flap-crease),
+            rgb(0 0 0 / 0) var(--flap-crease)
+          );
+        }
+
         & > .paper-clip > svg,
         & > .paper-clip-under > svg {
           position: absolute;
@@ -722,23 +771,37 @@ const pages = await Promise.all(
         // own resolved background color, lifted onto the sheet by fold-drag.ts — as a sibling
         // of the page this element can't see background definitions scoped inside it (e.g. a
         // blueprint page redefining its surface).
-        // Lit where it comes off the crease and darker toward its free corner, the way the
-        // bend behind the crease is shaded (see .paper-front::before), so flap and bend read as
-        // one sheet. The crease lies --fold-x * sin(a) along the gradient line from the box's
-        // bottom-right corner, and the corner twice that, a the crease's angle.
-        --flap-angle: atan2(var(--fold-y), var(--fold-x));
-        --flap-crease: calc(var(--fold-x) * sin(var(--flap-angle)));
+        //
+        // Lit where it lies flat, at its free corner, and in shadow where it curls up out of
+        // the crease: the fold is the one place the sheet turns away from the light. Two
+        // gradients along the crease's normal, measured from the box's bottom-right corner
+        // (see --flap-crease on the sheet): a darkening that peaks on the crease and is gone
+        // --flap-curl either side of it, and a sheen at the corner that the lift brings up. Both
+        // are mirrored about the crease, on purpose. The resting box above shows the far
+        // triangle, corner at twice the crease distance, reflected across the crease's
+        // perpendicular; the full-size box the drag switches to shows the corner triangle,
+        // corner at 0, reflected across the crease itself. Either way the corner is a flap's
+        // length from the crease, and one symmetric gradient lights both without a branch.
+        --flap-sheen: calc(0.05 * var(--fold-lift));
+        --flap-flat: calc(0.12 - 0.06 * var(--fold-lift));
+        --flap-fold: calc(0.38 - 0.04 * var(--fold-lift));
+        --flap-curl: calc(var(--fold-shade-w) * 0.8);
         background:
           linear-gradient(
             calc(-1 * var(--flap-angle)),
-            var(--bend-light) var(--flap-crease),
-            var(--bend-paper) calc(var(--flap-crease) * 1.4),
-            var(--bend-dark) calc(var(--flap-crease) * 2)
+            rgb(255 255 255 / var(--flap-sheen)) 0px,
+            rgb(255 255 255 / 0) calc(var(--flap-crease) * 0.6),
+            rgb(255 255 255 / 0) calc(var(--flap-crease) * 1.4),
+            rgb(255 255 255 / var(--flap-sheen)) calc(var(--flap-crease) * 2)
+          ),
+          linear-gradient(
+            calc(-1 * var(--flap-angle)),
+            rgb(0 0 0 / var(--flap-flat)) calc(var(--flap-crease) - var(--flap-curl)),
+            rgb(0 0 0 / var(--flap-fold)) var(--flap-crease),
+            rgb(0 0 0 / var(--flap-flat)) calc(var(--flap-crease) + var(--flap-curl))
           )
           var(--bend-paper);
         border: 1px solid var(--line-strong);
-        filter: brightness(75%);
-        transition: filter 200ms ease-out;
 
         position: absolute;
         right: -1px;
@@ -762,20 +825,15 @@ const pages = await Promise.all(
 
         &:hover {
           cursor: grab;
-          filter: brightness(95%);
         }
 
         &:active {
           cursor: grabbing;
         }
 
-        // The drag is far enough along that releasing here carries it through — the page onto
-        // the back of the stack going forward, or the previous page landing in front coming
-        // back. Lift the flap's brightness (past the hover value, which applies throughout a
-        // drag) so crossing the threshold reads as a state change.
-        &.paper-fold--will-commit {
-          filter: brightness(115%) drop-shadow(0 0 0.5em rgb(0 0 0 / 35%));
-        }
+        // Past the commit point the sheet lifts a step further (--fold-lift 2 on the sheet):
+        // the flap brightens past its in-hand tone and its shadow deepens, so crossing the
+        // threshold reads as a state change.
 
         // A committed flip keeps this flap on the outgoing sheet until it has folded away behind
         // the stack, so fold-drag.ts stands a second one in on the page taking the front, which

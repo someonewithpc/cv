@@ -2095,6 +2095,9 @@ const registerFoldProperties = () => {
   registerProperty({ name: '--flip-progress', syntax: '<number>', inherits: true, initialValue: '0' });
   // The strip's turn clock (see --pile-rise in index.astro): at rest by default.
   registerProperty({ name: '--turn-ease', syntax: '<number>', inherits: true, initialValue: '1' });
+  // How far the flap is off the page (see index.astro), registered so its tone eases between
+  // rest, in hand and past the commit point.
+  registerProperty({ name: '--fold-lift', syntax: '<number>', inherits: true, initialValue: '0' });
 };
 
 export function initPaperStackFold(): void {
