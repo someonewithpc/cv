@@ -3,11 +3,8 @@ import cx from 'classnames';
 
 import { useDebounce } from './useDebounce';
 import { useFontQuery } from './useFontQuery';
-import { registerFontSettingsProperties } from './registerFontSettingsProperties';
 
 const STATUS_BORDER_DURATION = 1000; // Must match $status-border-duration
-
-registerFontSettingsProperties();
 
 // `onLoaded` fires for the query's result, cached ones included, so entering a URL again
 // after a reset puts its faces back on

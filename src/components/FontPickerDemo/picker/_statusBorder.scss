@@ -1,11 +1,31 @@
 // A border that reports on a fetch: an arc orbits while pending, then the ring sweeps
 // closed in the verdict's colour. One conic gradient driven by three custom properties,
-// registered in registerFontSettingsProperties.ts so they animate.
+// registered below so they animate.
 $status-border-duration: 1s;
 // Eases in, then JS switches it to linear at the point where this bezier already is,
 // so the loop has no seam
 $status-border-timing: cubic-bezier(0.75, 0.25, 0.2, 0.2);
 $status-border-idle: #bbb;
+
+// Every stylesheet that uses this module carries these rules, so the picker island and the
+// Reactive Feedback sheet each bring the registration with them
+@property --font-settings-border-colored-width {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 1turn;
+}
+
+@property --font-settings-border-color {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #{$status-border-idle};
+}
+
+@property --font-settings-border-start {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0turn;
+}
 
 @mixin status-border($name, $background, $idle: $status-border-idle, $pending: #89ab24, $success: #89ab24, $error: #f44) {
   @keyframes #{$name}-idle {

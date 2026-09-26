@@ -1,8 +1,6 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
-import { registerFontSettingsProperties } from '../picker/registerFontSettingsProperties';
-
 const BORDER_ANIMATION_DURATION = 1000;
 
 type State = 'idle' | 'pending' | 'success' | 'error';
@@ -18,14 +16,11 @@ const WALKTHROUGH: { state: State; hold: number }[] = [
 ];
 
 /**
- * Wires the sheet's sample fieldset to its four state buttons, registers the border's custom
- * properties, without which the conic gradient cannot animate, and plays the request the
+ * Wires the sheet's sample fieldset to its four state buttons and plays the request the
  * border reports on while this page is the one in front. A press on any button is the visitor
  * taking it over, and it stays theirs until the transport deck's play or reset hands it back.
  */
 export function boot(host: HTMLElement) {
-  registerFontSettingsProperties();
-
   const fieldset = host.querySelector<HTMLElement>('[data-border-demo]');
   if (!fieldset) return;
 
