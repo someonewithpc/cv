@@ -105,6 +105,8 @@ const arrow = {
 </div>
 
 <style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
 // How long a hint takes to fade in, and how long one part of it waits for another.
 $hint-fade: 400ms;
 
@@ -120,6 +122,13 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
   // Allow the frame to shrink within the page grid instead of expanding it
   // to the stack's intrinsic width (default min-width: auto).
   min-width: 0;
+
+  // The dog-ear's resting size, restated here for the hint layer: the hint layer is the
+  // stack's sibling, so the property PaperStack publishes on the stack does not reach it by
+  // inheritance. From the same scss/_technical-drawing.scss source as PaperStack's own
+  // --fold-rest-x/-y, so the two cannot drift apart.
+  --fold-rest-x: #{drawing.$fold-rest-x};
+  --fold-rest-y: #{drawing.$fold-rest-y};
 }
 
 :global(article.technical-drawing-stack) {
@@ -444,14 +453,6 @@ function initStack(stack: HTMLElement) {
         if (note instanceof HTMLDialogElement && !note.open) note.showModal();
       });
     }
-  }
-
-  // The dog-ear's resting size, lifted from the stack onto the frame: the hint layer is the
-  // stack's sibling, so the property PaperStack publishes does not reach it by inheritance, and
-  // without it the arrow has no crease to aim at. It never changes, so once is enough.
-  const stackStyle = getComputedStyle(stack);
-  for (const rest of ['--fold-rest-x', '--fold-rest-y']) {
-    stack.parentElement?.style.setProperty(rest, stackStyle.getPropertyValue(rest));
   }
 
   // The sheet's size, orientation and width band, restated as plain pixels and two data

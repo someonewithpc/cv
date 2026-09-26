@@ -1,1 +1,8 @@
 $artwork-width: 20em;
+
+// The dog-ear's resting size: PaperStack publishes it as --fold-rest-x/-y for the fold to
+// rest at, and TechnicalDrawing/Stack.astro reads the same values onto the frame for the
+// flip-hint layer to aim its arrow at (the hint layer is the stack's sibling, so PaperStack's
+// custom property does not reach it by inheritance). One source keeps the two from drifting.
+$fold-rest-x: 2cm;
+$fold-rest-y: 1cm;
