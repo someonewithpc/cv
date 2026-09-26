@@ -346,7 +346,7 @@ test('on a narrow sheet the drawing stands on end and time flows down', async ({
   await expect(svg.locator('g.learning .tick')).toHaveCount(1);
 });
 
-test('the table service summers break off at each winter with a break line', async ({ page }) => {
+test('the table service summers break off at each winter with a round bar break', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
@@ -355,9 +355,13 @@ test('the table service summers break off at each winter with a break line', asy
   for (const drawing of ['wide', 'tall']) {
     const pieces = page.locator(`#career svg.${drawing} .job[data-job="${catering.id}"] .bar`);
     await expect(pieces, `${drawing}: one piece per summer`).toHaveCount(summers);
-    // Every cut edge carries the Z of a break line: four more corners than a straight edge.
-    const corners = await pieces.evaluateAll((paths) => paths.map((path) => (path.getAttribute('d')!.match(/L/g) ?? []).length + 1));
-    expect(corners, drawing).toEqual(corners.map((_, i) => 5 + 4 * ((i > 0 ? 1 : 0) + (i < corners.length - 1 ? 1 : 0))));
+    // Every cut end is the S of a round bar's break, two curves where a straight end has none,
+    // and shows its cut face: one hatched lobe per cut end.
+    const curves = await pieces.evaluateAll((paths) => paths.map((path) => (path.getAttribute('d')!.match(/C/g) ?? []).length));
+    expect(curves, drawing).toEqual(curves.map((_, i) => 2 * ((i > 0 ? 1 : 0) + (i < curves.length - 1 ? 1 : 0))));
+    const faces = page.locator(`#career svg.${drawing} .job[data-job="${catering.id}"] .break-face`);
+    await expect(faces, drawing).toHaveCount(2 * (summers - 1));
+    await expect(faces.first()).toHaveAttribute('fill', /-cut\)/);
   }
 
   // In the wide drawing each break falls inside the winter between two summers.
