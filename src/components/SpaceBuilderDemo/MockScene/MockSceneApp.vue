@@ -694,13 +694,13 @@ onMounted(async () => {
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? root.closest<HTMLElement>('.mock-scene-demo')
       ?? root;
-    stopPageWatch = watchPageActive(visibilityRoot, (active) => {
+    stopPageWatch = watchPageActive(visibilityRoot, (active, reasons) => {
       const wasActive = inView.value;
       inView.value = active;
 
       if (!active) {
         controller.pause();
-        releaseSpaceBuilderGpu(scene);
+        releaseSpaceBuilderGpu(scene, reasons);
         cursorPhase.value = 'gone';
         return;
       }

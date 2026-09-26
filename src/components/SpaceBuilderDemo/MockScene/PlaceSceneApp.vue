@@ -224,9 +224,9 @@ onMounted(async () => {
     const visibilityRoot =
       root.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? root;
-    stopPageWatch = watchPageActive(visibilityRoot, (active) => {
+    stopPageWatch = watchPageActive(visibilityRoot, (active, reasons) => {
       if (!active) {
-        releaseSpaceBuilderGpu(scene);
+        releaseSpaceBuilderGpu(scene, reasons);
         return;
       }
       claimSpaceBuilderGpu(scene);

@@ -1,3 +1,5 @@
+import type { PauseReason } from '@/client/frontPage';
+
 import type { SpaceBuilderScene } from './SpaceBuilderScene';
 
 /**
@@ -28,8 +30,13 @@ export function claimSpaceBuilderGpu(scene: SpaceBuilderScene) {
   scene.resume();
 }
 
-export function releaseSpaceBuilderGpu(scene: SpaceBuilderScene) {
+/**
+ * A hidden tab only pauses: the context is the page's own again when the tab comes back, and
+ * re-uploading the scene on every tab switch costs more than the memory it frees.
+ */
+export function releaseSpaceBuilderGpu(scene: SpaceBuilderScene, reasons?: ReadonlySet<PauseReason>) {
   scene.pause();
+  if (reasons && [...reasons].every((reason) => reason === 'hidden')) return;
   scene.releaseGpu();
   if (holder === scene) holder = null;
 }
