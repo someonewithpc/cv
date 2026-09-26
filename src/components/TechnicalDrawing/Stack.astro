@@ -483,7 +483,7 @@ function initStack(stack: HTMLElement) {
   // that is depends on which step of the block's fit ladder the sheet width picked and on how
   // wide the text in the cells ran, so it is measured rather than restated as a constant.
   [...stack.querySelectorAll<HTMLElement>('section > table')].forEach((block) => {
-    measureTitleBlock.observe(block);
+    measure.observe(block);
   });
 }
 
@@ -494,50 +494,50 @@ function initStack(stack: HTMLElement) {
 // have to flip at the same width or a layer would take its wide padding with its narrow type.
 const SHEET_WIDE_EM = 56;
 
-// One observer for every stack, so a resize is answered with all the reads before any of the
-// writes: a write to one stack followed by a read from the next would make the browser redo
-// style in between, once per stack.
+// A write that leaves the value as it was is skipped, so a resize step that moved nothing on a
+// sheet does not wake whatever watches its style attribute.
+function put(el: HTMLElement, name: string, value: string) {
+  if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value);
+}
+
+// One observer for every stack and title block, so a resize is answered with all the reads
+// before any of the writes: a write to one stack followed by a read from the next would make
+// the browser redo style in between, once per stack.
 const measure = new ResizeObserver((entries) => {
-  const read = entries.map((entry) => {
-    const [{ inlineSize, blockSize }] = entry.contentBoxSize;
-    const style = getComputedStyle(entry.target);
-    const [w, h] = style.aspectRatio.split('/').map(Number);
-    const em = parseFloat(style.fontSize) || 16;
-    return {
-      stack: entry.target as HTMLElement,
-      inlineSize,
-      blockSize,
-      portrait: h > w,
-      wide: inlineSize >= SHEET_WIDE_EM * em,
-    };
-  });
-  for (const { stack, inlineSize, blockSize, portrait, wide } of read) {
-    stack.style.setProperty('--sheet-inline', `${inlineSize}px`);
-    stack.style.setProperty('--sheet-block', `${blockSize}px`);
+  const stacks = [];
+  const blocks = [];
+  for (const entry of entries) {
+    const target = entry.target as HTMLElement;
+    if (target.matches('article.technical-drawing-stack')) {
+      const [{ inlineSize, blockSize }] = entry.contentBoxSize;
+      const style = getComputedStyle(target);
+      const [w, h] = style.aspectRatio.split('/').map(Number);
+      const em = parseFloat(style.fontSize) || 16;
+      stacks.push({ stack: target, inlineSize, blockSize, portrait: h > w, wide: inlineSize >= SHEET_WIDE_EM * em });
+    } else {
+      const [{ inlineSize, blockSize }] = entry.borderBoxSize;
+      blocks.push({ sheet: target.parentElement as HTMLElement, inlineSize, blockSize });
+    }
+  }
+  for (const { stack, inlineSize, blockSize, portrait, wide } of stacks) {
+    put(stack, '--sheet-inline', `${inlineSize}px`);
+    put(stack, '--sheet-block', `${blockSize}px`);
     // Both only when they actually change. Writing the same value back is still an attribute
     // write, and this page carries enough `:has()` rules that any attribute change invalidates
-    // every element in the document (see PR #50), so a resize step that moved the numbers and
-    // nothing else was still paying for it, twice per stack. The custom properties above are
-    // inline styles, which cost nothing like it.
+    // every element in the document (see PR #50).
     const orientation = portrait ? 'portrait' : 'landscape';
     if (stack.dataset.sheetOrientation !== orientation) stack.dataset.sheetOrientation = orientation;
     const band = wide ? 'wide' : 'narrow';
     if (stack.dataset.sheetWidth !== band) stack.dataset.sheetWidth = band;
     // The frame is taller than the sheet by the fan's reserve, so a hint that belongs on the
-    // sheet's own bottom edge cannot be placed from the frame's box alone.
-    (stack.parentElement as HTMLElement | null)?.style.setProperty('--stack-block', `${blockSize}px`);
+    // sheet's own bottom edge cannot be placed from the frame's box alone. Only the hint layer
+    // reads it, so it is set there: on the frame, each change restyled the stack under it too.
+    const hints = stack.parentElement?.querySelector<HTMLElement>(':scope > .flip-hints');
+    if (hints) put(hints, '--stack-block', `${blockSize}px`);
   }
-});
-
-// Reads before writes, for the same reason as `measure` above.
-const measureTitleBlock = new ResizeObserver((entries) => {
-  const read = entries.map((entry) => {
-    const [{ inlineSize, blockSize }] = entry.borderBoxSize;
-    return { sheet: entry.target.parentElement as HTMLElement, inlineSize, blockSize };
-  });
-  for (const { sheet, inlineSize, blockSize } of read) {
-    sheet.style.setProperty('--title-block-inline', `${inlineSize}px`);
-    sheet.style.setProperty('--title-block-block', `${blockSize}px`);
+  for (const { sheet, inlineSize, blockSize } of blocks) {
+    put(sheet, '--title-block-inline', `${inlineSize}px`);
+    put(sheet, '--title-block-block', `${blockSize}px`);
   }
 });
 
