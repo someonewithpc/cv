@@ -1,5 +1,6 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate } from '@/client/frontPage';
+import { holdableWait } from '@/client/resizeHold';
 import { watchHandover } from '@/client/walkthroughHandover';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -307,9 +308,7 @@ function initHeader(tool: Tool) {
   tool.note?.querySelector('.demo-reset')?.addEventListener('click', () => restore(tool));
 }
 
-function wait(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
+const wait = holdableWait;
 
 /** Matches the cursor's left/top transition in GridLayer.astro. */
 const TRAVEL_MS = 520;

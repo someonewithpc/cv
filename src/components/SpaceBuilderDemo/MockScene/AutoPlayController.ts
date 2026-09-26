@@ -1,3 +1,4 @@
+import { holdableTimeout, holdableWait } from '@/client/resizeHold';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
@@ -77,11 +78,7 @@ const SIDEBAR_SCROLL_MS = 480;
 /** Ignore sub-pixel / layout jitter when deciding whether the cursor actually moved. */
 const CURSOR_MOVE_EPS_PX = 8;
 
-function wait(ms: number) {
-  return new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+const wait = holdableWait;
 
 function waitFrames(count = 1) {
   return new Promise<void>((resolve) => {
@@ -246,7 +243,7 @@ function blocksDemoOf(preset: Preset) {
 }
 
 export class AutoPlayController {
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  private timer: (() => void) | null = null;
   private stepIndex = 0;
   private paused = false;
   private presetIndex = 0;
@@ -302,7 +299,7 @@ export class AutoPlayController {
   pause() {
     this.paused = true;
     if (this.timer) {
-      clearTimeout(this.timer);
+      this.timer();
       this.timer = null;
     }
     if (this.dragRaf != null) {
@@ -342,8 +339,8 @@ export class AutoPlayController {
     const step = this.steps()[this.stepIndex];
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
     // One timer at a time: a step that resumed into a fresh chain must not add a second.
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
+    this.timer?.();
+    this.timer = holdableTimeout(() => {
       this.timer = null;
       void this.runStep(step);
     }, delay);

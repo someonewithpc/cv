@@ -1,5 +1,6 @@
 import { ActionCreators } from 'redux-undo';
 
+import { holdableTimeout, holdableWait } from '@/client/resizeHold';
 import { hexToHsv } from '@/components/MarkerEditorDemo/markers/MarkerEditor/markerParts/shared/inlineColorPicker';
 import {
   demoPress,
@@ -212,7 +213,7 @@ export const autoplayCompletedToast = (): DemoToastPayload => ({
 export type DemoToastHandler = (toast: DemoToastPayload) => void;
 
 export class AutoPlayController {
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  private timer: (() => void) | null = null;
   private dragRaf: number | null = null;
   /** Release an in-flight drag/slider so the real pointer isn't fighting demo state. */
   private dragCleanup: (() => void) | null = null;
@@ -267,7 +268,7 @@ export class AutoPlayController {
     }
     this.generation += 1;
     if (this.timer) {
-      clearTimeout(this.timer);
+      this.timer();
       this.timer = null;
     }
     if (this.dragRaf != null) {
@@ -490,9 +491,7 @@ export class AutoPlayController {
 
   /** A pause in a run; the caller checks `this.paused` afterwards. */
   private wait(ms: number): Promise<void> {
-    return new Promise((resolve) => {
-      window.setTimeout(resolve, ms);
-    });
+    return holdableWait(ms);
   }
 
   /**
@@ -1001,8 +1000,8 @@ export class AutoPlayController {
 
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
     // One timer at a time: a step that resumed into a fresh chain must not add a second.
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
+    this.timer?.();
+    this.timer = holdableTimeout(() => {
       this.timer = null;
       void this.executeStep(step);
     }, delay);

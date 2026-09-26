@@ -2,6 +2,8 @@
 // and resumed between them. Everything a scene does goes through a Run bound to one token,
 // so a pause mid-scene unwinds it at the next await instead of leaving a half-typed field.
 
+import { holdableWait } from '@/client/resizeHold';
+
 export const CURSOR_TRAVEL_MS = 560;
 // The first glide after the cursor appears brings it in from beyond the sheet: a longer way,
 // taken unhurried, straight to whatever the scene reaches for first
@@ -14,7 +16,7 @@ export type CursorHook = (state: CursorState | null) => void;
 
 export class Cancelled extends Error {}
 
-export const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+export const wait = holdableWait;
 export const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);
@@ -71,12 +73,14 @@ export class Run {
   // In short steps, re-reading what is under the cursor between them: the page changes under
   // a still cursor too, as when the drawn list closes
   async wait(ms: number) {
-    const end = performance.now() + ms;
+    let left = ms;
     for (;;) {
-      await wait(Math.max(0, Math.min(100, end - performance.now())));
+      const step = Math.max(0, Math.min(100, left));
+      await wait(step);
+      left -= step;
       this.check();
       this.controller.refresh();
-      if (performance.now() >= end) return;
+      if (left <= 0) return;
     }
   }
 

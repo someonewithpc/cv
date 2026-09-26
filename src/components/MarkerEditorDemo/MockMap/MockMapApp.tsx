@@ -18,6 +18,7 @@ import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
+import { isResizeHeld } from '@/client/resizeHold';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -340,7 +341,12 @@ function MockMapOverlayInner() {
     if (!inView) return;
     const id = window.setInterval(() => {
       const el = activeTargetRef.current;
-      if (!el?.isConnected || userControlRef.current || cursorPhaseRef.current !== 'demo') {
+      if (
+        !el?.isConnected
+        || userControlRef.current
+        || cursorPhaseRef.current !== 'demo'
+        || isResizeHeld()
+      ) {
         return;
       }
       const next = toHostPoint(editorPortalHost, elementCenter(el));
