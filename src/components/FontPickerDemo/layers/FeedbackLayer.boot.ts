@@ -1,3 +1,4 @@
+import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { registerFontSettingsProperties } from '../picker/registerFontSettingsProperties';
@@ -20,7 +21,7 @@ const WALKTHROUGH: { state: State; hold: number }[] = [
  * Wires the sheet's sample fieldset to its four state buttons, registers the border's custom
  * properties, without which the conic gradient cannot animate, and plays the request the
  * border reports on while this page is the one in front. A press on any button is the visitor
- * taking it over, and it stays theirs.
+ * taking it over, and it stays theirs until the transport deck's play or reset hands it back.
  */
 export function boot(host: HTMLElement) {
   registerFontSettingsProperties();
@@ -51,6 +52,7 @@ export function boot(host: HTMLElement) {
     });
   };
 
+  let active = false;
   let userControl = false;
   let timer = 0;
   let step = 0;
@@ -62,21 +64,49 @@ export function boot(host: HTMLElement) {
     timer = window.setTimeout(run, hold);
   };
 
+  const play = () => {
+    window.clearTimeout(timer);
+    if (!active) return;
+    reportAutoplayState(host, userControl ? 'user' : 'playing');
+    if (!userControl) run();
+  };
+
   buttons.forEach((button) => {
     button.addEventListener('click', () => {
       userControl = true;
       window.clearTimeout(timer);
       show(button.dataset.borderState as State);
+      reportAutoplayState(host, 'user');
     });
   });
 
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    reportAutoplayState(host, 'off');
+    return;
+  }
+
+  // The deck's keys: pause keeps the fieldset where it stands, play carries on from there,
+  // and reset starts the request over from idle
+  onAutoplayCommand(host, (command) => {
+    if (command === 'pause') {
+      userControl = true;
+      window.clearTimeout(timer);
+      reportAutoplayState(host, 'user');
+      return;
+    }
+    const wasPlaying = !userControl;
+    userControl = false;
+    if (command === 'play' && wasPlaying) return;
+    if (command === 'reset') step = 0;
+    play();
+  });
 
   // Every page of the stack shares one grid cell, so intersection alone would keep this
   // running behind whichever page the visitor turned to. Nothing ever unmounts an island,
   // so the watcher's stop function has no caller and is not returned.
-  watchPageActive(host, (active) => {
-    window.clearTimeout(timer);
-    if (active && !userControl) run();
+  watchPageActive(host, (next) => {
+    active = next;
+    if (next) play();
+    else window.clearTimeout(timer);
   });
 }
