@@ -31,11 +31,10 @@ const { number, label } = Astro.props;
    1.5rem still clear of the mat (Layout.astro). Narrower than that the margin is a gutter, so
    there is no folio at all.
 
-   The rail is the desk between the window's left edge and the paper it numbers, and the
-   numeral and its label stand centred in it. A sheet's paper starts at the content column; a
-   full-width section's paper is the cutting mat, which starts at --desk-edge. The rail ends
-   where the paper starts, so the numeral stays in the middle of the desk left beside it at
-   every width. */
+   The rail is the desk between the window's left edge and --desk-edge, the cutting mat's near
+   edge. The mat is the paper nearest the window and every sheet starts further in, so the
+   numeral and its label stand centred in that rail, and every folio shares one axis down the
+   page, in the middle of the narrowest desk beside any paper. */
 .folio-rail {
   display: none;
 
@@ -45,13 +44,9 @@ const { number, label } = Astro.props;
     grid-row: var(--folio-row);
     grid-column: full-width-start / content-start;
     inset-block: 0;
-    inset-inline: 0;
+    inset-inline-start: 0;
+    inline-size: var(--desk-edge);
     color: color-mix(in oklch, var(--ink), transparent 45%);
-
-    &:has(+ .full-width) {
-      inset-inline-end: auto;
-      inline-size: var(--desk-edge);
-    }
   }
 }
 
@@ -59,6 +54,11 @@ const { number, label } = Astro.props;
   position: sticky;
   top: 1.5rem;
   display: grid;
+  /* The numeral is sized to leave --folio-gap of desk beside it (Layout.astro), and the label
+     wraps inside the same measure. A word or numeral wider than that widens the column, and
+     the column stays centred, so the overflow falls evenly on both sides of the axis. */
+  padding-inline: calc(var(--folio-gap) / 2);
+  justify-content: unsafe center;
   justify-items: center;
   gap: 0.5rem;
   text-align: center;
