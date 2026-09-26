@@ -34,6 +34,26 @@ const BARBS = [
 
 const frames = new WeakMap<HTMLElement, () => void>();
 
+/** The frame each observed stack or line of words belongs to. */
+const frameOf = new WeakMap<Element, HTMLElement>();
+
+/**
+ * One observer for every frame, created as the module loads: the browser delivers resize
+ * observations in the order the observers were created, and this one then comes right after
+ * the annotation overlay's, before any observer that writes (Stack.astro's measure, the fold's
+ * page sizes). Style and layout are clean at that point, so the rects layout() reads cost no
+ * flush. Read from a frame callback instead, they came after the overlay's writes and forced
+ * one on every resize step.
+ */
+const sized = new ResizeObserver((entries) => {
+  const touched = new Set<HTMLElement>();
+  for (const entry of entries) {
+    const frame = frameOf.get(entry.target);
+    if (frame) touched.add(frame);
+  }
+  for (const frame of touched) layout(frame);
+});
+
 /**
  * The four resting intercepts in pixels, off the spans Stack.astro sizes to them. A probe
  * inserted per reading put the whole page back through style and layout four times a step.
@@ -108,7 +128,9 @@ function draw(svg: SVGSVGElement, box: DOMRect, words: DOMRect, crease: Crease, 
 function layout(frame: HTMLElement) {
   const layer = frame.querySelector<HTMLElement>('.flip-hints');
   const stack = frame.querySelector<HTMLElement>('article.technical-drawing-stack');
-  if (!layer || !stack || getComputedStyle(layer).display === 'none') return;
+  // The layer is shown by the frame's mark (Stack.astro), so the mark is asked rather than the
+  // layer's computed display, which would resolve style on the spot.
+  if (!layer || !stack || !frame.hasAttribute('data-hint-show')) return;
 
   const box = layer.getBoundingClientRect();
   const sheet = stack.getBoundingClientRect();
@@ -174,9 +196,11 @@ export function drawFlipHints(frame: HTMLElement) {
   frames.set(frame, schedule);
 
   const stack = frame.querySelector<HTMLElement>('article.technical-drawing-stack');
-  const sized = new ResizeObserver(schedule);
-  if (stack) sized.observe(stack);
-  frame.querySelectorAll<HTMLElement>('.flip-hints .hint-words').forEach((words) => sized.observe(words));
+  for (const el of [stack, ...frame.querySelectorAll<HTMLElement>('.flip-hints .hint-words')]) {
+    if (!el) continue;
+    frameOf.set(el, frame);
+    sized.observe(el);
+  }
   if (stack) {
     // Neither callout is on screen while a page is moving: the peel hint goes the moment the
     // stack is marked as turned, and the way back waits for the settle. So the measure waits for
