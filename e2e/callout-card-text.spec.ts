@@ -214,3 +214,31 @@ test('every slip holds its height while the window is resized', async ({ page })
   }
   expect(moved).toEqual([]);
 });
+
+// The lead is the stylesheet's own work, not a script's: with scripts off, every slip is the same
+// height as with them and its title starts at the same place. The top stack is left out: a
+// script arms its peel hint, so without one there is no hint for its slip to clear.
+for (const width of [390, 768, 1024]) {
+  test(`the slips lay out without a script at ${width}px`, async ({ browser }) => {
+    const read = async (javaScriptEnabled: boolean) => {
+      const context = await browser.newContext({ javaScriptEnabled, viewport: { width, height: 900 } });
+      const page = await context.newPage();
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const slips = await page.evaluate(() =>
+        [...document.querySelectorAll('#demos .callout[data-card]')]
+          .filter((callout) => !callout.contains(document.querySelector('.technical-drawing-frame')))
+          .map((callout) => {
+            const card = callout.querySelector('.callout-card')!.getBoundingClientRect();
+            const title = callout.querySelector('.callout-card dt')!.getBoundingClientRect();
+            return [card.height, title.top - card.top];
+          }),
+      );
+      await context.close();
+      return slips;
+    };
+    const scripted = await read(true);
+    expect(scripted.length).toBeGreaterThan(1);
+    expect(await read(false)).toEqual(scripted);
+  });
+}
