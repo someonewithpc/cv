@@ -40,6 +40,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
+import { type SettledResizeObserver, settledResizeObserver } from '@/client/settledResize';
+
 import {
   DEFAULT_LAYOUT_OPTIONS,
   layoutChairs,
@@ -238,7 +240,7 @@ export class SpaceBuilderScene {
   private readonly handleContextRestored = () => {
     this.onContextLost?.(false);
   };
-  private resizeObserver: ResizeObserver;
+  private resizeObserver: SettledResizeObserver;
   /** The canvas rect, read once and kept until a resize, a scroll or a new gesture; reading it
    * every pointer frame forced a layout each time. */
   private canvasRectCache: DOMRect | null = null;
@@ -301,7 +303,7 @@ export class SpaceBuilderScene {
     this.buildSelectArea();
     this.resize();
 
-    this.resizeObserver = new ResizeObserver(() => {
+    this.resizeObserver = settledResizeObserver(() => {
       // Coalesce layout reads onto the next frame to avoid forced-reflow storms.
       requestAnimationFrame(() => {
         if (!this.disposed) this.resize();
