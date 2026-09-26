@@ -155,8 +155,11 @@ test.describe(() => {
     const { bus } = await mountedBus(page);
     await expect(bus).toHaveAttribute('data-autoplay-state', 'playing');
 
-    // Six steps in: the GIF on ViewAttachment, which ImageEncoder claims.
-    await expect(bus).toHaveAttribute('data-attachment', 'gif', within(8 * STEP_MS, rate));
+    // Six steps in: the GIF on ViewAttachment, which ImageEncoder claims. Each step is a press,
+    // a dispatch down the chain and a hold, so the six take about 6 * (STEP_MS + RUN_MS) of page
+    // time. The cursor's hops and the token's run wait on frames, which a loaded machine hands
+    // out slowly, so the wait allows twice that. It checks the order of the steps, not their pace.
+    await expect(bus).toHaveAttribute('data-attachment', 'gif', within(2 * 6 * (STEP_MS + RUN_MS), rate));
     await expect(bus).toHaveAttribute('data-stage', 'view');
     await expect(bus).toHaveAttribute('data-rendered', 'image', within(RUN_MS, rate));
 
