@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { demoStack, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
+import { demoStack, frontPageIndex, frontPageName, pressTurn, swipeStack } from './support/paperStack';
 
 const DEMOS = [
   {
@@ -138,6 +138,46 @@ test('visrez logo: the dog-ear is lit at its tip and shaded along the crease', a
     expect(crease.alpha).toBeGreaterThan(near.alpha);
     expect(crease.alpha).toBeGreaterThan(far.alpha);
   }
+});
+
+test('visrez logo: a back-drag shades the crease from its first move', async ({ page }) => {
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+  await pressTurn(stack, 'ArrowRight');
+
+  // A short pull on the folded-back corner: the previous page starts to fold up behind the
+  // stack, well short of coming over the clip, and its crease has to be shaded already.
+  const grab = await stack.locator('.paper-front > .paper-back-grab').boundingBox();
+  const grip = { x: grab!.x + grab!.width * 0.4, y: grab!.y + grab!.height * 0.4 };
+  await page.mouse.move(grip.x, grip.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i += 1) {
+    await page.mouse.move(grip.x + 5 * i, grip.y + 5 * i);
+    await page.waitForTimeout(20);
+  }
+
+  const shade = await stack.evaluate((el) => {
+    const fold = el.querySelector<HTMLElement>('.paper-fold--active')!;
+    const sheet = getComputedStyle(fold.parentElement!);
+    const x = Number.parseFloat(sheet.getPropertyValue('--fold-x'));
+    const y = Number.parseFloat(sheet.getPropertyValue('--fold-y'));
+    const peaks = [...getComputedStyle(fold).backgroundImage.matchAll(/rgba\(0, 0, 0, ([\d.]+)\) ([\d.-]+)px/g)]
+      .map((match) => ({ alpha: Number(match[1]), at: Number(match[2]) }))
+      .filter((stop) => stop.alpha > 0.2)
+      .sort((a, b) => a.at - b.at);
+    return { approaching: !fold.parentElement!.classList.contains('paper-front'), rest: x * Math.sin(Math.atan2(y, x)), peaks };
+  });
+  await page.mouse.up();
+
+  expect(shade.approaching, 'the page is still on its way over').toBe(true);
+  // Two creases carry a dark stop: the moving one, nearer the corner in the flap's own box,
+  // and the resting one the fold started from.
+  expect(shade.peaks).toHaveLength(2);
+  const [moving, resting] = shade.peaks;
+  expect(Math.abs(resting.at - shade.rest)).toBeLessThan(1);
+  expect(moving.at).toBeLessThan(shade.rest - 20);
+  expect(moving.alpha).toBeGreaterThan(0.2);
 });
 
 test('visrez logo: the dog-ear is drawn while the flip is still landing', async ({ page }) => {
