@@ -348,6 +348,19 @@ const pages = await Promise.all(
       border-radius: $border-radius;
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
+      // What the stack writes or transitions, read here and by the pseudo-elements below.
+      // fold-drag.ts registers every property that moves as not inherited, so that a change
+      // re-resolves the few elements that read it and not everything printed on the page, and
+      // each reader one level down says so.
+      --fold-back-x: inherit;
+      --fold-back-y: inherit;
+      --flip-progress: inherit;
+      --pages-turned: inherit;
+      --pile-rise: inherit;
+      --pile-drift: inherit;
+      --pile-lean: inherit;
+      --pile-paper: inherit;
+
       // The turned pages are the last --pages-turned of the order — a flip sends the front page
       // to --page-count and shifts the rest down — so the rank is 1 on the page turned first,
       // which now lies nearest the pages still to come, and --pages-turned on the one turned
@@ -429,6 +442,13 @@ const pages = await Promise.all(
         &::before {
           content: "";
           position: absolute;
+          --fold-back-x: inherit;
+          --fold-back-y: inherit;
+          --pages-turned: inherit;
+          --pile-rise: inherit;
+          --pile-drift: inherit;
+          --pile-lean: inherit;
+          --pile-paper: inherit;
           $pin-x: var(--fold-pin-x);
           $pin-y: var(--fold-pin-y);
           --lean-cos: cos(var(--pile-lean));
@@ -531,6 +551,12 @@ const pages = await Promise.all(
         // on top of it (or the clip's back bar riding under it): clip-path clips descendants
         // too, and those must be able to overhang the page.
         > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
+          --fold-x: inherit;
+          --fold-y: inherit;
+          --fold-page-w: inherit;
+          --fold-page-h: inherit;
+          --fold-back-x: inherit;
+          --fold-back-y: inherit;
           // --fold-page-w/-h (actual pixel size) are kept in sync by fold-drag.ts via
           // ResizeObserver on this div — needed because the crease's excess/ratio
           // terms below mix lengths and can't be computed against a bare percentage
@@ -590,6 +616,8 @@ const pages = await Promise.all(
         // has flipped, see [data-paper-flipped] below) drags the previous page back over the
         // front.
         & > .paper-back-grab {
+          --fold-back-x: inherit;
+          --fold-back-y: inherit;
           position: absolute;
           left: 0;
           top: 0;
@@ -640,6 +668,8 @@ const pages = await Promise.all(
         // that outer-right edge — the wire disappears in sync with the corner folding back.
         & > .paper-clip,
         & > .paper-clip-under {
+          --fold-back-x: inherit;
+          --fold-back-y: inherit;
           position: absolute;
           inset: 0;
           pointer-events: none;
@@ -663,6 +693,11 @@ const pages = await Promise.all(
         // shows through the hole. The gradient stops with the crease; the flap covers the near
         // side. Nothing here changes per frame that the flap does not change too, its stops
         // read the same --fold-x/-y, which the pseudo-element takes from the clip wrapper.
+        & > .paper-clip {
+          --fold-x: inherit;
+          --fold-y: inherit;
+        }
+
         & > .paper-clip::after {
           --fold-x: inherit;
           --fold-y: inherit;
@@ -764,6 +799,9 @@ const pages = await Promise.all(
       // .paper-front::before). --turned-drift is 0 on a page still to come, so their cut is
       // unchanged.
       &:not(.paper-front) > * {
+        --fold-back-x: inherit;
+        --fold-back-y: inherit;
+        --turned-drift: inherit;
         clip-path: polygon(
           calc(var(--fold-back-x) + var(--turned-drift)) 0px,
           var(--turned-drift) var(--fold-back-y),
@@ -777,6 +815,8 @@ const pages = await Promise.all(
       // restacks the pages at the fold's furthest reach, and the flap then rides the flipped
       // sheet — no longer the front page — while it folds back down behind the stack.
       & > .paper-fold {
+        --fold-x: inherit;
+        --fold-y: inherit;
         width: calc(var(--fold-x));
         height: calc(var(--fold-y));
 
@@ -904,6 +944,11 @@ const pages = await Promise.all(
     & > div::after {
       content: "";
       position: absolute;
+      --fold-back-x: inherit;
+      --fold-back-y: inherit;
+      --turned-drift: inherit;
+      --turned-rise: inherit;
+      --turned: inherit;
       --band-height: calc(var(--turned-rise) + #{$turn-under});
       // The left inset cancels the page's drift, as the corner cut below does, so the band ends
       // on the stack's left edge rather than out past it.
