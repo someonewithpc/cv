@@ -5,15 +5,12 @@ import { watchHandover } from '@/client/walkthroughHandover';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import { libraryObjects } from '../objects';
-import { formatScore, search, serialise, type Filters, type SearchResult, type SearchState } from '../search';
-import { initialState, searchStore, type RequestLog } from './store';
+import { formatScore, serialise, type Filters, type SearchResult, type SearchState } from '../search';
+import { requests, wait } from './requests';
+import { initialState } from './state';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-/** The leading-edge throttle in front of the request. */
-const THROTTLE_MS = 50;
-/** How long the mock server takes to answer, low and high. */
-const LATENCY_MS = [90, 260] as const;
 /** Matches the bar's scale transition in SearchTool.astro. */
 const MOVE_MS = 350;
 /** The tip of the drawn arrow, as fractions of the cursor's box. */
@@ -37,23 +34,6 @@ type Tool = {
   count: HTMLElement | null;
   options: HTMLUListElement | null;
 };
-
-function wait(ms: number, signal?: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener('abort', () => {
-      clearTimeout(timer);
-      reject(signal.reason);
-    }, { once: true });
-  });
-}
-
-/** Stands in for the controller: nothing leaves the page, but an answer takes as long to
-    come back as one would, and an aborted request never answers. */
-async function mockServer(state: SearchState, signal: AbortSignal) {
-  await wait(LATENCY_MS[0] + Math.random() * (LATENCY_MS[1] - LATENCY_MS[0]), signal);
-  return search(state);
-}
 
 /** Puts the rows in rank order and slides each one from where it was, so the bars are
     seen sorting themselves rather than the list being redrawn. */
@@ -103,87 +83,6 @@ function render(tool: Tool, result: SearchResult) {
       easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
     });
   });
-}
-
-/**
- * The front end's request handling, the product's library_object_search.js in outline. It
- * searches on every keystroke: requests in flight are held in a map keyed by the serialised
- * form, a query identical to one in flight (or to the one on screen) is dropped outright, a
- * superseded one is aborted, and the survivor goes out behind a 50 ms leading-edge throttle.
- * What it does is reported to `onLog`, which the Generated SQL sheet prints.
- */
-function requests(
-  tool: Tool,
-  initial: SearchState,
-  onResult: (result: SearchResult) => void,
-  onLog: (log: RequestLog) => void,
-) {
-  const inFlight = new Map<string, AbortController>();
-  const log: RequestLog = { key: serialise(initial), sent: 0, dropped: 0, aborted: 0 };
-  let onScreen = '';
-  let lastSent = -Infinity;
-  let pending: SearchState | null = null;
-  let timer = 0;
-
-  const report = () => onLog({ ...log });
-  const tallied = (name: 'sent' | 'dropped' | 'aborted') => {
-    log[name] += 1;
-    report();
-  };
-
-  const send = async (state: SearchState) => {
-    const key = serialise(state);
-    const controller = new AbortController();
-    inFlight.set(key, controller);
-    lastSent = performance.now();
-    tallied('sent');
-    tool.root.dataset.loading = 'true';
-    try {
-      const result = await mockServer(state, controller.signal);
-      onScreen = key;
-      onResult(result);
-      tool.root.dataset.answered = key;
-    } catch {
-      // Aborted: a newer query has taken its place.
-    } finally {
-      if (inFlight.get(key) === controller) inFlight.delete(key);
-      if (!inFlight.size) delete tool.root.dataset.loading;
-    }
-  };
-
-  const flush = () => {
-    timer = 0;
-    const state = pending;
-    pending = null;
-    if (state) void send(state);
-  };
-
-  const request = (state: SearchState) => {
-    const key = serialise(state);
-    log.key = key;
-    if (inFlight.has(key) || (!inFlight.size && !pending && key === onScreen)) {
-      tallied('dropped');
-      return;
-    }
-    inFlight.forEach((controller) => {
-      controller.abort();
-      log.aborted += 1;
-    });
-    inFlight.clear();
-    report();
-
-    pending = state;
-    const early = lastSent + THROTTLE_MS - performance.now();
-    if (early <= 0 && !timer) flush();
-    else if (!timer) timer = window.setTimeout(flush, Math.max(0, early));
-  };
-
-  const shown = (state: SearchState) => {
-    onScreen = serialise(state);
-    tool.root.dataset.answered = onScreen;
-  };
-
-  return { request, shown };
 }
 
 function readFilters(tool: Tool): Filters {
@@ -330,8 +229,8 @@ function drawnHand(host: HTMLElement, el: HTMLElement, list: HTMLUListElement | 
  * The walkthrough: the query is typed a few letters at a time, the way a visitor would, so
  * every keystroke goes through the same throttle and abort as theirs. It pauses whenever the
  * sheet is not the page on top. The visitor takes the tool over as watchHandover decides (a
- * moving pointer, a tap or focus; a resting pointer does not), and so does a query typed on
- * one of the other sheets, which share it. After a quiet spell the script starts again from
+ * moving pointer, a tap or focus; a resting pointer does not). It drives this sheet alone;
+ * the other sheets keep their own queries. After a quiet spell the script starts again from
  * the query the page opens on. `data-autoplay` on the tool is the whole state, as `playing`,
  * `user` or `off`, and the sheet's transport deck shows the same (src/client/autoplayStatus.ts).
  * Its keys drive it: pause holds the tool for the visitor, play and reset start the script
@@ -446,11 +345,7 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
     }
   }
 
-  return {
-    /** A query typed on another sheet: the visitor has the tool now. */
-    takeOver: () => handover.takeOver(),
-    walk,
-  };
+  return { walk };
 }
 
 export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
@@ -470,41 +365,21 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
   };
 
   const initial = initialState(root);
-  const store = searchStore(host, initial);
-  const pipeline = requests(tool, initial, (result) => render(tool, result), (log) => store.setLog(log));
+  // This sheet's own query: the other sheets keep theirs, so nothing here moves them.
+  const pipeline = requests(root, initial, (result) => render(tool, result));
   // The build already drew the opening query's answer.
   pipeline.shown(initial);
 
-  // The field and the filters both write to the stack's query; the other sheets read it.
   const onChange = () => {
-    store.set({ query: input.value, filters: readFilters(tool) }, tool);
+    pipeline.request({ query: input.value, filters: readFilters(tool) });
   };
   input.addEventListener('input', onChange);
   tool.selects.forEach((select) => select.addEventListener('change', onChange));
 
   const script = host.dataset.walkthrough;
   const walkthrough = script ? autoplay(tool, host, JSON.parse(script) as Step[], initial, onChange) : null;
-
-  // A query from another sheet is the visitor's, wherever they typed it.
-  store.subscribe((state, source) => {
-    if (source !== tool) {
-      walkthrough?.takeOver();
-      showState(tool, state);
-    }
-    pipeline.request(state);
-  });
-
-  // Another sheet may have booted first and moved the query on.
-  const state = store.get();
-  const movedOn = serialise(state) !== serialise(initial);
-  if (movedOn) {
-    showState(tool, state);
-    pipeline.request(state);
-  }
-
-  if (!walkthrough) listenCount(tool, true);
-  else if (movedOn) walkthrough.takeOver();
-  else void walkthrough.walk();
+  if (walkthrough) void walkthrough.walk();
+  else listenCount(tool, true);
 }
 
 /** The count is a live region only while every change to it is the visitor's own: while

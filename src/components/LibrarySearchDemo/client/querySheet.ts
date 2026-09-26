@@ -1,6 +1,7 @@
 import { mangledHtml, relevanceHtml, sqlHtml, sqlResultHtml } from '../markup';
 import { search, type Filters, type SearchState } from '../search';
-import { initialState, searchStore, type RequestLog } from './store';
+import { requests, type RequestLog } from './requests';
+import { initialState } from './state';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -24,12 +25,14 @@ function flash(host: HTMLElement) {
 }
 
 /**
- * The relevance and SQL sheets: each has a query field of its own that shares the stack's
- * query, and redraws its live part from the same functions the build printed it with.
+ * The relevance and SQL sheets: each has a query field and a query of its own, which no
+ * other sheet reads or moves, and redraws its live part from the same functions the build
+ * printed it with. The SQL sheet also sends its query through the request pipeline and
+ * prints what became of each request.
  */
 export function initQuerySheet(host: HTMLElement) {
   const kind = host.dataset.librarySearch;
-  const store = searchStore(host, initialState(host));
+  const initial = initialState(host);
   const input = host.querySelector<HTMLInputElement>('.sheet-query');
   const mangled = host.querySelector<HTMLElement>('.mangled');
   const filters = host.querySelector<HTMLElement>('.filters-note');
@@ -37,13 +40,8 @@ export function initQuerySheet(host: HTMLElement) {
   const result = host.querySelector<HTMLElement>('.sql-result');
   if (!input || !live) return;
 
-  let drawn = '';
-  const render = (state: SearchState) => {
-    const key = JSON.stringify(state);
-    if (key === drawn) return;
-    drawn = key;
-
-    if (input.value !== state.query) input.value = state.query;
+  let state = initial;
+  const render = () => {
     if (mangled) mangled.innerHTML = mangledHtml(state.query);
     if (filters) filters.textContent = filtersText(state.filters);
 
@@ -56,9 +54,6 @@ export function initQuerySheet(host: HTMLElement) {
     }
   };
 
-  input.addEventListener('input', () => store.set({ query: input.value }, host));
-  store.subscribe((state) => render(state));
-
   const key = host.querySelector<HTMLElement>('.requests .key');
   const tally = (name: string) => host.querySelector<HTMLElement>(`[data-tally="${name}"]`);
   const tallies = { sent: tally('sent'), dropped: tally('dropped'), aborted: tally('aborted') };
@@ -69,11 +64,19 @@ export function initQuerySheet(host: HTMLElement) {
       if (el) el.textContent = String(log[name]);
     }
   };
-  store.subscribeLog(showLog);
-  showLog(store.log());
+  const pipeline = kind === 'sql' ? requests(host, initial, () => {}, showLog) : null;
+  // The build already drew the opening query's answer.
+  pipeline?.shown(initial);
 
-  // The query may have moved on while this page was face down.
-  drawn = JSON.stringify(initialState(host));
-  render(store.get());
+  input.addEventListener('input', () => {
+    const next: SearchState = { ...state, query: input.value };
+    const changed = next.query !== state.query;
+    state = next;
+    if (changed) render();
+    pipeline?.request(state);
+  });
+
+  // The field may hold a query typed before the sheet booted.
+  if (input.value !== initial.query) input.dispatchEvent(new Event('input'));
   host.dataset.ready = 'true';
 }

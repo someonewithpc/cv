@@ -148,7 +148,7 @@ test('main page: the sheet shows the transport deck, and its keys drive the walk
 
 
 test('generated SQL page: a bare number is quoted, and a seats after it folds into the phrase', async ({ page }) => {
-  const { stack, tool } = await mountedTool(page);
+  const { stack } = await mountedTool(page);
   // The bound query is printed on the Generated SQL sheet, not beside the tool.
   await turnTo(page, stack, 'Generated SQL');
   const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
@@ -156,7 +156,7 @@ test('generated SQL page: a bare number is quoted, and a seats after it folds in
   const mangled = sheet.locator('.sent .mangled');
   const type = async (query: string) => {
     await sheet.locator('.sheet-query').fill(query);
-    await expect(tool).toHaveAttribute('data-answered', form(query));
+    await expect(sheet).toHaveAttribute('data-answered', form(query));
   };
 
   await type('rectangular 8');
@@ -166,9 +166,12 @@ test('generated SQL page: a bare number is quoted, and a seats after it folds in
   await type('rectangular 8 seats');
   await expect(mangled).toHaveText('rectangular "8 seats"');
   await expect(mangled.locator('.rule-folded')).toHaveText('"8 seats"');
+});
 
-  // Quoted, 8 is the token 8 alone: the 8 pax tables and the 8ft ones, never the 182 wide.
-  await type('8');
+test('main page: a quoted 8 is the token 8 alone', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+  // The 8 pax tables and the 8ft ones, never the 182 wide.
+  await search(tool, '8');
   await expect(tool.locator('.hit:not([hidden])')).toHaveCount(9);
   const names = await tool.locator('.hit:not([hidden]) .name').allTextContents();
   expect(names).not.toContain('Bar');
@@ -209,7 +212,7 @@ test('main page: a property filter narrows the rows but keeps the maximum', asyn
 });
 
 test('generated SQL page: the request line shows the form sent, and a repeat is dropped', async ({ page }) => {
-  const { stack, tool } = await mountedTool(page);
+  const { stack } = await mountedTool(page);
   await turnTo(page, stack, 'Generated SQL');
   const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
   await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
@@ -219,7 +222,7 @@ test('generated SQL page: the request line shows the form sent, and a repeat is 
 
   await field.fill('table');
   await expect(sheet.locator('.requests .key')).toHaveText(`?${form('table')}`);
-  await expect(tool).toHaveAttribute('data-answered', form('table'));
+  await expect(sheet).toHaveAttribute('data-answered', form('table'));
   const before = { sent: Number(await sent.textContent()), dropped: Number(await dropped.textContent()) };
   expect(before.sent).toBeGreaterThan(0);
 
@@ -458,27 +461,43 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1680, height: 105
   });
 }
 
-test('generated SQL page: all three copies of the fragment follow the query and the filters', async ({ page }) => {
-  const { stack, tool } = await mountedTool(page);
-  await tool.locator('.filter-select[data-filter="category"]').selectOption('Banquet');
-
+test('generated SQL page: all three copies of the fragment follow the query typed on it', async ({ page }) => {
+  const stack = librarySearchStack(page);
+  await stack.scrollIntoViewIfNeeded();
   await turnTo(page, stack, 'Generated SQL');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section.blueprint')).toBeVisible();
-  const sheet = front.locator('[data-library-search="sql"]');
+  const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
   await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
 
-  const frags = sheet.locator('.frag:not([data-mark="max"])');
-  await expect(frags).toHaveCount(3);
-  await expect(sheet.locator('.sql')).toContainText("AND (`library_objects`.category = 'Banquet')");
-
+  await expect(sheet.locator('.frag:not([data-mark="max"])')).toHaveCount(3);
   await sheet.locator('.sheet-query').fill('round 10 seats');
   for (const mark of ['where', 'select', 'order']) {
     await expect(sheet.locator(`.frag[data-mark="${mark}"]`)).toContainText(`AGAINST('round "10 seats"' IN BOOLEAN MODE)`);
   }
+});
 
-  // The main page's field follows, so turning back finds the same query there.
-  await expect(tool.locator('.query-input')).toHaveValue('round 10 seats');
+test('every sheet keeps its own query: typing or filtering on one never moves another', async ({ page }) => {
+  const { stack, tool } = await mountedTool(page);
+  const opening = await tool.locator('.query-input').inputValue();
+  await search(tool, 'gold chair');
+  await tool.locator('.filter-select[data-filter="category"]').selectOption('Banquet');
+
+  const sheets = { 'Relevance Scoring': 'relevance', 'Generated SQL': 'sql' } as const;
+  for (const [name, kind] of Object.entries(sheets)) {
+    await turnTo(page, stack, name);
+    const sheet = frontPage(stack, await frontPageIndex(stack)).locator(`[data-library-search="${kind}"]`);
+    await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
+    await expect(sheet.locator('.sheet-query'), name).toHaveValue(opening);
+    await expect(sheet.locator('.filters-note'), name).toHaveText('');
+    if (kind === 'sql') await expect(sheet.locator('.sql')).not.toContainText("category = 'Banquet'");
+  }
+
+  // And back the other way: the SQL sheet's query stays on it.
+  const sql = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
+  await sql.locator('.sheet-query').fill('round 10 seats');
+  await expect(sql).toHaveAttribute('data-answered', form('round 10 seats'));
+  await expect(tool.locator('.query-input')).toHaveValue('gold chair');
+  await expect(tool.locator('.filter-select[data-filter="category"]')).toHaveValue('Banquet');
+  await expect(stack.locator('[data-library-search="relevance"] .sheet-query')).toHaveValue(opening);
 });
 
 test('relevance page: the scoring table follows the query typed on it', async ({ page }) => {
