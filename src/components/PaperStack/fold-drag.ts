@@ -265,11 +265,13 @@ const currentBackFoldSize = (sheet: HTMLElement): Vec => currentLanding(sheet).b
 // is held at, and the resting crease's intercepts. The last two are fixed by the stylesheet in em
 // and the first is measured by the ResizeObserver that feeds --fold-page-w/-h, so none of them
 // can move during a gesture — sampling them per frame was pure overhead, and worse, overhead
-// spent re-resolving style the same frame had just dirtied. They are taken when the page resizes
-// and again as each gesture starts; the frames in between just read this.
+// spent re-resolving style the same frame had just dirtied. They are taken the first time
+// something asks after the page resizes, and again as each gesture starts; the frames in between
+// just read this.
 type SheetMetrics = { w: number, h: number, pin: Vec, rest: Vec };
 
 const metrics = new WeakMap<HTMLElement, SheetMetrics>();
+const observedSizes = new WeakMap<HTMLElement, { width: number, height: number }>();
 
 // `size` comes from the ResizeObserver entry when there is one, so the metrics and the custom
 // properties can't disagree about how big the page is.
@@ -285,7 +287,8 @@ const sampleMetrics = (sheet: HTMLElement, size?: { width: number, height: numbe
   return sampled;
 };
 
-const metricsOf = (sheet: HTMLElement): SheetMetrics => metrics.get(sheet) ?? sampleMetrics(sheet);
+const metricsOf = (sheet: HTMLElement): SheetMetrics =>
+  metrics.get(sheet) ?? sampleMetrics(sheet, observedSizes.get(sheet));
 
 // The flip hint that pairs with each fold flap — one of each per stack, moving between pages
 // together, so the pairing never changes and renderFold needn't re-query it every frame.
@@ -600,11 +603,11 @@ const markInHand = (fold: HTMLElement, active: boolean) => {
 };
 
 const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
-  // Once per gesture the metrics are taken fresh rather than trusted from the cache — the
-  // ResizeObserver keeps them current across resizes, but this is what catches anything that
-  // moved the em-based pin without changing the page's pixel size. The landing reading goes with
-  // them: one read at the start of a gesture costs nothing and covers whatever moved the corner
-  // cut while no stack was being touched.
+  // Once per gesture the metrics are taken fresh rather than trusted from the cache — a resize
+  // drops them, but this is what catches anything that moved the em-based pin without changing
+  // the page's pixel size. The landing reading goes with them: one read at the start of a
+  // gesture costs nothing and covers whatever moved the corner cut while no stack was being
+  // touched.
   sampleMetrics(sheet);
   stirLanding(sheet.parentElement!);
   const size = currentFoldSize(sheet);
@@ -1538,23 +1541,22 @@ const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement
 // Keeps --fold-page-w/-h in sync with each page's actual pixel size — the generalized clip-path
 // formula in index.astro needs a real length to divide by (percentages aren't real lengths until
 // layout, so they can't be used in that arithmetic). Every page is observed, not just the
-// current front, since flips move the front-page role around. The cached metrics refresh here
+// current front, since flips move the front-page role around. The cached metrics go stale here
 // too, resizes being what moves them; each gesture's grab re-samples as well (onFoldGrab), for
 // anything that shifts the em-based pin without changing the page's pixel size.
 const observeFoldPageSizes = (stack: HTMLElement): void => {
-  // Every page's readings before any page's writes (see lengthsOf): interleaved, each write
-  // made the browser redo style before the next page's read, once per page per resize.
   const observer = new ResizeObserver((entries) => {
     // A resize re-derives the corner cut, which is written in em: the kept landing reading goes
     // stale here with no transition to announce it.
     stirLanding(stack);
-    const pages = entries.map((entry) => {
+    // The metrics are dropped rather than sampled: sampling reads computed style, which the
+    // other stacks' observers have just dirtied, so every stack paid a style pass of its own on
+    // every resize step. The next gesture or frame that needs them samples them once.
+    for (const entry of entries) {
       const page = entry.target as HTMLElement;
-      sampleMetrics(page, entry.contentRect);
+      metrics.delete(page);
       const { width, height } = entry.contentRect;
-      return { page, width, height };
-    });
-    for (const { page, width, height } of pages) {
+      observedSizes.set(page, { width, height });
       page.style.setProperty('--fold-page-w', `${width}px`);
       page.style.setProperty('--fold-page-h', `${height}px`);
     }
