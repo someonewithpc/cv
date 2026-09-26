@@ -281,8 +281,11 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const arrow = (name: string) =>
     `<marker id="${marker(name)}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 8 4 0 8z" /></marker>`;
 
-  return `<svg class="service-graph ${layout}" viewBox="0 0 ${m.w} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="fediverse-graph-title-${layout}">`
-    + `<title id="fediverse-graph-title-${layout}">${escape(describe(compose))}</title>`
+  const titleId = `fediverse-graph-title-${layout}`;
+  const descId = `fediverse-graph-desc-${layout}`;
+  return `<svg class="service-graph ${layout}" viewBox="0 0 ${m.w} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId}" aria-describedby="${descId}">`
+    + `<title id="${titleId}">${escape(title(config, compose))}</title>`
+    + `<desc id="${descId}">${escape(describe(config, compose))}</desc>`
     + `<defs>${arrow('arrow')}${arrow('gate')}</defs>`
     + `<g class="wires">${wires.join('')}</g>`
     + `<g class="links">${links.join('')}</g>`
@@ -296,12 +299,25 @@ export function renderGraphs(config: PlaygroundConfig, compose: ComposeFile, opt
   return renderGraph(config, compose, { ...options, layout: 'landscape' }) + renderGraph(config, compose, { ...options, layout: 'portrait' });
 }
 
-/** One sentence for a screen reader: what the file holds and what waits on what. */
-export function describe(compose: ComposeFile): string {
-  const names = Object.keys(compose.services);
-  if (!names.length) return 'No instances enabled: the compose file has no services.';
-  const edges = names.flatMap((name) => dependenciesOf(compose.services[name]).map((dependency) => `${name} on ${dependency}`));
-  return `${names.length} services: ${names.join(', ')}. Depends on: ${edges.join('; ')}.`;
+const SHARED_ORDER: SharedId[] = ['db', 'redis', 'search', 'media', 'mariadb'];
+
+const list = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
+
+/** The drawing's name, short enough for a tooltip: how many servers, and what they share. */
+export function title(config: PlaygroundConfig, compose: ComposeFile): string {
+  const servers = Object.values(config.instances).filter((instance) => compose.services[instance.instance_id]).length;
+  if (!servers) return 'No servers switched on';
+  const shared = SHARED_ORDER.filter((id) => compose.services[id]);
+  return `${servers} server${servers === 1 ? '' : 's'} behind nginx, on ${list(shared)}`;
+}
+
+/** For a screen reader: which server uses which shared service. */
+export function describe(config: PlaygroundConfig, compose: ComposeFile): string {
+  const shared = new Set<string>(SHARED_ORDER.filter((id) => compose.services[id]));
+  return uses(config, compose, shared)
+    .filter(({ services }) => services.size)
+    .map(({ id, services }) => `${id} uses ${list(SHARED_ORDER.filter((name) => services.has(name)))}.`)
+    .join(' ');
 }
 
 /** The line under the toggles: what the builder wrote, and that it checked. */
