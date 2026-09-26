@@ -108,6 +108,6 @@
 - [x] Open Source intro card has no inset below 1024px, text sits on the card's edges (#139)
 - [x] Refresh the contributions list: move the PRs that closed or merged, add the new ones (#140)
 - [x] Match the Blender GSoC highlight to the cover letter (#149)
-- [ ] Work History
+- [x] Work History (#146)
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
 - [ ] N5 Japanese glosses across the page (#148)
