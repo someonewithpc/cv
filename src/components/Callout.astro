@@ -49,6 +49,82 @@ const hasCard = Astro.slots.has('card');
     )}
     <slot />
   </div>
+
+  {/* Inside the section: a script at the top of the template is a sibling of the details it
+     lies among, and the mat reads its children as what lies on it. */}
+  <script>
+    // How far the stack turns its hindmost sheet for each step down the fan (PaperStack's
+    // $per-page-splay), times the log of its place.
+    const SPLAY = (1.5 * Math.PI) / 180;
+    const stacked = window.matchMedia('(width < 105rem)');
+
+    const textSpan = (cell: Element) => {
+      const range = document.createRange();
+      const rects = [...cell.querySelectorAll('dt, dd')].flatMap((el) => {
+        range.selectNodeContents(el);
+        return [...range.getClientRects()].filter((r) => r.width > 0);
+      });
+      return { left: Math.min(...rects.map((r) => r.left)), right: Math.max(...rects.map((r) => r.right)) };
+    };
+
+    // Lifts the slip's entries as high as the sheets and the peel hint over them allow, each kept
+    // the slip's own inset below whatever lies over its text, so the gap above the first entry
+    // matches the slip's sides and foot.
+    function lift(card: HTMLElement) {
+      if (!stacked.matches) {
+        card.style.removeProperty('--slip-lead');
+        return;
+      }
+      const view = card.parentElement!;
+      const stack = view.querySelector<HTMLElement>('[data-paper-stack]');
+      const sheet = stack?.firstElementChild as HTMLElement | null;
+      if (!stack || !sheet) return;
+
+      // The hindmost sheet's bottom edge, turned about the pin every sheet turns on.
+      const box = stack.getBoundingClientRect();
+      const [pinX, pinY] = getComputedStyle(sheet).transformOrigin.split(' ').map(parseFloat);
+      const turn = SPLAY * Math.log(Number(stack.dataset.pageCount) || 1);
+      const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
+      const corner = (x: number) => [
+        box.left + pinX + (x - pinX) * cos - (box.height - pinY) * sin,
+        box.top + pinY + (x - pinX) * sin + (box.height - pinY) * cos,
+      ];
+      const [ax, ay] = corner(0);
+      const [bx, by] = corner(box.width);
+      const edge = (x: number) => ay + ((x - ax) * (by - ay)) / (bx - ax);
+
+      // The peel hint: its words, and the arrow that runs on from their end to the sheet's corner.
+      const words = view.querySelector('.technical-drawing-frame[data-hint-show] .flip-hint--fwd.hint-words');
+      const hint = words && { left: words.getBoundingClientRect().left, right: box.right, bottom: words.getBoundingClientRect().bottom };
+
+      const style = getComputedStyle(card);
+      const pad = parseFloat(style.paddingLeft);
+      let lift = -Infinity;
+      for (const cell of card.querySelectorAll('.title-cell')) {
+        if (!cell.getClientRects().length) continue;
+        const { left, right } = textSpan(cell);
+        let over = Math.max(edge(left), edge(right));
+        if (hint && right + pad > hint.left && left - pad < hint.right) over = Math.max(over, hint.bottom);
+        const top = cell.querySelector('dt')!.getBoundingClientRect().top;
+        lift = Math.max(lift, over + pad - top);
+      }
+      if (!Number.isFinite(lift) || Math.abs(lift) < 0.25) return;
+      card.style.setProperty('--slip-lead', `${parseFloat(style.paddingTop) + lift}px`);
+    }
+
+    const cards = [...document.querySelectorAll<HTMLElement>('.callout[data-card] .callout-card')];
+    const liftAll = () => cards.forEach(lift);
+    const watch = new ResizeObserver(liftAll);
+    for (const card of cards) {
+      watch.observe(card);
+      const frame = card.parentElement!.querySelector('.technical-drawing-frame');
+      if (frame) watch.observe(frame);
+      // The top stack arms its peel hint once its own script runs.
+      if (frame) new MutationObserver(liftAll).observe(frame, { attributeFilter: ['data-hint-show'] });
+    }
+    stacked.addEventListener('change', liftAll);
+    document.fonts.ready.then(liftAll);
+  </script>
 </section>
 
 <style lang="scss">
@@ -334,6 +410,9 @@ const hasCard = Astro.slots.has('card');
   .callout[data-card] .callout-card {
     --slip-tuck: 1rem;
     --slip-inset: 1.25rem;
+    /* The text's inset from every edge of the slip that shows: its sides, its foot, and at the
+       top whatever lies over it, the fan or the peel hint. */
+    --slip-pad: 1rem;
     /* Clear of the peel hint the stack writes under its right-hand corner. */
     --slip-width: min(34rem, 100% - 24rem);
     --slip-sine: sin(1.5deg * log(var(--slip-pages, 6)));
@@ -351,9 +430,10 @@ const hasCard = Astro.slots.has('card');
        (a percentage margin is a share of the width too), and a little under the front sheet. */
     margin-top: calc(-100% * var(--slip-sine) - var(--slip-tuck));
     margin-inline-start: var(--slip-inset);
-    /* The entries start just below the fan where it hangs lowest over the slip, its right-hand
-       corner. */
-    padding: calc(var(--slip-tuck) + (var(--slip-inset) + var(--slip-width)) * var(--slip-sine)) 1rem 0.75rem;
+    /* The entries start below the fan where it hangs lowest over the slip, its right-hand
+       corner. The script below lifts them to the lowest point over their own text instead
+       (--slip-lead). */
+    padding: var(--slip-lead, calc(var(--slip-tuck) + (var(--slip-inset) + var(--slip-width)) * var(--slip-sine) + var(--slip-pad))) var(--slip-pad) var(--slip-pad);
     background: var(--slip-paper);
     border: 1px solid var(--line-strong);
     border-radius: 0.25rem;
@@ -385,6 +465,24 @@ const hasCard = Astro.slots.has('card');
       border-bottom: 0;
     }
 
+    /* The inset runs to the text itself: the cap line of the first entry, the baseline of the
+       last, not the half-leading round them. */
+    :global(.title-cell:first-child) {
+      padding-top: 0;
+    }
+
+    :global(.title-cell:first-child dt) {
+      text-box: trim-start cap alphabetic;
+    }
+
+    :global(.title-cell-notes) {
+      padding-bottom: 0;
+    }
+
+    :global(.title-cell-notes dd) {
+      text-box: trim-end cap alphabetic;
+    }
+
     :global(.title-cell-notes dd) {
       font-size: 0.8125rem;
       line-height: 1.55;
@@ -413,13 +511,7 @@ const hasCard = Astro.slots.has('card');
     --slip-tuck: 0.75rem;
     --slip-inset: 0.75rem;
     --slip-width: calc(100% - 1.5rem);
-    padding-inline: 0.75rem;
-  }
-
-  /* A phone has no room beside the peel hint the top stack writes under its sheet
-     (Stack.astro), so there the entries start a line further down, under the hint. */
-  .callout[data-card]:has([data-hint-show]) .callout-card {
-    padding-top: calc(100% * var(--slip-sine) + var(--slip-tuck) + var(--hint-clear) + 1.375rem);
+    --slip-pad: 0.75rem;
   }
 }
 </style>
