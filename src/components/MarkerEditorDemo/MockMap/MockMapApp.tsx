@@ -337,6 +337,7 @@ function MockMapOverlayInner() {
   // stacked narrow layout shifts headers by whole sections). Re-glue the cursor
   // to the highlighted target until the next step retargets it.
   useEffect(() => {
+    if (!inView) return;
     const id = window.setInterval(() => {
       const el = activeTargetRef.current;
       if (!el?.isConnected || userControlRef.current || cursorPhaseRef.current !== 'demo') {
@@ -348,7 +349,7 @@ function MockMapOverlayInner() {
       ));
     }, 150);
     return () => window.clearInterval(id);
-  }, [editorPortalHost]);
+  }, [editorPortalHost, inView]);
 
   useEffect(() => {
     const overlay = containerRef.current;
