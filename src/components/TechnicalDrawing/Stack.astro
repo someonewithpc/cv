@@ -101,6 +101,8 @@ const arrow = {
       <path class="hint-pass" d={arrow.pass} />
       <path class="hint-head" d={arrow.head} />
     </svg>
+
+    {['rest-x', 'rest-y', 'lean-x', 'lean-y'].map((length) => <span class="crease-length" data-length={length} />)}
   </div>
 </div>
 
@@ -195,6 +197,17 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 
 .technical-drawing-frame[data-hint-show] .flip-hints {
   display: block;
+}
+
+// The creases' resting intercepts as boxes, for flip-hint.ts to read in pixels.
+.crease-length {
+  position: absolute;
+  visibility: hidden;
+
+  &[data-length='rest-x'] { width: var(--fold-rest-x, 0); }
+  &[data-length='rest-y'] { width: var(--fold-rest-y, 0); }
+  &[data-length='lean-x'] { width: var(--paper-clip-lean-x); }
+  &[data-length='lean-y'] { width: var(--paper-clip-lean-y); }
 }
 
 // Neither callout is there until it is called for: the peel hint waits to be scrolled to, the

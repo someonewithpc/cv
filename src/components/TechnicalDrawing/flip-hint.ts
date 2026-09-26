@@ -34,41 +34,13 @@ const BARBS = [
 
 const frames = new WeakMap<HTMLElement, () => void>();
 
-const lengthsOf = (el: Element, ...names: string[]) => {
-  const style = getComputedStyle(el);
-  return names.map((name) => style.getPropertyValue(name).trim());
-};
-
-/** A length in whatever unit the stack wrote it, resolved by the browser against `el`. */
-function px(el: HTMLElement, value: string) {
-  const probe = document.createElement('div');
-  probe.style.cssText = `position:absolute;visibility:hidden;width:${value || '0px'}`;
-  el.appendChild(probe);
-  const width = probe.getBoundingClientRect().width;
-  probe.remove();
-  return width;
-}
-
-const restLengths = new WeakMap<HTMLElement, number[]>();
-
 /**
- * The four resting intercepts in pixels, kept between layouts. Resolving one means a probe div
- * in the stack, which is a write in the middle of the reads: the browser has to redo style and
- * layout for the stack, with every `:has()` rule on the page back in play, before the probe's
- * box can be read. Four of them cost about a sixth of a second on the frame a page lands on.
- *
- * None of the four moves while a page turns. They are written in cm and in em against a
- * container width, so they move when the stack changes size or the face does, which is where
- * the cache is dropped.
+ * The four resting intercepts in pixels, off the spans Stack.astro sizes to them. A probe
+ * inserted per reading put the whole page back through style and layout four times a step.
  */
-function creaseLengths(stack: HTMLElement) {
-  const kept = restLengths.get(stack);
-  if (kept) return kept;
-  const lengths = lengthsOf(
-    stack, '--fold-rest-x', '--fold-rest-y', '--fold-back-rest-x', '--fold-back-rest-y',
-  ).map((value) => px(stack, value));
-  restLengths.set(stack, lengths);
-  return lengths;
+function creaseLengths(layer: HTMLElement) {
+  return ['rest-x', 'rest-y', 'lean-x', 'lean-y'].map((name) =>
+    layer.querySelector(`.crease-length[data-length='${name}']`)?.getBoundingClientRect().width ?? 0);
 }
 
 const unit = (v: Point) => {
@@ -140,7 +112,7 @@ function layout(frame: HTMLElement) {
 
   const box = layer.getBoundingClientRect();
   const sheet = stack.getBoundingClientRect();
-  const [restX, restY, leanX, leanY] = creaseLengths(stack);
+  const [restX, restY, leanX, leanY] = creaseLengths(layer);
   const s = {
     left: sheet.left - box.left,
     top: sheet.top - box.top,
@@ -166,7 +138,7 @@ function layout(frame: HTMLElement) {
     const svg = layer.querySelector<SVGSVGElement>(`.flip-hint--${way}.hint-arrow`);
     if (words && svg) measured.push({ way, svg, words: words.getBoundingClientRect() });
   }
-  layer.setAttribute('data-hint-drawn', '');
+  if (!layer.hasAttribute('data-hint-drawn')) layer.setAttribute('data-hint-drawn', '');
   for (const { way, svg, words } of measured) draw(svg, box, words, creases[way], way);
 }
 
@@ -202,11 +174,7 @@ export function drawFlipHints(frame: HTMLElement) {
   frames.set(frame, schedule);
 
   const stack = frame.querySelector<HTMLElement>('article.technical-drawing-stack');
-  const remeasure = () => {
-    if (stack) restLengths.delete(stack);
-    schedule();
-  };
-  const sized = new ResizeObserver(remeasure);
+  const sized = new ResizeObserver(schedule);
   if (stack) sized.observe(stack);
   frame.querySelectorAll<HTMLElement>('.flip-hints .hint-words').forEach((words) => sized.observe(words));
   if (stack) {
@@ -218,7 +186,7 @@ export function drawFlipHints(frame: HTMLElement) {
       if (stack.hasAttribute('data-paper-settled')) schedule();
     }).observe(stack, { attributes: true, attributeFilter: ['data-paper-settled'] });
   }
-  document.fonts?.addEventListener('loadingdone', remeasure);
+  document.fonts?.addEventListener('loadingdone', schedule);
   markWhenSeen(frame);
 
   layout(frame);
