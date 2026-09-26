@@ -53,7 +53,7 @@ test('main page: a painted buffer, cut into the ranges each parser is handed', a
 
   // The frontmatter and the style body are whole-line blocks; the one interpolation sits
   // inside its line.
-  await expect(buffer.locator('.block[data-lang="tsx"]')).toContainText('type Props');
+  await expect(buffer.locator('.block[data-lang="typescript"]')).toContainText('type Props');
   await expect(buffer.locator('.block[data-lang="scss"]').first()).toContainText('letter-spacing');
   await expect(buffer.locator('.range[data-lang="tsx"]')).toHaveCount(1);
 
@@ -73,7 +73,7 @@ test('main page: dashed boxes over the buffer nest astro around html around the 
   };
 
   const astro = await band('astro', 0);
-  const frontmatter = await band('tsx', 1);
+  const frontmatter = await band('typescript', 1);
   const html = await band('html', 1);
   const expression = await band('tsx', 2);
   const style = await band('scss', 2);
@@ -85,6 +85,7 @@ test('main page: dashed boxes over the buffer nest astro around html around the 
   expect([expression.from, expression.to]).toEqual([16, 16]);
   expect([style.from, style.to]).toEqual([23, 31]);
   expect(html.label).toBe('html 13-32');
+  expect(frontmatter.label).toBe('typescript 2-10');
   expect(expression.label).toBe('tsx 16');
 
   // The expression's box covers what is inside the braces, not the rest of its line.

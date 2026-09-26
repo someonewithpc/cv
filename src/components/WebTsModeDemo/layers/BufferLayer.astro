@@ -215,7 +215,8 @@ const echo = [
 // Which parser a range, a block or an outline stands for.
 .buffer-layer :global([data-lang='astro']) { --lang: var(--lang-astro); }
 .buffer-layer :global([data-lang='html']) { --lang: var(--lang-html); }
-.buffer-layer :global([data-lang='tsx']) { --lang: var(--lang-tsx); }
+.buffer-layer :global([data-lang='tsx']),
+.buffer-layer :global([data-lang='typescript']) { --lang: var(--lang-tsx); }
 .buffer-layer :global([data-lang='scss']),
 .buffer-layer :global([data-lang='css']) { --lang: var(--lang-scss); }
 

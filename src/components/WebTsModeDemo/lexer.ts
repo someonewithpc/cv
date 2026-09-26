@@ -8,10 +8,12 @@
  *
  * It was checked once against the real grammars (tree-sitter-astro, tsx, and the SCSS
  * grammar web-ts-mode vendors): the ranges on these sheets, and every selector depth in
- * them, come out the same.
+ * them, come out the same. One label is fixed here and not in the mode: the frontmatter
+ * range is `typescript`, since Astro builds it as plain TypeScript; web-ts-mode still
+ * hands that range to `tsx`, a known bug left alone outside this demo.
  */
 
-export type Lang = 'astro' | 'tsx' | 'scss' | 'css';
+export type Lang = 'astro' | 'tsx' | 'typescript' | 'scss' | 'css';
 
 /** The face a character ends up with, by the Emacs face it stands for. */
 export type Face =
@@ -820,7 +822,7 @@ export function lexAstro(src: string): Painted {
       paint(p, 0, 3, 'comment');
       paint(p, close + 1, close + 4, 'comment');
       embed(p, ranges, {
-        lang: 'tsx',
+        lang: 'typescript',
         node: 'frontmatter_js_block',
         rule: 'frontmatter (frontmatter_js_block)',
         offset: false,

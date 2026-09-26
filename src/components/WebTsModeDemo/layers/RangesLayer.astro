@@ -21,7 +21,7 @@ const nestedClose = text.indexOf('}', nestedOpen);
 const span = (from: number, to: number) => `--from: ${from}; --to: ${to}`;
 
 const rules = [
-  { capture: 'frontmatter_js_block', lang: 'tsx', note: '' },
+  { capture: 'frontmatter_js_block', lang: 'typescript', note: '' },
   { capture: 'attribute_js_expr', lang: 'tsx', note: 'unless inside an interpolation' },
   { capture: 'script_element raw_text', lang: 'tsx', note: '' },
   { capture: 'element > html_interpolation', lang: 'tsx', note: "top level only, :offset '(1 . -1)" },
