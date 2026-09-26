@@ -194,6 +194,8 @@ let heldByUser = false;
 // Whether the real pointer is on the demo. A parked mouse sends no more moves, so this is
 // what keeps the walkthrough from restarting under it and pausing again on the next twitch.
 let pointerOver = false;
+/** The walkthrough was held mid-run by the page going away, and picks up from the same step. */
+let parkedMidWalk = false;
 
 // Match Marker Editor: hovering pauses autoplay and resets the idle timer, while a
 // deliberate interaction keeps control until the visitor replays from the status chip.
@@ -592,7 +594,9 @@ function onKeyDown(event: KeyboardEvent) {
 
 function startAutoplay(controller: AutoPlayController) {
   if (reducedMotion.value || userControl.value || !chairsReady.value) return;
-  if (cursorPhase.value === 'demo') {
+  if (cursorPhase.value === 'demo' || parkedMidWalk) {
+    parkedMidWalk = false;
+    cursorPhase.value = 'demo';
     controller.resume();
     return;
   }
@@ -603,6 +607,7 @@ function startAutoplay(controller: AutoPlayController) {
 
 async function restartDemo() {
   if (!chairsReady.value) return;
+  parkedMidWalk = false;
   if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
   if (handoffTimer) { clearTimeout(handoffTimer); handoffTimer = null; }
   // The deck reads "auto play off" under reduced motion, so Restart puts the scene back
@@ -701,6 +706,7 @@ onMounted(async () => {
       if (!active) {
         controller.pause();
         releaseSpaceBuilderGpu(scene, reasons);
+        if (cursorPhase.value === 'demo') parkedMidWalk = true;
         cursorPhase.value = 'gone';
         return;
       }
