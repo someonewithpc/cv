@@ -214,7 +214,9 @@ header strong {
 .rules {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* The Numbers rule runs longest, so its column is a little wider and the three come out
+     about even; with equal columns it wraps a line more than the others on a narrow sheet. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: 0.5em;
   padding-top: 0.5em;
   border-top: 1px solid var(--line);
