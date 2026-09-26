@@ -796,12 +796,20 @@ section {
 
           :global(.tech-icon) {
             position: absolute;
+            /* White outside the Rails track, so it reads as a logo beside the seal and
+               not as a red blot. The stroke sits under the fill and past the viewBox. */
+            --rails-outline: #fff;
+            --rails-outline-width: 10;
 
             :global(svg) {
               display: block;
               width: $title-tech-icon-size;
               height: $title-tech-icon-size;
               margin: 0;
+            }
+
+            :global(svg[data-icon='rails']) {
+              overflow: visible;
             }
 
             &:first-child {
