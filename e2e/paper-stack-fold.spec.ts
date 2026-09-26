@@ -189,8 +189,13 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
   // flap over at the very end, so what matters is the paper: from the renumber on, the page at
   // the front must have a flap of its own, and it must be drawn well before the flip lands.
   // The flap's width is --fold-x, so its painted size measures the reveal too.
+  //
+  // How soon is read from the reveal's own start, not from the first frame that shows it: a
+  // loaded machine hands out frames late, and the frame that catches the flap drawn could come
+  // well after the paper was. The reveal is a CSS animation, so its start time and delay say when
+  // the corner began to curl up, to within the one frame it takes an animation to start.
   const watch = stack.evaluate((el) => new Promise<{
-    bareFrames: number, drawnAfter: number, landing: boolean, flapCount: number,
+    bareFrames: number, revealFrom: number, landing: boolean, flapCount: number,
   }>((resolve, reject) => {
     const pages = [...el.children] as HTMLElement[];
     const frontPage = () => pages.find((p) => p.style.getPropertyValue('--page-index').trim() === '1')!;
@@ -206,9 +211,15 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
         if (!flap) bareFrames += 1;
         // 2cm is the resting dog-ear, so a fifth of that is unmistakably paper, not a hairline
         if (flap && flap.getBoundingClientRect().width > 20) {
+          const reveal = front.getAnimations()
+            .find((animation) => (animation as CSSAnimation).animationName === 'initial-fold-reveal');
+          if (!reveal || reveal.startTime === null) {
+            reject(new Error('the dog-ear was drawn without its reveal'));
+            return;
+          }
           resolve({
             bareFrames,
-            drawnAfter: performance.now() - restacked,
+            revealFrom: Number(reveal.startTime) + Number(reveal.effect!.getTiming().delay ?? 0) - restacked,
             landing: !!el.querySelector('.paper-fold--active'),
             flapCount: el.querySelectorAll('.paper-fold').length,
           });
@@ -229,7 +240,8 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
   const seen = await watch;
 
   expect(seen.bareFrames, 'frames where the front page had no flap at all').toBe(0);
-  expect(seen.drawnAfter, 'ms from the renumber to a drawn dog-ear').toBeLessThan(400);
+  // index.astro holds a page's first reveal back half a second; a flip must not bring that wait along
+  expect(seen.revealFrom, 'ms from the renumber to the dog-ear starting to curl up').toBeLessThan(400);
   expect(seen.landing, 'the flipped sheet is still folding away').toBe(true);
   // One flap is the real one finishing the flip, the other the stand-in holding the new front
   // page's dog-ear until it is free.
