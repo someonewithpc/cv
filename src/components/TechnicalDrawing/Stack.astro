@@ -416,6 +416,7 @@ import './demo-cursor-press';
 
 import { positionAnnotations } from './annotations-position';
 import { drawFlipHints } from './flip-hint';
+import { forgetTextWidths, readTitleFit, writeTitleFit } from './title-fit';
 
 function initStack(stack: HTMLElement) {
   const onScreen = new WeakMap<HTMLElement, boolean>();
@@ -541,6 +542,12 @@ function initStack(stack: HTMLElement) {
   // wide the text in the cells ran, so it is measured rather than restated as a constant.
   [...stack.querySelectorAll<HTMLElement>('section > table')].forEach((block) => {
     measure.observe(block);
+    const sheet = block.parentElement;
+    if (!sheet) return;
+    fitTitleBlock.observe(sheet);
+    watchFrontPage(sheet, (front) => {
+      if (front) fitLater([sheet]);
+    });
   });
 }
 
@@ -606,6 +613,32 @@ const measure = new ResizeObserver((entries) => {
   }
 });
 
+// Which cells of the title block each sheet's own artwork leaves room for (title-fit.ts). Only
+// the front page is measured: the pages behind it show no more of their block than an edge, and
+// measuring all of them made a resize step through the ladder's widths a tenth slower. A page
+// behind goes back to the ladder when the sheet resizes, and is measured when it comes to the
+// front. Every sheet is read before any is written, so a pass costs one layout, not one per sheet.
+const fitTitleBlocks = (sheets: HTMLElement[]) => sheets
+  .map((sheet) => (isFrontPage(sheet) ? readTitleFit(sheet) : { sheet, fit: null }))
+  .forEach(writeTitleFit);
+// A frame after the sheet resized, not in the observer's callback: the annotations are moved to
+// the new size by their own observer, after this one has run, and a sheet read before that
+// measured its callouts where they stood at the old size.
+const fitPending = new Set<HTMLElement>();
+let fitFrame = 0;
+const fitLater = (sheets: HTMLElement[]) => {
+  sheets.forEach((sheet) => fitPending.add(sheet));
+  fitFrame ||= requestAnimationFrame(() => {
+    fitFrame = 0;
+    const pending = [...fitPending];
+    fitPending.clear();
+    fitTitleBlocks(pending);
+  });
+};
+const fitTitleBlock = new ResizeObserver((entries) => {
+  fitLater(entries.map((entry) => entry.target as HTMLElement));
+});
+
 // The top stack alone carries the hints: one is a nudge, one per demo is wallpaper, and by the
 // third stack the reader has worked it out. Arming them from here is also what keeps them off a
 // page whose JS never ran, where nothing would turn anyway.
@@ -619,6 +652,13 @@ function armHints() {
 function init() {
   [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack')].forEach(initStack);
   armHints();
+
+  // The block's cells are measured in its own fonts, and a sheet fitted before they arrived was
+  // fitted to the fallback's widths.
+  document.fonts.ready.then(() => {
+    forgetTextWidths();
+    fitTitleBlocks([...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack section:has(> table)')]);
+  });
 }
 
 /* A module script is deferred, so by the time this one runs the document is already

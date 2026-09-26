@@ -912,20 +912,18 @@ section {
     & > table .title-weight { display: none; }
   }
 
-  @mixin title-fit-4 {
-    @include title-fit-3;
-
-    /* The cells stop being a table so the logo cell can drop under the title
-       instead of standing a column beside it. Each cell keeps its hairline, and
-       the negative margins do what border-collapse did. A grid and not a wrapping
-       flex row: the title spans every column, so both rows are one width. A flex
-       row was as wide as all its cells end to end and left the row under the
-       title a stub. */
+  /* The cells stop being a table so the logo cell can drop under the title
+     instead of standing a column beside it. Each cell keeps its hairline, and
+     the negative margins do what border-collapse did. A grid and not a wrapping
+     flex row: the title spans every column, so both rows are one width. A flex
+     row was as wide as all its cells end to end and left the row under the
+     title a stub. $columns counts the cells under the title, the logo's too. */
+  @mixin stack-cells($columns) {
     & > table {
       display: grid;
-      grid-template-columns: repeat(3, auto);
+      grid-template-columns: repeat($columns, auto);
 
-      &:not(:has(.title-tech)) { grid-template-columns: repeat(2, auto); }
+      &:not(:has(.title-tech)) { grid-template-columns: repeat($columns - 1, auto); }
 
       tbody,
       tr { display: contents; }
@@ -954,6 +952,11 @@ section {
     }
   }
 
+  @mixin title-fit-4 {
+    @include title-fit-3;
+    @include stack-cells(3);
+  }
+
   @mixin title-fit-5 {
     @include title-fit-4;
     /* Narrow enough that the title has to take a second line. 11rem is what clears
@@ -965,12 +968,40 @@ section {
      of the portrait layout below, which gives the block its own row and has no
      room problem to solve. The symbol's cell, symbol only and 1.5em wide, fits
      beside the artwork on every sheet down to the width where Scale goes too:
-     measured clear of the prose on every page at 960, 1024 and 1440. */
-  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-1; }
-  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-2; }
-  @container technical-drawing-width (40em < width <= 46em) { @include title-fit-3; }
-  @container technical-drawing-width (40em < width <= 43em) { @include title-fit-4; }
-  @container technical-drawing-width (40em < width <= 41em) { @include title-fit-5; }
+     measured clear of the prose on every page at 960, 1024 and 1440.
+
+     Those pages are the ones whose artwork crowds the corner most, so the ladder is
+     only the floor. Where a sheet's own artwork leaves the block room for cells the
+     ladder sheds, Stack.astro names the fit it can take in data-title-fit, and that
+     replaces the ladder's step (title-fit.ts). */
+  @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-1; } }
+  @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-2; } }
+  @container technical-drawing-width (40em < width <= 46em) { &:not([data-title-fit]) { @include title-fit-3; } }
+  @container technical-drawing-width (40em < width <= 43em) { &:not([data-title-fit]) { @include title-fit-4; } }
+  @container technical-drawing-width (40em < width <= 41em) { &:not([data-title-fit]) { @include title-fit-5; } }
+
+  /* A fit is an arrangement and how many cells it sheds, in the ladder's order:
+     T is the table, S the logo under the title, W that with the title wrapped. */
+  @for $shed from 0 through 3 {
+    &[data-title-fit='T#{$shed}'],
+    &[data-title-fit='S#{$shed}'],
+    &[data-title-fit='W#{$shed}'] {
+      @if $shed == 1 { @include title-fit-1; }
+      @if $shed == 2 { @include title-fit-2; }
+      @if $shed == 3 { @include title-fit-3; }
+    }
+
+    &[data-title-fit='S#{$shed}'],
+    &[data-title-fit='W#{$shed}'] {
+      @include stack-cells(6 - $shed);
+    }
+  }
+
+  /* The title wraps where title-fit-5 wraps it, but the row of cells under it
+     may run wider than that, so the cap is on the lettering, not the block. */
+  &[data-title-fit^='W'] > table td.title-name header {
+    max-width: calc(11rem - 0.4em - 1px);
+  }
 
   /* A sheet this narrow cannot host the note beside the artwork — landscape
      included, where the sheet is half as tall as it is wide and the note runs
