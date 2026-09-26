@@ -350,8 +350,6 @@ const pages = await Promise.all(
       // every shade on it is a translucent black or white laid over that, so one set of
       // gradients serves every theme's paper.
       --bend-paper: var(--paper-surface, var(--surface-sunken));
-      --bend-light: color-mix(in oklab, var(--bend-paper) 86%, white);
-      --bend-dark: color-mix(in oklab, var(--bend-paper) 88%, black);
 
       // The one light in the drawing: what a fold shows is the sheet's back lit flat where it
       // lies down, in shadow where it curls up out of the crease, and casting a shadow on the
@@ -450,11 +448,13 @@ const pages = await Promise.all(
           // extra points on each set out along the crease's normal by a share of the bend's
           // width (the near bow lies under the front sheet, and is there so the shape stays a
           // whole), while the four corners stay on the two creases. And it is shaded across
-          // its width, from the crease to the pile: darker where the sheet turns up out of the
-          // crease, lit along the apex, darker again where it turns under at the pile's edge.
-          // The normal is (sin a, cos a) for a the crease's angle, pointing into the page; the
-          // gradient runs the other way, and its stops are measured from the box corner the
-          // gradient line starts at, which for that direction is the bottom-right one.
+          // its width, from the crease to the pile, the way the flap is shaded from its own
+          // crease: in shadow where the sheet turns up out of the front crease, the plain
+          // paper over the apex, a little darker again where it turns under at the pile's
+          // edge. The normal is (sin a, cos a) for a the crease's angle, pointing into the
+          // page; the gradient runs the other way, and its stops are measured from the box
+          // corner the gradient line starts at, which for that direction is the bottom-right
+          // one.
           --bend-angle: atan2(var(--fold-back-y), var(--fold-back-x));
           --bend-sin: sin(var(--bend-angle));
           --bend-cos: cos(var(--bend-angle));
@@ -495,14 +495,12 @@ const pages = await Promise.all(
           // it unset when nothing is turned, where the strip is transparent anyway. The fold
           // flap above stays on --bend-paper: that one really is the front page's own sheet.
           --pile-bend-paper: var(--pile-paper, var(--bend-paper));
-          --pile-bend-light: color-mix(in oklab, var(--pile-bend-paper) 86%, white);
-          --pile-bend-dark: color-mix(in oklab, var(--pile-bend-paper) 88%, black);
           background:
             linear-gradient(
               calc(-1 * var(--bend-angle)),
-              var(--pile-bend-dark) calc(var(--bend-crease) - var(--bend-bow)),
-              var(--pile-bend-light) calc(var(--bend-crease) + var(--bend-width) * 0.45),
-              var(--pile-bend-dark) calc(var(--bend-crease) + var(--bend-width) + var(--bend-bow))
+              rgb(0 0 0 / 0.38) calc(var(--bend-crease) - var(--bend-bow)),
+              rgb(0 0 0 / 0) calc(var(--bend-crease) + var(--bend-width) * 0.55),
+              rgb(0 0 0 / 0.14) calc(var(--bend-crease) + var(--bend-width) + var(--bend-bow))
             )
             var(--pile-bend-paper);
           border: 1px solid var(--line-strong);
@@ -877,10 +875,21 @@ const pages = await Promise.all(
         var(--fold-back-x) * (1 - tan(atan2(var(--band-height), max(var(--fold-back-y), 1px))))
       );
       clip-path: polygon(var(--fold-back-x) 0px, var(--band-crease-x) 100%, 100% 100%, 100% 0px);
-      background: var(--paper-surface, var(--surface-sunken));
+      // The page in front of this one in the pile lies on the band and casts a shadow up onto
+      // it from its top edge, which stands --turned-step below the band's top: the whole rise
+      // for the first page turned, whose neighbour is the front page, and the difference
+      // between two rises for the rest. The band is otherwise the sheet's back at a touch
+      // under the paper's own tone, no brighter than the flap lying flat.
+      --turned-step: calc(var(--turned-rise) - #{$turn-lift} * log(max(var(--turned-rank), 1)) / log(2));
+      background:
+        linear-gradient(
+          rgb(0 0 0 / 0.06),
+          rgb(0 0 0 / 0.06) calc(var(--turned-step) - 0.5em),
+          rgb(0 0 0 / 0.3) var(--turned-step)
+        )
+        var(--paper-surface, var(--surface-sunken));
       border: 1px solid var(--line-strong);
       border-top-right-radius: $border-radius;
-      filter: brightness(94%);
       opacity: var(--turned);
       pointer-events: none;
     }
