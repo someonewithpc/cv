@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import * as esbuild from 'esbuild';
 
+import PostIt from '@/components/PostIt.astro';
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 
 import SearchLayer from './layers/SearchLayer.astro';
@@ -56,6 +57,29 @@ type Layer = keyof typeof layers;
       relevance: <RelevanceLayer />,
       filters: <FiltersLayer />,
       sql: <SqlLayer />,
+    }[layer])}
+  </fragment>
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      search: null,
+      relevance: (
+        <PostIt background="#cde" color="black">
+          A raw MATCH score means nothing alone, so each row reads as a share of the best one.
+          Type a seat count here and 8 stops matching 81
+        </PostIt>
+      ),
+      filters: (
+        <PostIt background="#dfd" color="black">
+          The category goes in before the maximum, so the best row it leaves reads 1.00. A
+          property filter comes after, and can leave the top row lower
+        </PostIt>
+      ),
+      sql: (
+        <PostIt background="#edf" color="black">
+          Type fast here. Repeats get dropped and stale requests aborted, and one MATCH fragment
+          filters, scores and sorts whatever gets through
+        </PostIt>
+      ),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
