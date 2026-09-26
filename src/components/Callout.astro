@@ -394,6 +394,18 @@ const hasCard = Astro.slots.has('card');
   .callout[data-card] .callout-card-leader {
     display: none;
   }
+
+  /* The frame's box, and the box of any demo wrapped round it, runs on through the room kept
+     for the fan, over the slip's first entry, and would take its clicks and text selection.
+     Only what the frame holds takes the pointer. */
+  .callout[data-card] .callout-view > :global(:not(.callout-card)),
+  .callout[data-card] .callout-view :global(.technical-drawing-frame) {
+    pointer-events: none;
+  }
+
+  .callout[data-card] .callout-view :global(.technical-drawing-frame > :not(.flip-hints)) {
+    pointer-events: auto;
+  }
 }
 
 @media (max-width: 52rem) {
