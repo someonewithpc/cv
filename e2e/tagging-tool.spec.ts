@@ -21,7 +21,11 @@ async function mountedTool(page: import('@playwright/test').Page) {
   const tool = front.locator('.tagging-tool[data-live]');
   // A pointer moving over the tool is how a real visitor takes it over from the walkthrough
   // (src/client/walkthroughHandover.ts); without it the first row keeps typing, switching
-  // property and replaying on its own.
+  // property and replaying on its own. The tool only listens once its page is on screen and in
+  // front, and a pointer that arrives before then and rests is never heard, so wait for the
+  // walkthrough's cursor, which it shows only once it is running there.
+  await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+  await expect(front.locator('.tagging-cursor')).toBeVisible({ timeout: 10_000 });
   await tool.hover();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
   // The handover stops the walkthrough where it stands, and on a loaded machine it can land
