@@ -886,10 +886,17 @@ section {
 
     /* The cells stop being a table so the logo cell can drop under the title
        instead of standing a column beside it. Each cell keeps its hairline, and
-       the negative margins do what border-collapse did. */
+       the negative margins do what border-collapse did.
+
+       A grid and not a wrapping flex row: the title spans every column, so the row
+       under it is exactly as wide, and the block is as wide as the wider of the two.
+       A flex row took the width of all its cells laid end to end, which stretched
+       the title across it and left the cells below a stub at its left end. */
     & > table {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+
+      &:not(:has(.title-tech)) { grid-template-columns: repeat(2, auto); }
 
       tbody,
       tr { display: contents; }
@@ -900,11 +907,13 @@ section {
       }
 
       .title-name {
-        order: -1;
-        flex: 1 0 100%;
+        grid-row: 1;
+        grid-column: 1 / -1;
       }
 
-      .title-tech .title-tech-stack {
+      /* td as well, or the base rule's 4em square outranks this one and the row
+         under the title stands twice as tall as its lettering. */
+      td.title-tech .title-tech-stack {
         width: 2.625em;
         height: 2em;
         aspect-ratio: auto;
@@ -914,9 +923,6 @@ section {
           height: 1.25em;
         }
       }
-
-      .title-no,
-      .title-date { order: 1; }
     }
   }
 
