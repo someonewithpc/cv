@@ -1,6 +1,6 @@
 // A border that reports on a request: an arc orbits while pending, then the ring sweeps
 // closed in the verdict's colour. One conic gradient driven by three custom properties,
-// registered in src/client/registerStatusBorderProperties.ts so they animate. Copied from
+// registered below so they animate. Copied from
 // the font picker's FontPickerDemo/picker/_statusBorder.scss with the properties renamed;
 // the two should become one file when both are on main.
 $status-border-duration: 1s;
@@ -9,6 +9,26 @@ $status-border-duration: 1s;
 $status-border-timing: cubic-bezier(0.75, 0.25, 0.2, 0.2);
 $status-border-idle: #bbb;
 $status-border-brand: #89ab24;
+
+// Every stylesheet that uses this module carries these rules, so the registration arrives
+// with whichever component draws the ring
+@property --status-border-colored-width {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 1turn;
+}
+
+@property --status-border-color {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #{$status-border-idle};
+}
+
+@property --status-border-start {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0turn;
+}
 
 // `$transitions` and `$transition-durations` are extra transition-property and
 // transition-duration entries, as strings, for an element that already transitions

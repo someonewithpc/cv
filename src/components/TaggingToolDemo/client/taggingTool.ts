@@ -1,6 +1,5 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate } from '@/client/frontPage';
-import { registerStatusBorderProperties } from '@/client/registerStatusBorderProperties';
 import { watchHandover } from '@/client/walkthroughHandover';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -499,8 +498,6 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
 }
 
 export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
-  registerStatusBorderProperties();
-
   const select = root.querySelector<HTMLSelectElement>('.property-select');
   const list = root.querySelector<HTMLDataListElement>('datalist');
   if (!select || !list) return;
