@@ -108,7 +108,7 @@ type Layer = keyof typeof layers;
 // the rest.
 @container technical-drawing not (orientation: portrait) {
   :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .drag-drop-scene-app) {
-    grid-template-columns: minmax(0, 1fr) calc(var(--title-block-inline) - var(--demo-pad));
+    grid-template-columns: minmax(0, 1fr) calc(var(--title-block-inline) + var(--title-block-right) - var(--sheet-margin) - var(--demo-pad));
   }
 
   :global(.drag-drop-demo article.technical-drawing-stack > * > section:not(.blueprint) .drag-drop-scene-app .sidebar) {

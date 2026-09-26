@@ -227,6 +227,13 @@ section {
   --title-block-inline: 0px;
   --title-block-block: 0px;
 
+  /* How far the block stands off the right and bottom edges. The plain margin while it
+     has its Proj. cell, the cell drawn to take the page's dog-ear; more once it sheds it
+     (see stand-off-fold, and the portrait sheet). The apps that share an edge with the
+     block read the right one too. */
+  --title-block-right: var(--sheet-margin);
+  --title-block-bottom: var(--sheet-margin);
+
   contain: size style;
   overflow: clip;
 
@@ -731,8 +738,8 @@ section {
     $title-tech-icon-size: 2.25em;
 
     position: absolute;
-    right: var(--sheet-margin);
-    bottom: var(--sheet-margin);
+    right: var(--title-block-right);
+    bottom: var(--title-block-bottom);
 
     border-collapse: collapse;
     border-spacing: 0;
@@ -751,12 +758,11 @@ section {
        One offset serves both layers, since both tile from that box -- the ruling a
        blueprint sheet carries on (inherit takes the sheet's own image, already resolved,
        so the WIP tint comes with it) and the fibre. Both boxes are measured in
-       Stack.astro; the offset is the sheet's padding box less the margin the block is
-       inset by and the block's own size, which comes out as the margin itself wherever
-       the block runs the sheet's full width. */
+       Stack.astro; the offset is the sheet's padding box less the block's inset from each edge
+       and its own size. */
     --title-block-origin:
-      calc(-1 * (var(--sheet-inline) - 2px - var(--sheet-margin) - var(--title-block-inline)))
-      calc(-1 * (var(--sheet-block) - 2px - var(--sheet-margin) - var(--title-block-block)));
+      calc(-1 * (var(--sheet-inline) - 2px - var(--title-block-right) - var(--title-block-inline)))
+      calc(-1 * (var(--sheet-block) - 2px - var(--title-block-bottom) - var(--title-block-block)));
 
     background-color: var(--sheet-paper);
     background-image: inherit;
@@ -776,6 +782,29 @@ section {
       &.title-proj :global(svg) {
         width: 1.5em;
         height: 0.75em;
+      }
+
+      /* The lower row gives the Proj. cell the room it takes: tighter sides on its
+         other cells keep the block the width its title makes it. */
+      &.title-no,
+      &.title-scale,
+      &.title-weight,
+      &.title-date {
+        padding-inline: 0.125em;
+      }
+
+      /* The corner cell is the one the page's dog-ear lands on. It is as wide as the
+         dog-ear's flap reaches along the block's bottom edge, so the Date cell stops
+         short of it, and its row as tall as the flap reaches up the block, so the title
+         does too. The dog-ear rests at 2:1, which puts the flap's edge three quarters
+         of the block's inset (a margin and the frame's 2px) inside --fold-rest-x along
+         that edge, and its tip 1.6 times --fold-rest-y up the sheet. Each keeps a pixel
+         and a half of clear paper. Outside a paper stack both come out negative and the
+         cell keeps its own size. */
+      &.title-proj {
+        box-sizing: border-box;
+        width: calc(var(--fold-rest-x, 0px) - 1.75 * var(--sheet-margin) - 2px);
+        height: calc(1.6 * var(--fold-rest-y, 0px) - var(--sheet-margin) - 0.5px);
       }
 
       // display must stay table-cell — grid/flex on the td breaks rowspan.
@@ -867,7 +896,17 @@ section {
     .title-proj { display: none; }
   }
 
+  /* Without the Proj. cell the Date cell would take the corner, under the dog-ear's
+     flap. The block stands off by as far as the flap reaches along its bottom edge
+     instead (see .title-proj for the sum), with 3.5px of clear paper, since the
+     stacked cells of the narrowest steps stand a pixel or two past the block's own box.
+     A sheet outside a paper stack has no dog-ear and keeps the plain margin. */
+  @mixin stand-off-fold {
+    --title-block-right: max(var(--sheet-margin), calc(var(--fold-rest-x, 0px) - 0.75 * var(--sheet-margin)));
+  }
+
   @mixin title-fit-1 {
+    @include stand-off-fold;
     & > table { @include drop-proj; }
   }
 
@@ -935,13 +974,13 @@ section {
 
   /* Pick the step from the sheet's own width. The lower bound keeps the ladder out
      of the portrait layout below, which gives the block its own row and has no
-     room problem to solve. The symbol's cell, symbol only and 1.5em wide, fits
-     beside the artwork on every sheet down to the width where Scale goes too:
-     measured clear of the prose on every page at 960, 1024 and 1440. */
-  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-1; }
-  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-2; }
-  @container technical-drawing-width (40em < width <= 46em) { @include title-fit-3; }
-  @container technical-drawing-width (40em < width <= 43em) { @include title-fit-4; }
+     room problem to solve. Standing clear of the dog-ear takes room, so the block
+     gives up Proj. and Scale from 52.5em and stacks from 50em (Weight goes with
+     the stacking): measured clear of the prose on every page from 760 to 1100px
+     in 20px steps and at 1440. */
+  @container technical-drawing-width (40em < width <= 52.5em) { @include title-fit-1; }
+  @container technical-drawing-width (40em < width <= 52.5em) { @include title-fit-2; }
+  @container technical-drawing-width (40em < width <= 50em) { @include title-fit-4; }
   @container technical-drawing-width (40em < width <= 41em) { @include title-fit-5; }
 
   /* A sheet this narrow cannot host the note beside the artwork — landscape
@@ -998,6 +1037,11 @@ section {
     /* A phone sheet cannot spare a 1rem mat on all four edges. */
     --sheet-margin: 0.625rem;
     --demo-inset: 0px;
+
+    /* The block stands off the dog-ear here too. The note's corner holds the other
+       end of the row, so the room comes out of the block: Scale and Weight go, and
+       the title gives up the stand-off's width to a second line (see td header). */
+    @include stand-off-fold;
 
     grid-template-columns: minmax(0, 1fr);
     /* Artwork, then the deck, then the title block. The note is tucked under the
@@ -1064,7 +1108,8 @@ section {
          and sits in the corner, as it does on a landscape sheet. Stretched to the row, its
          cells grew wide and empty, and the logo cell reached under the note's corner. */
       justify-self: end;
-      max-width: 100%;
+      margin-inline-end: calc(var(--title-block-right) - var(--sheet-margin));
+      max-width: calc(100% - var(--title-block-right) + var(--sheet-margin));
       font-size: 0.7em;
 
       td {
@@ -1074,6 +1119,9 @@ section {
       // Purely decorative on a phone sheet: drop the cell rather than squeeze
       // the rest of the title block to make room for it.
       @include drop-proj;
+
+      .title-scale,
+      .title-weight { display: none; }
 
       // No longer has to stay square once the sheet can't spare the width —
       // a shorter, wider strip still reads fine at this size.
@@ -1091,8 +1139,9 @@ section {
       td header {
         /* Caps the cell's min-content too, so a long title cannot widen the
            block past the sheet. A title longer than that takes a second line
-           rather than an ellipsis. */
-        max-width: 58cqw;
+           rather than an ellipsis. It gives up the stand-off's width too, which
+           keeps the block's left end off the note's corner. */
+        max-width: calc(55cqw - var(--title-block-right) + var(--sheet-margin));
 
         h2,
         h3 {
