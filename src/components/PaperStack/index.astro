@@ -371,7 +371,9 @@ const pages = await Promise.all(
       // key off, so no new invalidation reaches the document.
       --fold-lift: 0;
       &:has(> .paper-fold:is(:hover, .paper-fold--active)) { --fold-lift: 1; }
-      &:has(> .paper-fold--will-commit) { --fold-lift: 2; }
+      // Two classes, to outweigh the in-hand rule above: a flap past the commit point is
+      // always active too.
+      &:has(> .paper-fold.paper-fold--will-commit) { --fold-lift: 2; }
       // The drift and the rise are what ease, not the translate they feed: the corner cut and
       // the band below read the same two numbers, so cut, band and translate arrive together
       // and the page's left edge stays on the stack's while it climbs. Easing the translate on
