@@ -462,12 +462,22 @@ function initStack(stack: HTMLElement) {
     note?.removeAttribute('popover');
     note?.querySelector('.note-dismiss[popovertarget]')?.remove();
   }
+  // The sheet is marked while its note is open, for Page.astro to hold its animations still.
+  const markNoteOpen = (note: HTMLDialogElement, open: boolean) =>
+    note.closest('section')?.toggleAttribute('data-note-open', open);
+  for (const note of stack.querySelectorAll<HTMLDialogElement>('dialog.drawing-note')) {
+    note.addEventListener('toggle', (event) => markNoteOpen(note, (event as ToggleEvent).newState === 'open'));
+    note.addEventListener('close', () => markNoteOpen(note, false));
+  }
   if (!('commandForElement' in HTMLButtonElement.prototype)) {
     for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
       tab.addEventListener('click', () => {
         const id = tab.getAttribute('commandfor');
         const note = id ? document.getElementById(id) : null;
-        if (note instanceof HTMLDialogElement && !note.open) note.showModal();
+        if (note instanceof HTMLDialogElement && !note.open) {
+          note.showModal();
+          markNoteOpen(note, true);
+        }
       });
     }
   }

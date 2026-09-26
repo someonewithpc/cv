@@ -649,8 +649,10 @@ section {
     }
   }
 
-  /* Nothing under the note should keep moving while it is being read. */
-  &:has(.drawing-note:is(:modal, :popover-open)) {
+  /* Nothing under the note should keep moving while it is being read. Stack.astro's script
+     marks the sheet while its note is open: asked through :has(), the rule's `*` made every
+     node inserted anywhere on the page restyle the whole document. */
+  &[data-note-open] {
     .content,
     .content :global(*) {
       animation-play-state: paused;
