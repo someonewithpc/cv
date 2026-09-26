@@ -609,6 +609,29 @@ const tall = (() => {
 </section>
 
 <style lang="scss">
+/* The CV is on engineering dot paper, not drawing paper. The sheet is the theme's paper with
+   a tenth of the accent mixed in, and a faint dot every 1.25rem. The accent also lifts a dark
+   sheet, which cost Forest's faint lettering its contrast, so a dark theme (one that inverts
+   the fibre) takes 0.04 of lightness back off. Every fill here that reads --surface-page
+   takes the new tint, the table cells and the knockout behind the drawing's lettering too.
+   The dots need #main in the selector to outrank the layout's paper rule. */
+#career {
+  --dot-paper: oklch(
+    from color-mix(in oklab, var(--theme-paper, var(--neutral-1)), var(--theme-accent) 10%)
+    calc(l - var(--theme-paper-invert) * 0.04) c h
+  );
+  --dot-ink: color-mix(in oklch, var(--ink-muted), var(--blueprint-9) 35%);
+  --dot: color-mix(in oklch, var(--dot-ink) 30%, transparent);
+  --dot-pitch: 1.25rem;
+  --surface-page: var(--dot-paper);
+}
+
+:global(#main) > #career {
+  background-image: radial-gradient(circle, var(--dot) 0 0.0625rem, transparent 0.125rem);
+  background-size: var(--dot-pitch) var(--dot-pitch);
+  background-position: center top;
+}
+
 #career {
   container-type: inline-size;
   margin-top: 1.5rem;
