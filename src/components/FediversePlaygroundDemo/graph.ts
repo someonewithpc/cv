@@ -71,6 +71,13 @@ const LINE = { label: 11, sub: 10.5 };
 /** The most characters of small print a shared box takes on one line. */
 const SHARED_LINE = 15;
 
+/** The word beside an install wire, and how far it sits from the wire on the side that has
+    room. Monospace glyphs at .gate's size run under 6 units wide, so this clears the word with
+    margin to spare; the rightmost column in the portrait drawing is the one that needs it. */
+const GATE_LABEL = 'completed';
+const GATE_GAP = 4;
+const GATE_CLEARANCE = 60;
+
 type Condition = 'service_healthy' | 'service_started' | 'service_completed_successfully' | 'listed';
 
 const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -215,7 +222,11 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     const x = appX.get(id)!;
     const appBottom = ROW.app + appHeight.get(id)!;
     wires.push(wire(`M${x} ${appBottom} V${ROW.install - 2}`, conditionOf(app, installer)));
-    labels.push(`<text class="gate" x="${x + 4}" y="${(appBottom + ROW.install) / 2 + 3}">completed</text>`);
+    // To the wire's right, unless that would run it past the sheet's edge, when it goes left.
+    const fitsRight = x + GATE_GAP + GATE_CLEARANCE <= m.w;
+    const gateX = fitsRight ? x + GATE_GAP : x - GATE_GAP;
+    const anchor = fitsRight ? '' : ' text-anchor="end"';
+    labels.push(`<text class="gate"${anchor} x="${gateX}" y="${(appBottom + ROW.install) / 2 + 3}">${GATE_LABEL}</text>`);
   });
 
   // One line from each server to each shared service it uses. Where a server's lines leave its

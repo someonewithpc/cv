@@ -94,6 +94,20 @@ for (const [width, height] of [[390, 844], [760, 900], [1440, 900]]) {
     }), size);
 
     expect(wrong).toEqual([]);
+
+    // #129: the rightmost column's "completed" label ran past the edge of its own drawing at a
+    // narrow width. Every one has to stay inside the SVG that draws it, whichever side it sits on.
+    const gateProblems = await stack.locator('svg.service-graph:visible').evaluateAll((svgs) => svgs.flatMap((svg) => {
+      const sheet = svg.getBoundingClientRect();
+      return [...svg.querySelectorAll('text.gate')].flatMap((label) => {
+        const box = label.getBoundingClientRect();
+        if (box.left < sheet.left - 0.5 || box.right > sheet.right + 0.5 || box.top < sheet.top - 0.5 || box.bottom > sheet.bottom + 0.5) {
+          return [`"${label.textContent}" at ${box.left.toFixed(1)}..${box.right.toFixed(1)}, sheet ${sheet.left.toFixed(1)}..${sheet.right.toFixed(1)}`];
+        }
+        return [];
+      });
+    }));
+    expect(gateProblems).toEqual([]);
   });
 }
 
