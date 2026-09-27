@@ -112,6 +112,16 @@ svg {
      already clips at its own boundary. */
   overflow: visible;
 
+  /* The box is twice the artwork, so it lies over the sheet's heading, its footnote and
+     on a wide sheet the note beside the drawing. It used to take every pointer on those,
+     and a drag across the heading selected callout text instead of the heading. The
+     labels keep their own hit test, so they can still be selected. */
+  pointer-events: none;
+
+  :global(text) {
+    pointer-events: auto;
+  }
+
   :global(path) {
     marker-start: var(--annotation-marker);
     stroke: var(--ink);

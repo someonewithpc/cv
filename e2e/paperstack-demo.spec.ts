@@ -41,6 +41,23 @@ test.describe('with script', () => {
     }
   });
 
+  test('the sheet heading under the callout overlay can be selected', async ({ page }) => {
+    const stack = paperStackDemo(page);
+    await stack.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+
+    // The overlay is twice the artwork and lies over the heading; a drag across the heading
+    // used to select callout text instead.
+    const heading = stack.locator('.point').first();
+    const box = (await heading.boundingBox())!;
+    await page.mouse.move(box.x + 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width - 2, box.y + box.height / 2, { steps: 8 });
+    await page.mouse.up();
+    const selected = await page.evaluate(() => window.getSelection()?.toString() ?? '');
+    expect(selected).toContain(await heading.innerText());
+  });
+
   test('at rest page: the lamps read the sheet\'s own gate', async ({ page }) => {
     const stack = paperStackDemo(page);
     await stack.scrollIntoViewIfNeeded();
