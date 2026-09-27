@@ -33,8 +33,8 @@ test('the resting dog-ear breathes only on a stack that is on screen', async ({ 
   await expect(first).toBeVisible();
 
   await first.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1000);
-  expect(await pulseStates(first)).toEqual(RUNNING);
+  // The pulse comes in once the dog-ear has drawn itself.
+  await expect.poll(() => pulseStates(first), { timeout: 5_000 }).toEqual(RUNNING);
 
   // The foot of the page, nowhere near the first stack however many demos come after it.
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -62,7 +62,7 @@ test('a page turn leaves the new front page breathing', async ({ page }) => {
   expect(await frontPageName(stack)).not.toBe(before);
 
   // The pulse travels with the front-page role, and the stack is in view, so it runs.
-  expect(await pulseStates(stack)).toEqual(RUNNING);
+  await expect.poll(() => pulseStates(stack), { timeout: 5_000 }).toEqual(RUNNING);
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front).toHaveClass(/paper-front/);
 });
