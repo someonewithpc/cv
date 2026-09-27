@@ -3,8 +3,7 @@
  * The live sheet: a page of its own on a stage, with the picker in its corner, doing what
  * the corner does to this page. The stage is a shadow root, so its theme switches restyle
  * the stage and nothing else; its walkthrough picks every theme in turn without touching
- * the page's stamp, its stored key or the real picker. The readout under it is this page's
- * own theme, marked by the picker's selectors (shown.ts), so the two are never confused.
+ * the page's stamp, its stored key or the real picker.
  *
  * The page on the stage is a wireframe: a title bar, lines of text, a table, badges and a
  * card, every block painted from the stage's own tokens so a pick recolours all of it.
@@ -14,7 +13,6 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 
 import { THEME_IDS, THEMES } from '@/themes';
 
-import { shownCss } from '../shown';
 import { iconSvg, stageCss } from '../stage';
 
 const css = stageCss();
@@ -32,10 +30,6 @@ const swatches = ['--accent', '--accent-muted', '--blueprint', '--surface-sunken
 ---
 
 <div class="theme-picker-demo" data-theme-picker-demo>
-  <header>
-    <span class="eyebrow">ThemePicker.astro · themes.ts</span>
-  </header>
-
   <div class="figure">
     <Annotations reach={1.1} fontSize={0.1}>
       <div slot="content" class="stage" data-stage>
@@ -108,14 +102,6 @@ const swatches = ['--accent', '--accent-muted', '--blueprint', '--surface-sunken
       </Fragment>
     </Annotations>
   </div>
-
-  <p class="readout">
-    This page is <span class="theme-name" data-readout="theme">{THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id].name}</span>)}</span>,
-    <span data-readout="chosen">
-      <span data-chosen="os">the OS colour scheme, nothing picked</span>
-      <span data-chosen="pick">a pick, kept as <code>cv-theme</code></span></span>.
-    Only the corner changes it.
-  </p>
 </div>
 
 <script>
@@ -124,8 +110,6 @@ import { boot } from '../client/boot';
 
 bootIslands('[data-theme-picker-demo]', boot);
 </script>
-
-<style is:global set:html={shownCss('.theme-picker-demo')} />
 
 <style lang="scss">
 @use "./sheet" as *;
@@ -139,10 +123,13 @@ bootIslands('[data-theme-picker-demo]', boot);
   @include sheet-frame;
 }
 
-/* Room for the callouts either side of the stage; the stage alone sets their unit. The
-   callout overlay lies over the stage and must not take the presses meant for its keys.
-   Portrait has one callout, above the stage, so the figure keeps it off the header. */
+/* The figure is the sheet's only row now the header and the readout are gone, but it still
+   takes the frame's middle, growing, row: sheet-frame's other two stay empty and collapse.
+   Padding makes room for the callouts either side of the stage; the stage alone sets their
+   unit. The callout overlay lies over the stage and must not take the presses meant for its
+   keys. Portrait has one callout, above the stage. */
 .figure {
+  grid-row: 2;
   padding: 0 0.5em;
 
   :global(svg[data-annotations]) {
@@ -150,31 +137,12 @@ bootIslands('[data-theme-picker-demo]', boot);
   }
 
   :global([data-sheet-orientation='portrait']) & {
-    padding: 18% 0.5em 0;
+    padding: 10% 0.5em 0;
   }
 }
 
 .stage {
   width: 30em;
   max-width: 100%;
-}
-
-.theme-name {
-  font-weight: 600;
-}
-
-/* The one line under the stage, ruled off like the rules of the other sheets. */
-.readout {
-  margin: 0;
-  padding-top: 0.5em;
-  border-top: 1px solid var(--line);
-  font-size: max(0.5rem, 0.875em);
-  line-height: 1.35;
-  text-wrap: pretty;
-
-  [data-shown],
-  [data-chosen] {
-    display: var(--shown-display, none);
-  }
 }
 </style>

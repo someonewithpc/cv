@@ -21,7 +21,6 @@ async function mountedSheet(page: Page): Promise<Locator> {
    reached like any other element. */
 const screen = (sheet: Locator) => sheet.locator('[data-stage] [data-screen]');
 const stageKey = (sheet: Locator, id: string) => sheet.locator('[data-stage] button[data-pick="' + id + '"]');
-const visible = (scope: Locator) => scope.locator('span').filter({ visible: true });
 const stored = (page: Page) => page.evaluate(() => localStorage.getItem('cv-theme'));
 
 /** What the page keeps of a pick: the stamp, the stored key, the checked radio. */
@@ -75,7 +74,6 @@ test.describe('with motion', () => {
     // while the page's canvas is still light's.
     await expect.poll(() => screen(sheet).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('oklch(0.955 0.015 235)');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('oklch(1 0 90)');
-    await expect(visible(sheet.locator('[data-readout="theme"]'))).toHaveText('Light');
   });
 });
 
@@ -83,7 +81,7 @@ test.describe('reduced motion', () => {
   // The stage's keys still work here, with no wipe, and the walkthrough is off.
   test.use({ reducedMotion: 'reduce' });
 
-  test('main page: a key on the stage stamps the stage, not the page, and the readouts say which is which', async ({ page }) => {
+  test('main page: a key on the stage stamps the stage, not the page', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
     const sheet = await mountedSheet(page);
@@ -100,14 +98,10 @@ test.describe('reduced motion', () => {
     await pageUntouched(page);
     expect(await card.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(cardBefore);
     await expect(sheet.locator('[data-stage] [data-stage-shown]').filter({ visible: true })).toHaveText('"dark-forest"');
-    await expect(visible(sheet.locator('[data-readout="theme"]'))).toHaveText('Light');
-    await expect(visible(sheet.locator('[data-readout="chosen"]'))).toHaveText(/the OS colour scheme/);
 
-    // A pick in the corner moves the page's readout and not the stage.
+    // A pick in the corner moves the page, and not the stage.
     await page.locator('#theme-picker label:has(input[value="arctic"])').click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
-    await expect(visible(sheet.locator('[data-readout="theme"]'))).toHaveText('Arctic');
-    await expect(visible(sheet.locator('[data-readout="chosen"]'))).toHaveText(/a pick, kept as/);
     await expect(screen(sheet)).toHaveAttribute('data-demo-theme', 'dark-forest');
   });
 
@@ -180,6 +174,5 @@ test.describe('without script', () => {
     expect(await sheet.locator('[data-stage]').evaluate((el) => !!el.shadowRoot && !el.querySelector('template'))).toBe(true);
     await expect(screen(sheet)).not.toHaveAttribute('data-demo-theme');
     await expect.poll(() => screen(sheet).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('oklch(0.2 0.035 265)');
-    await expect(visible(sheet.locator('[data-readout="theme"]'))).toHaveText('Dark');
   });
 });
