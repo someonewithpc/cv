@@ -97,6 +97,7 @@
       - [x] Strip behind the crease paints the turned page's back, not the front page's (#49)
       - [x] Dog-ear shaded backwards, lit at the crease; flat sheet while a page turns (#155)
       - [x] Dog-ear rest size declared on the frame in CSS, not read back from the stack at boot (#165)
+      - [x] Dog-ear pulse runs on the compositor: no restyle or repaint of the sheet at rest (#182)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
