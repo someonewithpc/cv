@@ -74,76 +74,6 @@ const pages = await Promise.all(
 );
 ---
 
-<noscript>
-  <!--
-    Without JS the one stack below is the reader's copy too: these rules turn it into a plain
-    scroll-snap row and switch off everything only fold-drag.ts gives meaning to. Plain CSS,
-    deliberately: a <style> nested in <noscript> is the one kind Astro leaves alone — it isn't
-    hoisted into the bundle (which is the point, these rules must not reach the scripted stack)
-    and so it isn't compiled either. `lang="scss"` would be an inert attribute and, worse, `//`
-    comments would reach the browser as parse errors that swallow the declaration after them.
-    Nesting below is native CSS nesting, which needs no compiler. The !importants outrank the
-    scripted sheet's own compound selectors; nothing else ever competes with them.
-  -->
-  <style>
-    [data-paper-stack-root][data-paper-stack] {
-      display: flex !important;
-      flex-direction: row;
-      position: relative;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: thin;
-      scroll-behavior: smooth;
-      touch-action: auto !important;
-      margin-bottom: 0 !important;
-      transition: none !important;
-
-      > * {
-        flex: 0 0 100%;
-        /* Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
-           scrollWidth, leaving a permanent horizontal scrollbar on every page. */
-        overflow: clip;
-        scroll-snap-align: center;
-        order: 0 !important;
-        rotate: none !important;
-        animation: none !important;
-        transition: none !important;
-
-        > * {
-          clip-path: none !important;
-        }
-
-        > :is(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
-          display: none !important;
-        }
-      }
-
-      @supports selector(::scroll-button(right)) {
-        &::scroll-button(*) {
-          position-anchor: --technical-drawing-stack;
-          position: absolute;
-          top: anchor(top);
-        }
-
-        &::scroll-button(left) {
-          content: "⬅" / "Scroll Left";
-          left: anchor(left);
-        }
-
-        &::scroll-button(right) {
-          content: "⮕" / "Scroll Right";
-          right: anchor(right);
-        }
-
-        &::scroll-button(*):focus-visible {
-          outline-offset: 0.25rem;
-        }
-      }
-    }
-  </style>
-</noscript>
-
 <Tag
   data-paper-stack-root
   data-paper-stack
@@ -1003,6 +933,71 @@ const pages = await Promise.all(
 
       > .paper-front > .paper-back-grab {
         display: block;
+      }
+    }
+  }
+}
+// Without JS the one stack above is the reader's copy too: these rules turn it into a plain
+// scroll-snap row and switch off everything only fold-drag.ts gives meaning to. They live in the
+// bundle with the rest, under a media query that is false on any page that runs script, so they
+// never reach the scripted stack. They used to sit in a <noscript><style>, which is only hidden
+// while scripting is on: a page loaded with JS and then switched off (DevTools, no reload) printed
+// the block's source as text above the stack. The !importants outrank the scripted sheet's own
+// compound selectors and the inline styles fold-drag.ts leaves behind; nothing else ever
+// competes with them.
+@media (scripting: none) {
+  [data-paper-stack-root][data-paper-stack] {
+    display: flex !important;
+    flex-direction: row;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+    touch-action: auto !important;
+    margin-bottom: 0 !important;
+    transition: none !important;
+
+    > * {
+      flex: 0 0 100%;
+      /* Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
+         scrollWidth, leaving a permanent horizontal scrollbar on every page. */
+      overflow: clip;
+      scroll-snap-align: center;
+      order: 0 !important;
+      rotate: none !important;
+      animation: none !important;
+      transition: none !important;
+
+      > * {
+        clip-path: none !important;
+      }
+
+      > :is(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
+        display: none !important;
+      }
+    }
+
+    @supports selector(::scroll-button(right)) {
+      &::scroll-button(*) {
+        position-anchor: --technical-drawing-stack;
+        position: absolute;
+        top: anchor(top);
+      }
+
+      &::scroll-button(left) {
+        content: "⬅" / "Scroll Left";
+        left: anchor(left);
+      }
+
+      &::scroll-button(right) {
+        content: "⮕" / "Scroll Right";
+        right: anchor(right);
+      }
+
+      &::scroll-button(*):focus-visible {
+        outline-offset: 0.25rem;
       }
     }
   }
