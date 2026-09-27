@@ -65,3 +65,24 @@ test('marker editor: an arrow key commits the turn without waiting', async ({ pa
   expect(back.done).toBeLessThan(2000);
   expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
 });
+
+test('a key turn reads the dog-ear off the screen once', async ({ page }) => {
+  // currentFoldSize is the one caller that asks for the clip's ::after style (the pulse's scale).
+  // The grab needs that read; the flip after it starts from the size the grab's first move wrote.
+  await page.addInitScript(() => {
+    const read = window.getComputedStyle;
+    const w = window as Window & { foldReads?: number };
+    w.foldReads = 0;
+    window.getComputedStyle = (el, pseudo) => {
+      if (pseudo === '::after' && el.classList.contains('paper-clip')) w.foldReads!++;
+      return read(el, pseudo);
+    };
+  });
+  await page.reload();
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+  await turnTiming(page, stack, 'ArrowRight');
+  expect(await frontPageName(stack)).toBe('Marker Selector');
+  expect(await page.evaluate(() => (window as Window & { foldReads?: number }).foldReads)).toBe(1);
+});

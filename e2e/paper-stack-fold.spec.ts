@@ -381,3 +381,17 @@ test.describe('a drag that pulls the wrong way cancels', () => {
     await expect.poll(() => frontPageIndex(stack), { message: 'the turn committed', timeout: 2500 }).not.toBe(before);
   });
 });
+
+test.describe('without JS', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('the stylesheet registers the fold properties', async ({ page }) => {
+    // A registered property computes to its typed initial value on an element that never sets it
+    const values = await page.locator('body').evaluate((body) => {
+      const style = getComputedStyle(body);
+      return ['--fold-x', '--fold-pin-x', '--pile-lean', '--page-index', '--turn-ease']
+        .map((name) => style.getPropertyValue(name).trim());
+    });
+    expect(values).toEqual(['0px', '0px', '0deg', '1', '1']);
+  });
+});
