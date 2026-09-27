@@ -42,3 +42,28 @@ test('without JS a stack snaps sheet to sheet, with arrows that take focus', asy
     return Math.round(left / width);
   }).toBe(2);
 });
+
+for (const width of [390, 1440]) {
+  test(`without JS at ${width}px each arrow sits whole on the page, centred on the sheet's edge`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const stack = page.locator('[data-paper-stack]').first();
+    await stack.scrollIntoViewIfNeeded();
+
+    const arrows = await stack.evaluate((el) => {
+      const sheet = el.getBoundingClientRect();
+      return (['left', 'right'] as const).map((side) => {
+        const s = getComputedStyle(el, `::scroll-button(${side})`);
+        const size = parseFloat(s.width);
+        const x0 = side === 'left' ? sheet.left + parseFloat(s.left) : sheet.right - parseFloat(s.right) - size;
+        return { size, x0, x1: x0 + size, edge: side === 'left' ? sheet.left : sheet.right, page: innerWidth };
+      });
+    });
+    for (const { size, x0, x1, edge, page: pageWidth } of arrows) {
+      expect(size).toBeGreaterThanOrEqual(24);
+      expect(x0).toBeGreaterThanOrEqual(0);
+      expect(x1).toBeLessThanOrEqual(pageWidth);
+      expect(Math.abs((x0 + x1) / 2 - edge)).toBeLessThanOrEqual(0.5);
+    }
+  });
+}
