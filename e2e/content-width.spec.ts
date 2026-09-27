@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-/** --content-max / --breakout-max in Layout.astro: 60em against a 16px root. */
+/** --content-max / --breakout-max in Layout.astro: 60rem against a 16px root. */
 const CAP = 960;
 
-test('a wide viewport caps the content column and the demo stacks at 60em', async ({ page }) => {
+test('a wide viewport caps the content column and the demo stacks at 60rem', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
 
   const main = page.locator('main');
-  await expect(main).toHaveCSS('--content-max', '60em');
-  await expect(main).toHaveCSS('--breakout-max', '60em');
+  await expect(main).toHaveCSS('--content-max', '60rem');
+  await expect(main).toHaveCSS('--breakout-max', '60rem');
 
   const columns = await main.evaluate((el) => {
     // The computed value carries the line names too; the track sizes are the px ones.
