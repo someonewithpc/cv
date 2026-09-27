@@ -185,9 +185,8 @@ const clipTransform = `translate(${pin.x} ${pin.y}) rotate(${clipAngle}) scale($
   }
 
   .wire {
-    @include line-art;
+    @include line-art(1.5);
     stroke: var(--ink-muted);
-    stroke-width: 1.5;
   }
 }
 </style>

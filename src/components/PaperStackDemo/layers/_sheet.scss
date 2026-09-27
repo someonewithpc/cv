@@ -34,9 +34,9 @@ $sheet-margin: 0.75em;
 
 // The drawings are line art in the sheet's ink. The paper fill is the sheet's own, so a
 // drawn sheet reads as paper on every theme and on the blueprint alike.
-@mixin line-art {
+@mixin line-art($width: 1) {
   stroke: var(--ink);
-  stroke-width: 1;
+  stroke-width: $width;
   stroke-linejoin: round;
   stroke-linecap: round;
   fill: none;

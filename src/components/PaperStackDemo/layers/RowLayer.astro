@@ -170,15 +170,13 @@ const dots = [0, 1, 2, 3];
   }
 
   .ring {
-    @include line-art;
+    @include line-art(1.5);
     stroke: var(--accent);
-    stroke-width: 1.5;
     fill: var(--sheet-paper);
   }
 
   .glyph {
-    @include line-art;
-    stroke-width: 1.5;
+    @include line-art(1.5);
   }
 
   .dot {
