@@ -11,8 +11,9 @@ import { Icon } from 'astro-icon/components';
 import { THEME_IDS, THEMES } from '@/themes';
 
 import { shownCss } from '../shown';
+import { tonesCss } from '../tones';
 
-/* Three frames of the wipe, as fractions of the final square. */
+/* Three frames of the wipe, as fractions of the final square, first to last. */
 const frames = [0.12, 0.4, 1];
 ---
 
@@ -29,8 +30,8 @@ const frames = [0.12, 0.4, 1];
           <span class="old-line"></span>
           <span class="old-line short"></span>
         </span>
-        {frames.map((size) => (
-          <span class="frame" data-frame={size === 1 ? 'end' : 'mid'} style={`--size: ${size}`}>
+        {frames.map((size, index) => (
+          <span class="frame" data-frame={['start', 'mid', 'end'][index]} style={`--size: ${size}; z-index: ${frames.length - index}`}>
             {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
           </span>
         ))}
@@ -68,7 +69,7 @@ const frames = [0.12, 0.4, 1];
   </dl>
 </div>
 
-<style is:global set:html={shownCss('.wipe-sheet')} />
+<style is:global set:html={shownCss('.wipe-sheet') + tonesCss('.wipe-sheet')} />
 
 <style lang="scss">
 @use "./sheet" as *;
@@ -111,7 +112,7 @@ const frames = [0.12, 0.4, 1];
   aspect-ratio: 16 / 10;
   height: 100%;
   max-width: 100%;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--tone-line);
   border-radius: 0.125em;
   background: var(--surface-sunken);
   overflow: hidden;
@@ -159,6 +160,7 @@ const frames = [0.12, 0.4, 1];
 }
 
 .corner {
+  z-index: 4;
   width: var(--corner);
   height: var(--corner);
   color: var(--ink);
@@ -168,7 +170,11 @@ const frames = [0.12, 0.4, 1];
   /* Percentages of the viewport box: its diagonal is 1.18 of its width and 1.89 of its height. */
   width: calc(var(--size) * 236%);
   height: calc(var(--size) * 378%);
-  color: color-mix(in oklch, var(--accent), transparent calc(100% - var(--size) * 45%));
+
+  /* Opaque tones, the later frame the fainter, and the earlier frames stacked on top. */
+  &[data-frame='start'] { color: var(--tone-start); }
+  &[data-frame='mid'] { color: var(--tone-mid); }
+  &[data-frame='end'] { color: var(--tone-fill); }
 }
 
 .corner :global(svg),
@@ -197,6 +203,7 @@ const frames = [0.12, 0.4, 1];
 
 .viewport .balloon {
   position: absolute;
+  z-index: 4;
   top: var(--y);
   left: var(--x);
   translate: -50% -50%;
