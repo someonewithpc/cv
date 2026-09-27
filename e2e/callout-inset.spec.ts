@@ -10,6 +10,9 @@ import { expect, test } from '@playwright/test';
 const PHONE = { width: 390, height: 844 };
 const NO_DESK = { width: 1024, height: 768 };
 const DESK = { width: 1440, height: 900 };
+/** Past 105rem (Layout.astro, design-mix.spec.ts's CARDS_FROM) the title card stands in a lane
+ * beside the stack, and the bubble should stand in the lane on the view's other side. */
+const DESK_CARD = { width: 1728, height: 900 };
 
 for (const viewport of [PHONE, NO_DESK, DESK]) {
   test(`the boundary stands the same distance off the view all round at ${viewport.width}px`, async ({ page }) => {
@@ -107,4 +110,28 @@ test('with room for them the peel hints are written inside the boundary', async 
   // The boundary is a 1px line on the view's own edge.
   expect(hints.fwdBottom).toBeLessThanOrEqual(hints.viewBottom - 1);
   expect(hints.backTop).toBeGreaterThanOrEqual(hints.viewTop + 1);
+});
+
+test('the bubble stands on the opposite side of the view from the card, and alternates with it', async ({ page }) => {
+  await page.setViewportSize(DESK_CARD);
+  await page.goto('/');
+
+  const rows = await page.locator('#demos .callout[data-card]').evaluateAll((callouts) => callouts.slice(0, 2).map((callout) => {
+    const view = callout.querySelector('.callout-view')!.getBoundingClientRect();
+    const card = callout.querySelector('.callout-card')!.getBoundingClientRect();
+    const bubble = callout.querySelector('.callout-bubble')!.getBoundingClientRect();
+    const mid = (view.left + view.right) / 2;
+    return {
+      side: (callout as HTMLElement).dataset.card,
+      cardOnLeft: card.left < mid,
+      bubbleOnLeft: bubble.left < mid,
+    };
+  }));
+
+  expect(rows.length).toBe(2);
+  for (const row of rows) {
+    expect(row.bubbleOnLeft, `${row.side} row, bubble opposite the card`).toBe(!row.cardOnLeft);
+  }
+  // Consecutive detail rows alternate sides (index.astro), so the bubble should too.
+  expect(rows[0].bubbleOnLeft).not.toBe(rows[1].bubbleOnLeft);
 });

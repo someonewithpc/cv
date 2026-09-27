@@ -216,7 +216,7 @@ const hasCard = Astro.slots.has('card');
   flex: none;
   width: 3rem;
   height: 3rem;
-  margin-left: 0.625rem;
+  margin-inline-start: 0.625rem;
   --bubble-ring: 2px;
   border: var(--bubble-ring) solid var(--callout-line);
   border-radius: 50%;
@@ -271,7 +271,23 @@ const hasCard = Astro.slots.has('card');
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1.25rem;
-    margin-left: 0.375rem;
+    margin-inline-start: 0.375rem;
+  }
+}
+
+/* Where the card lane is open (Layout.astro, 105rem) the card stands beside the view's near
+   edge (.callout[data-card] above). The bubble should stand at the view's far edge instead, so
+   it opposes the card rather than sitting next to it. A 'start' row needs the swap: the card
+   takes the label's near (start) edge, so the bubble moves to its far (end) one. An 'end' row
+   needs none, the bubble's own edge is already the view's far one from the card. */
+@media (width >= 105rem) {
+  .callout[data-card='start'] .callout-label {
+    justify-content: flex-end;
+  }
+
+  .callout[data-card='start'] .callout-bubble {
+    order: 1;
+    margin-inline: 0 0.625rem;
   }
 }
 
