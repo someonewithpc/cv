@@ -1039,7 +1039,10 @@ const pages = await Promise.all(
     // section's heading and below it the card slip, which tucks up under the sheets. Both or
     // neither; without them the row keeps its scrollbar and the pile.
     @supports selector(::scroll-marker) and selector(::scroll-button(right)) {
-      --arrow-size: 2rem;
+      // Half of each arrow lies past the sheet's side edge, so the circle is never wider than
+      // twice the room beside the sheet. On a phone the mat runs edge to edge and leaves 12 to
+      // 15px there.
+      --arrow-size: min(2rem, 100vw - anchor-size(width));
       // The arrow is drawn, not set in a font. A glyph sits where its font puts it, below the
       // circle's middle in most monospace faces. It is a shaft --arrow-length long and a head
       // --arrow-head tall, both --arrow-stroke thick, pointing to the previous sheet.
@@ -1103,7 +1106,7 @@ const pages = await Promise.all(
         width: var(--arrow-size);
         height: var(--arrow-size);
         padding: 0;
-        border: 2px solid var(--accent-muted);
+        border: 2px solid var(--accent);
         border-radius: 50%;
         color: var(--ink);
         // Each arm of the head is the diagonal of a square half the head's height, from the tip
@@ -1129,9 +1132,10 @@ const pages = await Promise.all(
         background-color: color-mix(in oklch, var(--surface-raised), var(--accent) 8%);
       }
 
+      // Dimmed, the ring still has to read over both the sheet and the mat it straddles.
       &::scroll-button(*):disabled {
         color: var(--ink-faint);
-        border-color: var(--line);
+        border-color: var(--line-strong);
         cursor: default;
       }
 
