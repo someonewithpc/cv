@@ -1,97 +1,100 @@
 ---
 /**
- * The live sheet: the picker drawn large, and a readout of what it did to the page. The
- * buttons press the real picker's radios, so a pick here is a pick in the corner, wipe and
- * all. The readout is CSS: the same selectors the picker paints the page with mark the
- * theme on screen and whether the OS or a pick chose it (shown.ts).
+ * The live sheet: a page of its own on a stage, with the picker in its corner, doing what
+ * the corner does to this page. The stage is a shadow root, so its theme switches restyle
+ * the stage and nothing else; its walkthrough picks every theme in turn without touching
+ * the page's stamp, its stored key or the real picker. The readout under it is this page's
+ * own theme, marked by the picker's selectors (shown.ts), so the two are never confused.
  */
-import { Icon } from 'astro-icon/components';
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
 import { THEME_IDS, THEMES } from '@/themes';
 
 import { shownCss } from '../shown';
+import { iconSvg, stageCss } from '../stage';
 
-const seeds = [
-  { token: '--theme-canvas', key: 'canvas', label: 'canvas' },
-  { token: '--theme-ink', key: 'ink', label: 'ink' },
-  { token: '--theme-accent', key: 'accent', label: 'accent' },
-  { token: '--theme-blueprint', key: 'blueprint', label: 'blueprint' },
-] as const;
+const css = stageCss();
+const layers = ['under', 'over'] as const;
 ---
 
 <div class="theme-picker-demo" data-theme-picker-demo>
-  <div class="control">
-    <h3 class="panel-heading">The picker, drawn large</h3>
-    <div class="picks" role="group" aria-label="Pick a theme">
-      {THEME_IDS.map((id) => (
-        <button class="pick" type="button" data-pick={id} data-shown={id} aria-pressed="false">
-          <Icon name={THEMES[id].icons.unchecked} class="unchecked" aria-hidden="true" />
-          <Icon name={THEMES[id].icons.checked} class="checked" aria-hidden="true" />
-          <span>{THEMES[id].name}</span>
-        </button>
-      ))}
+  <header>
+    <span class="eyebrow">ThemePicker.astro · themes.ts</span>
+    <strong>A pick cuts the new page out of the old one along the icon it was picked with</strong>
+  </header>
+
+  <div class="figure">
+    <Annotations reach={1.5} fontSize={0.1}>
+      <div slot="content" class="stage" data-stage>
+        <template shadowrootmode="open">
+          <style is:inline set:html={css}></style>
+          <div class="screen" data-screen>
+            {layers.map((layer) => (
+              <div class="paper" data-paper={layer} hidden={layer === 'over'} inert={layer === 'over'} aria-hidden={layer === 'over' ? 'true' : undefined}>
+                <div class="page">
+                  <p class="name">Hugo Sales</p>
+                  <p class="role">A CV drawn as a set of sheets</p>
+                  <div class="rule"></div>
+                  <div class="line"></div>
+                  <div class="line short"></div>
+                  <div class="sheet"><span class="blue"></span><span class="accent"></span></div>
+                </div>
+                <div class="corner" role={layer === 'under' ? 'group' : undefined} aria-label={layer === 'under' ? 'Pick a theme for the stage' : undefined}>
+                  {THEME_IDS.map((id) => {
+                    const icons = (
+                      <Fragment>
+                        <Fragment set:html={iconSvg(THEMES[id].icons.unchecked, 'class="unchecked"')} />
+                        <Fragment set:html={iconSvg(THEMES[id].icons.checked, `class="checked" data-factor="${THEMES[id].transitionScaleFactor}"`)} />
+                        <span>{THEMES[id].name}</span>
+                      </Fragment>
+                    );
+                    return layer === 'under'
+                      ? <button class="pick" type="button" data-pick={id} aria-pressed="false">{icons}</button>
+                      : <span class="pick" data-pick={id}>{icons}</span>;
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p class="stamp">
+            <span>stage</span>
+            <code>data-demo-theme=<Fragment>{THEME_IDS.map((id) => <span data-stage-shown={id}>"{id}"</span>)}</Fragment></code>
+            <span data-stage-shown="none">unset, so the OS scheme decides</span>
+          </p>
+        </template>
+      </div>
+
+      <Fragment slot="annotations">
+        <ArrowAnnotation target="[data-stage]" anchor="1 0.1" tipX={1} tipY={-0.8} angle={0} length={0.3} text="The picker, in its corner" lines={['The picker,', 'in its corner']} only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="0.86 0.26" tipX={0.84} tipY={-0.48} angle={-20} length={0.35} text="The icon grows from here" lines={['The icon grows', 'from here']} only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="left" tipX={-0.98} tipY={0} angle={180} length={0.3} text="One page, its own tokens" lines={['One page,', 'its own tokens']} labelSide="left" only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="0.92 0" tipX={0.92} tipY={-1} angle={90} length={0.25} text="The picker" labelSide="left" only="portrait" />
+        <ArrowAnnotation target="[data-stage]" anchor="0.86 0.26" tipX={0.84} tipY={-0.48} angle={-110} length={0.5} text="Grows from here" only="portrait" />
+      </Fragment>
+    </Annotations>
+  </div>
+
+  <dl class="rules">
+    <div>
+      <dt>This page</dt>
+      <dd>
+        <span class="theme-name" data-readout="theme">{THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id].name}</span>)}</span>,
+        <span data-readout="chosen">
+          <span data-chosen="os">the OS colour scheme, nothing picked</span>
+          <span data-chosen="pick">a pick, kept as <code>cv-theme</code></span></span>.
+        Only the corner changes it.
+      </dd>
     </div>
-    <p class="aside-note">
-      In the corner each of these is a radio under a label. Here each is a button that
-      presses that radio, so the page answers the way it does up there.
-    </p>
-    <button class="forget" type="button" data-forget>Follow the OS again</button>
-    <p class="aside-note">
-      This sheet's own key, the picker has none. It forgets the pick, unchecks the radios and
-      lets the OS colour scheme decide.
-    </p>
-    <p class="no-script">
-      Without script these keys do nothing. The picker in the corner still works, its radios
-      switch the page through CSS alone.
-    </p>
-  </div>
-
-  <div class="readout">
-    <h3 class="panel-heading">On screen now</h3>
-    <dl class="state">
-      <dt>Theme</dt>
-      <dd class="theme-name typewriter" data-readout="theme">
-        {THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id].name}</span>)}
-      </dd>
-      <dt>Set by</dt>
-      <dd data-readout="chosen">
-        <span data-chosen="os">the OS colour scheme, nothing picked yet</span>
-        <span data-chosen="pick">a pick, kept in this browser as <code>cv-theme</code></span>
-      </dd>
-    </dl>
-    <h4 class="panel-heading">The four seeds this theme sets on <code>:root</code></h4>
-    <ul class="seeds">
-      {seeds.map(({ token, key, label }) => (
-        <li class="seed" style={`--swatch: var(${token})`}>
-          <span class="swatch"></span>
-          <span class="seed-name">{label}</span>
-          <code class="seed-token">{token}</code>
-          <code class="seed-value">
-            {THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id][key]}</span>)}
-          </code>
-        </li>
-      ))}
-    </ul>
-  </div>
-
-  <section class="notes" aria-label="Notes">
-    <span class="notes-heading">Notes</span>
-    <ol>
-      <li>
-        Four radios named <code>theme</code> in one fixed <code>&lt;aside&gt;</code>, each
-        input hidden under a label with two icons, so a click anywhere on the label is the pick
-        and the arrow keys step through them.
-      </li>
-      <li>
-        A pick stamps <code>data-theme</code> on <code>&lt;html&gt;</code> and writes
-        <code>cv-theme</code> to localStorage. A script in <code>&lt;head&gt;</code> reads it
-        back before anything paints, so a reload never shows the OS theme first.
-      </li>
-      <li>
-        Every colour on the page is mixed from the four seeds. The next sheet takes them apart.
-      </li>
-    </ol>
-  </section>
+    <div>
+      <dt>The stage</dt>
+      <dd>A shadow root with its own copy of the tokens and its own stamp. What happens there stays there; nothing is kept.</dd>
+    </div>
+    <div>
+      <dt>Without script</dt>
+      <dd>The stage stands still on the OS scheme. The corner still switches this page, by CSS alone.</dd>
+    </div>
+  </dl>
 </div>
 
 <script>
@@ -106,214 +109,36 @@ bootIslands('[data-theme-picker-demo]', boot);
 <style lang="scss">
 @use "./sheet" as *;
 
-/* The sheet's content box is stretched to its cell so a phone-height portrait page scrolls
-   inside its frame instead of running under the title block. */
-:global(article.technical-drawing-stack > * > section .content:has(.theme-picker-demo)) {
-  place-self: stretch;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: 100%;
-  min-width: 0;
-  min-height: 0;
-  box-sizing: border-box;
-}
+@include stretch-cell(".theme-picker-demo");
 
 .theme-picker-demo {
   @include sheet-content;
   @include sheet-type(0.026, 0.03);
   @include clear-of-title-block;
+  @include sheet-frame;
+}
 
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-  gap: 0.75em;
-  align-content: center;
-  height: 100%;
-  max-height: 100%;
-  overflow-y: auto;
+/* Room for the callouts either side of the stage; the stage alone sets their unit. The
+   callout overlay lies over the stage and must not take the presses meant for its keys. */
+.figure {
+  padding: 0 0.5em;
 
-  :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-    align-content: start;
+  :global(svg[data-annotations]) {
+    pointer-events: none;
   }
 }
 
-.control,
-.readout {
-  @include panel;
-}
-
-.notes {
-  @include drawing-notes;
-
-  grid-column: 1 / -1;
-  font-size: max(0.5rem, 0.875em);
-
-  ol {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-
-    :global([data-sheet-orientation='portrait']) & {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-}
-
-.picks {
-  display: grid;
-  gap: 0.25em;
-  justify-items: start;
-}
-
-/* The picker's own label, at the sheet's size: monospace, an icon and the name, the same
-   1ch gap. The pressed one shows the filled icon the way the checked radio does. */
-.pick {
-  display: flex;
-  align-items: center;
-  gap: 1ch;
-  min-height: 1.5em;
-  padding: 0.125em 0.5em;
-  border: 1px solid transparent;
-  border-radius: 0.25em;
-  background: none;
-  font-family: monospace, system-ui;
-  font-size: 1.125em;
-  color: var(--ink-faint);
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    color: var(--ink);
-    background: color-mix(in oklch, var(--surface-raised), var(--accent) 8%);
-  }
-
-  &:focus-visible {
-    outline: 1px solid var(--line-strong);
-  }
-
-  &[aria-pressed='true'] {
-    color: var(--ink);
-    border-color: var(--line);
-  }
-
-  :global(svg) {
-    width: 1.125em;
-    height: 1.125em;
-    flex-shrink: 0;
-  }
-
-  :global(svg.checked) {
-    display: var(--shown-display, none);
-  }
-
-  :global(svg.unchecked) {
-    display: var(--hidden-display, inline);
-  }
-}
-
-.forget {
-  justify-self: start;
-  padding: 0.25em 0.625em;
-  border: 1px dashed var(--line-strong);
-  border-radius: 0.25em;
-  background: none;
-  font: inherit;
-  font-size: max(0.5rem, 0.875em);
-  color: var(--ink-muted);
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    color: var(--ink);
-    border-style: solid;
-  }
-}
-
-.aside-note,
-.no-script {
-  margin: 0;
-  font-size: max(0.5rem, 0.75em);
-  line-height: 1.35;
-  color: var(--ink-muted);
-  text-wrap: pretty;
-}
-
-.no-script {
-  display: none;
-  color: var(--ink);
-}
-
-@media (scripting: none) {
-  .no-script {
-    display: block;
-  }
-}
-
-.state {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.25em 0.75em;
-  margin: 0;
-
-  dt {
-    font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.75em);
-    line-height: 1.6;
-    color: var(--ink-muted);
-  }
-
-  dd {
-    margin: 0;
-    font-size: max(0.5rem, 0.875em);
-    line-height: 1.35;
-  }
+.stage {
+  width: 30em;
+  max-width: 100%;
 }
 
 .theme-name {
-  font-size: 1.375em;
-  line-height: 1.1;
+  font-weight: 600;
 }
 
-.readout [data-shown],
-.readout [data-chosen] {
+.rules [data-shown],
+.rules [data-chosen] {
   display: var(--shown-display, none);
-}
-
-.seeds {
-  display: grid;
-  gap: 0.25em;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.seed {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-items: center;
-  column-gap: 0.625em;
-  font-family: monospace, system-ui;
-
-  .swatch {
-    @include swatch(2em);
-
-    grid-row: 1 / span 2;
-  }
-
-  .seed-name {
-    font-size: max(0.5rem, 0.875em);
-  }
-
-  .seed-token {
-    grid-column: 2;
-    font-size: max(0.5rem, 0.6875em);
-    color: var(--ink-muted);
-  }
-
-  .seed-value {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    font-size: max(0.5rem, 0.8125em);
-  }
 }
 </style>

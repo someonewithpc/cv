@@ -1,0 +1,195 @@
+@use "colors";
+
+// The stage's own sheet, inside its shadow root. The seeds per theme are prepended by
+// stage.ts; the ramps and the names come from the page's own mixins, so the stage mixes
+// its colours the way the page does. The paper layers carry the ramps too, so a layer
+// stamped with the incoming theme mixes from its own seeds while the wipe runs.
+
+[data-screen],
+[data-demo-theme] {
+  @include colors.primitive-ramps;
+  @include colors.semantic-tokens;
+}
+
+:host {
+  display: grid;
+  gap: 0.375em;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none;
+}
+
+/* The stage's viewport, drawn 16:10. Paint containment keeps the wipe's square inside it. */
+.screen {
+  position: relative;
+  color: var(--ink);
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  contain: paint;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.125em;
+  background: var(--surface-page);
+}
+
+/* The stage's own readout: what is stamped on it, in the stamp's own words. */
+.stamp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5ch;
+  margin: 0;
+  font-family: monospace, system-ui;
+  font-size: 0.75em;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.stamp code {
+  font-family: inherit;
+  color: var(--ink);
+}
+
+[data-stage-shown] {
+  display: none;
+}
+
+.paper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--surface-page);
+  color: var(--ink);
+  transition: none;
+}
+
+/* The incoming page: on top, cut along the icon by the script's clip-path animation. */
+.paper[data-paper='over'] {
+  z-index: 2;
+}
+
+.page {
+  display: grid;
+  gap: 0.375em;
+  padding: 0.75em 3.5em 0.75em 0.875em;
+}
+
+.name {
+  margin: 0;
+  font-size: 1.125em;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.role {
+  margin: 0;
+  font-size: 0.625em;
+  line-height: 1.2;
+  color: var(--ink-muted);
+}
+
+.rule {
+  height: 1px;
+  background: var(--line);
+}
+
+.line {
+  height: 0.25em;
+  border-radius: 0.125em;
+  background: var(--ink-faint);
+}
+
+.line.short {
+  width: 60%;
+}
+
+.sheet {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375em;
+  width: 45%;
+  padding: 0.375em;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+
+.sheet .blue {
+  aspect-ratio: 4 / 3;
+  background: var(--blueprint);
+}
+
+.sheet .accent {
+  aspect-ratio: 4 / 3;
+  background: var(--accent);
+}
+
+/* The picker, drawn as the corner draws it: a raised tab on the page's edge. */
+.corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  gap: 0.125em;
+  padding: 0.375em 0.5em;
+  border-bottom: 1px solid var(--accent-muted);
+  border-left: 1px solid var(--accent-muted);
+  border-bottom-left-radius: 0.625em;
+  background: var(--surface-raised);
+  color: var(--ink-faint);
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+  margin: 0;
+  padding: 0.125em 0.25em;
+  border: 0;
+  border-radius: 0.125em;
+  background: none;
+  font: inherit;
+  font-family: monospace, system-ui;
+  font-size: 0.625em;
+  line-height: 1.25;
+  color: inherit;
+  cursor: pointer;
+}
+
+button.pick:hover,
+button.pick:focus-visible {
+  color: var(--ink);
+}
+
+button.pick:focus-visible {
+  outline: 1px solid var(--line-strong);
+}
+
+.pick svg {
+  flex-shrink: 0;
+  width: 1.125em;
+  height: 1.125em;
+}
+
+.pick .checked,
+.pick[data-on] .unchecked {
+  display: none;
+}
+
+.pick[data-on] {
+  color: var(--ink);
+}
+
+.pick[data-on] .checked {
+  display: block;
+}
+
+/* The over layer is a picture of the page to come: nothing in it takes a press. */
+.paper[data-paper='over'] .pick {
+  cursor: default;
+}
