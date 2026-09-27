@@ -1,14 +1,16 @@
 ---
 /**
- * The fold, exploded into the three layers PaperStack/index.astro draws it with, and the
- * geometry a drag works on: the corner, the tip under the pointer and the crease between
- * them. One fold size for both figures, 60 by 40 on a 120 by 60 sheet, past the commit
- * point so the release on the right would turn the page.
+ * The fold as PaperStack/index.astro draws it: three panels, one per layer, in the order
+ * they are painted, then the drag on a page of its own with the points a release is judged
+ * on. One fold size throughout, 60 by 40 on a 120 by 60 page, past the commit point, so the
+ * release drawn would turn the page.
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
-const annotationScale = 0.6;
+// The drag panel is a page and a margin, so its labels are at the sheet's callout size
+// rather than the small panels' and stay inside the panel, where nothing mirrors them.
+const annotationScale = 1;
 const annotationFontSize = 0.1 * annotationScale;
 
 const w = 120;
@@ -33,31 +35,20 @@ const hole = [{ x: 0, y: 0 }, { x: w, y: 0 }, b, a, { x: 0, y: h }].map(pt).join
 // The cast shadow: a band on the far side of the crease from the flap, gone 12 in.
 const shade = [a, b, { x: b.x - 12 * u.y, y: b.y + 12 * u.x }, { x: a.x - 12 * u.y, y: a.y + 12 * u.x }].map(pt).join(' ');
 
-// Where each figure stands in the drawing.
-const layers = [
-  { at: { x: 40, y: 90 }, part: 'page' },
-  { at: { x: 65, y: 60 }, part: 'shade' },
-  { at: { x: 90, y: 30 }, part: 'flap' },
-];
-const drag = { x: 260, y: 50 };
-
-const notes = [
-  'A pointer drags the dog-ear. The release reads where a throw would coast to: 120 ms at the speed of the last 100 ms.',
-  'A sideways wheel or trackpad scroll walks the same fold. It ends once the wheel has been quiet for four gaps, 140 to 800 ms.',
-  'A finger turns the page after 8 px sideways. Up or down first, and the page scrolls instead.',
-  'The arrow keys turn on the spot. There is no hand on the paper to wait for.',
-  'The folded-back corner at the top left brings the last page back. It commits a quarter of the diagonal in.',
-];
+const panels = [
+  { part: 'page', caption: 'the page, cut on the crease' },
+  { part: 'shade', caption: 'the shade, on the clip wrapper' },
+  { part: 'flap', caption: 'the flap, the back mirrored over' },
+] as const;
 ---
 
 <div class="wrapper">
-  <p class="point typewriter">Three layers, one crease</p>
+  <p class="point typewriter">How a fold is drawn</p>
 
-  <Annotations scale={annotationScale} reach={1}>
-    <svg class="fold-drawing" viewBox="-60 -30 460 220" slot="content" aria-hidden="true">
-      {/* The exploded view, bottom layer first. */}
-      {layers.map(({ at, part }) => (
-        <g data-layer={part} transform={`translate(${at.x} ${at.y})`}>
+  <ol class="layers">
+    {panels.map(({ part, caption }) => (
+      <li>
+        <svg class="fold-drawing" viewBox="-6 -6 132 72" aria-hidden="true">
           {part === 'page' && (
             <>
               <polygon class="paper" points={hole} />
@@ -76,88 +67,73 @@ const notes = [
               <polygon class="paper flap" points={flap} />
             </>
           )}
-        </g>
-      ))}
+        </svg>
+        <span class="caption">{caption}</span>
+      </li>
+    ))}
+  </ol>
 
-      {/* The drag: the sheet, the corner, the tip and the crease between them. */}
-      <g data-figure="drag" transform={`translate(${drag.x} ${drag.y})`}>
-        <rect class="paper" width={w} height={h} />
-        <polygon class="paper flap" points={flap} />
-        <line class="crease" data-part="crease" x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
-        <line class="rule" x1={w} y1={h} x2={tip.x} y2={tip.y} />
-        <circle class="mark" cx={tip.x} cy={tip.y} r="2.5" />
-        <circle class="mark" cx={w} cy={h} r="2.5" />
-        <g class="mark" data-part="commit" transform={`translate(${commit.x} ${commit.y})`}>
-          <line x1="-3" y1="-3" x2="3" y2="3" />
-          <line x1="-3" y1="3" x2="3" y2="-3" />
-        </g>
-        <text class="letter" x={tip.x - 9} y={tip.y + 2}>T</text>
-        <text class="letter" x={w + 3} y={h + 3}>C</text>
+  <Annotations scale={annotationScale} reach={1}>
+    <svg class="fold-drawing drag" viewBox="-24 -12 168 84" slot="content" aria-hidden="true">
+      <rect class="paper" width={w} height={h} />
+      <polygon class="paper flap" points={flap} />
+      <line class="crease" data-part="crease" x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+      <line class="rule" x1={w} y1={h} x2={tip.x} y2={tip.y} />
+      <circle class="mark" data-part="tip" cx={tip.x} cy={tip.y} r="2.5" />
+      <circle class="mark" data-part="corner" cx={w} cy={h} r="2.5" />
+      <g class="mark" data-part="commit" transform={`translate(${commit.x} ${commit.y})`}>
+        <line x1="-3" y1="-3" x2="3" y2="3" />
+        <line x1="-3" y1="3" x2="3" y2="-3" />
       </g>
+      <text class="letter" x={tip.x - 9} y={tip.y + 2}>T</text>
+      <text class="letter" x={w + 3} y={h + 3}>C</text>
     </svg>
 
     <Fragment slot="annotations">
       <ArrowAnnotation
-        target='[data-layer="page"]'
-        anchor="0.8 0.75"
-        tipX={-0.15}
-        tipY={0.5}
-        angle={-80}
-        length={0.35}
+        target='[data-part="tip"]'
+        anchor="center"
+        tipX={0.1}
+        tipY={-0.6}
+        angle={150}
+        length={0.4}
+        labelSide="left"
         fontSize={annotationFontSize}
-        text="page content, cut on the crease"
+        text="T, the pointer"
       />
       <ArrowAnnotation
-        target='[data-layer="shade"]'
-        anchor="0.8 0.7"
-        tipX={-0.04}
-        tipY={0.2}
-        angle={100}
-        length={1}
+        target='[data-part="corner"]'
+        anchor="center"
+        tipX={0.55}
+        tipY={0.72}
+        angle={-20}
+        length={0.4}
         fontSize={annotationFontSize}
-        text="shade on the clip wrapper, darkest on the crease"
-      />
-      <ArrowAnnotation
-        target='[data-layer="flap"]'
-        anchor="0.75 0.5"
-        tipX={0.04}
-        tipY={-0.18}
-        angle={30}
-        length={0.5}
-        fontSize={annotationFontSize}
-        text="flap, the sheet's back mirrored across the crease"
-        lines={["flap, the sheet's back", "mirrored across the crease"]}
-      />
-      <ArrowAnnotation
-        target='[data-part="commit"]'
-        anchor="bottom-right"
-        tipX={0.78}
-        tipY={0.14}
-        angle={-150}
-        length={0.5}
-        fontSize={annotationFontSize}
-        text="commit point, ¾ w ¾ h"
+        text="C, the corner"
       />
       <ArrowAnnotation
         target='[data-part="crease"]'
-        anchor="0.15 0.85"
-        tipX={0.69}
-        tipY={0.22}
-        angle={-110}
+        anchor="0.1 0.9"
+        tipX={-0.1}
+        tipY={0.62}
+        angle={180}
         length={0.5}
         labelSide="left"
         fontSize={annotationFontSize}
-        text="crease, halfway between C and T"
+        text="the crease, halfway"
+      />
+      <ArrowAnnotation
+        target='[data-part="commit"]'
+        anchor="center"
+        tipX={0.19}
+        tipY={0.36}
+        angle={-100}
+        length={0.5}
+        fontSize={annotationFontSize}
+        text="commit point, ¾ in"
       />
     </Fragment>
   </Annotations>
-
-  <aside class="notes">
-    <span class="notes-heading">Ways to turn</span>
-    <ol>
-      {notes.map((note) => <li>{note}</li>)}
-    </ol>
-  </aside>
 </div>
 
 <style lang="scss">
@@ -175,12 +151,45 @@ const notes = [
   margin-inline: auto;
 
   > :global(.content) {
-    width: min(100%, 40em);
+    width: min(100%, 26em);
   }
 }
 
 .point {
   @include point;
+}
+
+// The three layers in a row, in paint order.
+.layers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75em;
+  width: 100%;
+  max-width: 44em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: layer;
+
+  li {
+    display: grid;
+    gap: 0.125em;
+    counter-increment: layer;
+  }
+
+  .caption::before {
+    content: counter(layer) ' ';
+    color: var(--ink-muted);
+  }
+}
+
+.caption {
+  margin: 0;
+  font-family: "Special Elite", monospace, system-ui;
+  font-size: max(0.5rem, 0.75em);
+  line-height: 1.25;
+  text-align: center;
+  text-wrap: balance;
 }
 
 .fold-drawing {
@@ -228,20 +237,6 @@ const notes = [
     font-family: "Special Elite", monospace, system-ui;
     font-size: 8px;
     fill: var(--ink);
-  }
-}
-
-.notes {
-  @include drawing-notes;
-
-  width: 100%;
-
-  ol {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  :global([data-sheet-orientation='portrait']) & ol {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
