@@ -43,12 +43,11 @@ const noteId = `drawing-note-${crypto.randomUUID().slice(0, 8)}`;
 const asideHtml = (await Astro.slots.render('aside')) ?? '';
 const noteBackground = asideHtml.match(/--background:\s*([^;"]+)/)?.[1];
 const sheetAnchor = `--${noteId}-sheet`;
-const titleAnchor = `--${noteId}-title`;
 ---
 
 <section
   class={pageStyle}
-  style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor, '--drawing-title-anchor': titleAnchor }}
+  style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
 >
   <div class="content">
     <slot name="content" />
@@ -78,7 +77,7 @@ const titleAnchor = `--${noteId}-title`;
     </button>
   </div>
 
-  <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`} style={{ 'anchor-name': titleAnchor }}>
+  <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`}>
     <tbody>
       <tr>
         {techs.length > 0 && (
