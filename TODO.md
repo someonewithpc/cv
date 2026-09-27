@@ -16,7 +16,7 @@
   - [x] Some icons not very visible in dark mode
   - [-] Scroll horizontally? (prefers-reduced-motion)
   - [x] Filter?
-- [ ] Access Keys
+- [x] Access Keys (#192)
 - [ ] ARIA roles
 - [x] Every font size in rem or em, off px, on the eighths grid, following the reader's own default (#152)
 - [ ] Demos
@@ -156,4 +156,4 @@
 - [x] Firefox drops the callout frame's long dashes and every picker rule it cannot parse (FF1, FF2) (#196)
 - [x] Take the `:has()` rules off the path of a change inside a sheet (#197)
 - [x] Dog-ear flap paints nothing past the sheet's edges (#198)
-- [ ] Skip link moves focus nowhere, missing focus rings, no working access keys (#171 A3)
+- [x] Skip link moves focus nowhere, missing focus rings, no working access keys (#192)
