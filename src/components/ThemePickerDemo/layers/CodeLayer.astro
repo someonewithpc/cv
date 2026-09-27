@@ -1,12 +1,13 @@
 ---
 /**
  * The wipe's script, five steps in the order the picker runs them, each with the lines it
- * runs. Every fragment is checked against ThemePicker.astro at build, whitespace aside, so
- * the sheet cannot drift from the code. Shiki colours the fragments at build with its
- * css-variables theme, and the sheet maps the variables onto its own ink, accent and muted
- * tokens, so nothing ships to colour them at runtime. Beside the steps, the geometry of the last frame:
- * the icon's box in the viewport's corner and the square the same path is mapped onto,
- * drawn to scale with the theme on screen's own factor.
+ * runs, and under the frames what transformPath does with a path. Every fragment is
+ * checked against its source at build, whitespace aside, so the sheet cannot drift from the
+ * code. Shiki colours the fragments at build with the css-variables theme, and the sheet
+ * maps its variables onto its own ink, accent and muted tokens, so nothing ships to colour
+ * them at runtime. Beside the steps, the geometry of the last frame: the icon's box in the
+ * viewport's corner and the square the same path is mapped onto, drawn to scale with the
+ * theme on screen's own factor.
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -18,58 +19,97 @@ import { THEME_IDS, THEMES } from '@/themes';
 
 import { shownCss } from '../shown';
 
-const steps = [
+type Fragment = { code: string[]; from: 'picker' | 'utils'; check?: string };
+
+const steps: { name: string; fragment: Fragment }[] = [
   {
-    name: 'Start the transition. Its callback is the switch itself',
-    code: [
-      'const commitTheme = () => { syncRadios(id); persistTheme(id); };',
-      'const viewTransition = document.startViewTransition(commitTheme);',
-    ],
+    name: 'Start the transition. The callback is the switch itself',
+    /* The callback is stood in for: the check covers the call. */
+    fragment: {
+      code: ['const viewTransition = document.startViewTransition(() => { /**/ });'],
+      from: 'picker',
+      check: 'const viewTransition = document.startViewTransition(',
+    },
   },
   {
-    name: 'Once it is ready, measure the icon and read its path',
-    code: [
-      'viewTransition.ready.then(async () => {',
-      '  const rect = svg.getBoundingClientRect();',
-      '  const pathData = path.getPathData({ normalize: true });',
-    ],
+    name: 'Once ready, measure the icon and read its path',
+    fragment: {
+      code: [
+        'viewTransition.ready.then(async () => {',
+        '  const rect = svg.getBoundingClientRect();',
+        '  const pathData = path.getPathData({ normalize: true });',
+      ],
+      from: 'picker',
+    },
   },
   {
     name: 'First frame: the path mapped from its viewBox onto the icon\'s box',
-    code: [
-      '  const startPathData = transformPath(pathData, viewBox,',
-      '    { x: rect.x, y: rect.y, width: rect.width, height: rect.height });',
-    ],
+    fragment: {
+      code: [
+        '  const startPathData = transformPath(pathData, viewBox,',
+        '    { x: rect.x, y: rect.y, width: rect.width, height: rect.height });',
+      ],
+      from: 'picker',
+    },
   },
   {
     name: 'Last frame: the same path on a square 2 × size wide, centred on the icon',
-    code: [
-      '  const size = Math.hypot(window.innerWidth, window.innerHeight)',
-      '    * scaleFactor;',
-      '  const cx = rect.x + rect.width / 2;',
-      '  const cy = rect.y + rect.height / 2;',
-      '  const endPathData = transformPath(pathData, viewBox,',
-      '    { x: cx - size, y: cy - size, width: size * 2, height: size * 2 });',
-    ],
+    fragment: {
+      code: [
+        '  const size = Math.hypot(window.innerWidth, window.innerHeight)',
+        '    * scaleFactor;',
+        '  const cx = rect.x + rect.width / 2;',
+        '  const cy = rect.y + rect.height / 2;',
+        '  const endPathData = transformPath(pathData, viewBox,',
+        '    { x: cx - size, y: cy - size, width: size * 2, height: size * 2 });',
+      ],
+      from: 'picker',
+    },
   },
   {
-    name: 'Clip the new page to the first frame and grow it to the last',
-    code: [
-      '  document.documentElement.animate(',
-      '    [{ clipPath: `path("${pathDataToString(startPathData)}")` },',
-      '     { clipPath: `path("${pathDataToString(endPathData)}")` }],',
-      '    { duration: 500, easing: \'ease-in\',',
-      '      pseudoElement: \'::view-transition-new(theme-transition)\' });',
-    ],
+    name: 'Clip the new page to the first frame, grow it to the last',
+    fragment: {
+      code: [
+        '  document.documentElement.animate(',
+        '    [{ clipPath: `path("${pathDataToString(startPathData)}")` },',
+        '     { clipPath: `path("${pathDataToString(endPathData)}")` }],',
+        '    { duration: 500, easing: \'ease-in\',',
+        '      pseudoElement: \'::view-transition-new(theme-transition)\' });',
+      ],
+      from: 'picker',
+    },
   },
 ];
 
-/* The fragments must be the picker's own lines: compare with whitespace and trailing commas
-   dropped, line by line, and fail the build on the first that is not in the source. */
-const norm = (text: string) => text.replace(/,\s*([}\])])/g, '$1').replace(/\s*([()[\]{}])\s*/g, '$1').replace(/\s+/g, ' ').trim();
-const source = norm(await fs.readFile(path.join(process.cwd(), 'src/components/ThemePicker.astro'), 'utf8'));
-for (const line of steps.flatMap(({ code }) => code)) {
-  if (!source.includes(norm(line))) throw new Error(`CodeLayer: not in ThemePicker.astro: ${line}`);
+/* Inside transformPath (src/client/svg-utils.ts): one line each, with what it does. */
+const inside: { fragment: Fragment; note: string }[] = [
+  {
+    fragment: {
+      code: ['const mapWidthAbsolute = (x: number) => ((x - fromViewBox.x) / fromViewBox.width) * toViewBox.width + toViewBox.x;'],
+      from: 'utils',
+    },
+    note: 'x: its share of the viewBox width, times the box\'s width, from the box\'s left. y likewise.',
+  },
+  {
+    fragment: { code: ['return [mapWidthAbsolute(width), mapHeightAbsolute(height)];'], from: 'utils' },
+    note: 'Each command\'s values go through in x, y pairs.',
+  },
+  {
+    fragment: { code: ['values: (transformers[type] ?? thrower(type))(values),'], from: 'utils' },
+    note: 'Letters kept, values mapped: a path in viewport pixels, the one unit clip-path: path() takes.',
+  },
+];
+
+/* The fragments must be their source's own lines: compare with whitespace dropped and a
+   comma before a bracket or at the end taken off, line by line, and fail the build on the
+   first that is not in it. */
+const norm = (text: string) => text.replace(/,\s*$/, '').replace(/,\s*([}\])])/g, '$1').replace(/\s*([()[\]{}])\s*/g, '$1').replace(/\s+/g, ' ').trim();
+const read = async (file: string) => norm(await fs.readFile(path.join(process.cwd(), file), 'utf8'));
+const sources = { picker: await read('src/components/ThemePicker.astro'), utils: await read('src/client/svg-utils.ts') };
+for (const { code, from, check } of [...steps.map((step) => step.fragment), ...inside.map((row) => row.fragment)]) {
+  for (const line of check ? [check] : code) {
+    if (!sources[from].includes(norm(line))) throw new Error(`CodeLayer: not in the ${from} source: ${line}`);
+  }
 }
 
 /* The drawing, in a 150 by 100 box: the end square fixed on the right, the viewport drawn to
@@ -97,10 +137,21 @@ const geometry = THEME_IDS.map((id) => {
   </header>
 
   <ol class="steps" aria-label="The wipe's script">
-    {steps.map(({ name, code }, index) => (
+    {steps.map(({ name, fragment }, index) => (
       <li>
         <span class="step-name"><span class="balloon">{index + 1}</span>{name}</span>
-        <Code code={code.join('\n')} lang="ts" theme="css-variables" wrap={null} />
+        <Code code={fragment.code.join('\n')} lang="ts" theme="css-variables" wrap={null} />
+        {index === 3 && (
+          <div class="inside">
+            <span class="inside-name">Inside transformPath, for both frames</span>
+            {inside.map((row) => (
+              <div class="row">
+                <Code code={row.fragment.code.join('\n')} lang="ts" theme="css-variables" wrap={null} />
+                <span class="note">{row.note}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </li>
     ))}
   </ol>
@@ -160,9 +211,10 @@ const geometry = THEME_IDS.map((id) => {
    right stops above the title block, which reaches into that column only. */
 .code-sheet {
   @include sheet-content;
-  @include sheet-type(0.028, 0.032);
+  @include sheet-type(0.025, 0.032);
   @include sheet-frame;
   @include sheet-frame-side;
+  grid-template-columns: minmax(0, 13fr) minmax(0, 7fr);
 
   /* Shiki's css-variables theme, on the sheet's own tokens. */
   --astro-code-foreground: var(--ink);
@@ -197,7 +249,7 @@ const geometry = THEME_IDS.map((id) => {
 
 .steps {
   display: grid;
-  gap: 0.375em;
+  gap: 0.125em;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -206,7 +258,7 @@ const geometry = THEME_IDS.map((id) => {
   li {
     display: grid;
     gap: 0.25em;
-    padding: 0.25em 0.625em;
+    padding: 0.1875em 0.5em;
     border: 1px solid var(--line);
     border-radius: 0.25em;
     background: var(--sheet-paper);
@@ -225,7 +277,7 @@ const geometry = THEME_IDS.map((id) => {
     margin: 0;
     font-family: monospace, system-ui;
     font-size: max(0.5rem, 0.75em);
-    line-height: 1.25;
+    line-height: 1.2;
     white-space: pre;
     overflow-x: auto;
 
@@ -233,6 +285,39 @@ const geometry = THEME_IDS.map((id) => {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
+  }
+}
+
+/* transformPath's lines, each with its sentence, under the frames' step. */
+.inside {
+  display: grid;
+  gap: 0.125em;
+  margin-top: 0.125em;
+  padding-top: 0.25em;
+  border-top: 1px solid var(--line);
+
+  .inside-name {
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.75em);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .row {
+    display: grid;
+    gap: 0.125em;
+  }
+
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .note {
+    font-size: max(0.625rem, 0.875em);
+    line-height: 1.25;
+    text-wrap: pretty;
   }
 }
 
