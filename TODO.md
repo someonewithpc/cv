@@ -145,4 +145,4 @@
 - [x] Page load and theme switches read every page's paper colour, forcing a style pass each (#180)
 - [x] Load each demo's stylesheet when the demo boots, not in the head (#181)
 - [x] The Marker Editor walkthrough drags read no layout per frame (#178)
-- [ ] Skip style, layout and paint for the stacks off screen (#179)
+- [x] Skip style, layout and paint for the stacks off screen (#185)
