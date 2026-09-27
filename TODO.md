@@ -133,6 +133,7 @@
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
 - [x] Section numbers crowding the cutting mat on wide screens (#157)
 - [ ] N5 Japanese glosses across the page (#148)
+- [x] Japanese glosses marked decorative so the contrast check skips them, no colour change (#177)
 - [x] Copy says what every theme and layout shows: no blue sheets in Forest, no click on a phone (#158)
 - [x] Show the demo title card's text on narrower desks (#151)
 - [x] Lay out the title card's slip in CSS, with no script (#161)
