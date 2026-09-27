@@ -1018,7 +1018,19 @@ $fold-pulse-y: 2cm;
         width: calc(var(--fold-x));
         height: calc(var(--fold-y));
 
-        clip-path: polygon(0% 0%, 0% 100%, calc(100% - var(--fold-x)) 100%, 100% calc(100% - var(--fold-y)), 100% 0%);
+        // The far triangle of the box: the corner is cut off along the crease, from the box's
+        // bottom-left to its top-right. The box stands 1px past the sheet's right and bottom
+        // edges (below), so those two tips do too, and the reflection under this swaps them: a
+        // sliver of the tip drawn at the sheet's right edge lands under its bottom edge, and the
+        // other way round. Each tip is chamfered 2px back along its sheet edge, to the point
+        // 1.5px in on the crease, which covers the part whose mirror image falls off the sheet.
+        clip-path: polygon(
+          0% 0%,
+          0% calc(100% - 2px),
+          1.5px calc(100% - 1.5px * tan(var(--flap-angle))),
+          calc(100% - 1.5px / max(tan(var(--flap-angle)), 0.001)) 1.5px,
+          calc(100% - 2px) 0%
+        );
 
         border-top-left-radius: $border-radius;
 
