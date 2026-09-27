@@ -1,79 +1,83 @@
 ---
 /**
- * The wipe: how the new page is cut out of the old along the picked icon, and what a
- * switch costs. The figure grows the icon of the theme on screen from the picker's corner
- * across a drawn viewport, with the theme's own factor, so it is true in every theme.
+ * The wipe, drawn: the picked icon's box in the corner is the first frame of the switch, the
+ * same path grown to a square the viewport's diagonal times the theme's factor each side is
+ * the last, and the new page is clipped to it in between. The drawing grows the icon of the
+ * theme on screen with that theme's own factor, so it is true in every theme.
  */
 import { Icon } from 'astro-icon/components';
+
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
 import { THEME_IDS, THEMES } from '@/themes';
 
 import { shownCss } from '../shown';
 
-/* Three of the wipe's frames, as fractions of the final square. */
+/* Three frames of the wipe, as fractions of the final square. */
 const frames = [0.12, 0.4, 1];
-
-const steps = [
-  'document.startViewTransition(commit): the browser keeps a snapshot of the old page, the commit stamps the theme, and the new page renders under it.',
-  'The checked icon\'s <path>, through getPathData({ normalize: true }), so every command is absolute. A path that opens with a relative move, the snowflake, would otherwise be read from the viewport\'s origin. Polyfilled where the browser lacks it.',
-  'The path is mapped twice from the icon\'s viewBox, which astro-icon puts on the outer <svg> (older output put it on the <symbol>, both are checked): onto the icon\'s box on screen, then onto a square centred there, the viewport\'s diagonal times the theme\'s factor each side.',
-  'documentElement.animate on ::view-transition-new(theme-transition), clip-path from the first path to the second, 500 ms, ease-in. The default cross-fade is off, so the wipe is the only motion.',
-  'Skipped when reduced motion is on, the tab is hidden, or the theme picked is the one on screen. A second pick mid-wipe skips the first. While it runs <html> takes every click, so the picker hit-tests a click against its own boxes by hand.',
-];
-
-/* Four theme switches, measured for #180 on main 081ba11a and the branch that landed. */
-const cost = [
-  { what: 'forced style passes', before: '242', after: '0' },
-  { what: 'style recalculation', before: '1,641 ms', after: '548 ms' },
-  { what: 'main thread busy', before: '2,428 ms', after: '1,222 ms' },
-];
 ---
 
 <div class="wipe-sheet">
-  <p class="point typewriter">The new page is cut out of the old one along the icon</p>
+  <header>
+    <span class="eyebrow">ThemePicker.astro · startViewTransition · clip-path: path()</span>
+    <strong>The icon is the whole animation: its box in the corner is the first frame, the same path grown over the page is the last</strong>
+  </header>
 
-  <figure class="figure">
-    <div class="viewport" aria-hidden="true">
-      {frames.map((size) => (
-        <span class="frame" style={`--size: ${size}`}>
-          {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
-        </span>
-      ))}
-      <span class="corner">
-        {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
-      </span>
+  <div class="figure">
+    <Annotations reach={1.5} fontSize={0.1}>
+      <div slot="content" class="drawing">
+        <div class="viewport" data-viewport aria-hidden="true">
+          <span class="old">
+            <span class="old-name"></span>
+            <span class="old-line"></span>
+            <span class="old-line short"></span>
+          </span>
+          {frames.map((size) => (
+            <span class="frame" data-frame={size === 1 ? 'end' : 'mid'} style={`--size: ${size}`}>
+              {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+            </span>
+          ))}
+          <span class="corner" data-corner>
+            {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+          </span>
+        </div>
+        <ul class="factors" data-factors aria-label="Each theme's factor">
+          {THEME_IDS.map((id) => (
+            <li data-shown={id}>
+              <Icon name={THEMES[id].icons.checked} aria-hidden="true" />
+              <span class="factor">× {THEMES[id].transitionScaleFactor}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <Fragment slot="annotations">
+        <ArrowAnnotation target="[data-corner]" anchor="center" tipX={0.9} tipY={-0.86} angle={0} length={0.35} text="Frame 1: the icon's box, 1.125em in the corner" lines={['Frame 1: the icon\'s box,', '1.125em in the corner']} only="landscape" />
+        <ArrowAnnotation target="[data-corner]" anchor="center" tipX={0.9} tipY={-0.86} angle={90} length={0.3} text="Frame 1: the icon's box in the corner" lines={['Frame 1: the icon\'s box', 'in the corner']} labelSide="left" only="portrait" />
+        <ArrowAnnotation target="[data-viewport]" anchor="0.12 0.6" tipX={-0.75} tipY={0.2} angle={180} length={0.3} text="Last frame: the same path, a square diagonal × factor each side" lines={['Last frame: the same path,', 'a square diagonal × factor', 'each side']} labelSide="left" only="landscape" />
+        <ArrowAnnotation target="[data-viewport]" anchor="0.35 0.25" tipX={-0.3} tipY={-0.5} angle={120} length={0.6} text="Last frame: the path, grown diagonal × factor" lines={['Last frame: the path,', 'grown diagonal × factor']} labelSide="left" only="portrait" />
+        <ArrowAnnotation target="[data-viewport]" anchor="0.9 0.55" tipX={0.8} tipY={0.1} angle={0} length={0.3} text="The new page, clipped to the path, 500 ms ease-in" lines={['The new page, clipped to', 'the path, 500 ms ease-in']} only="landscape" />
+        <ArrowAnnotation target="[data-factors]" anchor="right" tipX={0.55} tipY={0.85} angle={0} length={0.3} text="A moon is round already, a sun has to grow further" lines={['A moon is round already,', 'a sun has to grow further']} only="landscape" />
+        <ArrowAnnotation target="[data-factors]" anchor="bottom" tipX={0} tipY={0.95} angle={-90} length={0.4} text="A moon is round, a sun grows further" lines={['A moon is round,', 'a sun grows further']} only="portrait" />
+      </Fragment>
+    </Annotations>
+  </div>
+
+  <dl class="rules">
+    <div>
+      <dt>Old and new</dt>
+      <dd><code>startViewTransition</code> keeps a picture of the old page; the pick lands inside its callback, and the new page renders under it.</dd>
     </div>
-    <figcaption>
-      Three frames of the 500 ms, from the icon's box in the corner to a square
-      {THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id].transitionScaleFactor}</span>)}
-      diagonals wide. Each theme sets its own factor, a moon has to grow further than a sun.
-    </figcaption>
-  </figure>
-
-  <section class="steps" aria-label="Steps">
-    <span class="panel-heading">One pick, step by step</span>
-    <ol>
-      {steps.map((step) => <li>{step}</li>)}
-    </ol>
-  </section>
-
-  <section class="cost" aria-label="What a switch costs">
-    <span class="panel-heading">What a switch repaints, and what it cost</span>
-    <p>
-      Every token on <code>:root</code>, the three ramps, the paper grain's blend and inversion,
-      the desk tile, the mat and the backs of the sheets. Four switches, traced for #180:
-    </p>
-    <table>
-      <thead>
-        <tr><th scope="col"></th><th scope="col">backs read from computed style</th><th scope="col">backs painted from the tokens</th></tr>
-      </thead>
-      <tbody>
-        {cost.map(({ what, before, after }) => (
-          <tr><th scope="row">{what}</th><td>{before}</td><td>{after}</td></tr>
-        ))}
-      </tbody>
-    </table>
-  </section>
+    <div>
+      <dt>The path</dt>
+      <dd>The checked icon's <code>&lt;path&gt;</code>, made absolute by <code>getPathData</code>, mapped from its viewBox onto the icon's box, then onto the square.</dd>
+    </div>
+    <div>
+      <dt>The motion</dt>
+      <dd><code>clip-path</code> from the one to the other on the new page, and nothing else moves. Skipped under reduced motion and in a hidden tab.</dd>
+    </div>
+  </dl>
 </div>
 
 <style is:global set:html={shownCss('.wipe-sheet')} />
@@ -81,74 +85,31 @@ const cost = [
 <style lang="scss">
 @use "./sheet" as *;
 
-:global(article.technical-drawing-stack > * > section .content:has(.wipe-sheet)) {
-  place-self: stretch;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: 100%;
-  min-width: 0;
-  min-height: 0;
-  box-sizing: border-box;
-}
+@include stretch-cell(".wipe-sheet");
 
 .wipe-sheet {
   @include sheet-content;
-  @include sheet-type(0.023, 0.028);
+  @include sheet-type(0.024, 0.028);
   @include clear-of-title-block;
-
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
-  grid-template-areas:
-    'point point'
-    'figure steps'
-    'cost steps';
-  gap: 0.5em;
-  align-content: center;
-  height: 100%;
-  max-height: 100%;
-  overflow-y: auto;
-
-  :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'point'
-      'figure'
-      'steps'
-      'cost';
-    align-content: start;
-  }
-}
-
-.point {
-  grid-area: point;
-  margin: 0;
-  font-size: 1.25em;
-  line-height: 1.2;
-  text-align: center;
-  text-wrap: balance;
+  @include sheet-frame;
 }
 
 .figure {
-  grid-area: figure;
-  display: grid;
-  gap: 0.375em;
-  margin: 0;
-  min-width: 0;
+  padding: 0.5em 0.5em 0;
+}
 
-  figcaption {
-    font-size: max(0.5rem, 0.75em);
-    line-height: 1.35;
-    color: var(--ink-muted);
-    text-wrap: pretty;
-  }
+.drawing {
+  display: grid;
+  gap: 0.5em;
+  width: 26em;
+  max-width: 100%;
 }
 
 /* A viewport, drawn 16:10, with the picker's corner top right. The frames are the icon
    itself, centred on the corner icon and grown to a share of the final square: a square
    --size of two diagonals wide, since the smallest factor is 1.2 and the largest 2.4. */
 .viewport {
-  --corner: 1.25em;
+  --corner: 1.375em;
 
   position: relative;
   aspect-ratio: 16 / 10;
@@ -157,6 +118,32 @@ const cost = [
   border-radius: 0.125em;
   background: var(--surface-sunken);
   overflow: hidden;
+}
+
+/* The old page, still under the frames: a name and two lines. */
+.old {
+  position: absolute;
+  inset: 0.75em 3em 0.75em 0.875em;
+  display: grid;
+  gap: 0.375em;
+  align-content: start;
+}
+
+.old-name {
+  width: 40%;
+  height: 0.625em;
+  border-radius: 0.125em;
+  background: var(--ink-muted);
+}
+
+.old-line {
+  height: 0.25em;
+  border-radius: 0.125em;
+  background: var(--ink-faint);
+
+  &.short {
+    width: 55%;
+  }
 }
 
 .corner,
@@ -188,74 +175,36 @@ const cost = [
   height: 100%;
 }
 
-.steps,
-.cost {
-  @include panel;
-}
-
-.steps {
-  grid-area: steps;
-
-  ol {
-    display: grid;
-    gap: 0.375em;
-    margin: 0;
-    padding-inline-start: 1.5em;
-  }
+/* Each theme's factor under the viewport, the one on screen in full ink. */
+.factors {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 
   li {
-    list-style: decimal outside;
-    font-size: max(0.5rem, 0.8125em);
-    line-height: 1.35;
-    text-wrap: pretty;
-
-    &::marker {
-      font-family: monospace, system-ui;
-      color: var(--ink-muted);
-    }
-  }
-}
-
-.cost {
-  grid-area: cost;
-
-  p {
-    margin: 0;
-    font-size: max(0.5rem, 0.8125em);
-    line-height: 1.35;
-    text-wrap: pretty;
-  }
-
-  table {
-    border-collapse: collapse;
+    display: flex;
+    align-items: center;
+    gap: 0.5ch;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.75em);
+    font-size: max(0.5rem, 0.875em);
+    color: var(--ink-faint);
   }
 
-  th,
-  td {
-    padding: 0.125em 0.625em 0.125em 0;
-    text-align: left;
-    vertical-align: top;
+  li[data-shown] {
+    display: flex;
   }
 
-  thead th {
-    font-weight: 400;
-    color: var(--ink-muted);
-    border-bottom: 1px solid var(--line);
+  li :global(svg) {
+    width: 1.25em;
+    height: 1.25em;
   }
 
-  tbody th {
-    font-weight: 400;
-    white-space: nowrap;
+  /* The theme on screen: the selectors set --shown to 1 on it, the rest stay faint. */
+  li {
+    color: color-mix(in oklch, var(--ink) calc(var(--shown, 0) * 100%), var(--ink-faint));
   }
-
-  td {
-    font-variant-numeric: tabular-nums;
-  }
-}
-
-[data-shown] {
-  display: var(--shown-display, none);
 }
 </style>

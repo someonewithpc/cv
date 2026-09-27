@@ -36,9 +36,9 @@ const pickerSize = toKiB(pickerBundle.text);
 
 const layers = {
   picker: { name: null },
+  wipe: { name: 'The Wipe', pageStyle: 'blueprint' },
   tokens: { name: 'Token Layers', pageStyle: 'blueprint' },
   default: { name: 'Default and Override', pageStyle: 'blueprint' },
-  wipe: { name: 'The Wipe', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;

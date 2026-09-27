@@ -1,87 +1,71 @@
 ---
 /**
  * Who decides the theme: the OS until something is picked, then the stamp and the radio.
- * The three rules are laid out in cascade order, and the ones painting the page right now
- * are lit by the same selectors (shown.ts), so a pick in the corner moves the light.
+ * The three rules are drawn in cascade order with a lamp each, lit by the same selectors
+ * that paint the page (shown.ts), so a pick in the corner moves the light.
  */
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
 import { shownCss } from '../shown';
 
 const rules = [
-  {
-    mark: 'os',
-    selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }',
-    says: 'The OS colour scheme, while nothing is picked. Light and dark only: the OS has no word for arctic or forest.',
-  },
-  {
-    mark: 'stamp',
-    selector: ':root[data-theme="dark"]',
-    says: 'The stamp. The head script writes it from localStorage before the first paint, and every pick writes it again.',
-  },
-  {
-    mark: 'radio',
-    selector: ':root:has(#theme-dark:checked)',
-    says: 'The radio itself. This needs no script at all; with script it is what the wipe repaints from.',
-  },
+  { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }' },
+  { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]' },
+  { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)' },
 ];
 
-const reload = [
-  { when: '0 ms', what: 'An inline script in <head> reads cv-theme and stamps <html>. Eight lines, nothing else runs yet.' },
-  { when: 'first paint', what: 'The stylesheet matches the stamp, so the page paints in the kept theme, never the OS one first.' },
-  { when: 'picker script', what: 'Checks the matching radio, and remembers the choice for the wipe.' },
-  { when: 'next pick', what: 'Both the stamp and the key are written again, inside the view transition\'s callback.' },
-];
+const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first paint'];
 ---
 
 <div class="default-sheet">
-  <p class="point typewriter">Nothing picked, the OS decides. One pick, and the stamp wins.</p>
+  <header>
+    <span class="eyebrow">ThemePicker.astro · Layout.astro</span>
+    <strong>Nothing picked, the OS decides; one pick, and the stamp wins, before the first paint</strong>
+  </header>
 
-  <section class="rules" aria-label="The rules, in cascade order">
-    <span class="panel-heading">Three rules, the ones painting now lit</span>
-    <ol>
-      {rules.map(({ mark, selector, says }) => (
-        <li data-chosen={mark}>
-          <code class="selector">{selector}</code>
-          <span class="on">painting</span>
-          <span class="says">{says}</span>
-        </li>
-      ))}
-    </ol>
-  </section>
+  <div class="figure">
+    <Annotations reach={1.5} fontSize={0.11}>
+      <div slot="content" class="drawing">
+        <ol class="cascade" data-cascade aria-label="The rules, in cascade order">
+          {rules.map(({ mark, name, selector }) => (
+            <li data-chosen={mark}>
+              <span class="lamp" data-lamp aria-hidden="true"></span>
+              <span class="rule-name">{name}</span>
+              <code class="selector">{selector}</code>
+              <span class="on">painting</span>
+            </li>
+          ))}
+        </ol>
 
-  <section class="reload" aria-label="A reload with a pick kept">
-    <span class="panel-heading">A reload, with a pick kept</span>
-    <ol>
-      {reload.map(({ when, what }) => (
-        <li>
-          <span class="when">{when}</span>
-          <span class="what">{what}</span>
-        </li>
-      ))}
-    </ol>
-  </section>
+        <ol class="reload" data-reload aria-label="A reload with a pick kept">
+          {reload.map((stop) => <li><code>{stop}</code></li>)}
+        </ol>
+      </div>
 
-  <section class="notes" aria-label="Notes">
-    <span class="notes-heading">Notes</span>
-    <ol>
-      <li>
-        A pick also sets <code>color-scheme: only dark</code> (or light) on <code>&lt;body&gt;</code>,
-        so scrollbars and form controls follow the pick and not the OS.
-      </li>
-      <li>
-        Without script the radios still switch the page. Nothing is stored, and a reload comes
-        back on the OS scheme.
-      </li>
-      <li>
-        The radios are matched by id. Naming an attribute inside <code>:has()</code> put every
-        input on the page in <code>:root</code>'s invalidation set, and any value typed anywhere
-        restyled the whole page.
-      </li>
-      <li>
-        The forget key on the first sheet removes all three: the stored key, the stamp and the
-        checks.
-      </li>
-    </ol>
-  </section>
+      <Fragment slot="annotations">
+        <ArrowAnnotation target="[data-lamp]" anchor="center" tipX={-0.95} tipY={-0.75} angle={180} length={0.35} text="Lit: painting now" lines={['Lit:', 'painting now']} labelSide="left" />
+        <ArrowAnnotation target='[data-chosen="os"]' anchor="top-right" tipX={0.95} tipY={-0.95} angle={60} length={0.3} text="Light and dark only: the OS has no word for arctic" lines={['Light and dark only:', 'the OS has no word for arctic']} labelSide="left" />
+        <ArrowAnnotation target='[data-chosen="radio"]' anchor="right" tipX={1} tipY={0.2} angle={-30} length={0.2} text="No script: CSS alone" lines={['No script:', 'CSS alone']} />
+        <ArrowAnnotation target="[data-reload]" anchor="bottom" tipX={0} tipY={1} angle={-90} length={0.4} text="A reload: eight lines in the head stamp the kept pick first" lines={['A reload: eight lines in the head', 'stamp the kept pick first']} />
+      </Fragment>
+    </Annotations>
+  </div>
+
+  <dl class="rules">
+    <div>
+      <dt>Nothing picked</dt>
+      <dd>Only the OS rule matches, so the page follows the system's light or dark and changes with it.</dd>
+    </div>
+    <div>
+      <dt>A pick</dt>
+      <dd>Writes the stamp, checks the radio and keeps <code>cv-theme</code>; <code>color-scheme: only</code> on <code>&lt;body&gt;</code> takes scrollbars and controls along.</dd>
+    </div>
+    <div>
+      <dt>Radios by id</dt>
+      <dd>Naming an attribute inside <code>:has()</code> put every input on the page in <code>:root</code>'s invalidation set, so any value typed anywhere restyled it all.</dd>
+    </div>
+  </dl>
 </div>
 
 <style is:global set:html={shownCss('.default-sheet')} />
@@ -89,127 +73,134 @@ const reload = [
 <style lang="scss">
 @use "./sheet" as *;
 
-:global(article.technical-drawing-stack > * > section .content:has(.default-sheet)) {
-  place-self: stretch;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: 100%;
-  min-width: 0;
-  min-height: 0;
-  box-sizing: border-box;
-}
+@include stretch-cell(".default-sheet");
 
 .default-sheet {
   @include sheet-content;
   @include sheet-type(0.024, 0.028);
   @include clear-of-title-block;
+  @include sheet-frame;
+}
 
+.figure {
+  padding: 0 1em;
+}
+
+.drawing {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.5em;
+  width: 26em;
+  max-width: 100%;
+}
+
+/* The three rules, drawn as a stack in cascade order, each with a lamp lit while it paints. */
+.cascade {
+  display: grid;
   gap: 0.5em;
-  align-content: center;
-  height: 100%;
-  max-height: 100%;
-  overflow-y: auto;
-
-  :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-    align-content: start;
-  }
-}
-
-.point {
-  grid-column: 1 / -1;
   margin: 0;
-  font-size: 1.25em;
-  line-height: 1.2;
-  text-align: center;
-  text-wrap: balance;
-}
+  padding: 0;
+  list-style: none;
+  counter-reset: rule;
 
-.rules,
-.reload {
-  @include panel;
-
-  ol {
+  li {
     display: grid;
-    gap: 0.375em;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'lamp name on'
+      'lamp selector selector';
+    align-items: center;
+    gap: 0.25em 0.625em;
+    padding: 0.5em 0.75em;
+    border: 1px solid var(--line);
+    border-radius: 0.25em;
+    background: var(--sheet-paper);
+    color: var(--ink-muted);
   }
-}
 
-.rules li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.125em 0.5em;
-  padding: 0.375em 0.5em;
-  border: 1px solid var(--line);
-  border-radius: 0.25em;
-  /* Lit or not: the mark sets --shown to 1 and the rule reads it. */
-  border-color: color-mix(in oklch, var(--line), var(--accent) calc(var(--shown, 0) * 100%));
-  opacity: calc(0.55 + 0.45 * var(--shown, 0));
-}
+  /* The selectors set --shown to 1 on the rule painting now. */
+  li[data-chosen] {
+    display: grid;
+  }
 
-.selector {
-  font-family: monospace, system-ui;
-  font-size: max(0.5rem, 0.8125em);
-  overflow-wrap: anywhere;
-}
+  .lamp {
+    grid-area: lamp;
+    width: 0.625em;
+    height: 0.625em;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: color-mix(in oklch, var(--accent) calc(var(--shown, 0) * 100%), transparent);
+    box-shadow: 0 0 calc(var(--shown, 0) * 0.5em) var(--accent);
+  }
 
-.on {
-  display: var(--shown-display, none);
-  align-self: start;
-  padding: 0 0.5em;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-contrast);
-  font-family: monospace, system-ui;
-  font-size: max(0.5rem, 0.6875em);
-  line-height: 1.6;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.says,
-.what {
-  grid-column: 1 / -1;
-  font-size: max(0.5rem, 0.8125em);
-  line-height: 1.35;
-  color: var(--ink-muted);
-  text-wrap: pretty;
-}
-
-.reload li {
-  display: grid;
-  grid-template-columns: 6em minmax(0, 1fr);
-  column-gap: 0.5em;
-  align-items: baseline;
-
-  .when {
+  .rule-name {
+    grid-area: name;
     font-family: monospace, system-ui;
     font-size: max(0.5rem, 0.75em);
-    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
-  .what {
-    grid-column: 2;
+  .selector {
+    grid-area: selector;
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.625em);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    color: color-mix(in oklch, var(--ink) calc(var(--shown, 0) * 100%), var(--ink-muted));
+  }
+
+  .on {
+    grid-area: on;
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.625em);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    opacity: var(--shown, 0);
   }
 }
 
-.notes {
-  @include drawing-notes;
+/* A reload with a pick kept, as four stops on a line. */
+.reload {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: monospace, system-ui;
+  font-size: max(0.5rem, 0.75em);
 
-  grid-column: 1 / -1;
-  font-size: max(0.5rem, 0.8125em);
+  li {
+    position: relative;
+    flex: 1;
+    padding-top: 0.75em;
+    text-align: center;
 
-  ol {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0.25em;
+      left: 50%;
+      width: 0.5em;
+      height: 0.5em;
+      translate: -50% 0;
+      border: 1px solid var(--line-strong);
+      border-radius: 50%;
+      background: var(--sheet-paper);
+    }
 
-    :global([data-sheet-orientation='portrait']) & {
-      grid-template-columns: minmax(0, 1fr);
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0.5em;
+      left: calc(50% + 0.25em);
+      right: calc(-50% + 0.25em);
+      border-top: 1px solid var(--line-strong);
+    }
+
+    &:last-child::after {
+      content: none;
     }
   }
 }
