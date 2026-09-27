@@ -1,138 +1,16 @@
 ---
 import { Icon } from 'astro-icon/components';
 
-type ThemeFollows = 'light' | 'dark';
-
-type ThemeSettings = {
-  canvas: string;
-  ink: string;
-  accent: string;
-  blueprint: string;
-  /**
-   * The desk the page lies on: public/desk/<deskTile>.webp, which scripts/bake-desk-tiles.mjs
-   * bakes from a veneer scan with this theme's colour and blend already in it, and `desk`,
-   * that tile's average, which shows until the tile loads.
-   */
-  desk: string;
-  deskTile: string;
-  /**
-   * The plain paper, which the drawing sheets and the contributions page both take. Hugo
-   * picked one per theme on the tuner. A theme without one sets it to initial, so the
-   * var() fallbacks take the ramp step; left unset, it would inherit light's white from :root.
-   */
-  paper?: string;
-  /**
-   * How strongly the paper's fibre tile shows on a drawing page, tuned so the painted sheet
-   * has a spread of about two levels. A paler sheet takes a fraction of this; see paper-grain
-   * in _colors.scss.
-   */
-  paperGrain: string;
-  /** The same on the contributions paper, which reads as the rougher sheet. Spread 2.6, and
-   * L* 91.7 against the 96.5 the sheet has bare: multiply pays for roughness in darkening.
-   * Round 4 ran this at 0.44, which is spread 3.2 at L* 90.6, and that read as too strong. */
-  paperSheetGrain: string;
-  /** multiply for a light sheet, screen for a dark one -- see paper-grain in _colors.scss. */
-  paperBlend: 'multiply' | 'screen';
-  /** '1' flips the tile dark-side-up for screen on a dark sheet, '0' leaves it as scanned. */
-  paperInvert: '0' | '1';
-  follows: ThemeFollows;
-  name: string;
-  transitionScaleFactor: number;
-  icons: {
-    checked: string;
-    unchecked: string;
-  };
-};
-
-const THEMES = {
-  light: {
-    // Round 1 lifted the light paper off grey, oklch(0.94 0.014 85) to here, at Hugo's ask.
-    canvas: 'oklch(0.97 0.011 85)',
-    ink: 'oklch(0.24 0.025 260)',
-    accent: 'oklch(0.7 0.13 65)',
-    blueprint: 'oklch(0.622 0.121 254)',
-    desk: 'rgb(229 200 160)',
-    deskTile: 'light',
-    paper: 'oklch(1 0 90)',
-    paperGrain: '0.45',
-    paperSheetGrain: '0.48',
-    paperBlend: 'multiply',
-    paperInvert: '0',
-    follows: 'light',
-    name: 'Light',
-    transitionScaleFactor: 2.4,
-    icons: {
-      checked: 'sun-filled',
-      unchecked: 'sun',
-    },
-  },
-  dark: {
-    canvas: 'oklch(0.2 0.035 265)',
-    ink: 'oklch(0.92 0.02 250)',
-    accent: 'oklch(0.78 0.1 75)',
-    blueprint: 'oklch(0.4 0.12 265)',
-    desk: 'rgb(31 28 24)',
-    deskTile: 'dark',
-    paperGrain: '0.33',
-    paperSheetGrain: '0.35',
-    paperBlend: 'screen',
-    paperInvert: '1',
-    follows: 'dark',
-    name: 'Dark',
-    transitionScaleFactor: 1.2,
-    icons: {
-      checked: 'moon-filled',
-      unchecked: 'moon',
-    },
-  },
-  arctic: {
-    canvas: 'oklch(0.96 0.016 230)',
-    ink: 'oklch(0.3 0.04 250)',
-    accent: 'oklch(0.52 0.1 210)',
-    blueprint: 'oklch(0.606 0.110 222)',
-    desk: 'rgb(212 203 197)',
-    deskTile: 'arctic',
-    paper: 'oklch(0.955 0.015 235)',
-    paperGrain: '0.40',
-    paperSheetGrain: '0.52',
-    paperBlend: 'multiply',
-    paperInvert: '0',
-    follows: 'light',
-    name: 'Arctic',
-    transitionScaleFactor: 2,
-    icons: {
-      checked: 'snowflake-filled',
-      unchecked: 'snowflake',
-    },
-  },
-  'dark-forest': {
-    canvas: 'oklch(0.17 0.035 145)',
-    ink: 'oklch(0.9 0.035 110)',
-    accent: 'oklch(0.72 0.1 95)',
-    blueprint: 'oklch(0.370 0.089 156)',
-    desk: 'rgb(37 27 12)',
-    deskTile: 'dark-forest',
-    paper: 'oklch(0.323 0.044 139)',
-    paperGrain: '0.27',
-    paperSheetGrain: '0.40',
-    paperBlend: 'screen',
-    paperInvert: '1',
-    follows: 'dark',
-    name: 'Forest',
-    transitionScaleFactor: 1.4,
-    icons: {
-      checked: 'leaf-filled',
-      unchecked: 'leaf',
-    },
-  },
-} as const satisfies Record<string, ThemeSettings>;
-
-type ThemeId = keyof typeof THEMES;
-
-const OS_THEMES = {
-  light: THEMES.light,
-  dark: THEMES.dark,
-} as const;
+import {
+  OS_THEMES,
+  ROOT_FOLLOWING_OS,
+  THEME_IDS,
+  THEMES,
+  rootRadioPicked,
+  rootShowing,
+  themeInputId,
+  type ThemeSettings,
+} from '@/themes';
 
 const themeVars = (settings: ThemeSettings) => `
       --theme-canvas: ${settings.canvas};
@@ -150,27 +28,19 @@ const themeVars = (settings: ThemeSettings) => `
       --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
 `;
 
-/* Match the radios by id. Naming an attribute inside :has() puts every input in the
-   document into the invalidation set for :root, so any `value` or `name` write
-   anywhere restyled the whole page. */
-const themeInputId = (id: string) => `theme-${id}`;
-const themeChecked = (id: string) => `#${themeInputId(id)}:is(:not(.with-transition):checked, .with-transition.checked)`;
-
 /* With script, a pick writes data-theme and the radio's .checked class in the same commit,
    so the root's theme is read from the attribute alone. The radio rules stand only on a page
-   whose script never ran: any :root:has() in the cascade makes the root an anchor, and every
-   node inserted anywhere on the page then walks the document's :has() invalidation set. The
-   OS default needs no guard against a checked radio: the id inside :has() outranks it. */
+   whose script never ran (see rootRadioPicked in src/themes.ts). */
 const THEMES_CSS = `${Object.entries(OS_THEMES).map(([id, settings]) => (
   `  @media (prefers-color-scheme: ${id}) {
-    :root:not([data-theme]) {
+    ${ROOT_FOLLOWING_OS} {
 ${themeVars(settings)}
       --theme-kind: ${id};
     }
   }`
 )).join('\n\n')}
 ${Object.entries(THEMES).map(([id, settings]) => `
-  :root[data-theme="${id}"] {
+  ${rootShowing(id)} {
     --theme-kind: ${id};
 ${themeVars(settings)}
 
@@ -181,7 +51,7 @@ ${themeVars(settings)}
 
   @media (scripting: none) {
 ${Object.entries(THEMES).map(([id, settings]) => `
-    :root:has(${themeChecked(id)}) {
+    ${rootRadioPicked(id)} {
       --theme-kind: ${id};
 ${themeVars(settings)}
 
@@ -191,8 +61,6 @@ ${themeVars(settings)}
     }`).join('\n')}
   }
 `;
-
-const THEME_IDS = Object.keys(THEMES) as ThemeId[];
 
 /* Below 52rem the picker sits over the content with no hover to lean on, so the
    rules under that width only trim its chrome. */
@@ -378,8 +246,8 @@ html.theme-transition {
 
 <script>
 import { transformPath, pathDataToString } from '@/client/svg-utils';
+import { THEME_STORAGE_KEY } from '@/themes';
 
-const STORAGE_KEY = 'cv-theme';
 
 let pathDataPolyfill: Promise<void> | null = null;
 function ensurePathData() {
@@ -404,7 +272,7 @@ const syncRadios = (id: string) => {
 const persistTheme = (id: string) => {
   document.documentElement.dataset.theme = id;
   try {
-    localStorage.setItem(STORAGE_KEY, id);
+    localStorage.setItem(THEME_STORAGE_KEY, id);
   } catch {
     /* ignore */
   }
@@ -412,7 +280,7 @@ const persistTheme = (id: string) => {
 
 const stored = (() => {
   try {
-    return localStorage.getItem(STORAGE_KEY);
+    return localStorage.getItem(THEME_STORAGE_KEY);
   } catch {
     return null;
   }
