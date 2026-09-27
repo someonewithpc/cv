@@ -67,6 +67,31 @@ test('a page turn leaves the new front page breathing', async ({ page }) => {
   await expect(front).toHaveClass(/paper-front/);
 });
 
+// What each pulse layer animates. A custom property, or anything else the compositor cannot run
+// by itself, would put the page's style resolve and the sheet's repaint back on every frame.
+test('the pulse animates only what the compositor runs on its own', async ({ page }) => {
+  await page.goto('/');
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await expect.poll(() => pulseStates(stack)).toEqual(RUNNING);
+
+  const animated = await stack.evaluate((el) =>
+    el.querySelector('.paper-front')!.getAnimations({ subtree: true })
+      .filter((animation) => (animation as CSSAnimation).animationName?.startsWith('fold-pulse-'))
+      .map((animation) => {
+        const keys = (animation.effect as KeyframeEffect).getKeyframes()
+          .flatMap((frame) => Object.keys(frame))
+          .filter((key) => !['offset', 'computedOffset', 'easing', 'composite'].includes(key));
+        return `${(animation as CSSAnimation).animationName}: ${[...new Set(keys)].join(', ')}`;
+      })
+      .sort());
+  expect(animated).toEqual([
+    'fold-pulse-flap: transform',
+    'fold-pulse-page: clipPath',
+    'fold-pulse-shade: scale',
+  ]);
+});
+
 /**
  * Takes hold of the front page's dog-ear and returns the point the pointer is now on. The flap
  * is a triangle inside its box and it breathes, so a point picked off the box can be paper one
