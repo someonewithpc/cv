@@ -139,3 +139,4 @@
 - [x] Lay out the title card's slip in CSS, with no script (#161)
 - [x] A window drag measures the scene, marker canvas and event bus token once, for the final size (#163)
 - [x] Page load and theme switches read every page's paper colour, forcing a style pass each (#180)
+- [x] Load each demo's stylesheet when the demo boots, not in the head (#181)
