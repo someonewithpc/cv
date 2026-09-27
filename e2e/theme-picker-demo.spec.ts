@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { demoStack, frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack, turnToPage } from './support/paperStack';
 
-const PAGES = ['Theme Picker', 'The Wipe', 'Token Layers', 'Default and Override'];
+const PAGES = ['Theme Picker', 'The Wipe', 'Token Layers', 'Default and Override', 'The Wipe in Code'];
 
 function pickerStack(page: Page) {
   return demoStack(page, 'Theme Picker');
@@ -159,6 +159,28 @@ test.describe('reduced motion', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
     expect(await lit()).toEqual(['stamp', 'radio']);
   });
+  test('code page: five steps, and the geometry drawn for the theme on screen', async ({ page }) => {
+    await page.goto('/');
+    const stack = pickerStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await turnToPage(stack, 'The Wipe in Code');
+    const sheet = frontPage(stack, await frontPageIndex(stack)).locator('.code-sheet');
+
+    await expect(sheet.locator('.steps li')).toHaveCount(5);
+    await expect(sheet.locator('.steps pre').first()).toContainText('document.startViewTransition(commitTheme)');
+
+    // One viewport per theme is drawn; the selectors show the one on screen.
+    const shown = () => sheet.locator('.geometry g[data-shown]').evaluateAll((groups) =>
+      groups.filter((group) => getComputedStyle(group).display !== 'none').map((group) => group.getAttribute('data-shown')),
+    );
+    await page.locator('#theme-picker label:has(input[value="dark"])').click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    expect(await shown()).toEqual(['dark']);
+    await page.locator('#theme-picker label:has(input[value="arctic"])').click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
+    expect(await shown()).toEqual(['arctic']);
+  });
+
 });
 
 test.describe('without script', () => {
