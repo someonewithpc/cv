@@ -36,7 +36,9 @@ function pageSection(stack: Locator, index: number): Locator {
 
 /**
  * Counts changes the demo makes inside `section`, leaving out the section's own attributes and
- * the live regions: a toast shown as the page came back leaves on its own timer, once.
+ * the live regions: a toast shown as the page came back leaves on its own timer, once. The
+ * Marker Editor mounts its toast region with the toast and drops it after, so a record that
+ * only adds or removes a live region is left out too.
  */
 async function countChanges(section: Locator) {
   await section.evaluate((el) => {
@@ -45,7 +47,10 @@ async function countChanges(section: Locator) {
     new MutationObserver((records) => {
       const own = records.filter((record) => {
         const target = record.target instanceof Element ? record.target : record.target.parentElement;
-        return record.target !== el && !target?.closest('[aria-live]');
+        const nodes = [...record.addedNodes, ...record.removedNodes];
+        const liveRegionOnly = nodes.length > 0
+          && nodes.every((node) => node instanceof Element && node.matches('[aria-live]'));
+        return record.target !== el && !liveRegionOnly && !target?.closest('[aria-live]');
       }).length;
       changes.set(el, (changes.get(el) ?? 0) + own);
     }).observe(el, { subtree: true, childList: true, attributes: true, characterData: true });
