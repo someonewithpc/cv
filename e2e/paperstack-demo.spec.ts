@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { demoStack, frontPageName, pressTurn, swipeStack, turnToPage } from './support/paperStack';
+import { demoStack, frontPage, frontPageName, pressTurn, swipeStack, turnToPage } from './support/paperStack';
 
 const PAGES = ['Paper Stack', 'The Fold', 'At Rest', 'Without Script'];
 
@@ -44,11 +44,11 @@ test.describe('with script', () => {
   test('the sheet heading under the callout overlay can be selected', async ({ page }) => {
     const stack = paperStackDemo(page);
     await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await turnToPage(stack, 'The Fold');
 
     // The overlay is twice the artwork and lies over the heading; a drag across the heading
     // used to select callout text instead.
-    const heading = stack.locator('.point').first();
+    const heading = frontPage(stack, 1).locator('.point').first();
     const box = (await heading.boundingBox())!;
     await page.mouse.move(box.x + 2, box.y + box.height / 2);
     await page.mouse.down();
