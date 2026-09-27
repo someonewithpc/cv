@@ -182,6 +182,13 @@ const pages = await Promise.all(
   inherits: false;
 }
 
+// The reveal's go-ahead (see watchStackReveal in fold-drag.ts), set once on the stack and read by
+// its pages alone.
+@property --fold-reveal {
+  syntax: '*';
+  inherits: false;
+}
+
 // How far the flap is off the page, typed so its tone eases between rest, in hand and past the
 // commit point. Set on the flap and the cast shadow themselves, so nothing inherits it while it
 // eases.
@@ -837,7 +844,13 @@ $fold-pulse-y: 2cm;
           animation-play-state: paused;
         }
 
+        // The reveal waits for the reader: held until fold-drag.ts sets --fold-reveal on the
+        // stack, the first time the stack's bottom edge, where the dog-ear is, comes on screen.
+        // Run from load, it played out on every stack while the reader was still at the top of
+        // the page. The pulse layers take their play state from here, so they wait with it.
         animation: 500ms 500ms ease-in-out initial-fold-reveal 1 forwards;
+        --fold-reveal: inherit;
+        animation-play-state: var(--fold-reveal, paused);
 
         @keyframes initial-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }
