@@ -28,7 +28,7 @@ const statistics = {
 };
 ---
 
-<section id="open-source" aria-labelledby="open-source-heading" style={edges}>
+<section id="open-source" aria-labelledby="open-source-heading" style={edges} tabindex="-1" accesskey="6">
   <div class="intro">
     <SectionHeader statistics={statistics} />
 
@@ -73,6 +73,12 @@ const statistics = {
   container-type: inline-size;
   margin-top: clamp(5rem, 12vw, 8rem);
   padding-bottom: 5rem;
+
+  // tabindex="-1": the accesskey's landing spot, not a Tab stop.
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -0.125rem;
+  }
 
   /* Layout.astro lays every band down as a sheet of paper on the desk. This band is not one
      sheet: it is the heading on a sheet and then a sheet of ruled paper per group, each one

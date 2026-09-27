@@ -78,7 +78,38 @@ oembedUrl.searchParams.set('format', 'json');
     </script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="skip-nav" aria-label="Keyboard shortcuts">
+      <a class="skip-link" href="#main" accesskey="1">Skip to content</a>
+      <ul class="accesskey-legend">
+        <li><kbd>1</kbd> Skip to content</li>
+        <li><kbd>2</kbd> Theme picker</li>
+        <li><kbd>3</kbd> Career</li>
+        <li><kbd>4</kbd> Bill of materials</li>
+        <li><kbd>5</kbd> Demos</li>
+        <li><kbd>6</kbd> Open source</li>
+        <li><kbd>7</kbd> Previous page, when a stack has focus</li>
+        <li><kbd>8</kbd> Next page, when a stack has focus</li>
+      </ul>
+      <button type="button" class="page-turn-key sr-only" tabindex="-1" accesskey="7" data-turn="ArrowLeft">Previous page</button>
+      <button type="button" class="page-turn-key sr-only" tabindex="-1" accesskey="8" data-turn="ArrowRight">Next page</button>
+    </nav>
+    <script>
+      // The two buttons above exist only so accesskey="7"/"8" have somewhere to land: pressing
+      // one moves focus to the button first (the browser's own accesskey behaviour, not
+      // scripted), which is the previously-focused element's `focusin.relatedTarget`. If that
+      // was a paper stack, replay the same ArrowLeft/ArrowRight keydown its own listener
+      // (PaperStack/fold-drag.ts) already turns pages on, then hand focus straight back so the
+      // ring returns to the stack and a second press keeps working.
+      for (const button of document.querySelectorAll<HTMLButtonElement>('.page-turn-key')) {
+        button.addEventListener('focusin', (event) => {
+          const stack = event.relatedTarget;
+          const key = button.dataset.turn;
+          if (!key || !(stack instanceof HTMLElement) || !stack.hasAttribute('data-paper-stack-root')) return;
+          stack.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+          stack.focus();
+        });
+      }
+    </script>
     <ThemePicker />
     <TransportKeyArt />
     <slot />
@@ -428,6 +459,52 @@ image, svg, img, picture {
     outline: 2px solid var(--ink);
     outline-offset: 0.125rem;
   }
+}
+
+/* Digit access keys read the same in every browser's modifier combo (Chrome: Alt+digit;
+   Firefox on Linux: Alt+Shift+digit), so the legend names the digit only and leaves the
+   modifier to the reader's browser. CSS-only: shown on the same condition that reveals the
+   skip link, so it needs no script and survives JS being off. */
+.accesskey-legend {
+  position: fixed;
+  top: 3.25rem;
+  left: 0.5rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25rem;
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: 0.75rem/1.375 var(--font-poppins);
+  opacity: 0;
+  translate: 0 -0.5rem;
+  pointer-events: none;
+  transition: opacity 125ms ease-out, translate 125ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+
+  kbd {
+    display: inline-block;
+    min-width: 1.25em;
+    margin-inline-end: 0.375em;
+    padding: 0.0625rem 0.3125rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.1875rem;
+    background: var(--surface-sunken);
+    font-family: monospace, system-ui;
+    font-size: 0.75em;
+    text-align: center;
+  }
+}
+
+body:has(.skip-link:focus-visible, .page-turn-key:focus-visible) .accesskey-legend {
+  opacity: 1;
+  translate: 0 0;
 }
 
 .bypass-contrast-check {

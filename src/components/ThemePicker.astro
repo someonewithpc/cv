@@ -200,7 +200,7 @@ const THEME_IDS = Object.keys(THEMES) as ThemeId[];
 
 <div id="theme-picker-transition-background" />
 
-<aside id="theme-picker" aria-label="Theme">
+<aside id="theme-picker" aria-label="Theme" tabindex="-1" accesskey="2">
   {THEME_IDS.map((id) => {
     const settings = THEMES[id];
     return (
@@ -235,6 +235,13 @@ aside {
   &:focus-within {
     color: var(--ink);
     background: color-mix(in oklch, var(--surface-raised), var(--accent) 8%);
+  }
+
+  // tabindex="-1": not a Tab stop of its own (the radios still are), only a landing spot for
+  // the accesskey, so its own ring only needs :focus-visible, not :focus-within.
+  &:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 0.125rem;
   }
 
   label {

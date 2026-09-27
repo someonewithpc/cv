@@ -47,7 +47,7 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
     <TechIconCloud />
 
     <Folio number={4} label="Demos" />
-    <section id="demos" class="full-width" aria-labelledby="demos-heading">
+    <section id="demos" class="full-width" aria-labelledby="demos-heading" tabindex="-1" accesskey="5">
       <div class="cutting-mat">
         <SectionHeader
           headingId="demos-heading"
@@ -181,6 +181,12 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
 // tabindex="-1" so the skip link (Layout.astro) can move focus here; not a Tab stop of its
 // own, since it sits right before the page's first real control in DOM order.
 #main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -0.125rem;
+}
+
+// tabindex="-1": the accesskey's landing spot, not a Tab stop.
+#demos:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -0.125rem;
 }

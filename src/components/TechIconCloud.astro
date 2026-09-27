@@ -7,7 +7,7 @@ const hardwareCount = TECH_ICONS.filter((tech) => tech.hardware).length;
 const softwareCount = TECH_ICONS.length - hardwareCount;
 ---
 
-<section id="bill-of-materials" aria-labelledby="tech-icon-cloud-label">
+<section id="bill-of-materials" aria-labelledby="tech-icon-cloud-label" tabindex="-1" accesskey="4">
   <p id="tech-icon-cloud-label" class="cloud-label monospace">Bill of materials</p>
 
   <div class="filter-bar">
@@ -46,6 +46,12 @@ section {
   margin-top: 1.5rem;
   /* The same inset as the Career sheet; past 64rem the desk's --sheet-pad takes over. */
   padding: var(--page-gap);
+
+  // tabindex="-1": the accesskey's landing spot, not a Tab stop.
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -0.125rem;
+  }
 
   .cloud-label {
     margin: 0 0 0.75rem;

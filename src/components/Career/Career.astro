@@ -498,7 +498,7 @@ const tall = (() => {
 })();
 ---
 
-<section id="career" aria-labelledby="career-heading">
+<section id="career" aria-labelledby="career-heading" tabindex="-1" accesskey="3">
   <SectionHeader headingId="career-heading" titleJp="しごとと学校" title="Career" sheetCode="SH-CV" />
 
   <div class="sheet-body">
@@ -633,6 +633,12 @@ const tall = (() => {
 
   position: relative;
   isolation: isolate;
+
+  // tabindex="-1": the accesskey's landing spot, not a Tab stop.
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -0.125rem;
+  }
 
   &::before {
     content: '';
