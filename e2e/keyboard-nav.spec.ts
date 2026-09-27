@@ -35,37 +35,62 @@ test.describe('access keys', () => {
   // reveal responds to the same focus the skip link (or a turn key) would carry. Pressing the
   // real key combination on the built site is Hugo's to try by hand.
 
-  test('every accesskey is unique and on the element the legend says', async ({ page }) => {
+  test('every accesskey is a letter, unique, and on the element the legend says', async ({ page }) => {
     await page.goto('/');
 
     const targets: Record<string, { locator: () => ReturnType<typeof page.locator>, focusable: boolean }> = {
-      '1': { locator: () => page.locator('.skip-link'), focusable: true },
-      '2': { locator: () => page.locator('#theme-picker'), focusable: true },
-      '3': { locator: () => page.locator('#career'), focusable: true },
-      '4': { locator: () => page.locator('#bill-of-materials'), focusable: true },
-      '5': { locator: () => page.locator('#demos'), focusable: true },
-      '6': { locator: () => page.locator('#open-source'), focusable: true },
-      '7': { locator: () => page.locator('.page-turn-key[data-turn="ArrowLeft"]'), focusable: false },
-      '8': { locator: () => page.locator('.page-turn-key[data-turn="ArrowRight"]'), focusable: false },
+      s: { locator: () => page.locator('.skip-link'), focusable: true },
+      t: { locator: () => page.locator('#theme-picker'), focusable: true },
+      c: { locator: () => page.locator('#career'), focusable: true },
+      b: { locator: () => page.locator('#bill-of-materials'), focusable: true },
+      m: { locator: () => page.locator('#demos'), focusable: true },
+      o: { locator: () => page.locator('#open-source'), focusable: true },
+      p: { locator: () => page.locator('.page-turn-key[data-turn="ArrowLeft"]'), focusable: false },
+      n: { locator: () => page.locator('.page-turn-key[data-turn="ArrowRight"]'), focusable: false },
     };
 
     const all = await page.locator('[accesskey]').evaluateAll((els) => els.map((el) => el.getAttribute('accesskey')));
-    expect(all.sort()).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+    expect(all.sort()).toEqual(['b', 'c', 'm', 'n', 'o', 'p', 's', 't']);
+    for (const key of all) expect(key).toMatch(/^[a-z]$/);
 
     for (const [key, { locator }] of Object.entries(targets)) {
       await expect(locator()).toHaveAttribute('accesskey', key);
     }
   });
 
-  test('the legend lists all eight keys and their targets', async ({ page }) => {
+  test('the legend shows the modifier for the reader\'s browser and platform', async ({ page }) => {
+    // Chrome cannot be told to report itself as Firefox or a Mac, so this stubs
+    // navigator.userAgent/platform before Layout.astro's script runs, the same values its UA
+    // check reads, to exercise the Firefox and Mac branches this box's real browser never hits.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0',
+        configurable: true,
+      });
+    });
     await page.goto('/');
+    await expect(page.locator('.ak-mod')).toHaveText('Alt+Shift');
+  });
+
+  test('the legend shows Ctrl+Alt on a Mac, regardless of browser', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'platform', { value: 'MacIntel', configurable: true });
+    });
+    await page.goto('/');
+    await expect(page.locator('.ak-mod')).toHaveText('Ctrl+Alt');
+  });
+
+  test('the legend lists all eight keys and their targets, with the real modifier', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.ak-mod')).toHaveText('Alt');
+
     const items = await page.locator('.accesskey-legend li').allTextContents();
     expect(items).toHaveLength(8);
     expect(items[0]).toContain('Skip to content');
     expect(items[1]).toContain('Theme picker');
     expect(items[6]).toContain('Previous page');
     expect(items[7]).toContain('Next page');
-    for (const [index, key] of ['1', '2', '3', '4', '5', '6', '7', '8'].entries()) {
+    for (const [index, key] of ['S', 'T', 'C', 'B', 'M', 'O', 'P', 'N'].entries()) {
       await expect(page.locator('.accesskey-legend li').nth(index).locator('kbd')).toHaveText(key);
     }
   });
