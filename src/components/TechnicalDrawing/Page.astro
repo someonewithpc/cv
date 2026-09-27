@@ -1117,28 +1117,15 @@ section {
   }
 }
 
-/* The sheet's measure on a page without script. The stack's ResizeObserver (Stack.astro) is
-   what writes --sheet-inline and --sheet-block; with no script the artwork's type scale read an
-   undefined variable and every clamp() on it fell back to the inherited size, so the tagging
-   tool, the event bus and the schema pages ran off the sheet under the title block. Read from
-   the viewport, not from container units: a container-derived length feeding font-size inside
-   these grids is what made Chrome's layout take seconds per resize (see the stack's note on
-   --sheet-inline). The stack spans the breakout column, which is the viewport less the page
-   gutter on each side, capped at main's --content-max; a sheet no wider than 40em is portrait
-   (Stack.astro), which is a viewport of 680px once the gutter is at its 1.25rem cap. The title
-   block's box is what a wide sheet measured, close enough for the reach the artwork keeps
-   from it. data-sheet-orientation and data-sheet-width have no fallback here: a hundred rules
-   across the demos key on them, and without the script they stay unset. */
+/* The title block's size on a page without script. The stack's ResizeObserver (Stack.astro)
+   measures it; without script this is the box a wide sheet measured, close enough for the reach
+   the artwork keeps from it. The sheet's own measure comes from CSS in both cases (the frame in
+   Stack.astro). data-sheet-orientation and data-sheet-width have no fallback here: a hundred
+   rules across the demos key on them, and without the script they stay unset. */
 @media (scripting: none) {
   section {
-    --sheet-inline: min(60rem, 100vw - 2 * var(--page-gap, 1rem));
-    --sheet-block: calc(var(--sheet-inline) / 2);
     --title-block-inline: 21rem;
     --title-block-block: 4.625rem;
-
-    @media (width <= 680px) {
-      --sheet-block: min(var(--sheet-inline) * 5 / 3, 36rem, 85svh);
-    }
   }
 }
 </style>

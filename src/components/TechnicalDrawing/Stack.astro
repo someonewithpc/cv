@@ -127,6 +127,34 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 .technical-drawing-frame {
   position: relative;
   container: technical-drawing-width / inline-size;
+
+  /* The sheet's measure, worked out from the viewport the way the page lays the stack out
+     rather than read off this container: a font-size that comes out of the container, by
+     unit, by query or through a variable, made Chrome's layout of the deep artwork grids take
+     seconds per pass (see the note where the script observes the stack). The stack spans the
+     drawing's column on the cutting mat (index.astro); the mat is the window less the
+     scrollbar and the desk on each side (Layout.astro); the column caps at --breakout-max.
+     --scrollbar-inline is the classic scrollbar's width, which 100vw counts and the page does
+     not: the script sets it, and without script it is 0.
+
+     Both stay unregistered on purpose. The text of the expression is the same at every width,
+     so a resize restyles only what reads it. A registered length resolves to new pixels at
+     each step, and every element under the frame then restyles to inherit them: a step
+     without script cost 50 to 65 ms more style that way. Every length in the expression is
+     in vw, rem or px, since an em would be read against the artwork's own type. */
+  --mat-inner: calc(
+    min(100vw - var(--scrollbar-inline, 0px) - var(--mat-inset) * 2, var(--mat-max))
+      - (var(--mat-rim) + var(--mat-line)) * 2
+  );
+  --sheet-inline: min(
+    max(
+      var(--mat-inner) - (var(--mat-boundary, 0px) + var(--mat-clear)) * 2,
+      min(var(--mat-inner) - max(0px, var(--mat-boundary, 0px) - var(--mat-rim)) * 2, var(--breakout-max))
+    ),
+    var(--breakout-max)
+  );
+  --sheet-block: calc(var(--sheet-inline) / 2);
+
   // Allow the frame to shrink within the page grid instead of expanding it
   // to the stack's intrinsic width (default min-width: auto).
   min-width: 0;
@@ -190,6 +218,21 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
        numbers — and sends the fold up the long axis instead. */
     --paper-clip-lean-x: var(--paper-clip-reach);
     --paper-clip-lean-y: calc(var(--paper-clip-reach) / 2);
+  }
+}
+
+// A portrait sheet is as tall as the stack's portrait rule above makes it. The script names the
+// orientation the frame's width query picked; without script, the query's 40em is a 680px
+// window once the gutter is at its 1.25rem cap. The hint layer is the stack's sibling and
+// places a hint on the sheet's bottom edge, so it takes the same height.
+:global(article.technical-drawing-stack[data-sheet-orientation='portrait']),
+:global(article.technical-drawing-stack[data-sheet-orientation='portrait']) ~ .flip-hints {
+  --sheet-block: min(var(--sheet-inline) * 5 / 3, 36rem, 85svh);
+}
+
+@media (scripting: none) and (width <= 680px) {
+  .technical-drawing-frame {
+    --sheet-block: min(var(--sheet-inline) * 5 / 3, 36rem, 85svh);
   }
 }
 
@@ -423,7 +466,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
 // since the crease itself leans by atan2(y, x) the other way.
 .flip-hint--fwd.hint-arrow {
   left: calc(100% - var(--fold-rest-x, 2cm) / 2);
-  top: calc(var(--stack-block, 100%) - var(--fold-rest-y, 1cm) / 2);
+  top: calc(var(--sheet-block, 100%) - var(--fold-rest-y, 1cm) / 2);
   rotate: atan2(var(--fold-rest-x, 2cm), var(--fold-rest-y, 1cm));
 }
 
@@ -570,13 +613,13 @@ function initStack(stack: HTMLElement) {
     }
   }
 
-  // The sheet's size, orientation and width band, restated as plain pixels and two data
-  // attributes for the artwork to scale its type by. The container queries and units say the
-  // same thing, but a font-size that comes out of them, by unit, by rule, or by an inherited
-  // variable, inside the deep grids of some layers makes every em in them depend on this
-  // container, and Chrome's layout of that runs seconds per pass: a resize, or docking
-  // DevTools, froze the page for twenty. The orientation and the em come off the frame's probe
-  // (.sheet-probe), observed first so its entry is read before the stack's.
+  // The sheet's orientation and width band, restated as two data attributes for the artwork to
+  // scale its type by. The container queries and units say the same thing, but a font-size that
+  // comes out of them, by unit, by rule, or by an inherited variable, inside the deep grids of
+  // some layers makes every em in them depend on this container, and Chrome's layout of that
+  // runs seconds per pass: a resize, or docking DevTools, froze the page for twenty. The sheet's
+  // size in pixels comes from CSS (the frame's --sheet-inline). The orientation and the em come
+  // off the frame's probe (.sheet-probe), observed first so its entry is read before the stack's.
   const probe = stack.parentElement?.querySelector<HTMLElement>(':scope > .sheet-probe');
   if (probe) measure.observe(probe);
   measure.observe(stack);
@@ -624,22 +667,26 @@ const measure = new ResizeObserver((entries) => {
   const blocks = [];
   for (const entry of entries) {
     const target = entry.target as HTMLElement;
-    if (target.matches('.sheet-probe')) {
+    if (target === document.documentElement) {
+      // The root is as wide as the window less a classic scrollbar, which 100vw counts, so the
+      // difference is what the frame's --sheet-inline takes off the viewport. It changes when a
+      // scrollbar comes or goes, not on every step.
+      const [{ inlineSize }] = entry.borderBoxSize;
+      put(target, '--scrollbar-inline', `${Math.max(0, window.innerWidth - inlineSize)}px`);
+    } else if (target.matches('.sheet-probe')) {
       const [{ inlineSize, blockSize }] = entry.borderBoxSize;
       probes.set(target.parentElement as HTMLElement, { em: inlineSize || 16, portrait: blockSize > 1.5 });
     } else if (target.matches('article.technical-drawing-stack')) {
-      const [{ inlineSize, blockSize }] = entry.contentBoxSize;
-      stacks.push({ stack: target, inlineSize, blockSize });
+      const [{ inlineSize }] = entry.contentBoxSize;
+      stacks.push({ stack: target, inlineSize });
     } else {
       const [{ inlineSize, blockSize }] = entry.borderBoxSize;
       blocks.push({ sheet: target.parentElement as HTMLElement, inlineSize, blockSize });
     }
   }
-  for (const { stack, inlineSize, blockSize } of stacks) {
+  for (const { stack, inlineSize } of stacks) {
     const { em, portrait } = probes.get(stack.parentElement as HTMLElement) ?? { em: 16, portrait: false };
     const wide = inlineSize >= SHEET_WIDE_EM * em;
-    put(stack, '--sheet-inline', `${inlineSize}px`);
-    put(stack, '--sheet-block', `${blockSize}px`);
     // Both only when they actually change. Writing the same value back is still an attribute
     // write, and this page carries enough `:has()` rules that any attribute change invalidates
     // every element in the document (see PR #50).
@@ -647,11 +694,6 @@ const measure = new ResizeObserver((entries) => {
     if (stack.dataset.sheetOrientation !== orientation) stack.dataset.sheetOrientation = orientation;
     const band = wide ? 'wide' : 'narrow';
     if (stack.dataset.sheetWidth !== band) stack.dataset.sheetWidth = band;
-    // The frame is taller than the sheet by the fan's reserve, so a hint that belongs on the
-    // sheet's own bottom edge cannot be placed from the frame's box alone. Only the hint layer
-    // reads it, so it is set there: on the frame, each change restyled the stack under it too.
-    const hints = stack.parentElement?.querySelector<HTMLElement>(':scope > .flip-hints');
-    if (hints) put(hints, '--stack-block', `${blockSize}px`);
   }
   for (const { sheet, inlineSize, blockSize } of blocks) {
     put(sheet, '--title-block-inline', `${inlineSize}px`);
@@ -696,6 +738,7 @@ function armHints() {
 }
 
 function init() {
+  measure.observe(document.documentElement);
   [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack')].forEach(initStack);
   armHints();
 
