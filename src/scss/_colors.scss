@@ -34,6 +34,9 @@
   --ink: var(--neutral-12);
   --ink-muted: var(--neutral-11);
   --ink-faint: var(--neutral-9);
+  // Japanese glosses. One step darker than --ink-faint, the lightest step that clears 4.5:1 for
+  // 10px text on the sunken cells in every theme.
+  --ink-gloss: var(--neutral-10);
 
   --line: var(--neutral-6);
   --line-strong: var(--neutral-8);
@@ -134,6 +137,7 @@
   --ink: var(--sheet-ink);
   --ink-muted: var(--sheet-ink-muted);
   --ink-faint: var(--sheet-ink-faint);
+  --ink-gloss: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 33%);
   --line: var(--sheet-line);
   --line-strong: var(--sheet-line-strong);
   --accent: var(--sheet-accent);
