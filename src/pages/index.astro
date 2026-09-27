@@ -23,6 +23,7 @@ import FediversePlaygroundDemo from '@/components/FediversePlaygroundDemo/Demo.a
 import LibrarySearchDemo from '@/components/LibrarySearchDemo/Demo.astro';
 import WebTsModeDemo from '@/components/WebTsModeDemo/Demo.astro';
 import PaperStackDemo from '@/components/PaperStackDemo/Demo.astro';
+import ThemePickerDemo from '@/components/ThemePickerDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
 
@@ -168,6 +169,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             without JavaScript.
           </TitleCard>
           <PaperStackDemo />
+        </Callout>
+        <Callout letter="N" title="Theme picker" titleJp="テーマをえらぶ" scale="1:1" headingId="detail-n" cardSide="end">
+          <TitleCard slot="card" title="Theme Picker" medium="Astro, CSS, View Transitions" year="2026">
+            The four themes this page comes in, and the control in the corner that picks one. A
+            pick sets four colours on the root and everything else is mixed from them, with no
+            script needed to switch. The sheets take the control apart.
+          </TitleCard>
+          <ThemePickerDemo />
         </Callout>
       </div>
     </section>
