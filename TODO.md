@@ -70,6 +70,7 @@
     - [x] A Mastodon server beside GNU social, the compose file without volumes or environment (#129)
     - [x] One line per server to each shared service, nginx named, search and media added (#129)
   - [x] web-ts-mode: painted buffer, parser ranges, selector depth hue, doctor (SH-11)
+  - [ ] Paper stack: the pile, the fold, the holds and the no-script row
   - [ ] Own theme picker
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
