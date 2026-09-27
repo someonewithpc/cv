@@ -734,6 +734,8 @@ function armHints() {
   const frame = document.querySelector<HTMLElement>('.technical-drawing-frame');
   if (!frame) return;
   frame.setAttribute('data-hint-show', '');
+  // The callout's title probes (Callout.astro) read the mark from the view above the frame.
+  frame.closest('.callout-view')?.setAttribute('data-hint-show', '');
   drawFlipHints(frame);
 }
 

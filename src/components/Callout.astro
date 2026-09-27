@@ -20,6 +20,18 @@ type Props = {
 const { id, class: className, letter, title, titleJp, scale, headingId, cardSide } = Astro.props;
 
 const hasCard = Astro.slots.has('card');
+
+/* The slip under a narrow view reads the stack's page count to know how far the fan drops
+   below the front sheet and what the peel hint says. The stack arrives pre-rendered, so the
+   count is read off it here rather than asked through :has() on the view, which put every
+   node inserted in a sheet through a whole-document invalidation set. The SlotString is
+   printed whole: a template literal or concatenation drops its hoisted scripts. */
+const view = await Astro.slots.render('default');
+const pageCount = Number(view.match(/data-page-count="(\d+)"/)?.[1]);
+const inWords = ['one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+const slipStyle = inWords[pageCount - 2] !== undefined
+  ? `--slip-pages: ${pageCount}; --slip-hint: '${inWords[pageCount - 2]} more sheets, peel this corner'`
+  : undefined;
 ---
 
 <section
@@ -40,7 +52,7 @@ const hasCard = Astro.slots.has('card');
     </span>
   </h3>
 
-  <div class="callout-view">
+  <div class="callout-view" style={slipStyle}>
     {hasCard && (
       <div class="callout-slip">
         <div class="callout-card">
@@ -49,7 +61,7 @@ const hasCard = Astro.slots.has('card');
         </div>
       </div>
     )}
-    <slot />
+    <Fragment set:html={view} />
   </div>
 </section>
 
@@ -351,16 +363,9 @@ const hasCard = Astro.slots.has('card');
 
   /* The stack fans its sheets out about a pin at its top-left corner, each turned by 1.5deg
      times the log of its place (PaperStack), so the hindmost one drops below the front sheet by
-     the sine of its turn times how far along it is. The slip reads the stack's page count to
-     know how far that is, and the peel hint Stack.astro writes for a stack that deep. */
-  $in-words: 'one', 'two', 'three', 'four', 'five', 'six', 'seven';
-
-  @for $pages from 2 through 8 {
-    .callout-view:has([data-page-count='#{$pages}']) {
-      --slip-pages: #{$pages};
-      --slip-hint: '#{nth($in-words, $pages - 1)} more sheets, peel this corner';
-    }
-  }
+     the sine of its turn times how far along it is. The view carries the stack's page count
+     (--slip-pages, set above from the rendered stack) so the slip knows how far that is, and
+     the peel hint Stack.astro writes for a stack that deep (--slip-hint). */
 
   .callout[data-card] .callout-slip {
     --slip-tuck: 1rem;
@@ -514,7 +519,7 @@ const hasCard = Astro.slots.has('card');
      width, as tall as the piece has to stand below the slip's top. Where they meet, the hint
      wraps under the piece and the probe is twice as tall; its negative margin takes one height
      back off, so the probe asks for that depth only when the hint is over the piece. */
-  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe) {
+  .callout-view[data-hint-show] .callout-card :global(.title-probe) {
     /* The hint's type (Stack.astro): smaller on a portrait sheet. */
     --probe-hint: calc(0.875rem + 0.125rem * var(--slip-land));
     /* The hint's foot below the slip's top: the stack's fan reserve, the tuck, the room the
@@ -560,7 +565,7 @@ const hasCard = Astro.slots.has('card');
     }
   }
 
-  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe[data-probe='label']) {
+  .callout-view[data-hint-show] .callout-card :global(.title-probe[data-probe='label']) {
     grid-row-end: label;
 
     &::before {
@@ -571,7 +576,7 @@ const hasCard = Astro.slots.has('card');
     }
   }
 
-  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe[data-probe='title']) {
+  .callout-view[data-hint-show] .callout-card :global(.title-probe[data-probe='title']) {
     grid-row-end: text;
 
     /* A line of text counts from the top of its letters, not of its line box: less the half
@@ -589,7 +594,7 @@ const hasCard = Astro.slots.has('card');
 
   /* The rule is the cell's bottom edge, a pixel above the row's end, and runs the slip's
      width. The hint keeps only the inset from it, not the 3rem it keeps from text. */
-  .callout-view:has(.technical-drawing-frame[data-hint-show]) .callout-card :global(.title-probe[data-probe='rule']) {
+  .callout-view[data-hint-show] .callout-card :global(.title-probe[data-probe='rule']) {
     grid-row-end: notes;
     --probe-depth: calc(var(--probe-foot) + var(--slip-pad));
 
