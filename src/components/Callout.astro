@@ -94,14 +94,16 @@ const hasCard = Astro.slots.has('card');
 }
 
 /* The chain-line boundary of the view: long dash, gap, short dash, gap. The view's own wrapper
-   draws it, so it goes round the view and the lines the view writes outside itself. */
+   draws it, so it goes round the view and the lines the view writes outside itself. The stops
+   are hard, so the interpolation space changes no pixel; it is named because Firefox 156 draws
+   a repeating gradient of oklch() stops in its default oklab as a dot every half rem. */
 .callout-view {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   margin-inline: calc(-1 * var(--callout-out));
   padding: var(--callout-room) var(--callout-out);
-  --dash: repeating-linear-gradient(90deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
-  --dash-v: repeating-linear-gradient(180deg, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
+  --dash: repeating-linear-gradient(90deg in srgb, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
+  --dash-v: repeating-linear-gradient(180deg in srgb, var(--callout-line) 0 1rem, transparent 1rem 1.375rem, var(--callout-line) 1.375rem 1.625rem, transparent 1.625rem 2rem);
   background:
     var(--dash) top / 100% 1px no-repeat,
     var(--dash) bottom / 100% 1px no-repeat,
