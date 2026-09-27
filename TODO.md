@@ -99,6 +99,7 @@
       - [x] Dog-ear rest size declared on the frame in CSS, not read back from the stack at boot (#165)
       - [x] Dog-ear pulse runs on the compositor: no restyle or repaint of the sheet at rest (#182)
       - [x] Fold properties registered by @property in CSS; a turn starts from the fold size it last wrote, not a style read (#187)
+      - [ ] Dog-ear reveal and pulse wait for the stack's corner to come on screen (#186)
     - [x] Navigation
       - [x] Paper turn horizontal scroll only works backwards, not forwards (#9)
       - [x] Keyboard paper turn waits too long before commit (#11)
