@@ -92,6 +92,46 @@ test('the pulse animates only what the compositor runs on its own', async ({ pag
   ]);
 });
 
+// The pulse grows the dog-ear without moving --fold-x/-y, so a hand that takes the flap at the
+// pulse's peak has to start from the size it sees there, not from the resting size.
+test('taking the dog-ear mid-pulse starts the drag from the size it was drawn at', async ({ page }) => {
+  await page.goto('/');
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await expect.poll(() => pulseStates(stack)).toEqual(RUNNING);
+
+  // Held at its peak, 3cm by 2cm (index.astro's $fold-pulse-x/-y): the delay, then 90% of the
+  // 7.5s run.
+  const point = await stack.evaluate((el) => {
+    for (const animation of el.querySelector('.paper-front')!.getAnimations({ subtree: true })) {
+      if (!(animation as CSSAnimation).animationName?.startsWith('fold-pulse-')) continue;
+      animation.pause();
+      animation.currentTime = 1500 + 0.9 * 7500;
+    }
+    const flap = el.querySelector<HTMLElement>('.paper-front > .paper-fold')!;
+    const rect = flap.getBoundingClientRect();
+    for (const k of [0.45, 0.4, 0.35, 0.3, 0.25, 0.2]) {
+      const at = { x: rect.left + rect.width * k, y: rect.top + rect.height * k };
+      if (document.elementFromPoint(at.x, at.y) === flap) return at;
+    }
+    return null;
+  });
+  expect(point, 'a point on the flap at the peak').not.toBeNull();
+
+  await page.mouse.move(point!.x, point!.y);
+  await page.mouse.down();
+  await page.mouse.move(point!.x - 2, point!.y - 2);
+  const size = await stack.locator('.paper-front').evaluate((sheet) => ({
+    x: parseFloat(sheet.style.getPropertyValue('--fold-x')),
+    y: parseFloat(sheet.style.getPropertyValue('--fold-y')),
+  }));
+  await page.mouse.up();
+
+  // 3cm and 2cm are 113.4px and 75.6px; the resting 2cm by 1cm would be 75.6px by 37.8px.
+  expect(size.x).toBeGreaterThan(105);
+  expect(size.y).toBeGreaterThan(68);
+});
+
 /**
  * Takes hold of the front page's dog-ear and returns the point the pointer is now on. The flap
  * is a triangle inside its box and it breathes, so a point picked off the box can be paper one
