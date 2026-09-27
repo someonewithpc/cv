@@ -31,8 +31,13 @@ const sheetsBelow = totalLayers - 1;
 const hint = Astro.props.hint ?? `${inWords[sheetsBelow] ?? sheetsBelow} more sheets, peel this corner`;
 const hintBack = 'this corner drags the page back';
 // One span per character, spaces included so the line's width stays put: each callout types
-// itself out when it appears, and the stylesheet times each letter by its index.
-const struck = (line: string) => [...line].map((letter, index) => ({ letter, index }));
+// itself out when it appears, and the stylesheet times each letter by its place in the line. The
+// stylesheet numbers the first 48 letters itself; a longer line carries the rest's index inline.
+const hintLettersNumbered = 48;
+const struck = (line: string) => [...line].map((letter, index) => ({
+  letter,
+  style: index < hintLettersNumbered ? undefined : `--i: ${index}`,
+}));
 const hintLetters = struck(hint);
 const hintBackLetters = struck(hintBack);
 
@@ -80,8 +85,8 @@ const arrow = {
     aria-hidden="true"
     style={`--hint-fwd-letters: ${hintLetters.length}; --hint-back-letters: ${hintBackLetters.length}`}
   >
-    <p class="flip-hint flip-hint--fwd hint-words typewriter">{hintLetters.map(({ letter, index }) => (
-      <span class="hint-letter" style={`--i: ${index}`}>{letter}</span>
+    <p class="flip-hint flip-hint--fwd hint-words typewriter">{hintLetters.map(({ letter, style }) => (
+      <span class="hint-letter" style={style}>{letter}</span>
     ))}</p>
     <svg class="flip-hint flip-hint--fwd hint-arrow" viewBox="0 0 48 28">
       <path class="hint-halo" d={arrow.shaft} />
@@ -91,8 +96,8 @@ const arrow = {
       <path class="hint-head" d={arrow.head} />
     </svg>
 
-    <p class="flip-hint flip-hint--back hint-words typewriter">{hintBackLetters.map(({ letter, index }) => (
-      <span class="hint-letter" style={`--i: ${index}`}>{letter}</span>
+    <p class="flip-hint flip-hint--back hint-words typewriter">{hintBackLetters.map(({ letter, style }) => (
+      <span class="hint-letter" style={style}>{letter}</span>
     ))}</p>
     <svg class="flip-hint flip-hint--back hint-arrow" viewBox="0 0 48 28">
       <path class="hint-halo" d={arrow.shaft} />
@@ -304,6 +309,14 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
 
   #{$way-back-shown} {
     @include types-itself($hint-fade, 0ms);
+  }
+}
+
+// Each letter's place in its line, for the delay above. The count matches hintLettersNumbered in
+// the frontmatter.
+@for $n from 1 through 48 {
+  .hint-letter:nth-child(#{$n}) {
+    --i: #{$n - 1};
   }
 }
 
