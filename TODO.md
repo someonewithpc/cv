@@ -24,6 +24,7 @@
   - [x] Logo cube: edges drawn once, visible on every theme
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
   - [x] Demos hold still off screen, behind the front page and in a background tab, and carry on from where they stopped
+  - [x] Measure what the autoplay demos cost, with a switch that pauses them all (#172)
   - [x] Autoplay is not very intuitive (#7)
   - [x] Drop the hover-to-take-over notes; demo images stay in the repo (#134)
   - [x] Visrez animated icon
