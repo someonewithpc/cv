@@ -143,6 +143,8 @@ async function peelHintShown(page: Page): Promise<Aim> {
     const words = document.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
     window.scrollTo(0, scrollY + words.top - innerHeight / 2);
   });
+  // The aim is read off the dog-ear's size, which is 0 until the stack's reveal has run.
+  await dogEarShown(page.locator('article.technical-drawing-stack').first());
   await expect.poll(async () => {
     const forward = await aim(page, 'fwd');
     return forward.painted && forward.animations === 0;
