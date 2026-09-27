@@ -70,7 +70,7 @@ function watchStackTurning(stack: Element, onChange: () => void): () => void {
  * Why a demo is standing still. It runs only while none applies. The first four are read from
  * the page itself; the rest are held from outside, through a gate's `hold` or `holdAll`.
  */
-export type PauseReason = 'offscreen' | 'back-page' | 'turning' | 'hidden' | 'resize' | 'user';
+export type PauseReason = 'offscreen' | 'back-page' | 'turning' | 'hidden' | 'resize' | 'user' | 'review';
 
 export interface DemoGate {
   readonly running: boolean;
@@ -91,7 +91,15 @@ export interface DemoGate {
 }
 
 const gates = new Set<{ set(reason: PauseReason, on: boolean): void }>();
-const heldEverywhere = new Set<PauseReason>();
+
+/**
+ * Review switch, for measuring only: `?autoplay=off` holds every demo from boot, so a trace can
+ * compare the page with the walkthroughs playing and without them. Read once, at load.
+ */
+const autoplaySwitchedOff = typeof location !== 'undefined'
+  && new URLSearchParams(location.search).get('autoplay') === 'off';
+
+const heldEverywhere = new Set<PauseReason>(autoplaySwitchedOff ? ['review'] : []);
 const tabHidden = () => document.visibilityState === 'hidden';
 
 let watchingTab = false;
