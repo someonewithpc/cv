@@ -377,6 +377,19 @@ image, svg, img, picture {
 *, ::before, ::after {
   box-sizing: border-box;
 }
+
+/* The islands' boot placeholders (Space Builder, Drag and drop, the font picker) show a spinner
+   until their script mounts them. Without script nothing ever will, so the spinner is a
+   promise the page cannot keep: say so instead. */
+@media (scripting: none) {
+  .boot-placeholder > * {
+    display: none;
+  }
+
+  .boot-placeholder::after {
+    content: "This demo needs JavaScript.";
+  }
+}
 </style>
 
 <style is:global>
