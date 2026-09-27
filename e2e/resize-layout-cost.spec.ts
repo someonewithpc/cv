@@ -34,3 +34,49 @@ test('narrowing the window and widening it again lays the page out quickly', asy
 
   expect(spent, `layout time for one dock and undock, in seconds`).toBeLessThan(BUDGET_SECONDS);
 });
+
+/**
+ * The artwork scales its type by --sheet-inline and --sheet-block. They come from CSS, worked out
+ * from the viewport the way the page lays the stack out (the frame in Stack.astro). The stack's
+ * ResizeObserver used to write them onto every stack at each resize step, which doubled the style
+ * each step cost. If the page's geometry changes and the formula is not changed with it, the
+ * sheet's measure no longer matches the sheet.
+ *
+ * 400 is a portrait sheet, 1060 is where the desk's mat narrows the column below --breakout-max,
+ * and 1440 is a capped sheet.
+ */
+for (const javaScriptEnabled of [true, false]) {
+  test.describe(`script ${javaScriptEnabled ? 'on' : 'off'}`, () => {
+    test.use({ javaScriptEnabled });
+
+    test('the sheet\'s measure matches the sheet at every width', async ({ page }) => {
+      await page.goto('/');
+      for (const width of [400, 1060, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.waitForTimeout(100);
+        const sheet = await page.locator('article.technical-drawing-stack section').first().evaluate((section) => {
+          // The variables hold the expression, not pixels, so a box sized by them reads them out.
+          const probe = document.createElement('div');
+          probe.style.cssText = 'position: absolute; visibility: hidden; width: var(--sheet-inline); height: var(--sheet-block)';
+          section.append(probe);
+          const measured = getComputedStyle(probe);
+          const box = section.getBoundingClientRect();
+          const inline = parseFloat(measured.width);
+          const block = parseFloat(measured.height);
+          probe.remove();
+          return {
+            inline,
+            block,
+            width: box.width,
+            height: box.height,
+            written: [...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack, .flip-hints')]
+              .some((el) => /--(sheet|stack)-/.test(el.getAttribute('style') ?? '')),
+          };
+        });
+        expect(Math.abs(sheet.inline - sheet.width), `--sheet-inline ${sheet.inline} against ${sheet.width} at ${width}px`).toBeLessThanOrEqual(1);
+        expect(Math.abs(sheet.block - sheet.height), `--sheet-block ${sheet.block} against ${sheet.height} at ${width}px`).toBeLessThanOrEqual(1);
+        expect(sheet.written, 'no script writes the sheet\'s measure').toBe(false);
+      }
+    });
+  });
+}
