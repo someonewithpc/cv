@@ -10,7 +10,7 @@ import { LANES, armDrawCounter, demoStack, forEachStackInLane, frontPage, frontP
  */
 
 declare global {
-  interface Window { demoChanges?: number; demoWatch?: MutationObserver }
+  interface Window { switchChanges?: number; switchWatch?: MutationObserver }
 }
 
 async function open(page: Page, query = '/?autoplay=off') {
@@ -26,23 +26,23 @@ function draws(page: Page) {
 /** Changes inside the front page's sheet, leaving out the sheet's own attributes and live regions. */
 async function watch(section: Locator) {
   await section.evaluate((el) => {
-    window.demoWatch?.disconnect();
-    window.demoChanges = 0;
-    window.demoWatch = new MutationObserver((records) => {
-      window.demoChanges! += records.filter((record) => {
+    window.switchWatch?.disconnect();
+    window.switchChanges = 0;
+    window.switchWatch = new MutationObserver((records) => {
+      window.switchChanges! += records.filter((record) => {
         const target = record.target instanceof Element ? record.target : record.target.parentElement;
         return record.target !== el && !target?.closest('[aria-live]');
       }).length;
     });
-    window.demoWatch.observe(el, { subtree: true, childList: true, attributes: true, characterData: true });
+    window.switchWatch.observe(el, { subtree: true, childList: true, attributes: true, characterData: true });
   });
 }
 
 async function quietFor(page: Page, ms: number) {
-  await page.evaluate(() => { window.demoChanges = 0; });
+  await page.evaluate(() => { window.switchChanges = 0; });
   const before = await draws(page);
   await page.waitForTimeout(ms);
-  return (await page.evaluate(() => window.demoChanges ?? 0)) === 0 && (await draws(page)) === before;
+  return (await page.evaluate(() => window.switchChanges ?? 0)) === 0 && (await draws(page)) === before;
 }
 
 async function expectQuiet(page: Page, stack: Locator, why: string) {
