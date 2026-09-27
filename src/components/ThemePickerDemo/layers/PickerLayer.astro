@@ -6,15 +6,12 @@
  * the page's stamp, its stored key or the real picker. The readout under it is this page's
  * own theme, marked by the picker's selectors (shown.ts), so the two are never confused.
  *
- * The page on the stage is this CV at a small scale: its title block, the career table,
- * the bill of materials and a title card, every piece coloured by the stage's own tokens
- * so a pick recolours all of it.
+ * The page on the stage is a wireframe: a title bar, lines of text, a table, badges and a
+ * card, every block painted from the stage's own tokens so a pick recolours all of it.
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
-import site from '@/components/Career/site.json';
-import { CONTACT } from '@/site';
 import { THEME_IDS, THEMES } from '@/themes';
 
 import { shownCss } from '../shown';
@@ -23,23 +20,20 @@ import { iconSvg, stageCss } from '../stage';
 const css = stageCss();
 const layers = ['under', 'over'] as const;
 
-/* The newest three rows of the career sheet's revision table, numbered the way it numbers them. */
-const { experience } = site;
-const rows = experience.slice(0, 3).map((entry, i) => ({
-  rev: String(experience.length - i).padStart(2, '0'),
-  role: entry.role,
-  org: entry.org,
-  when: `${entry.from.date.slice(0, 4)} to ${entry.to.date.slice(0, 4)}`,
-}));
-const text = experience[0].items.slice(0, 2).join(' ');
-const contact = [CONTACT.email, ...CONTACT.profiles.map((p) => p.label)];
-const badges = ['Astro', 'TypeScript', 'Sass', 'Vue', 'React', 'Ruby'];
+/* The wireframe's blocks: line widths as shares of their column, the table's cell widths. */
+const lines = [
+  [100, 92, 96, 58],
+  [100, 72],
+];
+const cells = [12, 44, 24, 20];
+const rows = 3;
+const badges = 6;
+const swatches = ['--accent', '--accent-muted', '--blueprint', '--surface-sunken', '--ink-muted'];
 ---
 
 <div class="theme-picker-demo" data-theme-picker-demo>
   <header>
     <span class="eyebrow">ThemePicker.astro · themes.ts</span>
-    <strong>A pick cuts the new page out of the old one along the icon it was picked with</strong>
   </header>
 
   <div class="figure">
@@ -52,29 +46,33 @@ const badges = ['Astro', 'TypeScript', 'Sass', 'Vue', 'React', 'Ruby'];
               <div class="paper" data-paper={layer} hidden={layer === 'over'} inert={layer === 'over'} aria-hidden={layer === 'over' ? 'true' : undefined}>
                 <div class="page">
                   <div class="title">
-                    <p class="meta">DWG · CV-001 · REV A</p>
-                    <p class="name">Hugo Sales</p>
-                    <p class="role">Full stack developer / FOSS contributor</p>
-                    <p class="contact">{contact.map((item) => <span>{item}</span>)}</p>
+                    <span class="bar meta"></span>
+                    <span class="bar name"></span>
+                    <span class="bar role"></span>
+                    <span class="contact">{[6, 4, 5, 5].map((width) => <span class="bar" style={`--w: ${width}em`}></span>)}</span>
                   </div>
                   <div class="body">
                     <div class="main">
-                      <p class="heading"><span class="code">SH-CAREER</span>Career</p>
-                      <p class="text">{text}</p>
-                      <table class="revisions">
-                        <thead><tr><th>Rev</th><th>Role</th><th>Where</th><th>When</th></tr></thead>
-                        <tbody>{rows.map((row) => <tr><td>{row.rev}</td><td>{row.role}</td><td>{row.org}</td><td>{row.when}</td></tr>)}</tbody>
-                      </table>
-                      <p class="heading"><span class="code">SH-BOM</span>Bill of materials</p>
-                      <ul class="badges">{badges.map((badge) => <li>{badge}</li>)}</ul>
+                      <span class="heading"><span class="bar code"></span><span class="bar word"></span></span>
+                      <span class="text">{lines[0].map((width) => <span class="bar" style={`--w: ${width}%`}></span>)}</span>
+                      <span class="table">
+                        {Array.from({ length: rows + 1 }, (_, row) => (
+                          <span class="row">{cells.map((width) => <span class="bar" data-head={row === 0 ? '' : undefined} style={`--w: ${width}%`}></span>)}</span>
+                        ))}
+                      </span>
+                      <span class="heading"><span class="bar code"></span><span class="bar word short"></span></span>
+                      <span class="text">{lines[1].map((width) => <span class="bar" style={`--w: ${width}%`}></span>)}</span>
+                      <span class="badges">{Array.from({ length: badges }, () => <span class="badge"></span>)}</span>
                     </div>
                     <div class="card">
-                      <span class="label">Title</span>
-                      <span class="value">Theme Picker</span>
-                      <span class="label">Medium</span>
-                      <span class="value">Astro, CSS</span>
-                      <span class="label">Notes</span>
-                      <span class="note">The corner picks one of four themes; a pick recolours every sheet.</span>
+                      <span class="bar label"></span>
+                      <span class="bar value"></span>
+                      <span class="bar label"></span>
+                      <span class="bar value short"></span>
+                      <span class="bar label"></span>
+                      <span class="swatches">{swatches.map((token) => <span class="swatch" style={`--swatch: var(${token})`}></span>)}</span>
+                      <span class="bar label"></span>
+                      <span class="text">{[100, 84].map((width) => <span class="bar" style={`--w: ${width}%`}></span>)}</span>
                     </div>
                   </div>
                 </div>
@@ -104,30 +102,20 @@ const badges = ['Astro', 'TypeScript', 'Sass', 'Vue', 'React', 'Ruby'];
       </div>
 
       <Fragment slot="annotations">
-        <ArrowAnnotation target="[data-stage]" anchor="1 0.12" tipX={1} tipY={-0.76} angle={0} length={0.3} text="The picker: a pick grows its icon from this corner" lines={['The picker: a pick grows', 'its icon from this corner']} only="landscape" />
-        <ArrowAnnotation target="[data-stage]" anchor="0 0.5" tipX={-1} tipY={0} angle={180} length={0.3} text="A page of its own, with its own tokens" lines={['A page of its own,', 'with its own tokens']} labelSide="left" only="landscape" />
-        <ArrowAnnotation target="[data-stage]" anchor="1 0.7" tipX={1} tipY={0.4} angle={0} length={0.3} text="What is picked here stays here" lines={['What is picked here', 'stays here']} only="landscape" />
-        <ArrowAnnotation target="[data-stage]" anchor="0.9 0" tipX={0.9} tipY={-1} angle={90} length={0.25} text="The picker: a pick grows its icon from this corner" lines={['The picker: a pick grows', 'its icon from this corner']} labelSide="left" only="portrait" />
+        <ArrowAnnotation target="[data-stage]" anchor="1 0.12" tipX={1} tipY={-0.76} angle={0} length={0.3} text="The picker, in its corner" only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="0 0.5" tipX={-1} tipY={0} angle={180} length={0.3} text="A page of its own: a pick here stays here" lines={['A page of its own:', 'a pick here stays here']} labelSide="left" only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="0.9 0" tipX={0.9} tipY={-1} angle={90} length={0.25} text="The picker, in its corner" labelSide="left" only="portrait" />
       </Fragment>
     </Annotations>
   </div>
 
-  <dl class="rules">
-    <div>
-      <dt>This page</dt>
-      <dd>
-        <span class="theme-name" data-readout="theme">{THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id].name}</span>)}</span>,
-        <span data-readout="chosen">
-          <span data-chosen="os">the OS colour scheme, nothing picked</span>
-          <span data-chosen="pick">a pick, kept as <code>cv-theme</code></span></span>.
-        Only the corner changes it.
-      </dd>
-    </div>
-    <div>
-      <dt>The stage</dt>
-      <dd>A shadow root with its own copy of the tokens; nothing there is kept. Without script it stands still on the OS scheme.</dd>
-    </div>
-  </dl>
+  <p class="readout">
+    This page is <span class="theme-name" data-readout="theme">{THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id].name}</span>)}</span>,
+    <span data-readout="chosen">
+      <span data-chosen="os">the OS colour scheme, nothing picked</span>
+      <span data-chosen="pick">a pick, kept as <code>cv-theme</code></span></span>.
+    Only the corner changes it.
+  </p>
 </div>
 
 <script>
@@ -175,8 +163,14 @@ bootIslands('[data-theme-picker-demo]', boot);
   font-weight: 600;
 }
 
-.rules {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+/* The one line under the stage, ruled off like the rules of the other sheets. */
+.readout {
+  margin: 0;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--line);
+  font-size: max(0.5rem, 0.875em);
+  line-height: 1.35;
+  text-wrap: pretty;
 
   [data-shown],
   [data-chosen] {
