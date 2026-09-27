@@ -1171,6 +1171,10 @@ $fold-pulse-y: 2cm;
     @supports not (selector(::scroll-marker) and selector(::scroll-button(right))) {
       --sheet-peek: 1.75rem;
       gap: 1rem;
+      // A start snap aims the sheet at the row's own edge, not inside the slack, and Firefox rested
+      // the second sheet 2px past that edge, which cut off its left border. The padding moves the
+      // snap inside the slack.
+      scroll-padding-inline: var(--row-slack);
       scrollbar-color: var(--line-strong) transparent;
 
       > * {
