@@ -5,6 +5,8 @@ import TechIcon from '@/components/TechIcon.astro';
 
 import { resolveTechs } from '@/server/tech-icons';
 
+import { transportKeyArtId, transportKeys } from './transport-keys';
+
 type Props = {
   title?: string | null;
   subtitle?: string;
@@ -42,27 +44,6 @@ const asideHtml = (await Astro.slots.render('aside')) ?? '';
 const noteBackground = asideHtml.match(/--background:\s*([^;"]+)/)?.[1];
 const sheetAnchor = `--${noteId}-sheet`;
 const titleAnchor = `--${noteId}-title`;
-
-/* One chassis, three glyphs: a cassette key drawn from the top left, so its cap has a
-   front and a side face to drop onto when it is held down. Each glyph sits in the cap's
-   own box (x 1 to 18, y 1 to 13), cut wide enough to still read at a 12px key. */
-const transportKeys = [
-  {
-    id: 'reset',
-    label: 'Reset the walkthrough',
-    glyph: '<path d="M4.6 3.4v7.2" /><path d="M10 3.4 6.6 7 10 10.6Z" /><path d="M14.4 3.4 11 7l3.4 3.6Z" />',
-  },
-  {
-    id: 'play',
-    label: 'Play the walkthrough',
-    glyph: '<path d="M6.6 2.9 13.9 7l-7.3 4.1Z" />',
-  },
-  {
-    id: 'pause',
-    label: 'Take over',
-    glyph: '<path d="M6.6 3.2h2.3v7.6H6.6z" /><path d="M10.6 3.2h2.3v7.6h-2.3z" />',
-  },
-];
 ---
 
 <section
@@ -160,22 +141,10 @@ const transportKeys = [
        by itself. -->
   <div class="demo-transport" data-demo-transport hidden>
     <span class="demo-keys">
-      {transportKeys.map(({ id, label, glyph }) => (
+      {transportKeys.map(({ id, label }) => (
         <button class="demo-key" type="button" data-demo-key={id} title={label} aria-pressed={id === 'reset' ? undefined : 'false'}>
           <span class="sr-only">{label}</span>
-          <svg viewBox="0 0 21 18" aria-hidden="true">
-            <path class="key-bevel" d="M1 13 2.5 16.5h17L18 13Z" />
-            <path class="key-bevel" d="M18 1 19.5 4.5v12L18 13Z" />
-            <g class="key-cap">
-              <rect class="key-face" x="1" y="1" width="17" height="12" rx="1.5" />
-              <g class="key-hatch">
-                <path d="M4 10.6 7.2 3.4" />
-                <path d="M8.4 10.6 11.6 3.4" />
-                <path d="M12.8 10.6 16 3.4" />
-              </g>
-              <g class="key-glyph" set:html={glyph} />
-            </g>
-          </svg>
+          <svg viewBox="0 0 21 18" aria-hidden="true"><use href={`#${transportKeyArtId(id)}`} /></svg>
         </button>
       ))}
     </span>
@@ -390,8 +359,21 @@ section {
 
   /* Each key is line art in the sheet's ink: a cap with a side bevel, and when it
      is held down the cap sits on the bevel and takes the hatch a sectioned part
-     gets in a drawing. */
+     gets in a drawing. The drawing itself is TransportKeyArt.astro, once for the
+     page; a key shows it through <use>, whose copy no selector here can reach, so
+     the key's state goes down to it as these properties. */
   .demo-key {
+    /* The sheet's own paper, not the mat the band is: --surface-raised sits a step
+       away from the mat on every theme, which left the cap looking like an outline
+       with the drawing showing through it. Paper is a step the other way, and it is
+       the lightest surface on the light themes and the darkest on the dark ones, so
+       the cap reads as a solid key on all four. */
+    --key-face-fill: var(--surface-page);
+    --key-glyph-ink: var(--ink);
+    --key-cap-shift: none;
+    --key-bevel-display: inline;
+    --key-hatch-display: none;
+
     display: block;
     padding: 0;
     border: 0;
@@ -408,43 +390,9 @@ section {
       overflow: visible;
     }
 
-    /* The sheet's own paper, not the mat the band is: --surface-raised sits a step
-       away from the mat on every theme, which left the cap looking like an outline
-       with the drawing showing through it. Paper is a step the other way, and it is
-       the lightest surface on the light themes and the darkest on the dark ones, so
-       the cap reads as a solid key on all four. */
-    .key-face {
-      fill: var(--surface-page);
-      stroke: var(--line-strong);
-      stroke-width: 0.9;
-    }
-
-    .key-bevel {
-      fill: color-mix(in oklab, var(--ink) 18%, var(--surface-page));
-      stroke: var(--line-strong);
-      stroke-width: 0.9;
-      stroke-linejoin: round;
-    }
-
-    .key-glyph {
-      fill: var(--ink);
-      stroke: var(--ink);
-      stroke-width: 1.1;
-      stroke-linejoin: round;
-      stroke-linecap: square;
-    }
-
-    .key-hatch {
-      display: none;
-      stroke: var(--line-strong);
-      stroke-width: 0.5;
-      opacity: 0.55;
-    }
-
-    &:hover .key-glyph,
-    &:focus-visible .key-glyph {
-      fill: var(--accent);
-      stroke: var(--accent);
+    &:hover,
+    &:focus-visible {
+      --key-glyph-ink: var(--accent);
     }
 
     &:focus-visible {
@@ -456,25 +404,14 @@ section {
        and the face takes a little ink so a held key still reads at a glance once the
        bevel that used to mark it is gone. */
     &[aria-pressed='true'] {
-      .key-cap {
-        translate: 1.5px 3.5px;
-      }
-
-      .key-face {
-        fill: color-mix(in oklab, var(--ink) 12%, var(--surface-page));
-      }
-
-      .key-bevel {
-        display: none;
-      }
-
-      .key-hatch {
-        display: inline;
-      }
+      --key-cap-shift: 1.5px 3.5px;
+      --key-face-fill: color-mix(in oklab, var(--ink) 12%, var(--surface-page));
+      --key-bevel-display: none;
+      --key-hatch-display: inline;
     }
 
-    &:active .key-cap {
-      translate: 1.5px 3.5px;
+    &:active {
+      --key-cap-shift: 1.5px 3.5px;
     }
 
     &:disabled {
@@ -483,9 +420,8 @@ section {
     }
   }
 
-  .demo-transport[data-state='playing'] [data-demo-key='play'] .key-glyph {
-    fill: var(--accent);
-    stroke: var(--accent);
+  .demo-transport[data-state='playing'] [data-demo-key='play'] {
+    --key-glyph-ink: var(--accent);
   }
 
   .demo-led {

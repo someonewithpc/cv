@@ -1,5 +1,6 @@
 ---
 import ThemePicker from '@/components/ThemePicker.astro';
+import TransportKeyArt from '@/components/TechnicalDrawing/TransportKeyArt.astro';
 import { AUTHOR_NAME, CONTACT, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/site';
 
 type Props = {
@@ -79,6 +80,7 @@ oembedUrl.searchParams.set('format', 'json');
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <ThemePicker />
+    <TransportKeyArt />
     <slot />
     <footer class="desktop-hint">
       <p>This page works best when viewed on a desktop.</p>

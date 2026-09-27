@@ -160,21 +160,25 @@ test('the deck keeps the instruction beside the state', async ({ page }) => {
 
 /**
  * A cap the band shows through reads as an outline, not a key, which is what sent the keys
- * back for a solid fill. The cap is an SVG face, so the background to check is its fill.
- * Painting it onto a cleared pixel and reading that pixel back settles the alpha whatever
- * colour space the theme wrote the fill in: a computed `oklab(...)` cannot be matched
- * against `rgba(...)`, and the canvas keeps the space it was given.
+ * back for a solid fill. The cap is an SVG face drawn once for the page and shown on each
+ * key through <use>, out of reach of a query, so the fill to check is the one the key hands
+ * down to it (--key-face-fill, Page.astro). Painting it onto a cleared pixel and reading
+ * that pixel back settles the alpha whatever colour space the theme wrote the fill in: a
+ * computed `oklab(...)` cannot be matched against `rgba(...)`, and the canvas keeps the
+ * space it was given.
  */
 test('the transport keys sit on a solid cap', async ({ page }) => {
   await page.goto('/');
   const deck = await playingDeck(markerEditorStack(page));
-  const cap = await deck.locator('[data-demo-key="play"] .key-face').evaluate((el) => {
-    const fill = getComputedStyle(el).fill;
+  const cap = await deck.locator('[data-demo-key="play"]').evaluate((el) => {
+    const fill = getComputedStyle(el).getPropertyValue('--key-face-fill').trim();
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
     const context = canvas.getContext('2d')!;
     context.clearRect(0, 0, 1, 1);
+    // A fill the canvas cannot parse keeps the old style; transparent makes that a failure.
+    context.fillStyle = 'transparent';
     context.fillStyle = fill;
     context.fillRect(0, 0, 1, 1);
     return { fill, alpha: context.getImageData(0, 0, 1, 1).data[3] };
