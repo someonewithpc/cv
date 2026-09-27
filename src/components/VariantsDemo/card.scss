@@ -110,6 +110,15 @@ $pip: 1.125rem;
     scroll-timeline: --styles inline;
     outline: none;
 
+    // The browser's scroll-marker and scroll-button pseudo-elements carry their own focus
+    // ring below, but the carousel itself is also a Tab stop (it is the scroll target and
+    // the click/drag surface), and the blanket outline: none above left that stop with no
+    // visible ring at all.
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: -2px;
+    }
+
     &::-webkit-scrollbar {
       display: none;
     }
