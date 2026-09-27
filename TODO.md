@@ -152,4 +152,4 @@
 - [x] Try `contain` on the boxes that do not depend on their surroundings (#193)
 - [x] Work out the sheets' measure in CSS instead of writing it on every resize step (#194)
 - [x] Give each sheet layout containment without moving its lines by a pixel (#195)
-- [ ] Stop the resting fold lengths restyling every element under a stack on each resize step
+- [x] Stop the resting fold lengths restyling every element under a stack on each resize step (#199)
