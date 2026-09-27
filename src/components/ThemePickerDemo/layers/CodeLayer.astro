@@ -2,7 +2,9 @@
 /**
  * The wipe's script, five steps in the order the picker runs them, each with the lines it
  * runs. Every fragment is checked against ThemePicker.astro at build, whitespace aside, so
- * the sheet cannot drift from the code. Beside the steps, the geometry of the last frame:
+ * the sheet cannot drift from the code. Shiki colours the fragments at build with its
+ * css-variables theme, and the sheet maps the variables onto its own ink, accent and muted
+ * tokens, so nothing ships to colour them at runtime. Beside the steps, the geometry of the last frame:
  * the icon's box in the viewport's corner and the square the same path is mapped onto,
  * drawn to scale with the theme on screen's own factor.
  */
@@ -10,6 +12,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { Icon } from 'astro-icon/components';
+import { Code } from 'astro:components';
 
 import { THEME_IDS, THEMES } from '@/themes';
 
@@ -97,7 +100,7 @@ const geometry = THEME_IDS.map((id) => {
     {steps.map(({ name, code }, index) => (
       <li>
         <span class="step-name"><span class="balloon">{index + 1}</span>{name}</span>
-        <pre><code>{code.join('\n')}</code></pre>
+        <Code code={code.join('\n')} lang="ts" theme="css-variables" wrap={null} />
       </li>
     ))}
   </ol>
@@ -161,6 +164,19 @@ const geometry = THEME_IDS.map((id) => {
   @include sheet-frame;
   @include sheet-frame-side;
 
+  /* Shiki's css-variables theme, on the sheet's own tokens. */
+  --astro-code-foreground: var(--ink);
+  --astro-code-background: transparent;
+  --astro-code-token-keyword: var(--accent);
+  --astro-code-token-string: var(--ink);
+  --astro-code-token-string-expression: var(--ink);
+  --astro-code-token-function: var(--ink);
+  --astro-code-token-constant: var(--ink);
+  --astro-code-token-parameter: var(--ink);
+  --astro-code-token-link: var(--ink);
+  --astro-code-token-punctuation: var(--ink-muted);
+  --astro-code-token-comment: var(--ink-faint);
+
   .figure {
     grid-column: 2;
     grid-row: 2;
@@ -212,7 +228,6 @@ const geometry = THEME_IDS.map((id) => {
     line-height: 1.25;
     white-space: pre;
     overflow-x: auto;
-    color: var(--ink-muted);
 
     :global([data-sheet-orientation='portrait']) & {
       white-space: pre-wrap;
