@@ -181,10 +181,13 @@ body {
 
 main {
   --page-gap: clamp(1rem, 4vw, 2.5rem);
-  /* em, not ch: the cap is a page width, and ch pins it to whatever font this
-     element inherits. 60em is 960px, which also keeps the demo sheets above the
-     56em mark where TechnicalDrawing/Page.astro tucks the note behind the fold. */
-  --content-max: 60em;
+  /* rem, not ch or em: the cap is a page width, and ch pins it to whatever font this
+     element inherits. The measures built on it reach elements with their own type through
+     variables, and an em there would be read against that type: the sheets' --sheet-inline
+     (TechnicalDrawing/Stack.astro) scales artwork set in 9 to 14px type. 60rem is 960px,
+     which also keeps the demo sheets above the 56em mark where TechnicalDrawing/Page.astro
+     tucks the note behind the fold. */
+  --content-max: 60rem;
   /* The demo stacks sit in the breakout column, so this is what caps them. */
   --breakout-max: var(--content-max);
 
