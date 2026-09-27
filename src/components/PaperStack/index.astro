@@ -1161,6 +1161,25 @@ $fold-pulse-y: 2cm;
       }
     }
 
+    // Firefox has neither ::scroll-button() nor ::scroll-marker, so nothing on the row said it
+    // scrolls: one sheet filled it, and the scrollbar is an overlay that shows only mid-scroll.
+    // There the sheets stand a rem apart, as the first carousel had them (TechnicalDrawingStack,
+    // f9110506), and each is narrow enough that the next one's edge shows on the right. They
+    // snap by their start so the edge stays on that side (the last sheet shows the one before it
+    // instead), and a flick stops at the next sheet. The condition is the whole CSS carousel's,
+    // so a browser that draws the arrows and dots keeps one full-width sheet.
+    @supports not (selector(::scroll-marker) and selector(::scroll-button(right))) {
+      --sheet-peek: 1.75rem;
+      gap: 1rem;
+      scrollbar-color: var(--line-strong) transparent;
+
+      > * {
+        flex-basis: calc(100% - var(--sheet-peek));
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+      }
+    }
+
     // A dot per sheet in the sheet's bottom margin, and an arrow on each side edge, half on the
     // sheet and half off. All of them lie on the stack, not beside it: above it is the
     // section's heading and below it the card slip, which tucks up under the sheets. Both or
