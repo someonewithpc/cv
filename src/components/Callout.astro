@@ -608,4 +608,13 @@ const hasCard = Astro.slots.has('card');
     --slip-pad: 0.75rem;
   }
 }
+
+/* Without script the stack is a scroll row (PaperStack), not a fan: no sheet drops below the
+   front one, so the slip has nothing to tuck under but the front sheet's own edge. With the
+   turn still counted, the slip's lead row hid its Title entry behind the sheet. */
+@media (scripting: none) {
+  .callout[data-card] .callout-slip {
+    --slip-turn: 0deg;
+  }
+}
 </style>
