@@ -262,7 +262,7 @@ export function render(
 
   const pax = card.querySelector<HTMLElement>('.object-pax');
   if (pax) {
-    setText(pax, `${visible.pax ?? 0} seats`, `Seats, ${visible.pax ?? 0}`);
+    setText(pax, `${visible.pax ?? 0} seats`);
     pax.querySelectorAll<HTMLElement>('.hover-select-options li').forEach((option) => {
       const value = Number(option.dataset.value);
       const available = !selected
@@ -288,7 +288,7 @@ export function render(
   }
 }
 
-function setText(row: HTMLElement, text: string, label: string) {
+function setText(row: HTMLElement, text: string, label?: string) {
   const current = row.querySelector<HTMLElement>('.hover-select-current');
   const target = current ?? row;
   const span = target.querySelector<HTMLElement>(':scope > .option-text');
@@ -296,7 +296,7 @@ function setText(row: HTMLElement, text: string, label: string) {
     span.textContent = text;
     if (current) announce(current, [{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }, { backgroundColor: 'rgba(255, 255, 255, 0)' }]);
   }
-  current?.setAttribute('aria-label', label);
+  if (label) current?.setAttribute('aria-label', label);
 }
 
 const SWAP_MS = 320;

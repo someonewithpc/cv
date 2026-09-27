@@ -293,11 +293,9 @@ function onPictureClick(event: MouseEvent) {
       <HoverSelect
         v-if="showPax"
         class="object-pax"
-        label="Seats"
         demo-target="variant:pax"
         :options="paxOptions"
         :current="visible.pax ?? 0"
-        :current-text="String(visible.pax ?? 0)"
         :unavailable="unavailablePax"
         :moved="movedRow === 'pax'"
         @pick="pickRow('pax', byPax($event))"

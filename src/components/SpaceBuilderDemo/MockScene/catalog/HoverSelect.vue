@@ -15,10 +15,14 @@ const props = defineProps<{
   current: HoverSelectOption | null;
   /** Options that cannot combine with the rest of the current pick; drawn muted. */
   unavailable?: HoverSelectOption[];
-  /** Accessible name for the control, e.g. "Seats". */
-  label: string;
-  /** Printed text of the current option, for the summary's accessible name. */
-  currentText: string;
+  /**
+   * Row name for a printed option that does not say what it is ("Size" for "1.8m x 76cm"):
+   * the summary is then named "<label>, <currentText>". A seat count prints "8 seats" and
+   * needs none, so its summary keeps its visible text as its name.
+   */
+  label?: string;
+  /** Printed text of the current option, for the name built from `label`. */
+  currentText?: string;
   /** A pick on the other row moved this one: flag it until it is opened or hovered. */
   moved?: boolean;
   /** Aim point for the walkthrough; each option gets `<demoTarget>:<option>`. */
@@ -68,7 +72,7 @@ function pick(option: HoverSelectOption) {
   >
     <summary
       class="hover-select-current"
-      :aria-label="`${label}, ${currentText}`"
+      :aria-label="label ? `${label}, ${currentText}` : undefined"
       :data-demo-target="demoTarget"
       @dblclick.stop
     >
