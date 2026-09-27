@@ -10,7 +10,7 @@ export function useRect<T extends Element | SVGElement>(
 ) {
   const ref = useRef<T | null>(ref_?.current ?? null);
 
-  const [rect, setRect] = useState(ref.current?.getBoundingClientRect());
+  const [rect, setRect] = useState(() => ref.current?.getBoundingClientRect());
   const [refGeneration, setRefGeneration] = useState(0);
 
   const resize = useCallback(() => {
