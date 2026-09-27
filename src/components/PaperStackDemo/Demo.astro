@@ -30,7 +30,7 @@ const scriptSize = toKiB(bundle.text);
 const layers = {
   pile: { name: null },
   fold: { name: 'The Fold', pageStyle: 'blueprint' },
-  row: { name: 'Without Script', pageStyle: 'blueprint' },
+  row: { name: 'Without JavaScript', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -68,7 +68,7 @@ type Layer = keyof typeof layers;
       ),
       row: (
         <PostIt background="#fed" color="black">
-          Switch script off and reload: every stack on this page is this row. Chrome draws
+          Switch JavaScript off and reload: every stack on this page is this row. Chrome draws
           the arrows and the dots; Firefox shows the next sheet's edge instead
         </PostIt>
       ),

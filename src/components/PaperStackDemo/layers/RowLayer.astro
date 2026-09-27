@@ -1,6 +1,6 @@
 ---
 /**
- * The stack without script: a scroll-snap row one sheet wide, with the neighbours out of
+ * The stack without JavaScript: a scroll-snap row one sheet wide, with the neighbours out of
  * view on either side, the arrows half over the sheet's edges, a dot per sheet and the pile
  * as two shadows under the row. Drawn as PaperStack/index.astro styles it under
  * (scripting: none), with Chrome's scroll buttons and markers.
@@ -23,7 +23,7 @@ const dots = [0, 1, 2, 3];
 ---
 
 <div class="wrapper">
-  <p class="point typewriter">The stack without script</p>
+  <p class="point typewriter">The stack without JavaScript</p>
 
   <Annotations scale={annotationScale} reach={1}>
     <svg class="row-drawing" viewBox="-70 -22 410 172" slot="content" aria-hidden="true">

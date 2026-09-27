@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { demoStack, frontPage, frontPageName, swipeStack, turnToPage } from './support/paperStack';
 
-const PAGES = ['Paper Stack', 'The Fold', 'Without Script'];
+const PAGES = ['Paper Stack', 'The Fold', 'Without JavaScript'];
 
 const paperStackDemo = (page: Page) => demoStack(page, 'Paper Stack');
 
