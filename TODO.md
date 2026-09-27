@@ -107,6 +107,7 @@
 - [x] Run W3C validator (#28)
   - [x] Put CSS and JS out of line (#22)
 - [x] Turn off the Cloudflare image binding nothing here uses (#66)
+- [x] Opening DevTools responsive mode shows the page zoomed in (#168)
 - [x] Docking DevTools holds the page zoomed in (#93)
 - [x] Make the e2e suite faster by fixing or cutting cases that do not make sense (#115)
 - [x] Pinching out over a 3D scene in responsive mode leaves the page zoomed in (#133)
