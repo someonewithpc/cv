@@ -93,6 +93,104 @@ const pages = await Promise.all(
 @use '@/scss/technical-drawing' as drawing;
 @use '@/scss/colors' as colors;
 
+// The stack's custom properties, typed so they transition and animate. At the top level of the
+// sheet, where Sass leaves them alone: nested in a selector, it would bubble each one out into
+// an invalid rule.
+//
+// Everything registered not inherited moves: --fold-x/-y on every frame of a drag, the rest over
+// a turn or a resize. An inherited property that moves makes the browser re-resolve the style of
+// every element below it, and below a page wrapper is everything printed on the page, some two
+// thousand elements, so a turn restyled the stack several times over. Not inherited, a change
+// reaches only the elements below that say `inherit` for it: the page content, the flap, the clip
+// wrappers, the grab handle, and the band and strip pseudo-elements. Each of those reads it one
+// level below where it is written, and nothing deeper reads any of them.
+@each $name in
+  fold-x, fold-y, fold-back-x, fold-back-y, fold-page-w, fold-page-h,
+  // The pile's reach, transitioned on the stack so the strip behind the crease climbs with it.
+  pile-rise, pile-drift,
+  // A turned page's own step out, transitioned on the page so its cut, band and translate climb
+  // together.
+  turned-drift, turned-rise,
+  // The crease intercepts the page content derives from --fold-x/-y for its clip-path.
+  crease-excess-x, crease-excess-y, crease1-x, crease1-y, crease2-x, crease2-y,
+  // A landing's second crease, written on the flap by renderLanding and read there alone.
+  land-x, land-y
+{
+  @property --#{$name} {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+}
+
+// The resting crease and the pin never move once the sheet is laid out, and the clip's wire
+// reads them two levels down, so these stay inherited.
+@each $name in fold-back-rest-x, fold-back-rest-y, fold-pin-x, fold-pin-y {
+  @property --#{$name} {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+}
+
+@each $name in pile-lean, paper-peek {
+  @property --#{$name} {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+  }
+}
+
+@property --page-index {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+@each $name in
+  flip-progress, pages-turned,
+  // What the stack and the pages derive from the count and the index.
+  pile-arc, pile-arc-under, turned-rank, turned, turned-arc
+{
+  @property --#{$name} {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+  }
+}
+
+// The strip's turn clock (see --pile-rise below): at rest by default.
+@property --turn-ease {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+// The pile's paper, set on the stack by syncPileSurface and unset while nothing is turned, where
+// the strip falls back to the front page's own. No initial value, so unset it stays invalid and
+// the fallback applies.
+@property --pile-paper {
+  syntax: '*';
+  inherits: false;
+}
+
+// restIdleFold's switch for the pulse layers, set on the sheet and read one level down (by the
+// clip's shadow two, through the clip): not inherited, so setting it restyles those and not the
+// page's content.
+@property --fold-pulse {
+  syntax: '*';
+  inherits: false;
+}
+
+// How far the flap is off the page, typed so its tone eases between rest, in hand and past the
+// commit point. Set on the flap and the cast shadow themselves, so nothing inherits it while it
+// eases.
+@property --fold-lift {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
 // How far the resting dog-ear's pulse grows it (see fold-pulse-keyframes below).
 $fold-pulse-x: 3cm;
 $fold-pulse-y: 2cm;
@@ -219,9 +317,9 @@ $fold-pulse-y: 2cm;
     --fold-pin-x: calc(var(--fold-back-rest-x) / 2);
     --fold-pin-y: calc(var(--fold-back-rest-y) / 2);
 
-    // Plain-CSS fallback for the first paint: until fold-drag.ts registers the typed custom
-    // properties, var(--flip-progress) is undefined, which invalidates the pages' rotate below
-    // at computed-value time. rotate: none doesn't just drop the splay — it stops each page
+    // The initial value its @property rule gives it as well, spelled out for a browser that
+    // does not register it: there var(--flip-progress) would be undefined, which invalidates the
+    // pages' rotate below at computed-value time. rotate: none doesn't just drop the splay — it stops each page
     // from being the containing block for its absolutely-positioned clip wrappers, flashing
     // the paper clip at the viewport's top-left corner while the page loads.
     --flip-progress: 0;
@@ -310,9 +408,9 @@ $fold-pulse-y: 2cm;
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
       // What the stack writes or transitions, read here and by the pseudo-elements below.
-      // fold-drag.ts registers every property that moves as not inherited, so that a change
-      // re-resolves the few elements that read it and not everything printed on the page, and
-      // each reader one level down says so.
+      // Every property that moves is registered as not inherited (the @property rules at the
+      // top), so that a change re-resolves the few elements that read it and not everything
+      // printed on the page, and each reader one level down says so.
       --fold-back-x: inherit;
       --fold-back-y: inherit;
       --flip-progress: inherit;
@@ -389,7 +487,7 @@ $fold-pulse-y: 2cm;
       // and the page's left edge stays on the stack's while it climbs. Easing the translate on
       // its own left the cut at the new drift while the translate was still catching up, which
       // opened a hairline of page background at the top of the crease, between the strip and
-      // the band, for the length of the turn. fold-drag.ts registers both as lengths.
+      // the band, for the length of the turn. Both are registered as lengths.
       // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out, --turned-drift 250ms ease-in-out, --turned-rise 250ms ease-in-out;
 

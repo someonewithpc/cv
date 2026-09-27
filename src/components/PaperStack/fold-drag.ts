@@ -1,10 +1,8 @@
 // Wires up the draggable "dog-ear" fold on each [data-paper-stack-root]'s front page — a drag
 // released with the page's center folded over flips the page onto the back of the stack, and
 // grabbing the folded-back top-left corner runs the same gesture in reverse to bring the
-// previous page back — and registers the CSS custom properties (--fold-x, --fold-y,
-// --fold-back-x, --fold-back-y, --fold-back-rest-x, --fold-back-rest-y, --fold-pin-x,
-// --fold-pin-y, --fold-page-w, --fold-page-h, --page-index, --flip-progress) the stack's
-// styles (in index.astro) key off of.
+// previous page back. The custom properties it writes (--fold-x, --fold-y, --page-index,
+// --flip-progress and the rest) are typed by the @property rules in index.astro.
 
 import { setStackTurning } from '@/client/frontPage';
 import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
@@ -2162,77 +2160,8 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   window.addEventListener('pointercancel', liftTouch);
 };
 
-// Re-registering a name throws — harmless in production (each property is only ever declared
-// once) but this guards against dev-time re-runs (e.g. Vite HMR re-executing this module).
-const registerProperty = (definition: PropertyDefinition) => {
-  try {
-    CSS.registerProperty(definition);
-  } catch {
-    // already registered
-  }
-};
-
-// Everything registered here moves: --fold-x/-y on every frame of the resting pulse and of a
-// drag, the rest over a turn or a resize. An inherited property that moves makes the browser
-// re-resolve the style of every element below it, and below a page wrapper is everything
-// printed on the page, some two thousand elements, so the pulse alone cost about 1.5ms a frame
-// per stack on screen and a turn restyled the stack several times over. Registered as not
-// inherited instead, a change reaches only the elements that say `inherit` for it in
-// index.astro: the page content, the flap, the clip wrappers, the grab handle, and the band
-// and strip pseudo-elements. Each of those reads it one level below where it is written, and
-// nothing deeper reads any of them.
-const registerFoldProperties = () => {
-  for (const name of [
-    '--fold-x', '--fold-y', '--fold-back-x', '--fold-back-y', '--fold-page-w', '--fold-page-h',
-    // The pile's reach, transitioned on the stack so the strip behind the crease climbs with it.
-    '--pile-rise', '--pile-drift',
-    // A turned page's own step out, transitioned on the page so its cut, band and translate
-    // climb together.
-    '--turned-drift', '--turned-rise',
-    // The crease intercepts the page content derives from --fold-x/-y for its clip-path.
-    '--crease-excess-x', '--crease-excess-y', '--crease1-x', '--crease1-y', '--crease2-x', '--crease2-y',
-  ]) {
-    registerProperty({ name, syntax: '<length>', inherits: false, initialValue: '0px' });
-  }
-  // The resting crease and the pin never move once the sheet is laid out, and the clip's wire
-  // reads them two levels down, so these stay inherited.
-  for (const name of ['--fold-back-rest-x', '--fold-back-rest-y', '--fold-pin-x', '--fold-pin-y']) {
-    registerProperty({ name, syntax: '<length>', inherits: true, initialValue: '0px' });
-  }
-  // A landing's second crease, written on the flap by renderLanding and read there alone.
-  for (const name of ['--land-x', '--land-y']) {
-    registerProperty({ name, syntax: '<length>', inherits: false, initialValue: '0px' });
-  }
-  for (const name of ['--pile-lean', '--paper-peek']) {
-    registerProperty({ name, syntax: '<angle>', inherits: false, initialValue: '0deg' });
-  }
-  registerProperty({ name: '--page-index', syntax: '<number>', inherits: false, initialValue: '1' });
-  for (const name of [
-    '--flip-progress', '--pages-turned',
-    // What the stack and the pages derive from the count and the index (see index.astro).
-    '--pile-arc', '--pile-arc-under', '--turned-rank', '--turned', '--turned-arc',
-  ]) {
-    registerProperty({ name, syntax: '<number>', inherits: false, initialValue: '0' });
-  }
-  // The strip's turn clock (see --pile-rise in index.astro): at rest by default.
-  registerProperty({ name: '--turn-ease', syntax: '<number>', inherits: false, initialValue: '1' });
-  // The pile's paper, set on the stack by syncPileSurface and unset while nothing is turned,
-  // where the strip falls back to the front page's own. No initial value, so unset it stays
-  // invalid and the fallback applies.
-  registerProperty({ name: '--pile-paper', syntax: '*', inherits: false });
-  // restIdleFold's switch for the pulse layers, set on the sheet and read one level down (by the
-  // clip's shadow two, through the clip): not inherited, so setting it restyles those and not
-  // the page's content.
-  registerProperty({ name: '--fold-pulse', syntax: '*', inherits: false });
-  // How far the flap is off the page (see index.astro), registered so its tone eases between
-  // rest, in hand and past the commit point. Set on the flap and the cast shadow themselves,
-  // so nothing inherits it while it eases.
-  registerProperty({ name: '--fold-lift', syntax: '<number>', inherits: false, initialValue: '0' });
-};
-
 export function initPaperStackFold(): void {
   const run = () => {
-    registerFoldProperties();
     for (const stack of document.querySelectorAll<HTMLElement>('[data-paper-stack-root]')) {
       const fold = stack.querySelector<HTMLElement>('.paper-fold');
       const grab = stack.querySelector<HTMLElement>('.paper-back-grab');
