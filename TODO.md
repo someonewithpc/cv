@@ -138,4 +138,4 @@
 - [x] Show the demo title card's text on narrower desks (#151)
 - [x] Lay out the title card's slip in CSS, with no script (#161)
 - [x] A window drag measures the scene, marker canvas and event bus token once, for the final size (#163)
-- [ ] Page load and theme switches read every page's paper colour, forcing a style pass each
+- [x] Page load and theme switches read every page's paper colour, forcing a style pass each (#180)
