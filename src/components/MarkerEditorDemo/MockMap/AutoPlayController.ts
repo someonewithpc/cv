@@ -1,6 +1,6 @@
 import { ActionCreators } from 'redux-undo';
 
-import { holdableTimeout, holdableWait } from '@/client/resizeHold';
+import { documentGate } from '@/client/frontPage';
 import { hexToHsv } from '@/components/MarkerEditorDemo/markers/MarkerEditor/markerParts/shared/inlineColorPicker';
 import {
   demoPress,
@@ -491,7 +491,7 @@ export class AutoPlayController {
 
   /** A pause in a run; the caller checks `this.paused` afterwards. */
   private wait(ms: number): Promise<void> {
-    return holdableWait(ms);
+    return documentGate().wait(ms);
   }
 
   /**
@@ -1001,7 +1001,7 @@ export class AutoPlayController {
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
     // One timer at a time: a step that resumed into a fresh chain must not add a second.
     this.timer?.();
-    this.timer = holdableTimeout(() => {
+    this.timer = documentGate().timeout(() => {
       this.timer = null;
       void this.executeStep(step);
     }, delay);

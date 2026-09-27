@@ -81,7 +81,9 @@ export interface DemoGate {
   onChange(listener: (running: boolean, reasons: ReadonlySet<PauseReason>) => void): () => void;
   /** Resolves at once while running, else the next time the gate opens. */
   whenRunning(): Promise<void>;
-  /** Like setTimeout, but its clock stops while the gate is held. */
+  /** Like setTimeout, but its clock stops while the gate is held. Returns a cancel function. */
+  timeout(run: () => void, ms: number): () => void;
+  /** A pause of `ms` on the gate's clock. */
   wait(ms: number): Promise<void>;
   /** Milliseconds the gate has been open, for tweens that pick up where they were held. */
   now(): number;
@@ -115,33 +117,19 @@ export function releaseAll(reason: PauseReason): void {
 }
 
 /**
- * Whether a visitor can see this page and it is holding still: its stack is on screen, the
- * page is the one drawn on top, no committed turn is under way on that stack, and the tab is
- * showing. Starts held for `offscreen` until the first intersection report says otherwise.
- *
- * The turn is in it because a demo playing under a page that is folding away costs the turn
- * its frames, and re-resolves the style of everything printed on that page as it goes. It only
- * counts from the commit point: a drag that comes back short of it never pauses anything, so
- * whatever is expensive to stop and start again — the Space Builder's WebGL context above all
- * — is never churned by a reader merely fiddling with the dog-ear. The page arriving at the
- * front waits for the settle in the same way, rather than coming alive under a sheet still
- * gliding over it.
+ * The clock and listeners every gate shares. `ignore` lists reasons this gate never takes,
+ * whoever holds them.
  */
-export function demoGate(el: Element): DemoGate {
-  const stack = el.closest<HTMLElement>('[data-paper-stack-root]') ?? el;
-  const reasons = new Set<PauseReason>(['offscreen', ...heldEverywhere]);
-  if (!isFrontPage(el)) reasons.add('back-page');
-  if (turningStacks.has(stack)) reasons.add('turning');
-  if (tabHidden()) reasons.add('hidden');
-
+function openGate(initial: Iterable<PauseReason>, ignore: readonly PauseReason[], cleanup: () => void) {
+  const reasons = new Set<PauseReason>([...initial].filter((reason) => !ignore.includes(reason)));
   const listeners = new Set<(running: boolean, reasons: ReadonlySet<PauseReason>) => void>();
   let waiters: Array<() => void> = [];
-  let running = false;
+  let running = reasons.size === 0;
   let openFor = 0;
-  let openedAt = 0;
+  let openedAt = performance.now();
 
   const set = (reason: PauseReason, on: boolean) => {
-    if (reasons.has(reason) === on) return;
+    if (ignore.includes(reason) || reasons.has(reason) === on) return;
     if (on) reasons.add(reason);
     else reasons.delete(reason);
     const next = reasons.size === 0;
@@ -156,18 +144,6 @@ export function demoGate(el: Element): DemoGate {
     }
     for (const listener of [...listeners]) listener(running, reasons);
   };
-
-  const stopFrontWatch = watchFrontPage(el, (front) => set('back-page', !front));
-
-  // Viewport root, not the stack: with root:stack a page reads as intersecting even while
-  // the whole stack is still below the fold (see TechnicalDrawing/Stack.astro).
-  const observer = new IntersectionObserver(
-    (entries) => set('offscreen', !entries[entries.length - 1]?.isIntersecting),
-    { threshold: 0.2 },
-  );
-  observer.observe(stack);
-
-  const stopTurnWatch = watchStackTurning(stack, () => set('turning', turningStacks.has(stack)));
 
   const whenRunning = () => (running ? Promise.resolve() : new Promise<void>((wake) => waiters.push(wake)));
 
@@ -191,44 +167,100 @@ export function demoGate(el: Element): DemoGate {
     whenRunning,
     now: () => openFor + (running ? performance.now() - openedAt : 0),
     frame: () => whenRunning().then(() => new Promise<void>((next) => requestAnimationFrame(() => next()))),
-    wait(ms) {
-      return new Promise<void>((resolve) => {
-        let left = ms;
-        let since = 0;
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const start = () => {
-          since = performance.now();
-          timer = setTimeout(finish, left);
-        };
-        const stop = () => {
-          clearTimeout(timer);
-          left -= performance.now() - since;
-        };
-        const off = gate.onChange((open) => (open ? start() : stop()));
-        function finish() {
-          off();
-          resolve();
-        }
-        if (running) start();
-      });
+    timeout(run, ms) {
+      let left = ms;
+      let since = 0;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const start = () => {
+        since = performance.now();
+        timer = setTimeout(finish, left);
+      };
+      const stop = () => {
+        clearTimeout(timer);
+        left -= performance.now() - since;
+      };
+      const off = gate.onChange((open) => (open ? start() : stop()));
+      function finish() {
+        off();
+        run();
+      }
+      if (running) start();
+      return () => {
+        clearTimeout(timer);
+        off();
+      };
     },
+    wait: (ms) => new Promise<void>((resolve) => gate.timeout(resolve, ms)),
     dispose() {
-      stopFrontWatch();
-      stopTurnWatch();
-      observer.disconnect();
+      cleanup();
       listeners.clear();
       gates.delete(entry);
     },
   };
+  return { gate, set };
+}
+
+/**
+ * Whether a visitor can see this page and it is holding still: its stack is on screen, the
+ * page is the one drawn on top, no committed turn is under way on that stack, and the tab is
+ * showing. Starts held for `offscreen` until the first intersection report says otherwise.
+ *
+ * The turn is in it because a demo playing under a page that is folding away costs the turn
+ * its frames, and re-resolves the style of everything printed on that page as it goes. It only
+ * counts from the commit point: a drag that comes back short of it never pauses anything, so
+ * whatever is expensive to stop and start again — the Space Builder's WebGL context above all
+ * — is never churned by a reader merely fiddling with the dog-ear. The page arriving at the
+ * front waits for the settle in the same way, rather than coming alive under a sheet still
+ * gliding over it.
+ */
+export function demoGate(el: Element, ignore: readonly PauseReason[] = []): DemoGate {
+  const stack = el.closest<HTMLElement>('[data-paper-stack-root]') ?? el;
+  const initial = new Set<PauseReason>(['offscreen', ...heldEverywhere]);
+  if (!isFrontPage(el)) initial.add('back-page');
+  if (turningStacks.has(stack)) initial.add('turning');
+  if (tabHidden()) initial.add('hidden');
+
+  const stops: Array<() => void> = [];
+  const { gate, set } = openGate(initial, ignore, () => stops.forEach((stop) => stop()));
+
+  stops.push(watchFrontPage(el, (front) => set('back-page', !front)));
+
+  // Viewport root, not the stack: with root:stack a page reads as intersecting even while
+  // the whole stack is still below the fold (see TechnicalDrawing/Stack.astro).
+  const observer = new IntersectionObserver(
+    (entries) => set('offscreen', !entries[entries.length - 1]?.isIntersecting),
+    { threshold: 0.2 },
+  );
+  observer.observe(stack);
+  stops.push(() => observer.disconnect());
+
+  stops.push(watchStackTurning(stack, () => set('turning', turningStacks.has(stack))));
+
   return gate;
 }
 
-/** `onChange` fires on every change of the page's gate, starting from inactive. */
+let shared: DemoGate | undefined;
+
+/**
+ * A gate with no page to watch, held only by `holdAll` and a hidden tab: the clock for the
+ * timers of demos that follow their page through `watchPageActive`. Made on first use, since
+ * the modules that import it render on the server too.
+ */
+export function documentGate(): DemoGate {
+  shared ??= openGate([...heldEverywhere, ...(tabHidden() ? ['hidden' as const] : [])], [], () => {}).gate;
+  return shared;
+}
+
+/**
+ * `onChange` fires on every change of the page's gate, starting from inactive. A resize hold
+ * is left out: these callers stop and restart their demo on a change, and a resize only
+ * stops their clocks, which run on `documentGate()`.
+ */
 export function watchPageActive(
   el: Element,
   onChange: (active: boolean, reasons: ReadonlySet<PauseReason>) => void,
 ): () => void {
-  const gate = demoGate(el);
+  const gate = demoGate(el, ['resize']);
   gate.onChange(onChange);
   return () => gate.dispose();
 }

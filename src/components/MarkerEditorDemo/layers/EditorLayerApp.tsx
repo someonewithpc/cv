@@ -10,7 +10,7 @@ import {
 import { StoreProvider } from '@/store/StoreProvider';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { watchPageActive } from '@/client/frontPage';
+import { documentGate, watchPageActive } from '@/client/frontPage';
 
 import { MarkerEditor } from '../markers/MarkerEditor';
 import { useLiveMarkerEditorSessionCount } from '../markers/liveMarkerEditorSession';
@@ -99,7 +99,7 @@ function EditorLayerInner() {
     let held = false;
 
     const id = window.setInterval(() => {
-      if (held) return;
+      if (held || !documentGate().running) return;
       const target = AUTOPLAY_TARGETS[stepRef.current % AUTOPLAY_TARGETS.length];
       stepRef.current += 1;
       host.querySelector<HTMLElement>(`[data-demo-target="${target}"]`)?.click();

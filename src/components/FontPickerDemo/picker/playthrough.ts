@@ -2,7 +2,7 @@
 // and resumed between them. Everything a scene does goes through a Run bound to one token,
 // so a pause mid-scene unwinds it at the next await instead of leaving a half-typed field.
 
-import { holdableWait } from '@/client/resizeHold';
+import { documentGate } from '@/client/frontPage';
 
 export const CURSOR_TRAVEL_MS = 560;
 // The first glide after the cursor appears brings it in from beyond the sheet: a longer way,
@@ -16,7 +16,7 @@ export type CursorHook = (state: CursorState | null) => void;
 
 export class Cancelled extends Error {}
 
-export const wait = holdableWait;
+export const wait = (ms: number) => documentGate().wait(ms);
 export const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);

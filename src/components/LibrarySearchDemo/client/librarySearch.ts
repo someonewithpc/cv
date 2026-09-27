@@ -1,15 +1,16 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
-import { demoGate } from '@/client/frontPage';
+import { demoGate, documentGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import { libraryObjects } from '../objects';
 import { formatScore, serialise, type Filters, type SearchResult, type SearchState } from '../search';
-import { requests, wait } from './requests';
+import { requests } from './requests';
 import { initialState } from './state';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const wait = (ms: number) => documentGate().wait(ms);
 
 /** Matches the bar's scale transition in SearchTool.astro. */
 const MOVE_MS = 350;

@@ -7,11 +7,15 @@
  * longer than SETTLE_MS, the frames do, so the hold does not lapse between two frames of the
  * same drag.
  *
- * A stack pauses its front page's animations (the dog-ear pulse, the deck's LED and the
- * like) for the hold, and autoplay timers made with `holdableTimeout` stop counting down,
- * then run out the time they had left. A walkthrough resumes at the step it was on. Nothing here touches a
- * demo's autoplay state, so a demo the reader paused from the deck stays paused.
+ * The hold goes through the demo gates (src/client/frontPage.ts) as `holdAll('resize')`, so
+ * every clock on a gate stops counting and runs out the time it had left once the size
+ * settles. A walkthrough resumes at the step it was on. A stack pauses its front page's
+ * animations (the dog-ear pulse, the deck's LED and the like) through `onResizeHold`, which
+ * the gates cannot do. Nothing here touches a demo's autoplay state, so a demo the reader
+ * paused from the deck stays paused.
  */
+import { holdAll, releaseAll } from './frontPage';
+
 const SETTLE_MS = 300;
 const SETTLE_FRAMES = 4;
 const ATTRIBUTE = 'data-resizing';
@@ -32,6 +36,7 @@ function settle(frameStart: number) {
   }
   holding = false;
   document.documentElement.removeAttribute(ATTRIBUTE);
+  releaseAll('resize');
   listeners.forEach((listener) => listener(false));
 }
 
@@ -41,6 +46,7 @@ function onResize() {
   if (holding) return;
   holding = true;
   document.documentElement.setAttribute(ATTRIBUTE, '');
+  holdAll('resize');
   listeners.forEach((listener) => listener(true));
   requestAnimationFrame(settle);
 }
@@ -61,49 +67,4 @@ export function onResizeHold(listener: Listener) {
   return () => {
     listeners.delete(listener);
   };
-}
-
-/**
- * setTimeout that stops counting while a resize holds the page and runs out the rest once
- * it settles. Returns a cancel function.
- */
-export function holdableTimeout(run: () => void, ms: number) {
-  let left = ms;
-  let started = 0;
-  let timer = 0;
-  let done = false;
-
-  const arm = () => {
-    started = performance.now();
-    timer = window.setTimeout(() => {
-      done = true;
-      stop();
-      run();
-    }, Math.max(0, left));
-  };
-
-  const stop = onResizeHold((held) => {
-    if (done) return;
-    if (held) {
-      window.clearTimeout(timer);
-      left -= performance.now() - started;
-    } else {
-      arm();
-    }
-  });
-
-  if (!holding) arm();
-
-  return () => {
-    done = true;
-    window.clearTimeout(timer);
-    stop();
-  };
-}
-
-/** A pause of `ms` that a resize stretches by however long it holds the page. */
-export function holdableWait(ms: number) {
-  return new Promise<void>((resolve) => {
-    holdableTimeout(resolve, ms);
-  });
 }

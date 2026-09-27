@@ -3,8 +3,7 @@ import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchPageActive } from '@/client/frontPage';
-import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
+import { documentGate, watchPageActive } from '@/client/frontPage';
 
 import {
   claimSpaceBuilderGpu,
@@ -34,7 +33,7 @@ const metrics = ref<{ theta: number; r: number; offset: number } | null>(null);
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
-let stopResizeHold: (() => void) | null = null;
+let stopClockWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
 
@@ -72,7 +71,7 @@ function stopOrbitLoop() {
 }
 
 function applyOrbitState() {
-  if (playing.value && inView && !noteOpen && !isResizeHeld()) startOrbitLoop();
+  if (playing.value && inView && !noteOpen && documentGate().running) startOrbitLoop();
   else stopOrbitLoop();
   // Drives the sheet's status chip (TechnicalDrawing/Page.astro).
   reportAutoplayState(rootRef.value, reducedMotion ? 'off' : playing.value ? 'playing' : 'user');
@@ -250,7 +249,7 @@ onMounted(async () => {
       if (open) scene.pause();
       else scene.resume();
     });
-    stopResizeHold = onResizeHold(applyOrbitState);
+    stopClockWatch = documentGate().onChange(() => applyOrbitState());
 
     onAutoplayCommand(root, (command) => {
       if (command === 'pause') pauseForManualControl();
@@ -269,8 +268,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  stopResizeHold?.();
-  stopResizeHold = null;
+  stopClockWatch?.();
+  stopClockWatch = null;
   stopPageWatch?.();
   stopPageWatch = null;
   stopNoteWatch?.();

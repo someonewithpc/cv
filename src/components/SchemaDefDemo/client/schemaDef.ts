@@ -1,5 +1,5 @@
 import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchPageActive } from '@/client/frontPage';
+import { documentGate, watchPageActive } from '@/client/frontPage';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -31,7 +31,7 @@ export function initSchemaDef(root: HTMLElement) {
   let playing = false;
   let active = false;
   let step = -1;
-  let timer: number | undefined;
+  let cancelStep = () => {};
 
   const linesOf = (pane: HTMLElement) => [...pane.querySelectorAll<HTMLElement>('.line[data-key]')];
 
@@ -69,9 +69,9 @@ export function initSchemaDef(root: HTMLElement) {
   };
 
   const schedule = () => {
-    window.clearTimeout(timer);
+    cancelStep();
     if (!playing || !active) return;
-    timer = window.setTimeout(() => {
+    cancelStep = documentGate().timeout(() => {
       step = (step + 1) % keys.length;
       light(keys[step]);
       schedule();

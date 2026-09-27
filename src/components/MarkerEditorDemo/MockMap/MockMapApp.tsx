@@ -17,8 +17,7 @@ import {
 import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchPageActive } from '@/client/frontPage';
-import { isResizeHeld } from '@/client/resizeHold';
+import { documentGate, watchPageActive } from '@/client/frontPage';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -345,7 +344,7 @@ function MockMapOverlayInner() {
         !el?.isConnected
         || userControlRef.current
         || cursorPhaseRef.current !== 'demo'
-        || isResizeHeld()
+        || !documentGate().running
       ) {
         return;
       }

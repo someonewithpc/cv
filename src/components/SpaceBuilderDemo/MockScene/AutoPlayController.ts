@@ -1,4 +1,4 @@
-import { holdableTimeout, holdableWait } from '@/client/resizeHold';
+import { documentGate } from '@/client/frontPage';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
@@ -78,7 +78,7 @@ const SIDEBAR_SCROLL_MS = 480;
 /** Ignore sub-pixel / layout jitter when deciding whether the cursor actually moved. */
 const CURSOR_MOVE_EPS_PX = 8;
 
-const wait = holdableWait;
+const wait = (ms: number) => documentGate().wait(ms);
 
 function waitFrames(count = 1) {
   return new Promise<void>((resolve) => {
@@ -340,7 +340,7 @@ export class AutoPlayController {
     const delay = typeof step.delay === 'function' ? step.delay() : step.delay;
     // One timer at a time: a step that resumed into a fresh chain must not add a second.
     this.timer?.();
-    this.timer = holdableTimeout(() => {
+    this.timer = documentGate().timeout(() => {
       this.timer = null;
       void this.runStep(step);
     }, delay);
