@@ -44,7 +44,9 @@
   }
 }
 
-.column {
+// Scoped: the Library Search sheet has columns of its own, and this sheet loads only when the
+// picker boots
+.held-controls .column {
   display: grid;
   // Close: a drag to the top of the size slider grows the column by three quarters, and the
   // foot of it has to clear the frame line
@@ -53,7 +55,7 @@
   min-width: 0;
 }
 
-.column-title {
+.held-controls .column-title {
   @include sheet-prose;
 
   margin: 0;
@@ -62,7 +64,7 @@
   font-size: 0.875em;
 }
 
-.column-caption {
+.held-controls .column-caption {
   @include sheet-prose;
 
   margin: 0;
