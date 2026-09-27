@@ -149,3 +149,4 @@
 - [x] The Marker Editor walkthrough drags read no layout per frame (#178)
 - [x] Skip style, layout and paint for the stacks off screen (#185)
 - [ ] Detail callout bubble sits on the same side down the page while its block alternates, past 105rem
+- [ ] Try `contain` on the boxes that do not depend on their surroundings (#179)
