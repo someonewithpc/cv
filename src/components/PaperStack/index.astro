@@ -969,6 +969,11 @@ const pages = await Promise.all(
   [data-paper-stack-root][data-paper-stack] {
     // How far each sheet under the current one shows below it.
     --pile-step: 0.25rem;
+    // How far the row reaches past the sheet on either side. A snap lands on a whole pixel and a
+    // sheet is rarely a whole number of pixels wide, so a sheet can rest up to half a pixel off
+    // centre; a row cut flush with it would shave that side's border. The gap between sheets
+    // keeps the next one out of that strip.
+    --row-slack: 0.125rem;
     --pile-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface-sunken)));
 
     display: flex !important;
@@ -982,15 +987,23 @@ const pages = await Promise.all(
     touch-action: auto !important;
     transition: none !important;
     counter-reset: paper-sheet;
+    // The slack goes on outside the box the stack sizes (width and aspect ratio), so the sheets
+    // keep the size they have with script on.
+    box-sizing: content-box;
+    margin-inline: calc(-1 * var(--row-slack));
+    padding-inline: var(--row-slack);
+    column-gap: calc(2 * var(--row-slack));
 
     // The rest of the stack, as two sheet edges under the one in front: the row scrolls past
-    // them, the pile stays put. The margin is the pile's room.
-    border-radius: calc(0.5em + 1px);
+    // them, the pile stays put. The margin is the pile's room. The row's corners are the
+    // sheet's own, --row-slack further out, so they clip nothing of it; the shadows take the
+    // slack back off each side and drop by it, which leaves the pile where it was.
+    border-radius: calc(0.5em + var(--row-slack));
     box-shadow:
-      0 var(--pile-step) 0 calc(-0.5 * var(--pile-step)) var(--pile-paper),
-      0 var(--pile-step) 0 calc(1px - 0.5 * var(--pile-step)) var(--line-strong),
-      0 calc(2 * var(--pile-step)) 0 calc(-1 * var(--pile-step)) var(--pile-paper),
-      0 calc(2 * var(--pile-step)) 0 calc(1px - var(--pile-step)) var(--line-strong);
+      0 calc(var(--pile-step) + var(--row-slack)) 0 calc(-0.5 * var(--pile-step) - var(--row-slack)) var(--pile-paper),
+      0 calc(var(--pile-step) + var(--row-slack)) 0 calc(1px - 0.5 * var(--pile-step) - var(--row-slack)) var(--line-strong),
+      0 calc(2 * var(--pile-step) + var(--row-slack)) 0 calc(-1 * var(--pile-step) - var(--row-slack)) var(--pile-paper),
+      0 calc(2 * var(--pile-step) + var(--row-slack)) 0 calc(1px - var(--pile-step) - var(--row-slack)) var(--line-strong);
     margin-bottom: calc(2 * var(--pile-step)) !important;
 
     > * {
@@ -998,6 +1011,9 @@ const pages = await Promise.all(
       /* Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
          scrollWidth, leaving a permanent horizontal scrollbar on every page. */
       overflow: clip;
+      // The sheet's own corner. The scripted stack's calc(0.5em + 1px) clips nothing there, since
+      // nothing clips that wrapper; here it would shave the sheet's rounded corner.
+      border-radius: 0.5em !important;
       scroll-snap-align: center;
       scroll-snap-stop: always;
       container-type: scroll-state;
@@ -1042,7 +1058,7 @@ const pages = await Promise.all(
       // Half of each arrow lies past the sheet's side edge, so the circle is never wider than
       // twice the room beside the sheet. On a phone the mat runs edge to edge and leaves 12 to
       // 15px there.
-      --arrow-size: min(2rem, 100vw - anchor-size(width));
+      --arrow-size: min(2rem, 100vw - anchor-size(width) + 2 * var(--row-slack));
       // The arrow is drawn, not set in a font. A glyph sits where its font puts it, below the
       // circle's middle in most monospace faces. It is a shaft --arrow-length long and a head
       // --arrow-head tall, both --arrow-stroke thick, pointing to the previous sheet.
@@ -1066,8 +1082,8 @@ const pages = await Promise.all(
         position-anchor: --technical-drawing-stack;
         position: absolute;
         top: calc(anchor(bottom) - var(--dot-mat));
-        left: anchor(left);
-        right: anchor(right);
+        left: calc(anchor(left) + var(--row-slack));
+        right: calc(anchor(right) + var(--row-slack));
         height: var(--dot-mat);
         display: flex;
         justify-content: center;
@@ -1147,12 +1163,12 @@ const pages = await Promise.all(
 
       &::scroll-button(left) {
         content: "" / "Previous sheet";
-        left: calc(anchor(left) - var(--arrow-size) / 2);
+        left: calc(anchor(left) + var(--row-slack) - var(--arrow-size) / 2);
       }
 
       &::scroll-button(right) {
         content: "" / "Next sheet";
-        right: calc(anchor(right) - var(--arrow-size) / 2);
+        right: calc(anchor(right) + var(--row-slack) - var(--arrow-size) / 2);
         // The same arrow, turned to face the next sheet.
         scale: -1 1;
       }
