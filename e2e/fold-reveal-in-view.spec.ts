@@ -9,7 +9,7 @@ import { expect, test, type Locator } from '@playwright/test';
  * Chrome paints the page's crease cut where it stood when that animation started, so the flap
  * drew itself over an uncut corner.
  */
-async function foldState(stack: Locator): Promise<{ reveal: string, pulses: string[], flap: number }> {
+async function foldState(stack: Locator): Promise<{ reveal: string, pulses: string[], flap: number, flapOpacity: string }> {
   return stack.evaluate((el) => {
     const front = el.querySelector<HTMLElement>('.paper-front')!;
     const animations = front.getAnimations({ subtree: true }) as CSSAnimation[];
@@ -20,11 +20,12 @@ async function foldState(stack: Locator): Promise<{ reveal: string, pulses: stri
         .filter((animation) => animation.animationName?.startsWith('fold-pulse-'))
         .map((animation) => animation.playState),
       flap: front.querySelector<HTMLElement>(':scope > .paper-fold')!.getBoundingClientRect().width,
+      flapOpacity: getComputedStyle(front.querySelector(':scope > .paper-fold')!).opacity,
     };
   });
 }
 
-type RevealFrame = { progress: number | null, spread: number, pulses: number };
+type RevealFrame = { progress: number | null, spread: number, pulses: number, flapOpacity: string };
 
 /**
  * Every frame from now until the reveal has finished: its progress, how far apart the fold
@@ -48,6 +49,7 @@ async function revealFrames(stack: Locator): Promise<RevealFrame[]> {
         progress: reveal ? reveal.effect!.getComputedTiming().progress ?? null : null,
         spread: Math.max(...sizes) - Math.min(...sizes),
         pulses: animations.filter((animation) => animation.animationName?.startsWith('fold-pulse-')).length,
+        flapOpacity: getComputedStyle(layers[1][0]).opacity,
       });
       if (reveal?.playState === 'finished' || frames.length > 600) resolve(frames);
       else requestAnimationFrame(sample);
@@ -74,8 +76,10 @@ test('a stack far down the page reveals its dog-ear only once its corner is on s
   const waiting = await foldState(stack);
   expect(waiting.reveal).toBe('paused at 0');
   expect(waiting.pulses).toEqual([]);
-  // Only the flap's 1px border on each side: the fold is still 0 by 0.
+  // Only the flap's 1px border on each side: the fold is still 0 by 0, and that border would
+  // paint a dot on the sheet's corner.
   expect(waiting.flap).toBeLessThan(3);
+  expect(waiting.flapOpacity).toBe('0');
 
   // Most of the stack in view, but not the corner the dog-ear is in.
   await bottomEdgeBelowWindow(stack, 120);
@@ -89,6 +93,7 @@ test('a stack far down the page reveals its dog-ear only once its corner is on s
   // The page's cut, the flap and its shadow grow as one, and no pulse is there to hold the cut.
   expect(Math.max(...frames.map((frame) => frame.spread))).toBe(0);
   expect(drawing.map((frame) => frame.pulses)).toEqual(drawing.map(() => 0));
+  expect(drawing.map((frame) => frame.flapOpacity)).toEqual(drawing.map(() => '1'));
   expect((await foldState(stack)).reveal).toBe('finished at 1000');
   await expect.poll(async () => (await foldState(stack)).pulses, { timeout: 2_000 }).toEqual(['running', 'running', 'running']);
   const shown = await foldState(stack);
