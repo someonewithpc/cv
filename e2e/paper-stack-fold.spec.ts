@@ -88,8 +88,8 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
 
-  // The flap paints the back of the sheet in the page's own colour, lifted off it by JS, so a
-  // theme switch has to be picked up there as well as in the stylesheet.
+  // The flap paints the back of the sheet in the page's own colour, which it can't read off the
+  // page itself (it is the page's sibling), so a theme switch has to reach it too.
   for (const theme of ['dark', 'arctic', 'dark-forest', 'light']) {
     await page.locator(`#theme-picker input[value="${theme}"]`).click({ force: true });
     // The picker writes data-theme back once its view transition has finished
@@ -104,6 +104,27 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
       return { fold: getComputedStyle(fold).backgroundColor, page: getComputedStyle(section).backgroundColor };
     });
     expect(paint.fold, `dog-ear under the ${theme} theme`).toBe(paint.page);
+  }
+});
+
+test('every page paints the back of its sheet in its own paper, in every theme', async ({ page }) => {
+  await page.waitForTimeout(500);
+
+  // The stylesheet picks each page's back from its class, apart from the face Page.astro
+  // paints, so a page kind the two disagree on shows here as a band of the wrong colour.
+  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+    await page.locator(`#theme-picker input[value="${theme}"]`).click({ force: true });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+    const papers = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-paper-stack-root] > div')].map((sheet) => ({
+        stack: sheet.parentElement!.getAttribute('aria-label'),
+        face: getComputedStyle(sheet.querySelector(':scope > section')!).backgroundColor,
+        back: getComputedStyle(sheet, '::after').backgroundColor,
+      })),
+    );
+    expect(papers.length).toBeGreaterThan(0);
+    for (const { stack, face, back } of papers) expect(back, `a page of ${stack} under the ${theme} theme`).toBe(face);
   }
 });
 
