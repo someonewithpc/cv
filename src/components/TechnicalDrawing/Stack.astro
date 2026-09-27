@@ -406,6 +406,15 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
   top: calc(var(--paper-clip-lean-y, 4.5em) / 2);
   rotate: calc(180deg + atan2(var(--paper-clip-lean-x, 2.25em), var(--paper-clip-lean-y, 4.5em)));
 }
+
+// Once armed, the hint layer stays armed: a page loaded with script and then switched off in
+// DevTools keeps the attribute, while the stack it points at has become the no-script scroll
+// row, with no corner to peel.
+@media (scripting: none) {
+  .flip-hints {
+    display: none !important;
+  }
+}
 </style>
 
 <script>
