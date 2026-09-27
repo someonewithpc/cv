@@ -1,0 +1,216 @@
+---
+/**
+ * The stack without script: a scroll-snap row one sheet wide, with the neighbours out of
+ * view on either side, the arrows half over the sheet's edges, a dot per sheet and the pile
+ * as two shadows under the row. Drawn as PaperStack/index.astro styles it under
+ * (scripting: none), with Chrome's scroll buttons and markers.
+ */
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+const annotationScale = 0.6;
+const annotationFontSize = 0.1 * annotationScale;
+
+const row = { x: 60, y: 30, w: 140, h: 70 };
+const right = row.x + row.w;
+const bottom = row.y + row.h;
+const middle = row.y + row.h / 2;
+const gap = 10;
+const arrow = 9;
+const dots = [0, 1, 2, 3];
+---
+
+<div class="wrapper">
+  <p class="point typewriter">A row, one sheet wide</p>
+
+  <Annotations scale={annotationScale} reach={1}>
+    <svg class="row-drawing" viewBox="-70 -20 400 170" slot="content" aria-hidden="true">
+      {/* The neighbours, past the row's edges and out of view. */}
+      <rect class="ghost" data-part="prev" x={row.x - gap - row.w} y={row.y} width={row.w} height={row.h} rx="3" />
+      <rect class="ghost" data-part="next" x={right + gap} y={row.y} width={row.w} height={row.h} rx="3" />
+
+      {/* The pile under the row: two sheet edges, a step apart. */}
+      <g data-part="pile">
+        <line class="edge" x1={row.x + 4} y1={bottom + 7} x2={right - 4} y2={bottom + 7} />
+        <line class="edge" x1={row.x + 2} y1={bottom + 3.5} x2={right - 2} y2={bottom + 3.5} />
+      </g>
+
+      {/* The sheet the row rests on. */}
+      <rect class="paper" data-part="sheet" x={row.x} y={row.y} width={row.w} height={row.h} rx="3" />
+      {[16, 26, 36].map((dy) => <line class="rule" x1={row.x + 12} y1={row.y + dy} x2={row.x + (dy > 30 ? 60 : 100)} y2={row.y + dy} />)}
+      <rect class="block" x={right - 52} y={bottom - 18} width="44" height="12" />
+
+      {/* The arrows, half on the sheet and half off. */}
+      <g data-part="arrow-prev" transform={`translate(${row.x} ${middle})`}>
+        <circle class="ring" r={arrow} />
+        <path class="glyph" d="M2.5 -3.5 L-1 0 L2.5 3.5 M-1 0 H4" />
+      </g>
+      <g data-part="arrow-next" transform={`translate(${right} ${middle})`}>
+        <circle class="ring" r={arrow} />
+        <path class="glyph" d="M-2.5 -3.5 L1 0 L-2.5 3.5 M1 0 H-4" />
+      </g>
+
+      {/* A dot per sheet in the bottom margin, the current one lit. */}
+      <g data-part="dots">
+        {dots.map((dot) => (
+          <circle class:list={['dot', { current: dot === 0 }]} cx={row.x + row.w / 2 + (dot - 1.5) * 8} cy={bottom - 6} r="1.75" />
+        ))}
+      </g>
+    </svg>
+
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        target='[data-part="sheet"]'
+        anchor="0.5 0.05"
+        tipX={0}
+        tipY={-0.37}
+        angle={90}
+        length={0.4}
+        labelSide="left"
+        fontSize={annotationFontSize}
+        text="scroll-snap-type: x mandatory"
+      />
+      <ArrowAnnotation
+        target='[data-part="next"]'
+        anchor="0.5 0.1"
+        tipX={0.75}
+        tipY={-0.33}
+        angle={90}
+        length={0.45}
+        fontSize={annotationFontSize}
+        text="next sheet, snapped to centre"
+      />
+      <ArrowAnnotation
+        target='[data-part="arrow-next"]'
+        anchor="center"
+        tipX={0.35}
+        tipY={0}
+        angle={60}
+        length={0.45}
+        fontSize={annotationFontSize}
+        text="::scroll-button, half over the edge"
+      />
+      <ArrowAnnotation
+        target='[data-part="dots"]'
+        anchor="center"
+        tipX={0}
+        tipY={0.35}
+        angle={-80}
+        length={0.5}
+        fontSize={annotationFontSize}
+        text="::scroll-marker per sheet, :target-current lit"
+      />
+      <ArrowAnnotation
+        target='[data-part="pile"]'
+        anchor="0 0.5"
+        tipX={-0.34}
+        tipY={0.46}
+        angle={-150}
+        length={0.4}
+        labelSide="left"
+        fontSize={annotationFontSize}
+        text="the pile, two box-shadows"
+      />
+    </Fragment>
+  </Annotations>
+
+  <p class="footnote">
+    All of it lives under <code>@media (scripting: none)</code>, so a page that loses script after
+    load becomes the row on the spot. Firefox has no scroll buttons or markers: there the sheets stand
+    1rem apart and the next one's edge shows 1.75rem in.
+  </p>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+  @include sheet-type;
+
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  row-gap: 0.5em;
+  max-width: min(92cqw, 100%);
+  margin-inline: auto;
+
+  > :global(.content) {
+    width: min(100%, 36em);
+  }
+}
+
+.point {
+  @include point;
+}
+
+.row-drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+
+  .paper {
+    @include line-art;
+    fill: var(--sheet-paper);
+  }
+
+  .ghost {
+    @include line-art;
+    stroke: var(--line-strong);
+    stroke-dasharray: 3 3;
+    fill: var(--sheet-paper);
+    opacity: 0.5;
+  }
+
+  .edge {
+    @include line-art;
+    stroke: var(--line-strong);
+  }
+
+  .rule {
+    @include line-art;
+    stroke: var(--line-strong);
+  }
+
+  .block {
+    @include line-art;
+    stroke: var(--line-strong);
+  }
+
+  .ring {
+    @include line-art;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    fill: var(--sheet-paper);
+  }
+
+  .glyph {
+    @include line-art;
+    stroke-width: 1.5;
+  }
+
+  .dot {
+    @include line-art;
+    stroke: var(--line-strong);
+
+    &.current {
+      stroke: var(--accent);
+      fill: var(--accent);
+    }
+  }
+}
+
+.footnote {
+  margin: 0;
+  font-size: max(0.5rem, 0.6875em);
+  line-height: 1.35;
+  color: var(--ink-muted);
+  text-align: center;
+  text-wrap: pretty;
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+</style>

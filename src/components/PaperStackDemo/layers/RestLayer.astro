@@ -1,0 +1,203 @@
+---
+/**
+ * What holds a demo still and what keeps going at rest. The board on the left is live: it
+ * opens a demo gate of its own (src/client/frontPage.ts), the same gate every walkthrough on
+ * the page runs on, and lights a lamp for each reason the gate is held. It listens and never
+ * polls, so at rest it costs nothing.
+ */
+const lamps = [
+  { reason: 'offscreen', label: 'stack off screen' },
+  { reason: 'back-page', label: 'behind the front page' },
+  { reason: 'hidden', label: 'tab hidden' },
+  { reason: 'resize', label: 'window resizing' },
+];
+
+const notes = [
+  'The dog-ear breathes: three animations the compositor runs on its own, one per layer of the fold, 7.5 s each way. They pause off screen and through a resize.',
+  'A committed turn holds the page too, from the commit point to the settle, and the deck\'s pause key holds a walkthrough for as long as you like.',
+  'The resize hold lasts from the first resize event until the size has kept still for 300 ms and four frames. Every clock on a gate stops with it.',
+  'content-visibility: auto skips style, layout and paint for the stacks well off screen. A size container keeps their height, so the scrollbar stays put.',
+  'Each fold property is registered by @property and not inherited, so a moving value re-resolves the few elements that read it, not the two thousand printed on the page.',
+  'Type is sized from --sheet-inline, the stack\'s width in pixels, never from a container query. A font-size that came out of one cost Chrome seconds per layout.',
+];
+---
+
+<div class="wrapper">
+  <p class="point typewriter">Whenever you can read this, every lamp is off</p>
+
+  <div class="panels">
+    <div class="board" data-gate-board>
+      <span class="notes-heading">This sheet's gate</span>
+      <ul class="lamps">
+        {lamps.map(({ reason, label }) => (
+          <li data-reason={reason}>
+            <span class="lamp" aria-hidden="true"></span>
+            <span class="label">{label}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="tally">
+        <span class="with-script">Holds since the page loaded: <span data-tally>0</span>.</span>
+        <span class="without-script">Without script there is no gate. Nothing on the sheet moves, and the stack is the row on the next sheet.</span>
+      </p>
+    </div>
+
+    <aside class="notes">
+      <span class="notes-heading">What still runs, and what does not</span>
+      <ol>
+        {notes.map((note) => <li>{note}</li>)}
+      </ol>
+    </aside>
+  </div>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+.wrapper {
+  @include sheet-content;
+  @include sheet-type;
+
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  row-gap: 0.5em;
+  max-width: min(92cqw, 100%);
+  margin-inline: auto;
+}
+
+.point {
+  @include point;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 0.75em;
+  align-items: start;
+  width: 100%;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.board {
+  @include drawing-notes;
+}
+
+.lamps {
+  display: grid;
+  gap: 0.375em;
+  margin: 0;
+  padding: 0.5em 0.75em;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-family: "Special Elite", monospace, system-ui;
+    font-size: max(0.5rem, 0.8125em);
+    line-height: 1.25;
+  }
+}
+
+// The deck's LED, one per reason: an empty ring until the reason holds the gate.
+.lamp {
+  flex: none;
+  width: 0.625em;
+  height: 0.625em;
+  border: 1px solid var(--ink-muted);
+  border-radius: 50%;
+  transition: background-color 200ms ease-out, border-color 200ms ease-out;
+
+  [data-lit] > & {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.tally {
+  margin: 0;
+  padding: 0.375em 0.75em 0.5em;
+  border-top: 1px solid var(--line);
+  font-size: max(0.5rem, 0.6875em);
+  line-height: 1.35;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+
+// One of the two lines shows, by whether the page runs script. The media query, not the
+// board's own mark: a page that loses script after load keeps the mark and would lie.
+.without-script {
+  display: none;
+}
+
+@media (scripting: none) {
+  .with-script {
+    display: none;
+  }
+
+  .without-script {
+    display: inline;
+  }
+}
+
+.notes {
+  @include drawing-notes;
+}
+</style>
+
+<script>
+import { demoGate, watchFrontPage, type PauseReason } from '@/client/frontPage';
+import { onResizeHold } from '@/client/resizeHold';
+
+const LAMPS: PauseReason[] = ['offscreen', 'back-page', 'hidden', 'resize'];
+
+function initBoard(board: HTMLElement) {
+  const gate = demoGate(board);
+  const tally = board.querySelector<HTMLElement>('[data-tally]');
+  let holds = 0;
+
+  const show = () => {
+    board.dataset.running = String(gate.running);
+    for (const reason of LAMPS) {
+      board.querySelector(`[data-reason="${reason}"]`)?.toggleAttribute('data-lit', gate.reasons.has(reason));
+    }
+  };
+
+  // The gate reports when it opens or closes. A reason that joins one already holding
+  // changes nothing there, so the two a reader can bring about on a held gate, the page
+  // going behind the front and the window resizing, are watched as well.
+  gate.onChange((running) => {
+    if (!running) holds += 1;
+    if (tally) tally.textContent = String(holds);
+    show();
+  });
+  watchFrontPage(board, show);
+  onResizeHold(show);
+  document.addEventListener('visibilitychange', show);
+
+  show();
+  board.dataset.gateLive = '';
+}
+
+function init() {
+  document.querySelectorAll<HTMLElement>('[data-gate-board]').forEach(initBoard);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init, { once: true });
+} else {
+  init();
+}
+</script>

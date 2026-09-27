@@ -22,6 +22,7 @@ import EventBusDemo from '@/components/EventBusDemo/Demo.astro';
 import FediversePlaygroundDemo from '@/components/FediversePlaygroundDemo/Demo.astro';
 import LibrarySearchDemo from '@/components/LibrarySearchDemo/Demo.astro';
 import WebTsModeDemo from '@/components/WebTsModeDemo/Demo.astro';
+import PaperStackDemo from '@/components/PaperStackDemo/Demo.astro';
 
 import OpenSourceContributions from '@/components/OpenSourceContributions/OpenSourceContributions.astro';
 
@@ -158,6 +159,15 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             part of the file, and highlighting and indenting work across the whole file.
           </TitleCard>
           <WebTsModeDemo />
+        </Callout>
+        <Callout letter="N" title="Paper stack" titleJp="かみをめくる" scale="1:1" headingId="detail-n" cardSide="end">
+          <TitleCard slot="card" title="Paper Stack" medium="CSS, TypeScript" year="2026">
+            Every demo on this page is a stack of drawing sheets, and the dog-ear turns them.
+            These four sheets take the stack apart: the pile and its front page, the fold's
+            three layers and the release that turns a page, what holds the demos still, and
+            the row the stack becomes without script.
+          </TitleCard>
+          <PaperStackDemo />
         </Callout>
       </div>
     </section>

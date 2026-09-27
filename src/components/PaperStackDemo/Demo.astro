@@ -1,0 +1,87 @@
+---
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import PostIt from '@/components/PostIt.astro';
+
+import PileLayer from './layers/PileLayer.astro';
+import FoldLayer from './layers/FoldLayer.astro';
+import RestLayer from './layers/RestLayer.astro';
+import RowLayer from './layers/RowLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+// The weight in the title block is the stack's own script, the one that turns these very
+// sheets, minified the way the site ships it.
+const srcRoot = path.join(process.cwd(), 'src');
+const { outputFiles: [bundle] } = await esbuild.build({
+  entryPoints: [path.join(srcRoot, 'components/PaperStack/fold-drag.ts')],
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  alias: { '@': srcRoot },
+});
+const scriptSize = toKiB(bundle.text);
+
+const layers = {
+  pile: { name: null },
+  fold: { name: 'The Fold', pageStyle: 'blueprint' },
+  rest: { name: 'At Rest', pageStyle: 'blueprint' },
+  row: { name: 'Without Script', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Paper Stack"
+  scale="1:1"
+  size={scriptSize}
+  date="2026"
+  tech={['css3', 'typescript']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      pile: <PileLayer />,
+      fold: <FoldLayer />,
+      rest: <RestLayer />,
+      row: <RowLayer />,
+    }[layer])}
+  </fragment>
+
+  <fragment slot="aside">
+    {(layer: Layer) => ({
+      pile: (
+        <PostIt background="#ea1" color="black">
+          Every page of a stack sits in the same grid cell. Nothing asks the browser which
+          one is on top: a turn renumbers --page-index, and the front page is the one that
+          reads 1
+        </PostIt>
+      ),
+      fold: (
+        <PostIt background="#cde" color="black">
+          Let go with the page's three-quarter point under the flap and the page turns.
+          Short of it, the fold glides back to rest
+        </PostIt>
+      ),
+      rest: (
+        <PostIt background="#dfd" color="black">
+          Resize the window with this sheet in view. The resizing lamp lights, and the
+          dog-ear stops mid-breath until the size settles
+        </PostIt>
+      ),
+      row: (
+        <PostIt background="#fed" color="black">
+          Switch script off and reload: every stack on this page is this row. Chrome draws
+          the arrows and the dots; Firefox shows the next sheet's edge instead
+        </PostIt>
+      ),
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>
