@@ -8,9 +8,9 @@
 import { shownCss } from '../shown';
 
 const rules = [
-  { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }', note: 'light or dark only: the OS has no word for arctic' },
+  { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }', note: 'the OS only knows light and dark' },
   { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]', note: 'written by the pick, kept as cv-theme' },
-  { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)', note: 'no script: CSS alone' },
+  { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)', note: 'works without script' },
 ];
 
 const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first paint'];
@@ -19,7 +19,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
 <div class="default-sheet">
   <header>
     <span class="eyebrow">ThemePicker.astro · Layout.astro</span>
-    <strong>Nothing picked, the OS decides; one pick, and the stamp wins, before the first paint</strong>
+    <strong>The OS decides the theme until a pick, and from then on the stamp decides, before the first paint</strong>
   </header>
 
   <div class="figure">
@@ -40,7 +40,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
         <ol class="reload" data-reload aria-label="A reload with a pick kept">
           {reload.map((stop) => <li><code>{stop}</code></li>)}
         </ol>
-        <span class="caption">A reload: eight lines in the head stamp the kept pick before the first paint</span>
+        <span class="caption">On a reload, eight lines in the head stamp the kept pick before the first paint</span>
       </div>
     </div>
   </div>
