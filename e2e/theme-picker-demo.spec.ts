@@ -170,8 +170,11 @@ test.describe('reduced motion', () => {
     await expect(sheet.locator('.steps > li').first().locator('pre')).toHaveText('const viewTransition = document.startViewTransition(() => { /**/ });');
     await expect(sheet.locator('.inside .row')).toHaveCount(3);
 
-    // Shiki ran at build: keyword spans carry the sheet's variable, and no highlighter script is on the page.
-    expect(await sheet.locator('.steps .astro-code span[style*="--astro-code-token-keyword"]').count()).toBeGreaterThan(0);
+    // Shiki ran at build with github-dark, the loading logo's path data theme: keywords and
+    // functions carry its colours, and no highlighter script is on the page.
+    await expect(sheet.locator('.steps pre.astro-code.github-dark').first()).toBeVisible();
+    expect(await sheet.locator('.steps .astro-code span[style*="#F97583"]').count()).toBeGreaterThan(0);
+    expect(await sheet.locator('.steps .astro-code span[style*="#B392F0"]').count()).toBeGreaterThan(0);
     expect(await page.locator('script[src*="shiki"], script[src*="prism"]').count()).toBe(0);
 
     // One end frame per theme is drawn; the selectors show the one on screen, and the tones

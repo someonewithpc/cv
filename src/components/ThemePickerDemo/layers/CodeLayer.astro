@@ -3,10 +3,9 @@
  * The wipe's script, five steps in the order the picker runs them, each with the lines it
  * runs, and under the frames what transformPath does with a path. Every fragment is
  * checked against its source at build, whitespace aside, so the sheet cannot drift from the
- * code. Shiki colours the fragments at build with the css-variables theme, and the sheet
- * maps its variables onto its own ink, accent and muted tones, so nothing ships to colour
- * them at runtime. Beside the steps, the geometry of the last frame: the viewport with the
- * icon's box in its corner, and the icon grown to the end frame, drawn to the theme on
+ * code. Shiki colours the fragments at build with github-dark, the theme the loading logo's
+ * path data sheet was coloured with, so nothing ships to colour them at runtime. Beside the
+ * steps, the geometry of the last frame: the viewport with the icon's box in its corner, and the icon grown to the end frame, drawn to the theme on
  * screen's own factor and cut at the drawing's edge.
  */
 import fs from 'node:fs/promises';
@@ -143,13 +142,13 @@ const frames = THEME_IDS.map((id) => {
     {steps.map(({ name, fragment }, index) => (
       <li>
         <span class="step-name"><span class="balloon">{index + 1}</span>{name}</span>
-        <Code code={fragment.code.join('\n')} lang="ts" theme="css-variables" wrap={null} />
+        <Code code={fragment.code.join('\n')} lang="ts" theme="github-dark" wrap={null} />
         {index === 3 && (
           <div class="inside">
             <span class="inside-name">Inside transformPath, for both frames</span>
             {inside.map((row) => (
               <div class="row">
-                <Code code={row.fragment.code.join('\n')} lang="ts" theme="css-variables" wrap={null} />
+                <Code code={row.fragment.code.join('\n')} lang="ts" theme="github-dark" wrap={null} />
                 <span class="note">{row.note}</span>
               </div>
             ))}
@@ -208,19 +207,6 @@ const frames = THEME_IDS.map((id) => {
   @include sheet-frame-side;
   grid-template-columns: minmax(0, 13fr) minmax(0, 7fr);
 
-  /* Shiki's css-variables theme, on the sheet's own tones. */
-  --astro-code-foreground: var(--ink);
-  --astro-code-background: transparent;
-  --astro-code-token-keyword: var(--tone-accent);
-  --astro-code-token-string: var(--ink);
-  --astro-code-token-string-expression: var(--ink);
-  --astro-code-token-function: var(--ink);
-  --astro-code-token-constant: var(--ink);
-  --astro-code-token-parameter: var(--ink);
-  --astro-code-token-link: var(--ink);
-  --astro-code-token-punctuation: var(--ink-muted);
-  --astro-code-token-comment: var(--ink-faint);
-
   .figure {
     grid-column: 2;
     grid-row: 2;
@@ -249,8 +235,8 @@ const frames = THEME_IDS.map((id) => {
 
   li {
     display: grid;
-    gap: 0.25em;
-    padding: 0.1875em 0.5em;
+    gap: 0.125em;
+    padding: 0.125em 0.5em;
     border: 1px solid var(--line);
     border-radius: 0.25em;
     background: var(--sheet-paper);
@@ -267,6 +253,7 @@ const frames = THEME_IDS.map((id) => {
 
   pre {
     margin: 0;
+    padding: 0.125em 0.375em;
     font-family: monospace, system-ui;
     font-size: max(0.5rem, 0.75em);
     line-height: 1.2;
