@@ -8,7 +8,6 @@ import PostIt from '@/components/PostIt.astro';
 
 import PileLayer from './layers/PileLayer.astro';
 import FoldLayer from './layers/FoldLayer.astro';
-import RestLayer from './layers/RestLayer.astro';
 import RowLayer from './layers/RowLayer.astro';
 
 function toKiB(text: string) {
@@ -31,7 +30,6 @@ const scriptSize = toKiB(bundle.text);
 const layers = {
   pile: { name: null },
   fold: { name: 'The Fold', pageStyle: 'blueprint' },
-  rest: { name: 'At Rest', pageStyle: 'blueprint' },
   row: { name: 'Without Script', pageStyle: 'blueprint' },
 } as const;
 
@@ -50,7 +48,6 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       pile: <PileLayer />,
       fold: <FoldLayer />,
-      rest: <RestLayer />,
       row: <RowLayer />,
     }[layer])}
   </fragment>
@@ -59,7 +56,7 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       pile: (
         <PostIt background="#ea1" color="black">
-          All four pages share one grid cell. Which one is in front is a number, --page-index,
+          All three pages share one grid cell. Which one is in front is a number, --page-index,
           and a turn renumbers them all
         </PostIt>
       ),
@@ -67,12 +64,6 @@ type Layer = keyof typeof layers;
         <PostIt background="#cde" color="black">
           Let go with the tip past the commit point and the page turns. Short of it, the fold
           glides back. A wheel, a finger or the arrow keys turn the page too
-        </PostIt>
-      ),
-      rest: (
-        <PostIt background="#dfd" color="black">
-          Resize the window with this sheet in view. The resizing lamp lights, and the
-          dog-ear stops mid-breath until the size settles
         </PostIt>
       ),
       row: (
