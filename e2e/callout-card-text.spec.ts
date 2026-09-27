@@ -215,9 +215,10 @@ test('every slip holds its height while the window is resized', async ({ page })
   expect(moved).toEqual([]);
 });
 
-// The lead is the stylesheet's own work, not a script's: with scripts off, every slip is the same
-// height as with them and its title starts at the same place. The top stack is left out: a
-// script arms its peel hint, so without one there is no hint for its slip to clear.
+// Without a script the stack is a scroll row with no fan, and the slip climbs under the front
+// sheet alone (Callout.astro's scripting query): the slip keeps its width and its title's column,
+// and the title stands just under the sheet's edge instead of behind it. The top stack is left
+// out: a script arms its peel hint, so without one there is no hint for its slip to clear.
 for (const width of [390, 768, 1024]) {
   test(`the slips lay out without a script at ${width}px`, async ({ browser }) => {
     const read = async (javaScriptEnabled: boolean) => {
@@ -231,7 +232,8 @@ for (const width of [390, 768, 1024]) {
           .map((callout) => {
             const card = callout.querySelector('.callout-card')!.getBoundingClientRect();
             const title = callout.querySelector('.callout-card dt')!.getBoundingClientRect();
-            return [card.height, title.top - card.top];
+            const stack = callout.querySelector('[data-paper-stack]')!.getBoundingClientRect();
+            return { width: card.width, column: title.left - card.left, drop: title.top - stack.bottom };
           }),
       );
       await context.close();
@@ -239,6 +241,11 @@ for (const width of [390, 768, 1024]) {
     };
     const scripted = await read(true);
     expect(scripted.length).toBeGreaterThan(1);
-    expect(await read(false)).toEqual(scripted);
+    const plain = await read(false);
+    expect(plain.map(({ width, column }) => [width, column])).toEqual(scripted.map(({ width, column }) => [width, column]));
+    for (const [index, { drop }] of plain.entries()) {
+      expect(drop, `slip ${index} title under the sheet's edge`).toBeGreaterThan(0);
+      expect(drop, `slip ${index} title too far from the sheet`).toBeLessThan(32);
+    }
   });
 }
