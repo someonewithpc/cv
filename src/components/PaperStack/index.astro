@@ -123,12 +123,13 @@ const pages = await Promise.all(
   }
 }
 
-// The resting crease and the pin never move once the sheet is laid out, and the clip's wire
-// reads them two levels down, so these stay inherited.
+// The resting crease and the pin follow the sheet's width (Stack.astro's --paper-clip-reach), so
+// inherited they re-resolved on every element under the stack at each resize step: most of a
+// step's layout. The page, its pile strip, the clip and its wire read them and say so.
 @each $name in fold-back-rest-x, fold-back-rest-y, fold-pin-x, fold-pin-y {
   @property --#{$name} {
     syntax: '<length>';
-    inherits: true;
+    inherits: false;
     initial-value: 0px;
   }
 }
@@ -419,6 +420,10 @@ $fold-pulse-y: 2cm;
     & > div {
       grid-area: content;
       border-radius: $border-radius;
+      --fold-back-rest-x: inherit;
+      --fold-back-rest-y: inherit;
+      --fold-pin-x: inherit;
+      --fold-pin-y: inherit;
       transform-origin: var(--fold-pin-x) var(--fold-pin-y);
 
       // What the stack writes or transitions, read here and by the pseudo-elements below.
@@ -535,6 +540,8 @@ $fold-pulse-y: 2cm;
           --pile-drift: inherit;
           --pile-lean: inherit;
           --pile-paper: inherit;
+          --fold-pin-x: inherit;
+          --fold-pin-y: inherit;
           $pin-x: var(--fold-pin-x);
           $pin-y: var(--fold-pin-y);
           --lean-cos: cos(var(--pile-lean));
@@ -756,6 +763,8 @@ $fold-pulse-y: 2cm;
         & > .paper-clip-under {
           --fold-back-x: inherit;
           --fold-back-y: inherit;
+          --fold-back-rest-x: inherit;
+          --fold-back-rest-y: inherit;
           position: absolute;
           inset: 0;
           pointer-events: none;
@@ -804,6 +813,10 @@ $fold-pulse-y: 2cm;
         & > .paper-clip > svg,
         & > .paper-clip-under > svg {
           position: absolute;
+          --fold-back-rest-x: inherit;
+          --fold-back-rest-y: inherit;
+          --fold-pin-x: inherit;
+          --fold-pin-y: inherit;
           left: var(--fold-pin-x);
           top: var(--fold-pin-y);
           // The wire's outer-right edge lies on the resting fold-back crease: its bottom point
