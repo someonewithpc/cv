@@ -1,0 +1,374 @@
+---
+/**
+ * The wipe's script, five steps in the order the picker runs them, each with the lines it
+ * runs. Every fragment is checked against ThemePicker.astro at build, whitespace aside, so
+ * the sheet cannot drift from the code. Beside the steps, the geometry of the last frame:
+ * the icon's box in the viewport's corner and the square the same path is mapped onto,
+ * drawn to scale with the theme on screen's own factor.
+ */
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { Icon } from 'astro-icon/components';
+
+import { THEME_IDS, THEMES } from '@/themes';
+
+import { shownCss } from '../shown';
+
+const steps = [
+  {
+    name: 'Start the transition. Its callback is the switch itself',
+    code: [
+      'const commitTheme = () => { syncRadios(id); persistTheme(id); };',
+      'const viewTransition = document.startViewTransition(commitTheme);',
+    ],
+  },
+  {
+    name: 'Once it is ready, measure the icon and read its path',
+    code: [
+      'viewTransition.ready.then(async () => {',
+      '  const rect = svg.getBoundingClientRect();',
+      '  const pathData = path.getPathData({ normalize: true });',
+    ],
+  },
+  {
+    name: 'First frame: the path mapped from its viewBox onto the icon\'s box',
+    code: [
+      '  const startPathData = transformPath(pathData, viewBox,',
+      '    { x: rect.x, y: rect.y, width: rect.width, height: rect.height });',
+    ],
+  },
+  {
+    name: 'Last frame: the same path on a square 2 × size wide, centred on the icon',
+    code: [
+      '  const size = Math.hypot(window.innerWidth, window.innerHeight)',
+      '    * scaleFactor;',
+      '  const cx = rect.x + rect.width / 2;',
+      '  const cy = rect.y + rect.height / 2;',
+      '  const endPathData = transformPath(pathData, viewBox,',
+      '    { x: cx - size, y: cy - size, width: size * 2, height: size * 2 });',
+    ],
+  },
+  {
+    name: 'Clip the new page to the first frame and grow it to the last',
+    code: [
+      '  document.documentElement.animate(',
+      '    [{ clipPath: `path("${pathDataToString(startPathData)}")` },',
+      '     { clipPath: `path("${pathDataToString(endPathData)}")` }],',
+      '    { duration: 500, easing: \'ease-in\',',
+      '      pseudoElement: \'::view-transition-new(theme-transition)\' });',
+    ],
+  },
+];
+
+/* The fragments must be the picker's own lines: compare with whitespace and trailing commas
+   dropped, line by line, and fail the build on the first that is not in the source. */
+const norm = (text: string) => text.replace(/,\s*([}\])])/g, '$1').replace(/\s*([()[\]{}])\s*/g, '$1').replace(/\s+/g, ' ').trim();
+const source = norm(await fs.readFile(path.join(process.cwd(), 'src/components/ThemePicker.astro'), 'utf8'));
+for (const line of steps.flatMap(({ code }) => code)) {
+  if (!source.includes(norm(line))) throw new Error(`CodeLayer: not in ThemePicker.astro: ${line}`);
+}
+
+/* The drawing, in a 150 by 100 box: the end square fixed on the right, the viewport drawn to
+   scale under it for each theme, its top-right icon centred on the square's centre, and the
+   callout in the room on the left. Labels are HTML, placed in per cent of the box. */
+const box = { width: 150, height: 100 };
+const square = { x: 60, y: 10, size: 80 };
+const icon = 3;
+const cx = 100;
+const cy = 50;
+const pct = (x: number, y: number) => `--x: ${(x / box.width) * 100}%; --y: ${(y / box.height) * 100}%`;
+const geometry = THEME_IDS.map((id) => {
+  const factor = THEMES[id].transitionScaleFactor;
+  const width = square.size / (2 * factor * Math.hypot(1, 0.625));
+  const height = width * 0.625;
+  const right = cx + icon / 2 + 1;
+  const top = cy - icon / 2 - 1;
+  return { id, factor, x: right - width, y: top, width, height, right, bottom: top + height };
+});
+---
+
+<div class="code-sheet">
+  <header>
+    <strong>The wipe's script in five steps, and the geometry of its last frame</strong>
+  </header>
+
+  <ol class="steps" aria-label="The wipe's script">
+    {steps.map(({ name, code }, index) => (
+      <li>
+        <span class="step-name"><span class="balloon">{index + 1}</span>{name}</span>
+        <pre><code>{code.join('\n')}</code></pre>
+      </li>
+    ))}
+  </ol>
+
+  <div class="figure">
+    <div class="drawing" aria-hidden="true">
+      <svg class="geometry" viewBox={`0 0 ${box.width} ${box.height}`}>
+        <rect class="end-square" x={square.x} y={square.y} width={square.size} height={square.size} />
+        <line class="dim" x1={square.x} y1="5" x2={square.x + square.size} y2="5" />
+        <line class="tick" x1={square.x} y1="3.5" x2={square.x} y2="6.5" />
+        <line class="tick" x1={square.x + square.size} y1="3.5" x2={square.x + square.size} y2="6.5" />
+        <line class="dim" x1={cx} y1={cy} x2={square.x + square.size} y2={cy} />
+        <line class="tick" x1={square.x + square.size} y1={cy - 1.5} x2={square.x + square.size} y2={cy + 1.5} />
+        <line class="leader" x1="55" y1="30" x2="78" y2="40" />
+        <circle class="leader-end" cx="78" cy="40" r="0.6" />
+        {geometry.map(({ id, x, y, width, height, right, bottom }) => (
+          <g data-shown={id}>
+            <rect class="viewport" x={x} y={y} width={width} height={height} />
+            <line class="diagonal" x1={x} y1={bottom} x2={right} y2={y} />
+          </g>
+        ))}
+        <rect class="icon-box" x={cx - icon / 2} y={cy - icon / 2} width={icon} height={icon} />
+        <circle class="centre" cx={cx} cy={cy} r="0.6" />
+      </svg>
+
+      <span class="end-icon">
+        {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+      </span>
+      <span class="corner-icon">
+        {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+      </span>
+
+      <span class="label" style={`${pct(cx, 5)}; --dx: -50%; --dy: -100%`}>2 × size</span>
+      <span class="label" style={`${pct(cx + icon, cy)}; --dx: 0; --dy: -100%`}>rect, cx, cy</span>
+      {geometry.map(({ id, factor, x, y, height }) => (
+        <span class="label-set" data-shown={id}>
+          <span class="label" style={`${pct(square.x + square.size, cy)}; --dx: -100%; --dy: 0.25em`}>size = diagonal × {factor}</span>
+          <span class="label" style={`${pct(x - 1, y + height / 2)}; --dx: -100%; --dy: -50%`}>viewport</span>
+        </span>
+      ))}
+
+      <p class="callout" style={pct(0, 12)}>
+        <code>clip-path: path()</code> takes viewport pixels only: no %, em or viewBox units. So the path is scaled and moved in JS, not in CSS.
+      </p>
+    </div>
+  </div>
+</div>
+
+<style is:global set:html={shownCss('.code-sheet')} />
+
+<style lang="scss">
+@use "./sheet" as *;
+
+@include stretch-cell(".code-sheet");
+
+/* The steps take the wider left column and the sheet's full height; the drawing on the
+   right stops above the title block, which reaches into that column only. */
+.code-sheet {
+  @include sheet-content;
+  @include sheet-type(0.028, 0.032);
+  @include sheet-frame;
+  @include sheet-frame-side;
+
+  .figure {
+    grid-column: 2;
+    grid-row: 2;
+    padding-bottom: var(--title-block-block, 0px);
+    justify-items: center;
+    container-type: size;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    .figure {
+      grid-column: auto;
+      grid-row: auto;
+      padding-bottom: 0;
+      container-type: normal;
+    }
+  }
+}
+
+.steps {
+  display: grid;
+  gap: 0.375em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  align-content: center;
+
+  li {
+    display: grid;
+    gap: 0.25em;
+    padding: 0.25em 0.625em;
+    border: 1px solid var(--line);
+    border-radius: 0.25em;
+    background: var(--sheet-paper);
+  }
+
+  .step-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: max(0.625rem, 0.875em);
+    line-height: 1.25;
+    text-wrap: pretty;
+  }
+
+  pre {
+    margin: 0;
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.75em);
+    line-height: 1.25;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--ink-muted);
+
+    :global([data-sheet-orientation='portrait']) & {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+}
+
+.balloon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  font-family: monospace, system-ui;
+  font-size: max(0.625rem, 0.875em);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+}
+
+/* The drawing, as large as the figure's width or height allows on a landscape sheet, where
+   the figure is a size container, and as wide as the column in portrait. */
+.drawing {
+  position: relative;
+  width: min(100cqw, 150cqh);
+  aspect-ratio: 3 / 2;
+
+  :global([data-sheet-orientation='portrait']) & {
+    width: min(100%, 30em);
+  }
+}
+
+.geometry {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+
+  line,
+  rect,
+  circle {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .end-square {
+    fill: var(--surface-sunken);
+    stroke: var(--ink);
+    stroke-width: 1px;
+  }
+
+  .viewport {
+    fill: var(--sheet-paper);
+    stroke: var(--ink);
+    stroke-width: 1px;
+  }
+
+  .diagonal {
+    stroke: var(--ink-muted);
+    stroke-width: 1px;
+    stroke-dasharray: 3 2;
+  }
+
+  .icon-box {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1px;
+  }
+
+  .leader-end,
+  .centre {
+    fill: var(--accent);
+  }
+
+  .dim,
+  .tick,
+  .leader {
+    stroke: var(--ink-muted);
+    stroke-width: 1px;
+  }
+
+  .dim {
+    stroke-dasharray: 2 1.5;
+  }
+
+  g[data-shown] {
+    display: var(--shown-display, none);
+  }
+}
+
+/* The icon as the end frame, faint over the square, and as itself in the corner box. */
+.end-icon,
+.corner-icon {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.end-icon {
+  inset: 10% 6.667% 10% 40%;
+  color: color-mix(in oklch, var(--accent), transparent 82%);
+}
+
+.corner-icon {
+  top: 48.5%;
+  left: 65.667%;
+  width: 2%;
+  height: 3%;
+  color: var(--ink);
+}
+
+.end-icon :global(svg),
+.corner-icon :global(svg) {
+  display: var(--shown-display, none);
+  width: 100%;
+  height: 100%;
+}
+
+.label-set {
+  display: var(--shown-display, none);
+}
+
+.label {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  translate: var(--dx) var(--dy);
+  padding: 0 0.25em;
+  font-family: monospace, system-ui;
+  font-size: max(0.5rem, 0.75em);
+  line-height: 1.25;
+  white-space: nowrap;
+  color: var(--ink-muted);
+}
+
+/* The sheet's one callout, in the empty quarter of the square, its leader drawn in the SVG. */
+.callout {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  width: 36%;
+  margin: 0;
+  padding: 0.375em 0.5em;
+  border: 1px solid var(--ink);
+  border-radius: 0.125em;
+  background: var(--sheet-paper);
+  font-size: max(0.625rem, 0.875em);
+  line-height: 1.35;
+  text-wrap: pretty;
+  color: var(--ink);
+
+  code {
+    font-family: monospace, system-ui;
+    white-space: nowrap;
+  }
+}
+</style>

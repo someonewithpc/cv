@@ -10,6 +10,7 @@ import PickerLayer from './layers/PickerLayer.astro';
 import TokensLayer from './layers/TokensLayer.astro';
 import DefaultLayer from './layers/DefaultLayer.astro';
 import WipeLayer from './layers/WipeLayer.astro';
+import CodeLayer from './layers/CodeLayer.astro';
 
 function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
@@ -39,6 +40,7 @@ const layers = {
   wipe: { name: 'The Wipe', pageStyle: 'blueprint' },
   tokens: { name: 'Token Layers', pageStyle: 'blueprint' },
   default: { name: 'Default and Override', pageStyle: 'blueprint' },
+  code: { name: 'The Wipe in Code', pageStyle: 'blueprint' },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -58,6 +60,7 @@ type Layer = keyof typeof layers;
       tokens: <TokensLayer />,
       default: <DefaultLayer />,
       wipe: <WipeLayer />,
+      code: <CodeLayer />,
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
