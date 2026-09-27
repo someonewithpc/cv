@@ -232,6 +232,26 @@ const currentFoldSize = (sheet: HTMLElement): Vec => {
   return Number.isNaN(sx) ? { x, y } : { x: x * sx, y: y * sy };
 };
 
+// The size this file last wrote to a sheet's --fold-x/-y, while that is also the size on screen:
+// from a drag's first move, which cancels every animation on the sheet, to the moment the
+// resting dog-ear takes over again. A glide, a release and a flip all start from the size the
+// frame before them wrote, so they take it from here and not from computed style, which after
+// that frame's writes would have to be resolved on the spot. A sheet with no entry is at rest,
+// its reveal or pulse deciding the size, and only a read can say where that stands.
+const writtenFoldSizes = new WeakMap<HTMLElement, Vec>();
+
+const writeFoldSize = (sheet: HTMLElement, size: Vec): void => {
+  writtenFoldSizes.set(sheet, size);
+  sheet.style.setProperty('--fold-x', `${size.x}px`);
+  sheet.style.setProperty('--fold-y', `${size.y}px`);
+};
+
+const forgetFoldSize = (sheet: HTMLElement): void => {
+  writtenFoldSizes.delete(sheet);
+};
+
+const foldSizeOf = (sheet: HTMLElement): Vec => writtenFoldSizes.get(sheet) ?? currentFoldSize(sheet);
+
 // The corner cut and the drift together, off one computed-style object: what a landing frame
 // needs, and all it reads. (The drift is how far a turned page's corner cut stands over from its
 // left edge — see --turned-drift in index.astro; the page slides back by the same amount, so the
@@ -600,7 +620,7 @@ const markInHand = (fold: HTMLElement, active: boolean) => {
   fold.parentElement?.classList.toggle('paper-in-hand', active || hoveredFolds.has(fold));
 };
 
-const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
+const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull, size = foldSizeOf(sheet)) => {
   // Once per gesture the metrics are taken fresh rather than trusted from the cache — a resize
   // drops them, but this is what catches anything that moved the em-based pin without changing
   // the page's pixel size. The landing reading goes with them: one read at the start of a
@@ -608,7 +628,6 @@ const onFoldGrab = (sheet: HTMLElement, gesture: FoldGesture, at: Pull) => {
   // touched.
   sampleMetrics(sheet);
   stirLanding(sheet.parentElement!);
-  const size = currentFoldSize(sheet);
   const contentRect = sheet.getBoundingClientRect();
   const tip = foldTipFromSize(size.x, size.y);
   gesture.offset = {
@@ -658,8 +677,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     // already crosses one of those margins. Freezing the size the grab captured first (gesture.
     // size, read once in onFoldGrab) keeps the dog-ear at what it visibly was, rather than
     // leaving the property unset and the flap sized calc(var(--fold-x)) of nothing.
-    sheet.style.setProperty('--fold-x', `${gesture.size.x}px`);
-    sheet.style.setProperty('--fold-y', `${gesture.size.y}px`);
+    writeFoldSize(sheet, gesture.size);
     sheet.getAnimations().forEach((animation) => animation.cancel());
     retirePulse(sheet);
     holdUnsplayed(sheet);
@@ -748,8 +766,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 
   const size = foldSizeFromTip(tip.x, tip.y);
   gesture.size = size;
-  sheet.style.setProperty('--fold-x', `${size.x}px`);
-  sheet.style.setProperty('--fold-y', `${size.y}px`);
+  writeFoldSize(sheet, size);
 
   // Live commit feedback: past the threshold the flap brightens and the hint appears, meaning the
   // same thing whichever way the page is going — let go now and the gesture goes through. Forward
@@ -797,7 +814,7 @@ const glideFoldTip = (
   // (a back-drag's approach released early) still carries its splay rotation, which would
   // inflate the rect to the rotated bounding box.
   const { w: width, h: height } = metricsOf(sheet);
-  const { x: fx, y: fy } = currentFoldSize(sheet);
+  const { x: fx, y: fy } = foldSizeOf(sheet);
   const from = foldTipFromSize(fx, fy);
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
   const duration = Math.max(Math.min(baseMs + distance / 3, baseMs + 500, coastMs(distance, thrown)), 120);
@@ -819,8 +836,7 @@ const glideFoldTip = (
     // to re-resolve it on the spot.
     const backCut = currentBackFoldSize(sheet);
     const size = foldSizeFromTip(tip.x, tip.y);
-    sheet.style.setProperty('--fold-x', `${size.x}px`);
-    sheet.style.setProperty('--fold-y', `${size.y}px`);
+    writeFoldSize(sheet, size);
     renderFold(section, fold, width, height, tip, backCut);
 
     if (t < 1) {
@@ -1132,6 +1148,7 @@ const watchStackPulse = (stack: HTMLElement): void => {
 // fresh run: --fold-pulse at none takes their animations off, and clearing it puts them back,
 // together and from the start.
 const restIdleFold = (sheet: HTMLElement): void => {
+  forgetFoldSize(sheet);
   sheet.style.setProperty('--fold-x', FOLD_REVEAL_END.x);
   sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
   sheet.style.animationName = 'none';
@@ -1253,6 +1270,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
 // animations can't be restarted under — the page would come back to the front with no dog-ear at
 // all, just the flap's 1px border.
 const clearFrontFold = (sheet: HTMLElement): void => {
+  forgetFoldSize(sheet);
   sheet.style.removeProperty('--fold-x');
   sheet.style.removeProperty('--fold-y');
   sheet.style.animationName = '';
@@ -1335,8 +1353,7 @@ const promoteFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement
   const { w, h } = metricsOf(sheet);
   const backCut = currentBackFoldSize(sheet);
   const size = foldSizeFromTip(seed.x, seed.y);
-  sheet.style.setProperty('--fold-x', `${size.x}px`);
-  sheet.style.setProperty('--fold-y', `${size.y}px`);
+  writeFoldSize(sheet, size);
   renderFold(section, fold, w, h, seed, backCut);
   clearLandingShade(fold);
   sheet.style.rotate = '';
@@ -1414,10 +1431,11 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   // single ease-out. The crease keeps its speed straight through the restack instead of settling
   // to a stop at the seed and setting off again, so the flip reads as one released motion.
   //
-  // Where the fold stands is read before the two attributes below are written, not after: an
-  // attribute write puts the document's :has() rules back in play, and the read would then have
-  // to resolve every element on the page before it could answer.
-  const { x: fx, y: fy } = currentFoldSize(sheet);
+  // Where the fold stands, taken before the two attributes below are written. It is nearly always
+  // the size the last drag frame wrote; when it has to be read (a flip from a fold nobody
+  // dragged), a read after an attribute write would resolve every element on the page, the
+  // document's :has() rules being back in play.
+  const { x: fx, y: fy } = foldSizeOf(sheet);
 
   // The flip is committed, so a first flip grows every page's corner cut now — the glide out to
   // the seed outlasts the cuts' 300ms transition, which would otherwise still be mid-growth
@@ -1459,15 +1477,13 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
       const k = p / d1;
       const tip = { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
       const size = foldSizeFromTip(tip.x, tip.y);
-      sheet.style.setProperty('--fold-x', `${size.x}px`);
-      sheet.style.setProperty('--fold-y', `${size.y}px`);
+      writeFoldSize(sheet, size);
       renderFold(section, fold, width, height, tip, backCut);
     } else {
       if (!settling) {
         settling = true;
         const size = foldSizeFromTip(to.x, to.y);
-        sheet.style.setProperty('--fold-x', `${size.x}px`);
-        sheet.style.setProperty('--fold-y', `${size.y}px`);
+        writeFoldSize(sheet, size);
         restack(sheet, fold);
       }
       const k = (p - d1) / d2;
@@ -1536,8 +1552,7 @@ const bringFold = (
       const k = (p - d1) / d2;
       const tip = { x: seed.x + (rest.x - seed.x) * k, y: seed.y + (rest.y - seed.y) * k };
       const size = foldSizeFromTip(tip.x, tip.y);
-      sheet.style.setProperty('--fold-x', `${size.x}px`);
-      sheet.style.setProperty('--fold-y', `${size.y}px`);
+      writeFoldSize(sheet, size);
       renderFold(section, fold, w, h, tip, backCut);
     }
     if (tt < 1) {
@@ -1560,7 +1575,7 @@ const bringFold = (
 
 const shouldFlip = (sheet: HTMLElement, coast: Vec | null): boolean => {
   const { w: width, h: height } = metricsOf(sheet);
-  const { x: fx, y: fy } = currentFoldSize(sheet);
+  const { x: fx, y: fy } = foldSizeOf(sheet);
   return pointFolded(commitPoint(width, height), width, height, coast ?? foldTipFromSize(fx, fy));
 };
 
@@ -1772,6 +1787,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // dog-ear relaxes flat for the duration (restored by returnBehind if the drag lets go).
     front.getAnimations().forEach((animation) => animation.cancel());
     retirePulse(front);
+    forgetFoldSize(front);
     front.style.removeProperty('--fold-x');
     front.style.removeProperty('--fold-y');
     sectionOf(front).style.clipPath = '';
@@ -1793,8 +1809,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // stack no longer has. The approach ends with promoteFold writing the seed there; writing
     // it now keeps the crease shaded the same on both sides of that hand-over.
     const seedSize = foldSizeFromTip(seed.x, seed.y);
-    sheet.style.setProperty('--fold-x', `${seedSize.x}px`);
-    sheet.style.setProperty('--fold-y', `${seedSize.y}px`);
+    writeFoldSize(sheet, seedSize);
     renderLanding(section, fold, w, h, seed, backCut, { x: w, y: h }, drift);
     // The pull direction: the resting crease's normal, which the seed lies opposite along
     const seedLength = Math.hypot(seed.x, seed.y);
@@ -1915,15 +1930,15 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     sheet = fold.parentElement!;
     section = sectionOf(sheet);
     const box = sheet.getBoundingClientRect();
-    const { x: foldX, y: foldY } = currentFoldSize(sheet);
-    const tip = foldTipFromSize(foldX, foldY);
+    const size = foldSizeOf(sheet);
+    const tip = foldTipFromSize(size.x, size.y);
     const at = { x: box.right + tip.x, y: box.bottom + tip.y };
     const diagonal = Math.hypot(box.width, box.height);
     gesture = {
       pointerId: -1, offset: { x: 0, y: 0 }, theta: 0, size: { x: 0, y: 0 }, gain: 1, canceled: false,
       grabAt: { x: 0, y: 0 }, unfoldFrom: null, approach: null, back: null, trail: [],
     };
-    onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: time });
+    onFoldGrab(sheet, gesture, { clientX: at.x, clientY: at.y, timeStamp: time }, size);
     swipe = restingSwipe(at, { x: -box.width / diagonal, y: -box.height / diagonal });
     return true;
   };
