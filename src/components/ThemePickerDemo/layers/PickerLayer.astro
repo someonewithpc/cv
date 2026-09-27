@@ -5,10 +5,16 @@
  * the stage and nothing else; its walkthrough picks every theme in turn without touching
  * the page's stamp, its stored key or the real picker. The readout under it is this page's
  * own theme, marked by the picker's selectors (shown.ts), so the two are never confused.
+ *
+ * The page on the stage is this CV at a small scale: its title block, the career table,
+ * the bill of materials and a title card, every piece coloured by the stage's own tokens
+ * so a pick recolours all of it.
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
+import site from '@/components/Career/site.json';
+import { CONTACT } from '@/site';
 import { THEME_IDS, THEMES } from '@/themes';
 
 import { shownCss } from '../shown';
@@ -16,6 +22,18 @@ import { iconSvg, stageCss } from '../stage';
 
 const css = stageCss();
 const layers = ['under', 'over'] as const;
+
+/* The newest three rows of the career sheet's revision table, numbered the way it numbers them. */
+const { experience } = site;
+const rows = experience.slice(0, 3).map((entry, i) => ({
+  rev: String(experience.length - i).padStart(2, '0'),
+  role: entry.role,
+  org: entry.org,
+  when: `${entry.from.date.slice(0, 4)} to ${entry.to.date.slice(0, 4)}`,
+}));
+const text = experience[0].items.slice(0, 2).join(' ');
+const contact = [CONTACT.email, ...CONTACT.profiles.map((p) => p.label)];
+const badges = ['Astro', 'TypeScript', 'Sass', 'Vue', 'React', 'Ruby'];
 ---
 
 <div class="theme-picker-demo" data-theme-picker-demo>
@@ -25,7 +43,7 @@ const layers = ['under', 'over'] as const;
   </header>
 
   <div class="figure">
-    <Annotations reach={1.5} fontSize={0.1}>
+    <Annotations reach={1.1} fontSize={0.1}>
       <div slot="content" class="stage" data-stage>
         <template shadowrootmode="open">
           <style is:inline set:html={css}></style>
@@ -33,12 +51,32 @@ const layers = ['under', 'over'] as const;
             {layers.map((layer) => (
               <div class="paper" data-paper={layer} hidden={layer === 'over'} inert={layer === 'over'} aria-hidden={layer === 'over' ? 'true' : undefined}>
                 <div class="page">
-                  <p class="name">Hugo Sales</p>
-                  <p class="role">A CV drawn as a set of sheets</p>
-                  <div class="rule"></div>
-                  <div class="line"></div>
-                  <div class="line short"></div>
-                  <div class="sheet"><span class="blue"></span><span class="accent"></span></div>
+                  <div class="title">
+                    <p class="meta">DWG · CV-001 · REV A</p>
+                    <p class="name">Hugo Sales</p>
+                    <p class="role">Full stack developer / FOSS contributor</p>
+                    <p class="contact">{contact.map((item) => <span>{item}</span>)}</p>
+                  </div>
+                  <div class="body">
+                    <div class="main">
+                      <p class="heading"><span class="code">SH-CAREER</span>Career</p>
+                      <p class="text">{text}</p>
+                      <table class="revisions">
+                        <thead><tr><th>Rev</th><th>Role</th><th>Where</th><th>When</th></tr></thead>
+                        <tbody>{rows.map((row) => <tr><td>{row.rev}</td><td>{row.role}</td><td>{row.org}</td><td>{row.when}</td></tr>)}</tbody>
+                      </table>
+                      <p class="heading"><span class="code">SH-BOM</span>Bill of materials</p>
+                      <ul class="badges">{badges.map((badge) => <li>{badge}</li>)}</ul>
+                    </div>
+                    <div class="card">
+                      <span class="label">Title</span>
+                      <span class="value">Theme Picker</span>
+                      <span class="label">Medium</span>
+                      <span class="value">Astro, CSS</span>
+                      <span class="label">Notes</span>
+                      <span class="note">The corner picks one of four themes; a pick recolours every sheet.</span>
+                    </div>
+                  </div>
                 </div>
                 <div class="corner" role={layer === 'under' ? 'group' : undefined} aria-label={layer === 'under' ? 'Pick a theme for the stage' : undefined}>
                   {THEME_IDS.map((id) => {
@@ -66,11 +104,10 @@ const layers = ['under', 'over'] as const;
       </div>
 
       <Fragment slot="annotations">
-        <ArrowAnnotation target="[data-stage]" anchor="1 0.1" tipX={1} tipY={-0.8} angle={0} length={0.3} text="The picker, in its corner" lines={['The picker,', 'in its corner']} only="landscape" />
-        <ArrowAnnotation target="[data-stage]" anchor="0.86 0.26" tipX={0.84} tipY={-0.48} angle={-20} length={0.35} text="The icon grows from here" lines={['The icon grows', 'from here']} only="landscape" />
-        <ArrowAnnotation target="[data-stage]" anchor="left" tipX={-0.98} tipY={0} angle={180} length={0.3} text="One page, its own tokens" lines={['One page,', 'its own tokens']} labelSide="left" only="landscape" />
-        <ArrowAnnotation target="[data-stage]" anchor="0.92 0" tipX={0.92} tipY={-1} angle={90} length={0.25} text="The picker" labelSide="left" only="portrait" />
-        <ArrowAnnotation target="[data-stage]" anchor="0.86 0.26" tipX={0.84} tipY={-0.48} angle={-110} length={0.5} text="Grows from here" only="portrait" />
+        <ArrowAnnotation target="[data-stage]" anchor="1 0.12" tipX={1} tipY={-0.76} angle={0} length={0.3} text="The picker: a pick grows its icon from this corner" lines={['The picker: a pick grows', 'its icon from this corner']} only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="0 0.5" tipX={-1} tipY={0} angle={180} length={0.3} text="A page of its own, with its own tokens" lines={['A page of its own,', 'with its own tokens']} labelSide="left" only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="1 0.7" tipX={1} tipY={0.4} angle={0} length={0.3} text="What is picked here stays here" lines={['What is picked here', 'stays here']} only="landscape" />
+        <ArrowAnnotation target="[data-stage]" anchor="0.9 0" tipX={0.9} tipY={-1} angle={90} length={0.25} text="The picker: a pick grows its icon from this corner" lines={['The picker: a pick grows', 'its icon from this corner']} labelSide="left" only="portrait" />
       </Fragment>
     </Annotations>
   </div>
@@ -88,11 +125,7 @@ const layers = ['under', 'over'] as const;
     </div>
     <div>
       <dt>The stage</dt>
-      <dd>A shadow root with its own copy of the tokens and its own stamp. What happens there stays there; nothing is kept.</dd>
-    </div>
-    <div>
-      <dt>Without script</dt>
-      <dd>The stage stands still on the OS scheme. The corner still switches this page, by CSS alone.</dd>
+      <dd>A shadow root with its own copy of the tokens; nothing there is kept. Without script it stands still on the OS scheme.</dd>
     </div>
   </dl>
 </div>
@@ -119,12 +152,17 @@ bootIslands('[data-theme-picker-demo]', boot);
 }
 
 /* Room for the callouts either side of the stage; the stage alone sets their unit. The
-   callout overlay lies over the stage and must not take the presses meant for its keys. */
+   callout overlay lies over the stage and must not take the presses meant for its keys.
+   Portrait has one callout, above the stage, so the figure keeps it off the header. */
 .figure {
   padding: 0 0.5em;
 
   :global(svg[data-annotations]) {
     pointer-events: none;
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    padding: 18% 0.5em 0;
   }
 }
 
@@ -137,8 +175,12 @@ bootIslands('[data-theme-picker-demo]', boot);
   font-weight: 600;
 }
 
-.rules [data-shown],
-.rules [data-chosen] {
-  display: var(--shown-display, none);
+.rules {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  [data-shown],
+  [data-chosen] {
+    display: var(--shown-display, none);
+  }
 }
 </style>

@@ -74,59 +74,177 @@
   z-index: 2;
 }
 
+/* The page: this CV at a small scale. The title block, then the career sheet's revision
+   table beside a title card, all of it in the stage's own tokens. The corner is clear of
+   the title block by its right padding. */
 .page {
   display: grid;
-  gap: 0.375em;
-  padding: 0.75em 3.5em 0.75em 0.875em;
+  gap: 0.625em;
+  padding: 0.75em 0.875em;
+}
+
+.page p,
+.page ul,
+.page table {
+  margin: 0;
+}
+
+.title {
+  display: grid;
+  gap: 0.125em;
+  padding-right: 4.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--line);
+}
+
+.meta,
+.contact,
+.heading .code,
+.card .label {
+  font-family: monospace, system-ui;
+  font-size: 0.5em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 .name {
-  margin: 0;
   font-size: 1.125em;
   font-weight: 600;
   line-height: 1.1;
 }
 
 .role {
-  margin: 0;
+  font-family: monospace, system-ui;
   font-size: 0.625em;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--ink-muted);
 }
 
-.rule {
-  height: 1px;
-  background: var(--line);
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5ch;
+  color: var(--accent-text);
 }
 
-.line {
-  height: 0.25em;
-  border-radius: 0.125em;
-  background: var(--ink-faint);
-}
-
-.line.short {
-  width: 60%;
-}
-
-.sheet {
+.body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 0.875em;
+  align-items: start;
+}
+
+.main {
+  display: grid;
   gap: 0.375em;
-  width: 45%;
-  padding: 0.375em;
-  border: 1px solid var(--line);
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+  padding-bottom: 0.125em;
+  border-bottom: 1px solid var(--line);
+  font-family: "Special Elite", monospace, system-ui;
+  font-size: 0.75em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.heading .code {
+  color: var(--accent-text);
+}
+
+.text {
+  font-size: 0.625em;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+/* The revision table, ruled the way the career sheet rules it. */
+.revisions {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.5em;
+  line-height: 1.25;
+}
+
+.revisions th,
+.revisions td {
+  padding: 0.375em 0.75em 0.375em 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.revisions th {
+  font-family: monospace, system-ui;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.revisions td:first-child {
+  font-family: monospace, system-ui;
+  color: var(--accent-text);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375em;
+  padding: 0;
+  list-style: none;
+}
+
+.badges li {
+  padding: 0.125em 0.75em;
+  border: 1px solid var(--line-strong);
+  border-radius: 1em;
+  background: var(--surface-raised);
+  font-family: monospace, system-ui;
+  font-size: 0.5em;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.badges li:first-child {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+/* The title card a detail carries, its cells ruled and its values in the typewriter face. */
+.card {
+  display: grid;
+  gap: 0.125em;
+  padding: 0.5em 0.625em;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: 0.25em;
   background: var(--surface-raised);
 }
 
-.sheet .blue {
-  aspect-ratio: 4 / 3;
-  background: var(--blueprint);
+.card .label {
+  margin-top: 0.375em;
 }
 
-.sheet .accent {
-  aspect-ratio: 4 / 3;
-  background: var(--accent);
+.card .label:first-child {
+  margin-top: 0;
+}
+
+.card .value {
+  font-family: "Special Elite", monospace, system-ui;
+  font-size: 0.75em;
+  line-height: 1.2;
+}
+
+.card .note {
+  font-size: 0.5em;
+  line-height: 1.35;
+  color: var(--ink-muted);
 }
 
 /* The picker, drawn as the corner draws it: a raised tab on the page's edge. */

@@ -90,10 +90,15 @@ test.describe('reduced motion', () => {
     await expect(sheet).toHaveAttribute('data-autoplay-state', 'off');
     await expect(screen(sheet)).not.toHaveAttribute('data-demo-theme');
 
+    // The page on the stage paints from the stage's tokens, down to its title card.
+    const card = sheet.locator('[data-stage] [data-paper="under"] .card');
+    const cardBefore = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
+
     await stageKey(sheet, 'dark-forest').click();
     await expect(screen(sheet)).toHaveAttribute('data-demo-theme', 'dark-forest');
     await expect(stageKey(sheet, 'dark-forest')).toHaveAttribute('aria-pressed', 'true');
     await pageUntouched(page);
+    expect(await card.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(cardBefore);
     await expect(sheet.locator('[data-stage] [data-stage-shown]').filter({ visible: true })).toHaveText('"dark-forest"');
     await expect(visible(sheet.locator('[data-readout="theme"]'))).toHaveText('Light');
     await expect(visible(sheet.locator('[data-readout="chosen"]'))).toHaveText(/the OS colour scheme/);
