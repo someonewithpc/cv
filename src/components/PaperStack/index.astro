@@ -89,8 +89,31 @@ const pages = await Promise.all(
 </Tag>
 
 <style lang="scss" is:global>
+@use 'sass:math';
 @use '@/scss/technical-drawing' as drawing;
 @use '@/scss/colors' as colors;
+
+// How far the resting dog-ear's pulse grows it (see fold-pulse-keyframes below).
+$fold-pulse-x: 3cm;
+$fold-pulse-y: 2cm;
+
+// CSS's ease-in-out, cubic-bezier(0.42, 0, 0.58, 1), at progress $s: the curve's x solved for
+// its parameter by halving, then its y there.
+@function ease-in-out($s) {
+  $lo: 0;
+  $hi: 1;
+  $t: $s;
+  @for $_ from 1 through 32 {
+    $t: ($lo + $hi) * 0.5;
+    $x: 3 * (1 - $t) * (1 - $t) * $t * 0.42 + 3 * (1 - $t) * $t * $t * 0.58 + $t * $t * $t;
+    @if $x < $s {
+      $lo: $t;
+    } @else {
+      $hi: $t;
+    }
+  }
+  @return 3 * (1 - $t) * $t * $t + $t * $t * $t;
+}
 
 [data-paper-stack-root] {
   anchor-name: --technical-drawing-stack;
@@ -716,23 +739,110 @@ const pages = await Promise.all(
           animation-play-state: paused;
         }
 
-        animation:
-          500ms 500ms ease-in-out initial-fold-reveal 1 forwards,
-          7.5s 1.5s ease-in-out fold-reveal-pulse infinite alternate
-        ;
-
-        @media (prefers-reduced-motion: reduce) {
-          animation-iteration-count: 1, 0;
-        }
+        animation: 500ms 500ms ease-in-out initial-fold-reveal 1 forwards;
 
         @keyframes initial-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }
           to { --fold-x: #{drawing.$fold-rest-x}; --fold-y: #{drawing.$fold-rest-y}; }
         }
 
-        @keyframes fold-reveal-pulse {
-          from, 50% { --fold-x: #{drawing.$fold-rest-x}; --fold-y: #{drawing.$fold-rest-y}; }
-          90%, to { --fold-x: 3cm; --fold-y: 2cm; }
+        // Then the resting dog-ear breathes: it holds at rest, eases out to $fold-pulse-x/-y
+        // and back, on a 7.5s loop. Animating --fold-x/-y would say that in one place, but
+        // every frame would then resolve style on the page and repaint the sheet, the frame
+        // and the clip's shadow: about 1,900 paints in 5s for each stack on screen, for as
+        // long as it is on screen. So each layer the fold draws animates the one property of
+        // its own that the compositor can run without the page, all three sampled from the
+        // same fold size:
+        //
+        // - the page content's crease clip-path, whose two crease vertices move with the fold
+        //   (fold-pulse-page);
+        // - the flap, drawn at rest and carried to each size by a transform: stretched to the
+        //   new box, then reflected across the new crease in place of the old one
+        //   (fold-pulse-flap);
+        // - the cast shadow, which lies in the corner triangle and so only scales out from the
+        //   corner (fold-pulse-shade).
+        //
+        // Every shading stop is a share of the crease's distance from the corner, so the
+        // stretched drawing is the drawing at the new size. What does stretch is the flap's
+        // 1px edge, which thickens with the fold towards the peak. The ease-in-out is sampled
+        // into linear steps because the flap's reflection is not linear in the size: sampled,
+        // it follows the same path as the other two.
+        $pulse-steps: 10;
+
+        @mixin fold-pulse-keyframes($name) {
+          @keyframes #{$name} {
+            @for $i from 0 through $pulse-steps {
+              $s: math.div($i, $pulse-steps);
+              $e: ease-in-out($s);
+              $x: drawing.$fold-rest-x + ($fold-pulse-x - drawing.$fold-rest-x) * $e;
+              $y: drawing.$fold-rest-y + ($fold-pulse-y - drawing.$fold-rest-y) * $e;
+              #{if($i == 0, 'from, 50%', if($i == $pulse-steps, '90%, to', percentage(0.5 + 0.4 * $s)))} {
+                @content($x, $y);
+              }
+            }
+          }
+        }
+
+        @include fold-pulse-keyframes(fold-pulse-page) using ($x, $y) {
+          clip-path: polygon(
+            var(--fold-back-x) 0px,
+            0px var(--fold-back-y),
+            0px 100%,
+            calc(100% - #{$x}) 100%,
+            100% calc(100% - #{$y}),
+            100% 0px
+          );
+        }
+
+        // The flap's box is the fold's size plus a 1px border all round, so it stretches
+        // border edge to border edge. Its centre, the transform origin, moves by half the
+        // growth.
+        @include fold-pulse-keyframes(fold-pulse-flap) using ($x, $y) {
+          $angle: math.atan2($y, $x);
+          transform:
+            translate(math.div(drawing.$fold-rest-x - $x, 2), math.div(drawing.$fold-rest-y - $y, 2))
+            rotate(-$angle) scaleX(-1) rotate($angle)
+            scale(
+              math.div($x + 2px, drawing.$fold-rest-x + 2px),
+              math.div($y + 2px, drawing.$fold-rest-y + 2px)
+            );
+        }
+
+        @include fold-pulse-keyframes(fold-pulse-shade) using ($x, $y) {
+          scale: math.div($x, drawing.$fold-rest-x) math.div($y, drawing.$fold-rest-y);
+        }
+
+        // The three share one clock: the same timing, started together whenever a page takes
+        // the front, and paused, cancelled and restarted together by fold-drag.ts, which
+        // restarts them by setting --fold-pulse to none for a frame on the sheet (each layer
+        // takes it by `inherit`). The play state comes down from the sheet too, so a pointer
+        // on the flap still holds the pulse.
+        @mixin fold-pulse($name) {
+          --fold-pulse: inherit;
+          animation: var(--fold-pulse, #{$name}) 7.5s 1.5s linear infinite alternate;
+          animation-play-state: inherit;
+
+          @media (prefers-reduced-motion: reduce) {
+            animation: none;
+          }
+        }
+
+        > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
+          @include fold-pulse(fold-pulse-page);
+        }
+
+        > .paper-fold:not(.paper-fold--active) {
+          @include fold-pulse(fold-pulse-flap);
+        }
+
+        > .paper-clip {
+          --fold-pulse: inherit;
+          animation-play-state: inherit;
+        }
+
+        > .paper-clip::after {
+          @include fold-pulse(fold-pulse-shade);
+          transform-origin: 100% 100%;
         }
       }
 
@@ -1025,6 +1135,7 @@ const pages = await Promise.all(
 
       > * {
         clip-path: none !important;
+        animation: none !important;
         transition: opacity 200ms ease-out, scale 200ms ease-out;
       }
 

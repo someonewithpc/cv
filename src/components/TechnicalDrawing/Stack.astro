@@ -434,6 +434,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
 import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
+import { isFoldPulse } from '@/components/PaperStack/fold-drag';
 import './demo-cursor-press';
 
 import { positionAnnotations } from './annotations-position';
@@ -460,10 +461,17 @@ function initStack(stack: HTMLElement) {
     heldByResize.add(animation);
   };
 
+  // The page's own animations and its content's. The dog-ear's pulse runs on the page too (its
+  // crease clip-path), but it is one of three layers kept on one clock by PaperStack's
+  // fold-drag.ts, which holds it off screen and through a resize itself; one layer stopped here
+  // would leave the hole and the flap out of step.
+  const animationsOf = (page: HTMLElement) =>
+    page.getAnimations({ subtree: true }).filter((animation) => !isFoldPulse(animation));
+
   const apply = (page: HTMLElement) => {
     const active = isActive(page);
 
-    page.getAnimations({ subtree: true }).forEach((animation) => {
+    animationsOf(page).forEach((animation) => {
       if (active) {
         if (isResizeHeld()) holdForResize(animation);
         else animation.play();
@@ -500,7 +508,7 @@ function initStack(stack: HTMLElement) {
   });
 
   onResizeHold((holding) => pages.filter(isActive).forEach((page) => {
-    page.getAnimations({ subtree: true }).forEach((animation) => {
+    animationsOf(page).forEach((animation) => {
       if (holding) holdForResize(animation);
       else if (heldByResize.delete(animation)) animation.play();
     });

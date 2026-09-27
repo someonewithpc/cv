@@ -222,9 +222,16 @@ const lengthsOf = (el: HTMLElement, ...names: string[]): number[] => {
   return names.map((name) => parseFloat(style.getPropertyValue(name)));
 };
 
+// The size the reader sees. At rest the pulse grows the dog-ear without touching --fold-x/-y (see
+// fold-pulse-keyframes in index.astro), and its cast shadow's scale is exactly that growth, so a
+// hand that takes the fold mid-pulse takes it at the size it was drawn at. Outside the pulse the
+// scale is none and the properties are the whole answer. Both reads come off the same flush.
 const currentFoldSize = (sheet: HTMLElement): Vec => {
   const [x, y] = lengthsOf(sheet, '--fold-x', '--fold-y');
-  return { x, y };
+  const clip = sheet.querySelector<HTMLElement>(':scope > .paper-clip');
+  if (!clip) return { x, y };
+  const [sx, sy = sx] = getComputedStyle(clip, '::after').scale.split(' ').map(parseFloat);
+  return Number.isNaN(sx) ? { x, y } : { x: x * sx, y: y * sy };
 };
 
 // The corner cut and the drift together, off one computed-style object: what a landing frame
@@ -656,6 +663,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
     sheet.style.setProperty('--fold-x', `${gesture.size.x}px`);
     sheet.style.setProperty('--fold-y', `${gesture.size.y}px`);
     sheet.getAnimations().forEach((animation) => animation.cancel());
+    retirePulse(sheet);
     holdUnsplayed(sheet);
   }
 
@@ -1038,33 +1046,67 @@ const commitTurn = (stack: HTMLElement): void => {
   setStackTurning(stack, true);
 };
 
-// The one thing on a stack that never stops: index.astro's fold-reveal-pulse, breathing the
-// resting dog-ear on a 7.5s loop for as long as the page is open. It animates --fold-x/--fold-y,
-// which the front page's crease clip-path reads, so every frame it advances the browser resolves
-// style for that page and everything printed on it — a demo's whole interface. One stack costs
-// about 1.5ms a frame that way and this page carries six, so better than half a 60fps frame was
-// going on dog-ears, including every frame of a turn happening on some other stack.
+// The one thing on a stack that never stops: index.astro's fold pulse, breathing the resting
+// dog-ear on a 7.5s loop for as long as the page is open. It is three animations, one on each
+// layer the fold draws (the page's crease clip-path, the flap's transform, the cast shadow's
+// scale), which the compositor runs without the page; they share one clock, so everything here
+// handles them together. The page's content has animations of its own, so the three are told
+// apart by name.
 //
 // A tease has no one to tease off screen, so there it holds still. Through the Web Animations
 // API rather than a class or a data attribute: a class or an attribute would put the document's
 // :has() rules back in play on every scroll past, and the whole-document style resolve that
 // follows is exactly what a turn is already paying too much of. A paused animation keeps its
 // value, so the dog-ear is where the reader left it when the stack comes back.
-const PULSE = 'fold-reveal-pulse';
+const PULSES = ['fold-pulse-page', 'fold-pulse-flap', 'fold-pulse-shade'];
+
+export const isFoldPulse = (animation: Animation): boolean =>
+  PULSES.includes((animation as CSSAnimation).animationName);
 
 const stillStacks = new WeakSet<HTMLElement>();
 
-const pulsesOf = (stack: HTMLElement): Animation[] =>
-  [...stack.querySelectorAll<HTMLElement>('.paper-front')]
-    .flatMap((sheet) => sheet.getAnimations())
-    .filter((animation) => (animation as CSSAnimation).animationName === PULSE);
+const sheetPulses = (sheet: HTMLElement): Animation[] =>
+  sheet.getAnimations({ subtree: true }).filter(isFoldPulse);
 
-// Re-applies the hold after anything that restarts the pulse — a flip hands it to the next page,
-// a settle starts it again. Free on a stack in view, which is the only kind a turn happens on,
-// unless the window is being resized (src/client/resizeHold.ts), which holds every pulse.
-const holdPulse = (stack: HTMLElement): void => {
-  if (!stillStacks.has(stack) && !isResizeHeld()) return;
-  for (const pulse of pulsesOf(stack)) pulse.pause();
+const pulsesOf = (stack: HTMLElement): Animation[] =>
+  [...stack.querySelectorAll<HTMLElement>('.paper-front')].flatMap(sheetPulses);
+
+// Hands the fold's rendering over to whatever writes it next, a drag or a flat relax: each pulse
+// layer's animation outranks the inline clip-path and transform written there, paused or not.
+// Cancelled, they stay off until restIdleFold starts them again.
+const retirePulse = (sheet: HTMLElement): void => {
+  for (const pulse of sheetPulses(sheet)) pulse.cancel();
+};
+
+// Puts the three layers' clocks back in step, then runs or holds them as the stack's place calls
+// for: held off screen and while the window is being resized (src/client/resizeHold.ts). A layer
+// can fall behind the other two. Until this file first plays the pulse, the page's layer obeys
+// the page's own animation-play-state, which Stack.astro sets on a page that is not showing; and
+// a flap handed back after a flip starts its run over. Each takes the one furthest along, once
+// all three are under way: an animation that has only just started has no start time yet, and
+// the frames before it gets one would come off its clock. Run or held through play() and
+// pause(), which overrule the CSS play state from then on.
+const alignPulse = (stack: HTMLElement, running = !stillStacks.has(stack) && !isResizeHeld()): void => {
+  const pulses = pulsesOf(stack);
+  for (const pulse of pulses) {
+    if (running) pulse.play();
+    else pulse.pause();
+  }
+  Promise.all(pulses.map((pulse) => pulse.ready)).then(() => {
+    const at = Math.max(...pulses.map((pulse) => Number(pulse.currentTime)));
+    for (const pulse of pulses) pulse.currentTime = at;
+  }, () => {
+    // A drag took the pulse off in the meantime, and restarts it when it lets go.
+  });
+};
+
+// The same after anything that starts the pulse over (a flip hands it to the next page, a
+// settle restarts it, the flap comes back to the front after a flip), at the start of the next
+// frame. The new animations come into being in that frame's style resolve, and asking for them
+// now would force one in the middle of the turn: a whole-document one, with the page's :has()
+// rules.
+const syncPulse = (stack: HTMLElement): void => {
+  requestAnimationFrame(() => alignPulse(stack));
 };
 
 const watchStackPulse = (stack: HTMLElement): void => {
@@ -1074,18 +1116,12 @@ const watchStackPulse = (stack: HTMLElement): void => {
     for (const entry of entries) {
       if (entry.isIntersecting) stillStacks.delete(stack);
       else stillStacks.add(stack);
-      for (const pulse of pulsesOf(stack)) {
-        if (entry.isIntersecting && !isResizeHeld()) pulse.play();
-        else pulse.pause();
-      }
+      alignPulse(stack);
     }
   }, { rootMargin: '25%' });
   onResizeHold((holding) => {
     if (stillStacks.has(stack)) return;
-    for (const pulse of pulsesOf(stack)) {
-      if (holding) pulse.pause();
-      else pulse.play();
-    }
+    alignPulse(stack, !holding);
   });
   observer.observe(stack);
 };
@@ -1093,16 +1129,18 @@ const watchStackPulse = (stack: HTMLElement): void => {
 // Puts a front page's fold back in its resting idle state: the dog-ear held at the reveal size
 // with the pulse running. The drag (or a back-drag borrowing the flap) cancelled
 // initial-fold-reveal, so its forwards-fill is gone for good — leaving --fold-x/-y set here is
-// what now holds FOLD_REVEAL_END during fold-reveal-pulse's own delay. Only the pulse (2nd
-// slot) gets a fresh run; the reveal (1st slot) stays retired, since restarting it would
-// replay its 0cm start and flash the fold back down.
+// what now holds FOLD_REVEAL_END, before and under the pulse. The reveal stays retired, since
+// restarting it would replay its 0cm start and flash the fold back down. The pulse layers get a
+// fresh run: --fold-pulse at none takes their animations off, and clearing it puts them back,
+// together and from the start.
 const restIdleFold = (sheet: HTMLElement): void => {
   sheet.style.setProperty('--fold-x', FOLD_REVEAL_END.x);
   sheet.style.setProperty('--fold-y', FOLD_REVEAL_END.y);
-  sheet.style.animationName = 'none, none';
+  sheet.style.animationName = 'none';
+  sheet.style.setProperty('--fold-pulse', 'none');
   void sheet.offsetWidth;
-  sheet.style.animationName = `none, ${PULSE}`;
-  holdPulse(sheet.parentElement!);
+  sheet.style.removeProperty('--fold-pulse');
+  syncPulse(sheet.parentElement!);
 };
 
 // What a page that has come to rest at the front hands back: index.astro's own rules take the
@@ -1196,7 +1234,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   // front page with a square corner, and the dog-ear only turned up once everything else had
   // stopped moving. It has been introduced by now, so start it at once and let it curl up while
   // the sheet it replaces folds away behind the stack. The pulse keeps its own gap after it.
-  next.style.animationDelay = '0s, 1s';
+  next.style.animationDelay = '0s';
   next.classList.add('paper-front');
   // The clip's back bar goes before the page content so the page hides it (see index.astro)
   next.prepend(under);
@@ -1208,7 +1246,7 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   syncInert(stack);
   // The dog-ear's pulse goes with the front-page role, so an off-screen stack has to hold the
   // new page's still too.
-  holdPulse(stack);
+  syncPulse(stack);
 };
 
 // Drops everything the front-page role leaves behind on a sheet, so its next turn at the front
@@ -1243,6 +1281,7 @@ const finishFlip = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement)
   const standIn = front.querySelector<HTMLElement>(`.${STAND_IN}`);
   if (standIn) standIn.replaceWith(fold);
   else front.insertBefore(fold, front.querySelector('.paper-back-grab'));
+  syncPulse(stack);
   settle(stack);
 };
 
@@ -1285,7 +1324,7 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   // state again on its way (flipFold).
   updateFlippedState(stack);
   // The pulse travels with the front-page role; off screen it stays held.
-  holdPulse(stack);
+  syncPulse(stack);
   return prev;
 };
 
@@ -1305,6 +1344,7 @@ const promoteFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement
   sheet.style.rotate = '';
   bringToFront(sheet.parentElement!);
   sheet.getAnimations().forEach((animation) => animation.cancel());
+  retirePulse(sheet);
 };
 
 // A back-drag's approach phase: the landing run in reverse, driven by the pointer. Pull along
@@ -1733,6 +1773,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     // The front page lends its flap to paint the arriving page's fold, so its own resting
     // dog-ear relaxes flat for the duration (restored by returnBehind if the drag lets go).
     front.getAnimations().forEach((animation) => animation.cancel());
+    retirePulse(front);
     front.style.removeProperty('--fold-x');
     front.style.removeProperty('--fold-y');
     sectionOf(front).style.clipPath = '';
@@ -2179,6 +2220,10 @@ const registerFoldProperties = () => {
   // where the strip falls back to the front page's own. No initial value, so unset it stays
   // invalid and the fallback applies.
   registerProperty({ name: '--pile-paper', syntax: '*', inherits: false });
+  // restIdleFold's switch for the pulse layers, set on the sheet and read one level down (by the
+  // clip's shadow two, through the clip): not inherited, so setting it restyles those and not
+  // the page's content.
+  registerProperty({ name: '--fold-pulse', syntax: '*', inherits: false });
   // How far the flap is off the page (see index.astro), registered so its tone eases between
   // rest, in hand and past the commit point. Set on the flap and the cast shadow themselves,
   // so nothing inherits it while it eases.
