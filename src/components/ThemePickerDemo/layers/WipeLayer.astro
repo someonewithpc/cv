@@ -21,11 +21,11 @@ const frames = [0.12, 0.4, 1];
 <div class="wipe-sheet">
   <header>
     <span class="eyebrow">ThemePicker.astro · startViewTransition · clip-path: path()</span>
-    <strong>The icon is the whole animation: its box in the corner is the first frame, the same path grown over the page is the last</strong>
+    <strong>The icon is the whole animation: its corner box is the first frame, the same path grown over the page the last</strong>
   </header>
 
   <div class="figure">
-    <Annotations reach={1.5} fontSize={0.1}>
+    <Annotations reach={1} fontSize={0.07}>
       <div slot="content" class="drawing">
         <div class="viewport" data-viewport aria-hidden="true">
           <span class="old">
@@ -52,14 +52,11 @@ const frames = [0.12, 0.4, 1];
         </ul>
       </div>
 
+      {/* Both callouts sit inside the viewport, clear of the old page's lines top left, so
+          the drawing can take the whole column in either orientation. */}
       <Fragment slot="annotations">
-        <ArrowAnnotation target="[data-corner]" anchor="center" tipX={0.9} tipY={-0.86} angle={0} length={0.35} text="Frame 1: the icon's box, 1.125em in the corner" lines={['Frame 1: the icon\'s box,', '1.125em in the corner']} only="landscape" />
-        <ArrowAnnotation target="[data-corner]" anchor="center" tipX={0.9} tipY={-0.86} angle={90} length={0.3} text="Frame 1: the icon's box in the corner" lines={['Frame 1: the icon\'s box', 'in the corner']} labelSide="left" only="portrait" />
-        <ArrowAnnotation target="[data-viewport]" anchor="0.12 0.6" tipX={-0.75} tipY={0.2} angle={180} length={0.3} text="Last frame: the same path, a square diagonal × factor each side" lines={['Last frame: the same path,', 'a square diagonal × factor', 'each side']} labelSide="left" only="landscape" />
-        <ArrowAnnotation target="[data-viewport]" anchor="0.35 0.25" tipX={-0.3} tipY={-0.5} angle={120} length={0.6} text="Last frame: the path, grown diagonal × factor" lines={['Last frame: the path,', 'grown diagonal × factor']} labelSide="left" only="portrait" />
-        <ArrowAnnotation target="[data-viewport]" anchor="0.9 0.55" tipX={0.8} tipY={0.1} angle={0} length={0.3} text="The new page, clipped to the path, 500 ms ease-in" lines={['The new page, clipped to', 'the path, 500 ms ease-in']} only="landscape" />
-        <ArrowAnnotation target="[data-factors]" anchor="right" tipX={0.55} tipY={0.85} angle={0} length={0.3} text="A moon is round already, a sun has to grow further" lines={['A moon is round already,', 'a sun has to grow further']} only="landscape" />
-        <ArrowAnnotation target="[data-factors]" anchor="bottom" tipX={0} tipY={0.95} angle={-90} length={0.4} text="A moon is round, a sun grows further" lines={['A moon is round,', 'a sun grows further']} only="portrait" />
+        <ArrowAnnotation target="[data-corner]" anchor="center" tipX={0.9} tipY={-0.86} angle={-120} length={0.35} text="Frame 1: the icon's box in the corner" lines={['Frame 1: the icon\'s box', 'in the corner']} labelSide="left" />
+        <ArrowAnnotation target="[data-viewport]" anchor="0.62 0.6" tipX={0.24} tipY={0.2} angle={180} length={0.2} text="The same path, grown: a square diagonal × factor wide" lines={['The same path, grown:', 'diagonal × factor wide']} labelSide="left" />
       </Fragment>
     </Annotations>
   </div>
@@ -67,15 +64,15 @@ const frames = [0.12, 0.4, 1];
   <dl class="rules">
     <div>
       <dt>Old and new</dt>
-      <dd><code>startViewTransition</code> keeps a picture of the old page; the pick lands inside its callback, and the new page renders under it.</dd>
+      <dd><code>startViewTransition</code> holds a picture of the old page; the new one renders under it.</dd>
     </div>
     <div>
       <dt>The path</dt>
-      <dd>The checked icon's <code>&lt;path&gt;</code>, made absolute by <code>getPathData</code>, mapped from its viewBox onto the icon's box, then onto the square.</dd>
+      <dd>The checked icon's <code>&lt;path&gt;</code>, mapped from its viewBox onto the corner box, then onto the square.</dd>
     </div>
     <div>
       <dt>The motion</dt>
-      <dd><code>clip-path</code> from the one to the other on the new page, and nothing else moves. Skipped under reduced motion and in a hidden tab.</dd>
+      <dd><code>clip-path</code> from the one to the other, 500 ms ease-in. A moon is round already; a sun grows further. Off under reduced motion.</dd>
     </div>
   </dl>
 </div>
@@ -92,24 +89,32 @@ const frames = [0.12, 0.4, 1];
   @include sheet-type(0.024, 0.028);
   @include clear-of-title-block;
   @include sheet-frame;
+  @include sheet-frame-side;
 }
 
+/* The callout overlay shrink-wraps its artwork; here the artwork is the column, capped so
+   the viewport clears the title block on a landscape sheet. The overlay reaches half an
+   artwork past it, and both callouts stay inside the viewport, so the figure clips it. */
 .figure {
-  padding: 0.5em 0.5em 0;
+  justify-items: center;
+  overflow: clip;
+
+  :global(.content) {
+    width: min(100%, 40em);
+  }
 }
 
 .drawing {
   display: grid;
   gap: 0.5em;
-  width: 26em;
-  max-width: 100%;
+  width: 100%;
 }
 
 /* A viewport, drawn 16:10, with the picker's corner top right. The frames are the icon
    itself, centred on the corner icon and grown to a share of the final square: a square
    --size of two diagonals wide, since the smallest factor is 1.2 and the largest 2.4. */
 .viewport {
-  --corner: 1.375em;
+  --corner: 1.5em;
 
   position: relative;
   aspect-ratio: 16 / 10;
@@ -120,7 +125,7 @@ const frames = [0.12, 0.4, 1];
   overflow: hidden;
 }
 
-/* The old page, still under the frames: a name and two lines. */
+/* The old page, still under the frames: a name and two lines, top left. */
 .old {
   position: absolute;
   inset: 0.75em 3em 0.75em 0.875em;
@@ -130,19 +135,20 @@ const frames = [0.12, 0.4, 1];
 }
 
 .old-name {
-  width: 40%;
+  width: 22%;
   height: 0.625em;
   border-radius: 0.125em;
   background: var(--ink-muted);
 }
 
 .old-line {
+  width: 32%;
   height: 0.25em;
   border-radius: 0.125em;
   background: var(--ink-faint);
 
   &.short {
-    width: 55%;
+    width: 24%;
   }
 }
 

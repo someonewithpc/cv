@@ -2,15 +2,13 @@
 /**
  * The token layers, painted live: four seeds, the three ramps _colors.scss mixes from them,
  * and the names a sheet reads. Every swatch is the token itself, so the drawing shows the
- * theme on screen and a switch repaints it with the rest of the page.
+ * theme on screen and a switch repaints it with the rest of the page. The layers are
+ * labelled in the margin, the way the ramps are, so the drawing needs no callouts.
  */
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
-
 const seeds = ['canvas', 'ink', 'accent', 'blueprint'];
 const steps = Array.from({ length: 12 }, (_, i) => i + 1);
 const ramps = ['neutral', 'accent', 'blueprint'];
-const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-grid'];
+const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
 ---
 
 <div class="tokens-sheet">
@@ -20,67 +18,56 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-gri
   </header>
 
   <div class="figure">
-    <Annotations reach={1.5} fontSize={0.11}>
-      <div slot="content" class="drawing">
-        <ul class="seeds" data-seeds aria-label="Seeds">
-          {seeds.map((seed) => (
-            <li style={`--swatch: var(--theme-${seed})`}>
-              <span class="swatch"></span>
-              <code>{seed}</code>
-            </li>
-          ))}
-        </ul>
+    <div class="drawing">
+      <span class="layer-name">seeds</span>
+      <ul class="seeds" data-seeds aria-label="Seeds">
+        {seeds.map((seed) => (
+          <li style={`--swatch: var(--theme-${seed})`}>
+            <span class="swatch"></span>
+            <code>{seed}</code>
+          </li>
+        ))}
+      </ul>
 
-        <span class="flow" aria-hidden="true">color-mix(in oklch)</span>
+      <span class="flow" aria-hidden="true">color-mix(in oklch)</span>
 
-        <div class="ramps" data-ramps>
-          {ramps.map((name) => (
-            <div class="ramp">
-              <code class="ramp-name">{name}</code>
-              <ol aria-label={`${name} 1 to 12`}>
-                {steps.map((i) => (
-                  <li style={`--swatch: var(--${name}-${i})`}><span class="swatch"></span></li>
-                ))}
-              </ol>
-            </div>
-          ))}
+      {ramps.map((name) => (
+        <div class="ramp">
+          <code class="layer-name">{name}</code>
+          <ol aria-label={`${name} 1 to 12`}>
+            {steps.map((i) => (
+              <li style={`--swatch: var(--${name}-${i})`}><span class="swatch"></span><span class="step">{i}</span></li>
+            ))}
+          </ol>
         </div>
+      ))}
 
-        <span class="flow" aria-hidden="true">var()</span>
+      <span class="flow" aria-hidden="true">var()</span>
 
-        <ul class="names" data-names aria-label="Names">
-          {names.map((token) => (
-            <li style={`--swatch: var(${token})`}>
-              <span class="swatch"></span>
-              <code>{token}</code>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <Fragment slot="annotations">
-        <ArrowAnnotation target="[data-seeds]" anchor="right" tipX={0.85} tipY={-0.85} angle={0} length={0.3} text="Seeds: four colours on :root, per theme" lines={['Seeds: four colours', 'on :root, per theme']} only="landscape" />
-        <ArrowAnnotation target="[data-seeds]" anchor="top-right" tipX={0.85} tipY={-0.95} angle={90} length={0.25} text="Seeds: four colours on :root, per theme" lines={['Seeds: four colours', 'on :root, per theme']} labelSide="left" only="portrait" />
-        <ArrowAnnotation target="[data-ramps]" anchor="right" tipX={0.9} tipY={-0.05} angle={0} length={0.3} text="Twelve steps: canvas to ink; accent and blueprint tinted, then shaded" lines={['Twelve steps: canvas to ink;', 'accent and blueprint', 'tinted, then shaded']} only="landscape" />
-        <ArrowAnnotation target="[data-ramps]" anchor="left" tipX={-0.9} tipY={-0.05} angle={180} length={0.2} text="Twelve steps" lines={['Twelve', 'steps']} labelSide="left" only="portrait" />
-        <ArrowAnnotation target="[data-names]" anchor="right" tipX={0.9} tipY={0.8} angle={0} length={0.3} text="Names: what a sheet reads, never a ramp step" lines={['Names: what a sheet reads,', 'never a ramp step']} only="landscape" />
-        <ArrowAnnotation target="[data-names]" anchor="bottom-right" tipX={0.9} tipY={0.95} angle={-90} length={0.25} text="Names: what a sheet reads" lines={['Names: what', 'a sheet reads']} labelSide="left" only="portrait" />
-      </Fragment>
-    </Annotations>
+      <span class="layer-name">names</span>
+      <ul class="names" data-names aria-label="Names">
+        {names.map((token) => (
+          <li style={`--swatch: var(${token})`}>
+            <span class="swatch"></span>
+            <code>{token}</code>
+          </li>
+        ))}
+      </ul>
+    </div>
   </div>
 
   <dl class="rules">
     <div>
       <dt>Seeds</dt>
-      <dd>A theme is four oklch colours. A dark theme's ink is light, so its ramps run the other way by themselves.</dd>
+      <dd>Four oklch colours on <code>:root</code> per theme. A dark theme's ink is light, so its ramps run the other way by themselves.</dd>
     </div>
     <div>
       <dt>Ramps</dt>
-      <dd>A Sass loop: neutral mixes canvas into ink in eleven equal steps; accent and blueprint tint to 8, seed at 9, shade to 12.</dd>
+      <dd>A Sass loop: neutral mixes canvas into ink in eleven steps; accent and blueprint tint to 8, seed at 9, shade to 12.</dd>
     </div>
     <div>
       <dt>Names</dt>
-      <dd>A blueprint sheet like this one remaps them from its own paper, so the swatches here are the sheet's, not the page's.</dd>
+      <dd>What a sheet reads, never a step. A blueprint sheet like this one remaps them from its own paper.</dd>
     </div>
   </dl>
 </div>
@@ -95,31 +82,43 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-gri
   @include sheet-type(0.024, 0.028);
   @include clear-of-title-block;
   @include sheet-frame;
+  @include sheet-frame-side;
 }
 
 .figure {
-  padding: 0 1em;
+  align-content: center;
 }
 
+/* The three layers on one grid: a label column, then the swatches. */
 .drawing {
   display: grid;
-  justify-items: center;
-  gap: 0.375em;
-  width: 26em;
-  max-width: 100%;
+  grid-template-columns: 5.5em minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5em 0.75em;
+  width: 100%;
   font-family: monospace, system-ui;
 }
 
+.ramp {
+  display: contents;
+}
+
+.layer-name {
+  font-size: max(0.5rem, 0.75em);
+  letter-spacing: 0.06em;
+  text-align: right;
+  color: var(--ink-muted);
+}
+
 .swatch {
-  @include swatch(1.5em);
+  @include swatch(2.5em);
 }
 
 .seeds,
 .names {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5em 1em;
+  gap: 0.5em 1.25em;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -127,19 +126,22 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-gri
   li {
     display: grid;
     justify-items: center;
-    gap: 0.125em;
+    gap: 0.25em;
     font-size: max(0.5rem, 0.75em);
   }
 }
 
 .names .swatch {
-  width: 1.25em;
-  height: 1.25em;
+  width: 2em;
+  height: 2em;
 }
 
 /* The arrow between layers, with what carries a colour down it. */
 .flow {
   position: relative;
+  grid-column: 2;
+  justify-self: start;
+  margin-left: 1em;
   padding-top: 1.25em;
   font-size: max(0.5rem, 0.75em);
   color: var(--ink-muted);
@@ -148,7 +150,7 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-gri
     content: '';
     position: absolute;
     top: 0;
-    left: 50%;
+    left: 0.5em;
     height: 1em;
     border-left: 1px solid var(--line-strong);
   }
@@ -157,7 +159,7 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-gri
     content: '';
     position: absolute;
     top: 0.75em;
-    left: 50%;
+    left: 0.5em;
     width: 0.375em;
     height: 0.375em;
     translate: -50% 0;
@@ -167,25 +169,18 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-gri
   }
 }
 
-.ramps {
+.ramp ol {
   display: grid;
-  gap: 0.375em;
-  width: 100%;
-}
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.25em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 
-.ramp {
-  display: grid;
-  grid-template-columns: 5em minmax(0, 1fr);
-  align-items: center;
-  gap: 0.5em;
-
-  ol {
+  li {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
+    justify-items: center;
     gap: 0.125em;
-    margin: 0;
-    padding: 0;
-    list-style: none;
   }
 
   .swatch {
@@ -193,10 +188,10 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint-gri
     aspect-ratio: 1;
     height: auto;
   }
-}
 
-.ramp-name {
-  font-size: max(0.5rem, 0.75em);
-  text-align: right;
+  .step {
+    font-size: max(0.5rem, 0.625em);
+    color: var(--ink-faint);
+  }
 }
 </style>

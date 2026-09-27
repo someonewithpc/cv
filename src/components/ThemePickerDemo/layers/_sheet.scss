@@ -206,3 +206,44 @@ $sheet-margin: 0.75em;
     box-sizing: border-box;
   }
 }
+
+// The same frame with the drawing beside its rules instead of over them: the figure takes the
+// wider left column and fills it, the rules stand in one column on the right. Portrait
+// stacks them again. Goes after sheet-frame on the same root.
+@mixin sheet-frame-side {
+  grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.625em 1.25em;
+
+  header {
+    grid-column: 1 / -1;
+  }
+
+  .figure {
+    justify-items: stretch;
+  }
+
+  .rules {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 0.75em;
+    padding: 0 0 0 1.25em;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+
+    header {
+      grid-column: auto;
+    }
+
+    .rules {
+      padding: 0.5em 0 0;
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+  }
+}

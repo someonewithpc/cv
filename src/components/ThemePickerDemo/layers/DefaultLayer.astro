@@ -2,17 +2,15 @@
 /**
  * Who decides the theme: the OS until something is picked, then the stamp and the radio.
  * The three rules are drawn in cascade order with a lamp each, lit by the same selectors
- * that paint the page (shown.ts), so a pick in the corner moves the light.
+ * that paint the page (shown.ts), so a pick in the corner moves the light. Each card
+ * carries its own note, so the drawing needs no callouts.
  */
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
-
 import { shownCss } from '../shown';
 
 const rules = [
-  { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }' },
-  { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]' },
-  { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)' },
+  { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }', note: 'light or dark only: the OS has no word for arctic' },
+  { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]', note: 'written by the pick, kept as cv-theme' },
+  { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)', note: 'no script: CSS alone' },
 ];
 
 const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first paint'];
@@ -25,45 +23,40 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   </header>
 
   <div class="figure">
-    <Annotations reach={1.5} fontSize={0.11}>
-      <div slot="content" class="drawing">
-        <ol class="cascade" data-cascade aria-label="The rules, in cascade order">
-          {rules.map(({ mark, name, selector }) => (
-            <li data-chosen={mark}>
-              <span class="lamp" data-lamp aria-hidden="true"></span>
-              <span class="rule-name">{name}</span>
-              <code class="selector">{selector}</code>
-              <span class="on">painting</span>
-            </li>
-          ))}
-        </ol>
+    <div class="drawing">
+      <ol class="cascade" data-cascade aria-label="The rules, in cascade order">
+        {rules.map(({ mark, name, selector, note }) => (
+          <li data-chosen={mark}>
+            <span class="lamp" data-lamp aria-hidden="true"></span>
+            <span class="rule-name">{name}</span>
+            <span class="on">painting</span>
+            <code class="selector">{selector}</code>
+            <span class="note">{note}</span>
+          </li>
+        ))}
+      </ol>
 
+      <div class="reload-row">
         <ol class="reload" data-reload aria-label="A reload with a pick kept">
           {reload.map((stop) => <li><code>{stop}</code></li>)}
         </ol>
+        <span class="caption">A reload: eight lines in the head stamp the kept pick before the first paint</span>
       </div>
-
-      <Fragment slot="annotations">
-        <ArrowAnnotation target="[data-lamp]" anchor="center" tipX={-0.95} tipY={-0.75} angle={180} length={0.35} text="Lit: painting now" lines={['Lit:', 'painting now']} labelSide="left" />
-        <ArrowAnnotation target='[data-chosen="os"]' anchor="top-right" tipX={0.95} tipY={-0.95} angle={60} length={0.3} text="Light and dark only: the OS has no word for arctic" lines={['Light and dark only:', 'the OS has no word for arctic']} labelSide="left" />
-        <ArrowAnnotation target='[data-chosen="radio"]' anchor="right" tipX={1} tipY={0.2} angle={-30} length={0.2} text="No script: CSS alone" lines={['No script:', 'CSS alone']} />
-        <ArrowAnnotation target="[data-reload]" anchor="bottom" tipX={0} tipY={1} angle={-90} length={0.4} text="A reload: eight lines in the head stamp the kept pick first" lines={['A reload: eight lines in the head', 'stamp the kept pick first']} />
-      </Fragment>
-    </Annotations>
+    </div>
   </div>
 
   <dl class="rules">
     <div>
       <dt>Nothing picked</dt>
-      <dd>Only the OS rule matches, so the page follows the system's light or dark and changes with it.</dd>
+      <dd>Only the OS rule matches, so the page follows the system and changes with it.</dd>
     </div>
     <div>
       <dt>A pick</dt>
-      <dd>Writes the stamp, checks the radio and keeps <code>cv-theme</code>; <code>color-scheme: only</code> on <code>&lt;body&gt;</code> takes scrollbars and controls along.</dd>
+      <dd>Writes the stamp, checks the radio, keeps <code>cv-theme</code>. <code>color-scheme: only</code> on <code>&lt;body&gt;</code> takes scrollbars and controls along.</dd>
     </div>
     <div>
       <dt>Radios by id</dt>
-      <dd>Naming an attribute inside <code>:has()</code> put every input on the page in <code>:root</code>'s invalidation set, so any value typed anywhere restyled it all.</dd>
+      <dd>An attribute inside <code>:has()</code> put every input on the page in <code>:root</code>'s invalidation set; an id names one.</dd>
     </div>
   </dl>
 </div>
@@ -80,37 +73,37 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   @include sheet-type(0.024, 0.028);
   @include clear-of-title-block;
   @include sheet-frame;
+  @include sheet-frame-side;
 }
 
 .figure {
-  padding: 0 1em;
+  align-content: center;
 }
 
 .drawing {
   display: grid;
-  gap: 1.5em;
-  width: 26em;
-  max-width: 100%;
+  gap: 1.25em;
+  width: 100%;
 }
 
 /* The three rules, drawn as a stack in cascade order, each with a lamp lit while it paints. */
 .cascade {
   display: grid;
-  gap: 0.5em;
+  gap: 0.625em;
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: rule;
 
   li {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
       'lamp name on'
-      'lamp selector selector';
+      'lamp selector selector'
+      'lamp note note';
     align-items: center;
-    gap: 0.25em 0.625em;
-    padding: 0.5em 0.75em;
+    gap: 0.25em 0.75em;
+    padding: 0.625em 0.875em;
     border: 1px solid var(--line);
     border-radius: 0.25em;
     background: var(--sheet-paper);
@@ -124,18 +117,18 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
 
   .lamp {
     grid-area: lamp;
-    width: 0.625em;
-    height: 0.625em;
+    width: 0.875em;
+    height: 0.875em;
     border: 1px solid var(--line-strong);
     border-radius: 50%;
     background: color-mix(in oklch, var(--accent) calc(var(--shown, 0) * 100%), transparent);
-    box-shadow: 0 0 calc(var(--shown, 0) * 0.5em) var(--accent);
+    box-shadow: 0 0 calc(var(--shown, 0) * 0.625em) var(--accent);
   }
 
   .rule-name {
     grid-area: name;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.75em);
+    font-size: max(0.5rem, 0.875em);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -143,16 +136,23 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   .selector {
     grid-area: selector;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.625em);
+    font-size: max(0.5rem, 0.75em);
     line-height: 1.35;
     overflow-wrap: anywhere;
     color: color-mix(in oklch, var(--ink) calc(var(--shown, 0) * 100%), var(--ink-muted));
   }
 
+  .note {
+    grid-area: note;
+    font-size: max(0.5rem, 0.75em);
+    line-height: 1.35;
+    color: var(--ink-muted);
+  }
+
   .on {
     grid-area: on;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.625em);
+    font-size: max(0.5rem, 0.75em);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--accent);
@@ -160,7 +160,12 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   }
 }
 
-/* A reload with a pick kept, as four stops on a line. */
+/* A reload with a pick kept, as four stops on a line, with its caption under it. */
+.reload-row {
+  display: grid;
+  gap: 0.375em;
+}
+
 .reload {
   display: flex;
   justify-content: space-between;
@@ -174,7 +179,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   li {
     position: relative;
     flex: 1;
-    padding-top: 0.75em;
+    padding-top: 0.875em;
     text-align: center;
 
     &::before {
@@ -203,5 +208,12 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
       content: none;
     }
   }
+}
+
+.caption {
+  font-size: max(0.5rem, 0.75em);
+  line-height: 1.35;
+  text-align: center;
+  color: var(--ink-muted);
 }
 </style>
