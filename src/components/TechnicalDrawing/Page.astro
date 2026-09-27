@@ -195,7 +195,11 @@ section {
   --title-block-inline: 0px;
   --title-block-block: 0px;
 
-  contain: size style;
+  /* size and layout make the sheet a layout boundary: a change inside it lays out
+     the sheet alone. Not style: Blink paints a box with both layout and style
+     containment from its offset rounded to a whole pixel, and that moved the
+     frame line and the logo by a pixel at 390. */
+  contain: size layout;
   overflow: clip;
 
   width: 100%;
