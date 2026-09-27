@@ -29,7 +29,7 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
         ))}
       </ul>
 
-      <span class="flow" aria-hidden="true">color-mix(in oklch)</span>
+      <span class="flow" aria-hidden="true"><code>color-mix(in oklch)</code></span>
 
       {ramps.map((name) => (
         <div class="ramp">
@@ -42,7 +42,7 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
         </div>
       ))}
 
-      <span class="flow" aria-hidden="true">var()</span>
+      <span class="flow" aria-hidden="true"><code>var()</code></span>
 
       <span class="layer-name">names</span>
       <ul class="names" data-names aria-label="Names">
@@ -59,11 +59,11 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
   <dl class="rules">
     <div>
       <dt>Seeds</dt>
-      <dd>Four oklch colours on <code>:root</code> per theme. A dark theme's ink is light, so its ramps run the other way by themselves.</dd>
+      <dd>Four <code>oklch</code> colours on <code>:root</code> per theme. A dark theme's ink is light, so its ramps run the other way by themselves.</dd>
     </div>
     <div>
       <dt>Ramps</dt>
-      <dd>A Sass loop: neutral mixes canvas into ink in eleven steps; accent and blueprint tint to 8, seed at 9, shade to 12.</dd>
+      <dd>A Sass loop mixes <code>canvas</code> into <code>ink</code> in eleven steps for <code>neutral</code>. <code>accent</code> and <code>blueprint</code> tint to 8, take the seed at 9 and shade to 12.</dd>
     </div>
     <div>
       <dt>Names</dt>

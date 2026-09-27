@@ -9,7 +9,7 @@ import { shownCss } from '../shown';
 
 const rules = [
   { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }', note: 'the OS only knows light and dark' },
-  { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]', note: 'written by the pick, kept as cv-theme' },
+  { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]', note: 'written by the pick, kept as <code>cv-theme</code>' },
   { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)', note: 'works without script' },
 ];
 
@@ -31,7 +31,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
             <span class="rule-name">{name}</span>
             <span class="on">painting</span>
             <code class="selector">{selector}</code>
-            <span class="note">{note}</span>
+            <span class="note" set:html={note} />
           </li>
         ))}
       </ol>
@@ -40,7 +40,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
         <ol class="reload" data-reload aria-label="A reload with a pick kept">
           {reload.map((stop) => <li><code>{stop}</code></li>)}
         </ol>
-        <span class="caption">On a reload, eight lines in the head stamp the kept pick before the first paint</span>
+        <span class="caption">On a reload, eight lines in the <code>&lt;head&gt;</code> stamp the kept pick before the first paint</span>
       </div>
     </div>
   </div>

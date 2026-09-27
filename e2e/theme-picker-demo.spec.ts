@@ -175,6 +175,11 @@ test.describe('reduced motion', () => {
     await expect(sheet.locator('.steps pre.astro-code.github-dark').first()).toBeVisible();
     expect(await sheet.locator('.steps .astro-code span[style*="#F97583"]').count()).toBeGreaterThan(0);
     expect(await sheet.locator('.steps .astro-code span[style*="#B392F0"]').count()).toBeGreaterThan(0);
+
+    // Code words in the prose are set as inline code, on a ground of their own.
+    const inline = sheet.locator('.step-name code', { hasText: 'startViewTransition' });
+    await expect(inline).toBeVisible();
+    expect(await inline.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
     expect(await page.locator('script[src*="shiki"], script[src*="prism"]').count()).toBe(0);
 
     // One end frame per theme is drawn; the selectors show the one on screen, and the tones

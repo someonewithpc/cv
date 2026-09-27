@@ -23,7 +23,7 @@ type Fragment = { code: string[]; from: 'picker' | 'utils'; check?: string };
 
 const steps: { name: string; fragment: Fragment }[] = [
   {
-    name: 'Start the transition. The callback is the switch itself',
+    name: 'Start the transition with `startViewTransition`, the switch as its callback',
     /* The callback is stood in for: the check covers the call. */
     fragment: {
       code: ['const viewTransition = document.startViewTransition(() => { /**/ });'],
@@ -32,7 +32,7 @@ const steps: { name: string; fragment: Fragment }[] = [
     },
   },
   {
-    name: 'Once ready, measure the icon and read its path',
+    name: 'Once `ready`, measure the icon into `rect` and read its path',
     fragment: {
       code: [
         'viewTransition.ready.then(async () => {',
@@ -43,7 +43,7 @@ const steps: { name: string; fragment: Fragment }[] = [
     },
   },
   {
-    name: 'First frame: the path mapped from its viewBox onto the icon\'s box',
+    name: 'For the first frame, map the path from its `viewBox` onto the icon\'s box',
     fragment: {
       code: [
         '  const startPathData = transformPath(pathData, viewBox,',
@@ -53,7 +53,7 @@ const steps: { name: string; fragment: Fragment }[] = [
     },
   },
   {
-    name: 'Last frame: the same path on a square 2 × size wide, centred on the icon',
+    name: 'For the last frame, map it onto a square `2 × size` wide, centred on `cx`, `cy`',
     fragment: {
       code: [
         '  const size = Math.hypot(window.innerWidth, window.innerHeight)',
@@ -67,7 +67,7 @@ const steps: { name: string; fragment: Fragment }[] = [
     },
   },
   {
-    name: 'Clip the new page to the first frame, grow it to the last',
+    name: 'Clip the new page to the first frame with `clip-path: path()` and grow it to the last',
     fragment: {
       code: [
         '  document.documentElement.animate(',
@@ -88,17 +88,21 @@ const inside: { fragment: Fragment; note: string }[] = [
       code: ['const mapWidthAbsolute = (x: number) => ((x - fromViewBox.x) / fromViewBox.width) * toViewBox.width + toViewBox.x;'],
       from: 'utils',
     },
-    note: 'x: its share of the viewBox width, times the box\'s width, from the box\'s left. y likewise.',
+    note: 'Scales `x` from the `viewBox` width to the box\'s width and adds the box\'s left. `y` likewise.',
   },
   {
     fragment: { code: ['return [mapWidthAbsolute(width), mapHeightAbsolute(height)];'], from: 'utils' },
-    note: 'Each command\'s values go through in x, y pairs.',
+    note: 'Each command\'s values go through in `x`, `y` pairs.',
   },
   {
     fragment: { code: ['values: (transformers[type] ?? thrower(type))(values),'], from: 'utils' },
-    note: 'Letters kept, values mapped: a path in viewport pixels, the one unit clip-path: path() takes.',
+    note: 'Keeps each command\'s letter and maps its values into viewport pixels, the unit `clip-path: path()` takes.',
   },
 ];
+
+/* Prose with code words in backticks, set as inline code. */
+const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const ticks = (text: string) => escape(text).replace(/`([^`]+)`/g, '<code>$1</code>');
 
 /* The fragments must be their source's own lines: compare with whitespace dropped and a
    comma before a bracket or at the end taken off, line by line, and fail the build on the
@@ -141,15 +145,15 @@ const frames = THEME_IDS.map((id) => {
   <ol class="steps" aria-label="The wipe's script">
     {steps.map(({ name, fragment }, index) => (
       <li>
-        <span class="step-name"><span class="balloon">{index + 1}</span>{name}</span>
+        <span class="step-name"><span class="balloon">{index + 1}</span><span set:html={ticks(name)} /></span>
         <Code code={fragment.code.join('\n')} lang="ts" theme="github-dark" wrap={null} />
         {index === 3 && (
           <div class="inside">
-            <span class="inside-name">Inside transformPath, for both frames</span>
+            <span class="inside-name">Inside <code>transformPath</code>, for both frames</span>
             {inside.map((row) => (
               <div class="row">
                 <Code code={row.fragment.code.join('\n')} lang="ts" theme="github-dark" wrap={null} />
-                <span class="note">{row.note}</span>
+                <span class="note" set:html={ticks(row.note)} />
               </div>
             ))}
           </div>
@@ -182,10 +186,10 @@ const frames = THEME_IDS.map((id) => {
       </span>
 
       {frames.map(({ id, factor }) => (
-        <span class="label" data-shown={id} style={`${pct(cx / 2, dimY - 1.5)}; --dx: -50%; --dy: -100%`}>size = diagonal × {factor}</span>
+        <span class="label" data-shown={id} style={`${pct(cx / 2, dimY - 1.5)}; --dx: -50%; --dy: -100%`}><code>size = diagonal × {factor}</code></span>
       ))}
-      <span class="label" style={`${pct(cx + icon.size / 2 + 2, cy)}; --dx: 0; --dy: -50%`}>rect, cx, cy</span>
-      <span class="label" style={`${pct(viewport.x + viewport.width / 2 + 3, viewport.y + viewport.height / 2 + 3)}; --dx: 0; --dy: 0`}>diagonal</span>
+      <span class="label" style={`${pct(cx + icon.size / 2 + 2, cy)}; --dx: 0; --dy: -50%`}><code>rect</code>, <code>cx</code>, <code>cy</code></span>
+      <span class="label" style={`${pct(viewport.x + viewport.width / 2 + 3, viewport.y + viewport.height / 2 + 3)}; --dx: 0; --dy: 0`}><code>diagonal</code></span>
       <span class="label" style={`${pct(viewport.x, bottom + 1)}; --dx: 0; --dy: 0`}>viewport</span>
     </div>
   </div>

@@ -116,6 +116,22 @@ $sheet-margin: 0.75em;
   vertical-align: middle;
 }
 
+// A code word in running text, set like a backtick span: the mono face a notch down on a
+// faint ground of the sheet's own ink, inside a hairline.
+@mixin inline-code {
+  padding: 0 0.25em;
+  border: 1px solid var(--line);
+  border-radius: 0.125em;
+  background: color-mix(in oklch, var(--ink) 7%, transparent);
+  font-family: monospace, system-ui;
+  font-size: 0.875em;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 // One drawing per sheet: a header of an eyebrow and the point in one line, the figure with
 // its callouts, and three short rules under a line. Markup: .sheet > header + .figure +
 // dl.rules > div > dt + dd. The root takes sheet-content and sheet-type itself.
@@ -189,6 +205,10 @@ $sheet-margin: 0.75em;
 
   code {
     font-family: monospace, system-ui;
+  }
+
+  :where(header, dd, .step-name, .inside-name, .note, .caption, .label, .flow) :global(code) {
+    @include inline-code;
   }
 }
 
