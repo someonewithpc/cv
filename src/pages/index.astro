@@ -31,7 +31,7 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
 
 <Layout>
   <style is:global set:html={MAT_GRID_CSS} />
-  <main id="main">
+  <main id="main" tabindex="-1">
     {/* One folio per sheet, in page order. Each label is the heading that sheet already
         shows, so the margin and the paper say the same thing; the top sheet has no heading
         but the name, so the name is what its folio reads. */}
@@ -178,6 +178,13 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
 </Layout>
 
 <style lang="scss">
+// tabindex="-1" so the skip link (Layout.astro) can move focus here; not a Tab stop of its
+// own, since it sits right before the page's first real control in DOM order.
+#main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -0.125rem;
+}
+
 #demos {
   display: grid;
   // The page's columns restated, not a subgrid of them. This section spans full-width, so it
