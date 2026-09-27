@@ -24,7 +24,8 @@
  * (taken from the overlay's screen matrix), so a page positioned while splayed at the back
  * of the stack is right when it turns to the front. The artwork is not expected to be
  * translated inside `.content`. A target whose position comes from an animation (the cube's
- * faces) is re-read when an animation on the artwork ends or is cancelled.
+ * faces) is re-read when an animation on the artwork ends or is cancelled, and every overlay
+ * is re-read when a web font finishes loading.
  */
 
 type Point = { x: number; y: number };
@@ -297,6 +298,14 @@ const observer = new ResizeObserver((entries) => {
   for (const overlay of touched) {
     if (overlay) schedule(overlay);
   }
+});
+
+// A web font that lands after the first read reflows the artwork's text without resizing the
+// artwork, and moves the targets laid out below that text: the Preview Background samples, by
+// 9px at 390 wide. The observer does not fire for that, so every overlay is read again once a
+// font load settles, which happens once or twice a visit and never on a resize.
+document.fonts?.addEventListener('loadingdone', () => {
+  for (const overlay of new Set(overlays.values())) schedule(overlay);
 });
 
 function calloutOf(group: SVGGElement, artwork: Element): Callout | undefined {
