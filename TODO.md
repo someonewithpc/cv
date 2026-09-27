@@ -50,6 +50,7 @@
     - [~] Grab some models like a classroom and a banquet set (#24)
     - [x] Space builder shows the variant picker in place (#51)
       - [x] Variants sheet shows the restart, play and pause deck (#143)
+      - [x] Seat pickers take the text they show, "8 seats", as their name for screen readers and voice control (#175)
     - [ ] Showcase the carousel? With the animated pips
   - [x] Visrez library tagging tool (#21)
     - [x] Walkthrough stops for good under a resting mouse or a scroll swipe (#137)
