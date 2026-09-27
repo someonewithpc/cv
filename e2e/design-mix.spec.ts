@@ -415,7 +415,9 @@ test('a title card stands beside every detail at 1728px, alternating sides', asy
 
   for (const [index, detail] of details.entries()) {
     const name = letter(index);
-    const onTheLeft = index % 2 === 0;
+    // The first detail's card stands on the right, so its bubble can oppose it on the left
+    // (index.astro): the near side alternates starting from the second detail, not the first.
+    const onTheLeft = index % 2 === 1;
     expect(detail.side, `${name} side`).toBe(onTheLeft ? 'start' : 'end');
     expect(detail.shown, `${name} shown`).toBe(true);
 

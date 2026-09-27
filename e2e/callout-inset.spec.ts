@@ -132,6 +132,8 @@ test('the bubble stands on the opposite side of the view from the card, and alte
   for (const row of rows) {
     expect(row.bubbleOnLeft, `${row.side} row, bubble opposite the card`).toBe(!row.cardOnLeft);
   }
+  // The page opens with the bubble on the left (index.astro), card on the right.
+  expect(rows[0].bubbleOnLeft, 'first row, bubble on the left').toBe(true);
   // Consecutive detail rows alternate sides (index.astro), so the bubble should too.
   expect(rows[0].bubbleOnLeft).not.toBe(rows[1].bubbleOnLeft);
 });
