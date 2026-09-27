@@ -147,3 +147,4 @@
 - [x] Load each demo's stylesheet when the demo boots, not in the head (#181)
 - [x] The Marker Editor walkthrough drags read no layout per frame (#178)
 - [x] Skip style, layout and paint for the stacks off screen (#185)
+- [ ] Detail callout bubble sits on the same side down the page while its block alternates, past 105rem
