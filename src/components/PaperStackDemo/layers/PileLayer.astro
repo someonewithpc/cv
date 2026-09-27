@@ -1,24 +1,26 @@
 ---
 /**
- * The stack in plan: the front sheet, the sheets still to come fanned below it about the pin,
- * the sheets already turned risen above its top edge, the clip on the pin and the dog-ear at
- * rest. Drawn the way PaperStack/index.astro lays it out, with the small angles and rises
- * exaggerated so they read at this size.
+ * The stack in plan: the front page with what a page carries, the pages still to come fanned
+ * below it about the pin, the pages already turned risen above its top edge, the clip on the
+ * pin and the dog-ear at rest. Drawn the way PaperStack/index.astro lays it out, with the
+ * small angles and rises exaggerated so they read at this size.
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
+import MiniPage from './MiniPage.astro';
+
 const annotationScale = 0.6;
 const annotationFontSize = 0.1 * annotationScale;
 
-// The front sheet's box and its folded-back corner (the lean is 1 in 2, as on a wide sheet).
-const sheet = { x: 40, y: 44, w: 160, h: 80 };
-const lean = { x: 9, y: 18 };
+// The front page's box and its folded-back corner (the lean is 1 in 2, as on a wide sheet).
+const sheet = { x: 30, y: 30, w: 240, h: 120 };
+const lean = { x: 12, y: 24 };
 const pin = { x: sheet.x + lean.x / 2, y: sheet.y + lean.y / 2 };
 const right = sheet.x + sheet.w;
 const bottom = sheet.y + sheet.h;
 
-// A sheet with its top-left corner cut on the resting crease.
+// A page with its top-left corner cut on the resting crease.
 const cut = (dx = 0, dy = 0) => [
   [sheet.x + lean.x + dx, sheet.y + dy],
   [right + dx, sheet.y + dy],
@@ -27,8 +29,7 @@ const cut = (dx = 0, dy = 0) => [
   [sheet.x + dx, sheet.y + lean.y + dy],
 ].map(([x, y]) => `${x},${y}`).join(' ');
 
-// The dog-ear: the crease from (right - 20, bottom) to (right, bottom - 10), a 2:1 rest, and
-// the corner reflected across it.
+// The dog-ear: a 2:1 rest, and the corner reflected across its crease.
 const ear = { x: 20, y: 10 };
 const creaseA = { x: right - ear.x, y: bottom };
 const creaseB = { x: right, y: bottom - ear.y };
@@ -39,20 +40,28 @@ const along = (right - creaseA.x) * u.x + (bottom - creaseA.y) * u.y;
 const foot = { x: creaseA.x + along * u.x, y: creaseA.y + along * u.y };
 const tip = { x: 2 * foot.x - right, y: 2 * foot.y - bottom };
 
-// The fan splays each page about the pin by 1.5° times the log of its index; three times
-// that here so the edges show. The pile rises half an em per log2 of the rank and drifts
-// back an eighth of an em per rank, scaled up the same way.
-const fan = [2, 3, 4].map((index) => 4.5 * Math.log(index));
-const pile = [1, 2].map((rank) => ({ rise: 6 * Math.log2(1 + rank), drift: 1.5 * rank }));
+// The fan splays each page about the pin by 1.5° times the log of its index; twice that
+// here so the edges show. The pile rises half an em per log2 of the rank and drifts back
+// an eighth of an em per rank, scaled up the same way.
+const fan = [2, 3, 4].map((index) => 3 * Math.log(index));
+const pile = [1, 2].map((rank) => ({ rise: 7 * Math.log2(1 + rank), drift: 2 * rank }));
 
 const clipAngle = (Math.atan2(lean.x, lean.y) * 180) / Math.PI;
 ---
 
 <div class="wrapper">
-  <p class="point typewriter">One grid cell, every page in it</p>
+  <p class="point typewriter">The pile from above</p>
 
   <Annotations scale={annotationScale} reach={1.25}>
-    <svg class="pile-drawing" viewBox="-70 -30 380 220" slot="content" aria-hidden="true">
+    <svg class="pile-drawing" viewBox="-85 -32 470 222" slot="content" aria-hidden="true">
+      <defs>
+        {/* The pages under the front one are blueprints, ruled like the real ones. */}
+        <pattern id="pile-blueprint" patternUnits="userSpaceOnUse" width="10" height="10">
+          <rect class="blueprint" width="10" height="10" />
+          <path class="blueprint-rule" d="M 10 0 V 10 M 0 10 H 10" />
+        </pattern>
+      </defs>
+
       {/* Behind everything: the pages already turned, the most recent furthest out. */}
       <g data-part="pile">
         {[...pile].reverse().map(({ rise, drift }) => (
@@ -63,86 +72,74 @@ const clipAngle = (Math.atan2(lean.x, lean.y) * 180) / Math.PI;
       {/* The pages still to come, hindmost first. */}
       <g data-part="fan">
         {[...fan].reverse().map((angle) => (
-          <polygon class="paper" points={cut()} transform={`rotate(${angle} ${pin.x} ${pin.y})`} />
+          <polygon class="paper ruled" points={cut()} transform={`rotate(${angle} ${pin.x} ${pin.y})`} />
         ))}
       </g>
 
-      {/* The front page, its bottom-right corner cut on the dog-ear's crease. */}
-      <polygon
-        class="paper front"
-        data-part="front"
-        points={`${sheet.x + lean.x},${sheet.y} ${right},${sheet.y} ${creaseB.x},${creaseB.y} ${creaseA.x},${creaseA.y} ${sheet.x},${bottom} ${sheet.x},${sheet.y + lean.y}`}
-      />
-      <text class="index" x={sheet.x + 14} y={sheet.y + 32}>1</text>
+      {/* The front page, its bottom-right corner cut on the dog-ear's crease, and what it carries. */}
+      <g data-part="front">
+        <polygon
+          class="paper front"
+          points={`${sheet.x + lean.x},${sheet.y} ${right},${sheet.y} ${creaseB.x},${creaseB.y} ${creaseA.x},${creaseA.y} ${sheet.x},${bottom} ${sheet.x},${sheet.y + lean.y}`}
+        />
+        <g transform={`translate(${sheet.x} ${sheet.y})`}>
+          <MiniPage w={sheet.w} h={sheet.h} />
+        </g>
+      </g>
 
       {/* The dog-ear: the corner folded over the crease, the sheet's back showing. */}
       <polygon class="paper flap" data-part="ear" points={`${creaseA.x},${creaseA.y} ${creaseB.x},${creaseB.y} ${tip.x},${tip.y}`} />
 
       {/* The clip on the pin, leaning with the resting crease. */}
       <g data-part="clip" transform={`translate(${pin.x} ${pin.y}) rotate(${clipAngle})`}>
-        <path class="wire" d="M-3 -4 V7 a4 4 0 0 0 8 0 V-9 a2.5 2.5 0 0 0 -5 0 V4" />
+        <path class="wire" d="M-3.5 -5 V8 a4.5 4.5 0 0 0 9 0 V-10 a3 3 0 0 0 -6 0 V5" />
       </g>
     </svg>
 
     <Fragment slot="annotations">
       <ArrowAnnotation
-        target='[data-part="front"]'
-        anchor="0.5 0.62"
-        tipX={0}
-        tipY={0.13}
-        angle={-75}
-        length={0.55}
-        fontSize={annotationFontSize}
-        text="front page, --page-index 1"
-      />
-      <ArrowAnnotation
-        target='[data-part="fan"]'
-        anchor="0.97 0.9"
-        tipX={0.41}
-        tipY={0.49}
-        angle={-15}
+        target='[data-part="pile"]'
+        anchor="0.55 0"
+        tipX={0.05}
+        tipY={-0.45}
+        angle={75}
         length={0.35}
         fontSize={annotationFontSize}
-        text="still to come, 1.5° × log n"
+        text="pages already read, risen"
       />
       <ArrowAnnotation
-        target='[data-part="pile"]'
-        anchor="0.5 0.05"
-        tipX={-0.06}
-        tipY={-0.4}
-        angle={70}
-        length={0.4}
-        fontSize={annotationFontSize}
-        text="already read, risen ½em × log₂ rank"
-      />
-      <ArrowAnnotation
-        target='[data-part="clip"]'
-        anchor="0 0.5"
-        tipX={-0.42}
-        tipY={-0.25}
+        target='[data-part="front"]'
+        anchor="0.1 0.55"
+        tipX={-0.6}
+        tipY={0.1}
         angle={180}
         length={0.3}
         labelSide="left"
         fontSize={annotationFontSize}
-        text="the pin, under the clip"
+        text="front page, --page-index 1"
       />
       <ArrowAnnotation
         target='[data-part="ear"]'
         anchor="center"
-        tipX={0.37}
-        tipY={0.32}
-        angle={20}
+        tipX={0.68}
+        tipY={0.42}
+        angle={45}
         length={0.4}
         fontSize={annotationFontSize}
-        text="dog-ear at rest, 2cm × 1cm"
+        text="dog-ear, 2cm by 1cm"
+      />
+      <ArrowAnnotation
+        target='[data-part="fan"]'
+        anchor="0.9 0.98"
+        tipX={0.55}
+        tipY={0.62}
+        angle={-30}
+        length={0.35}
+        fontSize={annotationFontSize}
+        text="pages to come, fanned about the pin"
       />
     </Fragment>
   </Annotations>
-
-  <p class="footnote">
-    Paint order is <code>order: calc(-1 * var(--page-index))</code>. A turn renumbers every page
-    and the splay eases to the new count.
-  </p>
 </div>
 
 <style lang="scss">
@@ -155,12 +152,12 @@ const clipAngle = (Math.atan2(lean.x, lean.y) * 180) / Math.PI;
   display: grid;
   justify-items: center;
   align-content: center;
-  row-gap: 0.5em;
+  row-gap: 0.375em;
   max-width: min(92cqw, 100%);
   margin-inline: auto;
 
   > :global(.content) {
-    width: min(100%, 38em);
+    width: min(100%, 44em);
   }
 }
 
@@ -179,6 +176,20 @@ const clipAngle = (Math.atan2(lean.x, lean.y) * 180) / Math.PI;
     fill: var(--sheet-paper);
   }
 
+  .ruled {
+    fill: url(#pile-blueprint);
+  }
+
+  .blueprint {
+    fill: var(--blueprint);
+  }
+
+  .blueprint-rule {
+    stroke: var(--blueprint-grid);
+    stroke-width: 0.5;
+    fill: none;
+  }
+
   .turned {
     fill: color-mix(in oklch, var(--sheet-paper), var(--ink) 6%);
   }
@@ -191,25 +202,6 @@ const clipAngle = (Math.atan2(lean.x, lean.y) * 180) / Math.PI;
     @include line-art;
     stroke: var(--ink-muted);
     stroke-width: 1.5;
-  }
-
-  .index {
-    font-family: "Special Elite", monospace, system-ui;
-    font-size: 14px;
-    fill: var(--ink-faint);
-  }
-}
-
-.footnote {
-  margin: 0;
-  font-size: max(0.5rem, 0.6875em);
-  line-height: 1.35;
-  color: var(--ink-muted);
-  text-align: center;
-  text-wrap: pretty;
-
-  code {
-    font-family: monospace, system-ui;
   }
 }
 </style>

@@ -59,9 +59,8 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       pile: (
         <PostIt background="#ea1" color="black">
-          Every page of a stack sits in the same grid cell. Nothing asks the browser which
-          one is on top: a turn renumbers --page-index, and the front page is the one that
-          reads 1
+          All four pages share one grid cell. Which one is in front is a number, --page-index,
+          and a turn renumbers them all
         </PostIt>
       ),
       fold: (
