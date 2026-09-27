@@ -98,12 +98,8 @@ function overlayPoint(overlay: Element, nx: number, ny: number): CursorPos {
   };
 }
 
-/** Convert viewport client coords into a positioned host (carousel page). */
-function toHostPoint(
-  host: Element | null | undefined,
-  pos: CursorPos,
-  rect = host?.getBoundingClientRect(),
-): CursorPos {
+/** Convert viewport client coords into a positioned host (carousel page) at `rect`. */
+function toHostPoint(rect: DOMRectReadOnly | undefined, pos: CursorPos): CursorPos {
   if (!rect) return pos;
   return {
     x: pos.x - rect.left,
@@ -256,13 +252,23 @@ function MockMapOverlayInner() {
     return overlayPoint(overlay, REST_CURSOR_FRACTION.x, REST_CURSOR_FRACTION.y);
   };
 
-  const applyCursorStepRef = useRef<(step: DemoCursorStep, attempt?: number) => void>(() => {});
   /**
-   * The host's rect from the step that started the current drag. Every frame of a drag
-   * comes from rects read when it started, so the frames reuse this one instead of forcing
-   * a style and layout pass each.
+   * Where the carousel page sits in the viewport. It moves only when the page resizes or
+   * scrolls, so it is read once after either and kept, and the re-glue below refreshes it
+   * from the boxes the browser hands over. Reading it per placement forced a style and
+   * layout pass after each press and release a step had just dispatched.
    */
-  const dragHostRectRef = useRef<DOMRect | undefined>(undefined);
+  const hostRectRef = useRef<DOMRectReadOnly | undefined>(undefined);
+  /** Counts resizes and scrolls, so a box measured before one is not kept after it. */
+  const hostMovesRef = useRef(0);
+  const hostRect = () => (hostRectRef.current ??= editorPortalHost?.getBoundingClientRect());
+  /**
+   * The host's rect from the placement that started the current drag. Every frame of a drag
+   * comes from points read when it started, so the frames keep that rect too.
+   */
+  const dragHostRectRef = useRef<DOMRectReadOnly | undefined>(undefined);
+
+  const applyCursorStepRef = useRef<(step: DemoCursorStep, attempt?: number) => void>(() => {});
 
   applyCursorStepRef.current = (step: DemoCursorStep, attempt = 0) => {
     // User owns the real pointer — don't move/show the demo cursor over them.
@@ -276,9 +282,9 @@ function MockMapOverlayInner() {
 
     const place = (pos: CursorPos) => {
       const following = step.dragging && !step.click && dragHostRectRef.current;
-      const rect = following ? dragHostRectRef.current : editorPortalHost?.getBoundingClientRect();
+      const rect = following ? dragHostRectRef.current : hostRect();
       dragHostRectRef.current = rect;
-      setCursorPos(toHostPoint(editorPortalHost, pos, rect));
+      setCursorPos(toHostPoint(rect, pos));
     };
 
     if (step.client) {
@@ -339,17 +345,66 @@ function MockMapOverlayInner() {
   }, []);
 
   useEffect(() => {
+    if (!editorPortalHost) return;
+    const moved = () => {
+      hostMovesRef.current += 1;
+      hostRectRef.current = undefined;
+    };
+    const resizes = new ResizeObserver(moved);
+    resizes.observe(editorPortalHost);
+    // The page also moves when something above it changes the document's height.
+    resizes.observe(document.documentElement);
+    window.addEventListener('scroll', moved, { passive: true });
+    return () => {
+      resizes.disconnect();
+      window.removeEventListener('scroll', moved);
+      moved();
+    };
+  }, [editorPortalHost]);
+
+  useEffect(() => {
     const overlay = containerRef.current;
     if (!overlay || !editorPortalHost) return;
-    setCursorPos(toHostPoint(editorPortalHost, overlayPoint(overlay, 0.42, 0.38)));
+    setCursorPos(toHostPoint(hostRect(), overlayPoint(overlay, 0.42, 0.38)));
   }, [editorPortalHost]);
 
   // A step measures its target once, but accordion sections in the editor keep
   // animating afterwards and carry the target away from the parked cursor (the
   // stacked narrow layout shifts headers by whole sections). Re-glue the cursor
-  // to the highlighted target until the next step retargets it.
+  // to the highlighted target until the next step retargets it. Each tick asks an
+  // IntersectionObserver for the boxes, which the browser hands over from the next
+  // frame's own layout, so the tick forces none.
   useEffect(() => {
-    if (!inView) return;
+    if (!inView || !editorPortalHost) return;
+    let asked = { el: null as Element | null, moves: 0 };
+    const boxes = new IntersectionObserver((entries) => {
+      boxes.disconnect();
+      // A resize or scroll since the tick asked: these boxes are from before it.
+      if (hostMovesRef.current !== asked.moves) return;
+      let host: DOMRectReadOnly | undefined;
+      let target: DOMRectReadOnly | undefined;
+      for (const entry of entries) {
+        if (entry.target === editorPortalHost) host = entry.boundingClientRect;
+        else if (entry.target === asked.el) target = entry.boundingClientRect;
+      }
+      if (host) hostRectRef.current = host;
+      const el = activeTargetRef.current;
+      if (
+        !target
+        || el !== asked.el
+        || userControlRef.current
+        || cursorPhaseRef.current !== 'demo'
+      ) {
+        return;
+      }
+      const next = toHostPoint(host ?? hostRect(), {
+        x: target.left + target.width / 2,
+        y: target.top + target.height / 2,
+      });
+      setCursorPos((prev) => (
+        Math.abs(prev.x - next.x) < 0.5 && Math.abs(prev.y - next.y) < 0.5 ? prev : next
+      ));
+    });
     const id = window.setInterval(() => {
       const el = activeTargetRef.current;
       if (
@@ -360,12 +415,15 @@ function MockMapOverlayInner() {
       ) {
         return;
       }
-      const next = toHostPoint(editorPortalHost, elementCenter(el));
-      setCursorPos((prev) => (
-        Math.abs(prev.x - next.x) < 0.5 && Math.abs(prev.y - next.y) < 0.5 ? prev : next
-      ));
+      asked = { el, moves: hostMovesRef.current };
+      boxes.disconnect();
+      boxes.observe(editorPortalHost);
+      boxes.observe(el);
     }, 150);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      boxes.disconnect();
+    };
   }, [editorPortalHost, inView]);
 
   useEffect(() => {
