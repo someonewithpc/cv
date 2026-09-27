@@ -173,7 +173,7 @@ $sheet-margin: 0.75em;
 
     dt {
       font-family: monospace, system-ui;
-      font-size: max(0.5rem, 0.75em);
+      font-size: max(0.625rem, 0.875em);
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--ink-muted);
@@ -181,7 +181,7 @@ $sheet-margin: 0.75em;
 
     dd {
       margin: 0;
-      font-size: max(0.5rem, 0.875em);
+      font-size: 1em;
       line-height: 1.35;
       text-wrap: pretty;
     }
@@ -208,8 +208,9 @@ $sheet-margin: 0.75em;
 }
 
 // The same frame with the drawing beside its rules instead of over them: the figure takes the
-// wider left column and fills it, the rules stand in one column on the right. Portrait
-// stacks them again. Goes after sheet-frame on the same root.
+// wider left column and fills it, the rules stand in one column on the right and stop above
+// the title block, which reaches into that column only, so the root takes no
+// clear-of-title-block. Portrait stacks them again. Goes after sheet-frame on the same root.
 @mixin sheet-frame-side {
   grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
   grid-template-rows: auto minmax(0, 1fr);
@@ -227,17 +228,23 @@ $sheet-margin: 0.75em;
     grid-template-columns: minmax(0, 1fr);
     align-content: center;
     gap: 0.75em;
-    padding: 0 0 0 1.25em;
+    padding: 0 0 var(--title-block-block, 0px) 1.25em;
     border-top: 0;
     border-left: 1px solid var(--line);
   }
 
   :global([data-sheet-orientation='portrait']) & {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
 
     header {
       grid-column: auto;
+    }
+
+    // Content-sized rows, so the sheet scrolls when the column runs out instead of squeezing
+    // the figure to nothing: an auto track takes a min-height: 0 item as zero.
+    .figure {
+      min-height: auto;
     }
 
     .rules {

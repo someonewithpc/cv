@@ -77,22 +77,28 @@ const frames = [0.12, 0.4, 1];
 
 .wipe-sheet {
   @include sheet-content;
-  @include sheet-type(0.024, 0.028);
-  @include clear-of-title-block;
+  @include sheet-type(0.028, 0.032);
   @include sheet-frame;
   @include sheet-frame-side;
 }
 
-/* The drawing takes the column, capped so the viewport clears the title block on a
-   landscape sheet. */
+/* The drawing is sized by the figure's height on a landscape sheet, so it never runs under
+   the header, and by the column's width in portrait. */
 .figure {
   justify-items: center;
 }
 
 .drawing {
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 0.5em;
-  width: min(100%, 40em);
+  height: 100%;
+  max-width: min(100%, 40em);
+
+  :global([data-sheet-orientation='portrait']) & {
+    width: min(100%, 40em);
+    height: auto;
+  }
 }
 
 /* A viewport, drawn 16:10, with the picker's corner top right. The frames are the icon
@@ -103,11 +109,17 @@ const frames = [0.12, 0.4, 1];
 
   position: relative;
   aspect-ratio: 16 / 10;
-  width: 100%;
+  height: 100%;
+  max-width: 100%;
   border: 1px solid var(--line-strong);
   border-radius: 0.125em;
   background: var(--surface-sunken);
   overflow: hidden;
+
+  :global([data-sheet-orientation='portrait']) & {
+    width: 100%;
+    height: auto;
+  }
 }
 
 /* The old page, still under the frames: a name and two lines, top left. */
@@ -177,7 +189,7 @@ const frames = [0.12, 0.4, 1];
   border-radius: 50%;
   background: var(--sheet-paper);
   font-family: monospace, system-ui;
-  font-size: max(0.625rem, 0.875em);
+  font-size: max(0.625rem, 1em);
   font-weight: 600;
   line-height: 1;
   color: var(--ink);
@@ -210,7 +222,7 @@ const frames = [0.12, 0.4, 1];
     align-items: center;
     gap: 0.5ch;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.875em);
+    font-size: max(0.5rem, 1em);
     color: var(--ink-faint);
   }
 

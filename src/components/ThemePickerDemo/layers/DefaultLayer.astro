@@ -70,8 +70,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
 
 .default-sheet {
   @include sheet-content;
-  @include sheet-type(0.024, 0.028);
-  @include clear-of-title-block;
+  @include sheet-type(0.028, 0.032);
   @include sheet-frame;
   @include sheet-frame-side;
 }
@@ -128,7 +127,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   .rule-name {
     grid-area: name;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.875em);
+    font-size: 1em;
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -136,7 +135,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   .selector {
     grid-area: selector;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.75em);
+    font-size: max(0.5rem, 0.875em);
     line-height: 1.35;
     overflow-wrap: anywhere;
     color: color-mix(in oklch, var(--ink) calc(var(--shown, 0) * 100%), var(--ink-muted));
@@ -144,7 +143,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
 
   .note {
     grid-area: note;
-    font-size: max(0.5rem, 0.75em);
+    font-size: max(0.5rem, 0.875em);
     line-height: 1.35;
     color: var(--ink-muted);
   }
@@ -152,7 +151,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   .on {
     grid-area: on;
     font-family: monospace, system-ui;
-    font-size: max(0.5rem, 0.75em);
+    font-size: max(0.5rem, 0.875em);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--accent);
@@ -174,7 +173,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   padding: 0;
   list-style: none;
   font-family: monospace, system-ui;
-  font-size: max(0.5rem, 0.75em);
+  font-size: max(0.5rem, 0.875em);
 
   li {
     position: relative;
@@ -211,7 +210,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
 }
 
 .caption {
-  font-size: max(0.5rem, 0.75em);
+  font-size: max(0.5rem, 0.875em);
   line-height: 1.35;
   text-align: center;
   color: var(--ink-muted);
