@@ -151,4 +151,4 @@
 - [ ] Detail callout bubble sits on the same side down the page while its block alternates, past 105rem
 - [x] Try `contain` on the boxes that do not depend on their surroundings (#193)
 - [x] Work out the sheets' measure in CSS instead of writing it on every resize step (#194)
-- [ ] Give each sheet layout containment without moving its lines by a pixel
+- [x] Give each sheet layout containment without moving its lines by a pixel (#195)
