@@ -122,6 +122,7 @@
 - [x] Make demos more usable without JS (#19)
   - [x] No-JS paper stack carousel styled as a stack of sheets, with arrows and a dot per sheet (#169)
 - [x] Page half-drawn with JS off, and stylesheet source printed when JS is switched off after load (#170)
+- [x] No-script stack row in Firefox gives no sign it holds more sheets; audit Firefox with JS on and off (#183)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
