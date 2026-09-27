@@ -42,11 +42,16 @@ const noteId = `drawing-note-${crypto.randomUUID().slice(0, 8)}`;
    read here instead of plumbing the color through every demo. */
 const asideHtml = (await Astro.slots.render('aside')) ?? '';
 const noteBackground = asideHtml.match(/--background:\s*([^;"]+)/)?.[1];
+/* Whether the note has anything in it is known here, so the sheet says so in an attribute.
+   Asked through :has(.note-card > *), the `*` put every node inserted anywhere on the page
+   through the document's :has() invalidation set. */
+const hasNote = /<\w/.test(asideHtml);
 const sheetAnchor = `--${noteId}-sheet`;
 ---
 
 <section
   class={pageStyle}
+  data-note={hasNote ? '' : undefined}
   style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
 >
   <div class="content">
@@ -659,12 +664,12 @@ section {
   }
 
   /* Nothing in the aside slot for this page — no corner to fold. */
-  .aside:not(:has(.note-card > *)) .note-fold {
+  &:not([data-note]) .note-fold {
     display: none;
   }
 
   /* No note at all: the note's column is the artwork's to use. */
-  &:not(:has(.note-card > *)) {
+  &:not([data-note]) {
     .content {
       grid-column: 1 / -1;
     }
@@ -965,7 +970,7 @@ section {
     }
 
     /* A sheet with no note has no tab, and keeps its corner. */
-    &:has(.note-card > *) {
+    &[data-note] {
       /* The tab lies on the artwork, the way a note tucked under a sheet would.
          What it must not do is cover a control or hide behind one, so it paints
          over the cell (see .content's isolation) and every demo keeps its own

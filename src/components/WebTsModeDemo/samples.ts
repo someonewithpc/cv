@@ -37,9 +37,10 @@ export const interpolation = {
 };
 
 /**
- * The depth sheet's stylesheet: the note-fold rules from TechnicalDrawing/Page.astro
- * (lines 673 to 685, under the `section` rule at 203), trimmed to one nested rule. One
- * selector reaches depth 4; the nested ones start again at 0.
+ * The depth sheet's stylesheet: the note-fold rules TechnicalDrawing/Page.astro carried
+ * until the sheet got a data-note attribute (the :has() made every sheet an invalidation
+ * anchor), trimmed to one nested rule. One selector reaches depth 4; the nested ones start
+ * again at 0.
  */
 export const depthSample = {
   file: 'TechnicalDrawing/Page.astro',
