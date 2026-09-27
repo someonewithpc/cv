@@ -6,7 +6,7 @@ import { expect, type Page, test } from '@playwright/test';
 // to say so. Locator actions and screenshots hang with the pref off, so everything below reads
 // the page through evaluate and drives it with the mouse.
 
-type Row = { rowLeft: number; rowRight: number; rowMiddle: number; sheetLefts: number[]; sheetRights: number[]; scrollLeft: number; maxScroll: number };
+type Row = { slack: number; rowLeft: number; rowRight: number; rowMiddle: number; sheetLefts: number[]; sheetRights: number[]; scrollLeft: number; maxScroll: number };
 
 const readRow = (page: Page, index = 0) =>
   page.evaluate((i) => {
@@ -14,6 +14,9 @@ const readRow = (page: Page, index = 0) =>
     const box = row.getBoundingClientRect();
     const sheets = [...row.children].map((sheet) => sheet.getBoundingClientRect());
     return {
+      // The row reaches this far past a resting sheet on each side (--row-slack), so no snap
+      // lands on a pixel that cuts the sheet's border.
+      slack: parseFloat(getComputedStyle(row).paddingLeft),
       rowLeft: box.left,
       rowRight: box.right,
       rowMiddle: (box.top + box.bottom) / 2,
@@ -23,6 +26,29 @@ const readRow = (page: Page, index = 0) =>
       maxScroll: row.scrollWidth - row.clientWidth,
     } satisfies Row;
   }, index);
+
+// The row once its snap has finished. A snap scrolls smoothly, and a sheet on its way can pass
+// through the slack before it comes to rest somewhere else.
+const settled = async (page: Page) => {
+  let last = Number.NaN;
+  await expect
+    .poll(async () => {
+      const now = (await readRow(page)).scrollLeft;
+      const still = now === last;
+      last = now;
+      return still;
+    }, { intervals: [250] })
+    .toBe(true);
+  return readRow(page);
+};
+
+// Whether the sheet at index i (-1 for the last) rests with its leading edge (the right edge for
+// the last) inside the row's slack: never past the row's edge, where the border would be cut, and
+// never more than the slack plus a pixel and a half in, as sheets are fractional pixels wide.
+const inSlack = (row: Row, i: number) => {
+  const gap = i < 0 ? row.rowRight - row.sheetRights.at(i)! : row.sheetLefts[i] - row.rowLeft;
+  return gap > -0.5 && gap < row.slack + 1.5;
+};
 
 for (const width of [1440, 390]) {
   test.describe(`at ${width}px`, () => {
@@ -62,29 +88,27 @@ for (const width of [1440, 390]) {
       await page.evaluate(() => document.querySelector('[data-paper-stack-root]')!.scrollIntoView({ block: 'center' }));
       const start = await readRow(page);
       expect(start.scrollLeft).toBe(0);
-      expect(Math.abs(start.sheetLefts[0] - start.rowLeft)).toBeLessThan(1);
+      expect(start.sheetLefts[0] - start.rowLeft).toBeCloseTo(start.slack, 0);
 
       await page.mouse.move(Math.round((start.rowLeft + start.rowRight) / 2), Math.round(start.rowMiddle));
-      // Sheets are fractional pixels wide, so an edge lands within a pixel and a half of the row's.
       // A third of a sheet: short of the next one, so only the snap can carry the row there.
       await page.mouse.wheel(Math.round((start.rowRight - start.rowLeft) / 3), 0);
-      await expect
-        .poll(async () => {
-          const row = await readRow(page);
-          return Math.abs(row.sheetLefts[1] - row.rowLeft);
-        })
-        .toBeLessThan(1.5);
+      expect(inSlack(await settled(page), 1)).toBe(true);
+
+      // A short scroll with no wheel behind it (a scrollbar drag, a keyboard step) settles by the
+      // snap alone. Firefox rested the second sheet 2px past the row's edge that way.
+      await page.evaluate(() => {
+        const row = document.querySelector<HTMLElement>('[data-paper-stack-root]')!;
+        row.scrollTo({ left: 0, behavior: 'instant' });
+        row.scrollBy({ left: 100, behavior: 'instant' });
+      });
+      expect(inSlack(await settled(page), 1)).toBe(true);
 
       await page.evaluate(() => {
         const row = document.querySelector<HTMLElement>('[data-paper-stack-root]')!;
         row.scrollTo({ left: row.scrollWidth, behavior: 'instant' });
       });
-      await expect
-        .poll(async () => {
-          const row = await readRow(page);
-          return Math.abs(row.rowRight - row.sheetRights[row.sheetRights.length - 1]);
-        })
-        .toBeLessThan(1.5);
+      expect(inSlack(await settled(page), -1)).toBe(true);
     });
   });
 }
