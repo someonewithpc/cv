@@ -3,12 +3,10 @@
  * The wipe, drawn: the picked icon's box in the corner is the first frame of the switch, the
  * same path grown to a square the viewport's diagonal times the theme's factor each side is
  * the last, and the new page is clipped to it in between. The drawing grows the icon of the
- * theme on screen with that theme's own factor, so it is true in every theme.
+ * theme on screen with that theme's own factor, so it is true in every theme. The frames
+ * carry numbered balloons and the rules beside the drawing read them, so no text lies on it.
  */
 import { Icon } from 'astro-icon/components';
-
-import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
-import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
 import { THEME_IDS, THEMES } from '@/themes';
 
@@ -25,54 +23,48 @@ const frames = [0.12, 0.4, 1];
   </header>
 
   <div class="figure">
-    <Annotations reach={1} fontSize={0.07}>
-      <div slot="content" class="drawing">
-        <div class="viewport" data-viewport aria-hidden="true">
-          <span class="old">
-            <span class="old-name"></span>
-            <span class="old-line"></span>
-            <span class="old-line short"></span>
-          </span>
-          {frames.map((size) => (
-            <span class="frame" data-frame={size === 1 ? 'end' : 'mid'} style={`--size: ${size}`}>
-              {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
-            </span>
-          ))}
-          <span class="corner" data-corner>
+    <div class="drawing">
+      <div class="viewport" data-viewport aria-hidden="true">
+        <span class="old">
+          <span class="old-name"></span>
+          <span class="old-line"></span>
+          <span class="old-line short"></span>
+        </span>
+        {frames.map((size) => (
+          <span class="frame" data-frame={size === 1 ? 'end' : 'mid'} style={`--size: ${size}`}>
             {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
           </span>
-        </div>
-        <ul class="factors" data-factors aria-label="Each theme's factor">
-          {THEME_IDS.map((id) => (
-            <li data-shown={id}>
-              <Icon name={THEMES[id].icons.checked} aria-hidden="true" />
-              <span class="factor">× {THEMES[id].transitionScaleFactor}</span>
-            </li>
-          ))}
-        </ul>
+        ))}
+        <span class="corner" data-corner>
+          {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+        </span>
+        <span class="balloon" data-balloon="1" style="--x: 90%; --y: 11%">1</span>
+        <span class="balloon" data-balloon="2" style="--x: 18%; --y: 82%">2</span>
+        <span class="balloon" data-balloon="3" style="--x: 64%; --y: 44%">3</span>
       </div>
-
-      {/* Both callouts sit inside the viewport, clear of the old page's lines top left, so
-          the drawing can take the whole column in either orientation. */}
-      <Fragment slot="annotations">
-        <ArrowAnnotation target="[data-corner]" anchor="center" tipX={0.9} tipY={-0.86} angle={-120} length={0.35} text="Frame 1: the icon's box in the corner" lines={['Frame 1: the icon\'s box', 'in the corner']} labelSide="left" />
-        <ArrowAnnotation target="[data-viewport]" anchor="0.62 0.6" tipX={0.24} tipY={0.2} angle={180} length={0.2} text="The same path, grown: a square diagonal × factor wide" lines={['The same path, grown:', 'diagonal × factor wide']} labelSide="left" />
-      </Fragment>
-    </Annotations>
+      <ul class="factors" data-factors aria-label="Each theme's factor">
+        {THEME_IDS.map((id) => (
+          <li data-shown={id}>
+            <Icon name={THEMES[id].icons.checked} aria-hidden="true" />
+            <span class="factor">× {THEMES[id].transitionScaleFactor}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   </div>
 
   <dl class="rules">
     <div>
-      <dt>Old and new</dt>
-      <dd><code>startViewTransition</code> holds a picture of the old page; the new one renders under it.</dd>
+      <dt><span class="balloon">1</span>First frame</dt>
+      <dd>The checked icon's <code>&lt;path&gt;</code>, mapped from its viewBox onto its box in the corner.</dd>
     </div>
     <div>
-      <dt>The path</dt>
-      <dd>The checked icon's <code>&lt;path&gt;</code>, mapped from its viewBox onto the corner box, then onto the square.</dd>
+      <dt><span class="balloon">2</span>Last frame</dt>
+      <dd>The same path, grown to a square the viewport's diagonal × the theme's factor wide.</dd>
     </div>
     <div>
-      <dt>The motion</dt>
-      <dd><code>clip-path</code> from the one to the other, 500 ms ease-in. A moon is round already; a sun grows further. Off under reduced motion.</dd>
+      <dt><span class="balloon">3</span>Between</dt>
+      <dd><code>clip-path</code> from the one to the other, 500 ms ease-in, over a picture of the old page. Off under reduced motion.</dd>
     </div>
   </dl>
 </div>
@@ -92,22 +84,16 @@ const frames = [0.12, 0.4, 1];
   @include sheet-frame-side;
 }
 
-/* The callout overlay shrink-wraps its artwork; here the artwork is the column, capped so
-   the viewport clears the title block on a landscape sheet. The overlay reaches half an
-   artwork past it, and both callouts stay inside the viewport, so the figure clips it. */
+/* The drawing takes the column, capped so the viewport clears the title block on a
+   landscape sheet. */
 .figure {
   justify-items: center;
-  overflow: clip;
-
-  :global(.content) {
-    width: min(100%, 40em);
-  }
 }
 
 .drawing {
   display: grid;
   gap: 0.5em;
-  width: 100%;
+  width: min(100%, 40em);
 }
 
 /* A viewport, drawn 16:10, with the picker's corner top right. The frames are the icon
@@ -179,6 +165,36 @@ const frames = [0.12, 0.4, 1];
   display: var(--shown-display, none);
   width: 100%;
   height: 100%;
+}
+
+/* Numbered balloons: a ruled disc on the sheet's paper, one on each frame of the drawing
+   and one before the rule that reads it. */
+.balloon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75em;
+  height: 1.75em;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: var(--sheet-paper);
+  font-family: monospace, system-ui;
+  font-size: max(0.625rem, 0.875em);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.viewport .balloon {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  translate: -50% -50%;
+}
+
+.rules dt {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
 }
 
 /* Each theme's factor under the viewport, the one on screen in full ink. */
