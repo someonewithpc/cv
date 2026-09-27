@@ -156,3 +156,4 @@
 - [x] Firefox drops the callout frame's long dashes and every picker rule it cannot parse (FF1, FF2) (#196)
 - [x] Take the `:has()` rules off the path of a change inside a sheet (#197)
 - [x] Dog-ear flap paints nothing past the sheet's edges (#198)
+- [ ] Skip link moves focus nowhere, missing focus rings, no working access keys (#171 A3)
