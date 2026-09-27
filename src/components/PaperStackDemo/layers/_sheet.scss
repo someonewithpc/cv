@@ -12,8 +12,8 @@ $sheet-margin: 0.75em;
   color: var(--ink);
 }
 
-// The sheet's type, from the stack's measured width (Stack.astro writes --sheet-inline in
-// pixels) rather than a container query: a font-size that comes out of a query on grids this
+// The sheet's type, from the sheet's width (Stack.astro works --sheet-inline out from the
+// viewport) rather than a container query: a font-size that comes out of a query on grids this
 // deep costs Chrome seconds per layout. Floored at the site's smallest step.
 @mixin sheet-type {
   font-size: clamp(0.5rem, 0.0138 * var(--sheet-inline), 0.875rem);
