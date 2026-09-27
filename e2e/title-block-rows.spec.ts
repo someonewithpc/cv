@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { drawEveryStack } from './support/paperStack';
+
 /**
  * A phone, each step of the ladder the block drops its cells in, the stacked step (688 to
  * 728) at every 8px, and the widths past it. The four themes lay the block out alike.
@@ -71,6 +73,7 @@ test('the title block sheds a cell only where the artwork leaves no room for it'
   // Every cell shows here, in the block's narrow type, so each one's natural width can be read.
   await page.setViewportSize({ width: 880, height: 900 });
   await page.goto('/');
+  await drawEveryStack(page);
   await expect(page.locator('article.technical-drawing-stack').first()).toBeVisible();
   await expect(page.locator('[data-paper-stack-root]:not([aria-roledescription="paper stack"])')).toHaveCount(0);
   await page.evaluate(() => document.fonts.ready);

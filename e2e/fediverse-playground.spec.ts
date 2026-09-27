@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName } from './support/paperStack';
+import { drawEveryStack, frontPage, frontPageIndex, frontPageName } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
 const PAGES = ['Fediverse Playground', 'A Branch for Every Server', 'Bringing a Server Up', 'Names on the Network'];
@@ -65,6 +65,7 @@ for (const [width, height] of [[390, 844], [760, 900], [1440, 900]]) {
   test(`fediverse playground: every page's logos sit inside their cell at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
+    await drawEveryStack(page);
     await page.addStyleTag({ content: '* { rotate: none !important; transform: none !important; translate: none !important; }' });
 
     const stack = playgroundStack(page);

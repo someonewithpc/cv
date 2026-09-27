@@ -219,3 +219,13 @@ export function sceneDraws(scope: Locator): Promise<number> {
     .first()
     .evaluate((canvas) => (canvas as CountedCanvas).__draws ?? 0);
 }
+
+/**
+ * A stack off screen is skipped (content-visibility, TechnicalDrawing/Stack.astro): it has no
+ * layout, no resize observations and no scroll size until the reader gets near it. A spec that
+ * reads every stack at once, which no reader does, draws them all first. The skip itself is
+ * covered by stack-offscreen.spec.ts.
+ */
+export async function drawEveryStack(page: Page): Promise<void> {
+  await page.addStyleTag({ content: 'article.technical-drawing-stack { content-visibility: visible !important; }' });
+}

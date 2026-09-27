@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPage, frontPageIndex } from './support/paperStack';
+import { drawEveryStack, frontPage, frontPageIndex } from './support/paperStack';
 
 // A note keeps clear of its sheet's frame line on every side, and of the title block below it
 // when it sits beside the artwork. What is measured is everything the note paints: its box as
@@ -80,6 +80,7 @@ for (const width of [980, 1100, 1440]) {
   test(`notes beside the artwork stay clear of the sheet's edges and the title block at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
+    await drawEveryStack(page);
 
     const notes = page.locator('aside.marker-font:visible');
     expect(await notes.count()).toBeGreaterThan(0);

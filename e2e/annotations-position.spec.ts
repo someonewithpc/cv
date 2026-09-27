@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { drawEveryStack } from './support/paperStack';
+
 /**
  * TechnicalDrawing/annotations-position.ts anchors every callout of an Annotations
  * overlay to the artwork's own box, and a callout with a target to that element, at any
@@ -207,6 +209,7 @@ for (const viewport of VIEWPORTS) {
   test(`at ${viewport.width}px every callout lands on its target and the unit square on the artwork box`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
+    await drawEveryStack(page);
     await page.addStyleTag({ content: 'article.technical-drawing-stack > div { rotate: none !important; }' });
 
     const overlays = page.locator('svg[data-annotations]');
