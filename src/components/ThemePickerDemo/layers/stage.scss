@@ -92,7 +92,7 @@
   max-width: 100%;
   height: 0.3em;
   border-radius: 0.15em;
-  background: var(--ink-faint);
+  background: var(--wire);
 }
 
 .title {
@@ -106,7 +106,7 @@
 .title .meta {
   width: 5em;
   height: 0.25em;
-  background: var(--ink-faint);
+  background: var(--wire);
 }
 
 .title .name {
@@ -118,7 +118,7 @@
 .title .role {
   width: 13em;
   height: 0.375em;
-  background: var(--ink-muted);
+  background: var(--wire);
 }
 
 .contact {
@@ -193,7 +193,7 @@
 .row .bar[data-head] {
   height: 0.2em;
   width: calc(var(--w) * 0.5);
-  background: var(--line-strong);
+  background: var(--wire);
 }
 
 .row .bar:first-child:not([data-head]) {
@@ -235,7 +235,7 @@
   width: 2em;
   height: 0.25em;
   margin-top: 0.375em;
-  background: var(--ink-faint);
+  background: var(--wire);
 }
 
 .card .label:first-child {
@@ -267,7 +267,7 @@
 }
 
 .card .text .bar {
-  background: var(--ink-muted);
+  background: var(--wire);
 }
 
 /* The picker, drawn as the corner draws it: a raised tab on the page's edge. */
