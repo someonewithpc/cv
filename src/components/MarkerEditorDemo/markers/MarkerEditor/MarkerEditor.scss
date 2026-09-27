@@ -371,11 +371,16 @@ $ul-columns: 4;
           // Outside the :has() above: a pseudo-element after :has() made every node inserted
           // anywhere on the page restyle the whole document. A picker only takes these while
           // its select is base-select, which only the rule above makes it.
-          select::picker(select) {
-            appearance: base-select;
-            line-height: normal;
-            color-scheme: dark;
-            padding: 0 0.25em;
+          // The @supports keeps the build from merging this rule into the select's, which has
+          // the same declarations: Firefox drops a whole rule when its selector list has a
+          // selector it does not parse, and the select lost these with it.
+          @supports selector(::picker(select)) {
+            select::picker(select) {
+              appearance: base-select;
+              line-height: normal;
+              color-scheme: dark;
+              padding: 0 0.25em;
+            }
           }
 
           .decoration-uploader {

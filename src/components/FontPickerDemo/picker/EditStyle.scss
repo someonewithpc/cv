@@ -204,12 +204,8 @@
       width: 100%;
     }
 
-    select,
-    ::picker(select) {
-      appearance: base-select;
-    }
-
     select {
+      appearance: base-select;
       font: inherit;
       color: inherit;
       background: light-dark(white, #1e1e1e);
@@ -218,9 +214,15 @@
       padding: 0.375em 0.5em;
     }
 
-    ::picker(select) {
-      border: 1px solid light-dark(#767676, #555);
-      padding: 0;
+    // The picker's rules stand apart from the select's and the option's: Firefox drops a whole
+    // rule when its selector list has a selector it does not parse, and the build merges
+    // neighbouring rules with the same declarations into one list. The @supports is the wall.
+    @supports selector(::picker(select)) {
+      ::picker(select) {
+        appearance: base-select;
+        border: 1px solid light-dark(#767676, #555);
+        padding: 0;
+      }
     }
 
     option {
@@ -244,9 +246,13 @@
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
     }
-    ::picker(select),
     option:last-of-type {
       border-radius: 0 0 0.5em 0.5em;
+    }
+    @supports selector(::picker(select)) {
+      ::picker(select) {
+        border-radius: 0 0 0.5em 0.5em;
+      }
     }
 
     .select-wrapper {
