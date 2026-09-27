@@ -83,6 +83,7 @@
   - [x] Long title block titles end in an ellipsis on a phone sheet (#147)
   - [x] Stacked title block leaves no empty space under its title (#156)
   - [x] Transport deck keys drawn once per page, not once per sheet (#174)
+  - [x] Flip hint letters numbered by the stylesheet, not by an inline style each (#176)
   - [ ] CSS Houdini grid border?
   - [x] Page flip animation
     - [x] Look through Turn.js
