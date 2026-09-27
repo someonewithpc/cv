@@ -163,7 +163,13 @@ function press(el: Element, click: boolean) {
   return demoPress(el, elementCentre(el), { click });
 }
 
-function mouseEvent(type: string, clientX: number, clientY: number, buttons: number) {
+function mouseEvent(
+  type: string,
+  clientX: number,
+  clientY: number,
+  buttons: number,
+  scroll: { x: number; y: number },
+) {
   const event = new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
@@ -172,9 +178,10 @@ function mouseEvent(type: string, clientX: number, clientY: number, buttons: num
     clientY,
     buttons,
   });
-  // Constructed MouseEvents can report pageX/pageY as 0 in some browsers.
-  Object.defineProperty(event, 'pageX', { configurable: true, get: () => clientX + window.scrollX });
-  Object.defineProperty(event, 'pageY', { configurable: true, get: () => clientY + window.scrollY });
+  // Constructed MouseEvents can report pageX/pageY as 0 in some browsers. React reads both
+  // for every event, so the scroll is read once per drag, not once per frame.
+  Object.defineProperty(event, 'pageX', { configurable: true, get: () => clientX + scroll.x });
+  Object.defineProperty(event, 'pageY', { configurable: true, get: () => clientY + scroll.y });
   return event;
 }
 
@@ -376,6 +383,7 @@ export class AutoPlayController {
       }
 
       const root = document.documentElement;
+      const scroll = { x: window.scrollX, y: window.scrollY };
       let curX = from.x;
       let curY = from.y;
       let settled = false;
@@ -452,7 +460,7 @@ export class AutoPlayController {
             curY = from.y + (to.y - from.y) * eased;
 
             this.onCursor({ client: { x: curX, y: curY }, dragging: true });
-            surface.dispatchEvent(mouseEvent('mousemove', curX, curY, 1));
+            surface.dispatchEvent(mouseEvent('mousemove', curX, curY, 1, scroll));
 
             if (t < 1) {
               this.dragRaf = requestAnimationFrame(tick);
