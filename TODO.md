@@ -155,4 +155,4 @@
 - [x] Stop the resting fold lengths restyling every element under a stack on each resize step (#199)
 - [x] Firefox drops the callout frame's long dashes and every picker rule it cannot parse (FF1, FF2) (#196)
 - [x] Take the `:has()` rules off the path of a change inside a sheet (#197)
-- [ ] Dog-ear flap paints nothing past the sheet's edges
+- [x] Dog-ear flap paints nothing past the sheet's edges (#198)
