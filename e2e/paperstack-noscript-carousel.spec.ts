@@ -51,11 +51,13 @@ for (const width of [390, 1440]) {
     await stack.scrollIntoViewIfNeeded();
 
     const arrows = await stack.evaluate((el) => {
-      const sheet = el.getBoundingClientRect();
+      // The arrows are placed in the frame around the row, which reaches past the sheet.
+      const frame = el.parentElement!.getBoundingClientRect();
+      const sheet = el.querySelector(':scope > * > section')!.getBoundingClientRect();
       return (['left', 'right'] as const).map((side) => {
         const s = getComputedStyle(el, `::scroll-button(${side})`);
         const size = parseFloat(s.width);
-        const x0 = side === 'left' ? sheet.left + parseFloat(s.left) : sheet.right - parseFloat(s.right) - size;
+        const x0 = side === 'left' ? frame.left + parseFloat(s.left) : frame.right - parseFloat(s.right) - size;
         return { size, x0, x1: x0 + size, edge: side === 'left' ? sheet.left : sheet.right, page: innerWidth };
       });
     });
@@ -64,6 +66,38 @@ for (const width of [390, 1440]) {
       expect(x0).toBeGreaterThanOrEqual(0);
       expect(x1).toBeLessThanOrEqual(pageWidth);
       expect(Math.abs((x0 + x1) / 2 - edge)).toBeLessThanOrEqual(0.5);
+    }
+  });
+}
+
+for (const width of [390, 1440]) {
+  test(`without JS at ${width}px the row never cuts into the sheet it rests on`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const stack = page.locator('[data-paper-stack]').nth(1);
+    await stack.scrollIntoViewIfNeeded();
+    await stack.evaluate((el) => { el.style.scrollBehavior = 'auto'; });
+
+    // Each sheet's wrapper clips it, so it has to clip on the sheet's own rounded corner and not
+    // inside it.
+    const corners = await stack.evaluate((el) => {
+      const page = el.children[0] as HTMLElement;
+      return [getComputedStyle(page).borderRadius, getComputedStyle(page.querySelector(':scope > section')!).borderRadius];
+    });
+    expect(corners[0]).toBe(corners[1]);
+
+    // A snap lands on a whole pixel and a sheet at 390px is not a whole number of pixels wide,
+    // so some sheets rest a fraction of a pixel off centre. Neither side edge may reach the row's
+    // clip, or that side's border is shaved.
+    const count = await stack.evaluate((el) => el.children.length);
+    for (let k = 0; k < count; k++) {
+      await stack.evaluate((el, k) => el.children[k].scrollIntoView({ block: 'nearest', inline: 'center' }), k);
+      const room = await stack.evaluate((el, k) => {
+        const row = el.getBoundingClientRect();
+        const sheet = el.children[k].querySelector(':scope > section')!.getBoundingClientRect();
+        return Math.min(sheet.left - row.left, row.right - sheet.right);
+      }, k);
+      expect(room, `sheet ${k + 1}`).toBeGreaterThanOrEqual(1);
     }
   });
 }

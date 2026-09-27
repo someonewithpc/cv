@@ -42,7 +42,7 @@ test.describe('with JavaScript off', () => {
 
     for (const index of SCALED_SHEETS) {
       const stack = stacks.nth(index);
-      const width = (await stack.boundingBox())!.width;
+      const width = (await stack.locator('section').first().boundingBox())!.width;
       expect(width).toBeLessThan(800);
       const size = await stack.locator('section .content').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
       expect(size, `stack ${index}: type scaled to the sheet`).toBeCloseTo(0.02 * width, 1);
