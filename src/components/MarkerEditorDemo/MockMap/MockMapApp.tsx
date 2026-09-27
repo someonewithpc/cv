@@ -99,9 +99,12 @@ function overlayPoint(overlay: Element, nx: number, ny: number): CursorPos {
 }
 
 /** Convert viewport client coords into a positioned host (carousel page). */
-function toHostPoint(host: Element | null | undefined, pos: CursorPos): CursorPos {
-  if (!host) return pos;
-  const rect = host.getBoundingClientRect();
+function toHostPoint(
+  host: Element | null | undefined,
+  pos: CursorPos,
+  rect = host?.getBoundingClientRect(),
+): CursorPos {
+  if (!rect) return pos;
   return {
     x: pos.x - rect.left,
     y: pos.y - rect.top,
@@ -254,6 +257,12 @@ function MockMapOverlayInner() {
   };
 
   const applyCursorStepRef = useRef<(step: DemoCursorStep, attempt?: number) => void>(() => {});
+  /**
+   * The host's rect from the step that started the current drag. Every frame of a drag
+   * comes from rects read when it started, so the frames reuse this one instead of forcing
+   * a style and layout pass each.
+   */
+  const dragHostRectRef = useRef<DOMRect | undefined>(undefined);
 
   applyCursorStepRef.current = (step: DemoCursorStep, attempt = 0) => {
     // User owns the real pointer — don't move/show the demo cursor over them.
@@ -266,7 +275,10 @@ function MockMapOverlayInner() {
     setCursorDragging(Boolean(step.dragging));
 
     const place = (pos: CursorPos) => {
-      setCursorPos(toHostPoint(editorPortalHost, pos));
+      const following = step.dragging && !step.click && dragHostRectRef.current;
+      const rect = following ? dragHostRectRef.current : editorPortalHost?.getBoundingClientRect();
+      dragHostRectRef.current = rect;
+      setCursorPos(toHostPoint(editorPortalHost, pos, rect));
     };
 
     if (step.client) {
