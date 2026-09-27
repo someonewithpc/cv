@@ -52,6 +52,8 @@ function EditorLayerInner() {
   // render (and steal the live editor's marker-part singletons) no matter which page a
   // visitor is actually looking at. --page-index is what fold-drag.ts itself updates on a
   // committed flip (front = "1"), so it's the one signal that actually tracks the front page.
+  // It is read off the wrapper's inline style, where fold-drag.ts writes it, so the check
+  // below forces no style pass each time that style changes.
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -61,7 +63,7 @@ function EditorLayerInner() {
     if (!wrapper) return;
 
     const checkFront = () => {
-      setPageVisible(getComputedStyle(wrapper).getPropertyValue('--page-index').trim() === '1');
+      setPageVisible(wrapper.style.getPropertyValue('--page-index').trim() === '1');
     };
     checkFront();
 
