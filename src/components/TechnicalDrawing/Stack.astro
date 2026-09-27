@@ -150,6 +150,22 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 
   container: technical-drawing / size;
 
+  /* The browser skips style, layout and paint for a stack well off screen, so a resize or a
+     theme switch lays out the one or two stacks in view instead of all of them. The size
+     container above already keeps the stack's box from depending on its pages, so a skipped
+     stack keeps its height and the scrollbar does not move. What this adds is a paint clip at
+     the box, which would cut the fanned sheets, the note tab and a turning flap that sweeps
+     hundreds of pixels off the sheet; a viewport's length of margin only cuts paint that is off
+     screen anyway. Safari has no clip margin, so it keeps rendering every stack. Without script
+     the stack is a scroll row whose arrows are placed from the frame around it (PaperStack), and
+     the containment would make the row their box instead, so that page renders every stack. */
+  @supports (overflow-clip-margin: 1px) {
+    @media (scripting: enabled) {
+      content-visibility: auto;
+      overflow-clip-margin: 100vmax;
+    }
+  }
+
   /* How far the resting crease reaches along the sheet's long side. The crease is what a flip
      folds the sheet along and what the folded-back corner is cut on, so this one number is the
      size of the dog-ear at the top left. A fixed em made it a fifth of the way across a
