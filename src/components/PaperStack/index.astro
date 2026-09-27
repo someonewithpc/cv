@@ -1079,6 +1079,10 @@ $fold-pulse-y: 2cm;
         bottom: -1px;
         touch-action: none;
 
+        // At no fold the box is its border alone, a 2px square over the sheet's corner: held
+        // before the reveal, it showed as a stray dot there.
+        opacity: sign(var(--fold-x));
+
         // While dragging (and briefly during the release settle), fold-drag.ts switches to
         // this full-size mode and drives clip-path/transform directly via inline styles —
         // the crease can now wrap around either corner, so it no longer fits in a box
@@ -1087,6 +1091,7 @@ $fold-pulse-y: 2cm;
           width: auto;
           height: auto;
           inset: 0;
+          opacity: 1;
           // Full-size, so every box corner coincides with a page corner: rounding them all
           // rounds whichever folded-over page corners the hole polygon includes (the clip
           // vertices there are sharp, but they pass exactly through the box corners, so the
