@@ -71,7 +71,7 @@
     - [x] One line per server to each shared service, nginx named, search and media added (#129)
   - [x] web-ts-mode: painted buffer, parser ranges, selector depth hue, doctor (SH-11)
   - [ ] Paper stack: the pile, the fold, the holds and the no-script row
-  - [ ] Own theme picker
+  - [x] Own theme picker: the control, the token layers, the default and the wipe (#189)
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
   - [ ] Ball loader animation (~/project/playground)
