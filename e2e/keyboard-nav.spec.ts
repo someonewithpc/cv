@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { demoStack, frontPageName } from './support/paperStack';
 
 test.describe('skip link', () => {
-  test('moves focus and the viewport to the content start, and the next Tab reaches a real control', async ({ page }) => {
+  test('moves focus to the Career section, not back to the top, and the next Tab lands inside it', async ({ page }) => {
     await page.goto('/');
 
     await page.keyboard.press('Tab');
@@ -11,14 +11,18 @@ test.describe('skip link', () => {
 
     await page.keyboard.press('Enter');
     // The native anchor jump plus the tabindex="-1" focus move both land in the same task; give
-    // the browser one to settle before reading document.activeElement.
-    await expect(page.locator('main#main')).toBeFocused();
+    // the browser one to settle before reading document.activeElement. #career, not #main:
+    // #main starts right where the reader already was (no visible change), so the skip link
+    // targets the first section with real content instead.
+    await expect(page.locator('#career')).toBeFocused();
 
     await page.keyboard.press('Tab');
-    // The theme picker (also in the DOM before <main>, but a Tab stop of its own) and every
+    // The theme picker (also in the DOM before #career, but a Tab stop of its own) and every
     // section start (tabindex="-1") are accesskey landing spots, not sequential Tab stops, so
-    // the next real stop after the skip link is the first content control: the mailto link.
-    await expect(page.getByRole('link', { name: /^contact@hsal\.es/ })).toBeFocused();
+    // the next real stop after the skip link is the first focusable control inside Career: the
+    // "Demos" link in the first job entry's "See" line. Career's own end-of-section refs list
+    // links to #demos too, later in the DOM, hence .first() rather than a role/name match.
+    await expect(page.locator('#career a[href="#demos"]').first()).toBeFocused();
   });
 });
 
