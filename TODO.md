@@ -154,4 +154,4 @@
 - [x] Give each sheet layout containment without moving its lines by a pixel (#195)
 - [x] Stop the resting fold lengths restyling every element under a stack on each resize step (#199)
 - [x] Firefox drops the callout frame's long dashes and every picker rule it cannot parse (FF1, FF2) (#196)
-- [ ] Take the `:has()` rules off the path of a change inside a sheet
+- [x] Take the `:has()` rules off the path of a change inside a sheet (#197)
