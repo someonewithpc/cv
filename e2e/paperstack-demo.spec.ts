@@ -32,12 +32,12 @@ test.describe('with script', () => {
   test('every sheet draws its callouts on the artwork', async ({ page }) => {
     const stack = paperStackDemo(page);
     await stack.scrollIntoViewIfNeeded();
-    // Three of the four sheets carry callouts; Stack.astro's script places each on its target.
+    // Every sheet carries callouts; Stack.astro's script places each on its target.
     const overlays = stack.locator('svg[data-annotations]');
-    await expect(overlays).toHaveCount(3);
+    await expect(overlays).toHaveCount(4);
     for (const overlay of await overlays.all()) {
       await expect(overlay).toHaveAttribute('data-annotations', 'js');
-      expect(await overlay.locator('g[data-target]').count()).toBeGreaterThanOrEqual(4);
+      expect(await overlay.locator('g[data-target]').count()).toBeGreaterThanOrEqual(3);
     }
   });
 

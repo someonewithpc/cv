@@ -1,33 +1,34 @@
 ---
 /**
- * What holds a demo still and what keeps going at rest. The board on the left is live: it
- * opens a demo gate of its own (src/client/frontPage.ts), the same gate every walkthrough on
- * the page runs on, and lights a lamp for each reason the gate is held. It listens and never
- * polls, so at rest it costs nothing.
+ * What holds a demo still. The board is live: it opens a demo gate of its own
+ * (src/client/frontPage.ts), the same gate every walkthrough on the page runs on, and lights
+ * a lamp for each reason the gate is held. It listens and never polls, so at rest it costs
+ * nothing.
  */
+import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
+import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+
+// The board is a short box, and the callout unit is its inscribed square, so the labels
+// are drawn twice the usual size to read at all.
+const annotationScale = 1.2;
+const annotationFontSize = 0.1 * annotationScale;
+
 const lamps = [
   { reason: 'offscreen', label: 'stack off screen' },
   { reason: 'back-page', label: 'behind the front page' },
   { reason: 'hidden', label: 'tab hidden' },
   { reason: 'resize', label: 'window resizing' },
 ];
-
-const notes = [
-  'The dog-ear breathes: three animations the compositor runs on its own, one per layer of the fold, 7.5 s each way. They pause off screen and through a resize.',
-  'A committed turn holds the page too, from the commit point to the settle, and the deck\'s pause key holds a walkthrough for as long as you like.',
-  'The resize hold lasts from the first resize event until the size has kept still for 300 ms and four frames. Every clock on a gate stops with it.',
-  'content-visibility: auto skips style, layout and paint for the stacks well off screen. A size container keeps their height, so the scrollbar stays put.',
-  'Each fold property is registered by @property and not inherited, so a moving value re-resolves the few elements that read it, not the two thousand printed on the page.',
-  'Type is sized from --sheet-inline, the stack\'s width in pixels, never from a container query. A font-size that came out of one cost Chrome seconds per layout.',
-];
 ---
 
 <div class="wrapper">
-  <p class="point typewriter">Whenever you can read this, every lamp is off</p>
+  <p class="point typewriter">What holds this sheet still</p>
 
-  <div class="panels">
+  <Annotations scale={annotationScale} reach={1}>
+    {/* The plate leaves the board room for its labels: beside it, or under it on a phone. */}
+    <div class="plate" slot="content">
     <div class="board" data-gate-board>
-      <span class="notes-heading">This sheet's gate</span>
+      <span class="notes-heading" data-part="heading">This sheet's gate</span>
       <ul class="lamps">
         {lamps.map(({ reason, label }) => (
           <li data-reason={reason}>
@@ -41,14 +42,81 @@ const notes = [
         <span class="without-script">Without script there is no gate. Nothing on the sheet moves, and the stack is the row on the next sheet.</span>
       </p>
     </div>
+    </div>
 
-    <aside class="notes">
-      <span class="notes-heading">What still runs, and what does not</span>
-      <ol>
-        {notes.map((note) => <li>{note}</li>)}
-      </ol>
-    </aside>
-  </div>
+    <Fragment slot="annotations">
+      <ArrowAnnotation
+        target='[data-part="heading"]'
+        anchor="0.97 0.5"
+        tipX={0.35}
+        tipY={-0.8}
+        angle={20}
+        length={0.3}
+        fontSize={annotationFontSize}
+        text="the gate every walkthrough runs on"
+        only="landscape"
+      />
+      <ArrowAnnotation
+        target='[data-reason="resize"] .label'
+        anchor="right"
+        gap={0.3}
+        tipX={0.15}
+        tipY={0.35}
+        angle={0}
+        length={0.3}
+        fontSize={annotationFontSize}
+        text="a lamp lights while its reason holds"
+        only="landscape"
+      />
+      <ArrowAnnotation
+        target='.tally'
+        anchor="right"
+        tipX={0.35}
+        tipY={0.8}
+        angle={-15}
+        length={0.35}
+        fontSize={annotationFontSize}
+        text="it listens, and never polls"
+        only="landscape"
+      />
+      <ArrowAnnotation
+        target='[data-part="heading"]'
+        anchor="0.97 0.5"
+        tipX={0.9}
+        tipY={-0.6}
+        angle={-90}
+        length={1.75}
+        labelSide="left"
+        fontSize={annotationFontSize}
+        text="the gate every walkthrough runs on"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target='[data-reason="resize"] .lamp'
+        anchor="-0.15 1"
+        tipX={-0.9}
+        tipY={0.3}
+        angle={-90}
+        length={0.5}
+        labelSide="right"
+        fontSize={annotationFontSize}
+        text="a lamp lights while its reason holds"
+        only="portrait"
+      />
+      <ArrowAnnotation
+        target='.tally'
+        anchor="0.75 1"
+        tipX={0.3}
+        tipY={0.6}
+        angle={-90}
+        length={0.5}
+        labelSide="left"
+        fontSize={annotationFontSize}
+        text="it listens, and never polls"
+        only="portrait"
+      />
+    </Fragment>
+  </Annotations>
 </div>
 
 <style lang="scss">
@@ -64,26 +132,31 @@ const notes = [
   row-gap: 0.5em;
   max-width: min(92cqw, 100%);
   margin-inline: auto;
+
+  > :global(.content) {
+    width: min(100%, 34em);
+  }
+}
+
+.plate {
+  box-sizing: border-box;
+  width: 100%;
+  padding-inline-end: 12em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    padding: 0 0 7.5em;
+  }
 }
 
 .point {
   @include point;
 }
 
-.panels {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
-  gap: 0.75em;
-  align-items: start;
-  width: 100%;
-
-  :global([data-sheet-orientation='portrait']) & {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 .board {
   @include drawing-notes;
+
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .lamps {
@@ -98,7 +171,7 @@ const notes = [
     align-items: center;
     gap: 0.5em;
     font-family: "Special Elite", monospace, system-ui;
-    font-size: max(0.5rem, 0.8125em);
+    font-size: max(0.5rem, 0.875em);
     line-height: 1.25;
   }
 }
@@ -126,14 +199,10 @@ const notes = [
   margin: 0;
   padding: 0.375em 0.75em 0.5em;
   border-top: 1px solid var(--line);
-  font-size: max(0.5rem, 0.6875em);
-  line-height: 1.35;
+  font-size: max(0.5rem, 0.75em);
+  line-height: 1.375;
   color: var(--ink-muted);
   text-wrap: pretty;
-
-  code {
-    font-family: monospace, system-ui;
-  }
 }
 
 // One of the two lines shows, by whether the page runs script. The media query, not the
@@ -150,10 +219,6 @@ const notes = [
   .without-script {
     display: inline;
   }
-}
-
-.notes {
-  @include drawing-notes;
 }
 </style>
 
