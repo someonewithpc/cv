@@ -312,33 +312,25 @@ const restSeed = ({ w, h, rest }: SheetMetrics): Vec => {
 const sectionOf = (sheet: HTMLElement): HTMLElement =>
   sheet.querySelector<HTMLElement>(':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)')!;
 
-const syncPaperSurface = (sheet: HTMLElement, section: HTMLElement): void => {
-  sheet.style.setProperty('--paper-surface', getComputedStyle(section).backgroundColor);
+// Which of the stack's papers (see index.astro) a page is printed on, named by its section's
+// class, the same way the page picks its own --paper-surface there. Read off the class and not
+// the page's colour, so naming it costs no style resolution, and a var() so the name follows a
+// theme switch without being asked again.
+const paperOf = (sheet: HTMLElement): string => {
+  const { classList } = sectionOf(sheet);
+  const paper = classList.contains('wip') ? 'wip' : classList.contains('blueprint') ? 'blueprint' : 'plain';
+  return `var(--paper-${paper})`;
 };
 
-// Every page carries its own resolved colour, not just the one the flap rides: a turned page
-// paints the back of its sheet in the pile behind the stack (see index.astro), and it is no
-// longer at the front to be asked when it does.
-const syncStackSurfaces = (stack: HTMLElement): void => {
-  for (const page of stack.children as HTMLCollectionOf<HTMLElement>) {
-    syncPaperSurface(page, sectionOf(page));
-  }
-  // The strip behind the crease reads the pile's colour off the page that carries it, so a
-  // theme switch has to reach it too.
-  syncPileSurface(stack);
-};
-
-// The colour above is a snapshot, taken when a gesture starts or a flip hands the flap on, so a
-// theme switch in between leaves the dog-ear painted in the theme the page loaded under. Re-lift
-// it whenever the theme moves: the picker's explicit choice (data-theme, which it also drops and
-// restores around its view transition) or, with no choice stored, the OS preference the page
-// falls back to.
-const watchThemePaperSurface = (): void => {
+// A theme can carry its own type, and the corner cut is written in em, so every stack settles
+// its landing again whenever the theme moves: the picker's explicit choice (data-theme, which it
+// also drops and restores around its view transition) or, with no choice stored, the OS
+// preference the page falls back to. The paper needs nothing here: it is all var() and
+// light-dark() (see index.astro).
+const watchThemeLanding = (): void => {
   const resync = () => {
     for (const stack of document.querySelectorAll<HTMLElement>('[data-paper-stack]')) {
-      // A theme can carry its own type, and the corner cut is written in em.
       stirLanding(stack);
-      syncStackSurfaces(stack);
     }
   };
   new MutationObserver(resync).observe(document.documentElement, {
@@ -1002,16 +994,15 @@ const updateFlippedState = (stack: HTMLElement): void => {
 
 // The strip behind the front page's crease is the back of the page turned most recently, so it
 // paints in that page's paper (see index.astro). That page is the furthest of the pile, which is
-// the highest --page-index; its own colour is already on it, lifted by syncStackSurfaces. With
-// nothing turned there is no pile, and the strip falls back to the front page's paper under an
-// opacity of 0.
+// the highest --page-index. With nothing turned there is no pile, and the strip falls back to
+// the front page's paper under an opacity of 0.
 const syncPileSurface = (stack: HTMLElement): void => {
   const pages = [...stack.children] as HTMLElement[];
   const furthest = pageIndex(pages[0]) === 1
     ? undefined
     : pages.find((page) => pageIndex(page) === pages.length);
   if (furthest) {
-    stack.style.setProperty('--pile-paper', furthest.style.getPropertyValue('--paper-surface'));
+    stack.style.setProperty('--pile-paper', paperOf(furthest));
   } else {
     stack.style.removeProperty('--pile-paper');
   }
@@ -1182,12 +1173,9 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   const hint = sheet.querySelector<HTMLElement>('.paper-flip-hint')!;
 
   const next = pages.find((page) => pageIndex(page) === 2)!;
-  // The incoming page's own paper, lifted before anything below moves a node or changes a class.
-  // It is the last computed-style read this function makes, and restartTurn's forced reflow is
-  // the last flush: after them come the moves and the classes, and the whole restack costs one
-  // document-wide resolve instead of the three it used to (the page's :has() rules put every
-  // element back in play on each one). Same colour either way — nothing below touches it.
-  syncPaperSurface(next, sectionOf(next));
+  // restartTurn's forced reflow is the last flush this function makes: after it come the moves
+  // and the classes, and the whole restack costs one document-wide resolve instead of the three
+  // it used to (the page's :has() rules put every element back in play on each one).
 
   // The strip behind the front crease follows this page up to the pile on --turn-ease (see
   // index.astro): back to 0 without a transition, then eased to 1 in the same recalc that
@@ -1231,8 +1219,6 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
 const clearFrontFold = (sheet: HTMLElement): void => {
   sheet.style.removeProperty('--fold-x');
   sheet.style.removeProperty('--fold-y');
-  // --paper-surface stays: the sheet paints its own back with it in the pile of turned pages,
-  // which is exactly where a page leaving the front goes.
   sheet.style.animationName = '';
   sheet.style.animationDelay = '';
 };
@@ -1298,7 +1284,6 @@ const bringToFront = (stack: HTMLElement): HTMLElement => {
   // as the corner it pins flattens out. A release that sends the page back sets the flipped
   // state again on its way (flipFold).
   updateFlippedState(stack);
-  syncPaperSurface(prev, sectionOf(prev));
   // The pulse travels with the front-page role; off screen it stays held.
   holdPulse(stack);
   return prev;
@@ -1618,7 +1603,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // children.
   const stack = sheet.parentElement!;
 
-  syncPaperSurface(sheet, section);
   const clearTease = attachBackFoldTease(stack, () => gesture !== null);
 
   fold.addEventListener('pointerenter', () => {
@@ -1641,7 +1625,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     cancelSettle();
     sheet = fold.parentElement!;
     section = sectionOf(sheet);
-    syncPaperSurface(sheet, section);
     clearTease();
 
     gesture = {
@@ -1746,7 +1729,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     const front = stack.querySelector<HTMLElement>('.paper-front')!;
     sheet = pages.find((page) => pageIndex(page) === pages.length)!;
     section = sectionOf(sheet);
-    syncPaperSurface(sheet, section);
 
     // The front page lends its flap to paint the arriving page's fold, so its own resting
     // dog-ear relaxes flat for the duration (restored by returnBehind if the drag lets go).
@@ -1893,7 +1875,6 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     }
     sheet = fold.parentElement!;
     section = sectionOf(sheet);
-    syncPaperSurface(sheet, section);
     const box = sheet.getBoundingClientRect();
     const { x: foldX, y: foldY } = currentFoldSize(sheet);
     const tip = foldTipFromSize(foldX, foldY);
@@ -2219,11 +2200,11 @@ export function initPaperStackFold(): void {
       stack.setAttribute('aria-description', 'The left and right arrow keys turn the pages');
       observeFoldPageSizes(stack);
       attachFoldDrag(fold, grab);
-      syncStackSurfaces(stack);
+      syncPileSurface(stack);
       syncInert(stack);
       watchStackPulse(stack);
     }
-    watchThemePaperSurface();
+    watchThemeLanding();
   };
 
   // After every other script on the page, not as soon as this one runs. A module script runs

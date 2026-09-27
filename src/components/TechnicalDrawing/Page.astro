@@ -229,7 +229,7 @@ section {
      instead of two puts the light sheet at L* 89, paper under the mat's vellum.
      A theme that names its own --theme-paper skips all of that and takes the colour
      Hugo picked on the tuner instead. */
-  --sheet-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface-sunken)));
+  --sheet-paper: #{colors.$sheet-paper};
   background: var(--sheet-paper);
 
   /* The sheet is paper, so it carries the fibre tile. On the page face rather than on the
@@ -239,8 +239,8 @@ section {
      drag, for free. It also leaves the wrapper's own ::before, the crease bend shading, where
      it is (see PaperStack). Every page carries it, not just the front one, since a flip brings
      each of them to the front in turn. The flap and the strip behind the crease paint the
-     sheet's back, which is plain paper with no fibre on it: they read the face's background
-     colour, and the pseudo-element never touches that. */
+     sheet's back, which is plain paper with no fibre on it: PaperStack gives them the paper
+     colour above, and the pseudo-element never touches that. */
   @include colors.paper-grain(0.5em);
 
   &:global(.blueprint) {
@@ -257,7 +257,7 @@ section {
 
   // Unfinished carousel pages — mute the mat + artwork so the WIP stamp reads clearly.
   &:global(.wip) {
-    --blueprint: color-mix(in oklch, var(--theme-blueprint) 36%, #6a6e6a 64%);
+    --blueprint: #{colors.$wip-blueprint};
     --blueprint-grid: color-mix(in oklch, var(--blueprint), #c5c8c5 34%);
     --surface-sunken: var(--blueprint);
     --sheet-paper: var(--blueprint);

@@ -180,6 +180,7 @@ async function strip(stack: Locator) {
     const index = (page: HTMLElement) => Number(page.style.getPropertyValue('--page-index'));
     const front = pages.find((page) => index(page) === 1)!;
     const furthest = pages.reduce((a, b) => (index(b) > index(a) ? b : a));
+    const face = (page: HTMLElement) => getComputedStyle(page.querySelector(':scope > section')!).backgroundColor;
     const own = getComputedStyle(el);
     const foldX = Number.parseFloat(own.getPropertyValue('--fold-back-x'));
     const foldY = Number.parseFloat(own.getPropertyValue('--fold-back-y'));
@@ -220,11 +221,11 @@ async function strip(stack: Locator) {
       background: back.backgroundColor,
       shading: back.backgroundImage,
       // The two papers the strip could be painted in: the front page's, which is the flap's,
-      // and the furthest pile page's, which is the strip's own. fold-drag.ts lifts each page's
-      // resolved background onto it, and hands the pile's to the stack as --pile-paper.
-      frontPaper: front.style.getPropertyValue('--paper-surface').trim(),
-      pilePaper: furthest.style.getPropertyValue('--paper-surface').trim(),
-      stackPaper: own.getPropertyValue('--pile-paper').trim(),
+      // and the furthest pile page's, which is the strip's own, each read off the page's face.
+      // fold-drag.ts names the pile's paper on the stack as --pile-paper.
+      frontPaper: face(front),
+      pilePaper: face(furthest),
+      stackPaper: el.style.getPropertyValue('--pile-paper').trim(),
       // The stack's one flap, wherever a gesture has it at the moment.
       flap: getComputedStyle(el.querySelector('.paper-fold')!).backgroundColor,
       flapShading: getComputedStyle(el.querySelector('.paper-fold')!).backgroundImage,
@@ -258,7 +259,7 @@ test('logo demo: the strip is the turned page\'s paper, not the front page\'s', 
   // papers differ and the strip has to pick one.
   expect(pile.pilePaper).not.toBe(pile.frontPaper);
   expect(pile.opacity).toBe('1');
-  expect(pile.stackPaper).toBe(pile.pilePaper);
+  expect(pile.stackPaper).not.toBe('');
   expect(pile.background).toBe(pile.pilePaper);
   // The flap is the front page's own sheet, so it stays on the front page's paper.
   expect(pile.flap).toBe(pile.frontPaper);

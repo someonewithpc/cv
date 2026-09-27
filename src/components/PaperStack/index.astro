@@ -90,6 +90,7 @@ const pages = await Promise.all(
 
 <style lang="scss" is:global>
 @use '@/scss/technical-drawing' as drawing;
+@use '@/scss/colors' as colors;
 
 [data-paper-stack-root] {
   anchor-name: --technical-drawing-stack;
@@ -273,6 +274,13 @@ const pages = await Promise.all(
       -1 * #{$turn-splay} * var(--pile-arc) * var(--turn-ease)
     );
 
+    // The papers a page can be printed on, the same values TechnicalDrawing/Page.astro paints
+    // the sheet's face with. Named here on the stack so that each page below can pick its own
+    // as --paper-surface, and fold-drag.ts can hand the pile's page on as --pile-paper by name.
+    --paper-plain: #{colors.$sheet-paper};
+    --paper-blueprint: var(--blueprint);
+    --paper-wip: #{colors.$wip-blueprint};
+
     & > div {
       grid-area: content;
       border-radius: $border-radius;
@@ -325,10 +333,23 @@ const pages = await Promise.all(
       );
       translate: calc(-1 * var(--turned-drift)) calc(-1 * var(--turned-rise));
 
-      // The sheet's back is the paper's own colour (lifted onto the sheet by fold-drag.ts), and
-      // every shade on it is a translucent black or white laid over that, so one set of
-      // gradients serves every theme's paper.
-      --bend-paper: var(--paper-surface, var(--surface-sunken));
+      // The sheet's back is the paper's own colour, and every shade on it is a translucent black
+      // or white laid over that, so one set of gradients serves every theme's paper. The page
+      // sets its paper on its own section, which the flap and the band, as its siblings, can't
+      // see; the page's class says which paper it is, and it never changes, so the :has()
+      // rules below match once. A blueprint page that is also unfinished takes the unfinished
+      // paper, as its face does. All of it is var() and light-dark(), so a theme switch
+      // repaints the backs with the faces and nothing has to read them again.
+      --paper-surface: var(--paper-plain);
+      --bend-paper: var(--paper-surface);
+
+      &:has(> .blueprint) {
+        --paper-surface: var(--paper-blueprint);
+      }
+
+      &:has(> .wip) {
+        --paper-surface: var(--paper-wip);
+      }
 
       // The flap's lift (see the fold-lift mixin), on the flap and on the cast shadow. A flap
       // past the commit point is in hand too, so the second rule follows the first.
@@ -459,8 +480,8 @@ const pages = await Promise.all(
           --bend-crease: calc((1em - 1px) * var(--bend-sin) + (var(--fold-back-y) + 1px) * var(--bend-cos));
           // The strip is the back of the page turned most recently, going round behind the
           // stack, so it is that page's paper and not the front page's — pages in one stack can
-          // carry different backgrounds. fold-drag.ts puts the furthest page's own
-          // --paper-surface on the stack as --pile-paper whenever the pile changes, and leaves
+          // carry different backgrounds. fold-drag.ts names the furthest page's paper on
+          // the stack as --pile-paper whenever the pile changes, and leaves
           // it unset when nothing is turned, where the strip is transparent anyway. The fold
           // flap above stays on --bend-paper: that one really is the front page's own sheet.
           --pile-bend-paper: var(--pile-paper, var(--bend-paper));
@@ -759,9 +780,8 @@ const pages = await Promise.all(
         transform: rotate(calc(-1 * #{$angle})) scaleX(-1) rotate(calc(#{$angle}));
 
         // The back of the sheet: plain paper, no page texture. --paper-surface is the page's
-        // own resolved background color, lifted onto the sheet by fold-drag.ts — as a sibling
-        // of the page this element can't see background definitions scoped inside it (e.g. a
-        // blueprint page redefining its surface).
+        // own paper, picked on the sheet above: as a sibling of the page this element can't see
+        // background definitions scoped inside it (e.g. a blueprint page redefining its surface).
         //
         // Lit where it lies flat, at its free corner, and in shadow where it curls up out of
         // the crease: the fold is the one place the sheet turns away from the light. Two
@@ -864,8 +884,8 @@ const pages = await Promise.all(
     }
 
     // The band of sheet back a risen page shows above the front one: the page's own colour,
-    // which fold-drag.ts lifts onto it because a background defined inside the page can't be
-    // seen from out here, darkened exactly as the fold flap darkens the same paper, with the
+    // picked on the sheet because a background defined inside the page can't be seen from out
+    // here, darkened exactly as the fold flap darkens the same paper, with the
     // sheet's hairline edge and its corner. It runs $turn-under behind the front page, so the
     // bottom of the band is never in view and what shows is exactly how far the sheet has
     // risen. ::after, not ::before: the page content would paint over it. The opacity is not
