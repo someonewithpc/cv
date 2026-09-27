@@ -56,9 +56,15 @@ function countProgress(stack: Locator): Promise<void> {
 const progress = (page: Page) => page.evaluate(() => (window as Window & { __progress?: number }).__progress ?? 0);
 const resetProgress = (page: Page) => page.evaluate(() => { (window as Window & { __progress?: number }).__progress = 0; });
 
+// The dog-ear's pulse is three animations on one clock, one per layer the fold draws: one state
+// when they agree, all of them when they do not.
 function pulseState(stack: Locator): Promise<string | undefined> {
-  return stack.evaluate((el) => el.querySelector('.paper-front')?.getAnimations()
-    .find((animation) => (animation as CSSAnimation).animationName === 'fold-reveal-pulse')?.playState);
+  return stack.evaluate((el) => {
+    const states = new Set(el.querySelector('.paper-front')?.getAnimations({ subtree: true })
+      .filter((animation) => (animation as CSSAnimation).animationName?.startsWith('fold-pulse-'))
+      .map((animation) => animation.playState));
+    return states.size ? [...states].join(', ') : undefined;
+  });
 }
 
 test('a resize holds every playing demo still, and each carries on once it settles', async ({ page }) => {

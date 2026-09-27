@@ -318,9 +318,8 @@ const dragFold = async (page: Page, stack: Locator, legs: { dx: number, dy: numb
 };
 
 test.describe('a drag that pulls the wrong way cancels', () => {
-  // The pulse that periodically grows the resting dog-ear (fold-reveal-pulse in index.astro)
-  // would otherwise move --fold-x/-y out from under a before/after comparison independently of
-  // anything a drag does.
+  // The pulse that periodically grows the resting dog-ear (the fold pulse in index.astro) would
+  // otherwise change the size a grab starts from, independently of anything a drag does.
   test.use({ reducedMotion: 'reduce' });
 
   test('80px straight down-right from the grab cancels: no flip, no fold left behind', async ({ page }) => {

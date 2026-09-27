@@ -3,24 +3,27 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { armDrawCounter, demoStack, frontPage, frontPageIndex, frontPageName, sceneDraws } from './support/paperStack';
 
 /**
- * The resting dog-ear breathes on a loop (fold-reveal-pulse in PaperStack/index.astro), and
- * that loop animates --fold-x/--fold-y, which the front page's crease clip-path reads — so
- * every frame it advances costs a style resolve of that page and the whole demo printed on
- * it. Seven stacks doing that at once ate better than half a 60fps frame, for ever, whether or
- * not any of them was being looked at, which is time a page turn on one of them no longer
- * had. fold-drag.ts pauses the pulse while its stack is off screen.
+ * The resting dog-ear breathes on a loop (the fold pulse in PaperStack/index.astro). It used to
+ * animate --fold-x/--fold-y, which the front page's crease clip-path reads, so every frame it
+ * advanced cost a style resolve of that page and a repaint of the sheet. Seven stacks doing
+ * that at once ate better than half a 60fps frame, for ever, which is time a page turn on one
+ * of them no longer had. Now it is three animations the compositor runs, one per layer the
+ * fold draws, and fold-drag.ts still pauses them while their stack is off screen.
  *
  * Read off the Web Animations API rather than off a class or an attribute, because that is
  * how it is driven: a class or an attribute would put the document's :has() rules back in
  * play on every scroll past, which is the cost this is avoiding in the first place.
  */
-async function pulseStates(stack: import('@playwright/test').Locator): Promise<string[]> {
+async function pulseStates(stack: Locator): Promise<string[]> {
   return stack.evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>('.paper-front')]
-      .flatMap((sheet) => sheet.getAnimations())
-      .filter((animation) => (animation as CSSAnimation).animationName === 'fold-reveal-pulse')
+      .flatMap((sheet) => sheet.getAnimations({ subtree: true }))
+      .filter((animation) => (animation as CSSAnimation).animationName?.startsWith('fold-pulse-'))
       .map((animation) => animation.playState));
 }
+
+const RUNNING = ['running', 'running', 'running'];
+const PAUSED = ['paused', 'paused', 'paused'];
 
 test('the resting dog-ear breathes only on a stack that is on screen', async ({ page }) => {
   test.setTimeout(90_000);
@@ -31,17 +34,17 @@ test('the resting dog-ear breathes only on a stack that is on screen', async ({ 
 
   await first.scrollIntoViewIfNeeded();
   await page.waitForTimeout(1000);
-  expect(await pulseStates(first)).toEqual(['running']);
+  expect(await pulseStates(first)).toEqual(RUNNING);
 
   // The foot of the page, nowhere near the first stack however many demos come after it.
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(1000);
-  expect(await pulseStates(first)).toEqual(['paused']);
+  expect(await pulseStates(first)).toEqual(PAUSED);
 
   // Back in view, and the tease picks up where it left off.
   await first.scrollIntoViewIfNeeded();
   await page.waitForTimeout(1000);
-  expect(await pulseStates(first)).toEqual(['running']);
+  expect(await pulseStates(first)).toEqual(RUNNING);
 });
 
 test('a page turn leaves the new front page breathing', async ({ page }) => {
@@ -59,7 +62,7 @@ test('a page turn leaves the new front page breathing', async ({ page }) => {
   expect(await frontPageName(stack)).not.toBe(before);
 
   // The pulse travels with the front-page role, and the stack is in view, so it runs.
-  expect(await pulseStates(stack)).toEqual(['running']);
+  expect(await pulseStates(stack)).toEqual(RUNNING);
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front).toHaveClass(/paper-front/);
 });
