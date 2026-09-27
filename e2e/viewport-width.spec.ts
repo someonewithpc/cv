@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { forEachStackInLane, LANES, settledAfter } from './support/paperStack';
+import { dogEarShown, forEachStackInLane, LANES, settledAfter } from './support/paperStack';
 
 /**
  * Opening Chrome's responsive device mode is mobile emulation applied to a page that is
@@ -70,6 +70,7 @@ async function widths(page: Page) {
  * rather than aiming at a corner and missing.
  */
 async function flapPoint(stack: Locator): Promise<{ x: number, y: number }> {
+  await dogEarShown(stack);
   const point = await stack.evaluate((element) => {
     const flap = element.querySelector('.paper-fold');
     if (!flap) return null;

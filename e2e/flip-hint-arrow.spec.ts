@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import sharp from 'sharp';
 
-import { swipeStack } from './support/paperStack';
+import { dogEarShown, swipeStack } from './support/paperStack';
 
 type Rgb = readonly [number, number, number];
 
@@ -304,6 +304,7 @@ test.describe('with motion allowed', () => {
 
     // A corner drag, released past the commit point, so the flip glides the rest of the way on
     // its own: the fold on the front page is the dog-ear at the sheet's bottom-right.
+    await dogEarShown(stack);
     const sheet = (await stack.locator('.paper-front').boundingBox())!;
     const grip = await flapGrip(stack);
     await page.mouse.move(grip.x, grip.y);

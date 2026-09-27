@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { armDrawCounter, demoStack, frontPage, frontPageIndex, frontPageName, sceneDraws } from './support/paperStack';
+import { armDrawCounter, demoStack, dogEarShown, frontPage, frontPageIndex, frontPageName, sceneDraws } from './support/paperStack';
 
 /**
  * The resting dog-ear breathes on a loop (the fold pulse in PaperStack/index.astro). It used to
@@ -99,6 +99,7 @@ test('taking the dog-ear mid-pulse starts the drag from the size it was drawn at
   const stack = page.locator('article.technical-drawing-stack').first();
   await stack.scrollIntoViewIfNeeded();
   await expect.poll(() => pulseStates(stack)).toEqual(RUNNING);
+  await dogEarShown(stack);
 
   // Held at its peak, 3cm by 2cm (index.astro's $fold-pulse-x/-y): the delay, then 90% of the
   // 7.5s run.

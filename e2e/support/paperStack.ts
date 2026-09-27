@@ -229,3 +229,19 @@ export function sceneDraws(scope: Locator): Promise<number> {
 export async function drawEveryStack(page: Page): Promise<void> {
   await page.addStyleTag({ content: 'article.technical-drawing-stack { content-visibility: visible !important; }' });
 }
+
+/**
+ * Waits for the front page's dog-ear to finish drawing itself. The reveal waits for the stack's
+ * bottom edge to come on screen (watchStackReveal in PaperStack/fold-drag.ts) and then takes a
+ * second, so a spec that scrolls a stack in and goes straight for the flap would find it 0 by 0.
+ * A drag retires the reveal for good, which counts as done.
+ */
+export async function dogEarShown(stack: Locator): Promise<void> {
+  await expect
+    .poll(() => stack.evaluate((el) => {
+      const reveal = el.querySelector('.paper-front')?.getAnimations()
+        .find((animation) => (animation as CSSAnimation).animationName === 'initial-fold-reveal');
+      return !reveal || reveal.playState === 'finished';
+    }), { message: 'the dog-ear never drew itself', timeout: 10_000 })
+    .toBe(true);
+}

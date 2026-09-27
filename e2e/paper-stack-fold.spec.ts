@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { demoStack, frontPageIndex, frontPageName, pressTurn, swipeStack } from './support/paperStack';
+import { demoStack, dogEarShown, frontPageIndex, frontPageName, pressTurn, swipeStack } from './support/paperStack';
 
 const DEMOS = [
   {
@@ -131,7 +131,7 @@ test('every page paints the back of its sheet in its own paper, in every theme',
 test('visrez logo: the dog-ear is lit at its tip and shaded along the crease', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   // The flap's darkening gradient runs along the crease's normal from the page's bottom-right
   // corner, where the crease lies fold-x·sin(a) in. Its darkest stop has to sit on the crease
@@ -325,7 +325,7 @@ test.describe('a drag that pulls the wrong way cancels', () => {
   test('80px straight down-right from the grab cancels: no flip, no fold left behind', async ({ page }) => {
     const stack = page.locator('article.technical-drawing-stack').first();
     await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await dogEarShown(stack);
 
     const before = await frontPageIndex(stack);
     const restBefore = await foldSize(stack);
@@ -351,7 +351,7 @@ test.describe('a drag that pulls the wrong way cancels', () => {
   test('a small wobble the wrong way on grab, then a strong pull inward, still turns the page', async ({ page }) => {
     const stack = page.locator('article.technical-drawing-stack').first();
     await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await dogEarShown(stack);
 
     const before = await frontPageIndex(stack);
 
@@ -371,7 +371,7 @@ test.describe('a drag that pulls the wrong way cancels', () => {
   test('a normal forward drag still turns the page', async ({ page }) => {
     const stack = page.locator('article.technical-drawing-stack').first();
     await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await dogEarShown(stack);
 
     const before = await frontPageIndex(stack);
     const sheet = (await stack.locator('.paper-front').boundingBox())!;
