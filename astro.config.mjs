@@ -9,6 +9,7 @@ import { defineConfig } from 'astro/config';
 import icon from 'astro-icon';
 
 import { httpToHttpsRedirect } from './plugins/httpToHttpsRedirect.mjs';
+import { lazyIslandStylesheets } from './plugins/lazyIslandStylesheets.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -32,6 +33,7 @@ export default defineConfig({
   integrations: [
     react(),
     vue(),
+    lazyIslandStylesheets(),
     icon({
       include: {
         lucide: [
