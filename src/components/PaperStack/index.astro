@@ -177,6 +177,8 @@ const pages = await Promise.all(
 // restIdleFold's switch for the pulse layers, set on the sheet and read one level down (by the
 // clip's shadow two, through the clip): not inherited, so setting it restyles those and not the
 // page's content.
+// The sheet takes it from the stack otherwise, where it keeps the pulse off until the reveal
+// has run (releasePulse in fold-drag.ts).
 @property --fold-pulse {
   syntax: '*';
   inherits: false;
@@ -225,6 +227,11 @@ $fold-pulse-y: 2cm;
   anchor-scope: --technical-drawing-stack;
 
   &[data-paper-stack] {
+    // No dog-ear pulse until the reveal has run: fold-drag.ts clears this when it ends
+    // (watchStackReveal), and the front page's pulse layers come into being then (see
+    // initial-fold-reveal below).
+    --fold-pulse: none;
+
     // The stack's own box is an upright rectangle around the whole fan, including the
     // margin reserved for the splay, so a ring on it misses the sheet the reader is
     // looking at. Put it on the front sheet instead: it turns with the splay, and
@@ -847,9 +854,14 @@ $fold-pulse-y: 2cm;
         // The reveal waits for the reader: held until fold-drag.ts sets --fold-reveal on the
         // stack, the first time the stack's bottom edge, where the dog-ear is, comes on screen.
         // Run from load, it played out on every stack while the reader was still at the top of
-        // the page. The pulse layers take their play state from here, so they wait with it.
+        // the page. The pulse is not there at all until the reveal has finished: the stack's
+        // --fold-pulse keeps its three layers' animations off. While the page's clip-path pulse
+        // exists, even held or still in its delay, Chrome keeps painting the crease clip it
+        // had when that animation started, at no fold: the flap drew itself over an uncut
+        // corner, and the cut only caught up when the pulse's delay ran out.
         animation: 500ms 500ms ease-in-out initial-fold-reveal 1 forwards;
         --fold-reveal: inherit;
+        --fold-pulse: inherit;
         animation-play-state: var(--fold-reveal, paused);
 
         @keyframes initial-fold-reveal {
@@ -926,7 +938,8 @@ $fold-pulse-y: 2cm;
         // The three share one clock: the same timing, started together whenever a page takes
         // the front, and paused, cancelled and restarted together by fold-drag.ts, which
         // restarts them by setting --fold-pulse to none for a frame on the sheet (each layer
-        // takes it by `inherit`). The play state comes down from the sheet too, so a pointer
+        // takes it by `inherit`; the sheet takes it from the stack, which holds it at none
+        // until the reveal). The play state comes down from the sheet too, so a pointer
         // on the flap still holds the pulse.
         @mixin fold-pulse($name) {
           --fold-pulse: inherit;

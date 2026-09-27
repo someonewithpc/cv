@@ -1079,9 +1079,6 @@ export const isFoldPulse = (animation: Animation): boolean =>
 
 const stillStacks = new WeakSet<HTMLElement>();
 
-// Stacks whose dog-ear has been on screen, so has had its reveal. The pulse waits for it too.
-const revealedStacks = new WeakSet<HTMLElement>();
-
 const sheetPulses = (sheet: HTMLElement): Animation[] =>
   sheet.getAnimations({ subtree: true }).filter(isFoldPulse);
 
@@ -1096,18 +1093,15 @@ const retirePulse = (sheet: HTMLElement): void => {
 };
 
 // Puts the three layers' clocks back in step, then runs or holds them as the stack's place calls
-// for: held until the stack's reveal (watchStackReveal), off screen, and while the window is
-// being resized (src/client/resizeHold.ts). A layer can fall behind the other two. Until this
-// file first plays the pulse, the page's layer obeys the page's own animation-play-state, which
-// Stack.astro sets on a page that is not showing; and a flap handed back after a flip starts its
-// run over. Each takes the one furthest along, once
-// all three are under way: an animation that has only just started has no start time yet, and
+// for: held off screen and while the window is being resized (src/client/resizeHold.ts). Before
+// the stack's reveal there is no pulse to run (watchStackReveal). A layer can fall behind the
+// other two. Until this file first plays the pulse, the page's layer obeys the page's own
+// animation-play-state, which Stack.astro sets on a page that is not showing; and a flap handed
+// back after a flip starts its run over. Each takes the one furthest along, once all three are
+// under way: an animation that has only just started has no start time yet, and
 // the frames before it gets one would come off its clock. Run or held through play() and
 // pause(), which overrule the CSS play state from then on.
-const alignPulse = (
-  stack: HTMLElement,
-  running = revealedStacks.has(stack) && !stillStacks.has(stack) && !isResizeHeld(),
-): void => {
+const alignPulse = (stack: HTMLElement, running = !stillStacks.has(stack) && !isResizeHeld()): void => {
   const pulses = pulsesOf(stack);
   for (const pulse of pulses) {
     if (running) pulse.play();
@@ -1130,7 +1124,7 @@ const syncPulse = (stack: HTMLElement): void => {
   requestAnimationFrame(() => alignPulse(stack));
 };
 
-// index.astro holds each stack's reveal, and with it the pulse, until the stack's bottom edge
+// index.astro holds each stack's reveal, and the pulse after it, until the stack's bottom edge
 // is on screen: the dog-ear sits in the bottom-right corner, so a stack that has only just come
 // up over the bottom of the window has not shown it yet. From below, the edge comes into view as
 // the stack's visible share either reaches 1 or, on a stack taller than the window, starts to
@@ -1142,10 +1136,17 @@ const REVEAL_THRESHOLDS = Array.from({ length: 21 }, (_, i) => i / 20);
 let revealObserver: IntersectionObserver | undefined;
 
 const revealStack = (stack: HTMLElement): void => {
-  revealedStacks.add(stack);
   revealObserver!.unobserve(stack);
   stack.style.setProperty('--fold-reveal', 'running');
-  alignPulse(stack);
+};
+
+// The pulse comes in once the reveal is over (see initial-fold-reveal in index.astro for why
+// not during it): `initial` is no value at all, so each layer falls back to its own animation.
+// A drag that cuts the reveal short gets it back from restIdleFold instead.
+const releasePulse = (stack: HTMLElement): void => {
+  if (stack.style.getPropertyValue('--fold-pulse') === 'initial') return;
+  stack.style.setProperty('--fold-pulse', 'initial');
+  syncPulse(stack);
 };
 
 const watchStackReveal = (stack: HTMLElement): void => {
@@ -1158,6 +1159,9 @@ const watchStackReveal = (stack: HTMLElement): void => {
     }
   }, { threshold: REVEAL_THRESHOLDS });
   revealObserver.observe(stack);
+  stack.addEventListener('animationend', (event) => {
+    if (event.animationName === 'initial-fold-reveal') releasePulse(stack);
+  });
 };
 
 const watchStackPulse = (stack: HTMLElement): void => {
@@ -1171,7 +1175,7 @@ const watchStackPulse = (stack: HTMLElement): void => {
     }
   }, { rootMargin: '25%' });
   onResizeHold((holding) => {
-    if (stillStacks.has(stack) || !revealedStacks.has(stack)) return;
+    if (stillStacks.has(stack)) return;
     alignPulse(stack, !holding);
   });
   observer.observe(stack);
@@ -1192,6 +1196,7 @@ const restIdleFold = (sheet: HTMLElement): void => {
   sheet.style.setProperty('--fold-pulse', 'none');
   void sheet.offsetWidth;
   sheet.style.removeProperty('--fold-pulse');
+  sheet.parentElement!.style.setProperty('--fold-pulse', 'initial');
   syncPulse(sheet.parentElement!);
 };
 
