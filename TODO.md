@@ -150,4 +150,4 @@
 - [x] Skip style, layout and paint for the stacks off screen (#185)
 - [ ] Detail callout bubble sits on the same side down the page while its block alternates, past 105rem
 - [x] Try `contain` on the boxes that do not depend on their surroundings (#193)
-- [ ] Work out the sheets' measure in CSS instead of writing it on every resize step (#171)
+- [x] Work out the sheets' measure in CSS instead of writing it on every resize step (#194)
