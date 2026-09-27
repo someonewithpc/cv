@@ -1,0 +1,117 @@
+// What the theme picker sheets share: the margin every layer keeps around its content, the
+// sheet's type, the lettered notes box and a swatch.
+
+// Clear sheet between the content and the frame line, in em of the sheet's own type so it
+// scales with the page. It goes on a layer's root and nowhere else.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// Keeps a layer's content clear of the title block, which reaches into the content column
+// from the bottom-right corner of a landscape sheet. Portrait gives the block its own row.
+@mixin clear-of-title-block {
+  padding-bottom: calc(var(--title-block-block, 0px) + #{$sheet-margin});
+
+  @container technical-drawing (orientation: portrait) {
+    padding-bottom: $sheet-margin;
+  }
+}
+
+// The sheet's type, keyed on the stack's orientation attribute rather than a container
+// query: a font size out of a query re-lays everything under it on each resize step that
+// crosses the breakpoint (see TechnicalDrawing/Stack.astro).
+@mixin sheet-type($landscape: 0.026, $portrait: 0.03) {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.625rem, $landscape * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  :global([data-sheet-orientation='portrait']) & {
+    font-size: min(1rem, $portrait * min(var(--sheet-inline), var(--sheet-block)));
+  }
+}
+
+// A drawing's general notes, lettered the way the title block is: a ruled box on the sheet's
+// own paper, its heading in the block's small label face, the notes numbered and set in the
+// typewriter face of the block's values. Markup: .notes > .notes-heading + ol > li.
+@mixin drawing-notes {
+  margin: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--sheet-paper);
+  color: var(--ink);
+
+  .notes-heading {
+    display: block;
+    padding: 0.125em 0.75em;
+    border-bottom: 1px solid var(--line-strong);
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.75em);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  ol {
+    display: grid;
+    gap: 0.25em 1.5em;
+    margin: 0;
+    padding: 0.375em 0.75em;
+  }
+
+  li {
+    margin-inline-start: 1.75em;
+    padding-inline-start: 0.25em;
+    list-style: decimal outside;
+    font-family: "Special Elite", monospace, system-ui;
+    line-height: 1.25;
+    text-wrap: pretty;
+
+    &::marker {
+      font-family: monospace, system-ui;
+      color: var(--ink-muted);
+    }
+  }
+
+  code {
+    font-family: monospace, system-ui;
+  }
+}
+
+// A ruled panel on the sheet's paper with a small uppercase heading, the same face as the
+// notes box, so a figure and its notes read as one drawing.
+@mixin panel {
+  display: grid;
+  align-content: start;
+  gap: 0.5em;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0.625em 0.75em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25em;
+  background: var(--sheet-paper);
+
+  .panel-heading {
+    margin: 0;
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.75em);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+}
+
+// A colour sample: a square of the token, ruled so a swatch the colour of the paper still
+// shows its edge. The token goes in `--swatch`.
+@mixin swatch($size: 1.5em) {
+  display: inline-block;
+  width: $size;
+  height: $size;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.125em;
+  background: var(--swatch);
+  vertical-align: middle;
+}

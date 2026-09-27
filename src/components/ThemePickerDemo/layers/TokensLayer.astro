@@ -1,0 +1,297 @@
+---
+/**
+ * The token layers, painted live: the four seeds, the three ramps _colors.scss mixes from
+ * them, and the names the page reads. Every swatch is the token itself, so the sheet shows
+ * whatever theme is on screen, and a switch repaints it with the rest of the page.
+ */
+const seeds = [
+  { token: '--theme-canvas', label: 'canvas' },
+  { token: '--theme-ink', label: 'ink' },
+  { token: '--theme-accent', label: 'accent' },
+  { token: '--theme-blueprint', label: 'blueprint' },
+];
+
+const steps = Array.from({ length: 12 }, (_, i) => i + 1);
+
+const ramps = [
+  { name: 'neutral', rule: 'canvas to ink, eleven equal steps' },
+  { name: 'accent', rule: '1 to 8 tinted toward the canvas, 9 the seed, 10 to 12 shaded toward the ink' },
+  { name: 'blueprint', rule: 'the same steps from the blueprint seed' },
+];
+
+/* The names a plain sheet reads, each painted twice: as the page defines it, from the ramps
+   this sheet leaves alone, and as this blueprint sheet remaps it. */
+const names = [
+  { token: '--surface-page', page: 'var(--theme-paper, var(--neutral-1))', from: '--theme-paper, or neutral 1' },
+  { token: '--ink', page: 'var(--neutral-12)', from: 'neutral 12' },
+  { token: '--line', page: 'var(--neutral-6)', from: 'neutral 6' },
+  { token: '--accent', page: 'var(--accent-9)', from: 'accent 9' },
+  { token: '--blueprint-grid', page: 'color-mix(in oklch, var(--blueprint-9), var(--theme-canvas) 38%)', from: 'blueprint 9, canvas 38%' },
+];
+---
+
+<div class="tokens-sheet">
+  <p class="point typewriter">Four seeds, three ramps, then the names the page reads</p>
+
+  <div class="figure">
+    <section class="layer seeds" aria-label="Seeds">
+      <span class="layer-heading">1 · Seeds, set per theme on <code>:root</code></span>
+      <ul>
+        {seeds.map(({ token, label }) => (
+          <li style={`--swatch: var(${token})`}>
+            <span class="swatch"></span>
+            <span class="label">{label}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="layer ramps" aria-label="Ramps">
+      <span class="layer-heading">2 · Ramps, <code>color-mix(in oklch)</code> in a Sass loop</span>
+      {ramps.map(({ name, rule }) => (
+        <div class="ramp">
+          <span class="ramp-name">{name}</span>
+          <ol aria-label={`${name} 1 to 12`}>
+            {steps.map((i) => (
+              <li style={`--swatch: var(--${name}-${i})`}><span class="swatch"></span><span class="n">{i}</span></li>
+            ))}
+          </ol>
+          <span class="ramp-rule">{rule}</span>
+        </div>
+      ))}
+    </section>
+
+    <section class="layer names" aria-label="Names">
+      <span class="layer-heading">3 · Names, what a sheet reads</span>
+      <table>
+        <thead>
+          <tr><th scope="col">token</th><th scope="col">on a plain sheet</th><th scope="col">on this sheet</th></tr>
+        </thead>
+        <tbody>
+          {names.map(({ token, page, from }) => (
+            <tr>
+              <th scope="row"><code>{token}</code></th>
+              <td><span class="swatch" style={`--swatch: ${page}`}></span> {from}</td>
+              <td><span class="swatch" style={`--swatch: var(${token})`}></span> remapped</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <section class="notes" aria-label="Notes">
+    <span class="notes-heading">Notes</span>
+    <ol>
+      <li>
+        <code>--neutral-i</code> is the canvas mixed with the ink at (i - 1) / 11: 1 is the canvas,
+        12 the ink. A dark theme's ink is light, so the ramp runs the other way by itself.
+      </li>
+      <li>
+        A sheet's paper is <code>--theme-paper</code> when the theme names one. Dark names
+        none, so its sheets fall back on <code>light-dark(--surface-raised, --surface-sunken)</code>.
+      </li>
+      <li>
+        A blueprint sheet resets the names, never the seeds or the ramps: <code>--ink</code>,
+        <code>--line</code> and the surfaces become mixes of the blueprint seed and white, so one
+        demo's chrome reads on both papers.
+      </li>
+      <li>
+        The backs of the sheets, the dog-ear and the pile strip paint from the same names
+        (#180), so a switch costs no computed read.
+      </li>
+    </ol>
+  </section>
+</div>
+
+<style lang="scss">
+@use "./sheet" as *;
+
+:global(article.technical-drawing-stack > * > section .content:has(.tokens-sheet)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.tokens-sheet {
+  @include sheet-content;
+  @include sheet-type(0.023, 0.028);
+  @include clear-of-title-block;
+
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  row-gap: 0.5em;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+
+  :global([data-sheet-orientation='portrait']) & {
+    align-content: start;
+  }
+}
+
+.point {
+  margin: 0;
+  font-size: 1.25em;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.figure {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5em;
+  width: 100%;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.layer {
+  @include panel;
+
+  font-family: monospace, system-ui;
+}
+
+.layer-heading {
+  font-size: max(0.5rem, 0.75em);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.swatch {
+  @include swatch(1.25em);
+}
+
+.seeds {
+  ul {
+    display: grid;
+    gap: 0.375em;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  .swatch {
+    @include swatch(1.75em);
+  }
+
+  :global([data-sheet-orientation='portrait']) & ul {
+    grid-template-columns: repeat(4, auto);
+    justify-content: start;
+  }
+}
+
+.ramps {
+  gap: 0.375em;
+}
+
+.ramp {
+  display: grid;
+  grid-template-columns: 5.5em minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.5em;
+
+  ol {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0.125em;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    justify-items: center;
+    gap: 0.125em;
+  }
+
+  .swatch {
+    width: 100%;
+    max-width: 1.5em;
+  }
+
+  .n {
+    font-size: max(0.5rem, 0.625em);
+    color: var(--ink-faint);
+  }
+
+  .ramp-rule {
+    grid-column: 2;
+    font-size: max(0.5rem, 0.6875em);
+    color: var(--ink-muted);
+  }
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+
+    .ramp-rule {
+      grid-column: 1;
+    }
+  }
+}
+
+.names {
+  grid-column: 1 / -1;
+
+  table {
+    border-collapse: collapse;
+    font-size: max(0.5rem, 0.75em);
+  }
+
+  th,
+  td {
+    padding: 0.125em 0.75em 0.125em 0;
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  thead th {
+    font-weight: 400;
+    color: var(--ink-muted);
+    border-bottom: 1px solid var(--line);
+  }
+
+  tbody th {
+    font-weight: 400;
+  }
+
+  .swatch {
+    @include swatch(1.125em);
+
+    margin-inline-end: 0.25em;
+  }
+}
+
+.notes {
+  @include drawing-notes;
+
+  width: 100%;
+  font-size: max(0.5rem, 0.8125em);
+
+  ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    :global([data-sheet-orientation='portrait']) & {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
+</style>

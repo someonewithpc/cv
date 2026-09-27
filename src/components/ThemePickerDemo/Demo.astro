@@ -1,0 +1,63 @@
+---
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import * as esbuild from 'esbuild';
+
+import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+
+import PickerLayer from './layers/PickerLayer.astro';
+import TokensLayer from './layers/TokensLayer.astro';
+import DefaultLayer from './layers/DefaultLayer.astro';
+import WipeLayer from './layers/WipeLayer.astro';
+
+function toKiB(text: string) {
+  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
+}
+
+// The weight is the picker's own script, bundled the way the page ships it: the <script>
+// block of ThemePicker.astro with its svg-utils import, the path-data polyfill left out
+// since the page only fetches it where getPathData is missing.
+const srcRoot = path.join(process.cwd(), 'src');
+const pickerSource = await fs.readFile(path.join(srcRoot, 'components/ThemePicker.astro'), 'utf8');
+const pickerScript = pickerSource.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? '';
+
+const { outputFiles: [pickerBundle] } = await esbuild.build({
+  stdin: { contents: pickerScript, resolveDir: srcRoot, loader: 'ts' },
+  bundle: true,
+  minify: true,
+  write: false,
+  format: 'esm',
+  packages: 'external',
+  alias: { '@': srcRoot },
+});
+
+const pickerSize = toKiB(pickerBundle.text);
+
+const layers = {
+  picker: { name: null },
+  tokens: { name: 'Token Layers', pageStyle: 'blueprint' },
+  default: { name: 'Default and Override', pageStyle: 'blueprint' },
+  wipe: { name: 'The Wipe', pageStyle: 'blueprint' },
+} as const;
+
+type Layer = keyof typeof layers;
+---
+
+<TechnicalDrawingStack
+  subtitle="Theme Picker"
+  scale="1:1"
+  size={pickerSize}
+  date="2026"
+  tech={['astro', 'css3']}
+  layers={layers}
+>
+  <fragment slot="layers">
+    {(layer: Layer) => ({
+      picker: <PickerLayer />,
+      tokens: <TokensLayer />,
+      default: <DefaultLayer />,
+      wipe: <WipeLayer />,
+    }[layer])}
+  </fragment>
+</TechnicalDrawingStack>

@@ -1,0 +1,261 @@
+---
+/**
+ * The wipe: how the new page is cut out of the old along the picked icon, and what a
+ * switch costs. The figure grows the icon of the theme on screen from the picker's corner
+ * across a drawn viewport, with the theme's own factor, so it is true in every theme.
+ */
+import { Icon } from 'astro-icon/components';
+
+import { THEME_IDS, THEMES } from '@/themes';
+
+import { shownCss } from '../shown';
+
+/* Three of the wipe's frames, as fractions of the final square. */
+const frames = [0.12, 0.4, 1];
+
+const steps = [
+  'document.startViewTransition(commit): the browser keeps a snapshot of the old page, the commit stamps the theme, and the new page renders under it.',
+  'The checked icon\'s <path>, through getPathData({ normalize: true }), so every command is absolute. A path that opens with a relative move, the snowflake, would otherwise be read from the viewport\'s origin. Polyfilled where the browser lacks it.',
+  'The path is mapped twice from the icon\'s viewBox, which astro-icon puts on the outer <svg> (older output put it on the <symbol>, both are checked): onto the icon\'s box on screen, then onto a square centred there, the viewport\'s diagonal times the theme\'s factor each side.',
+  'documentElement.animate on ::view-transition-new(theme-transition), clip-path from the first path to the second, 500 ms, ease-in. The default cross-fade is off, so the wipe is the only motion.',
+  'Skipped when reduced motion is on, the tab is hidden, or the theme picked is the one on screen. A second pick mid-wipe skips the first. While it runs <html> takes every click, so the picker hit-tests a click against its own boxes by hand.',
+];
+
+/* Four theme switches, measured for #180 on main 081ba11a and the branch that landed. */
+const cost = [
+  { what: 'forced style passes', before: '242', after: '0' },
+  { what: 'style recalculation', before: '1,641 ms', after: '548 ms' },
+  { what: 'main thread busy', before: '2,428 ms', after: '1,222 ms' },
+];
+---
+
+<div class="wipe-sheet">
+  <p class="point typewriter">The new page is cut out of the old one along the icon</p>
+
+  <figure class="figure">
+    <div class="viewport" aria-hidden="true">
+      {frames.map((size) => (
+        <span class="frame" style={`--size: ${size}`}>
+          {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+        </span>
+      ))}
+      <span class="corner">
+        {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+      </span>
+    </div>
+    <figcaption>
+      Three frames of the 500 ms, from the icon's box in the corner to a square
+      {THEME_IDS.map((id) => <span data-shown={id}>{THEMES[id].transitionScaleFactor}</span>)}
+      diagonals wide. Each theme sets its own factor, a moon has to grow further than a sun.
+    </figcaption>
+  </figure>
+
+  <section class="steps" aria-label="Steps">
+    <span class="panel-heading">One pick, step by step</span>
+    <ol>
+      {steps.map((step) => <li>{step}</li>)}
+    </ol>
+  </section>
+
+  <section class="cost" aria-label="What a switch costs">
+    <span class="panel-heading">What a switch repaints, and what it cost</span>
+    <p>
+      Every token on <code>:root</code>, the three ramps, the paper grain's blend and inversion,
+      the desk tile, the mat and the backs of the sheets. Four switches, traced for #180:
+    </p>
+    <table>
+      <thead>
+        <tr><th scope="col"></th><th scope="col">backs read from computed style</th><th scope="col">backs painted from the tokens</th></tr>
+      </thead>
+      <tbody>
+        {cost.map(({ what, before, after }) => (
+          <tr><th scope="row">{what}</th><td>{before}</td><td>{after}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<style is:global set:html={shownCss('.wipe-sheet')} />
+
+<style lang="scss">
+@use "./sheet" as *;
+
+:global(article.technical-drawing-stack > * > section .content:has(.wipe-sheet)) {
+  place-self: stretch;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.wipe-sheet {
+  @include sheet-content;
+  @include sheet-type(0.023, 0.028);
+  @include clear-of-title-block;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  grid-template-areas:
+    'point point'
+    'figure steps'
+    'cost steps';
+  gap: 0.5em;
+  align-content: center;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+
+  :global([data-sheet-orientation='portrait']) & {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'point'
+      'figure'
+      'steps'
+      'cost';
+    align-content: start;
+  }
+}
+
+.point {
+  grid-area: point;
+  margin: 0;
+  font-size: 1.25em;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.figure {
+  grid-area: figure;
+  display: grid;
+  gap: 0.375em;
+  margin: 0;
+  min-width: 0;
+
+  figcaption {
+    font-size: max(0.5rem, 0.75em);
+    line-height: 1.35;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+}
+
+/* A viewport, drawn 16:10, with the picker's corner top right. The frames are the icon
+   itself, centred on the corner icon and grown to a share of the final square: a square
+   --size of two diagonals wide, since the smallest factor is 1.2 and the largest 2.4. */
+.viewport {
+  --corner: 1.25em;
+
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.125em;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.corner,
+.frame {
+  position: absolute;
+  top: calc(var(--corner) * 0.5);
+  right: calc(var(--corner) * 0.5);
+  translate: 50% -50%;
+  display: block;
+}
+
+.corner {
+  width: var(--corner);
+  height: var(--corner);
+  color: var(--ink);
+}
+
+.frame {
+  /* Percentages of the viewport box: its diagonal is 1.18 of its width and 1.89 of its height. */
+  width: calc(var(--size) * 236%);
+  height: calc(var(--size) * 378%);
+  color: color-mix(in oklch, var(--accent), transparent calc(100% - var(--size) * 45%));
+}
+
+.corner :global(svg),
+.frame :global(svg) {
+  display: var(--shown-display, none);
+  width: 100%;
+  height: 100%;
+}
+
+.steps,
+.cost {
+  @include panel;
+}
+
+.steps {
+  grid-area: steps;
+
+  ol {
+    display: grid;
+    gap: 0.375em;
+    margin: 0;
+    padding-inline-start: 1.5em;
+  }
+
+  li {
+    list-style: decimal outside;
+    font-size: max(0.5rem, 0.8125em);
+    line-height: 1.35;
+    text-wrap: pretty;
+
+    &::marker {
+      font-family: monospace, system-ui;
+      color: var(--ink-muted);
+    }
+  }
+}
+
+.cost {
+  grid-area: cost;
+
+  p {
+    margin: 0;
+    font-size: max(0.5rem, 0.8125em);
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+
+  table {
+    border-collapse: collapse;
+    font-family: monospace, system-ui;
+    font-size: max(0.5rem, 0.75em);
+  }
+
+  th,
+  td {
+    padding: 0.125em 0.625em 0.125em 0;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  thead th {
+    font-weight: 400;
+    color: var(--ink-muted);
+    border-bottom: 1px solid var(--line);
+  }
+
+  tbody th {
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+[data-shown] {
+  display: var(--shown-display, none);
+}
+</style>
