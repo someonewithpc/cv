@@ -94,7 +94,9 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
     height: 5.5rem;
   }
 
-  :global(.hover-select-options) {
+  // card.scss says absolute at the same weight, and the Space Builder's sheet brings it again
+  // when that demo boots, so this outranks it rather than relying on coming later
+  :global(.option-item .hover-select-options) {
     position: static;
   }
 }
