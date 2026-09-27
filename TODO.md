@@ -116,6 +116,7 @@
 - [x] Drop the flaky phone seat-row hover test in the variants demo e2e spec (#144)
 - [x] Fix the e2e specs that fail under load (#164)
 - [x] Make demos more usable without JS (#19)
+- [x] Page half-drawn with JS off, and stylesheet source printed when JS is switched off after load (#170)
 - [x] Demo too wide on regular screen (max should be 100ch) (#8)
 - [x] Contact section
 - [x] Contributions link icon missing (#10)
