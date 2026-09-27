@@ -155,21 +155,22 @@ const themeVars = (settings: ThemeSettings) => `
    anywhere restyled the whole page. */
 const themeInputId = (id: string) => `theme-${id}`;
 const themeChecked = (id: string) => `#${themeInputId(id)}:is(:not(.with-transition):checked, .with-transition.checked)`;
-const ANY_THEME_CHECKED = Object.keys(THEMES).map(themeChecked).join(', ');
 
-/* Theme application mirrors the original radio/.checked contract so view
-   transitions keep working; data-theme is an extra early-paint / persistence path. */
+/* With script, a pick writes data-theme and the radio's .checked class in the same commit,
+   so the root's theme is read from the attribute alone. The radio rules stand only on a page
+   whose script never ran: any :root:has() in the cascade makes the root an anchor, and every
+   node inserted anywhere on the page then walks the document's :has() invalidation set. The
+   OS default needs no guard against a checked radio: the id inside :has() outranks it. */
 const THEMES_CSS = `${Object.entries(OS_THEMES).map(([id, settings]) => (
   `  @media (prefers-color-scheme: ${id}) {
-    :root:not([data-theme]):not(:has(${ANY_THEME_CHECKED})) {
+    :root:not([data-theme]) {
 ${themeVars(settings)}
       --theme-kind: ${id};
     }
   }`
 )).join('\n\n')}
 ${Object.entries(THEMES).map(([id, settings]) => `
-  :root[data-theme="${id}"],
-  :root:has(${themeChecked(id)}) {
+  :root[data-theme="${id}"] {
     --theme-kind: ${id};
 ${themeVars(settings)}
 
@@ -177,6 +178,18 @@ ${themeVars(settings)}
       color-scheme: only ${settings.follows};
     }
   }`).join('\n')}
+
+  @media (scripting: none) {
+${Object.entries(THEMES).map(([id, settings]) => `
+    :root:has(${themeChecked(id)}) {
+      --theme-kind: ${id};
+${themeVars(settings)}
+
+      body {
+        color-scheme: only ${settings.follows};
+      }
+    }`).join('\n')}
+  }
 `;
 
 const THEME_IDS = Object.keys(THEMES) as ThemeId[];

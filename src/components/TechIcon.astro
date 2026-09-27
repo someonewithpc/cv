@@ -48,8 +48,7 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
 </span>
 
 <style lang="scss">
-.tech-icon {
-  display: inline-flex;
+@mixin light-strokes {
   --icon-contrast-stroke: rgb(0 0 0 / 0.5);
   --icon-contrast-stroke-width: 3;
   --icon-outer-stroke: transparent;
@@ -58,6 +57,22 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
   --mysql-stroke-width: 3.5;
   --postgres-stroke: #1a171b;
   --postgres-stroke-width: 1.25;
+}
+
+@mixin dark-strokes {
+  --icon-contrast-stroke: rgb(255 255 255 / 0.65);
+  --icon-contrast-stroke-width: 9;
+  --icon-outer-stroke: rgb(255 255 255 / 0.85);
+  --icon-outer-stroke-width: 3.25;
+  --mysql-stroke: rgb(255 255 255 / 0.75);
+  --mysql-stroke-width: 1.75;
+  --postgres-stroke: rgb(255 255 255 / 0.55);
+  --postgres-stroke-width: 1;
+}
+
+.tech-icon {
+  display: inline-flex;
+  @include light-strokes;
 
   /* Follow ThemePicker / prefers-color-scheme so SVG light-dark() strokes work.
      Layout forces color-scheme: only light on bare svg. */
@@ -66,40 +81,39 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
   }
 }
 
-/* Dark-following themes (dark, dark-forest): boost contrast strokes */
-/* Matched by id, not by attribute: see the note in ThemePicker.astro. */
-:global(:root:has(#theme-dark:is(:not(.with-transition):checked, .with-transition.checked))),
-:global(:root:has(#theme-dark-forest:is(:not(.with-transition):checked, .with-transition.checked))),
+/* Dark-following themes (dark, dark-forest): boost contrast strokes. Read from the root's
+   data-theme, which the picker's script writes; the radios only speak for a page without
+   script (see ThemePicker.astro for why :root:has() stays out of the scripted cascade). */
 :global(:root[data-theme='dark']),
 :global(:root[data-theme='dark-forest']) {
   .tech-icon {
-    --icon-contrast-stroke: rgb(255 255 255 / 0.65);
-    --icon-contrast-stroke-width: 9;
-    --icon-outer-stroke: rgb(255 255 255 / 0.85);
-    --icon-outer-stroke-width: 3.25;
-    --mysql-stroke: rgb(255 255 255 / 0.75);
-    --mysql-stroke-width: 1.75;
-    --postgres-stroke: rgb(255 255 255 / 0.55);
-    --postgres-stroke-width: 1;
+    @include dark-strokes;
   }
 }
 
 @media (prefers-color-scheme: dark) {
-  :global(:root:not([data-theme]):not(:has(
-    #theme-light:is(:not(.with-transition):checked, .with-transition.checked),
-    #theme-dark:is(:not(.with-transition):checked, .with-transition.checked),
-    #theme-arctic:is(:not(.with-transition):checked, .with-transition.checked),
-    #theme-dark-forest:is(:not(.with-transition):checked, .with-transition.checked)
-  ))) {
+  :global(:root:not([data-theme])) {
     .tech-icon {
-      --icon-contrast-stroke: rgb(255 255 255 / 0.65);
-      --icon-contrast-stroke-width: 9;
-      --icon-outer-stroke: rgb(255 255 255 / 0.85);
-      --icon-outer-stroke-width: 3.25;
-      --mysql-stroke: rgb(255 255 255 / 0.75);
-      --mysql-stroke-width: 1.75;
-      --postgres-stroke: rgb(255 255 255 / 0.55);
-      --postgres-stroke-width: 1;
+      @include dark-strokes;
+    }
+  }
+}
+
+@media (scripting: none) {
+  :global(:root:has(#theme-dark:is(:not(.with-transition):checked, .with-transition.checked))),
+  :global(:root:has(#theme-dark-forest:is(:not(.with-transition):checked, .with-transition.checked))) {
+    .tech-icon {
+      @include dark-strokes;
+    }
+  }
+
+  /* A light theme picked under a dark OS: the id in :has() outranks the OS rule above. */
+  @media (prefers-color-scheme: dark) {
+    :global(:root:has(#theme-light:is(:not(.with-transition):checked, .with-transition.checked))),
+    :global(:root:has(#theme-arctic:is(:not(.with-transition):checked, .with-transition.checked))) {
+      .tech-icon {
+        @include light-strokes;
+      }
     }
   }
 }
