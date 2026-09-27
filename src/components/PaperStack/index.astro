@@ -1040,6 +1040,12 @@ const pages = await Promise.all(
     // neither; without them the row keeps its scrollbar and the pile.
     @supports selector(::scroll-marker) and selector(::scroll-button(right)) {
       --arrow-size: 2rem;
+      // The arrow is drawn, not set in a font. A glyph sits where its font puts it, below the
+      // circle's middle in most monospace faces. It is a shaft --arrow-length long and a head
+      // --arrow-head tall, both --arrow-stroke thick, pointing to the previous sheet.
+      --arrow-length: 0.75rem;
+      --arrow-head: 0.625rem;
+      --arrow-stroke: 2px;
       --dot-size: 0.5rem;
       --dot-hit: 1.5rem;
       // The sheet's bottom margin, which nothing on a sheet draws in (TechnicalDrawing/Page.astro).
@@ -1094,24 +1100,33 @@ const pages = await Promise.all(
         position: absolute;
         top: calc(anchor(center) - var(--arrow-size) / 2);
         box-sizing: border-box;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
         width: var(--arrow-size);
         height: var(--arrow-size);
         padding: 0;
         border: 2px solid var(--accent-muted);
         border-radius: 50%;
-        font-family: monospace, system-ui;
-        font-size: 1rem;
-        line-height: 1;
         color: var(--ink);
-        background: var(--surface-raised);
+        // Each arm of the head is the diagonal of a square half the head's height, from the tip
+        // at the shaft's end to the head's top or bottom corner. Every piece is placed from the
+        // circle's centre.
+        --arm: calc(var(--arrow-head) / 2);
+        --arm-x: calc(50% - (var(--arrow-length) - var(--arm)) / 2);
+        --arm-line: transparent calc(50% - var(--arrow-stroke) / 2),
+          currentColor calc(50% - var(--arrow-stroke) / 2) calc(50% + var(--arrow-stroke) / 2),
+          transparent calc(50% + var(--arrow-stroke) / 2);
+        background:
+          linear-gradient(to top left, var(--arm-line))
+            var(--arm-x) calc(50% - var(--arm) / 2) / var(--arm) var(--arm) no-repeat,
+          linear-gradient(to bottom left, var(--arm-line))
+            var(--arm-x) calc(50% + var(--arm) / 2) / var(--arm) var(--arm) no-repeat,
+          linear-gradient(currentColor, currentColor)
+            center / var(--arrow-length) var(--arrow-stroke) no-repeat,
+          var(--surface-raised);
         cursor: pointer;
       }
 
       &::scroll-button(*):enabled:hover {
-        background: color-mix(in oklch, var(--surface-raised), var(--accent) 8%);
+        background-color: color-mix(in oklch, var(--surface-raised), var(--accent) 8%);
       }
 
       &::scroll-button(*):disabled {
@@ -1127,13 +1142,15 @@ const pages = await Promise.all(
       }
 
       &::scroll-button(left) {
-        content: "←" / "Previous sheet";
+        content: "" / "Previous sheet";
         left: calc(anchor(left) - var(--arrow-size) / 2);
       }
 
       &::scroll-button(right) {
-        content: "→" / "Next sheet";
+        content: "" / "Next sheet";
         right: calc(anchor(right) - var(--arrow-size) / 2);
+        // The same arrow, turned to face the next sheet.
+        scale: -1 1;
       }
     }
   }
