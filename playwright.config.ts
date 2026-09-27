@@ -25,6 +25,23 @@ export function systemChrome(): string {
   );
 }
 
+// Firefox runs through Playwright's WebDriver BiDi channel against the system build, which
+// needs no browser download. Only the firefox-noscript-*.spec.ts files run there, and only on a
+// machine with a Firefox on PATH. The project turns script off with Firefox's own pref, since
+// the context's javaScriptEnabled over BiDi leaves (scripting: none) false and <noscript>
+// unparsed. With the pref off, page.evaluate and the mouse still work, but locator actions,
+// screenshots and document.fonts.ready never settle, so those specs keep to the first two and
+// the project takes no failure screenshots.
+function systemFirefox(): string | undefined {
+  try {
+    return execFileSync('which', ['firefox'], { encoding: 'utf8' }).trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+const FIREFOX = systemFirefox();
+const FIREFOX_SPECS = /\/e2e\/firefox-noscript-[^/]*\.spec\.ts$/;
+
 export default defineConfig<PaceOptions>({
   testDir: './e2e',
   timeout: 60_000,
@@ -71,11 +88,27 @@ export default defineConfig<PaceOptions>({
     },
     {
       name: 'chromium',
+      testIgnore: FIREFOX_SPECS,
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: { executablePath: systemChrome() },
       },
     },
+    ...(FIREFOX
+      ? [
+          {
+            name: 'firefox-noscript',
+            testMatch: FIREFOX_SPECS,
+            use: {
+              browserName: 'firefox' as const,
+              channel: 'moz-firefox',
+              launchOptions: { executablePath: FIREFOX, firefoxUserPrefs: { 'javascript.enabled': false } },
+              screenshot: 'off' as const,
+              trace: 'off' as const,
+            },
+          },
+        ]
+      : []),
   ],
   webServer: {
     // Tests run against a real production build, not `astro dev` — the dev server has its
