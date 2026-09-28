@@ -1114,12 +1114,14 @@ section {
     }
   }
 
-  @for $i from 1 through 20 {
-    @for $j from 1 through 20 {
+  /* A page is the only child of its wrapper, or the second child of .paper-front behind
+     the clip (PaperStack), and the title block has five cells at most. A 20 by 20 loop
+     here left 390 rules, 56 KB, that no markup could match. */
+  @for $i from 1 through 2 {
+    @for $j from 1 through 5 {
       &:nth-child(#{$i}) td:nth-child(#{$j}) {
         --random1: #{math.random() * 2 - 1};
         --random2: #{math.random() * 2 - 1};
-        --random3: #{math.random() * 2 - 1};
       }
     }
   }
