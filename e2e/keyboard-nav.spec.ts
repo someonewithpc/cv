@@ -41,6 +41,7 @@ test.describe('access keys', () => {
     const targets: Record<string, { locator: () => ReturnType<typeof page.locator>, focusable: boolean }> = {
       s: { locator: () => page.locator('.skip-link'), focusable: true },
       t: { locator: () => page.locator('#theme-picker'), focusable: true },
+      h: { locator: () => page.locator('.accesskey-legend a[href="#profile"]'), focusable: true },
       c: { locator: () => page.locator('.accesskey-legend a[href="#career"]'), focusable: true },
       b: { locator: () => page.locator('.accesskey-legend a[href="#bill-of-materials"]'), focusable: true },
       m: { locator: () => page.locator('.accesskey-legend a[href="#demos"]'), focusable: true },
@@ -50,7 +51,7 @@ test.describe('access keys', () => {
     };
 
     const all = await page.locator('[accesskey]').evaluateAll((els) => els.map((el) => el.getAttribute('accesskey')));
-    expect(all.sort()).toEqual(['b', 'c', 'm', 'n', 'o', 'p', 's', 't']);
+    expect(all.sort()).toEqual(['b', 'c', 'h', 'm', 'n', 'o', 'p', 's', 't']);
     for (const key of all) expect(key).toMatch(/^[a-z]$/);
 
     for (const [key, { locator }] of Object.entries(targets)) {
@@ -80,17 +81,18 @@ test.describe('access keys', () => {
     await expect(page.locator('.ak-mod')).toHaveText('Ctrl+Alt');
   });
 
-  test('the legend lists all eight keys and their targets, with the real modifier', async ({ page }) => {
+  test('the legend lists all nine keys and their targets, with the real modifier', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.ak-mod')).toHaveText('Alt');
 
     const items = await page.locator('.accesskey-legend li').allTextContents();
-    expect(items).toHaveLength(8);
+    expect(items).toHaveLength(9);
     expect(items[0]).toContain('Skip to content');
     expect(items[1]).toContain('Theme picker');
-    expect(items[6]).toContain('Previous page');
-    expect(items[7]).toContain('Next page');
-    for (const [index, key] of ['S', 'T', 'C', 'B', 'M', 'O', 'P', 'N'].entries()) {
+    expect(items[2]).toContain('Top of the page');
+    expect(items[7]).toContain('Previous page');
+    expect(items[8]).toContain('Next page');
+    for (const [index, key] of ['S', 'T', 'H', 'C', 'B', 'M', 'O', 'P', 'N'].entries()) {
       await expect(page.locator('.accesskey-legend li').nth(index).locator('kbd')).toHaveText(key);
     }
   });
@@ -123,7 +125,7 @@ test.describe('access keys', () => {
       // real press focuses the link and follows it; focus() then click() is that same sequence.
       await page.setViewportSize({ width, height });
       await page.goto('/');
-      for (const id of ['career', 'bill-of-materials', 'demos', 'open-source']) {
+      for (const id of ['profile', 'career', 'bill-of-materials', 'demos', 'open-source']) {
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.keyboard.press('Tab');
         await page.locator(`.accesskey-legend a[href="#${id}"]`).evaluate((link) => {
@@ -137,9 +139,9 @@ test.describe('access keys', () => {
     });
   }
 
-  test('the theme picker and each section take a visible ring when their accesskey target is focused', async ({ page }) => {
+  test('the profile, the theme picker and each section take a visible ring when their accesskey target is focused', async ({ page }) => {
     await page.goto('/');
-    for (const id of ['theme-picker', 'career', 'bill-of-materials', 'demos', 'open-source']) {
+    for (const id of ['profile', 'theme-picker', 'career', 'bill-of-materials', 'demos', 'open-source']) {
       const el = page.locator(`#${id}`);
       await el.evaluate((node) => (node as HTMLElement).focus());
       await expect(el).toBeFocused();

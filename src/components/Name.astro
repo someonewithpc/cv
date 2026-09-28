@@ -3,7 +3,7 @@ import { CONTACT } from '@/site';
 import { mailLink } from '../mailLink';
 ---
 
-<header id="profile">
+<header id="profile" tabindex="-1">
   <figure class="title-block">
     <p class="sheet-meta monospace" aria-hidden="true">
       <span>DWG</span>
@@ -43,6 +43,12 @@ import { mailLink } from '../mailLink';
 
 <style lang="scss">
 header {
+  // tabindex="-1": where the H access key lands, not a Tab stop.
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -0.125rem;
+  }
+
   display: flex;
   justify-content: center;
   margin-block: 1.25rem 0.25rem;
