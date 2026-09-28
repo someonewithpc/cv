@@ -203,13 +203,14 @@ const frames = THEME_IDS.map((id) => {
 @include stretch-cell(".code-sheet");
 
 /* The steps take the wider left column and the sheet's full height; the drawing on the
-   right stops above the title block, which reaches into that column only. */
+   right stops above the title block. The right column is never narrower than the block, so
+   the block reaches into that column only. */
 .code-sheet {
   @include sheet-content;
   @include sheet-type(0.025, 0.032);
   @include sheet-frame;
   @include sheet-frame-side;
-  grid-template-columns: minmax(0, 13fr) minmax(0, 7fr);
+  grid-template-columns: minmax(0, 13fr) minmax(calc(var(--title-block-inline, 0px) - #{$sheet-margin}), 7fr);
 
   .figure {
     grid-column: 2;
