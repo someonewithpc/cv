@@ -163,3 +163,4 @@
 - [x] Hide the decorative inline SVGs from screen readers and name the two logos (A6) (#202)
 - [x] `npm run test:audit` measures an uncompressed server (O2) (#209)
 - [x] The no-script row's scrollbar covers the bottom 6px of each sheet where scrollbars take space (FF4) (#216)
+- [ ] Size the Bill of materials chips from their labels before they first scroll into view (L2)
