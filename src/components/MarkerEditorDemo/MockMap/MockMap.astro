@@ -68,6 +68,11 @@ $mock-map-width: drawing.$artwork-width * 1.75;
       scale(var(--map-scale));
     transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: transform;
+
+    // The zoom says where the map went, so reduced motion keeps it, only quicker
+    @media (prefers-reduced-motion: reduce) {
+      transition-duration: 0.2s;
+    }
   }
 
   .mock-map-island {
