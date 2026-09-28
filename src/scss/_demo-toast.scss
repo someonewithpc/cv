@@ -24,6 +24,12 @@ $enter: demo-toast-in;
       translate: 0 0;
     }
   }
+
+  @keyframes #{$enter}-fade {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
 /** The column toasts pile into, bottom centre of the demo. */
@@ -63,6 +69,13 @@ $enter: demo-toast-in;
     opacity 0.32s ease,
     translate 0.32s ease,
     border-width 0.32s ease;
+
+
+  // Under reduced motion a toast fades in where it stands, and a leaving one is gone at once
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: #{$enter}-fade;
+    transition-property: opacity;
+  }
 }
 
 @mixin leaving {

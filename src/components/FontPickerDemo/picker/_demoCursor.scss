@@ -62,6 +62,12 @@
     translate 0.32s ease,
     border-width 0.32s ease;
 
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: font-picker-toast-fade;
+    transition-property: opacity;
+  }
+
   &.is-leaving {
     max-height: 0;
     margin: 0;
@@ -70,6 +76,12 @@
     opacity: 0;
     translate: 0 0.85rem;
     animation: none;
+  }
+}
+
+@keyframes font-picker-toast-fade {
+  from {
+    opacity: 0;
   }
 }
 

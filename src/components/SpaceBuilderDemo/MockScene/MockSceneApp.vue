@@ -1338,6 +1338,11 @@ $scene-bg: #212121;
     &.leaving {
       opacity: 0;
       translate: 0 0.35rem;
+
+
+      @media (prefers-reduced-motion: reduce) {
+        translate: none;
+      }
     }
   }
 
