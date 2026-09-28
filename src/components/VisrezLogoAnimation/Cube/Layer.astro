@@ -50,6 +50,11 @@ import Cube from './Cube.astro';
     ;
     stroke-dashoffset: 1;
 
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+
     @keyframes visrez-logo-cube-marker-start {
       from, 99% {
         marker-start: none;
@@ -69,6 +74,11 @@ import Cube from './Cube.astro';
   :global(text) {
     clip-path: rect(0 0 100% 0);
     animation: $duration visrez-logo-cube-texts 3s linear forwards 1;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      clip-path: none;
+    }
 
     @keyframes visrez-logo-cube-texts {
       from {

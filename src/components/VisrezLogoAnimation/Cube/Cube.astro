@@ -45,6 +45,11 @@ figure {
 
   $xRot: calc(atan2(1, sqrt(2)));
 
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transform: rotateX($xRot) rotateY(45deg);
+  }
+
   @keyframes tilt {
     to {
       transform: rotateX($xRot) rotateY(45deg);

@@ -129,6 +129,11 @@
 
   animation: 15s visrez-logo-all-together-layer-animation linear infinite;
 
+  // Every property rests at the logo itself when nothing animates it
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+
   .scene {
     width: 60%;
     aspect-ratio: 1;
