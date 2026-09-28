@@ -143,7 +143,8 @@ function scrollToStyle(index: number) {
   const el = list.value;
   const slide = el?.children[Math.max(0, Math.min(styles.value.length - 1, index))];
   if (!el || !(slide instanceof HTMLElement)) return;
-  el.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+  // card.scss makes the list scroll smoothly unless reduced motion is asked for
+  el.scrollTo({ left: slide.offsetLeft });
 }
 
 function onScrollEnd() {

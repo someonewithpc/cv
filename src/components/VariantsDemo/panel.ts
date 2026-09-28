@@ -321,7 +321,8 @@ export function scrollToStyle(styles: HTMLElement, index: number) {
   const slides = styles.querySelectorAll<HTMLElement>('.style');
   const slide = slides[Math.max(0, Math.min(slides.length - 1, index))];
   if (!slide) return;
-  styles.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+  // card.scss makes the list scroll smoothly unless reduced motion is asked for
+  styles.scrollTo({ left: slide.offsetLeft });
 }
 
 function enhanceCarousel(card: HTMLElement, styles: HTMLElement, commit: (variant: CatalogVariant) => void) {
