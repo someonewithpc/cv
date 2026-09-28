@@ -187,10 +187,6 @@ section {
     display: inline-flex;
     gap: 0.75ch;
     align-items: center;
-    // Skip layout/paint for chips while the ~500KiB inline SVG cloud is still
-    // being parsed / while chips are off-screen — feels like a mid-list hang.
-    content-visibility: auto;
-    contain-intrinsic-size: auto 2.25rem;
 
     color: var(--ink);
     background-color: var(--surface-raised);
