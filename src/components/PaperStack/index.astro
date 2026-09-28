@@ -36,7 +36,7 @@ const clipGradient = (id: string) => `<defs>
     </linearGradient>
   </defs>`;
 
-const paperClipUnder = `<div class="paper-clip-under"><svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+const paperClipUnder = `<div class="paper-clip-under"><svg aria-hidden="true" focusable="false" viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path
     d="M5 22 V50 a9 9 0 0 0 18 0 V14 a6.25 6.25 0 0 0 -12.5 0"
     stroke="url(#paper-clip-under-gradient-${clipId})"
@@ -46,7 +46,7 @@ const paperClipUnder = `<div class="paper-clip-under"><svg viewBox="0 0 28 64" f
   ${clipGradient(`paper-clip-under-gradient-${clipId}`)}
 </svg></div>`;
 
-const paperClipOver = `<svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+const paperClipOver = `<svg aria-hidden="true" focusable="false" viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path
     d="M10.5 14 V44 a4 4 0 0 0 8 0 V22"
     stroke="url(#paper-clip-over-gradient-${clipId})"

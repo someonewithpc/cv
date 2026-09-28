@@ -93,8 +93,8 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
               aria-label={`Shared value for ${group.base.name}`}
             />
             <button type="submit" title={title} data-label={setLabel}>
-              <Icon name="lucide:check" class="when-shared" />
-              <Icon name="lucide:triangle-alert" class="when-overrides" />
+              <Icon name="lucide:check" class="when-shared" aria-hidden="true" focusable="false" />
+              <Icon name="lucide:triangle-alert" class="when-overrides" aria-hidden="true" focusable="false" />
               <span class="sr-only">
                 {shared.shared ? setLabel : `${setLabel}. ${overrideNote}`}
               </span>
@@ -125,7 +125,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
                           aria-label={`Value for ${[object.name, object.details].filter(Boolean).join(' ')}`}
                         />
                         <button type="submit" title="Update">
-                          <Icon name="lucide:check" />
+                          <Icon name="lucide:check" aria-hidden="true" focusable="false" />
                           <span class="sr-only">{`Save ${[object.name, object.details].filter(Boolean).join(' ')}`}</span>
                         </button>
                       </form>

@@ -56,7 +56,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
   <div class="emitter">
     {live ? (
       <button type="button" class="call" data-dispatch title="Dispatch again">
-        <Icon name="lucide:play" class="replay" />
+        <Icon name="lucide:play" class="replay" aria-hidden="true" focusable="false" />
         <code data-stage="view">Event::handle('<b>{EVENT}</b>', [$vars, &amp;$res])</code>
         <code data-stage="resize">Event::handle('<b>{RESIZE_EVENT}</b>', [&amp;$event_map, $mimetype])</code>
       </button>
@@ -94,7 +94,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
           aria-pressed={entry.id === current.id ? 'true' : 'false'}
           disabled={!live}
         >
-          <Icon name={attachmentIcon[entry.id as keyof typeof attachmentIcon] ?? 'lucide:image'} />
+          <Icon name={attachmentIcon[entry.id as keyof typeof attachmentIcon] ?? 'lucide:image'} aria-hidden="true" focusable="false" />
           <span class="filename">{entry.filename}</span>
           <span class="mimetype">{entry.mimetype}</span>
         </button>
@@ -208,21 +208,21 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
       </span>
       <span class="rendered" data-kind="pending" aria-hidden="true">…</span>
       <span class="rendered" data-kind="image">
-        <Icon name="lucide:image" />
+        <Icon name="lucide:image" aria-hidden="true" focusable="false" />
         <span>
           <code>&lt;img class="u-photo"&gt;</code> <span class="by">ImageEncoder</span>
         </span>
       </span>
       <span class="rendered" data-kind="video">
-        <Icon name="lucide:circle-play" />
+        <Icon name="lucide:circle-play" aria-hidden="true" focusable="false" />
         <span><code>&lt;video controls&gt;</code> <span class="by">VideoEncoder</span></span>
       </span>
       <span class="rendered" data-kind="audio">
-        <Icon name="lucide:music" />
+        <Icon name="lucide:music" aria-hidden="true" focusable="false" />
         <span><code>&lt;audio controls&gt;</code> <span class="by">AudioEncoder</span></span>
       </span>
       <span class="rendered" data-kind="link">
-        <Icon name="lucide:link" />
+        <Icon name="lucide:link" aria-hidden="true" focusable="false" />
         <span><u class="link-text">{current.filename}</u> <span class="by">attachment.html.twig</span></span>
       </span>
     </figure>

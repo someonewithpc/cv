@@ -5,7 +5,7 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 
 <div class="wrapper">
   <Annotations reach={1.6} scale={0.85}>
-    <svg class="path-layer" viewBox="-1 -1 2 2" slot="content">
+    <svg class="path-layer" aria-hidden="true" focusable="false" viewBox="-1 -1 2 2" slot="content">
       <g transform="translate(0, 0.2) scale(.707)">
         <circle cx="1" cy="-0.707" r={0.224 / 2} fill="gray" class="first-vertex-virtual" />
         {/* The drawn vertices, as the stroke covers them: unpainted, for the callouts to anchor to. */}
