@@ -87,12 +87,13 @@ const swatches = ['--accent', '--accent-muted', '--blueprint', '--surface-sunken
               </div>
             ))}
           </div>
-          <p class="stamp">
-            <span>stage</span>
-            <code>data-demo-theme=<Fragment>{THEME_IDS.map((id) => <span data-stage-shown={id}>"{id}"</span>)}</Fragment></code>
-            <span data-stage-shown="none">unset, so the OS scheme decides</span>
-          </p>
+          <slot is:inline></slot>
         </template>
+        <p class="stamp">
+          <span>stage</span>
+          <code>data-demo-theme=<Fragment>{THEME_IDS.map((id) => <span data-stage-shown={id} hidden>"{id}"</span>)}</Fragment></code>
+          <span data-stage-shown="none">unset, so the OS scheme decides</span>
+        </p>
       </div>
 
       <Fragment slot="annotations">
@@ -144,5 +145,23 @@ bootIslands('[data-theme-picker-demo]', boot);
 .stage {
   width: 30em;
   max-width: 100%;
+}
+
+/* The stage's own readout: what is stamped on it, in the stamp's own words. It is slotted
+   into the stage, so it takes the stage's tokens, and stays in the page for find-in-page. */
+.stamp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5ch;
+  margin: 0;
+  font-family: monospace, system-ui;
+  font-size: 0.75em;
+  line-height: 1.5;
+  color: var(--ink-muted);
+
+  code {
+    font-family: inherit;
+    color: var(--ink);
+  }
 }
 </style>

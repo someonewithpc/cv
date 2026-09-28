@@ -50,6 +50,7 @@ export function initThemePickerDemo(host: HTMLElement) {
   const over = root?.querySelector<HTMLElement>('[data-paper="over"]');
   if (!stage || !root || !screen || !under || !over) return;
 
+  const readout = stage.querySelectorAll<HTMLElement>('[data-stage-shown]');
   const osDark = matchMedia('(prefers-color-scheme: dark)');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const gate = demoGate(host);
@@ -68,6 +69,7 @@ export function initThemePickerDemo(host: HTMLElement) {
     if (id) screen.dataset.demoTheme = id;
     else delete screen.dataset.demoTheme;
     press(under, id);
+    readout.forEach((span) => { span.hidden = span.dataset.stageShown !== (id ?? 'none'); });
   };
 
   /* The two clip paths, in the over layer's own box: the icon where it sits, and the icon

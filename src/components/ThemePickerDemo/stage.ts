@@ -54,9 +54,6 @@ const seedRules = [
   ...Object.entries(THEMES).map(([id, settings]) => (
     `[data-demo-theme="${id}"] { ${seeds(settings)} }`
   )),
-  /* The stage's readout: the stamp on it, or none. */
-  ...Object.keys(THEMES).map((id) => `[data-screen][data-demo-theme="${id}"] ~ .stamp [data-stage-shown="${id}"] { display: inline; }`),
-  '[data-screen]:not([data-demo-theme]) ~ .stamp [data-stage-shown="none"] { display: inline; }',
 ].join('\n');
 
 export function stageCss(): string {

@@ -39,27 +39,6 @@
   background: var(--surface-page);
 }
 
-/* The stage's own readout: what is stamped on it, in the stamp's own words. */
-.stamp {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 0.5ch;
-  margin: 0;
-  font-family: monospace, system-ui;
-  font-size: 0.75em;
-  line-height: 1.5;
-  color: var(--ink-muted);
-}
-
-.stamp code {
-  font-family: inherit;
-  color: var(--ink);
-}
-
-[data-stage-shown] {
-  display: none;
-}
-
 .paper {
   position: absolute;
   inset: 0;
