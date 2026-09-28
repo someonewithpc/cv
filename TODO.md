@@ -158,3 +158,4 @@
 - [x] Dog-ear flap paints nothing past the sheet's edges (#198)
 - [x] Skip link moves focus nowhere, missing focus rings, no working access keys (#192)
 - [x] index.css carries 56 KB of title-block tilt rules no page can match (#200)
+- [ ] Hide the decorative inline SVGs from screen readers and name the two logos (A6)
