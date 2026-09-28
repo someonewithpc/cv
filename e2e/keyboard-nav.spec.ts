@@ -41,10 +41,10 @@ test.describe('access keys', () => {
     const targets: Record<string, { locator: () => ReturnType<typeof page.locator>, focusable: boolean }> = {
       s: { locator: () => page.locator('.skip-link'), focusable: true },
       t: { locator: () => page.locator('#theme-picker'), focusable: true },
-      c: { locator: () => page.locator('#career'), focusable: true },
-      b: { locator: () => page.locator('#bill-of-materials'), focusable: true },
-      m: { locator: () => page.locator('#demos'), focusable: true },
-      o: { locator: () => page.locator('#open-source'), focusable: true },
+      c: { locator: () => page.locator('.accesskey-legend a[href="#career"]'), focusable: true },
+      b: { locator: () => page.locator('.accesskey-legend a[href="#bill-of-materials"]'), focusable: true },
+      m: { locator: () => page.locator('.accesskey-legend a[href="#demos"]'), focusable: true },
+      o: { locator: () => page.locator('.accesskey-legend a[href="#open-source"]'), focusable: true },
       p: { locator: () => page.locator('.page-turn-key[data-turn="ArrowLeft"]'), focusable: false },
       n: { locator: () => page.locator('.page-turn-key[data-turn="ArrowRight"]'), focusable: false },
     };
@@ -115,6 +115,27 @@ test.describe('access keys', () => {
     await page.evaluate(() => document.querySelector<HTMLElement>('.page-turn-key[data-turn="ArrowRight"]')?.focus());
     await expect(legend).toHaveCSS('opacity', '1');
   });
+
+  for (const [width, height] of [[1440, 900], [390, 844]]) {
+    test(`each section key puts its section's top at the top of the viewport and focuses it, at ${width}px`, async ({ page }) => {
+      // An access key on a section would focus it, and focus() centres anything taller than the
+      // viewport: Alt+O left the reader mid-sheet on a torn edge. The keys are links now, so a
+      // real press focuses the link and follows it; focus() then click() is that same sequence.
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+      for (const id of ['career', 'bill-of-materials', 'demos', 'open-source']) {
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.keyboard.press('Tab');
+        await page.locator(`.accesskey-legend a[href="#${id}"]`).evaluate((link) => {
+          (link as HTMLElement).focus();
+          (link as HTMLElement).click();
+        });
+        const section = page.locator(`#${id}`);
+        await expect(section).toBeFocused();
+        await expect.poll(async () => section.evaluate((el) => Math.abs(el.getBoundingClientRect().top))).toBeLessThan(1);
+      }
+    });
+  }
 
   test('the theme picker and each section take a visible ring when their accesskey target is focused', async ({ page }) => {
     await page.goto('/');

@@ -82,13 +82,18 @@ oembedUrl.searchParams.set('format', 'json');
       <a class="skip-link" href="#career" accesskey="s">Skip to content</a>
       <div class="accesskey-legend">
         <p class="accesskey-legend-mod"><kbd class="ak-mod">Alt</kbd> + key</p>
+        {/* Links, not accesskeys on the sections: an access key focuses its element, and focus()
+            centres anything taller than the viewport, which left the reader mid-sheet on a torn
+            edge. A link's access key follows the link, and the fragment jump puts the section's
+            top at the top of the viewport and focuses it (tabindex="-1"). tabindex="-1" here
+            keeps them out of the Tab order. */}
         <ul>
           <li><kbd>S</kbd> Skip to content</li>
           <li><kbd>T</kbd> Theme picker</li>
-          <li><kbd>C</kbd> Career</li>
-          <li><kbd>B</kbd> Bill of materials</li>
-          <li><kbd>M</kbd> Demos</li>
-          <li><kbd>O</kbd> Open source</li>
+          <li><a href="#career" accesskey="c" tabindex="-1"><kbd>C</kbd> Career</a></li>
+          <li><a href="#bill-of-materials" accesskey="b" tabindex="-1"><kbd>B</kbd> Bill of materials</a></li>
+          <li><a href="#demos" accesskey="m" tabindex="-1"><kbd>M</kbd> Demos</a></li>
+          <li><a href="#open-source" accesskey="o" tabindex="-1"><kbd>O</kbd> Open source</a></li>
           <li><kbd>P</kbd> Previous page, when a stack has focus</li>
           <li><kbd>N</kbd> Next page, when a stack has focus</li>
         </ul>
@@ -504,6 +509,11 @@ image, svg, img, picture {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 
   kbd {
