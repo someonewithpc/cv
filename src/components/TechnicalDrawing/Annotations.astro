@@ -52,6 +52,7 @@ const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
   <slot name="content" />
   <svg
     viewBox="-2 -2 4 4"
+    role="presentation"
     preserveAspectRatio={preserveAspectRatio}
     data-annotations="css"
     style={`--annotation-stroke-width: ${strokeWidth}; --annotation-marker: url(#${arrowId});`}
