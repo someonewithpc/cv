@@ -354,6 +354,10 @@ $fold-pulse-y: 2cm;
       --fold-back-x 300ms ease-out, --fold-back-y 300ms ease-out,
       --turn-ease 250ms ease-in-out;
 
+    @media (prefers-reduced-motion: reduce) {
+      transition-duration: 0s;
+    }
+
     // The fan pivots every page about the pin near the top-left, so the hindmost sheet — turned
     // the furthest, by the same $per-page-splay·log(n) the pages' rotate below uses — drops
     // below the front page's bottom edge by its own width times the sine of that turn. A
@@ -513,6 +517,10 @@ $fold-pulse-y: 2cm;
       // the band, for the length of the turn. Both are registered as lengths.
       // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out, --turned-drift 250ms ease-in-out, --turned-rise 250ms ease-in-out;
+
+      @media (prefers-reduced-motion: reduce) {
+        transition-duration: 0s;
+      }
 
       // The front page. A class rather than :first-child: fold-drag.ts hands it to the next
       // page when a completed drag flips this one onto the back of the stack, without touching
@@ -750,6 +758,11 @@ $fold-pulse-y: 2cm;
           scale: 0.5;
           transition: opacity 200ms ease-out, scale 200ms ease-out;
           pointer-events: none;
+
+          @media (prefers-reduced-motion: reduce) {
+            scale: none;
+            transition-property: opacity;
+          }
         }
 
         &.paper-will-commit > .paper-flip-hint {
@@ -887,6 +900,13 @@ $fold-pulse-y: 2cm;
         --fold-reveal: inherit;
         --fold-pulse: inherit;
         animation-play-state: var(--fold-reveal, paused);
+
+        // The corner lands at rest at once. A zero-length animation still ends, and its
+        // animationend is what fold-drag.ts waits for.
+        @media (prefers-reduced-motion: reduce) {
+          animation-duration: 0s;
+          animation-delay: 0s;
+        }
 
         @keyframes initial-fold-reveal {
           from { --fold-x: 0cm; --fold-y: 0cm; }

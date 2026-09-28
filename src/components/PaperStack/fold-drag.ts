@@ -801,6 +801,11 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
 // out to match a speed it never had.
 const coastMs = (distance: number, speed: number): number => (speed > 0 ? 3 * distance / speed : Infinity);
 
+// Under reduced motion every glide, landing and turn below settles on its next frame. A drag still
+// follows the hand, since that motion is the reader's own.
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const glideMs = (ms: number): number => (reducedMotion.matches ? 1 : ms);
+
 // Glides the fold's tip to a target along a straight tip-space path, easing out like released
 // tension, over a duration scaled to how far the tip has to travel — a long glide takes visibly
 // longer than a small nudge — and no longer than the release's own speed would take to cover it.
@@ -818,7 +823,7 @@ const glideFoldTip = (
   const { x: fx, y: fy } = foldSizeOf(sheet);
   const from = foldTipFromSize(fx, fy);
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
-  const duration = Math.max(Math.min(baseMs + distance / 3, baseMs + 500, coastMs(distance, thrown)), 120);
+  const duration = glideMs(Math.max(Math.min(baseMs + distance / 3, baseMs + 500, coastMs(distance, thrown)), 120));
 
   let frame = 0;
   const start = performance.now();
@@ -954,7 +959,7 @@ const glideLanding = (
   // Duration in proportion to the flight left to run, so a barely-started approach lays back
   // down quickly instead of crawling
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
-  const duration = Math.max(ms * distance / Math.hypot(seed.x, seed.y), 100);
+  const duration = glideMs(Math.max(ms * distance / Math.hypot(seed.x, seed.y), 100));
   let frame = 0;
   const start = performance.now();
   const step = (now: number) => {
@@ -1525,7 +1530,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   // full tilt, so the ease-out's opening speed stays roughly the same wherever the hand lets go —
   // unless the hand let go faster than that, in which case the flip sets off at the speed it was
   // thrown at. The crease covers half the ground the tip does, so the throw reaches it halved.
-  const duration = Math.max(Math.min(300 + total / 2, 1400, coastMs(total, thrown / 2)), 200);
+  const duration = glideMs(Math.max(Math.min(300 + total / 2, 1400, coastMs(total, thrown / 2)), 200));
   const home = { x: width, y: height };
 
   let settling = false;
@@ -1595,7 +1600,7 @@ const bringFold = (
   const d1 = Math.hypot(over.x - from.x, over.y - from.y) / 2;
   const d2 = Math.hypot(seed.x - rest.x, seed.y - rest.y) / 2;
   const total = d1 + d2;
-  const duration = Math.max(Math.min(300 + total / 2, 1400), 200);
+  const duration = glideMs(Math.max(Math.min(300 + total / 2, 1400), 200));
 
   let promoted = false;
   const promote = () => {
