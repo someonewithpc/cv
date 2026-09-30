@@ -82,14 +82,15 @@ const sheetAnchor = `--${noteId}-sheet`;
     </button>
   </div>
 
-  <table aria-label={`${title ?? subtitle ?? 'Drawing'} title block`}>
+  {/* A layout table. Only the title, the sheet number and the tech stay in the tree. */}
+  <table role="presentation">
     <tbody>
       <tr>
         {techs.length > 0 && (
-          <td rowspan="2" class="title-tech" aria-hidden="true">
-            <div class="title-tech-stack" data-count={techs.length}>
+          <td rowspan="2" class="title-tech">
+            <div class="title-tech-stack" data-count={techs.length} role="group" aria-label="Built with">
               {techs.map((entry) => (
-                <TechIcon tech={entry} decorative />
+                <TechIcon tech={entry} />
               ))}
             </div>
           </td>
@@ -109,28 +110,28 @@ const sheetAnchor = `--${noteId}-sheet`;
           </div>
         </td>
 
-        <td class="title-scale">
+        <td class="title-scale" aria-hidden="true">
           <div>
             <span class="title-label monospace">Scale</span>
             <span class="typewriter">{scale ?? '3:1'}</span>
           </div>
         </td>
 
-        <td class="title-weight">
+        <td class="title-weight" aria-hidden="true">
           <div>
             <span class="title-label monospace">Weight</span>
             <span class="typewriter">{size ?? '-'}</span>
           </div>
         </td>
 
-        <td class="title-date">
+        <td class="title-date" aria-hidden="true">
           <div>
             <span class="title-label monospace">Date</span>
             <span class="typewriter">{date ? <time datetime={date}>{date}</time> : '-'}</span>
           </div>
         </td>
 
-        <td class="title-proj">
+        <td class="title-proj" aria-hidden="true">
           <div>
             <span class="title-label sr-only">Projection</span>
             <Icon name="first-angle-projection" aria-hidden="true" />
