@@ -47,7 +47,7 @@ test.describe('with JavaScript off', () => {
 
     for (const stack of await stacks(page)) {
       for (const name of KEYBOARD_ATTRIBUTES) await expect(stack).not.toHaveAttribute(name);
-      await expect(stack).toHaveAttribute('role', 'region');
+      await expect(stack).not.toHaveAttribute('role');
     }
   });
 });

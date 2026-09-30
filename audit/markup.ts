@@ -38,8 +38,8 @@ const htmlConfig: ConfigData = {
     // An <aside> inside sectioning content is generic, not a complementary landmark,
     // so the per-sheet drawing notes need no names of their own.
     'unique-landmark': 'off',
-    // The paper stacks are <article role="region"> so a screen reader announces each
-    // one as a single turnable unit.
+    // The Event Bus listener mapping is a CSS grid whose rows and cells carry table
+    // roles (DiscoveryLayer.astro); the cells are grid items, so no <table>.
     'prefer-native-element': 'off',
   },
 };

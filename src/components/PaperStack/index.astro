@@ -83,7 +83,7 @@ const pages = await Promise.all(
   class={className}
   data-page-count={pageCount}
   style={`--page-count: ${pageCount}`}
-  role="region"
+  role={tagName === 'article' ? undefined : 'group'}
   aria-label={label}
 >
   {pages.map((page, index) => (
