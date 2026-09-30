@@ -318,6 +318,19 @@ test.describe('font proxy', () => {
     expect(response.status).toBe(502);
     expect(await response.text()).toBe('Upstream body failed');
   });
+  test('caches an ok answer by the headers it forwards, and never an upstream error', async () => {
+    const ok = await proxy(harness(PUBLIC, { 'https://fonts.test/a.css': { headers: CSS, bytes: 10 } }), 'https://fonts.test/a.css');
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('cache-control')).toBe('public, max-age=3600');
+    expect(ok.headers.get('vary')).toBe('accept, accept-language, user-agent');
+    for (const status of [404, 500]) {
+      const setup = harness(PUBLIC, { 'https://fonts.test/gone.css': { status, headers: { 'content-type': 'text/html' }, bytes: 10 } });
+      const response = await proxy(setup, 'https://fonts.test/gone.css');
+      expect(response.status).toBe(status);
+      expect(response.headers.get('cache-control'), String(status)).toBe('no-store');
+    }
+  });
+
 
 
 

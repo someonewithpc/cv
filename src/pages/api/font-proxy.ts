@@ -201,7 +201,10 @@ export const GET: APIRoute = async ({ url, request }) => {
     status: upstream.status,
     headers: {
       'content-type': contentType,
-      'cache-control': 'public, max-age=3600',
+      // An upstream 404 or 500 kept for an hour would outlast the fault that caused it
+      'cache-control': upstream.ok ? 'public, max-age=3600' : 'no-store',
+      // These three go upstream, and Google Fonts picks the CSS it serves by the user-agent
+      vary: 'accept, accept-language, user-agent',
       // The embed mode fetches whole pages, so text/html comes back through here, and a
       // browser pointed straight at this URL would run that page's scripts as this origin.
       // A sandboxed document gets an opaque origin instead. fetch().text() and FontFace
