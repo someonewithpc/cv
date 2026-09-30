@@ -176,3 +176,4 @@
 - [x] Event Dispatch resize stage list ends past the sheet at 688 px (L5) (#215)
 - [x] Honour reduced motion on the fold, the page turn, the logo layers, the toasts and the map zoom (#203)
 - [x] Self-hosted fonts, weights matched to use, no restyle after first paint (P3) (#217)
+- [ ] Give every control a 24px touch target at 390 wide, with and without script (A5)
