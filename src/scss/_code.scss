@@ -1,0 +1,67 @@
+// Code set by src/highlight.ts: inline <code class="hl"> and block <pre class="hl">, one set of
+// rules for both. Each token kind takes one of three roles drawn from the theme on screen: warm
+// from the accent, cool from the blueprint's hue, soft between the warm and the ink. The roles
+// are declared on the code itself, so var() reads the tokens of the sheet it sits on; a
+// blueprint sheet sets --code-warm and --code-cool for its dark ground (see
+// blueprint-sheet-boundary). Plain text and any kind left out keep the ink.
+@mixin code-roles {
+  --hl-warm: var(--code-warm, light-dark(var(--accent-text), var(--accent)));
+  --hl-cool: var(--code-cool, light-dark(oklch(from var(--theme-blueprint) 0.45 c h), oklch(from var(--theme-blueprint) 0.8 c h)));
+  --hl-soft: color-mix(in oklch, var(--hl-warm), var(--ink) 35%);
+}
+
+@mixin code-highlight {
+  :where(code.hl, pre.hl) {
+    @include code-roles;
+    background: color-mix(in oklch, var(--ink) 7%, transparent);
+    color: var(--ink);
+    font-family: monospace, system-ui;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  :where(code.hl) {
+    padding: 0 0.25em;
+    border: 1px solid var(--line);
+    border-radius: 0.125em;
+    font-size: 0.875em;
+    line-height: 1;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  // A listing is long enough for a sheet's grid to show through a see-through ground, so it
+  // takes the same tint on the surface it sits on.
+  :where(pre.hl) {
+    border-radius: 0.25em;
+    background: color-mix(in oklch, var(--ink) 7%, var(--surface-page));
+
+    code {
+      font: inherit;
+    }
+  }
+
+  :where(.hl) {
+    .tok-keyword,
+    .tok-tag,
+    .tok-selector {
+      color: var(--hl-warm);
+    }
+
+    .tok-function,
+    .tok-property,
+    .tok-attribute {
+      color: var(--hl-cool);
+    }
+
+    .tok-string,
+    .tok-number {
+      color: var(--hl-soft);
+    }
+
+    .tok-punctuation,
+    .tok-comment {
+      color: var(--ink-muted);
+    }
+  }
+}

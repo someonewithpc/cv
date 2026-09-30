@@ -136,6 +136,9 @@ oembedUrl.searchParams.set('format', 'json');
 
 <style lang="scss" is:global>
 @use "@/scss/_page-column.scss" as column;
+@use "@/scss/_code.scss" as code;
+
+@include code.code-highlight;
 
 /* No list-markers by default, since lists are used more often for semantics */
 ul, ol {

@@ -146,6 +146,10 @@ $wip-blueprint: color-mix(in oklch, var(--theme-blueprint) 36%, #6a6e6a 64%);
   --accent-text: var(--sheet-ink);
   --accent-contrast: var(--sheet-canvas);
   --control-accent: var(--sheet-accent);
+  // Code on the sheet: the accent and the blueprint hue lifted near the sheet ink, so a
+  // token reads on any sheet, arctic too, where the accent is close to the ground.
+  --code-warm: oklch(from var(--theme-accent) 0.84 max(c, 0.12) h);
+  --code-cool: oklch(from var(--theme-blueprint) 0.84 max(c, 0.08) h);
   --blueprint: var(--sheet-canvas);
   --blueprint-line: var(--sheet-line);
   --blueprint-grid: var(--sheet-grid);
