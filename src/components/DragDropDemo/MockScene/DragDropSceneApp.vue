@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 
 import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
@@ -136,7 +136,6 @@ let userControl = false;
 /** Whether a real pointer is resting on the demo. The walkthrough stays down while it is. */
 let pointerOver = false;
 let chairsReady = false;
-let reducedMotion = false;
 let autoplayToken = 0;
 /** Off screen, under another page or in a hidden tab, the walkthrough's waits hold it where it stands. */
 let pageGate: DemoGate | null = null;
@@ -641,8 +640,9 @@ async function revealCatalogCard(root: HTMLElement, id: string) {
   const bodyRect = body.getBoundingClientRect();
   if (cardRect.top >= bodyRect.top && cardRect.bottom <= bodyRect.bottom) return;
   const offset = cardRect.top - bodyRect.top - (bodyRect.height - cardRect.height) / 2;
-  body.scrollBy({ top: offset, behavior: reducedMotion ? 'auto' : 'smooth' });
-  await wait(reducedMotion ? 50 : 450);
+  const reduced = reducedMotion(rootRef.value);
+  body.scrollBy({ top: offset, behavior: reduced ? 'auto' : 'smooth' });
+  await wait(reduced ? 50 : 450);
 }
 
 function catalogButton(root: HTMLElement, id: string) {
@@ -848,8 +848,9 @@ async function runAutoplay() {
 }
 
 function startAutoplay() {
-  if (reducedMotion) {
-    reportAutoplayState(rootRef.value, 'off');
+  if (reducedMotion(rootRef.value)) {
+    if (demoPlaying.value) stopAutoplay();
+    reportAutoplayState(rootRef.value, 'paused');
     return;
   }
   // An object the visitor is still carrying is theirs to put down; taking the scene back
@@ -876,6 +877,12 @@ function stopAutoplay() {
     armedItem.value = null;
     phase.value = 'idle';
   }
+}
+
+const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function onReduceChange() {
+  if (reducedMotion(rootRef.value) || !demoPlaying.value) startAutoplay();
 }
 
 async function restartDemo() {
@@ -947,7 +954,7 @@ function onRealPointerLeave(event: PointerEvent) {
 }
 
 onMounted(async () => {
-  reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  reduceQuery.addEventListener('change', onReduceChange);
 
   const root = rootRef.value;
   const canvas = root?.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
@@ -1042,6 +1049,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  reduceQuery.removeEventListener('change', onReduceChange);
   stopPageWatch?.();
   stopPageWatch = null;
   stopNoteWatch?.();
