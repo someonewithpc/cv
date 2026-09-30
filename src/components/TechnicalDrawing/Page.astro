@@ -62,7 +62,7 @@ const sheetAnchor = `--${noteId}-sheet`;
     <!-- Without JS or invoker commands, popovertarget still opens the note as a popover.
          Stack.astro's script drops these attributes, so a scripted page always gets the modal. -->
     <dialog class="drawing-note" id={noteId} popover aria-label={`Note for ${title ?? subtitle ?? 'this drawing'}`}>
-      <form method="dialog">
+      <form method="dialog" role="none">
         <button class="note-dismiss" type="submit">
           <span class="sr-only">Close note</span>
         </button>
