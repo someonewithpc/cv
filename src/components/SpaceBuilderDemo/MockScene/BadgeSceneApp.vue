@@ -331,9 +331,9 @@ onBeforeUnmount(() => {
       <span>{{ loadError ? '3D scene unavailable' : 'Loading badge…' }}</span>
     </div>
 
-    <figure v-if="ready && !loadError" class="fail-card" aria-hidden="true">
+    <figure v-if="ready && !loadError" class="fail-card">
       <figcaption><span class="badge">Discarded</span> World −Z offset</figcaption>
-      <div class="fail-viewport">
+      <div class="fail-viewport" aria-hidden="true">
         <div class="fail-area">
           <span class="fail-tag">48 seats</span>
         </div>
