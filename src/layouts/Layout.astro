@@ -135,6 +135,8 @@ oembedUrl.searchParams.set('format', 'json');
 </html>
 
 <style lang="scss" is:global>
+@use "@/scss/_page-column.scss" as column;
+
 /* No list-markers by default, since lists are used more often for semantics */
 ul, ol {
   list-style: none;
@@ -208,14 +210,17 @@ body {
 }
 
 main {
-  --page-gap: clamp(1rem, 4vw, 2.5rem);
+  /* The page column and its gutters are written from src/scss/_page-column.scss, which also
+     derives from them the window widths the Career and Open Source rules switch at. A change
+     to them goes there. */
+  --page-gap: #{column.page-gap(column.$page-gap-wide)};
   /* rem, not ch or em: the cap is a page width, and ch pins it to whatever font this
      element inherits. The measures built on it reach elements with their own type through
      variables, and an em there would be read against that type: the sheets' --sheet-inline
      (TechnicalDrawing/Stack.astro) scales artwork set in 9 to 14px type. 60rem is 960px,
      which also keeps the demo sheets above the 56em mark where TechnicalDrawing/Page.astro
      tucks the note behind the fold. */
-  --content-max: 60rem;
+  --content-max: #{column.$content-max};
   /* The demo stacks sit in the breakout column, so this is what caps them. */
   --breakout-max: var(--content-max);
 
@@ -297,8 +302,8 @@ main {
   align-content: start;
   padding-bottom: 1.5rem;
 
-  @media (max-width: 52rem) {
-    --page-gap: clamp(0.75rem, 3.5vw, 1.25rem);
+  @media (max-width: #{column.$page-narrow-max}) {
+    --page-gap: #{column.page-gap(column.$page-gap-narrow)};
     padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
 
@@ -347,11 +352,11 @@ main {
   /* Wider than the page column plus its margins there is desk to spare on both sides, so the
      sheets take a rim of padding and a hairline edge, their own margins and width caps go,
      and the row gap is the only rhythm left. */
-  @media (width > 64rem) {
+  @media (width > #{column.$desk-from}) {
     /* One gap between every two sheets, and the same strip of desk above the first and below
        the last. */
     --desk-gap: 2.5rem;
-    --sheet-pad: 1.5rem;
+    --sheet-pad: #{column.$sheet-pad};
     /* The mat and the folio share the desk margin, so the mat stops at the far side of the
        lane the sheet number stands in whenever that is the wider of the two. */
     --mat-inset: max(clamp(1.5rem, 4vw, 5rem), var(--folio-lane));
@@ -375,7 +380,7 @@ main {
       max-width: none;
       margin-block: 0;
       padding: var(--sheet-pad);
-      border: 1px solid var(--line);
+      border: column.$sheet-border solid var(--line);
     }
 
     /* A full-width section is the whole viewport, so the paper belongs to the column-width

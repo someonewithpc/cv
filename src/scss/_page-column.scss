@@ -1,0 +1,239 @@
+@use "sass:list";
+@use "sass:map";
+@use "sass:math";
+
+// The page column: the middle track of the grid Layout.astro lays <main> out on, which every
+// band of the page but the full-width ones stands in. Layout.astro writes --page-gap,
+// --content-max and the desk's sheets from the numbers below, and section-width() reads the
+// same numbers, so the column and every breakpoint derived from it have one source.
+
+// The gutter on each side of the column, one side of --page-gap: a fraction of the window
+// (`fluid`, 0.04 is 4vw), held between a floor and a ceiling. A window up to
+// $page-narrow-max wide takes the narrow gutter, a wider one the wide gutter. The two do not
+// meet: at 52rem the narrow gutter is at its 1.25rem ceiling and the wide one starts at 4vw,
+// 2.08rem, so the column is 27px narrower just past 52rem than at it.
+$page-gap-narrow: (min: 0.75rem, fluid: 0.035, max: 1.25rem);
+$page-gap-wide: (min: 1rem, fluid: 0.04, max: 2.5rem);
+$page-narrow-max: 52rem;
+
+// The column's cap, --content-max. Layout.astro says why it is 60rem.
+$content-max: 60rem;
+
+// Past $desk-from of window the page lies on the desk: Layout.astro gives every band in the
+// column a rim of $sheet-pad and a $sheet-border edge in place of its own padding. The
+// column is still the window less two gutters.
+$desk-from: 64rem;
+$sheet-pad: 1.5rem;
+$sheet-border: 1px;
+
+// --page-gap for one of the two gutters above.
+@function page-gap($gap) {
+  @return clamp(map.get($gap, min), map.get($gap, fluid) * 100vw, map.get($gap, max));
+}
+
+// How far a section's content box stands in from the column on each side. `gaps` is its
+// inline padding under the desk, counted in page gutters (Career pads its sheet with
+// var(--page-gap), so 1). `desk` is its padding and border on the desk. The default is a
+// section as wide as the column at every window width, as Open Source is.
+$inset-none: (gaps: 0, desk: 0rem);
+
+// The desk's rim and edge, as a `desk` inset. Media queries measure rem at the browser's
+// default text size, so the 1px edge is counted at 16px to the rem.
+$inset-desk-sheet: $sheet-pad + math.div($sheet-border, 16px) * 1rem;
+
+// The column formula in three stretches of window width, each open at `from` and closed at
+// `to`, as Layout.astro's `(max-width: 52rem)` and `(width > 64rem)` split them.
+$-stretches: (
+  (from: 0rem, to: $page-narrow-max, gap: $page-gap-narrow, desk: false),
+  (from: $page-narrow-max, to: $desk-from, gap: $page-gap-wide, desk: false),
+  (from: $desk-from, to: null, gap: $page-gap-wide, desk: true)
+);
+
+@function -gutter($window, $gap) {
+  @return math.clamp(map.get($gap, min), map.get($gap, fluid) * $window, map.get($gap, max));
+}
+
+// The column at a window width in one stretch, or with $inset the section's content box.
+@function -width($window, $stretch, $inset: null) {
+  $gutter: -gutter($window, map.get($stretch, gap));
+  $width: math.min($window - 2 * $gutter, $content-max);
+  @if $inset and map.get($stretch, desk) {
+    $width: $width - 2 * map.get($inset, desk);
+  } @else if $inset {
+    $width: $width - 2 * map.get($inset, gaps) * $gutter;
+  }
+  @return $width;
+}
+
+// Where the line through the points ($xs, $ys) reaches $target: the least x at which it is
+// >= $target, or with $strict the greatest x at which it is <= $target. null if it never
+// does. $ys never falls, so there is one answer.
+@function -reach($xs, $ys, $target, $strict: false) {
+  $y: list.nth($ys, 1);
+  @if ($strict and $y > $target) or (not $strict and $y >= $target) {
+    @return list.nth($xs, 1);
+  }
+  @for $i from 1 to list.length($xs) {
+    $x0: list.nth($xs, $i);
+    $x1: list.nth($xs, $i + 1);
+    $y0: list.nth($ys, $i);
+    $y1: list.nth($ys, $i + 1);
+    @if ($strict and $y0 <= $target and $target < $y1) or
+      (not $strict and $y0 < $target and $target <= $y1) {
+      @return $x0 + ($target - $y0) * math.div($x1 - $x0, $y1 - $y0);
+    }
+  }
+  @return null;
+}
+
+// The window widths at which the formula bends inside one stretch: its two ends, where the
+// gutter reaches its floor and its ceiling, and where the column reaches its cap. Between two
+// of them a width is a straight line of the window. An open stretch ends past its last bend,
+// where everything is flat.
+@function -bends($stretch) {
+  $gap: map.get($stretch, gap);
+  $from: map.get($stretch, from);
+  $to: map.get($stretch, to);
+  $xs: ($from,);
+  @each $bound in (min, max) {
+    $x: math.div(map.get($gap, $bound), map.get($gap, fluid));
+    @if $x > $from and ($to == null or $x < $to) {
+      $xs: list.append($xs, $x);
+    }
+  }
+  @if $to == null {
+    $xs: list.append($xs, list.nth($xs, -1) + $content-max + 2 * map.get($gap, max));
+  } @else {
+    $xs: list.append($xs, $to);
+  }
+
+  $columns: ();
+  @each $x in $xs {
+    $columns: list.append($columns, -width($x, $stretch));
+  }
+  $cap: -reach($xs, $columns, $content-max);
+  @if $cap == null or list.index($xs, $cap) {
+    @return $xs;
+  }
+  $sorted: ();
+  @each $x in $xs {
+    @if $x < $cap {
+      $sorted: list.append($sorted, $x);
+    }
+  }
+  $sorted: list.append($sorted, $cap);
+  @each $x in $xs {
+    @if $x > $cap {
+      $sorted: list.append($sorted, $x);
+    }
+  }
+  @return $sorted;
+}
+
+// The part of one stretch where the section is $op $width wide, as
+// (lo, lo-closed, hi, hi-closed) with hi null for no end, or null for none of it.
+@function -stretch-range($op, $width, $inset, $stretch) {
+  $xs: -bends($stretch);
+  $ys: ();
+  @each $x in $xs {
+    $ys: list.append($ys, -width($x, $stretch, $inset));
+  }
+  // Checked at every build: inside a stretch a wider window never makes a narrower section.
+  // A change to the formula that broke this would let a width hold on two separate ranges
+  // inside one stretch, and the one boundary found here would be wrong.
+  @for $i from 1 to list.length($ys) {
+    @if list.nth($ys, $i + 1) < list.nth($ys, $i) {
+      @error "The section narrows as the window grows from #{list.nth($xs, $i)} to #{list.nth($xs, $i + 1)}, so section-width() cannot place one boundary there.";
+    }
+  }
+
+  $from: map.get($stretch, from);
+  $to: map.get($stretch, to);
+  $at: -reach($xs, $ys, $width, $op == ">" or $op == "<=");
+  @if $op == ">=" or $op == ">" {
+    @if $at == null {
+      @return null;
+    }
+    @if $at == $from {
+      @return ($from, false, $to, true);
+    }
+    @return ($at, $op == ">=", $to, true);
+  }
+  @if $at == $from {
+    @return null;
+  }
+  @if $at == null {
+    @return ($from, false, $to, true);
+  }
+  @return ($from, false, $at, $op == "<=");
+}
+
+// One range as a media feature: (width >= 1rem), (width < 2rem), (1rem <= width <= 2rem).
+@function -feature($range) {
+  $lo: list.nth($range, 1);
+  $hi: list.nth($range, 3);
+  $above: ">";
+  @if list.nth($range, 2) {
+    $above: ">=";
+  }
+  $below: "<";
+  @if list.nth($range, 4) {
+    $below: "<=";
+  }
+  @if $lo == 0rem and $hi == null {
+    @return "all";
+  }
+  @if $lo == 0rem {
+    @return "(width #{$below} #{$hi})";
+  }
+  @if $hi == null {
+    @return "(width #{$above} #{$lo})";
+  }
+  $flipped: "<";
+  @if list.nth($range, 2) {
+    $flipped: "<=";
+  }
+  @return "(#{$lo} #{$flipped} width #{$below} #{$hi})";
+}
+
+// The media condition under which a section in the page column is $op $width wide, $op one
+// of >=, >, < and <=. It answers what `@container ($op $width)` on the section asked, from
+// the window: a section as wide as the column, less its own inset, is a function of the
+// window alone, so a media query can stand in for the container. A section that is no
+// container is laid out in one pass with the page, not in a pass of its own on every resize
+// step.
+//
+//   @media #{column.section-width(">=", 44rem, $career-inset)} { ... }
+//
+// It returns the whole condition and not one width, because the column is narrower just past
+// $page-narrow-max than at it: a width can hold from under 52rem up to 52rem, stop, and hold
+// again a little past it, which takes two ranges. A classic scrollbar narrows the column by
+// its own width, which a media query cannot see, so with one each rule switches up to a
+// scrollbar's width of window later than the container did.
+@function section-width($op, $width, $inset: $inset-none) {
+  @if not list.index((">=", ">", "<", "<="), $op) {
+    @error "section-width() takes >=, >, < or <=, not #{$op}.";
+  }
+  $ranges: ();
+  @each $stretch in $-stretches {
+    $range: -stretch-range($op, $width, $inset, $stretch);
+    @if $range {
+      $n: list.length($ranges);
+      @if $n > 0 and list.nth(list.nth($ranges, $n), 3) == list.nth($range, 1) {
+        $last: list.nth($ranges, $n);
+        $range: (list.nth($last, 1), list.nth($last, 2), list.nth($range, 3), list.nth($range, 4));
+        $ranges: list.set-nth($ranges, $n, $range);
+      } @else {
+        $ranges: list.append($ranges, $range, $separator: comma);
+      }
+    }
+  }
+  @if list.length($ranges) == 0 {
+    @return "not all";
+  }
+  $features: ();
+  @each $range in $ranges {
+    $features: list.append($features, -feature($range), $separator: comma);
+  }
+  @return $features;
+}
