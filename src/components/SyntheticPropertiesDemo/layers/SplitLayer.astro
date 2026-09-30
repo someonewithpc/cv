@@ -147,6 +147,7 @@ bootIslands('[data-synthetic-demo]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 @use "./sheet" as *;
 
 /* The tool fills the sheet inside the shared --demo-inset (Page.astro), under the title
@@ -347,6 +348,7 @@ input {
   align-items: center;
   gap: 0.375em;
   min-width: 0;
+  @include hit-area;
 
   input {
     flex: 1;

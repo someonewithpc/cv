@@ -1186,6 +1186,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+@use '@/scss/hit-area' as *;
 @use '@/scss/demo-toast' as toast;
 
 $visrez-brand: #89ab24;
@@ -1368,6 +1369,7 @@ $scene-bg: #212121;
   font: 700 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
   cursor: pointer;
   white-space: nowrap;
+  @include hit-area;
 
   &:hover {
     background: color-mix(in oklab, $visrez-brand 40%, #171717);

@@ -70,6 +70,7 @@ bootIslands('[data-fediverse-playground]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 @use "./sheet" as *;
 
 :global(article.technical-drawing-stack > * > section .content:has(.playground)) {
@@ -328,6 +329,7 @@ fieldset {
     background: var(--panel);
     cursor: pointer;
     pointer-events: auto;
+    @include hit-area;
 
     span {
       font-size: 0.8em;

@@ -154,6 +154,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 </div>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 @use '@/scss/statusBorder' as *;
 
 /* Product measurements (Bootstrap 3 at a 14px base) carried over in em, so the
@@ -300,6 +301,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 
   label {
     flex: none;
+    @include hit-area;
   }
 
   input {
@@ -333,6 +335,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
     border-radius: 2px;
     background: var(--surface-page);
     cursor: pointer;
+    @include hit-area;
 
     :global(svg) {
       width: 1em;
@@ -476,6 +479,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
     border-radius: 2px;
     background: var(--surface-page);
     cursor: pointer;
+    @include hit-area;
 
     :global(svg) {
       width: 1em;

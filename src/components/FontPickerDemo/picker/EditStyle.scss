@@ -1,3 +1,4 @@
+@use '@/scss/hit-area' as *;
 @use './fontSettingsFieldset' as *;
 @use './demoCursor';
 
@@ -295,6 +296,7 @@
       font: inherit;
       line-height: 0;
       cursor: pointer;
+      @include hit-area;
 
       &:focus-visible {
         outline: 2px solid currentColor;

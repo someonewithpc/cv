@@ -114,6 +114,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 </script>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 @use '../picker/fontSettingsFieldset' as *;
 @use "./sheet" as *;
 @use "./sheetProse" as *;
@@ -228,6 +229,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
     background: transparent;
     color: var(--ink-muted);
     cursor: pointer;
+    @include hit-area;
 
     &:hover {
       border-color: var(--ink);

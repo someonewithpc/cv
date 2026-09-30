@@ -92,6 +92,7 @@ const echo = [
 </div>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -169,6 +170,9 @@ const echo = [
   letter-spacing: 0.04em;
   color: var(--ink-muted);
   cursor: pointer;
+  /* Over the frame's top edge, which the hit box reaches into. */
+  z-index: 1;
+  @include hit-area;
 
   input {
     margin: 0;

@@ -230,6 +230,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 </div>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 /* 1em here is the sheet's body type at this scale, so every measurement below scales
    with the page. */
 .event-bus {
@@ -308,6 +309,7 @@ button {
 
 button.call {
   cursor: pointer;
+  @include hit-area;
 
   &:hover .replay,
   &:focus-visible .replay {
@@ -565,6 +567,7 @@ button.call {
   border: 0;
   background: none;
   cursor: pointer;
+  @include hit-area;
 
   &:disabled {
     cursor: default;
