@@ -218,6 +218,36 @@ $pip: 1.125rem;
     }
   }
 
+  // Without a script, a browser that has neither pseudo-element (Firefox 156) showed one
+  // finish filling the square, with a hidden scrollbar: nothing said the strip scrolls.
+  // There the finishes stand apart on the row's dark ground, each narrow enough that the
+  // next one's edge shows on the right, the way #183's no-script sheet row does. They snap
+  // by their start so that edge stays on the right (the last finish shows the one before
+  // it instead), and the scrollbar shows in the brand colour. The lone dot of the pip
+  // track has no pip row to sit in here, so it goes. With a script, panel.ts builds the
+  // arrows and pips instead, and this block does not apply.
+  @media (scripting: none) {
+    @supports not (selector(::scroll-marker) and selector(::scroll-button(right))) {
+      ul.styles {
+        --style-peek: 1rem;
+        gap: 0.5rem;
+        background: $row-bg;
+        scrollbar-width: thin;
+        scrollbar-color: $brand transparent;
+
+        > .style {
+          flex-basis: calc(100% - var(--style-peek));
+          scroll-snap-align: start;
+          background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
+        }
+      }
+
+      .pip-track {
+        display: none;
+      }
+    }
+  }
+
   // Script-built copies of the same controls.
   button.previous,
   button.next {
