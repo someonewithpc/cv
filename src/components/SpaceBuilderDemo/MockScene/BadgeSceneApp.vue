@@ -28,7 +28,9 @@ const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
 const playing = ref(false);
-const metrics = ref<{ theta: number; r: number; offset: number } | null>(null);
+/** The math card's text. Set only when a shown number changes, so an orbit frame that
+ * moves the camera less than a degree or a centimetre re-renders nothing. */
+const readout = ref<{ theta: string; r: string; offset: string } | null>(null);
 
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let stopPageWatch: (() => void) | null = null;
@@ -44,7 +46,20 @@ let orbitRaf = 0;
 let lastFrameTime: number | null = null;
 
 function syncMetrics() {
-  metrics.value = sceneRef.value?.getTagMetrics() ?? null;
+  const metrics = sceneRef.value?.getTagMetrics() ?? null;
+  const next = metrics && {
+    theta: formatDeg(metrics.theta),
+    r: formatMeters(metrics.r),
+    offset: formatMeters(metrics.offset),
+  };
+  const shown = readout.value;
+  if (
+    shown === next ||
+    (shown && next && shown.theta === next.theta && shown.r === next.r && shown.offset === next.offset)
+  ) {
+    return;
+  }
+  readout.value = next;
 }
 
 function orbitStep(now: number) {
@@ -318,12 +333,12 @@ onBeforeUnmount(() => {
       <p class="fail-note">Buried under the box on orbit — not what shipped.</p>
     </figure>
 
-    <div v-if="ready && !loadError && metrics" class="math-card">
+    <div v-if="ready && !loadError && readout" class="math-card">
       <p class="math-title">offset = r + 0.95m</p>
       <dl>
-        <div><dt>θ</dt><dd>{{ formatDeg(metrics.theta) }}</dd></div>
-        <div><dt>r</dt><dd>{{ formatMeters(metrics.r) }}</dd></div>
-        <div><dt>offset</dt><dd>{{ formatMeters(metrics.offset) }}</dd></div>
+        <div><dt>θ</dt><dd>{{ readout.theta }}</dd></div>
+        <div><dt>r</dt><dd>{{ readout.r }}</dd></div>
+        <div><dt>offset</dt><dd>{{ readout.offset }}</dd></div>
       </dl>
     </div>
 

@@ -186,3 +186,27 @@ for (const { name, viewport } of [
     });
   });
 }
+
+// The readout's numbers are those of main at a9774c0f: the scene's home angle, then a 120 px
+// drag at 0.005 rad per px. Reduced motion holds the orbit so the first reading is fixed.
+test('badge page: the readout shows the home angle and follows a drag', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Capacity Badge');
+  const app = await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
+
+  const readout = app.locator('.math-card dd');
+  await expect(readout).toHaveText(['50°', '4.44m', '5.39m']);
+
+  const box = await app.locator('canvas[data-scene-canvas]').boundingBox();
+  if (!box) throw new Error('the badge scene has no canvas box');
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 120, cy, { steps: 6 });
+  await page.mouse.up();
+  await expect(readout).toHaveText(['16°', '3.42m', '4.37m']);
+});
