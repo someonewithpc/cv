@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 
+import { type Meter, UPSTREAM_BYTES_HEADER } from '../../server/fontProxyBudget';
 import { isInternalAddress, resolveHost } from '../../server/internalAddress';
 
 export const prerender = false;
@@ -51,8 +52,8 @@ function validateTarget(raw: string, base?: URL): URL {
 // address checked here. A name that answers this lookup with a public address and the next with
 // a private one (DNS rebinding, TTL 0) still gets through. Deployed Workers cannot reach
 // private addresses anyway, so the gap is open only under astro dev and preview.
-async function refuseInternal(target: URL): Promise<void> {
-  const addresses = await resolveHost(target.hostname);
+async function refuseInternal(target: URL, meter: Meter): Promise<void> {
+  const addresses = await resolveHost(target.hostname, meter);
   if (addresses.length === 0) throw new Refused('Host does not resolve');
   if (addresses.some(isInternalAddress)) throw new Refused('Refusing to fetch private addresses');
 }
@@ -62,9 +63,9 @@ async function refuseInternal(target: URL): Promise<void> {
  * refuseInternal: with redirect 'follow' only the first URL was checked, and the one it
  * redirected to could be anything.
  */
-async function fetchFollowingRedirects(target: URL, headers: HeadersInit): Promise<Response> {
+async function fetchFollowingRedirects(target: URL, headers: HeadersInit, meter: Meter): Promise<Response> {
   for (let hop = 0; ; hop += 1) {
-    await refuseInternal(target);
+    await refuseInternal(target, meter);
     const upstream = await fetch(target, { headers, redirect: 'manual' });
     const location = upstream.headers.get('location');
     if (upstream.status < 300 || upstream.status > 399 || !location) return upstream;
@@ -78,9 +79,10 @@ async function fetchFollowingRedirects(target: URL, headers: HeadersInit): Promi
  * Reads the body up to the cap. Past it the read is cancelled, so a chunked response with no
  * content-length, which the header check cannot judge, costs the worker at most one chunk
  * over the cap rather than the whole thing; arrayBuffer() pulled it all before measuring.
- * null when the body was over the cap.
+ * null when the body was over the cap. Every chunk read goes on the meter, the one past the cap
+ * too.
  */
-async function readUpTo(body: ReadableStream<Uint8Array> | null, limit: number): Promise<ArrayBuffer | null> {
+async function readUpTo(body: ReadableStream<Uint8Array> | null, limit: number, meter: Meter): Promise<ArrayBuffer | null> {
   if (!body) return new ArrayBuffer(0);
   const reader = body.getReader();
   const chunks: Uint8Array[] = [];
@@ -89,6 +91,7 @@ async function readUpTo(body: ReadableStream<Uint8Array> | null, limit: number):
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
+    meter.bytes += value.byteLength;
     if (total > limit) {
       await reader.cancel();
       return null;
@@ -125,6 +128,14 @@ export const GET: APIRoute = async ({ url, request }) => {
     throw e;
   }
 
+  // Everything after this point has cost upstream traffic, so every answer names it.
+  const meter: Meter = { bytes: 0 };
+  const metered = (body: BodyInit | null, init: ResponseInit): Response => {
+    const response = new Response(body, init);
+    response.headers.set(UPSTREAM_BYTES_HEADER, String(meter.bytes));
+    return response;
+  };
+
   let upstream: Response;
   try {
     upstream = await fetchFollowingRedirects(target, {
@@ -132,30 +143,30 @@ export const GET: APIRoute = async ({ url, request }) => {
       // Pass the browser's UA through so e.g. Google Fonts serves modern woff2 CSS
       'user-agent': request.headers.get('user-agent') ?? 'cv-font-picker-demo',
       'accept-language': request.headers.get('accept-language') ?? 'en',
-    });
+    }, meter);
   } catch (e) {
-    if (e instanceof Refused) return new Response(e.message, { status: 400 });
-    return new Response('Upstream fetch failed: ' + (e instanceof Error ? e.message : String(e)), { status: 502 });
+    if (e instanceof Refused) return metered(e.message, { status: 400 });
+    return metered('Upstream fetch failed: ' + (e instanceof Error ? e.message : String(e)), { status: 502 });
   }
 
   const contentType = upstream.headers.get('content-type') ?? '';
   if (!ALLOWED_CONTENT_TYPES.test(contentType)) {
     await upstream.body?.cancel();
-    return new Response('Unsupported content type', { status: 415 });
+    return metered('Unsupported content type', { status: 415 });
   }
 
   const declaredLength = Number(upstream.headers.get('content-length') ?? 0);
   if (declaredLength > MAX_BYTES) {
     await upstream.body?.cancel();
-    return new Response('Response too large', { status: 413 });
+    return metered('Response too large', { status: 413 });
   }
 
-  const body = await readUpTo(upstream.body, MAX_BYTES);
+  const body = await readUpTo(upstream.body, MAX_BYTES, meter);
   if (body === null) {
-    return new Response('Response too large', { status: 413 });
+    return metered('Response too large', { status: 413 });
   }
 
-  return new Response(body, {
+  return metered(body, {
     status: upstream.status,
     headers: {
       'content-type': contentType,

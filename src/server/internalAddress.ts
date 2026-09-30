@@ -104,8 +104,11 @@ const DOH_URL = 'https://cloudflare-dns.com/dns-query';
 const A = 1;
 const AAAA = 28;
 
-/** Every A and AAAA address the host resolves to, CNAMEs followed. Empty when it doesn't resolve. */
-export async function resolveHost(host: string): Promise<string[]> {
+/**
+ * Every A and AAAA address the host resolves to, CNAMEs followed. Empty when it doesn't resolve.
+ * The answers' bytes go on the meter.
+ */
+export async function resolveHost(host: string, meter: { bytes: number } = { bytes: 0 }): Promise<string[]> {
   const answers = await Promise.all(['A', 'AAAA'].map(async (type) => {
     const query = new URL(DOH_URL);
     query.searchParams.set('name', host);
@@ -115,7 +118,9 @@ export async function resolveHost(host: string): Promise<string[]> {
       await response.body?.cancel();
       throw new Error(`DNS lookup failed with ${response.status}`);
     }
-    const { Answer = [] } = await response.json() as { Answer?: { type: number, data: string }[] };
+    const raw = await response.arrayBuffer();
+    meter.bytes += raw.byteLength;
+    const { Answer = [] } = JSON.parse(new TextDecoder().decode(raw)) as { Answer?: { type: number, data: string }[] };
     return Answer.filter((record) => record.type === A || record.type === AAAA).map((record) => record.data);
   }));
   return answers.flat();

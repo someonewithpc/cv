@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { GET } from '../src/pages/api/font-proxy';
+import { UPSTREAM_BYTES_HEADER } from '../src/server/fontProxyBudget';
 import { isInternalAddress } from '../src/server/internalAddress';
 
 // Drives the endpoint's GET in the test process with fetch replaced, so neither the DNS
@@ -255,6 +256,23 @@ test.describe('font proxy', () => {
     expect(setup.served[0].cancelled).toBe(true);
     expect(setup.served[0].bytesRead).toBeLessThanOrEqual(CHUNK);
   });
+  test('names every upstream byte it read, the refused body and the DNS answers included', async () => {
+    const big = harness(PUBLIC, { 'https://fonts.test/big.woff2': { headers: { 'content-type': 'font/woff2' }, bytes: 64 * MB } });
+    const refused = await proxy(big, 'https://fonts.test/big.woff2');
+    expect(refused.status).toBe(413);
+    expect(Number(refused.headers.get(UPSTREAM_BYTES_HEADER))).toBeGreaterThan(big.served[0].bytesRead);
+
+    const small = harness(PUBLIC, { 'https://fonts.test/a.css': { headers: CSS, bytes: 10 } });
+    const served = await proxy(small, 'https://fonts.test/a.css');
+    expect(served.status).toBe(200);
+    expect(Number(served.headers.get(UPSTREAM_BYTES_HEADER))).toBeGreaterThan(10);
+
+    const nx = harness({}, {});
+    const unresolved = await proxy(nx, 'https://nowhere.test/');
+    expect(unresolved.status).toBe(400);
+    expect(Number(unresolved.headers.get(UPSTREAM_BYTES_HEADER))).toBeGreaterThan(0);
+  });
+
 
   test('lets public addresses through, mapped and NAT64 forms included', () => {
     for (const address of [

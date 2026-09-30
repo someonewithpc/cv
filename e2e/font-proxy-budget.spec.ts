@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { type Budget, DAILY_BYTES, dailyBudgetName, withBudget } from '../src/server/fontProxyBudget';
+import { type Budget, DAILY_BYTES, dailyBudgetName, UPSTREAM_BYTES_HEADER, withBudget } from '../src/server/fontProxyBudget';
 
 // Drives the Worker entry's budget gate in the test process, with an in-memory stand-in for
 // the per-day Durable Objects and a scripted Astro handler.
@@ -130,5 +130,32 @@ test.describe('font proxy budget path', () => {
       expect(response.status, path).toBe(503);
       expect(calls.count, path).toBe(0);
     }
+  });
+});
+
+test.describe('font proxy upstream bytes', () => {
+  test('charges what the endpoint read upstream when it sent less, and hides the header', async () => {
+    const budgets = days();
+    const ctx = context();
+    const next = async () => new Response('Response too large', {
+      status: 413,
+      headers: { [UPSTREAM_BYTES_HEADER]: String(8 * 1024 * 1024 + 1) },
+    });
+    const response = await withBudget(new Request(PROXY), budgets, ctx, next, NOON);
+    expect(response.status).toBe(413);
+    expect(response.headers.get(UPSTREAM_BYTES_HEADER)).toBeNull();
+    expect(await response.text()).toBe('Response too large');
+    await ctx.settle();
+    expect(budgets.bytes.get(TODAY)).toBe(8 * 1024 * 1024 + 1);
+  });
+
+  test('charges the body once when it is what came from upstream', async () => {
+    const budgets = days();
+    const ctx = context();
+    const next = async () => new Response(new Uint8Array(5000), { headers: { [UPSTREAM_BYTES_HEADER]: '5300' } });
+    const response = await withBudget(new Request(PROXY), budgets, ctx, next, NOON);
+    expect((await response.arrayBuffer()).byteLength).toBe(5000);
+    await ctx.settle();
+    expect(budgets.bytes.get(TODAY)).toBe(5300);
   });
 });

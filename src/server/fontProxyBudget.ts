@@ -15,6 +15,14 @@ export function dailyBudgetName(now: Date): string {
   return `font-proxy-bytes:${now.toISOString().slice(0, 10)}`;
 }
 
+// The endpoint names in this header what it read upstream, DNS answers included; the gate
+// charges that when it is more than the body it sent, and strips it before the client sees it.
+export const UPSTREAM_BYTES_HEADER = 'x-font-proxy-upstream-bytes';
+
+export interface Meter {
+  bytes: number;
+}
+
 const PROXY_PATH = '/api/font-proxy';
 
 // Astro's trailingSlash 'ignore' also routes '/api/font-proxy/', and other spellings may reach
@@ -45,7 +53,14 @@ export async function withBudget(
   }
 
   const response = await next();
-  if (!response.body) return response;
+  const upstreamBytes = Number(response.headers.get(UPSTREAM_BYTES_HEADER)) || 0;
+  const headers = new Headers(response.headers);
+  headers.delete(UPSTREAM_BYTES_HEADER);
+  const init = { status: response.status, statusText: response.statusText, headers };
+  if (!response.body) {
+    ctx.waitUntil(budget.add(upstreamBytes));
+    return new Response(null, init);
+  }
   let bytes = 0;
   const counter = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
@@ -54,6 +69,6 @@ export async function withBudget(
     },
   });
   // A client that hangs up rejects the pipe; count what went out before that.
-  ctx.waitUntil(response.body.pipeTo(counter.writable).catch(() => {}).then(() => budget.add(bytes)));
-  return new Response(counter.readable, response);
+  ctx.waitUntil(response.body.pipeTo(counter.writable).catch(() => {}).then(() => budget.add(Math.max(bytes, upstreamBytes))));
+  return new Response(counter.readable, init);
 }
