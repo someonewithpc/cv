@@ -12,7 +12,7 @@ const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
 ---
 
 <div class="wrapper">
-  <div class="shared-layer" aria-hidden="true">
+  <div class="shared-layer">
     <div class="panel">
       <header>
         <strong>One "Shared value" input for the base object and every variant</strong>
@@ -24,12 +24,12 @@ const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
           <div class="field" style={fieldStyle}>
             <span class="text">{walkthrough.value}</span>
             <span class="caret"></span>
-            <span class="tick">✓</span>
+            <span class="tick" aria-hidden="true">✓</span>
           </div>
           <span class="events"><code>keyup</code> · <code>focus</code> · <code>click</code> · <code>blur</code></span>
         </div>
 
-        <svg class="wires" viewBox="0 0 40 100" preserveAspectRatio="none">
+        <svg class="wires" aria-hidden="true" viewBox="0 0 40 100" preserveAspectRatio="none">
           <path d="M0 50 C 18 50, 22 12, 40 12" />
           <path d="M0 50 C 18 50, 22 37, 40 37" />
           <path d="M0 50 C 18 50, 22 63, 40 63" />

@@ -5,14 +5,14 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
 ---
 
 <div class="wrapper">
-  <div class="caret-layer" aria-hidden="true">
+  <div class="caret-layer">
     <div class="panel">
       <header>
         <strong>A caret for inputs that never have focus</strong>
       </header>
 
       <div class="ruler">
-        <div class="cells">
+        <div class="cells" aria-hidden="true">
           {cells.map((cell) => (
             <span class:list={['cell', { before: cell.index < selectionStart }]}>
               <span class="char">{cell.char}</span>
@@ -23,28 +23,28 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
         </div>
         <div class="readout">
           <span><code>selectionStart</code> = <strong>{selectionStart}</strong></span>
-          <span>→</span>
+          <span aria-hidden="true">→</span>
           <span><code>--caret: {selectionStart}</code></span>
-          <span>→</span>
+          <span aria-hidden="true">→</span>
           <span><code>left: min(var(--caret) * 1ch, var(--input-width) - 1ch)</code></span>
         </div>
       </div>
 
       <ol class="steps">
         <li>
-          <span class="n">1</span>
+          <span class="n" aria-hidden="true">1</span>
           <span>The shared input's <code>keyup</code>, <code>focus</code>, <code>click</code> and <code>blur</code> read <code>selectionStart</code></span>
         </li>
         <li>
-          <span class="n">2</span>
+          <span class="n" aria-hidden="true">2</span>
           <span>Each variant form gets <code>--caret</code> and its input's <code>--input-width</code>; the value is copied in and scrolled just far enough to keep that caret in view</span>
         </li>
         <li>
-          <span class="n">3</span>
+          <span class="n" aria-hidden="true">3</span>
           <span>The form is monospace, so <code>1ch</code> is one character and a <code>::before</code> holding a literal <code>|</code> lands where the real caret would</span>
         </li>
         <li>
-          <span class="n">4</span>
+          <span class="n" aria-hidden="true">4</span>
           <span>It only paints while the shared input <code>:focus</code> holds, blinks with <code>opacity</code> keyframes, and stands still under <code>prefers-reduced-motion</code></span>
         </li>
       </ol>
