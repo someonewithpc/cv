@@ -43,11 +43,11 @@ const slipStyle = inWords[pageCount - 2] !== undefined
   <h3 id={headingId} class="callout-label">
     <span class="callout-bubble typewriter" aria-hidden="true"><span class="callout-letter">{letter}</span></span>
     <span class="callout-text">
-      <span class="callout-kind monospace">
+      <span class="callout-kind monospace" aria-hidden="true">
         <span>Detail {letter}</span>
         {scale && <span class="callout-scale">Scale {scale}</span>}
       </span>
-      {titleJp && <small lang="ja">{titleJp}</small>}
+      {titleJp && <small lang="ja" aria-hidden="true">{titleJp}</small>}
       <span class="callout-title typewriter">{title}</span>
     </span>
   </h3>

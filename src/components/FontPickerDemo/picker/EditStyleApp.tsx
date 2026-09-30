@@ -62,7 +62,7 @@ export default function EditStyleApp() {
   const weightIsFree = selected !== undefined && options.filter((o) => o.family === selected.family).length === 1;
 
   return (
-    <div className="edit-style" ref={rootRef} role="region" aria-label="Font picker">
+    <div className="edit-style" ref={rootRef} role="region" aria-label="Font settings">
       <aside className="sidebar">
         <nav>
           <section className="edit-settings">

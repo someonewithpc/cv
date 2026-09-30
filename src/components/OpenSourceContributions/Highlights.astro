@@ -50,7 +50,7 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
       {(entry.role || entry.roleJp) && (
         <p>
           {entry.roleJp && (
-            <small lang="ja">{entry.roleJp}</small>
+            <small lang="ja" aria-hidden="true">{entry.roleJp}</small>
           )}
           {entry.role}
         </p>

@@ -16,7 +16,7 @@ const { headingId, titleJp, title, sheetCode = 'SH' } = Astro.props;
     <span>REV A</span>
   </p>
   <h2 id={headingId}>
-    <small lang="ja">{titleJp}</small>
+    <small lang="ja" aria-hidden="true">{titleJp}</small>
     <span class="typewriter">{title}</span>
   </h2>
 </header>

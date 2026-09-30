@@ -504,7 +504,7 @@ const tall = (() => {
   <div class="sheet-body">
     <div class="revisions">
       <h3 id="career-experience">
-        <small lang="ja">しごと</small>
+        <small lang="ja" aria-hidden="true">しごと</small>
         <span class="typewriter">Experience</span>
       </h3>
 
@@ -559,7 +559,7 @@ const tall = (() => {
 
     <dl class="cells">
       <div class="cell">
-        <dt class="monospace"><small lang="ja">学校</small>Education</dt>
+        <dt class="monospace"><small lang="ja" aria-hidden="true">学校</small>Education</dt>
         <dd>
           <span class="typewriter">{education.degree}</span>
           <span>{education.minor}</span>
@@ -569,7 +569,7 @@ const tall = (() => {
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">ことば</small>Languages</dt>
+        <dt class="monospace"><small lang="ja" aria-hidden="true">ことば</small>Languages</dt>
         <dd>
           <ul class="languages">
             {languages.map(({ name, level }) => (
@@ -580,17 +580,17 @@ const tall = (() => {
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">ばしょ</small>Location</dt>
+        <dt class="monospace"><small lang="ja" aria-hidden="true">ばしょ</small>Location</dt>
         <dd><span class="typewriter">{location}</span></dd>
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">すきなこと</small>Interests</dt>
+        <dt class="monospace"><small lang="ja" aria-hidden="true">すきなこと</small>Interests</dt>
         <dd><span>{interests.join(', ')}</span></dd>
       </div>
 
       <div class="cell">
-        <dt class="monospace"><small lang="ja">ほかのページ</small>See also</dt>
+        <dt class="monospace"><small lang="ja" aria-hidden="true">ほかのページ</small>See also</dt>
         <dd>
           <ul class="refs monospace">
             {refs.map(({ label, href }) => (
