@@ -1250,6 +1250,19 @@ $fold-pulse-y: 2cm;
         display: block;
       }
     }
+
+    // With nothing turned the front page's corner is whole at once. When a turn wraps round to
+    // the first page, the pile empties in one step (the strip over the cut goes with it) but the
+    // cut still eases shut, and through it showed the pile's sheets gliding back under the stack:
+    // a wedge of blueprint blue at the corner of a plain page. The other pages keep easing, under
+    // it. A back-turn to the first page draws its cut inline as it comes over, so this reaches it
+    // only once the page has landed.
+    &:not([data-paper-flipped])
+      > .paper-front
+      > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint) {
+      --fold-back-x: 0px;
+      --fold-back-y: 0px;
+    }
   }
 }
 // Without JS the one stack above is the reader's copy too: these rules turn it into a plain

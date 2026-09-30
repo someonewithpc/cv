@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageIndex, turnToPage } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, pressTurn, turnToPage } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -109,4 +109,46 @@ test('cube page: every strip is cut to a point at each end, so the vertices join
   ]));
   expect(cuts).toHaveLength(24);
   for (const cut of cuts) expect(cut.match(/linear-gradient\(/g)).toHaveLength(5);
+});
+
+// The last page and the first are both plain paper, but the pages between are blueprints. A
+// turn that wraps round empties the pile at once, and if the first page's folded-back corner
+// eased shut afterwards, the blueprints gliding back under the stack showed through it as a
+// blue wedge. So the corner is hit-tested inside the fold-back triangle on every frame from the
+// commit on: the first page's own content has to be there.
+test('wrapping round to the first page brings its corner back whole at once', async ({ page }) => {
+  const stack = visrezStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Putting it all together');
+
+  await stack.evaluate((el) => {
+    const w = window as Window & { cornerHits?: boolean[] };
+    const hits: boolean[] = (w.cornerHits = []);
+    const first = el.children[0] as HTMLElement;
+    const content = first.querySelector<HTMLElement>(
+      ':scope > :not(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)',
+    )!;
+    const sample = () => {
+      const box = first.getBoundingClientRect();
+      const at = document.elementsFromPoint(box.left + 8, box.top + 12);
+      hits.push(at.some((hit) => content.contains(hit)));
+    };
+    const observer = new MutationObserver(() => {
+      if (first.style.getPropertyValue('--page-index').trim() !== '1') return;
+      observer.disconnect();
+      const start = performance.now();
+      const frame = () => {
+        sample();
+        if (performance.now() - start < 400) requestAnimationFrame(frame);
+      };
+      frame();
+    });
+    observer.observe(first, { attributes: true, attributeFilter: ['style'] });
+  });
+  await pressTurn(stack, 'ArrowRight');
+  expect(await frontPageIndex(stack)).toBe(0);
+
+  const hits = await page.evaluate(() => (window as Window & { cornerHits?: boolean[] }).cornerHits!);
+  expect(hits.length).toBeGreaterThan(3);
+  expect(hits.every(Boolean), `corner hits per frame: ${hits.join(' ')}`).toBe(true);
 });
