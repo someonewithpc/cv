@@ -186,4 +186,4 @@
 - [x] Cap the font picker's fetches at 100 per page load, 2 MiB per response, 16 MiB in all and 10 s each; a tripped cap shows the error border (C48) (#223)
 - [x] Quote the family name as a CSS string wherever the picker writes it into a rule or a style (C49) (#223)
 - [x] Keep the walkthrough readouts in Synthetic, Event Bus and Fediverse from announcing every step (#222)
-- [ ] The marker editor takes focus when a visitor opens it, keeps Tab inside and gives focus back on close; the Space Builder root is a group, not an application (A9)
+- [x] The marker editor takes focus when a visitor opens it, keeps Tab inside and gives focus back on close; the Space Builder root is a group, not an application (A9) (#227)
