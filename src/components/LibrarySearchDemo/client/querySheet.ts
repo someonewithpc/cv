@@ -1,9 +1,9 @@
+import { reducedMotion } from '@/client/autoplayStatus';
+
 import { mangledHtml, relevanceHtml, sqlHtml, sqlResultHtml } from '../markup';
 import { search, type Filters, type SearchState } from '../search';
 import { requests, type RequestLog } from './requests';
 import { initialState } from './state';
-
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 function filtersText(filters: Filters) {
   const set = [
@@ -16,7 +16,7 @@ function filtersText(filters: Filters) {
 /** Lights the three copies of the match fragment up again, so a keystroke is seen landing
     in every one of them at once. */
 function flash(host: HTMLElement) {
-  if (reducedMotion.matches) return;
+  if (reducedMotion(host)) return;
   const code = host.querySelector<HTMLElement>('.sql');
   if (!code) return;
   // The fragments were just redrawn, so each starts its keyframes afresh; the class on the

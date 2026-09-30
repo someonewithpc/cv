@@ -296,7 +296,7 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sql:global(.flash) :global(.frag) {
+  .sql:global(.flash) :global(.frag:not([data-full-motion] *)) {
     animation: none;
   }
 }

@@ -347,13 +347,13 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .demo-options {
+  .demo-options:not([data-full-motion] *) {
     animation: none;
   }
 
-  .relevance .bar,
-  .query-input,
-  .filter-select {
+  .relevance .bar:not([data-full-motion] *),
+  .query-input:not([data-full-motion] *),
+  .filter-select:not([data-full-motion] *) {
     transition: none;
   }
 }

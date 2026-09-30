@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { demoGate, documentGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
@@ -9,7 +9,6 @@ import { formatScore, serialise, type Filters, type SearchResult, type SearchSta
 import { requests } from './requests';
 import { initialState } from './state';
 
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const wait = (ms: number) => documentGate().wait(ms);
 
 /** Matches the bar's scale transition in SearchTool.astro. */
@@ -70,7 +69,7 @@ function render(tool: Tool, result: SearchResult) {
 
   if (tool.count) tool.count.textContent = `${result.hits.length} of ${libraryObjects.length} objects`;
 
-  if (reducedMotion.matches) return;
+  if (reducedMotion(tool.root)) return;
   ordered.forEach((row) => {
     const from = before.get(row);
     if (from === undefined) {
@@ -233,14 +232,14 @@ function drawnHand(host: HTMLElement, el: HTMLElement, list: HTMLUListElement | 
  * moving pointer, a tap or focus; a resting pointer does not). It drives this sheet alone;
  * the other sheets keep their own queries. After a quiet spell the script starts again from
  * the query the page opens on. `data-autoplay` on the tool is the whole state, as `playing`,
- * `user` or `off`, and the sheet's transport deck shows the same (src/client/autoplayStatus.ts).
+ * `user`, `paused` or `off`, and the sheet's transport deck shows the same (src/client/autoplayStatus.ts).
  * Its keys drive it: pause holds the tool for the visitor, play and reset start the script
  * again from the opening query.
  */
 function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initial: SearchState, onChange: () => void) {
   const { root, input } = tool;
   const cursorEl = host.querySelector<HTMLElement>('[data-demo-cursor]');
-  if (reducedMotion.matches || !cursorEl) {
+  if (!cursorEl) {
     root.dataset.autoplay = 'off';
     reportAutoplayState(root, 'off');
     listenCount(tool, true);
@@ -256,7 +255,7 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
     active = next;
   });
 
-  const setState = (state: 'playing' | 'user') => {
+  const setState = (state: 'playing' | 'user' | 'paused') => {
     root.dataset.autoplay = state;
     reportAutoplayState(root, state);
   };
@@ -271,7 +270,7 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
       listenCount(tool, true);
     },
     handBack() {
-      if (held || !active) return false;
+      if (held || !active || reducedMotion(root)) return false;
       void walk();
       return true;
     },
@@ -286,7 +285,30 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
     held = false;
     handover.release();
     if (command === 'play' && root.dataset.autoplay === 'playing') return;
-    void walk();
+    void start();
+  });
+
+  /** Stops the script and leaves the tool as it stands, waiting for the deck's play key. */
+  function park() {
+    run += 1;
+    hand.hide();
+    setState('paused');
+    listenCount(tool, true);
+  }
+
+  // Under reduced motion only the play key starts the script, and reset just puts the
+  // opening query back.
+  function start() {
+    if (!reducedMotion(root)) return walk();
+    if (serialise({ query: input.value, filters: readFilters(tool) }) !== serialise(initial)) {
+      showState(tool, initial);
+      onChange();
+    }
+    park();
+  }
+
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+    if (root.dataset.autoplay === 'playing' && reducedMotion(root)) park();
   });
 
   async function walk() {
@@ -344,7 +366,7 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
     }
   }
 
-  return { walk };
+  return { start };
 }
 
 export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
@@ -377,7 +399,7 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
 
   const script = host.dataset.walkthrough;
   const walkthrough = script ? autoplay(tool, host, JSON.parse(script) as Step[], initial, onChange) : null;
-  if (walkthrough) void walkthrough.walk();
+  if (walkthrough) void walkthrough.start();
   else listenCount(tool, true);
 }
 
