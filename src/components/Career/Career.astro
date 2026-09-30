@@ -609,6 +609,14 @@ const tall = (() => {
 </section>
 
 <style lang="scss">
+@use "@/scss/_page-column.scss" as column;
+
+// The sheet is the page column less its padding: one page gutter (var(--page-gap)) on each
+// side, and on the desk the desk sheet's rim and edge in its place. The breakpoints below are
+// the sheet widths the drawing, the table and the cells need, turned into window widths by
+// column.section-width().
+$career-inset: (gaps: 1, desk: column.$inset-desk-sheet);
+
 /* The CV is on engineering dot paper, not drawing paper. The sheet is the theme's paper with
    a twentieth of the accent mixed in, and a faint dot every 1.25rem. The accent also lifts a
    dark sheet, which cost Forest's faint lettering its contrast, so a dark theme (one that
@@ -661,8 +669,8 @@ const tall = (() => {
 }
 
 #career {
-  container-type: inline-size;
   margin-top: 1.5rem;
+  // $career-inset counts this padding; change the two together.
   padding: var(--page-gap);
   font-size: 0.875rem;
   line-height: 1.5;
@@ -727,7 +735,7 @@ const tall = (() => {
     gap: 2rem;
     align-items: start;
 
-    @container (width >= 52rem) {
+    @media #{column.section-width(">=", 52rem, $career-inset)} {
       grid-template-columns: minmax(0, 1fr) 15rem;
       gap: 2.5rem;
     }
@@ -756,7 +764,7 @@ const tall = (() => {
     max-width: 27.5rem;
   }
 
-  @container (width >= 44rem) {
+  @media #{column.section-width(">=", 44rem, $career-inset)} {
     :global(.wide) {
       display: block;
     }
@@ -991,7 +999,7 @@ const tall = (() => {
 
   /* On a narrow sheet the description would have half the width of a phone, so the revision
      and the period take one line and the description the whole width under it. */
-  @container (width < 36rem) {
+  @media #{column.section-width("<", 36rem, $career-inset)} {
     --grid: 2.25rem minmax(0, 1fr);
 
     .head {
@@ -1021,11 +1029,11 @@ const tall = (() => {
   border: 1px solid var(--line-strong);
   border-radius: 0.125rem;
 
-  @container (width < 52rem) {
+  @media #{column.section-width("<", 52rem, $career-inset)} {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @container (width < 30rem) {
+  @media #{column.section-width("<", 30rem, $career-inset)} {
     grid-template-columns: minmax(0, 1fr);
   }
 

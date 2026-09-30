@@ -100,6 +100,10 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 ))}
 
 <style lang="scss">
+@use "@/scss/_page-column.scss" as column;
+
+// The breakpoints are widths of the Open Source section (OpenSourceContributions.astro says
+// why they are media queries).
 article {
   display: grid;
   grid-template-columns: var(--grid);
@@ -258,7 +262,7 @@ article {
     }
   }
 
-  @container (max-width: 50rem) {
+  @media #{column.section-width("<=", 50rem)} {
     grid-template-columns: 5rem 1fr;
 
     > header,
@@ -273,7 +277,7 @@ article {
     }
   }
 
-  @container (max-width: 30rem) {
+  @media #{column.section-width("<=", 30rem)} {
     grid-template-columns: auto minmax(0, 1fr);
     column-gap: 0.65rem;
 
@@ -318,7 +322,7 @@ article {
   }
 
   /* Beside the marks, a one-word title like BLENDER no longer fits and runs off the card. */
-  @container (max-width: 16rem) {
+  @media #{column.section-width("<=", 16rem)} {
     > ul,
     > header {
       grid-column: 1 / -1;

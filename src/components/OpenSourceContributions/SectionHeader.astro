@@ -41,6 +41,10 @@ const { statistics } = Astro.props;
 </header>
 
 <style lang="scss">
+@use "@/scss/_page-column.scss" as column;
+
+// The breakpoint is a width of the Open Source section (OpenSourceContributions.astro says
+// why it is a media query).
 header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -117,7 +121,7 @@ header {
     }
   }
 
-  @container (max-width: 50rem) {
+  @media #{column.section-width("<=", 50rem)} {
     grid-template-columns: 1fr;
     gap: 1.5rem;
 
