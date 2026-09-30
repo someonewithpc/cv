@@ -10,14 +10,15 @@ import desktopConfig from 'lighthouse/core/config/desktop-config.js';
 import { systemChrome } from '../playwright.config';
 
 // Floors under where the site already is, not targets. Performance keeps the slack: it
-// is the only score that reads the machine. Five runs here give desktop 0.96 to 0.97 and
-// mobile 0.66 to 0.67, with every other category flat at 1.
+// is the only score that reads the machine.
 //
-// Mobile performance is low because of the first paint, not the demos: blocking time and
-// layout shift both score 1, while first contentful paint lands at 5.3 s on a simulated
-// slow 4G link. Lighthouse blames a 537 KiB uncompressed document and a 160 KiB
-// render-blocking stylesheet. astro preview sends neither compressed and Cloudflare does,
-// so the deployed number is better than this one.
+// The server is wrangler dev (playwright.audit.config.ts), so the document arrives
+// brotli-compressed at 243 KiB, not the 1,518 KiB it is on disk. One run of each on
+// 2026-09-30, main a9774c0f, other suites sharing the box: astro preview gave desktop
+// 0.76 and mobile 0.55 with 2,464 KiB and 2,377 KiB transferred; wrangler dev gave 0.98
+// and 0.68 with 701 KiB and 648 KiB. Mobile is the lower one because Lighthouse's
+// simulated slow 4G still spends 4.1 s reaching the first paint, and a 4x CPU slowdown
+// on the boot scripts does the rest.
 const PROFILES = [
   {
     // Lighthouse's own desktop preset: no CPU throttling, a fast link, 1350x940.
