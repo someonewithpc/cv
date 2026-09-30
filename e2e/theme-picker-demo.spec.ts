@@ -170,11 +170,11 @@ test.describe('reduced motion', () => {
     await expect(sheet.locator('.steps > li').first().locator('pre')).toHaveText('const viewTransition = document.startViewTransition(() => { /**/ });');
     await expect(sheet.locator('.inside .row')).toHaveCount(3);
 
-    // Shiki ran at build with github-dark, the loading logo's path data theme: keywords and
-    // functions carry its colours, and no highlighter script is on the page.
-    await expect(sheet.locator('.steps pre.astro-code.github-dark').first()).toBeVisible();
-    expect(await sheet.locator('.steps .astro-code span[style*="#F97583"]').count()).toBeGreaterThan(0);
-    expect(await sheet.locator('.steps .astro-code span[style*="#B392F0"]').count()).toBeGreaterThan(0);
+    // src/highlight.ts ran at build: keywords and functions carry their kind's class, and no
+    // highlighter script is on the page.
+    await expect(sheet.locator('.steps pre.hl').first()).toBeVisible();
+    expect(await sheet.locator('.steps pre.hl .tok-keyword').count()).toBeGreaterThan(0);
+    expect(await sheet.locator('.steps pre.hl .tok-function').count()).toBeGreaterThan(0);
 
     // Code words in the prose are set as inline code, on a ground of their own.
     const inline = sheet.locator('.step-name code', { hasText: 'startViewTransition' });

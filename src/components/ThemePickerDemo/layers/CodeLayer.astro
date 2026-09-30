@@ -3,8 +3,8 @@
  * The wipe's script, five steps in the order the picker runs them, each with the lines it
  * runs, and under the frames what transformPath does with a path. Every fragment is
  * checked against its source at build, whitespace aside, so the sheet cannot drift from the
- * code. Shiki colours the fragments at build with github-dark, the theme the loading logo's
- * path data sheet was coloured with, so nothing ships to colour them at runtime. Beside the
+ * code. src/highlight.ts colours the fragments at build in the theme's own tokens, so nothing
+ * ships to colour them at runtime and the theme picker restyles them. Beside the
  * steps, the geometry of the last frame: the viewport with the icon's box in its corner, and the icon grown to the end frame, drawn to the theme on
  * screen's own factor and cut at the drawing's edge.
  */
@@ -12,7 +12,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { Icon } from 'astro-icon/components';
-import { Code } from 'astro:components';
+import { highlightBlock, highlightInline, ticks } from '@/highlight';
 
 import { THEME_IDS, THEMES } from '@/themes';
 
@@ -23,7 +23,7 @@ type Fragment = { code: string[]; from: 'picker' | 'utils'; check?: string };
 
 const steps: { name: string; fragment: Fragment }[] = [
   {
-    name: 'Start the transition with `startViewTransition`, the switch as its callback',
+    name: 'Start the transition with `{fn}startViewTransition`, the switch as its callback',
     /* The callback is stood in for: the check covers the call. */
     fragment: {
       code: ['const viewTransition = document.startViewTransition(() => { /**/ });'],
@@ -43,7 +43,7 @@ const steps: { name: string; fragment: Fragment }[] = [
     },
   },
   {
-    name: 'For the first frame, map the path from its `viewBox` onto the icon\'s box',
+    name: 'For the first frame, map the path from its `{attr}viewBox` onto the icon\'s box',
     fragment: {
       code: [
         '  const startPathData = transformPath(pathData, viewBox,',
@@ -67,7 +67,7 @@ const steps: { name: string; fragment: Fragment }[] = [
     },
   },
   {
-    name: 'Clip the new page to the first frame with `clip-path: path()` and grow it to the last',
+    name: 'Clip the new page to the first frame with `{prop}clip-path: path()` and grow it to the last',
     fragment: {
       code: [
         '  document.documentElement.animate(',
@@ -88,7 +88,7 @@ const inside: { fragment: Fragment; note: string }[] = [
       code: ['const mapWidthAbsolute = (x: number) => ((x - fromViewBox.x) / fromViewBox.width) * toViewBox.width + toViewBox.x;'],
       from: 'utils',
     },
-    note: 'Scales `x` from the `viewBox` width to the box\'s width and adds the box\'s left. `y` likewise.',
+    note: 'Scales `x` from the `{attr}viewBox` width to the box\'s width and adds the box\'s left. `y` likewise.',
   },
   {
     fragment: { code: ['return [mapWidthAbsolute(width), mapHeightAbsolute(height)];'], from: 'utils' },
@@ -96,13 +96,10 @@ const inside: { fragment: Fragment; note: string }[] = [
   },
   {
     fragment: { code: ['values: (transformers[type] ?? thrower(type))(values),'], from: 'utils' },
-    note: 'Keeps each command\'s letter and maps its values into viewport pixels, the unit `clip-path: path()` takes.',
+    note: 'Keeps each command\'s letter and maps its values into viewport pixels, the unit `{prop}clip-path: path()` takes.',
   },
 ];
 
-/* Prose with code words in backticks, set as inline code. */
-const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const ticks = (text: string) => escape(text).replace(/`([^`]+)`/g, '<code>$1</code>');
 
 /* The fragments must be their source's own lines: compare with whitespace dropped and a
    comma before a bracket or at the end taken off, line by line, and fail the build on the
@@ -146,13 +143,13 @@ const frames = THEME_IDS.map((id) => {
     {steps.map(({ name, fragment }, index) => (
       <li>
         <span class="step-name"><span class="balloon">{index + 1}</span><span set:html={ticks(name)} /></span>
-        <Code code={fragment.code.join('\n')} lang="ts" theme="github-dark" wrap={null} />
+        <Fragment set:html={highlightBlock(fragment.code.join('\n'), 'ts')} />
         {index === 3 && (
           <div class="inside">
-            <span class="inside-name">Inside <code>transformPath</code>, for both frames</span>
+            <span class="inside-name">Inside <Fragment set:html={highlightInline('transformPath', 'ts', ['', '()'])} />, for both frames</span>
             {inside.map((row) => (
               <div class="row">
-                <Code code={row.fragment.code.join('\n')} lang="ts" theme="github-dark" wrap={null} />
+                <Fragment set:html={highlightBlock(row.fragment.code.join('\n'), 'ts')} />
                 <span class="note" set:html={ticks(row.note)} />
               </div>
             ))}
@@ -186,10 +183,10 @@ const frames = THEME_IDS.map((id) => {
       </span>
 
       {frames.map(({ id, factor }) => (
-        <span class="label" data-shown={id} style={`${pct(cx / 2, dimY - 1.5)}; --dx: -50%; --dy: -100%`}><code>size = diagonal × {factor}</code></span>
+        <span class="label" data-shown={id} style={`${pct(cx / 2, dimY - 1.5)}; --dx: -50%; --dy: -100%`}><Fragment set:html={highlightInline(`size = diagonal × ${factor}`, 'ts')} /></span>
       ))}
-      <span class="label" style={`${pct(cx + icon.size / 2 + 2, cy)}; --dx: 0; --dy: -50%`}><code>rect</code>, <code>cx</code>, <code>cy</code></span>
-      <span class="label" style={`${pct(viewport.x + viewport.width / 2 + 3, viewport.y + viewport.height / 2 + 3)}; --dx: 0; --dy: 0`}><code>diagonal</code></span>
+      <span class="label" style={`${pct(cx + icon.size / 2 + 2, cy)}; --dx: 0; --dy: -50%`}><Fragment set:html={ticks('`rect`, `cx`, `cy`')} /></span>
+      <span class="label" style={`${pct(viewport.x + viewport.width / 2 + 3, viewport.y + viewport.height / 2 + 3)}; --dx: 0; --dy: 0`}><Fragment set:html={ticks('`diagonal`')} /></span>
       <span class="label" style={`${pct(viewport.x, bottom + 1)}; --dx: 0; --dy: 0`}>viewport</span>
     </div>
   </div>
@@ -256,7 +253,7 @@ const frames = THEME_IDS.map((id) => {
     text-wrap: pretty;
   }
 
-  pre {
+  :global(pre) {
     margin: 0;
     padding: 0.125em 0.375em;
     font-family: monospace, system-ui;
@@ -293,7 +290,7 @@ const frames = THEME_IDS.map((id) => {
     gap: 0.125em;
   }
 
-  pre {
+  :global(pre) {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }

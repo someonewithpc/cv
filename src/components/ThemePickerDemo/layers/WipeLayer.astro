@@ -8,6 +8,7 @@
  */
 import { Icon } from 'astro-icon/components';
 
+import { ticks } from '@/highlight';
 import { THEME_IDS, THEMES } from '@/themes';
 
 import { shownCss } from '../shown';
@@ -56,7 +57,7 @@ const frames = [0.12, 0.4, 1];
   <dl class="rules">
     <div>
       <dt><span class="balloon">1</span>First frame</dt>
-      <dd>The checked icon's <code>&lt;path&gt;</code>, mapped from its <code>viewBox</code> onto its box in the corner.</dd>
+      <dd set:html={ticks("The checked icon's `<path>`, mapped from its `{attr}viewBox` onto its box in the corner.")} />
     </div>
     <div>
       <dt><span class="balloon">2</span>Last frame</dt>
@@ -64,7 +65,7 @@ const frames = [0.12, 0.4, 1];
     </div>
     <div>
       <dt><span class="balloon">3</span>Between</dt>
-      <dd><code>clip-path</code> from the one to the other, 500 ms <code>ease-in</code>, over a picture of the old page. Off under reduced motion.</dd>
+      <dd set:html={ticks('`{prop}clip-path` from the one to the other, 500 ms `{css}ease-in`, over a picture of the old page. Off under reduced motion.')} />
     </div>
   </dl>
 </div>

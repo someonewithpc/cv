@@ -5,6 +5,8 @@
  * theme on screen and a switch repaints it with the rest of the page. The layers are
  * labelled in the margin, the way the ramps are, so the drawing needs no callouts.
  */
+import { ticks } from '@/highlight';
+
 const seeds = ['canvas', 'ink', 'accent', 'blueprint'];
 const steps = Array.from({ length: 12 }, (_, i) => i + 1);
 const ramps = ['neutral', 'accent', 'blueprint'];
@@ -59,11 +61,11 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
   <dl class="rules">
     <div>
       <dt>Seeds</dt>
-      <dd>Four <code>oklch</code> colours on <code>:root</code> per theme. A dark theme's ink is light, so its ramps run the other way by themselves.</dd>
+      <dd set:html={ticks("Four `{fn}oklch` colours on `{css}:root` per theme. A dark theme's ink is light, so its ramps run the other way by themselves.")} />
     </div>
     <div>
       <dt>Ramps</dt>
-      <dd>A Sass loop mixes <code>canvas</code> into <code>ink</code> in eleven steps for <code>neutral</code>. <code>accent</code> and <code>blueprint</code> tint to 8, take the seed at 9 and shade to 12.</dd>
+      <dd set:html={ticks('A Sass loop mixes `canvas` into `ink` in eleven steps for `neutral`. `accent` and `blueprint` tint to 8, take the seed at 9 and shade to 12.')} />
     </div>
     <div>
       <dt>Names</dt>

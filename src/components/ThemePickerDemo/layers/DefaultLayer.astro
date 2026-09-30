@@ -5,11 +5,13 @@
  * that paint the page (shown.ts), so a pick in the corner moves the light. Each card
  * carries its own note, so the drawing needs no callouts.
  */
+import { highlightInline, ticks } from '@/highlight';
+
 import { shownCss } from '../shown';
 
 const rules = [
   { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }', note: 'the OS only knows light and dark' },
-  { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]', note: 'written by the pick, kept as <code>cv-theme</code>' },
+  { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]', note: 'written by the pick, kept as `{str}cv-theme`' },
   { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)', note: 'works without script' },
 ];
 
@@ -30,8 +32,8 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
             <span class="lamp" data-lamp aria-hidden="true"></span>
             <span class="rule-name">{name}</span>
             <span class="on">painting</span>
-            <code class="selector">{selector}</code>
-            <span class="note" set:html={note} />
+            <Fragment set:html={highlightInline(selector, 'css', ['', ''], 'selector')} />
+            <span class="note" set:html={ticks(note)} />
           </li>
         ))}
       </ol>
@@ -40,7 +42,7 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
         <ol class="reload" data-reload aria-label="A reload with a pick kept">
           {reload.map((stop) => <li><code>{stop}</code></li>)}
         </ol>
-        <span class="caption">On a reload, eight lines in the <code>&lt;head&gt;</code> stamp the kept pick before the first paint</span>
+        <span class="caption" set:html={ticks('On a reload, eight lines in the `<head>` stamp the kept pick before the first paint')} />
       </div>
     </div>
   </div>
@@ -52,11 +54,11 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
     </div>
     <div>
       <dt>A pick</dt>
-      <dd>Writes the stamp, checks the radio, keeps <code>cv-theme</code>. <code>color-scheme: only</code> on <code>&lt;body&gt;</code> takes scrollbars and controls along.</dd>
+      <dd set:html={ticks("Writes the stamp, checks the radio, keeps `{str}cv-theme`. `{prop}color-scheme: only` on `<body>` takes scrollbars and controls along.")} />
     </div>
     <div>
       <dt>Radios by id</dt>
-      <dd>An attribute inside <code>:has()</code> put every input on the page in <code>:root</code>'s invalidation set; an id names one.</dd>
+      <dd set:html={ticks("An attribute inside `{css}:has()` put every input on the page in `{css}:root`'s invalidation set; an id names one.")} />
     </div>
   </dl>
 </div>
@@ -132,7 +134,8 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
     letter-spacing: 0.06em;
   }
 
-  .selector {
+  :global(.selector) {
+    justify-self: start;
     grid-area: selector;
     font-family: monospace, system-ui;
     font-size: max(0.5rem, 0.875em);
