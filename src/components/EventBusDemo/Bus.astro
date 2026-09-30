@@ -199,7 +199,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
     </div>
     )}
 
-    <figure class="res" aria-live={live ? 'polite' : undefined}>
+    <figure class="res" data-live-in-control={live ? '' : undefined}>
       <figcaption><span data-stage="view">$res</span><span data-stage="resize">$event_map</span></figcaption>
       <span class="event-map">
         {resizers.map((resizer, index) => (
