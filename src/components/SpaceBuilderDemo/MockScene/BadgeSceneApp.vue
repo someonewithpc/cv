@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
 
 import {
@@ -41,7 +41,6 @@ let pinch: PinchState | null = null;
 
 let inView = false;
 let noteOpen = false;
-let reducedMotion = false;
 let orbitRaf = 0;
 let lastFrameTime: number | null = null;
 
@@ -89,7 +88,7 @@ function applyOrbitState() {
   if (playing.value && inView && !noteOpen && documentGate().running) startOrbitLoop();
   else stopOrbitLoop();
   // Drives the sheet's status chip (TechnicalDrawing/Page.astro).
-  reportAutoplayState(rootRef.value, reducedMotion ? 'off' : playing.value ? 'playing' : 'user');
+  reportAutoplayState(rootRef.value, playing.value ? 'playing' : reducedMotion(rootRef.value) ? 'paused' : 'user');
 }
 
 function togglePlay() {
@@ -194,9 +193,16 @@ function formatMeters(v: number) {
   return `${v.toFixed(2)}m`;
 }
 
+const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function onReduceChange() {
+  if (reducedMotion(rootRef.value)) pauseForManualControl();
+  else applyOrbitState();
+}
+
 onMounted(async () => {
-  reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  playing.value = !reducedMotion;
+  playing.value = !reducedMotion(rootRef.value);
+  reduceQuery.addEventListener('change', onReduceChange);
 
   const root = rootRef.value;
   const canvas = root?.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
@@ -267,7 +273,8 @@ onMounted(async () => {
     stopClockWatch = documentGate().onChange(() => applyOrbitState());
 
     onAutoplayCommand(root, (command) => {
-      if (command === 'pause') pauseForManualControl();
+      // Reset under reduced motion leaves the orbit still, as the deck says.
+      if (command === 'pause' || reducedMotion(root)) pauseForManualControl();
       else if (!playing.value) togglePlay();
     });
     root.addEventListener('pointerdown', onPointerDown);
@@ -283,6 +290,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  reduceQuery.removeEventListener('change', onReduceChange);
   stopClockWatch?.();
   stopClockWatch = null;
   stopPageWatch?.();

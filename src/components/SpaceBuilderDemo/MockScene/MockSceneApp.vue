@@ -2,7 +2,12 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchEffect } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import {
+  isTransportControl,
+  onAutoplayCommand,
+  reducedMotion as reducedMotionAt,
+  reportAutoplayState,
+} from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import {
@@ -91,13 +96,15 @@ const canBuildSelected = computed(() => Boolean(selectedCatalogItem.value?.layou
 const loadError = ref(false);
 const inView = ref(false);
 const userControl = ref(false);
+// Read again whenever the deck may have set or cleared the sheet's data-full-motion.
 const reducedMotion = ref(false);
+const syncReducedMotion = () => { reducedMotion.value = reducedMotionAt(rootRef.value); };
 
 // Drives the sheet's status chip (TechnicalDrawing/Page.astro).
 watchEffect(() => {
   reportAutoplayState(
     rootRef.value,
-    reducedMotion.value ? 'off' : userControl.value ? 'user' : 'playing',
+    reducedMotion.value ? 'paused' : userControl.value ? 'user' : 'playing',
   );
 });
 
@@ -592,6 +599,17 @@ function onKeyDown(event: KeyboardEvent) {
   }
 }
 
+const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Reduced motion switched on mid-walkthrough parks the cursor where it stands.
+function onReduceChange() {
+  syncReducedMotion();
+  if (!reducedMotion.value || cursorPhase.value !== 'demo') return;
+  controllerRef.value?.pause();
+  parkedMidWalk = true;
+  cursorPhase.value = 'gone';
+}
+
 function startAutoplay(controller: AutoPlayController) {
   if (reducedMotion.value || userControl.value || !chairsReady.value) return;
   if (cursorPhase.value === 'demo' || parkedMidWalk) {
@@ -610,13 +628,16 @@ async function restartDemo() {
   parkedMidWalk = false;
   if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
   if (handoffTimer) { clearTimeout(handoffTimer); handoffTimer = null; }
-  // The deck reads "auto play off" under reduced motion, so Restart puts the scene back
+  // The deck reads "motion paused" under reduced motion, so Restart puts the scene back
   // and leaves it there: no fake cursor, and no "Demo paused" on the next hover.
   const walkthrough = !reducedMotion.value;
   if (walkthrough) {
     heldByUser = false;
     userControl.value = false;
     cursorPhase.value = 'demo';
+  } else {
+    controllerRef.value?.pause();
+    cursorPhase.value = 'gone';
   }
   sceneRef.value?.reset();
   panel.value = 'closed';
@@ -628,7 +649,8 @@ async function restartDemo() {
 }
 
 onMounted(async () => {
-  reducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  syncReducedMotion();
+  reduceQuery.addEventListener('change', onReduceChange);
 
   const root = rootRef.value;
   const canvas = root?.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
@@ -737,6 +759,7 @@ onMounted(async () => {
     });
 
     onAutoplayCommand(root, (command) => {
+      syncReducedMotion();
       if (command === 'reset') {
         restartDemo();
         return;
@@ -768,6 +791,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  reduceQuery.removeEventListener('change', onReduceChange);
   stopPageWatch?.();
   stopPageWatch = null;
   stopNoteWatch?.();
@@ -1098,7 +1122,9 @@ $scene-bg: #212121;
     transition: transform 0.25s ease;
 
     @media (prefers-reduced-motion: reduce) {
-      transition: none;
+      &:not([data-full-motion] *) {
+        transition: none;
+      }
     }
 
     &::-webkit-scrollbar {
@@ -1341,7 +1367,9 @@ $scene-bg: #212121;
 
 
       @media (prefers-reduced-motion: reduce) {
-        translate: none;
+        &:not([data-full-motion] *) {
+          translate: none;
+        }
       }
     }
   }

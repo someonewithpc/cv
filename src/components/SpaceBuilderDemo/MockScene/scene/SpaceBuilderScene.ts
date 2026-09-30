@@ -40,6 +40,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
+import { reducedMotion } from '@/client/autoplayStatus';
 import { type SettledResizeObserver, settledResizeObserver } from '@/client/settledResize';
 
 import {
@@ -1054,9 +1055,7 @@ export class SpaceBuilderScene {
       this.updateCamera();
       this.updateTagPosition();
     };
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const reduced = typeof window !== 'undefined' && reducedMotion(this.canvas);
     if (ms <= 0 || reduced) {
       apply(1);
       return Promise.resolve();

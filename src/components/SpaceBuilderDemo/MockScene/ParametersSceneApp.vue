@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
@@ -54,7 +54,6 @@ const seatsInvalid = ref(false);
 let inView = false;
 let userControl = false;
 let chairsReady = false;
-let reducedMotion = false;
 let autoplayToken = 0;
 /** Off screen, under another page or in a hidden tab, the walkthrough's waits hold it where it stands. */
 let pageGate: DemoGate | null = null;
@@ -137,8 +136,10 @@ async function runAutoplay() {
 }
 
 function startAutoplay() {
-  if (reducedMotion) {
-    reportAutoplayState(rootRef.value, 'off');
+  if (reducedMotion(rootRef.value)) {
+    autoplayToken += 1;
+    demoPlaying.value = false;
+    reportAutoplayState(rootRef.value, 'paused');
     return;
   }
   if (userControl || !chairsReady || !inView) return;
@@ -302,8 +303,14 @@ function saveArrangement() {
   }, 1800);
 }
 
+const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function onReduceChange() {
+  if (reducedMotion(rootRef.value) || !demoPlaying.value) startAutoplay();
+}
+
 onMounted(async () => {
-  reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  reduceQuery.addEventListener('change', onReduceChange);
 
   const root = rootRef.value;
   const canvas = root?.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
@@ -403,6 +410,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  reduceQuery.removeEventListener('change', onReduceChange);
   stopPageWatch?.();
   stopPageWatch = null;
   stopNoteWatch?.();

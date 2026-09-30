@@ -1,3 +1,4 @@
+import { reducedMotion } from '@/client/autoplayStatus';
 import { documentGate } from '@/client/frontPage';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
@@ -94,7 +95,7 @@ function waitFrames(count = 1) {
 }
 
 function prefersReducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return reducedMotion(document.querySelector('.space-builder-app'));
 }
 
 function typingDelay(ms: number) {
