@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { demoGate } from '@/client/frontPage';
 import { pathDataToString, transformPath } from '@/client/svg-utils';
 import { watchHandover } from '@/client/walkthroughHandover';
@@ -40,7 +40,7 @@ function adoptTemplate(stage: HTMLElement): ShadowRoot | null {
  *
  * Left alone, the walkthrough picks each theme in turn and then lets the OS decide again.
  * It runs on the page's gate, so it stands still off screen, under another page, through
- * a turn and in a hidden tab, and never under reduced motion.
+ * a turn and in a hidden tab, and under reduced motion only once the deck's play is pressed.
  */
 export function initThemePickerDemo(host: HTMLElement) {
   const stage = host.querySelector<HTMLElement>('[data-stage]');
@@ -52,7 +52,8 @@ export function initThemePickerDemo(host: HTMLElement) {
 
   const readout = stage.querySelectorAll<HTMLElement>('[data-stage-shown]');
   const osDark = matchMedia('(prefers-color-scheme: dark)');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => reducedMotion(host);
   const gate = demoGate(host);
 
   const shown = (): ThemeId => (screen.dataset.demoTheme as ThemeId | undefined) ?? (osDark.matches ? 'dark' : 'light');
@@ -103,7 +104,7 @@ export function initThemePickerDemo(host: HTMLElement) {
     if (id === shown()) return;
     /* A second pick mid-wipe skips the first, as the picker does. */
     wipe?.finish();
-    if (reducedMotion.matches || document.visibilityState !== 'visible') {
+    if (reduced() || document.visibilityState !== 'visible') {
       stamp(id);
       return;
     }
@@ -176,14 +177,14 @@ export function initThemePickerDemo(host: HTMLElement) {
       stop();
     },
     handBack() {
-      if (held || reducedMotion.matches) return false;
+      if (held || reduced()) return false;
       report('playing');
       void play();
       return true;
     },
   });
 
-  const canPlay = () => !held && !handover.userControl && !reducedMotion.matches;
+  const canPlay = () => !held && !handover.userControl && !reduced();
 
   under.querySelectorAll<HTMLButtonElement>('button[data-pick]').forEach((key) => {
     key.addEventListener('click', () => {
@@ -193,35 +194,39 @@ export function initThemePickerDemo(host: HTMLElement) {
   });
 
   onAutoplayCommand(host, (command) => {
-    if (reducedMotion.matches) return;
     if (command === 'pause') {
       held = true;
       handover.takeOver();
       return;
     }
-    const wasPlaying = !handover.userControl && playing !== 0;
+    const wasPlaying = !handover.userControl && playing !== 0 && playing === playToken;
     held = false;
     handover.release();
-    report('playing');
-    if (command === 'play' && wasPlaying) return;
     if (command === 'reset') {
       stop();
       step = 0;
       stamp(null);
     }
+    // Reset under reduced motion clears the stage and waits for play
+    if (reduced()) {
+      report('paused');
+      return;
+    }
+    report('playing');
+    if (command === 'play' && wasPlaying) return;
     if (canPlay()) void play();
   });
 
-  reducedMotion.addEventListener('change', () => {
-    if (reducedMotion.matches) {
+  motionQuery.addEventListener('change', () => {
+    if (reduced()) {
       stop();
-      report('off');
+      report('paused');
       return;
     }
     report(handover.userControl ? 'user' : 'playing');
     if (canPlay()) void play();
   });
 
-  report(reducedMotion.matches ? 'off' : 'playing');
+  report(reduced() ? 'paused' : 'playing');
   if (canPlay()) void play();
 }
