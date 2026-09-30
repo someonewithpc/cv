@@ -62,10 +62,18 @@ const TOUCH_HINT = 'tap the sheet to take over';
  * Under reduced motion a demo that is not playing is paused, whoever stopped it: the deck
  * then offers play, which runs the walkthrough at full animation.
  */
+/** A readout marked data-live-in-control is a polite live region only while the visitor
+    drives the demo: while the walkthrough plays, a screen reader would hear every step. */
+const LIVE_IN_CONTROL = '[data-live-in-control]';
+
 export function reportAutoplayState(root: Element | null | undefined, reported: AutoplayState) {
   const state = reported === 'user' && prefersReducedMotion() ? 'paused' : reported;
   if (!root || root.getAttribute(AUTOPLAY_STATE_ATTRIBUTE) === state) return;
   root.setAttribute(AUTOPLAY_STATE_ATTRIBUTE, state);
+  root.querySelectorAll(LIVE_IN_CONTROL).forEach((region) => {
+    if (state === 'playing') region.removeAttribute('aria-live');
+    else region.setAttribute('aria-live', 'polite');
+  });
   root.dispatchEvent(new CustomEvent(AUTOPLAY_STATE_EVENT, { bubbles: true, detail: { state } }));
 }
 
