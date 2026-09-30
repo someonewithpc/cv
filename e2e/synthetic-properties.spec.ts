@@ -236,6 +236,22 @@ test('main page: the tool fills the sheet and its last line scrolls clear of the
   expect(layout.clearOfBlock).toBeGreaterThanOrEqual(8);
 });
 
+test('main page: on a phone the tool scrolls, and the keyboard reaches and moves it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { tool } = await mountedTool(page);
+  // The three stages stack on a portrait sheet and run past the tool's foot.
+  expect(await tool.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  await expect(tool).toHaveAccessibleName("One table's size, split, converted and searched");
+
+  await syntheticStack(page).focus();
+  for (let i = 0; i < 5 && !(await tool.evaluate((el) => el === document.activeElement)); i += 1) {
+    await page.keyboard.press('Tab');
+  }
+  await expect(tool).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect.poll(() => tool.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+});
+
 test('unit conversions page: the carry is marked in the table', async ({ page }) => {
   await page.goto('/');
   const stack = syntheticStack(page);

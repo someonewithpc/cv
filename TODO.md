@@ -149,6 +149,7 @@
 - [x] Load each demo's stylesheet when the demo boots, not in the head (#181)
 - [x] The Marker Editor walkthrough drags read no layout per frame (#178)
 - [x] Skip style, layout and paint for the stacks off screen (#185)
+- [ ] The Synthetic Properties tool scrolls on a phone but the keyboard could not reach it (axe scrollable-region-focusable, #171 A9)
 - [ ] Detail callout bubble sits on the same side down the page while its block alternates, past 105rem
 - [x] Try `contain` on the boxes that do not depend on their surroundings (#193)
 - [x] Work out the sheets' measure in CSS instead of writing it on every resize step (#194)

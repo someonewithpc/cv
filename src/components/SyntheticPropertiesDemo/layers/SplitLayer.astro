@@ -31,10 +31,12 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
     data-autoplay-hint-playing="the sheet types by itself"
     data-autoplay-caption-user="PAUSED"
     data-autoplay-hint-user="press play to go on"
-    tabindex="-1"
+    role="group"
+    aria-labelledby="synthetic-tool-title"
+    tabindex="0"
   >
     <header class="lede">
-      <strong>One table's size, split, converted and searched</strong>
+      <strong id="synthetic-tool-title">One table's size, split, converted and searched</strong>
       <p>
         The table's size is stored as <code>{sample.size}</code>, in centimetres. When the
         row is saved, triggers split it on <code>x</code>, write each piece in centimetres,
@@ -191,7 +193,13 @@ bootIslands('[data-synthetic-demo]', boot);
   border: 1px solid var(--line-strong);
   border-radius: 0.5em;
   background: var(--surface-raised);
-  outline: none;
+
+  /* A portrait sheet stacks the stages taller than the tool, so it scrolls: the tool is a
+     Tab stop, and the arrow keys move it like any scroll box. */
+  &:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: -0.125em;
+  }
 
   :global([data-sheet-orientation='portrait']) & {
     --gutter: 0.75em;
