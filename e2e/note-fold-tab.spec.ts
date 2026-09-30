@@ -35,8 +35,7 @@ async function checkStack(page: Page, stack: Locator): Promise<void> {
   if ((await stack.locator('.note-card > *').count()) === 0) return;
 
   let pagesChecked = 0;
-  // Centred, not merely in view: the page's own desktop-hint footer is fixed to
-  // the bottom of the viewport and would answer the hit tests below.
+  // Centred, so the whole stack is in view for the hit tests below.
   await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await page.waitForTimeout(2000);
 

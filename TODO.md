@@ -167,3 +167,4 @@
 - [x] The no-script row's scrollbar covers the bottom 6px of each sheet where scrollbars take space (FF4) (#216)
 - [x] Size the Bill of materials chips from their labels before they first scroll into view (L2) (#201)
 - [x] Each demo is two regions for a screen reader, the callout and the stack inside it (A8) (#211)
+- [ ] Remove the desktop hint footer, the phone layout no longer needs it (O1)
