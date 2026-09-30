@@ -168,6 +168,7 @@ const sheetAnchor = `--${noteId}-sheet`;
 </section>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 @use 'sass:math';
 
 @use "@/scss/_colors.scss" as colors;
@@ -371,10 +372,13 @@ section {
     }
   }
 
+  /* Each key's hit box reaches half the gap past its sides and no further, so on a
+     narrow sheet, where 0.25em is under 3px, the gap grows to keep the phone keys 24px
+     apart. */
   .demo-keys {
     display: flex;
     align-items: center;
-    gap: 0.25em;
+    gap: max(0.25em, 0.25rem);
   }
 
   /* Each key is line art in the sheet's ink: a cap with a side bevel, and when it
@@ -401,6 +405,7 @@ section {
     color: inherit;
     cursor: pointer;
     pointer-events: auto;
+    @include hit-area($inline: -0.125rem);
 
     svg {
       display: block;
