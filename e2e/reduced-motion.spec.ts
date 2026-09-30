@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { demoStack, dogEarShown, frontPage, frontPageIndex } from './support/paperStack';
 
@@ -154,3 +154,62 @@ test.describe('with full motion', () => {
     await expect(sheet.locator('[data-demo-transport]')).toBeHidden();
   });
 });
+
+// Reduced motion shows each sheet as it rests once its motion is done, never half-drawn: a
+// note, a title block or a dog-ear that full motion shows has to show here too. Only the
+// sheet around the artwork is compared, since a walkthrough changes its own artwork as it
+// plays. The page is walked stack by stack first, so every sheet has booted.
+async function restingLook(page: Page) {
+  const stacks = page.locator('article.technical-drawing-stack');
+  for (let i = 0; i < await stacks.count(); i++) {
+    await stacks.nth(i).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+  }
+  await page.waitForTimeout(3000);
+  return page.evaluate(() => {
+    const shown = (el: Element) => {
+      const box = el.getBoundingClientRect();
+      let opacity = 1;
+      for (let node: Element | null = el; node; node = node.parentElement) opacity *= Number(getComputedStyle(node).opacity);
+      return el.checkVisibility({ visibilityProperty: true }) && box.width > 0 && box.height > 0 && opacity > 0.99;
+    };
+    const path = (el: Element) => {
+      const steps = [];
+      for (let node: Element | null = el; node && node !== document.body; node = node.parentElement) {
+        steps.unshift(`${node.tagName}:${[...(node.parentElement?.children ?? [])].indexOf(node)}`);
+      }
+      return steps.join('>');
+    };
+    const sheet = [...document.querySelectorAll('article.technical-drawing-stack *')]
+      .filter((el) => !el.closest('.content, script, style, template') && shown(el))
+      .map(path);
+    const notes = [...document.querySelectorAll('aside.marker-font')]
+      .map((note) => `${shown(note) ? 'shown' : 'hidden'}: ${note.textContent?.trim().slice(0, 40)}`);
+    return { sheet, notes };
+  });
+}
+
+for (const { width, javaScriptEnabled } of [
+  { width: 1440, javaScriptEnabled: true },
+  { width: 390, javaScriptEnabled: true },
+  { width: 1440, javaScriptEnabled: false },
+]) {
+  test.describe(`at ${width}px, script ${javaScriptEnabled ? 'on' : 'off'}`, () => {
+    test.use({ viewport: { width, height: 900 }, javaScriptEnabled });
+
+    test('every note and every part of the sheet full motion shows is shown at rest', async ({ page, browser, baseURL }) => {
+      test.setTimeout(120_000);
+      const full = await browser.newContext({ baseURL, viewport: { width, height: 900 }, javaScriptEnabled, reducedMotion: 'no-preference' });
+      const fullPage = await full.newPage();
+      await Promise.all([page.goto('/'), fullPage.goto('/')]);
+      const [reduced, moving] = await Promise.all([restingLook(page), restingLook(fullPage)]);
+      await full.close();
+
+      expect(reduced.notes.length).toBeGreaterThan(0);
+      expect(reduced.notes).toEqual(moving.notes);
+      // Beside the artwork, every note is out on its sheet; narrower, it waits under the dog-ear.
+      if (width === 1440 && javaScriptEnabled) expect(reduced.notes.filter((note) => note.startsWith('hidden'))).toEqual([]);
+      expect(moving.sheet.filter((part) => !reduced.sheet.includes(part))).toEqual([]);
+    });
+  });
+}
