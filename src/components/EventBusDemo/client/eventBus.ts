@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { demoGate, type DemoGate } from '@/client/frontPage';
@@ -18,7 +18,6 @@ import {
   type Stage,
 } from '../events';
 
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 /** How long the token takes between two stops on the rail, and how long a listener holds it. */
 const HOP_MS = 420;
@@ -91,7 +90,7 @@ async function hop(bus: Bus, to: Point, ms: number) {
   const from = bus.token.style.translate || `${to.x}px ${to.y}px`;
   const target = `${to.x}px ${to.y}px`;
   bus.token.style.translate = target;
-  if (reducedMotion.matches) return;
+  if (reducedMotion(bus.root)) return;
   const animation = bus.token.animate([{ translate: from }, { translate: target }], {
     duration: ms,
     easing: 'cubic-bezier(0.45, 0, 0.25, 1)',
@@ -121,7 +120,7 @@ function placeListeners(bus: Bus, change?: () => void) {
     !listeners.some(({ module }, index) => !bus.enabled.has(module) && hears(bus, index)),
   );
 
-  if (reducedMotion.matches) return;
+  if (reducedMotion(bus.root)) return;
   bus.items.forEach((item, module) => {
     const was = before.get(module);
     const now = item.getBoundingClientRect();
@@ -203,7 +202,7 @@ function runDispatch(bus: Bus): Promise<void> {
     showOutcome(bus, outcome);
   };
 
-  if (reducedMotion.matches) {
+  if (reducedMotion(bus.root)) {
     settle();
     bus.running = Promise.resolve();
     return bus.running;
@@ -428,11 +427,11 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     }, 320);
   }
 
-  const canPlay = () => active && !noteOpen && !userControl && !pointerOver && !reducedMotion.matches;
+  const canPlay = () => active && !noteOpen && !userControl && !pointerOver && !reducedMotion(bus.root);
 
   function start() {
-    if (reducedMotion.matches) {
-      reportAutoplayState(bus.root, 'off');
+    if (reducedMotion(bus.root)) {
+      reportAutoplayState(bus.root, 'paused');
       return;
     }
     if (!canPlay()) return;
@@ -445,9 +444,13 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   }
 
   function yieldToUser(keepControl = false) {
-    // Nothing plays under reduced motion, so there is nothing to take over.
-    if (reducedMotion.matches) return;
     clearResume();
+    // Nothing plays by itself under reduced motion: stop a run the play key started and stay paused.
+    if (reducedMotion(bus.root)) {
+      if (playing) stop();
+      reportAutoplayState(bus.root, 'paused');
+      return;
+    }
     if (!userControl) stop();
     userControl = true;
     reportAutoplayState(bus.root, 'user');
@@ -504,9 +507,19 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     stop();
     held = false;
     userControl = false;
+    if (command === 'reset' && reducedMotion(bus.root)) {
+      restore(bus);
+      void runDispatch(bus);
+      reportAutoplayState(bus.root, 'paused');
+      return;
+    }
     // Play is an ask for the walkthrough, so the pointer that pressed it is not in its way.
     pointerOver = false;
     start();
+  });
+
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+    if (playing && reducedMotion(bus.root)) yieldToUser(true);
   });
 
   return {
@@ -583,8 +596,8 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
   const page = host.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? host;
   bus.gate.onChange((active) => player.setActive(active));
   watchDrawingNote(page, (open) => player.setNoteOpen(open));
-  if (reducedMotion.matches) {
-    reportAutoplayState(root, 'off');
+  if (reducedMotion(root)) {
+    reportAutoplayState(root, 'paused');
     void runDispatch(bus);
   }
 }

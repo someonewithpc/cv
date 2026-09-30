@@ -1226,11 +1226,11 @@ button.call {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chip,
-  .load .switch,
-  .load .switch::after,
-  .branch .fallback,
-  .resizer {
+  .chip:not([data-full-motion] *),
+  .load .switch:not([data-full-motion] *),
+  .load .switch:not([data-full-motion] *)::after,
+  .branch .fallback:not([data-full-motion] *),
+  .resizer:not([data-full-motion] *) {
     transition: none;
   }
 }
