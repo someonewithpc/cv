@@ -345,6 +345,12 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
 // monospace, so the letters keep their width from the first frame and the arrow's measurement
 // holds.
 //
+// The letters are struck by a transition, not an animation, so a callout hidden again before
+// its line is out takes away only what was written. A struck letter fades with the line, and one
+// still waiting for its turn stays blank. With an animation, every letter went back to full
+// opacity the moment the callout was dropped, and the whole line faded out written: a key press
+// that turned the page again just after a settle flashed the way back in full as it went.
+//
 // Each one is read left to right. The peel hint's words are to the left of its arrow, so they
 // are struck first and the arrow follows the last letter; the way back's arrow is to the left of
 // its words, so the arrow comes in first and the letters start once it is there.
@@ -356,8 +362,8 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
   }
 
   .hint-letter {
-    animation: hint-letter-struck 1ms linear both;
-    animation-delay: calc(#{$lead} + var(--i) * var(--hint-letter-beat));
+    opacity: 1;
+    transition: opacity 1ms linear calc(#{$lead} + var(--i) * var(--hint-letter-beat));
   }
 
   &.hint-arrow {
@@ -366,6 +372,11 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .hint-letter {
+    opacity: 0;
+    transition: opacity $hint-fade ease;
+  }
+
   #{$peel-shown} {
     @include types-itself(0ms, calc(var(--hint-fwd-letters, 0) * var(--hint-letter-beat)));
   }
@@ -381,11 +392,6 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][dat
   .hint-letter:nth-child(#{$n}) {
     --i: #{$n - 1};
   }
-}
-
-@keyframes hint-letter-struck {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 
