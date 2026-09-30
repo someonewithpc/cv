@@ -16,7 +16,7 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
@@ -178,8 +178,6 @@ function MockMapOverlayInner() {
   const [cursorDragging, setCursorDragging] = useState(false);
   const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
   const [toasts, setToasts] = useState<DemoToast[]>([]);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const reducedMotionRef = useRef(false);
   const userControlRef = useRef(false);
   /** The visitor took over deliberately; only Replay hands the walkthrough back. */
   const heldRef = useRef(false);
@@ -453,8 +451,9 @@ function MockMapOverlayInner() {
       inViewRef.current = visible;
       setInView(visible);
       if (visible) {
-        if (reducedMotionRef.current) {
+        if (reducedMotion(containerRef.current)) {
           setCursorPhase('gone');
+          pauseAutoplay();
           return;
         }
         if (!autoplayStartedRef.current) {
@@ -486,7 +485,7 @@ function MockMapOverlayInner() {
       if (open) {
         controller.pause();
         setCursorPhase('gone');
-      } else if (inViewRef.current && !userControlRef.current && !reducedMotionRef.current) {
+      } else if (inViewRef.current && !userControlRef.current && !reducedMotion(containerRef.current)) {
         setCursorPhase('demo');
         controller.resume();
       }
@@ -514,12 +513,8 @@ function MockMapOverlayInner() {
   // Drives the sheet's transport deck (TechnicalDrawing/Page.astro).
   useEffect(() => {
     if (!inView) return;
-    if (reducedMotion) {
-      reportAutoplayState(containerRef.current, 'off');
-      return;
-    }
     reportAutoplayState(containerRef.current, userControl ? 'user' : 'playing');
-  }, [inView, userControl, reducedMotion]);
+  }, [inView, userControl]);
 
   useEffect(() => onAutoplayCommand(containerRef.current, (command) => commandRef.current(command)), []);
 
@@ -550,14 +545,19 @@ function MockMapOverlayInner() {
       (!inViewRef.current && !pressed)
       || heldRef.current
       || nativePopupRef.current
-      || reducedMotionRef.current
+      || reducedMotion(containerRef.current)
     ) return;
     userControlRef.current = false;
     cursorPhaseRef.current = 'demo';
     setUserControl(false);
     dispatch(setAutoplayPaused(false));
     setCursorPhase('demo');
-    autoplayRef.current?.resume();
+    // Under reduced motion the walkthrough never started on its own: play is its first run
+    if (autoplayStartedRef.current) autoplayRef.current?.resume();
+    else {
+      autoplayStartedRef.current = true;
+      autoplayRef.current?.start();
+    }
     pushToastRef.current(autoplayStartedToast());
   };
 
@@ -576,7 +576,15 @@ function MockMapOverlayInner() {
     dispatch(setAutoplayPaused(false));
     cursorPhaseRef.current = 'demo';
     setCursorPhase('demo');
+    autoplayStartedRef.current = true;
     autoplayRef.current?.restart();
+    // Reset under reduced motion puts the map back and waits for play
+    if (reducedMotion(containerRef.current)) {
+      cursorPhaseRef.current = 'gone';
+      setCursorPhase('gone');
+      pauseAutoplay();
+      return;
+    }
     pushToastRef.current(autoplayStartedToast());
   };
 
@@ -595,7 +603,7 @@ function MockMapOverlayInner() {
     nativePopupRef.current = false;
     if (command === 'reset') restartDemo();
     else resumeAutoplay(true);
-    reportAutoplayState(containerRef.current, 'playing');
+    reportAutoplayState(containerRef.current, userControlRef.current ? 'user' : 'playing');
   };
 
   // Never hide or teleport the real pointer — on trusted user movement, pause and
@@ -634,7 +642,7 @@ function MockMapOverlayInner() {
   };
 
   // The Space Builder scenes have always parked themselves under reduced motion; the map
-  // walkthrough never checked, so the sheet's deck would read AUTO PLAY OFF over a demo
+  // walkthrough never checked, so the sheet's deck would read paused over a demo
   // that was still moving. The query is watched, not read once: the setting can change
   // while the page is open.
   useEffect(() => {
@@ -653,10 +661,10 @@ function MockMapOverlayInner() {
     };
 
     const apply = () => {
-      reducedMotionRef.current = query.matches;
-      setReducedMotion(query.matches);
-      if (query.matches) park();
-      else if (inViewRef.current && !userControlRef.current) resumeAutoplay();
+      if (reducedMotion(containerRef.current)) {
+        park();
+        pauseAutoplay();
+      } else if (inViewRef.current && !userControlRef.current) resumeAutoplay();
     };
 
     apply();

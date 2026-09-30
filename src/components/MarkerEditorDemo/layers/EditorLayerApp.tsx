@@ -9,6 +9,7 @@ import {
 } from '@/store';
 import { StoreProvider } from '@/store/StoreProvider';
 
+import { reducedMotion } from '@/client/autoplayStatus';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { documentGate, watchPageActive } from '@/client/frontPage';
 
@@ -96,12 +97,10 @@ function EditorLayerInner() {
   useEffect(() => {
     const host = hostRef.current;
     if (!ready || !pageActive || !host) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
     let held = false;
 
     const id = window.setInterval(() => {
-      if (held || !documentGate().running) return;
+      if (held || reducedMotion(host) || !documentGate().running) return;
       const target = AUTOPLAY_TARGETS[stepRef.current % AUTOPLAY_TARGETS.length];
       stepRef.current += 1;
       host.querySelector<HTMLElement>(`[data-demo-target="${target}"]`)?.click();
