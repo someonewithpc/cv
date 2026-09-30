@@ -1,6 +1,8 @@
 // What the theme picker sheets share: the margin every layer keeps around its content, the
 // sheet's type, the lettered notes box and a swatch.
 
+@use "@/scss/_code.scss" as code;
+
 // Clear sheet between the content and the frame line, in em of the sheet's own type so it
 // scales with the page. It goes on a layer's root and nowhere else.
 $sheet-margin: 0.75em;
@@ -116,13 +118,13 @@ $sheet-margin: 0.75em;
   vertical-align: middle;
 }
 
-// A code word in running text, set like a backtick span: the mono face a notch down on a
-// faint ground of the sheet's own ink, inside a hairline.
+// A code word in running text, set like a backtick span: the mono face a notch down on the
+// code ground (see scss/_code.scss), inside a hairline.
 @mixin inline-code {
+  @include code.code-ground;
   padding: 0 0.25em;
   border: 1px solid var(--line);
   border-radius: 0.125em;
-  background: var(--code-ground, color-mix(in oklch, var(--ink) 7%, transparent));
   font-family: monospace, system-ui;
   font-size: 0.875em;
   line-height: 1;
