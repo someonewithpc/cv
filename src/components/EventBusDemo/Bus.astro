@@ -1135,6 +1135,96 @@ button.call {
   }
 }
 
+/* A landscape sheet too narrow for the wide one's type is half as tall as it is wide, so the
+   column of stages cannot spend a row on anything the room beside the emitter can hold: the
+   tray and $res go there, and the rows under the rail are the template and its note alone.
+   Those end where the title block begins, so the block keeps its corner whatever its fit.
+   The script names the band on the stack; without it, the window widths that band covers,
+   and the widest block the ladder gives a narrow landscape sheet. */
+@mixin narrow-landscape {
+  :global(article.technical-drawing-stack[data-sheet-orientation='landscape'][data-sheet-width='narrow'] .event-bus-demo) & {
+    @content;
+  }
+
+  @media (scripting: none) and (680px < width < 936px) {
+    :global(.event-bus-demo) & {
+      --title-block-inline: 17.375rem;
+
+      @content;
+    }
+  }
+}
+
+.event-bus {
+  @include narrow-landscape {
+    --beside-title-block: calc(100% - var(--title-block-inline, 0px));
+
+    grid-template-columns: minmax(0, 1fr) fit-content(18em);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'emitter unloaded'
+      'emitter res'
+      'rail rail'
+      'branch branch'
+      'note note';
+
+    /* A module switched off leaves the rail for the tray, so the rail needs less of the width
+       and the tray, now holding chips, takes the room beside it. */
+    &:has(> .unloaded[data-empty='false']) {
+      grid-template-columns: fit-content(34em) minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-template-areas:
+        'emitter unloaded'
+        'rail unloaded'
+        'rail res'
+        'branch branch'
+        'note note';
+    }
+
+    > .emitter {
+      grid-area: emitter;
+    }
+
+    > .unloaded {
+      grid-area: unloaded;
+      align-content: start;
+    }
+
+    > .rail-frame {
+      grid-area: rail;
+    }
+
+    > .emitter-branch {
+      display: contents;
+    }
+
+    .res {
+      align-self: start;
+    }
+
+    .branch,
+    .branch-note,
+    .resize {
+      justify-self: start;
+      max-inline-size: var(--beside-title-block);
+    }
+
+    .branch-note {
+      margin-block-start: -0.5em;
+    }
+
+    /* As on a narrow sheet, the merge line under it already says what the label did. */
+    .resize-label {
+      display: none;
+    }
+
+    .resize {
+      grid-column: 1 / -1;
+      grid-row: branch-start / note-end;
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chip,
   .load .switch,

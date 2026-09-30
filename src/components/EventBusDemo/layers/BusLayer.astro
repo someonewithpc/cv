@@ -31,6 +31,16 @@ bootIslands('[data-event-bus-demo]', boot);
   @include sheet-content;
   @include clear-title-block;
 
+  /* On a narrow landscape sheet the bus keeps the title block's corner itself (Bus.astro),
+     so the row beside the block is not given up across the whole width. */
+  :global(article.technical-drawing-stack[data-sheet-orientation='landscape'][data-sheet-width='narrow']) & {
+    padding-bottom: $sheet-margin;
+  }
+
+  @media (scripting: none) and (680px < width < 936px) {
+    padding-bottom: $sheet-margin;
+  }
+
   /* The walkthrough's drawn cursor is placed inside this box. */
   position: relative;
   display: grid;

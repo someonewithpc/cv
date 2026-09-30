@@ -326,3 +326,55 @@ for (const width of [390, 1024, 1440]) {
     }
   });
 }
+
+/** How far the demo's boxes reach past the sheet's frame line, and how much of the title block
+    the smallest of them cover, in px. */
+async function sheetOverflow(front: Locator) {
+  return front.locator('section').evaluate((sheet) => {
+    const s = sheet.getBoundingClientRect();
+    const inset = parseFloat(getComputedStyle(sheet).paddingTop) + 2;
+    const block = sheet.querySelector(':scope > table')!.getBoundingClientRect();
+    let past = -Infinity;
+    let under = 0;
+    for (const el of sheet.querySelectorAll('.event-bus-demo *')) {
+      if (!el.checkVisibility() || el.closest('.event-bus-cursor')) continue;
+      const b = el.getBoundingClientRect();
+      if (b.width < 1 || b.height < 1) continue;
+      past = Math.max(past, b.bottom - (s.bottom - inset), b.right - (s.right - inset), s.left + inset - b.left, s.top + inset - b.top);
+      if ([...el.children].some((child) => child.getBoundingClientRect().width > 0)) continue;
+      const across = Math.min(b.right, block.right) - Math.max(b.left, block.left);
+      const down = Math.min(b.bottom, block.bottom) - Math.max(b.top, block.top);
+      if (across > 0.5 && down > 0.5) under = Math.max(under, across * down);
+    }
+    return { past, under };
+  });
+}
+
+for (const width of [688, 720, 768]) {
+  test(`main page: a narrow landscape sheet holds every stage inside its frame at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const { front, bus } = await mountedBus(page);
+    const answered = { timeout: 15_000 };
+
+    const check = async (state: string) => {
+      await expect(bus).not.toHaveAttribute('data-result', 'pending', answered);
+      const { past, under } = await sheetOverflow(front);
+      expect(past, `${state}: past the frame line`).toBeLessThanOrEqual(0);
+      expect(under, `${state}: under the title block`).toBe(0);
+    };
+
+    await check('the JPEG');
+    await bus.locator('.attachment[data-attachment="gif"]').click();
+    await check('the GIF');
+    await bus.locator('.stage[data-stage="resize"]').click();
+    await expect(bus).toHaveAttribute('data-rendered', 'event-map', answered);
+    await check('the thumbnail');
+    await bus.locator('.attachment[data-attachment="jpeg"]').click();
+    for (const module of ['AudioEncoder', 'ImageEncoder']) {
+      await bus.locator(`.chain .listener[data-module="${module}"] .load`).click();
+      await check(`${module} off`);
+    }
+  });
+}

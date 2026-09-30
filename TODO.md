@@ -171,3 +171,6 @@
 - [x] Remove the desktop hint footer, the phone layout no longer needs it (#208)
 - [x] Variants style strip in Firefox without script shows the next finish at its edge and snaps (FF3) (#213)
 - [x] Give the Open Source and Career sections media queries for their breakpoints, since both are the page column wide (#204)
+- [ ] Event Dispatch branch note runs past the sheet at 688 and 696 px (L1)
+- [ ] Event Dispatch bus runs under the title block from 688 to about 808 px (L4)
+- [ ] Event Dispatch resize stage list ends past the sheet at 688 px (L5)
