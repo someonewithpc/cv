@@ -4,10 +4,17 @@ import { getCurrentFonts } from './getCurrentFonts';
 import { proxyPrefix } from './proxiedFetch';
 import { transformFontFaceSrcToProxiedAbsoluteURL } from './transformFontFaceSrcToProxiedAbsoluteURL';
 
+// Google's font files allow cross-origin reads, so they skip the proxy even though this
+// page no longer preconnects to them.
+const DIRECT_HOSTS = ['fonts.gstatic.com'];
+
 let preconnects: string[] | undefined;
 function preconnectedHosts() {
-  preconnects ??= Array.from(document.querySelectorAll('link[rel="preconnect"]') as NodeListOf<HTMLLinkElement>)
-    .map(({ href }) => new URL(href).hostname);
+  preconnects ??= [
+    ...DIRECT_HOSTS,
+    ...Array.from(document.querySelectorAll('link[rel="preconnect"]') as NodeListOf<HTMLLinkElement>)
+      .map(({ href }) => new URL(href).hostname),
+  ];
   return preconnects;
 }
 
