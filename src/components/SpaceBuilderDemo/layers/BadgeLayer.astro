@@ -20,6 +20,16 @@ bootIslands('[data-badge-scene-island]', boot);
 </script>
 
 <style lang="scss">
+// The sheet's one grid row is as tall as its tallest cell, and the note and formula card beside
+// the scene run taller than the frame, so the row grew past the frame and the scene, stretched
+// to it, went out over the deck. The row is the frame's height instead. Portrait sets its own
+// rows.
+@container technical-drawing not (orientation: portrait) {
+  :global(article.technical-drawing-stack > * > section:has(.badge-scene-demo)) {
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
 :global(article.technical-drawing-stack > * > section .content:has(.badge-scene-demo)) {
   place-self: stretch;
   align-self: stretch;

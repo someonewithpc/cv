@@ -210,3 +210,38 @@ test('badge page: the readout shows the home angle and follows a drag', async ({
   await page.mouse.up();
   await expect(readout).toHaveText(['16°', '3.42m', '4.37m']);
 });
+
+// The sheet's grid row once grew to the note column's height, and the scene went out over the
+// deck with it; the r row of the tag-offset card ran past the card's right edge. 1040 is the
+// narrowest window whose sheet still shows the card beside the scene.
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1040, height: 768 }]) {
+  test.describe(`badge page at ${viewport.width}px`, () => {
+    test.use({ viewport });
+
+    test('the scene stays inside the frame line and the formula inside its card', async ({ page }) => {
+      const stack = spaceBuilderStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await turnToPage(stack, 'Capacity Badge');
+      const front = frontPage(stack, await frontPageIndex(stack));
+      await waitForSceneReady(front);
+
+      const { scene, frame, rows } = await front.locator('section').evaluate((section) => {
+        const box = section.getBoundingClientRect();
+        const inset = parseFloat(getComputedStyle(section).paddingTop) + 1;
+        const card = section.querySelector<HTMLElement>('.badge-formula')!;
+        const cardRight = card.getBoundingClientRect().right - parseFloat(getComputedStyle(card).paddingRight);
+        return {
+          scene: section.querySelector('.badge-scene-demo')!.getBoundingClientRect().toJSON(),
+          frame: { left: box.left + inset, top: box.top + inset, right: box.right - inset, bottom: box.bottom - inset },
+          rows: [...card.querySelectorAll('mtr')].map((row) =>
+            Math.max(...[...row.querySelectorAll('mi, mo, mn, mtext')].map((token) => token.getBoundingClientRect().right)) - cardRight),
+        };
+      });
+      expect(scene.left).toBeGreaterThanOrEqual(frame.left);
+      expect(scene.top).toBeGreaterThanOrEqual(frame.top);
+      expect(scene.right).toBeLessThanOrEqual(frame.right);
+      expect(scene.bottom).toBeLessThanOrEqual(frame.bottom);
+      for (const past of rows) expect(past).toBeLessThanOrEqual(0.5);
+    });
+  });
+}
