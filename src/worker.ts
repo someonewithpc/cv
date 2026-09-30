@@ -1,16 +1,21 @@
 import { handle } from '@astrojs/cloudflare/handler';
 import { DurableObject } from 'cloudflare:workers';
 
-import { withBudget } from './server/fontProxyBudget';
+import { addBytes, spentBytes, withBudget } from './server/fontProxyBudget';
 
-// One object per UTC day, named 'font-proxy-bytes:<date>', holding that day's byte count.
+// One object per UTC day, named 'font-proxy-bytes:<date>', holding that day's byte count until
+// its alarm deletes it.
 export class FontProxyBudget extends DurableObject {
   async spent(): Promise<number> {
-    return (await this.ctx.storage.get<number>('fontProxyBytes')) ?? 0;
+    return spentBytes(this.ctx.storage);
   }
 
   async add(bytes: number): Promise<void> {
-    await this.ctx.storage.put('fontProxyBytes', (await this.spent()) + bytes);
+    await addBytes(this.ctx.storage, bytes, new Date());
+  }
+
+  async alarm(): Promise<void> {
+    await this.ctx.storage.deleteAll();
   }
 }
 

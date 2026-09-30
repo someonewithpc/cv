@@ -15,6 +15,31 @@ export function dailyBudgetName(now: Date): string {
   return `font-proxy-bytes:${now.toISOString().slice(0, 10)}`;
 }
 
+// What a day's object keeps, typed as the part of DurableObjectStorage it uses
+export interface BudgetStorage {
+  get<T>(key: string): Promise<T | undefined>;
+  put(key: string, value: number): Promise<void>;
+  getAlarm(): Promise<number | null>;
+  setAlarm(scheduledTime: number): Promise<void>;
+  deleteAll(): Promise<void>;
+}
+
+const BYTES_KEY = 'fontProxyBytes';
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export async function spentBytes(storage: BudgetStorage): Promise<number> {
+  return (await storage.get<number>(BYTES_KEY)) ?? 0;
+}
+
+// Each day's object is read only on that day, so the first add books its deletion a day after
+// the day ends, which leaves room for adds still settling in a waitUntil past midnight.
+export async function addBytes(storage: BudgetStorage, bytes: number, now: Date): Promise<void> {
+  await storage.put(BYTES_KEY, (await spentBytes(storage)) + bytes);
+  if (await storage.getAlarm() === null) {
+    await storage.setAlarm(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + 2 * DAY_MS);
+  }
+}
+
 // The endpoint names in this header what it read upstream, DNS answers included; the gate
 // charges that when it is more than the body it sent, and strips it before the client sees it.
 export const UPSTREAM_BYTES_HEADER = 'x-font-proxy-upstream-bytes';

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { type Budget, DAILY_BYTES, dailyBudgetName, UPSTREAM_BYTES_HEADER, withBudget } from '../src/server/fontProxyBudget';
+import { addBytes, type Budget, type BudgetStorage, DAILY_BYTES, spentBytes, dailyBudgetName, UPSTREAM_BYTES_HEADER, withBudget } from '../src/server/fontProxyBudget';
 
 // Drives the Worker entry's budget gate in the test process, with an in-memory stand-in for
 // the per-day Durable Objects and a scripted Astro handler.
@@ -184,5 +184,31 @@ test.describe('font proxy upstream bytes', () => {
     expect((await response.arrayBuffer()).byteLength).toBe(5000);
     await ctx.settle();
     expect(budgets.bytes.get(TODAY)).toBe(5300);
+  });
+});
+
+test.describe('font proxy budget object', () => {
+  function storage() {
+    const data = new Map<string, number>();
+    let alarm: number | null = null;
+    const store: BudgetStorage = {
+      get: async <T>(key: string) => data.get(key) as T | undefined,
+      put: async (key, value) => void data.set(key, value),
+      getAlarm: async () => alarm,
+      setAlarm: async (time) => void (alarm = time),
+      deleteAll: async () => data.clear(),
+    };
+    return { store, data, alarm: () => alarm };
+  }
+
+  test('adds up the day and books its deletion once, a day after the day ends', async () => {
+    const { store, data, alarm } = storage();
+    await addBytes(store, 300, NOON);
+    await addBytes(store, 200, new Date('2026-09-25T23:00:00Z'));
+    expect(await spentBytes(store)).toBe(500);
+    expect(alarm()).toBe(Date.parse('2026-09-27T00:00:00Z'));
+    await addBytes(store, 1, new Date('2026-09-26T00:00:05Z'));
+    expect(alarm()).toBe(Date.parse('2026-09-27T00:00:00Z'));
+    expect(data.size).toBe(1);
   });
 });

@@ -51,6 +51,9 @@ declare module 'cloudflare:workers' {
       storage: {
         get<T>(key: string): Promise<T | undefined>,
         put(key: string, value: unknown): Promise<void>,
+        getAlarm(): Promise<number | null>,
+        setAlarm(scheduledTime: number): Promise<void>,
+        deleteAll(): Promise<void>,
       },
     };
     constructor(ctx: unknown, env: unknown);
