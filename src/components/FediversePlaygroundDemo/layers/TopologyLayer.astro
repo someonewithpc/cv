@@ -577,7 +577,7 @@ fieldset {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .graph :global(.node.fresh) {
+  .graph :global(.node.fresh:not([data-full-motion] *)) {
     animation: none;
   }
 }

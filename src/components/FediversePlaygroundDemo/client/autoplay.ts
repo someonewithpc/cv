@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import type { DemoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
@@ -42,8 +42,6 @@ const PRESS_DELAY_MS = 160;
 const CURSOR_CLICK_MS = 260;
 const CURSOR_FADE_MS = 420;
 const LOOP_REST_MS = 2400;
-
-const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * The playground's own hand: a drawn cursor that flips the instance toggles and opens the
@@ -155,7 +153,7 @@ export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoG
       setState('user');
     },
     handBack() {
-      if (!active || noteOpen || held) return false;
+      if (!active || noteOpen || held || reducedMotion(host)) return false;
       void play();
       return true;
     },
@@ -172,17 +170,21 @@ export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoG
     if (command === 'play' && host.dataset.autoplay === 'playing') return;
     stop();
     if (command === 'reset') restore();
+    if (reducedMotion(host)) {
+      setState('paused');
+      return;
+    }
     if (active && !noteOpen) void play();
     else setState('playing');
   });
 
-  if (reducedMotion()) {
-    setState('off');
-    handover.dispose();
-    return { setActive() {}, setNoteOpen() {} };
-  }
-
-  setState('playing');
+  // Under reduced motion the walkthrough waits for the deck's play key.
+  setState(reducedMotion(host) ? 'paused' : 'playing');
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+    if (host.dataset.autoplay !== 'playing' || !reducedMotion(host)) return;
+    stop();
+    setState('paused');
+  });
 
   return {
     setActive(value: boolean) {
