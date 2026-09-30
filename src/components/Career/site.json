@@ -1,6 +1,13 @@
 {
   "experience": [
     {
+      "id": "runtime-revolution",
+      "org": "Runtime Revolution",
+      "role": "Backend web developer",
+      "from": { "date": "2026-09", "label": "Sep 2026" },
+      "summary": "Backend development in Ruby on Rails at Runtime Revolution, a Lisbon company that builds software for its clients. The Rails side of their web apps, from the data model to the API the front end talks to."
+    },
+    {
       "id": "visrez",
       "org": "Visrez",
       "place": "Ireland, remote",

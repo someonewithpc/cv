@@ -139,8 +139,10 @@ test('the degree is an outline bar in the lowest lane, under the jobs of its yea
   await expect(study.locator('text.label')).toHaveClass(/typewriter/);
 
   // The jobs of those years stand above it.
-  const lanes = await page.locator('#career svg.wide .job').evaluateAll((jobs) => jobs.map((job) => Number(job.getAttribute('data-lane'))));
-  expect(Math.min(...lanes)).toBeGreaterThan(0);
+  const during = site.experience.filter((entry) => at(entry.from) < Number(year) + 1 && Number(from) < until(entry.to));
+  for (const { id } of during) {
+    expect(Number(await page.locator(`#career svg.wide .job[data-job="${id}"]`).getAttribute('data-lane')), id).toBeGreaterThan(0);
+  }
 
   await expect(page.locator('#career svg.tall g.study .bubble-number')).toHaveText('B');
 });
@@ -329,10 +331,10 @@ test('the continuous learning line starts the axis and stays open at the present
 
   const { from: left, to: right } = await line.locator('.bar').evaluateAll(extent);
   expect(left, 'the line starts where the axis starts').toBeCloseTo(origin, 0);
-  // It runs past the newest job's end, to the present, and ends in an arrowhead: one tick
-  // at its start and none at its end.
+  // It runs to the present, past the newest job's end or level with a job still going, and
+  // ends in an arrowhead: one tick at its start and none at its end.
   const newest = await svg.locator('.job').evaluateAll((jobs) => Math.max(...jobs.flatMap((job) => [...job.querySelectorAll<SVGGraphicsElement>('.bar')].map((bar) => bar.getBBox().x + bar.getBBox().width))));
-  expect(right).toBeGreaterThan(newest);
+  expect(right).toBeGreaterThan(newest - 0.5);
   await expect(line.locator('.tick')).toHaveCount(1);
   const tip = await line.locator('.bar').evaluate((path) => (path as SVGPathElement).getAttribute('d')!.split(' L').length);
   expect(tip, 'an arrowhead at the open end').toBe(7);
