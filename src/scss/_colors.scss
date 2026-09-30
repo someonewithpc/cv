@@ -150,6 +150,9 @@ $wip-blueprint: color-mix(in oklch, var(--theme-blueprint) 36%, #6a6e6a 64%);
   // token reads on any sheet, arctic too, where the accent is close to the ground.
   --code-warm: oklch(from var(--theme-accent) 0.84 max(c, 0.12) h);
   --code-cool: oklch(from var(--theme-blueprint) 0.84 max(c, 0.08) h);
+  // The light themes' sheet is a mid blue, too light under those tokens, so code sits in a
+  // well of the sheet's hue darkened to 0.38 at most.
+  --code-ground: oklch(from var(--sheet-canvas) min(l - 0.04, 0.38) c h);
   --blueprint: var(--sheet-canvas);
   --blueprint-line: var(--sheet-line);
   --blueprint-grid: var(--sheet-grid);

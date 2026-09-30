@@ -2,7 +2,7 @@
 // rules for both. Each token kind takes one of three roles drawn from the theme on screen: warm
 // from the accent, cool from the blueprint's hue, soft between the warm and the ink. The roles
 // are declared on the code itself, so var() reads the tokens of the sheet it sits on; a
-// blueprint sheet sets --code-warm and --code-cool for its dark ground (see
+// blueprint sheet sets --code-warm, --code-cool and a darker --code-ground under them (see
 // blueprint-sheet-boundary). Plain text and any kind left out keep the ink.
 @mixin code-roles {
   --hl-warm: var(--code-warm, light-dark(var(--accent-text), var(--accent)));
@@ -13,7 +13,7 @@
 @mixin code-highlight {
   :where(code.hl, pre.hl) {
     @include code-roles;
-    background: color-mix(in oklch, var(--ink) 7%, transparent);
+    background: var(--code-ground, color-mix(in oklch, var(--ink) 7%, transparent));
     color: var(--ink);
     font-family: monospace, system-ui;
     letter-spacing: normal;
@@ -34,7 +34,7 @@
   // takes the same tint on the surface it sits on.
   :where(pre.hl) {
     border-radius: 0.25em;
-    background: color-mix(in oklch, var(--ink) 7%, var(--surface-page));
+    background: var(--code-ground, color-mix(in oklch, var(--ink) 7%, var(--surface-page)));
 
     code {
       font: inherit;
