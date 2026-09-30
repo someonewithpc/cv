@@ -239,11 +239,19 @@ type Layer = keyof typeof layers;
   box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.35);
   color: var(--ink);
 
+  // The r row, the widest, is 17.5 of the formula's own em wide. The card beside the scene is a
+  // third of the sheet less the gutter, the note's clearance and its own padding, 6rem in all,
+  // so the formula takes whatever size lets that row fit that measure. Opened from the
+  // dog-ear, the card has the sheet's whole width less the dialog's padding.
   math {
     display: block;
-    font-size: 1.125em;
+    font-size: min(1.125em, (var(--sheet-inline) / 3 - 6rem) / 17.5);
     // Prefer a local math face so stretchy fences / operators actually stretch.
     font-family: "DejaVu Math TeX Gyre", "Noto Sans Math", math, serif;
+  }
+
+  :global(.drawing-note:is(:modal, :popover-open)) & math {
+    font-size: min(1.125em, (var(--sheet-inline) - 6.5rem) / 17.5);
   }
 
   mfrac {
