@@ -39,6 +39,21 @@ import Cube from './Cube.astro';
 </Annotations>
 
 <style lang="scss">
+// Drawn at once under reduced motion, unless the visitor pressed play on the sheet
+@media (prefers-reduced-motion: reduce) {
+  .annotations:not([data-full-motion] *) {
+    :global(path) {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+
+    :global(text) {
+      animation: none;
+      clip-path: none;
+    }
+  }
+}
+
 .annotations {
   $duration: 0.25s;
 
@@ -49,11 +64,6 @@ import Cube from './Cube.astro';
       $duration visrez-logo-cube-paths 3s linear forwards 1
     ;
     stroke-dashoffset: 1;
-
-    @media (prefers-reduced-motion: reduce) {
-      animation: none;
-      stroke-dashoffset: 0;
-    }
 
     @keyframes visrez-logo-cube-marker-start {
       from, 99% {
@@ -74,11 +84,6 @@ import Cube from './Cube.astro';
   :global(text) {
     clip-path: rect(0 0 100% 0);
     animation: $duration visrez-logo-cube-texts 3s linear forwards 1;
-
-    @media (prefers-reduced-motion: reduce) {
-      animation: none;
-      clip-path: none;
-    }
 
     @keyframes visrez-logo-cube-texts {
       from {

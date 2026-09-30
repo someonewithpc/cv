@@ -131,7 +131,9 @@
 
   // Every property rests at the logo itself when nothing animates it
   @media (prefers-reduced-motion: reduce) {
-    animation: none;
+    &:not([data-full-motion] *) {
+      animation: none;
+    }
   }
 
   .scene {

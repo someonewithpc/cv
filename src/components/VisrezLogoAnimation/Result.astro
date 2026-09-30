@@ -48,7 +48,7 @@ svg {
 // The animation sits inline because the page prints this file as the source to copy, and only
 // an important declaration outranks it
 @media (prefers-reduced-motion: reduce) {
-  path {
+  path:not([data-full-motion] *) {
     animation: none !important;
     stroke-dashoffset: 0;
   }

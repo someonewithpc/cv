@@ -148,10 +148,12 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
   animation: visrez-logo-path-dash-animation-demo-path-layer 10s 0.5s linear forwards infinite;
 
   @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    --path-dash-offset: 0;
-    --first-vertex-virtual-visible: hidden;
-    --first-vertex-visible: hidden;
+    &:not([data-full-motion] *) {
+      animation: none;
+      --path-dash-offset: 0;
+      --first-vertex-virtual-visible: hidden;
+      --first-vertex-visible: hidden;
+    }
   }
 
   @keyframes visrez-logo-path-dash-animation-demo-path-layer {
