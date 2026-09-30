@@ -75,7 +75,7 @@ const statistics = {
      and in SectionHeader.astro and Highlights.astro ask column.section-width() for the window
      widths at which it is as wide as they need. Below the desk it has no inline padding, and
      on the desk it sets its padding and border to 0 (below), so it takes the default inset.
-     Padding the section would take an inset here and in those two files. */
+     The e2e spec section-breakpoints measures it against the same numbers. */
   margin-top: clamp(5rem, 12vw, 8rem);
   padding-bottom: 5rem;
 
@@ -105,7 +105,7 @@ const statistics = {
     box-shadow: var(--sheet-lift);
   }
 
-  @media (width > 64rem) {
+  @media (width > #{column.$desk-from}) {
     &#open-source {
       --sheet-gap: var(--desk-gap);
 

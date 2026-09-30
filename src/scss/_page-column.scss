@@ -41,6 +41,21 @@ $inset-none: (gaps: 0, desk: 0rem);
 // default text size, so the 1px edge is counted at 16px to the rem.
 $inset-desk-sheet: $sheet-pad + math.div($sheet-border, 16px) * 1rem;
 
+// The padding a section writes to stand `gaps` page gutters in from the column under the
+// desk. A section pads itself with this and passes the same inset to section-width(), so its
+// padding and its breakpoints read one number. On the desk Layout.astro pads every sheet with
+// $sheet-pad, which $inset-desk-sheet counts.
+@function section-padding($inset) {
+  $gaps: map.get($inset, gaps);
+  @if $gaps == 0 {
+    @return 0;
+  }
+  @if $gaps == 1 {
+    @return var(--page-gap);
+  }
+  @return calc(#{$gaps} * var(--page-gap));
+}
+
 // The column formula in three stretches of window width, each open at `from` and closed at
 // `to`, as Layout.astro's `(max-width: 52rem)` and `(width > 64rem)` split them.
 $-stretches: (
