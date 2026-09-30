@@ -39,11 +39,11 @@ export type ThemeSettings = {
   paperInvert: '0' | '1';
   follows: ThemeFollows;
   /**
-   * Code colours, one per group of token kinds, for a theme whose accent, blueprint and ink
-   * sit too close in hue for the roles scss/_code.scss draws from them. Left out, those roles
-   * stand.
+   * Code colours, one per group of token kinds, for a theme whose seeds do not give the roles
+   * scss/_code.scss draws from them: Arctic's accent, blueprint and ink share a hue, and Light's
+   * accent makes a rust. A kind left out keeps its role.
    */
-  code?: { keyword: string; attribute: string; string: string; comment: string };
+  code?: Partial<Record<'keyword' | 'attribute' | 'string' | 'comment', string>>;
   name: string;
   transitionScaleFactor: number;
   icons: {
@@ -62,6 +62,12 @@ export const THEMES = {
     desk: 'rgb(229 200 160)',
     deskTile: 'light',
     paper: 'oklch(1 0 90)',
+    // The accent's own hue gives a rust for tags and keywords, so they take a clear red at the
+    // sRGB edge instead. Strings keep the crimson they had when they were mixed from the rust.
+    code: {
+      keyword: 'oklch(0.51 0.184 34)',
+      string: 'oklch(0.352 0.118 359)',
+    },
     paperGrain: '0.45',
     paperSheetGrain: '0.48',
     paperBlend: 'multiply',
