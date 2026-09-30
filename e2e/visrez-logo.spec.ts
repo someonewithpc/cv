@@ -152,3 +152,55 @@ test('wrapping round to the first page brings its corner back whole at once', as
   expect(hits.length).toBeGreaterThan(3);
   expect(hits.every(Boolean), `corner hits per frame: ${hits.join(' ')}`).toBe(true);
 });
+
+// Turned fast all the way round, the stack is back on its first page, with no page behind it to
+// drag back. The way-back callout must not be there, and on the way it must never come up
+// while a page is still moving: each settle cut short by the next key press used to flash the
+// whole line written out as it faded.
+test.describe('with motion allowed', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test('a fast run of turns round to the first page leaves no way back showing', async ({ page }) => {
+    const stack = visrezStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const frame = page.locator('.technical-drawing-frame', { has: stack });
+    await expect(frame).toHaveAttribute('data-hint-show', '');
+
+    await stack.evaluate((el) => {
+      const w = window as Window & { backInk?: { ink: number; bad: boolean }[] };
+      const samples: { ink: number; bad: boolean }[] = (w.backInk = []);
+      const words = el.closest('.technical-drawing-frame')!.querySelector<HTMLElement>('.flip-hint--back.hint-words')!;
+      const letters = [...words.querySelectorAll<HTMLElement>('.hint-letter')];
+      const frameStep = () => {
+        const ink = Number(getComputedStyle(words).opacity)
+          * Math.max(...letters.map((letter) => Number(getComputedStyle(letter).opacity)));
+        const prev = samples.at(-1)?.ink ?? 0;
+        const due = el.hasAttribute('data-paper-flipped') && el.hasAttribute('data-paper-settled');
+        samples.push({ ink, bad: !due && ink > prev + 0.001 });
+        requestAnimationFrame(frameStep);
+      };
+      requestAnimationFrame(frameStep);
+    });
+
+    await stack.focus();
+    let moved = false;
+    for (let press = 0; press < 40; press += 1) {
+      await page.keyboard.press('ArrowRight');
+      await page.waitForTimeout(250);
+      const front = await frontPageIndex(stack);
+      if (front > 0) moved = true;
+      if (moved && front === 0) break;
+    }
+    expect(moved).toBe(true);
+    expect(await frontPageIndex(stack)).toBe(0);
+    await expect(stack).toHaveAttribute('data-paper-settled', '', { timeout: 3000 });
+    await expect(stack).not.toHaveAttribute('data-paper-flipped');
+    // Past the callout's own fade, so a way back that was coming would be in by now
+    await page.waitForTimeout(600);
+
+    const samples = await page.evaluate(() => (window as Window & { backInk?: { ink: number; bad: boolean }[] }).backInk!);
+    expect(samples.at(-1)!.ink, 'no way back on the first page').toBe(0);
+    const flashes = samples.filter((sample) => sample.bad).length;
+    expect(flashes, 'frames where the way back came up while it had nowhere to point').toBe(0);
+  });
+});

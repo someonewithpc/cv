@@ -328,12 +328,14 @@ $peel-shown: '.technical-drawing-frame[data-hint-seen] > :global(article.technic
   opacity: 1;
 }
 
-// The way back waits for the turned page to lie flat and still at the front; shown while it is
-// still gliding over, the arrow would be drawn across the moving sheet and whatever is on it.
-// And once the reader has found the way back it stays down: the stack keeps its turned mark
-// after the return, so the return has to be part of the show rule, or the settle at the end of
-// the way back would bring the callout up again.
-$way-back-shown: ':global(article.technical-drawing-stack[data-paper-turned][data-paper-settled]:not([data-paper-returned])) ~ .flip-hints .flip-hint--back';
+// The way back needs a page to go back to, which is the stack's flipped mark rather than its
+// turned one: turned stays on for good, so after turns that came full circle to the first page
+// the callout pointed at a corner with nothing behind it. It waits for the turned page to lie
+// flat and still at the front; shown while it is still gliding over, the arrow would be drawn
+// across the moving sheet and whatever is on it. And once the reader has found the way back it
+// stays down: the flipped mark comes back with the next turn, so the return has to be part of
+// the show rule, or the settle after it would bring the callout up again.
+$way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][data-paper-settled]:not([data-paper-returned])) ~ .flip-hints .flip-hint--back';
 
 #{$way-back-shown} {
   opacity: 1;
