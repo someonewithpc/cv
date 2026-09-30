@@ -192,3 +192,4 @@
 - [x] Favicon: five candidates for Hugo to pick from (#235)
 - [x] Build the four inline `<style>` blocks that fail the Nu validator inside their divs as static Sass in the same components, so Astro bundles them (O4) (#230)
 - [ ] Bring the four Space Builder spinners' keyframes into scope so they spin (S16)
+- [ ] The theme picker demo's stage buttons are 36 by 9 px, under the 24 px target size (A1)
