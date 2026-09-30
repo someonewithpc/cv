@@ -31,8 +31,8 @@ const clientSize = toKiB(clientBundle.text);
 
 const layers = {
   grid: { name: null },
-  shared: { name: 'Shared Value', pageStyle: 'blueprint' },
-  caret: { name: 'Simulated Caret', pageStyle: 'blueprint' },
+  shared: { name: 'Shared Value', pageStyle: 'blueprint', motion: true },
+  caret: { name: 'Simulated Caret', pageStyle: 'blueprint', motion: true },
   missing: { name: 'Completed Objects', pageStyle: 'blueprint' },
 } as const;
 
