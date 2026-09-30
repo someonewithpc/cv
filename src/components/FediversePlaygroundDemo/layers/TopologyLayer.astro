@@ -47,7 +47,7 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
       </fieldset>
     </div>
 
-    <p class="status" aria-live="polite" data-status>{summary(compose)}</p>
+    <p class="status" data-live-in-control data-status>{summary(compose)}</p>
 
     <div class="graph" data-graph set:html={renderGraphs(config, compose)} />
 
