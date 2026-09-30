@@ -40,6 +40,7 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
 </section>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 section {
   max-width: 80ch;
   margin-inline: auto;
@@ -95,8 +96,19 @@ section {
       display: inline-flex;
       border: 1px solid var(--line-strong);
       border-radius: $radius;
-      overflow: hidden;
       font-size: 0.75rem;
+
+      /* The end labels round their own corners, where the track used to clip them, so
+         each label's hit box can reach the track's border. */
+      label:first-of-type {
+        border-start-start-radius: calc(#{$radius} - 1px);
+        border-end-start-radius: calc(#{$radius} - 1px);
+      }
+
+      label:last-of-type {
+        border-start-end-radius: calc(#{$radius} - 1px);
+        border-end-end-radius: calc(#{$radius} - 1px);
+      }
     }
 
     input {
@@ -117,6 +129,7 @@ section {
       color: var(--ink-faint);
       background: var(--surface-raised);
       user-select: none;
+      @include hit-area;
 
       /* Under 18rem the sheet's padding leaves the three options too little room. */
       @media (max-width: 18rem) {
