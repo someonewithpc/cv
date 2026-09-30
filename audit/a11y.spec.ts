@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 
 const THEMES = ['light', 'dark', 'arctic', 'dark-forest'];
 
+const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
+
 const VIEWPORTS = [
   { name: '1440x900', width: 1440, height: 900 },
   { name: '390x844', width: 390, height: 844 },
@@ -30,7 +32,8 @@ for (const viewport of VIEWPORTS) {
       }
       await page.waitForTimeout(2000);
 
-      const { violations } = await new AxeBuilder({ page }).analyze();
+      // axe's defaults leave WCAG 2.2 out, and with it target-size (2.5.8).
+      const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
 
       expect(
         violations.map((violation) => ({
