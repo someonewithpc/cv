@@ -169,4 +169,4 @@
 - [x] Each demo is two regions for a screen reader, the callout and the stack inside it (A8) (#211)
 - [x] Remove the desktop hint footer, the phone layout no longer needs it (#208)
 - [x] Variants style strip in Firefox without script shows the next finish at its edge and snaps (FF3) (#213)
-- [ ] Give the Open Source and Career sections media queries for their breakpoints, since both are the page column wide
+- [x] Give the Open Source and Career sections media queries for their breakpoints, since both are the page column wide (#204)
