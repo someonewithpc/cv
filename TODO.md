@@ -69,6 +69,7 @@
     - [x] Framed as a federated network, compose file trimmed and coloured, sheets 3 and 4 redrawn (#129)
     - [x] A Mastodon server beside GNU social, the compose file without volumes or environment (#129)
     - [x] One line per server to each shared service, nginx named, search and media added (#129)
+    - [ ] Sheets keep their phone type without script, so the toggles read and reach 24px (#171 L3)
   - [x] web-ts-mode: painted buffer, parser ranges, selector depth hue, doctor (SH-11)
   - [ ] Paper stack: the pile, the fold, the holds and the no-script row
   - [x] Own theme picker: the control, the token layers, the default and the wipe (#189)

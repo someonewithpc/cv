@@ -66,6 +66,29 @@ test.describe('with JavaScript off', () => {
     const placeholder = page.locator('.boot-placeholder').first();
     expect(await placeholder.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('"This demo needs JavaScript."');
   });
+
+  test('a phone gets the portrait type, and the playground toggles are tall enough to tap', async ({ page }) => {
+    // Under 680px the sheet is portrait (Stack.astro's no-script mirror of its width query), and
+    // the type has to follow: the landscape size left every sheet at 7px, and the playground's
+    // toggles, at 0.8em of that, under 16px tall.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    const stacks = page.locator('article.technical-drawing-stack');
+
+    for (let index = 0; index < (await stacks.count()); index++) {
+      const stack = stacks.nth(index);
+      const width = (await stack.locator('section').first().boundingBox())!.width;
+      const size = await stack.locator('section .content').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(size, `stack ${index}: portrait type`).toBeCloseTo(0.038 * width, 1);
+    }
+
+    const toggles = page.locator('.playground .toggle');
+    expect(await toggles.count()).toBe(4);
+    for (const toggle of await toggles.all()) {
+      const box = (await toggle.boundingBox())!;
+      expect(box.height, 'toggle at least 24px tall').toBeGreaterThanOrEqual(24);
+    }
+  });
 });
 
 test('switching script off after the page loaded leaves a no-script page', async ({ page, context }) => {

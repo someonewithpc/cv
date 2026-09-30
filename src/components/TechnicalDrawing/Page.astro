@@ -327,6 +327,13 @@ section {
       /* Portrait gives the artwork the full sheet width, not a third of it. */
       font-size: min(1rem, 0.038 * var(--sheet-inline));
     }
+
+    /* Without script nothing sets the attribute, and the sheet is portrait by the same width
+       query Stack.astro mirrors for --sheet-block; the landscape size left a phone's sheet at
+       7px type. */
+    @media (scripting: none) and (width <= 680px) {
+      font-size: min(1rem, 0.038 * var(--sheet-inline));
+    }
   }
 
   /* The deck fills the bottom band, the strip of mat between the sheet edge and the
