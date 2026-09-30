@@ -9,6 +9,7 @@
 // drag is the same press pulled apart: `demoPressDown()`, the walkthrough's own moves, then
 // `demoRelease()`.
 import './demo-cursor-press.css';
+import { reducedMotion } from '@/client/autoplayStatus';
 
 /** How long the cursor stays pressed before the widget hears the release and the click. */
 export const PRESS_HOLD_MS = 140;
@@ -33,10 +34,6 @@ let pressed: HTMLElement | null = null;
 let pressedAt = 0;
 let release: number | null = null;
 
-function reducedMotion() {
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-}
-
 function mouse(type: string, point: { x: number; y: number }, buttons: number) {
   return new MouseEvent(type, {
     bubbles: true,
@@ -60,7 +57,7 @@ export async function demoPressDown(
   hold = PRESS_HOLD_MS,
 ): Promise<void> {
   target.dispatchEvent(mouse('mousedown', point, 1));
-  const wait = reducedMotion() ? 0 : hold;
+  const wait = reducedMotion(target) ? 0 : hold;
   if (wait > 0) await new Promise((resolve) => window.setTimeout(resolve, wait));
 }
 
@@ -97,9 +94,11 @@ function flareLayer() {
   return layer;
 }
 
-function flare(x: number, y: number, kind: 'down' | 'up') {
+function flare(x: number, y: number, kind: 'down' | 'up', target: EventTarget | null) {
   const ring = document.createElement('span');
   ring.className = `demo-cursor-flare demo-cursor-flare--${kind}`;
+  // The flares sit on the body, outside any sheet, so each carries its demo's motion itself.
+  if (target instanceof Element && target.closest('[data-full-motion]')) ring.dataset.fullMotion = '';
   ring.style.left = `${x}px`;
   ring.style.top = `${y}px`;
   flareLayer().append(ring);
@@ -123,7 +122,7 @@ function down(event: MouseEvent) {
   pressed = cursorFor(event.target);
   pressed?.setAttribute('data-pressed', '');
   pressedAt = performance.now();
-  flare(event.clientX, event.clientY, 'down');
+  flare(event.clientX, event.clientY, 'down', event.target);
 }
 
 function up(event: MouseEvent) {
@@ -131,7 +130,7 @@ function up(event: MouseEvent) {
     release = null;
     pressed?.removeAttribute('data-pressed');
     pressed = null;
-    flare(event.clientX, event.clientY, 'up');
+    flare(event.clientX, event.clientY, 'up', event.target);
   };
   // A raw walkthrough may send down and up in the same tick; hold the pulse long enough to
   // see. Either way the release trails the up, so it lands after the click's effect.

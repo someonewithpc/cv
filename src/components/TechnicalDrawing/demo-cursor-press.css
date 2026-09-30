@@ -38,11 +38,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-demo-cursor][data-pressed] {
+  [data-demo-cursor][data-pressed]:not([data-full-motion] *) {
     scale: none;
   }
 
-  .demo-cursor-flare {
+  .demo-cursor-flare:not([data-full-motion]) {
     animation: demo-cursor-fade 300ms ease-out forwards;
   }
 

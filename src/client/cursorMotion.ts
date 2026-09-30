@@ -8,6 +8,8 @@
  * Positions are in pixels inside the cursor's offset parent. The element's own hotspot
  * offset, if any, is given as percentages of its box and folded into every keyframe.
  */
+import { reducedMotion } from '@/client/autoplayStatus';
+
 export type Point = { x: number; y: number };
 
 export type CursorMotionOptions = {
@@ -47,10 +49,6 @@ function ease(t: number) {
 function settle(t: number, from: number) {
   if (t <= from) return 0;
   return Math.sin(Math.PI * ((t - from) / (1 - from)));
-}
-
-function reducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 export function hopDuration(distance: number, options: CursorMotionOptions = {}) {
@@ -112,7 +110,7 @@ export function createCursorMover(el: HTMLElement, options: CursorMotionOptions 
 
   /** Move the tip onto `to`; resolves once it has arrived and settled, or when cancelled. */
   function moveTo(to: Point): Promise<void> {
-    if (!at || reducedMotion() || typeof el.animate !== 'function') {
+    if (!at || reducedMotion(el) || typeof el.animate !== 'function') {
       jumpTo(to);
       return Promise.resolve();
     }

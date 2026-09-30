@@ -7,29 +7,50 @@
  * TechnicalDrawing/Page.astro renders on every sheet does the rest, so all three demos say the
  * same thing in the same place without each scene app drawing its own controls.
  */
-export type AutoplayState = 'playing' | 'user' | 'off';
+export type AutoplayState = 'playing' | 'user' | 'paused' | 'off';
 export type AutoplayCommand = 'play' | 'pause' | 'reset';
 
 export const AUTOPLAY_STATE_ATTRIBUTE = 'data-autoplay-state';
 const AUTOPLAY_STATE_EVENT = 'demo-autoplay-state';
 const AUTOPLAY_COMMAND_EVENT = 'demo-autoplay-command';
 
+/**
+ * On a sheet whose demo the visitor set playing under reduced motion. Until pause or reset,
+ * that demo runs at full animation: its scripts read it through `reducedMotion`, and its
+ * reduced-motion CSS rules skip anything inside `[data-full-motion]`.
+ */
+export const FULL_MOTION_ATTRIBUTE = 'data-full-motion';
+
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Reduced motion as a demo inside `el` should honour it: off while its sheet plays on request. */
+export function reducedMotion(el: Element | null | undefined): boolean {
+  return prefersReducedMotion() && !el?.closest(`[${FULL_MOTION_ATTRIBUTE}]`);
+}
+
 const CAPTION: Record<AutoplayState, string> = {
   playing: 'AUTO PLAYING',
   user: 'MANUAL CONTROL',
+  paused: 'MOTION PAUSED',
   off: 'AUTO PLAY OFF',
 };
 
 const HINT: Record<AutoplayState, string> = {
   playing: 'hover or tap the sheet to take over',
   user: 'press play to hand back',
+  paused: 'reduced motion is on, press play to watch',
   off: 'reduced motion is on',
 };
 
 /** No pointer to hover with, so say the half of it a phone can act on. */
 const TOUCH_HINT = 'tap the sheet to take over';
 
-export function reportAutoplayState(root: Element | null | undefined, state: AutoplayState) {
+/**
+ * Under reduced motion a demo that is not playing is paused, whoever stopped it: the deck
+ * then offers play, which runs the walkthrough at full animation.
+ */
+export function reportAutoplayState(root: Element | null | undefined, reported: AutoplayState) {
+  const state = reported === 'user' && prefersReducedMotion() ? 'paused' : reported;
   if (!root || root.getAttribute(AUTOPLAY_STATE_ATTRIBUTE) === state) return;
   root.setAttribute(AUTOPLAY_STATE_ATTRIBUTE, state);
   root.dispatchEvent(new CustomEvent(AUTOPLAY_STATE_EVENT, { bubbles: true, detail: { state } }));
@@ -64,8 +85,9 @@ export function initAutoplayStatus(page: HTMLElement) {
   let source: Element | null = null;
 
   const show = (root: Element, state: string | null) => {
-    if (state !== 'playing' && state !== 'user' && state !== 'off') return;
+    if (state !== 'playing' && state !== 'user' && state !== 'paused' && state !== 'off') return;
     source = root;
+    if (state !== 'playing') page.removeAttribute(FULL_MOTION_ATTRIBUTE);
     deck.hidden = false;
     deck.dataset.state = state;
     // A demo that takes no input says so in its own words: data-autoplay-caption-<state>
@@ -78,7 +100,7 @@ export function initAutoplayStatus(page: HTMLElement) {
       // Play and pause are toggles; reset is a momentary action and carries no pressed state.
       if (key.dataset.demoKey !== 'reset') {
         const pressed = (key.dataset.demoKey === 'play' && state === 'playing')
-          || (key.dataset.demoKey === 'pause' && state === 'user');
+          || (key.dataset.demoKey === 'pause' && (state === 'user' || state === 'paused'));
         key.setAttribute('aria-pressed', String(pressed));
       }
       key.disabled = state === 'off';
@@ -91,6 +113,9 @@ export function initAutoplayStatus(page: HTMLElement) {
   };
 
   const run = (command: AutoplayCommand) => {
+    // Before the demo hears the key, so its own reducedMotion check already answers for it:
+    // play runs the walkthrough at full animation, pause and reset leave it reduced.
+    if (prefersReducedMotion()) page.toggleAttribute(FULL_MOTION_ATTRIBUTE, command === 'play');
     source?.dispatchEvent(new CustomEvent(AUTOPLAY_COMMAND_EVENT, { detail: { command } }));
   };
 
