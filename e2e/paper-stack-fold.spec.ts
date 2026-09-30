@@ -382,6 +382,27 @@ test.describe('a drag that pulls the wrong way cancels', () => {
   });
 });
 
+// The hint rides the flap's centre, and a flap pulled out to the sheet's left edge has its centre
+// on that edge: the hint used to sit half off the paper there, over the frame line.
+test('the flip hint stays on the sheet when the flap is pulled out to its edge', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await dogEarShown(stack);
+
+  const sheet = (await stack.locator('.paper-front').boundingBox())!;
+  await dragFold(page, stack, [{ dx: -sheet.width * 1.3, dy: -sheet.height * 0.1 }]);
+  const hint = stack.locator('.paper-front > .paper-flip-hint');
+  await expect(hint).toHaveCSS('opacity', '1');
+  const box = (await hint.boundingBox())!;
+  await page.mouse.up();
+
+  expect(box.x).toBeGreaterThanOrEqual(sheet.x + 16);
+  expect(box.y).toBeGreaterThanOrEqual(sheet.y + 16);
+  expect(box.x + box.width).toBeLessThanOrEqual(sheet.x + sheet.width - 16);
+  expect(box.y + box.height).toBeLessThanOrEqual(sheet.y + sheet.height - 16);
+});
+
 test.describe('without JS', () => {
   test.use({ javaScriptEnabled: false });
 

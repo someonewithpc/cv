@@ -525,8 +525,8 @@ const clearFoldRender = (section: HTMLElement, fold: HTMLElement): void => {
   clearLandingShade(fold);
   const hint = hintOf.get(fold);
   if (hint) {
-    hint.style.left = '';
-    hint.style.top = '';
+    hint.style.removeProperty('--flip-hint-x');
+    hint.style.removeProperty('--flip-hint-y');
   }
 };
 
@@ -593,14 +593,15 @@ const renderFold = (
 
   // The flip hint rides at the flap's visual center: the hole's centroid pushed through the
   // same reflection the flap paints with. It's a sheet sibling of the flap, not a child, so it
-  // stays unmirrored.
+  // stays unmirrored. The stylesheet keeps it on the sheet (index.astro) when that centre is
+  // off the paper or on its edge.
   const hint = hintOf.get(fold);
   if (hint) {
     const centroid = polygonCentroid(hole);
     const local = rotateVec({ x: centroid.x - mid.x, y: centroid.y - mid.y }, -angle);
     const reflected = rotateVec({ x: local.x, y: -local.y }, angle);
-    hint.style.left = `${mid.x + reflected.x}px`;
-    hint.style.top = `${mid.y + reflected.y}px`;
+    hint.style.setProperty('--flip-hint-x', `${mid.x + reflected.x}px`);
+    hint.style.setProperty('--flip-hint-y', `${mid.y + reflected.y}px`);
   }
 };
 

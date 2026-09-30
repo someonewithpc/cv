@@ -729,11 +729,18 @@ $fold-pulse-y: 2cm;
           }
         }
 
-        // Commit feedback: fades in riding the flap (fold-drag.ts keeps left/top at the flap's
-        // visual center every drag frame) while releasing would carry the gesture through (see
-        // .paper-fold--will-commit above).
+        // Commit feedback: fades in riding the flap (fold-drag.ts writes the flap's visual
+        // center every drag frame) while releasing would carry the gesture through (see
+        // .paper-fold--will-commit above). A flap pulled out to the sheet's edge, or one coming
+        // back from off the sheet, has its centre there too, so the hint stops a mat and half
+        // its own size short of each edge and stays on the paper. Before the first drag frame
+        // the two lengths are unset, the insets resolve to auto, and it rests in the corner.
         & > .paper-flip-hint {
+          --flip-hint-inset: calc(1rem + 1.25em);
+
           position: absolute;
+          left: clamp(var(--flip-hint-inset), var(--flip-hint-x), 100% - var(--flip-hint-inset));
+          top: clamp(var(--flip-hint-inset), var(--flip-hint-y), 100% - var(--flip-hint-inset));
           translate: -50% -50%;
           width: 2.5em;
           height: 2.5em;
