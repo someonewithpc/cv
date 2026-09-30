@@ -5,7 +5,9 @@
 // dark block. Each token kind takes one of three roles drawn from the theme on screen: warm from
 // the accent, cool from the blueprint's hue, soft between the warm and the ink, each at a
 // lightness that clears 4.5:1 on that ground. The roles are declared on the code itself, so
-// var() reads the sheet it sits on. Plain text and any kind left out keep the ink.
+// var() reads the sheet it sits on. A theme whose three seeds share a hue (Arctic) sets its own
+// colour per role instead, as --theme-code-* from src/themes.ts. Plain text and any kind left
+// out keep the ink.
 @mixin code-roles {
   --hl-base: var(--sheet-paper, var(--surface-page));
   --hl-ground: light-dark(
@@ -13,23 +15,35 @@
     oklch(from var(--hl-base) calc(l + 0.035) c h)
   );
   --hl-ink: light-dark(var(--theme-ink), var(--ink));
-  --hl-muted: light-dark(
-    color-mix(in oklch, var(--hl-ink), var(--hl-ground) 30%),
-    color-mix(in oklch, var(--hl-ink), var(--hl-ground) 20%)
+  --hl-muted: var(
+    --theme-code-comment,
+    light-dark(
+      color-mix(in oklch, var(--hl-ink), var(--hl-ground) 30%),
+      color-mix(in oklch, var(--hl-ink), var(--hl-ground) 20%)
+    )
   );
-  --hl-warm: light-dark(
-    oklch(from var(--theme-accent) 0.46 max(c, 0.18) h),
-    oklch(from var(--theme-accent) 0.87 max(c, 0.14) h)
+  --hl-warm: var(
+    --theme-code-keyword,
+    light-dark(
+      oklch(from var(--theme-accent) 0.46 max(c, 0.18) h),
+      oklch(from var(--theme-accent) 0.87 max(c, 0.14) h)
+    )
   );
   // The blueprint's hue turned 30 degrees toward violet, which in all four themes turns it away
   // from the accent: Arctic's two sit 12 degrees apart as they come.
-  --hl-cool: light-dark(
-    oklch(from var(--theme-blueprint) 0.46 max(c, 0.18) calc(h + 30)),
-    oklch(from var(--theme-blueprint) 0.84 max(c, 0.13) calc(h + 30))
+  --hl-cool: var(
+    --theme-code-attribute,
+    light-dark(
+      oklch(from var(--theme-blueprint) 0.46 max(c, 0.18) calc(h + 30)),
+      oklch(from var(--theme-blueprint) 0.84 max(c, 0.13) calc(h + 30))
+    )
   );
-  --hl-soft: light-dark(
-    oklch(from color-mix(in oklch, var(--hl-warm), var(--hl-ink) 40%) calc(l - 0.02) max(c, 0.11) h),
-    color-mix(in oklch, var(--hl-warm), var(--hl-ink) 40%)
+  --hl-soft: var(
+    --theme-code-string,
+    light-dark(
+      oklch(from color-mix(in oklch, var(--hl-warm), var(--hl-ink) 40%) calc(l - 0.02) max(c, 0.11) h),
+      color-mix(in oklch, var(--hl-warm), var(--hl-ink) 40%)
+    )
   );
 }
 

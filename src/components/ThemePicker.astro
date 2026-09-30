@@ -25,6 +25,7 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-paper-blend: ${settings.paperBlend};
       --theme-paper-invert: ${settings.paperInvert};
       --theme-mode: ${settings.follows};
+${(['keyword', 'attribute', 'string', 'comment'] as const).map((kind) => `      --theme-code-${kind}: ${settings.code?.[kind] ?? 'initial'};`).join('\n')}
       --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
 `;
 

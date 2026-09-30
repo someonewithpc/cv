@@ -38,6 +38,12 @@ export type ThemeSettings = {
   /** '1' flips the tile dark-side-up for screen on a dark sheet, '0' leaves it as scanned. */
   paperInvert: '0' | '1';
   follows: ThemeFollows;
+  /**
+   * Code colours, one per group of token kinds, for a theme whose accent, blueprint and ink
+   * sit too close in hue for the roles scss/_code.scss draws from them. Left out, those roles
+   * stand.
+   */
+  code?: { keyword: string; attribute: string; string: string; comment: string };
   name: string;
   transitionScaleFactor: number;
   icons: {
@@ -95,6 +101,15 @@ export const THEMES = {
     desk: 'rgb(212 203 197)',
     deskTile: 'arctic',
     paper: 'oklch(0.955 0.015 235)',
+    // Accent, blueprint and ink are all blues here, so code spreads its kinds over hue: a deep
+    // blue for keywords and tags, teal for attributes, the desk's warm brown for strings and
+    // numbers, a grey of the ink for comments. Each clears 5.8:1 on the code ground.
+    code: {
+      keyword: 'oklch(0.41 0.16 262)',
+      attribute: 'oklch(0.44 0.085 185)',
+      string: 'oklch(0.45 0.085 50)',
+      comment: 'oklch(0.45 0.03 245)',
+    },
     paperGrain: '0.40',
     paperSheetGrain: '0.52',
     paperBlend: 'multiply',
