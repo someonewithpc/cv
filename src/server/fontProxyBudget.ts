@@ -15,6 +15,21 @@ export function dailyBudgetName(now: Date): string {
   return `font-proxy-bytes:${now.toISOString().slice(0, 10)}`;
 }
 
+const PROXY_PATH = '/api/font-proxy';
+
+// Astro's trailingSlash 'ignore' also routes '/api/font-proxy/', and other spellings may reach
+// the endpoint too, so every path that starts like the proxy's pays: a false match costs one
+// Durable Object read, a missed one relays for free.
+export function isProxyPath(pathname: string): boolean {
+  let path = pathname;
+  try {
+    path = decodeURIComponent(pathname);
+  } catch {
+    // A malformed escape is judged as written.
+  }
+  return path.replace(/\/{2,}/g, '/').toLowerCase().startsWith(PROXY_PATH);
+}
+
 export async function withBudget(
   request: Request,
   budgets: Budgets | undefined,
@@ -22,7 +37,7 @@ export async function withBudget(
   next: () => Promise<Response>,
   now = new Date(),
 ): Promise<Response> {
-  if (!budgets || new URL(request.url).pathname !== '/api/font-proxy') return next();
+  if (!budgets || !isProxyPath(new URL(request.url).pathname)) return next();
 
   const budget = budgets.getByName(dailyBudgetName(now));
   if (await budget.spent() >= DAILY_BYTES) {

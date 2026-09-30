@@ -120,3 +120,15 @@ test.describe('font proxy daily budget', () => {
     expect(calls.count).toBe(2);
   });
 });
+
+test.describe('font proxy budget path', () => {
+  test('budgets every spelling of the proxy path Astro routes to the endpoint', async () => {
+    for (const path of ['/api/font-proxy/', '/api/font-proxy//', '//api/font-proxy', '/api//font-proxy', '/api/font%2Dproxy', '/API/Font-Proxy']) {
+      const budgets = days({ [TODAY]: DAILY_BYTES });
+      const { calls, next } = handler(10);
+      const response = await withBudget(new Request(`https://cv.test${path}?url=x`), budgets, context(), next, NOON);
+      expect(response.status, path).toBe(503);
+      expect(calls.count, path).toBe(0);
+    }
+  });
+});
