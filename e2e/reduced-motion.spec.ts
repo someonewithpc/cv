@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { dogEarShown, frontPage, frontPageIndex } from './support/paperStack';
+import { demoStack, dogEarShown, frontPage, frontPageIndex } from './support/paperStack';
 
 declare global {
   interface Window {
@@ -88,4 +88,69 @@ test('a demo waits paused, plays at full motion on play, and pause puts it back'
   await expect(bus).toHaveAttribute('data-autoplay-state', 'paused');
   await expect(deck).toHaveAttribute('data-state', 'paused');
   await expect(drawing).not.toHaveAttribute('data-full-motion');
+});
+
+// The two sheets whose artwork holds still at every setting: nothing on them to play.
+const NO_DECK = ['web-ts-mode', 'Paper Stack'];
+
+test('every demo sheet shows its deck paused, with its keys in reach', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  const stacks = page.locator('article.technical-drawing-stack');
+  const titles = await stacks.evaluateAll((all) => all.map((stack) => stack.getAttribute('aria-label') ?? ''));
+  for (const title of titles) {
+    await test.step(title, async () => {
+      const stack = demoStack(page, title);
+      await stack.scrollIntoViewIfNeeded();
+      const deck = frontPage(stack, await frontPageIndex(stack)).locator('[data-demo-transport]');
+      if (NO_DECK.includes(title)) {
+        await expect(deck).toBeHidden();
+        return;
+      }
+      await expect(deck).toBeVisible({ timeout: 15_000 });
+      await expect(deck).toHaveAttribute('data-state', 'paused');
+      await expect(deck).toContainText('MOTION PAUSED');
+      for (const key of ['play', 'pause', 'reset']) {
+        await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeVisible();
+        await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeEnabled();
+      }
+    });
+  }
+});
+
+test('a sheet that only animates plays on request and pause stills it', async ({ page }) => {
+  await page.goto('/');
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  await stack.scrollIntoViewIfNeeded();
+  const sheet = frontPage(stack, await frontPageIndex(stack)).locator(':scope > section');
+  const deck = sheet.locator('[data-demo-transport]');
+  const logoAnimations = () => sheet.locator('.content svg path').evaluateAll((paths) =>
+    paths.flatMap((path) => path.getAnimations()).filter((animation) => animation.playState === 'running').length);
+
+  await expect(deck).toBeVisible();
+  await expect(deck).toContainText('MOTION PAUSED');
+  expect(await logoAnimations()).toBe(0);
+
+  await deck.locator('[data-demo-key="play"]').click();
+  await expect(sheet).toHaveAttribute('data-full-motion', '');
+  await expect(deck).toContainText('PLAYING');
+  await expect.poll(logoAnimations).toBeGreaterThan(0);
+
+  await deck.locator('[data-demo-key="pause"]').click();
+  await expect(deck).toHaveAttribute('data-state', 'paused');
+  await expect(sheet).not.toHaveAttribute('data-full-motion');
+  await expect.poll(logoAnimations).toBe(0);
+});
+
+test.describe('with full motion', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test('a sheet that only animates plays by itself and shows no deck', async ({ page }) => {
+    await page.goto('/');
+    const stack = demoStack(page, 'Visrez Animated Loading Logo');
+    await stack.scrollIntoViewIfNeeded();
+    const sheet = frontPage(stack, await frontPageIndex(stack));
+    await expect(sheet.locator('.content svg path').first()).toBeVisible();
+    await expect(sheet.locator('[data-demo-transport]')).toBeHidden();
+  });
 });
