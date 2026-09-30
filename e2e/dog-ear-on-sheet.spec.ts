@@ -48,7 +48,7 @@ test('the dog-ear paints nothing past the sheet\'s edges, at rest and breathing'
     const tag = await page.addStyleTag({ content: '.paper-front > .paper-fold { visibility: hidden !important; }' });
     await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
     const hidden = await page.screenshot({ clip, animations: 'allow' });
-    await tag.evaluate((el) => el.remove());
+    await tag.evaluate((el) => el.parentNode!.removeChild(el));
 
     const a = await sharp(shown).raw().toBuffer({ resolveWithObject: true });
     const b = await sharp(hidden).raw().toBuffer();

@@ -553,6 +553,7 @@ const readFolios = (page: import('@playwright/test').Page) =>
         // The numeral and its label together, which is all of the folio that draws.
         ink: [rail.querySelector('.folio-number')!, rail.querySelector('.folio-label')!]
           .map((el) => el.getBoundingClientRect())
+          .map(({ left, right, top, bottom }) => ({ left, right, top, bottom }))
           .reduce((a, b) => ({
             left: Math.min(a.left, b.left),
             right: Math.max(a.right, b.right),

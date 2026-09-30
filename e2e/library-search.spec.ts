@@ -368,7 +368,7 @@ test('main page: the walkthrough opens the Color list, lights Gold and closes on
         lit: el.querySelector('[data-hover]')?.textContent ?? undefined,
         current: el.querySelector('[data-selected]')?.textContent ?? undefined,
         value: select.value,
-        fits: el.hidden || (box.top >= under.bottom && box.left >= outer.left && box.right <= outer.right
+        fits: !!el.hidden || (box.top >= under.bottom && box.left >= outer.left && box.right <= outer.right
           && box.bottom <= outer.bottom && el.scrollHeight <= el.clientHeight),
       };
       if (JSON.stringify(frames.at(-1)) !== JSON.stringify(frame)) frames.push(frame);
@@ -536,7 +536,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     for (const name of PAGES) {
       await turnTo(page, stack, name);
       const front = frontPage(stack, await frontPageIndex(stack));
-      const small = await front.locator(':scope > section .content').evaluate((content) => {
+      const small = await front.locator(':scope > section .content').evaluate((content: HTMLElement) => {
         // Rendered size is the computed size times whatever scale the sheet is drawn at, read
         // off the whole sheet: offsetWidth rounds, which skews a small box's ratio.
         const scale = content.getBoundingClientRect().width / content.offsetWidth;

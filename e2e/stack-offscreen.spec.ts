@@ -1,5 +1,12 @@
 import { expect, test, type Locator } from '@playwright/test';
 
+// Chrome and Firefox still ship window.find, which lib.dom dropped as non-standard.
+declare global {
+  interface Window {
+    find(text: string): boolean;
+  }
+}
+
 /**
  * Stacks well off screen are `content-visibility: auto` (Stack.astro): the browser skips their
  * style, layout and paint, so a resize or a theme switch only lays out the stacks in view. These
