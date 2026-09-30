@@ -50,6 +50,26 @@ test('main page: scene loads and the add-object tool opens the catalog', async (
   await expect(app).toHaveAttribute('data-panel', 'catalog');
 });
 
+test('main page: A and Escape work from the focused root without an application role', async ({ page }) => {
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  const app = await waitForSceneReady(front);
+  await expect(app).toHaveAttribute('role', 'group');
+  await app.focus();
+  if ((await app.getAttribute('data-panel')) !== 'closed') {
+    await page.keyboard.press('Escape');
+    await expect(app).toHaveAttribute('data-panel', 'closed');
+  }
+
+  await page.keyboard.press('a');
+  await expect(app).toHaveAttribute('data-panel', 'catalog');
+  await app.focus();
+  await page.keyboard.press('Escape');
+  await expect(app).toHaveAttribute('data-panel', 'closed');
+});
+
 test('place page: select-area scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
