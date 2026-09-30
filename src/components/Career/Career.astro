@@ -197,8 +197,8 @@ const text = (x: number, y: number, s: string, cls = '', extra = '') =>
 
 /* Sizes are in drawing units, so they scale with the drawing: 12 for all lettering, set on the
    svg, and 13 for the first line of a label. */
-const lettering = (x: number, y: number, s: string, first: boolean) =>
-  first ? text(x, y, s, 'label typewriter', 'font-size="13"') : text(x, y, s, 'small monospace');
+const lettering = (x: number, y: number, s: string, first: boolean, anchor = '') =>
+  first ? text(x, y, s, 'label typewriter', `font-size="13" ${anchor}`) : text(x, y, s, 'small monospace', anchor);
 
 /* An architectural tick: a short stroke through the dimension line at 45 degrees. */
 const tick = (x: number, y: number) => `<path class="tick" d="M${x - 3.5} ${y + 3.5} l7 -7"/>`;
@@ -272,8 +272,10 @@ const wide = (() => {
   const BAR = 20;
   const ROW = 34;
 
-  /* `leg` is where a bent leader runs along its lane: from its turn to the bar's end. */
-  type Option = { ax: number; textEnd: number; lane: number; leg?: [number, number] };
+  /* `leg` is where a bent leader runs along its lane: from its turn to the bar's end. A label
+     reads on from its bubble, or back from it when the bar is too near the sheet's right edge
+     for it to fit; `textStart` and `textEnd` take in the bubble. */
+  type Option = { ax: number; left: boolean; textStart: number; textEnd: number; lane: number; leg?: [number, number] };
   type Spot = Option & { row: number };
   type Placed = Job & Spot;
 
@@ -284,19 +286,22 @@ const wide = (() => {
      first layout that fits, each label at its best anchor that allows it. */
   const options: Option[][] = jobs.map((job) => {
     const width = 25 + Math.max(...job.lines.map((line) => line.length)) * CH;
-    const straight = job.anchors.map((f): Option => ({ ax: x(job.start + f * (job.end - job.start)), textEnd: 0, lane: job.lane }));
+    const straight = job.anchors.map((f) => ({ ax: x(job.start + f * (job.end - job.start)), lane: job.lane }));
     const bent = job.anchors.length
       ? []
-      : elbows(job, 0.2).map((t): Option => ({ ax: x(t), textEnd: 0, lane: job.lane, leg: [x(t), t < job.start ? x(job.start) - 1 : x(job.end) + 1] }));
-    return [...straight, ...bent].filter((o) => o.ax + width <= W - 4).map((o) => ({ ...o, textEnd: o.ax + width }));
+      : elbows(job, 0.2).map((t) => ({ ax: x(t), lane: job.lane, leg: [x(t), t < job.start ? x(job.start) - 1 : x(job.end) + 1] as [number, number] }));
+    const spots = [...straight, ...bent];
+    const right = spots.filter((o) => o.ax + width <= W - 4).map((o): Option => ({ ...o, left: false, textStart: o.ax - 10, textEnd: o.ax + width }));
+    const left = spots.filter((o) => o.ax + width > W - 4 && o.ax - width >= 4).map((o): Option => ({ ...o, left: true, textStart: o.ax - width, textEnd: o.ax + 10 }));
+    return [...right, ...left];
   });
   const passes = (down: Spot, bent: Spot) =>
     !!bent.leg && down.lane < bent.lane && Math.min(...bent.leg) - 8 < down.ax && down.ax < Math.max(...bent.leg) + 8;
   const clear = (a: Spot, b: Spot) => {
     if (passes(a, b) || passes(b, a)) return false;
-    if (a.row === b.row) return a.textEnd + 16 <= b.ax - 10 || b.textEnd + 16 <= a.ax - 10;
+    if (a.row === b.row) return a.textEnd + 16 <= b.textStart || b.textEnd + 16 <= a.textStart;
     const [high, low] = a.row > b.row ? [a, b] : [b, a];
-    return high.ax + 12 < low.ax - 12 || low.textEnd + 4 < high.ax - 12;
+    return high.ax + 14 < low.textStart || low.textEnd + 16 < high.ax;
   };
   const search = (rows: number, chosen: Spot[]): Spot[] | undefined => {
     if (chosen.length === jobs.length) return chosen;
@@ -355,7 +360,7 @@ const wide = (() => {
       ${text(mid, dim - 4, job.span, 'span monospace', 'text-anchor="middle"')}
       <polyline class="leader" points="${leader}" marker-end="url(#h-arrow)"/>
       ${bubble(job.ax, by, job)}
-      ${job.lines.map((line, i) => lettering(job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0)).join('')}
+      ${job.lines.map((line, i) => lettering(job.left ? job.ax - 15 : job.ax + 15, by + (job.lines.length === 1 ? 4 : i === 0 ? -1 : 12), line, i === 0, job.left ? 'text-anchor="end"' : '')).join('')}
     </g>`;
   });
 
