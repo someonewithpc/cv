@@ -70,9 +70,12 @@ test.describe('font proxy daily budget', () => {
     const { calls, next } = handler(100);
     const response = await withBudget(new Request(PROXY), budgets, ctx, next, NOON);
     expect(response.status).toBe(503);
+    expect(response.headers.get('retry-after')).toBe(String(12 * 60 * 60));
     expect(calls.count).toBe(0);
     await ctx.settle();
     expect(budgets.bytes.get(TODAY)).toBe(DAILY_BYTES);
+    const late = await withBudget(new Request(PROXY), budgets, context(), next, new Date('2026-09-25T23:59:59.500Z'));
+    expect(late.headers.get('retry-after')).toBe('1');
   });
 
   test('still serves one byte under the budget', async () => {

@@ -38,6 +38,12 @@ export function isProxyPath(pathname: string): boolean {
   return path.replace(/\/{2,}/g, '/').toLowerCase().startsWith(PROXY_PATH);
 }
 
+// A fresh count opens at the next UTC midnight
+export function secondsToMidnight(now: Date): number {
+  const midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  return Math.ceil((midnight - now.getTime()) / 1000);
+}
+
 function unavailable(): Response {
   return new Response('The font proxy is unavailable', { status: 503 });
 }
@@ -66,7 +72,10 @@ export async function withBudget(
     return unavailable();
   }
   if (spent >= DAILY_BYTES) {
-    return new Response('The font proxy has spent its budget for today', { status: 503 });
+    return new Response('The font proxy has spent its budget for today', {
+      status: 503,
+      headers: { 'retry-after': String(secondsToMidnight(now)) },
+    });
   }
   const charge = (n: number) => budget.add(n).catch((e: unknown) => {
     console.error('font proxy: adding to the budget failed', e);
