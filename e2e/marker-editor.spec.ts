@@ -190,17 +190,17 @@ for (const { name, viewport } of VIEWPORTS) {
 test.describe('with reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
 
-  test('the map walkthrough stays parked and the deck says so', async ({ page }) => {
+  test('the map walkthrough waits paused and the deck says so', async ({ page }) => {
     const stack = markerEditorStack(page);
     await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
     const front = frontPage(stack, await frontPageIndex(stack));
     await waitForIslandMounted(front);
 
     const deck = front.locator('[data-demo-transport]');
-    await expect(deck).toHaveAttribute('data-state', 'off', { timeout: 20_000 });
-    await expect(deck).toContainText('AUTO PLAY OFF');
+    await expect(deck).toHaveAttribute('data-state', 'paused', { timeout: 20_000 });
+    await expect(deck).toContainText('MOTION PAUSED');
     for (const key of ['reset', 'play', 'pause']) {
-      await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeDisabled();
+      await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeEnabled();
     }
 
     // Nothing of the walkthrough runs: no drawn cursor, and it never opens the editor.

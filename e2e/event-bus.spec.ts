@@ -183,7 +183,7 @@ test('main page: reduced motion stands the walkthrough down and answers at once'
   await page.goto('/');
   const { front, bus } = await mountedBus(page);
 
-  await expect(bus).toHaveAttribute('data-autoplay-state', 'off');
+  await expect(bus).toHaveAttribute('data-autoplay-state', 'paused');
   await expect(front.locator('.event-bus-cursor')).toBeHidden();
 
   await listener(bus, 'ImageEncoder').locator('.load').click();

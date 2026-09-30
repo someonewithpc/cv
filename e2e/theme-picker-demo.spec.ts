@@ -78,14 +78,14 @@ test.describe('with motion', () => {
 });
 
 test.describe('reduced motion', () => {
-  // The stage's keys still work here, with no wipe, and the walkthrough is off.
+  // The stage's keys still work here, with no wipe, and the walkthrough waits paused.
   test.use({ reducedMotion: 'reduce' });
 
   test('main page: a key on the stage stamps the stage, not the page', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
     const sheet = await mountedSheet(page);
-    await expect(sheet).toHaveAttribute('data-autoplay-state', 'off');
+    await expect(sheet).toHaveAttribute('data-autoplay-state', 'paused');
     await expect(screen(sheet)).not.toHaveAttribute('data-demo-theme');
 
     // The page on the stage paints from the stage's tokens, down to its title card.

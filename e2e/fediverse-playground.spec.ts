@@ -125,7 +125,7 @@ test('fediverse playground: the arrow key visits every page in order, then wraps
 });
 
 test.describe('with reduced motion', () => {
-  // The walkthrough stays off, so every toggle starts from the config the page opens on.
+  // The walkthrough waits paused, so every toggle starts from the config the page opens on.
   test.use({ reducedMotion: 'reduce' });
 
   test('main page: the toggles rebuild the graph, and shared services appear once', async ({ page }) => {
