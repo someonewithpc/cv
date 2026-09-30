@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import cx from 'classnames';
 
 import type { FontFaceDescriptor } from './useFontFaces';
+import { cssString } from './cssString';
 import { demoPicker, useDemoPicker } from './demoPicker';
 import { Pinned } from './Pinned';
 
@@ -41,7 +42,7 @@ export function toOption(face: FontFaceDescriptor): FaceOption {
 function faceStyle(option: FaceOption | undefined): CSSProperties {
   if (!option) return {};
   return {
-    fontFamily: option.family,
+    fontFamily: cssString(option.family),
     fontWeight: option.weight ?? 400,
     fontStyle: option.style,
   };

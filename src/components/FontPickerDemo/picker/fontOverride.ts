@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
+import { cssString } from './cssString';
+
 export type FontOverride = {
   family: string | null;
   style: string;
@@ -44,7 +46,7 @@ const ROOT = '[data-font-picker-island] .edit-style';
 // with the type would squeeze the specimen for the sidebar's sake
 const SIZED = `${ROOT} > *`;
 
-function render({ family, style, size, weight }: FontOverride, externalFaces: Record<string, string>) {
+export function render({ family, style, size, weight }: FontOverride, externalFaces: Record<string, string>) {
   const rules: string[] = [];
 
   if (size !== 1) rules.push(`${SIZED} { font-size: ${size}em; }`);
@@ -52,7 +54,7 @@ function render({ family, style, size, weight }: FontOverride, externalFaces: Re
   if (family !== null) {
     if (externalFaces[family]) rules.push(externalFaces[family]);
     rules.push(`${ROOT} {
-  font-family: '${family}', sans-serif;${style !== 'normal' ? `\n  font-style: ${style};` : ''}
+  font-family: ${cssString(family)}, sans-serif;${style !== 'normal' ? `\n  font-style: ${style};` : ''}
 }`);
   }
 

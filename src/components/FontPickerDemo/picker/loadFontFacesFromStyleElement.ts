@@ -1,5 +1,6 @@
 import { camelCase } from 'lodash';
 
+import { unquoteCssString } from './cssString';
 import { getCurrentFonts } from './getCurrentFonts';
 import { proxyPrefix } from './proxiedFetch';
 import { transformFontFaceSrcToProxiedAbsoluteURL } from './transformFontFaceSrcToProxiedAbsoluteURL';
@@ -58,7 +59,7 @@ export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement
         .filter(([, value]) => !!value),
     );
 
-    const unquotedFontFamily = fontFamily.replaceAll('"', '');
+    const unquotedFontFamily = unquoteCssString(fontFamily);
 
     const ff = new FontFace(
       unquotedFontFamily,
