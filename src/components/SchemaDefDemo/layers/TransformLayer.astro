@@ -393,7 +393,7 @@ figcaption {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .line {
+  .line:not([data-full-motion] *) {
     transition: none;
   }
 }

@@ -1,7 +1,5 @@
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
-
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 /** How long the walk rests on each pair: long enough to read the rule under the panes. */
 const STEP_MS = 2200;
@@ -14,7 +12,7 @@ const STEP_MS = 2200;
  * to the counterpart with left and right, with one tab stop per pane.
  *
  * While nobody is using it, the highlight walks the schema top to bottom. The walk only
- * runs while the page is the one on top and on screen, and never under reduced motion; the
+ * runs while the page is the one on top and on screen, and under reduced motion only from the deck's play key; the
  * first hover or focus ends it and the sheet's transport deck can hand it back.
  */
 export function initSchemaDef(root: HTMLElement) {
@@ -47,7 +45,7 @@ export function initSchemaDef(root: HTMLElement) {
     if (top - pad < scroller.scrollTop) to = top - pad;
     else if (bottom + pad > scroller.scrollTop + scroller.clientHeight) to = bottom + pad - scroller.clientHeight;
     if (to === null) return;
-    scroller.scrollTo({ top: Math.max(0, to), behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+    scroller.scrollTo({ top: Math.max(0, to), behavior: reducedMotion(root) ? 'auto' : 'smooth' });
   };
 
   const light = (key: string | null, from?: HTMLElement) => {
@@ -79,8 +77,8 @@ export function initSchemaDef(root: HTMLElement) {
   };
 
   const setPlaying = (next: boolean) => {
-    playing = next && !reducedMotion.matches;
-    reportAutoplayState(root, reducedMotion.matches ? 'off' : playing ? 'playing' : 'user');
+    playing = next && !reducedMotion(root);
+    reportAutoplayState(root, playing ? 'playing' : reducedMotion(root) ? 'paused' : 'user');
     schedule();
   };
 
@@ -159,7 +157,7 @@ export function initSchemaDef(root: HTMLElement) {
     schedule();
   });
 
-  reducedMotion.addEventListener('change', () => setPlaying(playing));
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => setPlaying(playing));
 
   setPlaying(true);
 }
