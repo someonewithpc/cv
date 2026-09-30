@@ -1,3 +1,4 @@
+import { reducedMotion } from '@/client/autoplayStatus';
 import { variantsOf, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 
 import { formatSize, unitsFor } from './units';
@@ -309,7 +310,7 @@ const SWAP_MS = 320;
  */
 function announce(el: HTMLElement, keyframes: Keyframe[]) {
   if (typeof el.animate !== 'function') return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (reducedMotion(el)) return;
   el.animate(keyframes, { duration: SWAP_MS, easing: 'ease-out' });
 }
 

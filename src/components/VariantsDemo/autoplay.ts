@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import type { DemoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
@@ -67,10 +67,6 @@ const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
 const PRESS_DELAY_MS = 160;
 const CURSOR_CLICK_MS = 260;
 const CURSOR_FADE_MS = 420;
-
-function reducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 function runStep(el: HTMLElement, act: AutoplayStep['act']) {
   if (act === 'click') el.click();
@@ -200,7 +196,7 @@ export function createPlayer(host: HTMLElement, gate: DemoGate) {
       hideCursor(true);
     },
     handBack() {
-      if (held || !active || noteOpen || reducedMotion()) return false;
+      if (held || !active || noteOpen || reducedMotion(host)) return false;
       host.dataset.userControl = 'false';
       report('playing');
       void play();
@@ -209,33 +205,47 @@ export function createPlayer(host: HTMLElement, gate: DemoGate) {
   });
 
   function canPlay() {
-    return active && !noteOpen && !handover.userControl && !reducedMotion();
+    return active && !noteOpen && !handover.userControl && !reducedMotion(host);
   }
 
   const stopCommands = onAutoplayCommand(host, (command) => {
-    if (reducedMotion()) return;
     if (command === 'pause') {
       held = true;
       handover.takeOver();
       return;
     }
-    const wasPlaying = !handover.userControl;
+    const wasPlaying = !handover.userControl && playing !== 0 && playing === playToken;
     held = false;
     handover.release();
-    host.dataset.userControl = 'false';
-    report('playing');
-    if (command === 'play' && wasPlaying) return;
     if (command === 'reset') {
       stopPlaying();
       resetCards();
     }
+    // Reset under reduced motion puts the cards back and waits for play
+    if (reducedMotion(host)) {
+      hideCursor(false);
+      report('paused');
+      return;
+    }
+    host.dataset.userControl = 'false';
+    report('playing');
+    if (command === 'play' && wasPlaying) return;
     if (canPlay()) void play();
   });
+
+  const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const onMotionChange = () => {
+    if (!reducedMotion(host)) return;
+    stopPlaying();
+    hideCursor(false);
+    if (active) report('paused');
+  };
+  motionQuery.addEventListener('change', onMotionChange);
 
   return {
     setActive(value: boolean) {
       active = value;
-      if (value) report(reducedMotion() ? 'off' : handover.userControl ? 'user' : 'playing');
+      if (value) report(reducedMotion(host) ? 'paused' : handover.userControl ? 'user' : 'playing');
       // Off screen, under another page or in a hidden tab, the walkthrough's waits hold it
       // where it stands, and it carries on from there when the page is back.
       if (!value || (playing && playing === playToken)) return;
@@ -252,6 +262,7 @@ export function createPlayer(host: HTMLElement, gate: DemoGate) {
     dispose() {
       stopPlaying();
       stopCommands();
+      motionQuery.removeEventListener('change', onMotionChange);
       handover.dispose();
       if (fadeTimer) clearTimeout(fadeTimer);
       if (clickTimer) clearTimeout(clickTimer);

@@ -127,6 +127,12 @@ $pip: 1.125rem;
       scroll-behavior: smooth;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      [data-full-motion] & {
+        scroll-behavior: smooth;
+      }
+    }
+
     > .style {
       position: relative;
       flex: 0 0 100%;
@@ -356,10 +362,16 @@ $pip: 1.125rem;
       }
     }
 
+    // The dot keeps pace with the scroll in whole steps, one pip to the next, with no
+    // glide between them and no trail
     @media (prefers-reduced-motion: reduce) {
-      &,
-      > .pip-trail {
-        transition: none;
+      &:not([data-full-motion] *) {
+        animation-timing-function: steps(var(--pips, 1), jump-none);
+
+        &,
+        > .pip-trail {
+          transition: none;
+        }
       }
     }
   }
