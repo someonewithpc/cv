@@ -39,16 +39,21 @@ const steps: Step[] = [
 
 const layouts: Layout[] = ['landscape', 'short', 'portrait'];
 const drawings = layouts.map((layout) => renderSequence(heads, steps, layout)).join('');
+const spoken = (step: Step) =>
+  step.kind === 'message' ? `${lanes[step.from]} to ${lanes[step.to]}: ${step.text}` : `${lanes[step.lane]}: ${step.text}`;
 ---
 
 <div class="wrapper">
-  <div class="install-layer" aria-hidden="true">
+  <div class="install-layer">
     <header>
       <strong>A one-shot installer brings each server up</strong>
       <span class="caption">{app}'s containers, in the order the compose file starts them</span>
     </header>
 
     <div class="figure" set:html={drawings} />
+    <ol class="sr-only">
+      {steps.map((step) => <li>{spoken(step)}</li>)}
+    </ol>
 
     <dl class="rules">
       <div>

@@ -35,7 +35,7 @@ const ladder = RUNGS.map((why, rung) => ({
 ---
 
 <div class="wrapper">
-  <div class="worktrees-layer" aria-hidden="true">
+  <div class="worktrees-layer">
     <div class="panel">
       <header>
         <strong>One bare mirror per software, one worktree per instance</strong>
@@ -60,7 +60,7 @@ const ladder = RUNGS.map((why, rung) => ({
                     <span class="branch">
                       <s>{plan.requested}</s>
                       <span class="held">held by {plan.collidesWith}</span>
-                      <span class="arrow">→</span>
+                      <span class="arrow" aria-hidden="true">→</span>
                       <code class="renamed">{plan.checkout}</code>
                     </span>
                   ) : (

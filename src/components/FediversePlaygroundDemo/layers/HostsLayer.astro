@@ -28,7 +28,7 @@ const servers = instances.map((instance) => ({
 ---
 
 <div class="wrapper">
-  <div class="hosts-layer" aria-hidden="true">
+  <div class="hosts-layer">
     <header>
       <strong>Every server answers to two names</strong>
       <span class="caption">
@@ -55,7 +55,7 @@ const servers = instances.map((instance) => ({
             <tr>
               <th class:list={['name', { alias }]} scope="row"><code>{name}</code></th>
               {marks.map((mark) => (
-                <td class:list={{ mark }} />
+                <td class:list={{ mark }}>{mark && <span class="sr-only">yes</span>}</td>
               ))}
             </tr>
           ))}
