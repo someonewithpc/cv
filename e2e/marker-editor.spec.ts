@@ -198,7 +198,7 @@ test.describe('with reduced motion', () => {
 
     const deck = front.locator('[data-demo-transport]');
     await expect(deck).toHaveAttribute('data-state', 'paused', { timeout: 20_000 });
-    await expect(deck).toContainText('MOTION PAUSED');
+    await expect(deck).toContainText('ANIMATION PAUSED');
     for (const key of ['reset', 'play', 'pause']) {
       await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeEnabled();
     }

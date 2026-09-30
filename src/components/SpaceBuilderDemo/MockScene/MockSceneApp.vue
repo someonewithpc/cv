@@ -628,7 +628,7 @@ async function restartDemo() {
   parkedMidWalk = false;
   if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
   if (handoffTimer) { clearTimeout(handoffTimer); handoffTimer = null; }
-  // The deck reads "motion paused" under reduced motion, so Restart puts the scene back
+  // The deck reads "animation paused" under reduced motion, so Restart puts the scene back
   // and leaves it there: no fake cursor, and no "Demo paused" on the next hover.
   const walkthrough = !reducedMotion.value;
   if (walkthrough) {

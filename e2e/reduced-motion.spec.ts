@@ -69,7 +69,7 @@ test('a demo waits paused, plays at full motion on play, and pause puts it back'
 
   await expect(bus).toHaveAttribute('data-autoplay-state', 'paused');
   await expect(deck).toHaveAttribute('data-state', 'paused');
-  await expect(deck).toContainText('MOTION PAUSED');
+  await expect(deck).toContainText('ANIMATION PAUSED');
   await expect(key('play')).toBeEnabled();
   await expect(sheet.locator('.event-bus-cursor')).toBeHidden();
 
@@ -109,7 +109,7 @@ test('every demo sheet shows its deck paused, with its keys in reach', async ({ 
       }
       await expect(deck).toBeVisible({ timeout: 15_000 });
       await expect(deck).toHaveAttribute('data-state', 'paused');
-      await expect(deck).toContainText('MOTION PAUSED');
+      await expect(deck).toContainText('ANIMATION PAUSED');
       for (const key of ['play', 'pause', 'reset']) {
         await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeVisible();
         await expect(deck.locator(`[data-demo-key="${key}"]`)).toBeEnabled();
@@ -128,7 +128,7 @@ test('a sheet that only animates plays on request and pause stills it', async ({
     paths.flatMap((path) => path.getAnimations()).filter((animation) => animation.playState === 'running').length);
 
   await expect(deck).toBeVisible();
-  await expect(deck).toContainText('MOTION PAUSED');
+  await expect(deck).toContainText('ANIMATION PAUSED');
   expect(await logoAnimations()).toBe(0);
 
   await deck.locator('[data-demo-key="play"]').click();

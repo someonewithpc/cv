@@ -44,7 +44,7 @@ export function reducedMotion(el: Element | null | undefined): boolean {
 const CAPTION: Record<AutoplayState, string> = {
   playing: 'AUTO PLAYING',
   user: 'MANUAL CONTROL',
-  paused: 'MOTION PAUSED',
+  paused: 'ANIMATION PAUSED',
   off: 'AUTO PLAY OFF',
 };
 
