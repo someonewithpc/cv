@@ -6,7 +6,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 ---
 
 <div class="wrapper">
-  <div class="pipeline" aria-hidden="true">
+  <div class="pipeline">
     <div class="step" style="--seq: 1">
       <p class="step-title">Type a URL</p>
       <div class="paper field">
@@ -17,7 +17,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     </div>
 
     <div class="hop">
-      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+      <svg viewBox="0 0 48 12" class="arrow" aria-hidden="true"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
     </div>
 
     <div class="step" style="--seq: 2">
@@ -36,7 +36,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     </div>
 
     <div class="hop">
-      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+      <svg viewBox="0 0 48 12" class="arrow" aria-hidden="true"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
     </div>
 
     <div class="step" style="--seq: 3">
@@ -56,14 +56,14 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     </div>
 
     <div class="hop">
-      <svg viewBox="0 0 48 12" class="arrow"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
+      <svg viewBox="0 0 48 12" class="arrow" aria-hidden="true"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
       <span class="hop-note">new FontFace().load()<br />document.fonts.add()</span>
     </div>
 
     <div class="step" style="--seq: 4">
       <p class="step-title">Show the new face</p>
       <div class="paper select">
-        <span class="select-value">Poppins 400<span class="dot"></span></span>
+        <span class="select-value">Poppins 400<span class="dot" aria-hidden="true"></span></span>
         <span class="select-row new">Alfa Slab One 400</span>
       </div>
       <p class="caption">
@@ -77,7 +77,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
         A Google font skips the first two steps. <code>fonts.googleapis.com/css2?family=Lobster</code>
         answers with the same kind of stylesheet, and joins the flow here
       </p>
-      <svg viewBox="0 0 120 44" class="arrow branch-arrow">
+      <svg viewBox="0 0 120 44" class="arrow branch-arrow" aria-hidden="true">
         <path d="M0 36 H106 Q114 36 114 28 V14" />
         <path d="M110 18 L114 6 L118 18 z" class="head" />
       </svg>
