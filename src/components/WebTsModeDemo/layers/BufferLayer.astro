@@ -264,8 +264,8 @@ const echo = [
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buffer-layer :global(.emacs-window .range),
-  .buffer-layer :global(.emacs-window .block) {
+  .buffer-layer :global(.emacs-window .range:not([data-full-motion] *)),
+  .buffer-layer :global(.emacs-window .block:not([data-full-motion] *)) {
     transition: none;
   }
 }
