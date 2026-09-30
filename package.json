@@ -10,7 +10,7 @@
     "dev": "ASTRO_DEV_BACKGROUND=1 astro dev",
     "build": "astro build && node scripts/render-oembed-card.mjs",
     "preview": "ASTRO_PREVIEW_BACKGROUND=1 astro preview",
-    "deploy": "npm run test:e2e && npm run build && wrangler deploy",
+    "deploy": "npm run check && npm run build && E2E_PREBUILT=1 playwright test && wrangler deploy",
     "astro": "astro",
     "check": "astro check",
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",

@@ -114,9 +114,13 @@ export default defineConfig<PaceOptions>({
     // Tests run against a real production build, not `astro dev` — the dev server has its
     // own script-serving quirks (see the "dev-server-drops-demo-scripts" memory) unrelated
     // to what actually ships.
-    command: `npm run build && npm run preview -- --port ${PORT}`,
+    // `npm run deploy` builds first and sets E2E_PREBUILT, so the suite serves that dist and
+    // never an older preview already on the port.
+    command: process.env.E2E_PREBUILT
+      ? `npm run preview -- --port ${PORT}`
+      : `npm run build && npm run preview -- --port ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env.CI && !process.env.E2E_PREBUILT,
     timeout: 120_000,
     env: {
       // `astro preview` auto-detects a coding-agent environment (e.g. this one) and

@@ -1,5 +1,18 @@
 # Hugo Sales's CV and Portfolio
 
+## Checks and deploy
+
+`npm run check` runs `astro check`, which type-checks `src/` and the specs in `e2e/`. Playwright
+strips types before it runs a spec, so a type error there never fails `npm run test:e2e`.
+
+`npm run test:e2e` builds the site and serves it with `astro preview` on port 4310. If a
+preview is already on that port it reuses it and skips the build.
+
+`npm run deploy` runs `npm run check`, then `npm run build`, then the e2e suite against
+that `dist/`, then `wrangler deploy` of the same `dist/`. It stops at the first step that
+fails. `E2E_PREBUILT=1` tells the suite to serve the existing `dist/` without building
+again, and to refuse a server already on 4310 rather than test it.
+
 ## Audits
 
 `npm run test:audit` builds the site, serves the build on port 4311 through `wrangler dev`
