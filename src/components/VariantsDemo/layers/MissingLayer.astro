@@ -16,7 +16,7 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
 ---
 
 <div class="wrapper">
-  <div class="sheet" aria-hidden="true">
+  <div class="sheet">
     <div class="panel">
       <header>
         <span class="eyebrow">CatalogObjectFooter.vue · isAvailablePax</span>
@@ -24,8 +24,10 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
       </header>
 
       <div class="body">
-        <div class="variants-catalog drawn" inert>
-          <Card item={BANQUET_CARD} variantId={shown.id} active={true} open="pax" />
+        <div class="variants-catalog drawn">
+          <div class="card-drawing" aria-hidden="true" inert>
+            <Card item={BANQUET_CARD} variantId={shown.id} active={true} open="pax" />
+          </div>
           <p class="note">
             Every seat count stays on the list. The {missing.join(' and ')} seat sets have no
             object at the size held, so they go grey. Grey is not disabled.
@@ -84,6 +86,10 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
   display: grid;
   gap: 0.5em;
   width: 10rem;
+
+  .card-drawing {
+    display: contents;
+  }
 
   :global(.option-item) {
     color-scheme: only dark;
