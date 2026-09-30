@@ -182,3 +182,5 @@
 - [x] A key-turned page draws its dog-ear over a cut corner, not a whole one, in Chrome (#171 L8) (#233)
 - [x] Turning from the last page of the logo stack to the first flashes a blueprint-blue wedge at the folded-back corner (L6) (#219)
 - [x] Keep the Fediverse playground sheet off the title block from 624 to 1600 px, and draw its graph arrows without the paper halo (S2) (#232)
+- [ ] Cap the font picker's fetches at 100 per page load, 2 MiB per response, 16 MiB in all and 10 s each; a tripped cap shows the error border (C48)
+- [ ] Quote the family name as a CSS string wherever the picker writes it into a rule or a style (C49)
