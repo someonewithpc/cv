@@ -15,7 +15,7 @@ export class FontProxyBudget extends DurableObject {
 }
 
 interface WorkerEnv {
-  FONT_PROXY_BUDGET?: DurableObjectNamespace<FontProxyBudget>;
+  FONT_PROXY_BUDGET: DurableObjectNamespace<FontProxyBudget>;
 }
 
 export default {

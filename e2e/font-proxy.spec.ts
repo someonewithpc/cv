@@ -17,6 +17,8 @@ interface Upstream {
   bytes?: number,
   // Never answers, or answers and then never sends a byte
   hang?: 'headers' | 'body',
+  // Sends one chunk and then errors
+  broken?: boolean,
 }
 
 // A fetch that stalls until its signal fires, as a real one does
@@ -60,6 +62,7 @@ function harness(dns: Record<string, string[]>, upstreams: Record<string, Upstre
     const body = new ReadableStream<Uint8Array>({
       pull(controller) {
         if (upstream.hang === 'body') return new Promise(() => {});
+        if (upstream.broken && record.bytesRead > 0) return controller.error(new TypeError('connection reset'));
         if (left === 0) return controller.close();
         const size = Math.min(CHUNK, left);
         left -= size;
@@ -307,6 +310,13 @@ test.describe('font proxy', () => {
       AbortSignal.timeout = realTimeout;
     }
   });
+  test('answers 502 when the upstream body breaks off', async () => {
+    const setup = harness(PUBLIC, { 'https://fonts.test/a.woff2': { headers: { 'content-type': 'font/woff2' }, bytes: MB, broken: true } });
+    const response = await proxy(setup, 'https://fonts.test/a.woff2');
+    expect(response.status).toBe(502);
+    expect(await response.text()).toBe('Upstream body failed');
+  });
+
 
 
 

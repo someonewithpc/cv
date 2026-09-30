@@ -38,6 +38,10 @@ export function isProxyPath(pathname: string): boolean {
   return path.replace(/\/{2,}/g, '/').toLowerCase().startsWith(PROXY_PATH);
 }
 
+function unavailable(): Response {
+  return new Response('The font proxy is unavailable', { status: 503 });
+}
+
 export async function withBudget(
   request: Request,
   budgets: Budgets | undefined,
@@ -45,12 +49,28 @@ export async function withBudget(
   next: () => Promise<Response>,
   now = new Date(),
 ): Promise<Response> {
-  if (!budgets || !isProxyPath(new URL(request.url).pathname)) return next();
+  if (!isProxyPath(new URL(request.url).pathname)) return next();
 
-  const budget = budgets.getByName(dailyBudgetName(now));
-  if (await budget.spent() >= DAILY_BYTES) {
+  // With no count to check, the proxy stays shut rather than relaying with no cap.
+  if (!budgets) {
+    console.error('font proxy: the FONT_PROXY_BUDGET binding is missing');
+    return unavailable();
+  }
+  let budget: Budget;
+  let spent: number;
+  try {
+    budget = budgets.getByName(dailyBudgetName(now));
+    spent = await budget.spent();
+  } catch (e) {
+    console.error('font proxy: reading the budget failed', e);
+    return unavailable();
+  }
+  if (spent >= DAILY_BYTES) {
     return new Response('The font proxy has spent its budget for today', { status: 503 });
   }
+  const charge = (n: number) => budget.add(n).catch((e: unknown) => {
+    console.error('font proxy: adding to the budget failed', e);
+  });
 
   const response = await next();
   const upstreamBytes = Number(response.headers.get(UPSTREAM_BYTES_HEADER)) || 0;
@@ -58,7 +78,7 @@ export async function withBudget(
   headers.delete(UPSTREAM_BYTES_HEADER);
   const init = { status: response.status, statusText: response.statusText, headers };
   if (!response.body) {
-    ctx.waitUntil(budget.add(upstreamBytes));
+    ctx.waitUntil(charge(upstreamBytes));
     return new Response(null, init);
   }
   let bytes = 0;
@@ -69,6 +89,6 @@ export async function withBudget(
     },
   });
   // A client that hangs up rejects the pipe; count what went out before that.
-  ctx.waitUntil(response.body.pipeTo(counter.writable).catch(() => {}).then(() => budget.add(Math.max(bytes, upstreamBytes))));
+  ctx.waitUntil(response.body.pipeTo(counter.writable).catch(() => {}).then(() => charge(Math.max(bytes, upstreamBytes))));
   return new Response(counter.readable, init);
 }

@@ -188,7 +188,8 @@ export const GET: APIRoute = async ({ url, request }) => {
     body = await readUpTo(upstream.body, MAX_BYTES, meter, signal);
   } catch (e) {
     if (timedOut(e)) return metered('Upstream timed out', { status: 504 });
-    throw e;
+    await upstream.body?.cancel().catch(() => {});
+    return metered('Upstream body failed', { status: 502 });
   }
   if (body === null) {
     return metered('Response too large', { status: 413 });

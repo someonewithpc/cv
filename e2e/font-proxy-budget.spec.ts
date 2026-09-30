@@ -109,15 +109,39 @@ test.describe('font proxy daily budget', () => {
     expect(counted).toBeLessThan(10 * 1024);
   });
 
-  test('leaves other paths, and a Worker with no binding, alone', async () => {
+  test('leaves other paths alone', async () => {
     const budgets = days({ [TODAY]: DAILY_BYTES });
     const { calls, next } = handler(10);
     const page = await withBudget(new Request('https://cv.test/font-picker'), budgets, context(), next, NOON);
     expect(page.status).toBe(200);
     expect(budgets.asked).toEqual([]);
+    expect(calls.count).toBe(1);
+  });
+
+  test('answers 503 without the binding, or when the budget cannot be read, never calling the proxy', async () => {
+    const { calls, next } = handler(10);
     const unbound = await withBudget(new Request(PROXY), undefined, context(), next, NOON);
-    expect(unbound.status).toBe(200);
-    expect(calls.count).toBe(2);
+    expect(unbound.status).toBe(503);
+    const broken = {
+      getByName: () => ({
+        spent: () => Promise.reject(new Error('object reset')),
+        add: () => Promise.resolve(),
+      }),
+    };
+    const failed = await withBudget(new Request(PROXY), broken, context(), next, NOON);
+    expect(failed.status).toBe(503);
+    const throwing = { getByName: (): Budget => { throw new Error('no such namespace'); } };
+    expect((await withBudget(new Request(PROXY), throwing, context(), next, NOON)).status).toBe(503);
+    expect(calls.count).toBe(0);
+  });
+
+  test('still serves the body when adding to the budget fails, and settles the wait', async () => {
+    const ctx = context();
+    const { next } = handler(100);
+    const failing = { getByName: () => ({ spent: async () => 0, add: () => Promise.reject(new Error('object reset')) }) };
+    const response = await withBudget(new Request(PROXY), failing, ctx, next, NOON);
+    expect((await response.arrayBuffer()).byteLength).toBe(100);
+    await ctx.settle();
   });
 });
 
