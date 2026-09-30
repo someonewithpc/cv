@@ -41,3 +41,19 @@ test('code is coloured by kind from the theme on screen, inline and in blocks', 
   }
   expect(seen.size).toBe(4);
 });
+
+test('the path data listing splits the d value into commands and numbers', async ({ page }) => {
+  await page.goto('/');
+  const listing = demoStack(page, 'Visrez Animated Loading Logo').locator('pre.path-data-layer');
+
+  await expect(listing.locator('.tok-command')).toHaveText(['M', 'L', 'l', 'l', 'l', 'v', 'L', 'l', 'v']);
+  await expect(listing.locator('.tok-number').first()).toHaveText('0.6');
+  await expect(listing.locator('.tok-string', { hasText: '0.6' })).toHaveCount(0);
+
+  // On Arctic, whose seeds are all blues, a command and a number differ in colour.
+  await pick(page, 'arctic');
+  const [command, number] = await Promise.all(
+    ['.tok-command', '.tok-number'].map((kind) => listing.locator(kind).first().evaluate((el) => getComputedStyle(el).color)),
+  );
+  expect(command).not.toBe(number);
+});

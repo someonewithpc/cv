@@ -46,7 +46,7 @@ export const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(
 const span = (text: string, kind?: string) => (kind ? `<span class="tok-${kind}">${escapeHtml(text)}</span>` : escapeHtml(text));
 
 /* One line's tokens as spans, from column `from` to `to` of the tokenised text. */
-const renderLine = (tokens: { content: string; color?: string }[], from = 0, to = Infinity) => {
+const renderLine = (tokens: Token[], from = 0, to = Infinity) => {
   let at = 0;
   let out = '';
   for (const { content, color } of tokens) {
@@ -58,19 +58,70 @@ const renderLine = (tokens: { content: string; color?: string }[], from = 0, to 
   return out;
 };
 
+/* SVG path data (and points): the grammar is regular, so a regex splits it into commands,
+   numbers, commas and space. */
+const PATH_PART = /([MLHVCSQTAZ])|([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)|(,)|(\s+)|(.)/gi;
+const PATH_DATA = /^\s*[MLHVCSQTAZ][MLHVCSQTAZ\d\s,.e+-]*$/i;
+
+const pathSpans = (text: string) =>
+  [...text.matchAll(PATH_PART)]
+    .map(([part, command, number, comma, space]) =>
+      span(part, command ? 'command' : number ? 'number' : comma ? 'punctuation' : space ? undefined : 'string'))
+    .join('');
+
+/* Attribute values that are path data or a lone number, which the markup grammar reads as a
+   plain string. */
+const VALUE_GRAMMAR: Record<string, (text: string) => string> = {
+  d: pathSpans,
+  points: pathSpans,
+  pathLength: (text) => span(text, 'number'),
+};
+
+type Token = { content: string; color?: string };
+
+/* Splits the string tokens of each such attribute's value, across lines, and leaves the quotes
+   as strings. Returns the lines as spans. */
+const renderMarkup = (lines: Token[][]) => {
+  let grammar: ((text: string) => string) | undefined;
+  let quotes = 0;
+  return lines.map((line) =>
+    line
+      .map(({ content, color }) => {
+        const kind = color && kindOf.get(color.toLowerCase());
+        if (kind === 'attribute') {
+          grammar = VALUE_GRAMMAR[content.trim()];
+          quotes = 0;
+        } else if (kind === 'tag') grammar = undefined;
+        if (!grammar || kind !== 'string') return span(content, kind);
+        return content
+          .split(/(")/)
+          .map((part) => {
+            if (!part) return '';
+            if (part !== '"') return quotes === 1 ? grammar!(part) : span(part, kind);
+            quotes += 1;
+            return span(part, kind);
+          })
+          .join('');
+      })
+      .join(''),
+  );
+};
+
 const classes = (className: string) => ['hl', className].join(' ').trim();
 
 /**
  * A code block: <pre class="hl"><code> with one span.line per line. `lineComment` marks a
  * listing's own notes that the language has no syntax for (the path data sheet's `--`): each
- * runs to the end of its line, is left out of the tokenising and set as a comment.
+ * runs to the end of its line, is left out of the tokenising and set as a comment. In markup,
+ * a d or points value is split into path commands and numbers.
  */
 export const highlightBlock = (code: string, lang: CodeLang, { lineComment = '', className = '' } = {}) => {
   const lines = code.split('\n');
   const notes = lines.map((line) => (lineComment && line.includes(lineComment) ? line.slice(line.indexOf(lineComment)) : ''));
   const bare = lines.map((line, index) => line.slice(0, line.length - notes[index].length)).join('\n');
   const tokens = highlighter.codeToTokensBase(bare, { lang, theme: 'cv' });
-  const body = tokens.map((line, index) => `<span class="line">${renderLine(line)}${span(notes[index], notes[index] ? 'comment' : undefined)}</span>`);
+  const rendered = lang === 'xml' || lang === 'html' ? renderMarkup(tokens) : tokens.map((line) => renderLine(line));
+  const body = rendered.map((line, index) => `<span class="line">${line}${span(notes[index], notes[index] ? 'comment' : undefined)}</span>`);
   return `<pre class="${classes(className)}" data-lang="${lang}"><code>${body.join('\n')}</code></pre>`;
 };
 
@@ -84,8 +135,8 @@ export const highlightInline = (code: string, lang: CodeLang, context: [string, 
   return `<code class="${classes(className)}">${renderLine(tokens, before.length, before.length + code.length)}</code>`;
 };
 
-/* How a code word in prose is read: a hint in braces first, `{attr}viewBox`, else a tag if it
-   looks like one, else TypeScript. */
+/* How a code word in prose is read: path data if it parses as such, `l -1, -0.707`, then a
+   hint in braces, `{attr}viewBox`, else a tag if it looks like one, else TypeScript. */
 const HINTS: Record<string, [CodeLang, [string, string]]> = {
   ts: ['ts', ['', '']],
   fn: ['ts', ['', '()']],
@@ -96,6 +147,7 @@ const HINTS: Record<string, [CodeLang, [string, string]]> = {
 };
 
 export const highlightWord = (word: string) => {
+  if (PATH_DATA.test(word) && /\d/.test(word)) return `<code class="hl">${pathSpans(word)}</code>`;
   const hint = word.match(/^\{(\w+)\}/);
   if (hint && HINTS[hint[1]]) return highlightInline(word.slice(hint[0].length), ...HINTS[hint[1]]);
   if (/^<\/?[\w-]+.*>$/.test(word)) return highlightInline(word, 'html');

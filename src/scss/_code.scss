@@ -81,6 +81,7 @@
 
   :where(.hl) {
     .tok-keyword,
+    .tok-command,
     .tok-tag,
     .tok-selector {
       color: var(--hl-warm);
