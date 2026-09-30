@@ -1330,9 +1330,24 @@ $fold-pulse-y: 2cm;
       // snap inside the slack.
       scroll-padding-inline: var(--row-slack);
       scrollbar-color: var(--line-strong) transparent;
+      // The scrollbar shows here, inside the row. Sized by its aspect ratio, the row gave the
+      // scrollbar the bottom 6px of every sheet wherever scrollbars take space (Firefox headless,
+      // a desktop with overlay scrollbars off). Padding under the sheets changes nothing, the
+      // scrollbar takes its room off the content box first, and scrollbar-gutter reserves for the
+      // block-axis one only. So the row takes its height from the sheet and grows by the
+      // scrollbar, whatever height that is, and by nothing where the scrollbar is an overlay. A
+      // size container has no content to size by, so the sheet's height goes in as the row's
+      // intrinsic one, and the sheets take it themselves, since a flex line in a contained box
+      // is no taller than its items. The sheet is already capped at the height the frame capped
+      // the row to on a phone (Stack.astro).
+      height: auto;
+      max-height: none;
+      aspect-ratio: auto;
+      contain-intrinsic-block-size: var(--sheet-block);
 
       > * {
         flex-basis: calc(100% - var(--sheet-peek));
+        block-size: var(--sheet-block);
         scroll-snap-align: start;
         scroll-snap-stop: always;
       }

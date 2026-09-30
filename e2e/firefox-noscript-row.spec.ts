@@ -63,11 +63,16 @@ for (const width of [1440, 390]) {
           const style = getComputedStyle(row);
           const box = row.getBoundingClientRect();
           const next = row.children[1]?.getBoundingClientRect();
+          const sheet = row.children[0].getBoundingClientRect();
           return {
             label: row.getAttribute('aria-label'),
             display: style.display,
             snap: style.scrollSnapType,
             nextShows: next ? box.right - next.left : null,
+            // How far the first sheet reaches below the row's scrollport, which ends where the
+            // scrollbar starts.
+            underScrollbar: sheet.bottom - (box.top + row.clientTop + row.clientHeight),
+            scrollbar: row.offsetHeight - row.clientHeight,
           };
         }),
       }));
@@ -80,6 +85,10 @@ for (const width of [1440, 390]) {
         expect(stack.snap, stack.label ?? '').toBe('x mandatory');
         // More than a hairline of the second sheet inside the row: its edge is on show.
         expect(stack.nextShows, stack.label ?? '').toBeGreaterThan(8);
+        // Headless Firefox draws a classic scrollbar, which takes space; the row makes room for
+        // it below the sheet instead of over the sheet's bottom edge.
+        expect(stack.scrollbar, `${stack.label ?? ''} scrollbar takes space`).toBeGreaterThan(0);
+        expect(stack.underScrollbar, stack.label ?? '').toBeLessThanOrEqual(0);
       }
     });
 

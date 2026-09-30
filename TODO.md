@@ -161,3 +161,4 @@
 - [x] index.css carries 56 KB of title-block tilt rules no page can match (#200)
 - [x] Hide the decorative inline SVGs from screen readers and name the two logos (A6) (#202)
 - [x] `npm run test:audit` measures an uncompressed server (O2) (#209)
+- [ ] The no-script row's scrollbar covers the bottom 6px of each sheet where scrollbars take space (FF4)
