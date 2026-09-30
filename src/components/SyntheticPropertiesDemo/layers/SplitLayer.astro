@@ -641,18 +641,18 @@ input {
 
 @media (prefers-reduced-motion: reduce) {
   .synthetic-tool.running {
-    .chip,
-    .rendering .piece,
-    .text {
+    .chip:not([data-full-motion] *),
+    .rendering .piece:not([data-full-motion] *),
+    .text:not([data-full-motion] *) {
       animation: none;
     }
   }
 
-  .piece {
+  .piece:not([data-full-motion] *) {
     transition: none;
   }
 
-  .inert-note:global(.nudge) {
+  .inert-note:global(.nudge):not([data-full-motion] *) {
     animation: none;
   }
 }

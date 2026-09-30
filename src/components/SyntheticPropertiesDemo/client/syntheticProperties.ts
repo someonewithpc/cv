@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { demoGate } from '@/client/frontPage';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
@@ -15,7 +15,6 @@ import {
   type SyntheticProperty,
 } from '../units';
 
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 /** The longest delay in SplitLayer.astro's `.running` animations, plus its duration. */
 const RUN_MS = 1700;
@@ -144,7 +143,7 @@ function runPipeline(tool: Tool, animate = true) {
   tool.current = searchableText([...storedSizeProperties(tool.size.value), ...pax]);
   renderQueries(tool);
 
-  if (!animate || reducedMotion.matches) return;
+  if (!animate || reducedMotion(tool.root)) return;
   // Restart the animations: drop the class, force a style flush, put it back.
   tool.root.classList.remove('running');
   void tool.root.offsetWidth;
@@ -161,12 +160,6 @@ function runPipeline(tool: Tool, animate = true) {
  */
 function autoplay(tool: Tool, steps: readonly Step[]) {
   const { root } = tool;
-
-  if (reducedMotion.matches) {
-    root.dataset.autoplay = 'off';
-    reportAutoplayState(root, 'off');
-    return;
-  }
 
   const cursor = document.createElement('span');
   cursor.className = 'demo-cursor';
@@ -312,10 +305,30 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     if (command === 'play' && root.dataset.autoplay === 'playing') return;
     held = false;
     stop();
-    void play();
+    if (reducedMotion(root)) park();
+    else void play();
   });
 
-  void play();
+  /** Under reduced motion the sheet waits for the deck's play key. */
+  const setPaused = () => {
+    root.dataset.autoplay = 'paused';
+    reportAutoplayState(root, 'paused');
+  };
+  // Reset puts the opening sample back without typing it.
+  const park = () => {
+    restore(tool);
+    setPaused();
+  };
+
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+    if (root.dataset.autoplay !== 'playing' || !reducedMotion(root)) return;
+    held = true;
+    stop();
+    setPaused();
+  });
+
+  if (reducedMotion(root)) setPaused();
+  else void play();
 }
 
 function restore(tool: Tool) {
