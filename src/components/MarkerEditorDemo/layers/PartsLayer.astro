@@ -24,7 +24,7 @@ const steps = [
 ---
 
 <div class="wrapper">
-  <div class="parts-layer" aria-hidden="true">
+  <div class="parts-layer">
     <div class="panel">
       <header>
         <span class="eyebrow">MarkerPart</span>
@@ -43,7 +43,7 @@ const steps = [
           ))}
         </div>
 
-        <div class="samples">
+        <div class="samples" aria-hidden="true">
           {steps.map((step, i) => (
             <Fragment>
               {i > 0 && (
