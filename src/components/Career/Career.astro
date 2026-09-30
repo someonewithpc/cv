@@ -18,7 +18,8 @@ type Entry = {
   place?: string;
   role?: string;
   from: Edge;
-  to: Edge;
+  /* No end: the job is still going, and runs to the day of the build. */
+  to?: Edge;
   summary?: string;
   items?: string[];
   see?: Link[];
@@ -45,6 +46,10 @@ const at = (edge: Edge, end = false): number => {
   return year + (end ? 1 : 0);
 };
 
+/* The day of the build, where the learning line and a job still going end. */
+const today = new Date();
+const NOW = today.getFullYear() + (today.getMonth() + (today.getDate() - 1) / 31) / 12;
+
 type Job = Entry & {
   n: string;
   study?: boolean;
@@ -62,11 +67,11 @@ type Job = Entry & {
 const jobs: Job[] = experience
   .map((entry, index) => {
     const start = at(entry.from);
-    const end = at(entry.to, true);
+    const end = entry.to ? at(entry.to, true) : NOW;
     const seasonal = entry.from.label.startsWith('Summer');
-    const months = Math.round((end - start) * 12);
+    const months = Math.max(1, Math.round((end - start) * 12));
     const span = seasonal
-      ? `${Number(entry.to.date) - Number(entry.from.date) + 1} summers`
+      ? `${Number(entry.to!.date) - Number(entry.from.date) + 1} summers`
       : [months >= 12 && `${Math.floor(months / 12)}y`, months % 12 && `${months % 12}m`].filter(Boolean).join(' ');
     const org = entry.place ? `${entry.org}, ${entry.place}` : entry.org;
     const lines = entry.role ? [entry.role, org] : [org];
@@ -109,7 +114,7 @@ const overlaps = (a: Job, b: Job) => a.start < b.end + CLEAR && b.start < a.end 
 
 /* A seasonal job breaks off midway through each winter between its summers. */
 const breaks = (job: Job) =>
-  job.seasonal ? Array.from({ length: Number(job.to.date) - Number(job.from.date) }, (_, i) => Number(job.from.date) + i + 1.075) : [];
+  job.seasonal ? Array.from({ length: Number(job.to!.date) - Number(job.from.date) }, (_, i) => Number(job.from.date) + i + 1.075) : [];
 
 const ANCHORS = [0.3, 0.7, 0.5, 0.15, 0.85];
 const MARGIN = 0.12;
@@ -143,10 +148,6 @@ const elbows = (job: Job, margin: number): number[] => {
   }
   return turns.sort((a, b) => a.far - b.far).map(({ t }) => t);
 };
-
-/* The learning line has not ended: it runs to the day of the build. */
-const today = new Date();
-const NOW = today.getFullYear() + (today.getMonth() + (today.getDate() - 1) / 31) / 12;
 
 /* It lies under every lane, so its anchor is any point before the first job. Placed first,
    it takes the lowest label row. */
@@ -522,7 +523,7 @@ const tall = (() => {
 
               <p class="period monospace">
                 <time datetime={entry.from.date}>{entry.from.label}</time>
-                <span class="to"><span class="to-word">to</span> <time datetime={entry.to.date}>{entry.to.label}</time></span>
+                <span class="to"><span class="to-word">to</span> {entry.to ? <time datetime={entry.to.date}>{entry.to.label}</time> : 'present'}</span>
               </p>
 
               <div class="description">

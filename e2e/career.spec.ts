@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 type Edge = { date: string; label: string };
 type Site = {
-  experience: { id: string; org: string; from: Edge; to: Edge }[];
+  experience: { id: string; org: string; from: Edge; to?: Edge }[];
   learning: { label: string; from: string };
   education: { degree: string; minor: string; school: string; short: string; from: string; year: string };
   languages: { name: string }[];
@@ -20,6 +20,10 @@ const at = ({ date, label }: Edge, end = false) => {
   if (month) return year + (end ? month : month - 1) / 12;
   return year + (label.startsWith('Summer') ? (end ? 0.7 : 0.45) : end ? 1 : 0);
 };
+
+/** Where a job ends: a job still going runs to the day of the build, taken as today. */
+const today = new Date();
+const until = (to?: Edge) => (to ? at(to, true) : today.getFullYear() + (today.getMonth() + (today.getDate() - 1) / 31) / 12);
 
 /** How far a job's bar, or the pieces of a broken one, reach along the time axis. */
 const extent = (bars: SVGGraphicsElement[]) => {
@@ -50,7 +54,8 @@ test('the revision table lists every role in the data, newest first', async ({ p
     await expect(row).toHaveId(`career-${entry.id}`);
     await expect(row.locator('h4')).toContainText(entry.org);
     await expect(row.locator('.period time').first()).toHaveAttribute('datetime', entry.from.date);
-    await expect(row.locator('.period time').last()).toHaveAttribute('datetime', entry.to.date);
+    if (entry.to) await expect(row.locator('.period time').last()).toHaveAttribute('datetime', entry.to.date);
+    else await expect(row.locator('.period .to')).toHaveText('to present');
   }
 
   // The oldest job is revision 01 and the count runs down from the top.
@@ -91,7 +96,7 @@ test('the elevation under the table draws one bar per job, as long as the job la
   for (const [index, entry] of site.experience.entries()) {
     const job = wide.locator(`.job[data-job="${entry.id}"]`);
     const { from, to } = await job.locator('.bar').evaluateAll(extent);
-    expect(to - from, `${entry.id} is the wrong length`).toBeCloseTo((at(entry.to, true) - at(entry.from)) * unit, 0);
+    expect(to - from, `${entry.id} is the wrong length`).toBeCloseTo((until(entry.to) - at(entry.from)) * unit, 0);
     // The bubble carries the job's revision from the table.
     await expect(job.locator('.bubble-number')).toHaveText(String(site.experience.length - index).padStart(2, '0'));
   }
@@ -152,7 +157,7 @@ test('where two bars overlap, the one that started later sits lower', async ({ p
       const box = (await svg.locator(`g[data-job="${id}"] .bar`).first().boundingBox())!;
       return drawing === 'wide' ? -box.y : box.x;
     };
-    const jobs = site.experience.map((entry) => ({ id: entry.id, from: at(entry.from), to: at(entry.to, true) }));
+    const jobs = site.experience.map((entry) => ({ id: entry.id, from: at(entry.from), to: until(entry.to) }));
     for (const [i, a] of jobs.entries()) {
       for (const b of jobs.slice(i + 1)) {
         if (!(a.from < b.to && b.from < a.to)) continue;
@@ -378,7 +383,7 @@ test('the table service summers break off at each winter with a round bar break'
   await page.goto('/');
 
   const catering = site.experience.find((entry) => entry.from.label.startsWith('Summer'))!;
-  const summers = Number(catering.to.date) - Number(catering.from.date) + 1;
+  const summers = Number(catering.to!.date) - Number(catering.from.date) + 1;
   for (const drawing of ['wide', 'tall']) {
     const pieces = page.locator(`#career svg.${drawing} .job[data-job="${catering.id}"] .bar`);
     await expect(pieces, `${drawing}: one piece per summer`).toHaveCount(summers);
