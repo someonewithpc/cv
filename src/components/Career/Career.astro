@@ -616,6 +616,7 @@ const tall = (() => {
 
 <style lang="scss">
 @use "@/scss/_page-column.scss" as column;
+@use '@/scss/hit-area' as *;
 
 // The sheet is the page column less its padding: one page gutter (var(--page-gap)) on each
 // side, and on the desk the desk sheet's rim and edge in its place. The breakpoints below are
@@ -999,6 +1000,10 @@ $career-inset: (gaps: 1, desk: column.$inset-desk-sheet);
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--ink-faint);
+
+      a {
+        @include hit-area;
+      }
     }
   }
 

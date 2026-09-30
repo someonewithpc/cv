@@ -1,0 +1,25 @@
+// A touch target of at least $size each way (WCAG 2.5.8), drawn by a transparent
+// pseudo-element centred on the control, so the control looks and lays out the same.
+// It only grows the sides that are short, and it does not move the neighbours: a caller
+// checks there is room for it. $position false keeps a control that is already positioned;
+// $inline sets how far past the sides it reaches, for controls packed closer than that.
+// The box sits under the control's own content, so a label's input still takes its own
+// clicks and caret.
+@mixin hit-area($size: 1.5rem, $pseudo: after, $position: relative, $inline: null) {
+  @if $position {
+    position: $position;
+  }
+  isolation: isolate;
+
+  &::#{$pseudo} {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset-block: min(0px, calc((100% - #{$size}) / 2));
+    @if $inline {
+      inset-inline: $inline;
+    } @else {
+      inset-inline: min(0px, calc((100% - #{$size}) / 2));
+    }
+  }
+}

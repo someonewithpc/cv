@@ -42,6 +42,7 @@ import { mailLink } from '../mailLink';
 </header>
 
 <style lang="scss">
+@use '@/scss/hit-area' as *;
 header {
   // tabindex="-1": where the H access key lands, not a Tab stop.
   &:focus-visible {
@@ -216,6 +217,7 @@ header {
       justify-content: center;
       gap: 0.5ch;
       width: fit-content;
+      @include hit-area;
     }
 
     /* The player is 300px wide by default and still takes its room while hidden, so on a
