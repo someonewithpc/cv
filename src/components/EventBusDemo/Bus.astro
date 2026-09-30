@@ -249,7 +249,10 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
   container-name: event-bus;
 
   font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.6875rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
+  /* A landscape sheet under 423px tall held the type at its 0.6875rem floor while the sheet
+     kept shrinking, and the column of stages ran past its bottom edge. Under 367px tall the
+     type follows the sheet's height instead. */
+  font-size: min(clamp(0.6875rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem), 0.03 * var(--sheet-block));
   line-height: 1.35;
   color: var(--ink);
 
