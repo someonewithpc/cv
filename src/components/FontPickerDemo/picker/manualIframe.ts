@@ -1,4 +1,9 @@
-import { proxiedFetch } from './proxiedFetch';
+import { FetchCapError, proxiedFetch } from './proxiedFetch';
+
+// A page's stylesheets, @imports included, that one extraction follows
+export const MAX_SHEETS = 32;
+// Sheets kept for a later extraction of the same page
+const CACHED_SHEETS = 64;
 
 /**
  * The URL a sheet's own relative references resolve against: the sheet's, for one fetched
@@ -24,16 +29,20 @@ async function fetchStylesheet(source: { href: string }, signal: AbortSignal): P
     const promise = proxiedFetch(source.href, { signal })
       .then(async (res) => {
         if (!res.ok) return null;
-        return {
-          href: source.href,
-          contentType: res.headers.get('content-type') ?? '',
-          text: await res.text(),
-        };
+        return { href: source.href, contentType: res.contentType, text: await res.text() };
       })
-      .catch(() => {
+      .catch((error) => {
         stylesheetCache.delete(source.href);
+        // A missing sheet is skipped, a tripped limit fails the extraction
+        if (error instanceof FetchCapError) throw error;
         return null;
       });
+    stylesheetCache.set(source.href, promise);
+    if (stylesheetCache.size > CACHED_SHEETS) stylesheetCache.delete(stylesheetCache.keys().next().value!);
+  } else {
+    // Least recently used goes first
+    const promise = stylesheetCache.get(source.href)!;
+    stylesheetCache.delete(source.href);
     stylesheetCache.set(source.href, promise);
   }
 
@@ -48,11 +57,13 @@ type Source = { href: string };
 // microtask loop until the tab hung (the cache answers repeats with a resolved promise, so
 // the signal never got a say).
 function unseen(sources: Source[], seen: Set<string>): Source[] {
-  return sources.filter((source) => {
+  const fresh = sources.filter((source) => {
     if (seen.has(source.href)) return false;
     seen.add(source.href);
     return true;
   });
+  if (seen.size > MAX_SHEETS) throw new FetchCapError('Too many stylesheets');
+  return fresh;
 }
 
 function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc: Document, signal: AbortSignal, seen: Set<string>): Promise<any> {
@@ -66,12 +77,12 @@ function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc
       // and inlined under the page's <base> they would resolve against the page instead
       // (../fonts/x.woff2 from /assets/css/site.css landing at /fonts/ rather than /assets/fonts/).
       el.dataset.href = response.href;
-      el.innerHTML = response.text;
+      el.textContent = response.text;
       doc.body.append(el);
 
       const subResponses = await Promise.all(
         unseen(findStyleImports(el), seen)
-          .map((source) => fetchStylesheet(source, signal).catch(() => null))
+          .map((source) => fetchStylesheet(source, signal))
       );
 
       return processStylesheetResponses(subResponses, doc, signal, seen);
@@ -96,7 +107,7 @@ export default async function manualIframe(url: string, signal: AbortSignal) {
 
   const res = await proxiedFetch(url, { signal });
 
-  if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('text/html')) throw new Error('Invalid URL');
+  if (!res.ok || !res.contentType.startsWith('text/html')) throw new Error('Invalid URL');
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(await res.text(), 'text/html');
@@ -110,7 +121,7 @@ export default async function manualIframe(url: string, signal: AbortSignal) {
 
   const seen = new Set<string>();
   const stylesheetResponses = await Promise.all(
-    unseen([...stylesheetLinks, ...styleImports], seen).map((source) => fetchStylesheet(source, signal).catch(() => null))
+    unseen([...stylesheetLinks, ...styleImports], seen).map((source) => fetchStylesheet(source, signal))
   );
 
   await processStylesheetResponses(stylesheetResponses, doc, signal, seen);

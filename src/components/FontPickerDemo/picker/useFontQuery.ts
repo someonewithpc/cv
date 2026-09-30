@@ -10,11 +10,15 @@ export type QueryOptions<T> = {
 
 type Entry<T> = { status: QueryStatus, data?: T };
 
+// Every debounced value typed is a key, so only the most recent ones are kept
+const MAX_ENTRIES = 64;
 const entries = new Map<string, Entry<unknown>>();
 const listeners = new Set<() => void>();
 
 function setEntry(key: string, entry: Entry<unknown>) {
+  entries.delete(key);
   entries.set(key, entry);
+  if (entries.size > MAX_ENTRIES) entries.delete(entries.keys().next().value!);
   listeners.forEach((listener) => listener());
 }
 

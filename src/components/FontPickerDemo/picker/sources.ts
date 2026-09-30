@@ -1,6 +1,6 @@
 import loadFontFacesFromStyleElement, { mergeFaces } from './loadFontFacesFromStyleElement';
 import manualIframe, { stylesheetBase } from './manualIframe';
-import { proxiedFetch } from './proxiedFetch';
+import { cappedFetch, proxiedFetch } from './proxiedFetch';
 
 export type LoadedFaces = Record<string, string>;
 
@@ -14,12 +14,16 @@ export async function loadGoogleFont(family: string, signal: AbortSignal): Promi
   // name that works still works when asked directly, and only the ones on the way to it lose
   // their error to CORS
   let res = await proxiedFetch(url, { signal });
-  if (res.status === 404) res = await fetch(url, { signal });
-  if (!res.ok || res.headers.get('content-type')?.startsWith('text/css') !== true) throw new Error('Not a Google font');
+  if (res.status === 404) res = await cappedFetch(url, { signal, direct: true });
+  if (!res.ok || !res.contentType.startsWith('text/css')) throw new Error('Not a Google font');
 
-  // A detached <style> has no sheet, so the CSS gets a document of its own
-  const doc = new DOMParser().parseFromString(`<html><head><style>${await res.text()}</style></head></html>`, 'text/html');
-  return loadFontFacesFromStyleElement(doc.head.children[0] as HTMLStyleElement);
+  // A detached <style> has no sheet, so the CSS gets a document of its own. It goes in as
+  // text, never markup, so a </style> inside it stays CSS
+  const doc = document.implementation.createHTMLDocument();
+  const el = doc.createElement('style');
+  el.textContent = await res.text();
+  doc.head.append(el);
+  return loadFontFacesFromStyleElement(el);
 }
 
 export async function loadPageFonts(url: string, signal: AbortSignal): Promise<LoadedFaces> {
