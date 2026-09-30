@@ -2,10 +2,14 @@
 
 ## Audits
 
-`npm run test:audit` builds the site, serves the build on port 4311 and runs four checks
-over it. It takes about a minute and a half, so run it when you want it rather than on
-every change. `AUDIT_PORT` moves the server if 4311 is taken, `AUDIT_CHROME_PORT` the
-browser Lighthouse drives.
+`npm run test:audit` builds the site, serves the build on port 4311 through `wrangler dev`
+and runs four checks over it. wrangler runs the same worker and static-assets setup that
+`wrangler deploy` ships, offline in workerd, so Lighthouse sees the responses a reader gets:
+brotli on the document and the stylesheets, `_astro/` files immutable, `public/_headers`
+applied. `astro preview` sends every file uncompressed, which on Lighthouse's simulated slow
+4G put the mobile first paint at 12 s for a download nobody makes. The run takes about two
+minutes, so run it when you want it rather than on every change. `AUDIT_PORT` moves the
+server if 4311 is taken, `AUDIT_CHROME_PORT` the browser Lighthouse drives.
 
 - HTML, with the [W3C Nu checker](https://validator.w3.org/nu/) over `dist/client`. `vnu`
   comes from the nix dev shell, and the audit falls back to `nix develop --command vnu`
