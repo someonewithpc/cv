@@ -42,6 +42,18 @@ const CONTROL_POINT_INDICATOR_STROKE_WIDTH = 0.00625;
 
 export const defaultActiveState = { shape: 'teardrop', decoration: 'customIcon', shapeBorder: 'solid', shapeBorderColor: 'solid', decorationBorder: 'none', decorationBorderColor: 'solid', shapeFill: 'solid', decorationFill: 'solid', decorationFont: 'font' } as const;
 
+// The dialog's keyboard stops in document order. A closed step keeps its boxes
+// (content-visibility) and checkVisibility() ignores inert, so both are ruled out by hand.
+function tabbables(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>('button, input, select, textarea, summary, a[href], [tabindex]'))
+    .filter((el) => {
+      if (el.tabIndex < 0 || el.matches(':disabled') || el.closest('[inert]') || !el.checkVisibility()) return false;
+      const closed = el.closest('details:not([open])');
+      return !closed || (el.tagName === 'SUMMARY' && el.parentElement === closed);
+    });
+}
+
 function resetAllMarkerParts() {
   Object.values(markers).forEach((step) => {
     Object.values(step).forEach((part) => {
@@ -57,6 +69,7 @@ export function MarkerEditor({
   onClose,
   portalHost,
   embed = false,
+  focusOnOpen = false,
 }: {
   space: SpaceType;
   baseMarkerId: MarkerType['baseMarkerId'];
@@ -65,6 +78,8 @@ export function MarkerEditor({
   portalHost?: HTMLElement | null;
   /** Render in-place (no portal) for static diagram pages. */
   embed?: boolean;
+  /** Move focus onto the first control at mount: the open was the visitor's. */
+  focusOnOpen?: boolean;
 }) {
   const dispatch = useAppDispatch();
   const storeSpaces = useAppSelector(spacesSelector);
@@ -259,6 +274,13 @@ export function MarkerEditor({
 
   const editorRef = useRef<HTMLDivElement>(null);
 
+  // A visitor's open moves focus onto the dialog's first control; the walkthrough's opens
+  // leave focus where the visitor has it. The selector gives focus back when this closes.
+  useEffect(() => {
+    if (embed || !focusOnOpen) return;
+    tabbables(editorRef.current)[0]?.focus({ preventScroll: true });
+  }, [embed, focusOnOpen]);
+
   // Horizontal / shift-wheel over the editor chrome should still move the carousel.
   // (The dimmed backdrop already passes through via pointer-events: none.)
   useEffect(() => {
@@ -300,6 +322,17 @@ export function MarkerEditor({
           if (e.key === 'Escape' && !embed) {
             e.preventDefault();
             onClose();
+          }
+          // The dialog is modal: Tab past its last control comes back round to the first,
+          // and Shift+Tab off the first lands on the last.
+          if (e.key === 'Tab' && !embed) {
+            const stops = tabbables(e.currentTarget);
+            const at = stops.indexOf(document.activeElement as HTMLElement);
+            const wrap = e.shiftKey ? (at <= 0 ? stops[stops.length - 1] : undefined) : (at === stops.length - 1 ? stops[0] : undefined);
+            if (wrap) {
+              e.preventDefault();
+              wrap.focus({ preventScroll: true });
+            }
           }
           e.stopPropagation();
         }}

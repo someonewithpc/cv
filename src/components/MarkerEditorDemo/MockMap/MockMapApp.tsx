@@ -789,6 +789,7 @@ function MockMapOverlayInner() {
           position={{ x: selectorOverlayPos.x * 100, y: selectorOverlayPos.y * 100 }}
           portalHost={editorPortalHost}
           onClose={clearSelection}
+          interactive={userControl}
         />
       )}
 

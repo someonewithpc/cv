@@ -1,6 +1,6 @@
 import '../client-only';
 
-import { lazy, Suspense, useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -59,11 +59,14 @@ export function MarkerSelector({
   position,
   onClose,
   portalHost,
+  interactive = false,
 }: {
   space: SpaceType;
   position: Position;
   onClose: () => void;
   portalHost: HTMLElement | null;
+  /** The visitor has the demo: an open moves focus into the editor, a close gives it back. */
+  interactive?: boolean;
 }) {
   const dispatch = useAppDispatch();
   const markers = useAppSelector(markersSelector);
@@ -74,6 +77,18 @@ export function MarkerSelector({
   const [editedMarkerId, setEditedMarkerId] = useState<MarkerType['id'] | undefined>(undefined);
   const [editedBaseMarkerId, setEditedBaseMarkerId] = useState<MarkerType['baseMarkerId']>(undefined);
   const [isNewMarker, setIsNewMarker] = useState(false);
+
+  // The option the visitor opened the editor from, as its demo target; the walkthrough's
+  // opens leave it unset and focus alone.
+  const [opener, setOpener] = useState<string | null>(null);
+  const listRef = useRef<HTMLElement>(null);
+  const openEditor = (target: string) => setOpener(interactive ? target : null);
+
+  useEffect(() => {
+    if (editedMarkerId !== undefined || opener === null) return;
+    setOpener(null);
+    listRef.current?.querySelector<HTMLElement>(`[data-demo-target="${opener}"]`)?.focus({ preventScroll: true });
+  }, [editedMarkerId, opener]);
 
   // One object per space and marker: a literal here was a new prop on every render, and the
   // editor re-runs its nine imperative roots whenever the space it is handed changes.
@@ -87,6 +102,7 @@ export function MarkerSelector({
           baseMarkerId={editedBaseMarkerId}
           isNewMarker={isNewMarker}
           portalHost={portalHost}
+          focusOnOpen={opener !== null}
           onClose={() => {
             setEditedMarkerId(undefined);
             setEditedBaseMarkerId(undefined);
@@ -100,6 +116,7 @@ export function MarkerSelector({
   return (
     <>
       <section
+        ref={listRef}
         className="marker-editing-overlay"
         style={{
           '--selector-anchor-x': `${position.x}%`,
@@ -155,6 +172,7 @@ export function MarkerSelector({
                       aria-label="Edit marker"
                       onClick={(e) => {
                         e.stopPropagation();
+                        openEditor(`selector:edit:${marker.id}`);
                         setEditedMarkerId(marker.id);
                         setEditedBaseMarkerId(marker.baseMarkerId);
                         setIsNewMarker(false);
@@ -224,6 +242,7 @@ export function MarkerSelector({
             title="Create new marker"
             data-demo-target="selector:create"
             {...pressable(() => {
+              openEditor('selector:create');
               setEditedMarkerId(uuidv4());
               setIsNewMarker(true);
             })}

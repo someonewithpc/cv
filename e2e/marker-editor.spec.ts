@@ -185,6 +185,46 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(deck).toHaveAttribute('data-state', 'playing');
     });
   });
+
+  test.describe(`marker editor dialog at ${name} width`, () => {
+    test.use({ viewport });
+
+    test('takes focus on open, keeps Tab inside, and gives it back on Escape', async ({ page }) => {
+      const stack = markerEditorStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      const front = frontPage(stack, await frontPageIndex(stack));
+      const island = await waitForIslandMounted(front);
+      const overlay = island.locator('.mock-map-overlay');
+      const pins = overlay.locator('button.space-pin');
+      await expect(pins.first()).toBeVisible({ timeout: 15_000 });
+
+      // As in the picker test above: the pins answer once the visitor has taken over.
+      await overlay.focus();
+      await expect(page.getByText('Demo paused')).toBeVisible();
+      await pins.first().click();
+
+      const create = page.getByRole('option', { name: 'Create new marker' });
+      await create.focus();
+      await page.keyboard.press('Enter');
+
+      const editor = page.locator('#marker-editor');
+      await expect(editor).toBeVisible();
+      const goBack = editor.getByRole('button', { name: 'Go back' });
+      await expect(goBack).toBeFocused();
+
+      // Shift+Tab off the first control lands on the dialog's last one, and Tab from
+      // there comes back round: focus never leaves the dialog.
+      await page.keyboard.press('Shift+Tab');
+      await expect(editor.locator(':focus')).toHaveCount(1);
+      await expect(goBack).not.toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(goBack).toBeFocused();
+
+      await page.keyboard.press('Escape');
+      await expect(editor).toHaveCount(0);
+      await expect(create).toBeFocused();
+    });
+  });
 }
 
 test.describe('with reduced motion', () => {
