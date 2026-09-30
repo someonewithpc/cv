@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { GET } from '../src/pages/api/font-proxy';
+import { GET, UPSTREAM_TIMEOUT_MS } from '../src/pages/api/font-proxy';
 import { UPSTREAM_BYTES_HEADER } from '../src/server/fontProxyBudget';
 import { isInternalAddress } from '../src/server/internalAddress';
 
@@ -15,6 +15,15 @@ interface Upstream {
   status?: number,
   headers?: Record<string, string>,
   bytes?: number,
+  // Never answers, or answers and then never sends a byte
+  hang?: 'headers' | 'body',
+}
+
+// A fetch that stalls until its signal fires, as a real one does
+function stall(init?: RequestInit): Promise<never> {
+  return new Promise((_, reject) => {
+    init?.signal?.addEventListener('abort', () => reject(init.signal!.reason), { once: true });
+  });
 }
 
 interface Served {
@@ -35,6 +44,7 @@ function harness(dns: Record<string, string[]>, upstreams: Record<string, Upstre
       const type = url.searchParams.get('type')!;
       lookups.push({ name, type, accept: new Headers(init?.headers).get('accept') });
       if (name === 'dns-down.test') return new Response('', { status: 503 });
+      if (name === 'dns-hang.test') return stall(init);
       const answers = (dns[name] ?? [])
         .filter((address) => address.includes(':') === (type === 'AAAA'))
         .map((data) => ({ name, type: type === 'A' ? 1 : 28, TTL: 60, data }));
@@ -45,9 +55,11 @@ function harness(dns: Record<string, string[]>, upstreams: Record<string, Upstre
     if (!upstream) throw new Error(`test fetched an unscripted URL: ${url}`);
     const record: Served = { url: url.toString(), redirect: init?.redirect, bytesRead: 0, cancelled: false };
     served.push(record);
+    if (upstream.hang === 'headers') return stall(init);
     let left = upstream.bytes ?? 0;
     const body = new ReadableStream<Uint8Array>({
       pull(controller) {
+        if (upstream.hang === 'body') return new Promise(() => {});
         if (left === 0) return controller.close();
         const size = Math.min(CHUNK, left);
         left -= size;
@@ -272,6 +284,30 @@ test.describe('font proxy', () => {
     expect(unresolved.status).toBe(400);
     expect(Number(unresolved.headers.get(UPSTREAM_BYTES_HEADER))).toBeGreaterThan(0);
   });
+  test('gives up on a stalled lookup, hop or body at the deadline with a 504', async () => {
+    const realTimeout = AbortSignal.timeout;
+    const asked: number[] = [];
+    AbortSignal.timeout = (ms: number) => {
+      asked.push(ms);
+      return realTimeout.call(AbortSignal, 50);
+    };
+    try {
+      const cases: [string, ReturnType<typeof harness>][] = [
+        ['https://dns-hang.test/a.css', harness({}, {})],
+        ['https://fonts.test/a.css', harness(PUBLIC, { 'https://fonts.test/a.css': { headers: CSS, hang: 'headers' } })],
+        ['https://fonts.test/a.css', harness(PUBLIC, { 'https://fonts.test/a.css': { headers: CSS, hang: 'body' } })],
+      ];
+      for (const [target, setup] of cases) {
+        const response = await proxy(setup, target);
+        expect(response.status, target).toBe(504);
+        expect(await response.text()).toBe('Upstream timed out');
+      }
+      expect(asked).toEqual([UPSTREAM_TIMEOUT_MS, UPSTREAM_TIMEOUT_MS, UPSTREAM_TIMEOUT_MS]);
+    } finally {
+      AbortSignal.timeout = realTimeout;
+    }
+  });
+
 
 
   test('lets public addresses through, mapped and NAT64 forms included', () => {

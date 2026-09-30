@@ -106,14 +106,18 @@ const AAAA = 28;
 
 /**
  * Every A and AAAA address the host resolves to, CNAMEs followed. Empty when it doesn't resolve.
- * The answers' bytes go on the meter.
+ * The answers' bytes go on the meter, and the signal aborts the lookups.
  */
-export async function resolveHost(host: string, meter: { bytes: number } = { bytes: 0 }): Promise<string[]> {
+export async function resolveHost(
+  host: string,
+  meter: { bytes: number } = { bytes: 0 },
+  signal?: AbortSignal,
+): Promise<string[]> {
   const answers = await Promise.all(['A', 'AAAA'].map(async (type) => {
     const query = new URL(DOH_URL);
     query.searchParams.set('name', host);
     query.searchParams.set('type', type);
-    const response = await fetch(query, { headers: { accept: 'application/dns-json' } });
+    const response = await fetch(query, { headers: { accept: 'application/dns-json' }, signal });
     if (!response.ok) {
       await response.body?.cancel();
       throw new Error(`DNS lookup failed with ${response.status}`);

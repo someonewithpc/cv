@@ -9,6 +9,10 @@ const MAX_BYTES = 8 * 1024 * 1024;
 // Google Fonts answers in one hop and a page's stylesheet in at most a couple; a chain past
 // this is not a font.
 const MAX_REDIRECTS = 5;
+// One deadline for a whole request: every DNS lookup, every hop and the body read share it, so
+// a stalled upstream holds the worker this long at most. The picker waits on these fetches
+// while a visitor watches, and Google Fonts answers a hop in well under a second.
+export const UPSTREAM_TIMEOUT_MS = 10_000;
 
 // text/html and text/css for page/stylesheet extraction, the rest for the font files themselves
 const ALLOWED_CONTENT_TYPES = /^(text\/(css|html)|font\/|application\/(x-)?font|application\/octet-stream|binary\/octet-stream)/i;
@@ -52,8 +56,8 @@ function validateTarget(raw: string, base?: URL): URL {
 // address checked here. A name that answers this lookup with a public address and the next with
 // a private one (DNS rebinding, TTL 0) still gets through. Deployed Workers cannot reach
 // private addresses anyway, so the gap is open only under astro dev and preview.
-async function refuseInternal(target: URL, meter: Meter): Promise<void> {
-  const addresses = await resolveHost(target.hostname, meter);
+async function refuseInternal(target: URL, meter: Meter, signal: AbortSignal): Promise<void> {
+  const addresses = await resolveHost(target.hostname, meter, signal);
   if (addresses.length === 0) throw new Refused('Host does not resolve');
   if (addresses.some(isInternalAddress)) throw new Refused('Refusing to fetch private addresses');
 }
@@ -63,10 +67,10 @@ async function refuseInternal(target: URL, meter: Meter): Promise<void> {
  * refuseInternal: with redirect 'follow' only the first URL was checked, and the one it
  * redirected to could be anything.
  */
-async function fetchFollowingRedirects(target: URL, headers: HeadersInit, meter: Meter): Promise<Response> {
+async function fetchFollowingRedirects(target: URL, headers: HeadersInit, meter: Meter, signal: AbortSignal): Promise<Response> {
   for (let hop = 0; ; hop += 1) {
-    await refuseInternal(target, meter);
-    const upstream = await fetch(target, { headers, redirect: 'manual' });
+    await refuseInternal(target, meter, signal);
+    const upstream = await fetch(target, { headers, redirect: 'manual', signal });
     const location = upstream.headers.get('location');
     if (upstream.status < 300 || upstream.status > 399 || !location) return upstream;
     await upstream.body?.cancel();
@@ -80,15 +84,29 @@ async function fetchFollowingRedirects(target: URL, headers: HeadersInit, meter:
  * content-length, which the header check cannot judge, costs the worker at most one chunk
  * over the cap rather than the whole thing; arrayBuffer() pulled it all before measuring.
  * null when the body was over the cap. Every chunk read goes on the meter, the one past the cap
- * too.
+ * too. The read gives up when the signal fires, whether or not the stream heeds it.
  */
-async function readUpTo(body: ReadableStream<Uint8Array> | null, limit: number, meter: Meter): Promise<ArrayBuffer | null> {
+async function readUpTo(
+  body: ReadableStream<Uint8Array> | null,
+  limit: number,
+  meter: Meter,
+  signal: AbortSignal,
+): Promise<ArrayBuffer | null> {
   if (!body) return new ArrayBuffer(0);
+  signal.throwIfAborted();
   const reader = body.getReader();
+  const aborted = new Promise<never>((_, reject) => {
+    // Rejected before the cancel, which would settle the pending read as done
+    signal.addEventListener('abort', () => {
+      reject(signal.reason);
+      reader.cancel().catch(() => {});
+    }, { once: true });
+  });
+  aborted.catch(() => {});
   const chunks: Uint8Array[] = [];
   let total = 0;
   for (;;) {
-    const { done, value } = await reader.read();
+    const { done, value } = await Promise.race([reader.read(), aborted]);
     if (done) break;
     total += value.byteLength;
     meter.bytes += value.byteLength;
@@ -136,6 +154,9 @@ export const GET: APIRoute = async ({ url, request }) => {
     return response;
   };
 
+  const signal = AbortSignal.timeout(UPSTREAM_TIMEOUT_MS);
+  const timedOut = (e: unknown) => e instanceof DOMException && e.name === 'TimeoutError';
+
   let upstream: Response;
   try {
     upstream = await fetchFollowingRedirects(target, {
@@ -143,9 +164,10 @@ export const GET: APIRoute = async ({ url, request }) => {
       // Pass the browser's UA through so e.g. Google Fonts serves modern woff2 CSS
       'user-agent': request.headers.get('user-agent') ?? 'cv-font-picker-demo',
       'accept-language': request.headers.get('accept-language') ?? 'en',
-    }, meter);
+    }, meter, signal);
   } catch (e) {
     if (e instanceof Refused) return metered(e.message, { status: 400 });
+    if (timedOut(e)) return metered('Upstream timed out', { status: 504 });
     return metered('Upstream fetch failed: ' + (e instanceof Error ? e.message : String(e)), { status: 502 });
   }
 
@@ -161,7 +183,13 @@ export const GET: APIRoute = async ({ url, request }) => {
     return metered('Response too large', { status: 413 });
   }
 
-  const body = await readUpTo(upstream.body, MAX_BYTES, meter);
+  let body: ArrayBuffer | null;
+  try {
+    body = await readUpTo(upstream.body, MAX_BYTES, meter, signal);
+  } catch (e) {
+    if (timedOut(e)) return metered('Upstream timed out', { status: 504 });
+    throw e;
+  }
   if (body === null) {
     return metered('Response too large', { status: 413 });
   }
