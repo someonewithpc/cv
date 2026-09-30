@@ -177,3 +177,4 @@
 - [x] Honour reduced motion on the fold, the page turn, the logo layers, the toasts and the map zoom (#203)
 - [x] Self-hosted fonts, weights matched to use, no restyle after first paint (P3) (#217)
 - [x] Give every control a 24px touch target at 390 wide, with and without script (A5) (#206)
+- [ ] Give public/ desk, demo and favicon assets a long max-age instead of revalidating every visit (P12)
