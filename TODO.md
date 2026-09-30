@@ -74,7 +74,7 @@
   - [x] web-ts-mode: painted buffer, parser ranges, selector depth hue, doctor (SH-11)
   - [ ] Paper stack: the pile, the fold, the holds and the no-script row
   - [x] Own theme picker: the control, the token layers, the default and the wipe (#189)
-    - [ ] Code in the theme's own colours, inline and in blocks
+    - [x] Code in the theme's own colours, inline and in blocks (#207)
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
   - [ ] Ball loader animation (~/project/playground)
