@@ -187,4 +187,4 @@
 - [x] Quote the family name as a CSS string wherever the picker writes it into a rule or a style (C49) (#223)
 - [x] Keep the walkthrough readouts in Synthetic, Event Bus and Fediverse from announcing every step (#222)
 - [x] The marker editor takes focus when a visitor opens it, keeps Tab inside and gives focus back on close; the Space Builder root is a group, not an application (A9) (#227)
-- [ ] Hide only the drawn parts of the blueprint panels that hid all their text from screen readers (A2)
+- [x] Hide only the drawn parts of the blueprint panels that hid all their text from screen readers (A2) (#225)
