@@ -212,7 +212,8 @@ aside {
 }
 
 /* Opt the document into a named VT only while switching themes.
-   Old/new default fades are disabled so the JS clip-path wipe is the only motion. */
+   Old/new default fades are disabled so the JS clip-path wipe is the only motion,
+   and under reduced motion the new theme fades in over the old one instead. */
 html.theme-transition {
   view-transition-name: theme-transition;
 }
@@ -235,6 +236,16 @@ html.theme-transition {
 
 ::view-transition-new(theme-transition) {
   z-index: 2;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: theme-fade-in 0.5s ease-in-out both;
+  }
+}
+
+@keyframes theme-fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
 #theme-picker-transition-background {
@@ -296,9 +307,7 @@ if (stored && inputs.some((input) => input.value === stored)) {
 }
 
 inputs.forEach((inputEl) => {
-  if (!prefersReducedMotion.matches) {
-    inputEl.classList.add('with-transition');
-  }
+  inputEl.classList.add('with-transition');
 
   inputEl.addEventListener('input', () => {
     const id = inputEl.value;
@@ -317,7 +326,7 @@ inputs.forEach((inputEl) => {
        later click. Nobody can see it anyway. */
     const hidden = () => document.visibilityState !== 'visible';
 
-    if (prefersReducedMotion.matches || !document.startViewTransition || shown === id || hidden()) {
+    if (!document.startViewTransition || shown === id || hidden()) {
       commitTheme();
       return;
     }
@@ -337,6 +346,8 @@ inputs.forEach((inputEl) => {
     document.addEventListener('visibilitychange', skipIfHidden);
 
     viewTransition.ready.then(async () => {
+      /* The stylesheet fades the new theme in; there is no wipe to set up. */
+      if (prefersReducedMotion.matches) return;
       await ensurePathData();
 
       const label = inputEl.parentElement;
