@@ -185,4 +185,4 @@
 - [x] Keep the Fediverse playground sheet off the title block from 624 to 1600 px, and draw its graph arrows without the paper halo (S2) (#232)
 - [x] Cap the font picker's fetches at 100 per page load, 2 MiB per response, 16 MiB in all and 10 s each; a tripped cap shows the error border (C48) (#223)
 - [x] Quote the family name as a CSS string wherever the picker writes it into a rule or a style (C49) (#223)
-- [ ] Keep the walkthrough readouts in Synthetic, Event Bus and Fediverse from announcing every step (A4)
+- [x] Keep the walkthrough readouts in Synthetic, Event Bus and Fediverse from announcing every step (#222)
