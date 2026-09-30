@@ -161,7 +161,9 @@ test.describe('font proxy', () => {
     expect(await response.text()).toBe('Host does not resolve');
 
     const down = harness({}, {});
-    expect((await proxy(down, 'https://dns-down.test/')).status).toBe(502);
+    const failed = await proxy(down, 'https://dns-down.test/');
+    expect(failed.status).toBe(502);
+    expect(await failed.text()).toBe('Upstream fetch failed');
     expect(down.served).toEqual([]);
   });
 
@@ -237,7 +239,7 @@ test.describe('font proxy', () => {
     });
     const response = await proxy(setup, 'https://fonts.test/a.css');
     expect(response.status).toBe(502);
-    expect(await response.text()).toContain('Too many redirects');
+    expect(await response.text()).toBe('Too many redirects');
     expect(setup.served).toHaveLength(6);
     expect(setup.served.every(({ cancelled }) => cancelled)).toBe(true);
   });

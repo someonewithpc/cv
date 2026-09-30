@@ -20,6 +20,7 @@ const ALLOWED_CONTENT_TYPES = /^(text\/(css|html)|font\/|application\/(x-)?font|
 // A target this endpoint will not fetch. The caller asked for it, so it answers 400 on any hop;
 // other errors on the way are the upstream's and answer 502.
 class Refused extends Error {}
+class TooManyRedirects extends Error {}
 
 function validateTarget(raw: string, base?: URL): URL {
   let target: URL;
@@ -74,7 +75,7 @@ async function fetchFollowingRedirects(target: URL, headers: HeadersInit, meter:
     const location = upstream.headers.get('location');
     if (upstream.status < 300 || upstream.status > 399 || !location) return upstream;
     await upstream.body?.cancel();
-    if (hop === MAX_REDIRECTS) throw new Error('Too many redirects');
+    if (hop === MAX_REDIRECTS) throw new TooManyRedirects('Too many redirects');
     target = validateTarget(location, target);
   }
 }
@@ -168,7 +169,8 @@ export const GET: APIRoute = async ({ url, request }) => {
   } catch (e) {
     if (e instanceof Refused) return metered(e.message, { status: 400 });
     if (timedOut(e)) return metered('Upstream timed out', { status: 504 });
-    return metered('Upstream fetch failed: ' + (e instanceof Error ? e.message : String(e)), { status: 502 });
+    // The runtime's error text can name hosts and addresses the caller never asked about.
+    return metered(e instanceof TooManyRedirects ? e.message : 'Upstream fetch failed', { status: 502 });
   }
 
   const contentType = upstream.headers.get('content-type') ?? '';
