@@ -62,6 +62,7 @@
   - [x] Tagging tool and font picker borders register their properties in CSS, so booting them no longer restyles the whole page (#166)
   - [x] Interactive map font picker (#25)
     - [x] Font proxy stops relaying for the day after 1 GB
+    - [ ] Font proxy budget holds on every path, counts upstream bytes, times out and shuts with a 503 when its object fails
     - [x] Picker, Held Controls and Loading Indicator sheets show the restart, play and pause deck (#160)
   - [x] GNU social schemaDef to Doctrine metadata, two panes with a cross-highlight (SH-08)
     - [x] Cards run down to the title block, intro and rule beside it (#153)
