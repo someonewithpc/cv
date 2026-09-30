@@ -1,8 +1,7 @@
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, documentGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
 
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 type Values = Record<string, string | null>;
 
@@ -359,7 +358,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
   const { root } = tool;
   const cursorEl = host.querySelector<HTMLElement>('.tagging-cursor');
 
-  if (reducedMotion.matches || !cursorEl) {
+  if (!cursorEl) {
     root.dataset.autoplay = 'off';
     reportAutoplayState(root, 'off');
     return;
@@ -370,7 +369,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
   let active = false;
   let held = false;
 
-  const setState = (state: 'playing' | 'user') => {
+  const setState = (state: 'playing' | 'user' | 'paused') => {
     root.dataset.autoplay = state;
     reportAutoplayState(root, state);
   };
@@ -383,14 +382,11 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
   const handover = watchHandover(root, {
     listening: () => active,
     takeOver() {
-      run += 1;
-      cursorEl.hidden = true;
-      cursor.at = null;
-      group.root.classList.remove('autoplay');
+      stop();
       setState('user');
     },
     handBack() {
-      if (held) return false;
+      if (held || reducedMotion(root)) return false;
       void walk();
       return true;
     },
@@ -405,10 +401,31 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     held = false;
     handover.release();
     if (command === 'play' && root.dataset.autoplay === 'playing') return;
-    void walk();
+    if (!reducedMotion(root)) {
+      void walk();
+      return;
+    }
+    // Under reduced motion only play runs the walkthrough; reset puts the opening rows back.
+    stop();
+    restore(tool);
+    setState('paused');
   });
 
-  await walk();
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+    if (root.dataset.autoplay !== 'playing' || !reducedMotion(root)) return;
+    stop();
+    setState('paused');
+  });
+
+  if (reducedMotion(root)) setState('paused');
+  else await walk();
+
+  function stop() {
+    run += 1;
+    cursorEl!.hidden = true;
+    cursor.at = null;
+    group.root.classList.remove('autoplay');
+  }
 
   async function walk() {
     const token = ++run;

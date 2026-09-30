@@ -103,7 +103,7 @@ bootIslands('[data-tagging-grid-demo]', boot);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tagging-cursor {
+  .tagging-cursor:not([data-full-motion] *) {
     transition: none;
   }
 }

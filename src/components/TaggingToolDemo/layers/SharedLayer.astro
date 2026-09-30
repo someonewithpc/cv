@@ -263,7 +263,7 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .field .caret {
+  .field .caret:not([data-full-motion] *) {
     animation: none;
     opacity: 0.75;
   }

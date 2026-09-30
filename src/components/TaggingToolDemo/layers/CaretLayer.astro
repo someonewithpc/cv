@@ -221,7 +221,7 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .caret {
+  .caret:not([data-full-motion] *) {
     animation: none;
     opacity: 0.75;
   }

@@ -548,21 +548,21 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .grouped-objects:is(.autoplay, :has(> .shared-form > .shared-value:focus)) .object-form::before {
+  .grouped-objects:is(.autoplay, :has(> .shared-form > .shared-value:focus)) .object-form:not([data-full-motion] *)::before {
     animation: none;
     opacity: 0.75;
   }
 
-  .grouped-objects,
-  .panel-preview-library-object {
+  .grouped-objects:not([data-full-motion] *),
+  .panel-preview-library-object:not([data-full-motion] *) {
     animation: none;
     transition: none;
   }
 
   /* No orbit: the ring shows closed in the verdict colour for as long as the save's
      success holds, then goes. */
-  .grouped-objects.success,
-  .panel-preview-library-object.success {
+  .grouped-objects.success:not([data-full-motion] *),
+  .panel-preview-library-object.success:not([data-full-motion] *) {
     --status-border-colored-width: 1turn;
     --status-border-color: #{$status-border-brand};
   }
