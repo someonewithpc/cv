@@ -18,6 +18,8 @@ type Props = {
   pageStyle?: string;
   /** Tech name(s) or icon suffix(es) in a square rowspan cell. */
   tech?: string | readonly string[];
+  /** See Stack.astro's Layer. */
+  motion?: boolean;
 };
 
 const {
@@ -30,6 +32,7 @@ const {
   layerCount,
   pageStyle,
   tech,
+  motion,
 } = Astro.props;
 
 const techs = resolveTechs(tech);
@@ -52,6 +55,7 @@ const sheetAnchor = `--${noteId}-sheet`;
 <section
   class={pageStyle}
   data-note={hasNote ? '' : undefined}
+  data-motion-deck={motion ? '' : undefined}
   style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}
 >
   <div class="content">

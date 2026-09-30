@@ -21,6 +21,19 @@ const AUTOPLAY_COMMAND_EVENT = 'demo-autoplay-command';
  */
 export const FULL_MOTION_ATTRIBUTE = 'data-full-motion';
 
+/**
+ * On a sheet whose artwork moves by itself with no walkthrough behind it (Stack.astro's
+ * `motion` layers). Reduced motion stills that artwork, so the sheet answers the deck itself:
+ * play lets the animation run at full motion, pause and reset still it again.
+ */
+const MOTION_DECK_ATTRIBUTE = 'data-motion-deck';
+
+/** Nobody to take over from on such a sheet, so the deck says what the keys do instead. */
+const MOTION_DECK_WORDS = {
+  'data-autoplay-caption-playing': 'PLAYING',
+  'data-autoplay-hint-playing': 'press pause to stop it',
+};
+
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Reduced motion as a demo inside `el` should honour it: off while its sheet plays on request. */
@@ -127,6 +140,13 @@ export function initAutoplayStatus(page: HTMLElement) {
   });
 
   page.addEventListener(AUTOPLAY_STATE_EVENT, onState);
+
+  // Only under reduced motion: with full motion the artwork already plays, and needs no key.
+  if (page.hasAttribute(MOTION_DECK_ATTRIBUTE) && prefersReducedMotion()) {
+    Object.entries(MOTION_DECK_WORDS).forEach(([name, words]) => page.setAttribute(name, words));
+    onAutoplayCommand(page, (command) => reportAutoplayState(page, command === 'play' ? 'playing' : 'paused'));
+    reportAutoplayState(page, 'paused');
+  }
 
   // An app that mounted before this ran has already reported; read it back instead.
   const reported = page.querySelector(`[${AUTOPLAY_STATE_ATTRIBUTE}]`);

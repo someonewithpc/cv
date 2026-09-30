@@ -9,6 +9,9 @@ type Layer = {
   pageStyle?: string;
   /** Per-page tech icon(s); falls back to stack `tech`. */
   tech?: string | readonly string[];
+  /** The artwork moves by itself with no walkthrough behind it, so under reduced motion the
+      deck offers play for it (see src/client/autoplayStatus.ts). */
+  motion?: boolean;
 };
 
 type Props = {
@@ -56,7 +59,7 @@ const arrow = {
 <div class="technical-drawing-frame">
   <PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers} label={Astro.props.subtitle}>
     {(index: number) => {
-      const [id, { name, size, pageStyle, tech }] = Object.entries(layers)[index];
+      const [id, { name, size, pageStyle, tech, motion }] = Object.entries(layers)[index];
       return (
         <TechnicalDrawingPage
           title={name}
@@ -67,6 +70,7 @@ const arrow = {
           index={index + 1}
           layerCount={totalLayers}
           pageStyle={pageStyle}
+          motion={motion}
           tech={tech ?? stackTech}
         >
           <Fragment slot="content">
