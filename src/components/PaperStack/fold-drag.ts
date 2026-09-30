@@ -1030,12 +1030,36 @@ const syncPileSurface = (stack: HTMLElement): void => {
   }
 };
 
+// What a screen reader hears once a turn has settled: the sheet now at the front, by its place
+// in the stack and its title. The status beside the stack (index.astro) is a live region, and a
+// live region speaks when its text changes, so it is written only from a settle that left a
+// different page at the front: one announcement per turn, none on load, none while a drag is
+// still moving the paper, and none for a drag that came back to the page it started on.
+const announcedFront = new WeakMap<HTMLElement, HTMLElement>();
+
+const frontOf = (stack: HTMLElement): HTMLElement | undefined =>
+  ([...stack.children] as HTMLElement[]).find((page) => pageIndex(page) === 1);
+
+const announceFront = (stack: HTMLElement): void => {
+  const front = frontOf(stack);
+  if (!front || announcedFront.get(stack) === front) return;
+  announcedFront.set(stack, front);
+  const status = stack.nextElementSibling;
+  if (!(status instanceof HTMLElement) || !status.hasAttribute('data-paper-status')) return;
+  // Pages are never reordered in the DOM (flips renumber --page-index), so the DOM place is
+  // the sheet number the title block prints.
+  const number = [...stack.children].indexOf(front) + 1;
+  const title = sectionOf(front).querySelector('h2')?.textContent?.trim();
+  status.textContent = `Sheet ${number} of ${stack.childElementCount}${title ? `: ${title}` : ''}`;
+};
+
 // [data-paper-settled] means the front page is lying flat and still: set as a flip or a settle
 // hands the rendering back, and dropped the moment a gesture starts moving a page again. Hints
 // that point at the page (TechnicalDrawing's way-back callout) wait for it, so their arrow is
 // never drawn across a sheet still gliding over.
 const settle = (stack: HTMLElement): void => {
   stack.dataset.paperSettled = '';
+  announceFront(stack);
   // The turn is over, whichever way it went: the page that ended up at the front comes alive
   // here, and a gesture that came back short of committing gets its demo back.
   setStackTurning(stack, false);
@@ -2232,6 +2256,9 @@ export function initPaperStackFold(): void {
       observeFoldPageSizes(stack);
       attachFoldDrag(fold, grab);
       syncPileSurface(stack);
+      // The page at the front on load is known, not announced.
+      const front = frontOf(stack);
+      if (front) announcedFront.set(stack, front);
       syncInert(stack);
       watchStackPulse(stack);
       watchStackReveal(stack);

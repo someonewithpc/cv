@@ -74,6 +74,9 @@ const pages = await Promise.all(
 );
 ---
 
+<!-- The status beside the stack is what a screen reader hears once a turn has settled
+     (announceFront in fold-drag.ts). It is a sibling, not a child: every child of the stack is a
+     page. -->
 <Tag
   data-paper-stack-root
   data-paper-stack
@@ -87,6 +90,7 @@ const pages = await Promise.all(
     <div class={index === 0 ? 'paper-front' : undefined} style={`--page-index: ${index + 1}`}>{index === 0 && <Fragment set:html={paperClipUnder} />}{page}{index === 0 && <Fragment set:html={foldFront} />}</div>
   ))}
 </Tag>
+<div class="sr-only" role="status" data-paper-status></div>
 
 <style lang="scss" is:global>
 @use 'sass:math';

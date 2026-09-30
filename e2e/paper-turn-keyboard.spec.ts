@@ -86,3 +86,19 @@ test('a key turn reads the dog-ear off the screen once', async ({ page }) => {
   expect(await frontPageName(stack)).toBe('Marker Selector');
   expect(await page.evaluate(() => (window as Window & { foldReads?: number }).foldReads)).toBe(1);
 });
+
+test('a settled turn writes the front sheet to the status beside the stack', async ({ page }) => {
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+  const status = stack.locator('xpath=following-sibling::*[1][@role="status"]');
+  // Nothing on load: the page at the front is where the reader started.
+  await expect(status).toHaveText('');
+
+  const pages = await stack.evaluate((el) => el.childElementCount);
+  await turnTiming(page, stack, 'ArrowRight');
+  await expect(status).toHaveText(`Sheet 2 of ${pages}: Marker Selector`);
+
+  await turnTiming(page, stack, 'ArrowLeft');
+  await expect(status).toHaveText(`Sheet 1 of ${pages}: Interactive Map Marker Editor`);
+});
