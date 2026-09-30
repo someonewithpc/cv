@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 
@@ -33,10 +33,6 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
   useEffect(() => {
     const el = root.current;
     if (!el) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      reportAutoplayState(el, 'off');
-      return;
-    }
 
     // The carousel page: positioned, so cursor and toasts drawn into it ride along with it
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
@@ -79,7 +75,8 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
 
     const play = (message?: string) => {
       if (!pageActive) return;
-      if (held || userControl) {
+      // Under reduced motion the run waits for the deck's play
+      if (held || userControl || reducedMotion(el)) {
         reportAutoplayState(el, 'user');
         return;
       }
@@ -183,7 +180,15 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       play();
     });
 
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onMotionChange = () => {
+      if (reducedMotion(el)) hold();
+      play();
+    };
+    motionQuery.addEventListener('change', onMotionChange);
+
     return () => {
+      motionQuery.removeEventListener('change', onMotionChange);
       stopCommands();
       unwatchNote();
       stopPageWatch();

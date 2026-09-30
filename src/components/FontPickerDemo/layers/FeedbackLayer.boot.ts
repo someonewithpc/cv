@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 const BORDER_ANIMATION_DURATION = 1000;
@@ -62,6 +62,8 @@ export function boot(host: HTMLElement) {
   const play = () => {
     window.clearTimeout(timer);
     if (!active) return;
+    // Under reduced motion the request waits for the deck's play, as if paused
+    if (reducedMotion(host)) userControl = true;
     reportAutoplayState(host, userControl ? 'user' : 'playing');
     if (!userControl) run();
   };
@@ -75,11 +77,6 @@ export function boot(host: HTMLElement) {
     });
   });
 
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    reportAutoplayState(host, 'off');
-    return;
-  }
-
   // The deck's keys: pause keeps the fieldset where it stands, play carries on from there,
   // and reset starts the request over from idle
   onAutoplayCommand(host, (command) => {
@@ -92,13 +89,18 @@ export function boot(host: HTMLElement) {
     const wasPlaying = !userControl;
     userControl = false;
     if (command === 'play' && wasPlaying) return;
-    if (command === 'reset') step = 0;
+    if (command === 'reset') {
+      step = 0;
+      show(WALKTHROUGH[0].state);
+    }
     play();
   });
 
   // Every page of the stack shares one grid cell, so intersection alone would keep this
   // running behind whichever page the visitor turned to. Nothing ever unmounts an island,
   // so the watcher's stop function has no caller and is not returned.
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', play);
+
   watchPageActive(host, (next) => {
     active = next;
     if (next) play();

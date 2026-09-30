@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 
-import { isTransportControl, onAutoplayCommand, reportAutoplayState } from '@/client/autoplayStatus';
+import { isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
@@ -118,10 +118,6 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
   useEffect(() => {
     const el = root.current;
     if (!el) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      reportAutoplayState(el, 'off');
-      return;
-    }
 
     // The carousel page: positioned, so a cursor drawn into it rides along with the page
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
@@ -235,7 +231,8 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
 
     const play = () => {
       if (!active) return;
-      if (held || userControl) {
+      // Under reduced motion the sliders wait for the deck's play
+      if (held || userControl || reducedMotion(el)) {
         reportAutoplayState(el, 'user');
         return;
       }
@@ -320,7 +317,15 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       play();
     });
 
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onMotionChange = () => {
+      if (reducedMotion(el)) stop();
+      play();
+    };
+    motionQuery.addEventListener('change', onMotionChange);
+
     return () => {
+      motionQuery.removeEventListener('change', onMotionChange);
       stopCommands();
       stopPageWatch();
       page.removeEventListener('pointermove', onPointer);
