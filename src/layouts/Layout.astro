@@ -1,6 +1,10 @@
 ---
 import ThemePicker from '@/components/ThemePicker.astro';
 import TransportKeyArt from '@/components/TechnicalDrawing/TransportKeyArt.astro';
+import '@/assets/fonts/fonts.css';
+import stencilUrl from '@/assets/fonts/allerta-stencil.woff2?url';
+import poppinsUrl from '@/assets/fonts/poppins-400-latin.woff2?url';
+import specialEliteUrl from '@/assets/fonts/special-elite-latin.woff2?url';
 import { AUTHOR_NAME, CONTACT, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/site';
 
 type Props = {
@@ -37,33 +41,9 @@ oembedUrl.searchParams.set('format', 'json');
     <meta name="twitter:card" content="summary" />
     <link rel="alternate" type="application/json+oembed" href={oembedUrl} title={title} />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Poppins:wght@400;500;600;700&family=Special+Elite&display=swap"
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Poppins:wght@400;500;600;700&family=Special+Elite&display=swap"
-      media="print"
-      onload="this.setAttribute('media', 'all')"
-    />
-    <!-- Digits only: the stencil sets the sheet numbers in the desk margin and nothing else. -->
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&text=0123456789&display=swap"
-      media="print"
-      onload="this.setAttribute('media', 'all')"
-    />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Poppins:wght@400;500;600;700&family=Special+Elite&display=swap"
-      />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&text=0123456789&display=swap" />
-    </noscript>
+    <link rel="preload" as="font" type="font/woff2" href={specialEliteUrl} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={poppinsUrl} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={stencilUrl} crossorigin />
     <script is:inline>
       (() => {
         try {
