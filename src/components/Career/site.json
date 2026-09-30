@@ -5,7 +5,7 @@
       "org": "Runtime Revolution",
       "role": "Backend web developer",
       "from": { "date": "2026-09", "label": "Sep 2026" },
-      "summary": "Backend development in Ruby on Rails at Runtime Revolution, a Lisbon company that builds software for its clients. The Rails side of their web apps, from the data model to the API the front end talks to."
+      "summary": "Backend development in Ruby on Rails at Runtime Revolution, a Lisbon company that builds software for its clients"
     },
     {
       "id": "visrez",
@@ -27,7 +27,7 @@
       "role": "European Innovation Academy finalist",
       "from": { "date": "2021-06", "label": "Jun 2021" },
       "to": { "date": "2021-09", "label": "Sep 2021" },
-      "summary": "A startup enabling researchers to design and run protein folding simulations without requiring coding expertise. A node based editor in Vue and TypeScript wires up inputs, algorithms, outputs and plots, and the app writes the Julia that runs them."
+      "summary": "A startup enabling researchers to design and run protein folding simulations without requiring coding expertise. A node based editor in Vue and TypeScript wires up inputs, algorithms, outputs and plots, and the app writes the Julia that runs them"
     },
     {
       "id": "gnu-social",
@@ -35,7 +35,7 @@
       "role": "Core maintainer",
       "from": { "date": "2021-02", "label": "Feb 2021" },
       "to": { "date": "2022-04", "label": "Apr 2022" },
-      "summary": "The v3 rewrite of the federated social network, in PHP. An event driven modular architecture, low system requirements, and a deployment a sysadmin can run without much time for it.",
+      "summary": "The v3 rewrite of the federated social network, in PHP. An event driven modular architecture, low system requirements, and a deployment a sysadmin can run without much time for it",
       "see": [{ "label": "GNU social v3", "href": "#highlight-gnu-social-v3" }]
     },
     {
@@ -44,14 +44,14 @@
       "role": "Software engineering intern",
       "from": { "date": "2021-01", "label": "Jan 2021" },
       "to": { "date": "2021-03", "label": "Mar 2021" },
-      "summary": "Brought an acquired ride sharing platform's PHP backend up to date and its iOS and Android apps onto current versions, then built a driver and vehicle management platform with a React Native app."
+      "summary": "Brought an acquired ride sharing platform's PHP backend up to date and its iOS and Android apps onto current versions, then built a driver and vehicle management platform with a React Native app"
     },
     {
       "id": "catering",
       "org": "Table service and catering",
       "from": { "date": "2015", "label": "Summer 2015" },
       "to": { "date": "2018", "label": "Summer 2018" },
-      "summary": "Summer jobs waiting tables and working catering."
+      "summary": "Summer jobs waiting tables and working catering"
     }
   ],
   "education": {
