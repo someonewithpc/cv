@@ -175,4 +175,4 @@
 - [x] Event Dispatch bus runs under the title block from 688 to about 808 px (L4) (#215)
 - [x] Event Dispatch resize stage list ends past the sheet at 688 px (L5) (#215)
 - [x] Honour reduced motion on the fold, the page turn, the logo layers, the toasts and the map zoom (#203)
-- [ ] Self-hosted fonts, weights matched to use, no restyle after first paint (P3)
+- [x] Self-hosted fonts, weights matched to use, no restyle after first paint (P3) (#217)
