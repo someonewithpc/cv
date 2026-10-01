@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
+import { RESUME_DELAY_MS } from '../src/client/walkthroughHandover';
 import { demoStack, frontPageName } from './support/paperStack';
+import { pageWait, test as paced } from './support/timeScale';
 
 test.describe('skip link', () => {
   test('moves focus to the Career section, not back to the top, and the next Tab lands inside it', async ({ page }) => {
@@ -184,5 +186,51 @@ test.describe('access keys', () => {
     await page.evaluate(() => document.querySelector<HTMLElement>('.page-turn-key[data-turn="ArrowRight"]')?.focus());
     await page.waitForTimeout(500);
     expect(await frontPageName(stack)).toBe(before);
+  });
+});
+
+test.describe('walkthroughs', () => {
+  // Page time runs four times faster, so the quiet spell after the walk is a couple of seconds.
+  paced.use({ walkthroughRate: 4 });
+
+  paced('a Tab walk across the page takes each walkthrough over once and starts none', async ({ page }) => {
+    type Transition = { demo: string; from: string | null; to: string | null };
+    await page.addInitScript(() => {
+      const w = window as Window & { __transitions?: Transition[] };
+      w.__transitions = [];
+      const name = (el: Element) =>
+        el.closest('article.technical-drawing-stack')?.querySelector('h2.typewriter')?.textContent?.trim() ?? el.className;
+      new MutationObserver((records) => {
+        for (const record of records) {
+          const el = record.target as Element;
+          w.__transitions!.push({ demo: name(el), from: record.oldValue, to: el.getAttribute('data-autoplay-state') });
+        }
+      }).observe(document, { attributes: true, subtree: true, attributeFilter: ['data-autoplay-state'], attributeOldValue: true });
+    });
+    await page.goto('/');
+    // Every stack mounts once it has been in view, so the walk meets each demo's controls.
+    for (const stack of await page.locator('article.technical-drawing-stack').all()) {
+      await stack.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    // To the end of the page: focus wraps to the body once the last stop is behind it.
+    for (let i = 0; i < 400; i += 1) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(50);
+      if (i > 5 && (await page.evaluate(() => document.activeElement === document.body))) break;
+    }
+    await pageWait(page, RESUME_DELAY_MS + 2_000);
+
+    const log = await page.evaluate(() => (window as Window & { __transitions?: Transition[] }).__transitions ?? []);
+    const after = log.filter((t) => t.from !== null);
+    expect(after.filter((t) => t.to === 'playing'), 'walkthroughs that started again').toEqual([]);
+    const takeovers = new Map<string, number>();
+    for (const t of after) if (t.to === 'user') takeovers.set(t.demo, (takeovers.get(t.demo) ?? 0) + 1);
+    for (const [demo, count] of takeovers) expect(count, `${demo} taken over`).toBe(1);
+    for (const demo of ['GNU social · Event Dispatch', 'Theme Picker', 'schemaDef → Doctrine Metadata', 'Synthetic Properties']) {
+      expect(takeovers.get(demo), `${demo} taken over`).toBe(1);
+    }
   });
 });
