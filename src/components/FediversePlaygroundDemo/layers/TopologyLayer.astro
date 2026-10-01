@@ -142,7 +142,8 @@ bootIslands('[data-fediverse-playground]', boot);
      wide sheet and on most narrow ones, the type stays at 0.8em. */
   --side-rows: 28;
 
-  font-size: min(0.8em, (var(--sheet-block) - 2px - 2 * var(--sheet-margin) - 0.75em - var(--title-block-block, 0px)) / var(--side-rows));
+  --side-room: calc(var(--sheet-block) - 2px - 2 * var(--sheet-margin) - 0.75em - var(--title-block-block, 0px));
+  font-size: min(0.8em, var(--side-room) / var(--side-rows));
 
   :global([data-sheet-width='narrow']) & {
     --side-rows: 22;
