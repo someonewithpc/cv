@@ -39,7 +39,7 @@
       - [x] Hollow and U-shape chairs face the table, side rows start at the corners (#111)
     - [x] Badge showing number of seats (positioning)
     - [x] Badge readout re-renders only when a shown number changes (#171 AP2, #214)
-    - [ ] Badge note folds into the corner tab where it would reach the title block (#171 L7)
+    - [x] Badge note folds into the corner tab where it would reach the title block (#171 L7, #229)
     - [x] Drag and drop from sidebar to 3D
     - [x] WebGL texImage3D FLIP_Y warnings on GPU re-attach (#52)
     - [x] Drag and drop walkthrough breaks after the camera moves; Restart keeps the old view (#30)
