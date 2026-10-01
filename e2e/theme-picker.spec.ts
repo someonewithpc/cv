@@ -72,6 +72,37 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
   await expect(page.locator('#theme-picker input[value="light"]')).toBeChecked();
 });
 
+const PAGE_BACKGROUNDS = {
+  light: 'oklch(1 0 90)',
+  dark: 'oklch(0.2 0.035 265)',
+  arctic: 'oklch(0.955 0.015 235)',
+  'dark-forest': 'oklch(0.323 0.044 139)',
+};
+
+const metaThemeColor = (page: import('@playwright/test').Page) => page.evaluate(
+  () => document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
+);
+
+test('the theme-color meta follows each pick', async ({ page }) => {
+  await page.goto('/');
+
+  for (const [theme, background] of Object.entries(PAGE_BACKGROUNDS)) {
+    await pick(page, theme);
+    expect(await metaThemeColor(page)).toBe(background);
+  }
+
+  await page.reload();
+  expect(await metaThemeColor(page)).toBe(PAGE_BACKGROUNDS['dark-forest']);
+});
+
+test('a stored theme sets the chrome colour before paint', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('cv-theme', 'arctic'));
+  await page.goto('/');
+
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
+  expect(await metaThemeColor(page)).toBe(PAGE_BACKGROUNDS.arctic);
+});
+
 test('a second pick during the wipe wins', async ({ page }) => {
   await instrument(page);
   await page.goto('/');
