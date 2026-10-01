@@ -1,5 +1,6 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
+import { watchHandover } from '@/client/walkthroughHandover';
 
 /** How long the walk rests on each pair: long enough to read the rule under the panes. */
 const STEP_MS = 2200;
@@ -12,8 +13,9 @@ const STEP_MS = 2200;
  * to the counterpart with left and right, with one tab stop per pane.
  *
  * While nobody is using it, the highlight walks the schema top to bottom. The walk only
- * runs while the page is the one on top and on screen, and under reduced motion only from the deck's play key; the
- * first hover or focus ends it and the sheet's transport deck can hand it back.
+ * runs while the page is the one on top and on screen, and never under reduced motion. The
+ * visitor takes it over and hands it back as watchHandover decides, and the sheet's
+ * transport deck holds it or hands it back at once.
  */
 export function initSchemaDef(root: HTMLElement) {
   const keys = JSON.parse(root.dataset.keys ?? '[]') as string[];
@@ -28,6 +30,7 @@ export function initSchemaDef(root: HTMLElement) {
   let lit: string | null = null;
   let playing = false;
   let active = false;
+  let held = false;
   let step = -1;
   let cancelStep = () => {};
 
@@ -82,18 +85,24 @@ export function initSchemaDef(root: HTMLElement) {
     schedule();
   };
 
-  const takeOver = () => {
-    if (playing) setPlaying(false);
-  };
+  const handover = watchHandover(root, {
+    listening: () => active,
+    takeOver() {
+      if (playing) setPlaying(false);
+    },
+    handBack() {
+      if (held) return false;
+      setPlaying(true);
+      return true;
+    },
+  });
 
   root.addEventListener('pointerover', (event) => {
-    takeOver();
     const line = (event.target as Element).closest<HTMLElement>('.line[data-key]');
     if (line) light(line.dataset.key ?? null, line);
   });
 
   root.addEventListener('focusin', (event) => {
-    takeOver();
     const line = (event.target as Element).closest<HTMLElement>('.line[data-key]');
     if (!line) return;
     // Roving tab stop: the pane's one stop follows the line that last had focus.
@@ -142,9 +151,12 @@ export function initSchemaDef(root: HTMLElement) {
 
   onAutoplayCommand(root, (command) => {
     if (command === 'pause') {
-      setPlaying(false);
+      held = true;
+      handover.takeOver();
       return;
     }
+    held = false;
+    handover.release();
     if (command === 'reset') {
       step = -1;
       light(null);
