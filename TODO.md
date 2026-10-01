@@ -181,4 +181,4 @@
 - [x] `astro check` passes, and `npm run deploy` checks once, builds once and tests that build (E1, E9) (#221)
 - [x] A key-turned page draws its dog-ear over a cut corner, not a whole one, in Chrome (#171 L8) (#233)
 - [x] Turning from the last page of the logo stack to the first flashes a blueprint-blue wedge at the folded-back corner (L6) (#219)
-- [ ] Keep the Fediverse playground sheet off the title block from 624 to 1600 px (S2)
+- [x] Keep the Fediverse playground sheet off the title block from 624 to 1600 px (S2) (#232)
