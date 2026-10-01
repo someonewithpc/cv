@@ -1500,4 +1500,9 @@ $scene-bg: #212121;
   scrollbar-width: thin;
 }
 
+@keyframes drag-drop-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

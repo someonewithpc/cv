@@ -626,4 +626,10 @@ $scene-bg: #212121;
     }
   }
 }
+
+@keyframes layouts-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

@@ -749,4 +749,10 @@ $scene-bg: #212121;
   padding-block: 0.55rem;
   font-size: 0.875rem;
 }
+
+@keyframes params-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

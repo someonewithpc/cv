@@ -612,4 +612,10 @@ $scene-bg: #212121;
     text-align: center;
   }
 }
+
+@keyframes badge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>
