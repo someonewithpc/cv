@@ -1,0 +1,23 @@
+// Sets --tone-<name> inside $scope for the theme on screen, keyed on the picker's own
+// selectors with the OS scheme as the fallback, like _shown.scss. The values come from
+// ../tones.ts, which works them out per theme at build time.
+@use "sass:map";
+@use "ts:src/components/ThemePickerDemo/shown.ts" as themes;
+@use "ts:src/components/ThemePickerDemo/tones.ts" as tones;
+
+@mixin -declare($id) {
+  @each $name, $css in map.get(tones.$theme-tones, $id) {
+    --tone-#{$name}: #{$css};
+  }
+}
+
+@mixin tones($scope) {
+  @each $id in themes.$os-themes {
+    @media (prefers-color-scheme: #{$id}) {
+      #{themes.$root-following-os} #{$scope} { @include -declare($id); }
+    }
+  }
+  @each $id, $root in themes.$roots-showing {
+    :is(#{$root}) #{$scope} { @include -declare($id); }
+  }
+}

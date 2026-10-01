@@ -16,9 +16,6 @@ import { highlightBlock, highlightInline, ticks } from '@/highlight';
 
 import { THEME_IDS, THEMES } from '@/themes';
 
-import { shownCss } from '../shown';
-import { tonesCss } from '../tones';
-
 type Fragment = { code: string[]; from: 'picker' | 'utils'; check?: string };
 
 const steps: { name: string; fragment: Fragment }[] = [
@@ -192,7 +189,13 @@ const frames = THEME_IDS.map((id) => {
   </div>
 </div>
 
-<style is:global set:html={shownCss('.code-sheet') + tonesCss('.code-sheet')} />
+<style lang="scss" is:global>
+@use "./shown" as *;
+@use "./tones" as *;
+
+@include shown('.code-sheet');
+@include tones('.code-sheet');
+</style>
 
 <style lang="scss">
 @use "./sheet" as *;

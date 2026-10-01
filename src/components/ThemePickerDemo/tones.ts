@@ -1,4 +1,4 @@
-import { OS_THEMES, ROOT_FOLLOWING_OS, THEMES, rootShowing, type ThemeSettings } from '@/themes';
+import { THEMES, type ThemeSettings } from '@/themes';
 
 import { contrastRatio, liftedTo, mixWhite, oklchCss, parseOklch, toneAt } from './contrast';
 
@@ -59,16 +59,9 @@ export const sheetRatios = (settings: ThemeSettings): Record<ToneName, number> =
 };
 
 /**
- * CSS setting `--tone-<name>` inside `scope` for the theme on screen, keyed on the picker's
- * own selectors (src/themes.ts) with the OS scheme as the fallback, like shownCss.
+ * Each theme's tones, for layers/_tones.scss through `@use "ts:…"` (plugins/sassFromTs.mjs),
+ * which sets `--tone-<name>` for the theme on screen.
  */
-export function tonesCss(scope: string): string {
-  const declare = (settings: ThemeSettings) => (
-    `{ ${Object.entries(sheetTones(settings)).map(([name, css]) => `--tone-${name}: ${css};`).join(' ')} }`
-  );
-  const os = Object.entries(OS_THEMES).map(([id, settings]) => (
-    `@media (prefers-color-scheme: ${id}) { ${ROOT_FOLLOWING_OS} ${scope} ${declare(settings)} }`
-  ));
-  const picks = Object.entries(THEMES).map(([id, settings]) => `:is(${rootShowing(id)}) ${scope} ${declare(settings)}`);
-  return [...os, ...picks].join('\n');
-}
+export const sass = {
+  themeTones: Object.fromEntries(Object.entries(THEMES).map(([id, settings]) => [id, sheetTones(settings)])),
+};

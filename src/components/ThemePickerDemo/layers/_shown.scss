@@ -1,0 +1,29 @@
+// Marks, inside $scope, the elements that belong to the theme on screen and to whoever chose
+// it. An element carries data-shown="<theme id>", or data-chosen="os" while nothing is
+// picked, data-chosen="pick" once something is, and data-chosen="stamp" or
+// data-chosen="radio" for the two halves of a pick. A marked element gets --shown: 1,
+// --shown-display: inline and --hidden-display: none, which the sheets read; the properties
+// inherit, so an element can mark its children too. The ids and selectors come from
+// ../shown.ts.
+@use "ts:src/components/ThemePickerDemo/shown.ts" as themes;
+
+@mixin -mark {
+  --shown: 1;
+  --shown-display: inline;
+  --hidden-display: none;
+}
+
+@mixin shown($scope) {
+  @each $id in themes.$os-themes {
+    @media (prefers-color-scheme: #{$id}) {
+      #{themes.$root-following-os} #{$scope} [data-shown="#{$id}"] { @include -mark; }
+    }
+  }
+  @each $id, $root in themes.$roots-showing {
+    :is(#{$root}) #{$scope} [data-shown="#{$id}"] { @include -mark; }
+  }
+  #{themes.$root-following-os} #{$scope} [data-chosen="os"] { @include -mark; }
+  :is(:root[data-theme], :root:has(#{themes.$any-theme-picked})) #{$scope} [data-chosen="pick"] { @include -mark; }
+  :root[data-theme] #{$scope} [data-chosen="stamp"] { @include -mark; }
+  :root:has(#{themes.$any-theme-picked}) #{$scope} [data-chosen="radio"] { @include -mark; }
+}

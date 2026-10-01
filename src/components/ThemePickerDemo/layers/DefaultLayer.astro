@@ -2,12 +2,10 @@
 /**
  * Who decides the theme: the OS until something is picked, then the stamp and the radio.
  * The three rules are drawn in cascade order with a lamp each, lit by the same selectors
- * that paint the page (shown.ts), so a pick in the corner moves the light. Each card
+ * that paint the page (_shown.scss), so a pick in the corner moves the light. Each card
  * carries its own note, so the drawing needs no callouts.
  */
 import { highlightInline, ticks } from '@/highlight';
-
-import { shownCss } from '../shown';
 
 const rules = [
   { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }', note: 'the OS only knows light and dark' },
@@ -63,7 +61,11 @@ const reload = ['localStorage', '<head> script', 'data-theme on <html>', 'first 
   </dl>
 </div>
 
-<style is:global set:html={shownCss('.default-sheet')} />
+<style lang="scss" is:global>
+@use "./shown" as *;
+
+@include shown('.default-sheet');
+</style>
 
 <style lang="scss">
 @use "./sheet" as *;
