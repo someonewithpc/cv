@@ -509,6 +509,7 @@ import { isFoldPulse } from '@/components/PaperStack/fold-drag';
 import './demo-cursor-press';
 
 import { positionAnnotations } from './annotations-position';
+import { homeDeck } from './deck-home';
 import { drawFlipHints } from './flip-hint';
 import { forgetTextWidths, readTitleFit, writeTitleFit } from './title-fit';
 
@@ -588,7 +589,10 @@ function initStack(stack: HTMLElement) {
   // A demo island boots only once its page is on screen, so the deck is listening long
   // before the first state is reported. One that beat it to it is read back instead.
   [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
-    .forEach((page) => initAutoplayStatus(page));
+    .forEach((page) => {
+      initAutoplayStatus(page);
+      homeDeck(stack, page);
+    });
 
   positionAnnotations(stack);
 

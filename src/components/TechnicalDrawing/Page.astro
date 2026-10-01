@@ -1004,7 +1004,7 @@ section {
 }
 
 /* The deck's own look, outside section {} so it holds wherever the deck is put: on the sheet,
-   or in the detail's card (L9 review, FediversePlaygroundDemo/deck-place.ts). */
+   or in the callout's card under it (deck-home.ts). */
 .demo-transport {
   display: flex;
   align-items: center;
@@ -1147,6 +1147,41 @@ section {
    specificity and never switches the animation off. */
 @media (prefers-reduced-motion: reduce) {
   .demo-transport[data-state='playing'] .demo-led:not([data-full-motion] *) { animation: none; }
+}
+
+/* The deck in the callout's card (deck-home.ts), which only a portrait sheet sends it to, so
+   the card is always the slip filed under the stack there (Callout.astro): the entry after the
+   notes, ruled off from them the way the entries are. The keys at the size a phone sheet gives
+   them, the lamp and the state under them, and the instruction under those, since the slip is
+   narrower than a band. */
+:global(.callout-card) > .demo-transport {
+  flex-wrap: wrap;
+  row-gap: 0.375rem;
+  grid-column: 1 / -1;
+  margin-top: var(--slip-pad);
+  padding-top: var(--slip-pad);
+  border-top: 1px solid color-mix(in oklch, var(--line-strong), transparent 45%);
+
+  .demo-key svg {
+    height: 1.125rem;
+  }
+
+  /* Beside the keys, a narrow slip left the lamp at the end of their row on its own. */
+  .demo-keys {
+    flex-basis: 100%;
+  }
+
+  /* The state stays on the lamp's line, and the instruction takes the next. */
+  .demo-readout {
+    display: contents;
+  }
+
+  .demo-hint {
+    flex-basis: 100%;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
 }
 
 /* The title block's size on a page without script. The stack's ResizeObserver (Stack.astro)
