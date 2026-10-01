@@ -188,4 +188,4 @@
 - [x] Keep the walkthrough readouts in Synthetic, Event Bus and Fediverse from announcing every step (#222)
 - [x] The marker editor takes focus when a visitor opens it, keeps Tab inside and gives focus back on close; the Space Builder root is a group, not an application (A9) (#227)
 - [x] Hide only the drawn parts of the blueprint panels that hid all their text from screen readers (A2) (#225)
-- [ ] Favicon: five candidates for Hugo to pick from
+- [x] Favicon: five candidates for Hugo to pick from (#235)
