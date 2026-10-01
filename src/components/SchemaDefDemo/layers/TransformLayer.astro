@@ -1,8 +1,5 @@
 ---
-import { actor, actorRules, actorTable, type Line } from '../schema';
-
-// Walk order for the highlight, and the keyboard's: every keyed line of the source, once.
-const keys = [...new Set(actor.lines.map((line) => line.key).filter((key): key is string => Boolean(key)))];
+import { actor, actorKeys as keys, actorRules, actorTable, type Line } from '../schema';
 
 /** An id for a key's rule, so each keyed line can name the rule that describes it. */
 const ruleId = (key: string) => `schemadef-rule-${key.replace(/[^a-z0-9_-]+/gi, '-')}`;
@@ -10,17 +7,6 @@ const described = new Set(actorRules.map((rule) => rule.key));
 
 /** Indent in levels, so a four-space PHP level and a two-space SQL one take the same room. */
 const levels = (line: Line, width: number) => Math.round(line.indent / width);
-
-// Without a script, hovering or focusing a line still lights its counterpart and its rule:
-// one :has() rule per key. The script marks the demo enhanced and takes over from these.
-const fallback = keys
-  .map((key) => {
-    const at = `[data-key="${key}"]`;
-    return `[data-schemadef]:not([data-enhanced]):has(${at}:is(:hover, :focus)) :is(${at}, [data-rule="${key}"]) { --lit: 1; }`
-      + `\n[data-schemadef]:not([data-enhanced]):has(${at}:is(:hover, :focus)) [data-rule="${key}"] { display: flex; }`
-      + `\n[data-schemadef]:not([data-enhanced]):has(${at}:is(:hover, :focus)) [data-rule-default] { display: none; }`;
-  })
-  .join('\n');
 
 const panes = [
   {
@@ -106,7 +92,20 @@ const panes = [
   </div>
 </div>
 
-<style is:inline set:html={fallback}></style>
+<style lang="scss" is:global>
+// Without a script, hovering or focusing a line still lights its counterpart and its rule:
+// one :has() rule per key. The script marks the demo enhanced and takes over from these.
+@use "ts:src/components/SchemaDefDemo/schema.ts" as schema;
+
+@each $key in schema.$actor-keys {
+  $at: '[data-key="#{$key}"]';
+  [data-schemadef]:not([data-enhanced]):has(#{$at}:is(:hover, :focus)) {
+    :is(#{$at}, [data-rule="#{$key}"]) { --lit: 1; }
+    [data-rule="#{$key}"] { display: flex; }
+    [data-rule-default] { display: none; }
+  }
+}
+</style>
 
 <script>
 import { bootIslands } from '@/client/pageIsland';

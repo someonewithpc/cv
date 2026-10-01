@@ -416,5 +416,13 @@ export function rulesFor(schema: Schema): Rule[] {
 }
 
 export const actor = readSchemaDef(actorSource);
+
+/** Every keyed line of the source, once: TransformLayer's walk order for the highlight and
+ * the keyboard, and the keys its no-script fallback loops over. */
+export const actorKeys = [...new Set(actor.lines.map((line) => line.key).filter((key): key is string => Boolean(key)))];
+
+/** What TransformLayer's `<style lang="scss">` reads through `@use "ts:…"` (plugins/sassFromTs.mjs). */
+export const sass = { actorKeys };
+
 export const actorTable = createTable(actor.schema);
 export const actorRules = rulesFor(actor.schema);
