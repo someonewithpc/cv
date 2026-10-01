@@ -1,5 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 
+import { demoStack } from './support/paperStack';
+
 /**
  * A stack's dog-ear draws itself once (initial-fold-reveal in PaperStack/index.astro) and then
  * breathes (the fold pulse). Both used to start at load, so on a stack further down the page
@@ -99,4 +101,50 @@ test('a stack far down the page reveals its dog-ear only once its corner is on s
   const shown = await foldState(stack);
   // 2cm across at rest.
   expect(shown.flap).toBeGreaterThan(70);
+});
+
+type TurnFrame = { page: number, progress: number, pulses: number };
+
+test('a page turned to the front by key draws its dog-ear with no pulse under it', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/');
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  await stack.scrollIntoViewIfNeeded();
+  await expect.poll(async () => (await foldState(stack)).pulses, { timeout: 5_000 }).toEqual(['running', 'running', 'running']);
+
+  // Every frame of the turns, read in the page and fetched afterwards, so the key presses are
+  // not held up behind a pending evaluate().
+  await stack.evaluate((el) => {
+    const frames: TurnFrame[] = [];
+    (window as Window & { turnFrames?: TurnFrame[] }).turnFrames = frames;
+    const sample = () => {
+      const front = el.querySelector<HTMLElement>('.paper-front')!;
+      const animations = front.getAnimations({ subtree: true }) as CSSAnimation[];
+      const reveal = animations.find((animation) => animation.animationName === 'initial-fold-reveal');
+      frames.push({
+        page: [...el.children].indexOf(front),
+        progress: reveal?.effect!.getComputedTiming().progress ?? -1,
+        pulses: animations.filter((animation) => animation.animationName?.startsWith('fold-pulse-')).length,
+      });
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+
+  // Quick turns, the way the dog-ear was first seen drawn over an uncut corner: each page
+  // reveals its dog-ear as it comes to the front.
+  await stack.focus();
+  for (let turn = 0; turn < 3; turn++) {
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(700);
+  }
+  await page.waitForTimeout(1500);
+
+  const frames = await page.evaluate(() => (window as Window & { turnFrames?: TurnFrame[] }).turnFrames!);
+  const drawing = frames.filter((frame) => frame.progress > 0 && frame.progress < 1);
+  expect(new Set(drawing.map((frame) => frame.page)).size, 'no turned page caught drawing its dog-ear').toBeGreaterThan(1);
+  // While the page's clip-path pulse exists, Chrome paints the page's cut where it stood when
+  // that pulse started, at no fold, so the flap grows over a corner that stays whole.
+  expect(drawing.filter((frame) => frame.pulses > 0)).toEqual([]);
+  await expect.poll(async () => (await foldState(stack)).pulses, { timeout: 2_000 }).toEqual(['running', 'running', 'running']);
 });
