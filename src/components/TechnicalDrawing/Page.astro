@@ -355,148 +355,6 @@ section {
     bottom: 0;
     height: var(--sheet-margin);
     z-index: 4;
-
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-
-    color: var(--ink);
-    font-size: 0.625rem;
-    line-height: 1;
-    /* Paper, not chrome: the band under it shows through, and the sheet stays
-       hoverable everywhere except on the keys themselves. */
-    pointer-events: none;
-
-    &[hidden] {
-      display: none;
-    }
-  }
-
-  /* Each key's hit box reaches half the gap past its sides and no further, so on a
-     narrow sheet, where 0.25em is under 3px, the gap grows to keep the phone keys 24px
-     apart. */
-  .demo-keys {
-    display: flex;
-    align-items: center;
-    gap: max(0.25em, 0.25rem);
-  }
-
-  /* Each key is line art in the sheet's ink: a cap with a side bevel, and when it
-     is held down the cap sits on the bevel and takes the hatch a sectioned part
-     gets in a drawing. The drawing itself is TransportKeyArt.astro, once for the
-     page; a key shows it through <use>, whose copy no selector here can reach, so
-     the key's state goes down to it as these properties. */
-  .demo-key {
-    /* The sheet's own paper, not the mat the band is: --surface-raised sits a step
-       away from the mat on every theme, which left the cap looking like an outline
-       with the drawing showing through it. Paper is a step the other way, and it is
-       the lightest surface on the light themes and the darkest on the dark ones, so
-       the cap reads as a solid key on all four. */
-    --key-face-fill: var(--surface-page);
-    --key-glyph-ink: var(--ink);
-    --key-cap-shift: none;
-    --key-bevel-display: inline;
-    --key-hatch-display: none;
-
-    display: block;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    cursor: pointer;
-    pointer-events: auto;
-    @include hit-area($inline: -0.125rem);
-
-    svg {
-      display: block;
-      /* What the band leaves once the margin is the same on all four sides. */
-      height: 0.75rem;
-      width: auto;
-      overflow: visible;
-    }
-
-    &:hover,
-    &:focus-visible {
-      --key-glyph-ink: var(--accent);
-    }
-
-    &:focus-visible {
-      outline: 1px solid var(--accent);
-      outline-offset: 0.125em;
-    }
-
-    /* Held down: the cap drops the full depth of its bevel, which disappears under it,
-       and the face takes a little ink so a held key still reads at a glance once the
-       bevel that used to mark it is gone. */
-    &[aria-pressed='true'] {
-      --key-cap-shift: 1.5px 3.5px;
-      --key-face-fill: color-mix(in oklab, var(--ink) 12%, var(--surface-page));
-      --key-bevel-display: none;
-      --key-hatch-display: inline;
-    }
-
-    &:active {
-      --key-cap-shift: 1.5px 3.5px;
-    }
-
-    &:disabled {
-      cursor: default;
-      opacity: 0.5;
-    }
-  }
-
-  .demo-transport[data-state='playing'] [data-demo-key='play'] {
-    --key-glyph-ink: var(--accent);
-  }
-
-  .demo-led {
-    flex: none;
-    width: 0.5em;
-    height: 0.5em;
-    border: 1px solid var(--ink-muted);
-    border-radius: 50%;
-  }
-
-  /* Not nested under .demo-led: an `&` there carries the whole `section .demo-led`
-     chain into the selector and it never matches. */
-  .demo-transport[data-state='playing'] .demo-led {
-    border-color: var(--accent);
-    background: var(--accent);
-    animation: demo-led-pulse 1.6s ease-in-out infinite;
-  }
-
-  @keyframes demo-led-pulse {
-    50% { opacity: 0.25; }
-  }
-
-  /* One line, because the band is one line tall: the state reads as a stamp and
-     the instruction trails it in the muted ink the title block uses for labels. */
-  .demo-readout {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5em;
-    min-width: 0;
-  }
-
-  .demo-caption {
-    flex: none;
-    letter-spacing: 0.1em;
-  }
-
-  /* Ruled off from the state the way the title block rules its cells apart. */
-  .demo-hint {
-    overflow: hidden;
-    padding-inline-start: 0.625em;
-    border-inline-start: 1px solid var(--line);
-    color: var(--ink-muted);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* The same selector as the rule that starts the pulse: a bare .demo-led loses to it on
-     specificity and never switches the animation off. */
-  @media (prefers-reduced-motion: reduce) {
-    .demo-transport[data-state='playing'] .demo-led:not([data-full-motion] *) { animation: none; }
   }
 
   /* The note keeps clear of the frame line and of the title block below it,
@@ -1051,6 +909,7 @@ section {
       display: none;
     }
 
+
     .content {
       grid-column: 1;
       grid-row: 1;
@@ -1142,6 +1001,152 @@ section {
       }
     }
   }
+}
+
+/* The deck's own look, outside section {} so it holds wherever the deck is put: on the sheet,
+   or in the detail's card (L9 review, FediversePlaygroundDemo/deck-place.ts). */
+.demo-transport {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+
+  color: var(--ink);
+  font-size: 0.625rem;
+  line-height: 1;
+  /* Paper, not chrome: the band under it shows through, and the sheet stays
+     hoverable everywhere except on the keys themselves. */
+  pointer-events: none;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+/* Each key's hit box reaches half the gap past its sides and no further, so on a
+   narrow sheet, where 0.25em is under 3px, the gap grows to keep the phone keys 24px
+   apart. */
+.demo-keys {
+  display: flex;
+  align-items: center;
+  gap: max(0.25em, 0.25rem);
+}
+
+/* Each key is line art in the sheet's ink: a cap with a side bevel, and when it
+   is held down the cap sits on the bevel and takes the hatch a sectioned part
+   gets in a drawing. The drawing itself is TransportKeyArt.astro, once for the
+   page; a key shows it through <use>, whose copy no selector here can reach, so
+   the key's state goes down to it as these properties. */
+.demo-key {
+  /* The sheet's own paper, not the mat the band is: --surface-raised sits a step
+     away from the mat on every theme, which left the cap looking like an outline
+     with the drawing showing through it. Paper is a step the other way, and it is
+     the lightest surface on the light themes and the darkest on the dark ones, so
+     the cap reads as a solid key on all four. */
+  --key-face-fill: var(--surface-page);
+  --key-glyph-ink: var(--ink);
+  --key-cap-shift: none;
+  --key-bevel-display: inline;
+  --key-hatch-display: none;
+
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  @include hit-area($inline: -0.125rem);
+
+  svg {
+    display: block;
+    /* What the band leaves once the margin is the same on all four sides. */
+    height: 0.75rem;
+    width: auto;
+    overflow: visible;
+  }
+
+  &:hover,
+  &:focus-visible {
+    --key-glyph-ink: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 0.125em;
+  }
+
+  /* Held down: the cap drops the full depth of its bevel, which disappears under it,
+     and the face takes a little ink so a held key still reads at a glance once the
+     bevel that used to mark it is gone. */
+  &[aria-pressed='true'] {
+    --key-cap-shift: 1.5px 3.5px;
+    --key-face-fill: color-mix(in oklab, var(--ink) 12%, var(--surface-page));
+    --key-bevel-display: none;
+    --key-hatch-display: inline;
+  }
+
+  &:active {
+    --key-cap-shift: 1.5px 3.5px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+.demo-transport[data-state='playing'] [data-demo-key='play'] {
+  --key-glyph-ink: var(--accent);
+}
+
+.demo-led {
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  border: 1px solid var(--ink-muted);
+  border-radius: 50%;
+}
+
+/* Not nested under .demo-led: an `&` there carries the whole `section .demo-led`
+   chain into the selector and it never matches. */
+.demo-transport[data-state='playing'] .demo-led {
+  border-color: var(--accent);
+  background: var(--accent);
+  animation: demo-led-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes demo-led-pulse {
+  50% { opacity: 0.25; }
+}
+
+/* One line, because the band is one line tall: the state reads as a stamp and
+   the instruction trails it in the muted ink the title block uses for labels. */
+.demo-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  min-width: 0;
+}
+
+.demo-caption {
+  flex: none;
+  letter-spacing: 0.1em;
+}
+
+/* Ruled off from the state the way the title block rules its cells apart. */
+.demo-hint {
+  overflow: hidden;
+  padding-inline-start: 0.625em;
+  border-inline-start: 1px solid var(--line);
+  color: var(--ink-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The same selector as the rule that starts the pulse: a bare .demo-led loses to it on
+   specificity and never switches the animation off. */
+@media (prefers-reduced-motion: reduce) {
+  .demo-transport[data-state='playing'] .demo-led:not([data-full-motion] *) { animation: none; }
 }
 
 /* The title block's size on a page without script. The stack's ResizeObserver (Stack.astro)
