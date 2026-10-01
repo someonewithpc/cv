@@ -100,6 +100,13 @@ bootIslands('[data-fediverse-playground]', boot);
   :global([data-sheet-orientation='portrait']) & {
     /* Portrait gives the title block its own row. */
     padding-bottom: $sheet-margin;
+
+    /* Page.astro gives it that row only while the stack is taller than it is wide. From 624
+       to 672px the frame reads portrait but the stack is wider than tall, so the block stays
+       in the corner over the content and the content stops above it. */
+    @container technical-drawing (orientation: landscape) {
+      padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
+    }
   }
 }
 
@@ -126,10 +133,24 @@ bootIslands('[data-fediverse-playground]', boot);
   column-gap: var(--gap);
   row-gap: 0.5em;
   color: var(--ink);
-  font-size: 0.8em;
+  /* The side column has to end above the title block, whose height does not change with
+     the sheet's, so its em is the height from the playground's top to the block's top (the
+     sheet less its frame, a 1px border and --sheet-margin each side, the wrapper's top padding
+     and the block) over the rows' height in em. A wide sheet's rows come to 27.5em; a narrow
+     sheet's, with the intro across both columns over them, to 21.5em at most. Half an em more
+     keeps them a row gap off the block. Where that comes out over 0.8em, as on the largest
+     wide sheet and on most narrow ones, the type stays at 0.8em. */
+  --side-rows: 28;
+
+  font-size: min(0.8em, (var(--sheet-block) - 2px - 2 * var(--sheet-margin) - 0.75em - var(--title-block-block, 0px)) / var(--side-rows));
+
+  :global([data-sheet-width='narrow']) & {
+    --side-rows: 22;
+  }
 
   /* Portrait: one column, the graph under the rows. */
   :global([data-sheet-orientation='portrait']) & {
+    font-size: 0.8em;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto auto var(--bar) minmax(0, 1fr);
   }

@@ -110,6 +110,39 @@ for (const [width, height] of [[390, 844], [760, 900], [1440, 900]]) {
   });
 }
 
+/**
+ * #220 S2: nothing on the playground sheet may lie on the title block. The side column's rows
+ * ran 6 to 16 px into it from 1000 to 1072 px, with the sheet too short for them at 0.8em.
+ * Measured in view: a stack off screen is skipped (content-visibility), so its title block is
+ * never measured and the side column falls back to 20em.
+ */
+test.describe('title block clearance', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  for (const width of [1048, 1104, 1440]) {
+    test(`fediverse playground: nothing on the sheet overlaps the title block at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const host = await mountedPlayground(page);
+      await page.addStyleTag({ content: '* { rotate: none !important; transform: none !important; translate: none !important; }' });
+
+      // Polled: the title block is measured by a ResizeObserver once the stack is in view.
+      await expect.poll(() => host.evaluate((playground) => {
+        const block = playground.closest('section')!.querySelector(':scope > table')!.getBoundingClientRect();
+        return [...playground.querySelectorAll('*')].flatMap((el) => {
+          if (el.closest('pre, .demo-cursor, defs, title, desc') || el.matches('g, svg')) return [];
+          const style = getComputedStyle(el);
+          if (style.display === 'none' || style.visibility === 'hidden') return [];
+          const box = el.getBoundingClientRect();
+          if (!box.width || !box.height) return [];
+          const x = Math.min(box.right, block.right) - Math.max(box.left, block.left);
+          const y = Math.min(box.bottom, block.bottom) - Math.max(box.top, block.top);
+          return x > 0.5 && y > 0.5 ? [`${el.tagName.toLowerCase()}.${[...el.classList].join('.')} ${x.toFixed(1)}x${y.toFixed(1)}`] : [];
+        });
+      })).toEqual([]);
+    });
+  }
+});
+
 test('fediverse playground: the arrow key visits every page in order, then wraps', async ({ page }) => {
   const stack = playgroundStack(page);
   await stack.scrollIntoViewIfNeeded();
