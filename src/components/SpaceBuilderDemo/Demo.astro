@@ -11,6 +11,7 @@ import PlaceLayer from './layers/PlaceLayer.astro';
 import ParametersLayer from './layers/ParametersLayer.astro';
 import LayoutsLayer from './layers/LayoutsLayer.astro';
 import BadgeLayer from './layers/BadgeLayer.astro';
+import BadgeFormula from './layers/BadgeFormula.astro';
 
 function toKiB(text: string) {
   return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
@@ -87,10 +88,13 @@ type Layer = keyof typeof layers;
         </PostIt>
       ),
       badge: (
-        <PostIt background="#edf" color="black">
-          The seat count sticks to the bottom of the area on screen, without overlapping the
-          selected area
-        </PostIt>
+        <Fragment>
+          <PostIt background="#edf" color="black">
+            The seat count sticks to the bottom of the area on screen, without overlapping the
+            selected area
+          </PostIt>
+          <BadgeFormula place="note" />
+        </Fragment>
       ),
     }[layer])}
   </fragment>

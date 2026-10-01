@@ -248,7 +248,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1040, height: 768
       const { scene, frame, rows } = await front.locator('section').evaluate((section) => {
         const box = section.getBoundingClientRect();
         const inset = parseFloat(getComputedStyle(section).paddingTop) + 1;
-        const card = section.querySelector<HTMLElement>('.badge-formula')!;
+        const card = section.querySelector<HTMLElement>('.content > .badge-formula')!;
         const cardRight = card.getBoundingClientRect().right - parseFloat(getComputedStyle(card).paddingRight);
         return {
           scene: section.querySelector('.badge-scene-demo')!.getBoundingClientRect().toJSON(),
@@ -289,10 +289,10 @@ for (const viewport of [
       await turnToPage(stack, 'Capacity Badge');
       const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
 
-      await expect(section.locator('.note-card > *')).toHaveCount(1);
+      await expect(section.locator('.note-card > aside')).toHaveCount(1);
       if (viewport.width >= 1000) {
         await expect(section.locator('.note-card > aside')).toBeVisible();
-        await expect(section.locator('.badge-formula')).toBeVisible();
+        await expect(section.locator('.content > .badge-formula')).toBeVisible();
         await expect(section.locator('.note-fold')).toBeHidden();
       }
 
@@ -307,7 +307,7 @@ for (const viewport of [
           return { left, top, right: left + el.offsetWidth, bottom: top + el.offsetHeight };
         };
         const block = box(sheet.querySelector<HTMLElement>(':scope > table')!);
-        return [...sheet.querySelectorAll<HTMLElement>('.badge-scene-demo, .badge-formula, .note-card > aside')]
+        return [...sheet.querySelectorAll<HTMLElement>('.badge-scene-demo, .content > .badge-formula, .note-card > aside')]
           .filter((el) => el.offsetParent)
           .map((el) => box(el))
           .map((b) => Math.min(b.right - block.left, b.bottom - block.top));
@@ -331,7 +331,7 @@ for (const viewport of [{ width: 700, height: 768 }, { width: 963, height: 768 }
       const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
 
       await expect(section.locator('.note-fold')).toBeVisible();
-      await expect(section.locator('.badge-formula')).toBeVisible();
+      await expect(section.locator('.content > .badge-formula')).toBeVisible();
       const gaps = await section.evaluate((sheet) => {
         const box = (el: HTMLElement) => {
           let left = 0;
@@ -344,7 +344,7 @@ for (const viewport of [{ width: 700, height: 768 }, { width: 963, height: 768 }
         };
         const block = box(sheet.querySelector<HTMLElement>(':scope > table')!);
         const scene = box(sheet.querySelector<HTMLElement>('.badge-scene-demo')!);
-        const card = sheet.querySelector<HTMLElement>('.badge-formula')!;
+        const card = sheet.querySelector<HTMLElement>('.content > .badge-formula')!;
         const c = box(card);
         return { beside: c.left - scene.right, above: block.top - c.bottom, inside: block.right - c.right, spill: card.scrollWidth - card.clientWidth };
       });
@@ -352,6 +352,36 @@ for (const viewport of [{ width: 700, height: 768 }, { width: 963, height: 768 }
       expect(gaps.above).toBeGreaterThan(0);
       expect(gaps.inside).toBeGreaterThanOrEqual(0);
       expect(gaps.spill).toBeLessThanOrEqual(0);
+    });
+  });
+}
+
+// A portrait sheet has no room for the card beside or under the scene, and the card was shown
+// nowhere there. It is in the note now, after the note's own text, and the corner tab opens it.
+for (const viewport of [{ width: 554, height: 891 }, { width: 390, height: 768 }]) {
+  test.describe(`badge page at ${viewport.width}x${viewport.height}`, () => {
+    test.use({ viewport });
+
+    test('the tag-offset card is in the note the corner tab opens', async ({ page }) => {
+      const stack = spaceBuilderStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await turnToPage(stack, 'Capacity Badge');
+      const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
+
+      await expect(section.locator('.content > .badge-formula')).toBeHidden();
+      await section.locator('.note-fold').evaluate((tab: HTMLElement) => tab.click());
+      const card = section.locator('.drawing-note .note-card > .badge-formula');
+      await expect(card).toBeVisible();
+      const fit = await card.evaluate((el) => {
+        const note = el.closest('dialog')!.getBoundingClientRect();
+        const box = el.getBoundingClientRect();
+        const text = el.parentElement!.querySelector('aside')!.getBoundingClientRect();
+        return { spill: el.scrollWidth - el.clientWidth, left: box.left - note.left, right: note.right - box.right, after: box.top - text.top };
+      });
+      expect(fit.spill).toBeLessThanOrEqual(0);
+      expect(fit.left).toBeGreaterThanOrEqual(0);
+      expect(fit.right).toBeGreaterThanOrEqual(0);
+      expect(fit.after).toBeGreaterThan(0);
     });
   });
 }

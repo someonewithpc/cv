@@ -1,0 +1,159 @@
+---
+// The drawing shows the tag-offset card wherever it has room beside or under the scene. A
+// portrait sheet has none, and there the copy in the note, which the corner tab opens, shows
+// instead, after the note's own text.
+interface Props {
+  place: 'drawing' | 'note';
+}
+
+const { place } = Astro.props;
+---
+
+<figure class="badge-formula" data-place={place}>
+  <figcaption class="badge-formula-title">Tag offset</figcaption>
+  <div class="badge-formula-row">
+    <math display="block">
+      <mi>φ</mi><mo>=</mo><mi>θ</mi><mo>−</mo><mi>α</mi>
+    </math>
+    <math display="block">
+      <mi>r</mi>
+      <mo>=</mo>
+      <mi>min</mi>
+      <mo>⁡</mo>
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo stretchy="true" fence="true" form="prefix">(</mo>
+          <mfrac>
+            <mi>h</mi>
+            <mrow>
+              <mn>2</mn>
+              <mrow>
+                <mo stretchy="false" fence="true">|</mo>
+                <mrow>
+                  <mi>cos</mi>
+                  <mo>⁡</mo>
+                  <mi>φ</mi>
+                </mrow>
+                <mo stretchy="false" fence="true">|</mo>
+              </mrow>
+            </mrow>
+          </mfrac>
+          <mo lspace="0.3em" rspace="0.3em">,</mo>
+          <mfrac>
+            <mi>w</mi>
+            <mrow>
+              <mn>2</mn>
+              <mrow>
+                <mo stretchy="false" fence="true">|</mo>
+                <mrow>
+                  <mi>sin</mi>
+                  <mo>⁡</mo>
+                  <mi>φ</mi>
+                </mrow>
+                <mo stretchy="false" fence="true">|</mo>
+              </mrow>
+            </mrow>
+          </mfrac>
+          <mo stretchy="true" fence="true" form="postfix">)</mo>
+        </mrow>
+      </mstyle>
+    </math>
+    <math display="block">
+      <mtext>offset</mtext><mo>=</mo><mi>r</mi><mo>+</mo><mn>0.95</mn>
+    </math>
+  </div>
+  <p class="badge-formula-note">
+    φ is the camera's angle relative to the area; r is the distance from center to the area's
+    silhouette edge at that angle.
+  </p>
+</figure>
+
+<style lang="scss">
+.badge-formula {
+  display: none;
+  box-sizing: border-box;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.5em 0.9em 0.6em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.3em;
+  background: var(--surface-sunken);
+  box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+}
+
+.badge-formula-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25em 1.5em;
+
+  math {
+    font-size: var(--formula-size, 1em);
+    // Prefer a local math face so stretchy fences / operators actually stretch.
+    font-family: "DejaVu Math TeX Gyre", "Noto Sans Math", math, serif;
+  }
+
+  math, mtext {
+    margin: 0;
+  }
+
+  mtext {
+    font-style: normal;
+    font-family: inherit;
+  }
+
+  mfrac {
+    padding-block: 0.2em;
+  }
+}
+
+.badge-formula-title,
+.badge-formula-note {
+  font-family: monospace, system-ui;
+  font-size: 0.75em;
+  color: var(--ink-muted);
+}
+
+.badge-formula-title {
+  margin: 0 0 0.25em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge-formula-note {
+  margin: 0.35em 0 0;
+  line-height: 1.35;
+}
+
+// Where the note sits beside the artwork, the card is part of the drawing: a strip along the
+// bottom edge, left of the title block, where a drawing keeps its notes.
+@container technical-drawing not (orientation: portrait) {
+  :global(.content) > .badge-formula {
+    display: block;
+  }
+}
+
+// A narrower landscape sheet tucks the note under the corner, and the card takes the note's
+// empty column, centred in the height above the title block.
+@container technical-drawing-width (max-width: 56em) {
+  @container technical-drawing not (orientation: portrait) {
+    :global(.content) > .badge-formula {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: center;
+      // The equations stack here, and r at full size is as wide as the narrowest column.
+      --formula-size: 0.875em;
+    }
+  }
+}
+
+@container technical-drawing (orientation: portrait) {
+  :global(.note-card) > .badge-formula {
+    display: block;
+    // The equations stack on a phone too, and r at full size is wider than a 320 px sheet.
+    --formula-size: 0.875em;
+  }
+}
+</style>
