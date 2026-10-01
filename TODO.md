@@ -195,4 +195,4 @@
 - [ ] Bring the four Space Builder spinners' keyframes into scope so they spin (S16)
 - [x] The theme picker demo's stage buttons are 36 by 9 px, under the 24 px target size (A1) (#228)
 - [x] The audit's axe run skips WCAG 2.2, so it never checks target size (E30) (#228)
-- [ ] Keyboard focus takes a walkthrough over once and never restarts it (C32 to C35)
+- [x] Keyboard focus takes a walkthrough over once and never restarts it (C32 to C35) (#231)
