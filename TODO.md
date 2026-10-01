@@ -179,4 +179,4 @@
 - [x] Give every control a 24px touch target at 390 wide, with and without script (A5) (#206)
 - [x] Give public/ desk, demo and favicon assets a long max-age instead of revalidating every visit (#224)
 - [x] `astro check` passes, and `npm run deploy` checks once, builds once and tests that build (E1, E9) (#221)
-- [ ] A key-turned page draws its dog-ear over a cut corner, not a whole one, in Chrome (#171 L8)
+- [x] A key-turned page draws its dog-ear over a cut corner, not a whole one, in Chrome (#171 L8) (#233)
