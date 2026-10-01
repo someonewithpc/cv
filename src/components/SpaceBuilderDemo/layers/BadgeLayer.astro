@@ -41,7 +41,19 @@ bootIslands('[data-badge-scene-island]', boot);
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
-  padding: clamp(0.7rem, 3.2%, 1.35rem);
+  --scene-pad: clamp(0.7rem, 3.2%, 1.35rem);
+
+  padding: var(--scene-pad);
+}
+
+// The title block in the bottom-right corner is wider than the note column, so its left edge
+// falls inside this cell. The scene keeps the full height and gives up width instead: the cell
+// ends at the block, and the scene is centred in the space left of it. Each column is half of
+// this cell, and percentages here are of the cell. Portrait gives the block a row of its own.
+@container technical-drawing not (orientation: portrait) {
+  :global(article.technical-drawing-stack > * > section .content:has(.badge-scene-demo)) {
+    padding-right: calc(var(--scene-pad) + max(0px, var(--title-block-inline) - 50%));
+  }
 }
 
 .badge-scene-demo {

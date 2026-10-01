@@ -294,3 +294,41 @@ for (const viewport of [{ width: 1000, height: 768 }, { width: 1100, height: 768
     });
   });
 }
+
+// The title block is wider than the note column, and the scene's bottom-right corner ran under
+// it at every landscape width. The scene ends at the block's left edge now. Layout boxes, not
+// client rects: the block's tilt would widen its rect.
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+  { width: 1000, height: 768 },
+  { width: 1100, height: 768 },
+  { width: 1440, height: 900 },
+]) {
+  test.describe(`badge page at ${viewport.width}px`, () => {
+    test.use({ viewport });
+
+    test('the scene stays clear of the title block', async ({ page }) => {
+      const stack = spaceBuilderStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await turnToPage(stack, 'Capacity Badge');
+      const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
+
+      const overlap = await section.evaluate((sheet) => {
+        const box = (el: HTMLElement) => {
+          let left = 0;
+          let top = 0;
+          for (let e: HTMLElement | null = el; e && e !== sheet; e = e.offsetParent as HTMLElement | null) {
+            left += e.offsetLeft;
+            top += e.offsetTop;
+          }
+          return { left, top, right: left + el.offsetWidth, bottom: top + el.offsetHeight };
+        };
+        const block = box(sheet.querySelector<HTMLElement>(':scope > table')!);
+        const scene = box(sheet.querySelector<HTMLElement>('.badge-scene-demo')!);
+        return Math.min(scene.right - block.left, scene.bottom - block.top);
+      });
+      expect(overlap).toBeLessThanOrEqual(0);
+    });
+  });
+}
