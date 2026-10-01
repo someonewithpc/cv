@@ -218,6 +218,73 @@ type Layer = keyof typeof layers;
   }
 }
 
+// Past 56em the note sits beside the artwork, but the Badge note and its formula card are taller
+// than the column above the title block on sheets up to about 955px wide. Where the note would
+// reach the block, it folds into the corner tab the way it does on narrower sheets. The script
+// below marks those sheets. The note is only hidden, not taken out, so the column keeps its
+// height and the tab comes and goes at one width.
+$sheet: '.space-builder-demo article.technical-drawing-stack > * > section[data-note]';
+
+@mixin tucked-note {
+  :global(.drawing-note:not(:modal, :popover-open)) {
+    visibility: hidden;
+  }
+
+  :global(.note-fold) {
+    display: block;
+  }
+}
+
+:global(#{$sheet}[data-note-tucked]) {
+  --note-fold-reach: calc(var(--note-fold-size) - var(--sheet-margin));
+
+  > :global(.aside) {
+    @include tucked-note;
+  }
+
+  :global(.demo-transport) {
+    left: calc(var(--note-fold-size) + var(--sheet-margin));
+  }
+}
+
+// Without script the column asks the same question itself. It clips, and every item carries an
+// empty box as tall as the block under it, so the column overflows exactly when the note would
+// reach the block; the clearance above the block is a grid row of its own, so the note is
+// centred where it always was. With script this stays off: the clip nudges the card's
+// antialiasing by a level, and there is no deck to move without script either.
+@media (scripting: none) {
+  @container technical-drawing-width not (max-width: 56em) {
+    :global(#{$sheet} > .aside) {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) var(--note-clearance);
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      padding-bottom: var(--title-block-block);
+      overflow: hidden;
+      container: note-column / scroll-state;
+    }
+
+    :global(#{$sheet} > .aside .drawing-note:not(:modal, :popover-open) .note-card > *) {
+      position: relative;
+    }
+
+    :global(#{$sheet} > .aside .drawing-note:not(:modal, :popover-open) .note-card > *::after) {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 1px;
+      height: var(--title-block-block);
+    }
+  }
+
+  @container note-column scroll-state(scrollable: block-end) {
+    :global(#{$sheet} > .aside) {
+      @include tucked-note;
+    }
+  }
+}
+
 // Badge page: the formula card sits below the PostIt, never overlapping it.
 .badge-aside {
   display: flex;
@@ -287,3 +354,28 @@ type Layer = keyof typeof layers;
   line-height: 1.35;
 }
 </style>
+
+<script>
+// A sheet whose note would reach the title block tucks it under the corner tab (the styles
+// above). Offsets, not client rects: they leave out the stack's transforms, and the note and the
+// block share the sheet as their offset parent. Every sheet is read before any is written. A note
+// open in the dialog has left the column, so its sheet keeps the mark it had.
+const sheetOf = (el: Element) => el.closest<HTMLElement>('section[data-note]');
+const reaches = (sheet: HTMLElement) => {
+  const block = sheet.querySelector<HTMLElement>(':scope > table');
+  const items = sheet.querySelectorAll<HTMLElement>(':scope > .aside .drawing-note:not([open]) > .note-card > *');
+  return !!block && [...items].some((item) => item.offsetHeight > 0 && item.offsetTop + item.offsetHeight > block.offsetTop);
+};
+const tuck = new ResizeObserver((entries) => {
+  const sheets = new Set(entries.map((entry) => sheetOf(entry.target)).filter((sheet) => sheet !== null));
+  [...sheets]
+    .filter((sheet) => !sheet.querySelector(':scope > .aside .drawing-note[open]'))
+    .map((sheet) => [sheet, reaches(sheet)] as const)
+    .forEach(([sheet, tucked]) => {
+      if (sheet.hasAttribute('data-note-tucked') !== tucked) sheet.toggleAttribute('data-note-tucked', tucked);
+    });
+});
+for (const sheet of document.querySelectorAll<HTMLElement>('.space-builder-demo article.technical-drawing-stack section[data-note]')) {
+  for (const el of sheet.querySelectorAll(':scope > .aside, :scope > .aside .note-card > *, :scope > table')) tuck.observe(el);
+}
+</script>

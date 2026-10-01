@@ -232,9 +232,9 @@ test('badge page: the readout shows the home angle and follows a drag', async ({
 });
 
 // The sheet's grid row once grew to the note column's height, and the scene went out over the
-// deck with it; the r row of the tag-offset card ran past the card's right edge. 1040 is the
+// deck with it; the r row of the tag-offset card ran past the card's right edge. 1104 is the
 // narrowest window whose sheet still shows the card beside the scene.
-for (const viewport of [{ width: 1440, height: 900 }, { width: 1040, height: 768 }]) {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1104, height: 768 }]) {
   test.describe(`badge page at ${viewport.width}px`, () => {
     test.use({ viewport });
 
@@ -262,6 +262,35 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1040, height: 768
       expect(scene.right).toBeLessThanOrEqual(frame.right);
       expect(scene.bottom).toBeLessThanOrEqual(frame.bottom);
       for (const past of rows) expect(past).toBeLessThanOrEqual(0.5);
+    });
+  });
+}
+
+// Between about 990 and 1110 px the note and the tag-offset card are taller than the column
+// above the title block, and the card ran under the block. There the note folds into the
+// corner tab instead, and nothing of it is left over the block.
+for (const viewport of [{ width: 1000, height: 768 }, { width: 1100, height: 768 }]) {
+  test.describe(`badge page at ${viewport.width}px`, () => {
+    test.use({ viewport });
+
+    test('nothing of the note overlaps the title block', async ({ page }) => {
+      const stack = spaceBuilderStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await turnToPage(stack, 'Capacity Badge');
+      const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
+
+      await expect(section.locator('.note-fold')).toBeVisible();
+      const overlaps = await section.evaluate((sheet) => {
+        const block = sheet.querySelector(':scope > table')!.getBoundingClientRect();
+        return [...sheet.querySelectorAll('.badge-aside, .badge-aside *')]
+          .filter((el) => getComputedStyle(el).visibility === 'visible')
+          .map((el) => el.getBoundingClientRect())
+          .filter((box) => box.width > 0 && box.height > 0
+            && box.bottom > block.top && box.top < block.bottom
+            && box.right > block.left && box.left < block.right)
+          .length;
+      });
+      expect(overlaps).toBe(0);
     });
   });
 }
