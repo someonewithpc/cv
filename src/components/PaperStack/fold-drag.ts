@@ -1322,6 +1322,9 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   // stopped moving. It has been introduced by now, so start it at once and let it curl up while
   // the sheet it replaces folds away behind the stack. The pulse keeps its own gap after it.
   next.style.animationDelay = '0s';
+  // The new page's pulse waits for its reveal to end, as on load (releasePulse): a clip-path
+  // pulse there in its delay keeps Chrome painting the page uncut under the growing flap.
+  stack.style.setProperty('--fold-pulse', 'none');
   next.classList.add('paper-front');
   // The clip's back bar goes before the page content so the page hides it (see index.astro)
   next.prepend(under);
