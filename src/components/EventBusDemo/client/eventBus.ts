@@ -3,6 +3,7 @@ import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 import { settledResizeObserver } from '@/client/settledResize';
+import { watchHandover } from '@/client/walkthroughHandover';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
@@ -26,8 +27,6 @@ const HEAR_MS = 360;
 const SKIP_HOP_MS = 180;
 /** How long the chain takes to close up around a module switched on or off. */
 const RESORT_MS = 320;
-/** A quiet spell after the visitor's pointer leaves, then the walkthrough picks up again. */
-const RESUME_DELAY_MS = 6000;
 /** The tip of the drawn arrow, as fractions of the cursor's box. */
 const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
 
@@ -312,9 +311,9 @@ type Player = {
  * ImageEncoder's resizer makes a still instead. Every step
  * is a control the visitor can press.
  *
- * A trusted pointer or focus on the demo hands it over at once; the loop picks up again
- * a quiet spell after the pointer has left, unless the deck's pause key was what stopped
- * it. The deck in the sheet's margin reads the state back from `data-autoplay-state`.
+ * The visitor takes over and hands back as watchHandover decides: a quiet spell after the
+ * pointer, the deck's play key after keyboard focus, and the pause key holds it past both.
+ * The deck in the sheet's margin reads the state back from `data-autoplay-state`.
  */
 function createPlayer(bus: Bus, host: HTMLElement): Player {
   const cursor = document.createElement('span');
@@ -328,11 +327,10 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   let token = 0;
   let active = false;
   let noteOpen = false;
-  let userControl = false;
-  let pointerOver = false;
   /** The deck's pause key: no quiet spell brings the walkthrough back, only its play key. */
   let held = false;
-  let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+  /** A mouse or pen resting on the demo keeps it: the quiet spell starts once it has left. */
+  let pointerOver = false;
 
   const live = (mine: number) => mine === token;
 
@@ -427,7 +425,7 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     }, 320);
   }
 
-  const canPlay = () => active && !noteOpen && !userControl && !pointerOver && !reducedMotion(bus.root);
+  const canPlay = () => active && !noteOpen && !held && !handover.userControl && !reducedMotion(bus.root);
 
   function start() {
     if (reducedMotion(bus.root)) {
@@ -438,75 +436,41 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     void play();
   }
 
-  function clearResume() {
-    if (resumeTimer) clearTimeout(resumeTimer);
-    resumeTimer = null;
-  }
+  const handover = watchHandover(host, {
+    listening: () => active,
+    takeOver() {
+      // Nothing plays under reduced motion, so there is nothing to take over.
+      if (reducedMotion(bus.root)) return;
+      stop();
+      reportAutoplayState(bus.root, 'user');
+    },
+    handBack() {
+      if (held || pointerOver || reducedMotion(bus.root)) return false;
+      // Off screen or under the note the deck keeps saying manual until setActive or
+      // setNoteOpen starts the walkthrough, which reports playing itself.
+      if (active && !noteOpen) void play();
+      return true;
+    },
+  });
 
-  function yieldToUser(keepControl = false) {
-    clearResume();
-    // Nothing plays by itself under reduced motion: stop a run the play key started and stay paused.
-    if (reducedMotion(bus.root)) {
-      if (playing) stop();
-      reportAutoplayState(bus.root, 'paused');
-      return;
-    }
-    if (!userControl) stop();
-    userControl = true;
-    reportAutoplayState(bus.root, 'user');
-    if (keepControl) held = true;
-    if (held) return;
-    resumeTimer = setTimeout(() => {
-      resumeTimer = null;
-      if (pointerOver) return;
-      userControl = false;
-      start();
-    }, RESUME_DELAY_MS);
-  }
-
-  // A finger on the demo is not yet a visitor taking over: on a phone the same touch
-  // starts a page scroll, and the browser cancels the pointer once it does. Only a touch
-  // that lifts, a tap, hands the demo over.
-  function onTrustedPointer(event: PointerEvent) {
-    if (!event.isTrusted || !active) return;
-    const target = event.target;
-    if (!(target instanceof Node) || !host.contains(target)) return;
-    if (event.pointerType !== 'touch') {
-      pointerOver = true;
-      yieldToUser();
-      return;
-    }
-    if (event.type !== 'pointerdown') return;
-    const settle = (outcome: PointerEvent) => {
-      if (outcome.pointerId !== event.pointerId) return;
-      window.removeEventListener('pointerup', settle);
-      window.removeEventListener('pointercancel', settle);
-      if (outcome.type === 'pointerup') yieldToUser();
-    };
-    window.addEventListener('pointerup', settle);
-    window.addEventListener('pointercancel', settle);
-  }
-
+  host.addEventListener('pointerenter', (event) => {
+    if (event.isTrusted && event.pointerType !== 'touch') pointerOver = true;
+  });
   host.addEventListener('pointerleave', (event) => {
     if (!event.isTrusted || event.pointerType === 'touch') return;
     pointerOver = false;
-    if (userControl && active) yieldToUser();
+    if (handover.userControl && active) handover.takeOver();
   });
-  host.addEventListener('focusin', (event) => {
-    if (event.isTrusted) yieldToUser();
-  });
-  window.addEventListener('pointerdown', onTrustedPointer);
-  window.addEventListener('pointermove', onTrustedPointer, { passive: true });
 
   onAutoplayCommand(bus.root, (command) => {
     if (command === 'pause') {
-      yieldToUser(true);
+      held = true;
+      handover.takeOver();
       return;
     }
-    clearResume();
-    stop();
     held = false;
-    userControl = false;
+    handover.release();
+    stop();
     if (command === 'reset' && reducedMotion(bus.root)) {
       restore(bus);
       void runDispatch(bus);
@@ -519,7 +483,10 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   });
 
   matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
-    if (playing && reducedMotion(bus.root)) yieldToUser(true);
+    if (playing && reducedMotion(bus.root)) {
+      held = true;
+      handover.takeOver();
+    }
   });
 
   return {
