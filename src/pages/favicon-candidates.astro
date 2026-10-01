@@ -6,11 +6,6 @@ import Layout from '@/layouts/Layout.astro';
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const sizes = [16, 32, 48, 128];
 const candidates = [
-  { n: 1, note: "The friend's design, redrawn on its 16 by 16 grid." },
-  { n: 2, note: 'The same design in deep green, bright green and white.' },
-  { n: 3, note: 'A blueprint sheet in the light theme tokens, with an amber cursor.' },
-  { n: 4, note: 'A 16 px reduction, "10" with the cursor in 2 px strokes.' },
-  { n: 5, note: 'An "h" with a cursor in the friend\'s frame and maroon.' },
   { n: 6, note: 'An "H$" prompt on a dark terminal ground, with the $ in a paler green than the H.' },
   { n: 7, note: 'The same "H$" in dark green on a bright green square.' },
   { n: 8, note: 'An "H$" prompt in one green on the dark ground, with a block cursor after the $.' },
@@ -50,12 +45,6 @@ const grounds = [
         </section>
       ))
     }
-
-    <section class="candidate" aria-labelledby="fav-original">
-      <h2 id="fav-original">The friend's original</h2>
-      <p>The image candidates 1 and 2 start from.</p>
-      <img class="original" src={`${base}favicon-candidates/original.png`} width="581" height="592" alt="The friend's pixel art favicon: 010 and 10 with a cursor in blue on maroon" />
-    </section>
   </main>
 </Layout>
 
@@ -114,10 +103,5 @@ const grounds = [
 
   .label {
     inline-size: 5rem;
-  }
-
-  .original {
-    inline-size: min(100%, 16rem);
-    block-size: auto;
   }
 </style>
