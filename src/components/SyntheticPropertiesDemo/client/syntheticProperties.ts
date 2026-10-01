@@ -1,6 +1,7 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { demoGate } from '@/client/frontPage';
+import { watchHandover } from '@/client/walkthroughHandover';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
@@ -156,7 +157,9 @@ function runPipeline(tool: Tool, animate = true) {
  * types. The fields are read-only, so the walkthrough is the only thing that changes them.
  * It runs only while the sheet is on screen and its page is on top. The transport deck's
  * keys pause it, play it and start it over; `data-autoplay` on the tool is its state, and
- * the deck is told the same through reportAutoplayState.
+ * the deck is told the same through reportAutoplayState. The tool is a scroll box and a
+ * Tab stop, so keyboard focus inside it pauses the typing too: reveal() would otherwise
+ * pull the visitor's scroll back to each field, and only the play key goes on.
  */
 function autoplay(tool: Tool, steps: readonly Step[]) {
   const { root } = tool;
@@ -283,6 +286,18 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     runPipeline(tool, false);
   };
 
+  const handover = watchHandover(root, {
+    pointer: false,
+    listening: () => active,
+    takeOver() {
+      if (root.dataset.autoplay !== 'playing') return;
+      stop();
+      root.dataset.autoplay = 'user';
+      reportAutoplayState(root, 'user');
+    },
+    handBack: () => false,
+  });
+
   gate.onChange((next) => {
     active = next;
     if (!next) {
@@ -304,6 +319,7 @@ function autoplay(tool: Tool, steps: readonly Step[]) {
     }
     if (command === 'play' && root.dataset.autoplay === 'playing') return;
     held = false;
+    handover.release();
     stop();
     if (reducedMotion(root)) park();
     else void play();
