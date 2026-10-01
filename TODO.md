@@ -191,3 +191,4 @@
 - [x] Hide only the drawn parts of the blueprint panels that hid all their text from screen readers (A2) (#225)
 - [x] Favicon: five candidates for Hugo to pick from (#235)
 - [x] Build the four inline `<style>` blocks that fail the Nu validator inside their divs as static Sass in the same components, so Astro bundles them (O4) (#230)
+- [ ] Bring the four Space Builder spinners' keyframes into scope so they spin (S16)
