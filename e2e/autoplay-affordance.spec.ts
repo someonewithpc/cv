@@ -1,12 +1,13 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontDeck, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
 /**
  * The transport deck in the sheet's bottom band (see src/client/autoplayStatus.ts): cassette
- * keys, a lamp and a readout. Wherever it is drawn it has to stay on the sheet, keep off the
- * title block, and drive the walkthrough.
+ * keys, a lamp and a readout. On a landscape sheet it stays in the band, off the title block; a
+ * portrait sheet's band cannot hold it, so it moves under the page into the callout's card
+ * (TechnicalDrawing/deck-home.ts). Wherever it is, it drives the walkthrough.
  */
 const VIEWPORTS = [
   { name: 'desktop', viewport: { width: 1440, height: 900 } },
@@ -27,10 +28,13 @@ async function playingDeck(stack: Locator): Promise<Locator> {
   await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   const front = frontPage(stack, await frontPageIndex(stack));
   await waitForIslandMounted(front);
-  const deck = front.locator('[data-demo-transport]');
+  const deck = frontDeck(stack, front);
   await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 30_000 });
   return deck;
 }
+
+/** Every callout whose demo drives itself, so its sheet shows a deck at full motion. */
+const DECK_DETAILS = ['b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'o'];
 
 /** Where the deck sits, measured against the sheet it is drawn on. */
 function placement(deck: Locator) {
@@ -55,18 +59,16 @@ function placement(deck: Locator) {
   });
 }
 
-/**
- * On a phone the deck is a row of its own above the title block. Measured as boxes: the
- * title block sits below the deck, ruled off by clear paper.
- */
-function phoneRow(deck: Locator) {
+/** Where a deck in the callout's card sits against the stack it belongs to. */
+function cardPlacement(deck: Locator) {
   return deck.evaluate((el) => {
-    const section = el.closest('section')!;
+    const callout = el.closest('section.callout')!;
+    const stack = callout.querySelector('article.technical-drawing-stack')!.getBoundingClientRect();
     const box = el.getBoundingClientRect();
-    const title = section.querySelector('table')!.getBoundingClientRect();
     return {
-      gapToTitleBlock: Math.round(title.top - box.bottom),
-      spansSheet: Math.round(box.width) >= Math.round(title.width),
+      inCard: el.parentElement!.matches('.callout-card'),
+      underStack: box.top >= stack.bottom - 1,
+      withinStackWidth: box.left >= stack.left - 1 && box.right <= stack.right + 1,
     };
   });
 }
@@ -90,29 +92,60 @@ for (const { name, viewport } of VIEWPORTS) {
       await page.goto('/');
 
       for (const stack of [markerEditorStack(page), spaceBuilderStack(page)]) {
-        const where = await placement(await playingDeck(stack));
-        expect(where.insideSheet, 'inside the sheet').toBe(true);
-        expect(where.clearOfTitleBlock, 'clear of the title block').toBe(true);
-        expect(where.clearOfDrawing, 'clear of the drawing').toBe(true);
-        // The band is the bottom margin on a wide sheet; a phone gives the deck a row of
-        // its own inside the frame instead, above the title block.
-        expect(where.insideBand, 'inside the bottom band').toBe(name === 'desktop');
+        const deck = await playingDeck(stack);
+        if (name === 'desktop') {
+          const where = await placement(deck);
+          expect(where.insideSheet, 'inside the sheet').toBe(true);
+          expect(where.insideBand, 'inside the bottom band').toBe(true);
+          expect(where.clearOfTitleBlock, 'clear of the title block').toBe(true);
+          expect(where.clearOfDrawing, 'clear of the drawing').toBe(true);
+        } else {
+          // A phone sheet's band is shallower than a key, so the deck is under the page.
+          expect(await cardPlacement(deck)).toEqual({ inCard: true, underStack: true, withinStackWidth: true });
+        }
       }
     });
+  });
+}
 
-    if (name === 'phone') {
-      test('the deck spans the sheet above the title block', async ({ page }) => {
-        await page.goto('/');
-
-        for (const stack of [markerEditorStack(page), spaceBuilderStack(page)]) {
-          const row = await phoneRow(await playingDeck(stack));
-          expect(row.spansSheet, 'spans the sheet').toBe(true);
-          expect(row.gapToTitleBlock).toBeGreaterThanOrEqual(4);
-        }
-      });
+/**
+ * L9: the deck stays in the band wherever the band holds it and moves to the card where it
+ * does not, on every demo with a deck. 680 is the widest portrait sheet and 681 the narrowest
+ * landscape one.
+ */
+for (const [width, home] of [[390, 'card'], [680, 'card'], [681, 'band'], [1440, 'band']] as const) {
+  test(`every demo's deck is in the ${home} at ${width}px`, async ({ page }) => {
+    test.slow();
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    for (const id of DECK_DETAILS) {
+      const callout = page.locator(`section.callout[aria-labelledby="detail-${id}"]`);
+      await callout.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const deck = callout.locator('[data-demo-transport]:not([hidden])');
+      await expect(deck, id).toHaveCount(1, { timeout: 30_000 });
+      if (home === 'card') {
+        expect(await cardPlacement(deck), id).toEqual({ inCard: true, underStack: true, withinStackWidth: true });
+      } else {
+        const where = await placement(deck);
+        expect(where.insideBand, `${id} in the band`).toBe(true);
+        expect(where.clearOfTitleBlock, `${id} clear of the title block`).toBe(true);
+      }
     }
   });
 }
+
+test('the deck goes back to the band when the sheet turns landscape, and still drives the demo', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const stack = markerEditorStack(page);
+  const deck = await playingDeck(stack);
+  expect((await cardPlacement(deck)).inCard).toBe(true);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect.poll(async () => (await placement(deck)).insideBand).toBe(true);
+  await deck.locator('[data-demo-key="pause"]').click();
+  await expect(deck).toHaveAttribute('data-state', 'user');
+});
 
 test('the deck drives the walkthrough from its keys', { tag: '@handover' }, async ({ page }) => {
   await page.goto('/');

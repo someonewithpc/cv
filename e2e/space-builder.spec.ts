@@ -4,6 +4,7 @@ import {
   armDrawCounter,
   demoStack,
   frontPage,
+  frontDeck,
   frontPageIndex,
   sceneDraws,
   swipeStack,
@@ -176,11 +177,15 @@ for (const { name, viewport } of [
       const front = frontPage(stack, await frontPageIndex(stack));
       await waitForSceneReady(front);
 
-      const deck = front.locator('[data-demo-transport]');
+      const deck = frontDeck(stack, front);
       await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
 
       const placement = await deck.evaluate((el) => {
-        const section = el.closest('section')!;
+        // In the card, the deck is measured against the sheet it came off.
+        const inCard = el.parentElement!.matches('.callout-card');
+        const section = inCard
+          ? el.closest('section.callout')!.querySelector('article.technical-drawing-stack > * > section')!
+          : el.closest('section')!;
         const sheet = section.getBoundingClientRect();
         const box = el.getBoundingClientRect();
         const band = parseFloat(getComputedStyle(section).paddingBottom);
@@ -191,14 +196,16 @@ for (const { name, viewport } of [
             || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
         };
         return {
+          inCard,
           insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
           clearOfDrawing: clearOf(section.querySelector('.content')),
           clearOfTitleBlock: clearOf(section.querySelector('table')),
         };
       });
-      // A phone sheet has no room in the band, so the deck takes a row of its own inside
-      // the frame above the title block instead.
+      // A phone sheet's band cannot hold the deck, so it moves under the page into the
+      // callout's card instead.
       expect(placement).toEqual({
+        inCard: name === 'phone',
         insideBand: name === 'desktop',
         clearOfDrawing: true,
         clearOfTitleBlock: true,

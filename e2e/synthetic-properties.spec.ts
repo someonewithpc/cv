@@ -237,9 +237,10 @@ test('main page: the tool fills the sheet and its last line scrolls clear of the
 });
 
 test('main page: on a phone the tool scrolls, and the keyboard reaches and moves it', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  // The three stages stack on a portrait sheet. At 390 they just fit since the deck left the
+  // sheet for the card under it; at 430 they run past the tool's foot.
+  await page.setViewportSize({ width: 430, height: 932 });
   const { tool } = await mountedTool(page);
-  // The three stages stack on a portrait sheet and run past the tool's foot.
   expect(await tool.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
   await expect(tool).toHaveAccessibleName("One table's size, split, converted and searched");
 

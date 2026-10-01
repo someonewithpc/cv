@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import {
   demoStack,
   frontPage,
+  frontDeck,
   frontPageIndex,
   swipeStack,
   turnToPage,
@@ -125,7 +126,7 @@ for (const { name, viewport } of VIEWPORTS) {
       const front = frontPage(stack, await frontPageIndex(stack));
       await waitForIslandMounted(front);
 
-      const deck = front.locator('[data-demo-transport]');
+      const deck = frontDeck(stack, front);
       const play = deck.locator('[data-demo-key="play"]');
       const pause = deck.locator('[data-demo-key="pause"]');
       const reset = deck.locator('[data-demo-key="reset"]');
@@ -134,10 +135,14 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(deck).toContainText('AUTO PLAYING');
 
       // It is a stamp in the border band: inside the paper margin under the frame line,
-      // clear of the drawing and of the title block. A phone sheet has no room for it
-      // there, so it takes a row of its own inside the frame above the title block.
+      // clear of the drawing and of the title block. A phone sheet's band cannot hold it,
+      // so it moves under the page into the callout's card.
       const placement = await deck.evaluate((el) => {
-        const section = el.closest('section')!;
+        // In the card, the deck is measured against the sheet it came off.
+        const inCard = el.parentElement!.matches('.callout-card');
+        const section = inCard
+          ? el.closest('section.callout')!.querySelector('article.technical-drawing-stack > * > section')!
+          : el.closest('section')!;
         const sheet = section.getBoundingClientRect();
         const box = el.getBoundingClientRect();
         const band = parseFloat(getComputedStyle(section).paddingBottom);
@@ -148,12 +153,14 @@ for (const { name, viewport } of VIEWPORTS) {
             || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
         };
         return {
+          inCard,
           insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
           clearOfDrawing: clearOf(section.querySelector('.content')),
           clearOfTitleBlock: clearOf(section.querySelector('table')),
         };
       });
       expect(placement).toEqual({
+        inCard: name === 'phone',
         insideBand: name === 'desktop',
         clearOfDrawing: true,
         clearOfTitleBlock: true,

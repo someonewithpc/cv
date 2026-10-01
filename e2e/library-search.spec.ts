@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, swipeStack, waitForIslandMounted } from './support/paperStack';
+import { frontDeck, frontPage, frontPageIndex, frontPageName, swipeStack, waitForIslandMounted } from './support/paperStack';
 
 const PAGES = ['Library Search & Relevance', 'Relevance Scoring', 'Filters', 'Generated SQL'];
 
@@ -24,7 +24,7 @@ async function mountedTool(page: Page) {
   const tool = front.locator('.library-search[data-live]');
   // The deck's pause holds the tool for the test; a moving pointer would take it too, but
   // hands it back after a quiet spell, and the script would start over under the test.
-  await front.locator('[data-demo-transport] [data-demo-key="pause"]').click();
+  await frontDeck(stack, front).locator('[data-demo-key="pause"]').click();
   await expect(tool).toHaveAttribute('data-autoplay', 'user');
   return { stack, front, tool };
 }

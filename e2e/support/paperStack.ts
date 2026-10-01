@@ -49,6 +49,15 @@ export async function forEachStackInLane(
  * wrapper's `--page-index` reads `1` (see PaperStack/fold-drag.ts). So "the front page" is
  * whichever direct child currently carries that custom property, not a fixed DOM index.
  */
+/**
+ * The front page's transport deck. A landscape sheet keeps it in its bottom band; a portrait
+ * sheet sends it under the page into the callout's card (TechnicalDrawing/deck-home.ts).
+ */
+export function frontDeck(stack: Locator, front: Locator): Locator {
+  const card = stack.page().locator('section.callout').filter({ has: stack }).locator('.callout-card > [data-demo-transport]');
+  return front.locator('[data-demo-transport]').or(card);
+}
+
 export async function frontPageIndex(stack: Locator): Promise<number> {
   const index = await stack.locator(':scope > div').evaluateAll((wrappers) =>
     wrappers.findIndex((w) => getComputedStyle(w).getPropertyValue('--page-index').trim() === '1'),
