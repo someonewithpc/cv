@@ -1,3 +1,5 @@
+import { canonicalPath } from './requestPath';
+
 // What the font proxy may relay in one UTC day before it answers 503 until midnight.
 export const DAILY_BYTES = 1024 ** 3;
 
@@ -54,13 +56,7 @@ const PROXY_PATH = '/api/font-proxy';
 // the endpoint too, so every path that starts like the proxy's pays: a false match costs one
 // Durable Object read, a missed one relays for free.
 export function isProxyPath(pathname: string): boolean {
-  let path = pathname;
-  try {
-    path = decodeURIComponent(pathname);
-  } catch {
-    // A malformed escape is judged as written.
-  }
-  return path.replace(/\/{2,}/g, '/').toLowerCase().startsWith(PROXY_PATH);
+  return canonicalPath(pathname).startsWith(PROXY_PATH);
 }
 
 // A fresh count opens at the next UTC midnight

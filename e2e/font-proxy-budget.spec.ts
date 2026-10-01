@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { addBytes, type Budget, type BudgetStorage, DAILY_BYTES, spentBytes, dailyBudgetName, UPSTREAM_BYTES_HEADER, withBudget } from '../src/server/fontProxyBudget';
+import { canonicalRequest } from '../src/server/requestPath';
 
 // Drives the Worker entry's budget gate in the test process, with an in-memory stand-in for
 // the per-day Durable Objects and a scripted Astro handler.
@@ -156,6 +157,31 @@ test.describe('font proxy budget path', () => {
       const response = await withBudget(new Request(`https://cv.test${path}?url=x`), budgets, context(), next, NOON);
       expect(response.status, path).toBe(503);
       expect(calls.count, path).toBe(0);
+    }
+  });
+
+  test('hands server routes on in lower case, so a mixed-case spelling meets the same gate', async () => {
+    for (const [path, routed] of [
+      ['/API/Font-Proxy', '/api/font-proxy'],
+      ['/Api//FONT-proxy/', '/api/font-proxy/'],
+      ['/api/Font%2DProxy', '/api/font-proxy'],
+      ['/OEmbed.JSON', '/oembed.json'],
+    ]) {
+      const request = canonicalRequest(new Request(`https://cv.test${path}?url=x`));
+      expect(new URL(request.url).pathname, path).toBe(routed);
+      expect(new URL(request.url).search, path).toBe('?url=x');
+      if (!routed.startsWith('/api/')) continue;
+      const budgets = days({ [TODAY]: DAILY_BYTES });
+      const { calls, next } = handler(10);
+      expect((await withBudget(request, budgets, context(), next, NOON)).status, path).toBe(503);
+      expect(calls.count, path).toBe(0);
+    }
+  });
+
+  test('leaves every other path as written, static files included', async () => {
+    for (const path of ['/Font-Picker', '/fonts/Inter.woff2', '/API/Other']) {
+      const request = new Request(`https://cv.test${path}`);
+      expect(canonicalRequest(request), path).toBe(request);
     }
   });
 });

@@ -2,6 +2,7 @@ import { handle } from '@astrojs/cloudflare/handler';
 import { DurableObject } from 'cloudflare:workers';
 
 import { addBytes, spentBytes, withBudget } from './server/fontProxyBudget';
+import { canonicalRequest } from './server/requestPath';
 
 // One object per UTC day, named 'font-proxy-bytes:<date>', holding that day's byte count until
 // its alarm deletes it.
@@ -24,7 +25,8 @@ interface WorkerEnv {
 }
 
 export default {
-  fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Promise<Response> {
+  fetch(raw: Request, env: WorkerEnv, ctx: ExecutionContext): Promise<Response> {
+    const request = canonicalRequest(raw);
     return withBudget(request, env.FONT_PROXY_BUDGET, ctx, () => handle(request, env, ctx));
   },
 };
