@@ -10,6 +10,13 @@ import icon from 'astro-icon';
 
 import { httpToHttpsRedirect } from './plugins/httpToHttpsRedirect.mjs';
 import { lazyIslandStylesheets } from './plugins/lazyIslandStylesheets.mjs';
+import { sassFromTs } from './plugins/sassFromTs.mjs';
+
+// Only `@/…` — a bare `@` would also match scoped pkgs like `@astrojs`.
+const srcAlias = {
+  find: /^@\//,
+  replacement: `${path.resolve(import.meta.dirname, './src')}/`,
+};
 
 // https://astro.build/config
 export default defineConfig({
@@ -74,6 +81,11 @@ export default defineConfig({
 
   vite: {
     plugins: [basicSsl(), httpToHttpsRedirect()],
+    css: {
+      preprocessorOptions: {
+        scss: { importers: [sassFromTs({ root: import.meta.dirname, alias: [srcAlias] })] },
+      },
+    },
     optimizeDeps: {
       include: [
         'react',
@@ -137,11 +149,7 @@ export default defineConfig({
         // alias only covers the package root.
         { find: /^lodash$/, replacement: 'lodash-es' },
         { find: /^lodash\/(.+)$/, replacement: 'lodash-es/$1' },
-        // Only `@/…` — a bare `@` would also match scoped pkgs like `@astrojs`.
-        {
-          find: /^@\//,
-          replacement: `${path.resolve(import.meta.dirname, './src')}/`,
-        },
+        srcAlias,
       ],
     },
   },
