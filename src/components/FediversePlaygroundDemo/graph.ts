@@ -259,8 +259,7 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     const curve = `M${sx} ${installBottom} C${sx} ${bend} ${ex} ${bend} ${ex} ${slot.row ? m.data : m.data - 2}`;
     const d = slot.row ? `${curve} V${slot.y - 2}` : curve;
     const head = marker('arrow');
-    links.push(`<path class="halo" d="${d}" />`
-      + `<path class="edge link ${condition}" data-from="${escape(from)}" data-to="${escape(to)}" d="${d}" marker-end="url(#${head})" />`);
+    links.push(`<path class="edge link ${condition}" data-from="${escape(from)}" data-to="${escape(to)}" d="${d}" marker-end="url(#${head})" />`);
   });
 
   slots.forEach((slot, id) => {

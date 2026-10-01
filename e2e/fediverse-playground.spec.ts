@@ -182,6 +182,9 @@ test.describe('with reduced motion', () => {
     expect(await linkTargets(host, 'gnusocial-bob')).toEqual(['db', 'media', 'redis']);
     expect(await linkTargets(host, 'mastodon-carol')).toEqual(['db', 'media', 'redis', 'search']);
     await expect(links(host, 'gnusocial-v2')).toHaveCount(0);
+    // Each line is drawn once, in its own stroke, with no wider path traced under it.
+    expect(await host.locator('.service-graph:visible').evaluate((svg) => [...svg.querySelectorAll('.link')]
+      .filter((link) => [...svg.querySelectorAll('path')].filter((path) => path.getAttribute('d') === link.getAttribute('d')).length > 1).length)).toBe(0);
 
     // Mastodon off takes its four services and search, and leaves the GNU social pair on
     // Postgres, Redis and media.
