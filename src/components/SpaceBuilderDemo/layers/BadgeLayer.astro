@@ -173,8 +173,7 @@ bootIslands('[data-badge-scene-island]', boot);
 
 // Where the note sits beside the artwork, the formula card is part of the drawing: a strip along
 // the bottom edge, left of the title block, where a drawing keeps its notes. The scene takes the
-// height left above it. A narrower sheet tucks the note under the corner and has no room for the
-// strip, so the scene keeps the whole cell there.
+// height left above it.
 @container technical-drawing-width not (max-width: 56em) {
   @container technical-drawing not (orientation: portrait) {
     :global(article.technical-drawing-stack > * > section .content:has(.badge-scene-demo)) {
@@ -186,6 +185,41 @@ bootIslands('[data-badge-scene-island]', boot);
 
     .badge-formula {
       display: block;
+    }
+  }
+}
+
+// A narrower landscape sheet tucks the note under the corner, and the note's column stands empty
+// above the title block. The card takes that column instead: as wide as the block, a gutter
+// clear of its top edge, centred in the height left above it. The scene keeps the full height
+// and ends the same gutter left of the block.
+@container technical-drawing-width (max-width: 56em) {
+  @container technical-drawing not (orientation: portrait) {
+    :global(article.technical-drawing-stack > * > section .content:has(.badge-scene-demo)) {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) max(calc((100% + 2 * var(--scene-pad)) / 3 - var(--scene-pad)), calc(var(--title-block-inline) - var(--scene-pad)));
+      grid-template-rows: minmax(0, 1fr) calc(var(--title-block-block) - var(--scene-pad));
+      gap: var(--scene-pad);
+      padding-right: var(--scene-pad);
+    }
+
+    // The tab's wrapper keeps its column and shares the row, under the card.
+    :global(article.technical-drawing-stack > * > section:has(.badge-scene-demo) > :is(.content, .aside)) {
+      grid-row: 1;
+    }
+
+    .badge-scene-demo {
+      grid-row: 1 / -1;
+    }
+
+    .badge-formula {
+      display: block;
+      grid-column: 2;
+      grid-row: 1;
+      align-self: center;
+      // The equations stack here, and r at full size is as wide as the narrowest column.
+      --formula-size: 0.875em;
     }
   }
 }

@@ -269,11 +269,13 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1040, height: 768
 // The title block is wider than the note column, and the scene's bottom-right corner ran under
 // it at every landscape width; the note and the tag-offset card beside the scene ran under it
 // between about 990 and 1110 px. The note is a plain note, shown in place wherever the sheet is
-// wider than 56em, and the card is a strip under the scene that ends at the block's left edge.
+// wider than 56em, and the card is a strip under the scene that ends at the block's left edge,
+// or sits in the note's column above the block where the note is tucked under the corner.
 // Layout boxes, not client rects: the block's tilt would widen its rect.
 for (const viewport of [
   { width: 390, height: 844 },
   { width: 768, height: 1024 },
+  { width: 963, height: 768 },
   { width: 1000, height: 768 },
   { width: 1100, height: 768 },
   { width: 1440, height: 900 },
@@ -311,6 +313,45 @@ for (const viewport of [
           .map((b) => Math.min(b.right - block.left, b.bottom - block.top));
       });
       for (const overlap of overlaps) expect(overlap).toBeLessThanOrEqual(0);
+    });
+  });
+}
+
+// A landscape sheet 56em wide or narrower tucks the note under the corner, and the card once
+// went with it, out of sight, while the note's column stood empty. The card takes that column
+// now, beside the scene and above the title block.
+for (const viewport of [{ width: 700, height: 768 }, { width: 963, height: 768 }]) {
+  test.describe(`badge page at ${viewport.width}px`, () => {
+    test.use({ viewport });
+
+    test('the tag-offset card sits beside the scene, above the title block', async ({ page }) => {
+      const stack = spaceBuilderStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await turnToPage(stack, 'Capacity Badge');
+      const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
+
+      await expect(section.locator('.note-fold')).toBeVisible();
+      await expect(section.locator('.badge-formula')).toBeVisible();
+      const gaps = await section.evaluate((sheet) => {
+        const box = (el: HTMLElement) => {
+          let left = 0;
+          let top = 0;
+          for (let node: HTMLElement | null = el; node && node !== sheet; node = node.offsetParent as HTMLElement | null) {
+            left += node.offsetLeft;
+            top += node.offsetTop;
+          }
+          return { left, top, right: left + el.offsetWidth, bottom: top + el.offsetHeight };
+        };
+        const block = box(sheet.querySelector<HTMLElement>(':scope > table')!);
+        const scene = box(sheet.querySelector<HTMLElement>('.badge-scene-demo')!);
+        const card = sheet.querySelector<HTMLElement>('.badge-formula')!;
+        const c = box(card);
+        return { beside: c.left - scene.right, above: block.top - c.bottom, inside: block.right - c.right, spill: card.scrollWidth - card.clientWidth };
+      });
+      expect(gaps.beside).toBeGreaterThan(0);
+      expect(gaps.above).toBeGreaterThan(0);
+      expect(gaps.inside).toBeGreaterThanOrEqual(0);
+      expect(gaps.spill).toBeLessThanOrEqual(0);
     });
   });
 }
