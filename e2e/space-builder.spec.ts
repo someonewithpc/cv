@@ -232,9 +232,9 @@ test('badge page: the readout shows the home angle and follows a drag', async ({
 });
 
 // The sheet's grid row once grew to the note column's height, and the scene went out over the
-// deck with it; the r row of the tag-offset card ran past the card's right edge. 1104 is the
-// narrowest window whose sheet still shows the card beside the scene.
-for (const viewport of [{ width: 1440, height: 900 }, { width: 1104, height: 768 }]) {
+// deck with it; the r row of the tag-offset card ran past the card's right edge. 1040 is one of
+// the windows whose sheet once had too little room beside the scene for the note and the card.
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1040, height: 768 }]) {
   test.describe(`badge page at ${viewport.width}px`, () => {
     test.use({ viewport });
 
@@ -253,7 +253,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1104, height: 768
         return {
           scene: section.querySelector('.badge-scene-demo')!.getBoundingClientRect().toJSON(),
           frame: { left: box.left + inset, top: box.top + inset, right: box.right - inset, bottom: box.bottom - inset },
-          rows: [...card.querySelectorAll('mtr')].map((row) =>
+          rows: [...card.querySelectorAll('math')].map((row) =>
             Math.max(...[...row.querySelectorAll('mi, mo, mn, mtext')].map((token) => token.getBoundingClientRect().right)) - cardRight),
         };
       });
@@ -266,38 +266,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1104, height: 768
   });
 }
 
-// Between about 990 and 1110 px the note and the tag-offset card are taller than the column
-// above the title block, and the card ran under the block. There the note folds into the
-// corner tab instead, and nothing of it is left over the block.
-for (const viewport of [{ width: 1000, height: 768 }, { width: 1100, height: 768 }]) {
-  test.describe(`badge page at ${viewport.width}px`, () => {
-    test.use({ viewport });
-
-    test('nothing of the note overlaps the title block', async ({ page }) => {
-      const stack = spaceBuilderStack(page);
-      await stack.scrollIntoViewIfNeeded();
-      await turnToPage(stack, 'Capacity Badge');
-      const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
-
-      await expect(section.locator('.note-fold')).toBeVisible();
-      const overlaps = await section.evaluate((sheet) => {
-        const block = sheet.querySelector(':scope > table')!.getBoundingClientRect();
-        return [...sheet.querySelectorAll('.badge-aside, .badge-aside *')]
-          .filter((el) => getComputedStyle(el).visibility === 'visible')
-          .map((el) => el.getBoundingClientRect())
-          .filter((box) => box.width > 0 && box.height > 0
-            && box.bottom > block.top && box.top < block.bottom
-            && box.right > block.left && box.left < block.right)
-          .length;
-      });
-      expect(overlaps).toBe(0);
-    });
-  });
-}
-
 // The title block is wider than the note column, and the scene's bottom-right corner ran under
-// it at every landscape width. The scene ends at the block's left edge now. Layout boxes, not
-// client rects: the block's tilt would widen its rect.
+// it at every landscape width; the note and the tag-offset card beside the scene ran under it
+// between about 990 and 1110 px. The note is a plain note, shown in place wherever the sheet is
+// wider than 56em, and the card is a strip under the scene that ends at the block's left edge.
+// Layout boxes, not client rects: the block's tilt would widen its rect.
 for (const viewport of [
   { width: 390, height: 844 },
   { width: 768, height: 1024 },
@@ -308,13 +281,20 @@ for (const viewport of [
   test.describe(`badge page at ${viewport.width}px`, () => {
     test.use({ viewport });
 
-    test('the scene stays clear of the title block', async ({ page }) => {
+    test('the scene, the card and the note stay clear of the title block', async ({ page }) => {
       const stack = spaceBuilderStack(page);
       await stack.scrollIntoViewIfNeeded();
       await turnToPage(stack, 'Capacity Badge');
       const section = frontPage(stack, await frontPageIndex(stack)).locator('section');
 
-      const overlap = await section.evaluate((sheet) => {
+      await expect(section.locator('.note-card > *')).toHaveCount(1);
+      if (viewport.width >= 1000) {
+        await expect(section.locator('.note-card > aside')).toBeVisible();
+        await expect(section.locator('.badge-formula')).toBeVisible();
+        await expect(section.locator('.note-fold')).toBeHidden();
+      }
+
+      const overlaps = await section.evaluate((sheet) => {
         const box = (el: HTMLElement) => {
           let left = 0;
           let top = 0;
@@ -325,10 +305,12 @@ for (const viewport of [
           return { left, top, right: left + el.offsetWidth, bottom: top + el.offsetHeight };
         };
         const block = box(sheet.querySelector<HTMLElement>(':scope > table')!);
-        const scene = box(sheet.querySelector<HTMLElement>('.badge-scene-demo')!);
-        return Math.min(scene.right - block.left, scene.bottom - block.top);
+        return [...sheet.querySelectorAll<HTMLElement>('.badge-scene-demo, .badge-formula, .note-card > aside')]
+          .filter((el) => el.offsetParent)
+          .map((el) => box(el))
+          .map((b) => Math.min(b.right - block.left, b.bottom - block.top));
       });
-      expect(overlap).toBeLessThanOrEqual(0);
+      for (const overlap of overlaps) expect(overlap).toBeLessThanOrEqual(0);
     });
   });
 }

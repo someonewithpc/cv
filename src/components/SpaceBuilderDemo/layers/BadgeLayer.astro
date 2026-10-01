@@ -12,6 +12,65 @@
   </div>
 </div>
 
+<figure class="badge-formula">
+  <figcaption class="badge-formula-title">Tag offset</figcaption>
+  <div class="badge-formula-row">
+    <math display="block">
+      <mi>φ</mi><mo>=</mo><mi>θ</mi><mo>−</mo><mi>α</mi>
+    </math>
+    <math display="block">
+      <mi>r</mi>
+      <mo>=</mo>
+      <mi>min</mi>
+      <mo>⁡</mo>
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo stretchy="true" fence="true" form="prefix">(</mo>
+          <mfrac>
+            <mi>h</mi>
+            <mrow>
+              <mn>2</mn>
+              <mrow>
+                <mo stretchy="false" fence="true">|</mo>
+                <mrow>
+                  <mi>cos</mi>
+                  <mo>⁡</mo>
+                  <mi>φ</mi>
+                </mrow>
+                <mo stretchy="false" fence="true">|</mo>
+              </mrow>
+            </mrow>
+          </mfrac>
+          <mo lspace="0.3em" rspace="0.3em">,</mo>
+          <mfrac>
+            <mi>w</mi>
+            <mrow>
+              <mn>2</mn>
+              <mrow>
+                <mo stretchy="false" fence="true">|</mo>
+                <mrow>
+                  <mi>sin</mi>
+                  <mo>⁡</mo>
+                  <mi>φ</mi>
+                </mrow>
+                <mo stretchy="false" fence="true">|</mo>
+              </mrow>
+            </mrow>
+          </mfrac>
+          <mo stretchy="true" fence="true" form="postfix">)</mo>
+        </mrow>
+      </mstyle>
+    </math>
+    <math display="block">
+      <mtext>offset</mtext><mo>=</mo><mi>r</mi><mo>+</mo><mn>0.95</mn>
+    </math>
+  </div>
+  <p class="badge-formula-note">
+    φ is the camera's angle relative to the area; r is the distance from center to the area's
+    silhouette edge at that angle.
+  </p>
+</figure>
+
 <script>
 import { bootIslands } from '@/client/pageIsland';
 import { boot } from './BadgeLayer.boot';
@@ -20,10 +79,9 @@ bootIslands('[data-badge-scene-island]', boot);
 </script>
 
 <style lang="scss">
-// The sheet's one grid row is as tall as its tallest cell, and the note and formula card beside
-// the scene run taller than the frame, so the row grew past the frame and the scene, stretched
-// to it, went out over the deck. The row is the frame's height instead. Portrait sets its own
-// rows.
+// The sheet's one grid row is as tall as its tallest cell, and the scene and the formula card
+// under it would grow the row past the frame and out over the deck. The row is the frame's
+// height instead. Portrait sets its own rows.
 @container technical-drawing not (orientation: portrait) {
   :global(article.technical-drawing-stack > * > section:has(.badge-scene-demo)) {
     grid-template-rows: minmax(0, 1fr);
@@ -47,12 +105,88 @@ bootIslands('[data-badge-scene-island]', boot);
 }
 
 // The title block in the bottom-right corner is wider than the note column, so its left edge
-// falls inside this cell. The scene keeps the full height and gives up width instead: the cell
-// ends at the block, and the scene is centred in the space left of it. Each column is half of
-// this cell, and percentages here are of the cell. Portrait gives the block a row of its own.
+// falls inside this cell. The cell ends at the block, and so do the scene and the formula strip
+// under it; where there is no strip, the scene keeps the full height and gives up the width.
+// Each column is half of this cell, and percentages here are of the cell. Portrait gives the
+// block a row of its own.
 @container technical-drawing not (orientation: portrait) {
   :global(article.technical-drawing-stack > * > section .content:has(.badge-scene-demo)) {
     padding-right: calc(var(--scene-pad) + max(0px, var(--title-block-inline) - 50%));
+  }
+}
+
+.badge-formula {
+  display: none;
+  margin: 0;
+  padding: 0.5em 0.9em 0.6em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.3em;
+  background: var(--surface-sunken);
+  box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+}
+
+.badge-formula-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25em 1.5em;
+
+  math {
+    font-size: var(--formula-size, 1em);
+    // Prefer a local math face so stretchy fences / operators actually stretch.
+    font-family: "DejaVu Math TeX Gyre", "Noto Sans Math", math, serif;
+  }
+
+  math, mtext {
+    margin: 0;
+  }
+
+  mtext {
+    font-style: normal;
+    font-family: inherit;
+  }
+
+  mfrac {
+    padding-block: 0.2em;
+  }
+}
+
+.badge-formula-title,
+.badge-formula-note {
+  font-family: monospace, system-ui;
+  font-size: 0.75em;
+  color: var(--ink-muted);
+}
+
+.badge-formula-title {
+  margin: 0 0 0.25em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge-formula-note {
+  margin: 0.35em 0 0;
+  line-height: 1.35;
+}
+
+// Where the note sits beside the artwork, the formula card is part of the drawing: a strip along
+// the bottom edge, left of the title block, where a drawing keeps its notes. The scene takes the
+// height left above it. A narrower sheet tucks the note under the corner and has no room for the
+// strip, so the scene keeps the whole cell there.
+@container technical-drawing-width not (max-width: 56em) {
+  @container technical-drawing not (orientation: portrait) {
+    :global(article.technical-drawing-stack > * > section .content:has(.badge-scene-demo)) {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: var(--scene-pad);
+    }
+
+    .badge-formula {
+      display: block;
+    }
   }
 }
 
