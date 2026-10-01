@@ -258,7 +258,7 @@ html.theme-transition {
 
 <script>
 import { transformPath, pathDataToString } from '@/client/svg-utils';
-import { THEME_STORAGE_KEY } from '@/themes';
+import { THEME_STORAGE_KEY, THEMES, type ThemeId, type ThemeSettings } from '@/themes';
 
 
 let pathDataPolyfill: Promise<void> | null = null;
@@ -281,8 +281,26 @@ const syncRadios = (id: string) => {
   });
 };
 
+/* The boot script (Layout.astro) prepends this same unconditional meta the first time a
+   stored theme exists; a pick made this session may be the first one, so create it here too. */
+const pageBackground = (settings: ThemeSettings) => settings.paper ?? settings.canvas;
+
+const setThemeColorMeta = (id: string) => {
+  const settings = THEMES[id as ThemeId];
+  if (!settings) return;
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-theme-color-picked]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.dataset.themeColorPicked = '';
+    document.head.prepend(meta);
+  }
+  meta.content = pageBackground(settings);
+};
+
 const persistTheme = (id: string) => {
   document.documentElement.dataset.theme = id;
+  setThemeColorMeta(id);
   try {
     localStorage.setItem(THEME_STORAGE_KEY, id);
   } catch {

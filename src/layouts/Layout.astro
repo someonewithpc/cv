@@ -6,6 +6,7 @@ import stencilUrl from '@/assets/fonts/allerta-stencil.woff2?url';
 import poppinsUrl from '@/assets/fonts/poppins-400-latin.woff2?url';
 import specialEliteUrl from '@/assets/fonts/special-elite-latin.woff2?url';
 import { AUTHOR_NAME, CONTACT, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/site';
+import { THEME_IDS, THEME_STORAGE_KEY, THEMES, type ThemeId, type ThemeSettings } from '@/themes';
 
 type Props = {
   title?: string;
@@ -18,6 +19,30 @@ const canonical = new URL(Astro.url.pathname, SITE_URL);
 const oembedUrl = new URL('/oembed.json', SITE_URL);
 oembedUrl.searchParams.set('url', canonical.toString());
 oembedUrl.searchParams.set('format', 'json');
+
+/* What the browser chrome around the page (DevTools device frame, Android's address bar,
+   Safari's tab bar) should read as: each theme's own page background, not an accent. */
+const pageBackground = (settings: ThemeSettings) => settings.paper ?? settings.canvas;
+const themeColor = (id: ThemeId) => pageBackground(THEMES[id]);
+const themeColors = Object.fromEntries(THEME_IDS.map((id) => [id, themeColor(id)]));
+
+/* Stamps data-theme before the stylesheet loads, same as the picker's own pick; the meta
+   it adds here is unconditional and first in <head>, so it outranks the no-script pair
+   below once a theme is stored (see ThemePicker.astro's persistTheme for later picks). */
+const bootScript = `(() => {
+  try {
+    const stored = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
+    const colors = ${JSON.stringify(themeColors)};
+    if (stored && colors[stored]) {
+      document.documentElement.dataset.theme = stored;
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.dataset.themeColorPicked = '';
+      meta.content = colors[stored];
+      document.head.prepend(meta);
+    }
+  } catch {}
+})();`;
 ---
 
 <!doctype html>
@@ -40,22 +65,13 @@ oembedUrl.searchParams.set('format', 'json');
     <meta property="profile:username" content={CONTACT.username} />
     <meta name="twitter:card" content="summary" />
     <link rel="alternate" type="application/json+oembed" href={oembedUrl} title={title} />
+    <meta name="theme-color" content={themeColor('light')} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={themeColor('dark')} media="(prefers-color-scheme: dark)" />
 
     <link rel="preload" as="font" type="font/woff2" href={specialEliteUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={poppinsUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={stencilUrl} crossorigin />
-    <script is:inline>
-      (() => {
-        try {
-          const stored = localStorage.getItem('cv-theme');
-          if (stored && ['light', 'dark', 'arctic', 'dark-forest'].includes(stored)) {
-            document.documentElement.dataset.theme = stored;
-          }
-        } catch {
-          /* ignore */
-        }
-      })();
-    </script>
+    <script is:inline set:html={bootScript} />
   </head>
   <body>
     <nav class="skip-nav" aria-label="Keyboard shortcuts">
