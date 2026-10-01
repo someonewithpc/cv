@@ -556,4 +556,13 @@ body:has(.skip-link:focus-visible, .page-turn-key:focus-visible) .accesskey-lege
   font-weight: 400;
   font-style: normal;
 }
+
+/* Shared by every demo's loading spinner; named loading-spin, not spin, since
+   VisrezLogoAnimation/Cube declares its own global `spin` keyframe for the
+   cube's intro turn. */
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

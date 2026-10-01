@@ -449,7 +449,7 @@ $scene-bg: #212121;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: layouts-spin 0.8s linear infinite;
+  animation: loading-spin 0.8s linear infinite;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
@@ -624,12 +624,6 @@ $scene-bg: #212121;
       background: $visrez-brand;
       color: #fff;
     }
-  }
-}
-
-@keyframes layouts-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 </style>

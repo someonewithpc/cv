@@ -357,7 +357,7 @@ onBeforeUnmount(() => {
     border: 3px solid #89ab24;
     border-top-color: transparent;
     border-radius: 50%;
-    animation: place-spin 0.8s linear infinite;
+    animation: loading-spin 0.8s linear infinite;
 
     @media (prefers-reduced-motion: reduce) {
       animation: none;
@@ -380,12 +380,6 @@ onBeforeUnmount(() => {
     letter-spacing: 0.02em;
     pointer-events: none;
     white-space: nowrap;
-  }
-}
-
-@keyframes place-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 </style>

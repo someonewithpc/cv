@@ -418,7 +418,7 @@ $scene-bg: #212121;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: badge-spin 0.8s linear infinite;
+  animation: loading-spin 0.8s linear infinite;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
@@ -610,12 +610,6 @@ $scene-bg: #212121;
     color: #a2ce3b;
     white-space: nowrap;
     text-align: center;
-  }
-}
-
-@keyframes badge-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 </style>

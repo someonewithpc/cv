@@ -82,18 +82,12 @@ bootIslands('[data-parameters-scene-island]', boot);
     border: 3px solid #89ab24;
     border-top-color: transparent;
     border-radius: 50%;
-    animation: parameters-boot-spin 0.8s linear infinite;
+    animation: loading-spin 0.8s linear infinite;
 
     @media (prefers-reduced-motion: reduce) {
       animation: none;
       border-color: #89ab24;
     }
-  }
-}
-
-@keyframes parameters-boot-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 </style>

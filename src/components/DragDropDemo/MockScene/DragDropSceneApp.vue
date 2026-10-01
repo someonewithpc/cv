@@ -1270,7 +1270,7 @@ $scene-bg: #212121;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: drag-drop-spin 0.8s linear infinite;
+  animation: loading-spin 0.8s linear infinite;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
@@ -1498,11 +1498,5 @@ $scene-bg: #212121;
   overflow-y: auto;
   padding: 0.75rem;
   scrollbar-width: thin;
-}
-
-@keyframes drag-drop-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>
