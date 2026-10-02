@@ -108,7 +108,7 @@ function yieldToUser() {
 }
 
 function isChrome(target: EventTarget | null) {
-  return target instanceof Element && target.closest('.rail, button');
+  return target instanceof Element && target.closest('.sidebar, button');
 }
 
 function onPointerDown(event: PointerEvent) {
