@@ -79,6 +79,7 @@ const lanes = [
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 $accent: #89ab24;
 $op-slot: 0.85em;
 
@@ -113,7 +114,7 @@ $op-slot: 0.85em;
   /* The timeline runs down the sheet, and portrait stacks a note under it —
      the 0.8rem floor is what pushed it off the top. Keyed on the stack's
      attribute, not the orientation query: see Stack.astro's script. */
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: min(1.5rem, 0.036 * min(var(--sheet-inline), var(--sheet-block)));
   }
 }

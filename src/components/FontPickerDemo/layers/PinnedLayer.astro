@@ -27,6 +27,7 @@
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 @use "./sheetProse" as *;
 
@@ -46,7 +47,7 @@
 
   // A portrait sheet drops the note, so the first column's title lands in the corner the
   // paper clip sits over. Leave the clip its room.
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     margin-top: 1.25em;
   }
 }

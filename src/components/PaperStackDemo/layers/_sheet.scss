@@ -1,3 +1,4 @@
+@use '@/scss/sheet-orientation' as *;
 // What the paper stack's three sheets share: the margin every layer keeps around its content
 // and the sheet's type size.
 
@@ -18,7 +19,7 @@ $sheet-margin: 0.75em;
 @mixin sheet-type {
   font-size: clamp(0.5rem, 0.0138 * var(--sheet-inline), 0.875rem);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.5rem, 0.026 * var(--sheet-inline), 0.875rem);
   }
 }

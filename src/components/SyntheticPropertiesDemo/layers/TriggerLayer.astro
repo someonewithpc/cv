@@ -107,6 +107,7 @@ const breakable = (line: string) => line.split(/(?<=[_.(])(?![a-z]{1,3}\b)/i);
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -211,7 +212,7 @@ pre {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 0.55fr);
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
     row-gap: 0.5em;
@@ -224,7 +225,7 @@ pre {
   grid-template-rows: subgrid;
   row-gap: 0.125em;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-row: auto;
     grid-template-rows: auto auto;
   }

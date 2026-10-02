@@ -114,6 +114,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use '@/scss/hit-area' as *;
 @use '../picker/fontSettingsFieldset' as *;
 @use "./sheet" as *;
@@ -140,7 +141,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.75em;
 
@@ -261,7 +262,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
   min-width: 0;
   max-width: 26em;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     gap: 0.75em;
   }
 }

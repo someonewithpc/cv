@@ -149,6 +149,7 @@ bootIslands('[data-synthetic-demo]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use '@/scss/hit-area' as *;
 @use "./sheet" as *;
 
@@ -204,7 +205,7 @@ bootIslands('[data-synthetic-demo]', boot);
     outline-offset: -0.125em;
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     --gutter: 0.75em;
 
     gap: 0.5em;
@@ -258,7 +259,7 @@ input {
   list-style: none;
   counter-reset: stage;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     --stage-gap: 1.25em;
 
     grid-template-columns: minmax(0, 1fr);
@@ -283,7 +284,7 @@ input {
     line-height: 1;
     color: var(--ink-faint);
 
-    :global([data-sheet-orientation='portrait']) & {
+    @include portrait-sheet {
       content: '↓';
       top: calc(-1 * var(--stage-gap));
       left: 0;
@@ -331,7 +332,7 @@ input {
   color: var(--ink-muted);
 
   /* A phone-height sheet has no room for the asides. */
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     display: none;
   }
 }
@@ -434,7 +435,7 @@ input {
   padding: 0;
   list-style: none;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     display: none;
   }
 }
@@ -574,7 +575,7 @@ input {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: max(0.5rem, 0.625em);
   }
 

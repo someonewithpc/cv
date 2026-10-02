@@ -58,6 +58,7 @@ SELECT
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -101,7 +102,7 @@ pre {
   gap: 0.75em;
   align-items: start;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
   }
 }

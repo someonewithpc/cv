@@ -69,6 +69,7 @@ const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 .wrapper {
   @include sheet-content;
@@ -96,7 +97,7 @@ const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
   font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   }
 }

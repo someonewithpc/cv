@@ -72,6 +72,7 @@ const excerptLines = excerpt.split('\n').map((text) => ({
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 @include fill-content-cell;
@@ -95,7 +96,7 @@ const excerptLines = excerpt.split('\n').map((text) => ({
   align-items: center;
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "flow"
@@ -125,7 +126,7 @@ const excerptLines = excerpt.split('\n').map((text) => ({
       "path path"
       "namespace count";
 
-    :global([data-sheet-orientation='portrait']) & {
+    @include portrait-sheet {
       grid-template-areas: "path count";
     }
     gap: 0 0.5em;
@@ -145,7 +146,7 @@ const excerptLines = excerpt.split('\n').map((text) => ({
     grid-area: namespace;
 
     /* A phone's sheet is short a few lines; the path already says whose entities they are. */
-    :global([data-sheet-orientation='portrait']) & {
+    @include portrait-sheet {
       display: none;
     }
 

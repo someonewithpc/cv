@@ -147,6 +147,7 @@ const annotationFontSize = 0.1 * annotationScale;
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 $preview-bg: #3d3d3b;
 $line-real: #aaa7;
 $stripe-h: #5a9e3e;
@@ -439,7 +440,9 @@ header {
    Keyed on the stack's attribute, not the orientation query: a query-driven
    display toggle here cost a second on the way back to landscape (see
    Stack.astro's script). */
-:global([data-sheet-orientation='portrait']) .pipeline {
-  display: none;
+@include portrait-sheet {
+  .pipeline {
+    display: none;
+  }
 }
 </style>

@@ -97,6 +97,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -119,7 +120,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
   font-size: clamp(0.6875rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.625rem, min(0.03 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem);
   }
 }

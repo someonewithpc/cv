@@ -59,6 +59,7 @@ bootIslands('[data-library-search="relevance"]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 @include blueprint-cell;
@@ -172,8 +173,10 @@ header strong {
 
   /* The sum wraps to three lines a row on a phone sheet and pushes the panel off the page;
      the MATCH column beside it is the total anyway. */
-  :global([data-sheet-orientation='portrait']) & :global(.sum) {
-    display: none;
+  @include portrait-sheet {
+    :global(.sum) {
+      display: none;
+    }
   }
 
   :global(.excluded) {
@@ -221,7 +224,7 @@ header strong {
   padding-top: 0.5em;
   border-top: 1px solid var(--line);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
   }
 

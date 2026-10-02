@@ -97,6 +97,7 @@ const frames: Frame[] = [
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 /* The gutter the sheet leaves between its own border and anything drawn on it, so the
    plate floats on the page instead of sitting against the line. Same value the sheet pads
    itself with, not a length of this page's own. */
@@ -115,7 +116,7 @@ const frames: Frame[] = [
   font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   }
 }

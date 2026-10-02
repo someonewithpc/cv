@@ -113,6 +113,7 @@ bootIslands('[data-theme-picker-demo]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 @include stretch-cell(".theme-picker-demo");
@@ -137,7 +138,7 @@ bootIslands('[data-theme-picker-demo]', boot);
     pointer-events: none;
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     padding: 10% 0.5em 0;
   }
 }

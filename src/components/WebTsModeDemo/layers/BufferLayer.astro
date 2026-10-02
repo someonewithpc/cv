@@ -108,6 +108,7 @@ const rangeRules = ranges
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use '@/scss/hit-area' as *;
 @use "./sheet" as *;
 
@@ -143,7 +144,7 @@ const rangeRules = ranges
   font-size: clamp(0.5rem, 0.0135 * var(--sheet-inline), 0.75rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.5rem, 0.024 * var(--sheet-inline), 0.75rem);
   }
 

@@ -72,6 +72,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -88,7 +89,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   font-size: clamp(0.5rem, 0.0125 * var(--sheet-inline), 0.875rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.5rem, 0.023 * var(--sheet-inline), 0.875rem);
   }
 }

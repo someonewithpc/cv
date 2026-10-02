@@ -97,6 +97,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 @include fill-content-cell;
@@ -124,7 +125,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
   align-items: start;
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "table"
@@ -167,7 +168,7 @@ table {
     color: var(--ink-muted);
 
     /* A phone's sheet holds three columns, not four; the examples are the ones to go. */
-    :global([data-sheet-orientation='portrait']) & {
+    @include portrait-sheet {
       display: none;
     }
 
@@ -184,7 +185,7 @@ table {
   grid-template-columns: minmax(0, 1fr);
   gap: 0.375em 0.75em;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -215,7 +216,7 @@ table {
   margin: 0;
 
   /* The rest of the lookup table is the first thing a small sheet can spare. */
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     display: none;
   }
 

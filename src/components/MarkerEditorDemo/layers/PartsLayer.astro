@@ -121,6 +121,7 @@ const steps = [
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 $preview-bg: #3d3d3b;
 $accent: #89ab24;
 $sample: 3.6em;
@@ -135,7 +136,7 @@ $op-slot: 1.1em;
   display: grid;
   place-items: center;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     width: 100%;
     max-width: 100%;
   }
@@ -159,7 +160,7 @@ $op-slot: 1.1em;
   }
 
   // Keyed on the stack's attribute, not the orientation query: see Stack.astro's script.
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     width: 100%;
     font-size: clamp(0.75rem, 0.036 * var(--sheet-inline), 1rem);
   }
@@ -180,7 +181,7 @@ $op-slot: 1.1em;
 
   // max-content keeps the serialization note on one line, and on a phone that line, not
   // the drawing, is what set the card's width, and with it a 6px type scale.
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     width: 100%;
   }
 }

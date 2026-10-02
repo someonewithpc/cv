@@ -70,6 +70,7 @@ bootIslands('[data-fediverse-playground]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use '@/scss/hit-area' as *;
 @use "./sheet" as *;
 
@@ -97,7 +98,7 @@ bootIslands('[data-fediverse-playground]', boot);
     padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     /* Portrait gives the title block its own row. */
     padding-bottom: $sheet-margin;
 
@@ -150,7 +151,7 @@ bootIslands('[data-fediverse-playground]', boot);
   }
 
   /* Portrait: one column, the graph under the rows. */
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: 0.8em;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto auto var(--bar) minmax(0, 1fr);
@@ -170,7 +171,7 @@ bootIslands('[data-fediverse-playground]', boot);
     grid-column: 1 / -1;
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-column: 1;
   }
 }
@@ -187,7 +188,7 @@ bootIslands('[data-fediverse-playground]', boot);
   background: var(--panel);
   font-family: $code-font;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-column: 1;
   }
 }
@@ -225,7 +226,7 @@ fieldset {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -283,21 +284,23 @@ fieldset {
     }
   }
 
-  :global(:is([data-sheet-width='narrow'], [data-sheet-orientation='portrait'])) & .meta {
-    display: grid;
+  @include portrait-sheet($or: "[data-sheet-width='narrow']") {
+    .meta {
+      display: grid;
 
-    > span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    .host::before {
-      content: none;
+      .host::before {
+        content: none;
+      }
     }
   }
 
   /* A phone's column is too narrow for a hostname; the graph's box carries it. */
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-areas:
       "box name"
       "meta meta";
@@ -322,7 +325,7 @@ fieldset {
   font-size: 0.75em;
   color: var(--ink-muted);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-column: 1;
   }
 }
@@ -425,7 +428,7 @@ fieldset {
     font-style: italic;
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-row: 4 / 6;
     grid-column: 1;
     position: relative;
@@ -458,7 +461,7 @@ fieldset {
     display: none;
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     :global(svg.landscape) {
       display: none;
     }
@@ -555,7 +558,7 @@ fieldset {
     grid-row: 2 / -1;
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-row: 5;
   }
 }

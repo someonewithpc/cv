@@ -64,6 +64,7 @@ bootIslands('[data-editor-layer-island]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 .wrapper {
   box-sizing: border-box;
   width: 100%;
@@ -101,7 +102,7 @@ bootIslands('[data-editor-layer-island]', boot);
     font-size: clamp(0.875rem, 0.028 * min(var(--sheet-inline), var(--sheet-block)), 1.25rem);
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5em;
     font-size: clamp(0.75rem, 0.04 * min(var(--sheet-inline), var(--sheet-block)), 1.125rem);
@@ -208,7 +209,7 @@ code {
   align-self: stretch;
   justify-self: center;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     display: none;
   }
 

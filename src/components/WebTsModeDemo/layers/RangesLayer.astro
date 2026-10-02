@@ -101,6 +101,7 @@ const rules = [
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -116,7 +117,7 @@ const rules = [
   font-size: clamp(0.5rem, 0.0138 * var(--sheet-inline), 0.875rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.5rem, 0.026 * var(--sheet-inline), 0.875rem);
   }
 }

@@ -60,6 +60,7 @@ const steps = [
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 @include fill-content-cell;
@@ -132,7 +133,7 @@ const steps = [
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5em;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

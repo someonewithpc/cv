@@ -89,6 +89,7 @@ const servers = instances.map((instance) => ({
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 /* The sheet centres its content by default; this one takes the whole sheet, as the live one does. */
@@ -115,7 +116,7 @@ const servers = instances.map((instance) => ({
     padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     padding-bottom: $sheet-margin;
   }
 }
@@ -139,8 +140,7 @@ const servers = instances.map((instance) => ({
 
   /* Keyed on the stack's attributes, not the width query: a font size that comes out of a
      container query re-lays everything under it on each resize step. See Stack.astro. */
-  :global([data-sheet-width='narrow']) &,
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet($or: "[data-sheet-width='narrow']") {
     grid-template-columns: minmax(0, 1fr);
 
     /* The notes need a column of their own, and a short or a phone's sheet has none. */
@@ -158,34 +158,38 @@ const servers = instances.map((instance) => ({
     display: none;
   }
 
-  :global([data-sheet-orientation='portrait']) & .key {
-    grid-row: 3;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25em 1em;
-    font-size: 0.75em;
-    color: var(--ink-muted);
+  @include portrait-sheet {
+    .key {
+      grid-row: 3;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25em 1em;
+      font-size: 0.75em;
+      color: var(--ink-muted);
 
-    code {
-      color: var(--ink);
-      font-weight: 600;
-    }
+      code {
+        color: var(--ink);
+        font-weight: 600;
+      }
 
-    .full {
-      color: inherit;
-      font-weight: 400;
+      .full {
+        color: inherit;
+        font-weight: 400;
+      }
     }
   }
 
-  :global([data-sheet-orientation='portrait']) & thead {
-    .where,
-    .file {
-      display: none;
-    }
+  @include portrait-sheet {
+    thead {
+      .where,
+      .file {
+        display: none;
+      }
 
-    .short {
-      display: inline;
+      .short {
+        display: inline;
+      }
     }
   }
 }

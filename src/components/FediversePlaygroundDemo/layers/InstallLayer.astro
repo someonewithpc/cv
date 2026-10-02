@@ -77,6 +77,7 @@ const spoken = (step: Step) =>
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 /* The sheet centres its content by default; this one takes the whole sheet, as the live one does. */
@@ -103,7 +104,7 @@ const spoken = (step: Step) =>
     padding-bottom: calc(var(--title-block-block, 0px) + $sheet-margin);
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     padding-bottom: $sheet-margin;
   }
 }
@@ -126,8 +127,7 @@ const spoken = (step: Step) =>
 
   /* Keyed on the stack's attributes, not the width query: a font size that comes out of a
      container query re-lays everything under it on each resize step. See Stack.astro. */
-  :global([data-sheet-width='narrow']) &,
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet($or: "[data-sheet-width='narrow']") {
     grid-template-columns: minmax(0, 1fr);
 
     /* The notes need a column of their own, and a short or a phone's sheet has none. */
@@ -190,7 +190,7 @@ code {
     }
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     :global(svg:is(.landscape, .short)) {
       display: none;
     }

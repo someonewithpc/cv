@@ -91,6 +91,7 @@ function split(row: Row) {
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -107,7 +108,7 @@ function split(row: Row) {
   font-size: clamp(0.5rem, 0.0118 * var(--sheet-inline), 0.875rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.5rem, 0.021 * var(--sheet-inline), 0.875rem);
   }
 }

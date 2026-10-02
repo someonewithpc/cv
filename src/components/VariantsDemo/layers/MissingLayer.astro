@@ -69,6 +69,7 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use './sheet' as *;
 
 @include sheet-chrome(44em);
@@ -127,7 +128,7 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
     font-size: 1em;
 
     // A tall sheet leaves the list too narrow for two columns of prose.
-    :global([data-sheet-orientation='portrait']) & {
+    @include portrait-sheet {
       grid-template-columns: minmax(0, 1fr);
       gap: 0.125em;
     }

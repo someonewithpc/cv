@@ -87,6 +87,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 /* The product's look, Bootstrap 3 at a 14px base, carried over in em so the whole tool
    scales with the sheet. 1em here is the product's 14px. */
 .library-search {
@@ -336,7 +337,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
   }
 }
 
-:global([data-sheet-orientation='portrait']) {
+@include portrait-sheet {
   .hit {
     grid-template-columns: 3em minmax(0, 1fr) minmax(5em, 35%);
   }

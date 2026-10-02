@@ -1,3 +1,4 @@
+@use '@/scss/sheet-orientation' as *;
 // What the synthetic properties sheets share: the margin every layer keeps around its
 // content, and the type and panel the three blueprint sheets draw on.
 
@@ -61,7 +62,7 @@ $sheet-margin: 0.75em;
   font-size: clamp(0.625rem, $landscape * min(var(--sheet-inline), var(--sheet-block)), 1rem);
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: min(1rem, $portrait * min(var(--sheet-inline), var(--sheet-block)));
   }
 }
@@ -84,7 +85,7 @@ $sheet-margin: 0.75em;
 @mixin small-type($em) {
   font-size: max(#{$em}em, 0.0168 * min(var(--sheet-inline), var(--sheet-block)));
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: max(0.5rem, #{$em}em);
   }
 }

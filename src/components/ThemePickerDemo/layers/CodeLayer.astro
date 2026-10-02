@@ -198,6 +198,7 @@ const frames = THEME_IDS.map((id) => {
 </style>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 @include stretch-cell(".code-sheet");
@@ -220,7 +221,7 @@ const frames = THEME_IDS.map((id) => {
     container-type: size;
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     .figure {
       grid-column: auto;
       grid-row: auto;
@@ -265,7 +266,7 @@ const frames = THEME_IDS.map((id) => {
     white-space: pre;
     overflow-x: auto;
 
-    :global([data-sheet-orientation='portrait']) & {
+    @include portrait-sheet {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
@@ -330,7 +331,7 @@ const frames = THEME_IDS.map((id) => {
   border: 1px solid var(--line);
   overflow: hidden;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     width: min(100%, 30em);
   }
 }

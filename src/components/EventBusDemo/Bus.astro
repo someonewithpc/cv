@@ -230,6 +230,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use '@/scss/hit-area' as *;
 /* 1em here is the sheet's body type at this scale, so every measurement below scales
    with the page. */
@@ -257,7 +258,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
   line-height: 1.35;
   color: var(--ink);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     /* A page that quotes the bus beside other things can hand it a smaller size. Under a
        345px wide sheet the type follows the sheet past 0.625rem, as on a short landscape one. */
     font-size: var(--bus-portrait-font, clamp(0.5rem, min(0.029 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem));

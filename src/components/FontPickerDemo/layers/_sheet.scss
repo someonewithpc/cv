@@ -1,3 +1,4 @@
+@use '@/scss/sheet-orientation' as *;
 // What the picker's four sheets share: one type scale and the margin every layer keeps
 // around its content. Both go on a layer's root and nowhere else.
 
@@ -22,7 +23,7 @@ $widget-scale: 0.83;
 @mixin sheet-type($portrait: 0.036, $landscape: 0.027) {
   font-size: clamp(0.625rem, $landscape * min(var(--sheet-inline), var(--sheet-block)), 1rem);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: min(1rem, $portrait * var(--sheet-inline));
   }
 }

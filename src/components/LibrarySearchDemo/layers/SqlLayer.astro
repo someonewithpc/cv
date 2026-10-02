@@ -56,6 +56,7 @@ bootIslands('[data-library-search="sql"]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 @include blueprint-cell;
@@ -256,7 +257,7 @@ header strong {
   gap: 0.375em 0.75em;
   border-top: 1px solid var(--line);
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
   }
 

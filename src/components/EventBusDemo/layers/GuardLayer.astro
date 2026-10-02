@@ -64,6 +64,7 @@ const where = 'src/Core/ModuleManager.php:93';
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
 .wrapper {
@@ -102,7 +103,7 @@ const where = 'src/Core/ModuleManager.php:93';
       'footnote';
   }
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     font-size: clamp(0.625rem, min(0.03 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem);
   }
 }

@@ -1,0 +1,35 @@
+// A portrait sheet's rules. Stack.astro's script writes data-sheet-orientation from the frame's
+// width query. Without script nothing writes it, and the sheet is portrait below 680px, by the
+// same mirror Stack.astro gives --sheet-block, so the rules apply there too. :root stands in
+// for the attribute so both paths win the cascade the same way. $or names another attribute
+// the rules also apply under, such as a short landscape sheet's.
+$no-script-portrait: '(scripting: none) and (width <= 680px)';
+
+@mixin portrait-sheet($or: null) {
+  $attr: "[data-sheet-orientation='portrait']";
+  @if $or {
+    $attr: ':is(#{$or}, #{$attr})';
+  }
+
+  @if & {
+    :global(#{$attr}) & {
+      @content;
+    }
+
+    @media #{$no-script-portrait} {
+      :global(:root) & {
+        @content;
+      }
+    }
+  } @else {
+    :global(#{$attr}) {
+      @content;
+    }
+
+    @media #{$no-script-portrait} {
+      :global(:root) {
+        @content;
+      }
+    }
+  }
+}

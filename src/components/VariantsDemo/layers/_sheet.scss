@@ -1,3 +1,4 @@
+@use '@/scss/sheet-orientation' as *;
 /** Shared chrome for the variants demo's blueprint sheets. */
 @mixin sheet-chrome($width: 46em) {
   .wrapper {
@@ -15,7 +16,7 @@
     font-size: clamp(0.75rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
     color: var(--ink);
 
-    :global([data-sheet-orientation='portrait']) & {
+    @include portrait-sheet {
       font-size: clamp(0.625rem, 0.023 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
     }
   }
