@@ -261,4 +261,4 @@
 - [x] Duplicated style blocks live in one place each: section header, Japanese gloss, caret keyframes, demo sheet box, boot placeholder, status border timing, tear offset (S18) (#306)
 - [x] Preload the 18 shared script chunks with `modulepreload` so the island boot stops paying three round trips (P18) (#238)
 - [x] Safari draws every paper stack with its last page on top, since WebKit paints rotated pages in DOM order and ignores `order` (#320)
-- [ ] Match the tagging tool's wood base object's table colour casing to its variants' (C53)
+- [x] Match the tagging tool's wood base object's table colour casing to its variants' (C53) (#285)
