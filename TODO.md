@@ -211,3 +211,4 @@
 - [x] Allow an explicit host list on the dev server instead of any Host header, and build the http-to-https redirect's Location from that list instead of the request's own Host header (C64) (#246)
 - [x] Run the tagging tool's save and ring-easing clocks on the demo gate, not the document gate, and drop a save the visitor takes over mid-flight (C36) (#281)
 - [x] Run the library search walkthrough's press delay on the demo gate, not the document gate, so a press never lands off screen (C37) (#281)
+- [ ] Cut the document by 100 KB raw and 25 KB brotli: torn edges and the pronunciation clip as files, no inline color-scheme or empty style attributes (P1)
