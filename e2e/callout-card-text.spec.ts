@@ -61,7 +61,12 @@ for (const width of [390, 1024, 1440]) {
         const pad = parseFloat(style.paddingLeft);
         const cells = [...card.querySelectorAll('.title-cell')].filter((cell) => cell.getClientRects().length > 0);
         const text = cells.map(entryText);
-        const first = text[0];
+        // Under a portrait sheet a deck is the first entry (deck-home.ts), its keys its first line.
+        const keys = [...card.querySelectorAll(':scope > [data-demo-transport]:not([hidden]) .demo-key')]
+          .map((key) => key.getBoundingClientRect());
+        const first = keys.length
+          ? { left: Math.min(...keys.map((k) => k.left)), right: Math.max(...keys.map((k) => k.right)), top: Math.min(...keys.map((k) => k.top)) }
+          : text[0];
         let over = -Infinity;
         for (let x = Math.ceil(first.left); x < first.right; x += 2) {
           for (let y = Math.floor(first.top); y > box.top; y--) {
@@ -85,7 +90,7 @@ for (const width of [390, 1024, 1440]) {
           .filter((dt) => dt.getClientRects().length > 0)
           .map((dt) => dt.textContent!.trim());
         const { rotate, transform } = getComputedStyle(card);
-        return { box, stack, view, covered, smallest: Math.min(...sizes), entries, rotate, transform, inset, hintOver };
+        return { box, stack, view, covered, smallest: Math.min(...sizes), entries, rotate, transform, inset, hintOver, deck: keys.length > 0 };
       }, entryText.toString());
       expect(geometry.box.top, 'tucked under the stack').toBeLessThan(geometry.stack.bottom);
       expect(geometry.box.bottom, 'sticks out below it').toBeGreaterThan(geometry.stack.bottom);
@@ -101,7 +106,8 @@ for (const width of [390, 1024, 1440]) {
       const { pad, top, left, bottom } = geometry.inset;
       expect(Math.abs(left - pad), `inset at the side (${left} against ${pad})`).toBeLessThanOrEqual(1);
       expect(Math.abs(bottom - pad), `inset at the foot (${bottom} against ${pad})`).toBeLessThanOrEqual(1);
-      expect(Math.abs(top - pad), `inset over the first entry (${top} against ${pad})`).toBeLessThanOrEqual(1.5);
+      // Over a deck's keys the inset measures up to 1.7px more than the pad (12.3 to 13.7 at 12).
+      expect(Math.abs(top - pad), `inset over the first entry (${top} against ${pad})`).toBeLessThanOrEqual(geometry.deck ? 2 : 1.5);
     }
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

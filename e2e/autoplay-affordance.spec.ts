@@ -59,14 +59,17 @@ function placement(deck: Locator) {
   });
 }
 
-/** Where a deck in the callout's card sits against the stack it belongs to. */
+/** Where a deck in the callout's card sits: under the stack it belongs to, as the slip's first
+ *  entry, over the title. */
 function cardPlacement(deck: Locator) {
   return deck.evaluate((el) => {
     const callout = el.closest('section.callout')!;
     const stack = callout.querySelector('article.technical-drawing-stack')!.getBoundingClientRect();
     const box = el.getBoundingClientRect();
+    const title = callout.querySelector('.callout-card .title-cell dt')!.getBoundingClientRect();
     return {
       inCard: el.parentElement!.matches('.callout-card'),
+      first: el === el.parentElement!.firstElementChild && box.bottom <= title.top,
       underStack: box.top >= stack.bottom - 1,
       withinStackWidth: box.left >= stack.left - 1 && box.right <= stack.right + 1,
     };
@@ -101,7 +104,7 @@ for (const { name, viewport } of VIEWPORTS) {
           expect(where.clearOfDrawing, 'clear of the drawing').toBe(true);
         } else {
           // A phone sheet's band is shallower than a key, so the deck is under the page.
-          expect(await cardPlacement(deck)).toEqual({ inCard: true, underStack: true, withinStackWidth: true });
+          expect(await cardPlacement(deck)).toEqual({ inCard: true, first: true, underStack: true, withinStackWidth: true });
         }
       }
     });
@@ -124,7 +127,7 @@ for (const [width, home] of [[390, 'card'], [680, 'card'], [681, 'band'], [1440,
       const deck = callout.locator('[data-demo-transport]:not([hidden])');
       await expect(deck, id).toHaveCount(1, { timeout: 30_000 });
       if (home === 'card') {
-        expect(await cardPlacement(deck), id).toEqual({ inCard: true, underStack: true, withinStackWidth: true });
+        expect(await cardPlacement(deck), id).toEqual({ inCard: true, first: true, underStack: true, withinStackWidth: true });
       } else {
         const where = await placement(deck);
         expect(where.insideBand, `${id} in the band`).toBe(true);
