@@ -857,11 +857,15 @@ function init() {
   armHints();
 
   // The block's cells are measured in its own fonts, and a sheet fitted before they arrived was
-  // fitted to the fallback's widths.
-  document.fonts.ready.then(() => {
+  // fitted to the fallback's widths. Asked after the page has loaded: asking document.fonts for
+  // its ready promise resolves style and layout for the whole document on the spot, which here
+  // ran ahead of DOMContentLoaded. The fit itself waits for a frame, like a resize's.
+  const refit = () => document.fonts.ready.then(() => {
     forgetTextWidths();
-    fitTitleBlocks([...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack section:has(> table)')]);
+    fitLater([...document.querySelectorAll<HTMLElement>('article.technical-drawing-stack section:has(> table)')]);
   });
+  if (document.readyState === 'complete') refit();
+  else window.addEventListener('load', refit, { once: true });
 }
 
 /* A module script is deferred, so by the time this one runs the document is already
