@@ -36,6 +36,8 @@ const {
 
 const hasMeta = updatedAt || stats;
 
+const fileCount = stats ? `${stats.changed_files} file${stats.changed_files === 1 ? '' : 's'}` : '';
+
 const rowLabel = `${repository}${number == null ? '' : `#${number}`}: ${title.replaceAll('`', '')}`;
 
 // A row is one line of a ruled sheet, so a long name has to wrap where a reader would break
@@ -91,7 +93,7 @@ if (number != null) citePieces.push(null, `#${number}`);
               {' '}
               <span class="deletions">−{stats.deletions}</span>
               {' · '}
-              <span class="files">{stats.changed_files} files</span>
+              <span class="files">{fileCount}</span>
             </span>
           )}
         </footer>
