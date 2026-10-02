@@ -377,7 +377,7 @@
         {
           "repository": "th3rdwave/react-native-safe-area-context",
           "title": "Update Android Tools gradle version",
-          "description": "Updated react-native-safe-area-context for current React Native API compatibility.",
+          "description": "Bumped Android Gradle tooling in react-native-safe-area-context to unblock a react-native-gesture-handler build.",
           "url": "https://github.com/th3rdwave/react-native-safe-area-context/pull/173",
           "number": 173,
           "tags": [
@@ -684,30 +684,12 @@
         {
           "repository": "vivien/i3blocks-contrib",
           "title": "Add `redshift` block to display the current screen temperature",
-          "description": "Shipped a redshift i3blocks module that shows the current screen colour temperature.",
+          "description": "Added a redshift i3blocks module that shows the current screen colour temperature.",
           "url": "https://github.com/vivien/i3blocks-contrib/pull/310",
           "number": 310,
           "updatedAt": "2020-03-21T04:36:47Z",
           "tags": [
             "bash"
-          ]
-        },
-        {
-          "repository": "Bumblebee-Project/bbswitch",
-          "title": "bbswitch",
-          "description": "Fixed bbswitch kernel-module packaging and build issues for NVIDIA GPU power switching in a personal fork.",
-          "url": "https://github.com/someonewithpc/bbswitch/commit/60599f45755836e2154cf91487fe7f52b9cab07b",
-          "tags": [
-            "c"
-          ]
-        },
-        {
-          "repository": "gnu/librefm",
-          "title": "gnufm",
-          "description": "Fixed and extended GNU FM (Libre.fm) PHP code in a fork of the Savannah-hosted music platform.",
-          "url": "https://github.com/someonewithpc/gnufm/commit/9abebfef2aff3b46f0c7de7b7b5e19dfd936a30c",
-          "tags": [
-            "php"
           ]
         }
       ]
@@ -831,6 +813,7 @@
             "changed_files": 2
           },
           "tags": [
+            "leaflet",
             "typescript"
           ]
         },
@@ -1034,8 +1017,8 @@
         },
         {
           "repository": "OVYA/php-cs-fixer",
-          "title": "Pull request #11",
-          "description": "Forked PHP CS Fixer with custom rules and configuration for project-specific formatting.",
+          "title": "Fix broken functions",
+          "description": "Repaired a php-cs-fixer wrapper for Emacs, swapping its broken patch step for a direct file fix and a buffer revert.",
           "url": "https://github.com/OVYA/php-cs-fixer/pull/11",
           "number": 11,
           "tags": [
@@ -1044,8 +1027,8 @@
         },
         {
           "repository": "git/git",
-          "title": "Allow passing a new `-p'/`--parents' option to `git-mv'",
-          "description": "Allow passing a new `-p'/`--parents' option to `git-mv' making it so missing directories in the given target path get created if they don't exist. This allows running `git mv -p foo bar/quux/' to first create the `bar/' and `bar/quux/' directories if they don't exist, and then move `foo' to `bar/quux/foo'.",
+          "title": "Add a `-p`/`--parents` option to `git mv`",
+          "description": "Lets `git mv` create missing leading directories in the destination instead of failing: `git mv -p foo bar/quux/` creates `bar/` and `bar/quux/` first, then moves `foo` into place.",
           "url": "https://lore.kernel.org/git/20231009233458.1371351-1-hugo@hsal.es/",
           "updatedAt": "2023-10-09",
           "tags": [
@@ -1062,6 +1045,24 @@
           "tags": [
             "git",
             "c"
+          ]
+        },
+        {
+          "repository": "Bumblebee-Project/bbswitch",
+          "title": "bbswitch",
+          "description": "Fixed bbswitch kernel-module packaging and build issues for NVIDIA GPU power switching in a personal fork, never submitted upstream.",
+          "url": "https://github.com/someonewithpc/bbswitch/commit/60599f45755836e2154cf91487fe7f52b9cab07b",
+          "tags": [
+            "c"
+          ]
+        },
+        {
+          "repository": "someonewithpc/gnufm",
+          "title": "gnufm",
+          "description": "Fixed and extended GNU FM (Libre.fm) PHP code in a fork of the Savannah-hosted music platform, never submitted upstream.",
+          "url": "https://github.com/someonewithpc/gnufm/commit/9abebfef2aff3b46f0c7de7b7b5e19dfd936a30c",
+          "tags": [
+            "php"
           ]
         }
       ]
