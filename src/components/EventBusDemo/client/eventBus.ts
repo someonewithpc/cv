@@ -439,8 +439,12 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
   const handover = watchHandover(host, {
     listening: () => active,
     takeOver() {
-      // Nothing plays under reduced motion, so there is nothing to take over.
-      if (reducedMotion(bus.root)) return;
+      // Nothing plays by itself under reduced motion: stop a run the play key started and stay paused.
+      if (reducedMotion(bus.root)) {
+        if (playing) stop();
+        reportAutoplayState(bus.root, 'paused');
+        return;
+      }
       stop();
       reportAutoplayState(bus.root, 'user');
     },
