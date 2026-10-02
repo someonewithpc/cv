@@ -11,7 +11,8 @@ type Boot = (host: HTMLElement) => void | Promise<void>;
  * Every page of a PaperStack shares one grid cell, so the viewport observer sees all of them
  * at once when the stack scrolls in. Which one is on top is read from --page-index instead,
  * and a covered host waits for the stack's paper-flip events until its page comes to the
- * front. `data-mounted` marks a host handed to `boot`; the e2e helpers wait on it.
+ * front. `data-mounted` marks a host handed to `boot`; the e2e helpers wait on it. It is `"pending"`
+ * from registration until then.
  */
 export function bootIslands(selector: string, boot: Boot) {
   document.querySelectorAll<HTMLElement>(selector).forEach((host) => bootIsland(host, boot));
@@ -19,6 +20,7 @@ export function bootIslands(selector: string, boot: Boot) {
 
 function bootIsland(host: HTMLElement, boot: Boot) {
   if (host.dataset.mounted === 'true') return;
+  host.dataset.mounted = 'pending';
 
   const mount = async () => {
     if (host.dataset.mounted === 'true') return;
