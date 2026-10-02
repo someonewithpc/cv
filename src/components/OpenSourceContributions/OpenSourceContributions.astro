@@ -3,22 +3,16 @@ import site from './site.json';
 import ContributionRow from './ContributionRow.astro';
 import SectionHeader from './SectionHeader.astro';
 import Highlights from './Highlights.astro';
-import { tear, TEAR_TILE } from './tear';
+import { TEAR_TILE } from './tear';
 
 const { highlights, groups } = site;
 
-/* Drawn at the deepest tear any sheet uses; a narrow sheet squeezes the same tile shallower.
-   Written once on the section, so the three sheets share one copy of each image. */
-const top = tear(11, 24, 'top');
-const bottom = tear(29, 24, 'bottom');
+/* Written once on the section, so the three sheets share one copy of each image. */
 const edges = [
   `--tear-tile: ${TEAR_TILE}`,
-  `--tear-top: ${top.mask}`,
-  `--tear-bottom: ${bottom.mask}`,
-  `--core-top: ${top.core}`,
-  `--core-bottom: ${bottom.core}`,
-  `--shade-top: ${top.shade}`,
-  `--shade-bottom: ${bottom.shade}`,
+  ...['top', 'bottom'].flatMap((side) =>
+    ['mask', 'core', 'shade'].map((layer) => `--${layer === 'mask' ? 'tear' : layer}-${side}: url(/tears/${side}-${layer}.svg)`),
+  ),
 ].join('; ');
 
 const statistics = {

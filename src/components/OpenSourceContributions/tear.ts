@@ -49,8 +49,6 @@ const band = (next: () => number, samples: number, from: number, to: number, spr
   return values.map((value) => (value / deviation) * spread);
 };
 
-const encode = (svg: string) => `url("data:image/svg+xml,${svg.replaceAll('<', '%3C').replaceAll('>', '%3E').replaceAll('#', '%23').replaceAll('"', "'")}")`;
-
 /** A run of points as one relative path, each step one sample along. */
 const run = (points: number[], dx = STEP * UNIT) => {
   let out = '';
@@ -246,11 +244,26 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
     `<path d='${strayPath}' stroke='#000' filter='url(#s)' stroke-width='${0.6 * UNIT}' stroke-linecap='round' stroke-opacity='.1' fill='none'/>`;
 
   return {
-    mask: encode(`${open}${paper}${fibres}</svg>`),
-    core: encode(`${open}${core}</svg>`),
-    shade: encode(`${open}${shade}</svg>`),
+    mask: `${open}${paper}${fibres}</svg>`,
+    core: `${open}${core}</svg>`,
+    shade: `${open}${shade}</svg>`,
   };
 }
 
 /** The tile's width, which the sheet repeats its edges at. */
 export const TEAR_TILE = `${TILE / 16}rem`;
+
+/* Drawn at the deepest tear any sheet uses; a narrow sheet squeezes the same tile shallower.
+   Served as files from /tears/ (src/pages/tears), so the document does not carry their 90 KB. */
+const top = tear(11, 24, 'top');
+const bottom = tear(29, 24, 'bottom');
+
+/** Each edge image by its file name under /tears/. */
+export const TEAR_IMAGES: Record<string, string> = {
+  'top-mask': top.mask,
+  'bottom-mask': bottom.mask,
+  'top-core': top.core,
+  'bottom-core': bottom.core,
+  'top-shade': top.shade,
+  'bottom-shade': bottom.shade,
+};
