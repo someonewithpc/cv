@@ -714,6 +714,7 @@ onMounted(async () => {
       })
       .catch((error) => {
         console.debug('Space Builder demo chair failed to load', error);
+        loadError.value = true;
       });
 
     // Pause when this carousel page stops being the front one (same pattern as Marker Editor).

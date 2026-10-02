@@ -247,6 +247,7 @@ onMounted(async () => {
       syncMetrics();
     }).catch((error) => {
       console.debug('Badge scene chair failed to load', error);
+      loadError.value = true;
     });
 
     const visibilityRoot =

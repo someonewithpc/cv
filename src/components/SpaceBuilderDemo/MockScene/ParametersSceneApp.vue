@@ -364,6 +364,7 @@ onMounted(async () => {
       if (inView) startAutoplay();
     }).catch((error) => {
       console.debug('Parameters scene chair failed to load', error);
+      loadError.value = true;
     });
 
     const visibilityRoot =

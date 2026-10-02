@@ -1000,6 +1000,7 @@ onMounted(async () => {
       if (inView) startAutoplay();
     }).catch((error) => {
       console.debug('Drag and drop scene chair failed to load', error);
+      loadError.value = true;
     });
 
     const visibilityRoot =
