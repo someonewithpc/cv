@@ -208,3 +208,4 @@
 - [x] Share one fetch and parse of chair.glb across the Space Builder and Drag and Drop scene apps, each cloning the parsed result (P14) (#249)
 - [x] Touch the Space Builder cursor target only when it changes, not on every autoplay drag tick (C11) (#253)
 - [x] Dedupe the decoration font list and seed the weight slider from the stored descriptor (C44) (#287)
+- [ ] Allow an explicit host list on the dev server instead of any Host header, and build the http-to-https redirect's Location from that list instead of the request's own Host header (C64)
