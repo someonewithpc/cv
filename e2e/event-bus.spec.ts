@@ -334,8 +334,10 @@ async function sheetOverflow(front: Locator) {
     const s = sheet.getBoundingClientRect();
     const inset = parseFloat(getComputedStyle(sheet).paddingTop) + 2;
     const block = sheet.querySelector(':scope > table')!.getBoundingClientRect();
+    const deck = sheet.querySelector(':scope > .demo-transport')!.getBoundingClientRect();
     let past = -Infinity;
     let under = 0;
+    let underDeck = 0;
     for (const el of sheet.querySelectorAll('.event-bus-demo *')) {
       if (!el.checkVisibility() || el.closest('.event-bus-cursor')) continue;
       const b = el.getBoundingClientRect();
@@ -345,13 +347,16 @@ async function sheetOverflow(front: Locator) {
       const across = Math.min(b.right, block.right) - Math.max(b.left, block.left);
       const down = Math.min(b.bottom, block.bottom) - Math.max(b.top, block.top);
       if (across > 0.5 && down > 0.5) under = Math.max(under, across * down);
+      const acrossDeck = Math.min(b.right, deck.right) - Math.max(b.left, deck.left);
+      const downDeck = Math.min(b.bottom, deck.bottom) - Math.max(b.top, deck.top);
+      if (acrossDeck > 0.5 && downDeck > 0.5) underDeck = Math.max(underDeck, acrossDeck * downDeck);
     }
-    return { past, under };
+    return { past, under, underDeck };
   });
 }
 
-for (const width of [688, 720, 768]) {
-  test(`main page: a narrow landscape sheet holds every stage inside its frame at ${width}px`, async ({ page }) => {
+for (const width of [320, 336, 688, 720, 768]) {
+  test(`main page: a narrow sheet holds every stage inside its frame at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
@@ -360,9 +365,10 @@ for (const width of [688, 720, 768]) {
 
     const check = async (state: string) => {
       await expect(bus).not.toHaveAttribute('data-result', 'pending', answered);
-      const { past, under } = await sheetOverflow(front);
+      const { past, under, underDeck } = await sheetOverflow(front);
       expect(past, `${state}: past the frame line`).toBeLessThanOrEqual(0);
       expect(under, `${state}: under the title block`).toBe(0);
+      expect(underDeck, `${state}: under the deck`).toBe(0);
     };
 
     await check('the JPEG');
