@@ -184,7 +184,12 @@ function markWhenSeen(frame: HTMLElement) {
   seen.observe(words);
 }
 
-/** Lays the frame's hint arrows out now and again whenever their ends move. */
+/**
+ * Lays the frame's hint arrows out whenever their ends move. The first layout comes from the
+ * observer's first report, in the first frame and before its paint, where the rects are already
+ * worked out. Laid out here, before DOMContentLoaded, it forced the first style and layout of the
+ * whole document on the spot.
+ */
 export function drawFlipHints(frame: HTMLElement) {
   if (frames.has(frame)) { frames.get(frame)!(); return; }
 
@@ -212,6 +217,4 @@ export function drawFlipHints(frame: HTMLElement) {
   }
   document.fonts?.addEventListener('loadingdone', schedule);
   markWhenSeen(frame);
-
-  layout(frame);
 }
