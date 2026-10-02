@@ -244,4 +244,4 @@
 - [x] Every OptionsPanel input has its own name, the seat-count error is tied to its input, no div sits in a label or button (A27) (#301)
 - [x] Shrink the lodash the marker editor's store pulls into the serialization chunk: per-function imports and local helpers for the trivial ones (P4 lodash part) (#245)
 - [x] Cache the font picker's page rect per run instead of reading it on every cursor frame (C12) (#254)
-- [ ] Keep the playing hint in step with the pointer a hybrid device actually has, not the one it booted with (C54)
+- [x] Keep the playing hint in step with the pointer a hybrid device actually has, not the one it booted with (C54) (#288)
