@@ -457,8 +457,6 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
   }
 }
 
-// Once flip-hint.ts has measured, each arrow is drawn over the whole layer in its own pixels,
-// from the words to the crease, and the placement below is left to a page without script.
 .flip-hints[data-hint-drawn] .hint-arrow {
   inset: 0;
   width: 100%;
@@ -467,28 +465,6 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
   rotate: none;
   translate: none;
   overflow: visible;
-}
-
-// Both arrows point at the middle of the crease they invite you to take hold of, square to it:
-// aiming at the page's corner instead says nothing about which way the paper travels, and the
-// corner is the one part of the fold the hand does not need.
-//
-// The way out is the dog-ear on the front page, whose resting crease runs from
-// (100% - x, 100%) to (100%, 100% - y) of the sheet. atan2(x, y) is the angle of its normal,
-// since the crease itself leans by atan2(y, x) the other way.
-.flip-hint--fwd.hint-arrow {
-  left: calc(100% - var(--fold-rest-x, 2cm) / 2);
-  top: calc(var(--sheet-block, 100%) - var(--fold-rest-y, 1cm) / 2);
-  rotate: atan2(var(--fold-rest-x, 2cm), var(--fold-rest-y, 1cm));
-}
-
-// The way back is the folded-away top-left corner, whose crease runs from (lean-x, 0) to
-// (0, lean-y) and whose middle is the pin the paper clip holds. Same normal, half a turn round,
-// so the arrow comes in over the cut corner rather than across the sheet.
-.flip-hint--back.hint-arrow {
-  left: calc(var(--paper-clip-lean-x, 2.25em) / 2);
-  top: calc(var(--paper-clip-lean-y, 4.5em) / 2);
-  rotate: calc(180deg + atan2(var(--paper-clip-lean-x, 2.25em), var(--paper-clip-lean-y, 4.5em)));
 }
 
 // Once armed, the hint layer stays armed: a page loaded with script and then switched off in
