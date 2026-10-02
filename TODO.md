@@ -243,4 +243,4 @@
 - [x] Selection state reaches assistive tech: layout chips, HoverSelect options, placeholder cards, the Badge play toggle, the listener table (A11) (#301)
 - [x] Every OptionsPanel input has its own name, the seat-count error is tied to its input, no div sits in a label or button (A27) (#301)
 - [x] Shrink the lodash the marker editor's store pulls into the serialization chunk: per-function imports and local helpers for the trivial ones (P4 lodash part) (#245)
-- [ ] Cache the font picker's page rect per run instead of reading it on every cursor frame (C12)
+- [x] Cache the font picker's page rect per run instead of reading it on every cursor frame (C12) (#254)
