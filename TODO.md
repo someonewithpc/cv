@@ -192,4 +192,4 @@
 - [x] Favicon: five candidates for Hugo to pick from (#235)
 - [x] Build the four inline `<style>` blocks that fail the Nu validator inside their divs as static Sass in the same components, so Astro bundles them (O4) (#230)
 - [ ] Bring the four Space Builder spinners' keyframes into scope so they spin (S16)
-- [ ] Drop the map's above-N5 kanji labels and give it a readable OpenStreetMap credit (T33)
+- [x] Read the map's Japanese labels in kana, and give it a readable OpenStreetMap credit under it instead of the tiny one baked into the SVG (T33) (#264)
