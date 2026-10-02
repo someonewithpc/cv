@@ -1064,6 +1064,10 @@ export function bindUndoRedoKeys(
   const onKeyDown = (e: KeyboardEvent) => {
     const mod = e.metaKey || e.ctrlKey;
     if (!mod || e.key.toLowerCase() !== 'z') return;
+    // Text fields keep their own undo, as in the product.
+    const { target } = e;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+    if (target instanceof HTMLElement && target.isContentEditable) return;
     e.preventDefault();
     if (e.shiftKey) {
       onToast(undoRedoShortcut('Redo'));
