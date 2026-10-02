@@ -255,4 +255,4 @@
 - [x] Colours that only work in one theme: the grab line, the Path layer, the All Together post-it, and the product colours left unnamed (S12) (#302)
 - [x] Let a plain scroll over a stack start without waiting on the main thread: passive wheel listener, cancelling ones only during a swipe (C3) (#243)
 - [x] Keep the Space Builder root rect between scrolls and resizes instead of reading it on every cursor frame (layout reads audit) (#318)
-- [ ] Cut the Tab stops: one per contribution group and one per tagging tool row, arrows inside (A14)
+- [x] Cut the Tab stops: one per contribution group and one per tagging tool row, arrows inside (A14) (#276)
