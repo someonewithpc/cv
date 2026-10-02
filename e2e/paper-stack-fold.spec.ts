@@ -382,6 +382,41 @@ test.describe('a drag that pulls the wrong way cancels', () => {
   });
 });
 
+// The latest frame, within the next two seconds, where the flap is still drawn by script (the
+// inline clip-path a drag or a settle glide writes each frame), in ms from the start; -1 if none.
+const flapGlideMs = (stack: Locator) => stack.evaluate((st) => new Promise<number>((done) => {
+  const fold = st.querySelector<HTMLElement>('.paper-fold')!;
+  const start = performance.now();
+  let last = -1;
+  const tick = (now: number) => {
+    if (fold.style.clipPath !== '' || fold.classList.contains('paper-fold--active')) last = now - start;
+    if (now - start < 2000) requestAnimationFrame(tick);
+    else done(Math.round(last));
+  };
+  requestAnimationFrame(tick);
+}));
+
+// A grab that never moves has nothing to hand back. Once a gesture has come to rest, the sheet
+// keeps its resting --fold-x/-y inline for good, and the release used to read that as a drag
+// and play the whole 1 s settle glide back to where the fold already lay.
+test('a tap on the flap after a drag lets go at once, while the drag itself glides', async ({ page }) => {
+  const stack = page.locator('article.technical-drawing-stack').first();
+  await stack.scrollIntoViewIfNeeded();
+  await dogEarShown(stack);
+
+  await dragFold(page, stack, [{ dx: -40, dy: -40 }]);
+  const glide = flapGlideMs(stack);
+  await page.mouse.up();
+  expect(await glide, 'a real drag settles with a glide').toBeGreaterThan(200);
+
+  const grip = await flapGrip(stack);
+  await page.mouse.move(grip.x, grip.y);
+  const tap = flapGlideMs(stack);
+  await page.mouse.down();
+  await page.mouse.up();
+  expect(await tap, 'a tap runs no glide').toBe(-1);
+});
+
 // The hint rides the flap's centre, and a flap pulled out to the sheet's left edge has its centre
 // on that edge: the hint used to sit half off the paper there, over the frame line.
 test('the flip hint stays on the sheet when the flap is pulled out to its edge', async ({ page }) => {
