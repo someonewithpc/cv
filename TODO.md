@@ -252,4 +252,4 @@
 - [x] Animate the Visrez logo layers on the parts that move, not through inherited custom properties, and give the resting logo its own layer (171-PW8) (#251)
 - [x] The drawing note pauses every walkthrough and the deck says PAUSED until it closes (C38) (#286)
 - [x] Colours that only work in one theme: the grab line, the Path layer, the All Together post-it, and the product colours left unnamed (S12) (#302)
-- [ ] Let a plain scroll over a stack start without waiting on the main thread: passive wheel listener, cancelling ones only during a swipe (C3)
+- [x] Let a plain scroll over a stack start without waiting on the main thread: passive wheel listener, cancelling ones only during a swipe (C3) (#243)
