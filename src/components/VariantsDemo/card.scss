@@ -113,9 +113,10 @@ $pip: 1.125rem;
     // The browser's scroll-marker and scroll-button pseudo-elements carry their own focus
     // ring below, but the carousel itself is also a Tab stop (it is the scroll target and
     // the click/drag surface), and the blanket outline: none above left that stop with no
-    // visible ring at all.
+    // visible ring at all. White read as no ring at all against this card's own pale edge —
+    // the brand accent reads in every case instead.
     &:focus-visible {
-      outline: 2px solid #fff;
+      outline: 2px solid $visrez-brand;
       outline-offset: -2px;
     }
 
@@ -167,8 +168,16 @@ $pip: 1.125rem;
         cursor: pointer;
       }
 
-      &::scroll-button(*):not(:disabled):is(:hover, :focus-visible) {
+      &::scroll-button(*):not(:disabled):hover {
         outline: 1px solid rgba(52, 58, 64, 0.75);
+      }
+
+      // `outline` never paints on this pseudo-element in Chrome, which is why a keyboard
+      // walk found these two stops with no ring at all; `box-shadow` paints where outline
+      // does not, so the same 2 px accent ring other demos use shows here too.
+      &::scroll-button(*):not(:disabled):focus-visible {
+        outline: 1px solid rgba(52, 58, 64, 0.75);
+        box-shadow: 0 0 0 2px $visrez-brand;
       }
 
       &::scroll-button(*):disabled {
@@ -217,9 +226,11 @@ $pip: 1.125rem;
         background: color-mix(in srgb, var(--active-pip-color), black 15%);
       }
 
+      // Same `outline`-never-paints gap as the scroll buttons above: five of the six stops
+      // the carousel adds to the Tab order are these markers, each landing with no ring
+      // until this swapped to a box-shadow.
       > .style::scroll-marker:focus-visible {
-        outline: 2px solid #fff;
-        outline-offset: 1px;
+        box-shadow: 0 0 0 2px $visrez-brand;
       }
     }
   }
