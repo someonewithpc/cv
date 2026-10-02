@@ -103,7 +103,13 @@ export function MarkerEditor({
     const sourceMarker = isNewMarker
       ? undefined
       : (storeMarkers.find((m) => m.id === baseMarkerId) ?? storeMarkers.find((m) => m.id === space.markerId));
-    const active = { ...defaultActiveState, ...(deserializeMarker(sourceMarker) ?? {}) };
+    let deserialized: StateType['active'] | null = null;
+    try {
+      deserialized = deserializeMarker(sourceMarker);
+    } catch (error) {
+      console.error('Failed to deserialize marker', sourceMarker, error);
+    }
+    const active = { ...defaultActiveState, ...(deserialized ?? {}) };
     const shapePart = (markers.shape as Record<string, MarkerPart & { center?: Point }>)[active.shape];
     const shapeCenter = shapePart?.center;
 
