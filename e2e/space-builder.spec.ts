@@ -71,6 +71,37 @@ test('main page: A and Escape work from the focused root without an application 
   await expect(app).toHaveAttribute('data-panel', 'closed');
 });
 
+test('main page: typing A or Ctrl+A in an Options field does not close the sidebar', async ({ page }) => {
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  const app = await waitForSceneReady(front);
+  await app.focus();
+  if ((await app.getAttribute('data-panel')) !== 'closed') {
+    await page.keyboard.press('Escape');
+    await expect(app).toHaveAttribute('data-panel', 'closed');
+  }
+
+  // Reach the options sidebar: open the catalog, then confirm a real, layoutable item.
+  await page.keyboard.press('a');
+  await expect(app).toHaveAttribute('data-panel', 'catalog');
+  await app.locator('[data-demo-target="catalog:chair"]').first().dblclick();
+  await expect(app).toHaveAttribute('data-panel', 'options');
+
+  const rows = app.locator('.blocks-of input[placeholder="Rows"]');
+  await rows.click();
+  await rows.press('a');
+  await expect(app).toHaveAttribute('data-panel', 'options');
+  await rows.press('Control+a');
+  await expect(app).toHaveAttribute('data-panel', 'options');
+
+  // The shortcut still works once focus leaves the field.
+  await app.focus();
+  await page.keyboard.press('a');
+  await expect(app).toHaveAttribute('data-panel', 'closed');
+});
+
 test('place page: select-area scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
