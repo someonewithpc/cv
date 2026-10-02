@@ -247,3 +247,4 @@
 - [x] Cache the font picker's page rect per run instead of reading it on every cursor frame (C12) (#254)
 - [x] Keep the playing hint in step with the pointer a hybrid device actually has, not the one it booted with (C54) (#288)
 - [x] Ctrl+Z and Ctrl+Shift+Z undo and redo while focus is in the marker editor, and leave text fields their own undo (C40) (#268)
+- [ ] Animate the Visrez logo layers on the parts that move, not through inherited custom properties, and give the resting logo its own layer (171-PW8)
