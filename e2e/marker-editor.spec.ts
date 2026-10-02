@@ -339,6 +339,43 @@ for (const { name, viewport } of VIEWPORTS) {
   });
 }
 
+test('Ctrl+Z undoes from inside the marker editor but leaves text fields their own undo', async ({ page }) => {
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const island = await waitForIslandMounted(front);
+  const overlay = island.locator('.mock-map-overlay');
+  const pins = overlay.locator('button.space-pin');
+  await expect(pins.first()).toBeVisible({ timeout: 15_000 });
+  const undoToasts = island.locator('.mock-map-toast', { hasText: 'Undo' });
+
+  // Outside the demo the shortcut is left alone.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  // A count, not expect().toHaveCount(0): that retries, and would pass once a toast left.
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(500);
+  expect(await undoToasts.count()).toBe(0);
+
+  await overlay.focus();
+  await expect(page.getByText('Demo paused')).toBeVisible();
+  await pins.first().click();
+  await page.getByRole('option', { name: 'Create new marker' }).click();
+
+  const editor = page.locator('#marker-editor');
+  await expect(editor.getByRole('button', { name: 'Go back' })).toBeFocused();
+  await page.keyboard.press('Control+z');
+  await expect(undoToasts).toHaveCount(1);
+  await expect(undoToasts).toHaveCount(0, { timeout: 10_000 });
+
+  await editor.getByText('Decoration', { exact: true }).click();
+  await editor.getByRole('option', { name: 'Free Text' }).click();
+  const text = editor.locator('#marker-free-text');
+  await text.fill('Hall');
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(500);
+  expect(await undoToasts.count()).toBe(0);
+});
+
 test.describe('with reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
 
