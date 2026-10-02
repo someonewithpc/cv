@@ -186,6 +186,41 @@ for (const { name, viewport } of VIEWPORTS) {
     });
   });
 
+  test.describe(`map credit at ${name} width`, () => {
+    test.use({ viewport });
+
+    test('reads clearly, links to the OSM copyright page, and clears the title block and sheet edges', async ({ page }) => {
+      const stack = markerEditorStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      const front = frontPage(stack, await frontPageIndex(stack));
+      await waitForIslandMounted(front);
+
+      const credit = front.locator('.mock-map-credit a');
+      await expect(credit).toBeVisible();
+      await expect(credit).toHaveText('© OpenStreetMap contributors');
+      await expect(credit).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
+
+      const placement = await credit.evaluate((el) => {
+        const section = el.closest('section')!;
+        const sheet = section.getBoundingClientRect();
+        const map = section.querySelector('.mock-map-demo')!.getBoundingClientRect();
+        const box = el.getBoundingClientRect();
+        const table = section.querySelector('table');
+        const overlapsTitleBlock = table
+          ? box.right > table.getBoundingClientRect().left && box.left < table.getBoundingClientRect().right
+            && box.bottom > table.getBoundingClientRect().top && box.top < table.getBoundingClientRect().bottom
+          : false;
+        return {
+          belowMap: box.top >= map.bottom,
+          clearOfSheetEdges: box.left > sheet.left && box.right < sheet.right
+            && box.top > sheet.top && box.bottom < sheet.bottom,
+          overlapsTitleBlock,
+        };
+      });
+      expect(placement).toEqual({ belowMap: true, clearOfSheetEdges: true, overlapsTitleBlock: false });
+    });
+  });
+
   test.describe(`marker editor dialog at ${name} width`, () => {
     test.use({ viewport });
 
