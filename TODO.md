@@ -214,4 +214,4 @@
 - [x] Cut the document by 100 KB raw and 25 KB brotli: torn edges and the pronunciation clip as files, no inline color-scheme or empty style attributes (P1) (#256)
 - [x] Delete the dead `pageStyle: 'wip'` plumbing and the unreachable no-script hint-arrow rules (C80, C83) (#259)
 - [x] Hovering a marker editor header button changes its margin, border and size and shifts its neighbours (A25) (#296)
-- [ ] A plain tap on the flap after the first gesture runs a 1 s settle glide (C20)
+- [x] A plain tap on the flap after the first gesture runs a 1 s settle glide (C20) (#269)
