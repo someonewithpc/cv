@@ -216,7 +216,23 @@ test('the deck keeps the instruction beside the state', async ({ page }) => {
   await page.goto('/');
   const deck = await playingDeck(markerEditorStack(page));
   await expect(deck.locator('[data-demo-caption]')).toHaveText('AUTO PLAYING');
-  await expect(deck.locator('[data-demo-hint]')).toBeVisible();
+  const hint = deck.locator('[data-demo-hint]');
+  await expect(hint).toBeVisible();
+
+  // Both readings sit in the hint at once; a CSS media query picks one, not a one-time
+  // `matchMedia().matches` read at init, so a hybrid device that gains or loses a pointer
+  // mid-visit still gets the right one (C54).
+  const reading = await hint.evaluate((el) => ({
+    pointerText: el.querySelector('[data-demo-hint-pointer]')?.textContent,
+    touchText: el.querySelector('[data-demo-hint-touch]')?.textContent,
+    pointerShown: getComputedStyle(el.querySelector('[data-demo-hint-pointer]')!).display !== 'none',
+    touchShown: getComputedStyle(el.querySelector('[data-demo-hint-touch]')!).display !== 'none',
+    noHover: matchMedia('(hover: none)').matches,
+  }));
+  expect(reading.pointerText).toBe('hover, tap or tab in to take over');
+  expect(reading.touchText).toBe('tap the sheet to take over');
+  expect(reading.pointerShown).toBe(!reading.noHover);
+  expect(reading.touchShown).toBe(reading.noHover);
 });
 
 /**

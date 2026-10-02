@@ -1165,6 +1165,22 @@ section {
   white-space: nowrap;
 }
 
+/* autoplayStatus.ts writes the playing hint as both readings at once; this picks between
+   them so a hybrid device follows the pointer it currently has. */
+.demo-hint :global([data-demo-hint-touch]) {
+  display: none;
+}
+
+@media (hover: none) {
+  .demo-hint :global([data-demo-hint-pointer]) {
+    display: none;
+  }
+
+  .demo-hint :global([data-demo-hint-touch]) {
+    display: inline;
+  }
+}
+
 /* The same selector as the rule that starts the pulse: a bare .demo-led loses to it on
    specificity and never switches the animation off. */
 @media (prefers-reduced-motion: reduce) {

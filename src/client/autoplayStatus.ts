@@ -55,7 +55,10 @@ const HINT: Record<AutoplayState, string> = {
   off: 'reduced motion is on',
 };
 
-/** No pointer to hover with, so say the half of it a phone can act on. */
+/** No pointer to hover with, so say the half of it a phone can act on. Both strings sit in the
+    hint markup at once; the deck's stylesheet shows one or the other under `@media (hover:
+    none)`, which stays live as a hybrid device gains or loses a pointer. A one-time
+    `matchMedia().matches` read here would freeze on whichever hint the page booted with. */
 const TOUCH_HINT = 'tap the sheet to take over';
 
 /**
@@ -115,7 +118,6 @@ export function initAutoplayStatus(page: HTMLElement) {
   const keys = [...(deck?.querySelectorAll<HTMLButtonElement>('[data-demo-key]') ?? [])];
   if (!deck || !caption || !hint || keys.length === 0) return () => {};
 
-  const touch = window.matchMedia('(hover: none)').matches;
   let source: Element | null = null;
 
   const show = (root: Element, state: string | null) => {
@@ -127,8 +129,22 @@ export function initAutoplayStatus(page: HTMLElement) {
     // A demo that takes no input says so in its own words: data-autoplay-caption-<state>
     // and data-autoplay-hint-<state> on its root.
     caption.textContent = root.getAttribute(`data-autoplay-caption-${state}`) ?? CAPTION[state];
-    hint.textContent = root.getAttribute(`data-autoplay-hint-${state}`)
-      ?? (state === 'playing' && touch ? TOUCH_HINT : HINT[state]);
+    const overrideHint = root.getAttribute(`data-autoplay-hint-${state}`);
+    if (overrideHint) {
+      hint.textContent = overrideHint;
+    } else if (state === 'playing') {
+      // Both readings live in the DOM at once; CSS alone picks one, so it tracks the pointer
+      // the visitor actually has rather than the one the page booted with.
+      const pointer = document.createElement('span');
+      pointer.dataset.demoHintPointer = '';
+      pointer.textContent = HINT.playing;
+      const touch = document.createElement('span');
+      touch.dataset.demoHintTouch = '';
+      touch.textContent = TOUCH_HINT;
+      hint.replaceChildren(pointer, touch);
+    } else {
+      hint.textContent = HINT[state];
+    }
 
     keys.forEach((key) => {
       // Play and pause are toggles; reset is a momentary action and carries no pressed state.
