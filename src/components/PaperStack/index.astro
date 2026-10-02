@@ -1,6 +1,8 @@
 ---
 import flipHint from './assets/flip-hint.svg?raw';
 
+import { deterministicId } from '@/server/deterministicId';
+
 export type Props = {
   /** Tag name for the stack wrapper element. */
   as?: string;
@@ -15,8 +17,10 @@ const { as: tagName = 'div', class: className, pageCount, label } = Astro.props;
 const Tag = tagName;
 
 // One pair of gradients per stack: a page carries its clip wherever the stack goes, and a
-// shared id would leave every clip painted from the first stack's gradient.
-const clipId = crypto.randomUUID().slice(0, 8);
+// shared id would leave every clip painted from the first stack's gradient. Named from the
+// stack's own accessible name and page count, both fixed for a given stack, so the id (and
+// the document's hashes) are the same on every build (#220 C66).
+const clipId = deterministicId(label ?? 'stack', pageCount);
 
 // One gem-clip wire, split at the top bend into its two physical layers. The wire leans with
 // the resting fold-back crease — its outer-right edge runs along that crease, bottoming out at

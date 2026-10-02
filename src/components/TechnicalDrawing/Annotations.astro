@@ -1,5 +1,6 @@
 ---
 import { roundedCorners } from '@/server/svg-utils';
+import { deterministicId } from '@/server/deterministicId';
 
 /**
  * Callouts are authored in artwork units: a tip at (x, y) with |x|, |y| ≤ 1 sits
@@ -23,6 +24,9 @@ type Props = {
    * sheet; landscape has the room and ignores it.
    */
   reach?: number;
+  /** Names this instance for the marker id below; every caller passes a literal
+      unique across the document (its demo and layer, e.g. "paper-stack-pile"). */
+  seed: string;
 };
 
 const {
@@ -31,6 +35,7 @@ const {
   fontSize = 0.1 * scale,
   preserveAspectRatio = 'xMidYMid meet',
   reach = 1.5,
+  seed,
 } = Astro.props as Props;
 
 const vertices = [{ x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 0 }];
@@ -40,7 +45,7 @@ const arrowPathD = roundedCorners(vertices, radius);
 
 // One marker per layer: the same id on every annotated sheet would be a duplicate,
 // and every arrow would draw the first sheet's marker.
-const arrowId = `annotation-rounded-arrow-${crypto.randomUUID().slice(0, 8)}`;
+const arrowId = `annotation-rounded-arrow-${deterministicId(seed)}`;
 ---
 
 {/* The overlay below is the no-script placement. Stack.astro's script runs

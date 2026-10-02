@@ -4,6 +4,7 @@ import { Icon } from 'astro-icon/components';
 import TechIcon from '@/components/TechIcon.astro';
 
 import { resolveTechs } from '@/server/tech-icons';
+import { deterministicId } from '@/server/deterministicId';
 
 import { transportKeyArtId, transportKeys } from './transport-keys';
 
@@ -37,7 +38,9 @@ const {
 
 const techs = resolveTechs(tech);
 
-const noteId = `drawing-note-${crypto.randomUUID().slice(0, 8)}`;
+// Named from the stack's subtitle and this page's own index, both unique within the
+// document, so the id (and the document's hashes) are the same on every build (#220 C66).
+const noteId = `drawing-note-${deterministicId(subtitle ?? title ?? 'page', index ?? 0)}`;
 
 /* The fold is the note's own corner peeking out from under the sheet, so it
    wears the note's paper color. The slot arrives pre-rendered (Stack.astro
@@ -173,6 +176,15 @@ const sheetAnchor = `--${noteId}-sheet`;
 
 @use "@/scss/_colors.scss" as colors;
 @use "@/scss/_kbd.scss" as kbd;
+
+/* A sine hash standing in for math.random(): the same $i/$j always lands on the same
+   fractional part of a wildly oscillating sine, so the build is reproducible and the two
+   calls below (different $a/$b/$scale) land far apart in [-1, 1] rather than mirroring
+   each other when $i and $j are swapped. */
+@function seeded-jitter($i, $j, $a, $b, $scale) {
+  $x: math.sin($i * $a + $j * $b) * $scale;
+  @return ($x - math.floor($x)) * 2 - 1;
+}
 
 /* Off the paper but still in the page: the shapes that letter the state onto the
    drawing keep the live region for a screen reader and say nothing twice. */
@@ -1006,8 +1018,8 @@ section {
   @for $i from 1 through 2 {
     @for $j from 1 through 5 {
       &:nth-child(#{$i}) td:nth-child(#{$j}) {
-        --random1: #{math.random() * 2 - 1};
-        --random2: #{math.random() * 2 - 1};
+        --random1: #{seeded-jitter($i, $j, 12.9898, 78.233, 43758.5453)};
+        --random2: #{seeded-jitter($i, $j, 39.3463, 11.9898, 29973.1543)};
       }
     }
   }

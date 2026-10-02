@@ -25,7 +25,7 @@ const dots = [0, 1, 2, 3];
 <div class="wrapper">
   <p class="point typewriter">The stack without JavaScript</p>
 
-  <Annotations scale={annotationScale} reach={1}>
+  <Annotations seed="paper-stack-row" scale={annotationScale} reach={1}>
     <svg class="row-drawing" viewBox="-70 -22 410 172" slot="content" aria-hidden="true">
       {/* The neighbours, past the row's edges and out of view. */}
       <rect class="ghost" data-part="prev" x={row.x - gap - row.w} y={row.y} width={row.w} height={row.h} rx="3" />
