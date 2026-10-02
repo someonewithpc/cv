@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { waitForEveryStackMounted } from '../e2e/support/paperStack';
+
 const THEMES = ['light', 'dark', 'arctic', 'dark-forest'];
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
@@ -33,13 +35,10 @@ for (const viewport of VIEWPORTS) {
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
         // Scan the page a reader would have in front of them: every stack booted, every
-        // island mounted. Same settle as e2e/home.spec.ts.
+        // island mounted.
         const stacks = page.locator('article.technical-drawing-stack');
         expect(await stacks.count(), 'the page shows no demo stack').toBeGreaterThan(0);
-        for (const stack of await stacks.all()) {
-          await stack.scrollIntoViewIfNeeded();
-        }
-        await page.waitForTimeout(2000);
+        await waitForEveryStackMounted(page);
 
         // axe's defaults leave WCAG 2.2 out, and with it target-size (2.5.8).
         const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();

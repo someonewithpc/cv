@@ -182,6 +182,21 @@ export async function waitForIslandMounted(page: Locator, selector = '[data-moun
   return island;
 }
 
+/**
+ * Centres every demo stack in turn and waits for its front page island, if it has one, to mount.
+ * pageIsland.ts marks every host `data-mounted="pending"` at registration, so a page with no
+ * island is told apart from one still waiting to come on screen.
+ */
+export async function waitForEveryStackMounted(page: Page): Promise<void> {
+  for (const stack of await page.locator('article.technical-drawing-stack').all()) {
+    await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    const front = frontPage(stack, await frontPageIndex(stack));
+    const island = front.locator('[data-mounted]').first();
+    if ((await island.count()) === 0) continue;
+    await expect(island).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
+  }
+}
+
 type CountedCanvas = HTMLCanvasElement & { __draws?: number };
 
 /**

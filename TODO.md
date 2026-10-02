@@ -266,3 +266,4 @@
 - [x] Match the tagging tool's wood base object's table colour casing to its variants' (C53) (#285)
 - [x] Add a print stylesheet: no desk, no theme picker, every page of each stack down the page, contributions open, light theme, links as text (S21) (#261)
 - [x] Take container-unit type out of the drawing stacks, the pattern that froze Chrome for 20 s (S5) (#244)
+- [ ] home, svg-aria and a11y scroll every stack then wait a fixed 2 s instead of its mount (E17)

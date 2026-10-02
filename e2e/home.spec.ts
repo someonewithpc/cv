@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { waitForEveryStackMounted } from './support/paperStack';
+
 test('loads the homepage with no console errors and every demo titled', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (msg) => {
@@ -24,10 +26,7 @@ test('loads the homepage with no console errors and every demo titled', async ({
   // Give every stack a chance to reach the viewport and boot its islands before checking
   // for errors — a mid-boot exception would otherwise land after this listener stopped
   // being interesting to the test, not before.
-  for (const stack of await stacks.all()) {
-    await stack.scrollIntoViewIfNeeded();
-  }
-  await page.waitForTimeout(2000);
+  await waitForEveryStackMounted(page);
 
   expect(errors, `console errors on load:\n${errors.join('\n')}`).toEqual([]);
 });
