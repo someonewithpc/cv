@@ -7,6 +7,10 @@ import mapUrl from './map.svg?url';
   <img class="mock-map-svg" src={mapUrl} width="800" height="800" alt="" decoding="async" loading="lazy" />
   <div class="mock-map-island" data-mock-map-island></div>
 </div>
+{/* The map tiles are OSM-derived (ODbL); the in-image credit was too small to read, so the real one lives here instead. */}
+<p class="mock-map-credit">
+  <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
+</p>
 
 <script>
 import { bootIslands } from '@/client/pageIsland';
@@ -78,6 +82,25 @@ $mock-map-width: drawing.$artwork-width * 1.75;
   .mock-map-island {
     position: absolute;
     inset: 0;
+  }
+}
+
+.mock-map-credit {
+  max-width: 100%;
+  margin: 0.4em 0 0;
+  font-size: 0.625em;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--ink-faint);
+
+  // Follows the map's own shift to the datum edge once the title block takes
+  // the corner back (see .mock-map-demo above).
+  @container technical-drawing-width (max-width: 56em) {
+    margin-right: auto;
+  }
+
+  a {
+    color: var(--accent-text);
   }
 }
 </style>

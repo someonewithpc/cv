@@ -222,7 +222,6 @@ function buildSvg(data, opts) {
     <text x="${round(tokyoStation.x)}" y="${round(tokyoStation.y)}" font-size="12" font-weight="500" fill="#a39e92">とうきょうえき<tspan x="${round(tokyoStation.x)}" dy="1.15em" font-size="10" font-weight="500" fill="#b0aaa0">Tokyo Station</tspan></text>
     <text x="${round(tokyo.x)}" y="${round(tokyo.y)}" font-size="17" font-weight="600" letter-spacing="0.12em" fill="#8f897d">とうきょう<tspan x="${round(tokyo.x)}" dy="1.2em" font-size="11" font-weight="500" letter-spacing="0.04em" fill="#a39e92">Tokyo</tspan></text>
   </g>
-  <text x="12" y="${height - 12}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#b0aaa0" text-anchor="start">© OpenStreetMap</text>
 </svg>
 `;
 }
