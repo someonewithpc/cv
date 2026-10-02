@@ -205,4 +205,4 @@
 - [x] Paint text with --accent-text instead of --accent, and give the diff add/remove colours per-theme values that clear 4.5:1 on Dark and Forest paper (A23) (#265)
 - [x] Show the "3D scene unavailable" cover when the chair GLB fails to load, instead of an empty scene that never starts (C31) (#271)
 - [x] Show the "3D scene unavailable" cover on the five Space Builder pages while the WebGL context is lost (C30) (#271)
-- [ ] Share one fetch and parse of chair.glb across the Space Builder and Drag and Drop scene apps, each cloning the parsed result (P14)
+- [x] Share one fetch and parse of chair.glb across the Space Builder and Drag and Drop scene apps, each cloning the parsed result (P14) (#249)
