@@ -666,7 +666,7 @@ const onFoldDrag = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // paused — animations outrank inline styles in the cascade, and a paused one still forces its
   // own value — and the fan closes up behind the drag. Neither may repeat per frame: cancelling
   // again would also cancel the rotate *transition* the un-splay rides on, snapping the fan
-  // shut one frame after this very handler eased it. settleFold keys off the class to know
+  // shut one frame after this very handler eased it. releaseFold keys off the class to know
   // whether a grab ever became a drag, so it must be added here and not at the grab.
   if (!fold.classList.contains('paper-fold--active')) {
     markInHand(fold, true);
@@ -1676,8 +1676,10 @@ const shouldFlip = (sheet: HTMLElement, coast: Vec | null): boolean => {
 };
 
 const releaseFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, canceled: boolean, thrown: Throw | null): (() => void) => {
-  // A grab that never dragged left the animations alone, so there is nothing to hand back
-  if (sheet.style.getPropertyValue('--fold-x') === '') return () => {};
+  // A grab that never dragged left the animations alone, so there is nothing to hand back. The
+  // class, not the inline --fold-x: once a gesture has rested, restIdleFold keeps that set for
+  // good, and a tap would run the whole settle glide back to where the fold already lies.
+  if (!fold.classList.contains('paper-fold--active')) return () => {};
 
   const speed = thrown ? thrown.speed : 0;
   const hasBack = sheet.parentElement!.childElementCount > 1;
