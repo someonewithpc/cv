@@ -37,7 +37,13 @@ const columns = [
       <div class="compare">
         {columns.map(({ title, result, note }, index) => (
           <>
-            {index > 0 && <span class="arrow">+ filter →</span>}
+            {index > 0 && (
+              <span class="arrow">
+                + filter
+                <span class="glyph-across" aria-hidden="true">→</span>
+                <span class="glyph-down" aria-hidden="true">↓</span>
+              </span>
+            )}
             <div class="column">
               <h3>{title}</h3>
               <ol>
@@ -69,7 +75,7 @@ const columns = [
         </div>
         <div>
           <dt>Options</dt>
-          <dd>A property filter offers the values already stored for it, so it never offers one that matches nothing</dd>
+          <dd>A property filter offers the values already stored for it, so on its own it never offers one that matches nothing</dd>
         </div>
       </dl>
     </div>
@@ -127,6 +133,22 @@ header {
   font-size: 0.75em;
   color: var(--ink-muted);
   white-space: nowrap;
+
+  .glyph-down {
+    display: none;
+  }
+
+  /* A portrait sheet stacks the columns, so the arrow has to point down the page
+     instead of across it. */
+  :global([data-sheet-orientation='portrait']) & {
+    .glyph-across {
+      display: none;
+    }
+
+    .glyph-down {
+      display: inline;
+    }
+  }
 }
 
 .column {
