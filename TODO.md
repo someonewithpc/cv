@@ -242,3 +242,4 @@
 - [x] Rethrow anything the library search's `send()` catches that is not an AbortError (C51) (#284)
 - [x] Selection state reaches assistive tech: layout chips, HoverSelect options, placeholder cards, the Badge play toggle, the listener table (A11) (#301)
 - [x] Every OptionsPanel input has its own name, the seat-count error is tied to its input, no div sits in a label or button (A27) (#301)
+- [ ] Shrink the lodash the marker editor's store pulls into the serialization chunk: per-function imports and local helpers for the trivial ones (P4 lodash part)

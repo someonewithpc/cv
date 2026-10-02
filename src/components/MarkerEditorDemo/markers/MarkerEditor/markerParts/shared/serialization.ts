@@ -3,7 +3,8 @@ import '../../../client-only';
 import { createElement } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
-import { camelCase, snakeCase, partition } from 'lodash';
+import camelCase from 'lodash-es/camelCase';
+import snakeCase from 'lodash-es/snakeCase';
 
 import { dataUrlToSvg, svgToDataUrl } from '../../../../store';
 import type { MarkerType, SpaceType } from '../../../../store';
@@ -13,6 +14,16 @@ import { markers } from '..';
 import type { StateType } from '..';
 
 import { Point } from './Point';
+
+/** Splits `items` on `predicate`: truthy first, falsey second. */
+function partition<T>(items: readonly T[], predicate: (item: T) => boolean): [T[], T[]] {
+  const pass: T[] = [];
+  const fail: T[] = [];
+  for (const item of items) {
+    (predicate(item) ? pass : fail).push(item);
+  }
+  return [pass, fail];
+}
 
 class Json {
   #value: object | undefined = undefined;

@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
-import { type DebouncedFunc, debounce } from "lodash";
+import { type DebouncedFunc, debounce } from "./debounce";
 
 import type { SpaceType } from '../../../../store';
 

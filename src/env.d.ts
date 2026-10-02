@@ -3,6 +3,19 @@
 
 declare module 'path-data-polyfill';
 
+// lodash-es ships no types and @types/lodash-es isn't a dependency; the deep
+// paths resolve at runtime, so borrow the signatures @types/lodash already
+// has for the bare package.
+declare module 'lodash-es/camelCase' {
+  import { camelCase } from 'lodash';
+  export default camelCase;
+}
+
+declare module 'lodash-es/snakeCase' {
+  import { snakeCase } from 'lodash';
+  export default snakeCase;
+}
+
 declare module '/@react-refresh' {
   const runtime: {
     injectIntoGlobalHook: (env: Window) => void;

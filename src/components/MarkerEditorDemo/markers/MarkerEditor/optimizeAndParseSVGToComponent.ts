@@ -1,5 +1,5 @@
 import { createElement, type ReactNode } from 'react';
-import { camelCase } from 'lodash';
+import camelCase from 'lodash-es/camelCase';
 import cx from 'classnames';
 
 function parseInlineStyle(rawStyle: string | null): Record<string, string> {
