@@ -60,9 +60,9 @@ const ts = (code: string) => highlightSpans(code, 'ts');
         <code class="line rule indent" set:html={source} />
       </div>
       <p class="caption">
-        The worker follows every <code>link</code> and <code>@import</code>. Each
-        <code>src</code> is made absolute and sent back through the proxy, because loading a
-        webfont is CORS-checked too
+        The browser follows every <code>link</code> and <code>@import</code>, fetching each
+        one through the proxy in turn. Each <code>src</code> is made absolute and sent back
+        through the proxy too, because loading a webfont is CORS-checked as well
       </p>
     </div>
 
