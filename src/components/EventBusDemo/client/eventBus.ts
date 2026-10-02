@@ -1,6 +1,5 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
-import { watchDrawingNote } from '@/client/drawingNote';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 import { settledResizeObserver } from '@/client/settledResize';
 import { watchHandover } from '@/client/walkthroughHandover';
@@ -296,7 +295,6 @@ function restore(bus: Bus) {
 
 type Player = {
   setActive: (active: boolean) => void;
-  setNoteOpen: (open: boolean) => void;
 };
 
 /**
@@ -326,7 +324,6 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
 
   let token = 0;
   let active = false;
-  let noteOpen = false;
   /** The deck's pause key: no quiet spell brings the walkthrough back, only its play key. */
   let held = false;
   /** A mouse or pen resting on the demo keeps it: the quiet spell starts once it has left. */
@@ -425,7 +422,7 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     }, 320);
   }
 
-  const canPlay = () => active && !noteOpen && !held && !handover.userControl && !reducedMotion(bus.root);
+  const canPlay = () => active && !held && !handover.userControl && !reducedMotion(bus.root);
 
   function start() {
     if (reducedMotion(bus.root)) {
@@ -450,9 +447,9 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     },
     handBack() {
       if (held || pointerOver || reducedMotion(bus.root)) return false;
-      // Off screen or under the note the deck keeps saying manual until setActive or
-      // setNoteOpen starts the walkthrough, which reports playing itself.
-      if (active && !noteOpen) void play();
+      // Off screen the deck keeps saying manual until setActive starts the
+      // walkthrough, which reports playing itself.
+      if (active) void play();
       return true;
     },
   });
@@ -499,11 +496,6 @@ function createPlayer(bus: Bus, host: HTMLElement): Player {
     setActive(value) {
       active = value;
       if (value && !(playing && live(playing))) start();
-    },
-    setNoteOpen(value) {
-      noteOpen = value;
-      if (value) stop();
-      else start();
     },
   };
 }
@@ -564,9 +556,7 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
 
   root.dataset.ready = 'true';
   const player = createPlayer(bus, host);
-  const page = host.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? host;
   bus.gate.onChange((active) => player.setActive(active));
-  watchDrawingNote(page, (open) => player.setNoteOpen(open));
   if (reducedMotion(root)) {
     reportAutoplayState(root, 'paused');
     void runDispatch(bus);
