@@ -35,7 +35,7 @@ test('main page: the walkthrough holds still while a native colour picker has fo
 
   await expect(swatch).toBeFocused();
   await expect(page.locator('.mock-map-demo-cursor')).toHaveCount(0);
-  await expect(page.getByText('Demo playing · move to take over')).toHaveCount(0);
+  await expect(page.getByText('Demo playing · touch or move to take over')).toHaveCount(0);
 });
 
 test('main page: the on-page picker opens on a press of the swatch and closes on the ways out', async ({ page }) => {

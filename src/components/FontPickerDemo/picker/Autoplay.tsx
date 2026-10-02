@@ -83,7 +83,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       reportAutoplayState(el, 'playing');
       if (noteOpen || controller.running) return;
       controller.start();
-      toast(message ?? (everPlayed ? 'Demo resumed' : 'Demo playing · move to take over'));
+      toast(message ?? (everPlayed ? 'Demo resumed' : 'Demo playing · touch or move to take over'));
       everPlayed = true;
     };
 

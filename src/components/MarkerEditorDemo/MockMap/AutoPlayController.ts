@@ -214,7 +214,7 @@ export function undoRedoShortcut(action: 'Undo' | 'Redo'): DemoToastPayload {
 }
 
 export const autoplayStartedToast = (): DemoToastPayload => ({
-  action: 'Demo playing · move to take over',
+  action: 'Demo playing · touch or move to take over',
 });
 
 export const autoplayPausedToast = (): DemoToastPayload => ({

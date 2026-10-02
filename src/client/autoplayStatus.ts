@@ -49,7 +49,7 @@ const CAPTION: Record<AutoplayState, string> = {
 };
 
 const HINT: Record<AutoplayState, string> = {
-  playing: 'hover or tap the sheet to take over',
+  playing: 'hover or tab in to take over',
   user: 'press play to hand back',
   paused: 'reduced motion is on, press play to watch',
   off: 'reduced motion is on',

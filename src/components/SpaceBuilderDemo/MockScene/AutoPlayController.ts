@@ -41,7 +41,7 @@ export type DemoUiHandler = (patch: {
 }) => void;
 
 export const autoplayStartedToast = (): DemoToastPayload => ({
-  action: 'Demo playing · move to take over',
+  action: 'Demo playing · take over anytime',
 });
 
 export const autoplayPausedToast = (): DemoToastPayload => ({
