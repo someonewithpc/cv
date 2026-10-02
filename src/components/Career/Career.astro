@@ -49,6 +49,8 @@ const at = (edge: Edge, end = false): number => {
 /* The day of the build, where the learning line and a job still going end. */
 const today = new Date();
 const NOW = today.getFullYear() + (today.getMonth() + (today.getDate() - 1) / 31) / 12;
+/* A job still going counts the current month in full, so it ends with that month. */
+const MONTH_END = today.getFullYear() + (today.getMonth() + 1) / 12;
 
 type Job = Entry & {
   n: string;
@@ -67,7 +69,7 @@ type Job = Entry & {
 const jobs: Job[] = experience
   .map((entry, index) => {
     const start = at(entry.from);
-    const end = entry.to ? at(entry.to, true) : NOW;
+    const end = entry.to ? at(entry.to, true) : MONTH_END;
     const seasonal = entry.from.label.startsWith('Summer');
     const months = Math.max(1, Math.round((end - start) * 12));
     const span = seasonal
@@ -160,7 +162,7 @@ jobs.unshift({
   n: 'A',
   open: true,
   start: Number(learning.from),
-  end: NOW,
+  end: MONTH_END,
   seasonal: false,
   span: `since ${learning.from}`,
   lane: -1,

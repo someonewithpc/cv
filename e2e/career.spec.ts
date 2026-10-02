@@ -21,9 +21,9 @@ const at = ({ date, label }: Edge, end = false) => {
   return year + (label.startsWith('Summer') ? (end ? 0.7 : 0.45) : end ? 1 : 0);
 };
 
-/** Where a job ends: a job still going runs to the day of the build, taken as today. */
+/** Where a job ends: a job still going runs to the end of the current month. */
 const today = new Date();
-const until = (to?: Edge) => (to ? at(to, true) : today.getFullYear() + (today.getMonth() + (today.getDate() - 1) / 31) / 12);
+const until = (to?: Edge) => (to ? at(to, true) : today.getFullYear() + (today.getMonth() + 1) / 12);
 
 /** How far a job's bar, or the pieces of a broken one, reach along the time axis. */
 const extent = (bars: SVGGraphicsElement[]) => {
