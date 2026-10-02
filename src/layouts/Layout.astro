@@ -155,8 +155,10 @@ const skipScript = `(() => {
 <style lang="scss" is:global>
 @use "@/scss/_page-column.scss" as column;
 @use "@/scss/_code.scss" as code;
+@use "@/scss/_print.scss" as print;
 
 @include code.code-highlight;
+@include print.rules;
 
 /* No list-markers by default, since lists are used more often for semantics */
 ul, ol {

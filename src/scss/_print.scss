@@ -1,0 +1,112 @@
+// Printed output: no desk, no theme picker, no transport decks or hint arrows, the light
+// paper theme on every sheet whatever the picker had set, every page of a stack down the
+// page instead of fanned in one grid cell, the contributions open, and links as plain text.
+@mixin rules {
+  @media print {
+    #theme-picker,
+    #theme-picker-transition-background,
+    .folio-rail,
+    .skip-nav,
+    .demo-transport,
+    .flip-hints,
+    .paper-fold,
+    .paper-back-grab,
+    .paper-clip,
+    .paper-clip-under,
+    .paper-flip-hint,
+    .sheet-probe {
+      display: none !important;
+    }
+
+    // The light theme's own seeds (ThemePicker.astro's base :root block), forced over
+    // whichever theme's data-theme attribute or prefers-color-scheme picked.
+    :root {
+      --theme-canvas: oklch(0.97 0.011 85) !important;
+      --theme-ink: oklch(0.24 0.025 260) !important;
+      --theme-accent: oklch(0.7 0.13 65) !important;
+      --theme-blueprint: oklch(0.622 0.121 254) !important;
+      --theme-paper: oklch(1 0 90) !important;
+      --theme-paper-grain: 0.45 !important;
+      --theme-paper-sheet-grain: 0.48 !important;
+      --theme-paper-blend: multiply !important;
+      --theme-paper-invert: 0 !important;
+      --theme-mode: light !important;
+      --theme-kind: light !important;
+      color-scheme: light !important;
+    }
+
+    body {
+      color-scheme: light !important;
+    }
+
+    // No desk: the sheets print on plain paper, one above the next, and the card lane never
+    // opens (Layout.astro only gives it room from 105rem).
+    main {
+      --card-display: none !important;
+
+      &#main {
+        display: block !important;
+        background: none !important;
+        padding: 0 !important;
+
+        > * {
+          max-width: none !important;
+          margin: 0 0 1rem !important;
+          padding: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+          background: none !important;
+        }
+      }
+    }
+
+    .cutting-mat {
+      display: block !important;
+      width: auto !important;
+      background: none !important;
+      border: none !important;
+      padding: 0 !important;
+
+      &::before {
+        display: none !important;
+      }
+    }
+
+    // Every page of a stack in turn, down the page: break the grid cell every page shares
+    // (PaperStack/index.astro) and the splay, the turn and the folded corner's clip-path
+    // that make the pile read as one sheet on screen.
+    [data-paper-stack-root][data-paper-stack] {
+      display: block !important;
+      margin-bottom: 0 !important;
+
+      > div {
+        display: block !important;
+        position: static !important;
+        order: 0 !important;
+        rotate: none !important;
+        translate: none !important;
+        transform: none !important;
+        margin: 0 0 1.5rem !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+
+        > * {
+          clip-path: none !important;
+        }
+      }
+    }
+
+    // The contributions read open: a row's note prints under it instead of staying behind
+    // a disclosure triangle nobody can click on paper.
+    #open-source details::details-content {
+      content-visibility: visible !important;
+      block-size: auto !important;
+    }
+
+    // Nothing on paper is a hyperlink.
+    a {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+  }
+}
