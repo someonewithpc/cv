@@ -204,3 +204,4 @@
 - [x] Take the boot scripts' forced style and layout off a throttled phone's load path: the page animation hold, the pulse lookup, the flip hint layout and the fonts.ready read (P17, C5) (#250)
 - [x] Paint text with --accent-text instead of --accent, and give the diff add/remove colours per-theme values that clear 4.5:1 on Dark and Forest paper (A23) (#265)
 - [ ] Show the "3D scene unavailable" cover when the chair GLB fails to load, instead of an empty scene that never starts (C31)
+- [ ] Show the "3D scene unavailable" cover on the five Space Builder pages while the WebGL context is lost (C30)

@@ -159,6 +159,10 @@ onMounted(async () => {
       onSnapshot: () => {
         arrows?.sync();
       },
+      // A lost context leaves a blank canvas; show the sheet's fallback until it comes back.
+      onContextLost: (lost) => {
+        loadError.value = lost;
+      },
     });
     scene.pause();
     registerSpaceBuilderGpu(scene);

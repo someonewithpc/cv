@@ -54,6 +54,7 @@ const seatsInvalid = ref(false);
 let inView = false;
 let userControl = false;
 let chairsReady = false;
+let chairFailed = false;
 let autoplayToken = 0;
 /** Off screen, under another page or in a hidden tab, the walkthrough's waits hold it where it stands. */
 let pageGate: DemoGate | null = null;
@@ -335,6 +336,15 @@ onMounted(async () => {
         snapshot.value = next;
         updateSeatsInvalid(next);
       },
+      // A lost context leaves a blank canvas; show the sheet's fallback until it comes back.
+      onContextLost: (lost) => {
+        loadError.value = lost || chairFailed;
+        if (!lost) startAutoplay();
+        else {
+          autoplayToken += 1;
+          demoPlaying.value = false;
+        }
+      },
     });
     scene.pause();
     registerSpaceBuilderGpu(scene);
@@ -364,6 +374,7 @@ onMounted(async () => {
       if (inView) startAutoplay();
     }).catch((error) => {
       console.debug('Parameters scene chair failed to load', error);
+      chairFailed = true;
       loadError.value = true;
     });
 

@@ -136,6 +136,7 @@ let userControl = false;
 /** Whether a real pointer is resting on the demo. The walkthrough stays down while it is. */
 let pointerOver = false;
 let chairsReady = false;
+let chairFailed = false;
 let autoplayToken = 0;
 /** Off screen, under another page or in a hidden tab, the walkthrough's waits hold it where it stands. */
 let pageGate: DemoGate | null = null;
@@ -978,7 +979,7 @@ onMounted(async () => {
       labelHost,
       // A lost context leaves a blank canvas; show the sheet's fallback until it comes back.
       onContextLost: (lost) => {
-        loadError.value = lost;
+        loadError.value = lost || chairFailed;
         if (lost) stopAutoplay();
         else if (inView) startAutoplay();
       },
@@ -1000,6 +1001,7 @@ onMounted(async () => {
       if (inView) startAutoplay();
     }).catch((error) => {
       console.debug('Drag and drop scene chair failed to load', error);
+      chairFailed = true;
       loadError.value = true;
     });
 

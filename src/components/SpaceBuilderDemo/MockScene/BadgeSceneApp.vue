@@ -41,6 +41,7 @@ let pinch: PinchState | null = null;
 
 let inView = false;
 let noteOpen = false;
+let chairFailed = false;
 let orbitRaf = 0;
 let lastFrameTime: number | null = null;
 
@@ -219,7 +220,16 @@ onMounted(async () => {
     });
 
     prepareSpaceBuilderGpu();
-    const scene = new SpaceBuilderScene({ canvas, labelHost });
+    const scene = new SpaceBuilderScene({
+      canvas,
+      labelHost,
+      // A lost context leaves a blank canvas; show the sheet's fallback until it comes back.
+      onContextLost: (lost) => {
+        loadError.value = lost || chairFailed;
+        if (lost) stopOrbitLoop();
+        else applyOrbitState();
+      },
+    });
     scene.pause();
     registerSpaceBuilderGpu(scene);
     sceneRef.value = scene;
@@ -247,6 +257,7 @@ onMounted(async () => {
       syncMetrics();
     }).catch((error) => {
       console.debug('Badge scene chair failed to load', error);
+      chairFailed = true;
       loadError.value = true;
     });
 

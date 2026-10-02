@@ -83,6 +83,7 @@ const controllerRef = shallowRef<AutoPlayController | null>(null);
 
 const ready = ref(false);
 const chairsReady = ref(false);
+let chairFailed = false;
 const selectedCatalogId = ref('chair');
 // Bump to remount CatalogPanel (clears its internal search box) when Add reopens.
 const catalogPanelKey = ref(0);
@@ -677,6 +678,12 @@ onMounted(async () => {
       onSnapshot: (next) => {
         snapshot.value = next;
       },
+      // A lost context leaves a blank canvas; show the sheet's fallback until it comes back.
+      onContextLost: (lost) => {
+        loadError.value = lost || chairFailed;
+        if (lost) controllerRef.value?.pause();
+        else if (inView.value && !userControl.value && chairsReady.value) controllerRef.value?.resume();
+      },
     });
     // Stay paused until the carousel page is in view — avoids WebGL work during boot.
     scene.pause();
@@ -714,6 +721,7 @@ onMounted(async () => {
       })
       .catch((error) => {
         console.debug('Space Builder demo chair failed to load', error);
+        chairFailed = true;
         loadError.value = true;
       });
 
