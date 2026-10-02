@@ -265,4 +265,4 @@
 - [x] Safari draws every paper stack with its last page on top, since WebKit paints rotated pages in DOM order and ignores `order` (#320)
 - [x] Match the tagging tool's wood base object's table colour casing to its variants' (C53) (#285)
 - [x] Add a print stylesheet: no desk, no theme picker, every page of each stack down the page, contributions open, light theme, links as text (S21) (#261)
-- [ ] Take container-unit type out of the drawing stacks, the pattern that froze Chrome for 20 s (S5)
+- [x] Take container-unit type out of the drawing stacks, the pattern that froze Chrome for 20 s (S5) (#244)
