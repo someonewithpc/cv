@@ -1109,8 +1109,12 @@ export const isFoldPulse = (animation: Animation): boolean =>
 
 const stillStacks = new WeakSet<HTMLElement>();
 
+// Asked of the layers themselves, the sheet's children, rather than of the sheet's whole subtree:
+// that walk went through every animation on the page to find these three. The shade runs on
+// the clip's ::after, which only a subtree query reports, and the clip holds nothing else.
 const sheetPulses = (sheet: HTMLElement): Animation[] =>
-  sheet.getAnimations({ subtree: true }).filter(isFoldPulse);
+  [...sheet.children].flatMap((layer) =>
+    layer.getAnimations({ subtree: layer.classList.contains('paper-clip') })).filter(isFoldPulse);
 
 const pulsesOf = (stack: HTMLElement): Animation[] =>
   [...stack.querySelectorAll<HTMLElement>('.paper-front')].flatMap(sheetPulses);
@@ -1131,8 +1135,19 @@ const retirePulse = (sheet: HTMLElement): void => {
 // under way: an animation that has only just started has no start time yet, and
 // the frames before it gets one would come off its clock. Run or held through play() and
 // pause(), which overrule the CSS play state from then on.
-const alignPulse = (stack: HTMLElement, running = !stillStacks.has(stack) && !isResizeHeld()): void => {
-  const pulses = pulsesOf(stack);
+// Every stack's layers are read before any is run or held: asking for an animation resolves
+// style, and a stack written in between made that a whole-document resolve per stack on load.
+const alignPulses = (stacks: HTMLElement[], running?: boolean): void => {
+  const reads = stacks.map((stack) => ({
+    pulses: pulsesOf(stack),
+    running: running ?? (!stillStacks.has(stack) && !isResizeHeld()),
+  }));
+  for (const { pulses, running } of reads) syncClocks(pulses, running);
+};
+
+const alignPulse = (stack: HTMLElement, running?: boolean): void => alignPulses([stack], running);
+
+const syncClocks = (pulses: Animation[], running: boolean): void => {
   for (const pulse of pulses) {
     if (running) pulse.play();
     else pulse.pause();
@@ -1194,21 +1209,27 @@ const watchStackReveal = (stack: HTMLElement): void => {
   });
 };
 
+// A margin so the pulse is already running by the time the stack is actually looked at,
+// rather than starting under the reader's eye as it crosses the viewport edge. One observer for
+// every stack, so the first pass on load is one callback that reads them all, then writes.
+let pulseObserver: IntersectionObserver | undefined;
+
 const watchStackPulse = (stack: HTMLElement): void => {
-  // A margin so the pulse is already running by the time the stack is actually looked at,
-  // rather than starting under the reader's eye as it crosses the viewport edge.
-  const observer = new IntersectionObserver((entries) => {
+  pulseObserver ??= new IntersectionObserver((entries) => {
+    const stacks = new Set<HTMLElement>();
     for (const entry of entries) {
-      if (entry.isIntersecting) stillStacks.delete(stack);
-      else stillStacks.add(stack);
-      alignPulse(stack);
+      const target = entry.target as HTMLElement;
+      if (entry.isIntersecting) stillStacks.delete(target);
+      else stillStacks.add(target);
+      stacks.add(target);
     }
+    alignPulses([...stacks]);
   }, { rootMargin: '25%' });
   onResizeHold((holding) => {
     if (stillStacks.has(stack)) return;
     alignPulse(stack, !holding);
   });
-  observer.observe(stack);
+  pulseObserver.observe(stack);
 };
 
 // Puts a front page's fold back in its resting idle state: the dog-ear held at the reveal size
