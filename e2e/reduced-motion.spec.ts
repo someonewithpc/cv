@@ -90,6 +90,19 @@ test('a demo waits paused, plays at full motion on play, and pause puts it back'
   await expect(drawing).not.toHaveAttribute('data-full-motion');
 });
 
+test('schemaDef resumes its walk once reduced motion is turned off', async ({ page }) => {
+  await page.goto('/');
+  const stack = demoStack(page, 'schemaDef → Doctrine Metadata');
+  await stack.scrollIntoViewIfNeeded();
+  const sheet = frontPage(stack, await frontPageIndex(stack));
+  const root = sheet.locator('[data-schemadef]');
+  await expect(root).toHaveAttribute('data-enhanced', 'true', { timeout: 15_000 });
+  await expect(root).toHaveAttribute('data-autoplay-state', 'paused');
+
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(root).toHaveAttribute('data-autoplay-state', 'playing', { timeout: 5_000 });
+});
+
 // The two sheets whose artwork holds still at every setting: nothing on them to play.
 const NO_DECK = ['web-ts-mode', 'Paper Stack'];
 
