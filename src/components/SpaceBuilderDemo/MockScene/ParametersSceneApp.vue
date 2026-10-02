@@ -466,14 +466,9 @@ onBeforeUnmount(() => {
 
       <p v-if="demoPlaying" class="flash" role="status">{{ autoplayStartedToast().action }}</p>
 
-      <div v-if="ready && !loadError" class="controls">
-        <button type="button" class="restart-btn" @click="restartDemo">
-          Restart
-        </button>
-        <p class="hint">
-          Orbit to look around · edit the sidebar to take over
-        </p>
-      </div>
+      <p v-if="ready && !loadError" class="hint">
+        Orbit to look around · edit the sidebar to take over
+      </p>
     </div>
 
     <aside class="sidebar" aria-label="Options" @pointerdown="yieldToUser" @focusin="yieldToUser">
@@ -622,38 +617,14 @@ $scene-bg: #212121;
   pointer-events: none;
 }
 
-.controls {
+.hint {
   position: absolute;
   left: 50%;
   bottom: 0.55rem;
   z-index: 2;
   translate: -50% 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.35rem 0.5rem;
-  // Narrow frames can't fit the button + full hint on one line — wrap
-  // instead of letting the row force this centered box off both edges.
+  width: max-content;
   max-width: calc(100% - 1rem);
-}
-
-.restart-btn {
-  padding: 0.28rem 0.7rem;
-  border: 1px solid $visrez-brand;
-  border-radius: 0.25rem;
-  background: color-mix(in oklab, $visrez-brand 25%, #171717);
-  color: #f4ffe8;
-  font: 700 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
-  cursor: pointer;
-  white-space: nowrap;
-
-  &:hover {
-    background: color-mix(in oklab, $visrez-brand 40%, #171717);
-  }
-}
-
-.hint {
   margin: 0;
   padding: 0.25rem 0.55rem;
   border-radius: 0.25rem;

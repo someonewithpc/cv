@@ -15,7 +15,7 @@ test.use({ reducedMotion: 'reduce' });
  * sheet's full height into the corner, where the block covers it as pasted paper covers a
  * drawing. The sidebar stops above the block, and nothing else sits in that corner.
  */
-const APPS = '.space-builder-app .rail, .space-builder-app .sidebar, .space-builder-app .restart-btn, .space-builder-app .toasts';
+const APPS = '.space-builder-app .rail, .space-builder-app .sidebar, .space-builder-app .toasts';
 
 async function settle(page: Page, selector: string) {
   const stack = page.locator(selector);

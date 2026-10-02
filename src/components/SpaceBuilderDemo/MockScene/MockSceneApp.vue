@@ -648,8 +648,8 @@ async function restartDemo() {
   parkedMidWalk = false;
   if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
   if (handoffTimer) { clearTimeout(handoffTimer); handoffTimer = null; }
-  // The deck reads "animation paused" under reduced motion, so Restart puts the scene back
-  // and leaves it there: no fake cursor, and no "Demo paused" on the next hover.
+  // The deck reads "animation paused" under reduced motion, so its restart key puts the scene
+  // back and leaves it there: no fake cursor, and no "Demo paused" on the next hover.
   const walkthrough = !reducedMotion.value;
   if (walkthrough) {
     heldByUser = false;
@@ -921,27 +921,6 @@ onBeforeUnmount(() => {
       <div v-if="snapshot?.flash" class="flash" role="status">
         <p class="flash-message">{{ snapshot.flash }}</p>
       </div>
-
-      <button
-        v-if="ready && !loadError"
-        type="button"
-        class="restart-btn"
-        :disabled="!chairsReady"
-        title="Restart the demo"
-        @click="restartDemo"
-      >
-        <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
-          <path
-            d="M15.5 5.5A6.5 6.5 0 1 0 16.9 11M15.5 5.5V2M15.5 5.5H12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        Restart
-      </button>
 
       <div class="toasts" aria-live="polite">
         <div
@@ -1337,33 +1316,6 @@ $scene-bg: #212121;
       font-size: 0.875rem;
       text-align: center;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    }
-  }
-
-  .restart-btn {
-    position: absolute;
-    top: 0.55rem;
-    right: 0.55rem;
-    z-index: 5;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.28rem 0.6rem 0.28rem 0.5rem;
-    border: 1px solid $visrez-brand;
-    border-radius: 0.25rem;
-    background: color-mix(in oklab, $visrez-brand 25%, #171717);
-    color: #f4ffe8;
-    font: 700 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
-    cursor: pointer;
-    white-space: nowrap;
-
-    &:hover:not(:disabled) {
-      background: color-mix(in oklab, $visrez-brand 40%, #171717);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: default;
     }
   }
 
