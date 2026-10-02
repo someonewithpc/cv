@@ -1,5 +1,5 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
-import { demoGate, documentGate } from '@/client/frontPage';
+import { demoGate, documentGate, type DemoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
 
 
@@ -35,6 +35,9 @@ type Tool = {
   property: string;
   initialProperty: string;
   note: HTMLElement | null;
+  /** Paces the save clocks and the ring's easing switch; holds while the sheet is off
+      screen or behind another page, same as the walkthrough's own pacing. */
+  gate: DemoGate;
 };
 
 /** The script the walkthrough plays, handed over from objects.ts by GridLayer.astro. */
@@ -98,16 +101,36 @@ const RING_REST_MS = 1000;
 
 type RingState = 'idle' | 'pending' | 'success';
 
+/** The easing-switch timer armed on each ring, so a state change or a takeover can cancel
+    the one still pending instead of leaving it to land on an element that moved on. */
+const ringTimers = new WeakMap<HTMLElement, () => void>();
+
+function clearRingTimer(el: HTMLElement) {
+  ringTimers.get(el)?.();
+  ringTimers.delete(el);
+}
+
 /** The pending loop eases in, then goes linear at the point where the bezier is already
-    linear, so the orbit has no seam. The font picker's subform does the same. */
-function armRing(el: HTMLElement) {
+    linear, so the orbit has no seam. The font picker's subform does the same. Runs on the
+    demo gate so the switch pauses with the rest of the demo's clocks, and a later state
+    change or takeover cancels it outright rather than leaving it to fire on a cold ring. */
+function armRing(el: HTMLElement, gate: DemoGate) {
   el.addEventListener('animationstart', () => {
-    setTimeout(() => el.style.setProperty('animation-timing-function', 'linear'), RING_MS * 0.75);
+    clearRingTimer(el);
+    ringTimers.set(
+      el,
+      gate.timeout(() => el.style.setProperty('animation-timing-function', 'linear'), RING_MS * 0.75),
+    );
   });
-  el.addEventListener('animationend', () => el.style.removeProperty('animation-timing-function'));
+  el.addEventListener('animationend', () => {
+    clearRingTimer(el);
+    el.style.removeProperty('animation-timing-function');
+  });
 }
 
 function ringState(el: HTMLElement, state: RingState | null) {
+  clearRingTimer(el);
+  el.style.removeProperty('animation-timing-function');
   el.classList.remove('idle', 'pending', 'success');
   if (state) el.classList.add(state);
 }
@@ -115,13 +138,24 @@ function ringState(el: HTMLElement, state: RingState | null) {
 /** A save as its ring reports it: pending orbits for the round trip, success sweeps the
     ring closed, then `commit` lands the values and the ring rests before sweeping back.
     Resolves once the values have landed. A save already in flight on `el` swallows the
-    new one: the change and submit events of one press both come here. */
-async function saving(el: HTMLElement, commit: () => void) {
+    new one: the change and submit events of one press both come here. Runs on the demo
+    gate, not the document gate, so the clock holds with the rest of the demo while the
+    sheet is off screen. `cancelled` is the walkthrough's own stop token: a visitor who
+    takes over mid-save drops the commit instead of landing it on a tool they now own. */
+async function saving(el: HTMLElement, commit: () => void, gate: DemoGate, cancelled: () => boolean = () => false) {
   if (el.classList.contains('pending')) return;
   ringState(el, 'pending');
-  await wait(SAVE_MS);
+  await gate.wait(SAVE_MS);
+  if (cancelled()) {
+    ringState(el, null);
+    return;
+  }
   ringState(el, 'success');
-  await wait(RING_MS);
+  await gate.wait(RING_MS);
+  if (cancelled()) {
+    ringState(el, null);
+    return;
+  }
   commit();
   window.setTimeout(() => {
     if (el.classList.contains('success')) ringState(el, 'idle');
@@ -199,18 +233,28 @@ function afterSave(tool: Tool, group: Group, hide = true) {
   if (hide) applyVisibility(tool);
 }
 
-function submitShared(tool: Tool, group: Group, hide = true) {
-  return saving(group.root, () => {
-    group.cards.forEach((card) => setValue(tool, card, group.shared.value));
-    afterSave(tool, group, hide);
-  });
+function submitShared(tool: Tool, group: Group, hide = true, cancelled?: () => boolean) {
+  return saving(
+    group.root,
+    () => {
+      group.cards.forEach((card) => setValue(tool, card, group.shared.value));
+      afterSave(tool, group, hide);
+    },
+    tool.gate,
+    cancelled,
+  );
 }
 
-function submitCard(tool: Tool, group: Group, card: Card, hide = true) {
-  return saving(card.ring, () => {
-    setValue(tool, card, card.input.value);
-    afterSave(tool, group, hide);
-  });
+function submitCard(tool: Tool, group: Group, card: Card, hide = true, cancelled?: () => boolean) {
+  return saving(
+    card.ring,
+    () => {
+      setValue(tool, card, card.input.value);
+      afterSave(tool, group, hide);
+    },
+    tool.gate,
+    cancelled,
+  );
 }
 
 /** Redraw every row for the property the picker is on. */
@@ -242,7 +286,7 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
   const cards = [...section.querySelectorAll<HTMLElement>('.image-thumbnail')].map((root) => {
     const values = JSON.parse(root.dataset.values ?? '{}') as Values;
     const ring = root.querySelector<HTMLElement>('.panel-preview-library-object')!;
-    armRing(ring);
+    armRing(ring, tool.gate);
     return {
       root,
       form: root.querySelector<HTMLFormElement>('.object-form')!,
@@ -253,7 +297,7 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
       initial: { ...values },
     };
   });
-  armRing(section);
+  armRing(section, tool.gate);
 
   const sharedSave = section.querySelector<HTMLButtonElement>('.shared-form button')!;
   const group: Group = {
@@ -374,7 +418,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     reportAutoplayState(root, state);
   };
 
-  const gate = demoGate(root);
+  const gate = tool.gate;
   gate.onChange((next) => {
     active = next;
   });
@@ -476,7 +520,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
       // The ring orbits for the round trip and closes before the values land. The ring is
       // the whole cue: the row does not fade out and back the way a row leaving the
       // product's list would, since here it stays for the next step.
-      await submitShared(tool, group, false);
+      await submitShared(tool, group, false, stopped);
       if (stopped()) break;
       group.root.classList.remove('autoplay');
       await pause(1100);
@@ -506,7 +550,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
       if (stopped()) break;
       await press(cursor);
       if (stopped()) break;
-      await submitCard(tool, group, card, false);
+      await submitCard(tool, group, card, false, stopped);
       await pause(2600);
     }
   }
@@ -525,6 +569,7 @@ export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
     property: root.dataset.property ?? select.value,
     initialProperty: root.dataset.property ?? select.value,
     note: root.querySelector<HTMLElement>('.demo-note'),
+    gate: demoGate(root),
   };
   tool.groups = [...root.querySelectorAll<HTMLElement>('.grouped-objects')].map((section) =>
     initGroup(tool, section),

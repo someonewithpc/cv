@@ -243,6 +243,38 @@ test('main page: the walkthrough puts its pointer on the tick before the row sav
   expect(seen.onTick).toBe(true);
 });
 
+test(
+  'main page: a visitor who takes over mid-save keeps the walkthrough from landing it',
+  { tag: '@handover' },
+  async ({ page }) => {
+    const stack = taggingToolStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const front = frontPage(stack, await frontPageIndex(stack));
+    await expect(front.locator('.tagging-grid-demo')).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
+    const tool = front.locator('.tagging-tool[data-live]');
+    const gold = tool.locator('.grouped-objects[data-group="gold"]');
+    await expect(tool).toHaveAttribute('data-autoplay', 'playing');
+
+    // Catch the walkthrough's own shared save while its ring still orbits, then take the
+    // tool over before it closes.
+    await expect(gold).toHaveClass(/\bpending\b/, { timeout: 15_000 });
+    const mirrored = await gold.locator('.object-value').first().inputValue();
+
+    await tool.hover();
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
+
+    // SAVE_MS + RING_MS is 1.9 s; past it, the orbiting save must have dropped rather than
+    // landed on a tool the visitor now owns.
+    await pageWait(page, 2_500);
+    await expect(gold).not.toHaveClass(/\bpending\b/);
+    await expect(gold).not.toHaveClass(/\bsuccess\b/);
+    // Commit() titleizes the mirrored text; it staying as typed means commit() never ran.
+    expect(await gold.locator('.object-value').first().inputValue()).toBe(mirrored);
+    // The pending ring's easing-switch timer must drop with it, not land on a cold ring.
+    expect(await gold.evaluate((el) => (el as HTMLElement).style.animationTimingFunction)).toBe('');
+  },
+);
+
 test('main page: a narrow sheet scrolls the list rather than squashing the thumbnails', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.reload();
