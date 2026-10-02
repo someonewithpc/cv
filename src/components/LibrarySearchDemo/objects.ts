@@ -15,32 +15,38 @@ export type LibraryObject = {
   size?: string;
 };
 
-const IMAGES = '/demos/library-search';
+const IMAGES = import.meta.glob<string>('/src/assets/demos/library-search/*.webp', { query: '?url', eager: true, import: 'default' });
+
+const image = (name: string) => {
+  const url = IMAGES[`/src/assets/demos/library-search/${name}`];
+  if (!url) throw new Error(`No library picture src/assets/demos/library-search/${name}`);
+  return url;
+};
 
 /* Objects from the Space Builder library, the ones the other demos already carry renders
    of: the 2800 Chiavari chair in five of its finishes, the banquet tables at their real
    seat counts and sizes, and the rest of the catalogue. Each finish and each seat count
    is its own object in the product, so it is here too. */
 export const libraryObjects: readonly LibraryObject[] = [
-  { id: '3121', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-natural.webp`, properties: [['chair', 'Chiavari'], ['color', 'Natural'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
-  { id: '3122', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-gold.webp`, properties: [['chair', 'Chiavari'], ['color', 'Gold'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
-  { id: '3123', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-silver.webp`, properties: [['chair', 'Chiavari'], ['color', 'Silver'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
-  { id: '3124', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-white.webp`, properties: [['chair', 'Chiavari'], ['color', 'White'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
-  { id: '3125', name: 'Chiavari Chair', category: 'Banquet', image: `${IMAGES}/chair-black.webp`, properties: [['chair', 'Chiavari'], ['color', 'Black'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
-  { id: '3140', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-8.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 8, size: '243x121' },
-  { id: '3141', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-6.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 6, size: '243x121' },
-  { id: '3142', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-4.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 4, size: '243x121' },
-  { id: '3143', name: 'Banquet Table', category: 'Banquet', image: `${IMAGES}/banquet-6-narrow.webp`, properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 6, size: '182x76' },
-  { id: '3150', name: 'Round Table', category: 'Banquet', image: `${IMAGES}/round-table.webp`, properties: [['shape', 'Round'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 8, size: '152' },
-  { id: '3151', name: 'Round Table', category: 'Banquet', image: `${IMAGES}/round-table.webp`, properties: [['shape', 'Round'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 10, size: '183' },
-  { id: '3210', name: 'Cocktail Table', category: 'Reception', image: `${IMAGES}/cocktail-table.webp`, properties: [['shape', 'Round'], ['color', 'White'], ['material', 'Linen']], size: '76x76x110' },
-  { id: '3211', name: 'Barstool', category: 'Reception', image: `${IMAGES}/barstool.webp`, properties: [['color', 'Black'], ['material', 'Steel']], pax: 1, size: '40x40x75' },
-  { id: '3212', name: 'Bar', category: 'Reception', image: `${IMAGES}/bar.webp`, properties: [['color', 'White'], ['material', 'Wood']], pax: 10, size: '500x60x110' },
-  { id: '3310', name: 'Sofa', category: 'Sofa', image: `${IMAGES}/sofa.webp`, properties: [['color', 'Beige'], ['material', 'Fabric']], pax: 3, size: '210x90x85' },
-  { id: '3311', name: 'Side Chair', category: 'Sofa', image: `${IMAGES}/side-chair.webp`, properties: [['color', 'Beige'], ['material', 'Fabric']], pax: 1, size: '49x53x91' },
-  { id: '3410', name: 'Buffet Table', category: 'Catering', image: `${IMAGES}/buffet-table.webp`, properties: [['shape', 'Rectangular'], ['color', 'White'], ['material', 'Linen']], size: '183x76x76' },
-  { id: '3510', name: 'Outdoor Table With Umbrella', category: 'Outdoor', image: `${IMAGES}/umbrella-table.webp`, properties: [['color', 'Grey'], ['material', 'Aluminium']], pax: 4, size: '120x120x230' },
-  { id: '3610', name: 'Flower Pot', category: 'Plants', image: `${IMAGES}/flower-pot.webp`, properties: [['color', 'White'], ['material', 'Fibreglass']], size: '40x40x60' },
+  { id: '3121', name: 'Chiavari Chair', category: 'Banquet', image: image('chair-natural.webp'), properties: [['chair', 'Chiavari'], ['color', 'Natural'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3122', name: 'Chiavari Chair', category: 'Banquet', image: image('chair-gold.webp'), properties: [['chair', 'Chiavari'], ['color', 'Gold'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3123', name: 'Chiavari Chair', category: 'Banquet', image: image('chair-silver.webp'), properties: [['chair', 'Chiavari'], ['color', 'Silver'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3124', name: 'Chiavari Chair', category: 'Banquet', image: image('chair-white.webp'), properties: [['chair', 'Chiavari'], ['color', 'White'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3125', name: 'Chiavari Chair', category: 'Banquet', image: image('chair-black.webp'), properties: [['chair', 'Chiavari'], ['color', 'Black'], ['material', 'Wood']], pax: 1, size: '42x50x95' },
+  { id: '3140', name: 'Banquet Table', category: 'Banquet', image: image('banquet-8.webp'), properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 8, size: '243x121' },
+  { id: '3141', name: 'Banquet Table', category: 'Banquet', image: image('banquet-6.webp'), properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 6, size: '243x121' },
+  { id: '3142', name: 'Banquet Table', category: 'Banquet', image: image('banquet-4.webp'), properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 4, size: '243x121' },
+  { id: '3143', name: 'Banquet Table', category: 'Banquet', image: image('banquet-6-narrow.webp'), properties: [['shape', 'Rectangular'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 6, size: '182x76' },
+  { id: '3150', name: 'Round Table', category: 'Banquet', image: image('round-table.webp'), properties: [['shape', 'Round'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 8, size: '152' },
+  { id: '3151', name: 'Round Table', category: 'Banquet', image: image('round-table.webp'), properties: [['shape', 'Round'], ['chair', 'Chiavari'], ['color', 'White'], ['material', 'Linen']], pax: 10, size: '183' },
+  { id: '3210', name: 'Cocktail Table', category: 'Reception', image: image('cocktail-table.webp'), properties: [['shape', 'Round'], ['color', 'White'], ['material', 'Linen']], size: '76x76x110' },
+  { id: '3211', name: 'Barstool', category: 'Reception', image: image('barstool.webp'), properties: [['color', 'Black'], ['material', 'Steel']], pax: 1, size: '40x40x75' },
+  { id: '3212', name: 'Bar', category: 'Reception', image: image('bar.webp'), properties: [['color', 'White'], ['material', 'Wood']], pax: 10, size: '500x60x110' },
+  { id: '3310', name: 'Sofa', category: 'Sofa', image: image('sofa.webp'), properties: [['color', 'Beige'], ['material', 'Fabric']], pax: 3, size: '210x90x85' },
+  { id: '3311', name: 'Side Chair', category: 'Sofa', image: image('side-chair.webp'), properties: [['color', 'Beige'], ['material', 'Fabric']], pax: 1, size: '49x53x91' },
+  { id: '3410', name: 'Buffet Table', category: 'Catering', image: image('buffet-table.webp'), properties: [['shape', 'Rectangular'], ['color', 'White'], ['material', 'Linen']], size: '183x76x76' },
+  { id: '3510', name: 'Outdoor Table With Umbrella', category: 'Outdoor', image: image('umbrella-table.webp'), properties: [['color', 'Grey'], ['material', 'Aluminium']], pax: 4, size: '120x120x230' },
+  { id: '3610', name: 'Flower Pot', category: 'Plants', image: image('flower-pot.webp'), properties: [['color', 'White'], ['material', 'Fibreglass']], size: '40x40x60' },
 ];
 
 const CM_PER_INCH = 2.54;
