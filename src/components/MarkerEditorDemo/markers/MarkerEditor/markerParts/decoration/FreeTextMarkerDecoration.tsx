@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFont } from "@fortawesome/free-solid-svg-icons";
+import { faFont } from "@fortawesome/free-solid-svg-icons/faFont";
 
 import type { SpaceType } from '@/store';
 

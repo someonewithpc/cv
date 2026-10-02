@@ -213,3 +213,4 @@
 - [x] Run the library search walkthrough's press delay on the demo gate, not the document gate, so a press never lands off screen (C37) (#281)
 - [x] Cut the document by 100 KB raw and 25 KB brotli: torn edges and the pronunciation clip as files, no inline color-scheme or empty style attributes (P1) (#256)
 - [x] Delete the dead `pageStyle: 'wip'` plumbing and the unreachable no-script hint-arrow rules (C80, C83) (#259)
+- [ ] Deep-import the marker editor and font picker's FontAwesome icons so free-solid-svg-icons stops shipping the whole package (P3)

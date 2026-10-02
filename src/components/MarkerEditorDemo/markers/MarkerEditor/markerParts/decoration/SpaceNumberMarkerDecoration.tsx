@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowDown19 } from "@fortawesome/free-solid-svg-icons";
+import { faArrowDown19 } from "@fortawesome/free-solid-svg-icons/faArrowDown19";
 
 import $store, { spaceGlobalOrderSelector } from '@/store';
 import type { SpaceType } from '@/store';

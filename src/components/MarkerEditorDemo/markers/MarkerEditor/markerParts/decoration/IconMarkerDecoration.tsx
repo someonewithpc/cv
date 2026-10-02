@@ -1,5 +1,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faIcons, faSpinner, faUpload } from "@fortawesome/free-solid-svg-icons";
+import { faIcons } from "@fortawesome/free-solid-svg-icons/faIcons";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { faUpload } from "@fortawesome/free-solid-svg-icons/faUpload";
 
 import $store, { markerDecorationsSelector } from '@/store';
 

@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowDownAZ } from "@fortawesome/free-solid-svg-icons";
+import { faArrowDownAZ } from "@fortawesome/free-solid-svg-icons/faArrowDownAZ";
 
 import type { SpaceType } from '@/store';
 
