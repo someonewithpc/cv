@@ -2,7 +2,8 @@
  * The note dialog covers its own drawing page while it is open, so anything
  * animating underneath should hold still until the note is folded away again.
  * CSS animations are paused by TechnicalDrawing/Page.astro; scripted demos
- * (rAF loops, autoplay) subscribe here.
+ * (rAF loops) subscribe here. A walkthrough is paused by the deck, see
+ * initAutoplayStatus in autoplayStatus.ts.
  */
 export function watchDrawingNote(root: Element, onToggle: (open: boolean) => void) {
   const page = root.closest('article.technical-drawing-stack > * > section');

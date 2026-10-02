@@ -55,6 +55,9 @@ const HINT: Record<AutoplayState, string> = {
   off: 'reduced motion is on',
 };
 
+/** While the sheet's note is open over a walkthrough it paused. */
+const NOTE_HINT = 'close the note to carry on';
+
 /** No pointer to hover with, so say the half of it a phone can act on. Both strings sit in the
     hint markup at once; the deck's stylesheet shows one or the other under `@media (hover:
     none)`, which stays live as a hybrid device gains or loses a pointer. A one-time
@@ -119,8 +122,10 @@ export function initAutoplayStatus(page: HTMLElement) {
   if (!deck || !caption || !hint || keys.length === 0) return () => {};
 
   let source: Element | null = null;
+  /** The walkthroughs the open note paused, to hand back when it closes. */
+  let notePaused: Element[] = [];
 
-  const show = (root: Element, state: string | null) => {
+  const show = (root: Element, state: string | null, hintOverride?: string) => {
     if (state !== 'playing' && state !== 'user' && state !== 'paused' && state !== 'off') return;
     source = root;
     if (state !== 'playing') page.removeAttribute(FULL_MOTION_ATTRIBUTE);
@@ -129,7 +134,7 @@ export function initAutoplayStatus(page: HTMLElement) {
     // A demo that takes no input says so in its own words: data-autoplay-caption-<state>
     // and data-autoplay-hint-<state> on its root.
     caption.textContent = root.getAttribute(`data-autoplay-caption-${state}`) ?? CAPTION[state];
-    const overrideHint = root.getAttribute(`data-autoplay-hint-${state}`);
+    const overrideHint = hintOverride ?? root.getAttribute(`data-autoplay-hint-${state}`);
     if (overrideHint) {
       hint.textContent = overrideHint;
     } else if (state === 'playing') {
@@ -159,15 +164,42 @@ export function initAutoplayStatus(page: HTMLElement) {
 
   const onState = (event: Event) => {
     const root = event.target;
-    if (root instanceof Element) show(root, root.getAttribute(AUTOPLAY_STATE_ATTRIBUTE));
+    if (!(root instanceof Element)) return;
+    // The deck keeps saying paused under the note, whatever the paused demo reports meanwhile.
+    if (notePaused.length > 0) source = root;
+    else show(root, root.getAttribute(AUTOPLAY_STATE_ATTRIBUTE));
   };
 
-  const run = (command: AutoplayCommand) => {
+  const send = (root: Element | null, command: AutoplayCommand) => {
     // Before the demo hears the key, so its own reducedMotion check already answers for it:
     // play runs the walkthrough at full animation, pause and reset leave it reduced.
     if (prefersReducedMotion()) page.toggleAttribute(FULL_MOTION_ATTRIBUTE, command === 'play');
-    source?.dispatchEvent(new CustomEvent(AUTOPLAY_COMMAND_EVENT, { detail: { command } }));
+    root?.dispatchEvent(new CustomEvent(AUTOPLAY_COMMAND_EVENT, { detail: { command } }));
   };
+  const run = (command: AutoplayCommand) => send(source, command);
+
+  // The note covers the sheet, so every walkthrough playing under it pauses as if the pause
+  // key had been pressed, and folding the note away hands each one back as play would.
+  const note = page.querySelector<HTMLDialogElement>('dialog.drawing-note');
+  let noteOpen = false;
+  const onNote = () => {
+    if (!note || note.open === noteOpen) return;
+    noteOpen = note.open;
+    if (noteOpen) {
+      const playing = `[${AUTOPLAY_STATE_ATTRIBUTE}="playing"]`;
+      notePaused = [...(page.matches(playing) ? [page] : []), ...page.querySelectorAll(playing)];
+      if (notePaused.length === 0) return;
+      notePaused.forEach((root) => send(root, 'pause'));
+      show(source ?? notePaused[0], 'paused', NOTE_HINT);
+      return;
+    }
+    const resume = notePaused;
+    notePaused = [];
+    resume.forEach((root) => send(root, 'play'));
+    if (source) show(source, source.getAttribute(AUTOPLAY_STATE_ATTRIBUTE));
+  };
+  note?.addEventListener('toggle', onNote);
+  note?.addEventListener('close', onNote);
 
   keys.forEach((key) => {
     key.addEventListener('click', () => {
@@ -192,5 +224,7 @@ export function initAutoplayStatus(page: HTMLElement) {
 
   return () => {
     page.removeEventListener(AUTOPLAY_STATE_EVENT, onState);
+    note?.removeEventListener('toggle', onNote);
+    note?.removeEventListener('close', onNote);
   };
 }
