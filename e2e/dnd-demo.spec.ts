@@ -98,6 +98,10 @@ test('dragging an object onto the floor places exactly one in a live scene', asy
     );
     await page.waitForTimeout(40);
   }
+  // The scene draws only when something in it changes, so the count before the drop has to
+  // be read once the last move's frame is out.
+  await page.waitForTimeout(200);
+  const drawnBeforeDrop = await sceneDraws(app);
   await page.mouse.up();
 
   await expect(app).toHaveAttribute('data-selected', 'true');
@@ -106,8 +110,7 @@ test('dragging an object onto the floor places exactly one in a live scene', asy
 
   // The chair has to land in the scene that owns the WebGL context, or the drop is real
   // but nothing is ever drawn.
-  const drawnOnDrop = await sceneDraws(app);
-  await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnDrop);
+  await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnBeforeDrop);
 });
 
 test('the picture riding the pointer over the catalog carries the card tile', async ({ page }) => {

@@ -174,9 +174,10 @@ async function dragTo(page: Page, from: { x: number, y: number }, to: { x: numbe
 
 /**
  * The demos hold still for a turn, but only from the commit point (watchPageActive in
- * client/frontPage.ts). The Space Builder stack is the one that shows it: its scenes render
- * every frame they are active for, and give the WebGL context back when they are not, so the
- * canvas's own draw count says whether the demo under the paper is still playing. A drag that
+ * client/frontPage.ts). The Space Builder stack is the one that shows it: its scenes draw
+ * only while they are active and give the WebGL context back when they are not, and the
+ * canvas's data-scene-active says which. A scene at rest draws nothing either way, so the
+ * draw count alone can't tell a still demo from a stopped one. A drag that
  * comes back short of the threshold has to leave it playing, since stopping there would cost
  * the scene its context for nothing.
  */
@@ -197,18 +198,19 @@ test('the demo under the paper plays until the turn is certain, then stops', asy
   const grab = await takeFlap(stack);
   await page.mouse.down();
 
-  // Short of the commit point: the flap says so, and the scene under it is still drawing.
+  // Short of the commit point: the flap says so, and the scene under it is still active.
   const shy = { x: box.x + box.width * 0.88, y: box.y + box.height * 0.88 };
   await dragTo(page, grab, shy);
   await expect(stack.locator('.paper-fold')).not.toHaveClass(/paper-fold--will-commit/);
-  const drawnShort = await sceneDraws(front);
+  const canvas = front.locator('canvas[data-scene-canvas]');
   await page.waitForTimeout(600);
-  expect(await sceneDraws(front)).toBeGreaterThan(drawnShort);
+  await expect(canvas).toHaveAttribute('data-scene-active', 'true');
 
   // Past it, with the hand still on the paper: the turn is going to happen, so the demo stops
   // now rather than at the release.
   await dragTo(page, shy, { x: box.x + box.width * 0.3, y: box.y + box.height * 0.3 });
   await expect(stack.locator('.paper-fold')).toHaveClass(/paper-fold--will-commit/);
+  await expect(canvas).toHaveAttribute('data-scene-active', 'false');
   const drawnPastCommit = await sceneDraws(front);
   await page.waitForTimeout(600);
   expect(await sceneDraws(front)).toBe(drawnPastCommit);
@@ -219,6 +221,6 @@ test('the demo under the paper plays until the turn is certain, then stops', asy
   const landed = await frontPageIndex(stack);
   expect(landed).not.toBe(started);
   const arrived = frontPage(stack, landed);
-  const drawnOnLanding = await sceneDraws(arrived);
-  await expect.poll(() => sceneDraws(arrived), { timeout: 30_000 }).toBeGreaterThan(drawnOnLanding);
+  await expect(arrived.locator('canvas[data-scene-canvas]')).toHaveAttribute('data-scene-active', 'true', { timeout: 30_000 });
+  await expect.poll(() => sceneDraws(arrived), { timeout: 30_000 }).toBeGreaterThan(0);
 });
