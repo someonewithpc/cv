@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Cuts public/paper-fibre.webp out of Hugo's paper scan.
+ * Cuts src/assets/paper-fibre.webp out of Hugo's paper scan.
  *
  * Usage:
  *   node scripts/cut-paper-tile.mjs
@@ -44,7 +44,7 @@ const DEFAULTS = {
   // The level the tile is centred on. Multiply darkens a sheet by (255 - mean) / 255 of the
   // grain's opacity whatever else the tile does, so moving this moves every sheet's tone.
   mean: 216.4,
-  out: resolve(ROOT, 'public/paper-fibre.webp'),
+  out: resolve(ROOT, 'src/assets/paper-fibre.webp'),
 };
 
 const args = process.argv.slice(2);

@@ -150,7 +150,7 @@ $sheet-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface
     inset: 0;
     z-index: -1;
     border-radius: #{$radius};
-    background-image: url('/paper-fibre.webp');
+    background-image: url('@/assets/paper-fibre.webp');
     background-size: 12rem 12rem;
     background-position: #{$offset};
     mix-blend-mode: var(--theme-paper-blend, multiply);

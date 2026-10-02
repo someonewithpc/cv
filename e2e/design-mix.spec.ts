@@ -1283,7 +1283,7 @@ test('the paper grain tile is fetched once and stays under 24 KB', async ({ page
   const paperRequests: string[] = [];
   let paperBytes = -1;
   page.on('requestfinished', async (request) => {
-    if (!/\/paper-fibre\.webp$/.test(request.url())) return;
+    if (!/\/paper-fibre(\.[\w-]+)?\.webp$/.test(request.url())) return;
     paperRequests.push(request.url());
     const response = await request.response();
     const body = await response?.body();
@@ -1354,7 +1354,7 @@ test('the grain paints on the paper sheets and on nothing else', async ({ page }
 
   const carriers = await page.evaluate(() =>
     [...document.querySelectorAll('*')]
-      .filter((el) => getComputedStyle(el, '::before').backgroundImage.includes('paper-fibre.webp'))
+      .filter((el) => getComputedStyle(el, '::before').backgroundImage.includes('paper-fibre.'))
       .map((el) => ({
         // The page face of a drawing stack: the element that wears the fold's clip-path, so
         // the grain is cut by the dog-ear along with the rest of the sheet.
@@ -1439,8 +1439,8 @@ test('the fold flap is the back of the sheet, with no fibre on it', async ({ pag
         (el, p) => getComputedStyle(el, p).backgroundImage,
         pseudo,
       );
-      expect(painted).not.toContain('paper-fibre.webp');
+      expect(painted).not.toContain('paper-fibre.');
     }
-    await expect(rider).not.toHaveCSS('background-image', /paper-fibre\.webp/);
+    await expect(rider).not.toHaveCSS('background-image', /paper-fibre\./);
   }
 });
