@@ -102,6 +102,33 @@ if (number != null) citePieces.push(null, `#${number}`);
   </details>
 </div>
 
+<script>
+  import { describeKeys, rove } from '@/client/roving';
+
+  /* One Tab stop per group: Up and Down move between the rows, Left and Right between a
+     row's toggle and its title link. */
+  document.querySelectorAll<HTMLElement>('#open-source .lines').forEach((lines, index) => {
+    const rows = [...lines.querySelectorAll<HTMLElement>(':scope > .row')].map((row) => [
+      row.querySelector<HTMLElement>('summary')!,
+      row.querySelector<HTMLElement>('a.title')!,
+    ]);
+    const items = rows.flat();
+    rove(lines, items, (event, current) => {
+      const r = rows.findIndex((row) => row.includes(current));
+      const c = rows[r].indexOf(current);
+      switch (event.key) {
+        case 'ArrowDown': return rows[r + 1]?.[c];
+        case 'ArrowUp': return rows[r - 1]?.[c];
+        case 'ArrowRight': return rows[r][c + 1];
+        case 'ArrowLeft': return rows[r][c - 1];
+        case 'Home': return rows[0][c];
+        case 'End': return rows[rows.length - 1][c];
+      }
+    });
+    describeKeys(lines, items, `contribution-keys-${index}`, 'Up and Down arrows move between contributions, Left and Right between a row and its link.');
+  });
+</script>
+
 <style lang="scss">
 @use "@/scss/_ruled.scss" as ruled;
 
