@@ -231,3 +231,4 @@
 - [x] The marker editor's snapping filter also drops other steps whose active option shares a name, which looks unintended but matches the product (C46) (#280)
 - [x] The Fediverse sheets and the font picker panel use the shared code and Poppins fonts, the web-ts-mode range highlights follow the range count and the stage table names wrap at underscores (S19 and S20) (#303)
 - [x] Skip style and layout for the callouts and sheets below the first screen while the page is parsed, with nothing changed once it is (P20) (#255)
+- [ ] Keep the demo grids inside the frame on a phone sheet without script (NJ11)
