@@ -15,7 +15,7 @@ type Props = {
 
 /** Icons whose fills must not be remapped when the page is in dark color-scheme.
  *  Iconify strips style="color-scheme" from local SVG roots, so set it on the
- *  rendered <svg> (inline style wins over the inherit rule below). */
+ *  rendered <svg> as a class that outranks the inherit rule below. */
 const LOCK_COLOR_SCHEME_LIGHT = new Set([
   'php',
   'python',
@@ -43,7 +43,7 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
     name={tech.icon}
     is:inline={inline}
     aria-hidden="true"
-    style={LOCK_COLOR_SCHEME_LIGHT.has(tech.icon) ? 'color-scheme: only light' : undefined}
+    class={LOCK_COLOR_SCHEME_LIGHT.has(tech.icon) ? 'light-scheme' : undefined}
   />
 </span>
 
@@ -78,6 +78,10 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
      Layout forces color-scheme: only light on bare svg. */
   :global(svg) {
     color-scheme: inherit;
+  }
+
+  :global(svg.light-scheme) {
+    color-scheme: only light;
   }
 }
 
