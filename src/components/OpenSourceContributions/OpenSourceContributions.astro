@@ -301,6 +301,8 @@ const statistics = {
       /* The repository takes only the width it needs, so the contribution gets the rest and
          reaches the end of its line before it has to wrap onto the next one. */
       --grid: 4rem minmax(11rem, 18rem) minmax(0, 1fr);
+      /* A row's native disclosure marker sits in this room at the start of the line, and the header keeps the same room so its columns stay over the rows'. */
+      --marker-room: 1.25rem;
 
       container-type: inline-size;
       display: grid;
@@ -312,6 +314,7 @@ const statistics = {
         display: grid;
         grid-template-columns: var(--grid);
         column-gap: var(--column-gap, 0.75rem);
+        padding-inline-start: var(--marker-room);
         /* Every cell's first line lands on the same rule, so a row whose title wraps keeps
            its technologies and its repository up on that line rather than centred across
            both of them. */

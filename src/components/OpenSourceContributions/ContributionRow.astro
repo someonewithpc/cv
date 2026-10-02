@@ -245,12 +245,22 @@ if (number != null) citePieces.push(null, `#${number}`);
 
     > summary {
       grid-row: 1;
-      list-style: none;
+      position: relative;
       cursor: pointer;
       transition: background 150ms ease;
 
-      &::-webkit-details-marker {
-        display: none;
+      /* The browser's own disclosure triangle at the start of the row, right when shut and down
+         when open. ::marker takes only colour and font, so the room for it is the row's padding.
+         Safari shows a summary's marker only as a list-item, and older WebKit styles it as
+         ::-webkit-details-marker, which keeps its own triangle there. */
+      display: list-item;
+      list-style-position: inside;
+      margin-inline-start: calc(-1 * var(--marker-room));
+      line-height: var(--rule-pitch);
+
+      &::marker {
+        color: var(--ink-muted);
+        font-size: 0.75em;
       }
 
       &:focus-visible {
@@ -262,6 +272,11 @@ if (number != null) citePieces.push(null, `#${number}`);
     /* A wash rather than a fill: the paper's ruling still runs under the row it marks. */
     &[open] > summary {
       background: color-mix(in oklch, transparent, var(--row-accent, var(--line-strong)) 14%);
+    }
+
+    &[open] > summary::marker,
+    > summary:focus-visible::marker {
+      color: var(--accent-text);
     }
   }
 
@@ -362,6 +377,7 @@ if (number != null) citePieces.push(null, `#${number}`);
       /* The meta column ignores the pointer so the summary under it toggles;
          the link itself takes clicks back. */
       pointer-events: auto;
+      max-width: 100%;
     }
   }
 }
