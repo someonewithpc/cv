@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
-const modelPath = process.argv[2] ?? '/demos/space-builder/chair.glb';
+const modelPath = process.argv[2] ?? '/src/assets/demos/space-builder/chair.glb';
 const outPath = path.resolve(root, process.argv[3] ?? 'public/demos/space-builder/chair-thumb.webp');
 // Optional per-material base colour, as the catalog variants declare it: a JSON array of
 // hex strings (or nulls) in the GLB's material order.
@@ -131,7 +131,7 @@ try {
   if (MeshoptDecoder.ready) await MeshoptDecoder.ready;
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
-  loader.setDRACOLoader(new DRACOLoader().setDecoderPath('/demos/space-builder/draco/'));
+  loader.setDRACOLoader(new DRACOLoader().setDecoderPath('/node_modules/three/examples/jsm/libs/draco/gltf/'));
   const gltf = await loader.loadAsync('${modelPath}');
   const rootObj = gltf.scene;
   if (TINT) {

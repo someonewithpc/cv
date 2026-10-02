@@ -458,7 +458,7 @@ test('the sidebar title stays inside its header, wrapping if it has to', async (
 
 test('a grass texture that fails to load is retried once, then the flat colour stays', async ({ page }) => {
   const requests: string[] = [];
-  await page.route('**/demos/space-builder/grass/color.webp*', (route) => {
+  await page.route(/\/color(\.[\w-]+)?\.webp(\?|$)/, (route) => {
     requests.push(route.request().url());
     void route.abort('failed');
   });

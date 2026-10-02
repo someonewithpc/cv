@@ -6,6 +6,11 @@ import { expect, test } from './support/timeScale';
 /** Real, loadable catalog objects; everything else in the catalog is a placeholder SVG. */
 const REAL_ITEMS = ['chair', 'armchair', 'table-round'];
 
+/** A model's file name without the build's hash: chair.Ab12_x-Y.glb reads as chair.glb. */
+function modelFile(url: string) {
+  return (new URL(url).pathname.split('/').pop() ?? '').replace(/\.[\w-]{8}(\.glb)$/, '$1');
+}
+
 function spaceBuilderStack(page: Page) {
   return demoStack(page, 'Space Builder · Add Tool');
 }
@@ -53,7 +58,7 @@ test('the catalog offers the chair, side chair and banquet table as real objects
 test('a catalog model is only fetched once its item is picked', async ({ page }) => {
   const models: string[] = [];
   page.on('request', (request) => {
-    const file = request.url().split('/').pop() ?? '';
+    const file = modelFile(request.url());
     if (file.endsWith('.glb')) models.push(file);
   });
 
@@ -106,7 +111,7 @@ test('the chair card steps through the library finishes', { tag: '@handover' }, 
 test('the banquet card swaps the model for the seat count and table size picked', async ({ page }) => {
   const models: string[] = [];
   page.on('request', (request) => {
-    const file = request.url().split('/').pop() ?? '';
+    const file = modelFile(request.url());
     if (file.endsWith('.glb')) models.push(file);
   });
 
@@ -150,7 +155,7 @@ test.describe(() => {
     await page.waitForFunction(
       () => performance
         .getEntriesByType('resource')
-        .some((entry) => entry.name.includes('banquet-8pax-243x121.glb')),
+        .some((entry) => /\/banquet-8pax-243x121(\.[\w-]+)?\.glb$/.test(entry.name)),
       undefined,
       { timeout: 60_000 },
     );

@@ -1,8 +1,13 @@
-const CHAIR_URL = '/demos/space-builder/chair.glb';
+import chairUrl from '@/assets/demos/space-builder/chair.glb?url';
+import grassColorUrl from '@/assets/demos/space-builder/grass/color.webp?url';
+import grassDisplacementUrl from '@/assets/demos/space-builder/grass/displacement.webp?url';
+import grassNormalUrl from '@/assets/demos/space-builder/grass/normal.webp?url';
+
+const CHAIR_URL = chairUrl;
 const GRASS_URLS = [
-  '/demos/space-builder/grass/color.webp',
-  '/demos/space-builder/grass/normal.webp',
-  '/demos/space-builder/grass/displacement.webp',
+  grassColorUrl,
+  grassNormalUrl,
+  grassDisplacementUrl,
 ] as const;
 
 /** Low-priority cache warm — never preload (that competes with LCP). */

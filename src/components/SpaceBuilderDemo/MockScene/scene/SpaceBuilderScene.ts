@@ -39,6 +39,13 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import dracoWasmUrl from 'three/addons/libs/draco/gltf/draco_decoder.wasm?url';
+import dracoWrapperUrl from 'three/addons/libs/draco/gltf/draco_wasm_wrapper.js?url';
+
+import chairUrl from '@/assets/demos/space-builder/chair.glb?url';
+import grassColorUrl from '@/assets/demos/space-builder/grass/color.webp?url';
+import grassDisplacementUrl from '@/assets/demos/space-builder/grass/displacement.webp?url';
+import grassNormalUrl from '@/assets/demos/space-builder/grass/normal.webp?url';
 
 import { reducedMotion } from '@/client/autoplayStatus';
 import { type SettledResizeObserver, settledResizeObserver } from '@/client/settledResize';
@@ -83,7 +90,7 @@ function applyTint(root: Object3D, tint: (string | null)[]) {
 let dracoLoader: DRACOLoader | null = null;
 
 function makeGltfLoader() {
-  dracoLoader ??= new DRACOLoader().setDecoderPath('/demos/space-builder/draco/');
+  dracoLoader ??= new DRACOLoader().setDecoderPath({ js: dracoWrapperUrl, wasm: dracoWasmUrl });
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
   loader.setDRACOLoader(dracoLoader);
@@ -563,7 +570,7 @@ export class SpaceBuilderScene {
     return renderer;
   }
 
-  async loadChair(url = '/demos/space-builder/chair.glb') {
+  async loadChair(url = chairUrl) {
     if (this.chairReady) return this.chairReady;
     this.chairReady = this.loadChairInternal(url);
     return this.chairReady;
@@ -1597,19 +1604,19 @@ export class SpaceBuilderScene {
       return texture;
     };
 
-    this.loadGrassMap('/demos/space-builder/grass/color.webp', (color) => {
+    this.loadGrassMap(grassColorUrl, (color) => {
       grassMat.map = configureMap(color, { srgb: true });
       grassMat.color.set(0xffffff);
       grassMat.needsUpdate = true;
     });
 
-    this.loadGrassMap('/demos/space-builder/grass/normal.webp', (normal) => {
+    this.loadGrassMap(grassNormalUrl, (normal) => {
       grassMat.normalMap = configureMap(normal);
       grassMat.normalScale.set(0.85, 0.85);
       grassMat.needsUpdate = true;
     });
 
-    this.loadGrassMap('/demos/space-builder/grass/displacement.webp', (displacement) => {
+    this.loadGrassMap(grassDisplacementUrl, (displacement) => {
       grassMat.displacementMap = configureMap(displacement);
       grassMat.needsUpdate = true;
     });

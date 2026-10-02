@@ -27,6 +27,8 @@ const { outputFiles: [sceneBundle] } = await esbuild.build({
   write: false,
   format: 'esm',
   packages: 'external',
+  // Asset URLs (chair.glb?url) are strings Vite fills in; the bundle only measures code.
+  external: ['*?url'],
   alias: { '@': srcRoot },
 });
 

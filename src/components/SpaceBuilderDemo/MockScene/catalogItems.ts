@@ -1,3 +1,5 @@
+import { spaceBuilderAsset } from './assets';
+
 /**
  * One style of a catalog object. Space Builder's library keeps every finish, seat count
  * and size as its own object and groups them under one card; these mirror that group.
@@ -117,7 +119,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     name: 'Side Chair',
     thumb: '/demos/space-builder/armchair-thumb.webp',
     real: true,
-    modelUrl: '/demos/space-builder/armchair.glb',
+    modelUrl: spaceBuilderAsset('armchair.glb'),
     size: '49cm x 53cm x 91cm',
   },
   { id: 'barstool', name: 'Barstool', thumb: '/demos/space-builder/catalog/barstool.webp' },
@@ -127,7 +129,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     name: 'Banquet Table',
     thumb: '/demos/space-builder/table-thumb.webp',
     real: true,
-    modelUrl: '/demos/space-builder/banquet-8pax-243x121.glb',
+    modelUrl: spaceBuilderAsset('banquet-8pax-243x121.glb'),
     size: BANQUET_WIDE,
     // The library stores each seat count and table size as its own object, so these are
     // four real models. 182x76 only goes up to six seats, which is why the picker greys
@@ -137,7 +139,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
         id: 'table-8-243',
         style: 'Chiavari Chairs',
         thumb: '/demos/space-builder/table-thumb.webp',
-        modelUrl: '/demos/space-builder/banquet-8pax-243x121.glb',
+        modelUrl: spaceBuilderAsset('banquet-8pax-243x121.glb'),
         pax: 8,
         size: BANQUET_WIDE,
       },
@@ -145,7 +147,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
         id: 'table-6-243',
         style: 'Chiavari Chairs',
         thumb: '/demos/space-builder/table-6-thumb.webp',
-        modelUrl: '/demos/space-builder/banquet-6pax-243x121.glb',
+        modelUrl: spaceBuilderAsset('banquet-6pax-243x121.glb'),
         pax: 6,
         size: BANQUET_WIDE,
       },
@@ -153,7 +155,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
         id: 'table-4-243',
         style: 'Chiavari Chairs',
         thumb: '/demos/space-builder/table-4-thumb.webp',
-        modelUrl: '/demos/space-builder/banquet-4pax-243x121.glb',
+        modelUrl: spaceBuilderAsset('banquet-4pax-243x121.glb'),
         pax: 4,
         size: BANQUET_WIDE,
       },
@@ -161,7 +163,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
         id: 'table-6-182',
         style: 'Chiavari Chairs',
         thumb: '/demos/space-builder/table-6-narrow-thumb.webp',
-        modelUrl: '/demos/space-builder/banquet-6pax-182x76.glb',
+        modelUrl: spaceBuilderAsset('banquet-6pax-182x76.glb'),
         pax: 6,
         size: BANQUET_NARROW,
       },
