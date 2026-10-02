@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowDown19 } from "@fortawesome/free-solid-svg-icons";
 
-import $store, { spaceGlobalOrderSelector } from '@/store';
-import type { SpaceType } from '@/store';
+import $store, { spaceGlobalOrderSelector } from '../../../../store';
+import type { SpaceType } from '../../../../store';
 
 import { TextMarkerDecoration } from "./TextMarkerDecoration";
 

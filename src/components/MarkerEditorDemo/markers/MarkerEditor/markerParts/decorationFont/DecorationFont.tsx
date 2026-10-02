@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { type SpaceType } from '@/store';
+import { type SpaceType } from '../../../../store';
 
 import { MarkerPart } from '../shared';
 

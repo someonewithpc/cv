@@ -1,4 +1,4 @@
-import type { SpaceType } from '@/store';
+import type { SpaceType } from '../../../../store';
 
 import { SpaceNumberMarkerDecoration } from "./SpaceNumberMarkerDecoration";
 

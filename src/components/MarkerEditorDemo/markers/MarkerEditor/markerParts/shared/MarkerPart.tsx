@@ -1,5 +1,5 @@
-import $store from '@/store';
-import type { SpaceType } from '@/store';
+import $store from '../../../../store';
+import type { SpaceType } from '../../../../store';
 import { clamp } from '../../../../lib/mapRange';
 import { serializeKeyValue } from './serialization';
 

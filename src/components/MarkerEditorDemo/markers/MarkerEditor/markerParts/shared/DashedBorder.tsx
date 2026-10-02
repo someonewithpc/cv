@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBorderAll } from "@fortawesome/free-solid-svg-icons";
 import { type DebouncedFunc, debounce } from "lodash";
 
-import type { SpaceType } from '@/store';
+import type { SpaceType } from '../../../../store';
 
 import { SolidBorder } from "./SolidBorder";
 import { CONTROL_COMMIT_MS, keepReactOut } from "./liveStyleRule";

@@ -3,8 +3,8 @@ import { useSyncExternalStore } from "react";
 import _partition from 'lodash/partition';
 
 import { imperativeReactComponent } from '../../../lib/imperativeReactComponent';
-import store, { markerEditingSpaceSelector } from '@/store';
-import type { SpaceType } from '@/store';
+import store, { markerEditingSpaceSelector } from '../../../store';
+import type { SpaceType } from '../../../store';
 
 import { EmptyMarkerDecoration } from "./decoration/EmptyMarkerDecoration";
 import { IconMarkerDecoration } from "./decoration/IconMarkerDecoration";

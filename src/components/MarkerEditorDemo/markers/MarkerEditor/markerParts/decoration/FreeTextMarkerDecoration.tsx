@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFont } from "@fortawesome/free-solid-svg-icons";
 
-import type { SpaceType } from '@/store';
+import type { SpaceType } from '../../../../store';
 
 import { TextMarkerDecoration } from "./TextMarkerDecoration";
 import { Point } from "../shared";

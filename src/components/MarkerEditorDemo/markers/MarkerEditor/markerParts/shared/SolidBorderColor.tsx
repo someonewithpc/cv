@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 import { type DebouncedFunc, debounce } from "lodash";
 
-import type { SpaceType } from '@/store';
+import type { SpaceType } from '../../../../store';
 
 import { MarkerPart } from "./";
 import { ColorField } from "./ColorField";

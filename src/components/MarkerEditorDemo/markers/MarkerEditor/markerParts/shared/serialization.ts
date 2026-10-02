@@ -5,8 +5,8 @@ import { flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { camelCase, snakeCase, partition } from 'lodash';
 
-import { dataUrlToSvg, svgToDataUrl } from '@/store';
-import type { MarkerType, SpaceType } from '@/store';
+import { dataUrlToSvg, svgToDataUrl } from '../../../../store';
+import type { MarkerType, SpaceType } from '../../../../store';
 
 import { parseSVGDocument } from '../../optimizeAndParseSVGToComponent';
 import { markers } from '..';

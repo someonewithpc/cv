@@ -1,7 +1,7 @@
 import { clamp } from "lodash";
 
-import $store, { spaceGlobalOrderSelector } from '@/store';
-import type { SpaceType } from '@/store';
+import $store, { spaceGlobalOrderSelector } from '../../../../store';
+import type { SpaceType } from '../../../../store';
 
 import { MarkerPart, Point } from "../shared";
 import type { PointLiteral } from "../shared";
