@@ -2095,6 +2095,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   };
 
   const endSwipe = (time: number) => {
+    stack.removeEventListener('wheel', holdWheel);
     const ended = gesture;
     if (swipe) {
       clearTimeout(swipe.idle);
@@ -2127,12 +2128,28 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       : flipFold(sheet, section, fold, 0);
   };
 
+  // Lines and pages only reach here from wheels that report in them; a trackpad's own units are
+  // already the pixels the fold is measured in.
+  const wheelUnit = (e: WheelEvent) => e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sheet.clientHeight : 1;
+
+  // The stacks cover most of the page, and a cancelling wheel listener on one makes every scroll
+  // that starts over it wait for the main thread. So the stack listens passively, and this one,
+  // which claims the mostly sideways events, is only attached while a wheel swipe is underway.
+  // A browser decides whether a scroll waits on the page when the scroll starts, so the scroll
+  // that started the swipe stays uncancellable; the claim covers the ones that follow it.
+  const holdWheel = (e: WheelEvent) => {
+    if (swipe === null) {
+      stack.removeEventListener('wheel', holdWheel);
+      return;
+    }
+    const unit = wheelUnit(e);
+    if (e.cancelable && e.deltaX !== 0 && Math.abs(e.deltaX * unit) >= Math.abs(e.deltaY * unit)) e.preventDefault();
+  };
+
   stack.addEventListener('wheel', (e) => {
     // A pointer already working the fold owns it until it lets go
     if (gesture !== null && swipe === null) return;
-    // Lines and pages only reach here from wheels that report in them; a trackpad's own units are
-    // already the pixels the fold is measured in.
-    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sheet.clientHeight : 1;
+    const unit = wheelUnit(e);
     const sideways = e.deltaX * unit;
     const upright = Math.abs(e.deltaY * unit);
     if (swipe === null) {
@@ -2140,6 +2157,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       // left, which is the way the page leaves.
       if (Math.abs(sideways) <= upright) return;
       if (!beginSwipe(sideways > 0, e.timeStamp)) return;
+      stack.addEventListener('wheel', holdWheel, { passive: false });
     } else if (sideways === 0) {
       // Nothing sideways in it at all — the page's own scrolling, which the gesture has no claim
       // on and which doesn't keep it alive either
@@ -2147,10 +2165,9 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     }
     // Once underway the gesture takes whatever sideways an event has in it, however much upright
     // came along: scrolling slowly wobbles off the horizontal, and dropping those events on the
-    // ratio starved the gesture of the very travel it was being given. It only claims the event
-    // outright while sideways is what it is mostly made of, so a deliberate scroll down mid-
+    // ratio starved the gesture of the very travel it was being given. holdWheel only claims the
+    // event outright while sideways is what it is mostly made of, so a deliberate scroll down mid-
     // gesture still scrolls the page.
-    if (Math.abs(sideways) >= upright) e.preventDefault();
 
     // The scroll moves its own target and the fold eases after it (followScroll), so a wheel's
     // lump lands as a movement rather than a jump. Each gesture counts the scroll running its own
@@ -2181,7 +2198,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       () => { if (swipe) swipe.quiet = true; },
       Math.min(Math.max(gap * SCROLL_IDLE_GAPS, SCROLL_IDLE_MIN), SCROLL_IDLE_MAX),
     );
-  }, { passive: false });
+  }, { passive: true });
 
   // Arrow keys turn the page as the same gesture a swipe drives, committed on the spot: a key
   // press has no hand still on the paper to wait for, and what it asks for is settled the moment
@@ -2236,6 +2253,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       try {
         stack.setPointerCapture(e.pointerId);
       } catch { /* the finger is gone already; the release below still tidies up */ }
+      stack.addEventListener('touchmove', holdTouch, { passive: false });
     }
     e.preventDefault();
     // A finger arrives already smooth, and standing where it puts the paper is the whole point of
@@ -2245,23 +2263,22 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     swipeTo(swipe!.target, e.timeStamp);
   });
 
-  // Pointer events have no say over scrolling — preventDefault on a pointermove is ignored, and
-  // touch-action can only be read at the moment the finger lands, which is before anyone knows
-  // what the finger is for. So the page is held still from the touch stream instead, which is
-  // where a scroll can still be called off: while any gesture owns the finger — the flap's drag,
-  // the back-drag's, or a swipe — every move it makes is cancelled here, and the page stays put
-  // for as long as the paper is being worked. Pointer events for a touch are dispatched ahead of
-  // the touch events they came from, so the gesture the pointermove handlers above start is
-  // already in place by the time the matching touchmove arrives. Once the browser has committed
-  // to a scroll of its own it stops asking (cancelable false) and there is nothing to do but let
-  // it have the gesture — which is why the swipe declines a finger that set off upright.
-  stack.addEventListener('touchmove', (e) => {
-    if (gesture !== null && e.cancelable) e.preventDefault();
-  }, { passive: false });
+  // Pointer events have no say over scrolling: preventDefault on a pointermove is ignored, and
+  // touch-action is read when the finger lands, before anyone knows what the finger is for. The
+  // flap and the back-drag's grab are touch-action: none, so a finger on them never scrolls the
+  // page. A swipe starts from the stack's pan-y, and Chromium and Firefox stop a pan-y touch that
+  // sets off sideways from scrolling at all; for browsers that don't, the swipe cancels its
+  // finger's moves from here, attached only while it owns the finger. A stack-wide listener held
+  // every scroll that started over a stack until the main thread was free (#220 C3). A browser
+  // that already committed the touch as uncancellable (cancelable false) keeps it.
+  const holdTouch = (e: TouchEvent) => {
+    if (e.cancelable) e.preventDefault();
+  };
 
   const liftTouch = (e: PointerEvent) => {
     if (touch === null || e.pointerId !== touch.id) return;
     touch = null;
+    stack.removeEventListener('touchmove', holdTouch);
     if (swipe) endSwipe(e.timeStamp);
   };
   // On the window, not the stack: a finger has implicit capture, so its lift always reaches

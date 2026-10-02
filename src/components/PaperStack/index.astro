@@ -231,6 +231,13 @@ $fold-pulse-y: 2cm;
   @return 3 * (1 - $t) * $t * $t + $t * $t * $t;
 }
 
+// A sideways trackpad swipe over a stack turns its pages, and fold-drag.ts listens to the wheel
+// passively, so it cannot cancel the scroll a swipe starts with. Without this that scroll would also
+// take the browser back a page.
+html:has([data-paper-stack-root]:hover) {
+  overscroll-behavior-x: none;
+}
+
 [data-paper-stack-root] {
   anchor-name: --technical-drawing-stack;
   anchor-scope: --technical-drawing-stack;
@@ -272,10 +279,9 @@ $fold-pulse-y: 2cm;
     // A sideways swipe over the stack turns its pages (fold-drag.ts), so the browser mustn't
     // spend it panning. Vertical is left to the browser: the page still scrolls under a finger
     // that means to scroll, and it takes the gesture back the moment it decides that's what is
-    // happening. Which is only half the bargain — this is settled the instant a finger lands,
-    // before anyone knows what the finger is for, so a finger that turns out to be working the
-    // paper would scroll the page out from under itself. fold-drag.ts cancels the touch moves of
-    // any finger a gesture has claimed, which is what actually holds the page still.
+    // happening. A finger that sets off sideways gets no scroll at all, and the flap and the grab
+    // are touch-action: none, so a finger working the paper holds the page still without a
+    // touchmove listener on the whole stack (fold-drag.ts, holdTouch).
     touch-action: pan-y;
 
     $per-page-splay: 1.5deg;
