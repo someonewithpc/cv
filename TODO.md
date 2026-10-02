@@ -207,3 +207,4 @@
 - [x] Show the "3D scene unavailable" cover on the five Space Builder pages while the WebGL context is lost (C30) (#271)
 - [x] Share one fetch and parse of chair.glb across the Space Builder and Drag and Drop scene apps, each cloning the parsed result (P14) (#249)
 - [x] Touch the Space Builder cursor target only when it changes, not on every autoplay drag tick (C11) (#253)
+- [ ] Dedupe the decoration font list and seed the weight slider from the stored descriptor (C44)

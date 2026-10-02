@@ -17,9 +17,7 @@ export type FontFaceDescriptor = {
 
 const DEMO_FONTS = [
   { family: 'Poppins', weight: '400' },
-  { family: 'Poppins', weight: '700' },
   { family: 'system-ui', weight: '400' },
-  { family: 'system-ui', weight: '700' },
   { family: 'Georgia', weight: '400' },
   { family: 'monospace', weight: '400' },
 ];
