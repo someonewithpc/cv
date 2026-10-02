@@ -137,7 +137,7 @@ test.describe('desktop', () => {
     await expect(set).toHaveAttribute('data-variant', 'table-6-243');
     await expect(set).toHaveClass(/active/);
     await expect(set.locator('.object-icons img'))
-      .toHaveAttribute('src', /table-6-thumb\.webp$/);
+      .toHaveAttribute('src', /table-6-thumb(\.[\w-]+)?\.webp$/);
     await expect(card(app, 'chair')).not.toHaveClass(/active/);
   });
 });

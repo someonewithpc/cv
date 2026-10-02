@@ -1,3 +1,4 @@
+import { spaceBuilderAsset } from './assets';
 import type { LayoutStyle } from './scene/layoutEngine';
 
 /**
@@ -6,12 +7,12 @@ import type { LayoutStyle } from './scene/layoutEngine';
  * Grid & Offset share `theater-grid` (flip-v); Chevron is `t-herringbone` (flip-v).
  */
 export const LAYOUT_ICONS: Record<LayoutStyle, string> = {
-  grid: '/demos/space-builder/layouts/grid.svg',
-  offset: '/demos/space-builder/layouts/offset.svg',
-  hollow: '/demos/space-builder/layouts/hollow.svg',
-  chevron: '/demos/space-builder/layouts/chevron.svg',
-  circle: '/demos/space-builder/layouts/circle.svg',
-  semi_circle: '/demos/space-builder/layouts/semi_circle.svg',
-  u_shape: '/demos/space-builder/layouts/u_shape.svg',
-  boardroom: '/demos/space-builder/layouts/boardroom.svg',
+  grid: spaceBuilderAsset('layouts/grid.svg'),
+  offset: spaceBuilderAsset('layouts/offset.svg'),
+  hollow: spaceBuilderAsset('layouts/hollow.svg'),
+  chevron: spaceBuilderAsset('layouts/chevron.svg'),
+  circle: spaceBuilderAsset('layouts/circle.svg'),
+  semi_circle: spaceBuilderAsset('layouts/semi_circle.svg'),
+  u_shape: spaceBuilderAsset('layouts/u_shape.svg'),
+  boardroom: spaceBuilderAsset('layouts/boardroom.svg'),
 };

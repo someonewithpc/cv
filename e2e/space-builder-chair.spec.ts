@@ -127,7 +127,7 @@ test('the banquet card swaps the model for the seat count and table size picked'
     '8 seats', '6 seats', '4 seats',
   ]);
   await seats.locator('.hover-select-options li').nth(1).locator('button').click();
-  await expect(card.locator('.object-icons img')).toHaveAttribute('src', /table-6-thumb\.webp$/);
+  await expect(card.locator('.object-icons img')).toHaveAttribute('src', /table-6-thumb(\.[\w-]+)?\.webp$/);
   await expect.poll(() => models, { timeout: 20_000 }).toContain('banquet-6pax-243x121.glb');
 
   // 1.82m x 76cm tops out at six seats, so the other two read as unavailable.

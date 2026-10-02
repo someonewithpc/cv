@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchEffect } from 'vue';
 
+import builderLogoUrl from '@/assets/demos/space-builder/builder-logo.png?url';
 import { watchDrawingNote } from '@/client/drawingNote';
 import {
   isTransportControl,
@@ -69,7 +70,7 @@ const railGroups: RailTool[][] = [
 ];
 
 function toolIconStyle(tool: RailTool) {
-  const url = `url(${tool.icon})`;
+  const url = `url("${tool.icon}")`;
   return {
     maskImage: url,
     WebkitMaskImage: url,
@@ -860,7 +861,7 @@ onBeforeUnmount(() => {
       <div class="rail-logo" aria-hidden="true" title="Visrez">
         <img
           class="rail-logo-img"
-          src="/demos/space-builder/builder-logo.png"
+          :src="builderLogoUrl"
           alt=""
           width="40"
           height="40"
@@ -1215,7 +1216,7 @@ $scene-bg: #212121;
     display: block;
     height: 5px;
     margin: 0.75em 0;
-    background-image: url('/demos/space-builder/separator.svg');
+    background-image: url('@/assets/demos/space-builder/separator.svg');
     background-position: center;
     background-repeat: repeat-x;
   }
