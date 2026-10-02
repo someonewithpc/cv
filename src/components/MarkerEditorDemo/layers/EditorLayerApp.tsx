@@ -6,8 +6,7 @@ import {
   spacesSelector,
   useAppDispatch,
   useAppSelector,
-} from '@/store';
-import { StoreProvider } from '@/store/StoreProvider';
+} from '../store';
 
 import { reducedMotion } from '@/client/autoplayStatus';
 import { watchDrawingNote } from '@/client/drawingNote';
@@ -36,7 +35,7 @@ const AUTOPLAY_TARGETS = [
 
 const AUTOPLAY_STEP_MS = 1400;
 
-function EditorLayerInner() {
+export default function EditorLayerApp() {
   const dispatch = useAppDispatch();
   const hostRef = useRef<HTMLDivElement>(null);
   const spaces = useAppSelector(spacesSelector);
@@ -126,13 +125,5 @@ function EditorLayerInner() {
         />
       ) : null}
     </div>
-  );
-}
-
-export default function EditorLayerApp() {
-  return (
-    <StoreProvider>
-      <EditorLayerInner />
-    </StoreProvider>
   );
 }

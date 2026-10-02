@@ -2,19 +2,15 @@ import '../markers/client-only';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useStore } from 'react-redux';
 
-import {
+import store, {
   markerEditingSpaceIdSelector,
-  setAutoplayPaused,
   setMarkerEditingSpaceId,
   spacesSelector,
   useAppDispatch,
   useAppSelector,
-  type RootState,
   type SpaceType,
-} from '@/store';
-import { StoreProvider } from '@/store/StoreProvider';
+} from '../store';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
@@ -153,9 +149,9 @@ function DemoCursor({
   );
 }
 
-function MockMapOverlayInner() {
+/** Client-only overlays: pins + marker selector (map SVG is server-rendered). */
+export default function MockMapApp() {
   const dispatch = useAppDispatch();
-  const store = useStore<RootState>();
   const spaces = useAppSelector(spacesSelector);
   const storeEditingSpaceId = useAppSelector(markerEditingSpaceIdSelector);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -502,7 +498,7 @@ function MockMapOverlayInner() {
       clearTargetRetry();
       clearDemoTargetHighlight();
     };
-  }, [dispatch, store]);
+  }, [dispatch]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -529,7 +525,6 @@ function MockMapOverlayInner() {
   const pauseAutoplay = () => {
     userControlRef.current = true;
     setUserControl(true);
-    dispatch(setAutoplayPaused(true));
     autoplayRef.current?.pause();
     clearTargetRetry();
     clearDemoTargetHighlight();
@@ -550,7 +545,6 @@ function MockMapOverlayInner() {
     userControlRef.current = false;
     cursorPhaseRef.current = 'demo';
     setUserControl(false);
-    dispatch(setAutoplayPaused(false));
     setCursorPhase('demo');
     // Under reduced motion the walkthrough never started on its own: play is its first run
     if (autoplayStartedRef.current) autoplayRef.current?.resume();
@@ -573,7 +567,6 @@ function MockMapOverlayInner() {
     nativePopupRef.current = false;
     userControlRef.current = false;
     setUserControl(false);
-    dispatch(setAutoplayPaused(false));
     cursorPhaseRef.current = 'demo';
     setCursorPhase('demo');
     autoplayStartedRef.current = true;
@@ -803,14 +796,5 @@ function MockMapOverlayInner() {
         host={editorPortalHost}
       />
     </div>
-  );
-}
-
-/** Client-only overlays: pins + marker selector (map SVG is server-rendered). */
-export default function MockMapApp() {
-  return (
-    <StoreProvider>
-      <MockMapOverlayInner />
-    </StoreProvider>
   );
 }

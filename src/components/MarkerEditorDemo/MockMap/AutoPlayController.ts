@@ -1,5 +1,3 @@
-import { ActionCreators } from 'redux-undo';
-
 import { documentGate } from '@/client/frontPage';
 import { hexToHsv } from '@/components/MarkerEditorDemo/markers/MarkerEditor/markerParts/shared/inlineColorPicker';
 import {
@@ -9,16 +7,19 @@ import {
 } from '@/components/TechnicalDrawing/demo-cursor-press';
 
 import {
+  clearHistory,
   markersSelector,
+  redo,
   removeMarker,
   setMarkerEditingSpaceId,
   setSpaceMarker,
   setSpaces,
   spacesSelector,
+  undo,
   type AppDispatch,
   type MarkerType,
   type RootState,
-} from '@/store';
+} from '../store';
 
 export type DemoCursorStep = {
   /** `data-demo-target` value, or null to rest on the map. */
@@ -369,7 +370,7 @@ export class AutoPlayController {
     }
     this.demoMarkerIds = DEMO_PRESETS.map(() => null);
     this.sessionIsCreate = false;
-    dispatch(ActionCreators.clearHistory());
+    dispatch(clearHistory());
   }
 
   /**
@@ -967,7 +968,7 @@ export class AutoPlayController {
         cursor: { target: null },
         run: (dispatch) => {
           this.onToast(undoRedoShortcut('Undo'));
-          dispatch(ActionCreators.undo());
+          dispatch(undo());
         },
       },
       {
@@ -975,7 +976,7 @@ export class AutoPlayController {
         cursor: { target: null },
         run: (dispatch) => {
           this.onToast(undoRedoShortcut('Redo'));
-          dispatch(ActionCreators.redo());
+          dispatch(redo());
         },
       },
       {
@@ -1066,10 +1067,10 @@ export function bindUndoRedoKeys(
     e.preventDefault();
     if (e.shiftKey) {
       onToast(undoRedoShortcut('Redo'));
-      dispatch(ActionCreators.redo());
+      dispatch(redo());
     } else {
       onToast(undoRedoShortcut('Undo'));
-      dispatch(ActionCreators.undo());
+      dispatch(undo());
     }
   };
 
