@@ -1,7 +1,8 @@
 /* Where a sheet's transport deck sits. On a landscape sheet it fills the bottom band, which
    holds the whole deck at every landscape width. A portrait sheet's band is 0.625rem deep,
    shallower than a key, and the dog-eared corner covers its start, so there the deck moves
-   under the page into the callout's card (Callout.astro), the slip filed under the stack.
+   under the page into the callout's card (Callout.astro), the slip filed under the stack, as
+   its first entry, over the title.
 
    The fit is CSS's: the frame's probe query picks the orientation, which Stack.astro restates
    as data-sheet-orientation. Script only does the move, because the card is outside the sheet
@@ -18,7 +19,9 @@ export function homeDeck(stack: HTMLElement, page: HTMLElement) {
 
   const place = () => {
     const home = stack.dataset.sheetOrientation === 'portrait' && isFrontPage(page) ? card : page;
-    if (deck.parentElement !== home) home.append(deck);
+    if (deck.parentElement === home) return;
+    if (home === card) card.prepend(deck);
+    else home.append(deck);
   };
   new MutationObserver(place).observe(stack, { attributes: true, attributeFilter: ['data-sheet-orientation'] });
   watchFrontPage(page, place);

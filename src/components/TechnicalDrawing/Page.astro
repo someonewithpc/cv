@@ -1150,17 +1150,18 @@ section {
 }
 
 /* The deck in the callout's card (deck-home.ts), which only a portrait sheet sends it to, so
-   the card is always the slip filed under the stack there (Callout.astro): the entry after the
-   notes, ruled off from them the way the entries are. The keys at the size a phone sheet gives
+   the card is always the slip filed under the stack there (Callout.astro): its first entry, over
+   the title and ruled off from it the way the entries are. The keys at the size a phone sheet gives
    them, the lamp and the state under them, and the instruction under those, since the slip is
    narrower than a band. */
 :global(.callout-card) > .demo-transport {
   flex-wrap: wrap;
   row-gap: 0.375rem;
-  grid-column: 1 / -1;
-  margin-top: var(--slip-pad);
-  padding-top: var(--slip-pad);
-  border-top: 1px solid color-mix(in oklch, var(--line-strong), transparent 45%);
+  /* Over the title card, which spans every row of the slip and comes after it. */
+  position: relative;
+  grid-area: deck / 1 / deck / -1;
+  padding-bottom: 0.4375rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--line-strong), transparent 45%);
 
   .demo-key svg {
     height: 1.125rem;

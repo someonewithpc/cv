@@ -407,7 +407,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
 
     display: grid;
     grid-template-columns: [title-start] fit-content(100%) [title-end] minmax(0, 1fr);
-    grid-template-rows: [lead] minmax(0, 1fr) [label] auto 0.125rem [text] auto [notes] auto;
+    grid-template-rows: [lead] minmax(0, 1fr) [deck] auto [label] auto 0.125rem [text] auto [notes] auto;
     position: relative;
     top: auto;
     inset-inline: auto;
@@ -444,7 +444,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
       padding-top: calc(
         var(--slip-tuck) + var(--slip-pad) - 1px
         + (var(--slip-sheet) - var(--slip-pin-y)) * (1 / cos(var(--slip-turn)) - 1)
-        + (var(--slip-inset) + 1px + var(--slip-pad) - var(--slip-pin-x) + 100%) * var(--slip-tan)
+        + (var(--slip-inset) + 1px + var(--slip-pad) - var(--slip-pin-x) + var(--slip-first, 100%)) * var(--slip-tan)
       );
     }
 
@@ -498,6 +498,22 @@ const slipStyle = inWords[pageCount - 2] !== undefined
 
     :global(.title-cell-notes) {
       padding-bottom: 0;
+    }
+
+    /* A deck (deck-home.ts) is the first entry, and the keys are the whole of its first line:
+       three keys 1.125rem tall, 21 by 18, 0.25em apart at the deck's 0.625rem (Page.astro). The
+       fan clears them where the title's text would end. */
+    &:has(> [data-demo-transport]:not([hidden])) > :global(.title-card::before) {
+      --slip-first: calc(3 * 1.125rem * 21 / 18 + 2 * 0.25 * 0.625rem);
+    }
+
+    /* Under a deck (deck-home.ts) the title is an entry below a rule, like the notes. */
+    &:has(> [data-demo-transport]:not([hidden])) :global(.title-cell:first-child) {
+      padding-top: 0.375rem;
+    }
+
+    &:has(> [data-demo-transport]:not([hidden])) :global(.title-cell:first-child dt) {
+      text-box: normal;
     }
 
     :global(.title-cell-notes dd) {
@@ -599,6 +615,22 @@ const slipStyle = inWords[pageCount - 2] !== undefined
     --probe-depth: calc(var(--probe-foot) + var(--slip-pad));
 
     &::before {
+      padding-inline-start: calc(var(--slip-inset) + var(--slip-width) - 1px - var(--slip-pad));
+    }
+
+    &::after {
+      padding-inline-start: var(--slip-pad);
+    }
+  }
+
+  /* Under a deck the hint keeps the inset from the deck as a whole: its lines run on to the
+     slip's inner edge, the way a rule does, so the deck stands under the hint wherever the hint
+     is over the slip. */
+  .callout-view[data-hint-show] .callout-card:has(> [data-demo-transport]:not([hidden])) :global(.title-probe[data-probe='label']) {
+    grid-row-end: deck;
+
+    &::before {
+      content: '' / '';
       padding-inline-start: calc(var(--slip-inset) + var(--slip-width) - 1px - var(--slip-pad));
     }
 
