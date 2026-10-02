@@ -764,25 +764,6 @@ function MockMapOverlayInner() {
         </div>
       </div>
 
-      <button
-        type="button"
-        className="mock-map-restart"
-        title="Restart the demo"
-        onClick={restartDemo}
-      >
-        <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
-          <path
-            d="M15.5 5.5A6.5 6.5 0 1 0 16.9 11M15.5 5.5V2M15.5 5.5H12"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Restart
-      </button>
-
       {editingSpace && selectorOverlayPos && (
         <MarkerSelector
           space={editingSpace}
