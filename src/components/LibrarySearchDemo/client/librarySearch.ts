@@ -1,6 +1,6 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
-import { demoGate, documentGate } from '@/client/frontPage';
+import { demoGate, type DemoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
 
@@ -8,8 +8,6 @@ import { libraryObjects } from '../objects';
 import { formatScore, serialise, type Filters, type SearchResult, type SearchState } from '../search';
 import { requests } from './requests';
 import { initialState } from './state';
-
-const wait = (ms: number) => documentGate().wait(ms);
 
 /** Matches the bar's scale transition in SearchTool.astro. */
 const MOVE_MS = 350;
@@ -107,9 +105,10 @@ function showState(tool: Tool, state: SearchState) {
  * the script makes starts with it: it clicks into the field before it types or empties it,
  * and clicks a filter open, then the option in its drawn list, before that filter changes.
  * The control it works wears the focus ring while it does, without the focus, which would
- * hand the tool to the visitor.
+ * hand the tool to the visitor. Its pauses run on the demo gate, same as the walkthrough's
+ * own pacing, so a press never lands once the sheet has gone off screen.
  */
-function drawnHand(host: HTMLElement, el: HTMLElement, list: HTMLUListElement | null) {
+function drawnHand(host: HTMLElement, el: HTMLElement, list: HTMLUListElement | null, gate: DemoGate) {
   const mover = createCursorMover(el, { hotspot: CURSOR_HOTSPOT });
   let working: HTMLElement | null = null;
 
@@ -142,7 +141,7 @@ function drawnHand(host: HTMLElement, el: HTMLElement, list: HTMLUListElement | 
       await mover.moveTo(to);
     }
     if (stopped()) return;
-    await wait(PRESS_DELAY_MS);
+    await gate.wait(PRESS_DELAY_MS);
     if (stopped()) return;
     const box = target.getBoundingClientRect();
     await demoPress(target, { x: box.left + box.width * at.x, y: box.top + box.height * at.y }, { click: false });
@@ -201,7 +200,7 @@ function drawnHand(host: HTMLElement, el: HTMLElement, list: HTMLUListElement | 
         close();
         return false;
       }
-      await wait(LIST_OPEN_MS);
+      await gate.wait(LIST_OPEN_MS);
       if (stopped()) return false;
       if (list && (item.offsetTop < list.scrollTop || item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight)) {
         list.scrollTop = item.offsetTop - list.clientHeight / 2;
@@ -246,11 +245,11 @@ function autoplay(tool: Tool, host: HTMLElement, script: readonly Step[], initia
     return null;
   }
 
-  const hand = drawnHand(host, cursorEl, tool.options);
   let run = 0;
   let active = false;
   let held = false;
   const gate = demoGate(root);
+  const hand = drawnHand(host, cursorEl, tool.options, gate);
   gate.onChange((next) => {
     active = next;
   });
