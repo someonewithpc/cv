@@ -83,36 +83,6 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
 <style lang="scss">
 @use '@/scss/technical-drawing' as drawing;
 
-@property --first-vertex-virtual-visible {
-  syntax: 'visible | hidden';
-  inherits: true;
-  initial-value: visible;
-}
-
-@property --first-vertex-visible {
-  syntax: 'visible | hidden';
-  inherits: true;
-  initial-value: visible;
-}
-
-@property --second-vertex-visible {
-  syntax: 'visible | hidden';
-  inherits: true;
-  initial-value: hidden;
-}
-
-@property --third-vertex-visible {
-  syntax: 'visible | hidden';
-  inherits: true;
-  initial-value: hidden;
-}
-
-@property --path-dash-offset {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 1;
-}
-
 .wrapper {
   width: min(#{drawing.$artwork-width}, 100%);
   max-width: 100%;
@@ -123,77 +93,124 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
     height: 100%;
   }
 
+  // Each part runs its own copy of the 10 s timeline, so a frame restyles and repaints only the
+  // part that moves. The vertices switch on and off with steps at the moments they did when
+  // the timeline drove inherited custom properties.
+  $timing: 10s 0.5s linear forwards infinite;
+
   path {
     stroke: white;
     stroke-dasharray: 1;
-    stroke-dashoffset: var(--path-dash-offset);
+    stroke-dashoffset: 1;
+    animation: visrez-logo-path-layer-dash $timing;
   }
 
   :global(.first-vertex-virtual) {
-    visibility: var(--first-vertex-virtual-visible);
+    animation: visrez-logo-path-layer-first-vertex-virtual $timing;
+    animation-timing-function: step-end;
   }
 
   :global(.first-vertex) {
-    visibility: var(--first-vertex-visible);
+    animation: visrez-logo-path-layer-first-vertex $timing;
+    animation-timing-function: step-end;
   }
 
   :global(.second-vertex) {
-    visibility: var(--second-vertex-visible);
+    visibility: hidden;
+    animation: visrez-logo-path-layer-second-vertex $timing;
+    animation-timing-function: step-end;
   }
 
   :global(.third-vertex) {
-    visibility: var(--third-vertex-visible);
+    visibility: hidden;
+    animation: visrez-logo-path-layer-third-vertex $timing;
+    animation-timing-function: step-end;
   }
-
-  animation: visrez-logo-path-dash-animation-demo-path-layer 10s 0.5s linear forwards infinite;
 
   @media (prefers-reduced-motion: reduce) {
     &:not([data-full-motion] *) {
-      animation: none;
-      --path-dash-offset: 0;
-      --first-vertex-virtual-visible: hidden;
-      --first-vertex-visible: hidden;
+      path,
+      :global(:is(.first-vertex-virtual, .first-vertex, .second-vertex, .third-vertex)) {
+        animation: none;
+      }
+
+      path {
+        stroke-dashoffset: 0;
+      }
+
+      :global(:is(.first-vertex-virtual, .first-vertex)) {
+        visibility: hidden;
+      }
     }
   }
 
-  @keyframes visrez-logo-path-dash-animation-demo-path-layer {
+  @keyframes visrez-logo-path-layer-dash {
     from {
-      --path-dash-offset: 0.999;
-      --first-vertex-virtual-visible: visible;
+      stroke-dashoffset: 0.999;
     }
 
     20% {
-      --first-vertex-virtual-visible: hidden;
-      --path-dash-offset: 0.9;
-    }
-
-    30% {
-      --first-vertex-visible: hidden;
-      --second-vertex-visible: visible;
-    }
-
-    40% {
-      --second-vertex-visible: hidden;
-      --first-vertex-virtual-visible: hidden;
-    }
-
-    55% {
-      --third-vertex-visible: visible;
-    }
-
-    56% {
-      --third-vertex-visible: hidden;
-    }
-
-    63% {
-      --first-vertex-virtual-visible: visible;
-      --first-vertex-visible: hidden;
+      stroke-dashoffset: 0.9;
     }
 
     85%, to {
-      --first-vertex-virtual-visible: hidden;
-      --first-vertex-visible: hidden;
-      --path-dash-offset: 0;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes visrez-logo-path-layer-first-vertex-virtual {
+    from {
+      visibility: visible;
+    }
+
+    10% {
+      visibility: hidden;
+    }
+
+    51.5% {
+      visibility: visible;
+    }
+
+    74%, to {
+      visibility: hidden;
+    }
+  }
+
+  @keyframes visrez-logo-path-layer-first-vertex {
+    from {
+      visibility: visible;
+    }
+
+    15%, to {
+      visibility: hidden;
+    }
+  }
+
+  @keyframes visrez-logo-path-layer-second-vertex {
+    from {
+      visibility: hidden;
+    }
+
+    15% {
+      visibility: visible;
+    }
+
+    35%, to {
+      visibility: hidden;
+    }
+  }
+
+  @keyframes visrez-logo-path-layer-third-vertex {
+    from {
+      visibility: hidden;
+    }
+
+    27.5% {
+      visibility: visible;
+    }
+
+    55.5%, to {
+      visibility: hidden;
     }
   }
 }
