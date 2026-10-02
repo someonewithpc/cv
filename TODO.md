@@ -225,4 +225,4 @@
 - [x] The take-over toasts and deck hint name a mouse gesture, and two Space Builder apps only hand over on a sidebar edit or a chip pick (T22) (#270)
 - [x] Other gesture-bound strings across the demos: double-click, drag, hover, Ctrl, finger counts and a "below" that isn't there (T23) (#270)
 - [x] Closing a HoverSelect with focus on an option returns focus to its summary, and the map pins and the tagging tool ring keyboard focus (A18) (#304)
-- [ ] LayoutsSceneApp's `isChrome` matched `.rail, button`, a selector it has no `.rail` for, so a wheel or drag over the sidebar's gaps reached the scene (C28)
+- [x] LayoutsSceneApp's `isChrome` matched `.rail, button`, a selector it has no `.rail` for, so a wheel or drag over the sidebar's gaps reached the scene (C28) (#275)
