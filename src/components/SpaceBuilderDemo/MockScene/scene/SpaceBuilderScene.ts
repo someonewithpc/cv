@@ -36,7 +36,7 @@ import {
 } from 'three';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -157,6 +157,41 @@ let chairModelPromise: Promise<MergedModel> | null = null;
 function loadSharedChairModel(url: string): Promise<MergedModel> {
   chairModelPromise ??= loadModelAsMergedMesh(url);
   return chairModelPromise;
+}
+
+/**
+ * The extras (banquet sets, armchair) follow the chair's rule: one fetch and Draco decode
+ * per URL per page, shared by every scene. A scene tints and disposes only the copy
+ * {@link cloneSharedModel} gives it. A failed load leaves the map so a later scene retries.
+ */
+const extraModelPromises = new Map<string, Promise<GLTF>>();
+
+async function loadSharedExtraModel(url: string): Promise<GLTF> {
+  let promise = extraModelPromises.get(url);
+  if (!promise) {
+    promise = (async () => {
+      const loader = makeGltfLoader();
+      if (MeshoptDecoder.ready) await MeshoptDecoder.ready;
+      return loader.loadAsync(url);
+    })();
+    extraModelPromises.set(url, promise);
+    promise.catch(() => extraModelPromises.delete(url));
+  }
+  return promise;
+}
+
+/** Object3D.clone shares geometry and materials; give each mesh its own copies. */
+function cloneSharedModel(source: Object3D): Object3D {
+  const root = source.clone(true);
+  root.traverse((obj) => {
+    const mesh = obj as Mesh;
+    if (!mesh.isMesh) return;
+    mesh.geometry = mesh.geometry.clone();
+    mesh.material = Array.isArray(mesh.material)
+      ? mesh.material.map((material) => material.clone())
+      : mesh.material.clone();
+  });
+  return root;
 }
 
 const GROUND_SIZE = 28;
@@ -580,13 +615,9 @@ export class SpaceBuilderScene {
     // primary chair's own raw-height measurement so every extra converts to
     // real meters by the same factor, instead of guessing per model.
     await this.whenChairReady();
-    const loader = makeGltfLoader();
-    if (MeshoptDecoder.ready) {
-      await MeshoptDecoder.ready;
-    }
-    const gltf = await loader.loadAsync(url);
+    const gltf = await loadSharedExtraModel(url);
     if (this.disposed) return;
-    const root = gltf.scene;
+    const root = cloneSharedModel(gltf.scene);
     if (variant.tint) applyTint(root, variant.tint);
     root.updateMatrixWorld(true);
 
