@@ -27,14 +27,14 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
           <span aria-hidden="true">→</span>
           <span><code class="hl" set:html={highlightSpans(`--caret: ${selectionStart}`, 'css', ['a{', '}'])} /></span>
           <span aria-hidden="true">→</span>
-          <span><code class="hl" set:html={highlightSpans('left: min(var(--caret) * 1ch, var(--input-width) - 1ch)', 'css', ['a{', '}'])} /></span>
+          <span><code class="hl" set:html={highlightSpans('left: min(var(--caret) * 1ch - var(--scroll), var(--input-width) - 1ch) + 0.5ch', 'css', ['a{', '}'])} /></span>
         </div>
       </div>
 
       <ol class="steps">
         <li>
           <span class="n" aria-hidden="true">1</span>
-          <span>The shared input's <code>keyup</code>, <code>focus</code>, <code>click</code> and <code>blur</code> read <code>selectionStart</code></span>
+          <span>The shared input's <code>keyup</code>, <code>focus</code>, <code>click</code>, <code>blur</code> and <code>input</code> read <code>selectionStart</code></span>
         </li>
         <li>
           <span class="n" aria-hidden="true">2</span>
