@@ -76,11 +76,13 @@ export class SceneArrowAnnotations {
     for (const item of this.items) {
       this.layoutItem(item);
     }
+    this.host.requestRender();
   }
 
   dispose() {
     this.clearItems();
     this.host.scene.remove(this.group);
+    this.host.requestRender();
     this.shaftGeo.dispose();
     this.headGeo.dispose();
     this.mat.dispose();

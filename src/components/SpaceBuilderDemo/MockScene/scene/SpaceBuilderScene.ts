@@ -384,6 +384,7 @@ export class SpaceBuilderScene {
     this.root = canvas.parentElement ?? labelHost;
     this.onSnapshot = onSnapshot;
     this.onContextLost = onContextLost;
+    canvas.dataset.sceneActive = 'true';
     canvas.addEventListener('webglcontextlost', this.handleContextLost);
     canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
 
@@ -449,27 +450,28 @@ export class SpaceBuilderScene {
       this.resizeObserver.observe(appShell);
     }
 
-    this.startLoop();
+    this.requestRender();
   }
 
-  // Only runs while active: a loop left spinning on a paused scene still asks the browser for
-  // a frame every vsync, and six of them kept an idle page producing frames.
-  private startLoop() {
-    cancelAnimationFrame(this.animationId);
-    const tick = () => {
-      if (this.disposed || !this.active) {
-        this.animationId = 0;
-        return;
-      }
-      this.animationId = requestAnimationFrame(tick);
+  /**
+   * Draw once on the next frame. Nothing in the scene moves on its own: every change comes
+   * through a method here (camera, area, chairs, ghost, selection, textures, resize), and
+   * each asks for a frame, so a scene at rest asks the browser for none. Calls within a
+   * frame share one draw, and a tween that changes the scene every frame asks every frame.
+   */
+  requestRender() {
+    if (this.disposed || !this.active || this.animationId) return;
+    this.animationId = requestAnimationFrame(() => {
+      this.animationId = 0;
+      if (this.disposed || !this.active) return;
       this.renderer.render(this.scene, this.camera);
       this.labelRenderer.render(this.scene, this.camera);
-    };
-    this.animationId = requestAnimationFrame(tick);
+    });
   }
 
   pause() {
     this.active = false;
+    this.canvas.dataset.sceneActive = 'false';
     cancelAnimationFrame(this.animationId);
     this.animationId = 0;
   }
@@ -477,7 +479,8 @@ export class SpaceBuilderScene {
   resume() {
     if (this.disposed || this.gpuReleased) return;
     this.active = true;
-    if (!this.animationId) this.startLoop();
+    this.canvas.dataset.sceneActive = 'true';
+    this.requestRender();
   }
 
   isActive() {
@@ -600,6 +603,7 @@ export class SpaceBuilderScene {
       this.scene.remove(this.extraGhost);
       this.extraGhost = null;
     }
+    this.requestRender();
     if (id === 'chair') {
       this.activeCatalogId = 'chair';
       this.setChairTint(variant?.tint);
@@ -673,6 +677,7 @@ export class SpaceBuilderScene {
     this.extraGhost = template.clone(true);
     this.extraGhost.visible = false;
     this.scene.add(this.extraGhost);
+    this.requestRender();
   }
 
   private clearExtras() {
@@ -778,6 +783,7 @@ export class SpaceBuilderScene {
   /** Hide the corner/edge/move/rotate lollipops without hiding the tinted fill plane. */
   setHandlesVisible(visible: boolean) {
     this.handles.visible = visible;
+    this.requestRender();
   }
 
   /** Hide the capacity tag regardless of seat count — for pages with no chairs loaded. */
@@ -895,6 +901,7 @@ export class SpaceBuilderScene {
   setGhostVisible(visible: boolean) {
     const ghost = this.activeGhost();
     if (ghost) ghost.visible = visible;
+    this.requestRender();
   }
 
   setGhostAt(clientX: number, clientY: number) {
@@ -906,6 +913,7 @@ export class SpaceBuilderScene {
     ghost.position.z = point.z;
     if (this.activeCatalogId === 'chair') ghost.position.y = this.chairYOffset;
     ghost.visible = true;
+    this.requestRender();
   }
 
   /**
@@ -933,6 +941,7 @@ export class SpaceBuilderScene {
     this.selectionHighlight.position.x = center.x;
     this.selectionHighlight.position.z = center.z;
     this.selectionHighlight.visible = true;
+    this.requestRender();
     return { x: center.x, z: center.z };
   }
 
@@ -940,6 +949,7 @@ export class SpaceBuilderScene {
   clearSelection() {
     this.selected = null;
     if (this.selectionHighlight) this.selectionHighlight.visible = false;
+    this.requestRender();
   }
 
   hasSelection() {
@@ -1630,6 +1640,7 @@ export class SpaceBuilderScene {
         const texture = new Texture(image);
         texture.needsUpdate = true;
         apply(texture);
+        this.requestRender();
       },
       () => {
         if (!this.disposed) console.debug(`Grass texture ${url} failed twice, keeping the flat colour`);
@@ -1778,6 +1789,7 @@ export class SpaceBuilderScene {
   }
 
   private updateTagPosition() {
+    this.requestRender();
     if (!this.area || this.tagSuppressed) {
       this.tagObject.visible = false;
       return;
@@ -1843,6 +1855,7 @@ export class SpaceBuilderScene {
       this.chairs.setMatrixAt(i, this.dummy.matrix);
     }
     this.chairs.instanceMatrix.needsUpdate = true;
+    this.requestRender();
   }
 
   private clearChairs() {
@@ -1851,9 +1864,11 @@ export class SpaceBuilderScene {
       this.chairs.dispose();
       this.chairs = null;
     }
+    this.requestRender();
   }
 
   private updateCamera() {
+    this.requestRender();
     this.camera.position.setFromSpherical(this.spherical).add(this.cameraTarget);
     this.camera.lookAt(this.cameraTarget);
     if (this.skybox) {
@@ -1886,6 +1901,7 @@ export class SpaceBuilderScene {
   }
 
   private emitSnapshot() {
+    this.requestRender();
     this.onSnapshot?.(this.getSnapshot());
   }
 }
