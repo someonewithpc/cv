@@ -72,7 +72,7 @@ export function deserializeKeyValue(key: string, value: string): [string, string
   if (rest.length === 0) return null;
   const data = rest.join(':');
 
-  if (!(constructorName in serializableConstructors)) throw new Error(`Unknown constructor ${constructorName}`);
+  if (!(constructorName in serializableConstructors)) return null;
 
   const boxed = new serializableConstructors[constructorName](data);
   const unboxed = 'valueOf' in boxed ? boxed.valueOf() : boxed;
@@ -141,8 +141,9 @@ export function deserializeMarker(storeMarker: MarkerType | undefined) {
 
       const [flatAttributes, nestedAttributes] = partition(attributes, ([, value]) => typeof value === 'string');
 
-      console.assert(flatAttributes.length === 1 && flatAttributes[0][0] === 'kind', 'Unhandled attributes %o found when deserializing %o', flatAttributes, storeMarker);
-      const [[, className]] = flatAttributes;
+      const kindAttribute = flatAttributes.find(([name]) => name === 'kind');
+      if (!kindAttribute) return;
+      const [, className] = kindAttribute;
 
       Object.entries(markers)
         .forEach(([step, options]) => {
