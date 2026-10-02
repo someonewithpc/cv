@@ -8,7 +8,7 @@
 import { highlightInline, ticks } from '@/highlight';
 
 const rules = [
-  { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]):not(:has(radio:checked)) }', note: 'the OS only knows light and dark' },
+  { mark: 'os', name: 'OS scheme', selector: '@media (prefers-color-scheme: dark) { :root:not([data-theme]) }', note: 'the OS only knows light and dark' },
   { mark: 'stamp', name: 'stamp', selector: ':root[data-theme="dark"]', note: 'written by the pick, kept as `{str}cv-theme`' },
   { mark: 'radio', name: 'radio', selector: ':root:has(#theme-dark:checked)', note: 'works without script' },
 ];
