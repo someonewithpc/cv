@@ -218,4 +218,4 @@
 - [x] A plain tap on the flap after the first gesture runs a 1 s settle glide (C20) (#269)
 - [x] Fit the Event Dispatch sheet at 320 and 336 px, where its template and $res ran under the deck and past the sheet (S1) (#273)
 - [x] Decorative SVGs and dead ARIA: reset icon titles, elevation figure, separator role, bare SVGs (A13) (#297)
-- [ ] Give the Chair style carousel, the note-fold button and the theme picker stage a focus ring that actually paints (A15, A16)
+- [x] Give the Chair style carousel, the note-fold button and the theme picker stage a focus ring that actually paints (A15, A16) (#267)
