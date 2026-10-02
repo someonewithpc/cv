@@ -1088,7 +1088,7 @@ onBeforeUnmount(() => {
     :data-selected="selectedPlacement ? 'true' : 'false'"
     :data-placed="placedAt"
     :data-floor="floorExtent"
-    aria-label="Drag and drop demo, autoplaying the Add tool; drag a catalog card onto the floor, or double-click one and click where it goes"
+    aria-label="Drag and drop demo, autoplaying the Add tool; drag a catalog card onto the floor, or pick one, then pick where it goes"
     @keydown="onKeyDown"
   >
     <div class="viewport">

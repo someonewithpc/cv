@@ -113,7 +113,7 @@ type Layer = keyof typeof layers;
       store: (
         <PostIt background="#edf" color="black">
           Marker and space mutations live under redux-undo. <code>groupedUndo.batch</code> wraps
-          multi-dispatch saves so Ctrl/Z undoes the whole edit as one step
+          multi-dispatch saves so Ctrl/Cmd+Z undoes the whole edit as one step
         </PostIt>
       ),
     }[layer])}

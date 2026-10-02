@@ -75,7 +75,7 @@ const unavailableSize = computed(() => sizeOptions.value.filter(
 const title = computed(() => {
   if (!props.item.real) return `${props.item.name} (placeholder)`;
   return props.item.layoutable
-    ? `${props.item.name} · double-click to Build`
+    ? `${props.item.name} · confirm to Build`
     : `${props.item.name} · drag to place`;
 });
 

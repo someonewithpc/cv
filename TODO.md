@@ -222,3 +222,5 @@
 - [x] Stop an aborted font query's fetches and keep its faces out of document.fonts (C47) (#282)
 - [x] Drop the 43 legacy colour aliases nothing reads (S14) (#305)
 - [x] Remove the rules and declarations that do nothing (S17) (#305)
+- [ ] The take-over toasts and deck hint name a mouse gesture, and two Space Builder apps only hand over on a sidebar edit or a chip pick (T22)
+- [ ] Other gesture-bound strings across the demos: double-click, drag, hover, Ctrl, finger counts and a "below" that isn't there (T23)

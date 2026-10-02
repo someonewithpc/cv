@@ -17,7 +17,7 @@ export function FontWeight(
         htmlFor={id}
         title={enabled
           ? 'Select font weight. Note that different weights may not be supported by the selected font'
-          : 'Font weight is not available because this font only provides specific weights. Use the dropdown below'
+          : 'Font weight is not available because this font only provides specific weights. Use the Font Family dropdown instead'
         }
       >
         <span>

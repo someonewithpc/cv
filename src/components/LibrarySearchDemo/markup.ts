@@ -88,7 +88,7 @@ export function relevanceHtml(state: SearchState) {
     })
     .join('');
 
-  const more = hits.length > TOP ? `<p class="more">and ${hits.length - TOP} more below</p>` : '';
+  const more = hits.length > TOP ? `<p class="more">and ${hits.length - TOP} more not shown</p>` : '';
   const empty = hits.length ? '' : '<p class="nothing">No object matches, so there is no maximum to divide by.</p>';
 
   return `<table class="terms">

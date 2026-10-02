@@ -44,7 +44,7 @@ const bands: Band[] = [
 const gutter = String(lines.length).length;
 
 const echo = [
-  { id: 'idle', text: 'Point at the code to see which parser owns it' },
+  { id: 'idle', text: 'Point at or tab to the code to see which parser owns it' },
   { id: 'host', text: 'astro: the host parser, over the whole buffer' },
   ...ranges.map((range) => ({ id: range.id, text: `${range.lang}: ${range.rule}, :local t` })),
 ];

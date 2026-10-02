@@ -150,7 +150,7 @@ test('main page: pointing at a token lights up the range that owns it', async ({
   const echo = buffer.locator('.echo');
   const visibleEcho = () => echo.locator('span').filter({ visible: true });
 
-  await expect(visibleEcho()).toHaveText(/Point at the code/);
+  await expect(visibleEcho()).toHaveText(/Point at or tab to the code/);
 
   const interpolation = buffer.locator('.range', { hasText: 'label' });
   const idle = await interpolation.evaluate((el) => getComputedStyle(el).backgroundColor);

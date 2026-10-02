@@ -303,7 +303,7 @@ onBeforeUnmount(() => {
     </div>
 
     <p v-if="ready && !loadError" class="hint">
-      Drag handles to edit · one-finger orbit · pinch zoom · two-finger pan
+      Drag handles to edit · orbit · zoom · pan
     </p>
   </div>
 </template>
