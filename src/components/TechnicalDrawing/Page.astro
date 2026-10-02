@@ -354,7 +354,11 @@ section {
     right: var(--sheet-margin);
     bottom: 0;
     height: var(--sheet-margin);
-    z-index: 4;
+    /* Over whatever a demo draws onto the sheet beside .content rather than in it: the marker
+       editor's backdrop (1000), the font picker's toasts (40) and the drawn cursors (1100).
+       The sheet is a stacking context (contain: layout), so these only compete with each
+       other, and the deck stays where a visitor can see it and press pause. */
+    z-index: 1200;
   }
 
   /* The note keeps clear of the frame line and of the title block below it,
