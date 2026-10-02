@@ -8,7 +8,6 @@
 // and only then sends the up and the click, so the cursor moves before the widget reacts. A
 // drag is the same press pulled apart: `demoPressDown()`, the walkthrough's own moves, then
 // `demoRelease()`.
-import './demo-cursor-press.css';
 import { reducedMotion } from '@/client/autoplayStatus';
 
 /** How long the cursor stays pressed before the widget hears the release and the click. */

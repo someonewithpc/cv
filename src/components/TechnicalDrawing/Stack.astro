@@ -499,6 +499,63 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
     display: none !important;
   }
 }
+
+// demo-cursor-press.ts marks whichever demo's own [data-demo-cursor] is pressed and draws a
+// flare at the event point, so these match elements outside this component's own markup.
+:global([data-demo-cursor][data-pressed]) {
+  scale: 0.84;
+}
+
+:global(.demo-cursor-flares) {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+:global(.demo-cursor-flare) {
+  position: absolute;
+  width: 2.5em;
+  height: 2.5em;
+  margin: -1.25em 0 0 -1.25em;
+  border: 0.125em solid var(--ink, currentColor);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0.0625em var(--surface-page, transparent);
+  opacity: 0.6;
+  animation: demo-cursor-flare 300ms ease-out forwards;
+}
+
+:global(.demo-cursor-flare--up) {
+  opacity: 0.35;
+}
+
+@keyframes demo-cursor-flare {
+  from {
+    scale: 0.3;
+  }
+
+  to {
+    scale: 1;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global([data-demo-cursor][data-pressed]:not([data-full-motion] *)) {
+    scale: none;
+  }
+
+  :global(.demo-cursor-flare:not([data-full-motion])) {
+    animation: demo-cursor-fade 300ms ease-out forwards;
+  }
+
+  @keyframes demo-cursor-fade {
+    to {
+      opacity: 0;
+    }
+  }
+}
 </style>
 
 <script>
