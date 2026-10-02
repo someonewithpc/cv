@@ -170,6 +170,10 @@ code {
     gap: 0.45em;
   }
 
+  /* Describes the circle and cross drawn in .editor-layer, which portrait hides. */
+  :global([data-sheet-orientation='portrait']) & {
+    display: none;
+  }
 }
 
 .mark {
@@ -180,14 +184,14 @@ code {
 
   &.circle {
     box-sizing: border-box;
-    border: 0.125em solid #6aa9d8;
+    border: 0.125em solid blue;
     border-radius: 50%;
   }
 
   &.cross {
     background:
-      linear-gradient(#7fbf5a 0 0) center / 100% 0.125em no-repeat,
-      linear-gradient(#7fbf5a 0 0) center / 0.125em 100% no-repeat;
+      linear-gradient(green 0 0) center / 100% 0.125em no-repeat,
+      linear-gradient(green 0 0) center / 0.125em 100% no-repeat;
   }
 
   &.list {
