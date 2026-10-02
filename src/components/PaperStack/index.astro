@@ -423,7 +423,6 @@ $fold-pulse-y: 2cm;
     // as --paper-surface, and fold-drag.ts can hand the pile's page on as --pile-paper by name.
     --paper-plain: #{colors.$sheet-paper};
     --paper-blueprint: var(--blueprint);
-    --paper-wip: #{colors.$wip-blueprint};
 
     & > div {
       grid-area: content;
@@ -485,18 +484,13 @@ $fold-pulse-y: 2cm;
       // or white laid over that, so one set of gradients serves every theme's paper. The page
       // sets its paper on its own section, which the flap and the band, as its siblings, can't
       // see; the page's class says which paper it is, and it never changes, so the :has()
-      // rules below match once. A blueprint page that is also unfinished takes the unfinished
-      // paper, as its face does. All of it is var() and light-dark(), so a theme switch
+      // rule below matches once. All of it is var() and light-dark(), so a theme switch
       // repaints the backs with the faces and nothing has to read them again.
       --paper-surface: var(--paper-plain);
       --bend-paper: var(--paper-surface);
 
       &:has(> .blueprint) {
         --paper-surface: var(--paper-blueprint);
-      }
-
-      &:has(> .wip) {
-        --paper-surface: var(--paper-wip);
       }
 
       // The flap's lift (see the fold-lift mixin), on the flap and on the cast shadow. A flap

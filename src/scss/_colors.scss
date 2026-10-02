@@ -116,10 +116,9 @@
   @include legacy-aliases;
 }
 
-// A drawing sheet's paper, plain and on an unfinished page (see TechnicalDrawing/Page.astro).
-// PaperStack paints the back of each sheet from the same values, so they live here.
+// A drawing sheet's paper. PaperStack paints the back of each sheet from the same value, so it
+// lives here (see TechnicalDrawing/Page.astro).
 $sheet-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface-sunken)));
-$wip-blueprint: color-mix(in oklch, var(--theme-blueprint) 36%, #6a6e6a 64%);
 
 // Full sheet boundary for `.blueprint` pages (drawing ink on blueprint fill).
 @mixin blueprint-sheet-boundary {

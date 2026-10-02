@@ -343,7 +343,7 @@ const sectionOf = (sheet: HTMLElement): HTMLElement =>
 // theme switch without being asked again.
 const paperOf = (sheet: HTMLElement): string => {
   const { classList } = sectionOf(sheet);
-  const paper = classList.contains('wip') ? 'wip' : classList.contains('blueprint') ? 'blueprint' : 'plain';
+  const paper = classList.contains('blueprint') ? 'blueprint' : 'plain';
   return `var(--paper-${paper})`;
 };
 
