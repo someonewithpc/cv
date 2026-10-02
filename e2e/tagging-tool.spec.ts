@@ -450,6 +450,44 @@ test('main page: typing mid-value keeps the shared caret put and scrolls each ca
   }
 });
 
+test('main page: each row is one Tab stop, and Left and Right at a field\'s ends walk the row', async ({ page }) => {
+  const { tool } = await mountedTool(page);
+  const row = tool.locator('.grouped-objects:not([hidden])').first();
+  const next = tool.locator('.grouped-objects:not([hidden])').nth(1);
+  const shared = row.locator('.shared-value');
+  const sharedSave = row.locator('.shared-form button');
+  const firstCard = row.locator('.object-value').first();
+
+  await expect(row.locator('[tabindex="0"]')).toHaveCount(1);
+  await shared.focus();
+  await page.keyboard.press('End');
+  await page.keyboard.press('ArrowRight');
+  await expect(sharedSave).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(firstCard).toBeFocused();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('ArrowLeft');
+  await expect(sharedSave).toBeFocused();
+
+  // Mid-value the caret moves, not the focus. The value goes in without an input event, so
+  // leaving the field saves nothing.
+  await firstCard.evaluate((input: HTMLInputElement) => (input.value = 'Ivory'));
+  await firstCard.focus();
+  await page.keyboard.press('End');
+  await page.keyboard.press('ArrowLeft');
+  await expect(firstCard).toBeFocused();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('ArrowRight');
+  await expect(firstCard).toBeFocused();
+  await sharedSave.focus();
+
+  // Tab moves on to the next row, and Shift+Tab comes back to where this one was left.
+  await page.keyboard.press('Tab');
+  await expect(next.locator('.shared-value')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(sharedSave).toBeFocused();
+});
+
 test('main page: differing variant values keep the shared input open and flag the overrides', async ({ page }) => {
   const { tool } = await mountedTool(page);
 

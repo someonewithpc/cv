@@ -93,9 +93,30 @@ test('the disclosure answers the keyboard and is named after the contribution', 
   await page.keyboard.press('Enter');
   await expect(details).not.toHaveAttribute('open', /.*/);
 
-  // The title link is its own tab stop, ahead of the row's own toggle.
-  await link.focus();
+  // Right moves from the toggle to the title link and Left back again.
+  await page.keyboard.press('ArrowRight');
   await expect(link).toBeFocused();
-  await page.keyboard.press('Tab');
+  await page.keyboard.press('ArrowLeft');
   await expect(summary).toBeFocused();
+});
+
+test('each group of contributions is one Tab stop, and the arrows walk its rows', async ({ page }) => {
+  const groups = page.locator('#open-source .lines');
+  await expect(groups).toHaveCount(3);
+  for (const group of await groups.all()) {
+    await expect(group.locator('[tabindex="0"]')).toHaveCount(1);
+  }
+
+  const lines = groups.first();
+  const rows = lines.locator('.row');
+  const first = rows.first().locator('summary');
+  await first.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(rows.nth(1).locator('summary')).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(rows.nth(1).locator('a.title')).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(rows.last().locator('a.title')).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(rows.first().locator('a.title')).toBeFocused();
 });
