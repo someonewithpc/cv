@@ -9,6 +9,7 @@ import {
   DoubleSide,
   Group,
   HemisphereLight,
+  ImageLoader,
   InstancedMesh,
   Mesh,
   MeshBasicMaterial,
@@ -26,13 +27,12 @@ import {
   SphereGeometry,
   Spherical,
   SRGBColorSpace,
-  TextureLoader,
+  Texture,
   Vector2,
   Vector3,
   WebGLRenderer,
   type BufferGeometry,
   type Material,
-  type Texture,
 } from 'three';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
@@ -192,6 +192,25 @@ function cloneSharedModel(source: Object3D): Object3D {
       : mesh.material.clone();
   });
   return root;
+}
+
+/**
+ * Every scene app on the page lays the same grass, so each map's image is fetched and decoded
+ * once and shared. A scene wraps the shared image in a Texture of its own: repeat and
+ * anisotropy are set per texture, and a scene's dispose() frees only its own GL copy.
+ * One retry on a failed image; a failure that sticks is dropped so a later scene tries again.
+ */
+const grassImages = new Map<string, Promise<HTMLImageElement>>();
+
+function loadSharedGrassImage(url: string): Promise<HTMLImageElement> {
+  let image = grassImages.get(url);
+  if (!image) {
+    const loader = new ImageLoader();
+    image = loader.loadAsync(url).catch(() => loader.loadAsync(`${url}?retry`));
+    image.catch(() => grassImages.delete(url));
+    grassImages.set(url, image);
+  }
+  return image;
 }
 
 const GROUND_SIZE = 28;
@@ -1541,7 +1560,6 @@ export class SpaceBuilderScene {
   }
 
   private buildGround() {
-    const loader = new TextureLoader();
     // Solid fill first so the first frames aren't a white/empty material flash.
     const grassMat = new MeshStandardMaterial({
       color: 0x3f5234,
@@ -1579,43 +1597,37 @@ export class SpaceBuilderScene {
       return texture;
     };
 
-    this.loadGrassMap(loader, '/demos/space-builder/grass/color.webp', (color) => {
-      if (this.disposed) {
-        color.dispose();
-        return;
-      }
+    this.loadGrassMap('/demos/space-builder/grass/color.webp', (color) => {
       grassMat.map = configureMap(color, { srgb: true });
       grassMat.color.set(0xffffff);
       grassMat.needsUpdate = true;
     });
 
-    this.loadGrassMap(loader, '/demos/space-builder/grass/normal.webp', (normal) => {
-      if (this.disposed) {
-        normal.dispose();
-        return;
-      }
+    this.loadGrassMap('/demos/space-builder/grass/normal.webp', (normal) => {
       grassMat.normalMap = configureMap(normal);
       grassMat.normalScale.set(0.85, 0.85);
       grassMat.needsUpdate = true;
     });
 
-    this.loadGrassMap(loader, '/demos/space-builder/grass/displacement.webp', (displacement) => {
-      if (this.disposed) {
-        displacement.dispose();
-        return;
-      }
+    this.loadGrassMap('/demos/space-builder/grass/displacement.webp', (displacement) => {
       grassMat.displacementMap = configureMap(displacement);
       grassMat.needsUpdate = true;
     });
   }
 
-  /** One retry on a failed texture; after that the flat colour the ground was built with stays. */
-  private loadGrassMap(loader: TextureLoader, url: string, apply: (texture: Texture) => void, retry = true) {
-    loader.load(url, apply, undefined, () => {
-      if (this.disposed) return;
-      if (retry) this.loadGrassMap(loader, `${url}?retry`, apply, false);
-      else console.debug(`Grass texture ${url} failed twice, keeping the flat colour`);
-    });
+  /** A map that fails twice leaves the flat colour the ground was built with. */
+  private loadGrassMap(url: string, apply: (texture: Texture) => void) {
+    loadSharedGrassImage(url).then(
+      (image) => {
+        if (this.disposed) return;
+        const texture = new Texture(image);
+        texture.needsUpdate = true;
+        apply(texture);
+      },
+      () => {
+        if (!this.disposed) console.debug(`Grass texture ${url} failed twice, keeping the flat colour`);
+      },
+    );
   }
 
   private makeLollipop(color: number) {
