@@ -158,29 +158,48 @@ function toRootPoint(clientX: number, clientY: number) {
   };
 }
 
+// The autoplay walkthrough calls applyCursor on every rAF tick of a drag or a resize tween, not
+// only when the step actually changes. These cache what was last applied so a tick that repeats
+// the same input skips the DOM write (classList churn) and the getBoundingClientRect read that
+// follows it in the same call — the pair is what forces a style/layout pass (C11, #220).
+let lastCursorTargetEl: Element | null = null;
+let lastCursorClientX: number | null = null;
+let lastCursorClientY: number | null = null;
+let lastCursorPositionEl: Element | null = null;
+
 function applyCursor(step: DemoCursorStep) {
   cursorDragging.value = Boolean(step.dragging);
 
   const scope = rootRef.value ?? document;
-  scope.querySelectorAll('.is-demo-target').forEach((el) => el.classList.remove('is-demo-target'));
+  const targetEl = step.target
+    ? scope.querySelector(`[data-demo-target="${CSS.escape(step.target)}"]`)
+    : null;
 
-  if (step.client) {
-    const point = toRootPoint(step.client.x, step.client.y);
-    cursorPos.x = point.x;
-    cursorPos.y = point.y;
-  } else if (step.target) {
-    const el = scope.querySelector(`[data-demo-target="${CSS.escape(step.target)}"]`);
-    if (el instanceof HTMLElement) {
-      const rect = el.getBoundingClientRect();
-      const point = toRootPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      cursorPos.x = point.x;
-      cursorPos.y = point.y;
-    }
+  // Compare by element identity, not the selector string, so a remounted target (the catalog
+  // panel remounts when Add reopens) is still picked up as a change.
+  if (targetEl !== lastCursorTargetEl) {
+    scope.querySelectorAll('.is-demo-target').forEach((el) => el.classList.remove('is-demo-target'));
+    targetEl?.classList.add('is-demo-target');
+    lastCursorTargetEl = targetEl;
   }
 
-  if (step.target) {
-    scope.querySelector(`[data-demo-target="${CSS.escape(step.target)}"]`)
-      ?.classList.add('is-demo-target');
+  if (step.client) {
+    if (step.client.x !== lastCursorClientX || step.client.y !== lastCursorClientY) {
+      const point = toRootPoint(step.client.x, step.client.y);
+      cursorPos.x = point.x;
+      cursorPos.y = point.y;
+      lastCursorClientX = step.client.x;
+      lastCursorClientY = step.client.y;
+      lastCursorPositionEl = null;
+    }
+  } else if (targetEl instanceof HTMLElement && targetEl !== lastCursorPositionEl) {
+    const rect = targetEl.getBoundingClientRect();
+    const point = toRootPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    cursorPos.x = point.x;
+    cursorPos.y = point.y;
+    lastCursorPositionEl = targetEl;
+    lastCursorClientX = null;
+    lastCursorClientY = null;
   }
 
   if (cursorPhase.value === 'gone') cursorPhase.value = 'demo';
