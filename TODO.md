@@ -246,3 +246,4 @@
 - [x] Shrink the lodash the marker editor's store pulls into the serialization chunk: per-function imports and local helpers for the trivial ones (P4 lodash part) (#245)
 - [x] Cache the font picker's page rect per run instead of reading it on every cursor frame (C12) (#254)
 - [x] Keep the playing hint in step with the pointer a hybrid device actually has, not the one it booted with (C54) (#288)
+- [ ] Ctrl+Z and Ctrl+Shift+Z undo and redo while focus is in the marker editor, and leave text fields their own undo (C40)
