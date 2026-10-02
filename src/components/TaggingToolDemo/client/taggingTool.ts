@@ -1,5 +1,6 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, documentGate, type DemoGate } from '@/client/frontPage';
+import { describeKeys, rove } from '@/client/roving';
 import { watchHandover } from '@/client/walkthroughHandover';
 
 
@@ -342,6 +343,8 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
     });
   });
 
+  rovePerRow(section, group);
+
   return group;
 }
 
@@ -581,4 +584,24 @@ export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
   const target = tool.groups.find((group) => group.root.hasAttribute('data-autoplay-target'));
   const script = host.dataset.walkthrough;
   if (target && script) void autoplay(tool, host, target, JSON.parse(script) as Walkthrough);
+}
+
+/** At a field's ends, beyond which the caret cannot go, Left and Right step to the field or
+    button beside it. Up and Down stay with the field: they open its list of values. */
+function atEdge(el: HTMLElement, key: string) {
+  if (!(el instanceof HTMLInputElement)) return true;
+  const { selectionStart: start, selectionEnd: end, value } = el;
+  if (start !== end) return false;
+  return key === 'ArrowLeft' ? start === 0 : end === value.length;
+}
+
+/** One Tab stop per row in place of two per card. The product leaves every field and button
+    a stop of its own. */
+function rovePerRow(section: HTMLElement, group: Group) {
+  const items = [group.shared, group.sharedSave, ...group.cards.flatMap((card) => [card.input, card.save])];
+  rove(section, items, (event, current) => {
+    if ((event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') || !atEdge(current, event.key)) return null;
+    return items[items.indexOf(current) + (event.key === 'ArrowLeft' ? -1 : 1)];
+  });
+  describeKeys(section, items, `${group.shared.id}-keys`, 'At either end of a field, Left and Right arrows move to the next field or button in this row.');
 }
