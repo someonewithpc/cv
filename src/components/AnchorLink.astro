@@ -1,0 +1,75 @@
+---
+/**
+ * The link icon that sits beside a section or demo title, as on Wikipedia and GitHub. Put it
+ * straight after the heading, never inside it, so the heading's name stays the title. It is
+ * shown by opacity alone, so it stays focusable while hidden; touch has no hover, so there it
+ * is always faintly shown.
+ */
+type Props = {
+  /** The id of the element to link to. */
+  id: string;
+  /** Icon side in rem; the link's hit area stays 1.75rem. */
+  size?: string;
+};
+
+const { id, size } = Astro.props;
+---
+
+<a class="anchor" href={`#${id}`} aria-label="Link to this section" style={size ? { '--anchor-icon': size } : undefined}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+  </svg>
+</a>
+
+<style lang="scss" is:global>
+/* A heading and its link side by side, in the free space after the title. */
+.anchor-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.125rem;
+  min-width: 0;
+
+  > :not(.anchor) {
+    min-width: 0;
+  }
+}
+
+.anchor {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-block: -0.25rem;
+  color: var(--accent-text);
+  opacity: 0;
+  border-radius: 0.25rem;
+
+  svg {
+    width: var(--anchor-icon, 1.125rem);
+    height: var(--anchor-icon, 1.125rem);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: opacity 0.15s;
+  }
+}
+
+:is(h2, h3, p):hover + .anchor,
+.anchor:hover,
+.anchor:focus-visible {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .anchor {
+    opacity: 0.5;
+  }
+}
+</style>

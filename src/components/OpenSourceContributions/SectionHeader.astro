@@ -1,4 +1,6 @@
 ---
+import AnchorLink from '@/components/AnchorLink.astro';
+
 const { statistics } = Astro.props;
 ---
 
@@ -9,10 +11,13 @@ const { statistics } = Astro.props;
       <span>/</span>
       <span>REV A</span>
     </p>
-    <h2 id="open-source-heading">
-      <small lang="ja" aria-hidden="true">オープンソース</small>
-      <span class="typewriter">Open Source</span>
-    </h2>
+    <div class="anchor-row">
+      <h2 id="open-source-heading">
+        <small lang="ja" aria-hidden="true">オープンソース</small>
+        <span class="typewriter">Open Source</span>
+      </h2>
+      <AnchorLink id="open-source" />
+    </div>
   </div>
 
   <dl>

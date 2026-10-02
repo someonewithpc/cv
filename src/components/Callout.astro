@@ -1,4 +1,6 @@
 ---
+import AnchorLink from '@/components/AnchorLink.astro';
+
 /**
  * A drawing callout: a reference bubble with the detail's letter, its label, a leader down to a
  * chain-line boundary, and the view itself inside that boundary. The boundary is the view's own
@@ -40,17 +42,20 @@ const slipStyle = inWords[pageCount - 2] !== undefined
   data-card={hasCard ? (cardSide ?? 'start') : undefined}
   aria-labelledby={headingId}
 >
-  <h3 id={headingId} class="callout-label">
-    <span class="callout-bubble typewriter" aria-hidden="true"><span class="callout-letter">{letter}</span></span>
-    <span class="callout-text">
-      <span class="callout-kind monospace" aria-hidden="true">
-        <span>Detail {letter}</span>
-        {scale && <span class="callout-scale">Scale {scale}</span>}
+  <div class="callout-label anchor-row">
+    <h3 id={headingId} class="callout-heading">
+      <span class="callout-bubble typewriter" aria-hidden="true"><span class="callout-letter">{letter}</span></span>
+      <span class="callout-text">
+        <span class="callout-kind monospace" aria-hidden="true">
+          <span>Detail {letter}</span>
+          {scale && <span class="callout-scale">Scale {scale}</span>}
+        </span>
+        {titleJp && <small lang="ja" aria-hidden="true">{titleJp}</small>}
+        <span class="callout-title typewriter">{title}</span>
       </span>
-      {titleJp && <small lang="ja" aria-hidden="true">{titleJp}</small>}
-      <span class="callout-title typewriter">{title}</span>
-    </span>
-  </h3>
+    </h3>
+    <AnchorLink id={headingId} />
+  </div>
 
   <div class="callout-view" style={slipStyle}>
     {hasCard && (
@@ -222,6 +227,16 @@ const slipStyle = inWords[pageCount - 2] !== undefined
   @media (max-width: 52rem) {
     gap: 0.625rem;
   }
+}
+
+/* The heading takes no box of its own, so the bubble and the text stay the label's flex items
+   and the link can stand after them. */
+.callout-heading {
+  display: contents;
+}
+
+.callout-label :global(.anchor) {
+  margin: 0 0 -0.125rem -0.5rem;
 }
 
 .callout-bubble {

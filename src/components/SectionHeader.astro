@@ -1,12 +1,15 @@
 ---
+import AnchorLink from '@/components/AnchorLink.astro';
+
 type Props = {
   headingId: string;
+  sectionId: string;
   titleJp: string;
   title: string;
   sheetCode?: string;
 };
 
-const { headingId, titleJp, title, sheetCode = 'SH' } = Astro.props;
+const { headingId, sectionId, titleJp, title, sheetCode = 'SH' } = Astro.props;
 ---
 
 <header>
@@ -15,10 +18,13 @@ const { headingId, titleJp, title, sheetCode = 'SH' } = Astro.props;
     <span>/</span>
     <span>REV A</span>
   </p>
-  <h2 id={headingId}>
-    <small lang="ja" aria-hidden="true">{titleJp}</small>
-    <span class="typewriter">{title}</span>
-  </h2>
+  <div class="anchor-row">
+    <h2 id={headingId}>
+      <small lang="ja" aria-hidden="true">{titleJp}</small>
+      <span class="typewriter">{title}</span>
+    </h2>
+    <AnchorLink id={sectionId} />
+  </div>
 </header>
 
 <style lang="scss">
