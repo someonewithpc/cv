@@ -9,7 +9,7 @@ const GRASS_URLS = [
 function warmAssets() {
   const opts = { credentials: 'same-origin', priority: 'low' } as RequestInit;
   void fetch(CHAIR_URL, opts).catch(() => null);
-  void fetch(GRASS_URLS[0], opts).catch(() => null);
+  for (const url of GRASS_URLS) void fetch(url, opts).catch(() => null);
 }
 
 export async function boot(host: HTMLElement) {
