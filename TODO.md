@@ -200,4 +200,4 @@
 - [x] Transport deck drawn over the marker editor's backdrop, the font picker's toasts and the drawn cursors, so pause stays in sight and in reach (S23) (#247)
 - [x] Fold the cursor-press stylesheet into Stack.astro's style, one render-blocking request fewer (P16) (#239)
 - [x] Ship one public Draco decoder, no bundled JS fallback or wasm duplicates (P2) (#240)
-- [ ] Bake a 720px desk tile per theme and serve it under 52rem, a quarter of the pixels for a wood strip a few pixels wide (P19)
+- [x] Bake a 720px desk tile per theme and serve it under 52rem, a quarter of the pixels for a wood strip a few pixels wide (P19) (#241)
