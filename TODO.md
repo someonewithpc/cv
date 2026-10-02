@@ -209,3 +209,5 @@
 - [x] Touch the Space Builder cursor target only when it changes, not on every autoplay drag tick (C11) (#253)
 - [x] Dedupe the decoration font list and seed the weight slider from the stored descriptor (C44) (#287)
 - [x] Allow an explicit host list on the dev server instead of any Host header, and build the http-to-https redirect's Location from that list instead of the request's own Host header (C64) (#246)
+- [ ] Run the tagging tool's save and ring-easing clocks on the demo gate, not the document gate, and drop a save the visitor takes over mid-flight (C36)
+- [ ] Run the library search walkthrough's press delay on the demo gate, not the document gate, so a press never lands off screen (C37)
