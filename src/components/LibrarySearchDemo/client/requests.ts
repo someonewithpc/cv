@@ -64,8 +64,10 @@ export function requests(
       onScreen = key;
       onResult(result);
       root.dataset.answered = key;
-    } catch {
-      // Aborted: a newer query has taken its place.
+    } catch (err) {
+      // Aborted: a newer query has taken its place. Anything else is a real failure in
+      // onResult or render, and swallowing it here would hide the bug.
+      if (!(err instanceof DOMException && err.name === 'AbortError')) throw err;
     } finally {
       if (inFlight.get(key) === controller) inFlight.delete(key);
       if (!inFlight.size) delete root.dataset.loading;
