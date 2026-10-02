@@ -14,6 +14,8 @@ import { lazyIslandStylesheets } from './plugins/lazyIslandStylesheets.mjs';
 import { sassFromTs } from './plugins/sassFromTs.mjs';
 import { stripDracoDefaultAssets } from './plugins/stripDracoDefaultAssets.mjs';
 
+import { modulePreloadChunks } from './plugins/modulePreloadChunks.mjs';
+
 // Only `@/…` — a bare `@` would also match scoped pkgs like `@astrojs`.
 const srcAlias = {
   find: /^@\//,
@@ -47,6 +49,7 @@ export default defineConfig({
     react(),
     vue(),
     lazyIslandStylesheets(),
+    modulePreloadChunks(),
     icon({
       include: {
         lucide: [
