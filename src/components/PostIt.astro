@@ -6,6 +6,7 @@
 
 <style lang="scss">
 @use "@/scss/_kbd.scss" as kbd;
+@use '@/scss/technical-drawing' as drawing;
 
 aside {
   color-scheme: only light;
@@ -29,14 +30,16 @@ aside {
   :global(kbd) {
     @include kbd.prose-kbd;
   }
-  font-size: var(--note-font-size, 1.25rem);
+  font-size: var(
+    --note-font-size,
+    drawing.portrait-or(clamp(1rem, 0.038 * var(--sheet-inline), 1.125rem), 1.25rem)
+  );
   text-wrap: pretty;
 
   @container technical-drawing (orientation: portrait) {
     --pad-top: 0.55em;
     --pad-inline: 0.7em;
 
-    font-size: var(--note-font-size, clamp(1rem, 3.8cqw, 1.125rem));
     line-height: 1.2;
     /* Clears the peeled corner, which sits 1.5em tall in the bottom left and
        otherwise eats the start of the last line. */
