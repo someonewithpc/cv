@@ -38,6 +38,16 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
     setHost(page);
 
+    // The page's own rect, read once per run instead of on every cursor frame: it moves only
+    // on resize or when the sheet's own box changes (the --sheet-inline/--sheet-block scale),
+    // never from the picker's own state
+    let pageRectCache: DOMRect | null = null;
+    const pageRect = () => (pageRectCache ??= page.getBoundingClientRect());
+    const invalidatePageRect = () => { pageRectCache = null; };
+    window.addEventListener('resize', invalidatePageRect);
+    const pageResize = new ResizeObserver(invalidatePageRect);
+    pageResize.observe(page);
+
     const toast = (text: string) => {
       const id = ++toastId.current;
       setToasts((prev) => [...prev, { id, text, leaving: false }]);
@@ -58,7 +68,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
           return;
         }
         window.clearTimeout(fadeTimer);
-        const rect = page.getBoundingClientRect();
+        const rect = pageRect();
         setCursor({ ...state, x: state.x - rect.left, y: state.y - rect.top, phase: 'demo' });
       },
       () => toast('Demo complete · looping again'),
@@ -196,6 +206,8 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       page.removeEventListener('pointerdown', onPointer);
       el.removeEventListener('focusin', onFocusIn);
       el.removeEventListener('focusout', onFocusOut);
+      window.removeEventListener('resize', invalidatePageRect);
+      pageResize.disconnect();
       window.clearTimeout(resumeTimer);
       window.clearTimeout(fadeTimer);
       controller.pause();
