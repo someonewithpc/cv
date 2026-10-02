@@ -1,12 +1,3 @@
-/paper-fibre.webp
-  Cache-Control: public, max-age=604800
-
-/desk/*
-  Cache-Control: public, max-age=604800
-
-/demos/*
-  Cache-Control: public, max-age=604800
-
 /favicon.svg
   Cache-Control: public, max-age=604800
 
