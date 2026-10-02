@@ -83,11 +83,19 @@ function DecorationFontConfiguration({
   fontDescriptor: FontFaceDescriptor | undefined;
   setFontDescriptor: (fontDescriptor: FontFaceDescriptor | undefined) => void;
 }) {
-  const [weight, setWeight] = useState(600);
+  const [weight, setWeight] = useState(() => Number(fontDescriptor?.weight ?? 600));
 
   useEffect(() => {
     if (!fontDescriptor) {
-      setFontDescriptor({ family: 'Poppins', weight: 600 });
+      const defaultDescriptor = { family: 'Poppins', weight: 600 };
+      setFontDescriptor(defaultDescriptor);
+      setWeight(defaultDescriptor.weight);
+      return;
+    }
+
+    const descriptorWeight = Number(fontDescriptor.weight);
+    if (!Number.isNaN(descriptorWeight)) {
+      setWeight(descriptorWeight);
     }
   }, [fontDescriptor, setFontDescriptor]);
 

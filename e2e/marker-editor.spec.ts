@@ -109,6 +109,63 @@ test('editor page: a picker event paints the preview before React renders', asyn
     .toContain('#123456');
 });
 
+/**
+ * Clicks a selector inside the embed through the DOM, not through Playwright's pointer
+ * simulation: the autoplaying walkthrough keeps moving its own cursor layer over this page
+ * (as the picker test above notes) and intercepts a real pointer click mid-test.
+ */
+function clickInEditor(page: import('@playwright/test').Page, selector: string) {
+  return page.evaluate((selector) => {
+    const editor = document.querySelector('.marker-editor--embed');
+    const el = editor?.querySelector<HTMLElement>(selector);
+    if (!el) throw new Error(`Marker editor control not found: ${selector}`);
+    el.click();
+  }, selector);
+}
+
+/** Sets the font weight slider's value and dispatches the input event React listens for. */
+function setFontWeight(page: import('@playwright/test').Page, value: number) {
+  return page.evaluate((value) => {
+    const editor = document.querySelector('.marker-editor--embed');
+    const input = editor?.querySelector<HTMLInputElement>('#marker-font-weight');
+    if (!input) throw new Error('Marker editor font weight control not found');
+
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    setValue.call(input, String(value));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, value);
+}
+
+test('editor page: the decoration font list has no duplicate rows, and the weight slider follows a reset', async ({ page }) => {
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Marker Editor');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  await waitForIslandMounted(front);
+  const editor = front.locator('.marker-editor--embed');
+  await expect(editor).toBeVisible({ timeout: 15_000 });
+
+  // Decoration Font is disabled under the default decoration (Custom Icon); Free Text
+  // leaves it enabled.
+  await clickInEditor(page, 'summary[data-demo-target="editor:step:decoration"]');
+  await clickInEditor(page, 'li[data-demo-target="editor:decoration:freeText"]');
+
+  await clickInEditor(page, 'summary[data-demo-target="editor:step:decorationFont"]');
+
+  const labels = await editor.locator('#marker-font-family option').allTextContents();
+  expect(new Set(labels).size).toBe(labels.length);
+
+  const weightInput = editor.locator('#marker-font-weight');
+  await expect(weightInput).toHaveValue('600');
+
+  await setFontWeight(page, 300);
+  await expect(weightInput).toHaveValue('300');
+
+  await clickInEditor(page, 'button[title="Reset"]');
+  await expect(weightInput).toHaveValue('600');
+});
+
 const VIEWPORTS = [
   { name: 'desktop', viewport: { width: 1440, height: 900 } },
   { name: 'phone', viewport: { width: 390, height: 844 } },
