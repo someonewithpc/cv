@@ -498,9 +498,21 @@ section {
       scale: 1.06;
     }
 
+    /* clip-path clips outline the same way it clips box-shadow, so the ring is a stack of
+       sharp drop-shadows in every direction instead: unlike outline it follows the fold's
+       triangle rather than drawing a square past the clipped corner. */
     &:focus-visible {
       outline: none;
-      filter: drop-shadow(0 0 0.2em var(--accent)) drop-shadow(0.1em -0.1em 0.3em rgba(0, 0, 0, 0.45));
+      filter:
+        drop-shadow(0.125rem 0 0 var(--accent))
+        drop-shadow(-0.125rem 0 0 var(--accent))
+        drop-shadow(0 0.125rem 0 var(--accent))
+        drop-shadow(0 -0.125rem 0 var(--accent))
+        drop-shadow(0.125rem 0.125rem 0 var(--accent))
+        drop-shadow(-0.125rem -0.125rem 0 var(--accent))
+        drop-shadow(0.125rem -0.125rem 0 var(--accent))
+        drop-shadow(-0.125rem 0.125rem 0 var(--accent))
+        drop-shadow(0.1em -0.1em 0.3em rgba(0, 0, 0, 0.45));
     }
   }
 
