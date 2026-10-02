@@ -570,37 +570,69 @@ import { homeDeck } from './deck-home';
 import { drawFlipHints } from './flip-hint';
 import { forgetTextWidths, readTitleFit, writeTitleFit } from './title-fit';
 
-function initStack(stack: HTMLElement) {
-  const onScreen = new WeakMap<HTMLElement, boolean>();
+// Being on screen is only half of it: every page of a stack shares one grid cell, so
+// intersection says nothing about which one is drawn on top. Without the --page-index
+// half, a page's intro animation ran (and finished) while it was still covered, and the
+// visitor who turned to it got the end state instead of the animation.
+const onScreen = new WeakMap<HTMLElement, boolean>();
+const isActive = (page: HTMLElement) => Boolean(onScreen.get(page)) && isFrontPage(page);
 
-  // Being on screen is only half of it: every page of the stack shares one grid cell, so
-  // intersection says nothing about which one is drawn on top. Without the --page-index
-  // half, a page's intro animation ran (and finished) while it was still covered, and the
-  // visitor who turned to it got the end state instead of the animation.
-  const isActive = (page: HTMLElement) => Boolean(onScreen.get(page)) && isFrontPage(page);
+// While the window is being resized (src/client/resizeHold.ts) the front page's loops,
+// the dog-ear pulse among them, stop where they are and carry on once the size settles.
+// This has to be done here: once play() or pause() has run on an animation, CSS
+// animation-play-state no longer moves it.
+const heldByResize = new WeakSet<Animation>();
+const holdForResize = (animation: Animation) => {
+  if (animation.playState !== 'running' && animation.playState !== 'paused') return;
+  animation.pause();
+  heldByResize.add(animation);
+};
 
-  // While the window is being resized (src/client/resizeHold.ts) the front page's loops,
-  // the dog-ear pulse among them, stop where they are and carry on once the size settles.
-  // This has to be done here: once play() or pause() has run on an animation, CSS
-  // animation-play-state no longer moves it.
-  const heldByResize = new WeakSet<Animation>();
-  const holdForResize = (animation: Animation) => {
-    if (animation.playState !== 'running' && animation.playState !== 'paused') return;
-    animation.pause();
-    heldByResize.add(animation);
-  };
+// The pages' own animations and their content's, one list per page. The dog-ear's pulse runs
+// on the page too (its crease clip-path), but it is one of three layers kept on one clock by
+// PaperStack's fold-drag.ts, which holds it off screen and through a resize itself; one layer
+// stopped here would leave the hole and the flap out of step. Every page is read before any is
+// written: asking for a page's animations resolves style first, and a page written in between
+// made that a whole-document resolve per page, 78 of them on load.
+const animationsOf = (pages: HTMLElement[]) =>
+  pages.map((page) => page.getAnimations({ subtree: true }).filter((animation) => !isFoldPulse(animation)));
 
-  // The page's own animations and its content's. The dog-ear's pulse runs on the page too (its
-  // crease clip-path), but it is one of three layers kept on one clock by PaperStack's
-  // fold-drag.ts, which holds it off screen and through a resize itself; one layer stopped here
-  // would leave the hole and the flap out of step.
-  const animationsOf = (page: HTMLElement) =>
-    page.getAnimations({ subtree: true }).filter((animation) => !isFoldPulse(animation));
+// A stack the browser is skipping (content-visibility above) has had no style worked out for
+// its pages, and asking one of them for its animations makes the browser style and lay that
+// stack out on the spot: on load that was every stack, once per page. A page that is not
+// showing has nothing to start, so it waits until its stack is rendered again, and is held then.
+const skippedStacks = new WeakSet<HTMLElement>();
+const waiting = new WeakMap<HTMLElement, Set<HTMLElement>>();
+const stackOf = (page: HTMLElement) => page.closest<HTMLElement>('article.technical-drawing-stack')!;
 
-  const apply = (page: HTMLElement) => {
+const watchSkipping = (stack: HTMLElement, page: HTMLElement) => {
+  // The first state comes before this script runs, while the document is still being parsed.
+  if (!page.checkVisibility({ contentVisibilityAuto: true })) skippedStacks.add(stack);
+  stack.addEventListener('contentvisibilityautostatechange', (event) => {
+    if ((event as ContentVisibilityAutoStateChangeEvent).skipped) {
+      skippedStacks.add(stack);
+      return;
+    }
+    skippedStacks.delete(stack);
+    const pages = waiting.get(stack);
+    waiting.delete(stack);
+    if (pages) apply([...pages]);
+  });
+};
+
+const apply = (all: HTMLElement[]) => {
+  const pages = all.filter((page) => {
+    const stack = stackOf(page);
+    if (!skippedStacks.has(stack) || isActive(page)) return true;
+    if (!waiting.has(stack)) waiting.set(stack, new Set());
+    waiting.get(stack)!.add(page);
+    page.style.setProperty('animation-play-state', 'paused');
+    return false;
+  });
+  const animations = animationsOf(pages);
+  pages.forEach((page, i) => {
     const active = isActive(page);
-
-    animationsOf(page).forEach((animation) => {
+    animations[i].forEach((animation) => {
       if (active) {
         if (isResizeHeld()) holdForResize(animation);
         else animation.play();
@@ -614,34 +646,41 @@ function initStack(stack: HTMLElement) {
       animation.play();
       animation.pause();
     });
-
     page.style[active ? 'removeProperty' : 'setProperty']('animation-play-state', 'paused');
-  };
+  });
+};
 
-  // Viewport root (not the stack): with root:stack the active slide was
-  // "intersecting" on load even when still below the fold. Stack overflow
-  // still clips off-screen carousel slides from the viewport intersection.
-  const observer = new IntersectionObserver((intersections) => {
-    [...intersections].forEach((entry) => {
-      const page = entry.target as HTMLElement;
-      onScreen.set(page, entry.isIntersecting);
-      apply(page);
-    });
-  }, { threshold: 0.25, scrollMargin: '25%' });
+// Viewport root (not the stack): with root:stack the active slide was "intersecting" on load
+// even when still below the fold. Stack overflow still clips off-screen carousel slides from
+// the viewport intersection. One observer for every stack's pages, so the first pass on load
+// comes in one callback and pays one style resolve.
+const pageObserver = new IntersectionObserver((intersections) => {
+  const pages = new Set<HTMLElement>();
+  for (const entry of intersections) {
+    const page = entry.target as HTMLElement;
+    onScreen.set(page, entry.isIntersecting);
+    pages.add(page);
+  }
+  apply([...pages]);
+}, { threshold: 0.25, scrollMargin: '25%' });
+
+function initStack(stack: HTMLElement) {
   // The pages only: a demo's own sections would otherwise get an observer, a front-page
   // watcher and an inline animation-play-state of their own.
   const pages = [...stack.querySelectorAll<HTMLElement>(':scope > * > section')];
+  if (pages[0]) watchSkipping(stack, pages[0]);
   pages.forEach((page) => {
-    observer.observe(page);
-    watchFrontPage(page, () => apply(page));
+    pageObserver.observe(page);
+    watchFrontPage(page, () => apply([page]));
   });
 
-  onResizeHold((holding) => pages.filter(isActive).forEach((page) => {
-    animationsOf(page).forEach((animation) => {
+  onResizeHold((holding) => {
+    const active = pages.filter(isActive);
+    animationsOf(active).flat().forEach((animation) => {
       if (holding) holdForResize(animation);
       else if (heldByResize.delete(animation)) animation.play();
     });
-  }));
+  });
 
   // A demo island boots only once its page is on screen, so the deck is listening long
   // before the first state is reported. One that beat it to it is read back instead.
