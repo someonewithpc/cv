@@ -17,6 +17,15 @@
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
 
+/* A button inside the shadow root can take focus, but nothing marked the host itself, so a
+   keyboard walk found the stage with no ring at all while one of its buttons held it. The
+   page's own --accent crosses the shadow boundary by inheritance, same as every other ring
+   on the site. */
+:host(:focus-within) {
+  outline: 2px solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
 *,
 *::before,
 *::after {
@@ -287,7 +296,8 @@ button.pick:focus-visible {
 }
 
 button.pick:focus-visible {
-  outline: 1px solid var(--line-strong);
+  outline: 2px solid var(--accent);
+  outline-offset: 0.125rem;
 }
 
 .pick svg {
