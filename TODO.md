@@ -237,4 +237,4 @@
 - [x] Make the sr-only Previous page and Next page buttons turn a page on click and keyboard activation (A8) (#258)
 - [x] Derive the PaperStack, drawing-note and annotation marker ids and the title block's jitter from the stack and page index instead of crypto.randomUUID() and math.random(), so a build is reproducible (C66) (#262)
 - [x] The Space Builder walkthrough's Save step toasts "Arrangement saved" twice (C26) (#274)
-- [ ] Render the Space Builder scenes on demand, so a scene at rest asks for no frames (171-AP1)
+- [x] Render the Space Builder scenes on demand, so a scene at rest asks for no frames (171-AP1) (#252)
