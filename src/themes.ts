@@ -11,7 +11,7 @@ export type ThemeSettings = {
   accent: string;
   blueprint: string;
   /**
-   * The desk the page lies on: public/desk/<deskTile>.webp, which scripts/bake-desk-tiles.mjs
+   * The desk the page lies on: src/assets/desk/<deskTile>.webp, which scripts/bake-desk-tiles.mjs
    * bakes from a veneer scan with this theme's colour and blend already in it, and `desk`,
    * that tile's average, which shows until the tile loads.
    */

@@ -8,13 +8,16 @@ const DESK_FROM = 1024;
 /** The side the desk lays a scan down at: 45rem at a 16px root, as ThemePicker.astro sets it. */
 const TILE = 720;
 
-/** Each theme's baked tile in public/desk, and its average, which shows until the tile loads. */
+/** Each theme's baked tile in src/assets/desk, and its average, which shows until the tile loads. */
 const DESKS = {
   light: 'rgb(229, 200, 160)',
   dark: 'rgb(31, 28, 24)',
   arctic: 'rgb(212, 203, 197)',
   'dark-forest': 'rgb(37, 27, 12)',
 } as const;
+
+/** A theme's tile URL, hashed in a build (light.Ab12_x-Y.webp) or not in dev. */
+const deskTile = (theme: string) => new RegExp(`/${theme}(\\.[\\w-]+)?\\.webp`);
 
 const withTheme = async (page: import('@playwright/test').Page, theme: string) => {
   await page.addInitScript((id) => {
@@ -38,7 +41,7 @@ for (const [theme, desk] of Object.entries(DESKS)) {
     });
 
     // One baked tile per theme, laid down as it is, over the colour it averages to.
-    expect(background.image).toContain(`/desk/${theme}.webp`);
+    expect(background.image).toMatch(deskTile(theme));
     expect(background.blend).toBe('normal');
     expect(background.color).toBe(desk);
   });
@@ -67,7 +70,7 @@ for (const { width, height } of NARROW) {
     });
 
     // The 720px tile under 52rem, laid at the same size as the wide desk's.
-    expect(background.image).toContain('/desk/light-720.webp');
+    expect(background.image).toMatch(deskTile('light-720'));
     expect(background.blend).toBe('normal');
     expect(background.size).toBe(`${TILE}px ${TILE}px`);
     expect(background.color).toBe(DESKS.light);
@@ -257,7 +260,7 @@ test('each theme brings its own wood, not one scan recoloured', async ({ page })
 
   expect(new Set(tiles).size, 'four themes, four grains').toBe(tiles.length);
   themes.forEach((theme, index) => {
-    expect(tiles[index], `${theme} wears its own tile`).toContain(`/desk/${theme}.webp`);
+    expect(tiles[index], `${theme} wears its own tile`).toMatch(deskTile(theme));
   });
 });
 

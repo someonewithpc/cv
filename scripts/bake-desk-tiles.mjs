@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Bakes public/desk/<theme>.webp: each theme's veneer scan with its desk colour, blend and
+ * Bakes src/assets/desk/<theme>.webp: each theme's veneer scan with its desk colour, blend and
  * veil already applied, so the page lays the tile down as it is and can paint the tile's own
- * average under it while it loads. Also bakes public/desk/<theme>-720.webp, the same pixels
+ * average under it while it loads. Also bakes src/assets/desk/<theme>-720.webp, the same pixels
  * downsized: under 52rem the desk is only a strip down each edge and a band between sections
  * (Layout.astro), a few pixels wide, so a quarter of the linear resolution is all that shows.
  *
@@ -23,7 +23,8 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DESK = resolve(ROOT, 'public/desk');
+const DESK = resolve(ROOT, 'src/assets/desk');
+const VENEER = resolve(DESK, 'veneer');
 const PHONE_SIZE = 720;
 
 /*
@@ -98,7 +99,7 @@ const composite = (cb, cs, alpha, mode) => {
 const hex = (rgb) => '#' + rgb.map((v) => v.toString(16).padStart(2, '0')).join('');
 
 for (const [theme, recipe] of Object.entries(RECIPES)) {
-  const { data, info } = await sharp(resolve(DESK, `${recipe.wood}.webp`))
+  const { data, info } = await sharp(resolve(VENEER, `${recipe.wood}.webp`))
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
