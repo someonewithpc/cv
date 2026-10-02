@@ -611,7 +611,14 @@ function onViewportDrop(event: DragEvent) {
   pushToast({ action: placed ? 'Object placed' : 'Still loading · drag again' });
 }
 
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+}
+
 function onKeyDown(event: KeyboardEvent) {
+  if (event.ctrlKey || event.metaKey || event.altKey || isEditableTarget(event.target)) return;
   if (event.key === 'a' || event.key === 'A') {
     event.preventDefault();
     if (!userControl.value) yieldToUser(true);
