@@ -289,7 +289,7 @@ test('the second sheet shows the handoff in four frames of the demo and few word
   const front = frontPage(stack, await frontPageIndex(stack));
   const layer = front.locator('[data-handoff-layer]');
   await expect(layer).toBeVisible();
-  await expect(layer.locator('img[src^="/demos/drag-drop/handoff-"]')).toHaveCount(4);
+  await expect(layer.locator('img[src*="/handoff-"]')).toHaveCount(4);
   await expect(layer.locator('figcaption')).toHaveCount(4);
 
   const words = await front.evaluate((page) => {

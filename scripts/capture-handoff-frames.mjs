@@ -19,7 +19,7 @@
  * Usage: npm run build && ASTRO_PREVIEW_BACKGROUND=1 npm run preview -- --port 4369
  *        node scripts/capture-handoff-frames.mjs [http://localhost:4369] [out-dir]
  *
- * Writes handoff-1.webp to handoff-4.webp to public/demos/drag-drop/ unless out-dir says
+ * Writes handoff-1.webp to handoff-4.webp to src/assets/demos/drag-drop/ unless out-dir says
  * otherwise. Needs a system Chrome on PATH, as the e2e suite does (playwright.config.ts).
  */
 import { execFileSync } from 'node:child_process';
@@ -31,7 +31,7 @@ import { chromium } from '@playwright/test';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const baseUrl = process.argv[2] ?? 'http://localhost:4369';
-const outDir = path.resolve(root, process.argv[3] ?? 'public/demos/drag-drop');
+const outDir = path.resolve(root, process.argv[3] ?? 'src/assets/demos/drag-drop');
 
 /** The app's size on the stack's front page at this viewport. */
 const VIEWPORT = { width: 1440, height: 900 };

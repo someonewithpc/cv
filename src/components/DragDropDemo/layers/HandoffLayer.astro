@@ -1,6 +1,6 @@
 ---
 /**
- * The drag route, in four frames of the demo itself (public/demos/drag-drop/handoff-*.webp,
+ * The drag route, in four frames of the demo itself (src/assets/demos/drag-drop/handoff-*.webp,
  * made by scripts/capture-handoff-frames.mjs). What each frame shows is what the code
  * does: the press on a card arms a drag and the first move starts it (DragDropSceneApp.vue
  * onItemPointerdown, startItemDrag; the product's ObjectDrag.vue dragStart); while the
@@ -24,6 +24,14 @@
  * 219x125 to about 210x209. Two rows of two would give each frame more width, but the
  * sheet has no height for a second row: one row of four already reaches the plate's floor.
  */
+
+const FRAMES = import.meta.glob<string>('/src/assets/demos/drag-drop/handoff-*.webp', { query: '?url', eager: true, import: 'default' });
+
+const handoffFrame = (n: number) => {
+  const url = FRAMES[`/src/assets/demos/drag-drop/handoff-${n}.webp`];
+  if (!url) throw new Error(`No handoff frame src/assets/demos/drag-drop/handoff-${n}.webp`);
+  return url;
+};
 
 const FRAME = { width: 981, height: 978 };
 
@@ -73,7 +81,7 @@ const frames: Frame[] = [
         {frames.map((frame, index) => (
           <figure class="frame" data-frame={frame.id}>
             <img
-              src={`/demos/drag-drop/handoff-${index + 1}.webp`}
+              src={handoffFrame(index + 1)}
               alt={frame.alt}
               width={FRAME.width}
               height={FRAME.height}
