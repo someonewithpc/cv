@@ -22,31 +22,34 @@ function findStyleImports(style: HTMLStyleElement) {
 
 type FetchedStylesheet = { href: string, contentType: string, text: string };
 
-const stylesheetCache = new Map<string, Promise<FetchedStylesheet | null>>();
+// Only settled sheets are kept: a pending fetch belongs to the signal that started it, and a
+// later query sharing it would be cut off when the first one is aborted
+const stylesheetCache = new Map<string, FetchedStylesheet | null>();
+
+function remember(href: string, sheet: FetchedStylesheet | null) {
+  // Least recently used goes first
+  stylesheetCache.delete(href);
+  stylesheetCache.set(href, sheet);
+  if (stylesheetCache.size > CACHED_SHEETS) stylesheetCache.delete(stylesheetCache.keys().next().value!);
+}
 
 async function fetchStylesheet(source: { href: string }, signal: AbortSignal): Promise<FetchedStylesheet | null> {
-  if (!stylesheetCache.has(source.href)) {
-    const promise = proxiedFetch(source.href, { signal })
-      .then(async (res) => {
-        if (!res.ok) return null;
-        return { href: source.href, contentType: res.contentType, text: await res.text() };
-      })
-      .catch((error) => {
-        stylesheetCache.delete(source.href);
-        // A missing sheet is skipped, a tripped limit fails the extraction
-        if (error instanceof FetchCapError) throw error;
-        return null;
-      });
-    stylesheetCache.set(source.href, promise);
-    if (stylesheetCache.size > CACHED_SHEETS) stylesheetCache.delete(stylesheetCache.keys().next().value!);
-  } else {
-    // Least recently used goes first
-    const promise = stylesheetCache.get(source.href)!;
-    stylesheetCache.delete(source.href);
-    stylesheetCache.set(source.href, promise);
+  if (stylesheetCache.has(source.href)) {
+    const sheet = stylesheetCache.get(source.href)!;
+    remember(source.href, sheet);
+    return sheet;
   }
 
-  return stylesheetCache.get(source.href)!;
+  try {
+    const res = await proxiedFetch(source.href, { signal });
+    const sheet = res.ok ? { href: source.href, contentType: res.contentType, text: await res.text() } : null;
+    remember(source.href, sheet);
+    return sheet;
+  } catch (error) {
+    // A missing sheet is skipped, an abort or a tripped limit fails the extraction
+    if (signal.aborted || error instanceof FetchCapError) throw error;
+    return null;
+  }
 }
 
 type Source = { href: string };
@@ -67,6 +70,8 @@ function unseen(sources: Source[], seen: Set<string>): Source[] {
 }
 
 function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc: Document, signal: AbortSignal, seen: Set<string>): Promise<any> {
+  // Cached sheets answer at once, so an aborted query would otherwise run every round to the end
+  signal.throwIfAborted();
   return Promise.all(
     responses.map(async (response) => {
       if (response === null) return null;
@@ -109,8 +114,10 @@ export default async function manualIframe(url: string, signal: AbortSignal) {
 
   if (!res.ok || !res.contentType.startsWith('text/html')) throw new Error('Invalid URL');
 
+  const text = await res.text();
+  signal.throwIfAborted();
   const parser = new DOMParser();
-  const doc = parser.parseFromString(await res.text(), 'text/html');
+  const doc = parser.parseFromString(text, 'text/html');
   const base = doc.createElement('base');
   base.href = url;
   doc.head.prepend(base);
