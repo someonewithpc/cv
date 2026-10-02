@@ -7,10 +7,10 @@ import path from 'node:path';
 /**
  * The live sheet's buffer: a whole component, frontmatter, markup and a SCSS style block.
  * The style block has no ranges inside it, so it keeps only the rule for the element that
- * holds the expression. The rest of the file is as it stands.
+ * holds the last expression. The rest of the file is as it stands.
  */
-export const bufferFile = 'WipStamp.astro';
-const keptRule = '.wip-stamp__text {';
+export const bufferFile = 'Folio.astro';
+const keptRule = '.folio-label {';
 
 export async function readBuffer() {
   const source = await readFile(path.join(process.cwd(), 'src/components', bufferFile), 'utf8');

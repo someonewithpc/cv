@@ -51,11 +51,11 @@ test('main page: a painted buffer, cut into the ranges each parser is handed', a
 
   await expect(buffer).toContainText('colours the code with a small lexer');
 
-  // The frontmatter and the style body are whole-line blocks; the one interpolation sits
-  // inside its line.
+  // The frontmatter and the style body are whole-line blocks; the three expressions sit
+  // inside their lines.
   await expect(buffer.locator('.block[data-lang="typescript"]')).toContainText('type Props');
   await expect(buffer.locator('.block[data-lang="scss"]').first()).toContainText('letter-spacing');
-  await expect(buffer.locator('.range[data-lang="tsx"]')).toHaveCount(1);
+  await expect(buffer.locator('.range[data-lang="tsx"]')).toHaveCount(3);
 
   // The braces stay with the Astro parser: the offset leaves them out of the range.
   const interpolation = buffer.locator('.range', { hasText: 'label' });
@@ -65,8 +65,8 @@ test('main page: a painted buffer, cut into the ranges each parser is handed', a
 test('main page: dashed boxes over the buffer nest astro around html around the embedded ranges', async ({ page }) => {
   const buffer = await liveBuffer(page);
   const bands = buffer.locator('.bands .band');
-  const band = async (lang: string, lane: number) => {
-    const found = bands.and(buffer.locator(`[data-lang="${lang}"][data-lane="${lane}"]`));
+  const band = async (lang: string, lane: number, fromLine?: number) => {
+    const found = bands.and(buffer.locator(`[data-lang="${lang}"][data-lane="${lane}"]${fromLine ? `[data-from="${fromLine}"]` : ''}`));
     await expect(found).toHaveCount(1);
     const [from, to] = await found.evaluate((el) => [Number(el.dataset.from), Number(el.dataset.to)]);
     return { from, to, box: (await found.boundingBox())!, label: await found.locator('.band-label').innerText() };
@@ -75,18 +75,18 @@ test('main page: dashed boxes over the buffer nest astro around html around the 
   const astro = await band('astro', 0);
   const frontmatter = await band('typescript', 1);
   const html = await band('html', 1);
-  const expression = await band('tsx', 2);
+  const expression = await band('tsx', 2, 25);
   const style = await band('scss', 2);
 
-  // The lines Emacs 31.1 gives each parser in WipStamp.astro, its style block cut to one rule.
-  expect([astro.from, astro.to]).toEqual([1, 32]);
-  expect([frontmatter.from, frontmatter.to]).toEqual([2, 10]);
-  expect([html.from, html.to]).toEqual([13, 32]);
-  expect([expression.from, expression.to]).toEqual([16, 16]);
-  expect([style.from, style.to]).toEqual([23, 31]);
-  expect(html.label).toBe('html 13-32');
-  expect(frontmatter.label).toBe('typescript 2-10');
-  expect(expression.label).toBe('tsx 16');
+  // The lines Emacs 31.1 gives each parser in Folio.astro, its style block cut to one rule.
+  expect([astro.from, astro.to]).toEqual([1, 34]);
+  expect([frontmatter.from, frontmatter.to]).toEqual([2, 19]);
+  expect([html.from, html.to]).toEqual([22, 34]);
+  expect([expression.from, expression.to]).toEqual([25, 25]);
+  expect([style.from, style.to]).toEqual([30, 33]);
+  expect(html.label).toBe('html 22-34');
+  expect(frontmatter.label).toBe('typescript 2-19');
+  expect(expression.label).toBe('tsx 25');
 
   // The expression's box covers what is inside the braces, not the rest of its line.
   const inner = (await buffer.locator('.range', { hasText: 'label' }).boundingBox())!;
@@ -98,7 +98,7 @@ test('main page: dashed boxes over the buffer nest astro around html around the 
 
   // One style for every range: a dashed box, and nothing else outlines the code.
   const styles = await bands.evaluateAll((all) => all.map((el) => getComputedStyle(el).borderTopStyle));
-  expect(styles).toEqual(Array(5).fill('dashed'));
+  expect(styles).toEqual(Array(7).fill('dashed'));
   const otherOutlines = await buffer.locator('.block, .range').evaluateAll((all) =>
     all.map((el) => getComputedStyle(el).outlineStyle).filter((style) => style !== 'none'),
   );
@@ -162,7 +162,7 @@ test('main page: pointing at a token lights up the range that owns it', async ({
   await expect(visibleEcho()).toHaveText(/^scss: style_element \(raw_text\)/);
 
   // Markup outside every embedded range belongs to the Astro parser itself.
-  await buffer.locator('.line', { hasText: 'aria-hidden="true"' }).first().hover();
+  await buffer.locator('.line', { hasText: '</div>' }).first().hover();
   await expect(visibleEcho()).toHaveText(/^astro: the host parser/);
 });
 
