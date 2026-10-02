@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { mapSpaceToMarkerSelector, useAppSelector, type SpaceType } from '@/store';
+import { mapSpaceToMarkerSelector, useAppSelector, type SpaceType } from '../../store';
 
 import { resolveMarkerSvgForSpace } from '../resolveMarkerSvgForSpace';
 

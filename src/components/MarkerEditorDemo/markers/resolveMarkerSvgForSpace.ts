@@ -1,5 +1,5 @@
-import $store, { spaceGlobalOrderSelector } from '@/store';
-import type { SpaceType } from '@/store';
+import $store, { spaceGlobalOrderSelector } from '../store';
+import type { SpaceType } from '../store';
 
 import { serializeKeyValue } from './MarkerEditor/markerParts/shared/serialization';
 

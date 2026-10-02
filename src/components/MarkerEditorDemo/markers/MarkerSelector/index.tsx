@@ -18,7 +18,7 @@ import {
   useAppSelector,
   type MarkerType,
   type SpaceType,
-} from '@/store';
+} from '../../store';
 
 import { resolveMarkerSvgForSpace } from '../resolveMarkerSvgForSpace';
 

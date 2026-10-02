@@ -10,8 +10,8 @@ import _startCase from 'lodash/startCase';
 
 import { useRect } from '../../hooks/useRect';
 import { mapRange } from '../../lib/mapRange';
-import { addMarker, dataUrlToSvg, groupedUndo, markersSelector, setSpaceMarker, spacesSelector, updateMarker, useAppDispatch, useAppSelector } from '@/store';
-import type { MarkerType, SpaceType } from '@/store';
+import { addMarker, dataUrlToSvg, groupedUndo, markersSelector, setSpaceMarker, spacesSelector, updateMarker, useAppDispatch, useAppSelector } from '../../store';
+import type { MarkerType, SpaceType } from '../../store';
 import { useRootElementEvents } from '../../hooks/useRootElementEvents';
 import { useLiveMarkerEditorSession } from '../liveMarkerEditorSession';
 
