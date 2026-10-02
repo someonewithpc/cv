@@ -2,7 +2,9 @@
 /**
  * Bakes public/desk/<theme>.webp: each theme's veneer scan with its desk colour, blend and
  * veil already applied, so the page lays the tile down as it is and can paint the tile's own
- * average under it while it loads.
+ * average under it while it loads. Also bakes public/desk/<theme>-720.webp, the same pixels
+ * downsized: under 52rem the desk is only a strip down each edge and a band between sections
+ * (Layout.astro), a few pixels wide, so a quarter of the linear resolution is all that shows.
  *
  * Usage:
  *   node scripts/bake-desk-tiles.mjs
@@ -22,6 +24,7 @@ import sharp from 'sharp';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DESK = resolve(ROOT, 'public/desk');
+const PHONE_SIZE = 720;
 
 /*
  * Overlay scales every step the scan has by base * (1 - base), which collapses near black, so
@@ -122,11 +125,18 @@ for (const [theme, recipe] of Object.entries(RECIPES)) {
     .webp({ quality: opts.quality, smartSubsample: true, effort: 6 })
     .toFile(path);
 
+  const phonePath = resolve(DESK, `${theme}-${PHONE_SIZE}.webp`);
+  await sharp(out, { raw: info })
+    .resize(PHONE_SIZE, PHONE_SIZE)
+    .webp({ quality: opts.quality, smartSubsample: true, effort: 6 })
+    .toFile(phonePath);
+
   const pixels = data.length / 3;
   const average = sums.map((s) => Math.round(s / pixels));
   const encoded = (await sharp(path).stats()).channels.slice(0, 3).map((c) => Math.round(c.mean));
   console.log(
     `${theme}: ${info.width}x${info.height} q${opts.quality}, ${statSync(path).size} bytes, ` +
-      `average rgb(${encoded.join(' ')}) ${hex(encoded)} (before encoding rgb(${average.join(' ')}))`,
+      `average rgb(${encoded.join(' ')}) ${hex(encoded)} (before encoding rgb(${average.join(' ')})); ` +
+      `${PHONE_SIZE}x${PHONE_SIZE} ${statSync(phonePath).size} bytes`,
   );
 }
