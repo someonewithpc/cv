@@ -6,3 +6,37 @@ $artwork-width: 20em;
 // custom property does not reach it by inheritance). One source keeps the two from drifting.
 $fold-rest-x: 2cm;
 $fold-rest-y: 1cm;
+
+// Type keyed on the sheet's shape without a container query: a font size that came out of
+// one, inside a stack, made Chrome take seconds to lay the stack out.
+
+// Rules for a sheet under 56em, keyed on what Stack.astro's script writes on the stack. Without
+// script nothing writes it, and the width the query flips at stands in: a 56em sheet in a
+// 936px window, once the gutter is at its 1.25rem cap.
+@mixin narrow-sheet {
+  :global([data-sheet-width='narrow']) & {
+    @content;
+  }
+
+  @media (scripting: none) and (width < 936px) {
+    @content;
+  }
+}
+
+// $yes where the length $test comes out at zero or more, $no where it is negative. The test
+// scaled up and clamped is a cap of 0 on one side and 100rem on the other, so each value is
+// only let through on its own side.
+@function sheet-pick($test, $yes, $no) {
+  @return unquote(
+    'max(min(#{$yes}, clamp(0rem, (#{$test}) * 100000 + 100rem, 100rem)), '
+      + 'min(#{$no}, clamp(0rem, (#{$test}) * -100000, 100rem)))'
+  );
+}
+
+// What `@container technical-drawing (orientation: portrait)` picks: a sheet at least as tall
+// as it is wide. The width query names the stack's orientation attribute, and a portrait sheet
+// is capped at 36rem tall, so between a 616px and a 680px window the attribute says portrait
+// while the sheet is wider than tall; the page's layout follows the sheet's shape there.
+@function portrait-or($portrait, $landscape) {
+  @return sheet-pick('var(--sheet-block) - var(--sheet-inline)', $portrait, $landscape);
+}

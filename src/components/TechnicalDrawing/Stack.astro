@@ -405,7 +405,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
   // a second line would run into the next stack's sheet.
   white-space: nowrap;
 
-  @container technical-drawing-width (max-width: 40em) {
+  :global(article.technical-drawing-stack[data-sheet-orientation='portrait']) ~ .flip-hints & {
     font-size: 0.875rem;
   }
 }

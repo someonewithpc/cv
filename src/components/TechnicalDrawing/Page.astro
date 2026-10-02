@@ -176,6 +176,7 @@ const sheetAnchor = `--${noteId}-sheet`;
 
 @use "@/scss/_colors.scss" as colors;
 @use "@/scss/_kbd.scss" as kbd;
+@use '@/scss/technical-drawing' as drawing;
 
 /* A sine hash standing in for math.random(): the same $i/$j always lands on the same
    fractional part of a wildly oscillating sine, so the build is reproducible and the two
@@ -702,9 +703,15 @@ section {
         rotate: calc(var(--random1) * 0.75deg);
         translate: calc(var(--random2) * 2px) calc(var(--random2) * 2px);
 
+        /* A portrait sheet gives the block a row of its own and sets the lettering in rem,
+           so it holds its size when the block's own type shrinks. */
+        h2 {
+          font-size: drawing.portrait-or(0.875rem, 1rem);
+        }
+
         h3 {
           color: var(--ink-muted);
-          font-size: 0.625em;
+          font-size: drawing.portrait-or(0.625rem, 0.625em);
           margin-top: 0.25rem;
         }
       }
@@ -848,6 +855,19 @@ section {
      included, where the sheet is half as tall as it is wide and the note runs
      over the title block. Tuck it under the dog-eared corner instead; 56em is
      the same threshold EditorLayer uses to hand the gutters to the chrome. */
+  /* The note's wrapper sets no type of its own once it is only the dog-ear, and the
+     artwork keeps the sheet centre, so the corner block gives ground, portrait
+     included. Its paper is the sheet's at every width now, so only the type shrinks. */
+  @include drawing.narrow-sheet {
+    .aside {
+      font-size: 1rem;
+    }
+
+    & > table {
+      font-size: 0.625em;
+    }
+  }
+
   @container technical-drawing-width (max-width: 56em) {
     --demo-inset: 0.5rem;
 
@@ -855,7 +875,6 @@ section {
       /* Only the dog-ear lives here; the note itself is in the dialog, and the
          fold positions itself against the sheet, so the wrapper adds no box. */
       display: contents;
-      font-size: 1rem;
     }
 
     .drawing-note:not(:modal, :popover-open) {
@@ -882,12 +901,7 @@ section {
       }
     }
 
-    /* The artwork keeps the sheet centre, so the corner block gives ground —
-       the same size portrait uses. Its paper is the sheet's at every width now,
-       so only the type shrinks here. */
     & > table {
-      font-size: 0.625em;
-
       td {
         padding: 0.2em;
       }
@@ -920,7 +934,6 @@ section {
       padding: 0.25rem 0.375rem;
       /* Ruled off from the title block by clear paper, not a shared line. */
       margin-bottom: 0.375rem;
-      font-size: 0.625rem;
     }
 
     .demo-key svg {
@@ -966,7 +979,6 @@ section {
          cells grew wide and empty, and the logo cell reached under the note's corner. */
       justify-self: end;
       max-width: 100%;
-      font-size: 0.625em;
 
       td {
         padding: 0.2em;
@@ -999,14 +1011,6 @@ section {
         h3 {
           text-wrap: balance;
           overflow-wrap: anywhere;
-        }
-
-        h2 {
-          font-size: 0.875rem;
-        }
-
-        h3 {
-          font-size: 0.625rem;
         }
       }
     }
