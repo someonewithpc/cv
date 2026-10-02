@@ -198,3 +198,4 @@
 - [x] Keyboard focus takes a walkthrough over once and never restarts it (C32 to C35) (#231)
 - [x] Transport deck in the bottom band where it fits, in the callout's slip under the page where it does not, on every demo (L9) (#234)
 - [x] Transport deck drawn over the marker editor's backdrop, the font picker's toasts and the drawn cursors, so pause stays in sight and in reach (S23) (#247)
+- [ ] Fold the cursor-press stylesheet into Stack.astro's style, one render-blocking request fewer (P16)
