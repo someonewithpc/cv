@@ -314,10 +314,16 @@ main {
      bands, never behind text. A phone has only the page gutter to spare, so there the wood
      is a strip down each edge and a band between every two sections, which is all Hugo
      asked it for. The tiles are 1440px square and the desk lays them down at half that,
-     which is the side round 2 cut the drawn boards to. */
+     which is the side round 2 cut the drawn boards to. Under the narrow width that strip and
+     that band are only ever a few pixels wide, so --theme-desk-tile-720 is the same bake at a
+     quarter the linear resolution and swaps in there, same background-size. */
   --sheet-lift: 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%);
 
   background: var(--theme-desk-tile) 0 0 / 45rem 45rem var(--theme-desk);
+
+  @media (max-width: #{column.$page-narrow-max}) {
+    background-image: var(--theme-desk-tile-720);
+  }
 
   /* Every band on the desk is a sheet of the same paper, with the small radius and the lift
      the drawing stacks have. Narrow, that is all it is: the band keeps the width, the margins

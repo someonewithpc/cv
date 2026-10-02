@@ -19,6 +19,7 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-blueprint: ${settings.blueprint};
       --theme-desk: ${settings.desk};
       --theme-desk-tile: url("/desk/${settings.deskTile}.webp");
+      --theme-desk-tile-720: url("/desk/${settings.deskTile}-720.webp");
       --theme-paper: ${settings.paper ?? 'initial'};
       --theme-paper-grain: ${settings.paperGrain};
       --theme-paper-sheet-grain: ${settings.paperSheetGrain};
@@ -192,6 +193,7 @@ aside {
   --theme-blueprint: oklch(0.622 0.121 254);
   --theme-desk: rgb(229 200 160);
   --theme-desk-tile: url("/desk/light.webp");
+  --theme-desk-tile-720: url("/desk/light-720.webp");
   --theme-paper: oklch(1 0 90);
   --theme-paper-grain: 0.45;
   --theme-paper-sheet-grain: 0.48;
