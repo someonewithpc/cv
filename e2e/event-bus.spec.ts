@@ -91,6 +91,25 @@ test.describe(() => {
     expect(await state()).toBe(before);
   });
 
+  test('main page: the drawing note pauses the walkthrough until it closes', { tag: '@handover' }, async ({ page }) => {
+    await page.goto('/');
+    const { front, bus } = await mountedBus(page);
+    const deck = front.locator('[data-demo-transport]');
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+
+    // A click from script, so no pointer crosses the sheet and takes the demo over first.
+    await front.locator('button.note-fold').evaluate((tab: HTMLElement) => tab.click());
+    await expect(front.locator('dialog.drawing-note')).toHaveJSProperty('open', true);
+    await expect(deck).toHaveAttribute('data-state', 'paused');
+    await expect(deck.locator('[data-demo-caption]')).toHaveText('ANIMATION PAUSED');
+    await expect(front.locator('.event-bus-cursor')).toBeHidden();
+
+    await page.keyboard.press('Escape');
+    await expect(front.locator('dialog.drawing-note')).toHaveJSProperty('open', false);
+    await expect(deck).toHaveAttribute('data-state', 'playing');
+    await expect(bus).toHaveAttribute('data-autoplay-state', 'playing');
+  });
+
   test('main page: switching plugins re-runs the chain and moves the claim', async ({ page, walkthroughRate }) => {
     const rate = walkthroughRate;
     await page.goto('/');
