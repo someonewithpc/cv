@@ -230,6 +230,9 @@ export function useSyncSnappingControlPointsState(state: StateType) {
   useEffect(() => {
     Object.entries(state.active)
       .forEach(([step, part]) => {
+        // otherPart !== part also drops other steps whose active option shares a name
+        // with this one's (several steps default to 'solid'). That looks like a stray
+        // condition, but the product's marker editor filters the same way, so this stays.
         const controlPoints = state.snappingDisabled
           ? []
           : Object.entries(state.active)
