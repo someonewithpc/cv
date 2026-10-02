@@ -43,6 +43,8 @@
 svg {
   width: min(#{drawing.$artwork-width}, 100%);
   aspect-ratio: 1;
+  // Its own layer, so each frame of the dash repaints the logo and not the sheet
+  will-change: transform;
 }
 
 // The animation sits inline because the page prints this file as the source to copy, and only
