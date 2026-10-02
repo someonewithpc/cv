@@ -107,21 +107,30 @@ const skipScript = `(() => {
           <li><kbd>N</kbd> Next page, when a stack has focus</li>
         </ul>
       </div>
-      <button type="button" class="page-turn-key sr-only" tabindex="-1" accesskey="p" data-turn="ArrowLeft">Previous page</button>
-      <button type="button" class="page-turn-key sr-only" tabindex="-1" accesskey="n" data-turn="ArrowRight">Next page</button>
+      <button type="button" class="page-turn-key sr-only" accesskey="p" data-turn="ArrowLeft">Previous page</button>
+      <button type="button" class="page-turn-key sr-only" accesskey="n" data-turn="ArrowRight">Next page</button>
     </nav>
     <script>
-      // The two buttons above exist only so accesskey="p"/"n" have somewhere to land: pressing
-      // one moves focus to the button first (the browser's own accesskey behaviour, not
-      // scripted), which is the previously-focused element's `focusin.relatedTarget`. If that
-      // was a paper stack, replay the same ArrowLeft/ArrowRight keydown its own listener
-      // (PaperStack/fold-drag.ts) already turns pages on, then hand focus straight back so the
-      // ring returns to the stack and a second press keeps working.
+      // The two buttons above turn whichever paper stack last held keyboard focus: the one a
+      // reader is sitting on, or, once they Tab or accesskey away to a button here, the one they
+      // left. A stack gaining focus is the only thing tracked, so a click straight after page
+      // load with no stack ever focused is a no-op rather than a guess.
+      let lastFocusedStack: HTMLElement | null = null;
+      document.addEventListener('focusin', (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement && target.hasAttribute('data-paper-stack-root')) lastFocusedStack = target;
+      });
+
+      // A click, a Tab-then-Enter/Space, a screen reader's activate gesture, and a real
+      // accesskey press (which the browser both focuses and clicks) all land here alike. Replay
+      // the same ArrowLeft/ArrowRight keydown the stack's own listener (PaperStack/fold-drag.ts)
+      // already turns pages on, then hand focus straight back so the ring returns to the stack
+      // and a second press keeps working.
       for (const button of document.querySelectorAll<HTMLButtonElement>('.page-turn-key')) {
-        button.addEventListener('focusin', (event) => {
-          const stack = event.relatedTarget;
+        button.addEventListener('click', () => {
           const key = button.dataset.turn;
-          if (!key || !(stack instanceof HTMLElement) || !stack.hasAttribute('data-paper-stack-root')) return;
+          const stack = lastFocusedStack;
+          if (!key || !stack || !stack.isConnected) return;
           stack.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
           stack.focus();
         });

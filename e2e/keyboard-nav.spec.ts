@@ -59,6 +59,12 @@ test.describe('access keys', () => {
     for (const [key, { locator }] of Object.entries(targets)) {
       await expect(locator()).toHaveAttribute('accesskey', key);
     }
+
+    // The page-turn buttons answer a click or a keyboard activation of their own now, so unlike
+    // the section links above (tabindex="-1", accesskey-only, see the comment above) they stay
+    // real Tab stops: a reader who never discovers the accesskey can still reach and use them.
+    await expect(page.locator('.page-turn-key[data-turn="ArrowLeft"]')).not.toHaveAttribute('tabindex', '-1');
+    await expect(page.locator('.page-turn-key[data-turn="ArrowRight"]')).not.toHaveAttribute('tabindex', '-1');
   });
 
   test('the legend shows the modifier for the reader\'s browser and platform', async ({ page }) => {
@@ -99,7 +105,7 @@ test.describe('access keys', () => {
     }
   });
 
-  test('the legend is hidden at rest, shown while the skip link has focus, and hidden again once focus moves on', async ({ page }) => {
+  test('the legend is hidden at rest, shown while the skip link or a page-turn button has focus, and hidden again once focus moves past both', async ({ page }) => {
     await page.goto('/');
     const legend = page.locator('.accesskey-legend');
 
@@ -107,6 +113,16 @@ test.describe('access keys', () => {
 
     await page.keyboard.press('Tab');
     await expect(page.locator('.skip-link')).toBeFocused();
+    await expect(legend).toHaveCSS('opacity', '1');
+
+    // The next two Tab stops are the page-turn buttons themselves, real Tab stops now, and the
+    // legend stays up through both since it explains what they do.
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.page-turn-key[data-turn="ArrowLeft"]')).toBeFocused();
+    await expect(legend).toHaveCSS('opacity', '1');
+
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.page-turn-key[data-turn="ArrowRight"]')).toBeFocused();
     await expect(legend).toHaveCSS('opacity', '1');
 
     await page.keyboard.press('Tab');
@@ -164,26 +180,28 @@ test.describe('access keys', () => {
     await expect(stack).toBeFocused();
 
     const before = await frontPageName(stack);
-    // A real accesskey press cannot be simulated here (see the note above): .focus() is what
-    // the browser's own accesskey handling would do first, and it fires the same
-    // focusin/relatedTarget the Layout.astro script reads, so this exercises the same code
-    // path a real Alt+8 press would reach.
-    await page.evaluate(() => document.querySelector<HTMLElement>('.page-turn-key[data-turn="ArrowRight"]')?.focus());
+    // Tab moves focus off the stack and onto the button (it is a real Tab stop now), but
+    // Layout.astro remembers the stack as the last one focused, so Enter here still turns it —
+    // the same path a real Tab-then-Enter or an Alt+8 accesskey press both reach.
+    await page.locator('.page-turn-key[data-turn="ArrowRight"]').focus();
+    await page.keyboard.press('Enter');
     await expect.poll(async () => frontPageName(stack), { timeout: 15_000 }).not.toBe(before);
     await expect(stack).toBeFocused();
 
     const afterForward = await frontPageName(stack);
-    await page.evaluate(() => document.querySelector<HTMLElement>('.page-turn-key[data-turn="ArrowLeft"]')?.focus());
+    await page.locator('.page-turn-key[data-turn="ArrowLeft"]').focus();
+    await page.keyboard.press('Enter');
     await expect.poll(async () => frontPageName(stack), { timeout: 15_000 }).not.toBe(afterForward);
     await expect(stack).toBeFocused();
   });
 
-  test('the next-page key is a no-op when no stack has focus', async ({ page }) => {
+  test('the next-page key is a no-op when no stack has ever had focus', async ({ page }) => {
     await page.goto('/');
-    await page.locator('#career').evaluate((node) => (node as HTMLElement).focus());
+    await page.locator('#career').focus();
     const stack = demoStack(page, 'Visrez Animated Loading Logo');
     const before = await frontPageName(stack);
-    await page.evaluate(() => document.querySelector<HTMLElement>('.page-turn-key[data-turn="ArrowRight"]')?.focus());
+    await page.locator('.page-turn-key[data-turn="ArrowRight"]').focus();
+    await page.keyboard.press('Enter');
     await page.waitForTimeout(500);
     expect(await frontPageName(stack)).toBe(before);
   });
