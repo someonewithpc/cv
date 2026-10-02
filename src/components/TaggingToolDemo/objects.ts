@@ -104,7 +104,7 @@ export const baseObjects: readonly BaseObject[] = [
       name: 'Banquet Set',
       details: '10 seats, 1.82m',
       image: wood10,
-      values: { chair: 'Cream', 'table color': 'wood' },
+      values: { chair: 'Cream', 'table color': 'Wood' },
     },
     variants: [
       {

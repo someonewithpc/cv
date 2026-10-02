@@ -509,11 +509,10 @@ test('main page: picking another property brings up the values already stored fo
   const wood = tool.locator('.grouped-objects[data-group="wood"]');
   await tool.locator('.property-select').selectOption('table color');
 
-  // Stored as typed: the product titleizes on save, and this row's base was not saved
-  // through this page, so its value differs from its variants' by case alone.
-  await expect(wood.locator('.object-value').first()).toHaveValue('wood');
+  // The product titleizes on save, so the base and its variants agree on case.
+  await expect(wood.locator('.object-value').first()).toHaveValue('Wood');
   await expect(wood.locator('.object-value').nth(1)).toHaveValue('Wood');
-  await expect(wood.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: wood, Wood');
+  await expect(wood.locator('.shared-value')).toHaveAttribute('placeholder', 'Overrides: Wood');
 
   // The last variant has no table colour, which is why the object is still listed; the
   // other row has one on every object, so it is not.
