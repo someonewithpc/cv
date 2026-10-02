@@ -500,11 +500,11 @@ export default function MockMapApp() {
     };
   }, [dispatch]);
 
+  // On the portal host, so the shortcut also reaches it from the marker editor portaled there.
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    return bindUndoRedoKeys(el, dispatch, (toast) => pushToastRef.current(toast));
-  }, [dispatch]);
+    if (!editorPortalHost) return;
+    return bindUndoRedoKeys(editorPortalHost, dispatch, (toast) => pushToastRef.current(toast));
+  }, [dispatch, editorPortalHost]);
 
   // Drives the sheet's transport deck (TechnicalDrawing/Page.astro).
   useEffect(() => {
