@@ -201,3 +201,4 @@
 - [x] Fold the cursor-press stylesheet into Stack.astro's style, one render-blocking request fewer (P16) (#239)
 - [x] Ship one public Draco decoder, no bundled JS fallback or wasm duplicates (P2) (#240)
 - [x] Bake a 720px desk tile per theme and serve it under 52rem, a quarter of the pixels for a wood strip a few pixels wide (P19) (#241)
+- [ ] Take the boot scripts' forced style and layout off a throttled phone's load path: the page animation hold, the pulse lookup, the flip hint layout and the fonts.ready read (P17, C5)
