@@ -213,7 +213,7 @@ $chrome-stacked-block: 60;
             border-top: 1px solid #666;
           }
 
-          &[inert] {
+          &:has(> summary[inert]) {
             color: var(--marker-inert-ink) !important;
           }
         }

@@ -2,7 +2,7 @@ import '../client-only';
 
 import { faArrowRotateLeft, faArrowRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from 'react-dom';
 import { v4 as uuidv4 } from 'uuid';
 import cx from 'classnames';
@@ -440,60 +440,62 @@ export function MarkerEditor({
                   const Configuration = markerConfigurationComponents[step][state.active[step] as string];
                   const disabled = Object.entries(state.active).some(([activeStep, activeOption]) => (disabledStepCombinations as any)[activeStep]?.[activeOption]?.includes(step));
                   return (
-                    <details
-                      key={step}
-                      name="marker-editor-step"
-                      inert={disabled || undefined}
-                      title={disabled ? "This step is disabled because it's not compatible with some selected options" : undefined}
-                      open={state.step === step}
-                      onClick={(e) => {
-                        if (disabled) e.preventDefault();
-                      }}
-                      onToggle={(e) => {
-                        if (disabled && (e.nativeEvent as ToggleEvent).newState === 'open') {
-                          e.currentTarget.open = false;
-                        } else if ((e.nativeEvent as ToggleEvent).newState === 'open' && state.step !== step) {
-                          setState((prev) => ({ ...prev, step }));
-                        } else if ((e.nativeEvent as ToggleEvent).newState === 'closed' && state.step === step) {
-                          e.currentTarget.open = true;
-                        }
-                      }}
-                    >
-                      <summary data-demo-target={`editor:step:${step}`}>{_startCase(step)}</summary>
-                      <ul role="listbox" aria-label={_startCase(step)}>
-                        {Object.entries(markers[step])
-                          .map(([type, part]) => {
-                            const Thumbnail = markerThumbnailComponents[step][type];
-                            return (
-                              <li
-                                key={type}
-                                role="option"
-                                aria-label={part.title}
-                                aria-selected={state.active[step] === type}
-                                data-demo-target={`editor:${step}:${type}`}
-                                tabIndex={0}
-                                onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
-                                onKeyDown={(event) => {
-                                  // A list item with a click is not a keyboard target on its own.
-                                  if (event.key !== 'Enter' && event.key !== ' ') return;
-                                  event.preventDefault();
-                                  setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }));
-                                }}
-                                title={part.title}
-                              >
-                                <Thumbnail space={space} />
-                              </li>
-                            );
-                          })
-                        }
-                      </ul>
-
-                      <section className="marker-step-configuration">
-                        <Configuration
-                          space={space}
-                        />
-                      </section>
-                    </details>
+                    <Fragment key={step}>
+                      <details
+                        name="marker-editor-step"
+                        aria-hidden={disabled || undefined}
+                        title={disabled ? "This step is disabled because it's not compatible with some selected options" : undefined}
+                        open={state.step === step}
+                        onClick={(e) => {
+                          if (disabled) e.preventDefault();
+                        }}
+                        onToggle={(e) => {
+                          if (disabled && (e.nativeEvent as ToggleEvent).newState === 'open') {
+                            e.currentTarget.open = false;
+                          } else if ((e.nativeEvent as ToggleEvent).newState === 'open' && state.step !== step) {
+                            setState((prev) => ({ ...prev, step }));
+                          } else if ((e.nativeEvent as ToggleEvent).newState === 'closed' && state.step === step) {
+                            e.currentTarget.open = true;
+                          }
+                        }}
+                      >
+                        <summary data-demo-target={`editor:step:${step}`} inert={disabled || undefined}>{_startCase(step)}</summary>
+                        <ul role="listbox" aria-label={_startCase(step)}>
+                          {Object.entries(markers[step])
+                            .map(([type, part]) => {
+                              const Thumbnail = markerThumbnailComponents[step][type];
+                              return (
+                                <li
+                                  key={type}
+                                  role="option"
+                                  aria-label={part.title}
+                                  aria-selected={state.active[step] === type}
+                                  data-demo-target={`editor:${step}:${type}`}
+                                  tabIndex={0}
+                                  onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
+                                  onKeyDown={(event) => {
+                                    // A list item with a click is not a keyboard target on its own.
+                                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                                    event.preventDefault();
+                                    setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }));
+                                  }}
+                                  title={part.title}
+                                >
+                                  <Thumbnail space={space} />
+                                </li>
+                              );
+                            })
+                          }
+                        </ul>
+  
+                        <section className="marker-step-configuration">
+                          <Configuration
+                            space={space}
+                          />
+                        </section>
+                      </details>
+                      {disabled && <p className="sr-only">{_startCase(step)}. This step is disabled because it's not compatible with some selected options</p>}
+                    </Fragment>
                   );
                 }
                 )}
