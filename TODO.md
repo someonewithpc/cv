@@ -239,4 +239,4 @@
 - [x] The Space Builder walkthrough's Save step toasts "Arrangement saved" twice (C26) (#274)
 - [x] Render the Space Builder scenes on demand, so a scene at rest asks for no frames (171-AP1) (#252)
 - [x] Keep schemaDef's walk running once reduced motion turns back off (C39) (#279)
-- [ ] Rethrow anything the library search's `send()` catches that is not an AbortError (C51)
+- [x] Rethrow anything the library search's `send()` catches that is not an AbortError (C51) (#284)
