@@ -133,6 +133,24 @@ test('layouts page: the scene draws and autoplay cycles the styles after the pag
   await expect.poll(activeStyle, { timeout: 20_000 }).not.toBe(styleOnArrival);
 });
 
+test('layouts page: a wheel over a sidebar gap scrolls the page instead of zooming the scene', async ({ page }) => {
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Layout Styles');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  const app = await waitForSceneReady(front);
+  // The sidebar header sits in `.sidebar` but is not a `.style-chip` button — the gap this
+  // bug zoomed/orbited through instead of letting the page scroll.
+  const header = app.locator('.sidebar-header');
+  const prevented = await header.evaluate((el) => {
+    const wheelEvent = new WheelEvent('wheel', { deltaY: 100, bubbles: true, cancelable: true });
+    el.dispatchEvent(wheelEvent);
+    return wheelEvent.defaultPrevented;
+  });
+  expect(prevented).toBe(false);
+});
+
 test('badge page: capacity-badge scene loads', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
