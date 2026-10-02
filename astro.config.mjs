@@ -1,4 +1,5 @@
 // @ts-check
+import os from "node:os";
 import path from "path";
 
 import cloudflare from '@astrojs/cloudflare';
@@ -19,6 +20,10 @@ const srcAlias = {
   replacement: `${path.resolve(import.meta.dirname, './src')}/`,
 };
 
+// host: true binds every interface so the machine's own LAN name reaches dev; allowedHosts
+// stays an explicit list rather than true, which would accept any Host header.
+const devHosts = ['localhost', '127.0.0.1', os.hostname()];
+
 // https://astro.build/config
 export default defineConfig({
   adapter: cloudflare({
@@ -34,7 +39,7 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: true,
+    allowedHosts: devHosts,
   },
   // No Astro.session usage — drop session runtime + Cloudflare SESSION KV wiring
   session: false,
