@@ -78,48 +78,6 @@
 <style lang="scss">
 @use '@/scss/technical-drawing' as drawing;
 
-@property --rect-mask-full {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 0;
-}
-
-@property --rect-clip-amount {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 0;
-}
-
-@property --white-stroke-opacity {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 0;
-}
-
-@property --path-dash-draw {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 1;
-}
-
-@property --rotate-x {
-  syntax: '<angle>';
-  inherits: true;
-  initial-value: 0deg;
-}
-
-@property --rotate-y {
-  syntax: '<angle>';
-  inherits: true;
-  initial-value: 0deg;
-}
-
-@property --path-z {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 0em;
-}
-
 .all-together-layer {
   width: min(#{drawing.$artwork-width}, 100%);
   max-width: 100%;
@@ -127,11 +85,13 @@
   display: grid;
   place-items: center;
 
-  animation: 15s visrez-logo-all-together-layer-animation linear infinite;
+  // Each part runs its own copy of the 15 s timeline, so a frame restyles only the parts that
+  // move and the turn of the scene stays a transform
+  $timing: 15s linear infinite;
 
   // Every property rests at the logo itself when nothing animates it
   @media (prefers-reduced-motion: reduce) {
-    &:not([data-full-motion] *) {
+    &:not([data-full-motion] *) :is(.scene, .face-mask-full, .face-mask-path, .path, path) {
       animation: none;
     }
   }
@@ -141,7 +101,8 @@
     aspect-ratio: 1;
     display: grid;
     transform-style: preserve-3d;
-    transform: rotateX(calc(-1 * var(--rotate-x))) rotateY(var(--rotate-y));
+    transform: rotateX(0deg) rotateY(0deg);
+    animation: visrez-logo-all-together-scene $timing;
   }
 
   svg {
@@ -156,117 +117,155 @@
   }
 
   .face-mask-full {
-    opacity: var(--rect-mask-full);
+    opacity: 0;
+    animation: visrez-logo-all-together-mask-full $timing;
   }
 
   .face-mask-path {
-    opacity: var(--rect-clip-amount);
+    opacity: 0;
+    animation: visrez-logo-all-together-mask-path $timing;
   }
 
   .path {
-    transform: translateZ(var(--path-z));
+    transform: translateZ(0em);
+    animation: visrez-logo-all-together-path $timing;
 
     path {
-      stroke-dasharray: var(--path-dash-draw) 1;
+      stroke-dasharray: 1 1;
       stroke-dashoffset: 0;
     }
   }
 
   .stroke-gradient {
-    opacity: calc(1 - var(--white-stroke-opacity));
+    animation: visrez-logo-all-together-stroke-gradient $timing;
   }
 
   .stroke-white {
-    opacity: var(--white-stroke-opacity);
+    opacity: 0;
+    animation: visrez-logo-all-together-stroke-white $timing;
   }
 
-  @keyframes visrez-logo-all-together-layer-animation {
+  @keyframes visrez-logo-all-together-scene {
     0%, 12% {
-      --rect-mask-full: 0;
-      --rect-clip-amount: 0;
-      --white-stroke-opacity: 0;
-      --rotate-x: 0deg;
-      --rotate-y: 0deg;
-      --path-z: 0em;
-      --path-dash-draw: 1;
+      transform: rotateX(0deg) rotateY(0deg);
     }
 
-    19.99% {
-      --path-dash-draw: 1;
-    }
-
-    20% {
-      --rect-mask-full: 1;
-      --rect-clip-amount: 0;
-      --white-stroke-opacity: 1;
-      --rotate-x: 30deg;
-      --rotate-y: 45deg;
-      --path-z: 6em;
-      --path-dash-draw: 0;
-    }
-
-    48% {
-      --rect-mask-full: 1;
-      --rect-clip-amount: 0;
-      --white-stroke-opacity: 1;
-      --rotate-x: 30deg;
-      --rotate-y: 45deg;
-      --path-z: 6em;
-      --path-dash-draw: 1;
-    }
-
-    52% {
-      --rect-mask-full: 1;
-      --rect-clip-amount: 0;
-      --white-stroke-opacity: 1;
-      --rotate-x: 30deg;
-      --rotate-y: 45deg;
-      --path-z: 6em;
-      --path-dash-draw: 1;
-    }
-
-    58% {
-      --rect-mask-full: 0;
-      --rect-clip-amount: 1;
-      --white-stroke-opacity: 1;
-      --rotate-x: 30deg;
-      --rotate-y: 45deg;
-      --path-z: 6em;
-      --path-dash-draw: 1;
-    }
-
-    62% {
-      --rect-mask-full: 0;
-      --rect-clip-amount: 1;
-      --white-stroke-opacity: 1;
-      --rotate-x: 30deg;
-      --rotate-y: 45deg;
-      --path-z: 6em;
-      --path-dash-draw: 1;
-    }
-
-    67% {
-      --white-stroke-opacity: 0;
+    20%, 48%, 52%, 58%, 62% {
+      transform: rotateX(-30deg) rotateY(45deg);
     }
 
     71% {
-      --rect-mask-full: 0;
-      --rect-clip-amount: 1;
-      --white-stroke-opacity: 0;
-      --rotate-x: 3deg;
-      --rotate-y: 4.5deg;
-      --path-z: 0.6em;
-      --path-dash-draw: 1;
+      transform: rotateX(-3deg) rotateY(4.5deg);
     }
 
     72%, 100% {
-      --rect-mask-full: 0;
-      --rect-clip-amount: 0;
-      --white-stroke-opacity: 0;
-      --rotate-x: 0deg;
-      --rotate-y: 0deg;
-      --path-z: 0em;
-      --path-dash-draw: 1;
+      transform: rotateX(0deg) rotateY(0deg);
+    }
+  }
+
+  @keyframes visrez-logo-all-together-mask-full {
+    0%, 12% {
+      opacity: 0;
+    }
+
+    20%, 48%, 52% {
+      opacity: 1;
+    }
+
+    58%, 62%, 71%, 72%, 100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes visrez-logo-all-together-mask-path {
+    0%, 12%, 20%, 48%, 52% {
+      opacity: 0;
+    }
+
+    58%, 62%, 71% {
+      opacity: 1;
+    }
+
+    72%, 100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes visrez-logo-all-together-path {
+    0%, 12% {
+      transform: translateZ(0em);
+    }
+
+    20%, 48%, 52%, 58%, 62% {
+      transform: translateZ(6em);
+    }
+
+    71% {
+      transform: translateZ(0.6em);
+    }
+
+    72%, 100% {
+      transform: translateZ(0em);
+    }
+  }
+
+  @keyframes visrez-logo-all-together-stroke-gradient {
+    0%, 12% {
+      stroke-dasharray: 1 1;
+      opacity: 1;
+    }
+
+    19.99% {
+      stroke-dasharray: 1 1;
+    }
+
+    20% {
+      stroke-dasharray: 0 1;
+      opacity: 0;
+    }
+
+    48%, 52%, 58%, 62% {
+      stroke-dasharray: 1 1;
+      opacity: 0;
+    }
+
+    67% {
+      opacity: 1;
+    }
+
+    71%, 72%, 100% {
+      stroke-dasharray: 1 1;
+      opacity: 1;
+    }
+  }
+
+  @keyframes visrez-logo-all-together-stroke-white {
+    0%, 12% {
+      stroke-dasharray: 1 1;
+      opacity: 0;
+    }
+
+    19.99% {
+      stroke-dasharray: 1 1;
+    }
+
+    20% {
+      stroke-dasharray: 0 1;
+      opacity: 1;
+    }
+
+    48%, 52%, 58%, 62% {
+      stroke-dasharray: 1 1;
+      opacity: 1;
+    }
+
+    67% {
+      opacity: 0;
+    }
+
+    71%, 72%, 100% {
+      stroke-dasharray: 1 1;
+      opacity: 0;
     }
   }
 }
