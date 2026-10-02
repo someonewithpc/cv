@@ -258,8 +258,9 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
   color: var(--ink);
 
   :global([data-sheet-orientation='portrait']) & {
-    /* A page that quotes the bus beside other things can hand it a smaller size. */
-    font-size: var(--bus-portrait-font, clamp(0.625rem, min(0.029 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem));
+    /* A page that quotes the bus beside other things can hand it a smaller size. Under a
+       345px wide sheet the type follows the sheet past 0.625rem, as on a short landscape one. */
+    font-size: var(--bus-portrait-font, clamp(0.5rem, min(0.029 * var(--sheet-inline), 0.018 * var(--sheet-block)), 0.9375rem));
   }
 }
 
@@ -1224,6 +1225,84 @@ button.call {
     .resize {
       grid-column: 1 / -1;
       grid-row: branch-start / note-end;
+    }
+  }
+}
+
+/* A portrait sheet on a phone is too short for the column of stages at the type it allows:
+   the tray and $res share a row, each chip carries its priority beside its name, and the rows
+   close up, so the template and its note end above the deck. A wider portrait sheet keeps
+   the stacked column, which fits it. */
+@mixin narrow-portrait {
+  @container technical-drawing (orientation: portrait) and (max-width: 26rem) {
+    :global(.event-bus-demo) & {
+      @content;
+    }
+  }
+}
+
+.event-bus {
+  @include narrow-portrait {
+    gap: 0.5em;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'emitter emitter'
+      'rail rail'
+      'unloaded res'
+      'branch branch'
+      'note note';
+
+    > .emitter {
+      grid-area: emitter;
+      row-gap: 0.375em;
+    }
+
+    > .rail-frame {
+      grid-area: rail;
+    }
+
+    > .unloaded {
+      grid-area: unloaded;
+    }
+
+    > .emitter-branch {
+      display: contents;
+    }
+
+    .res {
+      align-self: start;
+    }
+
+    .branch {
+      line-height: 1.25;
+    }
+
+    .resize {
+      grid-column: 1 / -1;
+      grid-row: branch-start / note-end;
+    }
+
+    .chain .chip {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: baseline;
+      padding-block: 0.25em;
+
+      .meta,
+      .load {
+        grid-row: 1;
+      }
+
+      .meta {
+        grid-column: 2;
+      }
+
+      .load {
+        grid-column: 3;
+      }
+    }
+
+    .chain .terminal {
+      min-height: 1.75em;
     }
   }
 }
