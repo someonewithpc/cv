@@ -30,7 +30,7 @@ const targets = [
       '  (library_object_id, name, value)',
       '#{size_synthetic_property_select_sql("id = NEW.id")}',
       'UNION ALL',
-      '#{pax_synthetic_property_select_sql("id = NEW.id")}',
+      '#{pax_synthetic_property_select_sql("id = NEW.id")};',
     ],
   },
   {
@@ -100,9 +100,10 @@ const body = (sql: string[]) =>
     <div class="panel">
       <header>
         <strong>The same SQL in the backfill and three triggers</strong>
-        <span>The backfill and the three row triggers on <code>library_objects</code> all call
-          one Ruby method, each with its own <code>where</code>. The hairtrigger gem writes the
-          triggers into a migration.</span>
+        <span>The backfill and the insert and update triggers on <code>library_objects</code> call
+          one Ruby method, each with its own <code>where</code>; the delete trigger calls neither,
+          it just deletes the rows outright. The hairtrigger gem writes the triggers into a
+          migration.</span>
       </header>
 
       <div class="builder">
