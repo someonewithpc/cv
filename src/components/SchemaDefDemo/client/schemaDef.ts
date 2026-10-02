@@ -29,6 +29,9 @@ export function initSchemaDef(root: HTMLElement) {
 
   let lit: string | null = null;
   let playing = false;
+  // Separate from `playing`: whether the walk should run once reduced motion stops forcing
+  // it off, as opposed to `playing` itself, which reduced motion can override to false.
+  let wanted = false;
   let active = false;
   let held = false;
   let step = -1;
@@ -80,6 +83,7 @@ export function initSchemaDef(root: HTMLElement) {
   };
 
   const setPlaying = (next: boolean) => {
+    wanted = next;
     playing = next && !reducedMotion(root);
     reportAutoplayState(root, playing ? 'playing' : reducedMotion(root) ? 'paused' : 'user');
     schedule();
@@ -169,7 +173,7 @@ export function initSchemaDef(root: HTMLElement) {
     schedule();
   });
 
-  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => setPlaying(playing));
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => setPlaying(wanted));
 
   setPlaying(true);
 }
