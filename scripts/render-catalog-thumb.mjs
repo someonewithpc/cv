@@ -22,8 +22,10 @@ const tint = process.argv[4] ? JSON.parse(process.argv[4]) : null;
 // Optional camera angle, "inclination azimuth" in degrees; the catalog's own is 60 60.
 const [inclinationDeg, azimuthDeg] = (process.argv[5] ?? '60 60').split(' ').map(Number);
 // Space Builder stores catalog thumbnails at 600px square (Upload/Preview.vue renders 300
-// and the platform keeps a 2x original).
-const SIZE = 600;
+// and the platform keeps a 2x original), but this demo's own catalog card never shows
+// one past 246px CSS wide (measured across CatalogObjectCard.vue and Card.astro at every
+// breakpoint) — bake at 2x that instead, so the shipped file matches what the page uses.
+const SIZE = 492;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

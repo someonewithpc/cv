@@ -211,7 +211,7 @@ function onPictureClick(event: MouseEvent) {
           :data-variant="style.id"
           :data-name="style.style"
         >
-          <img :src="style.thumb" alt="" width="600" height="600">
+          <img :src="style.thumb" alt="" width="492" height="492">
           <span class="group-object-count">
             <span>{{ index + 1 }}</span>
             <span class="vr" />
@@ -282,7 +282,7 @@ function onPictureClick(event: MouseEvent) {
         @dragend="emit('dragend')"
         @pointerdown="emit('itemPointerdown', $event, item, visible)"
       >
-        <img :src="visible.thumb" alt="" width="600" height="600">
+        <img :src="visible.thumb" alt="" width="492" height="492">
         <span v-if="variants.length > 1" class="group-object-count">
           {{ variants.length }}
         </span>

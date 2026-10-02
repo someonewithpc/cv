@@ -66,7 +66,7 @@ const TRAIL_PARTS = [1, 2, 3, 4, 5];
       >
         {styles.map((style, index) => (
           <li class="style" data-variant={style.id} data-name={styleName(style)}>
-            <img src={style.thumb} alt="" width="600" height="600" loading="lazy" />
+            <img src={style.thumb} alt="" width="492" height="492" loading="lazy" />
             <span class="group-object-count">
               <span>{index + 1}</span>
               <span class="vr" />
@@ -81,7 +81,7 @@ const TRAIL_PARTS = [1, 2, 3, 4, 5];
       </span>
     ) : (
       <div class="object-icons">
-        <img src={visible.thumb} alt="" width="600" height="600" loading="lazy" />
+        <img src={visible.thumb} alt="" width="492" height="492" loading="lazy" />
         {variants.length > 1 && <span class="group-object-count">{variants.length}</span>}
       </div>
     )}

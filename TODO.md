@@ -256,3 +256,4 @@
 - [x] Let a plain scroll over a stack start without waiting on the main thread: passive wheel listener, cancelling ones only during a swipe (C3) (#243)
 - [x] Keep the Space Builder root rect between scrolls and resizes instead of reading it on every cursor frame (layout reads audit) (#318)
 - [x] Cut the Tab stops: one per contribution group and one per tagging tool row, arrows inside (A14) (#276)
+- [ ] Bake the Space Builder catalog thumbnails at the size the cards actually show, not the 600px product original (P6)
