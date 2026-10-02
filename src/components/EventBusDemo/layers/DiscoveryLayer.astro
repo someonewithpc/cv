@@ -33,8 +33,9 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
     <p class="point">
       <strong>No module registers a listener</strong>
       <span>
-        Every class in <code>components/*/</code> and <code>plugins/*/</code> is a module, and
-        every public <code>on&lt;EventName&gt;</code> method on it is a listener for that event.
+        Each directory's main class in <code>components/*/</code> and <code>plugins/*/</code> is a
+        module, and every public <code>on&lt;EventName&gt;</code> method on it is a listener for
+        that event.
       </span>
     </p>
 
