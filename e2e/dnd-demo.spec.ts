@@ -623,7 +623,7 @@ test('the walkthrough still drops on the visible floor after the camera moves', 
   expect(moved.y).toBeLessThan(moved.height);
 });
 
-test('Restart brings the camera home', async ({ page }) => {
+test("the deck's restart key brings the camera home", async ({ page }) => {
   const app = await openDemo(page);
   await watchDrops(app);
   const box = await sceneBox(app);
@@ -632,9 +632,9 @@ test('Restart brings the camera home', async ({ page }) => {
   await expect(app).toHaveAttribute('data-selected', 'false');
   await moveCamera(page, box);
   const seen = await dropCount(app);
-  await app.getByRole('button', { name: 'Restart' }).click();
+  await app.locator('xpath=ancestor::section[1]').locator('[data-demo-transport] [data-demo-key="reset"]').click();
 
-  // The first drop after Restart aims at the same floor point as the first drop after load,
+  // The first drop after a restart aims at the same floor point as the first drop after load,
   // so with the camera back home it lands on the same pixel; a kept view would put it elsewhere.
   const restarted = await dropAfter(app, seen);
   expect(Math.abs(restarted.x - fresh.x)).toBeLessThan(8);
@@ -694,8 +694,8 @@ test('a lap that starts after a takeover clears the floor first', async ({ page 
     .poll(() => floorLog(app).then(standing), { timeout: 30_000, intervals: [40] })
     .toBeGreaterThan(0);
   await expect(app).toHaveAttribute('data-selected', 'false');
-  // An orbit hands the scene over the way any visitor gesture does. Restart, the one path
-  // that resets the scene, is not involved, and the lap resumes on its own.
+  // An orbit hands the scene over the way any visitor gesture does. The restart key, the one
+  // path that resets the scene, is not involved, and the lap resumes on its own.
   await orbitCamera(page, box, -160);
   await leaveDemo(page, app);
 

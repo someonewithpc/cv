@@ -891,7 +891,7 @@ async function restartDemo() {
   resumeTimer = null;
   stopAutoplay();
   userControl = false;
-  // Restart is an ask for the walkthrough, so the pointer that pressed it is not in its way.
+  // A restart asks for the walkthrough, so a pointer resting on the scene is not in its way.
   pointerOver = false;
   sceneRef.value?.reset();
   selectedPlacement.value = false;
@@ -1127,12 +1127,6 @@ onBeforeUnmount(() => {
           <span class="key-toast__action">{{ entry.action }}</span>
         </div>
       </div>
-
-      <div v-if="ready && !loadError" class="controls">
-        <button type="button" class="restart-btn" @click="restartDemo">
-          Restart
-        </button>
-      </div>
     </div>
 
     <aside class="sidebar" aria-label="Select an Object" @pointerdown="yieldToUser" @focusin="yieldToUser">
@@ -1189,7 +1183,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-@use '@/scss/hit-area' as *;
 @use '@/scss/demo-toast' as toast;
 
 $visrez-brand: #89ab24;
@@ -1334,8 +1327,6 @@ $scene-bg: #212121;
 .key-toasts {
   @include toast.stack;
 
-  // Clear of the Restart button, which owns the bottom centre of this viewport.
-  bottom: 2.6rem;
   z-index: 3;
 }
 
@@ -1352,30 +1343,6 @@ $scene-bg: #212121;
 
   &__action {
     @include toast.action;
-  }
-}
-
-.controls {
-  position: absolute;
-  left: 50%;
-  bottom: 0.55rem;
-  z-index: 2;
-  translate: -50% 0;
-}
-
-.restart-btn {
-  padding: 0.28rem 0.7rem;
-  border: 1px solid $visrez-brand;
-  border-radius: 0.25rem;
-  background: color-mix(in oklab, $visrez-brand 25%, #171717);
-  color: #f4ffe8;
-  font: 700 0.625rem/1.3 var(--font-poppins, system-ui, sans-serif);
-  cursor: pointer;
-  white-space: nowrap;
-  @include hit-area;
-
-  &:hover {
-    background: color-mix(in oklab, $visrez-brand 40%, #171717);
   }
 }
 
