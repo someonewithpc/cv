@@ -11,6 +11,7 @@ import icon from 'astro-icon';
 import { httpToHttpsRedirect } from './plugins/httpToHttpsRedirect.mjs';
 import { lazyIslandStylesheets } from './plugins/lazyIslandStylesheets.mjs';
 import { sassFromTs } from './plugins/sassFromTs.mjs';
+import { stripDracoDefaultAssets } from './plugins/stripDracoDefaultAssets.mjs';
 
 // Only `@/…` — a bare `@` would also match scoped pkgs like `@astrojs`.
 const srcAlias = {
@@ -80,7 +81,7 @@ export default defineConfig({
   ],
 
   vite: {
-    plugins: [basicSsl(), httpToHttpsRedirect()],
+    plugins: [basicSsl(), httpToHttpsRedirect(), stripDracoDefaultAssets()],
     css: {
       preprocessorOptions: {
         scss: { importers: [sassFromTs({ root: import.meta.dirname, alias: [srcAlias] })] },
