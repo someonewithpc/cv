@@ -215,4 +215,4 @@
 - [x] Delete the dead `pageStyle: 'wip'` plumbing and the unreachable no-script hint-arrow rules (C80, C83) (#259)
 - [x] Hovering a marker editor header button changes its margin, border and size and shifts its neighbours (A25) (#296)
 - [x] A plain tap on the flap after the first gesture runs a 1 s settle glide (C20) (#269)
-- [ ] Fit the Event Dispatch sheet at 320 and 336 px, where its template and $res ran under the deck and past the sheet (S1)
+- [x] Fit the Event Dispatch sheet at 320 and 336 px, where its template and $res ran under the deck and past the sheet (S1) (#273)
