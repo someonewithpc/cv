@@ -45,7 +45,10 @@ export function useFontQuery<T>({ queryKey, queryFn, enabled = true }: QueryOpti
     setEntry(key, { status: 'pending' });
 
     queryFn({ signal: controller.signal })
-      .then((data) => setEntry(key, { status: 'success', data }))
+      .then((data) => {
+        // A query that resolves after its abort would otherwise cache its result as fresh
+        if (!controller.signal.aborted) setEntry(key, { status: 'success', data });
+      })
       .catch(() => {
         if (!controller.signal.aborted) setEntry(key, { status: 'error' });
       });
