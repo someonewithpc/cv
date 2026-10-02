@@ -1,13 +1,20 @@
 import http from 'node:http';
 import net from 'node:net';
 
-/** Same-port HTTP→HTTPS for Vite: TLS is proxied to loopback; plain HTTP 308s. */
-export const httpToHttpsRedirect = () => ({
+/**
+ * Same-port HTTP→HTTPS for Vite: TLS is proxied to loopback; plain HTTP 308s.
+ *
+ * The Location header names a host from `allowedHosts`, never the request's own Host header:
+ * echoing that straight back would let any Host value redirect a visitor anywhere.
+ */
+export const httpToHttpsRedirect = ({ allowedHosts = ['localhost'] } = {}) => ({
   name: 'http-to-https-redirect',
   apply: 'serve',
   configureServer: (server) => {
     const httpsServer = server.httpServer;
     if (!httpsServer) return;
+
+    const lowerAllowedHosts = allowedHosts.map((host) => host.toLowerCase());
 
     /** @type {net.Server | undefined} */
     let demux;
@@ -16,7 +23,8 @@ export const httpToHttpsRedirect = () => ({
     const originalClose = httpsServer.close.bind(httpsServer);
 
     const redirectServer = http.createServer((req, res) => {
-      const hostname = (req.headers.host ?? 'localhost').replace(/:\d+$/, '');
+      const requestHost = (req.headers.host ?? '').replace(/:\d+$/, '').toLowerCase();
+      const hostname = lowerAllowedHosts.includes(requestHost) ? requestHost : lowerAllowedHosts[0];
       const address = demux?.address();
       const port = typeof address === 'object' && address ? address.port : undefined;
       const portSuffix = port && port !== 443 ? `:${port}` : '';

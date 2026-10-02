@@ -86,7 +86,7 @@ export default defineConfig({
   ],
 
   vite: {
-    plugins: [basicSsl(), httpToHttpsRedirect(), stripDracoDefaultAssets()],
+    plugins: [basicSsl(), httpToHttpsRedirect({ allowedHosts: devHosts }), stripDracoDefaultAssets()],
     css: {
       preprocessorOptions: {
         scss: { importers: [sassFromTs({ root: import.meta.dirname, alias: [srcAlias] })] },
