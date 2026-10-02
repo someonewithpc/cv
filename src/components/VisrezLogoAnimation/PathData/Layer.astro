@@ -33,6 +33,8 @@ const listing = `<svg
 <Fragment set:html={highlightBlock(listing, 'xml', { lineComment: '--', className: 'path-data-layer' })} />
 
 <style lang="scss">
+@use '@/scss/technical-drawing' as drawing;
+
 :global(article.technical-drawing-stack > * > section.path-data) {
   overflow: hidden;
 }
@@ -63,20 +65,16 @@ const listing = `<svg
     max-width: 100%;
     overflow: auto;
 
+    /* Sideways scrolling inside a swipeable carousel is a trap, so on a portrait sheet
+       shrink the listing until its longest line fits the sheet instead. */
     &, :global(code) {
-      font-size: 0.875rem;
+      font-size: drawing.portrait-or(min(0.875rem, 0.0195 * var(--sheet-inline)), 0.875rem);
       line-height: 1.35;
     }
 
-    /* Sideways scrolling inside a swipeable carousel is a trap, so shrink the
-       listing until its longest line fits the sheet instead. */
     @container technical-drawing (orientation: portrait) {
       margin: 0.5em;
       padding: 0.5em;
-
-      &, :global(code) {
-        font-size: min(0.875rem, 1.95cqw);
-      }
     }
 
     & > :global(code) > :global(.line) {
