@@ -118,7 +118,7 @@ test.describe('handover', () => {
     await expect(tool).toHaveAttribute('data-autoplay', 'playing', { timeout: 10_000 });
   });
 
-  test('keyboard focus in the tool holds it until focus leaves', async ({ page }) => {
+  test('keyboard focus in the tool takes it over, and leaving hands nothing back', async ({ page }) => {
     const tool = await playingTool(page);
     const field = tool.locator('.grouped-objects[data-group="wood"] .shared-value');
 
@@ -129,7 +129,8 @@ test.describe('handover', () => {
     await expect(field).toBeFocused();
 
     await field.blur();
-    await expect(tool).toHaveAttribute('data-autoplay', 'playing', { timeout: 10_000 });
+    await pageWait(page, 9_000);
+    await expect(tool).toHaveAttribute('data-autoplay', 'user');
   });
 
   test('the sheet shows the transport deck, and its keys drive the walkthrough', async ({ page }) => {
