@@ -1,4 +1,3 @@
-import { watchDrawingNote } from '@/client/drawingNote';
 import { demoGate } from '@/client/frontPage';
 
 export async function boot(host: HTMLElement) {
@@ -10,5 +9,4 @@ export async function boot(host: HTMLElement) {
   const gate = demoGate(page);
   const player = createPlayer(host, restore, gate);
   gate.onChange((active) => player.setActive(active));
-  watchDrawingNote(page, (open) => player.setNoteOpen(open));
 }

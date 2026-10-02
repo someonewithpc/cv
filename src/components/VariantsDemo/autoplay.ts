@@ -91,7 +91,6 @@ export function createPlayer(host: HTMLElement, gate: DemoGate) {
 
   let playToken = 0;
   let active = false;
-  let noteOpen = false;
   let held = false;
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
   let clickTimer: ReturnType<typeof setTimeout> | null = null;
@@ -196,7 +195,7 @@ export function createPlayer(host: HTMLElement, gate: DemoGate) {
       hideCursor(true);
     },
     handBack() {
-      if (held || !active || noteOpen || reducedMotion(host)) return false;
+      if (held || !active || reducedMotion(host)) return false;
       host.dataset.userControl = 'false';
       report('playing');
       void play();
@@ -205,7 +204,7 @@ export function createPlayer(host: HTMLElement, gate: DemoGate) {
   });
 
   function canPlay() {
-    return active && !noteOpen && !handover.userControl && !reducedMotion(host);
+    return active && !handover.userControl && !reducedMotion(host);
   }
 
   const stopCommands = onAutoplayCommand(host, (command) => {
@@ -249,14 +248,6 @@ export function createPlayer(host: HTMLElement, gate: DemoGate) {
       // Off screen, under another page or in a hidden tab, the walkthrough's waits hold it
       // where it stands, and it carries on from there when the page is back.
       if (!value || (playing && playing === playToken)) return;
-      if (canPlay()) void play();
-    },
-    setNoteOpen(value: boolean) {
-      noteOpen = value;
-      if (value) {
-        stopPlaying();
-        return;
-      }
       if (canPlay()) void play();
     },
     dispose() {

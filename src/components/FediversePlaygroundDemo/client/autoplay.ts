@@ -60,7 +60,6 @@ export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoG
 
   let token = 0;
   let active = false;
-  let noteOpen = false;
   let held = false;
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -144,7 +143,7 @@ export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoG
     hideCursor();
   }
 
-  const canPlay = () => active && !noteOpen && !held && !handover.userControl;
+  const canPlay = () => active && !held && !handover.userControl;
 
   const handover = watchHandover(host, {
     listening: () => active,
@@ -153,7 +152,7 @@ export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoG
       setState('user');
     },
     handBack() {
-      if (!active || noteOpen || held || reducedMotion(host)) return false;
+      if (!active || held || reducedMotion(host)) return false;
       void play();
       return true;
     },
@@ -174,7 +173,7 @@ export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoG
       setState('paused');
       return;
     }
-    if (active && !noteOpen) void play();
+    if (active) void play();
     else setState('playing');
   });
 
@@ -192,14 +191,6 @@ export function createPlayer(host: HTMLElement, restore: () => void, gate: DemoG
       // Off screen, under another page or in a hidden tab, the walkthrough's waits hold it
       // where it stands, and it carries on from there when the page is back.
       if (!value || (playing && playing === token)) return;
-      if (canPlay() && host.dataset.autoplay === 'playing') void play();
-    },
-    setNoteOpen(value: boolean) {
-      noteOpen = value;
-      if (value) {
-        if (host.dataset.autoplay === 'playing') stop();
-        return;
-      }
       if (canPlay() && host.dataset.autoplay === 'playing') void play();
     },
   };

@@ -2,7 +2,6 @@ import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
-import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
@@ -78,7 +77,6 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
 
     let pageActive = false;
     let userControl = false;
-    let noteOpen = false;
     let everPlayed = false;
     // Set by the deck's pause: the picker stays the visitor's past the quiet spell
     let held = false;
@@ -92,7 +90,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
         return;
       }
       reportAutoplayState(el, 'playing');
-      if (noteOpen || controller.running) return;
+      if (controller.running) return;
       controller.start();
       toast(message ?? (everPlayed ? 'Demo resumed' : 'Demo playing · touch or move to take over'));
       everPlayed = true;
@@ -153,14 +151,6 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     el.addEventListener('focusin', onFocusIn);
     el.addEventListener('focusout', onFocusOut);
 
-    // The sheet's note covers the picker while it is open: nothing to watch until it folds away
-    const unwatchNote = watchDrawingNote(el, (open) => {
-      noteOpen = open;
-      window.clearTimeout(resumeTimer);
-      if (open) hold();
-      else play();
-    });
-
     // Reset puts the picker back as the page opens it, as the last scene does, and the run
     // starts again from the first
     const restart = () => {
@@ -201,7 +191,6 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     return () => {
       motionQuery.removeEventListener('change', onMotionChange);
       stopCommands();
-      unwatchNote();
       stopPageWatch();
       page.removeEventListener('pointermove', onPointer);
       page.removeEventListener('pointerdown', onPointer);

@@ -1,4 +1,3 @@
-import { watchDrawingNote } from '@/client/drawingNote';
 import { demoGate } from '@/client/frontPage';
 import { variantsOf } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 
@@ -25,5 +24,4 @@ export function boot(host: HTMLElement) {
   const gate = demoGate(page);
   const player = createPlayer(host, gate);
   gate.onChange((visible) => player.setActive(visible));
-  watchDrawingNote(page, (open) => player.setNoteOpen(open));
 }
