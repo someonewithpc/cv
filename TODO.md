@@ -236,3 +236,4 @@
 - [x] Open Source data: pluralise the file count, move fork-only commits out of Open, and fix a placeholder title and copy that misdescribed its own PR (T18) (#260)
 - [x] Make the sr-only Previous page and Next page buttons turn a page on click and keyboard activation (A8) (#258)
 - [x] Derive the PaperStack, drawing-note and annotation marker ids and the title block's jitter from the stack and page index instead of crypto.randomUUID() and math.random(), so a build is reproducible (C66) (#262)
+- [ ] The Space Builder walkthrough's Save step toasts "Arrangement saved" twice (C26)

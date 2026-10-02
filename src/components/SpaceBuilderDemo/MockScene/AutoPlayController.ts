@@ -897,13 +897,11 @@ export class AutoPlayController {
         cursor: { target: 'action:save' },
       },
       {
+        // domClick fires the real save button, which already toasts and closes the
+        // panel (saveArrangement, MockSceneApp.vue): no run here or it doubles up.
         delay: 500,
         cursor: { target: 'action:save', click: true },
         domClick: true,
-        run: () => {
-          this.onToast({ action: 'Arrangement saved' });
-          this.onUi({ panel: 'closed', phase: 'idle' });
-        },
       },
       {
         delay: 1100,
