@@ -23,7 +23,7 @@ export async function loadGoogleFont(family: string, signal: AbortSignal): Promi
   const el = doc.createElement('style');
   el.textContent = await res.text();
   doc.head.append(el);
-  return loadFontFacesFromStyleElement(el);
+  return loadFontFacesFromStyleElement(el, undefined, signal);
 }
 
 export async function loadPageFonts(url: string, signal: AbortSignal): Promise<LoadedFaces> {
@@ -33,7 +33,7 @@ export async function loadPageFonts(url: string, signal: AbortSignal): Promise<L
   if (!result) throw new Error('Nothing to load');
 
   const maps = await Promise.all(
-    [...result.doc.querySelectorAll('style')].map((el) => loadFontFacesFromStyleElement(el, stylesheetBase(el))),
+    [...result.doc.querySelectorAll('style')].map((el) => loadFontFacesFromStyleElement(el, stylesheetBase(el), signal)),
   );
   const faces: LoadedFaces = mergeFaces(maps);
 

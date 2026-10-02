@@ -27,7 +27,8 @@ type Candidate = { family: string, face: FontFace, rule: CSSFontFaceRule, finalS
  * and often one per unicode-range subset on top, and keeping only the last would leave
  * Latin text on the fallback whenever that last one is the Vietnamese subset.
  */
-export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement, baseURL: string | undefined = undefined) {
+export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement, baseURL: string | undefined, signal: AbortSignal) {
+  signal.throwIfAborted();
   const rules = [...(el.sheet?.cssRules ?? [])];
   const candidates: Candidate[] = [];
 
@@ -81,11 +82,14 @@ export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement
   return Promise.allSettled(
     candidates.map(
       (candidate) => candidate.face.load().then((loaded) => {
+        // A face that finishes after its query was dropped stays out of the page
+        signal.throwIfAborted();
         document.fonts.add(loaded);
         return candidate;
       })
     )
   ).then((results) => {
+    signal.throwIfAborted();
     const didLoad = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
 
     // @ts-ignore FontFaceSetLoadEvent isn't in every lib.dom yet
