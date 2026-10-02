@@ -10,15 +10,15 @@ export function FontWeight(
 ) {
   const [interacting, setInteracting] = useState(false);
   const id = useId();
+  const hint = enabled
+    ? 'Select font weight. Note that different weights may not be supported by the selected font'
+    : 'Font weight is not available because this font only provides specific weights. Use the Font Family dropdown instead';
 
   return (
     <Pinned interacting={interacting} onLeave={() => setInteracting(false)}>
       <label
         htmlFor={id}
-        title={enabled
-          ? 'Select font weight. Note that different weights may not be supported by the selected font'
-          : 'Font weight is not available because this font only provides specific weights. Use the Font Family dropdown instead'
-        }
+        title={hint}
       >
         <span>
           <span id={`${id}-name`}>Font Weight</span>
@@ -35,6 +35,7 @@ export function FontWeight(
         <input
           id={id}
           aria-labelledby={`${id}-name`}
+          aria-describedby={`${id}-hint`}
           disabled={!enabled}
           type="range"
           data-demo-target="weight"
@@ -49,6 +50,7 @@ export function FontWeight(
           onFocus={() => setInteracting(true)}
           onBlur={() => setInteracting(false)}
         />
+        <span id={`${id}-hint`} className="sr-only">{hint}</span>
       </label>
     </Pinned>
   );

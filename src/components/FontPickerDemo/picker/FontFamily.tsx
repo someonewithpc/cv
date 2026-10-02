@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import cx from 'classnames';
 
@@ -78,6 +78,7 @@ export function FontFamily(
   ];
 
   const picker = useDemoPicker();
+  const newId = useId();
   useEffect(() => {
     if (!picker.open) {
       stopPreviewing();
@@ -97,6 +98,7 @@ export function FontFamily(
         <div className={cx('select-wrapper', { 'new-dot': hasNew, 'is-demo-open': picker.open })}>
           <select
             ref={selectRef}
+            aria-describedby={hasNew ? newId : undefined}
             className="w-100"
             data-demo-target="family"
             value={value}
@@ -143,6 +145,7 @@ export function FontFamily(
           sheetOf(selectRef.current),
         )}
       </label>
+      {hasNew && <span id={newId} className="sr-only">New faces in the list</span>}
     </Pinned>
   );
 }
