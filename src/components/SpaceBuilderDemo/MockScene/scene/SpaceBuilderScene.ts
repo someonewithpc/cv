@@ -90,6 +90,75 @@ function makeGltfLoader() {
   return loader;
 }
 
+/** What {@link loadModelAsMergedMesh} hands back: one draw call's worth of geometry and material. */
+type MergedModel = { geometry: BufferGeometry; material: Material | Material[] };
+
+/**
+ * Load a GLB and flatten every primitive (glTF splits one mesh into a
+ * primitive per material) into a single BufferGeometry with per-primitive
+ * groups, so the result works as one InstancedMesh/Mesh draw call — even
+ * when the source model has more than one material (e.g. a chair frame +
+ * cushion). World transforms are baked in so nested nodes merge correctly.
+ */
+async function loadModelAsMergedMesh(url: string): Promise<MergedModel> {
+  const loader = makeGltfLoader();
+  if (MeshoptDecoder.ready) {
+    await MeshoptDecoder.ready;
+  }
+  const gltf = await loader.loadAsync(url);
+  const root = gltf.scene;
+  root.updateMatrixWorld(true);
+
+  const geometries: BufferGeometry[] = [];
+  const materials: Material[] = [];
+  root.traverse((obj) => {
+    if (!(obj as Mesh).isMesh) return;
+    const mesh = obj as Mesh;
+    const geom = mesh.geometry.clone();
+    geom.applyMatrix4(mesh.matrixWorld);
+    // Keep only the attributes every primitive shares — extras like vertex
+    // tangents/colour aren't needed for MeshStandardMaterial and would make
+    // mergeGeometries reject a set that isn't identical across primitives.
+    for (const name of Object.keys(geom.attributes)) {
+      if (!['position', 'normal', 'uv'].includes(name)) geom.deleteAttribute(name);
+    }
+    if (!geom.getAttribute('uv')) {
+      geom.setAttribute('uv', new BufferAttribute(new Float32Array(geom.attributes.position.count * 2), 2));
+    }
+    geometries.push(geom);
+    materials.push(Array.isArray(mesh.material) ? mesh.material[0] : mesh.material);
+  });
+  if (!geometries.length) throw new Error(`Model has no mesh: ${url}`);
+
+  const geometry = geometries.length > 1 ? mergeGeometries(geometries, true) : geometries[0];
+  if (!geometry) throw new Error(`Failed to merge model geometry: ${url}`);
+
+  return { geometry, material: materials.length > 1 ? materials : materials[0] };
+}
+
+function cloneMergedModel(model: MergedModel): MergedModel {
+  return {
+    geometry: model.geometry.clone(),
+    material: Array.isArray(model.material)
+      ? model.material.map((material) => material.clone())
+      : model.material.clone(),
+  };
+}
+
+/**
+ * Every scene app in a tour (five layers of the Space Builder stack, the Drag and Drop
+ * demo) draws the same chair, so the GLB only needs fetching and parsing once per page —
+ * each scene then clones the parsed result for its own GPU copy. A scene's own dispose()
+ * or releaseGpu() frees that clone's buffers, which must not take the shared parse down
+ * with it, so nothing here hands out the cached geometry or material directly.
+ */
+let chairModelPromise: Promise<MergedModel> | null = null;
+
+function loadSharedChairModel(url: string): Promise<MergedModel> {
+  chairModelPromise ??= loadModelAsMergedMesh(url);
+  return chairModelPromise;
+}
+
 const GROUND_SIZE = 28;
 const GRASS_REPEAT = 5;
 /** Subdivisions for MeshStandardMaterial displacement (visible grass only). */
@@ -555,8 +624,9 @@ export class SpaceBuilderScene {
   }
 
   private async loadChairInternal(url: string) {
-    const { geometry, material } = await this.loadModelAsMergedMesh(url);
+    const shared = await loadSharedChairModel(url);
     if (this.disposed) return;
+    const { geometry, material } = cloneMergedModel(shared);
 
     geometry.computeBoundingBox();
     const box = geometry.boundingBox!;
@@ -578,49 +648,6 @@ export class SpaceBuilderScene {
     // The area/options set before the (async) chair GLB resolved rendered zero
     // chairs — reflow now so seats appear without needing a follow-up interaction.
     this.reflow();
-  }
-
-  /**
-   * Load a GLB and flatten every primitive (glTF splits one mesh into a
-   * primitive per material) into a single BufferGeometry with per-primitive
-   * groups, so the result works as one InstancedMesh/Mesh draw call — even
-   * when the source model has more than one material (e.g. a chair frame +
-   * cushion). World transforms are baked in so nested nodes merge correctly.
-   */
-  private async loadModelAsMergedMesh(url: string): Promise<{ geometry: BufferGeometry; material: Material | Material[] }> {
-    const loader = makeGltfLoader();
-    if (MeshoptDecoder.ready) {
-      await MeshoptDecoder.ready;
-    }
-    const gltf = await loader.loadAsync(url);
-    const root = gltf.scene;
-    root.updateMatrixWorld(true);
-
-    const geometries: BufferGeometry[] = [];
-    const materials: Material[] = [];
-    root.traverse((obj) => {
-      if (!(obj as Mesh).isMesh) return;
-      const mesh = obj as Mesh;
-      const geom = mesh.geometry.clone();
-      geom.applyMatrix4(mesh.matrixWorld);
-      // Keep only the attributes every primitive shares — extras like vertex
-      // tangents/colour aren't needed for MeshStandardMaterial and would make
-      // mergeGeometries reject a set that isn't identical across primitives.
-      for (const name of Object.keys(geom.attributes)) {
-        if (!['position', 'normal', 'uv'].includes(name)) geom.deleteAttribute(name);
-      }
-      if (!geom.getAttribute('uv')) {
-        geom.setAttribute('uv', new BufferAttribute(new Float32Array(geom.attributes.position.count * 2), 2));
-      }
-      geometries.push(geom);
-      materials.push(Array.isArray(mesh.material) ? mesh.material[0] : mesh.material);
-    });
-    if (!geometries.length) throw new Error(`Model has no mesh: ${url}`);
-
-    const geometry = geometries.length > 1 ? mergeGeometries(geometries, true) : geometries[0];
-    if (!geometry) throw new Error(`Failed to merge model geometry: ${url}`);
-
-    return { geometry, material: materials.length > 1 ? materials : materials[0] };
   }
 
   getSnapshot(): SceneSnapshot {
