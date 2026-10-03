@@ -53,61 +53,17 @@
 
 // Transitional aliases — do not use in new chrome; remove when consumers are gone.
 @mixin legacy-aliases {
-  --fg-100: var(--neutral-1);
-  --fg-200: var(--neutral-2);
-  --fg-300: var(--neutral-3);
-  --fg-400: var(--neutral-5);
-  --fg-500: var(--neutral-7);
-  --fg-600: var(--neutral-8);
-  --fg-650: var(--neutral-9);
   --fg-700: var(--neutral-10);
-  --fg-750: var(--neutral-10);
   --fg-800: var(--neutral-11);
-  --fg-825: var(--neutral-11);
   --fg-850: var(--neutral-11);
-  --fg-875: var(--neutral-12);
-  --fg-900: var(--neutral-12);
 
-  --bg-100: var(--neutral-12);
-  --bg-200: var(--neutral-11);
-  --bg-300: var(--neutral-10);
-  --bg-400: var(--neutral-8);
-  --bg-500: var(--neutral-6);
-  --bg-600: var(--neutral-5);
-  --bg-700: var(--neutral-4);
   --bg-800: var(--neutral-3);
-  --bg-825: var(--neutral-3);
-  --bg-850: var(--neutral-2);
-  --bg-875: var(--neutral-2);
   --bg-900: var(--neutral-1);
 
-  --accent-100: var(--accent-1);
-  --accent-200: var(--accent-2);
-  --accent-300: var(--accent-3);
   --accent-400: var(--accent-4);
-  --accent-500: var(--accent-5);
   --accent-600: var(--accent-6);
-  --accent-650: var(--accent-7);
-  --accent-700: var(--accent-7);
-  --accent-750: var(--accent-8);
   --accent-800: var(--accent-9);
-  --accent-825: var(--accent-9);
-  --accent-850: var(--accent-10);
-  --accent-875: var(--accent-11);
   --accent-900: var(--accent-9);
-
-  --blueprint-100: var(--blueprint-1);
-  --blueprint-200: var(--blueprint-2);
-  --blueprint-300: var(--blueprint-3);
-  --blueprint-400: var(--blueprint-4);
-  --blueprint-500: var(--blueprint-5);
-  --blueprint-600: var(--blueprint-6);
-  --blueprint-700: var(--blueprint-7);
-  --blueprint-800: var(--blueprint-8);
-  --blueprint-825: var(--blueprint-9);
-  --blueprint-850: var(--blueprint-9);
-  --blueprint-875: var(--blueprint-10);
-  --blueprint-900: var(--blueprint-9);
 }
 
 @mixin color-variables {

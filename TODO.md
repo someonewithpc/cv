@@ -220,3 +220,4 @@
 - [x] Decorative SVGs and dead ARIA: reset icon titles, elevation figure, separator role, bare SVGs (A13) (#297)
 - [x] Give the Chair style carousel, the note-fold button and the theme picker stage a focus ring that actually paints (A15, A16) (#267)
 - [x] Stop an aborted font query's fetches and keep its faces out of document.fonts (C47) (#282)
+- [ ] Drop the 43 legacy colour aliases nothing reads (S14)
