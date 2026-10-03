@@ -66,7 +66,11 @@ const slipStyle = inWords[pageCount - 2] !== undefined
 </section>
 
 <style lang="scss">
+@use "@/scss/_page-column.scss" as column;
+
 .callout {
+  @include column.skip-while-parsing(48rem);
+
   --callout-line: color-mix(in oklch, var(--ink), transparent 30%);
   /* The least clearance that takes a line of text the view writes outside its own box, the
      way a drawing stack writes its peel hints above and under the sheet. */

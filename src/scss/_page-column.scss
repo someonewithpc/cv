@@ -252,3 +252,20 @@ $-stretches: (
   }
   @return $features;
 }
+
+// Lets the browser skip an element's style and layout while the page is still being parsed and
+// the element is off screen. The parser lays out the page again at each pause, and without the
+// skip every pass redid every sheet parsed so far. Layout.astro sets the attribute only on a plain
+// visit with no fragment, and drops it once the last of the page is parsed, before any module
+// script runs, so a fragment, a reload, a back or forward, the finished page and a page without
+// script all lay out as before. The size is a placeholder for those passes only. The clip margin
+// keeps a torn edge or a shadow drawn past the box from being cut while the box is on screen.
+@mixin skip-while-parsing($block-size) {
+  @supports (overflow-clip-margin: 1px) {
+    :global(html[data-skip-while-parsing]) & {
+      content-visibility: auto;
+      contain-intrinsic-block-size: $block-size;
+      overflow-clip-margin: 100vmax;
+    }
+  }
+}

@@ -43,6 +43,17 @@ const bootScript = `(() => {
     }
   } catch {}
 })();`;
+
+/* Skips the off-screen sheets while the page is parsed (skip-while-parsing in
+   scss/_page-column.scss), on a plain visit only. A fragment, a reload or a back or forward
+   lands on a place further down, and the browser finds it against the laid-out page there, so
+   those visits parse the whole page as before. The attribute goes at the end of <body>. */
+const skipScript = `(() => {
+  const visit = performance.getEntriesByType('navigation')[0];
+  if (!location.hash && (!visit || visit.type === 'navigate')) {
+    document.documentElement.dataset.skipWhileParsing = '';
+  }
+})();`;
 ---
 
 <!doctype html>
@@ -72,6 +83,7 @@ const bootScript = `(() => {
     <link rel="preload" as="font" type="font/woff2" href={poppinsUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={stencilUrl} crossorigin />
     <script is:inline set:html={bootScript} />
+    <script is:inline set:html={skipScript} />
   </head>
   <body>
     <nav class="skip-nav" aria-label="Keyboard shortcuts">
@@ -127,6 +139,7 @@ const bootScript = `(() => {
     <ThemePicker />
     <TransportKeyArt />
     <slot />
+    <script is:inline>delete document.documentElement.dataset.skipWhileParsing;</script>
   </body>
 </html>
 
