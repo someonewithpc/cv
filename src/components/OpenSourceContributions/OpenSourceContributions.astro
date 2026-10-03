@@ -3,13 +3,14 @@ import site from './site.json';
 import ContributionRow from './ContributionRow.astro';
 import SectionHeader from './SectionHeader.astro';
 import Highlights from './Highlights.astro';
-import { TEAR_TILE } from './tear';
+import { TEAR_DEPTH_REM, TEAR_TILE } from './tear';
 
 const { highlights, groups } = site;
 
 /* Written once on the section, so the three sheets share one copy of each image. */
 const edges = [
   `--tear-tile: ${TEAR_TILE}`,
+  `--tear-depth: ${TEAR_DEPTH_REM}`,
   ...['top', 'bottom'].flatMap((side) =>
     ['mask', 'core', 'shade'].map((layer) => `--${layer === 'mask' ? 'tear' : layer}-${side}: url(/tears/${side}-${layer}.svg)`),
   ),
@@ -158,7 +159,9 @@ const statistics = {
     --line-height: 1.25rem;
     --rule-pitch: calc(var(--line-height) * 1.5);
     /* How deep the tear eats into the sheet, top and bottom. */
-    --tear: 1.5rem;
+    --tear: var(--tear-depth);
+    /* Where the bottom tear's tiles start along the sheet, against the top's. */
+    --tear-offset: 6.5rem;
     --paper-x: 1.5rem;
     --margin-x: 3.25rem;
     /* The paper above and below the writing is a whole number of bands too, so the sheet is
@@ -228,7 +231,7 @@ const statistics = {
     mask-position:
       var(--tear-shift, 0rem) top,
       0 var(--tear),
-      calc(var(--tear-shift, 0rem) - 6.5rem) bottom;
+      calc(var(--tear-shift, 0rem) - var(--tear-offset)) bottom;
     mask-repeat: repeat-x, no-repeat, repeat-x;
 
     /* Where the tear split the paper, the inside shows between the face and the back, with the
@@ -244,10 +247,10 @@ const statistics = {
       mask-size: var(--tear-tile) var(--tear);
       background-position:
         var(--tear-shift, 0rem) top,
-        calc(var(--tear-shift, 0rem) - 6.5rem) bottom;
+        calc(var(--tear-shift, 0rem) - var(--tear-offset)) bottom;
       mask-position:
         var(--tear-shift, 0rem) top,
-        calc(var(--tear-shift, 0rem) - 6.5rem) bottom;
+        calc(var(--tear-shift, 0rem) - var(--tear-offset)) bottom;
       background-repeat: repeat-x;
       mask-repeat: repeat-x;
       pointer-events: none;

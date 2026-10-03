@@ -253,10 +253,14 @@ export function tear(seed: number, depth: number, side: 'top' | 'bottom'): Edge 
 /** The tile's width, which the sheet repeats its edges at. */
 export const TEAR_TILE = `${TILE / 16}rem`;
 
+/** The deepest tear any sheet draws, in px. The sheet's --tear is this in rem (--tear-depth). */
+export const TEAR_DEPTH = 24;
+export const TEAR_DEPTH_REM = `${TEAR_DEPTH / 16}rem`;
+
 /* Drawn at the deepest tear any sheet uses; a narrow sheet squeezes the same tile shallower.
    Served as files from /tears/ (src/pages/tears), so the document does not carry their 90 KB. */
-const top = tear(11, 24, 'top');
-const bottom = tear(29, 24, 'bottom');
+const top = tear(11, TEAR_DEPTH, 'top');
+const bottom = tear(29, TEAR_DEPTH, 'bottom');
 
 /** Each edge image by its file name under /tears/. */
 export const TEAR_IMAGES: Record<string, string> = {
