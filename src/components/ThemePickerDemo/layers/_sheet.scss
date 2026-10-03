@@ -1,3 +1,5 @@
+@use "@/scss/sheet" as shared;
+@forward "@/scss/sheet" show sheet-content;
 @use '@/scss/sheet-orientation' as *;
 // What the theme picker sheets share: the margin every layer keeps around its content, the
 // sheet's type, the lettered notes box and a swatch.
@@ -6,13 +8,7 @@
 
 // Clear sheet between the content and the frame line, in em of the sheet's own type so it
 // scales with the page. It goes on a layer's root and nowhere else.
-$sheet-margin: 0.75em;
-
-@mixin sheet-content {
-  box-sizing: border-box;
-  width: 100%;
-  padding: $sheet-margin;
-}
+$sheet-margin: shared.$sheet-margin;
 
 // Keeps a layer's content clear of the title block, which reaches into the content column
 // from the bottom-right corner of a landscape sheet. Portrait gives the block its own row.
@@ -28,13 +24,7 @@ $sheet-margin: 0.75em;
 // query: a font size out of a query re-lays everything under it on each resize step that
 // crosses the breakpoint (see TechnicalDrawing/Stack.astro).
 @mixin sheet-type($landscape: 0.026, $portrait: 0.03) {
-  font-family: var(--font-poppins), system-ui, sans-serif;
-  font-size: clamp(0.625rem, $landscape * min(var(--sheet-inline), var(--sheet-block)), 1rem);
-  color: var(--ink);
-
-  @include portrait-sheet {
-    font-size: min(1rem, $portrait * min(var(--sheet-inline), var(--sheet-block)));
-  }
+  @include shared.sheet-type-poppins($landscape, $portrait);
 }
 
 // A drawing's general notes, lettered the way the title block is: a ruled box on the sheet's

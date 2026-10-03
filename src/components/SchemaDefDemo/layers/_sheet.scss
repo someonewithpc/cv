@@ -1,15 +1,11 @@
+@use "@/scss/sheet" as shared;
+@forward "@/scss/sheet" show sheet-content;
 // What the schemaDef sheets share: the margin every layer keeps around its content, and
 // the code face the panes and excerpts are set in.
 
 // Clear sheet between the content and the frame line, the title block and the corner pieces,
 // in em of the sheet's own type so it scales with the page. The spec's floor is 0.5em.
-$sheet-margin: 0.75em;
-
-@mixin sheet-content {
-  box-sizing: border-box;
-  width: 100%;
-  padding: $sheet-margin;
-}
+$sheet-margin: shared.$sheet-margin;
 
 // Every layer takes the whole content cell rather than a box its own size, so it has a
 // definite height to divide up or to scroll within. Each layer root carries the attribute.

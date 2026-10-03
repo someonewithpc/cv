@@ -1,0 +1,25 @@
+@use 'sheet-orientation' as *;
+
+// What every demo's `layers/_sheet.scss` shares. A demo forwards `sheet-content` and keeps its
+// own overrides beside it.
+
+// Clear sheet between the content and the frame line, in em of the sheet's own type so it
+// scales with the page. It goes on a layer's root and nowhere else.
+$sheet-margin: 0.75em;
+
+@mixin sheet-content {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $sheet-margin;
+}
+
+// The Poppins sheet type the theme picker and the synthetic-properties demo both set.
+@mixin sheet-type-poppins($landscape: 0.026, $portrait: 0.03) {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: clamp(0.625rem, $landscape * min(var(--sheet-inline), var(--sheet-block)), 1rem);
+  color: var(--ink);
+
+  @include portrait-sheet {
+    font-size: min(1rem, $portrait * min(var(--sheet-inline), var(--sheet-block)));
+  }
+}

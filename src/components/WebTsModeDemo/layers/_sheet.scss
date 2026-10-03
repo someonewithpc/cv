@@ -1,15 +1,11 @@
+@use "@/scss/sheet" as shared;
+@forward "@/scss/sheet" show sheet-content;
 // What the web-ts-mode sheets share: the margin every layer keeps around its content, and
 // the faces a buffer is painted in.
 
 // Clear sheet between the content and the frame line, in em of the sheet's own type so it
 // scales with the page. It goes on a layer's root and nowhere else.
-$sheet-margin: 0.75em;
-
-@mixin sheet-content {
-  box-sizing: border-box;
-  width: 100%;
-  padding: $sheet-margin;
-}
+$sheet-margin: shared.$sheet-margin;
 
 // A drawing's general notes, lettered the way the title block is: a ruled box on the sheet's
 // own paper, its heading in the block's small label face, the notes numbered and set in the

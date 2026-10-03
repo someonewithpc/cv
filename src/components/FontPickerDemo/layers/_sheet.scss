@@ -1,10 +1,11 @@
+@use "@/scss/sheet" as shared;
 @use '@/scss/sheet-orientation' as *;
 // What the picker's four sheets share: one type scale and the margin every layer keeps
 // around its content. Both go on a layer's root and nowhere else.
 
 // Clear sheet between the content and the frame line, the title block and the corner pieces,
 // in em of the sheet's own type so it scales with the page. The spec's floor is 0.5em.
-$sheet-margin: 0.75em;
+$sheet-margin: shared.$sheet-margin;
 
 // The sheet's type, sized from the stack's measured pixels (Stack.astro's script), never a
 // container unit: a font-size out of a container query costs Chrome seconds per layout in
@@ -31,7 +32,5 @@ $widget-scale: 0.83;
 @mixin sheet-content($portrait: 0.036, $landscape: 0.027) {
   @include sheet-type($portrait, $landscape);
 
-  box-sizing: border-box;
-  width: 100%;
-  padding: $sheet-margin;
+  @include shared.sheet-content;
 }

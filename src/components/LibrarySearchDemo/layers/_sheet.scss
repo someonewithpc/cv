@@ -1,3 +1,5 @@
+@use "@/scss/sheet" as shared;
+@forward "@/scss/sheet" show sheet-content;
 @use '@/scss/sheet-orientation' as *;
 // What the library search's four sheets share: the margin every layer keeps around its
 // content, and the panel the blueprint sheets draw their diagrams on.
@@ -5,13 +7,7 @@
 // Clear sheet between the content and the frame line, the title block and the corner pieces,
 // in em of the sheet's own type so it scales with the page. It goes on a layer's root and
 // nowhere else, so nothing inside has to be nudged on its own. The spec's floor is 0.5em.
-$sheet-margin: 0.75em;
-
-@mixin sheet-content {
-  box-sizing: border-box;
-  width: 100%;
-  padding: $sheet-margin;
-}
+$sheet-margin: shared.$sheet-margin;
 
 // The content cell a blueprint sheet is given, stretched to the sheet so the wrapper has a
 // definite height to keep its panel inside. Included once at the top level of each layer.
@@ -38,7 +34,7 @@ $sheet-margin: 0.75em;
 
 // A blueprint sheet's centred panel, clear of the title block wherever the block sits.
 @mixin blueprint-wrapper {
-  @include sheet-content;
+  @include shared.sheet-content;
 
   height: 100%;
   min-height: 0;

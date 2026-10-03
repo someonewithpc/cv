@@ -1,15 +1,14 @@
+@use "@/scss/sheet" as shared;
 @use '@/scss/sheet-orientation' as *;
 // What the paper stack's three sheets share: the margin every layer keeps around its content
 // and the sheet's type size.
 
 // Clear sheet between the content and the frame line, in em of the sheet's own type so it
 // scales with the page. It goes on a layer's root and nowhere else.
-$sheet-margin: 0.75em;
+$sheet-margin: shared.$sheet-margin;
 
 @mixin sheet-content {
-  box-sizing: border-box;
-  width: 100%;
-  padding: $sheet-margin;
+  @include shared.sheet-content;
   color: var(--ink);
 }
 
