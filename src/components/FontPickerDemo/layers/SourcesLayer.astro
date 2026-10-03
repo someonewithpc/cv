@@ -1,11 +1,21 @@
 ---
+import { highlightLines, highlightSpans } from '@/highlight';
+
 // The route a face takes from a URL a visitor types to a row in the dropdown, drawn as the
 // four hops it makes. The data on the sheet is the real thing: the URL the walkthrough
 // types, one of the rules that comes back, and the row it ends up as
 const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlfaSlabOne.woff2';
+
+// The listing read at build: the page's two tags as HTML, the stylesheet as CSS, with the src
+// the worker rewrote marked.
+const tag = (code: string) => highlightSpans(code, 'html');
+const [face, source] = highlightLines(`@font-face { font-family: "Alfa Slab One";\nsrc: url(⟦${PROXIED_SRC}⟧)`, 'css', {
+  inserts: { '⟦': '<span class="rewritten">', '⟧': '</span>' },
+});
+const ts = (code: string) => highlightSpans(code, 'ts');
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <div class="pipeline">
     <div class="step" style="--seq: 1">
       <p class="step-title">Type a URL</p>
@@ -41,12 +51,12 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 
     <div class="step" style="--seq: 3">
       <p class="step-title">Read the stylesheets</p>
-      <div class="draft listing">
-        <code class="line"><span class="tag">&lt;base href=</span>"https://rust-lang.org/"<span class="tag">&gt;</span></code>
-        <code class="line"><span class="tag">&lt;link href=</span>"/static/styles.css"<span class="tag">&gt;</span></code>
-        <code class="line indent">@import url("fonts.css")</code>
-        <code class="line rule">@font-face &#123; font-family: "Alfa Slab One";</code>
-        <code class="line rule indent">src: url(<span class="rewritten">{PROXIED_SRC}</span>)</code>
+      <div class="draft listing hl-box">
+        <code class="line" set:html={tag('<base href="https://rust-lang.org/">')} />
+        <code class="line" set:html={tag('<link href="/static/styles.css">')} />
+        <code class="line indent" set:html={highlightSpans('@import url("fonts.css")', 'css')} />
+        <code class="line rule" set:html={face} />
+        <code class="line rule indent" set:html={source} />
       </div>
       <p class="caption">
         The worker follows every <code>link</code> and <code>@import</code>. Each
@@ -57,7 +67,7 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 
     <div class="hop">
       <svg viewBox="0 0 48 12" class="arrow" aria-hidden="true"><path d="M0 6 H42" /><path d="M36 2 L44 6 L36 10 z" class="head" /></svg>
-      <span class="hop-note">new FontFace().load()<br />document.fonts.add()</span>
+      <span class="hop-note"><Fragment set:html={ts('new FontFace().load()')} /><br /><Fragment set:html={ts('document.fonts.add()')} /></span>
     </div>
 
     <div class="step" style="--seq: 4">
@@ -298,15 +308,18 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
     padding-left: 1.25em;
   }
 
-  .tag,
   .rule {
     color: var(--ink-muted);
   }
 
-  .rewritten {
-    color: #c5e06a;
+  :global(.rewritten) {
+    color: var(--hl-warm);
     text-decoration: underline;
     text-underline-offset: 0.125em;
+
+    :global(span) {
+      color: inherit;
+    }
   }
 }
 
@@ -319,11 +332,14 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
   .hop-note {
     @include sheet-prose;
 
+    /* Code, so the patch is the code ground the token colours are tuned to. */
+    background: var(--hl-ground);
+    box-shadow: 0 0 0 0.25em var(--hl-ground);
+    color: var(--hl-ink);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: max(0.5rem, 0.625em);
     line-height: 1.3;
     text-align: center;
-    color: var(--ink-muted);
   }
 }
 

@@ -1,4 +1,6 @@
 ---
+import { highlightSpans } from '@/highlight';
+
 const states = ['idle', 'pending', 'success', 'error'] as const;
 
 // The border's own easing, drawn from the numbers the stylesheet animates with
@@ -22,7 +24,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <div class="indicator" data-feedback-island>
     <div class="live">
       <div class="sample">
@@ -67,7 +69,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
         <text class="swap-label" font-size="8" x={SWAP_AT * 100 + 4} y="-2">750ms: go linear</text>
       </svg>
       <figcaption>
-        <code>cubic-bezier({CONTROL.join(", ")})</code> gives the orbit a push and lets it
+        <code class="hl" set:html={highlightSpans(`cubic-bezier(${CONTROL.join(", ")})`, 'css', ['a{transition-timing-function: ', '}'])} /> gives the orbit a push and lets it
         settle. Kept for every turn it stutters at each restart, so at 750ms the script swaps
         the timing function for <code>linear</code> at the point the curve has already
         reached. The seam goes, the first turn keeps its kick
@@ -114,12 +116,15 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 @use '@/scss/hit-area' as *;
 @use '../picker/fontSettingsFieldset' as *;
 @use "./sheet" as *;
 @use "./sheetProse" as *;
 
 .wrapper {
+  @include code.code-chip;
+
   // A portrait sheet has the height for the sample, the buttons and the curve at this, not
   // at the picker's scale
   @include sheet-content(0.03, $prose-landscape);
