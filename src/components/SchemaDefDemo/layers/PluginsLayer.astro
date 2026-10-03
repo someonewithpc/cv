@@ -193,12 +193,13 @@ const excerptLines = excerpt.split('\n').map((text, at) => ({
 }
 
 .chain {
+  @include code-panel;
+
   display: grid;
   gap: 0.125em;
   padding: 0.375em 0.5em;
   border: 1.5px solid var(--ink);
   border-radius: 0.375em;
-  background: var(--surface-raised);
   font-size: fs(0.625);
 
   .service {

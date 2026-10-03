@@ -87,12 +87,11 @@ const steps = [
 }
 
 .call {
+  @include code-panel;
+
   justify-self: center;
   margin: 0;
   max-width: 100%;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.5em;
-  background: var(--surface-raised);
 
   figcaption {
     padding: 0.25em 0.75em;
@@ -144,13 +143,13 @@ const steps = [
   }
 
   li {
+    @include code-panel;
+
     display: flex;
     flex-direction: column;
     gap: 0.25em;
     padding: 0.5em 0.625em;
-    border: 1px solid var(--line-strong);
     border-radius: 0.375em;
-    background: var(--surface-raised);
   }
 
   .number {
