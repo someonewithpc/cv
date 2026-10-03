@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBan } from "@fortawesome/free-solid-svg-icons/faBan";
+import { faBan } from '@/lib/fontAwesome';
 
 import type { SpaceType } from '@/store';
 

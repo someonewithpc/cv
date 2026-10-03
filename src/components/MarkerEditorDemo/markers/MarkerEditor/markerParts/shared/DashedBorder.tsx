@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBorderAll } from "@fortawesome/free-solid-svg-icons/faBorderAll";
+import { faBorderAll } from '@/lib/fontAwesome';
 import { type DebouncedFunc, debounce } from "lodash";
 
 import type { SpaceType } from '@/store';

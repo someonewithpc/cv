@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons/faTriangleExclamation';
+import { faTriangleExclamation } from '@/lib/fontAwesome';
 
 import { loadPageFonts, type LoadedFaces } from './sources';
 import { SubForm, useSubFormInput } from './SubForm';

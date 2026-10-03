@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons/faArrowsRotate';
+import { faArrowsRotate } from '@/lib/fontAwesome';
 
 import { Pinned } from './Pinned';
 

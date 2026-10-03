@@ -3,12 +3,7 @@ import '../client-only';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCopy } from '@fortawesome/free-solid-svg-icons/faCopy';
-import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
-import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
-import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
-import { faUpload } from '@fortawesome/free-solid-svg-icons/faUpload';
-import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
+import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@/lib/fontAwesome';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
