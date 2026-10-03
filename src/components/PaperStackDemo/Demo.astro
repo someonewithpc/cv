@@ -5,6 +5,7 @@ import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
+import { highlightInline } from '@/highlight';
 
 import PileLayer from './layers/PileLayer.astro';
 import FoldLayer from './layers/FoldLayer.astro';
@@ -56,8 +57,8 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       pile: (
         <PostIt background="#ea1" color="black">
-          All four pages share one grid cell. Which one is in front is a number, --page-index,
-          and a turn renumbers them all
+          Every page shares one grid cell. Which one is in front is a number,{' '}
+          <Fragment set:html={highlightInline('--page-index', 'css', ['a{', '}'], 'custom-property')} />, and a turn renumbers them all
         </PostIt>
       ),
       fold: (
@@ -75,3 +76,12 @@ type Layer = keyof typeof layers;
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>
+
+<style>
+  /* The highlighter leaves a custom property in the ink; this one is the note's subject, so it
+     takes the accent role the code keywords use, kept on one line. */
+  :global(code.hl.custom-property) {
+    color: var(--hl-warm);
+    white-space: nowrap;
+  }
+</style>
