@@ -193,7 +193,7 @@
 - [x] Favicon: five candidates for Hugo to pick from (#235)
 - [x] Build the four inline `<style>` blocks that fail the Nu validator inside their divs as static Sass in the same components, so Astro bundles them (O4) (#230)
 - [ ] Bring the four Space Builder spinners' keyframes into scope so they spin (S16)
-- [ ] Name the Visrez green `$visrez-brand` and define it once in `src/scss/_visrez.scss`, so the Variants and Space Builder catalog cards and the status border no longer each carry a bare `$brand` hex
+- [x] Name the Visrez green `$visrez-brand` and define it once in `src/scss/_visrez.scss`, so the Variants and Space Builder catalog cards and the status border no longer each carry a bare `$brand` hex (#307)
 - [x] The theme picker demo's stage buttons are 36 by 9 px, under the 24 px target size (A1) (#228)
 - [x] The audit's axe run skips WCAG 2.2, so it never checks target size (E30) (#228)
 - [x] Keyboard focus takes a walkthrough over once and never restarts it (C32 to C35) (#231)
