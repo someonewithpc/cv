@@ -251,4 +251,4 @@
 - [x] Ctrl+Z and Ctrl+Shift+Z undo and redo while focus is in the marker editor, and leave text fields their own undo (C40) (#268)
 - [x] Animate the Visrez logo layers on the parts that move, not through inherited custom properties, and give the resting logo its own layer (171-PW8) (#251)
 - [x] The drawing note pauses every walkthrough and the deck says PAUSED until it closes (C38) (#286)
-- [ ] Colours that only work in one theme: the grab line, the Path layer, the All Together post-it, and the product colours left unnamed (S12)
+- [x] Colours that only work in one theme: the grab line, the Path layer, the All Together post-it, and the product colours left unnamed (S12) (#302)
