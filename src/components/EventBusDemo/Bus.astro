@@ -1018,6 +1018,7 @@ button.call {
 .event-bus[data-rendered='audio'] .rendered[data-kind='audio'],
 .event-bus[data-rendered='link'] .rendered[data-kind='link'] {
   display: inline-flex;
+  visibility: visible;
 }
 
 /* The $event_map FileResizerAvailable hands back: a module that is not loaded leaves its
@@ -1079,6 +1080,15 @@ button.call {
 
   .chain {
     flex-direction: column;
+  }
+
+  /* $res sits in the column here, so the answer it holds would move everything under it:
+     every answer shares one cell, the ones not given hidden, and the cell is as tall as
+     the tallest, the dots of a run in flight included. */
+  .event-bus[data-stage='view'] .rendered {
+    grid-area: 2 / 1;
+    display: inline-flex;
+    visibility: hidden;
   }
 
   .event-bus[data-stage='view']:has(.tray > :nth-child(1 of [data-module])) .ghost:nth-child(1 of .ghost),
