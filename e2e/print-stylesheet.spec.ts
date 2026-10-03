@@ -44,7 +44,7 @@ test('print drops the desk, the theme picker and the whole demos band', async ({
   expect(order).toEqual(['profile', 'career', 'bill-of-materials', 'open-source']);
 });
 
-test('the contributions print one line per entry, closed', async ({ page }) => {
+test('the contributions print one line per entry, closed, the title across the rest of the line', async ({ page }) => {
   await page.emulateMedia({ media: 'print' });
 
   const rows = page.locator('#open-source details');
@@ -53,10 +53,28 @@ test('the contributions print one line per entry, closed', async ({ page }) => {
     await expect(row).toBeHidden();
   }
 
-  const heights = await page.locator('#open-source .row').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+  const lines = await page.locator('#open-source .row').evaluateAll((els) =>
+    els.map((el) => {
+      const row = el.getBoundingClientRect();
+      const [marks, repo, title] = ['ul', 'cite', '.title'].map((sel) => el.querySelector(sel)!.getBoundingClientRect());
+      return { height: row.height, tops: [marks.top, repo.top, title.top].map((top) => Math.round(top - row.top)), titleColumn: row.right - title.left, width: row.width };
+    }),
+  );
   const lineHeight = 20;
-  for (const height of heights) {
-    expect(height).toBeLessThanOrEqual(lineHeight * 1.5 * 3 + 1);
+  for (const line of lines) {
+    // The marks, the repository and the title share the row's first line.
+    expect(line.tops[0]).toBe(line.tops[1]);
+    expect(line.tops[2]).toBe(line.tops[1]);
+    // The title's column is the larger half of the row: no empty half-page beside a narrow column.
+    expect(line.titleColumn).toBeGreaterThan(line.width / 2);
+    expect(line.height).toBeLessThanOrEqual(lineHeight * 1.5 * 3 + 1);
+  }
+  // The repositories line up down the list, since the rows share the sheet's columns.
+  const repoLefts = await page.locator('#open-source section[data-group]').evaluateAll((groups) =>
+    groups.map((group) => new Set(Array.from(group.querySelectorAll('.row cite')).map((cite) => Math.round(cite.getBoundingClientRect().left))).size),
+  );
+  for (const distinct of repoLefts) {
+    expect(distinct).toBe(1);
   }
 });
 
