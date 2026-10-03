@@ -35,9 +35,11 @@
     color-scheme: only light !important;
   }
 
-  // No desk: the bands print as plain paper with no lift.
+  // No desk: the bands print as plain paper with no lift, and the desk seen between them
+  // is a 1rem gap.
   main#main {
     background: none !important;
+    row-gap: 1rem !important;
 
     > *:not(.folio-rail),
     > .full-width > * {
@@ -100,6 +102,31 @@
 
     details {
       display: none !important;
+    }
+
+    // The section's bottom padding and the last sheet's tear margin added a page with
+    // nothing on it, and a group heading could end a page with its list on the next. The
+    // gaps between the sheets are desk, and there is no desk on paper: 1rem, like the
+    // bands' gaps below. A row never straddles a page: its lower band printed as a page of
+    // its own with no text on it.
+    &#open-source {
+      --sheet-gap: 1rem !important;
+
+      padding-bottom: 0 !important;
+    }
+
+    .row,
+    .lines > header {
+      break-inside: avoid;
+    }
+
+    .sheet:last-child {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    h3 {
+      break-after: avoid;
     }
 
     // One line per entry: the marks take 4rem (three at most), the repository 14rem and the
