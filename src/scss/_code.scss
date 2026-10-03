@@ -47,6 +47,20 @@
   );
 }
 
+// Code on a panel that is dark in every theme, such as a product's own editor drawn on the
+// sheet: each role takes its dark side, mixed from the panel's own ink and ground, and a theme's
+// fixed code colours, which are set for its paper, are left out.
+@mixin code-roles-on-dark($ink, $ground) {
+  @include code-roles;
+  --theme-code-keyword: initial;
+  --theme-code-attribute: initial;
+  --theme-code-string: initial;
+  --theme-code-comment: initial;
+  --hl-ink: #{$ink};
+  --hl-ground: #{$ground};
+  color-scheme: dark;
+}
+
 // Inline code set on the chip (class hl) inside a sheet's own type: the chip keeps the size of
 // the text around it, and its narrow inset hangs out over the gap beside it by its own width, so
 // the text sits where it did without the chip and no row or line grows. As schemaDef's sheets
