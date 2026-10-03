@@ -66,8 +66,8 @@ for (const { width, height } of NARROW) {
       };
     });
 
-    // The same tile the wide desk has, at the same size.
-    expect(background.image).toContain('/desk/light.webp');
+    // The 720px tile under 52rem, laid at the same size as the wide desk's.
+    expect(background.image).toContain('/desk/light-720.webp');
     expect(background.blend).toBe('normal');
     expect(background.size).toBe(`${TILE}px ${TILE}px`);
     expect(background.color).toBe(DESKS.light);
