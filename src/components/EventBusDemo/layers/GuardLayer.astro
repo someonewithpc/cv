@@ -15,18 +15,21 @@ const where = 'src/Core/ModuleManager.php:93';
 // The handler tokenised at build. Only the signature is read by the pass, so the body is
 // dimmed, and the wrong return type is marked.
 const source = highlightLines(
-  `public function onViewAttachment(
+  [
+    `public function onViewAttachment(
     array $vars,
     array &$res,
-): ⟦bool⟧ {
+): `,
+    { text: 'bool', open: '<mark>', close: '</mark>' },
+    ` {
     if (!self::shouldHandle($vars['attachment']->getMimetype())) {
         return Event::next;
     }
     …
     return Event::stop;
 }`,
+  ],
   'php',
-  { inserts: { '⟦': '<mark>', '⟧': '</mark>' } },
 ).map((html, index) => ({ html, dim: index >= 4 && index <= 8 }));
 ---
 

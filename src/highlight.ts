@@ -149,38 +149,58 @@ export const highlightBlock = (code: string, lang: CodeLang, { lineComment = '',
  * tag), so `context` tokenises it between a prefix and a suffix and keeps the word's tokens.
  */
 /**
+ * Code given in parts, so markup can go inside a token without any marker in the code: a
+ * string is plain code, `{ text, open, close }` is code wrapped in that markup (a mark, a bold
+ * name), and `{ insert }` is markup with no text of its own (a <wbr>).
+ */
+export type CodePart = string | { text: string; open: string; close: string } | { insert: string };
+
+/** Code written as text after markup has been put in: the escaped code itself, tags left out. */
+const textOf = (html: string) =>
+  html.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+/**
  * The spans of a code line or lines, with no element round them, for markup that already has
  * its own box. PHP is tokenised after an opening tag, which the grammar needs to leave markup
  * mode; the tag is not part of the result. One entry per line, each tokenised with its
  * neighbours. `context` is tokenised round the code and left out, as for inline code, and may
- * run over lines. Each character of `inserts` found in the code is taken out before tokenising
- * and its markup put back in its place, for a mark or a line break opportunity inside a token.
+ * run over lines. Code in parts (CodePart) has its markup put in at the parts' own columns.
+ * A line whose text comes out different from the code throws, so the build fails rather than
+ * show anything that is not the code.
  */
 export const highlightLines = (
-  code: string,
+  code: string | CodePart[],
   lang: CodeLang,
-  { context = ['', ''], inserts = {} }: { context?: [string, string]; inserts?: Record<string, string> } = {},
+  { context = ['', ''] }: { context?: [string, string] } = {},
 ) => {
   const before = (lang === 'php' ? '<?php ' : '') + context[0];
   const skip = before.split('\n').length - 1;
   const column = before.length - before.lastIndexOf('\n') - 1;
-  const keys = Object.keys(inserts);
-  const marker = keys.length ? new RegExp(keys.map((key) => key.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')).join('|'), 'g') : null;
-  const lines = code.split('\n').map((line, index) => {
+  // The bare code, and each piece of markup at its offset in it.
+  let bare = '';
+  const at: [number, string][] = [];
+  for (const part of typeof code === 'string' ? [code] : code) {
+    if (typeof part === 'string') bare += part;
+    else if ('insert' in part) at.push([bare.length, part.insert]);
+    else {
+      at.push([bare.length, part.open]);
+      bare += part.text;
+      at.push([bare.length, part.close]);
+    }
+  }
+  let start = 0;
+  const lines = bare.split('\n').map((text, index) => {
     const offset = index === 0 ? column : 0;
-    const at: [number, string][] = [];
-    let taken = 0;
-    const bare = marker
-      ? line.replace(marker, (char, where: number) => {
-          at.push([offset + where - taken, inserts[char]]);
-          taken += char.length;
-          return '';
-        })
-      : line;
-    return { bare, offset, at };
+    const inserts = at.filter(([where]) => where >= start && where <= start + text.length).map(([where, html]): [number, string] => [offset + where - start, html]);
+    start += text.length + 1;
+    return { text, offset, inserts };
   });
-  const tokens = highlighter.codeToTokensBase(before + lines.map(({ bare }) => bare).join('\n') + context[1], { lang, theme: 'cv' });
-  return lines.map(({ bare, offset, at }, index) => renderLine(tokens[skip + index], offset, offset + bare.length, at));
+  const tokens = highlighter.codeToTokensBase(before + bare + context[1], { lang, theme: 'cv' });
+  return lines.map(({ text, offset, inserts }, index) => {
+    const html = renderLine(tokens[skip + index], offset, offset + text.length, inserts);
+    if (textOf(html) !== text) throw new Error(`highlightLines: ${JSON.stringify(textOf(html))} is not the code ${JSON.stringify(text)}`);
+    return html;
+  });
 };
 
 /** One line of code as spans, for a box that exists already. */

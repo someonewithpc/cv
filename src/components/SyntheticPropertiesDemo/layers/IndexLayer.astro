@@ -9,7 +9,7 @@ const rows = [...storedSizeProperties(sample.size), ...paxProperties(sample.pax)
 const text = searchableText(rows);
 
 // The upsert the second trigger runs, with the clause that keeps one row per object marked.
-const upsert = highlightLines(`INSERT INTO library_object_properties_concatenated
+const upsert = highlightLines([`INSERT INTO library_object_properties_concatenated
   (\`library_object_id\`, \`values\`)
 SELECT
     lops.library_object_id,
@@ -19,7 +19,7 @@ SELECT
   WHERE lops.library_object_id = NEW.library_object_id
     AND \`lops\`.\`value\` IS NOT NULL
   GROUP BY lops.library_object_id
-⟦ON DUPLICATE KEY UPDATE⟧ \`values\` = VALUES(\`values\`);`, 'sql', { inserts: { '⟦': '<span class="hot">', '⟧': '</span>' } }).join('\n');
+`, { text: 'ON DUPLICATE KEY UPDATE', open: '<span class="hot">', close: '</span>' }, ' `values` = VALUES(`values`);'], 'sql').join('\n');
 ---
 
 <div class="wrapper synthetic-blueprint hl">

@@ -9,9 +9,10 @@ const PROXIED_SRC = '/api/font-proxy?url=https%3A%2F%2Frust-lang.org%2F…%2FAlf
 // The listing read at build: the page's two tags as HTML, the stylesheet as CSS, with the src
 // the worker rewrote marked.
 const tag = (code: string) => highlightSpans(code, 'html');
-const [face, source] = highlightLines(`@font-face { font-family: "Alfa Slab One";\nsrc: url(⟦${PROXIED_SRC}⟧)`, 'css', {
-  inserts: { '⟦': '<span class="rewritten">', '⟧': '</span>' },
-});
+const [face, source] = highlightLines(
+  ['@font-face { font-family: "Alfa Slab One";\nsrc: url(', { text: PROXIED_SRC, open: '<span class="rewritten">', close: '</span>' }, ')'],
+  'css',
+);
 const ts = (code: string) => highlightSpans(code, 'ts');
 ---
 

@@ -45,9 +45,10 @@ const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:
 const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 
 // The code on the bus, tokenised at build. The event's name is set in bold inside its string.
-const php = (code: string) => highlightLines(code, 'php', { inserts: { '⟦': '<b>', '⟧': '</b>' } })[0];
-const handleView = php(`Event::handle('⟦${EVENT}⟧', [$vars, &$res])`);
-const handleResize = php(`Event::handle('⟦${RESIZE_EVENT}⟧', [&$event_map, $mimetype])`);
+const handle = (event: string, args: string) =>
+  highlightLines(["Event::handle('", { text: event, open: '<b>', close: '</b>' }, `', ${args})`], 'php')[0];
+const handleView = handle(EVENT, '[$vars, &$res]');
+const handleResize = handle(RESIZE_EVENT, '[&$event_map, $mimetype]');
 // The template's lines, each with the part of the branch it belongs to.
 const template = highlightLines(
   [
