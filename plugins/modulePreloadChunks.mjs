@@ -8,7 +8,11 @@ import { fileURLToPath } from 'node:url';
  * only discovers those once the entry script has arrived and been parsed:
  * one extra round trip per import depth. modulepreload tells it about the
  * shared chunks up front, from the entry list already in the page, so the
- * requests start alongside the entry scripts instead of after them.
+ * requests start alongside the entry scripts instead of after them. The links
+ * are low priority: at the default priority their 17 requests compete with the
+ * render-blocking CSS and fonts and delay first paint. Links at the end of the
+ * body or from an idle callback come too late, after the entry scripts have
+ * already discovered the chunks themselves.
  */
 export const modulePreloadChunks = () => {
   /** @type {Map<string, Set<string>>} entry chunk fileName -> its statically imported chunk fileNames (transitive, entry itself excluded) */
@@ -61,7 +65,7 @@ export const modulePreloadChunks = () => {
           for (const name of onPage) for (const dep of neededBy.get(name) ?? []) needed.add(dep);
           for (const name of onPage) needed.delete(name);
           if (needed.size === 0) continue;
-          const links = [...needed].map((name) => `<link rel="modulepreload" href="/${name}">`).join('');
+          const links = [...needed].map((name) => `<link rel="modulepreload" href="/${name}" fetchpriority="low">`).join('');
           const out = html.replace('</head>', `${links}</head>`);
           await fs.writeFile(file, out);
           logger.info(`${page}: ${needed.size} shared chunks modulepreloaded`);
