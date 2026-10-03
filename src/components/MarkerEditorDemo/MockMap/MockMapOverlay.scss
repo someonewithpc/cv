@@ -67,8 +67,14 @@
   .space-pin {
     cursor: pointer;
 
-    &:focus {
+    &:focus:not(:focus-visible) {
       outline: none;
+    }
+
+    // The 1.14 scale alone is too slight a cue for a key press.
+    &:focus-visible {
+      outline: 2px solid var(--accent-600, #3d7ea6);
+      outline-offset: 2px;
     }
   }
 
