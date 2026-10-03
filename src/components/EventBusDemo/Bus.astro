@@ -133,6 +133,16 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
         <span class="port"><span class="node"></span></span>
         <span class="terminal-label">returns <code class="returned">{outcome.result}</code></span>
       </li>
+
+      {live && listeners.map((listener) => (
+        <li class="ghost" aria-hidden="true">
+          <div class="chip">
+            <span class="module">{listener.module}</span>
+            <span class="meta">prio {listener.priority}</span>
+            <span class="load"><span class="switch"></span></span>
+          </div>
+        </li>
+      ))}
     </ol>
 
     {live && <span class="token" aria-hidden="true" hidden></span>}
@@ -141,6 +151,15 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
   <div class="unloaded" data-empty={String(unloaded.length === 0)} hidden={!tray}>
     <span class="unloaded-label">Not loaded</span>
     <ul class="tray">
+      {live && (
+        <li class="listener placeholder" aria-hidden="true">
+          <div class="chip">
+            <span class="module">{listeners[0].module}</span>
+            <span class="meta">prio {listeners[0].priority}</span>
+            <span class="load"><span class="switch"></span></span>
+          </div>
+        </li>
+      )}
       {unloaded.map(({ listener, index }) => (
         <li class="listener" data-module={listener.module} data-index={index} data-resizes={String(listener.resizes)} data-result="off">
           <div class="chip">
@@ -753,6 +772,20 @@ button.call {
   }
 }
 
+/* Stand-in chips that keep the room a chip leaves as the walkthrough moves it between the
+   rail and the tray, so the sheet under them holds still: the empty tray holds one, as tall
+   as the chip that lands there, and on a narrow sheet the column keeps one row for each
+   listener that is off. */
+.placeholder,
+.ghost {
+  visibility: hidden;
+}
+
+.chain > .ghost,
+.unloaded[data-empty='false'] .placeholder {
+  display: none;
+}
+
 /* The template that raised the event, templates/cards/blocks/attachment.html.twig, and what
    $res ended up holding. */
 .emitter-branch {
@@ -1048,6 +1081,14 @@ button.call {
     flex-direction: column;
   }
 
+  .event-bus[data-stage='view']:has(.tray > :nth-child(1 of [data-module])) .ghost:nth-child(1 of .ghost),
+  .event-bus[data-stage='view']:has(.tray > :nth-child(2 of [data-module])) .ghost:nth-child(2 of .ghost),
+  .event-bus[data-stage='view']:has(.tray > :nth-child(3 of [data-module])) .ghost:nth-child(3 of .ghost),
+  .event-bus[data-stage='resize']:has(.tray > :nth-child(1 of [data-resizes='true'])) .ghost:nth-child(1 of .ghost),
+  .event-bus[data-stage='resize']:has(.tray > :nth-child(2 of [data-resizes='true'])) .ghost:nth-child(2 of .ghost) {
+    display: grid;
+  }
+
   .chain > li {
     grid-template-rows: none;
     grid-template-columns: 2.25em minmax(0, 1fr) 5.5em;
@@ -1056,7 +1097,8 @@ button.call {
     padding-inline: 0;
   }
 
-  .listener {
+  .listener,
+  .ghost {
     flex: none;
     padding-block: 0.25em;
   }
@@ -1191,6 +1233,12 @@ button.call {
     > .unloaded {
       grid-area: unloaded;
       align-content: start;
+    }
+
+    /* The tray changes places as soon as it holds a chip, so a stand-in would only make
+       the empty one taller. */
+    .placeholder {
+      display: none;
     }
 
     > .rail-frame {
