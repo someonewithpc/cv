@@ -114,14 +114,19 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
   @include blueprint-root;
 }
 
-/* A phone's sheet has no width to give the panels' inset, so there it hangs out into the sheet's
-   margin and the table keeps the width it had. */
-@mixin panel-inset {
+/* The panels' inset hangs out into the sheet's margin, so the text in them keeps the width it had
+   without one: a narrower column wraps into lines a landscape sheet has no height for. Each
+   panel hangs out on its outer side, and on a phone's sheet, where it has the row to itself,
+   on both. */
+$hang: calc(-0.625em - 1px);
+
+@mixin panel-inset($side) {
   margin: 0;
+  margin-inline-#{$side}: $hang;
   padding: 0.375em 0.625em;
 
   @include portrait-sheet {
-    margin-inline: calc(-0.625em - 1px);
+    margin-inline: $hang;
   }
 }
 
@@ -135,7 +140,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
      height and not the width, so there they go back under. */
   grid-template-columns: max-content minmax(0, 1fr);
   grid-template-areas: "table rules";
-  gap: 0.625em 1.25em;
+  gap: 0.625em;
   align-items: start;
   color: var(--ink);
 
@@ -150,7 +155,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
 /* The table and the line under it on one panel, the rules on another. */
 .types {
   @include code-panel;
-  @include panel-inset;
+  @include panel-inset(start);
 
   grid-area: table;
   display: grid;
@@ -202,7 +207,7 @@ table {
 
 .rules {
   @include code-panel;
-  @include panel-inset;
+  @include panel-inset(end);
 
   grid-area: rules;
   display: grid;
@@ -213,14 +218,25 @@ table {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  @include narrow-sheet {
+    row-gap: 0.25em;
+  }
+
+  /* Each rule's name runs in at the head of its text. On a line of its own, the six rules stood
+     taller than the room a small landscape sheet has beside the table. */
   div {
-    display: grid;
-    align-content: start;
-    gap: 0.0625em;
+    font-size: fs(0.5625);
+    line-height: 1.35;
+    text-wrap: pretty;
+
+    @include narrow-sheet {
+      line-height: 1.25;
+    }
   }
 
   dt {
-    font-size: fs(0.5625);
+    display: inline;
+    margin-inline-end: 0.5em;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -228,10 +244,8 @@ table {
   }
 
   dd {
+    display: inline;
     margin: 0;
-    font-size: fs(0.5625);
-    line-height: 1.35;
-    text-wrap: pretty;
   }
 }
 
