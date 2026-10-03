@@ -1,4 +1,5 @@
 ---
+import { highlightSpans } from '@/highlight';
 import { mangledHtml, sqlHtml, sqlResultHtml } from '../markup';
 import { initialQuery } from '../objects';
 import { search, serialise } from '../search';
@@ -6,7 +7,7 @@ import { search, serialise } from '../search';
 const state = { query: initialQuery, filters: {} };
 ---
 
-<div class="wrapper" data-blueprint-sheet>
+<div class="wrapper hl" data-blueprint-sheet>
   <div class="sql-layer" data-library-search="sql" data-query={state.query} data-filters="{}">
     <div class="panel">
       <header>
@@ -42,7 +43,7 @@ const state = { query: initialQuery, filters: {} };
         <li data-mark="where"><span class="badge">1</span><span><code>WHERE</code> decides which rows come back at all</span></li>
         <li data-mark="select"><span class="badge">2</span><span>divided by the maximum, it is the <code>search_relevance</code> column; Rails' <code>#select</code> drops <code>library_objects.*</code> once a <code>MATCH</code> is in it, so it goes on <code>arel.projections</code></span></li>
         <li data-mark="order"><span class="badge">3</span><span>the same ratio is the first <code>ORDER BY</code> term; <code>updated_at</code>, inherited from the <code>visible</code> scope, breaks ties</span></li>
-        <li data-mark="max"><span class="badge">max</span><span><code>MAX()</code> would fold the rows into one, so the maximum comes from the same relation <code>reselect</code>ed as a scalar subquery, category and <code>LIMIT 250</code> included. The property filter comes after, so it never moves the maximum</span></li>
+        <li data-mark="max"><span class="badge">max</span><span><code>MAX()</code> would fold the rows into one, so the maximum comes from the same relation <code>reselect</code>ed as a scalar subquery, category and <code class="hl" set:html={highlightSpans('LIMIT 250', 'sql')} /> included. The property filter comes after, so it never moves the maximum</span></li>
       </ol>
     </div>
   </div>
@@ -57,11 +58,14 @@ bootIslands('[data-library-search="sql"]', boot);
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 @use "./sheet" as *;
 
 @include blueprint-cell;
 
 .wrapper {
+  @include code.code-chip;
+
   @include blueprint-wrapper;
 }
 
