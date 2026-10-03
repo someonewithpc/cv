@@ -217,3 +217,4 @@
 - [x] Hovering a marker editor header button changes its margin, border and size and shifts its neighbours (A25) (#296)
 - [x] A plain tap on the flap after the first gesture runs a 1 s settle glide (C20) (#269)
 - [x] Fit the Event Dispatch sheet at 320 and 336 px, where its template and $res ran under the deck and past the sheet (S1) (#273)
+- [ ] Decorative SVGs and dead ARIA: reset icon titles, logo ids and xml, elevation figure, separator role, bare SVGs (A13)
