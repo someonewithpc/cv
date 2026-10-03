@@ -21,6 +21,7 @@
 
 <style lang="scss">
 @use "./sheet" as *;
+@use "./boot";
 
 .picker-layer {
   @include sheet-content;
@@ -40,30 +41,6 @@
   :global(article.technical-drawing-stack > * > section > .content:has(.picker-layer)) {
     grid-column: 1 / -1;
     margin-bottom: 3.5em;
-  }
-}
-
-.boot-placeholder {
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 0.75rem;
-  min-height: 12em;
-  color: var(--ink-muted, #666);
-  font: 0.875rem/1.3 system-ui, sans-serif;
-}
-
-.boot-spinner {
-  width: 1.75rem;
-  height: 1.75rem;
-  border: 3px solid #89ab24;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: loading-spin 0.8s linear infinite;
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    border-color: #89ab24;
   }
 }
 </style>
