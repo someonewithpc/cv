@@ -243,12 +243,13 @@ test.describe('with reduced motion', () => {
     }
     await expect(code).not.toContainText('web:');
 
-    // Highlighted by the emitter itself: keys, values, quoted strings and comments are spans.
-    await expect(code.locator('.y-key', { hasText: /^services$/ })).toHaveCount(1);
-    await expect(code.locator('.y-plain', { hasText: /^nginx:alpine$/ })).toHaveCount(1);
-    await expect(code.locator('.y-string', { hasText: /^"3"$/ })).toHaveCount(1);
-    await expect(code.locator('.y-comment')).toHaveCount(1);
-    const [key, value] = await Promise.all(['.y-key', '.y-plain'].map((selector) =>
+    // Highlighted by the emitter itself, with the shared highlighter's kinds: keys, values,
+    // quoted strings and comments are spans.
+    await expect(code.locator('.tok-tag', { hasText: /^services$/ })).toHaveCount(1);
+    await expect(code.locator('.tok-string', { hasText: /^nginx:alpine$/ })).toHaveCount(1);
+    await expect(code.locator('.tok-string', { hasText: /^"3"$/ })).toHaveCount(1);
+    await expect(code.locator('.tok-comment')).toHaveCount(1);
+    const [key, value] = await Promise.all(['.tok-tag', '.tok-string'].map((selector) =>
       code.locator(selector).first().evaluate((el) => getComputedStyle(el).color)));
     expect(key).not.toBe(value);
 

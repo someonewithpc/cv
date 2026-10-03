@@ -1,5 +1,6 @@
 ---
 import { exampleConfig } from '../config';
+import { highlightSpans } from '@/highlight';
 import { planWorktrees, RUNGS, worktreeCommand } from '../worktrees';
 
 // What each bare mirror holds on a first sync. `git clone --bare` copies origin's branches in
@@ -34,7 +35,7 @@ const ladder = RUNGS.map((why, rung) => ({
 }));
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <div class="worktrees-layer">
     <div class="panel">
       <header>
@@ -79,7 +80,7 @@ const ladder = RUNGS.map((why, rung) => ({
           {ladder.map(({ why, command, taken, skipped, unreached }) => (
             <li class:list={{ taken, skipped, unreached }}>
               <span class="why">{why}</span>
-              <code>{command}</code>
+              <code class="hl-box" set:html={highlightSpans(command, 'shellscript')} />
             </li>
           ))}
         </ol>

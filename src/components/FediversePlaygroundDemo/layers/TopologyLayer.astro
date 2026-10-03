@@ -52,7 +52,7 @@ const toggles = Object.entries(exampleConfig.instances).map(([key, instance]) =>
     <div class="graph" data-graph set:html={renderGraphs(config, compose)} />
 
     {/* Open, the file lies over the graph rather than pushing it off the sheet. */}
-    <details class="yaml">
+    <details class="yaml hl">
       <summary>
         <span>docker-compose.yml</span>
         <span class="lines" data-lines>{lineCount(compose)}</span>
@@ -406,26 +406,6 @@ fieldset {
     font-size: 0.75em;
     color: var(--ink-muted);
     white-space: normal;
-  }
-
-  /* yaml.ts tags every token as it writes it. Keys take the accent, plain values the ink,
-     quoted strings and numbers a blue mixed half into the ink, so it is dark on the light
-     papers and light on the dark ones, and the header and every cut the muted ink. */
-  code :global(.y-key) {
-    color: var(--accent-text);
-  }
-
-  code :global(:is(.y-string, .y-number)) {
-    color: color-mix(in oklch, var(--ink) 50%, oklch(0.6 0.17 245));
-  }
-
-  code :global(.y-punct) {
-    color: var(--ink-muted);
-  }
-
-  code :global(.y-comment) {
-    color: var(--ink-muted);
-    font-style: italic;
   }
 
   @include portrait-sheet {
