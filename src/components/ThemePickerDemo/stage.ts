@@ -42,7 +42,7 @@ const seeds = (settings: ThemeSettings) => `
   --theme-blueprint: ${settings.blueprint};
   --theme-paper: ${settings.paper ?? 'initial'};
   --theme-mode: ${settings.follows};
-  --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
+  --accent-text: ${settings.follows === 'dark' ? 'var(--accent-800)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
   --wire: ${wireColor(settings)};
 `;
 

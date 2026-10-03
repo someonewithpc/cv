@@ -27,7 +27,7 @@ const themeVars = (settings: ThemeSettings) => `
       --theme-paper-invert: ${settings.paperInvert};
       --theme-mode: ${settings.follows};
 ${(['keyword', 'attribute', 'string', 'comment'] as const).map((kind) => `      --theme-code-${kind}: ${settings.code?.[kind] ?? 'initial'};`).join('\n')}
-      --accent-text: ${settings.follows === 'dark' ? 'var(--accent-9)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
+      --accent-text: ${settings.follows === 'dark' ? 'var(--accent-800)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
       --diff-add-text: ${settings.follows === 'dark' ? 'oklch(from hsl(145 42% 38%) 0.7 c h)' : 'hsl(145 42% 38%)'};
       --diff-remove-text: ${settings.follows === 'dark' ? 'oklch(from hsl(0 48% 46%) 0.73 c h)' : 'hsl(0 48% 46%)'};
 `;

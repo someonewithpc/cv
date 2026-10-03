@@ -67,30 +67,30 @@ $sheet-margin: 0.75em;
 // a dark one, so each keeps its contrast; the shading greys them, so the chroma gets a
 // floor back, and the hue is the theme's own turned a set angle.
 @mixin buffer-faces {
-  --buffer-paper: var(--neutral-2);
-  --buffer-ink: var(--neutral-12);
-  --buffer-line: var(--neutral-7);
-  --buffer-dim: var(--neutral-9);
-  --buffer-mode-line: var(--neutral-4);
+  --buffer-paper: var(--neutral-200);
+  --buffer-ink: var(--neutral-900);
+  --buffer-line: var(--neutral-650);
+  --buffer-dim: var(--neutral-800);
+  --buffer-mode-line: var(--neutral-400);
 
-  --face-comment: var(--neutral-9);
-  --face-keyword: oklch(from var(--accent-12) l max(c, 0.1) h);
-  --face-builtin: oklch(from var(--accent-12) l max(c, 0.1) calc(h + 150));
-  --face-string: oklch(from var(--accent-12) l max(c, 0.1) calc(h + 85));
-  --face-variable: oklch(from var(--accent-12) l max(c, 0.1) calc(h - 40));
-  --face-function: oklch(from var(--blueprint-12) l max(c, 0.1) h);
-  --face-tag: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 35));
-  --face-component: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h + 55));
-  --face-type: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h + 90));
-  --face-constant: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 80));
-  --face-literal: oklch(from var(--blueprint-12) l max(c, 0.1) calc(h - 100));
+  --face-comment: var(--neutral-800);
+  --face-keyword: oklch(from var(--accent-900) l max(c, 0.1) h);
+  --face-builtin: oklch(from var(--accent-900) l max(c, 0.1) calc(h + 150));
+  --face-string: oklch(from var(--accent-900) l max(c, 0.1) calc(h + 85));
+  --face-variable: oklch(from var(--accent-900) l max(c, 0.1) calc(h - 40));
+  --face-function: oklch(from var(--blueprint-900) l max(c, 0.1) h);
+  --face-tag: oklch(from var(--blueprint-900) l max(c, 0.1) calc(h - 35));
+  --face-component: oklch(from var(--blueprint-900) l max(c, 0.1) calc(h + 55));
+  --face-type: oklch(from var(--blueprint-900) l max(c, 0.1) calc(h + 90));
+  --face-constant: oklch(from var(--blueprint-900) l max(c, 0.1) calc(h - 80));
+  --face-literal: oklch(from var(--blueprint-900) l max(c, 0.1) calc(h - 100));
 
   // Which parser owns a range, for the outlines and their labels. Each is a
   // quarter of the way to the ink, which keeps it 3:1 or more on the paper in every theme.
-  --lang-astro: var(--neutral-10);
-  --lang-html: color-mix(in oklch, oklch(from var(--accent-11) l max(c, 0.1) calc(h + 150)), var(--buffer-ink) 25%);
-  --lang-tsx: color-mix(in oklch, var(--blueprint-11), var(--buffer-ink) 25%);
-  --lang-scss: color-mix(in oklch, var(--accent-11), var(--buffer-ink) 25%);
+  --lang-astro: var(--neutral-850);
+  --lang-html: color-mix(in oklch, oklch(from var(--accent-875) l max(c, 0.1) calc(h + 150)), var(--buffer-ink) 25%);
+  --lang-tsx: color-mix(in oklch, var(--blueprint-875), var(--buffer-ink) 25%);
+  --lang-scss: color-mix(in oklch, var(--accent-875), var(--buffer-ink) 25%);
   --lang-css: var(--lang-scss);
 }
 

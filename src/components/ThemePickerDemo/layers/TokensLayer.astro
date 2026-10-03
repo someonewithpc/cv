@@ -8,7 +8,7 @@
 import { ticks } from '@/highlight';
 
 const seeds = ['canvas', 'ink', 'accent', 'blueprint'];
-const steps = Array.from({ length: 12 }, (_, i) => i + 1);
+const steps = [100, 200, 300, 400, 500, 600, 650, 700, 800, 850, 875, 900];
 const ramps = ['neutral', 'accent', 'blueprint'];
 const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
 ---
@@ -36,7 +36,7 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
       {ramps.map((name) => (
         <div class="ramp">
           <code class="layer-name">{name}</code>
-          <ol aria-label={`${name} 1 to 12`}>
+          <ol aria-label={`${name} 100 to 900`}>
             {steps.map((i) => (
               <li style={`--swatch: var(--${name}-${i})`}><span class="swatch"></span><span class="step">{i}</span></li>
             ))}
@@ -65,7 +65,7 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
     </div>
     <div>
       <dt>Ramps</dt>
-      <dd set:html={ticks('A Sass loop mixes `canvas` into `ink` in eleven steps for `neutral`. `accent` and `blueprint` tint to 8, take the seed at 9 and shade to 12.')} />
+      <dd set:html={ticks('A Sass loop mixes `canvas` into `ink` in eleven steps for `neutral`. `accent` and `blueprint` tint to 700, take the seed at 800 and shade to 900.')} />
     </div>
     <div>
       <dt>Names</dt>

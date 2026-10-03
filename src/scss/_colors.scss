@@ -1,54 +1,62 @@
+@use "sass:list";
 @use "sass:math";
 
-// Primitive ramps (1 = nearest canvas / tint, 12 = nearest ink / shade).
-// Themes set --theme-canvas, --theme-ink, --theme-accent, --theme-blueprint.
+// Primitive ramps, named like font weights: 100 = nearest canvas / tint, 900 = nearest ink /
+// shade. The steps are not evenly spaced: 650, 850 and 875 sit between their neighbours where
+// the chrome needs a finer cut. Themes set --theme-canvas, --theme-ink, --theme-accent,
+// --theme-blueprint.
+$ramp-steps: 100, 200, 300, 400, 500, 600, 650, 700, 800, 850, 875, 900;
+
 @mixin primitive-ramps {
   @for $i from 1 through 12 {
+    $step: list.nth($ramp-steps, $i);
     $t: math.div($i - 1, 11) * 100%;
-    --neutral-#{$i}: color-mix(in oklch, var(--theme-canvas), var(--theme-ink) #{$t});
+    --neutral-#{$step}: color-mix(in oklch, var(--theme-canvas), var(--theme-ink) #{$t});
   }
 
-  // Accent / blueprint: 1–8 tint toward canvas, 9 = solid, 10–12 shade toward ink.
+  // Accent / blueprint: 100 to 700 tint toward canvas, 800 = solid, 850 to 900 shade toward ink.
   // Chroma is preserved better than mixing from paper→hue (old accent scale).
   @for $i from 1 through 8 {
+    $step: list.nth($ramp-steps, $i);
     $t: math.div(9 - $i, 8) * 82%;
-    --accent-#{$i}: color-mix(in oklch, var(--theme-accent), var(--theme-canvas) #{$t});
-    --blueprint-#{$i}: color-mix(in oklch, var(--theme-blueprint), var(--theme-canvas) #{$t});
+    --accent-#{$step}: color-mix(in oklch, var(--theme-accent), var(--theme-canvas) #{$t});
+    --blueprint-#{$step}: color-mix(in oklch, var(--theme-blueprint), var(--theme-canvas) #{$t});
   }
 
-  --accent-9: var(--theme-accent);
-  --blueprint-9: var(--theme-blueprint);
+  --accent-800: var(--theme-accent);
+  --blueprint-800: var(--theme-blueprint);
 
   @for $i from 10 through 12 {
+    $step: list.nth($ramp-steps, $i);
     $t: math.div($i - 9, 3) * 42%;
-    --accent-#{$i}: color-mix(in oklch, var(--theme-accent), var(--theme-ink) #{$t});
-    --blueprint-#{$i}: color-mix(in oklch, var(--theme-blueprint), var(--theme-ink) #{$t});
+    --accent-#{$step}: color-mix(in oklch, var(--theme-accent), var(--theme-ink) #{$t});
+    --blueprint-#{$step}: color-mix(in oklch, var(--theme-blueprint), var(--theme-ink) #{$t});
   }
 }
 
 @mixin semantic-tokens {
-  --surface-page: var(--theme-paper, var(--neutral-1));
-  --surface-raised: var(--neutral-2);
-  --surface-sunken: var(--neutral-3);
+  --surface-page: var(--theme-paper, var(--neutral-100));
+  --surface-raised: var(--neutral-200);
+  --surface-sunken: var(--neutral-300);
 
-  --ink: var(--neutral-12);
-  --ink-muted: var(--neutral-11);
-  --ink-faint: var(--neutral-9);
+  --ink: var(--neutral-900);
+  --ink-muted: var(--neutral-875);
+  --ink-faint: var(--neutral-800);
 
-  --line: var(--neutral-6);
-  --line-strong: var(--neutral-8);
+  --line: var(--neutral-600);
+  --line-strong: var(--neutral-700);
 
-  --accent: var(--accent-9);
-  --accent-muted: var(--accent-7);
+  --accent: var(--accent-800);
+  --accent-muted: var(--accent-650);
   // Accent as running text: the light themes drop its lightness (hue and chroma kept) until it
   // clears 4.5:1 on --surface-raised; the dark themes use the plain accent (see ThemePicker).
   --accent-text: oklch(from var(--theme-accent) 0.42 c h);
   --accent-contrast: var(--theme-canvas);
-  --control-accent: var(--accent-9);
+  --control-accent: var(--accent-800);
 
-  --blueprint: var(--blueprint-9);
-  --blueprint-line: var(--blueprint-11);
-  --blueprint-grid: color-mix(in oklch, var(--blueprint-9), var(--theme-canvas) 38%);
+  --blueprint: var(--blueprint-800);
+  --blueprint-line: var(--blueprint-875);
+  --blueprint-grid: color-mix(in oklch, var(--blueprint-800), var(--theme-canvas) 38%);
 }
 
 @mixin color-variables {
@@ -62,7 +70,7 @@ $sheet-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface
 
 // Full sheet boundary for `.blueprint` pages (drawing ink on blueprint fill).
 @mixin blueprint-sheet-boundary {
-  --sheet-canvas: var(--blueprint-9);
+  --sheet-canvas: var(--blueprint-800);
   --sheet-ink: color-mix(in oklch, white 88%, var(--theme-blueprint));
   --sheet-ink-muted: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 18%);
   --sheet-ink-faint: color-mix(in oklch, var(--sheet-ink), var(--sheet-canvas) 48%);

@@ -47,8 +47,8 @@
   padding: 0.45em 0.7em;
   border: 1px solid color-mix(in oklab, #000 12%, transparent);
   border-radius: 0.45em;
-  background: color-mix(in oklab, var(--sheet-canvas, var(--neutral-1, #fff)) 92%, transparent);
-  color: var(--sheet-ink, var(--neutral-11, #222));
+  background: color-mix(in oklab, var(--sheet-canvas, var(--neutral-100, #fff)) 92%, transparent);
+  color: var(--sheet-ink, var(--neutral-875, #222));
   box-shadow: 0 2px 10px color-mix(in oklab, #000 16%, transparent);
   font-size: 0.75rem;
   line-height: 1;
