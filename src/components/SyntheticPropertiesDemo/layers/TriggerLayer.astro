@@ -88,7 +88,7 @@ const body = (sql: string[]) =>
   highlightLines(
     sql.flatMap((line, index) => [
       ...(index > 0 ? ['\n'] : []),
-      ...breakable(line).flatMap((part, at) => (at > 0 ? [{ insert: '<wbr />' }, part] : [part])),
+      ...breakable(line).flatMap((part, at) => (at > 0 ? [{ insert: '<wbr>' }, part] : [part])),
     ]),
     'ruby',
     { context: ['<<~SQL\n', '\nSQL'] },
