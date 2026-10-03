@@ -39,6 +39,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
 
 <div class="wrapper hl" data-schemadef-sheet>
   <div class="typemap">
+    <div class="types">
     <table>
       <thead>
         <tr>
@@ -52,7 +53,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
         {rows.map((row) => (
           <tr>
             <td>
-              {row.size && <><code class="hl" set:html={php(`'${row.size}'`)} /> + </>}<code class="hl" set:html={php(`'${row.v2}'`)} />
+              {row.size && <><code set:html={php(`'${row.size}'`)} /> + </>}<code set:html={php(`'${row.v2}'`)} />
             </td>
             <td><code>{row.type}</code></td>
             <td><code>{row.sql ?? 'bundle type'}</code></td>
@@ -62,18 +63,25 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
       </tbody>
     </table>
 
+    <p class="footnote">
+      Mapped ahead of need, unused by any v2 schema: {spare.map((v2, index) => (
+        <><code>{v2}</code>{index < spare.length - 1 ? ', ' : ''}</>
+      ))}
+    </p>
+    </div>
+
     <dl class="rules">
       <div>
         <dt>Size</dt>
-        <dd>Glued onto the name before the lookup: <code class="hl" set:html={php("'tiny'")} /> on an <code>int</code> looks up <code>tinyint</code>, which has no portable form, so <code>smallint</code></dd>
+        <dd>Glued onto the name before the lookup: <code set:html={php("'tiny'")} /> on an <code>int</code> looks up <code>tinyint</code>, which has no portable form, so <code>smallint</code></dd>
       </div>
       <div>
         <dt>Null</dt>
-        <dd><code class="hl" set:html={php("'not null' => true")} /> is inverted into <code class="hl" set:html={php("'nullable' => false")} />; a field that says nothing is nullable</dd>
+        <dd><code set:html={php("'not null' => true")} /> is inverted into <code set:html={php("'nullable' => false")} />; a field that says nothing is nullable</dd>
       </div>
       <div>
         <dt>Width</dt>
-        <dd><code>char</code> is the same string type as <code>varchar</code>, with <code class="hl" set:html={php("'fixed' => true")} /></dd>
+        <dd><code>char</code> is the same string type as <code>varchar</code>, with <code set:html={php("'fixed' => true")} /></dd>
       </div>
       <div>
         <dt>Serial</dt>
@@ -81,19 +89,14 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
       </div>
       <div>
         <dt>Docs</dt>
-        <dd>Each <code class="hl" set:html={php("'description'")} /> becomes a column comment: the documentation lands in the database</dd>
+        <dd>Each <code set:html={php("'description'")} /> becomes a column comment: the documentation lands in the database</dd>
       </div>
       <div>
         <dt>Keys</dt>
-        <dd><code class="hl" set:html={php("['idx' => [cols]]")} /> is reshaped into <code class="hl" set:html={php("[['name' => 'idx', 'columns' => [cols]]]")} /></dd>
+        <dd><code set:html={php("['idx' => [cols]]")} /> is reshaped into <code set:html={php("[['name' => 'idx', 'columns' => [cols]]]")} /></dd>
       </div>
     </dl>
 
-    <p class="footnote">
-      Mapped ahead of need, unused by any v2 schema: {spare.map((v2, index) => (
-        <><code>{v2}</code>{index < spare.length - 1 ? ', ' : ''}</>
-      ))}
-    </p>
   </div>
 </div>
 
@@ -106,10 +109,20 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
 .wrapper {
   @include sheet-content;
   @include highlighted;
-  @include code-chip;
   @include clear-title-block;
 
   @include blueprint-root;
+}
+
+/* A phone's sheet has no width to give the panels' inset, so there it hangs out into the sheet's
+   margin and the table keeps the width it had. */
+@mixin panel-inset {
+  margin: 0;
+  padding: 0.375em 0.625em;
+
+  :global([data-sheet-orientation='portrait']) & {
+    margin-inline: calc(-0.625em - 1px);
+  }
 }
 
 .typemap {
@@ -121,9 +134,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
      so it takes the width it needs and the rules take the rest. A portrait sheet has the
      height and not the width, so there they go back under. */
   grid-template-columns: max-content minmax(0, 1fr);
-  grid-template-areas:
-    "table rules"
-    "note note";
+  grid-template-areas: "table rules";
   gap: 0.625em 1.25em;
   align-items: start;
   color: var(--ink);
@@ -132,13 +143,21 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "table"
-      "rules"
-      "note";
+      "rules";
   }
 }
 
-table {
+/* The table and the line under it on one panel, the rules on another. */
+.types {
+  @include code-panel;
+  @include panel-inset;
+
   grid-area: table;
+  display: grid;
+  gap: 0.625em;
+}
+
+table {
   width: 100%;
   border-collapse: collapse;
   font-size: fs(0.6875);
@@ -182,8 +201,10 @@ table {
 }
 
 .rules {
+  @include code-panel;
+  @include panel-inset;
+
   grid-area: rules;
-  margin: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.375em 0.75em;
@@ -215,8 +236,9 @@ table {
 }
 
 .footnote {
-  grid-area: note;
   margin: 0;
+  /* Wraps to the table's width rather than widening the panel. */
+  contain: inline-size;
 
   /* The rest of the lookup table is the first thing a small sheet can spare. */
   @include portrait-sheet {

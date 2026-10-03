@@ -11,15 +11,13 @@
   @include code.code-roles;
 }
 
-// The chip behind inline highlighted code (class hl, the site's code.hl): it keeps the type size of
-// the text around it, and its narrow inset hangs out over the gap beside it by its own width, so
-// the text sits where it did before the chip and no row or line grows.
-@mixin code-chip {
-  code.hl {
-    font-size: 1em;
-    padding-inline: 0.125em;
-    margin-inline: calc(-0.125em - 1px);
-  }
+// The panel a block of code or notes sits on, the ModuleManager excerpt's: the raised surface
+// inside a strong hairline, so the sheet's grid stops at its edge. The code in it is set as
+// plain tokens, with no chip of its own.
+@mixin code-panel {
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5em;
+  background: var(--surface-raised);
 }
 
 // Clear sheet between the content and the frame line, the title block and the corner pieces,
