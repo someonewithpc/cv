@@ -12,7 +12,7 @@
   --hl-base: var(--sheet-paper, var(--surface-page));
   --hl-ground: light-dark(
     oklch(from var(--hl-base) clamp(0.92, calc(l - 0.035), 0.97) min(c, 0.04) h),
-    oklch(from var(--hl-base) calc(l + 0.035) c h)
+    oklch(from var(--hl-base) calc(l + var(--hl-dark-step, 0.035)) c h)
   );
   --hl-ink: light-dark(var(--theme-ink), var(--ink));
   --hl-muted: var(
@@ -93,6 +93,12 @@
   // wrapper, which takes no ground, and the tokens inside read them.
   :where(.hl:not(code, pre)) {
     @include code-roles;
+  }
+
+  // On a dark theme's blueprint a step up barely parts the code from the blue, and the grid's
+  // light lines read as running through it, so the ground steps down there instead.
+  :where(section.blueprint) {
+    --hl-dark-step: -0.1;
   }
 
   // On a blueprint sheet the light side of each role is dark on the blue, so a box a sheet sets
