@@ -6,7 +6,7 @@
  */
 import { createHighlighter, type ThemeRegistration } from 'shiki';
 
-export type CodeLang = 'ts' | 'css' | 'html' | 'xml' | 'php' | 'sql' | 'ruby' | 'shellscript' | 'yaml';
+export type CodeLang = 'ts' | 'css' | 'html' | 'xml' | 'php' | 'sql' | 'ruby' | 'shellscript' | 'yaml' | 'emacs-lisp';
 
 const KINDS: Record<string, string[]> = {
   keyword: ['keyword', 'storage', 'punctuation.definition.keyword'],
@@ -19,7 +19,7 @@ const KINDS: Record<string, string[]> = {
     'entity.name.tag.css',
     'meta.selector punctuation.definition.entity.css',
   ],
-  attribute: ['entity.other.attribute-name'],
+  attribute: ['entity.other.attribute-name', 'constant.keyword', 'constant.keyword punctuation.definition.keyword'],
   property: [
     'support.type.property-name',
     'meta.definition.variable',
@@ -30,7 +30,7 @@ const KINDS: Record<string, string[]> = {
   ],
   function: ['entity.name.function', 'support.function', 'support.class', 'support.attribute', 'support.other.namespace'],
   string: ['string', 'punctuation.definition.string'],
-  number: ['constant.numeric', 'constant.language', 'keyword.other.unit', 'support.constant.property-value'],
+  number: ['constant.numeric', 'constant.language', 'constant.boolean', 'keyword.other.unit', 'support.constant.property-value'],
   punctuation: ['punctuation', 'meta.brace'],
   comment: ['comment', 'punctuation.definition.comment'],
 };
@@ -46,7 +46,7 @@ const theme: ThemeRegistration = {
   tokenColors: Object.values(KINDS).map((scope, index) => ({ scope, settings: { foreground: stand(index) } })),
 };
 
-const highlighter = await createHighlighter({ themes: [theme], langs: ['ts', 'css', 'html', 'xml', 'php', 'sql', 'ruby', 'shellscript', 'yaml'] });
+const highlighter = await createHighlighter({ themes: [theme], langs: ['ts', 'css', 'html', 'xml', 'php', 'sql', 'ruby', 'shellscript', 'yaml', 'emacs-lisp'] });
 
 export const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
