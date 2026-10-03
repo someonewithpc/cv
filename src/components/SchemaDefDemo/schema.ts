@@ -71,7 +71,7 @@ export const driverTypes: Record<string, string> = {
 type Value = string | number | boolean | null;
 export type Options = Record<string, Value>;
 
-export type TokenKind = 'str' | 'num' | 'kw' | 'punct' | 'com';
+export type TokenKind = 'str' | 'num' | 'kw' | 'op' | 'com';
 export type Token = { text: string; kind?: TokenKind };
 
 /** One printed line. `key` pairs it with its counterpart on the other pane. */
@@ -204,7 +204,7 @@ function tokenizePhp(text: string): Token[] {
     (match) => {
       if (match.startsWith("'")) return 'str';
       if (/^\d/.test(match)) return 'num';
-      if (match === '=>') return 'punct';
+      if (match === '=>') return 'op';
       return 'kw';
     },
   );

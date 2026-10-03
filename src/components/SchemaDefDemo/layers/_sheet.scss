@@ -1,7 +1,15 @@
 @use "@/scss/sheet" as shared;
 @forward "@/scss/sheet" show sheet-content;
+@use "@/scss/_code.scss" as code;
+
 // What the schemaDef sheets share: the margin every layer keeps around its content, and
 // the code face the panes and excerpts are set in.
+
+// The shared highlighter's three roles (scss/_code.scss), declared on a layer's root so every
+// token on the sheet reads the same warm, cool, soft and muted as the other demos' code.
+@mixin highlighted {
+  @include code.code-roles;
+}
 
 // Clear sheet between the content and the frame line, the title block and the corner pieces,
 // in em of the sheet's own type so it scales with the page. The spec's floor is 0.5em.

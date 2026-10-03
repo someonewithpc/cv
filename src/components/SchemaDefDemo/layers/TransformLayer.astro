@@ -124,6 +124,7 @@ bootIslands('[data-schemadef-demo]', (host) => {
 
 .schemadef-demo {
   @include sheet-content;
+  @include highlighted;
 
   /* A definite height, so the panes scroll inside the sheet rather than growing it. */
   height: 100%;
@@ -298,25 +299,28 @@ figcaption {
   }
 }
 
-.str {
-  color: var(--accent-text);
+/* The pane's own token classes, coloured by the shared highlighter's roles: a keyword is the
+   warm kind, a string or number the soft one, an operator the warm kind, a comment the muted. */
+.str,
+.num {
+  color: var(--hl-soft);
 }
 
 .num {
-  color: var(--accent-text);
   font-weight: 600;
 }
 
 .kw {
+  color: var(--hl-warm);
   font-weight: 600;
 }
 
-.punct {
-  color: var(--ink-muted);
+.op {
+  color: var(--hl-warm);
 }
 
 .com {
-  color: var(--ink-muted);
+  color: var(--hl-muted);
   font-style: italic;
 }
 
