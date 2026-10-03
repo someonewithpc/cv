@@ -10,6 +10,7 @@
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+import { highlightSpans } from '@/highlight';
 
 import { THEME_IDS, THEMES } from '@/themes';
 
@@ -29,7 +30,7 @@ const badges = 6;
 const swatches = ['--accent', '--accent-muted', '--blueprint', '--surface-sunken', '--ink-muted'];
 ---
 
-<div class="theme-picker-demo" data-theme-picker-demo>
+<div class="theme-picker-demo hl" data-theme-picker-demo>
   <div class="figure">
     <Annotations seed="theme-picker-picker" reach={1.1} fontSize={0.1}>
       <div slot="content" class="stage" data-stage>
@@ -91,7 +92,7 @@ const swatches = ['--accent', '--accent-muted', '--blueprint', '--surface-sunken
         </template>
         <p class="stamp">
           <span>stage</span>
-          <code>data-demo-theme=<Fragment>{THEME_IDS.map((id) => <span data-stage-shown={id} hidden>"{id}"</span>)}</Fragment></code>
+          <code class="hl"><Fragment set:html={highlightSpans('data-demo-theme=', 'html', ['<a ', '"">'])} />{THEME_IDS.map((id) => <span data-stage-shown={id} hidden set:html={highlightSpans(`"${id}"`, 'html', ['<a b=', '>'])} />)}</code>
           <span data-stage-shown="none">unset, so the OS scheme decides</span>
         </p>
       </div>
@@ -114,11 +115,14 @@ bootIslands('[data-theme-picker-demo]', boot);
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 @use "./sheet" as *;
 
 @include stretch-cell(".theme-picker-demo");
 
 .theme-picker-demo {
+  @include code.code-chip;
+
   @include sheet-content;
   @include sheet-type(0.026, 0.03);
   @include clear-of-title-block;

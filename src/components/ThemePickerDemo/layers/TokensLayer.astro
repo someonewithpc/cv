@@ -5,7 +5,7 @@
  * theme on screen and a switch repaints it with the rest of the page. The layers are
  * labelled in the margin, the way the ramps are, so the drawing needs no callouts.
  */
-import { ticks } from '@/highlight';
+import { highlightSpans, ticks } from '@/highlight';
 
 const seeds = ['canvas', 'ink', 'accent', 'blueprint'];
 const steps = [100, 200, 300, 400, 500, 600, 650, 700, 800, 850, 875, 900];
@@ -13,7 +13,7 @@ const ramps = ['neutral', 'accent', 'blueprint'];
 const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
 ---
 
-<div class="tokens-sheet">
+<div class="tokens-sheet hl">
   <header>
     <span class="eyebrow">ThemePicker.astro · _colors.scss</span>
     <strong>Four seeds per theme, three ramps mixed from them, and the names every sheet reads</strong>
@@ -31,7 +31,7 @@ const names = ['--surface-page', '--ink', '--line', '--accent', '--blueprint'];
         ))}
       </ul>
 
-      <span class="flow" aria-hidden="true"><code>color-mix(in oklch)</code></span>
+      <span class="flow" aria-hidden="true"><code class="hl-box" set:html={highlightSpans('color-mix(in oklch)', 'css', ['a{color: ', '}'])} /></span>
 
       {ramps.map((name) => (
         <div class="ramp">
