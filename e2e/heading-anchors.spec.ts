@@ -62,27 +62,46 @@ for (const id of ['career', 'demos', 'loading-logo', 'paper-stack', 'open-source
   });
 }
 
-test('the icon centres on the capitals of the title beside it', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => document.fonts.ready);
-  for (const [title, anchor] of [
-    ['#career-heading .typewriter', 'a.anchor[href="#career"]'],
-    ['#detail-a .callout-title', 'a.anchor[href="#loading-logo"]'],
-  ]) {
-    const offset = await page.evaluate(([title, anchor]) => {
-      const t = document.querySelector<HTMLElement>(title)!;
-      const icon = document.querySelector(anchor)!.querySelector('svg')!.getBoundingClientRect();
-      const style = getComputedStyle(t);
-      const ctx = document.createElement('canvas').getContext('2d')!;
-      ctx.font = `${style.fontSize} ${style.fontFamily}`;
-      const cap = ctx.measureText('H').actualBoundingBoxAscent;
-      const probe = document.createElement('span');
-      probe.style.cssText = 'display: inline-block; width: 0; height: 0';
-      t.append(probe);
-      const baseline = probe.getBoundingClientRect().bottom;
-      probe.remove();
-      return (icon.top + icon.bottom) / 2 - (baseline - cap / 2);
-    }, [title, anchor]);
-    expect(Math.abs(offset), `${anchor} is ${offset}px off the capitals' middle`).toBeLessThanOrEqual(1.5);
-  }
-});
+for (const width of [390, 768, 1440]) {
+  test(`the icon is as tall as its title's capitals and centred on them at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    for (const theme of ['dark', 'arctic', 'dark-forest', 'light']) {
+      await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+      await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+      await page.evaluate(() => document.fonts.ready);
+      const rows = await page.evaluate(() => {
+        const out: { name: string; height: number; offset: number; wrapped: boolean }[] = [];
+        for (const a of document.querySelectorAll<HTMLElement>('a.anchor')) {
+          const t = a.parentElement!.querySelector<HTMLElement>('.callout-title') ?? a.parentElement!.querySelector<HTMLElement>('.typewriter');
+          if (!t) continue;
+          const icon = a.querySelector('svg')!.getBoundingClientRect();
+          if (!icon.height) continue;
+          const style = getComputedStyle(t);
+          const ctx = document.createElement('canvas').getContext('2d')!;
+          ctx.font = `100px ${style.fontFamily}`;
+          const cap = (ctx.measureText('H').actualBoundingBoxAscent / 100) * parseFloat(style.fontSize);
+          const probe = document.createElement('span');
+          probe.style.cssText = 'display: inline-block; width: 0; height: 0';
+          t.append(probe);
+          const baseline = probe.getBoundingClientRect().bottom;
+          probe.remove();
+          out.push({
+            name: a.getAttribute('href')!,
+            height: icon.height - cap,
+            offset: (icon.top + icon.bottom) / 2 - (baseline - cap / 2),
+            wrapped: a.getBoundingClientRect().top > t.getBoundingClientRect().bottom,
+          });
+        }
+        return out;
+      });
+      expect(rows.length).toBeGreaterThanOrEqual(3);
+      for (const r of rows) {
+        expect(Math.abs(r.height), `${r.name} ${theme}: icon vs capital height`).toBeLessThanOrEqual(1);
+        expect(Math.abs(r.offset), `${r.name} ${theme}: icon centre vs capitals' centre`).toBeLessThanOrEqual(0.5);
+        expect(r.wrapped, `${r.name} ${theme} wraps below its title`).toBe(false);
+      }
+    }
+  });
+}

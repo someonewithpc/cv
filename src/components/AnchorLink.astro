@@ -5,25 +5,24 @@
  * shown by opacity alone, so it stays focusable while hidden; touch has no hover, so there it
  * is always faintly shown.
  *
- * The icon centres on the title's capitals: set the title's font size as `--anchor-size` on the
- * row and the icon stands on the title's last baseline, raised half a capital.
+ * The icon is as tall as the title's capitals: set the title's font size as `--anchor-size` on the
+ * row and the icon, 0.7em square (the capital height of both faces, measured), stands on the
+ * title's last baseline, so its middle is the capitals' middle.
  */
 type Props = {
   /** The id of the element to link to. */
   id: string;
   /** What the link points at, read as "Link to <label>". */
   label: string;
-  /** Icon side in rem; the link's hit area stays 1.75rem. */
-  size?: string;
 };
 
-const { id, label, size } = Astro.props;
+const { id, label } = Astro.props;
 ---
 
-<a class="anchor" href={`#${id}`} aria-label={`Link to ${label}`} style={size ? { '--anchor-icon': size } : undefined}>
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+<a class="anchor" href={`#${id}`} aria-label={`Link to ${label}`}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path vector-effect="non-scaling-stroke" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+    <path vector-effect="non-scaling-stroke" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
   </svg>
 </a>
 
@@ -41,8 +40,8 @@ const { id, label, size } = Astro.props;
 }
 
 /* The link's baseline is the icon's bottom edge, which lands on the title's last baseline; the
-   shift raises the icon's middle to half a capital, 0.7em in both the typewriter and the
-   monospace face, measured. */
+   icon is a capital tall (0.7em in both the typewriter and the monospace face, measured), so
+   its middle is the capitals' middle. The hit area is padding, not icon. */
 .anchor {
   flex: none;
   align-self: last baseline;
@@ -51,14 +50,13 @@ const { id, label, size } = Astro.props;
   width: 1.75rem;
   height: 1.75rem;
   margin-block: -0.25rem;
-  translate: 0 calc(var(--anchor-icon, 1.125rem) / 2 - 0.35 * var(--anchor-size, 1em));
   color: var(--accent-text);
   opacity: 0;
   border-radius: 0.25rem;
 
   svg {
-    width: var(--anchor-icon, 1.125rem);
-    height: var(--anchor-icon, 1.125rem);
+    width: calc(0.7 * var(--anchor-size, 1em));
+    height: calc(0.7 * var(--anchor-size, 1em));
   }
 
   &:focus-visible {
