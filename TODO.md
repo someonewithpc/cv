@@ -267,3 +267,4 @@
 - [x] Add a print stylesheet: no desk, no theme picker, every page of each stack down the page, contributions open, light theme, links as text (S21) (#261)
 - [x] Take container-unit type out of the drawing stacks, the pattern that froze Chrome for 20 s (S5) (#244)
 - [x] home, svg-aria and a11y scroll every stack then wait a fixed 2 s instead of its mount (E17) (#289)
+- [ ] A vertical wheel right after a horizontal swipe on a stack scrolls the page without a mouse move first
