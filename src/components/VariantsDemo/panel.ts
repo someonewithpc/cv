@@ -275,6 +275,7 @@ export function render(
         || variants.some((v) => (v.pax ?? 0) === value && v.size === selected.size);
       option.classList.toggle('unavailable', !available);
       option.classList.toggle('current', value === (visible.pax ?? 0));
+      markOption(option, value === (visible.pax ?? 0), available);
     });
   }
 
@@ -290,8 +291,18 @@ export function render(
         || variants.some((v) => v.size === value && v.pax === selected.pax);
       option.classList.toggle('unavailable', !available);
       option.classList.toggle('current', value === visible.size);
+      markOption(option, value === visible.size, available);
     });
   }
+}
+
+function markOption(option: HTMLElement, current: boolean, available: boolean) {
+  const button = option.querySelector('button');
+  if (!button) return;
+  if (current) button.setAttribute('aria-current', 'true');
+  else button.removeAttribute('aria-current');
+  if (available) button.removeAttribute('aria-description');
+  else button.setAttribute('aria-description', 'Not with the current pick');
 }
 
 function setText(row: HTMLElement, text: string, label?: string) {

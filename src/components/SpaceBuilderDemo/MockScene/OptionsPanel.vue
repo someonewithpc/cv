@@ -321,6 +321,7 @@ function blockFromEvent(event: Event) {
         class="layout-item"
         :data-demo-target="`layout:${style}`"
         :class="{ active: layoutStyle === style }"
+        :aria-pressed="layoutStyle === style"
         @click="emit('style', style)"
       >
         <span class="item-label">{{ LAYOUT_LABELS[style] }}</span>

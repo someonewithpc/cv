@@ -362,6 +362,7 @@ onBeforeUnmount(() => {
             type="button"
             class="style-chip"
             :class="{ active: activeStyle === style }"
+            :aria-pressed="activeStyle === style"
             @click="setStyle(style)"
           >
             <span class="style-icon">

@@ -103,6 +103,8 @@ function pick(option: HoverSelectOption) {
       >
         <button
           type="button"
+          :aria-current="option === current || undefined"
+          :aria-description="isUnavailable(option) ? 'Not with the current pick' : undefined"
           :data-demo-target="demoTarget ? `${demoTarget}:${option}` : undefined"
           @click.stop="pick(option)"
           @dblclick.stop

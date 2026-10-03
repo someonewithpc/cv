@@ -54,7 +54,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
     <div class="mapping" role="table" aria-label={`Listeners derived from ${file}`}>
       <div class="head" role="row">
         <span role="columnheader" class="file"><code>{file}</code></span>
-        <span role="columnheader" class="arrow-head"></span>
+        <span role="columnheader" class="arrow-head"><span class="sr-only">becomes</span></span>
         <span role="columnheader">listener table</span>
       </div>
 
@@ -71,7 +71,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
             )}
             <span class="sig">{row.signature}</span>
           </code>
-          <span class="arrow" role="cell" aria-hidden={row.event ? undefined : 'true'}>
+          <span class="arrow" role="cell">
             {row.event ? <span class="sr-only">becomes</span> : null}
           </span>
           <span class="entry" role="cell">

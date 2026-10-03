@@ -104,7 +104,7 @@ const TRAIL_PARTS = [1, 2, 3, 4, 5];
         <ul class="hover-select-options">
           {paxOptions.map((pax) => (
             <li class:list={{ unavailable: !paxAvailable(pax) }} data-value={pax}>
-              <button type="button">
+              <button type="button" aria-description={paxAvailable(pax) ? undefined : 'Not with the current pick'}>
                 <svg viewBox="0 0 448 512" width="10" height="10" aria-hidden="true">
                   <path fill="currentColor" d="M224 256a112 112 0 1 0 0-224 112 112 0 0 0 0 224zm-64 48C71 304 0 375 0 464c0 26 22 48 48 48h352c26 0 48-22 48-48 0-89-71-160-160-160h-128z" />
                 </svg>
@@ -130,7 +130,7 @@ const TRAIL_PARTS = [1, 2, 3, 4, 5];
         <ul class="hover-select-options">
           {sizeOptions.map((size) => (
             <li class:list={{ unavailable: !sizeAvailable(size) }} data-value={size}>
-              <button type="button">
+              <button type="button" aria-description={sizeAvailable(size) ? undefined : 'Not with the current pick'}>
                 <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
                   <path d="M2 9h20v6H2zM6 9v3M10 9v4M14 9v3M18 9v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>

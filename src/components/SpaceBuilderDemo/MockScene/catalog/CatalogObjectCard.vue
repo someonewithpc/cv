@@ -275,6 +275,7 @@ function onPictureClick(event: MouseEvent) {
         :data-demo-target="`catalog:${item.id}`"
         :draggable="nativeDrag && Boolean(item.real)"
         :title="title"
+        :aria-disabled="!item.real || undefined"
         @click="pick(visible)"
         @dblclick="emit('confirm', item, visible)"
         @dragstart="emit('dragstart', $event, item, visible)"

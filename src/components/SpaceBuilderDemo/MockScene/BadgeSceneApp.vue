@@ -363,7 +363,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="ready && !loadError" class="controls">
-      <button type="button" class="play-toggle" :aria-pressed="playing" @click="togglePlay">
+      <button type="button" class="play-toggle" :class="{ playing }" @click="togglePlay">
         {{ playing ? 'Pause' : 'Play' }}
       </button>
       <p class="hint">{{ playing ? 'Auto-orbiting · drag to take over' : 'Drag to orbit' }}</p>
@@ -463,7 +463,7 @@ $scene-bg: #212121;
     background: color-mix(in oklab, $visrez-brand 40%, #171717);
   }
 
-  &[aria-pressed='true'] {
+  &.playing {
     background: $visrez-brand;
     color: #142008;
   }
