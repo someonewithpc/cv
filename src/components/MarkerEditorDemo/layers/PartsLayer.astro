@@ -1,4 +1,5 @@
 ---
+import { highlightLines, highlightSpans } from '@/highlight';
 import defaultDecorationSvg from '../assets/default-decoration.svg?raw';
 import defaultMarkerSvg from '../assets/default-marker.svg?raw';
 
@@ -25,7 +26,7 @@ const steps = [
 
 <div class="wrapper">
   <div class="parts-layer">
-    <div class="panel">
+    <div class="panel hl">
       <header>
         <span class="eyebrow">MarkerPart</span>
         <strong>Composable stack</strong>
@@ -103,16 +104,16 @@ const steps = [
             <span class="flow-title">In editor</span>
             <ul>
               <li><code>PinMarkerShape</code></li>
-              <li>center → <code>Point(0, -0.25)</code></li>
+              <li>center → <code set:html={highlightSpans('Point(0, -0.25)', 'ts')} /></li>
               <li><code>IconMarkerDecoration</code></li>
             </ul>
           </div>
           <span class="flow-op" aria-hidden="true">→</span>
           <div class="flow-card svg-tag">
             <span class="flow-title">On the SVG</span>
-            <pre class="tag"><code>{`<path data-kind="PinMarkerShape"
+            <pre class="tag"><code set:html={highlightLines(`<path data-kind="PinMarkerShape"
   data-state-center="Point:0.000;-0.250" />
-<g data-kind="IconMarkerDecoration" …>`}</code></pre>
+<g data-kind="IconMarkerDecoration" …>`, 'html').join('\n')} /></pre>
           </div>
         </div>
       </div>
@@ -122,6 +123,7 @@ const steps = [
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 $preview-bg: #3d3d3b;
 $accent: #89ab24;
 $sample: 3.6em;
@@ -167,6 +169,8 @@ $op-slot: 1.1em;
 }
 
 .panel {
+  @include code.code-roles-on-dark(#e8e4dc, #2a2a28);
+
   box-sizing: border-box;
   width: max-content;
   max-width: 100%;

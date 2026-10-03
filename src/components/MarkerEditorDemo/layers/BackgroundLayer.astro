@@ -1,4 +1,5 @@
 ---
+import { highlightSpans } from '@/highlight';
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
 
@@ -18,7 +19,7 @@ const annotationFontSize = 0.1 * annotationScale;
 <div class="wrapper">
   <Annotations seed="marker-editor-background" scale={annotationScale} reach={1}>
     <div class="background-layer" slot="content">
-      <div class="panel">
+      <div class="panel hl">
         <header>
           <span class="eyebrow">Preview chrome</span>
           <strong>Crosshair background</strong>
@@ -45,7 +46,7 @@ const annotationFontSize = 0.1 * annotationScale;
             <div class="sample shipped" style={`--cross-tile: ${crossTileUrl}`}></div>
             <p class="note">
               One tiny SVG draws a centered <code>+</code> from two short strokes in a
-              <code>viewBox="-1 -1 2 2"</code>. <code>background-repeat</code> tiles that cell so
+              <code set:html={highlightSpans('viewBox="-1 -1 2 2"', 'html', ['<svg ', '>'])} />. <code>background-repeat</code> tiles that cell so
               every cross stays coherent.
             </p>
           </figure>
@@ -148,6 +149,7 @@ const annotationFontSize = 0.1 * annotationScale;
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 $preview-bg: #3d3d3b;
 $line-real: #aaa7;
 $stripe-h: #5a9e3e;
@@ -185,6 +187,8 @@ $cell-debug: 11.111%;
 }
 
 .panel {
+  @include code.code-roles-on-dark(#f4f0ea, #333);
+
   box-sizing: border-box;
   padding: 0.85em;
   background: #333;
