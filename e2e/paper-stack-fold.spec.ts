@@ -83,6 +83,24 @@ test('marker editor: backward swipe is clamped at the first page', async ({ page
   expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
 });
 
+test('a horizontal swipe then a vertical wheel without a mouse move scrolls the page', async ({ page }) => {
+  const stack = demoStack(page, 'Visrez Animated Loading Logo');
+  await stack.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+
+  for (const forward of [false, true]) {
+    await swipeStack(page, stack, forward);
+    const before = await page.evaluate(() => scrollY);
+    for (let i = 0; i < 3; i += 1) {
+      await page.mouse.wheel(0, 40);
+      await page.waitForTimeout(20);
+    }
+    await expect.poll(() => page.evaluate(() => scrollY), {
+      message: forward ? 'after a forward swipe' : 'after a declined back swipe',
+    }).toBeGreaterThan(before);
+  }
+});
+
 test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
