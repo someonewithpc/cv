@@ -7,12 +7,14 @@ import {
   type AreaRect,
 } from '../src/components/SpaceBuilderDemo/MockScene/scene/layoutEngine';
 
-// Regression for #220 C29: a negative Offset shifts every odd row left by the full Offset, as
-// the product does, but left the row's first chairs outside the area. Chairs whose footprint
-// leaves the area are removed; the rest keep their shifted positions.
-const AREA: AreaRect = { x: 0, z: 0, width: 4, depth: 2, angle: 0 };
+// The Offset layout follows the product's OffsetMixin: odd rows shift by the offset plus a
+// re-anchor term (half a step when positive, the rows' length difference plus half a chair when
+// negative), and the odd row's count uses |offset|. That keeps every chair inside the area on
+// both sides (#220 C29) and makes the two directions differ the way the product's do.
+const AREA: AreaRect = { x: 0, z: 0, width: 7.4, depth: 5.6, angle: 0 };
 const EPS = 1e-6;
-const STEP_X = CHAIR_FOOTPRINT.width + DEFAULT_LAYOUT_OPTIONS.distanceX;
+const SIZE_X = CHAIR_FOOTPRINT.width;
+const STEP_X = SIZE_X + DEFAULT_LAYOUT_OPTIONS.distanceX;
 
 function rowsAt(offset: number) {
   const { poses } = layoutChairs(AREA, { ...DEFAULT_LAYOUT_OPTIONS, style: 'offset', offset });
@@ -25,38 +27,19 @@ function rowsAt(offset: number) {
   return { poses, rows };
 }
 
-test('a negative offset removes the chairs that leave the area and keeps the rest in place', () => {
-  const { poses, rows } = rowsAt(-0.8);
-  const halfX = AREA.width / 2;
-  const halfZ = AREA.depth / 2;
-  const footHalfX = CHAIR_FOOTPRINT.width / 2;
-  const footHalfZ = CHAIR_FOOTPRINT.depth / 2;
-
-  expect(rows.length).toBeGreaterThan(1);
-  for (const p of poses) {
-    expect(p.x - footHalfX).toBeGreaterThanOrEqual(-halfX - EPS);
-    expect(p.x + footHalfX).toBeLessThanOrEqual(halfX + EPS);
-    expect(p.z - footHalfZ).toBeGreaterThanOrEqual(-halfZ - EPS);
-    expect(p.z + footHalfZ).toBeLessThanOrEqual(halfZ + EPS);
-  }
-
-  const even = rows[0];
-  const odd = rows[1];
-  expect(odd.length).toBeLessThan(even.length);
-  // The odd row sits on the even row's grid shifted by the full 0.8 to the left, not clamped.
-  for (const x of odd) {
-    const steps = (x + 0.8 - even[0]) / STEP_X;
-    expect(Math.abs(steps - Math.round(steps))).toBeLessThan(EPS);
-  }
-  expect(odd[0]).toBeGreaterThan(even[0]);
-  expect(odd[odd.length - 1]).toBeLessThan(even[even.length - 1]);
-});
-
-test('a positive offset keeps its rows as before', () => {
-  const { rows } = rowsAt(0.8);
-  const even = rows[0];
-  const odd = rows[1];
-  expect(odd).toHaveLength(5);
-  expect(even).toHaveLength(6);
-  expect(odd[0]).toBeCloseTo(even[0] + 0.8, 6);
-});
+for (const [offset, shift, oddCount] of [
+  [-0.8, -0.8 + STEP_X + SIZE_X / 2, 10],
+  [0, STEP_X / 2, 11],
+  [0.8, 0.8 + STEP_X / 2, 10],
+] as const) {
+  test(`offset ${offset} shifts odd rows by the product's ${shift.toFixed(3)} and keeps every chair inside`, () => {
+    const { poses, rows } = rowsAt(offset);
+    expect(rows[0]).toHaveLength(12);
+    expect(rows[1]).toHaveLength(oddCount);
+    expect(rows[1][0] - rows[0][0]).toBeCloseTo(shift, 6);
+    for (const p of poses) {
+      expect(p.x - SIZE_X / 2).toBeGreaterThanOrEqual(-AREA.width / 2 - EPS);
+      expect(p.x + SIZE_X / 2).toBeLessThanOrEqual(AREA.width / 2 + EPS);
+    }
+  });
+}

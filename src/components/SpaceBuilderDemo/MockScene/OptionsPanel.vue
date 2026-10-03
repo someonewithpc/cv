@@ -249,7 +249,7 @@ function blockFromEvent(event: Event) {
     >
       <span class="range-label">
         <span>Offset</span>
-        <span class="range-value">{{ formatDistance(snapshot?.options.offset ?? 0.3) }}</span>
+        <span class="range-value">{{ formatDistance(snapshot?.options.offset ?? 0) }}</span>
       </span>
       <input
         data-demo-target="param:offset"
@@ -257,7 +257,7 @@ function blockFromEvent(event: Event) {
         min="-0.8"
         max="0.8"
         step="0.05"
-        :value="snapshot?.options.offset ?? 0.3"
+        :value="snapshot?.options.offset ?? 0"
         :disabled="!fieldActive('offset')"
         @input="emit('offset', numberFromEvent($event))"
       >

@@ -93,7 +93,7 @@ export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   distanceX: 0.2,
   distanceZ: 0.35,
   aisle: 0.8,
-  offset: 0.3,
+  offset: 0,
   angle: Math.PI / 8,
   innerDiameter: 0,
 };
@@ -296,28 +296,39 @@ function layoutGrid(area: AreaRect, options: LayoutOptions): ChairPose[] {
   return poses;
 }
 
+/**
+ * Space Builder OffsetMixin: odd rows start at offset plus a re-anchor term, half a step for a
+ * positive offset and the rows' length difference plus half a chair for a negative one. The
+ * odd row's count uses |offset|, so the chairs stay inside the area on both sides.
+ */
+/**
+ * Space Builder OffsetMixin: odd rows start at offset plus a re-anchor term, half a step for a
+ * positive offset and the rows' length difference plus half a chair for a negative one. The
+ * odd row's count uses |offset|, so the chairs stay inside the area on both sides.
+ */
 function layoutOffset(area: AreaRect, options: LayoutOptions): ChairPose[] {
   const sizeX = CHAIR_FOOTPRINT.width;
   const sizeZ = CHAIR_FOOTPRINT.depth;
-  const stepX = sizeX + options.distanceX;
-  const stepZ = sizeZ + options.distanceZ;
-  const cols = countFit(area.width, sizeX, options.distanceX);
-  const rows = countFit(area.depth, sizeZ, options.distanceZ);
+  const { distanceX, distanceZ, offset } = options;
+  const stepX = sizeX + distanceX;
+  const stepZ = sizeZ + distanceZ;
+  const rows = Math.max(0, Math.floor((area.depth + distanceZ) / stepZ));
+  const evenBig = Math.max(0, Math.floor((area.width + distanceX) / stepX));
+  const oddBig = Math.max(
+    0,
+    Math.floor((area.width - sizeX / 2 + distanceX / 2 - Math.abs(offset)) / stepX),
+  );
+  const rowDiff = Math.max(0, evenBig - oddBig - 1);
+  const oddShift = offset + (offset >= 0 ? stepX / 2 : rowDiff * stepX + sizeX / 2);
   const { poses, pushLocal } = makePusher(area);
   const originX = -area.width / 2 + sizeX / 2;
   const originZ = -area.depth / 2 + sizeZ / 2;
-  const stagger = options.offset;
 
   for (let r = 0; r < rows; r += 1) {
-    const rowOffset = r % 2 === 0 ? 0 : stagger;
-    // Rightwards the row is trimmed to what still fits; leftwards the footprint check below trims it.
-    const maxC = r % 2 === 0 || stagger < 0
-      ? cols
-      : countFit(Math.max(0, area.width - stagger), sizeX, options.distanceX);
-    for (let c = 0; c < maxC; c += 1) {
-      const lx = originX + c * stepX + rowOffset;
-      if (lx - sizeX / 2 < -area.width / 2 - 1e-6 || lx + sizeX / 2 > area.width / 2 + 1e-6) continue;
-      pushLocal(lx, originZ + r * stepZ);
+    const cols = r % 2 === 0 ? evenBig : oddBig;
+    const rowShift = r % 2 === 0 ? 0 : oddShift;
+    for (let c = 0; c < cols; c += 1) {
+      pushLocal(originX + c * stepX + rowShift, originZ + r * stepZ);
     }
   }
   return poses;

@@ -32,7 +32,7 @@ const SEED_OPTIONS: LayoutOptions = {
   distanceX: 0.2,
   distanceZ: 0.35,
   aisle: 0.8,
-  offset: 0.3,
+  offset: 0,
   angle: Math.PI / 8,
   innerDiameter: 0,
 };

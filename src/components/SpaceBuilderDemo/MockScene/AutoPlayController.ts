@@ -206,7 +206,7 @@ const PRESETS: Preset[] = [
   },
   // The chair loop again, cut to its bones, on the object a caterer actually lays out.
   { kind: 'banquet', style: 'grid', seats: 0, distanceX: 0.2, distanceZ: 0.35 },
-  { kind: 'build', style: 'offset', seats: 0, distanceX: 0.2, distanceZ: 0.35, offset: 0.35 },
+  { kind: 'build', style: 'offset', seats: 0, distanceX: 0.2, distanceZ: 0.35, offset: 0 },
   { kind: 'build', style: 'hollow', seats: 0, distanceX: 0.25, distanceZ: 0.4 },
   { kind: 'dnd', style: 'grid', seats: 0, distanceX: 0.2, distanceZ: 0.35 },
   { kind: 'build', style: 'chevron', seats: 0, distanceX: 0.18, distanceZ: 0.32, aisle: 1.1, angle: Math.PI / 7 },
