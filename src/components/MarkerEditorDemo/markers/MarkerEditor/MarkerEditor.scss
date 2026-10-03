@@ -218,6 +218,48 @@ $ul-columns: 4;
           }
         }
 
+        // Every step's content shares the one row under the open summary, the closed ones
+        // laid out but hidden, so the sidebar is always as tall as its tallest step and
+        // stepping through the accordion does not resize the dialog. The details boxes give
+        // way to their summaries and contents, and a separator row stands in for each
+        // details' top border. A disabled step cannot open, so it stays out of the measure.
+        @supports selector(::details-content) {
+          display: grid;
+          row-gap: 0;
+
+          details {
+            display: contents;
+
+            &:not(:first-of-type)::before {
+              content: '';
+              margin-block: math.div($gap, 2);
+              border-top: 1px solid #666;
+            }
+          }
+
+          summary {
+            min-width: 18em;
+          }
+
+          // The open summary's row is the step's place among the separators and summaries.
+          @for $step from 1 through 9 {
+            &:has(> details:nth-of-type(#{$step})[open]) {
+              --open-row: #{2 * $step};
+            }
+          }
+
+          &:has(> details[open]) details::details-content {
+            grid-row: var(--open-row);
+            grid-column: 1;
+            padding-block: 0.25em;
+          }
+
+          &:has(> details[open]) details:not([open], [inert])::details-content {
+            content-visibility: visible;
+            visibility: hidden;
+          }
+        }
+
         $svg-margin: 0.25em;
         $ul-gap: 0.5em;
 
