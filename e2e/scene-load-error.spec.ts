@@ -29,7 +29,7 @@ async function forEachScenePage(page: Page, check: (app: Locator, name: string) 
 const unavailable = (app: Locator) => app.getByRole('status').filter({ hasText: '3D scene unavailable' });
 
 test('a chair that fails to load puts up the scene unavailable cover', async ({ page }) => {
-  await page.route(/\/chair\.glb$/, (route) => route.abort());
+  await page.route(/\/chair(\.[\w-]+)?\.glb$/, (route) => route.abort());
   await page.goto('/');
   await forEachScenePage(page, async (app, name) => {
     if (name === NO_CHAIR) await expect(unavailable(app)).toHaveCount(0);
