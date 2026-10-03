@@ -227,3 +227,4 @@
 - [x] Closing a HoverSelect with focus on an option returns focus to its summary, and the map pins and the tagging tool ring keyboard focus (A18) (#304)
 - [x] LayoutsSceneApp's `isChrome` matched `.rail, button`, a selector it has no `.rail` for, so a wheel or drag over the sidebar's gaps reached the scene (C28) (#275)
 - [x] The marker editor's snapping filter also drops other steps whose active option shares a name, which looks unintended but matches the product (C46) (#280)
+- [ ] The Fediverse sheets and the font picker panel use the shared code and Poppins fonts, the web-ts-mode range highlights follow the range count and the stage table names wrap at underscores (S19 and S20)
