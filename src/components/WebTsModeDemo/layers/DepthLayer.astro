@@ -4,6 +4,7 @@
  * from this CV, next to the hue scale the faces come from. The deepest selector is taken
  * apart below, one level at a time.
  */
+import { highlightSpans } from '@/highlight';
 import Window from '../Window.astro';
 import { depthHue, lexStylesheet, paintSelectorList } from '../lexer';
 import { depthSample } from '../samples';
@@ -27,7 +28,7 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 }));
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <p class="point typewriter">Each level moves the hue toward green</p>
 
   <div class="figure">
@@ -64,18 +65,21 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   <section class="notes" aria-label="Notes">
     <span class="notes-heading">Notes</span>
     <ol>
-      <li>In <code>a &gt; b</code> the right side starts one level past the deepest on its left.</li>
+      <li>In <code class="hl" set:html={highlightSpans('a > b', 'css')} /> the right side starts one level past the deepest on its left.</li>
       <li>The arguments of <code>:not()</code> and <code>:has()</code> sit one level deeper than the pseudo-class.</li>
-      <li>The branches of <code>a, b</code> share a depth. A nested rule starts again at 0.</li>
+      <li>The branches of <code class="hl" set:html={highlightSpans('a, b', 'css')} /> share a depth. A nested rule starts again at 0.</li>
     </ol>
   </section>
 </div>
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 @use "./sheet" as *;
 
 .wrapper {
+  @include code.code-chip;
+
   @include sheet-content;
   @include buffer-faces;
 

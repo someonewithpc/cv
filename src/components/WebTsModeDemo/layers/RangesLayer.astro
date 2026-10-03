@@ -6,6 +6,7 @@
  * braces instead, as one program, and leaves the nested one out so the ranges never
  * overlap. The parse results quoted here were read off the real grammars once.
  */
+import { highlightSpans } from '@/highlight';
 import { lexAstro, type Token } from '../lexer';
 import { interpolation } from '../samples';
 
@@ -29,7 +30,7 @@ const rules = [
 ];
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <p class="point typewriter">One interpolation, one TSX program</p>
 
   <figure class="figure" aria-label={`Parser ranges over ${interpolation.file}, line ${interpolation.line}`}>
@@ -94,7 +95,7 @@ const rules = [
     </tbody>
     <tfoot>
       <tr>
-        <td colspan="3">Each rule is <code>:local t</code>, so every capture gets a parser of its own.</td>
+        <td colspan="3">Each rule is <code class="hl" set:html={highlightSpans(':local t', 'emacs-lisp')} />, so every capture gets a parser of its own.</td>
       </tr>
     </tfoot>
   </table>
@@ -102,9 +103,12 @@ const rules = [
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 @use "./sheet" as *;
 
 .wrapper {
+  @include code.code-chip;
+
   @include sheet-content;
 
   display: grid;
