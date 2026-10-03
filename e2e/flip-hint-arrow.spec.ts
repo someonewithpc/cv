@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import sharp from 'sharp';
 
-import { dogEarShown, swipeStack } from './support/paperStack';
+import { demoStack, dogEarShown, swipeStack } from './support/paperStack';
 
 type Rgb = readonly [number, number, number];
 
@@ -276,7 +276,7 @@ test('a turn hands over to the way back, which points at the folded-away crease'
 
 test('the default hint writes its sheet count in lowercase words', async ({ page }) => {
   await page.goto('/');
-  const words = (await page.locator('.flip-hint--fwd.hint-words').first().textContent())?.trim() ?? '';
+  const words = (await page.locator('.technical-drawing-frame', { has: demoStack(page, 'Visrez Animated Loading Logo') }).locator('.flip-hint--fwd.hint-words').textContent())?.trim() ?? '';
   expect(words).toContain('more sheets');
   expect(words).not.toMatch(/\d/);
   expect(words).toBe(words.toLowerCase());

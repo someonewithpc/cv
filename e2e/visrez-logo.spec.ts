@@ -161,9 +161,10 @@ test.describe('with motion allowed', () => {
   test.use({ reducedMotion: 'no-preference' });
 
   test('a fast run of turns round to the first page leaves no way back showing', async ({ page }) => {
-    const stack = visrezStack(page);
+    // The hints ride on the top stack alone, whichever demo opens the band.
+    const frame = page.locator('.technical-drawing-frame').first();
+    const stack = frame.locator('article.technical-drawing-stack');
     await stack.scrollIntoViewIfNeeded();
-    const frame = page.locator('.technical-drawing-frame', { has: stack });
     await expect(frame).toHaveAttribute('data-hint-show', '');
 
     await stack.evaluate((el) => {

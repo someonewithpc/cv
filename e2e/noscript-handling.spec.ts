@@ -1,14 +1,15 @@
 import { expect, type Page, test } from '@playwright/test';
+import { demoStack } from './support/paperStack';
 
 // Words from PaperStack's no-script rules. They used to sit in a <noscript><style>, which a
 // page loaded with script parses as text and shows the moment script is switched off.
 const SOURCE_TELLS = ['Without JS the one stack', '!important', 'scroll-snap-type'];
 
 // Sheets whose artwork ran off the sheet under the title block without the measure the
-// stack's script writes: the tagging tool, the schema driver and the event bus, by stack index.
+// stack's script writes: the tagging tool, the schema driver and the event bus.
 // Their type comes from --sheet-inline (Page.astro), which is the stack's own width.
-const SCALED_SHEETS = [4, 7, 8];
-const EVENT_BUS = 8;
+const SCALED_SHEETS = ['Library Tagging Tool', 'schemaDef → Doctrine Metadata', 'GNU social · Event Dispatch'];
+const EVENT_BUS = 'GNU social · Event Dispatch';
 
 async function expectNoScriptPage(page: Page) {
   const text = await page.locator('body').innerText();
@@ -40,16 +41,16 @@ test.describe('with JavaScript off', () => {
     await page.goto('/');
     const stacks = page.locator('article.technical-drawing-stack');
 
-    for (const index of SCALED_SHEETS) {
-      const stack = stacks.nth(index);
+    for (const title of SCALED_SHEETS) {
+      const stack = demoStack(page, title);
       const width = (await stack.locator('section').first().boundingBox())!.width;
       expect(width).toBeLessThan(800);
       const size = await stack.locator('section .content').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-      expect(size, `stack ${index}: type scaled to the sheet`).toBeCloseTo(0.02 * width, 1);
+      expect(size, `${title}: type scaled to the sheet`).toBeCloseTo(0.02 * width, 1);
     }
 
     // The event bus sheet's artwork stands clear of the title block, as it does with script.
-    const sheet = stacks.nth(EVENT_BUS).locator('section').first();
+    const sheet = demoStack(page, EVENT_BUS).locator('section').first();
     const block = (await sheet.locator('table').boundingBox())!;
     for (const leaf of await sheet.locator('.content :not(:has(*))').all()) {
       const box = await leaf.boundingBox();

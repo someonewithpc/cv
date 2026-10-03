@@ -42,7 +42,7 @@ async function turnForwardTo(page: Page, stack: Locator, name: string, note: str
 
 test('fediverse playground: the copy is about a federated network', async ({ page }) => {
   const stack = playgroundStack(page);
-  const card = page.locator('section.callout[aria-labelledby="detail-k"] .title-card');
+  const card = page.locator('section.callout', { has: stack }).locator('.title-card');
   await expect(card).toContainText('small federated network on one machine');
   await expect(stack.locator('.intro')).toContainText('how fediverse servers talk to each other');
   await expect(stack.locator('.config .file')).toContainText('recipes: social-v3, social-v2, mastodon');

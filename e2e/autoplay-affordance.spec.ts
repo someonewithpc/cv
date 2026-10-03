@@ -34,7 +34,20 @@ async function playingDeck(stack: Locator): Promise<Locator> {
 }
 
 /** Every callout whose demo drives itself, so its sheet shows a deck at full motion. */
-const DECK_DETAILS = ['b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'o'];
+const DECK_DEMOS = [
+  'Interactive Map Marker Editor',
+  'Space Builder · Add Tool',
+  'Space Builder · Object Variants',
+  'Library Tagging Tool',
+  'Interactive Map Font Picker',
+  'Space Builder · Drag & Drop',
+  'schemaDef → Doctrine Metadata',
+  'GNU social · Event Dispatch',
+  'Synthetic Properties',
+  'Fediverse Playground',
+  'Library Search & Relevance',
+  'Theme Picker',
+];
 
 /** Where the deck sits, measured against the sheet it is drawn on. */
 function placement(deck: Locator) {
@@ -121,8 +134,8 @@ for (const [width, home] of [[390, 'card'], [680, 'card'], [681, 'band'], [1440,
     test.slow();
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    for (const id of DECK_DETAILS) {
-      const callout = page.locator(`section.callout[aria-labelledby="detail-${id}"]`);
+    for (const id of DECK_DEMOS) {
+      const callout = page.locator('section.callout', { has: demoStack(page, id) });
       await callout.evaluate((el) => el.scrollIntoView({ block: 'center' }));
       const deck = callout.locator('[data-demo-transport]:not([hidden])');
       await expect(deck, id).toHaveCount(1, { timeout: 30_000 });
