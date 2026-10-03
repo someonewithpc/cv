@@ -23,6 +23,7 @@ test('code is coloured by kind from the theme on screen, inline and in blocks', 
   await expect(picker.locator('code.hl.selector .tok-selector').first()).toHaveText(/:root/);
   await expect(picker.locator('dd code.hl .tok-tag', { hasText: 'path' })).toHaveCount(1);
   await expect(logo.locator('pre.path-data-layer .tok-comment').first()).toContainText('--');
+  await expect(demoStack(page, 'schemaDef → Doctrine Metadata').locator('code .tok-function', { hasText: 'addDriver' })).toHaveCount(1);
 
   const keyword = 'article[aria-label="Theme Picker"] pre.hl .tok-keyword';
   const inline = 'article[aria-label="Theme Picker"] code.hl.selector .tok-selector';
