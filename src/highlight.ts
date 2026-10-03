@@ -6,7 +6,7 @@
  */
 import { createHighlighter, type ThemeRegistration } from 'shiki';
 
-export type CodeLang = 'ts' | 'css' | 'html' | 'xml' | 'php' | 'sql' | 'ruby' | 'shellscript' | 'yaml' | 'emacs-lisp';
+export type CodeLang = 'ts' | 'css' | 'html' | 'xml' | 'php' | 'sql' | 'ruby' | 'shellscript' | 'yaml' | 'emacs-lisp' | 'twig';
 
 const KINDS: Record<string, string[]> = {
   keyword: ['keyword', 'storage', 'punctuation.definition.keyword'],
@@ -46,7 +46,7 @@ const theme: ThemeRegistration = {
   tokenColors: Object.values(KINDS).map((scope, index) => ({ scope, settings: { foreground: stand(index) } })),
 };
 
-const highlighter = await createHighlighter({ themes: [theme], langs: ['ts', 'css', 'html', 'xml', 'php', 'sql', 'ruby', 'shellscript', 'yaml', 'emacs-lisp'] });
+const highlighter = await createHighlighter({ themes: [theme], langs: ['ts', 'css', 'html', 'xml', 'php', 'sql', 'ruby', 'shellscript', 'yaml', 'emacs-lisp', 'twig'] });
 
 export const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
