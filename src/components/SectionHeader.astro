@@ -23,7 +23,7 @@ const { headingId, sectionId, titleJp, title, sheetCode = 'SH' } = Astro.props;
       <small lang="ja" aria-hidden="true">{titleJp}</small>
       <span class="typewriter">{title}</span>
     </h2>
-    <AnchorLink id={sectionId} />
+    <AnchorLink id={sectionId} label={title} />
   </div>
 </header>
 

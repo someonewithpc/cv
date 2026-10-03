@@ -11,14 +11,16 @@
 type Props = {
   /** The id of the element to link to. */
   id: string;
+  /** What the link points at, read as "Link to <label>". */
+  label: string;
   /** Icon side in rem; the link's hit area stays 1.75rem. */
   size?: string;
 };
 
-const { id, size } = Astro.props;
+const { id, label, size } = Astro.props;
 ---
 
-<a class="anchor" href={`#${id}`} aria-label="Link to this section" style={size ? { '--anchor-icon': size } : undefined}>
+<a class="anchor" href={`#${id}`} aria-label={`Link to ${label}`} style={size ? { '--anchor-icon': size } : undefined}>
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
