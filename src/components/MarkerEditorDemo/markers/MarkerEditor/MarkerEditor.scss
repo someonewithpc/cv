@@ -116,12 +116,10 @@ $ul-columns: 4;
           align-items: center;
           justify-content: center;
 
-          &:hover {
-            margin: -1px;
-            border-width: 2px;
+          &:hover, &:focus-visible {
             border-color: #ccc;
-            width: calc(#{$icon} + 2 * #{$pad} + 4px);
-            height: calc(#{$icon} + 2 * #{$pad} + 4px);
+            outline: 1px solid #ccc;
+            outline-offset: 0;
           }
 
           svg {

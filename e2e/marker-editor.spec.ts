@@ -288,6 +288,33 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(editor).toHaveCount(0);
       await expect(create).toBeFocused();
     });
+
+    test('hovering a header button moves nothing', async ({ page }) => {
+      const stack = markerEditorStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      const front = frontPage(stack, await frontPageIndex(stack));
+      const island = await waitForIslandMounted(front);
+      const overlay = island.locator('.mock-map-overlay');
+      const pins = overlay.locator('button.space-pin');
+      await expect(pins.first()).toBeVisible({ timeout: 15_000 });
+      await overlay.focus();
+      await pins.first().click();
+      await page.getByRole('option', { name: 'Create new marker' }).click();
+
+      const editor = page.locator('#marker-editor');
+      await expect(editor).toBeVisible();
+      const header = editor.getByRole('button', { name: 'Go back' }).locator('..');
+      const kids = header.locator('> *');
+      const count = await kids.count();
+      expect(count).toBeGreaterThan(1);
+      const boxes = async () => Promise.all(Array.from({ length: count }, (_, i) => kids.nth(i).boundingBox()));
+      await page.mouse.move(0, 0);
+      const before = await boxes();
+      for (let i = 0; i < count; i++) {
+        await kids.nth(i).hover();
+        expect(await boxes()).toEqual(before);
+      }
+    });
   });
 }
 
