@@ -17,6 +17,8 @@ const dimensions = splitSizes(sample.size);
 const sizes = sizeProperties(sample.size);
 const pax = paxProperties(sample.pax);
 const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
+// A table name may wrap after an underscore, never inside a word.
+const wrapAtUnderscores = (name: string) => name.replaceAll('_', '_<wbr>');
 ---
 
 <div
@@ -47,7 +49,7 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
 
     <ol class="stages">
       <li class="stage source">
-        <span class="stage-label"><span class="step">1</span> Stored <code>library_objects</code></span>
+        <span class="stage-label"><span class="step">1</span> Stored <code set:html={wrapAtUnderscores('library_objects')} /></span>
         <div class="fields">
           <label class="field size-field">
             <span class="field-name"><code>size</code></span>
@@ -88,7 +90,7 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
       </li>
 
       <li class="stage render">
-        <span class="stage-label"><span class="step">2</span> Converted <code>library_object_synthetic_properties</code></span>
+        <span class="stage-label"><span class="step">2</span> Converted <code set:html={wrapAtUnderscores('library_object_synthetic_properties')} /></span>
         <ul class="renderings">
           {sizes.map((property, row) => (
             <li class="rendering" data-unit={renderings[row].id} style={{ '--row': row }}>
@@ -113,7 +115,7 @@ const text = searchableText([...storedSizeProperties(sample.size), ...pax]);
       </li>
 
       <li class="stage search">
-        <span class="stage-label"><span class="step">3</span> Searched <code>library_object_properties_concatenated</code></span>
+        <span class="stage-label"><span class="step">3</span> Searched <code set:html={wrapAtUnderscores('library_object_properties_concatenated')} /></span>
         <label class="field query-field">
           <span class="field-name">search</span>
           <input
@@ -307,9 +309,6 @@ input {
     grid-column: 2;
     font-weight: 400;
     color: var(--ink-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 }
 
