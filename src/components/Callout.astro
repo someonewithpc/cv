@@ -7,6 +7,8 @@ import AnchorLink from '@/components/AnchorLink.astro';
  * wrapper, drawn on its edge, so it goes round whatever the view is and not a guess at it.
  */
 type Props = {
+  /** The callout's id and its link's fragment; the title as a slug when left out. Pass
+      one where the slug is an id the page or the demo already uses (#theme-picker, #marker-editor). */
   id?: string;
   class?: string;
   /** Reference letter in the bubble: A, B, C. */
@@ -20,6 +22,11 @@ type Props = {
 };
 
 const { id, class: className, letter, title, titleJp, scale, headingId, cardSide } = Astro.props;
+
+/* The callout is the anchors' target: the heading takes no box of its own (display: contents),
+   so a fragment naming it has nothing to scroll to. The id is the demo's name, so the link reads
+   #paper-stack rather than the detail letter. */
+const targetId = id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const hasCard = Astro.slots.has('card');
 
@@ -37,7 +44,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
 ---
 
 <section
-  id={id}
+  id={targetId}
   class:list={['callout', className]}
   data-card={hasCard ? (cardSide ?? 'start') : undefined}
   aria-labelledby={headingId}
@@ -54,7 +61,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
         <span class="callout-title typewriter">{title}</span>
       </span>
     </h3>
-    <AnchorLink id={headingId} />
+    <AnchorLink id={targetId} />
   </div>
 
   <div class="callout-view" style={slipStyle}>
