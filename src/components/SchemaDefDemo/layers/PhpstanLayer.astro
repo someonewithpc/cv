@@ -1,4 +1,5 @@
 ---
+import { php, phpLines } from '../php';
 // How a table name in a string comes out of analysis typed as its entity. Each step names
 // the file it happens in, and its code is cut into lines by hand so no box breaks a name.
 const steps = [
@@ -6,35 +7,39 @@ const steps = [
     title: 'Boot flag',
     file: 'phpstan.sh',
     code: ['PHPSTAN_BOOT_KERNEL=1', 'vendor/bin/phpstan analyse'],
+    php: false,
     text: 'The analyser runs with the real kernel behind it, not a stub',
   },
   {
     title: 'Real kernel',
     file: 'config/phpstan-bootstrap.php',
     code: ['$kernel->boot();', 'return $kernel;'],
+    php: true,
     text: 'GNUsocialProvider requires it, then starts every module as a request would',
   },
   {
     title: 'Table map',
     file: 'DB.php',
     code: ['DB::initTableMap();', "'note' => 'App\\Entity\\Note'"],
+    php: true,
     text: 'Built from getAllMetadata(), so from the same schemaDefs the driver reads',
   },
   {
     title: 'Return type',
     file: 'ClassFromTableName….php',
     code: ['new UnionType([', '    Note,', '    new NullType(),', '])'],
+    php: true,
     text: 'For find, getReference, getPartialReference and getRepository with a literal first argument',
   },
 ];
 ---
 
-<div class="wrapper" data-schemadef-sheet>
+<div class="wrapper hl" data-schemadef-sheet>
   <div class="phpstan">
     <figure class="call">
       <figcaption><code>components/Link/Entity/NoteToLink.php</code></figcaption>
       <code class="code">
-        <span class="line">$note = DB::find(<mark>'note'</mark>, ['id' =&gt; $args['note_id']]);</span>
+        <span class="line"><Fragment set:html={php('$note = DB::find(')} /><mark set:html={php("'note'")} /><Fragment set:html={php(", ['id' => $args['note_id']]);")} /></span>
         <span class="line inferred">// PHPStan: <mark>App\Entity\Note|null</mark></span>
       </code>
     </figure>
@@ -44,7 +49,7 @@ const steps = [
         <li>
           <span class="number">{index + 1}</span>
           <strong>{step.title}</strong>
-          <code class="snippet">{step.code.map((line) => <span>{line}</span>)}</code>
+          <code class="snippet">{step.php ? phpLines(step.code.join('\n')).map((html) => <span set:html={html} />) : step.code.map((line) => <span>{line}</span>)}</code>
           <span class="text">{step.text}</span>
           <code class="file">{step.file}</code>
         </li>
@@ -67,6 +72,7 @@ const steps = [
 
 .wrapper {
   @include sheet-content;
+  @include highlighted;
   @include clear-title-block;
 
   @include blueprint-root;

@@ -1,4 +1,5 @@
 ---
+import { php } from '../php';
 import { actor, actorKeys as keys, actorRules, actorTable, type Line } from '../schema';
 
 /** An id for a key's rule, so each keyed line can name the rule that describes it. */
@@ -26,7 +27,7 @@ const panes = [
 ];
 ---
 
-<div class="schemadef-demo" data-schemadef-demo data-schemadef-sheet>
+<div class="schemadef-demo hl" data-schemadef-demo data-schemadef-sheet>
   <div class="schemadef" data-schemadef data-keys={JSON.stringify(keys)}>
     <p class="intro">
       GNU social is a federated social network server. Each table is a PHP array on its entity
@@ -76,14 +77,14 @@ const panes = [
       </li>
       {actorRules.map((rule) => (
         <li data-rule={rule.key} id={ruleId(rule.key)} hidden>
-          <code class="label">{rule.label}</code>
-          {rule.steps.map(([php, doctrine, sql]) => (
+          <code class="label" set:html={php(rule.label)} />
+          {rule.steps.map((step) => (
             <span class="step">
-              <code class="php">{php}</code>
+              <code class="php" set:html={php(step[0])} />
               <span class="arrow">→</span>
-              <code class="doctrine">{doctrine}</code>
+              <code class="doctrine">{step[1]}</code>
               <span class="arrow">→</span>
-              <code class="sql">{sql}</code>
+              <code class="sql">{step[2]}</code>
             </span>
           ))}
         </li>

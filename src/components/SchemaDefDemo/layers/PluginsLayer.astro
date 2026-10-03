@@ -1,4 +1,5 @@
 ---
+import { php, phpLines } from '../php';
 // Entity directories in the v3 tree as of 2022-10-21 (49a80a3c), and how many classes in
 // each answer schemaDef(). Counted with grep, not estimated: 17 in core, 29 across 12
 // components and 28 across 16 plugins.
@@ -22,13 +23,15 @@ const excerpt = String.raw`foreach ($module_paths as $path) {
     }
 }`;
 
-const excerptLines = excerpt.split('\n').map((text) => ({
+const excerptHtml = phpLines(excerpt.split('\n').map((text) => text.trim()).join('\n'));
+const excerptLines = excerpt.split('\n').map((text, at) => ({
+  html: excerptHtml[at],
   indent: Math.round((text.match(/^ */)?.[0].length ?? 0) / 4),
   text: text.trim(),
 }));
 ---
 
-<div class="wrapper" data-schemadef-sheet>
+<div class="wrapper hl" data-schemadef-sheet>
   <div class="plugins">
     <div class="flow">
       <ul class="sources">
@@ -43,13 +46,13 @@ const excerptLines = excerpt.split('\n').map((text) => ({
 
       <p class="call">
         <span class="arrow" aria-hidden="true">↓</span>
-        <code>addDriver(app.schemadef_driver, $namespace)</code>
+        <code set:html={php('addDriver(app.schemadef_driver, $namespace)')} />
       </p>
 
       <div class="chain">
         <code class="service">doctrine.orm.<wbr />default_metadata_driver</code>
         <span>One driver chain, one <code>SchemaDefDriver</code>, 74 entities as of October 2022</span>
-        <code class="transient">isTransient($class) = !method_exists($class, 'schemaDef')</code>
+        <code class="transient" set:html={php("isTransient($class) = !method_exists($class, 'schemaDef')")} />
       </div>
     </div>
 
@@ -57,14 +60,14 @@ const excerptLines = excerpt.split('\n').map((text) => ({
       <figcaption><code>src/Core/ModuleManager.php</code> · <code>process()</code></figcaption>
       <code class="code">
         {excerptLines.map((line) => (
-          <span class:list={['line', { comment: line.text.startsWith('//') }]} style={{ '--indent': line.indent }}>{line.text}</span>
+          <span class:list={['line', { comment: line.text.startsWith('//') }]} style={{ '--indent': line.indent }} set:html={line.html} />
         ))}
       </code>
     </figure>
 
     <p class="footnote">
       <code>plugins/Favourite/Entity/NoteFavourite.php</code> is a whole plugin table: drop it in
-      and <code>note_favourite</code> exists. Its <code>'foreign key' =&gt; true</code> is still
+      and <code>note_favourite</code> exists. Its <code set:html={php("'foreign key' => true")} /> is still
       read by nobody, since the driver's association branch sits behind <code>if (false &amp;&amp; …)</code>,
       so <code>note_id</code> maps as a plain <code>INT</code>.
     </p>
@@ -79,6 +82,7 @@ const excerptLines = excerpt.split('\n').map((text) => ({
 
 .wrapper {
   @include sheet-content;
+  @include highlighted;
   @include clear-title-block;
 
   @include blueprint-root;
