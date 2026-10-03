@@ -154,3 +154,54 @@
     letter-spacing: 0.08em;
   }
 }
+
+// A narrow landscape sheet gives the map the whole sheet and lays the title block over its
+// corner (MockMap.astro). The pins stay on the square in the middle; the overlay keeps the
+// sheet's box, so the toasts, the selector and the zoomed pin's preview at 50% 50% read it.
+// Nothing on the overlay may sit under the block: the corner is cut out of it, a pin the zoom
+// carries there goes under the block with the map, and the selector and toasts are placed
+// in what is left.
+article.technical-drawing-stack[data-sheet-orientation='landscape'][data-sheet-width='narrow'] .mock-map-demo {
+  // Where the block starts, in the overlay's box: the map stops --map-pad short of the frame
+  // line the block sits on. Half a rem keeps a gap.
+  --block-left: calc(100% + var(--map-pad) - var(--title-block-inline) - 0.5rem);
+  --block-top: calc(100% + var(--map-pad) - var(--title-block-block) - 0.5rem);
+
+  .mock-map-overlay {
+    clip-path: polygon(
+      0 0, 100% 0, 100% var(--block-top),
+      var(--block-left) var(--block-top), var(--block-left) 100%, 0 100%
+    );
+  }
+
+  .mock-map-scene {
+    inset: 0 auto 0 calc(50% - 50cqh);
+    width: 100cqh;
+  }
+
+  // The bottom strip between the note's folded corner and the block.
+  .mock-map-toasts {
+    --strip-left: calc(var(--note-fold-reach) - var(--map-pad));
+
+    left: calc((var(--strip-left) + var(--block-left)) / 2);
+    max-width: calc(var(--block-left) - var(--strip-left));
+  }
+
+  // The zoom brings the pin being edited to the middle of the sheet, so the selector takes the
+  // half to its left, short of the pin's hovered half width, and centres in it, above the
+  // folded corner. The block starts right of the middle on every sheet in the band; the min
+  // holds that anyway. The smaller chips the docked layout uses keep it to two rows.
+  .marker-editing-overlay {
+    --marker-chip-artwork: 48px;
+    --free-right: min(50% - 57px * 1.14 / 2 - 1em, var(--block-left));
+
+    left: calc(var(--free-right) / 2);
+    right: auto;
+    top: calc((100% - var(--note-fold-reach) + var(--map-pad)) / 2);
+    bottom: auto;
+    translate: -50% -50%;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: calc(var(--free-right) - 1.25em);
+  }
+}

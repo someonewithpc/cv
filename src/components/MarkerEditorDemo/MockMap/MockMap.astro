@@ -80,4 +80,50 @@ $mock-map-width: drawing.$artwork-width * 1.75;
     inset: 0;
   }
 }
+
+// A landscape sheet too narrow for the wide one's type is half as tall as it is wide, and the
+// square map left its right half empty. There the map takes the whole sheet, the way a map widget
+// fills whatever box the venue's page gives it, and the title block lies over its corner. The
+// square stays the sheet's height, so the pins keep their place on it; the SVG draws its streets
+// past the viewBox into the room either side. Only the pins and the selector keep off the block
+// (MockMapOverlay.scss). The script names the band on the stack, so without it nothing changes.
+$narrow-landscape: "article.technical-drawing-stack[data-sheet-orientation='landscape'][data-sheet-width='narrow']";
+
+:global(#{$narrow-landscape} > * > section:has(.mock-map-demo)) {
+  // The gap the Space Builder keeps between the frame line and an app that fills the sheet.
+  --map-pad: calc(2px + var(--demo-inset));
+  grid-template-rows: minmax(0, 1fr);
+}
+
+:global(#{$narrow-landscape} > * > section .content:has(.mock-map-demo)) {
+  grid-column: 1 / -1;
+  align-self: stretch;
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--map-pad);
+}
+
+:global(#{$narrow-landscape}) .mock-map-demo {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  margin: 0;
+  // Sized by the sheet now, so the map can read its own height: the square is 100cqh.
+  container-type: size;
+  // The streets end a little way past the viewBox; the land carries on to the edges.
+  background: #efebe3;
+
+  .mock-map-svg {
+    position: absolute;
+    inset: 0;
+    // The square sits in the middle of the wider box, so the zoom is the same one in units of
+    // the square, about its left edge.
+    transform-origin: calc(50% - 50cqh) 0;
+    transform: translate(
+        calc((0.5 - var(--map-focus-x) * var(--map-scale)) * 100cqh),
+        calc((0.5 - var(--map-focus-y) * var(--map-scale)) * 100cqh)
+      )
+      scale(var(--map-scale));
+  }
+}
 </style>
