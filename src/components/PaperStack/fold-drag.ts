@@ -2137,8 +2137,23 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
   // which claims the mostly sideways events, is only attached while a wheel swipe is underway.
   // A browser decides whether a scroll waits on the page when the scroll starts, so the scroll
   // that started the swipe stays uncancellable; the claim covers the ones that follow it.
+  // A sideways wheel the stack has nothing to turn to (a back swipe on the front page) still gets
+  // claimed. Let through, it starts a sideways page scroll that moves nothing, and Chrome holds the
+  // scrolling after it to that axis until the mouse moves, so the next upright scroll goes nowhere.
+  // The claim lasts until the sideways scrolling has been quiet for the longest idle wait.
+  let declined = 0;
+  const releaseDeclined = () => {
+    declined = 0;
+    if (swipe === null) stack.removeEventListener('wheel', holdWheel);
+  };
+  const holdDeclined = () => {
+    clearTimeout(declined);
+    declined = window.setTimeout(releaseDeclined, SCROLL_IDLE_MAX);
+    stack.addEventListener('wheel', holdWheel, { passive: false });
+  };
+
   const holdWheel = (e: WheelEvent) => {
-    if (swipe === null) {
+    if (swipe === null && declined === 0) {
       stack.removeEventListener('wheel', holdWheel);
       return;
     }
@@ -2156,7 +2171,10 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       // Starting one takes a scroll that is mostly sideways. Scrolling right takes the content
       // left, which is the way the page leaves.
       if (Math.abs(sideways) <= upright) return;
-      if (!beginSwipe(sideways > 0, e.timeStamp)) return;
+      if (!beginSwipe(sideways > 0, e.timeStamp)) {
+        holdDeclined();
+        return;
+      }
       stack.addEventListener('wheel', holdWheel, { passive: false });
     } else if (sideways === 0) {
       // Nothing sideways in it at all — the page's own scrolling, which the gesture has no claim
