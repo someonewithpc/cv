@@ -149,11 +149,18 @@ function pushToast(payload: DemoToastPayload) {
   }, TOAST_VISIBLE_MS);
 }
 
+// The root's place in the viewport, read once and kept until the page scrolls or the root
+// resizes. Every frame of a cursor tween maps through it, and reading it per frame forced a
+// style pass over the whole app each time.
+let rootRectCache: DOMRect | null = null;
+const forgetRootRect = () => { rootRectCache = null; };
+const rootResize = new ResizeObserver(forgetRootRect);
+
 /** Map viewport client coords into the demo root so the cursor scrolls with the page. */
 function toRootPoint(clientX: number, clientY: number) {
   const root = rootRef.value;
   if (!root) return { x: clientX, y: clientY };
-  const rect = root.getBoundingClientRect();
+  const rect = (rootRectCache ??= root.getBoundingClientRect());
   return {
     x: clientX - rect.left,
     y: clientY - rect.top,
@@ -680,6 +687,9 @@ async function restartDemo() {
 onMounted(async () => {
   syncReducedMotion();
   reduceQuery.addEventListener('change', onReduceChange);
+  window.addEventListener('scroll', forgetRootRect, { passive: true });
+  window.addEventListener('resize', forgetRootRect);
+  if (rootRef.value) rootResize.observe(rootRef.value);
 
   const root = rootRef.value;
   const canvas = root?.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
@@ -829,6 +839,9 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   reduceQuery.removeEventListener('change', onReduceChange);
+  window.removeEventListener('scroll', forgetRootRect);
+  window.removeEventListener('resize', forgetRootRect);
+  rootResize.disconnect();
   stopPageWatch?.();
   stopPageWatch = null;
   stopNoteWatch?.();
