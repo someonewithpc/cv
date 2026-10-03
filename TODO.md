@@ -22,7 +22,7 @@
 - [ ] ARIA roles
 - [x] Every font size in rem or em, off px, on the eighths grid, following the reader's own default (#152)
 - [ ] Demos
-  - [ ] Demos band ordered by what a recruiter sees first: 3D, motion and polish ahead of backend and tooling
+  - [x] Demos band ordered by what a recruiter sees first: 3D, motion and polish ahead of backend and tooling (#316)
   - [x] Drawn cursor pulses and flares on press and release, shared by every demo
   - [x] Logo cube: edges drawn once, visible on every theme
   - [x] Autoplay demos don't pause while color picker is open, resuming, confusingly (#13)
