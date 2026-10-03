@@ -1,24 +1,16 @@
 // Printed output. Linked from Layout.astro with media="print", so the screen never parses it.
-// No desk, no theme picker, no fold mechanics; the light theme on every sheet whatever the
-// picker had set; every page of a stack in turn down the page instead of fanned in one grid
-// cell; the contributions as a compact list; links as plain text.
+// No desk, no theme picker, no demos: the demos run in the browser and mean nothing on paper,
+// so the whole band goes and the printout is the title block, the career, the bill of
+// materials and the contributions, in the light theme whatever the picker had set, with the
+// contributions as a compact list and links as plain text.
 @use "ts:src/themes.ts" as themes;
 
 @media print {
   #theme-picker,
   #theme-picker-transition-background,
+  #demos,
   .folio-rail,
-  .skip-nav,
-  .demo-transport,
-  .flip-hints,
-  .paper-fold,
-  .paper-back-grab,
-  .paper-clip,
-  .paper-clip-under,
-  .paper-flip-hint,
-  .sheet-probe,
-  .note-fold,
-  .callout-card-leader {
+  .skip-nav {
     display: none !important;
   }
 
@@ -60,85 +52,6 @@
     }
   }
 
-  // The cutting mat keeps its width and its columns; only the mat itself goes.
-  .cutting-mat {
-    background: none !important;
-    border-color: transparent !important;
-
-    &::before {
-      display: none !important;
-    }
-  }
-
-  // Every page of a stack in turn, down the page. Each page becomes the size container the
-  // stack was (its artwork's orientation queries read it), with the sheet's own aspect, under
-  // a heading of its own: the callout's letter and the sheet's number.
-  #demos {
-    counter-reset: print-callout;
-  }
-
-  .callout {
-    counter-increment: print-callout;
-  }
-
-  article.technical-drawing-stack {
-    display: block !important;
-    aspect-ratio: auto !important;
-    height: auto !important;
-    max-height: none !important;
-    container-type: normal !important;
-    content-visibility: visible !important;
-    overflow: visible !important;
-    counter-reset: print-sheet;
-
-    > div {
-      display: block !important;
-      position: relative !important;
-      order: 0 !important;
-      rotate: none !important;
-      translate: none !important;
-      width: 100% !important;
-      aspect-ratio: var(--technical-drawing-aspect) !important;
-      margin: 2.5rem 0 0 !important;
-      container: technical-drawing / size;
-      counter-increment: print-sheet;
-      break-inside: avoid;
-
-      &:first-child {
-        margin-top: 0 !important;
-      }
-
-      // Over the front page's own ::before, the crease bend strip: every value it sets is reset.
-      &::before {
-        content: "Detail " counter(print-callout, upper-alpha) " · Sheet " counter(print-sheet) !important;
-        position: absolute !important;
-        inset: auto auto 100% 0 !important;
-        width: auto !important;
-        height: auto !important;
-        margin-bottom: 0.5rem !important;
-        clip-path: none !important;
-        background: none !important;
-        border: none !important;
-        opacity: 1 !important;
-        font-family: monospace, system-ui;
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--ink-muted);
-      }
-
-      > * {
-        clip-path: none !important;
-      }
-    }
-  }
-
-  // The title card tucks under the fanned sheets on screen; here it follows the last page.
-  .callout-slip {
-    margin-top: 1.5rem !important;
-    z-index: auto !important;
-  }
-
   // The contributions as a list: one line per entry, no torn edges and no lift, and no
   // disclosure body under a triangle nobody can click on paper.
   #open-source {
@@ -161,33 +74,6 @@
     details {
       display: none !important;
     }
-  }
-
-  // An island that has not booted shows its cover, which on screen is the scene's own dark
-  // ground; on paper it says what the sheet is. A booted scene's canvas has no print either.
-  .boot-placeholder {
-    background: none !important;
-    color: var(--ink-muted) !important;
-
-    > * {
-      display: none !important;
-    }
-
-    &::after {
-      content: "This demo runs in the browser.";
-    }
-  }
-
-  canvas {
-    display: none !important;
-  }
-
-  // The scene's ground behind either is the product's dark viewport; paper is not.
-  :has(> .boot-placeholder),
-  :has(> canvas) {
-    background: none !important;
-    box-shadow: none !important;
-    color-scheme: light !important;
   }
 
   // Nothing on paper is a hyperlink.

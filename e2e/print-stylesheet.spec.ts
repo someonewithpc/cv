@@ -19,70 +19,29 @@ test('the print rules load from their own sheet, off the render-blocking one', a
   expect(screenHasPrintRules, 'a screen stylesheet carries @media print rules').toBe(false);
 });
 
-test('print drops the desk, the theme picker, the transport decks and the hint arrows', async ({ page }) => {
+test('print drops the desk, the theme picker and the whole demos band', async ({ page }) => {
   await page.emulateMedia({ media: 'print' });
 
   await expect(page.locator('#theme-picker')).toBeHidden();
   await expect(page.locator('#theme-picker-transition-background')).toBeHidden();
   await expect(page.locator('.folio-rail').first()).toBeHidden();
-
-  for (const transport of await page.locator('.demo-transport').all()) {
-    await expect(transport).toBeHidden();
-  }
-
-  for (const hint of await page.locator('.flip-hints').all()) {
-    await expect(hint).toBeHidden();
-  }
-
   await expect(page.locator('#main')).toHaveCSS('background-image', 'none');
-});
 
-test('every stack prints every page at the sheet width, down the page, under its own heading', async ({ page }) => {
-  await page.emulateMedia({ media: 'print' });
+  // The demos run in the browser; on paper the band goes whole, stacks, callouts, cards,
+  // hints and heading, and the contributions follow the bill of materials.
+  await expect(page.locator('#demos')).toBeHidden();
+  await expect(page.locator('#demos-heading')).toBeHidden();
+  await expect(page.locator('[data-paper-stack-root]').first()).toBeHidden();
+  await expect(page.locator('.callout').first()).toBeHidden();
+  await expect(page.locator('.flip-hints').first()).toBeHidden();
+  await expect(page.locator('.demo-transport').first()).toBeHidden();
 
-  const stacks = page.locator('[data-paper-stack-root][data-paper-stack]');
-  const stackCount = await stacks.count();
-  expect(stackCount, 'the page shows no demo stack').toBeGreaterThan(0);
-
-  const sheetWidth = await page.locator('.callout').first().evaluate((el) => el.getBoundingClientRect().width);
-  expect(sheetWidth).toBeGreaterThan(600);
-
-  let index = 0;
-  for (const stack of await stacks.all()) {
-    const letter = await stack.locator('xpath=ancestor::section[contains(@class, "callout")]//*[contains(@class, "callout-letter")]').first().innerText();
-    const pageCount = Number(await stack.getAttribute('data-page-count'));
-    expect(pageCount).toBeGreaterThan(0);
-
-    const pages = stack.locator('> div');
-    await expect(pages).toHaveCount(pageCount);
-
-    const boxes = [];
-    let sheet = 0;
-    for (const sheetEl of await pages.all()) {
-      sheet++;
-      await expect(sheetEl).toBeVisible();
-      const box = await sheetEl.boundingBox();
-      expect(box, 'a printed page with no box').not.toBeNull();
-      expect(box!.width, `stack ${index + 1} page ${sheet} is narrower than the sheet`).toBeGreaterThanOrEqual(sheetWidth - 1);
-      boxes.push(box!);
-
-      const heading = await sheetEl.evaluate((el) => getComputedStyle(el, '::before').content);
-      expect(heading).toContain('counter(print-sheet)');
-      const rotate = await sheetEl.evaluate((el) => getComputedStyle(el).rotate);
-      expect(rotate).toBe('none');
-    }
-    expect(letter.trim()).toHaveLength(1);
-
-    for (let i = 1; i < boxes.length; i++) {
-      expect(boxes[i].y, `page ${i + 1} overlaps page ${i}`).toBeGreaterThanOrEqual(boxes[i - 1].y + boxes[i - 1].height - 1);
-    }
-    index++;
-  }
-
-  // The fold mechanics and the note tab are off the paper.
-  for (const selector of ['.paper-fold', '.paper-clip', '.note-fold', '.callout-card-leader']) {
-    await expect(page.locator(selector).first()).toBeHidden();
-  }
+  const order = await page.evaluate(() =>
+    Array.from(document.getElementById('main')!.children)
+      .filter((el) => el.id && el.getBoundingClientRect().height > 0)
+      .map((el) => el.id),
+  );
+  expect(order).toEqual(['profile', 'career', 'bill-of-materials', 'open-source']);
 });
 
 test('the contributions print one line per entry, closed', async ({ page }) => {

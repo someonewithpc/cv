@@ -49,8 +49,7 @@ svg {
 
 // The animation sits inline because the page prints this file as the source to copy, and only
 // an important declaration outranks it
-// Print too: a page printed mid-dash shows a part of the stroke, or none of it.
-@media (prefers-reduced-motion: reduce), print {
+@media (prefers-reduced-motion: reduce) {
   path:not([data-full-motion] *) {
     animation: none !important;
     stroke-dashoffset: 0;
