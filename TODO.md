@@ -257,4 +257,4 @@
 - [x] Keep the Space Builder root rect between scrolls and resizes instead of reading it on every cursor frame (layout reads audit) (#318)
 - [x] Cut the Tab stops: one per contribution group and one per tagging tool row, arrows inside (A14) (#276)
 - [x] Bake the Space Builder catalog thumbnails at the size the cards actually show, not the 600px product original (P6) (#242)
-- [ ] A negative Space Builder Offset shifts odd rows left and leaves their first chairs outside the area; remove the chairs whose footprint leaves it, keep the shift (C29)
+- [x] The Space Builder Offset layout ignored the product's OffsetMixin re-anchor terms, so a negative offset left chairs outside the area and the two directions did not differ as the product's do; the Offset chip also reused the Grid icon (C29) (#277)
