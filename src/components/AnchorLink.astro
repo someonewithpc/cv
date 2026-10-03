@@ -4,6 +4,9 @@
  * straight after the heading, never inside it, so the heading's name stays the title. It is
  * shown by opacity alone, so it stays focusable while hidden; touch has no hover, so there it
  * is always faintly shown.
+ *
+ * The icon centres on the title's capitals: set the title's font size as `--anchor-size` on the
+ * row and the icon stands on the title's last baseline, raised half a capital.
  */
 type Props = {
   /** The id of the element to link to. */
@@ -26,7 +29,7 @@ const { id, size } = Astro.props;
 /* A heading and its link side by side, in the free space after the title. */
 .anchor-row {
   display: flex;
-  align-items: flex-end;
+  align-items: last baseline;
   gap: 0.125rem;
   min-width: 0;
 
@@ -35,13 +38,18 @@ const { id, size } = Astro.props;
   }
 }
 
+/* The link's baseline is the icon's bottom edge, which lands on the title's last baseline; the
+   shift raises the icon's middle to half a capital, 0.7em in both the typewriter and the
+   monospace face, measured. */
 .anchor {
   flex: none;
+  align-self: last baseline;
   display: inline-grid;
   place-items: center;
   width: 1.75rem;
   height: 1.75rem;
   margin-block: -0.25rem;
+  translate: 0 calc(var(--anchor-icon, 1.125rem) / 2 - 0.35 * var(--anchor-size, 1em));
   color: var(--accent-text);
   opacity: 0;
   border-radius: 0.25rem;

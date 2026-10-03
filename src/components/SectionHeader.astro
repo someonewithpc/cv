@@ -43,6 +43,10 @@ header {
     color: var(--accent-text);
   }
 
+  .anchor-row {
+    --anchor-size: clamp(2.25rem, 5.5vw, 3.25rem);
+  }
+
   h2 {
     display: grid;
     justify-items: start;
@@ -53,7 +57,7 @@ header {
     }
 
     .typewriter {
-      font-size: clamp(2.25rem, 5.5vw, 3.25rem);
+      font-size: var(--anchor-size);
       letter-spacing: 0.08em;
       text-transform: uppercase;
       line-height: 1.05;
