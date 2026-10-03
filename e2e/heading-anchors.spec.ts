@@ -45,7 +45,7 @@ test('the link stands beside the title, clear of the heading text', async ({ pag
     ['#career-heading', 'a.anchor[href="#career"]'],
     ['#demos-heading', 'a.anchor[href="#demos"]'],
     ['#open-source-heading', 'a.anchor[href="#open-source"]'],
-    ['#detail-a .callout-text', 'a.anchor[href="#loading-logo"]'],
+    ['#detail-d .callout-text', 'a.anchor[href="#loading-logo"]'],
   ]) {
     const h = (await page.locator(heading).boundingBox())!;
     const a = (await page.locator(anchor).boundingBox())!;

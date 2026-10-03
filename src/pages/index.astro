@@ -57,12 +57,12 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
           title="Demos"
           sheetCode="SH-DEMOS"
         />
-        <Callout letter="A" title="Loading logo" titleJp="読みこみ中のロゴ" scale="3:1" headingId="detail-a" cardSide="end">
-          <TitleCard slot="card" title="Visrez Animated Loading Logo" medium="SVG, CSS animation" year="2023">
-            The Illustrator export became one path and a cube, animated by hand. The sheets
-            after it show each step.
+        <Callout letter="A" title="Space builder" titleJp="へやをつくる" scale="1:1" headingId="detail-a" cardSide="end">
+          <TitleCard slot="card" title="Space Builder · Add Tool" medium="Vue, Three.js" year="2023">
+            Draw a rectangle on the floor and it fills with chairs. Sliders set the spacing,
+            the aisles and the seat count.
           </TitleCard>
-          <VisrezLogoAnimation />
+          <SpaceBuilderDemo />
         </Callout>
         <Callout id="marker-editor-demo" letter="B" title="Marker editor" titleJp="マーカーをつくる" scale="1:1" headingId="detail-b" cardSide="start">
           <TitleCard slot="card" title="Interactive Map Marker Editor" medium="React, Leaflet, Redux" year="2026">
@@ -71,28 +71,27 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
           </TitleCard>
           <MarkerEditorDemo />
         </Callout>
-        <Callout letter="C" title="Space builder" titleJp="へやをつくる" scale="1:1" headingId="detail-c" cardSide="end">
-          <TitleCard slot="card" title="Space Builder · Add Tool" medium="Vue, Three.js" year="2023">
-            Draw a rectangle on the floor and it fills with chairs. Sliders set the spacing,
-            the aisles and the seat count.
+        <Callout letter="C" title="Drag and drop" titleJp="ドラッグ＆ドロップ" scale="1:1" headingId="detail-c" cardSide="end">
+          <TitleCard slot="card" title="Space Builder · Drag and Drop" medium="Vue, Three.js" year="2023">
+            Drag a card off the catalogue and the object lands where it is dropped. Double-click
+            one instead and the next click on the floor places it.
           </TitleCard>
-          <SpaceBuilderDemo />
+          <DragDropDemo />
         </Callout>
-        <Callout letter="D" title="Object variants" titleJp="いろいろなしゅるい" scale="1:1" headingId="detail-d" cardSide="start">
+        <Callout letter="D" title="Loading logo" titleJp="読みこみ中のロゴ" scale="3:1" headingId="detail-d" cardSide="start">
+          <TitleCard slot="card" title="Visrez Animated Loading Logo" medium="SVG, CSS animation" year="2023">
+            The Illustrator export became one path and a cube, animated by hand. The sheets
+            after it show each step.
+          </TitleCard>
+          <VisrezLogoAnimation />
+        </Callout>
+        <Callout letter="E" title="Object variants" titleJp="いろいろなしゅるい" scale="1:1" headingId="detail-e" cardSide="end">
           <TitleCard slot="card" title="Space Builder · Object Variants" medium="Vue, Sass" year="2024">
             One card covers a whole group of library objects. The carousel steps through one
             cell's finishes, the dropdowns move between cells, and a pair the catalogue never
             made falls back to the nearest one it did.
           </TitleCard>
           <VariantsDemo />
-        </Callout>
-        <Callout letter="E" title="Tagging tool" titleJp="タグをつけるツール" scale="1:1" headingId="detail-e" cardSide="end">
-          <TitleCard slot="card" title="Library Tagging Tool" medium="CSS, JavaScript" year="2025">
-            One input tags a base object and every variant under it. Variants that already
-            disagree keep their own value, and an object leaves the page once nothing about it
-            is missing. Pick another property and the values already stored for it come back.
-          </TitleCard>
-          <TaggingToolDemo />
         </Callout>
         <Callout letter="F" title="Font picker" titleJp="フォントをえらぶ" scale="1:1" headingId="detail-f" cardSide="start">
           <TitleCard slot="card" title="Interactive Map Font Picker" medium="React" year="2026">
@@ -102,22 +101,33 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
           </TitleCard>
           <FontPickerDemo />
         </Callout>
-        <Callout letter="G" title="Drag and drop" titleJp="ドラッグ＆ドロップ" scale="1:1" headingId="detail-g" cardSide="end">
-          <TitleCard slot="card" title="Space Builder · Drag and Drop" medium="Vue, Three.js" year="2023">
-            Drag a card off the catalogue and the object lands where it is dropped. Double-click
-            one instead and the next click on the floor places it.
+        <Callout letter="G" title="Tagging tool" titleJp="タグをつけるツール" scale="1:1" headingId="detail-g" cardSide="end">
+          <TitleCard slot="card" title="Library Tagging Tool" medium="CSS, JavaScript" year="2025">
+            One input tags a base object and every variant under it. Variants that already
+            disagree keep their own value, and an object leaves the page once nothing about it
+            is missing. Pick another property and the values already stored for it come back.
           </TitleCard>
-          <DragDropDemo />
+          <TaggingToolDemo />
         </Callout>
-        <Callout letter="H" title="Schema driver" titleJp="テーブルのかたち" scale="1:1" headingId="detail-h" cardSide="start">
-          <TitleCard slot="card" title="schemaDef → Doctrine Metadata" medium="PHP, Symfony, Doctrine" year="2020">
-            GNU social is a federated social network server, written in PHP. Each of its
-            tables is one PHP array on the entity class, and a Doctrine driver turns that
-            array into the ORM mapping, the database schema and the types PHPStan checks.
+        <Callout id="theme-picker-demo" letter="H" title="Theme picker" titleJp="テーマをえらぶ" scale="1:1" headingId="detail-h" cardSide="start">
+          <TitleCard slot="card" title="Theme Picker" medium="Astro, CSS, View Transitions" year="2026">
+            The control in the corner that picks one of this page's four themes. A pick grows
+            the icon it was picked with from the corner until it covers the page, and the new
+            page is cut out of the old along it. The first sheet plays it on a sample page with its
+            own theme. The sheets behind it draw the wipe, its code, the tokens and who decides.
           </TitleCard>
-          <SchemaDefDemo />
+          <ThemePickerDemo />
         </Callout>
-        <Callout letter="I" title="GNU social event bus" titleJp="できごとをくばる" scale="1:1" headingId="detail-i" cardSide="end">
+        <Callout letter="I" title="Paper stack" titleJp="かみをめくる" scale="1:1" headingId="detail-i" cardSide="end">
+          <TitleCard slot="card" title="Paper Stack" medium="CSS, TypeScript" year="2026">
+            Every demo on this page is a stack of drawing sheets, and the dog-ear turns them.
+            These three sheets take the stack apart: the pile and its front page, the fold's
+            three layers and the release that turns a page, and the row the stack becomes
+            without JavaScript.
+          </TitleCard>
+          <PaperStackDemo />
+        </Callout>
+        <Callout letter="J" title="GNU social event bus" titleJp="できごとをくばる" scale="1:1" headingId="detail-j" cardSide="start">
           <TitleCard slot="card" title="GNU social · Event Dispatch" medium="PHP, Symfony" year="2022">
             GNU social is a federated social network server. Its plugins never call each other:
             a plugin listens for an event by naming a method after it, and the first one to
@@ -128,15 +138,6 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
             GIF moving. Switch it off and ImageEncoder makes a still.
           </TitleCard>
           <EventBusDemo />
-        </Callout>
-        <Callout letter="J" title="Synthetic properties" titleJp="大きさでさがす" scale="1:1" headingId="detail-j" cardSide="start">
-          <TitleCard slot="card" title="Synthetic Properties" medium="Rails, MariaDB" year="2024">
-            A library object stores its size once, in centimetres. On each save, database
-            triggers wrote that size out in centimetres, metres, inches and feet, so a search
-            for 5ft3in or 1.6m found the same table. The triggers lived five weeks on a branch
-            before Ruby callbacks replaced them.
-          </TitleCard>
-          <SyntheticPropertiesDemo />
         </Callout>
         <Callout letter="K" title="Fediverse playground" titleJp="たくさんのきかいがはなす" scale="1:1" headingId="detail-k" cardSide="end">
           <TitleCard slot="card" title="Fediverse Playground" medium="TypeScript, Docker" year="2026">
@@ -154,31 +155,30 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
           </TitleCard>
           <LibrarySearchDemo />
         </Callout>
-        <Callout letter="M" title="web-ts-mode" titleJp="いくつものげんごを読む" scale="1:1" headingId="detail-m" cardSide="end">
+        <Callout letter="M" title="Synthetic properties" titleJp="大きさでさがす" scale="1:1" headingId="detail-m" cardSide="end">
+          <TitleCard slot="card" title="Synthetic Properties" medium="Rails, MariaDB" year="2024">
+            A library object stores its size once, in centimetres. On each save, database
+            triggers wrote that size out in centimetres, metres, inches and feet, so a search
+            for 5ft3in or 1.6m found the same table. The triggers lived five weeks on a branch
+            before Ruby callbacks replaced them.
+          </TitleCard>
+          <SyntheticPropertiesDemo />
+        </Callout>
+        <Callout letter="N" title="Schema driver" titleJp="テーブルのかたち" scale="1:1" headingId="detail-n" cardSide="start">
+          <TitleCard slot="card" title="schemaDef → Doctrine Metadata" medium="PHP, Symfony, Doctrine" year="2020">
+            GNU social is a federated social network server, written in PHP. Each of its
+            tables is one PHP array on the entity class, and a Doctrine driver turns that
+            array into the ORM mapping, the database schema and the types PHPStan checks.
+          </TitleCard>
+          <SchemaDefDemo />
+        </Callout>
+        <Callout letter="O" title="web-ts-mode" titleJp="いくつものげんごを読む" scale="1:1" headingId="detail-o" cardSide="end">
           <TitleCard slot="card" title="web-ts-mode" medium="Emacs Lisp, tree-sitter" year="2026">
             An Emacs major mode for web templates such as Astro and Vue, where one file mixes
             markup, TypeScript and styles. Each language gets its own tree-sitter parser over its
             part of the file, and highlighting and indenting work across the whole file.
           </TitleCard>
           <WebTsModeDemo />
-        </Callout>
-        <Callout letter="N" title="Paper stack" titleJp="かみをめくる" scale="1:1" headingId="detail-n" cardSide="start">
-          <TitleCard slot="card" title="Paper Stack" medium="CSS, TypeScript" year="2026">
-            Every demo on this page is a stack of drawing sheets, and the dog-ear turns them.
-            These three sheets take the stack apart: the pile and its front page, the fold's
-            three layers and the release that turns a page, and the row the stack becomes
-            without JavaScript.
-          </TitleCard>
-          <PaperStackDemo />
-        </Callout>
-        <Callout id="theme-picker-demo" letter="O" title="Theme picker" titleJp="テーマをえらぶ" scale="1:1" headingId="detail-o" cardSide="end">
-          <TitleCard slot="card" title="Theme Picker" medium="Astro, CSS, View Transitions" year="2026">
-            The control in the corner that picks one of this page's four themes. A pick grows
-            the icon it was picked with from the corner until it covers the page, and the new
-            page is cut out of the old along it. The first sheet plays it on a sample page with its
-            own theme. The sheets behind it draw the wipe, its code, the tokens and who decides.
-          </TitleCard>
-          <ThemePickerDemo />
         </Callout>
       </div>
     </section>
