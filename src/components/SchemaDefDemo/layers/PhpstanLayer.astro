@@ -143,13 +143,12 @@ const steps = [
   }
 
   li {
-    @include code-panel;
+    @include code-panel($radius: 0.375em);
 
     display: flex;
     flex-direction: column;
     gap: 0.25em;
     padding: 0.5em 0.625em;
-    border-radius: 0.375em;
   }
 
   .number {

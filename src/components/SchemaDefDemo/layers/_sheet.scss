@@ -17,15 +17,15 @@
 // light ink nor the dark tokens read, so there the panel takes the theme's own paper, the token
 // nearest white, and its ink and rules turn to the theme's dark ink. The tokens take their light
 // side on a light theme already.
-@mixin code-panel {
+@mixin code-panel($border: 1px solid var(--line-strong), $radius: 0.5em) {
   /* Dark, unlike the other three, sets no paper of its own. */
   --panel-paper: var(--theme-paper, var(--surface-raised));
   --ink: light-dark(var(--theme-ink), var(--sheet-ink));
   --ink-muted: light-dark(color-mix(in oklch, var(--theme-ink), var(--panel-paper) 25%), var(--sheet-ink-muted));
   --line: light-dark(color-mix(in oklch, var(--theme-ink), var(--panel-paper) 60%), var(--sheet-line));
   --line-strong: light-dark(color-mix(in oklch, var(--theme-ink), var(--panel-paper) 35%), var(--sheet-line-strong));
-  border: 1px solid var(--line-strong);
-  border-radius: 0.5em;
+  border: $border;
+  border-radius: $radius;
   background: light-dark(var(--panel-paper), var(--surface-raised));
   color: var(--ink);
 }
