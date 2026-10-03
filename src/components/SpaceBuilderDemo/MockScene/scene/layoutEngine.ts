@@ -310,11 +310,14 @@ function layoutOffset(area: AreaRect, options: LayoutOptions): ChairPose[] {
 
   for (let r = 0; r < rows; r += 1) {
     const rowOffset = r % 2 === 0 ? 0 : stagger;
-    const maxC = r % 2 === 0
+    // Rightwards the row is trimmed to what still fits; leftwards the footprint check below trims it.
+    const maxC = r % 2 === 0 || stagger < 0
       ? cols
-      : countFit(Math.max(0, area.width - Math.abs(stagger)), sizeX, options.distanceX);
+      : countFit(Math.max(0, area.width - stagger), sizeX, options.distanceX);
     for (let c = 0; c < maxC; c += 1) {
-      pushLocal(originX + c * stepX + rowOffset, originZ + r * stepZ);
+      const lx = originX + c * stepX + rowOffset;
+      if (lx - sizeX / 2 < -area.width / 2 - 1e-6 || lx + sizeX / 2 > area.width / 2 + 1e-6) continue;
+      pushLocal(lx, originZ + r * stepZ);
     }
   }
   return poses;
