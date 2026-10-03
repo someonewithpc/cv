@@ -1078,6 +1078,24 @@ export function bindUndoRedoKeys(
     }
   };
 
+  // The product listens on the editor's root, which a click always leaves focus inside. Here the
+  // editor is portaled onto the carousel page, and a click on bare paper leaves focus on the stack
+  // around it, where this listener never hears the key. So a click inside the demo that lands
+  // focus outside it hands focus to the demo itself, as an app that owns its window would.
+  // It runs on pointerup for a mouse and on click for a touch, whose focus change comes later.
+  const ownedTabindex = target.getAttribute('tabindex');
+  if (ownedTabindex === null) target.tabIndex = -1;
+  const takeFocus = () => {
+    if (!target.contains(document.activeElement)) target.focus({ preventScroll: true });
+  };
+
   target.addEventListener('keydown', onKeyDown);
-  return () => target.removeEventListener('keydown', onKeyDown);
+  target.addEventListener('pointerup', takeFocus);
+  target.addEventListener('click', takeFocus);
+  return () => {
+    target.removeEventListener('keydown', onKeyDown);
+    target.removeEventListener('pointerup', takeFocus);
+    target.removeEventListener('click', takeFocus);
+    if (ownedTabindex === null) target.removeAttribute('tabindex');
+  };
 }
