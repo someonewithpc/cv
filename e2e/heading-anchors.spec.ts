@@ -3,18 +3,21 @@ import { expect, test } from '@playwright/test';
 const opacity = (el: import('@playwright/test').Locator) =>
   el.evaluate((node) => Number(getComputedStyle(node).opacity));
 
-test('every section and demo title has an anchor to an existing id', async ({ page }) => {
+test('every section and demo title has an anchor to an existing id, named after its title', async ({ page }) => {
   await page.goto('/');
   const anchors = page.locator('a.anchor');
   // Career, bill of materials, demos, open source, and the fifteen demo callouts.
   expect(await anchors.count()).toBeGreaterThanOrEqual(19);
 
   for (const anchor of await anchors.all()) {
-    await expect(anchor).toHaveAttribute('aria-label', 'Link to this section');
+    await expect(anchor).toHaveAttribute('aria-label', /^Link to (?!Detail)\S/);
     const href = await anchor.getAttribute('href');
     expect(href).toMatch(/^#[a-z0-9-]+$/);
     await expect(page.locator(`[id="${href!.slice(1)}"]`), `no element for ${href}`).toHaveCount(1);
   }
+
+  await expect(page.locator('a.anchor[href="#career"]')).toHaveAttribute('aria-label', 'Link to Career');
+  await expect(page.locator('a.anchor[href="#paper-stack"]')).toHaveAttribute('aria-label', 'Link to Paper stack');
 });
 
 test('the link shows on hover and focus, stays in the tab order, and sets the fragment', async ({ page }) => {
@@ -42,10 +45,44 @@ test('the link stands beside the title, clear of the heading text', async ({ pag
     ['#career-heading', 'a.anchor[href="#career"]'],
     ['#demos-heading', 'a.anchor[href="#demos"]'],
     ['#open-source-heading', 'a.anchor[href="#open-source"]'],
-    ['#detail-a .callout-text', 'a.anchor[href="#detail-a"]'],
+    ['#detail-a .callout-text', 'a.anchor[href="#loading-logo"]'],
   ]) {
     const h = (await page.locator(heading).boundingBox())!;
     const a = (await page.locator(anchor).boundingBox())!;
     expect(a.x, `${anchor} overlaps ${heading}`).toBeGreaterThanOrEqual(h.x + h.width - 1);
+  }
+});
+
+for (const id of ['career', 'demos', 'loading-logo', 'paper-stack', 'open-source']) {
+  test(`a fresh load of #${id} lands on it and stays after the page boots`, async ({ page }) => {
+    await page.goto(`/#${id}`);
+    await page.waitForTimeout(3000);
+    const top = await page.locator(`[id="${id}"]`).evaluate((el) => el.getBoundingClientRect().top);
+    expect(Math.abs(top)).toBeLessThanOrEqual(1);
+  });
+}
+
+test('the icon centres on the capitals of the title beside it', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  for (const [title, anchor] of [
+    ['#career-heading .typewriter', 'a.anchor[href="#career"]'],
+    ['#detail-a .callout-title', 'a.anchor[href="#loading-logo"]'],
+  ]) {
+    const offset = await page.evaluate(([title, anchor]) => {
+      const t = document.querySelector<HTMLElement>(title)!;
+      const icon = document.querySelector(anchor)!.querySelector('svg')!.getBoundingClientRect();
+      const style = getComputedStyle(t);
+      const ctx = document.createElement('canvas').getContext('2d')!;
+      ctx.font = `${style.fontSize} ${style.fontFamily}`;
+      const cap = ctx.measureText('H').actualBoundingBoxAscent;
+      const probe = document.createElement('span');
+      probe.style.cssText = 'display: inline-block; width: 0; height: 0';
+      t.append(probe);
+      const baseline = probe.getBoundingClientRect().bottom;
+      probe.remove();
+      return (icon.top + icon.bottom) / 2 - (baseline - cap / 2);
+    }, [title, anchor]);
+    expect(Math.abs(offset), `${anchor} is ${offset}px off the capitals' middle`).toBeLessThanOrEqual(1.5);
   }
 });
