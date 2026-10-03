@@ -18,6 +18,7 @@
   - [-] Scroll horizontally? (prefers-reduced-motion)
   - [x] Filter?
 - [x] Access Keys (#192)
+- [ ] Wikipedia-style link icons beside each section and demo title, named after the demo, fragments land after a reload
 - [ ] ARIA roles
 - [x] Every font size in rem or em, off px, on the eighths grid, following the reader's own default (#152)
 - [ ] Demos
