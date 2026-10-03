@@ -52,16 +52,28 @@ export const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(
 
 const span = (text: string, kind?: string) => (kind ? `<span class="tok-${kind}">${escapeHtml(text)}</span>` : escapeHtml(text));
 
-/* One line's tokens as spans, from column `from` to `to` of the tokenised text. */
-const renderLine = (tokens: Token[], from = 0, to = Infinity) => {
+/* One line's tokens as spans, from column `from` to `to` of the tokenised text. Each insert
+   is markup put in at its column, splitting the token it falls in. */
+const renderLine = (tokens: Token[], from = 0, to = Infinity, inserts: [number, string][] = []) => {
   let at = 0;
   let out = '';
+  let next = 0;
+  const flush = (upto: number) => {
+    while (next < inserts.length && inserts[next][0] <= upto) out += inserts[next++][1];
+  };
   for (const { content, color } of tokens) {
-    const start = Math.max(at, from);
+    const kind = color && kindOf.get(color.toLowerCase());
+    let pos = Math.max(at, from);
     const end = Math.min(at + content.length, to);
-    if (end > start) out += span(content.slice(start - at, end - at), color && kindOf.get(color.toLowerCase()));
+    while (pos < end) {
+      flush(pos);
+      const stop = next < inserts.length && inserts[next][0] < end ? inserts[next][0] : end;
+      out += span(content.slice(pos - at, stop - at), kind);
+      pos = stop;
+    }
     at += content.length;
   }
+  flush(Infinity);
   return out;
 };
 
@@ -140,13 +152,40 @@ export const highlightBlock = (code: string, lang: CodeLang, { lineComment = '',
  * The spans of a code line or lines, with no element round them, for markup that already has
  * its own box. PHP is tokenised after an opening tag, which the grammar needs to leave markup
  * mode; the tag is not part of the result. One entry per line, each tokenised with its
- * neighbours.
+ * neighbours. `context` is tokenised round the code and left out, as for inline code, and may
+ * run over lines. Each character of `inserts` found in the code is taken out before tokenising
+ * and its markup put back in its place, for a mark or a line break opportunity inside a token.
  */
-export const highlightLines = (code: string, lang: CodeLang) => {
-  const before = lang === 'php' ? '<?php ' : '';
-  const lines = highlighter.codeToTokensBase(before + code, { lang, theme: 'cv' });
-  return lines.map((line, index) => renderLine(line, index === 0 ? before.length : 0));
+export const highlightLines = (
+  code: string,
+  lang: CodeLang,
+  { context = ['', ''], inserts = {} }: { context?: [string, string]; inserts?: Record<string, string> } = {},
+) => {
+  const before = (lang === 'php' ? '<?php ' : '') + context[0];
+  const skip = before.split('\n').length - 1;
+  const column = before.length - before.lastIndexOf('\n') - 1;
+  const keys = Object.keys(inserts);
+  const marker = keys.length ? new RegExp(keys.map((key) => key.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')).join('|'), 'g') : null;
+  const lines = code.split('\n').map((line, index) => {
+    const offset = index === 0 ? column : 0;
+    const at: [number, string][] = [];
+    let taken = 0;
+    const bare = marker
+      ? line.replace(marker, (char, where: number) => {
+          at.push([offset + where - taken, inserts[char]]);
+          taken += char.length;
+          return '';
+        })
+      : line;
+    return { bare, offset, at };
+  });
+  const tokens = highlighter.codeToTokensBase(before + lines.map(({ bare }) => bare).join('\n') + context[1], { lang, theme: 'cv' });
+  return lines.map(({ bare, offset, at }, index) => renderLine(tokens[skip + index], offset, offset + bare.length, at));
 };
+
+/** One line of code as spans, for a box that exists already. */
+export const highlightSpans = (code: string, lang: CodeLang, context: [string, string] = ['', '']) =>
+  highlightLines(code, lang, { context })[0];
 
 export const highlightInline = (code: string, lang: CodeLang, context: [string, string] = ['', ''], className = '') => {
   const [before, after] = context;

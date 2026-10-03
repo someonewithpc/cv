@@ -61,6 +61,12 @@
     text-transform: none;
   }
 
+  // Code set into a box of its own (highlightLines): the roles are declared on the sheet's
+  // wrapper, which takes no ground, and the tokens inside read them.
+  :where(.hl:not(code, pre)) {
+    @include code-roles;
+  }
+
   :where(code.hl) {
     padding: 0 0.25em;
     border: 1px solid var(--line);
