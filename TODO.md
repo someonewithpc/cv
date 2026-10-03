@@ -240,5 +240,5 @@
 - [x] Render the Space Builder scenes on demand, so a scene at rest asks for no frames (171-AP1) (#252)
 - [x] Keep schemaDef's walk running once reduced motion turns back off (C39) (#279)
 - [x] Rethrow anything the library search's `send()` catches that is not an AbortError (C51) (#284)
-- [ ] Selection state reaches assistive tech: layout chips, HoverSelect options, placeholder cards, the Badge play toggle, the listener table (A11)
-- [ ] Every OptionsPanel input has its own name, the seat-count error is tied to its input, no div sits in a label or button (A27)
+- [x] Selection state reaches assistive tech: layout chips, HoverSelect options, placeholder cards, the Badge play toggle, the listener table (A11) (#301)
+- [x] Every OptionsPanel input has its own name, the seat-count error is tied to its input, no div sits in a label or button (A27) (#301)
