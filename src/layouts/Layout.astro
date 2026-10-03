@@ -5,6 +5,7 @@ import '@/assets/fonts/fonts.css';
 import stencilUrl from '@/assets/fonts/allerta-stencil.woff2?url';
 import poppinsUrl from '@/assets/fonts/poppins-400-latin.woff2?url';
 import specialEliteUrl from '@/assets/fonts/special-elite-latin.woff2?url';
+import printUrl from '@/scss/print.scss?url';
 import { AUTHOR_NAME, CONTACT, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/site';
 import { THEME_IDS, THEME_STORAGE_KEY, THEMES, type ThemeId, type ThemeSettings } from '@/themes';
 
@@ -82,6 +83,7 @@ const skipScript = `(() => {
     <link rel="preload" as="font" type="font/woff2" href={specialEliteUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={poppinsUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={stencilUrl} crossorigin />
+    <link rel="stylesheet" media="print" href={printUrl} />
     <script is:inline set:html={bootScript} />
     <script is:inline set:html={skipScript} />
   </head>
@@ -155,10 +157,8 @@ const skipScript = `(() => {
 <style lang="scss" is:global>
 @use "@/scss/_page-column.scss" as column;
 @use "@/scss/_code.scss" as code;
-@use "@/scss/_print.scss" as print;
 
 @include code.code-highlight;
-@include print.rules;
 
 /* No list-markers by default, since lists are used more often for semantics */
 ul, ol {
