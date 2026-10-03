@@ -6,13 +6,12 @@ import { highlightBlock } from '@/highlight';
 const listing = `<svg
   xmlns="http://www.w3.org/2000/svg"
   viewBox="-1 -1 2 2"       -- Define the coordinate system to go
-                            -- from (-1, -1), 2 by 2
+                            -- from (-1, -1) with a width of (2, 2)
 >
-  <g transform="translate(0, 0.2) scale(.707)"> -- The path spans y -1.414 to 1,
-                                                 -- a height of 2.414, so scaling
-                                                 -- it by 0.707 brings that down
-                                                 -- to 1.707, and the translate
-                                                 -- settles it into the viewBox
+  <g style="scale: 0.707;"> -- Scale the overall shape down. Because
+                            -- we move up (and down) by 2 * 0.707,
+                            -- the overall height becomes 4 * 0.707 = 2.828,
+                            -- so we scale down by 0.707 to get a height of 2
     <path
       d="M 0.6, -0.42       -- Move to 60% of (1, -0.707)
          L  0, 0            -- Draw a line to (0, 0)
@@ -20,7 +19,7 @@ const listing = `<svg
          l  1, -0.707       -- Draw a relative line by moving ( 1, -0.707)
          l  1, 0.707        -- Draw a relative line by moving ( 1, 0.707)
          v  1               -- Draw a vertical line by moving (0, 1)
-         L  0, 1            -- Draw a line to (0, 1)
+         L  0, 1            -- Draw a line by moving to (0, 1)
          l -1, -0.707       -- Draw a relative line by moving (-1, -0.707)
          v -0.2"            -- Draw a vertical line by moving (0, -0.2)
       pathLength="1"        -- Tell the renderer to treat the length
