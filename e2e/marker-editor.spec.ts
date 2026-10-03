@@ -45,6 +45,27 @@ test('main page: map pins mount and clicking one opens the marker picker', async
   await expect(picker).not.toBeVisible();
 });
 
+test('main page on a narrow landscape sheet: the map fills it and the selector keeps clear of the title block', async ({ page }) => {
+  await page.setViewportSize({ width: 760, height: 900 });
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await expect(stack).toHaveAttribute('data-sheet-width', 'narrow');
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const overlay = (await waitForIslandMounted(front)).locator('.mock-map-overlay');
+  await overlay.focus();
+  await expect(page.getByText('Demo paused')).toBeVisible();
+  await overlay.locator('button.space-pin').first().click();
+  await expect(front.locator('.marker-editing-overlay')).toBeVisible();
+
+  const map = (await front.locator('.mock-map-demo').boundingBox())!;
+  const sheet = (await front.locator('section').first().boundingBox())!;
+  const block = (await front.locator('section > table').first().boundingBox())!;
+  const selector = (await front.locator('.marker-editing-overlay').boundingBox())!;
+  expect(map.width).toBeGreaterThan(sheet.width * 0.9);
+  const apart = selector.x + selector.width <= block.x || selector.y + selector.height <= block.y;
+  expect(apart).toBe(true);
+});
+
 test('editor page: live marker-editor diagram mounts', async ({ page }) => {
   const stack = markerEditorStack(page);
   await stack.scrollIntoViewIfNeeded();
