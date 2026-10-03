@@ -359,24 +359,29 @@ const ts = (code: string) => highlightSpans(code, 'ts');
   }
 }
 
-// The Google branch runs under the flow and joins it where the two paths meet
+// The Google branch runs under the flow and joins it at step 3, where its stylesheet is read
 .branch {
-  // Under the first two steps and the hop into step 3, which is where this path rejoins the
-  // flow. Stopping there also keeps it out of the title block's corner on a short sheet
-  grid-column: 1 / 4;
+  // The caption keeps under the first two steps, which is where the title block's corner stays
+  // clear on a short sheet. The leader takes the hop into step 3 and turns up under that step
+  grid-column: 1 / 6;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75em;
+  grid-template-columns: subgrid;
+  align-items: start;
   margin-top: 0.5em;
-  padding-top: 0.5em;
-  border-top: 1px dashed var(--line);
 
-  // Short, so the caption beside it has the width to run in few lines: the branch's row
-  // is what reaches nearest the frame line on a landscape sheet
+  .caption {
+    grid-column: 1 / 4;
+    padding-top: 0.5em;
+    border-top: 1px dashed var(--line);
+  }
+
+  // Up into the row, so the head stops just under step 3, the tallest step on the row
   .branch-arrow {
+    grid-column: 4 / 6;
+    justify-self: start;
     width: 5.5em;
     height: 2em;
+    margin-top: -0.5em;
   }
 }
 
