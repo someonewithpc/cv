@@ -154,6 +154,36 @@ export type ThemeId = keyof typeof THEMES;
 
 export const THEME_IDS = Object.keys(THEMES) as ThemeId[];
 
+/**
+ * The custom properties a theme writes on :root, by name. ThemePicker.astro writes every
+ * theme's, with the desk tiles resolved to their built URLs; scss/print.scss writes the light
+ * theme's over whatever was picked, and prints no desk, so it passes no resolver.
+ */
+export const themeVars = (settings: ThemeSettings, deskTile?: (name: string) => string): Record<string, string> => ({
+  'theme-canvas': settings.canvas,
+  'theme-ink': settings.ink,
+  'theme-accent': settings.accent,
+  'theme-blueprint': settings.blueprint,
+  'theme-desk': settings.desk,
+  ...(deskTile ? {
+    'theme-desk-tile': `url("${deskTile(settings.deskTile)}")`,
+    'theme-desk-tile-720': `url("${deskTile(`${settings.deskTile}-720`)}")`,
+  } : {}),
+  'theme-paper': settings.paper ?? 'initial',
+  'theme-paper-grain': settings.paperGrain,
+  'theme-paper-sheet-grain': settings.paperSheetGrain,
+  'theme-paper-blend': settings.paperBlend,
+  'theme-paper-invert': settings.paperInvert,
+  'theme-mode': settings.follows,
+  ...Object.fromEntries((['keyword', 'attribute', 'string', 'comment'] as const).map((kind) => [`theme-code-${kind}`, settings.code?.[kind] ?? 'initial'])),
+  'accent-text': settings.follows === 'dark' ? 'var(--accent-800)' : 'oklch(from var(--theme-accent) 0.42 c h)',
+  'diff-add-text': settings.follows === 'dark' ? 'oklch(from hsl(145 42% 38%) 0.7 c h)' : 'hsl(145 42% 38%)',
+  'diff-remove-text': settings.follows === 'dark' ? 'oklch(from hsl(0 48% 46%) 0.73 c h)' : 'hsl(0 48% 46%)',
+});
+
+/** For scss/print.scss, through plugins/sassFromTs.mjs: the theme a printout takes. */
+export const sass = { printTheme: themeVars(THEMES.light) };
+
 /** The two the OS can ask for by prefers-color-scheme. */
 export const OS_THEMES = {
   light: THEMES.light,

@@ -2,6 +2,8 @@
 // No desk, no theme picker, no fold mechanics; the light theme on every sheet whatever the
 // picker had set; every page of a stack in turn down the page instead of fanned in one grid
 // cell; the contributions as a compact list; links as plain text.
+@use "ts:src/themes.ts" as themes;
+
 @media print {
   #theme-picker,
   #theme-picker-transition-background,
@@ -20,20 +22,13 @@
     display: none !important;
   }
 
-  // The light theme's own seeds (ThemePicker.astro's base :root block), forced over
-  // whichever theme's data-theme attribute or prefers-color-scheme picked.
+  // The light theme's variables (src/themes.ts), over whichever theme the data-theme attribute
+  // or prefers-color-scheme picked.
   :root {
-    --theme-canvas: oklch(0.97 0.011 85) !important;
-    --theme-ink: oklch(0.24 0.025 260) !important;
-    --theme-accent: oklch(0.7 0.13 65) !important;
-    --theme-blueprint: oklch(0.622 0.121 254) !important;
-    --theme-paper: oklch(1 0 90) !important;
-    --theme-paper-grain: 0.45 !important;
-    --theme-paper-sheet-grain: 0.48 !important;
-    --theme-paper-blend: multiply !important;
-    --theme-paper-invert: 0 !important;
-    --theme-mode: light !important;
     --theme-kind: light !important;
+    @each $name, $value in themes.$print-theme {
+      --#{$name}: #{$value} !important;
+    }
     color-scheme: light !important;
   }
 

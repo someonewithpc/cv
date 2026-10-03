@@ -9,6 +9,7 @@ import {
   rootRadioPicked,
   rootShowing,
   themeInputId,
+  themeVars as themeVarsOf,
   type ThemeSettings,
 } from '@/themes';
 
@@ -20,25 +21,9 @@ const deskTileUrl = (name: string) => {
   return url;
 };
 
-const themeVars = (settings: ThemeSettings) => `
-      --theme-canvas: ${settings.canvas};
-      --theme-ink: ${settings.ink};
-      --theme-accent: ${settings.accent};
-      --theme-blueprint: ${settings.blueprint};
-      --theme-desk: ${settings.desk};
-      --theme-desk-tile: url("${deskTileUrl(settings.deskTile)}");
-      --theme-desk-tile-720: url("${deskTileUrl(`${settings.deskTile}-720`)}");
-      --theme-paper: ${settings.paper ?? 'initial'};
-      --theme-paper-grain: ${settings.paperGrain};
-      --theme-paper-sheet-grain: ${settings.paperSheetGrain};
-      --theme-paper-blend: ${settings.paperBlend};
-      --theme-paper-invert: ${settings.paperInvert};
-      --theme-mode: ${settings.follows};
-${(['keyword', 'attribute', 'string', 'comment'] as const).map((kind) => `      --theme-code-${kind}: ${settings.code?.[kind] ?? 'initial'};`).join('\n')}
-      --accent-text: ${settings.follows === 'dark' ? 'var(--accent-800)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
-      --diff-add-text: ${settings.follows === 'dark' ? 'oklch(from hsl(145 42% 38%) 0.7 c h)' : 'hsl(145 42% 38%)'};
-      --diff-remove-text: ${settings.follows === 'dark' ? 'oklch(from hsl(0 48% 46%) 0.73 c h)' : 'hsl(0 48% 46%)'};
-`;
+const themeVars = (settings: ThemeSettings) => Object.entries(themeVarsOf(settings, deskTileUrl))
+  .map(([name, value]) => `      --${name}: ${value};`)
+  .join('\n');
 
 /* With script, a pick writes data-theme and the radio's .checked class in the same commit,
    so the root's theme is read from the attribute alone. The radio rules stand only on a page
