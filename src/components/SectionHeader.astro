@@ -10,24 +10,30 @@ type Props = {
 };
 
 const { headingId, sectionId, titleJp, title, sheetCode = 'SH' } = Astro.props;
+const hasAside = Astro.slots.has('default');
 ---
 
-<header>
-  <p class="sheet-code monospace" aria-hidden="true">
-    <span>{sheetCode}</span>
-    <span>/</span>
-    <span>REV A</span>
-  </p>
-  <div class="anchor-row">
-    <h2 id={headingId}>
-      <small lang="ja" aria-hidden="true">{titleJp}</small>
-      <span class="typewriter">{title}</span>
-    </h2>
-    <AnchorLink id={sectionId} label={title} />
+<header class:list={{ 'has-aside': hasAside }}>
+  <div class="title">
+    <p class="sheet-code monospace" aria-hidden="true">
+      <span>{sheetCode}</span>
+      <span>/</span>
+      <span>REV A</span>
+    </p>
+    <div class="anchor-row">
+      <h2 id={headingId}>
+        <small lang="ja" aria-hidden="true">{titleJp}</small>
+        <span class="typewriter">{title}</span>
+      </h2>
+      <AnchorLink id={sectionId} label={title} />
+    </div>
   </div>
+  <slot />
 </header>
 
 <style lang="scss">
+@use "@/scss/_page-column.scss" as column;
+
 header {
   margin-bottom: 2.5rem;
   padding-bottom: 0.5rem;
@@ -62,6 +68,27 @@ header {
       text-transform: uppercase;
       line-height: 1.05;
       color: var(--ink);
+    }
+  }
+
+  // With something in the slot (the Open Source stats) the title and the slot share a row.
+  // The breakpoint is a width of the Open Source section (OpenSourceContributions.astro says
+  // why it is a media query).
+  &.has-aside {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2rem 3rem;
+    align-items: end;
+    padding-bottom: 0.75rem;
+    border-bottom-color: var(--line);
+
+    .sheet-code {
+      margin-bottom: 0.5rem;
+    }
+
+    @media #{column.section-width("<=", 50rem)} {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
     }
   }
 }
