@@ -147,6 +147,7 @@
 - [ ] N5 Japanese glosses across the page (#148)
 - [x] Japanese glosses marked decorative so the contrast check skips them, no colour change (#177)
 - [x] Copy says what every theme and layout shows: no blue sheets in Forest, no click on a phone (#158)
+- [ ] Key names written as plain text become `<kbd>` elements: Enter, Ctrl, the arrow keys
 - [x] Show the demo title card's text on narrower desks (#151)
 - [x] Lay out the title card's slip in CSS, with no script (#161)
 - [x] A window drag measures the scene, marker canvas and event bus token once, for the final size (#163)
