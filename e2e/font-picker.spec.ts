@@ -398,3 +398,39 @@ test.describe('transport deck', () => {
     await expect(deck).toHaveAttribute('data-state', 'playing');
   });
 });
+
+// The cursor's page rect is cached from the first frame of a glide, so only a window scroll that
+// lands mid-glide leaves it holding the page's old place. The control the walkthrough then
+// changes is where the arrow's tip, 7 px in from its box's left, has to be
+for (const width of [1440, 390]) test(`main page: the drawn cursor reaches its control after the window scrolls mid-glide at ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.reload();
+  await fontPickerStack(page).scrollIntoViewIfNeeded();
+  await expect(page.locator('.font-picker-cursor')).toBeVisible({ timeout: 20_000 });
+
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    const top = () => document.querySelector('.font-picker-cursor')?.getBoundingClientRect().top ?? 0;
+    let last = top();
+    const tick = () => {
+      if (Math.abs(top() - last) > 4) {
+        document.addEventListener('change', (event) => {
+          const el = event.target as HTMLElement;
+          const c = document.querySelector('.font-picker-cursor')?.getBoundingClientRect();
+          if (!c || !el.dataset.demoTarget || (window as any).tipMiss !== undefined) return;
+          const r = el.getBoundingClientRect();
+          (window as any).tipMiss = Math.hypot(
+            Math.max(r.left - (c.left + 7), 0, c.left + 7 - r.right),
+            Math.max(r.top - c.top, 0, c.top - r.bottom),
+          );
+        }, true);
+        window.scrollBy(0, 200);
+        resolve();
+        return;
+      }
+      last = top();
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }));
+  await expect.poll(() => page.evaluate(() => (window as any).tipMiss ?? Infinity), { timeout: 20_000 }).toBeLessThan(24);
+});
