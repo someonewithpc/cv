@@ -331,11 +331,9 @@ const ts = (code: string) => highlightSpans(code, 'ts');
   padding-top: 3.25em;
 
   .hop-note {
-    @include sheet-prose;
-
     /* Code, so the patch is the code ground the token colours are tuned to. */
-    background: var(--hl-ground);
-    box-shadow: 0 0 0 0.25em var(--hl-ground);
+    @include sheet-prose($ground: var(--hl-ground));
+
     color: var(--hl-ink);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: max(0.5rem, 0.625em);

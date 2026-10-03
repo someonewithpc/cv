@@ -3,9 +3,9 @@
 // `.blueprint` page --surface-sunken is that fill (Page.astro sets it after the mixin), so the
 // band has no edge of its own. The spread comes from a shadow rather than padding: it reaches
 // past the text box without moving anything around it.
-@mixin sheet-prose($spread: 0.25em) {
-  background: var(--surface-sunken);
-  box-shadow: 0 0 0 $spread var(--surface-sunken);
+@mixin sheet-prose($spread: 0.25em, $ground: var(--surface-sunken)) {
+  background: $ground;
+  box-shadow: 0 0 0 $spread $ground;
   border-radius: 0.125em;
 }
 
