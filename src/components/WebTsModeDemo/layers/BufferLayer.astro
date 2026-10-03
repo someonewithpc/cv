@@ -48,7 +48,23 @@ const echo = [
   { id: 'host', text: 'astro: the host parser, over the whole buffer' },
   ...ranges.map((range) => ({ id: range.id, text: `${range.lang}: ${range.rule}, :local t` })),
 ];
+
+// Pointing at a range lights it and names its parser. One rule per range the lexer found, so
+// a longer buffer needs no edit here. Stylesheet rules cannot count the ranges, so they are
+// written out here and emitted beside the buffer.
+const rangeRules = ranges
+  .map(({ id }) => {
+    const hovered = `.buffer-layer[data-web-ts-buffer]:has([data-range='${id}']:is(:hover, :focus-visible))`;
+    return [
+      `${hovered} [data-range='${id}'] { background: color-mix(in oklch, var(--lang) 22%, var(--buffer-paper)); }`,
+      `${hovered} .echo [data-echo='idle'] { display: none; }`,
+      `${hovered} .echo [data-echo='${id}'] { display: inline; }`,
+    ].join('\n');
+  })
+  .join('\n');
 ---
+
+<style is:inline set:html={rangeRules} />
 
 <div class="wrapper">
   <div class="buffer-layer" data-web-ts-buffer>
@@ -254,17 +270,6 @@ const echo = [
 
   .echo [data-echo='idle'] { display: none; }
   .echo [data-echo='host'] { display: inline; }
-}
-
-@for $i from 0 through 15 {
-  .buffer-layer:has([data-range='r#{$i}']:is(:hover, :focus-visible)) {
-    :global([data-range='r#{$i}']) {
-      background: color-mix(in oklch, var(--lang) 22%, var(--buffer-paper));
-    }
-
-    .echo [data-echo='idle'] { display: none; }
-    .echo [data-echo='r#{$i}'] { display: inline; }
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
