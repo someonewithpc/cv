@@ -31,6 +31,7 @@
   - [x] Visrez marker editor
     - [x] Marker editor pages past the second look rough (#18)
     - [x] Colour picker lags while dragging (#17)
+    - [ ] Map fills a narrow landscape sheet under the title block, and the marker selector keeps clear of the block
   - [x] Space builder add tool
     - [x] Layouts page demo doesn't work (#14)
     - [x] Drag and drop furniture doesn't work (#14)
