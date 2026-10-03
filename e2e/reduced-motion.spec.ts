@@ -194,7 +194,8 @@ async function restingLook(page: Page) {
       return steps.join('>');
     };
     const sheet = [...document.querySelectorAll('article.technical-drawing-stack *')]
-      .filter((el) => !el.closest('.content, script, style, template') && shown(el))
+      // The deck's hint spans exist only while a walkthrough plays: state, not an element that vanishes.
+      .filter((el) => !el.closest('.content, script, style, template, [data-demo-hint]') && shown(el))
       .map(path);
     const notes = [...document.querySelectorAll('aside.marker-font')]
       .map((note) => `${shown(note) ? 'shown' : 'hidden'}: ${note.textContent?.trim().slice(0, 40)}`);
