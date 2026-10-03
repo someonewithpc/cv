@@ -1,6 +1,6 @@
 @use 'sass:math';
 
-$visrez-brand: #89ab24;
+@use '@/scss/visrez' as *;
 $marker-editor-background: #333;
 
 // Marker-part chip grid; the narrow layout repacks it, so these are file-scope.

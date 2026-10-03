@@ -1,4 +1,4 @@
-$visrez-brand: #89ab24;
+@use '@/scss/visrez' as *;
 
 .marker-editing-overlay {
   // Floats above the focused pin, which the zoom centers in the map.

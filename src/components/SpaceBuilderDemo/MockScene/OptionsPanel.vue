@@ -329,7 +329,7 @@ function blockFromEvent(event: Event) {
 </template>
 
 <style lang="scss" scoped>
-$visrez-brand: #89ab24;
+@use '@/scss/visrez' as *;
 $light-grey: #565656;
 $nav-second-bg: #151515;
 
