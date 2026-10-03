@@ -294,6 +294,12 @@ section {
     justify-content: center;
     align-items: center;
 
+    /* Key names in a sheet's copy: the code face, at the text's own size, no chip. */
+    :global(:where(kbd)) {
+      font: inherit;
+      font-family: monospace, system-ui;
+    }
+
     /* Em-sized artwork tracks the sheet down once it is narrower than 50em;
        wider sheets get the full 1rem. Sized from the stack's measured pixels
        (Stack.astro's script) and keyed on its orientation attribute rather
