@@ -22,9 +22,8 @@ test.describe('skip link', () => {
     // The theme picker (also in the DOM before #career, but a Tab stop of its own) and every
     // section start (tabindex="-1") are accesskey landing spots, not sequential Tab stops, so
     // the next real stop after the skip link is the first focusable control inside Career: the
-    // "Demos" link in the first job entry's "See" line. Career's own end-of-section refs list
-    // links to #demos too, later in the DOM, hence .first() rather than a role/name match.
-    await expect(page.locator('#career a[href="#demos"]').first()).toBeFocused();
+    // link beside its title.
+    await expect(page.locator('#career a.anchor[href="#career"]')).toBeFocused();
   });
 });
 
