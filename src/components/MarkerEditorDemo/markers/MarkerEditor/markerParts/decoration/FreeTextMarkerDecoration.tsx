@@ -100,7 +100,6 @@ export class FreeTextMarkerDecoration extends TextMarkerDecoration {
         <textarea
           id="marker-free-text"
           key="free-text-marker-decoration-textarea"
-          className="w-100"
           data-demo-target="editor:free-text"
           value={this.reactiveState.text}
           onChange={(e) => { this.reactiveState.text = e.target.value; }}

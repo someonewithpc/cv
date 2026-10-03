@@ -1040,8 +1040,8 @@ $fold-pulse-y: 2cm;
       & > .paper-fold {
         --fold-x: inherit;
         --fold-y: inherit;
-        width: calc(var(--fold-x));
-        height: calc(var(--fold-y));
+        width: var(--fold-x);
+        height: var(--fold-y);
 
         // The far triangle of the box: the corner is cut off along the crease, from the box's
         // bottom-left to its top-right. The box stands 1px past the sheet's right and bottom
@@ -1223,7 +1223,7 @@ $fold-pulse-y: 2cm;
           rgb(0 0 0 / 0.06) calc(var(--turned-step) - 0.5em),
           rgb(0 0 0 / 0.3) var(--turned-step)
         )
-        var(--paper-surface, var(--surface-sunken));
+        var(--paper-surface);
       border: 1px solid var(--line-strong);
       border-top-right-radius: $border-radius;
       opacity: var(--turned);

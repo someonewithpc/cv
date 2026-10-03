@@ -1261,7 +1261,6 @@ $scene-bg: #212121;
     pointer-events: none;
   }
 
-  .fallback,
   .boot-cover {
     position: absolute;
     inset: 0;
@@ -1481,10 +1480,6 @@ $scene-bg: #212121;
     background: $buttons-ui;
     border-color: $buttons-ui;
     color: #fff;
-  }
-
-  .action--save {
-    flex: 1.35;
   }
 
   .action--save {
