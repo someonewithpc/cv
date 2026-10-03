@@ -1,0 +1,10 @@
+// The text caret's blink. Every sheet that draws one @use's this file.
+@keyframes caret-blink {
+  from, 49% {
+    opacity: 0;
+  }
+
+  50%, to {
+    opacity: 0.75;
+  }
+}

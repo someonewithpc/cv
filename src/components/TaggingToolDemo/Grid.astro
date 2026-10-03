@@ -155,6 +155,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "./_caret";
 @use '@/scss/hit-area' as *;
 @use '@/scss/statusBorder' as *;
 
@@ -514,21 +515,11 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
     z-index: 1;
     top: 0.143em;
     left: calc(min(var(--caret, 0) * 1ch - var(--scroll, 0px), var(--input-width, 100%) - 1ch) + 0.5ch);
-    animation: blink 500ms infinite alternate both;
+    animation: caret-blink 500ms infinite alternate both;
   }
 
   input {
     background-color: var(--highlight);
-  }
-}
-
-@keyframes blink {
-  from, 49% {
-    opacity: 0;
-  }
-
-  50%, to {
-    opacity: 0.75;
   }
 }
 

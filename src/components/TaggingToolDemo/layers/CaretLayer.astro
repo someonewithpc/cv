@@ -54,6 +54,7 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "../_caret";
 @use "./sheet" as *;
 
 .wrapper {
@@ -209,16 +210,6 @@ header {
 
 code {
   font-family: monospace, system-ui;
-}
-
-@keyframes caret-blink {
-  from, 49% {
-    opacity: 0;
-  }
-
-  50%, to {
-    opacity: 0.75;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
