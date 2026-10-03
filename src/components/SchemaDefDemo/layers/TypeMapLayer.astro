@@ -120,7 +120,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
   margin: 0;
   padding: 0.375em 0.625em;
 
-  :global([data-sheet-orientation='portrait']) & {
+  @include portrait-sheet {
     margin-inline: calc(-0.625em - 1px);
   }
 }
