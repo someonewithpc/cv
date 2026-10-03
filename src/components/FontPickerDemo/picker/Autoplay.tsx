@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 
@@ -118,7 +118,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     // pointer events, and a pointer elsewhere on the page is reading, not reaching in. The
     // deck is the sheet's own chrome, so reaching for its keys is not taking over
     const onPointer = (e: PointerEvent) => {
-      if (!e.isTrusted || !pageActive || isTransportControl(e.target)) return;
+      if (!e.isTrusted || !pageActive || isTransportControl(e.target) || inDeckGrace(e)) return;
       yieldToUser(e.target instanceof Element ? e.target : null);
     };
     page.addEventListener('pointermove', onPointer, { passive: true });

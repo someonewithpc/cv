@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchE
 import builderLogoUrl from '@/assets/demos/space-builder/builder-logo.png?url';
 import { watchDrawingNote } from '@/client/drawingNote';
 import {
+  inDeckGrace,
   isTransportControl,
   onAutoplayCommand,
   reducedMotion as reducedMotionAt,
@@ -298,7 +299,7 @@ function onTrustedPointer(event: PointerEvent) {
   }
 
   pointerOver = true;
-  if (isTransportControl(event.target)) return;
+  if (isTransportControl(event.target) || inDeckGrace(event)) return;
   yieldToUser(event.type === 'pointerdown');
 }
 

@@ -12,7 +12,7 @@ import store, {
   type SpaceType,
 } from '../store';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
@@ -673,7 +673,7 @@ export default function MockMapApp() {
     const onTrustedPointer = (e: PointerEvent) => {
       if (!e.isTrusted) return;
       // Reaching for the deck's own keys is not taking the demo over.
-      if (isTransportControl(e.target)) return;
+      if (isTransportControl(e.target) || inDeckGrace(e)) return;
       // The page only gets pointer events again once a native popup has closed.
       nativePopupRef.current = false;
       yieldToUser(e.type === 'pointerdown');

@@ -1,3 +1,5 @@
+import { inDeckGrace } from './autoplayStatus';
+
 /** How long a demo has to be left alone before its walkthrough starts again. */
 export const RESUME_DELAY_MS = 6000;
 
@@ -67,6 +69,7 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
   // pointerenter, not pointermove, when the page scrolls the host under a still mouse.
   function onPointer(event: PointerEvent) {
     if (!event.isTrusted || !options.listening()) return;
+    if (inDeckGrace(event)) return;
     const target = event.target;
     if (!(target instanceof Node) || !host.contains(target)) return;
     if (event.pointerType !== 'touch') {

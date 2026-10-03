@@ -90,6 +90,19 @@ export function onAutoplayCommand(
   return () => root.removeEventListener(AUTOPLAY_COMMAND_EVENT, listener);
 }
 
+/**
+ * After a deck key is pressed, a pointer moving onto the sheet is the pointer leaving the key,
+ * not the visitor reaching in. Pointer take-over is ignored for this long; presses on the sheet,
+ * keyboard focus and the deck's own pause key still take over at once.
+ */
+export const DECK_GRACE_MS = 1000;
+let lastDeckPress = Number.NEGATIVE_INFINITY;
+
+/** True while a pointer move should not take a demo over because a deck key was just pressed. */
+export function inDeckGrace(event: Event): boolean {
+  return event.type !== 'pointerdown' && performance.now() - lastDeckPress < DECK_GRACE_MS;
+}
+
 /** The deck is the sheet's own chrome, so hovering it is not taking the demo over. */
 export function isTransportControl(node: EventTarget | null): boolean {
   return node instanceof Element && node.closest('[data-demo-transport]') !== null;
@@ -142,6 +155,7 @@ export function initAutoplayStatus(page: HTMLElement) {
 
   keys.forEach((key) => {
     key.addEventListener('click', () => {
+      lastDeckPress = performance.now();
       const command = key.dataset.demoKey as AutoplayCommand | undefined;
       if (command) run(command);
     });

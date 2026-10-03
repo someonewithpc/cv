@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 
-import { isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
@@ -271,7 +271,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     // Only a real pointer, and only over the sheet: the scripted values never come through
     // pointer events. The deck's keys are the sheet's own chrome, not the visitor reaching in
     const onPointer = (e: PointerEvent) => {
-      if (!e.isTrusted || !active || isTransportControl(e.target)) return;
+      if (!e.isTrusted || !active || isTransportControl(e.target) || inDeckGrace(e)) return;
       yieldToUser(e.target instanceof Element ? e.target : null);
     };
     page.addEventListener('pointermove', onPointer, { passive: true });
