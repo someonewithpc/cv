@@ -110,10 +110,13 @@ test.describe('access keys', () => {
     const legend = page.locator('.accesskey-legend');
 
     await expect(legend).toHaveCSS('opacity', '0');
+    // Hidden from find-in-page too: visibility, not just opacity.
+    await expect(legend).toHaveCSS('visibility', 'hidden');
 
     await page.keyboard.press('Tab');
     await expect(page.locator('.skip-link')).toBeFocused();
     await expect(legend).toHaveCSS('opacity', '1');
+    await expect(legend).toHaveCSS('visibility', 'visible');
 
     // The next two Tab stops are the page-turn buttons themselves, real Tab stops now, and the
     // legend stays up through both since it explains what they do.

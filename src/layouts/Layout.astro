@@ -493,7 +493,9 @@ image, svg, img, picture {
 /* The legend's own kbd (.ak-mod) starts as "Alt", the Chrome/Windows/Linux default, and the
    Layout.astro script overwrites it once at load for Firefox (Alt+Shift) or a Mac (Ctrl+Alt),
    so the text is still correct with JS off. CSS-only reveal: shown on the same condition that
-   reveals the skip link, so it needs no script to appear at all. */
+   reveals the skip link, so it needs no script to appear at all. visibility: hidden keeps the
+   hidden legend out of find-in-page and the accessibility tree; it flips at once on reveal and
+   after the fade on hide. */
 .accesskey-legend {
   position: fixed;
   top: 3.25rem;
@@ -511,7 +513,8 @@ image, svg, img, picture {
   opacity: 0;
   translate: 0 -0.5rem;
   pointer-events: none;
-  transition: opacity 125ms ease-out, translate 125ms ease-out;
+  visibility: hidden;
+  transition: opacity 125ms ease-out, translate 125ms ease-out, visibility 0s 125ms;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
@@ -551,6 +554,8 @@ image, svg, img, picture {
 body:has(.skip-link:focus-visible, .page-turn-key:focus-visible) .accesskey-legend {
   opacity: 1;
   translate: 0 0;
+  visibility: visible;
+  transition-delay: 0s;
 }
 
 .bypass-contrast-check {
