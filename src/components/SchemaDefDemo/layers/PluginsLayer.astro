@@ -46,13 +46,13 @@ const excerptLines = excerpt.split('\n').map((text, at) => ({
 
       <p class="call">
         <span class="arrow" aria-hidden="true">↓</span>
-        <code set:html={php('addDriver(app.schemadef_driver, $namespace)')} />
+        <code class="hl" set:html={php('addDriver(app.schemadef_driver, $namespace)')} />
       </p>
 
       <div class="chain">
         <code class="service">doctrine.orm.<wbr />default_metadata_driver</code>
         <span>One driver chain, one <code>SchemaDefDriver</code>, 74 entities as of October 2022</span>
-        <code class="transient" set:html={php("isTransient($class) = !method_exists($class, 'schemaDef')")} />
+        <code class="transient hl" set:html={php("isTransient($class) = !method_exists($class, 'schemaDef')")} />
       </div>
     </div>
 
@@ -67,7 +67,7 @@ const excerptLines = excerpt.split('\n').map((text, at) => ({
 
     <p class="footnote">
       <code>plugins/Favourite/Entity/NoteFavourite.php</code> is a whole plugin table: drop it in
-      and <code>note_favourite</code> exists. Its <code set:html={php("'foreign key' => true")} /> is still
+      and <code>note_favourite</code> exists. Its <code class="hl" set:html={php("'foreign key' => true")} /> is still
       read by nobody, since the driver's association branch sits behind <code>if (false &amp;&amp; …)</code>,
       so <code>note_id</code> maps as a plain <code>INT</code>.
     </p>
@@ -83,6 +83,7 @@ const excerptLines = excerpt.split('\n').map((text, at) => ({
 .wrapper {
   @include sheet-content;
   @include highlighted;
+  @include code-chip;
   @include clear-title-block;
 
   @include blueprint-root;

@@ -52,7 +52,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
         {rows.map((row) => (
           <tr>
             <td>
-              {row.size && <><code set:html={php(`'${row.size}'`)} /> + </>}<code set:html={php(`'${row.v2}'`)} />
+              {row.size && <><code class="hl" set:html={php(`'${row.size}'`)} /> + </>}<code class="hl" set:html={php(`'${row.v2}'`)} />
             </td>
             <td><code>{row.type}</code></td>
             <td><code>{row.sql ?? 'bundle type'}</code></td>
@@ -65,15 +65,15 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
     <dl class="rules">
       <div>
         <dt>Size</dt>
-        <dd>Glued onto the name before the lookup: <code set:html={php("'tiny'")} /> on an <code>int</code> looks up <code>tinyint</code>, which has no portable form, so <code>smallint</code></dd>
+        <dd>Glued onto the name before the lookup: <code class="hl" set:html={php("'tiny'")} /> on an <code>int</code> looks up <code>tinyint</code>, which has no portable form, so <code>smallint</code></dd>
       </div>
       <div>
         <dt>Null</dt>
-        <dd><code set:html={php("'not null' => true")} /> is inverted into <code set:html={php("'nullable' => false")} />; a field that says nothing is nullable</dd>
+        <dd><code class="hl" set:html={php("'not null' => true")} /> is inverted into <code class="hl" set:html={php("'nullable' => false")} />; a field that says nothing is nullable</dd>
       </div>
       <div>
         <dt>Width</dt>
-        <dd><code>char</code> is the same string type as <code>varchar</code>, with <code set:html={php("'fixed' => true")} /></dd>
+        <dd><code>char</code> is the same string type as <code>varchar</code>, with <code class="hl" set:html={php("'fixed' => true")} /></dd>
       </div>
       <div>
         <dt>Serial</dt>
@@ -81,11 +81,11 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
       </div>
       <div>
         <dt>Docs</dt>
-        <dd>Each <code set:html={php("'description'")} /> becomes a column comment: the documentation lands in the database</dd>
+        <dd>Each <code class="hl" set:html={php("'description'")} /> becomes a column comment: the documentation lands in the database</dd>
       </div>
       <div>
         <dt>Keys</dt>
-        <dd><code set:html={php("['idx' => [cols]]")} /> is reshaped into <code set:html={php("[['name' => 'idx', 'columns' => [cols]]]")} /></dd>
+        <dd><code class="hl" set:html={php("['idx' => [cols]]")} /> is reshaped into <code class="hl" set:html={php("[['name' => 'idx', 'columns' => [cols]]]")} /></dd>
       </div>
     </dl>
 
@@ -106,6 +106,7 @@ const spare = Object.keys(driverTypes).filter((v2) => !rows.some((row) => row.lo
 .wrapper {
   @include sheet-content;
   @include highlighted;
+  @include code-chip;
   @include clear-title-block;
 
   @include blueprint-root;
