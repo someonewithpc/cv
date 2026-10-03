@@ -498,21 +498,32 @@ section {
       scale: 1.06;
     }
 
-    /* clip-path clips outline the same way it clips box-shadow, so the ring is a stack of
-       sharp drop-shadows in every direction instead: unlike outline it follows the fold's
-       triangle rather than drawing a square past the clipped corner. */
     &:focus-visible {
       outline: none;
-      filter:
-        drop-shadow(0.125rem 0 0 var(--accent))
-        drop-shadow(-0.125rem 0 0 var(--accent))
-        drop-shadow(0 0.125rem 0 var(--accent))
-        drop-shadow(0 -0.125rem 0 var(--accent))
-        drop-shadow(0.125rem 0.125rem 0 var(--accent))
-        drop-shadow(-0.125rem -0.125rem 0 var(--accent))
-        drop-shadow(0.125rem -0.125rem 0 var(--accent))
-        drop-shadow(-0.125rem 0.125rem 0 var(--accent))
-        drop-shadow(0.1em -0.1em 0.3em rgba(0, 0, 0, 0.45));
+    }
+  }
+
+  /* The focus ring. clip-path clips outline and box-shadow, so it is a second triangle
+     behind the fold: one paint, no filter. Its hypotenuse sits 0.125rem out from the
+     fold's (the box is 0.125rem x sqrt(2) bigger past the top and right) and it scales
+     from the sheet's corner as the fold does. The fold's resting shadow is separate. */
+  .aside:has(.note-fold:focus-visible)::before {
+    content: '';
+    position: absolute;
+    left: -0.125rem;
+    bottom: -0.125rem;
+    z-index: 3;
+    width: calc(var(--note-fold-size) + 0.125rem * 3.4142);
+    height: calc(var(--note-fold-size) + 0.125rem * 3.4142);
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    background: var(--accent);
+    transform-origin: 0.125rem calc(100% - 0.125rem);
+    scale: 1.06;
+    transition: scale 120ms ease;
+    pointer-events: none;
+
+    @starting-style {
+      scale: 1;
     }
   }
 
