@@ -412,7 +412,7 @@
         {
           "repository": "wispr-flow-linux/helper",
           "title": "feat: omit listed VK codes from the global key monitor",
-          "description": "Added `WISPR_CAPTURE_IGNORE_VK`, a list of virtual-key codes the Linux helper leaves out of its global key monitor, so a push-to-talk bind on Right Ctrl stops firing on Left Ctrl as well. Skipped keys do not take a sequence index, so the app never sees a gap, and paste injection is untouched.",
+          "description": "Added `WISPR_CAPTURE_IGNORE_VK`, a list of virtual-key codes the Linux helper leaves out of its global key monitor, so a push-to-talk bind on <kbd>Right Ctrl</kbd> stops firing on <kbd>Left Ctrl</kbd> as well. Skipped keys do not take a sequence index, so the app never sees a gap, and paste injection is untouched.",
           "url": "https://github.com/wispr-flow-linux/helper/pull/15",
           "number": 15,
           "updatedAt": "2026-09-17T17:19:05Z",

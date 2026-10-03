@@ -5,6 +5,8 @@
 </aside>
 
 <style lang="scss">
+@use "@/scss/_kbd.scss" as kbd;
+
 aside {
   color-scheme: only light;
 
@@ -23,6 +25,10 @@ aside {
   color: var(--color);
 
   line-height: 1.25rem;
+
+  :global(kbd) {
+    @include kbd.prose-kbd;
+  }
   font-size: var(--note-font-size, 1.25rem);
   text-wrap: pretty;
 

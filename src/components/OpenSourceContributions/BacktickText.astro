@@ -5,7 +5,7 @@ type Props = {
 
 const { text } = Astro.props;
 
-const segments = text.split(/(`[^`]*`)/g).filter((segment) => segment.length > 0);
+const segments = text.split(/(`[^`]*`|<kbd>[^<]*<\/kbd>)/g).filter((segment) => segment.length > 0);
 
 /* A code span is one unbreakable word, so a line can only take it whole and the
    prose before it gets stranded on a short line. Offer breaks after the
@@ -24,10 +24,18 @@ const splitAfterCodePunctuation = (code: string) => (
 <>{segments.map((segment) => (
   segment.startsWith('`') && segment.endsWith('`')
     ? <span class="backtick">{splitAfterCodePunctuation(segment.slice(1, -1)).map((piece, index) => (index > 0 ? [<wbr />, piece] : piece))}</span>
-    : segment
+    : segment.startsWith('<kbd>')
+      ? <kbd>{segment.slice(5, -6)}</kbd>
+      : segment
 ))}</>
 
 <style lang="scss">
+@use "@/scss/_kbd.scss" as kbd;
+
+kbd {
+  @include kbd.prose-kbd;
+}
+
 .backtick {
   color: var(--accent-text);
   font-size: inherit;
