@@ -1,4 +1,5 @@
 ---
+import { highlightSpans } from '@/highlight';
 import { baseObjects, objectsOf, walkthrough } from '../objects';
 
 const group = baseObjects.find((object) => object.autoplay) ?? baseObjects[0];
@@ -11,7 +12,7 @@ const caret = walkthrough.value.length;
 const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <div class="shared-layer">
     <div class="panel">
       <header>
@@ -44,7 +45,7 @@ const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
                 <span class="text">{walkthrough.value}</span>
                 <span class="caret"></span>
               </span>
-              <code class="prop">--caret: {caret}</code>
+              <code class="prop hl" set:html={highlightSpans(`--caret: ${caret}`, 'css', ['a{', '}'])} />
             </li>
           ))}
         </ul>
@@ -71,8 +72,11 @@ const fieldStyle = { "--caret": caret, "--chars": walkthrough.value.length };
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
 @use "../_caret";
+@use "@/scss/_code.scss" as code;
 @use "./sheet" as *;
 .wrapper {
+  @include code.code-chip;
+
   @include sheet-content;
 
   @container technical-drawing-width (max-width: 56em) {

@@ -1,10 +1,11 @@
 ---
+import { highlightSpans } from '@/highlight';
 const value = 'White and Beige';
 const selectionStart = 9;
 const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : char, index }));
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <div class="caret-layer">
     <div class="panel">
       <header>
@@ -24,9 +25,9 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
         <div class="readout">
           <span><code>selectionStart</code> = <strong>{selectionStart}</strong></span>
           <span aria-hidden="true">→</span>
-          <span><code>--caret: {selectionStart}</code></span>
+          <span><code class="hl" set:html={highlightSpans(`--caret: ${selectionStart}`, 'css', ['a{', '}'])} /></span>
           <span aria-hidden="true">→</span>
-          <span><code>left: min(var(--caret) * 1ch, var(--input-width) - 1ch)</code></span>
+          <span><code class="hl" set:html={highlightSpans('left: min(var(--caret) * 1ch, var(--input-width) - 1ch)', 'css', ['a{', '}'])} /></span>
         </div>
       </div>
 
@@ -55,9 +56,12 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
 @use "../_caret";
+@use "@/scss/_code.scss" as code;
 @use "./sheet" as *;
 
 .wrapper {
+  @include code.code-chip;
+
   @include sheet-content;
 
   @container technical-drawing-width (max-width: 56em) {
