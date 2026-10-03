@@ -47,6 +47,20 @@
   );
 }
 
+// Inline code set on the chip (class hl) inside a sheet's own type: the chip keeps the size of
+// the text around it, and its narrow inset hangs out over the gap beside it by its own width, so
+// the text sits where it did without the chip and no row or line grows. As schemaDef's sheets
+// do (#314); the line height and the block margin also keep a code that is a grid or flex item
+// its height. Wrapped in :where() so a sheet's own rule for a code's size or face still wins.
+@mixin code-chip {
+  :where(code.hl) {
+    font-size: 1em;
+    line-height: inherit;
+    padding-inline: 0.125em;
+    margin: -1px calc(-0.125em - 1px);
+  }
+}
+
 @mixin code-ground {
   @include code-roles;
   background: var(--hl-ground);
