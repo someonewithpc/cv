@@ -4,7 +4,7 @@ import type { LayoutStyle } from './scene/layoutEngine';
 /**
  * Space Builder `fac` glyphs for seats/theater category layouts
  * (`LayoutsField.vue`: theater / theater_offset / t_herringbone / …).
- * Grid & Offset share `theater-grid` (flip-v); Chevron is `t-herringbone` (flip-v).
+ * Grid and Offset use the default layouts' `grid-regular` and `grid-offset`; Chevron is `t-herringbone` (flip-v).
  */
 export const LAYOUT_ICONS: Record<LayoutStyle, string> = {
   grid: spaceBuilderAsset('layouts/grid.svg'),
