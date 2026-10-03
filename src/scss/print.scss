@@ -59,6 +59,17 @@
     }
   }
 
+  // The title block's corner accents are a border under a gradient mask, and Chrome's print
+  // default (background graphics off) drops the mask with the backgrounds, leaving the whole
+  // border. Print this one's graphics whatever the dialog says.
+  .title-block {
+    box-shadow: none !important;
+
+    &::after {
+      print-color-adjust: exact;
+    }
+  }
+
   .cutting-mat {
     display: block !important;
     width: auto !important;
