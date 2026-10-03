@@ -788,13 +788,13 @@ test('each group is a sheet of ruled paper torn along the top and the bottom', a
     // edge is a tile laid side by side at its own size rather than one path stretched across
     // the sheet, so the tear is as fine on a phone as on a wide screen.
     expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
-    expect(sheet.mask.split('url("data:').length - 1, `${sheet.id} two tears`).toBe(2);
+    expect((sheet.mask.match(/url\("[^"]*\/tears\/[a-z-]+\.svg"\)/g) ?? []).length, `${sheet.id} two tears`).toBe(2);
     expect(sheet.maskRepeat, `${sheet.id} tear tiles`).toBe('repeat-x, no-repeat, repeat-x');
     expect(sheet.maskSize[0], `${sheet.id} tile`).toBe(sheet.maskSize[2]);
     expect(sheet.maskSize[0], `${sheet.id} tile`).not.toMatch(/%/);
     // The paper's inside shows along both tears, where the fibres pulled out. Count the
-    // images, not the url(#…) references inside them.
-    expect(sheet.fringe.split('url("data:').length - 1, `${sheet.id} fringe`).toBe(2);
+    // images under /tears/.
+    expect((sheet.fringe.match(/url\("[^"]*\/tears\/[a-z-]+\.svg"\)/g) ?? []).length, `${sheet.id} fringe`).toBe(2);
     // The sheets are the width of the band, laid one under the other.
     expect(Math.abs(sheet.width - intro.width), `${sheet.id} width`).toBeLessThanOrEqual(1);
     expect(Math.abs(sheet.left - intro.left), `${sheet.id} edge`).toBeLessThanOrEqual(1);
