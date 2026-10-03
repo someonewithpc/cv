@@ -73,7 +73,7 @@ ${themeVars(settings)}
   {THEME_IDS.map((id) => {
     const settings = THEMES[id];
     return (
-      <label class="bypass-contrast-check">
+      <label>
         <input type="radio" id={themeInputId(id)} name="theme" value={id} class="sr-only" />
         <Icon name={settings.icons.unchecked} class="unchecked" aria-hidden="true" />
         <Icon name={settings.icons.checked} class="checked" data-theme-transition-scale-factor={settings.transitionScaleFactor} aria-hidden="true" />
