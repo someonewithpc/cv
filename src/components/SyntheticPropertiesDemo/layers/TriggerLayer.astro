@@ -1,4 +1,8 @@
 ---
+import { highlightLines } from '@/highlight';
+
+const HOT = { '⟦': '<span class="hot">', '⟧': '</span>' };
+
 // Where the one builder's SQL ends up, the way app/models/library_object.rb wrote it on the
 // branch. The bodies are cut down to the lines that show what the builder was handed.
 const targets = [
@@ -56,12 +60,31 @@ const targets = [
   },
 ];
 
+// The builder, with the argument each caller passes marked where it is taken and where it lands.
+const builder = highlightLines(`def self.size_synthetic_property_select_sql(⟦where⟧ = "1=1")
+  <<~SQL.chomp
+    WITH RECURSIVE split_sizes AS (…)  -- one row per dimension
+    SELECT id AS library_object_id, 'Size (centimeters)' AS name,
+      GROUP_CONCAT(CONCAT(ROUND(size, 1 - FLOOR(LOG10(size))), 'cm') SEPARATOR ' by ') AS value
+    FROM split_sizes WHERE #{⟦where⟧} AND size <> '' GROUP BY id
+    UNION ALL  -- five more, and the exact cm and m where they round
+  SQL
+end`, 'ruby', { inserts: HOT }).join('\n');
+
 // A long name may wrap after an underscore, a dot or an opening bracket, never inside a word,
 // and never to leave a stub such as `id` alone on the next line.
 const breakable = (line: string) => line.split(/(?<=[_.(])(?![a-z]{1,3}\b)/i);
+
+// Each body as the heredoc it sits in, so its interpolations read as Ruby, with a break
+// opportunity at every place breakable allows.
+const body = (sql: string[]) =>
+  highlightLines(sql.map((line) => breakable(line).join('¦')).join('\n'), 'ruby', {
+    context: ['<<~SQL\n', '\nSQL'],
+    inserts: { '¦': '<wbr />' },
+  });
 ---
 
-<div class="wrapper synthetic-blueprint">
+<div class="wrapper synthetic-blueprint hl">
   <div class="trigger-layer">
     <div class="panel">
       <header>
@@ -73,15 +96,7 @@ const breakable = (line: string) => line.split(/(?<=[_.(])(?![a-z]{1,3}\b)/i);
 
       <div class="builder">
         <span class="caption"><code>app/models/library_object.rb</code></span>
-        <pre><code><span class="k">def</span> self.size_synthetic_property_select_sql(<span class="hot">where</span> = <span class="s">"1=1"</span>)
-  <span class="k">&lt;&lt;~SQL</span>.chomp
-    WITH RECURSIVE split_sizes AS (…)  <span class="c">-- one row per dimension</span>
-    SELECT id AS library_object_id, 'Size (centimeters)' AS name,
-      GROUP_CONCAT(CONCAT(ROUND(size, 1 - FLOOR(LOG10(size))), 'cm') SEPARATOR ' by ') AS value
-    FROM split_sizes WHERE #{'#{'}<span class="hot">where</span>{'}'} AND size &lt;&gt; '' GROUP BY id
-    UNION ALL  <span class="c">-- five more, and the exact cm and m where they round</span>
-  <span class="k">SQL</span>
-<span class="k">end</span></code></pre>
+        <pre class="hl-box"><code set:html={builder} /></pre>
       </div>
 
       <ol class="targets">
@@ -94,11 +109,7 @@ const breakable = (line: string) => line.split(/(?<=[_.(])(?![a-z]{1,3}\b)/i);
                 <span class="source"><code>where</code> = <code class="hot">{target.where}</code></span>
               )}
             </span>
-            <pre><code>{target.sql.map((line) => (
-              <span class="line">{breakable(line).map((part, index) => (
-                <Fragment>{index > 0 && <wbr />}{part}</Fragment>
-              ))}</span>
-            ))}</code></pre>
+            <pre class="hl-box"><code>{body(target.sql).map((line) => <span class="line" set:html={line} />)}</code></pre>
           </li>
         ))}
       </ol>
@@ -174,22 +185,20 @@ pre {
   }
 }
 
-.k {
-  color: var(--accent-text);
-  font-weight: 600;
-}
-
-.c {
-  color: var(--ink-muted);
-}
-
-.s {
-  color: var(--ink-muted);
-}
-
 .hot {
   color: var(--accent-text);
   font-weight: 600;
+}
+
+/* In the code the mark takes the warm role, which is tuned to the code's ground. */
+pre :global(.hot) {
+  color: var(--hl-warm);
+  font-weight: 600;
+
+  /* The marked argument stays one colour, whatever kind its word is. */
+  :global(span) {
+    color: inherit;
+  }
 }
 
 /* The four in one row of equal cards: each card spans a heading row and a code row the

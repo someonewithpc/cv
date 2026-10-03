@@ -1,4 +1,5 @@
 ---
+import { highlightLines } from '@/highlight';
 import { paxProperties, sample, searchableText, storedSizeProperties } from '../units';
 
 // The sample object's rows in the synthetic table, and what the second trigger layer folds
@@ -6,9 +7,22 @@ import { paxProperties, sample, searchableText, storedSizeProperties } from '../
 const objectId = 1024;
 const rows = [...storedSizeProperties(sample.size), ...paxProperties(sample.pax)];
 const text = searchableText(rows);
+
+// The upsert the second trigger runs, with the clause that keeps one row per object marked.
+const upsert = highlightLines(`INSERT INTO library_object_properties_concatenated
+  (\`library_object_id\`, \`values\`)
+SELECT
+    lops.library_object_id,
+    GROUP_CONCAT(CONCAT(lops.\`value\`, ' ', lops.\`name\`)
+      SEPARATOR ' ')
+  FROM library_object_synthetic_properties lops
+  WHERE lops.library_object_id = NEW.library_object_id
+    AND \`lops\`.\`value\` IS NOT NULL
+  GROUP BY lops.library_object_id
+⟦ON DUPLICATE KEY UPDATE⟧ \`values\` = VALUES(\`values\`);`, 'sql', { inserts: { '⟦': '<span class="hot">', '⟧': '</span>' } }).join('\n');
 ---
 
-<div class="wrapper synthetic-blueprint">
+<div class="wrapper synthetic-blueprint hl">
   <div class="index-layer">
     <div class="panel">
       <header>
@@ -37,17 +51,7 @@ const text = searchableText(rows);
 
         <div class="upsert">
           <span class="caption"><code>app/models/library_object_synthetic_property.rb</code> · AFTER INSERT, UPDATE and DELETE, each row</span>
-          <pre><code>INSERT INTO library_object_properties_concatenated
-  (`library_object_id`, `values`)
-SELECT
-    lops.library_object_id,
-    GROUP_CONCAT(CONCAT(lops.`value`, ' ', lops.`name`)
-      SEPARATOR ' ')
-  FROM library_object_synthetic_properties lops
-  WHERE lops.library_object_id = NEW.library_object_id
-    AND `lops`.`value` IS NOT NULL
-  GROUP BY lops.library_object_id
-<span class="hot">ON DUPLICATE KEY UPDATE</span> `values` = VALUES(`values`);</code></pre>
+          <pre class="hl-box"><code set:html={upsert} /></pre>
           <span class="arrow" aria-hidden="true">↓</span>
           <span class="caption"><code>library_object_properties_concatenated.values</code> · FULLTEXT</span>
           <pre class="text">{text}</pre>
@@ -165,9 +169,14 @@ pre.text {
   border-color: var(--line-strong);
 }
 
-.hot {
-  color: var(--accent-text);
+pre :global(.hot) {
+  color: var(--hl-warm);
   font-weight: 600;
+
+  /* The marked clause stays one colour, whatever kinds its words are. */
+  :global(span) {
+    color: inherit;
+  }
 }
 
 .arrow {

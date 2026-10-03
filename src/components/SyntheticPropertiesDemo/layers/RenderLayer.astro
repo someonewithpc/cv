@@ -1,4 +1,5 @@
 ---
+import { highlightSpans } from '@/highlight';
 import { renderDimension, renderings } from '../units';
 
 // Two of the sample's dimensions, and one that shows both corrections: 182cm rounds to
@@ -21,7 +22,7 @@ const rules: Record<(typeof renderings)[number]['id'], string> = {
 const feet = new Set(['ft-mark', 'ft-in']);
 ---
 
-<div class="wrapper synthetic-blueprint">
+<div class="wrapper synthetic-blueprint hl">
   <div class="render-layer">
     <div class="panel">
       <header>
@@ -43,7 +44,7 @@ const feet = new Set(['ft-mark', 'ft-in']);
             <tr>
               <th scope="row">
                 <span class="name">{rendering.name}</span>
-                <code class="rule">{rules[rendering.id]}</code>
+                <code class="rule hl-box" set:html={highlightSpans(rules[rendering.id], 'sql')} />
               </th>
               {columns.map((cm) => (
                 <td class:list={['num', { carry: cm === carry && feet.has(rendering.id) }]}>
