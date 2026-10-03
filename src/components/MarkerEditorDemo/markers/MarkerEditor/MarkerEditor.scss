@@ -16,6 +16,14 @@ $ul-columns: 4;
   // Tallest and widest thing in the chrome.
   --marker-editor-canvas: 32em;
 
+  // The product's own editor colours: white chrome icons, a blue handle on a white ring,
+  // a green constraint cross, grey for a part that cannot be picked.
+  --marker-chrome-icon: white;
+  --marker-handle-stroke: blue;
+  --marker-handle-fill: white;
+  --marker-constraint-stroke: green;
+  --marker-inert-ink: gray;
+
   // The chrome's footprint in em. The type scales so that footprint fits the
   // host, so these have to follow whichever layout `article` is using.
   --marker-editor-chrome-inline: 56;
@@ -198,7 +206,7 @@ $ul-columns: 4;
           }
 
           &[inert] {
-            color: gray !important;
+            color: var(--marker-inert-ink) !important;
           }
         }
 

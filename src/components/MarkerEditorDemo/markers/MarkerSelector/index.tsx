@@ -247,7 +247,7 @@ export function MarkerSelector({
               setIsNewMarker(true);
             })}
           >
-            <FontAwesomeIcon icon={faPlus} size="3x" color="white" />
+            <FontAwesomeIcon icon={faPlus} size="3x" color="var(--marker-chrome-icon)" />
           </li>
           <li
             role="option"
@@ -267,7 +267,7 @@ export function MarkerSelector({
             {...pressable(onClose)}
             title="Close marker selector"
           >
-            <FontAwesomeIcon icon={faXmark} size="3x" color="white" />
+            <FontAwesomeIcon icon={faXmark} size="3x" color="var(--marker-chrome-icon)" />
           </li>
         </ul>
       </section>

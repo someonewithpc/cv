@@ -8,6 +8,10 @@
   translate: -50% calc(-100% - 4rem);
   z-index: 20;
 
+  // The product's selector colours: white icons, dark grey for a disabled cell.
+  --marker-chrome-icon: white;
+  --marker-disabled-ink: darkgray;
+
   background: #333;
   border: 2px solid #666;
   border-radius: 0.5em;
@@ -161,7 +165,7 @@
         }
 
         &:disabled {
-          color: darkgray;
+          color: var(--marker-disabled-ink);
           cursor: not-allowed;
         }
       }

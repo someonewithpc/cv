@@ -348,13 +348,13 @@ export function MarkerEditor({
               >
                 <FontAwesomeIcon
                   icon={faArrowRightFromBracket}
-                  color="white"
+                  color="var(--marker-chrome-icon)"
                 />
               </button>
               <button type="button" title="Reset" onClick={reset}>
                 <FontAwesomeIcon
                   icon={faArrowRotateLeft}
-                  color="white"
+                  color="var(--marker-chrome-icon)"
                 />
               </button>
             </header>
@@ -416,7 +416,7 @@ export function MarkerEditor({
                           }}
                         >
                           {/* We position the indicators on the top left and use CSS `translate` to move them to the appropriate place in order to bypass React's rendering, as it was unusably slow */}
-                          <circle cx={-1} cy={-1} r={MARKER_EDITING_CIRCLE_RADIUS} stroke="blue" fill="white" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
+                          <circle cx={-1} cy={-1} r={MARKER_EDITING_CIRCLE_RADIUS} style={{ stroke: 'var(--marker-handle-stroke)', fill: 'var(--marker-handle-fill)' }} strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
                         </g>
                         <g
                           ref={activeControlPointIndicatorRefs[controlPointName]['constrained']}
@@ -425,8 +425,8 @@ export function MarkerEditor({
                             translate: activePart.controlPoints[controlPointName].toCSSTranslate(),
                           }}
                         >
-                          <line x1={-1 - MARKER_EDITING_CROSS_RADIUS} y1={-1} x2={-1 + MARKER_EDITING_CROSS_RADIUS} y2={-1} stroke="green" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
-                          <line x1={-1} y1={-1 - MARKER_EDITING_CROSS_RADIUS} x2={-1} y2={-1 + MARKER_EDITING_CROSS_RADIUS} stroke="green" strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
+                          <line x1={-1 - MARKER_EDITING_CROSS_RADIUS} y1={-1} x2={-1 + MARKER_EDITING_CROSS_RADIUS} y2={-1} style={{ stroke: 'var(--marker-constraint-stroke)' }} strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
+                          <line x1={-1} y1={-1 - MARKER_EDITING_CROSS_RADIUS} x2={-1} y2={-1 + MARKER_EDITING_CROSS_RADIUS} style={{ stroke: 'var(--marker-constraint-stroke)' }} strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
                         </g>
                       </g>
                     ))}
