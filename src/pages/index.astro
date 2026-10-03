@@ -189,6 +189,7 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
 </Layout>
 
 <style lang="scss">
+@use "@/scss/gloss" as gloss;
 // tabindex="-1": the accesskey's landing spot, not a Tab stop. The skip link also targets
 // #career (Career.astro), the first section with real content, rather than #main: #main
 // starts right where the reader already was, so jumping there produced no visible change.
@@ -323,13 +324,8 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
   }
 
   :global([lang='ja']) {
-    display: block;
-    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    color: color-mix(in oklch, var(--ink-faint), transparent 20%);
+    @include gloss.ja-gloss;
     margin-inline-start: -0.125rem;
-    background-image: linear-gradient(transparent, transparent);
   }
 }
 </style>
