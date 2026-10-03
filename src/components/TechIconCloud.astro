@@ -41,6 +41,7 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
 
 <style lang="scss">
 @use '@/scss/hit-area' as *;
+@use '@/scss/page-column' as column;
 section {
   max-width: 80ch;
   margin-inline: auto;
@@ -184,6 +185,8 @@ section {
   }
 
   ul {
+    @include column.skip-while-parsing(30rem);
+
     display: flex;
     justify-content: center;
     gap: 0.5em;

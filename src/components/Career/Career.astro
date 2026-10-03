@@ -754,6 +754,8 @@ $career-inset: (gaps: 1, desk: column.$inset-desk-sheet);
    smallest lettering to stay above 8px, and the tall one is capped so its lettering never
    outgrows the notes'. */
 .elevation {
+  @include column.skip-while-parsing(30rem);
+
   display: grid;
   justify-items: center;
   margin: 3rem 0 0;

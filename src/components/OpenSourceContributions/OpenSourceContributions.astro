@@ -93,6 +93,8 @@ const statistics = {
   /* Narrow, the intro is paper with no rim of its own, so it takes the page gutter: the inset
      the cutting mat gives the Demos title. */
   .intro {
+    @include column.skip-while-parsing(72rem);
+
     padding: var(--page-gap);
     border-radius: 0.25rem;
     background: var(--surface-page);
@@ -140,6 +142,8 @@ const statistics = {
   /* A mask cuts a box-shadow away along with the paper, so the lift belongs to a wrapper and
      is a drop-shadow, which follows the torn edge instead of the box. */
   .sheet {
+    @include column.skip-while-parsing(110rem);
+
     filter:
       drop-shadow(0 1px 1px rgb(0 0 0 / 10%))
       drop-shadow(0 0.5rem 0.9rem rgb(0 0 0 / 14%));
