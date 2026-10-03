@@ -7,6 +7,7 @@
  */
 import Annotations from '@/components/TechnicalDrawing/Annotations.astro';
 import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro';
+import { highlightSpans } from '@/highlight';
 
 import MiniPage from './MiniPage.astro';
 
@@ -22,7 +23,7 @@ const arrow = 9;
 const dots = [0, 1, 2, 3];
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <p class="point typewriter">The stack without JavaScript</p>
 
   <Annotations seed="paper-stack-row" scale={annotationScale} reach={1}>
@@ -119,13 +120,16 @@ const dots = [0, 1, 2, 3];
     </Fragment>
   </Annotations>
 
-  <p class="footnote">One rule carries all of it: <code>@media (scripting: none)</code>.</p>
+  <p class="footnote">One rule carries all of it: <code class="hl" set:html={highlightSpans('@media (scripting: none)', 'css')} />.</p>
 </div>
 
 <style lang="scss">
+@use "@/scss/_code.scss" as code;
 @use "./sheet" as *;
 
 .wrapper {
+  @include code.code-chip;
+
   @include sheet-content;
   @include sheet-type;
 
