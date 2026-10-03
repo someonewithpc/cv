@@ -473,7 +473,11 @@ html:has([data-paper-stack-root]:hover) {
       // Paint order: back to front by --page-index, which already reads the pile the right way
       // round. A turned page carries the highest indices, so it paints behind the bottom page of
       // the stack, and within the pile the page turned most recently paints behind the rest.
+      // The z-index says it again for WebKit, which paints grid items that are stacking contexts
+      // (the rotate below makes every page one) in DOM order and ignores `order`. It stays
+      // inside the stack: the stack's size containment makes it a stacking context of its own.
       order: calc(-1 * var(--page-index));
+      z-index: calc(var(--page-count) + 1 - var(--page-index));
       // --flip-progress (set to 1 by fold-drag.ts for the length of a drag) closes the fan by
       // one page: the front page and the one behind it square up — so their folded-back corners
       // stay flush instead of fanning a gap open at the top-left — and by the time a committed
@@ -1331,6 +1335,7 @@ html:has([data-paper-stack-root]:hover) {
       container-type: scroll-state;
       counter-increment: paper-sheet;
       order: 0 !important;
+      z-index: auto !important;
       rotate: none !important;
       animation: none !important;
       transition: none !important;
