@@ -6,7 +6,7 @@
  */
 import { createHighlighter, type ThemeRegistration } from 'shiki';
 
-export type CodeLang = 'ts' | 'css' | 'html' | 'xml';
+export type CodeLang = 'ts' | 'css' | 'html' | 'xml' | 'php';
 
 const KINDS: Record<string, string[]> = {
   keyword: ['keyword', 'storage', 'punctuation.definition.keyword'],
@@ -20,8 +20,15 @@ const KINDS: Record<string, string[]> = {
     'meta.selector punctuation.definition.entity.css',
   ],
   attribute: ['entity.other.attribute-name'],
-  property: ['support.type.property-name', 'meta.definition.variable', 'variable.other.constant'],
-  function: ['entity.name.function', 'support.function'],
+  property: [
+    'support.type.property-name',
+    'meta.definition.variable',
+    'variable.other.constant',
+    'variable.other.php',
+    'punctuation.definition.variable',
+    'constant.other.php',
+  ],
+  function: ['entity.name.function', 'support.function', 'support.class', 'support.attribute', 'support.other.namespace'],
   string: ['string', 'punctuation.definition.string'],
   number: ['constant.numeric', 'constant.language', 'keyword.other.unit', 'support.constant.property-value'],
   punctuation: ['punctuation', 'meta.brace'],
@@ -39,7 +46,7 @@ const theme: ThemeRegistration = {
   tokenColors: Object.values(KINDS).map((scope, index) => ({ scope, settings: { foreground: stand(index) } })),
 };
 
-const highlighter = await createHighlighter({ themes: [theme], langs: ['ts', 'css', 'html', 'xml'] });
+const highlighter = await createHighlighter({ themes: [theme], langs: ['ts', 'css', 'html', 'xml', 'php'] });
 
 export const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -129,6 +136,18 @@ export const highlightBlock = (code: string, lang: CodeLang, { lineComment = '',
  * Inline code. A word alone can miss its grammar (viewBox is an attribute only inside a
  * tag), so `context` tokenises it between a prefix and a suffix and keeps the word's tokens.
  */
+/**
+ * The spans of a code line or lines, with no element round them, for markup that already has
+ * its own box. PHP is tokenised after an opening tag, which the grammar needs to leave markup
+ * mode; the tag is not part of the result. One entry per line, each tokenised with its
+ * neighbours.
+ */
+export const highlightLines = (code: string, lang: CodeLang) => {
+  const before = lang === 'php' ? '<?php ' : '';
+  const lines = highlighter.codeToTokensBase(before + code, { lang, theme: 'cv' });
+  return lines.map((line, index) => renderLine(line, index === 0 ? before.length : 0));
+};
+
 export const highlightInline = (code: string, lang: CodeLang, context: [string, string] = ['', ''], className = '') => {
   const [before, after] = context;
   const tokens = highlighter.codeToTokensBase(before + code + after, { lang, theme: 'cv' }).flat();
