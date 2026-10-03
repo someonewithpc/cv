@@ -49,7 +49,7 @@ function Column({ side }: { side: Side }) {
                   <label>
                     <span>
                       <span>Font Size</span>
-                      <FontAwesomeIcon icon={faArrowsRotate} title="Reset to default" style={{ float: 'right' }} />
+                      <span title="Reset to default" style={{ float: 'right' }}><FontAwesomeIcon icon={faArrowsRotate} /></span>
                     </span>
                     <input
                       type="range"
@@ -75,7 +75,7 @@ function Column({ side }: { side: Side }) {
                   <label>
                     <span>
                       <span>Font Weight</span>
-                      <FontAwesomeIcon icon={faArrowsRotate} title="Reset to default" style={{ float: 'right' }} />
+                      <span title="Reset to default" style={{ float: 'right' }}><FontAwesomeIcon icon={faArrowsRotate} /></span>
                     </span>
                     <input type="range" data-demo-target={`weight-${side}`} min="100" max="1000" step={100} defaultValue={400} />
                   </label>
