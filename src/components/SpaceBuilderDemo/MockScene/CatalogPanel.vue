@@ -77,7 +77,7 @@ const itemsVisible = computed(() => {
 <style lang="scss" scoped>
 // Space Builder's own accent (ui/main.scss `$visrez-brand`), which the rest of the demo
 // already uses; the catalog was the one panel still on Inspinia's default teal.
-$brand: #89ab24;
+@use '@/scss/visrez' as *;
 
 .catalog-search {
   display: block;
@@ -100,7 +100,7 @@ $brand: #89ab24;
 
     &:focus {
       outline: 0;
-      border-color: $brand;
+      border-color: $visrez-brand;
       box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
     }
   }

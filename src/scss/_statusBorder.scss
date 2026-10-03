@@ -3,12 +3,13 @@
 // registered below so they animate. Copied from
 // the font picker's FontPickerDemo/picker/_statusBorder.scss with the properties renamed;
 // the two should become one file when both are on main.
+@use './visrez' as *;
 $status-border-duration: 1s;
 // Eases in, then JS switches it to linear at the point where this bezier already is,
 // so the loop has no seam
 $status-border-timing: cubic-bezier(0.75, 0.25, 0.2, 0.2);
 $status-border-idle: #bbb;
-$status-border-brand: #89ab24;
+$status-border-brand: $visrez-brand;
 
 // Every stylesheet that uses this module carries these rules, so the registration arrives
 // with whichever component draws the ring

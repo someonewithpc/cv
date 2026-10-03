@@ -2,7 +2,7 @@
 // The catalog card, its style carousel and its dropdown rows, after Space Builder's
 // _catalog_object_field.scss, _catalog_subcategory_group_field.scss and _hover_select.scss.
 // Scoped under .variants-catalog so the panel and the drawn copy on the sheet share it.
-$brand: #89ab24;
+@use '@/scss/visrez' as *;
 $border: #3d4246;
 $row-bg: #212529;
 $duration: 250ms;
@@ -21,7 +21,7 @@ $pip: 1.125rem;
   user-select: none;
   // The pips keep the brand colour on every card; only the count badge greys until the
   // card is the selected one, as _catalog_subcategory_group_field.scss has it.
-  --active-pip-color: #{$brand};
+  --active-pip-color: #{$visrez-brand};
   --active-count-color: #6c757d;
 
   &:hover {
@@ -30,10 +30,10 @@ $pip: 1.125rem;
 
   &.active {
     box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
-    --active-count-color: #{$brand};
+    --active-count-color: #{$visrez-brand};
 
     .item-label {
-      background: $brand;
+      background: $visrez-brand;
       color: #fff;
     }
   }
@@ -239,7 +239,7 @@ $pip: 1.125rem;
         gap: 0.5rem;
         background: $row-bg;
         scrollbar-width: thin;
-        scrollbar-color: $brand transparent;
+        scrollbar-color: $visrez-brand transparent;
 
         > .style {
           flex-basis: calc(100% - var(--style-peek));
