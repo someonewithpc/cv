@@ -106,7 +106,8 @@ for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
       };
     });
 
-    expect(colours.scheme).toBe('light');
+    // "only light": the opt-out from Chrome's auto dark mode, which would invert a plain light page.
+    expect(colours.scheme.split(' ').sort()).toEqual(['light', 'only']);
     expect(colours.kind).toBe('light');
     for (const sample of [colours.table, colours.cell]) {
       expect(sample.paper).toBeGreaterThan(0.9);

@@ -24,11 +24,15 @@
     }
     --theme-paper-grain: 0 !important;
     --theme-paper-sheet-grain: 0 !important;
-    color-scheme: light !important;
+    color-scheme: only light !important;
   }
 
+  // "only light", not "light": Chrome's auto dark mode (chrome://flags force-dark) inverts a
+  // page whose scheme is plain light, so DevTools' print emulation showed the light print
+  // palette turned inside out. A page that opts out with "only" is left alone. The PDF was
+  // never inverted; auto dark mode does not run at print time.
   body {
-    color-scheme: light !important;
+    color-scheme: only light !important;
   }
 
   // No desk: the bands print as plain paper with no lift.
