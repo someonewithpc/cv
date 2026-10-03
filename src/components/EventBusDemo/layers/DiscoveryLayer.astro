@@ -1,4 +1,6 @@
 ---
+import { highlightSpans } from '@/highlight';
+
 // One module as the compiler pass reads it. Its public methods in source order, every
 // on-method among them; the ones whose name starts with `on` become listeners, the event
 // being the rest of the name, and the others are left alone. Two of the plain methods,
@@ -26,7 +28,7 @@ const components = ['Attachment', 'Avatar', 'Conversation', 'Feed', 'Posting', '
 const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoEncoder'];
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <div class="discovery-layer">
     <p class="point">
       <strong>No module registers a listener</strong>
@@ -78,7 +80,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
             {row.event ? (
               <>
                 <code class="event">{row.event}</code>
-                <code class="callable">[ImageEncoder, '{row.name}']</code>
+                <code class="callable hl-box" set:html={highlightSpans(`[ImageEncoder, '${row.name}']`, 'php')} />
                 <span class="prio">prio 0</span>
               </>
             ) : (

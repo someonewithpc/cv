@@ -1,6 +1,8 @@
 ---
 import { Icon } from 'astro-icon/components';
 
+import { highlightLines, highlightSpans } from '@/highlight';
+
 import { EVENT, RESIZE_EVENT, attachments, defaultAttachment, dispatch, listeners, resize, resizers, type EventResult } from './events';
 
 type Props = {
@@ -41,10 +43,28 @@ const unloaded = listeners.map((listener, index) => ({ listener, index })).filte
 const branchTaken = outcome.rendered === 'link';
 const attachmentIcon = { jpeg: 'lucide:image', mp4: 'lucide:film', ogg: 'lucide:music', gif: 'lucide:image-play' } as const;
 const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
+
+// The code on the bus, tokenised at build. The event's name is set in bold inside its string.
+const php = (code: string) => highlightLines(code, 'php', { inserts: { '⟦': '<b>', '⟧': '</b>' } })[0];
+const handleView = php(`Event::handle('⟦${EVENT}⟧', [$vars, &$res])`);
+const handleResize = php(`Event::handle('⟦${RESIZE_EVENT}⟧', [&$event_map, $mimetype])`);
+// The template's lines, each with the part of the branch it belongs to.
+const template = highlightLines(
+  [
+    `{% for block in handle_event('${EVENT}', …) %}`,
+    '    {{ block | raw }}',
+    '{% endfor %}',
+    '{% if not handled %}',
+    '    <a href="{{ attachment.getShowUrl(note) }}">{{ title }}</a>',
+    '{% endif %}',
+  ].join('\n'),
+  'twig',
+).map((html, index) => ({ html, part: ['if', 'loop-body', 'if', 'if', 'fallback', 'if'][index] }));
+const markup = (code: string) => highlightSpans(code, 'html');
 ---
 
 <div
-  class="event-bus"
+  class="event-bus hl"
   data-live={live ? '' : undefined}
   data-attachment={current.id}
   data-result={outcome.result}
@@ -57,23 +77,23 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
     {live ? (
       <button type="button" class="call" data-dispatch title="Dispatch again">
         <Icon name="lucide:play" class="replay" aria-hidden="true" focusable="false" />
-        <code data-stage="view">Event::handle('<b>{EVENT}</b>', [$vars, &amp;$res])</code>
-        <code data-stage="resize">Event::handle('<b>{RESIZE_EVENT}</b>', [&amp;$event_map, $mimetype])</code>
+        <code class="hl-box" data-stage="view" set:html={handleView} />
+        <code class="hl-box" data-stage="resize" set:html={handleResize} />
       </button>
     ) : (
       <span class="call">
-        <code>Event::handle('<b>{EVENT}</b>', [$vars, &amp;$res])</code>
+        <code class="hl-box" set:html={handleView} />
       </span>
     )}
 
     {caption && (
       <p class="caption">
         <span data-stage="view">
-          Each listener is <code>[Module, 'on{EVENT}']</code>, in the order the modules were found
+          Each listener is <code class="hl" set:html={highlightSpans(`[Module, 'on${EVENT}']`, 'php')} />, in the order the modules were found
         </span>
         <span data-stage="resize">
           ImageEncoder's view asks for the GIF's thumbnail, and <code>getOrCreate</code> raises
-          this. Each listener is <code>[Module, 'on{RESIZE_EVENT}']</code>
+          this. Each listener is <code class="hl" set:html={highlightSpans(`[Module, 'on${RESIZE_EVENT}']`, 'php')} />
         </span>
       </p>
     )}
@@ -165,12 +185,9 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 
   <div class="emitter-branch" data-branch={String(branch)}>
     {branch && (
-    <pre class="branch" data-taken={String(branchTaken)}><code><span class="if">{'{%'} for block in handle_event('{EVENT}', …) {'%}'}</span>
-<span class="loop-body">    {'{{'} block | raw {'}}'}</span>
-<span class="if">{'{%'} endfor {'%}'}</span>
-<span class="if">{'{%'} if not handled {'%}'}</span>
-<span class="fallback">    &lt;a href="{'{{'} attachment.getShowUrl(note) {'}}'}"&gt;{'{{'} title {'}}'}&lt;/a&gt;</span>
-<span class="if">{'{%'} endif {'%}'}</span></code></pre>
+    <pre class="branch hl-box" data-taken={String(branchTaken)}><code>{template.map(({ html, part }, index) => (
+      <Fragment>{index > 0 && '\n'}<span class={part} set:html={html} /></Fragment>
+    ))}</code></pre>
     )}
     {branch && (
     <span class="branch-note" data-taken={String(branchTaken)}>
@@ -182,7 +199,7 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
     {branch && (
     <div class="resize" role="group" aria-label="How the GIF's thumbnail is made">
       <span class="resize-label">then <code>getOrCreate</code> tries the resizers in this order</span>
-      <code class="merge">array_merge($event_map['image/gif'], $event_map['image'])</code>
+      <code class="merge hl-box" set:html={highlightSpans("array_merge($event_map['image/gif'], $event_map['image'])", 'php')} />
       <ol class="resizers">
         {resizers.map((resizer, index) => (
           <li class="resizer" data-module={resizer.module} data-result={resized.results[index]}>
@@ -210,16 +227,16 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
       <span class="rendered" data-kind="image">
         <Icon name="lucide:image" aria-hidden="true" focusable="false" />
         <span>
-          <code>&lt;img class="u-photo"&gt;</code> <span class="by">ImageEncoder</span>
+          <code class="hl" set:html={markup('<img class="u-photo">')} /> <span class="by">ImageEncoder</span>
         </span>
       </span>
       <span class="rendered" data-kind="video">
         <Icon name="lucide:circle-play" aria-hidden="true" focusable="false" />
-        <span><code>&lt;video controls&gt;</code> <span class="by">VideoEncoder</span></span>
+        <span><code class="hl" set:html={markup('<video controls>')} /> <span class="by">VideoEncoder</span></span>
       </span>
       <span class="rendered" data-kind="audio">
         <Icon name="lucide:music" aria-hidden="true" focusable="false" />
-        <span><code>&lt;audio controls&gt;</code> <span class="by">AudioEncoder</span></span>
+        <span><code class="hl" set:html={markup('<audio controls>')} /> <span class="by">AudioEncoder</span></span>
       </span>
       <span class="rendered" data-kind="link">
         <Icon name="lucide:link" aria-hidden="true" focusable="false" />
@@ -231,10 +248,13 @@ const resizeLabel = { true: 'true', unused: 'not called', off: 'off' } as const;
 
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
+@use "@/scss/_code.scss" as code;
 @use '@/scss/hit-area' as *;
 /* 1em here is the sheet's body type at this scale, so every measurement below scales
    with the page. */
 .event-bus {
+  @include code.code-chip;
+
   --chip-inline: 10.5em;
   --rail: var(--line-strong);
   --stop: var(--accent);
@@ -296,9 +316,14 @@ button {
   font-size: 0.875em;
   overflow-wrap: anywhere;
 
-  b {
-    color: var(--accent-text);
+  /* The warm role: the accent, at the lightness the code's other colours are tuned to. */
+  :global(b) {
+    color: var(--hl-warm);
     font-weight: 600;
+
+    :global(span) {
+      color: inherit;
+    }
   }
 
   .replay {
@@ -779,7 +804,8 @@ button.call {
   padding: 0.5em 0.75em;
   border: 1px solid var(--line);
   border-radius: 0.375em;
-  background: var(--surface-sunken);
+  /* The code ground, which the token colours are tuned to. */
+  background: var(--hl-ground);
   font-size: max(0.5rem, 0.75em);
   line-height: 1.5;
   white-space: pre-wrap;

@@ -1,4 +1,5 @@
 ---
+import { highlightSpans } from '@/highlight';
 import Bus from '../Bus.astro';
 
 // The three cases of the enum, and what each one does to the chain. Two are in use: the
@@ -23,7 +24,7 @@ const results = [
 ];
 ---
 
-<div class="wrapper">
+<div class="wrapper hl">
   <div class="stop-layer">
     <p class="point">
       <strong>One handler returns <code>Event::stop</code>, and propagation ends there</strong>
@@ -40,7 +41,7 @@ const results = [
     </div>
 
     <section class="results" aria-label="The three cases of EventResult">
-      <code class="enum">enum EventResult</code>
+      <code class="enum hl-box" set:html={highlightSpans('enum EventResult', 'php')} />
       <dl>
         {results.map((row) => (
           <div data-result={row.value}>
