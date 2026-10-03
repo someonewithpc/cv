@@ -137,6 +137,10 @@ test('the banquet card swaps the model for the seat count and table size picked'
   await expect(seats.locator('.hover-select-options li.unavailable button')).toHaveText([
     '8 seats', '4 seats',
   ]);
+  await expect(seats.locator('.hover-select-options button[aria-description]')).toHaveText([
+    '8 seats', '4 seats',
+  ]);
+  await expect(seats.locator('.hover-select-options button[aria-current="true"]')).toHaveText('6 seats');
 });
 
 test.describe(() => {

@@ -159,7 +159,7 @@ test('layouts page: the scene draws and autoplay cycles the styles after the pag
   const drawnOnArrival = await sceneDraws(app);
   await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(drawnOnArrival);
 
-  const activeStyle = () => app.locator('.style-chip.active .style-label').textContent();
+  const activeStyle = () => app.locator('.style-chip.active[aria-pressed="true"] .style-label').textContent();
   const styleOnArrival = await activeStyle();
   await expect.poll(activeStyle, { timeout: 20_000 }).not.toBe(styleOnArrival);
 });
