@@ -4,8 +4,7 @@ const states = ['idle', 'pending', 'success', 'error'] as const;
 // The border's own easing, drawn from the numbers the stylesheet animates with
 // (_statusBorder.scss). Sampling the curve keeps the plot honest: it is the function itself,
 // not a picture of one
-const CONTROL = [0.75, 0.25, 0.2, 0.2] as const;
-const SWAP_AT = 0.75;
+import { STATUS_BORDER_CONTROL as CONTROL, STATUS_BORDER_SWAP_AT as SWAP_AT } from "@/scss/statusBorder";
 
 function bezier(u: number, p1: number, p2: number) {
   const v = 1 - u;
@@ -68,7 +67,7 @@ const swap = samples.reduce((best, s) => (Math.abs(s.x - SWAP_AT) < Math.abs(bes
         <text class="swap-label" font-size="8" x={SWAP_AT * 100 + 4} y="-2">750ms: go linear</text>
       </svg>
       <figcaption>
-        <code>cubic-bezier(0.75, 0.25, 0.2, 0.2)</code> gives the orbit a push and lets it
+        <code>cubic-bezier({CONTROL.join(", ")})</code> gives the orbit a push and lets it
         settle. Kept for every turn it stutters at each restart, so at 750ms the script swaps
         the timing function for <code>linear</code> at the point the curve has already
         reached. The seam goes, the first turn keeps its kick

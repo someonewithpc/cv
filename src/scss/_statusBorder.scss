@@ -4,7 +4,10 @@
 // the font picker's FontPickerDemo/picker/_statusBorder.scss with the properties renamed;
 // the two should become one file when both are on main.
 @use './visrez' as *;
+
+// These three numbers are also in statusBorder.ts: change both.
 $status-border-duration: 1s;
+$status-border-swap-at: 0.75;
 // Eases in, then JS switches it to linear at the point where this bezier already is,
 // so the loop has no seam
 $status-border-timing: cubic-bezier(0.75, 0.25, 0.2, 0.2);

@@ -1,7 +1,6 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
-
-const BORDER_ANIMATION_DURATION = 1000;
+import { STATUS_BORDER_DURATION, STATUS_BORDER_SWAP_AT } from '@/scss/statusBorder';
 
 type State = 'idle' | 'pending' | 'success' | 'error';
 
@@ -29,7 +28,7 @@ export function boot(host: HTMLElement) {
   fieldset.addEventListener('animationstart', () => {
     setTimeout(() => {
       fieldset.style.setProperty('animation-timing-function', 'linear');
-    }, BORDER_ANIMATION_DURATION * 0.75);
+    }, STATUS_BORDER_DURATION * STATUS_BORDER_SWAP_AT);
   });
   fieldset.addEventListener('animationend', () => {
     fieldset.style.removeProperty('animation-timing-function');

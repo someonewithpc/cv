@@ -4,7 +4,7 @@ import cx from 'classnames';
 import { useDebounce } from './useDebounce';
 import { useFontQuery } from './useFontQuery';
 
-const STATUS_BORDER_DURATION = 1000; // Must match $status-border-duration
+import { STATUS_BORDER_DURATION, STATUS_BORDER_SWAP_AT } from '@/scss/statusBorder';
 
 // `onLoaded` fires for the query's result, cached ones included, so entering a URL again
 // after a reset puts its faces back on
@@ -51,7 +51,7 @@ export function SubForm(
         const target = e.currentTarget;
         setTimeout(() => {
           target.style.setProperty('animation-timing-function', 'linear');
-        }, STATUS_BORDER_DURATION * 0.75);
+        }, STATUS_BORDER_DURATION * STATUS_BORDER_SWAP_AT);
       }}
       onAnimationEnd={(e) => {
         e.currentTarget.style.removeProperty('animation-timing-function');
