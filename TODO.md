@@ -273,4 +273,4 @@
 - [x] Fix sheet text that contradicts the code: the Sources caption, the Editor legend, the relevance empty state, the Default sheet's OS rule, the Caret readout, the Synthetic trigger text, the Discovery sheet, the Paper Stack page count, the Filters arrow and MissingLayer's sort text (T4 to T13) (#266)
 - [x] Give Lightning CSS browser targets so Safari gets the -webkit- prefixes it still needs (#325)
 - [x] Cut the requests that start before first paint: the island scripts' shared chunks load as one file (#323)
-- [ ] Reasons that lived only in `title` reach keyboard, touch and screen reader users, and a contribution row shows it opens (A21)
+- [x] Reasons that lived only in `title` reach keyboard, touch and screen reader users, and a contribution row shows it opens (A21) (#272)
