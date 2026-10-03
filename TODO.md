@@ -72,7 +72,7 @@
     - [x] Picker, Held Controls and Loading Indicator sheets show the restart, play and pause deck (#160)
   - [x] GNU social schemaDef to Doctrine metadata, two panes with a cross-highlight (SH-08)
     - [x] Cards run down to the title block, intro and rule beside it (#153)
-    - [ ] The schemaDef sheets take their code colours from the shared highlighter
+    - [x] The schemaDef sheets take their code colours from the shared highlighter (#314)
   - [x] GNU social event dispatch and module discovery (SH-07)
   - [x] Fediverse playground compose graph (SH-09)
     - [x] Framed as a federated network, compose file trimmed and coloured, sheets 3 and 4 redrawn (#129)
