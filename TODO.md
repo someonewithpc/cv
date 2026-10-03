@@ -260,3 +260,4 @@
 - [x] The Space Builder Offset layout ignored the product's OffsetMixin re-anchor terms, so a negative offset left chairs outside the area and the two directions did not differ as the product's do; the Offset chip also reused the Grid icon (C29) (#277)
 - [x] Duplicated style blocks live in one place each: section header, Japanese gloss, caret keyframes, demo sheet box, boot placeholder, status border timing, tear offset (S18) (#306)
 - [x] Preload the 18 shared script chunks with `modulepreload` so the island boot stops paying three round trips (P18) (#238)
+- [ ] Safari draws every paper stack with its last page on top, since WebKit paints rotated pages in DOM order and ignores `order`
