@@ -67,6 +67,14 @@
     @include code-roles;
   }
 
+  // On a blueprint sheet the light side of each role is dark on the blue, so a box a sheet sets
+  // code into takes code.hl's ground and ink there, which the roles are tuned to. On paper it
+  // keeps the sheet's own look.
+  section.blueprint .hl-box {
+    background: var(--hl-ground);
+    color: var(--hl-ink);
+  }
+
   :where(code.hl) {
     padding: 0 0.25em;
     border: 1px solid var(--line);
