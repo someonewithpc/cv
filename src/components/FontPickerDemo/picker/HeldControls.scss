@@ -80,7 +80,7 @@
   position: absolute;
   z-index: 1080;
   pointer-events: none;
-  border-top: 1px dashed rgb(0 0 0 / 45%);
+  border-top: 1px dashed color-mix(in srgb, var(--ink) 45%, transparent);
 }
 
 .grab-measure {
