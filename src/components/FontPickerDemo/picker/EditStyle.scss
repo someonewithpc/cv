@@ -108,6 +108,7 @@
 :where(.edit-style, .held-controls) .sidebar {
   --sidebar-background: light-dark(#{$sidebar-background}, #2b2b2b);
   --sidebar-ink: light-dark(black, #e6e6e6);
+  --sidebar-link: light-dark(blue, #8ab4f8);
 
   box-sizing: border-box;
   width: 100%;
