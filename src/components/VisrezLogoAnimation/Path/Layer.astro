@@ -7,7 +7,7 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
   <Annotations seed="visrez-logo-path" reach={1.6} scale={0.85}>
     <svg class="path-layer" aria-hidden="true" focusable="false" viewBox="-1 -1 2 2" slot="content">
       <g transform="translate(0, 0.2) scale(.707)">
-        <circle cx="1" cy="-0.707" r={0.224 / 2} fill="gray" class="first-vertex-virtual" />
+        <circle cx="1" cy="-0.707" r={0.224 / 2} class="first-vertex-virtual" />
         {/* The drawn vertices, as the stroke covers them: unpainted, for the callouts to anchor to. */}
         <circle cx="0.6" cy="-0.4242" r={0.224 / 2} fill="none" data-vertex="first" />
         <circle cx="0" cy="0" r={0.224 / 2} fill="none" data-vertex="second" />
@@ -99,7 +99,7 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
   $timing: 10s 0.5s linear forwards infinite;
 
   path {
-    stroke: white;
+    stroke: var(--ink);
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
     animation: visrez-logo-path-layer-dash $timing;
@@ -108,6 +108,7 @@ import ArrowAnnotation from '@/components/TechnicalDrawing/ArrowAnnotation.astro
   :global(.first-vertex-virtual) {
     animation: visrez-logo-path-layer-first-vertex-virtual $timing;
     animation-timing-function: step-end;
+    fill: var(--ink-faint);
   }
 
   :global(.first-vertex) {
