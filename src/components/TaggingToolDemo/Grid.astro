@@ -183,6 +183,12 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
+
+  /* tabindex="-1" when live: a handover lands focus here, and a key press should show it. */
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
 }
 
 .tagging-tool :global(input),
