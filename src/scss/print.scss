@@ -23,12 +23,15 @@
   }
 
   // The light theme's variables (src/themes.ts), over whichever theme the data-theme attribute
-  // or prefers-color-scheme picked.
+  // or prefers-color-scheme picked. The fibre tile goes with the grain set to 0: a tile blended
+  // onto a sheet makes Chrome rasterise the whole sheet, 2 MB per contributions page.
   :root {
     --theme-kind: light !important;
     @each $name, $value in themes.$print-theme {
       --#{$name}: #{$value} !important;
     }
+    --theme-paper-grain: 0 !important;
+    --theme-paper-sheet-grain: 0 !important;
     color-scheme: light !important;
   }
 
@@ -136,12 +139,55 @@
     z-index: auto !important;
   }
 
-  // The contributions as a list: one line per entry, and no disclosure body under a triangle
-  // nobody can click on paper.
+  // The contributions as a list: one line per entry, no torn edges and no lift, and no
+  // disclosure body under a triangle nobody can click on paper.
   #open-source {
+    .sheet {
+      filter: none !important;
+    }
+
+    .intro {
+      box-shadow: none !important;
+    }
+
+    section[data-group] {
+      mask: none !important;
+
+      &::after {
+        display: none !important;
+      }
+    }
+
     details {
       display: none !important;
     }
+  }
+
+  // An island that has not booted shows its cover, which on screen is the scene's own dark
+  // ground; on paper it says what the sheet is. A booted scene's canvas has no print either.
+  .boot-placeholder {
+    background: none !important;
+    color: var(--ink-muted) !important;
+
+    > * {
+      display: none !important;
+    }
+
+    &::after {
+      content: "This demo runs in the browser.";
+    }
+  }
+
+  canvas {
+    display: none !important;
+  }
+
+  // The scene's ground behind either is the product's dark viewport; paper is not.
+  :has(> .boot-placeholder),
+  :has(> canvas) {
+    background: none !important;
+    box-shadow: none !important;
+    color-scheme: light !important;
   }
 
   // Nothing on paper is a hyperlink.
