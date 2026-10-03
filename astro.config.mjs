@@ -15,6 +15,7 @@ import { sassFromTs } from './plugins/sassFromTs.mjs';
 import { stripDracoDefaultAssets } from './plugins/stripDracoDefaultAssets.mjs';
 
 import { modulePreloadChunks } from './plugins/modulePreloadChunks.mjs';
+import { sharedChunk } from './plugins/sharedChunk.mjs';
 
 // Only `@/…` — a bare `@` would also match scoped pkgs like `@astrojs`.
 const srcAlias = {
@@ -89,7 +90,7 @@ export default defineConfig({
   ],
 
   vite: {
-    plugins: [basicSsl(), httpToHttpsRedirect({ allowedHosts: devHosts }), stripDracoDefaultAssets()],
+    plugins: [basicSsl(), httpToHttpsRedirect({ allowedHosts: devHosts }), stripDracoDefaultAssets(), sharedChunk()],
     css: {
       preprocessorOptions: {
         scss: { importers: [sassFromTs({ root: import.meta.dirname, alias: [srcAlias] })] },
