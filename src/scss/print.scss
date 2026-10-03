@@ -57,8 +57,31 @@
   }
 
   // The contributions as a list: one line per entry, no torn edges and no lift, and no
-  // disclosure body under a triangle nobody can click on paper.
+  // disclosure body under a triangle nobody can click on paper. Document type: the screen
+  // sets the rows and the highlight cards at the reader's text size, 16px on a 30px ruling,
+  // which on A4 wraps most titles; here both are 0.875rem (10.5pt) and the ruling is 1.5rem,
+  // so a row is one line of the sheet and the section takes fewer pages.
   #open-source {
+    --line-size: 0.875rem !important;
+
+    section[data-group] {
+      --line-height: 1rem !important;
+    }
+
+    .intro {
+      font-size: 0.875rem !important;
+
+      article {
+        h3 {
+          font-size: 1rem !important;
+        }
+
+        p {
+          line-height: 1.5 !important;
+        }
+      }
+    }
+
     .sheet {
       filter: none !important;
     }
