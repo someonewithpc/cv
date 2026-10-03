@@ -11,7 +11,7 @@ test.describe('with JavaScript off', () => {
     await page.goto('/');
     const root = page.locator(':root');
     const icon = page.locator('.tech-icon').first();
-    await expect(root).toHaveCSS('--theme-kind', 'dark');
+    await expect(root).toHaveCSS('--theme-kind', 'dark-forest');
     await expect(icon).toHaveCSS('--icon-contrast-stroke-width', '9');
 
     // A light pick under a dark OS: the radio outranks the OS default, for the icons too.

@@ -159,12 +159,12 @@ test('picking the theme already on screen does not start a transition', async ({
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
 
-  // Nothing stored, so no radio is checked and the dark theme comes from the OS alone.
+  // Nothing stored, so no radio is checked and Forest comes from the OS's dark scheme alone.
   await expect(page.locator('#theme-picker input:checked')).toHaveCount(0);
 
-  await pick(page, 'dark');
+  await pick(page, 'dark-forest');
   expect(await page.evaluate(() => window.__viewTransitions)).toBe(0);
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark-forest');
 
   await pick(page, 'arctic');
   expect(await page.evaluate(() => window.__viewTransitions)).toBe(1);

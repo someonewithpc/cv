@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 
 import {
+  OS_THEME_IDS,
   OS_THEMES,
   ROOT_FOLLOWING_OS,
   THEME_IDS,
@@ -28,11 +29,11 @@ const themeVars = (settings: ThemeSettings) => Object.entries(themeVarsOf(settin
 /* With script, a pick writes data-theme and the radio's .checked class in the same commit,
    so the root's theme is read from the attribute alone. The radio rules stand only on a page
    whose script never ran (see rootRadioPicked in src/themes.ts). */
-const THEMES_CSS = `${Object.entries(OS_THEMES).map(([id, settings]) => (
-  `  @media (prefers-color-scheme: ${id}) {
+const THEMES_CSS = `${Object.entries(OS_THEMES).map(([scheme, settings]) => (
+  `  @media (prefers-color-scheme: ${scheme}) {
     ${ROOT_FOLLOWING_OS} {
 ${themeVars(settings)}
-      --theme-kind: ${id};
+      --theme-kind: ${OS_THEME_IDS[scheme as keyof typeof OS_THEME_IDS]};
     }
   }`
 )).join('\n\n')}

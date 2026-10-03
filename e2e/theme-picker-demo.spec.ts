@@ -213,6 +213,6 @@ test.describe('without script', () => {
 
     expect(await sheet.locator('[data-stage]').evaluate((el) => !!el.shadowRoot && !el.querySelector('template'))).toBe(true);
     await expect(screen(sheet)).not.toHaveAttribute('data-demo-theme');
-    await expect.poll(() => screen(sheet).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('oklch(0.2 0.035 265)');
+    await expect.poll(() => screen(sheet).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('oklch(0.323 0.044 139)');
   });
 });

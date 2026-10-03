@@ -184,10 +184,15 @@ export const themeVars = (settings: ThemeSettings, deskTile?: (name: string) => 
 /** For scss/print.scss, through plugins/sassFromTs.mjs: the theme a printout takes. */
 export const sass = { printTheme: themeVars(THEMES.light) };
 
-/** The two the OS can ask for by prefers-color-scheme. */
+/** The theme each prefers-color-scheme value shows: Light, and Forest for a dark scheme. */
+export const OS_THEME_IDS = {
+  light: 'light',
+  dark: 'dark-forest',
+} as const satisfies Record<'light' | 'dark', ThemeId>;
+
 export const OS_THEMES = {
-  light: THEMES.light,
-  dark: THEMES.dark,
+  light: THEMES[OS_THEME_IDS.light],
+  dark: THEMES[OS_THEME_IDS.dark],
 } as const;
 
 /** Where the pick is kept between visits; Layout.astro's head script reads the same key. */

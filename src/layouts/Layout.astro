@@ -7,7 +7,7 @@ import poppinsUrl from '@/assets/fonts/poppins-400-latin.woff2?url';
 import specialEliteUrl from '@/assets/fonts/special-elite-latin.woff2?url';
 import printUrl from '@/scss/print.scss?url';
 import { AUTHOR_NAME, CONTACT, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/site';
-import { THEME_IDS, THEME_STORAGE_KEY, THEMES, type ThemeId, type ThemeSettings } from '@/themes';
+import { OS_THEMES, THEME_IDS, THEME_STORAGE_KEY, THEMES, type ThemeId, type ThemeSettings } from '@/themes';
 
 type Props = {
   title?: string;
@@ -77,8 +77,8 @@ const skipScript = `(() => {
     <meta property="profile:username" content={CONTACT.username} />
     <meta name="twitter:card" content="summary" />
     <link rel="alternate" type="application/json+oembed" href={oembedUrl} title={title} />
-    <meta name="theme-color" content={themeColor('light')} media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content={themeColor('dark')} media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content={pageBackground(OS_THEMES.light)} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={pageBackground(OS_THEMES.dark)} media="(prefers-color-scheme: dark)" />
 
     <link rel="preload" as="font" type="font/woff2" href={specialEliteUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={poppinsUrl} crossorigin />
