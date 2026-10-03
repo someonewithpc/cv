@@ -30,11 +30,11 @@ const frames = [0.12, 0.4, 1];
         </span>
         {frames.map((size, index) => (
           <span class="frame" data-frame={['start', 'mid', 'end'][index]} style={`--size: ${size}; z-index: ${frames.length - index}`}>
-            {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+            {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} aria-hidden="true" />)}
           </span>
         ))}
         <span class="corner" data-corner>
-          {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+          {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} aria-hidden="true" />)}
         </span>
         <span class="balloon" data-balloon="1" style="--x: 90%; --y: 11%">1</span>
         <span class="balloon" data-balloon="2" style="--x: 18%; --y: 82%">2</span>

@@ -4,7 +4,7 @@ export class MarkerShape extends MarkerPart {
   Thumbnail() {
     const Content = this.Content.bind(this);
     return (
-      <svg viewBox="-1 -1 2 2" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="-1 -1 2 2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <Content extraProps={{}} />
       </svg>
     );

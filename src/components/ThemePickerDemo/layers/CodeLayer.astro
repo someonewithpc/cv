@@ -160,11 +160,11 @@ const frames = THEME_IDS.map((id) => {
     <div class="drawing" aria-hidden="true">
       {frames.map(({ id, span }) => (
         <span class="end-icon" data-shown={id} style={`${pct(cx, cy)}; --span: ${span}`}>
-          <Icon name={THEMES[id].icons.checked} />
+          <Icon name={THEMES[id].icons.checked} aria-hidden="true" />
         </span>
       ))}
 
-      <svg class="geometry" viewBox={`0 0 ${box.width} ${box.height}`}>
+      <svg class="geometry" aria-hidden="true" viewBox={`0 0 ${box.width} ${box.height}`}>
         <rect class="viewport" x={viewport.x} y={viewport.y} width={viewport.width} height={viewport.height} />
         <line class="diagonal" x1={viewport.x} y1={bottom} x2={right} y2={viewport.y} />
         <line class="extension" x1={cx} y1={cy - icon.size / 2 - 1} x2={cx} y2={dimY - 2} />
@@ -176,7 +176,7 @@ const frames = THEME_IDS.map((id) => {
       </svg>
 
       <span class="corner-icon" style={pct(cx, cy)}>
-        {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} />)}
+        {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} aria-hidden="true" />)}
       </span>
 
       {frames.map(({ id, factor }) => (

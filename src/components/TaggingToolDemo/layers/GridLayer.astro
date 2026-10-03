@@ -13,7 +13,7 @@ import { walkthrough } from '../objects';
   {/* The walkthrough's stand-in pointer. It sits outside the tool, which clips its
       own overflow, so the tip still reads at a field on the panel's edge. */}
   <div class="tagging-cursor" aria-hidden="true" hidden>
-    <svg viewBox="0 0 32 32" width="32" height="32">
+    <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
       <path
         d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
         fill="#fff"
