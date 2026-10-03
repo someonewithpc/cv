@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 
 import { LAYOUT_ICONS } from './layoutIcons';
 import {
@@ -52,6 +52,9 @@ const aisleEnabled = computed(() => {
   return isAisleEnabled(layoutStyle.value, opts);
 });
 
+const seatsErrorId = useId();
+const blocksLabelId = useId();
+
 function fieldActive(id: UiFieldId) {
   return activeFields.value.has(id);
 }
@@ -100,23 +103,28 @@ function blockFromEvent(event: Event) {
         :value="snapshot?.options.seats || ''"
         placeholder="Enter a value or leave empty to fill the selected area"
         :disabled="!fieldActive('seats')"
+        :aria-invalid="seatsInvalid || undefined"
+        :aria-describedby="seatsInvalid ? seatsErrorId : undefined"
         @change="emit('seats', numberFromEvent($event))"
       >
-      <span v-if="seatsInvalid" class="invalid-feedback">
+      <span v-if="seatsInvalid" :id="seatsErrorId" class="invalid-feedback">
         Too many seats for this area (max {{ snapshot?.maxSeats ?? 0 }})
       </span>
     </label>
-    <label
+    <div
       class="field"
+      role="group"
+      :aria-labelledby="blocksLabelId"
       :title="fieldActive('blocks') ? undefined : 'Not used by this layout'"
     >
-      <span>Blocks of</span>
-      <div class="blocks-of" data-demo-target="param:blocks">
+      <span :id="blocksLabelId">Blocks of</span>
+      <span class="blocks-of" data-demo-target="param:blocks">
         <input
           type="text"
           inputmode="numeric"
           pattern="[0-9]*"
           placeholder="Chairs"
+          aria-label="Chairs"
           :value="snapshot?.options.blocks.width || ''"
           :disabled="!fieldActive('blocks')"
           @input="emit('blockWidth', blockFromEvent($event))"
@@ -128,13 +136,14 @@ function blockFromEvent(event: Event) {
           inputmode="numeric"
           pattern="[0-9]*"
           placeholder="Rows"
+          aria-label="Rows"
           :value="snapshot?.options.blocks.height || ''"
           :disabled="!fieldActive('blocks')"
           @input="emit('blockHeight', blockFromEvent($event))"
           @change="emit('blockHeight', blockFromEvent($event))"
         >
-      </div>
-    </label>
+      </span>
+    </div>
   </details>
 
   <details v-if="showSpacing" class="options-section" :open="openSpacing">
@@ -315,14 +324,14 @@ function blockFromEvent(event: Event) {
         @click="emit('style', style)"
       >
         <span class="item-label">{{ LAYOUT_LABELS[style] }}</span>
-        <div class="layout-style-icons" aria-hidden="true">
+        <span class="layout-style-icons" aria-hidden="true">
           <img
             :src="LAYOUT_ICONS[style]"
             alt=""
             width="56"
             height="56"
           >
-        </div>
+        </span>
       </button>
     </div>
   </details>
