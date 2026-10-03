@@ -173,6 +173,17 @@ test.describe('metric locale', () => {
     await expect(set).toHaveAttribute('data-variant', 'table-6-182');
   });
 
+  test('Escape on a focused option closes the list and focuses the summary', async ({ page }) => {
+    const app = await openDemo(page);
+    const seats = card(app, 'table-round').locator('.object-pax');
+
+    await seats.locator('.hover-select-current').click();
+    await seats.locator('.hover-select-options li').nth(1).locator('button').focus();
+    await page.keyboard.press('Escape');
+    await expect(seats).not.toHaveAttribute('open', '');
+    await expect(seats.locator('.hover-select-current')).toBeFocused();
+  });
+
   test('one card is selected at a time', async ({ page }) => {
     const app = await openDemo(page);
     const chair = card(app, 'chair');

@@ -126,6 +126,18 @@ test.describe('desktop', () => {
     await expect(set).toHaveAttribute('data-variant', 'table-8-243');
   });
 
+  test('Escape on a focused option closes the list and focuses the summary', async ({ page }) => {
+    const app = await openCatalog(page);
+    const seats = card(app, 'table-round').locator('.object-pax');
+
+    await seats.locator('.hover-select-current').click();
+    await expect(seats).toHaveAttribute('open', '');
+    await seats.locator('.hover-select-options li').nth(1).locator('button').focus();
+    await page.keyboard.press('Escape');
+    await expect(seats).not.toHaveAttribute('open', '');
+    await expect(seats.locator('.hover-select-current')).toBeFocused();
+  });
+
   test('picking a seat count selects the set and shows that object', async ({ page }) => {
     const app = await openCatalog(page);
     const set = card(app, 'table-round');

@@ -172,21 +172,19 @@ function enhanceRow(
     button?.addEventListener('focus', preview);
     button?.addEventListener('click', (event) => {
       event.stopPropagation();
-      row.open = false;
+      close(row);
       const variant = resolve(value);
       if (variant) pick(variant);
     });
   });
 
   // Space Builder puts the preview back when the pointer leaves without a pick.
-  row.addEventListener('mouseleave', () => {
-    row.open = false;
-  });
+  row.addEventListener('mouseleave', () => close(row));
   enhanceTouch(row, (option) => {
     const variant = resolve(option.dataset.value ?? '');
     if (variant) show(variant);
   }, (option) => {
-    row.open = false;
+    close(row);
     const variant = option && resolve(option.dataset.value ?? '');
     if (variant) pick(variant);
   });
@@ -194,8 +192,15 @@ function enhanceRow(
     if (!row.open) show(held());
   });
   row.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') row.open = false;
+    if (event.key === 'Escape') close(row);
   });
+}
+
+/** Close a row; focus left on one of its options goes to the summary first, as the options are about to hide. */
+function close(row: HTMLDetailsElement) {
+  const summary = row.querySelector<HTMLElement>(':scope > summary');
+  if (row.contains(document.activeElement) && document.activeElement !== summary) summary?.focus();
+  row.open = false;
 }
 
 /**

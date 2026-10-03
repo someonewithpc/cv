@@ -39,6 +39,13 @@ const emit = defineEmits<{
 }>();
 
 const expanded = ref(false);
+const root = ref<HTMLDetailsElement | null>(null);
+
+/** Closing hides the options, so focus left on one is moved to the summary first. */
+function returnFocus() {
+  const summary = root.value?.querySelector<HTMLElement>(':scope > summary');
+  if (root.value?.contains(document.activeElement) && document.activeElement !== summary) summary?.focus();
+}
 
 function isUnavailable(option: HoverSelectOption) {
   return props.unavailable?.includes(option) ?? false;
@@ -51,10 +58,14 @@ function onToggle(event: Event) {
 }
 
 function close() {
+  returnFocus();
+  // The details' own toggle event lands a task later, too late for a quick Escape to see it open.
+  if (root.value) root.value.open = false;
   expanded.value = false;
 }
 
 function pick(option: HoverSelectOption) {
+  returnFocus();
   expanded.value = false;
   emit('pick', option);
 }
@@ -62,6 +73,7 @@ function pick(option: HoverSelectOption) {
 
 <template>
   <details
+    ref="root"
     class="hover-select"
     :class="{ 'new-dot': moved }"
     :open="expanded"
