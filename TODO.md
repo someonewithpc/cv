@@ -213,3 +213,4 @@
 - [x] Run the library search walkthrough's press delay on the demo gate, not the document gate, so a press never lands off screen (C37) (#281)
 - [x] Cut the document by 100 KB raw and 25 KB brotli: torn edges and the pronunciation clip as files, no inline color-scheme or empty style attributes (P1) (#256)
 - [x] Delete the dead `pageStyle: 'wip'` plumbing and the unreachable no-script hint-arrow rules (C80, C83) (#259)
+- [ ] Reserve room so Event Dispatch and the Marker Editor hold still while their walkthroughs play; the font picker's shift is the product's own live resize and stays open (P8)
