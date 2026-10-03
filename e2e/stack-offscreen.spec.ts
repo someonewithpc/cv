@@ -104,3 +104,18 @@ for (const width of [1440, 390]) {
     expect(hit, 'the fan below the box is cut off').toBe(true);
   });
 }
+
+// The callouts and sheets round the stacks are skipped only while the page is parsed
+// (skip-while-parsing in scss/_page-column.scss), and a visit to a fragment parses it whole.
+test('a fragment deep in a section lands at the top of the window on a fresh load', async ({ page }) => {
+  await page.goto('/#highlight-gnu-social-v3');
+  await page.waitForTimeout(1500);
+  expect(await page.locator('#highlight-gnu-social-v3').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
+  await expect(page.locator('html')).not.toHaveAttribute('data-skip-while-parsing');
+});
+
+test('nothing is skipped round the stacks once the page is parsed', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('html')).not.toHaveAttribute('data-skip-while-parsing');
+  expect(await page.locator('section.callout').last().evaluate((el) => getComputedStyle(el).contentVisibility)).toBe('visible');
+});
