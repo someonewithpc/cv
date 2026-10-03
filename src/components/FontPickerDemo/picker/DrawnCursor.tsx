@@ -24,8 +24,8 @@ export function DrawnCursor({ cursor }: { cursor: DrawnCursorState }) {
       <svg viewBox="0 0 32 32" width="56" height="56" aria-hidden="true">
         <path
           d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z"
-          fill="var(--bg-900, #fff)"
-          stroke="var(--fg-850, #222)"
+          fill="var(--sheet-canvas, var(--neutral-1, #fff))"
+          stroke="var(--sheet-ink, var(--neutral-11, #222))"
           strokeWidth="1.6"
           strokeLinejoin="round"
         />

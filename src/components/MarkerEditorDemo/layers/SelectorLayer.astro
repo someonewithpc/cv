@@ -180,7 +180,7 @@ const squirclePath = [
   :global([data-sheet-width='wide']) & {
     font-size: 1.75em;
   }
-  color: var(--fg-700, #f4f0ea);
+  color: var(--sheet-ink-muted, #f4f0ea);
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
 
@@ -263,8 +263,8 @@ const squirclePath = [
         height: 100%;
         color-scheme: only light;
         // Warm fill reads clearly under the blue house decoration.
-        --accent-800: #c47a3a;
-        --accent-400: #5c3a1e;
+        --accent-9: #c47a3a;
+        --accent-4: #5c3a1e;
       }
     }
 
@@ -304,7 +304,7 @@ const squirclePath = [
     justify-items: center;
     gap: 0.3em;
     padding: 0.45em 0.25em 0.5em;
-    border: 1px dashed color-mix(in oklab, var(--fg-700, #fff) 35%, transparent);
+    border: 1px dashed color-mix(in oklab, var(--sheet-ink-muted, #fff) 35%, transparent);
     border-radius: 0.45em;
     background: color-mix(in oklab, #000 18%, transparent);
 
