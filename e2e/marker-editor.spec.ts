@@ -376,6 +376,34 @@ test('Ctrl+Z undoes from inside the marker editor but leaves text fields their o
   expect(await undoToasts.count()).toBe(0);
 });
 
+test('Ctrl+Z and Cmd+Z undo after a plain click on the sheet, with nothing focused first', async ({ page }) => {
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const island = await waitForIslandMounted(front);
+  const overlay = island.locator('.mock-map-overlay');
+  await expect(overlay.locator('button.space-pin').first()).toBeVisible({ timeout: 15_000 });
+  const undoToasts = island.locator('.mock-map-toast', { hasText: 'Undo' });
+  const sheet = overlay.locator('xpath=ancestor::section[1]');
+
+  for (const key of ['Control+z', 'Meta+z']) {
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    // Bare paper, not the map: nothing there takes focus, so the stack around it would.
+    await sheet.click({ position: { x: 4, y: 4 } });
+    await expect(sheet).toBeFocused();
+    await page.keyboard.press(key);
+    await expect(undoToasts).toHaveCount(1);
+    await expect(undoToasts).toHaveCount(0, { timeout: 10_000 });
+  }
+
+  // A page element outside the demo keeps the shortcut to itself.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(500);
+  expect(await undoToasts.count()).toBe(0);
+});
+
 test.describe('with reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
 
