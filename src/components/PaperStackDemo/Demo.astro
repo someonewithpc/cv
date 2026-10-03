@@ -57,8 +57,9 @@ type Layer = keyof typeof layers;
     {(layer: Layer) => ({
       pile: (
         <PostIt background="#ea1" color="black">
-          Every page shares one grid cell. Which one is in front is a number,{' '}
-          <Fragment set:html={highlightInline('--page-index', 'css', ['a{', '}'], 'custom-property')} />, and a turn renumbers them all
+          All pages in the stack are overlapped by placing them in the same grid cell, with the order
+          being controlled by CSS <Fragment set:html={highlightInline('order', 'css', ['a{', ': 1}'], 'note-code')} />, so they can be
+          rearranged as the pages turn
         </PostIt>
       ),
       fold: (
@@ -78,9 +79,9 @@ type Layer = keyof typeof layers;
 </TechnicalDrawingStack>
 
 <style>
-  /* The highlighter leaves a custom property in the ink; this one is the note's subject, so it
-     takes the accent role the code keywords use, kept on one line. */
-  :global(code.hl.custom-property) {
+  /* The note's code word takes the accent role, the colour code keywords take, on one line. */
+  :global(code.hl.note-code),
+  :global(code.hl.note-code span) {
     color: var(--hl-warm);
     white-space: nowrap;
   }
