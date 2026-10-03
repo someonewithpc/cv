@@ -172,6 +172,7 @@ const sheetAnchor = `--${noteId}-sheet`;
 @use 'sass:math';
 
 @use "@/scss/_colors.scss" as colors;
+@use "@/scss/_kbd.scss" as kbd;
 
 /* Off the paper but still in the page: the shapes that letter the state onto the
    drawing keep the live region for a screen reader and say nothing twice. */
@@ -294,10 +295,14 @@ section {
     justify-content: center;
     align-items: center;
 
-    /* Key names in a sheet's copy: the code face, at the text's own size, no chip. */
+    /* Key names in a sheet's copy get the prose chip. A chord like Ctrl+Z wraps its keys in an
+       outer kbd, which keeps the text face so the chips do not nest. */
     :global(:where(kbd)) {
       font: inherit;
-      font-family: monospace, system-ui;
+    }
+
+    :global(:where(kbd:not(:has(kbd)))) {
+      @include kbd.prose-kbd;
     }
 
     /* Em-sized artwork tracks the sheet down once it is narrower than 50em;
