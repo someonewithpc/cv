@@ -198,6 +198,7 @@
 - [x] The audit's axe run skips WCAG 2.2, so it never checks target size (E30) (#228)
 - [x] Keyboard focus takes a walkthrough over once and never restarts it (C32 to C35) (#231)
 - [x] Transport deck in the bottom band where it fits, in the callout's slip under the page where it does not, on every demo (L9) (#234)
+- [ ] Pressing a deck key over the sheet and moving off it pauses the demo it just started, so pointer take-over waits one second after a deck press
 - [x] Transport deck drawn over the marker editor's backdrop, the font picker's toasts and the drawn cursors, so pause stays in sight and in reach (S23) (#247)
 - [x] Fold the cursor-press stylesheet into Stack.astro's style, one render-blocking request fewer (P16) (#239)
 - [x] Ship one public Draco decoder, no bundled JS fallback or wasm duplicates (P2) (#240)
