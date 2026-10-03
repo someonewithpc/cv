@@ -58,3 +58,25 @@ test('the path data listing splits the d value into commands and numbers', async
   );
   expect(command).not.toBe(number);
 });
+
+test("every demo's sheets set their code through the highlighter", async ({ page }) => {
+  await page.goto('/');
+  // One token per demo, from a snippet each sheet tokenises at build (Fediverse's file is
+  // tokenised in the browser, with the same classes).
+  const tokens: [string, string, string][] = [
+    ['Fediverse Playground', '[data-yaml] .tok-tag', 'services'],
+    ['Fediverse Playground', '.tok-function', 'git'],
+    ['Synthetic Properties', '.tok-keyword', 'INSERT INTO'],
+    ['GNU social · Event Dispatch', 'pre.branch .tok-keyword', 'for'],
+    ['Interactive Map Marker Editor', 'pre.tag .tok-tag', 'path'],
+    ['web-ts-mode', '.tok-attribute', ':local'],
+    ['Library Tagging Tool', '.tok-function', 'min'],
+    ['Interactive Map Font Picker', '.tok-keyword', '@font-face'],
+    ['Library Search & Relevance', '.tok-keyword', 'LIMIT'],
+    ['Paper Stack', '.tok-keyword', '@media'],
+    ['Theme Picker', 'code.hl .tok-attribute', 'data-demo-theme'],
+  ];
+  for (const [demo, selector, text] of tokens) {
+    await expect(demoStack(page, demo).locator(selector, { hasText: new RegExp(`^${text}$`) }).first()).toBeAttached();
+  }
+});
