@@ -334,7 +334,7 @@ async function sheetOverflow(front: Locator) {
     const s = sheet.getBoundingClientRect();
     const inset = parseFloat(getComputedStyle(sheet).paddingTop) + 2;
     const block = sheet.querySelector(':scope > table')!.getBoundingClientRect();
-    const deck = sheet.querySelector(':scope > .demo-transport')!.getBoundingClientRect();
+    const deck = sheet.querySelector(':scope > [data-demo-transport]:not([hidden])')?.getBoundingClientRect();
     let past = -Infinity;
     let under = 0;
     let underDeck = 0;
@@ -347,8 +347,8 @@ async function sheetOverflow(front: Locator) {
       const across = Math.min(b.right, block.right) - Math.max(b.left, block.left);
       const down = Math.min(b.bottom, block.bottom) - Math.max(b.top, block.top);
       if (across > 0.5 && down > 0.5) under = Math.max(under, across * down);
-      const acrossDeck = Math.min(b.right, deck.right) - Math.max(b.left, deck.left);
-      const downDeck = Math.min(b.bottom, deck.bottom) - Math.max(b.top, deck.top);
+      const acrossDeck = deck ? Math.min(b.right, deck.right) - Math.max(b.left, deck.left) : 0;
+      const downDeck = deck ? Math.min(b.bottom, deck.bottom) - Math.max(b.top, deck.top) : 0;
       if (acrossDeck > 0.5 && downDeck > 0.5) underDeck = Math.max(underDeck, acrossDeck * downDeck);
     }
     return { past, under, underDeck };
