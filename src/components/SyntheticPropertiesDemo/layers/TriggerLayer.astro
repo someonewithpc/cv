@@ -101,9 +101,8 @@ const body = (sql: string[]) =>
       <header>
         <strong>The same SQL in the backfill and three triggers</strong>
         <span>The backfill and the insert and update triggers on <code>library_objects</code> call
-          one Ruby method, each with its own <code>where</code>; the delete trigger calls neither,
-          it just deletes the rows outright. The hairtrigger gem writes the triggers into a
-          migration.</span>
+          one Ruby method, each with its own <code>where</code>. The delete trigger only deletes
+          the rows. The hairtrigger gem writes the triggers into a migration.</span>
       </header>
 
       <div class="builder">

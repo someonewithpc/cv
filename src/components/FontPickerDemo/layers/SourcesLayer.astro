@@ -60,9 +60,9 @@ const ts = (code: string) => highlightSpans(code, 'ts');
         <code class="line rule indent" set:html={source} />
       </div>
       <p class="caption">
-        The browser follows every <code>link</code> and <code>@import</code>. Each
-        <code>src</code> is made absolute and sent back through the proxy, because loading a
-        webfont is CORS-checked too
+        The browser follows every <code>link</code> and <code>@import</code>. It makes each
+        <code>src</code> absolute and routes it through the proxy, since webfont loads are
+        CORS-checked too
       </p>
     </div>
 
@@ -86,7 +86,7 @@ const ts = (code: string) => highlightSpans(code, 'ts');
     <div class="branch">
       <p class="caption">
         A Google font skips the first two steps. <code>fonts.googleapis.com/css2?family=Lobster</code>
-        answers with the same kind of stylesheet, and joins the flow here
+        returns the same kind of stylesheet, which joins the flow here
       </p>
       <svg viewBox="0 0 120 44" class="arrow branch-arrow" aria-hidden="true">
         <path d="M0 36 H106 Q114 36 114 28 V14" />

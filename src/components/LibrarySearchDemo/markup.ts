@@ -57,7 +57,7 @@ export function relevanceHtml(state: SearchState) {
   const { terms, hits, max, total } = result;
 
   if (!terms.length) {
-    return '<p class="nothing">Type a term: with nothing to match, the objects are listed newest first and nobody has a score.</p>';
+    return '<p class="nothing">Type a term. With nothing to match, the list runs newest first and has no scores.</p>';
   }
 
   const termRows = terms

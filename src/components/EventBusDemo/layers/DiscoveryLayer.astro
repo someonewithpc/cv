@@ -34,8 +34,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
       <strong>No module registers a listener</strong>
       <span>
         Each directory's main class in <code>components/*/</code> and <code>plugins/*/</code> is a
-        module, and every public <code>on&lt;EventName&gt;</code> method on it is a listener for
-        that event.
+        module. Its public <code>on&lt;EventName&gt;</code> methods listen for that event.
       </span>
     </p>
 
