@@ -187,6 +187,31 @@ test('the deck drives the walkthrough from its keys', { tag: '@handover' }, asyn
   await expect(deck).toHaveAttribute('data-state', 'playing');
 });
 
+test('a deck press gives the pointer a second to leave the key before it takes over', async ({ page }) => {
+  await page.goto('/');
+  const stack = markerEditorStack(page);
+  const deck = await playingDeck(stack);
+  const reset = deck.locator('[data-demo-key="reset"]');
+  const box = (await stack.boundingBox())!;
+  const onSheet = (fx: number) => page.mouse.move(box.x + box.width * fx, box.y + box.height * 0.6);
+
+  await reset.click();
+  await onSheet(0.4);
+  await onSheet(0.42);
+  await expect(deck).toHaveAttribute('data-state', 'playing');
+
+  // A press on the sheet itself is deliberate, so it takes over at once.
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(deck).toHaveAttribute('data-state', 'user');
+
+  await reset.click();
+  await pageWait(page, 1200);
+  await onSheet(0.4);
+  await onSheet(0.42);
+  await expect(deck).toHaveAttribute('data-state', 'user');
+});
+
 test('the deck keeps the instruction beside the state', async ({ page }) => {
   await page.goto('/');
   const deck = await playingDeck(markerEditorStack(page));
