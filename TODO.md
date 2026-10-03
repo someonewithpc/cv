@@ -197,3 +197,4 @@
 - [x] The audit's axe run skips WCAG 2.2, so it never checks target size (E30) (#228)
 - [x] Keyboard focus takes a walkthrough over once and never restarts it (C32 to C35) (#231)
 - [x] Transport deck in the bottom band where it fits, in the callout's slip under the page where it does not, on every demo (L9) (#234)
+- [ ] The Japanese glosses and the pronunciation toggle hide from the contrast check behind a transparent gradient (A22)
