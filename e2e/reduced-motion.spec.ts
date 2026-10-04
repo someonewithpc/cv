@@ -171,11 +171,20 @@ test.describe('with full motion', () => {
 // Reduced motion shows each sheet as it rests once its motion is done, never half-drawn: a
 // note, a title block or a dog-ear that full motion shows has to show here too. Only the
 // sheet around the artwork is compared, since a walkthrough changes its own artwork as it
-// plays. The page is walked stack by stack first, so every sheet has booted.
-async function restingLook(page: Page) {
+// plays. The page is walked stack by stack first, so every sheet has booted. A booted demo
+// sheet shows its deck under reduced motion with script on, and only then, so the walk waits
+// for it there: a sheet still booting under load would leave the deck out of the comparison.
+// A portrait sheet hands its deck to the stack's callout card.
+async function restingLook(page: Page, decksShown: boolean) {
   const stacks = page.locator('article.technical-drawing-stack');
   for (let i = 0; i < await stacks.count(); i++) {
-    await stacks.nth(i).scrollIntoViewIfNeeded();
+    const stack = stacks.nth(i);
+    await stack.scrollIntoViewIfNeeded();
+    if (decksShown && !NO_DECK.includes((await stack.getAttribute('aria-label')) ?? '')) {
+      await expect.poll(() => stack.evaluate((el) =>
+        [...el.querySelectorAll('[data-demo-transport]'), ...el.closest('.callout')?.querySelectorAll('.callout-card > [data-demo-transport]') ?? []]
+          .some((deck) => deck.checkVisibility())), { message: 'the sheet never showed its deck', timeout: 15_000 }).toBe(true);
+    }
     await page.waitForTimeout(300);
   }
   await page.waitForTimeout(3000);
@@ -216,7 +225,7 @@ for (const { width, javaScriptEnabled } of [
       const full = await browser.newContext({ baseURL, viewport: { width, height: 900 }, javaScriptEnabled, reducedMotion: 'no-preference' });
       const fullPage = await full.newPage();
       await Promise.all([page.goto('/'), fullPage.goto('/')]);
-      const [reduced, moving] = await Promise.all([restingLook(page), restingLook(fullPage)]);
+      const [reduced, moving] = await Promise.all([restingLook(page, javaScriptEnabled), restingLook(fullPage, false)]);
       await full.close();
 
       expect(reduced.notes.length).toBeGreaterThan(0);
