@@ -1,0 +1,166 @@
+---
+/**
+ * Review only: every desk ornament candidate on its theme's own desk, at the size it would
+ * have beside the paper, with a switch to see it on the whole page. Comes off at landing.
+ */
+import Layout from '@/layouts/Layout.astro';
+import { ORNAMENTS, ORNAMENT_CSS, ornamentFile } from '@/ornaments';
+import { THEMES, THEME_IDS, themeVars, type ThemeId, type ThemeSettings } from '@/themes';
+
+const DESK_TILES = import.meta.glob<string>('/src/assets/desk/*.webp', { query: '?url', eager: true, import: 'default' });
+const deskTileUrl = (name: string) => {
+  const url = DESK_TILES[`/src/assets/desk/${name}.webp`];
+  if (!url) throw new Error(`No desk tile src/assets/desk/${name}.webp`);
+  return url;
+};
+const vars = (id: ThemeId) => {
+  const settings: ThemeSettings = THEMES[id];
+  return [
+    ...Object.entries(themeVars(settings, deskTileUrl)).map(([name, value]) => `--${name}: ${value}`),
+    `--review-paper: ${settings.paper ?? settings.canvas}`,
+    `--review-ink: ${settings.ink}`,
+  ].join('; ');
+};
+const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
+---
+
+<Layout title="Desk ornaments" description="Candidates for the object that lies on the desk beside the paper, one set per theme.">
+  <main class="ornaments">
+    <h1>Desk ornaments</h1>
+    <p class="lead">
+      One object per theme, lying on the desk to the right of the Career sheet from 84rem of
+      window, hidden narrower than that. Three candidates each, drawn by hand as SVG and lit
+      from above like the sheets. Open one on the page with <code>/?ornament=&lt;name&gt;</code>;
+      the link under each does that.
+    </p>
+    {THEME_IDS.map((id) => (
+      <section class="desk" style={vars(id)} data-mode={THEMES[id].follows} aria-labelledby={`desk-${id}`}>
+        <h2 id={`desk-${id}`}><span class="sheet">{THEMES[id].name}</span></h2>
+        <div class="paper" aria-hidden="true"></div>
+        <ul class="candidates">
+          {ORNAMENTS.filter((ornament) => ornament.theme === id).map((ornament) => {
+            const file = ornamentFile(ornament.id);
+            return (
+              <li>
+                <div class="ornament" data-ornament={ornament.id} role="img" aria-label={ornament.title}></div>
+                <div class="caption">
+                  <h3>{ornament.title}</h3>
+                  <p>{ornament.why}</p>
+                  <p>{ornament.how}</p>
+                  <p class="meta">{kb(file.bytes)} on disk, {file.width} by {file.height} units, 9rem wide on the desk. <a href={`../?ornament=${ornament.id}`}>On the page</a></p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ))}
+  </main>
+</Layout>
+
+<style is:global set:html={ORNAMENT_CSS} />
+
+<style lang="scss">
+.ornaments {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  gap: 2rem;
+  padding: 2rem var(--page-gap, 1.5rem) 4rem;
+  max-width: 76rem;
+  margin-inline: auto;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+.lead {
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+/* Each desk takes its theme's own variables, tile and colour scheme, so the shadow and the
+   caption paper read as they would on that theme's page. */
+.desk {
+  position: relative;
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 1.5rem;
+  padding: 2rem 1.5rem;
+  border-radius: 0.25rem;
+  background: var(--theme-desk-tile) 0 0 / 45rem 45rem var(--theme-desk);
+  color-scheme: only light;
+
+  &[data-mode="dark"] {
+    color-scheme: only dark;
+  }
+}
+
+h2 {
+  grid-column: 1 / -1;
+  font-size: 1rem;
+}
+
+.sheet,
+.caption {
+  background: var(--review-paper);
+  color: var(--review-ink);
+  box-shadow: var(--sheet-lift, 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%));
+  border-radius: 0.25rem;
+}
+
+.sheet {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+}
+
+/* The near edge of the paper the ornament lies beside, so the gap reads at scale. */
+.paper {
+  align-self: stretch;
+  border-radius: 0 0.25rem 0.25rem 0;
+  background: var(--review-paper);
+  box-shadow: var(--sheet-lift, 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%));
+}
+
+.candidates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 2rem;
+
+  li {
+    display: grid;
+    grid-template-rows: 18rem auto;
+    justify-items: center;
+    gap: 1.5rem;
+  }
+}
+
+.ornament {
+  align-self: center;
+}
+
+.caption {
+  justify-self: stretch;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+
+  h3 {
+    font-size: 0.875rem;
+    margin-block-end: 0.25rem;
+  }
+
+  p + p {
+    margin-block-start: 0.375rem;
+  }
+
+  .meta {
+    opacity: 0.75;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+</style>
