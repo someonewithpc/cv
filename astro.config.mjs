@@ -150,6 +150,9 @@ export default defineConfig({
       // Space Builder ships Three.js (~600KiB min) behind an intersection-gated
       // dynamic import — over the default 500KiB tip, but not on the critical path.
       chunkSizeWarningLimit: 700,
+      // Astro's esnext target gives Lightning CSS no targets, so it adds no prefixes. Safari
+      // 17.5 is the floor the CSS already needs for light-dark(). Below 17.2 it flattens nesting.
+      cssTarget: ['safari17.5', 'ios17.5', 'chrome154', 'firefox157'],
     },
     resolve: {
       dedupe: ['react', 'react-dom', 'vue'],
