@@ -1,0 +1,57 @@
+---
+/**
+ * An object lying on the desk in the right margin, beside the paper: decoration, so
+ * assistive tech never sees it, and never in the flow, so nothing on the page moves for it.
+ * Like the folio it is a child of #main, placed in the margin column of the Career row,
+ * level with that sheet's top edge; higher up it would meet the theme picker.
+ * While Hugo picks, ?ornament=<theme>-<name> shows one candidate for the visit (ornaments.ts
+ * lists them; /ornaments/ shows them all) and stamps that theme on the root the same way.
+ */
+import { ORNAMENT_CSS, ORNAMENTS } from '@/ornaments';
+
+const themeOf = Object.fromEntries(ORNAMENTS.map(({ id, theme }) => [id, theme]));
+const switchScript = `(() => {
+  const themes = ${JSON.stringify(themeOf)};
+  const id = new URLSearchParams(location.search).get('ornament');
+  if (!id || !themes[id]) return;
+  const root = document.documentElement;
+  const stamp = () => { root.dataset.ornament = id; root.dataset.theme = themes[id]; };
+  stamp();
+  document.addEventListener('DOMContentLoaded', stamp);
+})();`;
+---
+
+<script is:inline set:html={switchScript} />
+<div class="ornament-rail" aria-hidden="true">
+  <div class="ornament"></div>
+</div>
+
+<style is:global set:html={ORNAMENT_CSS} />
+
+<style lang="scss">
+/* 84rem is where the margin beside the 60rem column holds a 9rem ornament with 1.5rem of
+   desk clear on either side. Narrower than that the desk is a strip, and the ornament would
+   lie on the paper, so there is none; wider, the ornament stays centred in the margin. */
+.ornament-rail {
+  display: none;
+
+  @media (width >= 84rem) {
+    :root[data-ornament] & {
+      display: grid;
+      position: absolute;
+      grid-row: 2;
+      grid-column: content-end / full-width-end;
+      inset: 0;
+      justify-items: center;
+      align-content: start;
+      pointer-events: none;
+    }
+  }
+}
+
+@media print {
+  .ornament-rail {
+    display: none;
+  }
+}
+</style>

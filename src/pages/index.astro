@@ -2,6 +2,7 @@
 import Layout from '@/layouts/Layout.astro';
 
 import Folio from '@/components/Folio.astro';
+import Ornament from '@/components/Ornament.astro';
 import Name from '@/components/Name.astro';
 import Career from '@/components/Career/Career.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
@@ -37,6 +38,7 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
         shows, so the margin and the paper say the same thing; the top sheet has no heading
         but the name, so the name is what its folio reads. */}
     <Folio number={1} label="Hugo Sales" />
+    <Ornament />
     <Name />
 
     {/* The CV itself sits right behind the title block, where a drawing keeps its revision
