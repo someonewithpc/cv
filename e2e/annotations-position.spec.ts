@@ -6,12 +6,12 @@ import { drawEveryStack } from './support/paperStack';
  * TechnicalDrawing/annotations-position.ts anchors every callout of an Annotations
  * overlay to the artwork's own box, and a callout with a target to that element, at any
  * container width. Each annotated layer is checked in place: the stack's splay rotate is
- * switched off for the read (it never moves layout, and turning every page to the front
- * would take a swipe each), and the artwork's box is its layout box, read through a
- * ResizeObserver so a `scale` on the artwork (the original Visrez logo carries one) does
- * not leak into it. Targets are read from their client rects, which is where the visitor
- * sees them; a segment anchor is mapped from the target's SVG through its root's client
- * rect and viewBox, not the screen matrix the script uses.
+ * switched off before the page's scripts run (it never moves layout, and turning every
+ * page to the front would take a swipe each), and the artwork's box is its layout box, read
+ * through a ResizeObserver so a `scale` on the artwork (the original Visrez logo carries
+ * one) does not leak into it. Targets are read from their client rects, which is where the
+ * visitor sees them; a segment anchor is mapped from the target's SVG through its root's
+ * client rect and viewBox, not the screen matrix the script uses.
  */
 
 const VIEWPORTS = [
@@ -208,9 +208,21 @@ const crosses = (segment: [Point, Point], other: Box | [Point, Point]) =>
 for (const viewport of VIEWPORTS) {
   test(`at ${viewport.width}px every callout lands on its target and the unit square on the artwork box`, async ({ page }) => {
     await page.setViewportSize(viewport);
+    // From the first layout: the script reads a target's client rect and turns it back by the
+    // page's rotation, which is only exact for an unrotated box, and it has no cause to read
+    // again when the rotate goes. Switched off after load, it raced the cube's last read.
+    await page.addInitScript(() => {
+      const style = document.createElement('style');
+      style.textContent = 'article.technical-drawing-stack > div { rotate: none !important; }';
+      const place = () => {
+        if (!document.head) return false;
+        document.head.append(style);
+        return true;
+      };
+      if (!place()) new MutationObserver((_, observer) => place() && observer.disconnect()).observe(document, { childList: true, subtree: true });
+    });
     await page.goto('/');
     await drawEveryStack(page);
-    await page.addStyleTag({ content: 'article.technical-drawing-stack > div { rotate: none !important; }' });
 
     const overlays = page.locator('svg[data-annotations]');
     await expect(overlays.first()).toBeAttached();
@@ -231,7 +243,8 @@ for (const viewport of VIEWPORTS) {
               || animation.effect?.getComputedTiming().iterations === Infinity);
         })), { timeout: 10_000 })
       .toBe(true);
-    await page.waitForTimeout(100);
+    // The read that ending sets off is written on the next animation frame.
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
     const readings = await readOverlays(page);
     expect(readings.length).toBeGreaterThanOrEqual(5);
