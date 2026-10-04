@@ -63,3 +63,10 @@ test('oembed.json only supports the json format', async ({ request }) => {
   const response = await request.get('/oembed.json?format=xml');
   expect(response.status()).toBe(501);
 });
+
+test('oembed.json names its provider and can be read cross-origin', async ({ request }) => {
+  const response = await request.get(`/oembed.json?url=${encodeURIComponent(SITE_ROOT)}&format=json`);
+  expect(response.headers()['access-control-allow-origin']).toBe('*');
+  expect(response.headers()['cache-control']).toBe('public, max-age=86400');
+  expect(await response.json()).toMatchObject({ provider_name: AUTHOR_NAME, provider_url: SITE_URL, cache_age: 86400 });
+});

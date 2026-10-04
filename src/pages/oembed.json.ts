@@ -5,10 +5,16 @@ import { AUTHOR_NAME, SITE_TITLE, SITE_URL } from '@/site';
 
 export const prerender = false;
 
+const CACHE_AGE = 86400;
+
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8' },
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'access-control-allow-origin': '*',
+      'cache-control': `public, max-age=${CACHE_AGE}`,
+    },
   });
 
 // The card embeds this snippet directly, not the live page: hsal.es is a full interactive
@@ -52,6 +58,9 @@ export const GET: APIRoute = ({ url }) => {
     type: 'rich',
     title: SITE_TITLE,
     author_name: AUTHOR_NAME,
+    provider_name: AUTHOR_NAME,
+    provider_url: SITE_URL,
+    cache_age: CACHE_AGE,
     width,
     height,
     html,
