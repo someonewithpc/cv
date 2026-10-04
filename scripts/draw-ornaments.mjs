@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 /**
- * Writes src/assets/ornaments/<theme>-<name>.svg, the objects that lie on the desk beside the
- * paper (components/Ornament.astro). Each is drawn here rather than in an editor so the parts
- * that repeat, needles, barbs, pinnae and scales, come from a few numbers, and so every one
- * shares the same light: from above, as the sheets' lift shadow says, with the highlight on
- * the top edge of a thing and the shade under it. The page adds the contact shadow in CSS.
+ * Writes src/assets/ornaments/<theme>-<name>.svg, the things that lie on the desk round the
+ * paper (components/Ornament.astro places them; ornaments.ts says where). Each is drawn here
+ * rather than in an editor so the parts that repeat, needles, pinnae and scales, come from a
+ * few numbers, and so every one shares the same light: from above, as the sheets' lift shadow
+ * says, with the highlight on the top edge of a thing and the shade under it. The page adds
+ * the contact shadow in CSS.
+ *
+ * Nothing here is symmetric on purpose. Every outline is jittered, lengths vary, and each
+ * object carries the marks of having been handled: a chewed pencil end, a scratched watch
+ * case, a cap off an acorn. The noise is a fixed sequence, so a run writes the same files.
  *
  * Usage: node scripts/draw-ornaments.mjs
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,6 +26,13 @@ const stops = (list) => list.map(([o, c, a]) => `<stop offset="${o}" stop-color=
 const linear = (id, list, x1 = 0, y1 = 0, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops(list)}</linearGradient>`;
 const radial = (id, list, cx = 0.5, cy = 0.5, rad = 0.5, fx = cx, fy = cy) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${rad}" fx="${fx}" fy="${fy}">${stops(list)}</radialGradient>`;
 const svg = (w, h, defs, body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">\n<defs>${defs}</defs>\n${body}\n</svg>\n`;
+
+/* A fixed sequence, so the same file comes out of every run. */
+const noise = (seed) => () => {
+  seed = (seed * 16807) % 2147483647;
+  return seed / 2147483647;
+};
+const between = (rnd, a, b) => a + (b - a) * rnd();
 
 /* A point and tangent on a quadratic Bezier, for the things that grow along a stem. */
 const quad = (p0, p1, p2) => (t) => {
@@ -36,363 +48,449 @@ const rotate = (tx, ty, deg) => {
   const a = (deg * Math.PI) / 180;
   return [tx * Math.cos(a) - ty * Math.sin(a), tx * Math.sin(a) + ty * Math.cos(a)];
 };
-/* A fixed sequence, so the same file comes out of every run. */
-const noise = (seed) => () => {
-  seed = (seed * 16807) % 2147483647;
-  return seed / 2147483647;
+
+/* A closed smooth path through points, each nudged by up to `amp`: the outline of anything
+   that was never a perfect shape. */
+const blob = (points, amp, rnd) => {
+  const p = points.map(([x, y]) => [x + between(rnd, -amp, amp), y + between(rnd, -amp, amp)]);
+  const n = p.length;
+  const mid = (i) => [(p[i][0] + p[(i + 1) % n][0]) / 2, (p[i][1] + p[(i + 1) % n][1]) / 2];
+  let d = `M${pt(...mid(n - 1))}`;
+  for (let i = 0; i < n; i += 1) d += ` Q${pt(...p[i])} ${pt(...mid(i))}`;
+  return `${d} Z`;
 };
+/* Points round an ellipse, for blob(). */
+const ring = (cx, cy, rx, ry, n, phase = 0) => Array.from({ length: n }, (_, i) => {
+  const a = phase + (i / n) * Math.PI * 2;
+  return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)];
+});
+/* Short pale lines, the scuffs a thing picks up. */
+const scuffs = (rnd, cx, cy, spread, count, color, opacity = 0.35) => Array.from({ length: count }, () => {
+  const x = cx + between(rnd, -spread, spread); const y = cy + between(rnd, -spread, spread);
+  const a = between(rnd, 0, Math.PI); const l = between(rnd, 2, 7);
+  return `<path d="M${pt(x, y)} l${pt(Math.cos(a) * l, Math.sin(a) * l)}" stroke="${color}" stroke-width="${r(between(rnd, 0.4, 0.9))}" opacity="${r(opacity * between(rnd, 0.6, 1))}"/>`;
+}).join('');
+/* Translucent patches of a second tone, so a surface is not one flat gradient. */
+const blotches = (rnd, cx, cy, spread, count, color, opacity = 0.14) => Array.from({ length: count }, () => (
+  `<path d="${blob(ring(cx + between(rnd, -spread, spread), cy + between(rnd, -spread, spread), between(rnd, 3, 8), between(rnd, 2, 6), 6, between(rnd, 0, 3)), 1.2, rnd)}" fill="${color}" opacity="${r(opacity * between(rnd, 0.6, 1.2))}"/>`
+)).join('');
 
 const files = {};
 
-/* Light: a daisy, picked and laid down, head up, stem running down and right. */
+/* Light: a daisy, picked and pressed in a pocket. Petals of uneven length, one missing, two
+   folded over; the stem has a kink where it was snapped off. */
 files['light-daisy'] = () => {
-  const n = 19;
-  const petals = Array.from({ length: n }, (_, i) => `<use href="#p" transform="rotate(${r((360 / n) * i + 7)})"/>`).join('');
+  const rnd = noise(21);
+  const n = 20;
+  let petals = '';
+  for (let i = 0; i < n; i += 1) {
+    if (i === 13) continue;
+    const a = (360 / n) * i + between(rnd, -5, 5);
+    const len = between(rnd, 0.72, 1.08) * (i === 5 || i === 16 ? 0.62 : 1);
+    const w = between(rnd, 0.8, 1.15);
+    const tip = between(rnd, -3, 3);
+    const d = `M0,-12 C${r(7 * w)},-18 ${r(9 * w + tip)},${r(-40 * len)} ${r(tip)},${r(-56 * len)} C${r(-9 * w + tip)},${r(-40 * len)} ${r(-7 * w)},-18 0,-12 Z`;
+    const fold = i === 2 || i === 9;
+    petals += `<path d="${d}" transform="rotate(${r(a)})${fold ? ' scale(1 0.6)' : ''}" fill="url(#dp)" stroke="#d9d1b6" stroke-width="0.6"/>`;
+    if (fold) petals += `<path d="M0,-12 C${r(5 * w)},-16 ${r(6 * w)},-26 0,-33 C${r(-6 * w)},-26 ${r(-5 * w)},-16 0,-12 Z" transform="rotate(${r(a)})" fill="#e7e1cc" opacity="0.7"/>`;
+  }
   return svg(160, 200, [
-    linear('dp', [[0, '#ece6d2'], [0.45, '#fbfaf5'], [1, '#ffffff']], 0, 1, 0, 0),
+    linear('dp', [[0, '#e9e2cc'], [0.45, '#faf8f0'], [1, '#fffefb']], 0, 1, 0, 0),
     linear('ds', [[0, '#000', 0], [1, '#5a4410', 0.22]]),
-    radial('dc', [[0, '#f8d45c'], [0.6, '#e9ac25'], [1, '#b87a12']], 0.5, 0.5, 0.5, 0.4, 0.3),
-    linear('dg', [[0, '#7fa551'], [1, '#4d7230']], 0, 0, 1, 0),
-    linear('dl', [[0, '#8db85e'], [1, '#4f7a33']], 0, 0, 1, 1),
-    `<path id="p" d="M0,-13 C7,-19 9,-40 0,-57 C-9,-40 -7,-19 0,-13 Z" fill="url(#dp)" stroke="#dcd4bb" stroke-width="0.6"/>`,
-    `<mask id="dm"><g transform="translate(80 62)" fill="#fff">${petals.replace(/<use /g, '<use fill="#fff" ')}<circle r="17"/></g></mask>`,
-    `<pattern id="dd" width="3.2" height="3.2" patternUnits="userSpaceOnUse"><circle cx="1.6" cy="1.6" r="0.9" fill="#9a6410" opacity="0.5"/></pattern>`,
+    radial('dc', [[0, '#f3cf58'], [0.6, '#e2a523'], [1, '#a66d10']], 0.5, 0.5, 0.5, 0.42, 0.32),
+    linear('dg', [[0, '#86a856'], [1, '#4b6d2f']], 0, 0, 1, 0),
+    linear('dl', [[0, '#93b864'], [1, '#4f7633']], 0, 0, 1, 1),
+    `<mask id="dm"><g transform="translate(78 64)" fill="#fff">${petals.replace(/fill="url\(#dp\)"/g, 'fill="#fff"')}<circle r="17"/></g></mask>`,
+    `<pattern id="dd" width="3.4" height="3.1" patternUnits="userSpaceOnUse"><circle cx="1.7" cy="1.5" r="0.9" fill="#8f5c0e" opacity="0.5"/></pattern>`,
   ].join(''), [
-    `<path d="M82,76 C92,110 104,150 96,194" fill="none" stroke="url(#dg)" stroke-width="4" stroke-linecap="round"/>`,
-    `<path d="M96,140 C104,120 128,112 140,118 C132,136 112,146 96,140 Z" fill="url(#dl)"/>`,
-    `<path d="M97,139 C112,130 126,122 138,119" fill="none" stroke="#3f6428" stroke-width="0.8" opacity="0.6"/>`,
-    `<g transform="translate(80 62)">${petals}</g>`,
-    `<rect x="18" y="0" width="124" height="124" fill="url(#ds)" mask="url(#dm)"/>`,
-    `<circle cx="80" cy="62" r="16.5" fill="url(#dc)"/>`,
-    `<circle cx="80" cy="62" r="13" fill="url(#dd)"/>`,
+    `<path d="M80,78 C88,100 102,118 98,142 C96,152 90,160 94,172 C96,182 100,190 98,196" fill="none" stroke="url(#dg)" stroke-width="4.2" stroke-linecap="round"/>`,
+    `<path d="M98,142 C96,152 90,160 94,172" fill="none" stroke="#3d5a24" stroke-width="1.2" opacity="0.5"/>`,
+    `<path d="${blob([[97, 150], [108, 136], [124, 126], [140, 128], [138, 140], [122, 152], [106, 154]], 2, rnd)}" fill="url(#dl)"/>`,
+    `<path d="M99,149 C112,140 126,132 138,129" fill="none" stroke="#3f6428" stroke-width="0.8" opacity="0.6"/>`,
+    `<path d="M126,127 L130,134 L122,133 Z" fill="#e8c9a0" opacity="0.9"/>`,
+    `<g transform="translate(78 64)">${petals}</g>`,
+    `<rect x="12" y="0" width="132" height="128" fill="url(#ds)" mask="url(#dm)"/>`,
+    `<path d="${blob(ring(79, 65, 16.5, 15.5, 9, 0.4), 0.8, rnd)}" fill="url(#dc)"/>`,
+    `<path d="${blob(ring(79, 65, 13, 12, 8, 1), 0.6, rnd)}" fill="url(#dd)"/>`,
+    blotches(rnd, 79, 65, 8, 3, '#7a4a08', 0.18),
   ].join('\n'));
 };
 
-/* Light: a sharpened HB pencil, lying tip up and to the right. */
-files['light-pencil'] = () => svg(160, 232, [
-  linear('pe', [[0, '#f6b7b0'], [0.55, '#e48a84'], [1, '#b85f5a']]),
-  linear('pf', [[0, '#f2f2f4'], [0.4, '#b9babf'], [0.7, '#e2e2e6'], [1, '#7c7d84']]),
-  linear('pb', [[0, '#f9dc63'], [0.34, '#f9dc63'], [0.34, '#f1b826'], [0.67, '#f1b826'], [0.67, '#b57f12'], [1, '#b57f12']]),
-  linear('pw', [[0, '#f3dcbb'], [0.5, '#dfb98a'], [1, '#a77c4c']]),
-  linear('pt', [[0, '#8c8f94'], [1, '#2c2d31']]),
-].join(''), [
-  `<g transform="translate(26 218) rotate(-62)">`,
-  `<rect x="0" y="-8" width="24" height="16" rx="5" fill="url(#pe)"/>`,
-  `<rect x="20" y="-8" width="22" height="16" fill="url(#pf)"/>`,
-  `<path d="M25,-8 V8 M31,-8 V8 M37,-8 V8" stroke="#5a5b61" stroke-width="1" opacity="0.6"/>`,
-  `<rect x="42" y="-8" width="156" height="16" fill="url(#pb)"/>`,
-  `<path d="M198,-8 L224,-2.2 L224,2.2 L198,8 Z" fill="url(#pw)"/>`,
-  `<path d="M224,-2.2 L232,0 L224,2.2 Z" fill="url(#pt)"/>`,
-  `<path d="M42,-8 H198" stroke="#fff" stroke-width="0.8" opacity="0.45"/>`,
-  `<text x="150" y="1.6" font-family="monospace" font-size="4.6" fill="#7a5407" text-anchor="middle" opacity="0.8">HB</text>`,
-  `</g>`,
-].join('\n'));
-
-/* Light: a scallop shell, hinge down, ribs fanning up. */
-files['light-shell'] = () => {
-  const ribs = 13;
-  const hx = 80; const hy = 136; const R = 86;
-  const span = 150; const a0 = -90 - span / 2;
-  const edge = [];
-  for (let i = 0; i <= ribs; i += 1) {
-    const a = ((a0 + (span / ribs) * i) * Math.PI) / 180;
-    edge.push([hx + R * Math.cos(a), hy + R * Math.sin(a)]);
-  }
-  let d = `M${pt(hx - 11, hy - 2)} L${pt(edge[0][0], edge[0][1])}`;
-  for (let i = 1; i <= ribs; i += 1) d += ` A9,9 0 0 1 ${pt(edge[i][0], edge[i][1])}`;
-  d += ` L${pt(hx + 11, hy - 2)} Z`;
-  let lines = '';
-  for (let i = 0; i < ribs; i += 1) {
-    const a = ((a0 + (span / ribs) * (i + 0.5)) * Math.PI) / 180;
-    const ex = hx + (R - 4) * Math.cos(a); const ey = hy + (R - 4) * Math.sin(a);
-    lines += `<path d="M${pt(hx, hy - 6)} Q${pt(hx + (ex - hx) * 0.5 - 2, hy + (ey - hy) * 0.5)} ${pt(ex, ey)}" stroke="#fff" stroke-width="2.2" opacity="0.45"/>`;
-    lines += `<path d="M${pt(hx + 2, hy - 6)} Q${pt(hx + (ex - hx) * 0.5 + 2, hy + (ey - hy) * 0.5 + 1)} ${pt(ex + 3, ey + 1)}" stroke="#a7724c" stroke-width="2" opacity="0.4"/>`;
-  }
-  return svg(160, 150, [
-    radial('sh', [[0, '#fbeee0'], [0.55, '#f0cfb0'], [1, '#d8a27a']], 0.5, 0.95, 0.9, 0.5, 0.5),
-    linear('se', [[0, '#000', 0], [0.7, '#000', 0], [1, '#4a2a10', 0.25]]),
-    linear('sg', [[0, '#e8c3a4'], [1, '#b8825a']]),
+/* Light: a pencil that has been in someone's mouth. The eraser is worn to a slant, the ferrule
+   has a dent, the paint is bitten through near it, and the lead is blunt. */
+files['light-pencil'] = () => {
+  const rnd = noise(33);
+  const bites = Array.from({ length: 9 }, () => {
+    const x = between(rnd, 44, 92); const y = between(rnd, -7, 7);
+    return `<path d="${blob(ring(x, y, between(rnd, 1.5, 3), between(rnd, 1, 2.2), 6), 0.5, rnd)}" fill="#6b4a12" opacity="${r(between(rnd, 0.25, 0.5))}"/>`;
+  }).join('');
+  return svg(160, 232, [
+    linear('pe', [[0, '#f0b1aa'], [0.55, '#d9847e'], [1, '#a9585a']]),
+    linear('pf', [[0, '#e9e9eb'], [0.4, '#aaabb0'], [0.7, '#d4d4d8'], [1, '#6f7077']]),
+    linear('pb', [[0, '#f3d55e'], [0.34, '#f3d55e'], [0.34, '#e9b124'], [0.67, '#e9b124'], [0.67, '#ad7a12'], [1, '#ad7a12']]),
+    linear('pw', [[0, '#efd6b4'], [0.5, '#d6b082'], [1, '#9c7247']]),
+    linear('pt', [[0, '#7c7f84'], [1, '#26272b']]),
+    `<clipPath id="pcb"><path d="M42,-8 H190 L188,8 H42 Z"/></clipPath>`,
   ].join(''), [
-    `<path d="${d}" fill="url(#sh)" stroke="#b58660" stroke-width="0.7"/>`,
-    `<g fill="none" stroke-linecap="round">${lines}</g>`,
-    `<path d="${d}" fill="url(#se)"/>`,
-    `<path d="M66,130 L94,130 L90,139 L70,139 Z" fill="url(#sg)"/>`,
-  ].join('\n'));
-};
-
-/* Dark: a brass drawing compass, open, needle leg to the left. */
-files['dark-compass'] = () => {
-  const knurl = Array.from({ length: 24 }, (_, i) => `<path d="M0,-13.5 V-10.8" transform="rotate(${i * 15})"/>`).join('');
-  return svg(160, 240, [
-    linear('cb', [[0, '#f2dc93'], [0.3, '#cfa64a'], [0.7, '#9a7126'], [1, '#5b3f12']], 0, 0, 1, 0),
-    linear('ch', [[0, '#f6e5a8'], [0.5, '#c59e44'], [1, '#6a4a16']], 0, 0, 0.6, 1),
-    linear('cs', [[0, '#eef0f3'], [0.5, '#9aa0a8'], [1, '#4d525a']], 0, 0, 1, 0),
-    linear('cl', [[0, '#9a9ca2'], [1, '#2a2b2f']], 0, 0, 1, 0),
-    `<path id="leg" d="M-5,0 L5,0 L3.2,170 L-3.2,170 Z" fill="url(#cb)"/>`,
-  ].join(''), [
-    `<g transform="translate(80 34)">`,
-    `<g transform="rotate(14)"><use href="#leg"/><path d="M-3.2,170 L3.2,170 L0,190 Z" fill="url(#cs)"/></g>`,
-    `<g transform="rotate(-13)"><use href="#leg"/><rect x="-4.4" y="150" width="8.8" height="22" rx="1.5" fill="url(#cb)" stroke="#4a3410" stroke-width="0.5"/><path d="M-2.4,172 L2.4,172 L0,190 Z" fill="url(#cl)"/></g>`,
-    `<path d="M-6,8 H6" stroke="#4a3410" stroke-width="1" opacity="0.5"/>`,
-    `<circle r="14" fill="url(#ch)" stroke="#4a3410" stroke-width="0.6"/>`,
-    `<g stroke="#5a4012" stroke-width="1" opacity="0.7">${knurl}</g>`,
-    `<circle r="5" fill="#8a6520" stroke="#3e2b0a" stroke-width="0.6"/>`,
-    `<path d="M-3.4,-3.4 L3.4,3.4" stroke="#2f2007" stroke-width="1.2"/>`,
-    `<path d="M-9,-8 A12,12 0 0 1 3,-13" fill="none" stroke="#fff6cf" stroke-width="1.6" opacity="0.6" stroke-linecap="round"/>`,
-    `<rect x="-3" y="-30" width="6" height="18" rx="2" fill="url(#cb)" stroke="#4a3410" stroke-width="0.5"/>`,
+    `<g transform="translate(28 216) rotate(-58)">`,
+    `<path d="M4,-8 L24,-8 L24,8 L1,8 C-2,6 -1,-5 4,-8 Z" fill="url(#pe)"/>`,
+    `<path d="M2,-4 L12,-6 M3,3 L14,5" stroke="#8a4a4c" stroke-width="0.8" opacity="0.5"/>`,
+    `<path d="M20,-8 H42 V8 H20 Z" fill="url(#pf)"/>`,
+    `<path d="M26,-8 V8 M32,-8 V8 M38,-8 V8" stroke="#5a5b61" stroke-width="1" opacity="0.6"/>`,
+    `<path d="M29,-8 C31,-5 33,-5 35,-8" fill="#5a5b61" opacity="0.6"/>`,
+    `<path d="M42,-8 H190 L188,8 H42 Z" fill="url(#pb)"/>`,
+    `<g clip-path="url(#pcb)">${bites}${scuffs(rnd, 120, 0, 60, 8, '#fff7d8', 0.5)}</g>`,
+    `<path d="M112,-8 C116,-3 120,-5 124,-8 Z" fill="#d7b886"/>`,
+    `<path d="M42,-8 H190" stroke="#fff" stroke-width="0.8" opacity="0.4"/>`,
+    `<path d="M190,-8 L214,-3 L213,2.6 L188,8 Z" fill="url(#pw)"/>`,
+    `<path d="M196,-6 C200,-2 204,-5 208,-3 M194,5 C200,2 206,4 210,1" fill="none" stroke="#7a5230" stroke-width="0.6" opacity="0.5"/>`,
+    `<path d="M213,-3 L219,-1 L219,1.5 L213,2.6 Z" fill="url(#pt)"/>`,
+    `<text x="150" y="1.6" font-family="monospace" font-size="4.6" fill="#7a5407" text-anchor="middle" opacity="0.7">HB</text>`,
     `</g>`,
   ].join('\n'));
 };
 
-/* Dark: a steel pocket watch, bow up, a few links of chain off to the right. */
+/* Light: a paperclip, one loop bent out where it was used to open something. */
+files['light-paperclip'] = () => {
+  const rnd = noise(45);
+  const w = (d) => d.replace(/(-?\d+\.?\d*),(-?\d+\.?\d*)/g, (_, x, y) => pt(+x + between(rnd, -0.8, 0.8), +y + between(rnd, -0.8, 0.8)));
+  const d = w('M28,22 C28,10 20,8 14,10 C8,12 8,22 8,30 L8,118 C8,128 14,134 22,134 C30,134 36,128 36,118 L36,40 C36,30 30,26 24,28 C18,30 18,36 18,42 L20,108 C20,114 24,116 28,116 C32,116 36,112 36,106');
+  return svg(60, 150, [
+    linear('cm', [[0, '#f4f5f7'], [0.35, '#b7bac1'], [0.7, '#e4e6ea'], [1, '#6f737b']], 0, 0, 1, 0.3),
+  ].join(''), [
+    `<path d="${d}" fill="none" stroke="#3a3d44" stroke-width="4.2" stroke-linecap="round" opacity="0.35"/>`,
+    `<path d="${d}" fill="none" stroke="url(#cm)" stroke-width="3.2" stroke-linecap="round"/>`,
+    `<path d="M22,134 C30,134 36,128 36,118 L36,106" fill="none" stroke="#9a9ea6" stroke-width="3.2" stroke-linecap="round" opacity="0.4"/>`,
+    scuffs(rnd, 22, 70, 20, 5, '#fff', 0.6),
+  ].join('\n'));
+};
+
+/* Dark: a brass drawing compass that has done years of work: tarnished in patches, scuffed,
+   the needle bent a few degrees off the leg. */
+files['dark-compass'] = () => {
+  const rnd = noise(57);
+  const knurl = Array.from({ length: 24 }, (_, i) => (i === 7 || i === 8 ? '' : `<path d="M0,-13.5 V-10.8" transform="rotate(${r(i * 15 + between(rnd, -2, 2))})"/>`)).join('');
+  const leg = (deg, extra) => [
+    `<g transform="rotate(${deg})">`,
+    `<path d="M-5,0 L5,0 L3.6,96 L3.1,170 L-3.1,170 L-3.6,96 Z" fill="url(#cb)"/>`,
+    `<g clip-path="url(#ccl)">${blotches(rnd, 0, 90, 60, 6, '#3a2608', 0.3)}${scuffs(rnd, 0, 100, 70, 7, '#fff2c0', 0.4)}</g>`,
+    extra,
+    `</g>`,
+  ].join('');
+  return svg(160, 240, [
+    linear('cb', [[0, '#ead07f'], [0.3, '#c69c3f'], [0.7, '#8f681f'], [1, '#4f360e']], 0, 0, 1, 0),
+    linear('ch', [[0, '#f0dc9a'], [0.5, '#bb943c'], [1, '#5e4012']], 0, 0, 0.6, 1),
+    linear('cs', [[0, '#e3e6ea'], [0.5, '#8d939b'], [1, '#43484f']], 0, 0, 1, 0),
+    linear('cl', [[0, '#8d8f95'], [1, '#232428']], 0, 0, 1, 0),
+    `<clipPath id="cch"><circle r="13.5"/></clipPath>`,
+    `<clipPath id="ccl"><path d="M-5,0 L5,0 L3.6,96 L3.1,170 L-3.1,170 L-3.6,96 Z"/></clipPath>`,
+  ].join(''), [
+    `<g transform="translate(80 34)">`,
+    leg(15, `<path d="M-3.1,170 L3.1,170 L1.6,190 Z" fill="url(#cs)" transform="rotate(4 0 170)"/>`),
+    leg(-12, `<path d="M-4.4,150 h8.8 v22 h-8.8 Z" fill="url(#cb)" stroke="#4a3410" stroke-width="0.5" transform="rotate(-2 0 160)"/><path d="M-2.4,172 L2.4,172 L0.6,189 Z" fill="url(#cl)"/>`),
+    `<path d="M-6,8 H6" stroke="#4a3410" stroke-width="1" opacity="0.5"/>`,
+    `<path d="${blob(ring(0, 0, 14, 14, 10), 0.5, rnd)}" fill="url(#ch)" stroke="#4a3410" stroke-width="0.6"/>`,
+    `<g stroke="#5a4012" stroke-width="1" opacity="0.7">${knurl}</g>`,
+    `<g clip-path="url(#cch)">${blotches(rnd, 0, 0, 8, 3, '#3a2608', 0.3)}</g>`,
+    `<circle cx="0.8" cy="-0.4" r="5" fill="#86621f" stroke="#3e2b0a" stroke-width="0.6"/>`,
+    `<path d="M-2.6,-3.8 L4.2,3" stroke="#2f2007" stroke-width="1.2"/>`,
+    `<path d="M-9,-8 A12,12 0 0 1 3,-13" fill="none" stroke="#fff6cf" stroke-width="1.6" opacity="0.5" stroke-linecap="round"/>`,
+    `<path d="M-3,-30 h6 v18 h-6 Z" fill="url(#cb)" stroke="#4a3410" stroke-width="0.5" transform="rotate(3 0 -20)"/>`,
+    `</g>`,
+  ].join('\n'));
+};
+
+/* Dark: a steel pocket watch, its lid left a little open, the case scratched from a pocket
+   full of keys, the dial yellowed at one edge. */
 files['dark-watch'] = () => {
+  const rnd = noise(69);
   const ticks = Array.from({ length: 60 }, (_, i) => (
     i % 5 === 0
       ? `<path d="M0,-44 V-37" stroke="#2b2f3a" stroke-width="2" transform="rotate(${i * 6})"/>`
       : `<path d="M0,-44 V-41" stroke="#2b2f3a" stroke-width="0.8" transform="rotate(${i * 6})"/>`
   )).join('');
-  const chain = [[138, 128], [146, 144], [148, 162], [142, 178]].map(([x, y], i) => (
-    `<ellipse cx="${x}" cy="${y}" rx="4" ry="7.5" transform="rotate(${-20 + i * 14} ${x} ${y})" fill="none" stroke="url(#wc)" stroke-width="2.2"/>`
+  const chain = [[148, 126], [157, 142], [156, 160], [148, 175], [136, 184]].map(([x, y], i) => (
+    `<ellipse cx="${x}" cy="${y}" rx="4" ry="7.5" transform="rotate(${r(-20 + i * 16 + between(rnd, -10, 10))} ${x} ${y})" fill="none" stroke="url(#wc)" stroke-width="2.2"/>`
   )).join('');
-  return svg(160, 190, [
-    linear('wc', [[0, '#f0f2f5'], [0.45, '#a3a8b2'], [1, '#4f545e']]),
-    linear('wb', [[0, '#5e636c'], [0.5, '#b7bcc5'], [1, '#e7e9ee']]),
-    radial('wd', [[0, '#fbf7ea'], [0.75, '#f1e8d1'], [1, '#d9ccab']], 0.5, 0.5, 0.5, 0.4, 0.3),
-    linear('wg', [[0, '#fff', 0.5], [0.5, '#fff', 0]], 0, 0, 0.7, 1),
+  return svg(180, 190, [
+    linear('wc', [[0, '#eceef1'], [0.45, '#9ba0aa'], [1, '#474c56']]),
+    linear('wb', [[0, '#575c66'], [0.5, '#afb4bd'], [1, '#e2e4e9']]),
+    radial('wd', [[0, '#fbf7ea'], [0.75, '#efe5cc'], [1, '#d3c4a0']], 0.5, 0.5, 0.5, 0.4, 0.3),
+    linear('wg', [[0, '#fff', 0.45], [0.5, '#fff', 0]], 0, 0, 0.7, 1),
+    linear('wl', [[0, '#d9dce2'], [0.5, '#8e939d'], [1, '#3f444d']], 0, 0, 1, 1),
+    `<clipPath id="wcc"><circle r="60"/></clipPath>`,
   ].join(''), [
-    `<g transform="translate(80 104)">`,
+    `<g transform="translate(96 104)">`,
+    `<ellipse cx="-66" rx="17" ry="58" fill="url(#wl)" stroke="#2f333b" stroke-width="0.6" transform="rotate(-3 -66 0)"/>`,
+    `<ellipse cx="-68" rx="9" ry="50" fill="#c9cdd4" opacity="0.6" transform="rotate(-3 -66 0)"/>`,
+    `<path d="M-60,-10 h4 v20 h-4 Z" fill="#5c6069"/>`,
     `<circle r="60" fill="url(#wc)"/>`,
     `<circle r="54" fill="url(#wb)"/>`,
     `<circle r="50" fill="url(#wd)"/>`,
+    `<path d="${blob(ring(26, 30, 22, 14, 7), 2, rnd)}" fill="#b89a5a" opacity="0.18"/>`,
     `<g>${ticks}</g>`,
     `<text y="-26" font-family="serif" font-size="9" fill="#2b2f3a" text-anchor="middle">XII</text>`,
     `<text x="35" y="3" font-family="serif" font-size="9" fill="#2b2f3a" text-anchor="middle">III</text>`,
     `<text y="33" font-family="serif" font-size="9" fill="#2b2f3a" text-anchor="middle">VI</text>`,
     `<text x="-35" y="3" font-family="serif" font-size="9" fill="#2b2f3a" text-anchor="middle">IX</text>`,
     `<circle cy="20" r="11" fill="none" stroke="#7a7466" stroke-width="0.6"/>`,
-    `<path d="M0,0 L-22,-14" stroke="#1f3a6e" stroke-width="3.2" stroke-linecap="round"/>`,
-    `<path d="M0,0 L16,-36" stroke="#1f3a6e" stroke-width="2.2" stroke-linecap="round"/>`,
-    `<path d="M0,20 L5,14" stroke="#1f3a6e" stroke-width="0.8"/>`,
+    `<path d="M0,0 L-21,-16" stroke="#1f3a6e" stroke-width="3.2" stroke-linecap="round"/>`,
+    `<path d="M0,0 L18,-35" stroke="#1f3a6e" stroke-width="2.2" stroke-linecap="round"/>`,
+    `<path d="M0,20 L6,13" stroke="#1f3a6e" stroke-width="0.8"/>`,
     `<circle r="2.6" fill="#1f3a6e"/>`,
     `<circle r="50" fill="url(#wg)"/>`,
-    `<rect x="-6" y="-72" width="12" height="13" rx="2" fill="url(#wc)"/>`,
-    `<path d="M-3,-72 V-59 M0,-72 V-59 M3,-72 V-59" stroke="#4f545e" stroke-width="0.8" opacity="0.7"/>`,
-    `<circle cy="-82" r="10" fill="none" stroke="url(#wc)" stroke-width="4"/>`,
+    `<path d="M-30,-70 C-10,-66 20,-72 44,-50 M20,56 C34,46 44,30 48,22" fill="none" stroke="#fff" stroke-width="0.7" opacity="0.5"/>`,
+    `<g clip-path="url(#wcc)">${scuffs(rnd, 0, 0, 56, 14, '#f5f6f8', 0.5)}</g>`,
+    `<path d="M-6,-72 h12 v13 h-12 Z" fill="url(#wc)" transform="rotate(-4 0 -66)"/>`,
+    `<path d="M-3,-72 V-59 M0,-72 V-59 M3,-72 V-59" stroke="#4f545e" stroke-width="0.8" opacity="0.7" transform="rotate(-4 0 -66)"/>`,
+    `<ellipse cy="-82" rx="10" ry="9" fill="none" stroke="url(#wc)" stroke-width="4" transform="rotate(-10 0 -82)"/>`,
     `</g>`,
     chain,
   ].join('\n'));
 };
 
-/* Dark: a pale moth at rest, wings flat, antennae combed. */
-files['dark-moth'] = () => {
-  const comb = (side) => Array.from({ length: 14 }, (_, i) => {
-    const t = i / 13;
-    const x = 100 + side * (2 + 26 * t); const y = 44 - 30 * t;
-    const l = 5 - 3 * t;
-    return `<path d="M${pt(x, y)} l${pt(side * l * 0.3, -l)}"/>`;
-  }).join('');
-  return svg(200, 150, [
-    linear('mw', [[0, '#f1ece0'], [0.6, '#dbd3c0'], [1, '#b8ad97']]),
-    linear('mh', [[0, '#e6dfcd'], [1, '#b2a68e']]),
-    linear('mb', [[0, '#8f8470'], [0.5, '#c9bea6'], [1, '#6f6553']], 0, 0, 1, 0),
-    `<g id="wing"><path d="M104,54 C140,30 176,28 188,44 C184,72 160,96 130,98 C118,99 108,92 105,80 Z" fill="url(#mw)" stroke="#9c927c" stroke-width="0.7"/>`
-    + `<path d="M106,84 C125,102 150,112 140,128 C122,136 108,122 104,108 Z" fill="url(#mh)" stroke="#9c927c" stroke-width="0.7"/>`
-    + `<path d="M118,50 C140,46 160,48 176,58" fill="none" stroke="#7d7361" stroke-width="1.4" opacity="0.6"/>`
-    + `<path d="M124,74 C142,70 158,74 170,84" fill="none" stroke="#7d7361" stroke-width="2.4" opacity="0.4"/>`
-    + `<path d="M130,60 C145,58 158,60 168,66" fill="none" stroke="#6f6553" stroke-width="0.8" opacity="0.5" stroke-dasharray="3 2"/>`
-    + `<circle cx="150" cy="66" r="3.4" fill="#4e4638" opacity="0.7"/><circle cx="150" cy="66" r="1.4" fill="#e9e1cf"/>`
-    + `<path d="M112,96 C125,106 134,116 132,124" fill="none" stroke="#7d7361" stroke-width="1.2" opacity="0.4"/></g>`,
+/* Dark: a struck match, the head burnt to a crust, the stick charred a third of the way and
+   bent where the burn weakened it. */
+files['dark-matchstick'] = () => {
+  const rnd = noise(81);
+  return svg(40, 160, [
+    linear('ms', [[0, '#1d1a17'], [0.3, '#3d2f22'], [0.45, '#8a6a46'], [1, '#d9b98a']]),
+    linear('mx', [[0, '#eed9b4', 0.5], [1, '#5a4530', 0.5]], 0, 0, 1, 0),
+    `<clipPath id="msc"><path d="M16,36 C14,60 18,90 15,120 C14,135 16,146 17,154 L23,154 C22,146 21,135 22,120 C24,90 20,60 23,38 Z"/></clipPath>`,
   ].join(''), [
-    `<use href="#wing"/>`,
-    `<use href="#wing" transform="translate(200 0) scale(-1 1)"/>`,
-    `<ellipse cx="100" cy="92" rx="7" ry="30" fill="url(#mb)"/>`,
-    `<path d="M93,80 h14 M93,88 h14 M93,96 h14 M94,104 h12 M95,112 h10" stroke="#5f5544" stroke-width="0.8" opacity="0.45"/>`,
-    `<circle cx="100" cy="60" r="11" fill="url(#mb)"/>`,
-    `<circle cx="100" cy="60" r="12" fill="none" stroke="#c9bea6" stroke-width="1.6" stroke-dasharray="1 1.4" opacity="0.8"/>`,
-    `<circle cx="100" cy="47" r="6" fill="#8a7f6b"/>`,
-    `<path d="M100,44 C92,36 80,24 72,14 M100,44 C108,36 120,24 128,14" fill="none" stroke="#6f6553" stroke-width="1.2" stroke-linecap="round"/>`,
-    `<g stroke="#6f6553" stroke-width="0.6" opacity="0.8">${comb(-1)}${comb(1)}</g>`,
+    `<path d="M16,36 C14,60 18,90 15,120 C14,135 16,146 17,154 L23,154 C22,146 21,135 22,120 C24,90 20,60 23,38 Z" fill="url(#ms)"/>`,
+    `<path d="M16,36 C14,60 18,90 15,120 C14,135 16,146 17,154 L23,154 C22,146 21,135 22,120 C24,90 20,60 23,38 Z" fill="url(#mx)"/>`,
+    `<path d="M15,44 C17,52 18,58 17,66 M22,48 C21,56 22,62 21,70" fill="none" stroke="#000" stroke-width="0.5" opacity="0.5"/>`,
+    `<path d="${blob([[13, 36], [15, 24], [20, 14], [27, 12], [31, 20], [29, 32], [24, 40]], 1.8, rnd)}" fill="#1a1512"/>`,
+    `<path d="${blob(ring(23, 24, 5, 7, 7), 1.2, rnd)}" fill="#4a4340" opacity="0.8"/>`,
+    `<path d="${blob(ring(26, 20, 3, 3, 6), 0.8, rnd)}" fill="#8d8683" opacity="0.6"/>`,
+    `<g clip-path="url(#msc)">${blotches(rnd, 19, 90, 30, 4, '#5a3a1a', 0.25)}</g>`,
+    `<path d="M17,154 C18,157 22,157 23,154" fill="#b89a6e"/>`,
   ].join('\n'));
 };
 
-/* Arctic: a spruce sprig, needles out to both sides, a little frost on it. */
+/* Arctic: a spruce sprig, needles of every length, some missing, a few dropped beside it,
+   the stem snapped at the thick end. */
 files['arctic-sprig'] = () => {
   const stem = quad([34, 220], [50, 120], [96, 22]);
-  const rnd = noise(7);
+  const rnd = noise(93);
   let needles = '';
   let frost = '';
-  for (let t = 0.06; t < 0.985; t += 0.022) {
+  for (let t = 0.06; t < 0.985; t += 0.021) {
     const p = stem(t);
     for (const side of [-1, 1]) {
-      const len = 20 + 8 * Math.sin(t * Math.PI) + rnd() * 5 - (t > 0.9 ? (t - 0.9) * 120 : 0);
-      const [dx, dy] = rotate(p.tx, p.ty, side * (58 + rnd() * 12));
+      if (rnd() < 0.1) continue;
+      const len = (20 + 8 * Math.sin(t * Math.PI)) * between(rnd, 0.55, 1.2) - (t > 0.9 ? (t - 0.9) * 120 : 0);
+      const [dx, dy] = rotate(p.tx, p.ty, side * between(rnd, 48, 76));
+      const bend = between(rnd, -6, 6);
       const ex = p.x + dx * len; const ey = p.y + dy * len;
-      const cx = p.x + dx * len * 0.5 + p.tx * 4; const cy = p.y + dy * len * 0.5 + p.ty * 4;
-      needles += `<path d="M${pt(p.x, p.y)} Q${pt(cx, cy)} ${pt(ex, ey)}"/>`;
-      if (rnd() > 0.72) frost += `<circle cx="${r(ex - dx * 3)}" cy="${r(ey - dy * 3)}" r="1.1"/>`;
+      const cx = p.x + dx * len * 0.5 + p.tx * 4 - dy * bend; const cy = p.y + dy * len * 0.5 + p.ty * 4 + dx * bend;
+      needles += `<path d="M${pt(p.x, p.y)} Q${pt(cx, cy)} ${pt(ex, ey)}"${rnd() < 0.12 ? ' stroke="#8a9a6e"' : ''}/>`;
+      if (rnd() > 0.8) frost += `<circle cx="${r(ex - dx * 3)}" cy="${r(ey - dy * 3)}" r="${r(between(rnd, 0.7, 1.3))}"/>`;
     }
   }
+  const dropped = [[18, 190, -40, 14], [26, 206, 20, 18], [62, 214, -70, 16], [108, 196, 30, 12], [12, 160, 80, 15]].map(([x, y, a, l]) => {
+    const [dx, dy] = rotate(1, 0, a);
+    return `<path d="M${pt(x, y)} q${pt(dx * l * 0.5 - dy * 2, dy * l * 0.5 + dx * 2)} ${pt(dx * l, dy * l)}"/>`;
+  }).join('');
   return svg(130, 230, [
-    linear('ss', [[0, '#8a6a4a'], [1, '#4e3826']], 0, 1, 0, 0),
-    linear('sn', [[0, '#3f6b5f'], [0.5, '#5d8a7c'], [1, '#86aa9d']], 0, 1, 0, 0),
+    linear('ss', [[0, '#7f6245'], [1, '#4a3524']], 0, 1, 0, 0),
+    linear('sn', [[0, '#3b6659'], [0.5, '#5a8676'], [1, '#82a697']], 0, 1, 0, 0),
   ].join(''), [
     `<g fill="none" stroke="url(#sn)" stroke-width="1.7" stroke-linecap="round">${needles}</g>`,
-    `<path d="M34,220 Q50,120 96,22" fill="none" stroke="url(#ss)" stroke-width="4.5" stroke-linecap="round"/>`,
+    `<g fill="none" stroke="#5f8878" stroke-width="1.5" stroke-linecap="round" opacity="0.8">${dropped}</g>`,
+    `<path d="M34,220 Q50,120 96,22" fill="none" stroke="url(#ss)" stroke-width="4.5" stroke-linecap="butt"/>`,
+    `<path d="M31,220 L37,222 L35,217 Z" fill="#c9b08f"/>`,
     `<path d="M34,220 Q50,120 96,22" fill="none" stroke="#b99a7c" stroke-width="1" opacity="0.5" stroke-dasharray="6 9"/>`,
     `<g fill="#f4fbff" opacity="0.85">${frost}</g>`,
   ].join('\n'));
 };
 
-/* Arctic: two river pebbles, one grey, one warmer. */
-files['arctic-pebble'] = () => {
-  const rnd = noise(3);
-  let speck = '';
-  for (let i = 0; i < 70; i += 1) {
-    const a = rnd() * Math.PI * 2; const d = Math.sqrt(rnd());
-    speck += `<circle cx="${r(64 + Math.cos(a) * 44 * d)}" cy="${r(70 + Math.sin(a) * 33 * d)}" r="${r(0.5 + rnd() * 0.8)}"/>`;
-  }
-  return svg(160, 130, [
-    radial('pa', [[0, '#e3e5e9'], [0.5, '#b4b8c0'], [0.85, '#848a95'], [1, '#5d636e']], 0.5, 0.5, 0.62, 0.38, 0.3),
-    radial('pq', [[0, '#e0d8ce'], [0.5, '#b7aa9a'], [0.85, '#86796a'], [1, '#5f5446']], 0.5, 0.5, 0.62, 0.38, 0.3),
+/* Arctic: a torn tram ticket, creased once across, the stub end ripped off. */
+files['arctic-ticket'] = () => {
+  const rnd = noise(105);
+  const tear = [];
+  for (let y = 10; y <= 80; y += 5) tear.push([between(rnd, 118, 128), y]);
+  const outline = `M14,10 L118,10 ${tear.map(([x, y]) => `L${pt(x, y)}`).join(' ')} L14,80 Z`;
+  return svg(140, 90, [
+    linear('tp', [[0, '#f2f0ea'], [0.5, '#e4e1d8'], [0.5, '#dcd8ce'], [1, '#ecebe4']], 0, 0, 1, 0.2),
+    `<pattern id="tt" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#8aa2b8" opacity="0.5"/></pattern>`,
   ].join(''), [
-    `<path d="M22,60 C26,34 52,26 78,32 C104,38 116,56 108,80 C100,104 60,110 38,100 C22,92 18,78 22,60 Z" fill="url(#pa)"/>`,
-    `<g fill="#3e434c" opacity="0.28">${speck}</g>`,
-    `<path d="M44,54 C60,50 84,52 100,66" fill="none" stroke="#f3f4f6" stroke-width="1.2" opacity="0.5"/>`,
-    `<path d="M104,80 C110,66 128,62 142,70 C154,78 152,96 138,102 C122,108 100,100 104,80 Z" fill="url(#pq)"/>`,
-    `<path d="M114,78 C122,72 134,72 142,78" fill="none" stroke="#f3eee6" stroke-width="1" opacity="0.5"/>`,
+    `<g transform="rotate(-6 70 45)">`,
+    `<path d="${outline}" fill="url(#tp)" stroke="#b9b5aa" stroke-width="0.5"/>`,
+    `<path d="M14,10 L26,30 L14,80" fill="none" stroke="#b5b1a6" stroke-width="0.5" opacity="0.6"/>`,
+    `<path d="M68,10 L74,80" fill="none" stroke="#7d8a96" stroke-width="0.7" opacity="0.5"/>`,
+    `<path d="M22,18 h40 M22,24 h30 M22,34 h46 M22,40 h18 M22,56 h38 M22,62 h24" stroke="#4d6b88" stroke-width="2" opacity="0.75"/>`,
+    `<text x="24" y="74" font-family="monospace" font-size="7" fill="#2f4b66" opacity="0.8">0417</text>`,
+    `<path d="M84,18 h26 M84,26 h20 M84,34 h28 M84,42 h14" stroke="#4d6b88" stroke-width="2" opacity="0.55"/>`,
+    `<rect x="84" y="52" width="30" height="20" fill="url(#tt)"/>`,
+    `<path d="M14,12 L118,12" stroke="#6c7f94" stroke-width="1.5" opacity="0.5" stroke-dasharray="3 2"/>`,
+    blotches(rnd, 60, 50, 40, 5, '#9a8a66', 0.12),
+    `</g>`,
   ].join('\n'));
 };
 
-/* Arctic: a white feather, quill down, the vane split in a few places. */
-files['arctic-feather'] = () => {
-  const shaft = quad([38, 232], [48, 130], [86, 16]);
-  const rnd = noise(11);
-  let barbs = '';
-  let vane = { l: [], r: [] };
-  for (let t = 0.2; t < 0.995; t += 0.012) {
-    const p = shaft(t);
-    const shape = Math.sin(Math.PI * Math.min(1, (t - 0.2) / 0.8) ** 0.6);
-    const base = 26 * shape + 4;
-    for (const side of [-1, 1]) {
-      const len = base * (0.75 + rnd() * 0.3) * (side < 0 ? 1.1 : 0.85);
-      const [dx, dy] = rotate(p.tx, p.ty, side * 34);
-      const ex = p.x + dx * len; const ey = p.y + dy * len;
-      const cx = p.x + dx * len * 0.55 - p.tx * 3; const cy = p.y + dy * len * 0.55 - p.ty * 3;
-      barbs += `<path d="M${pt(p.x, p.y)} Q${pt(cx, cy)} ${pt(ex, ey)}"/>`;
-      vane[side < 0 ? 'l' : 'r'].push([p.x + dx * len * 0.92, p.y + dy * len * 0.92]);
-    }
-  }
-  const tip = shaft(1);
-  const outline = `M${pt(shaft(0.2).x, shaft(0.2).y)} ${vane.l.map(([x, y]) => `L${pt(x, y)}`).join(' ')} L${pt(tip.x, tip.y)} ${vane.r.reverse().map(([x, y]) => `L${pt(x, y)}`).join(' ')} Z`;
-  return svg(120, 240, [
-    linear('fq', [[0, '#efe9dd'], [1, '#fbfaf7']], 0, 1, 0, 0),
-    linear('fb', [[0, '#c7cbd1'], [0.35, '#e9ebee'], [1, '#ffffff']], 0, 1, 0, 0),
+/* Arctic: a small steel key, tarnished, the bow ring bent out of round. */
+files['arctic-key'] = () => {
+  const rnd = noise(117);
+  return svg(60, 140, [
+    linear('km', [[0, '#e8ebef'], [0.4, '#a2a8b1'], [0.7, '#d2d6dc'], [1, '#5b616b']], 0, 0, 1, 0.4),
+    `<clipPath id="kc"><ellipse cx="30" cy="24" rx="15" ry="13"/><path d="M26,36 L34,36 L33,112 L27,112 Z"/><path d="M33,96 h10 v5 h-7 v4 h9 v6 h-12 Z"/></clipPath>`,
   ].join(''), [
-    `<path d="${outline}" fill="#f6f6f3" opacity="0.7"/>`,
-    `<g fill="none" stroke="url(#fb)" stroke-width="1.1" stroke-linecap="round">${barbs}</g>`,
-    `<path d="M36,230 C42,214 40,198 44,186 M42,226 C48,210 46,194 52,180 M40,222 C38,206 44,196 42,182" fill="none" stroke="#d8dbe0" stroke-width="1" stroke-linecap="round" opacity="0.8"/>`,
-    `<path d="M38,232 Q48,130 86,16" fill="none" stroke="url(#fq)" stroke-width="3" stroke-linecap="round"/>`,
-    `<path d="M38,232 Q48,130 86,16" fill="none" stroke="#cfc8b8" stroke-width="0.8" opacity="0.6"/>`,
+    `<g transform="rotate(5 30 70)">`,
+    `<path d="${blob(ring(30, 24, 15, 13, 10, 0.3), 1.2, rnd)}" fill="url(#km)"/>`,
+    `<path d="${blob(ring(30, 24, 7, 6, 8, 0.6), 0.7, rnd)}" fill="#1b1c20" opacity="0.85"/>`,
+    `<path d="M26,36 L34,36 L33,112 L27,112 Z" fill="url(#km)"/>`,
+    `<path d="M33,96 h10 v5 h-7 v4 h9 v6 h-12 Z" fill="url(#km)"/>`,
+    `<path d="M27,40 h6" stroke="#2c2e33" stroke-width="1" opacity="0.5"/>`,
+    `<g clip-path="url(#kc)">${blotches(rnd, 30, 70, 30, 6, '#3a3222', 0.3)}${scuffs(rnd, 30, 60, 20, 6, '#fff', 0.5)}</g>`,
+    `<path d="M27,112 L33,112 L31,118 L29,118 Z" fill="#8a8f98"/>`,
+    `</g>`,
   ].join('\n'));
 };
 
-/* Forest: a fern frond, Hugo's ask, lobed pinnae either side of a curving rachis. */
+/* Forest: Hugo's fern, picked and carried: pinnae of unequal length on the two sides, a few
+   missing, two browned at the base, the tip beginning to curl. */
 files['forest-fern'] = () => {
   const rachis = quad([30, 250], [40, 150], [112, 14]);
-  const rnd = noise(5);
+  const rnd = noise(129);
   let pinnae = '';
-  const pairs = 17;
+  const pairs = 18;
   for (let i = 0; i < pairs; i += 1) {
-    const t = 0.08 + (0.9 * i) / (pairs - 1);
+    const t = 0.07 + (0.9 * i) / (pairs - 1);
     const p = rachis(t);
     const s = (i + 1) / pairs;
-    const len = 50 * Math.sin(Math.PI * (0.12 + 0.88 * s) ** 0.75) * (1 - 0.45 * s) + 6;
+    const base = 50 * Math.sin(Math.PI * (0.12 + 0.88 * s) ** 0.75) * (1 - 0.45 * s) + 6;
     for (const side of [-1, 1]) {
-      const ang = side * (62 - 28 * s) + rnd() * 6 - 3;
+      if ((i === 4 && side === 1) || (i === 11 && side === -1)) continue;
+      const len = base * between(rnd, 0.7, 1.12) * (side < 0 ? 1.08 : 0.92);
+      const ang = side * (62 - 28 * s) + between(rnd, -9, 9);
       const [dx, dy] = rotate(p.tx, p.ty, ang);
       const [nx, ny] = [-dy, dx];
       const lobes = Math.max(3, Math.round(len / 5));
+      const curl = between(rnd, -8, 8) * -side;
       const edge = (sign) => {
         const pts = [];
         for (let k = 0; k <= lobes * 2; k += 1) {
           const u = k / (lobes * 2);
-          const w = (5.5 * (1 - u ** 1.6) + 0.6) * (1 + 0.55 * Math.abs(Math.sin(u * Math.PI * lobes)));
-          const bend = Math.sin(u * Math.PI / 2) * 5 * -side;
+          const w = (5.5 * (1 - u ** 1.6) + 0.6) * (1 + 0.55 * Math.abs(Math.sin(u * Math.PI * lobes))) * between(rnd, 0.85, 1.15);
+          const bend = Math.sin(u * Math.PI / 2) * curl;
           pts.push([p.x + dx * len * u + nx * (w * sign + bend), p.y + dy * len * u + ny * (w * sign + bend)]);
         }
         return pts;
       };
       const a = edge(1); const b = edge(-1).reverse();
       const d = `M${pt(a[0][0], a[0][1])} ${a.slice(1).map(([x, y]) => `L${pt(x, y)}`).join(' ')} ${b.map(([x, y]) => `L${pt(x, y)}`).join(' ')} Z`;
-      pinnae += `<path d="${d}" fill="url(#${side < 0 ? 'fl' : 'fr'})"/>`;
-      pinnae += `<path d="M${pt(p.x, p.y)} L${pt(p.x + dx * len * 0.9, p.y + dy * len * 0.9)}" stroke="#2a4a22" stroke-width="0.7" opacity="0.6"/>`;
+      const brown = (i < 2 && side === 1) || (i === 6 && side === -1);
+      pinnae += `<path d="${d}" fill="url(#${brown ? 'fb' : side < 0 ? 'fl' : 'fr'})"/>`;
+      pinnae += `<path d="M${pt(p.x, p.y)} L${pt(p.x + dx * len * 0.9 + nx * curl * 0.7, p.y + dy * len * 0.9 + ny * curl * 0.7)}" stroke="#2a4a22" stroke-width="0.7" opacity="0.6"/>`;
     }
   }
   return svg(150, 260, [
-    linear('fl', [[0, '#2f5a2a'], [0.5, '#4f8a3e'], [1, '#86b25c']], 0, 1, 1, 0),
-    linear('fr', [[0, '#2a4f26'], [0.5, '#447a36'], [1, '#76a352']], 0, 1, 1, 0),
+    linear('fl', [[0, '#2d5629'], [0.5, '#4b853b'], [1, '#86b25c']], 0, 1, 1, 0),
+    linear('fr', [[0, '#284c24'], [0.5, '#417634'], [1, '#74a150']], 0, 1, 1, 0),
+    linear('fb', [[0, '#5a5a22'], [0.5, '#8a7a30'], [1, '#b39a4a']], 0, 1, 1, 0),
     linear('fs', [[0, '#5a4a26'], [1, '#6e8a3a']], 0, 1, 0, 0),
   ].join(''), [
     `<g stroke-linejoin="round">${pinnae}</g>`,
     `<path d="M30,250 Q40,150 112,14" fill="none" stroke="url(#fs)" stroke-width="3.2" stroke-linecap="round"/>`,
+    `<path d="M112,14 C116,10 122,10 120,16" fill="none" stroke="#6e8a3a" stroke-width="2" stroke-linecap="round"/>`,
   ].join('\n'));
 };
 
-/* Forest: two acorns, one still capped, with an oak leaf. */
+/* Forest: two acorns, one still in its cap and the other out of it, the empty cap lying on
+   its back beside them. */
 files['forest-acorns'] = () => {
-  const acorn = (x, y, deg, s) => [
+  const rnd = noise(141);
+  const nut = (x, y, deg, s) => [
     `<g transform="translate(${x} ${y}) rotate(${deg}) scale(${s})">`,
-    `<path d="M-18,-6 C-18,16 -9,30 0,30 C9,30 18,16 18,-6 Z" fill="url(#an)"/>`,
-    `<ellipse cy="29" rx="2.2" ry="1.6" fill="#3a2410"/>`,
-    `<path d="M-20,-4 C-20,-20 -10,-28 0,-28 C10,-28 20,-20 20,-4 C14,-1 -14,-1 -20,-4 Z" fill="url(#ac)"/>`,
-    `<path d="M-20,-4 C-20,-20 -10,-28 0,-28 C10,-28 20,-20 20,-4 C14,-1 -14,-1 -20,-4 Z" fill="url(#as)"/>`,
-    `<path d="M-20,-4 C-12,0 12,0 20,-4" fill="none" stroke="#3a2410" stroke-width="1.2"/>`,
-    `<path d="M0,-28 C2,-32 6,-36 8,-39" fill="none" stroke="#4a3018" stroke-width="2.4" stroke-linecap="round"/>`,
-    `<path d="M-14,-12 C-10,-20 -4,-24 2,-24" fill="none" stroke="#fff3d8" stroke-width="1.4" opacity="0.35" stroke-linecap="round"/>`,
+    `<path d="${blob([[-18, -6], [-17, 12], [-9, 28], [0, 31], [9, 28], [17, 12], [18, -6]], 1.2, rnd)}" fill="url(#an)"/>`,
+    `<ellipse cy="30" rx="2.2" ry="1.6" fill="#3a2410"/>`,
+    `<g clip-path="url(#anc)">${blotches(rnd, 0, 10, 10, 3, '#2a1606', 0.2)}${scuffs(rnd, 0, 8, 10, 3, '#f5dcb0', 0.4)}</g>`,
+    `</g>`,
+  ].join('');
+  const capShape = () => blob([[-20, -4], [-18, -18], [-10, -27], [0, -28], [10, -27], [18, -18], [20, -4], [10, -1], [-10, -1]], 1, rnd);
+  const cap = (x, y, deg, s, open) => [
+    `<g transform="translate(${x} ${y}) rotate(${deg}) scale(${s})">`,
+    `<path d="${capShape()}" fill="url(#ac)"/>`,
+    `<path d="${capShape()}" fill="url(#as)"/>`,
+    open ? `<path d="M-19,-4 C-12,2 12,2 19,-4 C12,-9 -12,-9 -19,-4 Z" fill="#3a2410"/><path d="M-14,-4 C-8,-1 8,-1 14,-4" fill="none" stroke="#6e5230" stroke-width="1"/>` : `<path d="M-20,-4 C-12,0 12,0 20,-4" fill="none" stroke="#3a2410" stroke-width="1.2"/>`,
+    `<path d="M0,-28 C2,-32 7,-35 ${open ? 12 : 8},-${open ? 36 : 39}" fill="none" stroke="#4a3018" stroke-width="2.4" stroke-linecap="round"/>`,
     `</g>`,
   ].join('');
   return svg(160, 150, [
-    radial('an', [[0, '#d9a765'], [0.45, '#a86f33'], [0.85, '#6b4017'], [1, '#3f250c']], 0.5, 0.5, 0.6, 0.35, 0.25),
-    radial('ac', [[0, '#a98a5e'], [0.6, '#7d6038'], [1, '#4b361a']], 0.5, 0.5, 0.65, 0.4, 0.2),
+    radial('an', [[0, '#d4a060'], [0.45, '#a26a30'], [0.85, '#653c15'], [1, '#3b220b']], 0.5, 0.5, 0.6, 0.35, 0.25),
+    radial('ac', [[0, '#a3855a'], [0.6, '#775c35'], [1, '#463218']], 0.5, 0.5, 0.65, 0.4, 0.2),
+    `<clipPath id="anc"><path d="M-18,-6 C-18,16 -9,30 0,30 C9,30 18,16 18,-6 Z"/></clipPath>`,
     `<pattern id="as" width="7" height="5" patternUnits="userSpaceOnUse"><path d="M0,5 Q3.5,-1 7,5" fill="none" stroke="#3a2410" stroke-width="0.8" opacity="0.5"/><path d="M3.5,2.5 Q5.3,0 7,2.5 M0,2.5 Q1.7,0 3.5,2.5" fill="none" stroke="#fff3d8" stroke-width="0.5" opacity="0.25"/></pattern>`,
-    linear('al', [[0, '#8a9a4a'], [0.5, '#6d7e34'], [1, '#8f7a3a']], 0, 0, 1, 1),
   ].join(''), [
-    `<g transform="translate(96 46) rotate(-118)"><path d="M0,-38 C8,-36 10,-28 6,-24 C14,-24 18,-16 12,-10 C20,-8 20,2 12,4 C18,10 14,20 6,18 C8,26 2,32 -2,30 C-8,34 -14,26 -10,20 C-18,22 -22,14 -16,8 C-24,4 -22,-6 -14,-8 C-20,-14 -16,-24 -8,-22 C-10,-30 -6,-38 0,-38 Z" fill="url(#al)" stroke="#5a6428" stroke-width="0.6"/>`,
-    `<path d="M0,-36 L-1,30" stroke="#4e5a22" stroke-width="0.9" opacity="0.7"/><path d="M-0.5,-22 L7,-26 M-0.5,-10 L11,-13 M-0.5,2 L10,2 M-0.5,14 L6,16 M-0.5,-16 L-12,-20 M-0.5,-4 L-14,-6 M-0.5,8 L-12,10 M-0.5,20 L-8,24" stroke="#4e5a22" stroke-width="0.5" opacity="0.6"/></g>`,
-    acorn(58, 96, -22, 1),
-    acorn(112, 100, 18, 0.86),
+    nut(52, 86, -24, 1),
+    cap(52, 86, -24, 1, false),
+    nut(104, 98, 32, 0.74),
+    cap(136, 56, 150, 0.8, true),
   ].join('\n'));
 };
 
-/* Forest: a pine cone on its side, stalk end to the left. */
+/* Forest: a pine cone on its side, with scales missing where it was knocked about and the
+   stalk broken short. */
 files['forest-pinecone'] = () => {
+  const rnd = noise(153);
   let scales = '';
-  const rnd = noise(9);
   const cols = 9;
   for (let c = cols - 1; c >= 0; c -= 1) {
     const u = c / (cols - 1);
-    const x = 30 + u * 112;
+    const x = 30 + u * 112 + between(rnd, -2, 2);
     const h = 44 * Math.sin(Math.PI * (0.18 + 0.82 * u) ** 0.7) * (1 - 0.3 * u) + 6;
     const rows = Math.max(2, Math.round(h / 9));
     for (let k = 0; k <= rows; k += 1) {
-      const v = rows === 0 ? 0 : (k / rows) * 2 - 1;
+      if (rnd() < 0.09) continue;
+      const v = (k / rows) * 2 - 1;
       const y = 60 + v * h * 0.9 + (c % 2) * 4;
       const tilt = v * 26;
       const sh = 0.35 + 0.65 * (1 - Math.abs(v)) ** 0.5;
-      scales += `<path d="M-10,0 C-9,-7 -2,-9 8,-6 C13,-4 16,-1 18,0 C16,1 13,4 8,6 C-2,9 -9,7 -10,0 Z" transform="translate(${r(x)} ${r(y)}) rotate(${r(tilt + rnd() * 6 - 3)})" fill="url(#ps)" opacity="${r(sh)}" stroke="#2e1a08" stroke-width="0.6"/>`;
+      const sc = between(rnd, 0.85, 1.12);
+      scales += `<path d="M-10,0 C-9,-7 -2,-9 8,-6 C13,-4 16,-1 18,0 C16,1 13,4 8,6 C-2,9 -9,7 -10,0 Z" transform="translate(${r(x)} ${r(y)}) rotate(${r(tilt + between(rnd, -7, 7))}) scale(${r(sc)})" fill="url(#ps)" opacity="${r(sh * between(rnd, 0.85, 1))}" stroke="#2e1a08" stroke-width="0.6"/>`;
     }
   }
+  const outline = blob([[18, 60], [30, 30], [60, 15], [90, 13], [126, 16], [150, 36], [156, 60], [150, 84], [126, 104], [88, 107], [52, 104], [26, 88]], 2, rnd);
   return svg(160, 120, [
-    linear('ps', [[0, '#3b2410'], [0.5, '#8a5a30'], [0.85, '#c9935a'], [1, '#e8be8a']], 0, 0, 1, 0),
-    linear('pk', [[0, '#5a3a1a'], [1, '#2e1a08']], 0, 0, 0, 1),
-    `<clipPath id="pc"><path d="M18,60 C22,30 52,14 88,14 C126,14 154,36 156,60 C154,84 126,106 88,106 C52,106 22,90 18,60 Z"/></clipPath>`,
+    linear('ps', [[0, '#3b2410'], [0.5, '#84562e'], [0.85, '#c38d55'], [1, '#e2b784']], 0, 0, 1, 0),
+    `<clipPath id="pc"><path d="${outline}"/></clipPath>`,
   ].join(''), [
-    `<path d="M18,60 C22,30 52,14 88,14 C126,14 154,36 156,60 C154,84 126,106 88,106 C52,106 22,90 18,60 Z" fill="#2e1a08"/>`,
+    `<path d="${outline}" fill="#2a1806"/>`,
     `<g clip-path="url(#pc)">${scales}</g>`,
-    `<path d="M20,60 C14,58 8,58 4,60" fill="none" stroke="url(#pk)" stroke-width="4" stroke-linecap="round"/>`,
+    `<path d="M20,60 C16,59 12,60 10,58" fill="none" stroke="#4a2e14" stroke-width="4" stroke-linecap="butt"/>`,
+    `<path d="M9,56 L11,61 L8,60 Z" fill="#a98a66"/>`,
   ].join('\n'));
 };
 
+/* Forest: a dried beech leaf, curled at one edge, two holes where something ate it. */
+files['forest-leaf'] = () => {
+  const rnd = noise(165);
+  const outline = blob([[14, 70], [30, 48], [52, 30], [80, 20], [108, 22], [132, 36], [142, 58], [134, 82], [112, 100], [84, 108], [56, 104], [32, 92]], 3, rnd);
+  const veins = Array.from({ length: 7 }, (_, i) => {
+    const t = 0.15 + i * 0.12;
+    const x = 14 + 128 * t; const y = 70 - 2 * i;
+    return `<path d="M${pt(x, y)} Q${pt(x + 10, y - 22)} ${pt(x + 18, y - 34)} M${pt(x, y)} Q${pt(x + 8, y + 20)} ${pt(x + 14, y + 30)}" />`;
+  }).join('');
+  return svg(150, 120, [
+    linear('lf', [[0, '#8a5a2a'], [0.45, '#b8803c'], [1, '#d4a860']], 0, 1, 1, 0),
+    linear('lu', [[0, '#e3c48c'], [1, '#caa368']], 0, 0, 0, 1),
+    `<clipPath id="lc"><path d="${outline}"/></clipPath>`,
+    `<mask id="lh"><rect width="150" height="120" fill="#fff"/><path d="${blob(ring(60, 58, 7, 5, 6), 1.5, rnd)}" fill="#000"/><path d="${blob(ring(104, 76, 4, 3.5, 6), 1, rnd)}" fill="#000"/></mask>`,
+  ].join(''), [
+    `<g mask="url(#lh)">`,
+    `<path d="${outline}" fill="url(#lf)"/>`,
+    `<path d="M112,100 C124,92 136,78 142,58 C140,74 130,90 118,98 Z" fill="url(#lu)"/>`,
+    `<g fill="none" stroke="#6e4418" stroke-width="0.7" opacity="0.55">${veins}</g>`,
+    `<path d="M14,70 Q80,66 140,58" fill="none" stroke="#5e3a14" stroke-width="1.3" opacity="0.7"/>`,
+    `<g clip-path="url(#lc)">${blotches(rnd, 80, 64, 36, 7, '#5a3010', 0.16)}</g>`,
+    `</g>`,
+    `<path d="M14,70 C8,72 4,70 2,66" fill="none" stroke="#5e3a14" stroke-width="2" stroke-linecap="round"/>`,
+  ].join('\n'));
+};
+
+for (const old of readdirSync(out)) if (!(old.replace(/\.svg$/, '') in files)) rmSync(join(out, old));
 for (const [name, draw] of Object.entries(files)) {
   const text = draw();
   writeFileSync(join(out, `${name}.svg`), text);
