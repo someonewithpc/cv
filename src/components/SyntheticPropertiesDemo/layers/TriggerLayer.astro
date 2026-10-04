@@ -147,6 +147,26 @@ const body = (sql: string[]) =>
   @include panel;
 
   gap: 0.375em;
+
+  /* A narrow landscape sheet has the title block under the last two cards, so the header
+     moves up beside the builder, into the width its code leaves free, and the cards end
+     above the block. */
+  :global([data-sheet-width='narrow']:not([data-sheet-orientation='portrait'])) & {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.75em;
+
+    header {
+      align-self: center;
+    }
+
+    .builder {
+      width: auto;
+    }
+
+    .targets {
+      grid-column: 1 / -1;
+    }
+  }
 }
 
 header {
@@ -226,12 +246,6 @@ pre :global(.hot) {
   padding: 0;
   list-style: none;
 
-  /* On a narrow landscape sheet the title block sits under the last two columns, so the
-     row has to end above it; the update body takes more of the width there. */
-  @container technical-drawing (width < 47.5rem) {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 0.55fr);
-  }
-
   @include portrait-sheet {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
@@ -286,6 +300,11 @@ pre :global(.hot) {
     display: block;
     padding-inline-start: 2ch;
     text-indent: -2ch;
+  }
+
+  /* A quoted argument stays whole; the line breaks before it instead. */
+  pre :global(.tok-string) {
+    white-space: nowrap;
   }
 
   &[data-target='backfill'] {
