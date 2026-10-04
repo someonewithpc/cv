@@ -274,3 +274,4 @@
 - [x] Give Lightning CSS browser targets so Safari gets the -webkit- prefixes it still needs (#325)
 - [x] Cut the requests that start before first paint: the island scripts' shared chunks load as one file (#323)
 - [x] Reasons that lived only in `title` reach keyboard, touch and screen reader users, and a contribution row shows it opens (A21) (#272)
+- [ ] Add an og:image so chat apps show the large link card
