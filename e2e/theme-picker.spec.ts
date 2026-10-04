@@ -74,7 +74,7 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
 
 const PAGE_BACKGROUNDS = {
   light: 'oklch(1 0 90)',
-  dark: 'oklch(0.2 0.035 265)',
+  dark: 'oklch(0.31 0.02 240)',
   arctic: 'oklch(0.955 0.015 235)',
   'dark-forest': 'oklch(0.323 0.044 139)',
 };

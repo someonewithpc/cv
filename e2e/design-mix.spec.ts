@@ -11,7 +11,7 @@ const TILE = 720;
 /** Each theme's baked tile in src/assets/desk, and its average, which shows until the tile loads. */
 const DESKS = {
   light: 'rgb(229, 200, 160)',
-  dark: 'rgb(31, 28, 24)',
+  dark: 'rgb(22, 30, 36)',
   arctic: 'rgb(212, 203, 197)',
   'dark-forest': 'rgb(37, 27, 12)',
 } as const;

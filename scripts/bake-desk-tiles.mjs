@@ -36,8 +36,8 @@ const PHONE_SIZE = 720;
 const RECIPES = {
   // The same oak as the other three, raised to the ash boards' tone and limed.
   light: { wood: 'oak-7760-limed', desk: [0.76, 0.05, 68], grain: 0.85, blend: 'overlay', veilBlend: 'normal' },
-  // Slip-matched oak, levelled: cathedral figure across the page and no joint in it.
-  dark: { wood: 'oak-7760-mid', desk: [0.235, 0.01, 55], grain: 0, base: [128, 97, 73], blend: 'difference', veilBlend: 'color' },
+  // Slip-matched oak, levelled: cathedral figure across the page and no joint in it, stained grey.
+  dark: { wood: 'oak-7760-mid', desk: [0.235, 0.018, 240], grain: 0, base: [128, 97, 73], blend: 'difference', veilBlend: 'color' },
   // The same oak at its own lightness, which under a pale desk reads as bleached.
   arctic: { wood: 'oak-7760', desk: [0.81, 0.013, 232], grain: 0.85, blend: 'overlay', veilBlend: 'normal' },
   // The same oak smoked in the file: darker, and drained of red before the veil goes on.

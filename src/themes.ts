@@ -81,12 +81,15 @@ export const THEMES = {
     },
   },
   dark: {
-    canvas: 'oklch(0.2 0.035 265)',
-    ink: 'oklch(0.92 0.02 250)',
-    accent: 'oklch(0.78 0.1 75)',
-    blueprint: 'oklch(0.4 0.12 265)',
-    desk: 'rgb(31 28 24)',
+    // Slate: blue-grey paper with a copper accent and a muted slate blueprint, on grey-stained
+    // oak. Hugo picked it (2026-10-04) as the muted sibling of Forest, as Arctic is of Light.
+    canvas: 'oklch(0.23 0.018 240)',
+    ink: 'oklch(0.93 0.012 80)',
+    accent: 'oklch(0.75 0.12 48)',
+    blueprint: 'oklch(0.40 0.065 235)',
+    desk: 'rgb(22 30 36)',
     deskTile: 'dark',
+    paper: 'oklch(0.31 0.02 240)',
     paperGrain: '0.33',
     paperSheetGrain: '0.35',
     paperBlend: 'screen',
