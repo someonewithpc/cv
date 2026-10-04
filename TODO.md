@@ -269,4 +269,4 @@
 - [x] home, svg-aria and a11y scroll every stack then wait a fixed 2 s instead of its mount (E17) (#289)
 - [x] A vertical wheel right after a horizontal swipe on a stack scrolls the page without a mouse move first (#321)
 - [x] Fix sheet text that contradicts the code: the Sources caption, the Editor legend, the relevance empty state, the Default sheet's OS rule, the Caret readout, the Synthetic trigger text, the Discovery sheet, the Paper Stack page count, the Filters arrow and MissingLayer's sort text (T4 to T13) (#266)
-- [ ] Give Lightning CSS browser targets so Safari gets the -webkit- prefixes it still needs
+- [x] Give Lightning CSS browser targets so Safari gets the -webkit- prefixes it still needs (#325)
