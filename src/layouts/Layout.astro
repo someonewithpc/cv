@@ -364,7 +364,7 @@ main {
      and the padding it already had, so no line of text moves to make room for the wood. The
      id is in the selector to outrank the sections' own margins, which the desk takes over
      once it is wide enough to. */
-  &#main > *:not(.folio-rail),
+  &#main > *:not(.folio-rail, .ornament-slot),
   &#main > .full-width > * {
     border-radius: 0.25rem;
     background: var(--surface-page);
@@ -413,7 +413,7 @@ main {
     row-gap: var(--desk-gap);
     padding-block: var(--desk-gap);
 
-    &#main > *:not(.folio-rail),
+    &#main > *:not(.folio-rail, .ornament-slot),
     &#main > .full-width > * {
       width: 100%;
       max-width: none;
