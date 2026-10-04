@@ -164,6 +164,7 @@ const statistics = {
     --tear-offset: 6.5rem;
     --paper-x: 1.5rem;
     --margin-x: 3.25rem;
+    --writing-x: max(var(--paper-x), var(--margin-x) + 0.875rem);
     /* The paper above and below the writing is a whole number of bands too, so the sheet is
        ruled from its own top edge and the rules run on evenly off both tears. */
     --paper-top: round(up, var(--tear) + 0.5rem, var(--rule-pitch));
@@ -192,7 +193,7 @@ const statistics = {
       var(--paper-top)
       var(--paper-x)
       var(--paper-bottom)
-      max(var(--paper-x), var(--margin-x) + 0.875rem);
+      var(--writing-x);
     background-color: var(--paper);
     /* The ruling, then the margin line. The ruling is one pitch-tall tile repeated down the
        sheet from the top of the first band, with its rule in the tile's last pixel, so a rule
@@ -301,8 +302,9 @@ const statistics = {
       /* The repository takes only the width it needs, so the contribution gets the rest and
          reaches the end of its line before it has to wrap onto the next one. */
       --grid: 4rem minmax(11rem, 18rem) minmax(0, 1fr);
-      /* A row's native disclosure marker sits in this room at the start of the line, and the header keeps the same room so its columns stay over the rows'. */
-      --marker-room: 1.25rem;
+      /* The paper between the margin line, or the sheet's edge where there is none, and the
+         writing: a row's disclosure marker sits there, so the writing keeps its place. */
+      --marker-room: calc(var(--writing-x) - var(--margin-x));
 
       container-type: inline-size;
       display: grid;
@@ -314,7 +316,6 @@ const statistics = {
         display: grid;
         grid-template-columns: var(--grid);
         column-gap: var(--column-gap, 0.75rem);
-        padding-inline-start: var(--marker-room);
         /* Every cell's first line lands on the same rule, so a row whose title wraps keeps
            its technologies and its repository up on that line rather than centred across
            both of them. */

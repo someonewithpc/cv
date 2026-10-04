@@ -249,18 +249,21 @@ if (number != null) citePieces.push(null, `#${number}`);
       cursor: pointer;
       transition: background 150ms ease;
 
-      /* The browser's own disclosure triangle at the start of the row, right when shut and down
-         when open. ::marker takes only colour and font, so the room for it is the row's padding.
-         Safari shows a summary's marker only as a list-item, and older WebKit styles it as
-         ::-webkit-details-marker, which keeps its own triangle there. */
+      /* The browser's own disclosure triangle, right when shut and down when open, centred in
+         the paper before the writing. ::marker takes only colour and font, so the summary
+         reaches back over that paper and is set at the marker's size: its one line is then
+         the marker's and stays a band tall. Safari shows a summary's marker only as a
+         list-item, and older WebKit styles it as ::-webkit-details-marker, which keeps its own
+         triangle there. */
       display: list-item;
       list-style-position: inside;
       margin-inline-start: calc(-1 * var(--marker-room));
+      font-size: 0.75em;
       line-height: var(--rule-pitch);
+      text-indent: calc((var(--marker-room) - 0.625em) / 2);
 
       &::marker {
         color: var(--ink-muted);
-        font-size: 0.75em;
       }
 
       &:focus-visible {
