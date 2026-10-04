@@ -94,14 +94,21 @@ test('the chair card steps through the library finishes', { tag: '@handover' }, 
   await expect(card.locator('.group-object-count').first()).toContainText('5');
   await expect(card).toHaveAttribute('data-variant', 'chair');
 
-  // Four steps right lands on the last finish, and the carousel refuses to go further.
-  for (let i = 0; i < 4; i += 1) {
+  // Each step right lands on the next finish. The pick commits on scrollend, so the next
+  // click waits for it: one landing mid-scroll aims from where the list is and is lost.
+  const finishes = await card.locator('li.style').evaluateAll((items) => items.map((item) => item.getAttribute('data-variant')));
+  expect(finishes.at(-1)).toBe('chair-black');
+  for (const finish of finishes.slice(1)) {
     await clickArrow(page, styles, 'next');
-    await page.waitForTimeout(500);
+    await expect(card).toHaveAttribute('data-variant', finish!);
   }
-  await expect(card).toHaveAttribute('data-variant', 'chair-black');
+
+  // At the end of the list the arrow is disabled, and a click on it scrolls nowhere.
+  const atEnd = () => styles.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft < 1);
+  await expect.poll(atEnd).toBe(true);
   await clickArrow(page, styles, 'next');
-  await page.waitForTimeout(500);
+  await styles.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  expect(await atEnd()).toBe(true);
   await expect(card).toHaveAttribute('data-variant', 'chair-black');
 
   await clickArrow(page, styles, 'previous');
