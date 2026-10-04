@@ -134,6 +134,7 @@
 - [x] Turn off the cv worker's workers.dev and preview URLs (#142)
 - [x] Drop the flaky phone seat-row hover test in the variants demo e2e spec (#144)
 - [x] Fix the e2e specs that fail under load (#164)
+- [ ] Make the flaky e2e specs deterministic: annotations-position, offscreen-pause, space-builder-chair, contributions-links, reduced-motion
 - [x] Make demos more usable without JS (#19)
   - [x] No-JS paper stack carousel styled as a stack of sheets, with arrows and a dot per sheet (#169)
 - [x] Page half-drawn with JS off, and stylesheet source printed when JS is switched off after load (#170)
