@@ -17,6 +17,9 @@ type Props = {
 const { title = SITE_TITLE, description = SITE_DESCRIPTION } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, SITE_URL);
+const ogImage = new URL('/og.png', SITE_URL);
+const ogImageAlt =
+  "The title block of Hugo Sales' CV on a white card over a wooden desk, with his name, the role Full stack developer and FOSS contributor, and links to his email, GitHub, Codeberg and LinkedIn";
 const oembedUrl = new URL('/oembed.json', SITE_URL);
 oembedUrl.searchParams.set('url', canonical.toString());
 oembedUrl.searchParams.set('format', 'json');
@@ -72,10 +75,17 @@ const skipScript = `(() => {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content={AUTHOR_NAME} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ogImageAlt} />
     <meta property="profile:first_name" content="Hugo" />
     <meta property="profile:last_name" content="Sales" />
     <meta property="profile:username" content={CONTACT.username} />
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
     <link rel="alternate" type="application/json+oembed" href={oembedUrl} title={title} />
     <meta name="theme-color" content={pageBackground(OS_THEMES.light)} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content={pageBackground(OS_THEMES.dark)} media="(prefers-color-scheme: dark)" />

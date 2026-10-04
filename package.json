@@ -15,6 +15,7 @@
     "check": "astro check",
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",
     "generate:catalog-thumb": "node scripts/render-catalog-thumb.mjs",
+    "og:image": "node scripts/capture-og-image.mjs",
     "test:e2e": "playwright test",
     "test:audit": "playwright test --config playwright.audit.config.ts",
     "test:audit:html-validate": "AUDIT_HTML=html-validate playwright test --config playwright.audit.config.ts audit/markup.spec.ts"
