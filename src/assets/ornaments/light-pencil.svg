@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 232">
+<defs><linearGradient id="pe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6b7b0"/><stop offset="0.55" stop-color="#e48a84"/><stop offset="1" stop-color="#b85f5a"/></linearGradient><linearGradient id="pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2f2f4"/><stop offset="0.4" stop-color="#b9babf"/><stop offset="0.7" stop-color="#e2e2e6"/><stop offset="1" stop-color="#7c7d84"/></linearGradient><linearGradient id="pb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f9dc63"/><stop offset="0.34" stop-color="#f9dc63"/><stop offset="0.34" stop-color="#f1b826"/><stop offset="0.67" stop-color="#f1b826"/><stop offset="0.67" stop-color="#b57f12"/><stop offset="1" stop-color="#b57f12"/></linearGradient><linearGradient id="pw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3dcbb"/><stop offset="0.5" stop-color="#dfb98a"/><stop offset="1" stop-color="#a77c4c"/></linearGradient><linearGradient id="pt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8c8f94"/><stop offset="1" stop-color="#2c2d31"/></linearGradient></defs>
+<g transform="translate(26 218) rotate(-62)">
+<rect x="0" y="-8" width="24" height="16" rx="5" fill="url(#pe)"/>
+<rect x="20" y="-8" width="22" height="16" fill="url(#pf)"/>
+<path d="M25,-8 V8 M31,-8 V8 M37,-8 V8" stroke="#5a5b61" stroke-width="1" opacity="0.6"/>
+<rect x="42" y="-8" width="156" height="16" fill="url(#pb)"/>
+<path d="M198,-8 L224,-2.2 L224,2.2 L198,8 Z" fill="url(#pw)"/>
+<path d="M224,-2.2 L232,0 L224,2.2 Z" fill="url(#pt)"/>
+<path d="M42,-8 H198" stroke="#fff" stroke-width="0.8" opacity="0.45"/>
+<text x="150" y="1.6" font-family="monospace" font-size="4.6" fill="#7a5407" text-anchor="middle" opacity="0.8">HB</text>
+</g>
+</svg>
