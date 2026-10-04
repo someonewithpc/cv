@@ -1,10 +1,10 @@
 ---
 /**
- * Review only: every desk ornament candidate on its theme's own desk, at the size it would
- * have beside the paper, with a switch to see it on the whole page. Comes off at landing.
+ * Review only: each theme's desk as a page-length strip with its set laid out as the page
+ * lays it at 125rem of window, then the round 2 ideas on their own. Comes off at landing.
  */
 import Layout from '@/layouts/Layout.astro';
-import { ORNAMENTS, ORNAMENT_CSS, ornamentFile } from '@/ornaments';
+import { ORNAMENTS, ORNAMENT_CSS, SETS, footprint, ornamentFile, showsFrom } from '@/ornaments';
 import { THEMES, THEME_IDS, themeVars, type ThemeId, type ThemeSettings } from '@/themes';
 
 const DESK_TILES = import.meta.glob<string>('/src/assets/desk/*.webp', { query: '?url', eager: true, import: 'default' });
@@ -22,32 +22,57 @@ const vars = (id: ThemeId) => {
   ].join('; ');
 };
 const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
+const rem = (n: number) => `${Math.round(n * 8) / 8}rem`;
+const byId = Object.fromEntries(ORNAMENTS.map((ornament) => [ornament.id, ornament]));
+const rows = ['Title block', 'Career', 'Bill of materials', 'Demos', 'Open source'];
 ---
 
-<Layout title="Desk ornaments" description="Candidates for the object that lies on the desk beside the paper, one set per theme.">
+<Layout title="Desk ornaments" description="Each theme's set of things on the desk round the paper, and the ideas not yet in a set.">
   <main class="ornaments">
     <h1>Desk ornaments</h1>
     <p class="lead">
-      One object per theme, lying on the desk to the right of the Career sheet from 84rem of
-      window, hidden narrower than that. Three candidates each, drawn by hand as SVG and lit
-      from above like the sheets. Open one on the page with <code>/?ornament=&lt;name&gt;</code>;
-      the link under each does that.
+      Each theme has a set of two or three objects, laid in nine slots down the page's margins:
+      either side of the title block, down the right margin, the left margin from 108rem where it is
+      clear of the folio, beside the demos' mat, and in the gap between two sheets. The strips
+      below are the page at 125rem of window, at half size; the sheets stand in for the real
+      ones. Open the whole page with a set with <code>/?ornament=&lt;theme&gt;</code>, or one
+      drawing on its own with <code>/?ornament=&lt;theme&gt;-&lt;name&gt;</code>.
     </p>
     {THEME_IDS.map((id) => (
       <section class="desk" style={vars(id)} data-mode={THEMES[id].follows} aria-labelledby={`desk-${id}`}>
-        <h2 id={`desk-${id}`}><span class="sheet">{THEMES[id].name}</span></h2>
-        <div class="paper" aria-hidden="true"></div>
-        <ul class="candidates">
+        <h2 id={`desk-${id}`}><span class="sheet">{THEMES[id].name}</span> <a class="sheet" href={`../?ornament=${id}`}>On the page</a></h2>
+        <div class="strip" aria-hidden="true">
+          {rows.map((row, i) => <div class="mock" data-row={i + 1}><span>{row}</span></div>)}
+          {SETS[id].map((placement, i) => (
+            <div class="ornament-slot" data-slot={placement.slot} data-set={`${id}:${i}`}><div class="ornament"></div></div>
+          ))}
+        </div>
+        <table class="caption slots">
+          <thead><tr><th>Slot</th><th>Object</th><th>Size</th><th>Turn</th><th>Room</th><th>From</th></tr></thead>
+          <tbody>
+            {SETS[id].map((placement) => (
+              <tr>
+                <td>{placement.slot}</td>
+                <td>{byId[placement.id].title}</td>
+                <td>{rem(placement.size)}</td>
+                <td>{placement.rotate}&deg;</td>
+                <td>{rem(footprint(placement))}</td>
+                <td>{showsFrom(placement)}rem</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <ul class="cards">
           {ORNAMENTS.filter((ornament) => ornament.theme === id).map((ornament) => {
             const file = ornamentFile(ornament.id);
             return (
               <li>
-                <div class="ornament" data-ornament={ornament.id} role="img" aria-label={ornament.title}></div>
+                <div class="ornament ornament-card" data-ornament={ornament.id} role="img" aria-label={ornament.title}></div>
                 <div class="caption">
-                  <h3>{ornament.title}</h3>
+                  <h3>{ornament.title}{ornament.kept ? '' : ', new this round'}</h3>
                   <p>{ornament.why}</p>
                   <p>{ornament.how}</p>
-                  <p class="meta">{kb(file.bytes)} on disk, {file.width} by {file.height} units, 9rem wide on the desk. <a href={`../?ornament=${ornament.id}`}>On the page</a></p>
+                  <p class="meta">{kb(file.bytes)} on disk, {file.width} by {file.height} units. <a href={`../?ornament=${ornament.id}`}>On its own</a></p>
                 </div>
               </li>
             );
@@ -76,21 +101,20 @@ h1 {
 }
 
 .lead {
-  max-width: 60ch;
+  max-width: 64ch;
   line-height: 1.5;
 }
 
 /* Each desk takes its theme's own variables, tile and colour scheme, so the shadow and the
    caption paper read as they would on that theme's page. */
 .desk {
-  position: relative;
   display: grid;
-  grid-template-columns: 7rem 1fr;
   gap: 1.5rem;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem;
   border-radius: 0.25rem;
   background: var(--theme-desk-tile) 0 0 / 45rem 45rem var(--theme-desk);
   color-scheme: only light;
+  overflow-x: auto;
 
   &[data-mode="dark"] {
     color-scheme: only dark;
@@ -98,7 +122,9 @@ h1 {
 }
 
 h2 {
-  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
   font-size: 1rem;
 }
 
@@ -113,31 +139,88 @@ h2 {
 .sheet {
   display: inline-block;
   padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
 }
 
-/* The near edge of the paper the ornament lies beside, so the gap reads at scale. */
-.paper {
-  align-self: stretch;
-  border-radius: 0 0.25rem 0.25rem 0;
-  background: var(--review-paper);
-  box-shadow: var(--sheet-lift, 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%));
-}
-
-.candidates {
+/* The page's grid at 125rem of window, halved: the same named columns the slots are placed
+   in, the demos row as wide as the mat, the heights a stand-in for the real sheets. The slot
+   rules take their widths from the window, which here is the strip, so every slot shows. */
+.strip {
+  --desk-edge: calc((125rem - 82.625rem) / 2);
+  --desk-gap: 2.5rem;
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 2rem;
+  inline-size: 125rem;
+  grid-template-columns:
+    [full-width-start] 1fr
+    [content-start] 60rem [content-end]
+    1fr [full-width-end];
+  grid-template-rows: 20rem 72rem 30rem 64rem 64rem;
+  row-gap: var(--desk-gap);
+  padding-block: var(--desk-gap);
+  zoom: 0.5;
+  margin-inline: auto;
 
-  li {
-    display: grid;
-    grid-template-rows: 18rem auto;
-    justify-items: center;
-    gap: 1.5rem;
+  :global(.ornament-slot) {
+    display: block;
   }
 }
 
-.ornament {
+.mock {
+  grid-column: content;
+  border-radius: 0.25rem;
+  background: var(--review-paper);
+  color: var(--review-ink);
+  box-shadow: var(--sheet-lift, 0 1px 1px rgb(0 0 0 / 10%), 0 0.5rem 1.25rem rgb(0 0 0 / 14%));
+  padding: 1.5rem;
+  font-size: 2rem;
+  opacity: 0.9;
+
+  &[data-row="1"] {
+    inline-size: 42rem;
+    justify-self: center;
+  }
+
+  &[data-row="4"] {
+    grid-column: full-width;
+    inline-size: 82.625rem;
+    justify-self: center;
+  }
+}
+
+.slots {
+  justify-self: start;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 0.125rem 0.75rem 0.125rem 0;
+    text-align: start;
+  }
+
+  th {
+    opacity: 0.7;
+    font-weight: normal;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.5rem;
+
+  li {
+    display: grid;
+    grid-template-rows: 14rem auto;
+    justify-items: center;
+    gap: 1rem;
+  }
+}
+
+.ornament-card {
   align-self: center;
+  max-block-size: 13rem;
 }
 
 .caption {
