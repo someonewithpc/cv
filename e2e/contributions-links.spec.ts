@@ -57,7 +57,7 @@ test('the row title is underlined in its own ink and the mark is not', async ({ 
   expect(styles.markDecoration).toBe('none');
 });
 
-test('the title links to the contribution and the rest of the row toggles it open', async ({ page, context }) => {
+test('the title links to the contribution and the rest of the row toggles it open', async ({ page, context, baseURL }) => {
   const row = page.locator('#open-source .row').first();
   const details = row.locator('details');
   const link = row.locator('a.title');
@@ -65,9 +65,13 @@ test('the title links to the contribution and the rest of the row toggles it ope
   await expect(link).toHaveAttribute('href', /^https:\/\//);
   await expect(link).toHaveAttribute('target', '_blank');
 
+  // The contribution lives on another host. The tab the link opens is answered here, so the
+  // check never waits on that host or the network.
+  const site = new URL(baseURL!).origin;
+  await context.route((url) => url.origin !== site, (route) => route.fulfill({ contentType: 'text/html', body: '' }));
   await row.scrollIntoViewIfNeeded();
   const [opened] = await Promise.all([context.waitForEvent('page'), link.click()]);
-  expect(opened.url()).toBe(await link.getAttribute('href'));
+  await expect(opened).toHaveURL((await link.getAttribute('href'))!);
   await opened.close();
   // Following the link must not also work the disclosure.
   await expect(details).not.toHaveAttribute('open', /.*/);
