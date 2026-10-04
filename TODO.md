@@ -5,6 +5,7 @@
   - [x] Cave dark theme
   - [x] Forrest light theme
   - [x] Improve THEMES_CSS so it can be bundled correctly (define:vars?)
+  - [x] Dark theme colours: Forest for the OS dark scheme, slate seeds in Dark's place, picked from four variations in cv-preview/notes/reports/dark-theme-variants.md (#322)
   - [ ] Collapse after delay (prefers-reduced-motion)
   - [x] Avoid transition to already active theme (#4)
   - [x] Theme Picker animation switching doesn't work (#4)
