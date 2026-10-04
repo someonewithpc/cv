@@ -57,17 +57,13 @@ export const THEMES = {
     // Round 1 lifted the light paper off grey, oklch(0.94 0.014 85) to here, at Hugo's ask.
     canvas: 'oklch(0.97 0.011 85)',
     ink: 'oklch(0.24 0.025 260)',
-    accent: 'oklch(0.7 0.13 65)',
+    // Moss, Hugo's pick (2026-10-04) from the round 3 candidates. Keywords follow the accent
+    // and strings mix from it, as the roles in scss/_code.scss derive them.
+    accent: 'oklch(0.60 0.12 130)',
     blueprint: 'oklch(0.622 0.121 254)',
     desk: 'rgb(229 200 160)',
     deskTile: 'light',
     paper: 'oklch(1 0 90)',
-    // The accent's own hue gives a rust for tags and keywords, so they take a clear red at the
-    // sRGB edge instead. Strings keep the crimson they had when they were mixed from the rust.
-    code: {
-      keyword: 'oklch(0.51 0.184 34)',
-      string: 'oklch(0.352 0.118 359)',
-    },
     paperGrain: '0.45',
     paperSheetGrain: '0.48',
     paperBlend: 'multiply',
@@ -81,15 +77,20 @@ export const THEMES = {
     },
   },
   dark: {
-    // Slate: blue-grey paper with a copper accent and a muted slate blueprint, on grey-stained
+    // Slate: blue-grey paper with a verdigris accent and a muted slate blueprint, on grey-stained
     // oak. Hugo picked it (2026-10-04) as the muted sibling of Forest, as Arctic is of Light.
     canvas: 'oklch(0.23 0.018 240)',
     ink: 'oklch(0.93 0.012 80)',
-    accent: 'oklch(0.75 0.12 48)',
+    accent: 'oklch(0.78 0.09 185)',
     blueprint: 'oklch(0.40 0.065 235)',
     desk: 'rgb(22 30 36)',
     deskTile: 'dark',
     paper: 'oklch(0.31 0.02 240)',
+    // The derived keyword forces chroma 0.14, which at this hue is a bare cyan on the slate, so
+    // keywords take a quieter teal.
+    code: {
+      keyword: 'oklch(0.86 0.08 185)',
+    },
     paperGrain: '0.33',
     paperSheetGrain: '0.35',
     paperBlend: 'screen',
@@ -105,16 +106,17 @@ export const THEMES = {
   arctic: {
     canvas: 'oklch(0.96 0.016 230)',
     ink: 'oklch(0.3 0.04 250)',
-    accent: 'oklch(0.52 0.1 210)',
+    // Iris, Hugo's pick (2026-10-04): the first accent here off the blue of the ink and the
+    // blueprint.
+    accent: 'oklch(0.52 0.11 290)',
     blueprint: 'oklch(0.606 0.110 222)',
     desk: 'rgb(212 203 197)',
     deskTile: 'arctic',
     paper: 'oklch(0.955 0.015 235)',
-    // Accent, blueprint and ink are all blues here, so code spreads its kinds over hue: a deep
-    // blue for keywords and tags, teal for attributes, the desk's warm brown for strings and
+    // Blueprint and ink are both blues here, so code spreads its kinds over hue: keywords and
+    // tags follow the accent, teal for attributes, the desk's warm brown for strings and
     // numbers, a grey of the ink for comments. Each clears 5.8:1 on the code ground.
     code: {
-      keyword: 'oklch(0.41 0.16 262)',
       attribute: 'oklch(0.44 0.085 185)',
       string: 'oklch(0.45 0.085 50)',
       comment: 'oklch(0.45 0.03 245)',
