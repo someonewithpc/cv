@@ -55,6 +55,17 @@ $chrome-stacked-block: 60;
   // technical-drawing carousel scroll to another page underneath.
   pointer-events: none;
 
+  // A finger drags a handle instead of scrolling the carousel; the keys move a focused one.
+  .control-point {
+    touch-action: none;
+    outline: none;
+
+    // Three times the handle's ring, in the handle's own blue.
+    &:focus-visible circle {
+      stroke-width: 0.01875;
+    }
+  }
+
   summary.is-demo-target {
     outline: 1px solid #aaa;
     outline-offset: 2px;
