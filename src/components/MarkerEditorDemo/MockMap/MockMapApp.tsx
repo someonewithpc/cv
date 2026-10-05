@@ -719,7 +719,12 @@ export default function MockMapApp() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectSpace = (selected: SpaceType) => {
+  // The pressed pin leaves the map while its selector is open, and focus would go with it:
+  // a keyboard open hands focus to the selector, and its close hands it back to the pin.
+  const [keyboardSpaceId, setKeyboardSpaceId] = useState<SpaceType['id'] | null>(null);
+
+  const selectSpace = (selected: SpaceType, byKeyboard = false) => {
+    setKeyboardSpaceId(byKeyboard ? selected.id : null);
     setEditingSpaceId(selected.id);
     dispatch(setMarkerEditingSpaceId(selected.id));
   };
@@ -728,6 +733,16 @@ export default function MockMapApp() {
     setEditingSpaceId(null);
     dispatch(setMarkerEditingSpaceId(null));
   };
+
+  useEffect(() => {
+    if (editingSpaceId !== null || keyboardSpaceId === null) return;
+    setKeyboardSpaceId(null);
+    const focused = document.activeElement;
+    if (focused && focused !== document.body && focused.isConnected) return;
+    containerRef.current
+      ?.querySelector<HTMLElement>(`[data-demo-target="pin:${keyboardSpaceId}"]`)
+      ?.focus({ preventScroll: true });
+  }, [editingSpaceId, keyboardSpaceId]);
 
   const selectorOverlayPos = editingSpace
     ? sceneToOverlay(editingSpace.x, editingSpace.y, focus)
@@ -764,6 +779,7 @@ export default function MockMapApp() {
           portalHost={editorPortalHost}
           onClose={clearSelection}
           interactive={userControl}
+          focusOnOpen={keyboardSpaceId === editingSpace.id}
         />
       )}
 

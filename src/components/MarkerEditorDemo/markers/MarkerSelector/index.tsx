@@ -60,6 +60,7 @@ export function MarkerSelector({
   onClose,
   portalHost,
   interactive = false,
+  focusOnOpen = false,
 }: {
   space: SpaceType;
   position: Position;
@@ -67,6 +68,8 @@ export function MarkerSelector({
   portalHost: HTMLElement | null;
   /** The visitor has the demo: an open moves focus into the editor, a close gives it back. */
   interactive?: boolean;
+  /** Opened from the keyboard: focus starts on the space's current marker. */
+  focusOnOpen?: boolean;
 }) {
   const dispatch = useAppDispatch();
   const markers = useAppSelector(markersSelector);
@@ -89,6 +92,13 @@ export function MarkerSelector({
     setOpener(null);
     listRef.current?.querySelector<HTMLElement>(`[data-demo-target="${opener}"]`)?.focus({ preventScroll: true });
   }, [editedMarkerId, opener]);
+
+  useEffect(() => {
+    if (!focusOnOpen) return;
+    listRef.current?.querySelector<HTMLElement>('[role="option"][aria-selected="true"]')?.focus({ preventScroll: true });
+  // On open only: a pick closes the selector, and the editor hands focus back itself.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // One object per space and marker: a literal here was a new prop on every render, and the
   // editor re-runs its nine imperative roots whenever the space it is handed changes.

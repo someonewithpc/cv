@@ -12,7 +12,8 @@ export function SpacePin({
 }: {
   space: SpaceType;
   interactive: boolean;
-  onSelect: (space: SpaceType) => void;
+  /** `byKeyboard`: the pin was pressed with keyboard focus on it, which the selector takes over. */
+  onSelect: (space: SpaceType, byKeyboard: boolean) => void;
 }) {
   const mapSpaceToMarker = useAppSelector(mapSpaceToMarkerSelector);
   const marker = mapSpaceToMarker(space);
@@ -35,9 +36,9 @@ export function SpacePin({
         height: marker.size[1],
       }}
       aria-label={`Edit marker for ${space.name}`}
-      onClick={() => {
+      onClick={(event) => {
         if (!interactive) return;
-        onSelect(space);
+        onSelect(space, event.currentTarget.matches(':focus-visible'));
       }}
     >
       {svg
