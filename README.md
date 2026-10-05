@@ -5,87 +5,79 @@ technical drawings on a cutting mat, with demos you can use in the browser. Some
 work at Visrez, like the 3D space builder and the map marker editor, and others from my open
 source work, like the Fediverse playground. It's an Astro site, deployed to Cloudflare Workers.
 
+## The demos
+
+| | Demo | From | Built with | In `src/components/` |
+| --- | --- | --- | --- | --- |
+| A | Space builder | Visrez | Vue, Three.js | `SpaceBuilderDemo` |
+| B | Marker editor | Visrez | React, Leaflet, Redux | `MarkerEditorDemo` |
+| C | Drag and drop | Visrez | Vue, Three.js | `DragDropDemo` |
+| D | Font picker | Visrez | React | `FontPickerDemo` |
+| E | Loading logo | Visrez | SVG, CSS animation | `VisrezLogoAnimation` |
+| F | Theme picker | This site | Astro, CSS, View Transitions | `ThemePickerDemo` |
+| G | Object variants | Visrez | Vue, Sass | `VariantsDemo` |
+| H | Tagging tool | Visrez | CSS, JavaScript | `TaggingToolDemo` |
+| I | Paper stack | This site | CSS, TypeScript | `PaperStackDemo` |
+| J | Event bus | GNU social | PHP, Symfony | `EventBusDemo` |
+| K | Fediverse playground | Open source | TypeScript, Docker | `FediversePlaygroundDemo` |
+| L | Library search | Visrez | Rails, MariaDB | `LibrarySearchDemo` |
+| M | Synthetic properties | Visrez | Rails, MariaDB | `SyntheticPropertiesDemo` |
+| N | Schema driver | GNU social | PHP, Symfony, Doctrine | `SchemaDefDemo` |
+| O | web-ts-mode | Open source | Emacs Lisp, tree-sitter | `WebTsModeDemo` |
+
+The "Built with" column names what the original used. The demos themselves run on Astro,
+React, Vue and plain TypeScript.
+
+## How it's built
+
+Astro renders the whole page to HTML at build time, and a Cloudflare Worker serves it. The
+demos are islands that load their script when you scroll to them. Without JavaScript the page
+still reads start to finish, and the paper stacks fall back to a row you scroll sideways.
+
+There are four themes, and a print stylesheet for the paper version.
+
 ## Running it
 
-`nix develop` (or direnv) gives you Node and installs the dependencies, then `npm run dev`
-starts the dev server.
+You need Node 22. The nix flake provides it: `nix develop` opens a shell with Node and installs
+the dependencies, and direnv does the same when you enter the directory. Without nix, run
+`npm install` yourself.
 
-## Checks and deploy
+`npm run dev` starts the dev server.
+
+## Tests
 
 `npm run check` runs `astro check`, which type-checks `src/` and the specs in `e2e/`. Playwright
 strips types before it runs a spec, so a type error there never fails `npm run test:e2e`.
 
-`npm run test:e2e` builds the site and serves it with `astro preview` on port 4310. If a
-preview is already on that port it reuses it and skips the build.
-
-`npm run deploy` runs `npm run check`, then `npm run build`, then the e2e suite against
-that `dist/`, then `wrangler deploy` of the same `dist/`. It stops at the first step that
-fails. `E2E_PREBUILT=1` tells the suite to serve the existing `dist/` without building
-again, and to refuse a server already on 4310 rather than test it.
+`npm run test:e2e` builds the site, serves it with `astro preview` on port 4310 and runs the
+Playwright suite against it. If a preview is already on that port it reuses it and skips the
+build. The suite drives the Chrome installed on your machine, and Firefox for the no-script
+specs when it is on PATH.
 
 ## Audits
 
-`npm run test:audit` builds the site, serves the build on port 4311 through `wrangler dev`
-and runs four checks over it. wrangler runs the same worker and static-assets setup that
-`wrangler deploy` ships, offline in workerd, so Lighthouse sees the responses a reader gets:
-brotli on the document and the stylesheets, `_astro/` files immutable, `public/_headers`
-applied. `astro preview` sends every file uncompressed, which on Lighthouse's simulated slow
-4G put the mobile first paint at 12 s for a download nobody makes. The run takes about two
-minutes, so run it when you want it rather than on every change. `AUDIT_PORT` moves the
-server if 4311 is taken, `AUDIT_CHROME_PORT` the browser Lighthouse drives.
+`npm run test:audit` checks the built site four ways: HTML with the W3C Nu checker, CSS with
+stylelint, accessibility with axe-core in all four themes, and Lighthouse on desktop and
+mobile. It takes about two minutes. [docs/AUDITS.md](docs/AUDITS.md) says what each check
+covers, why there are two HTML checkers, and where the ignored messages are listed.
 
-- HTML, with the [W3C Nu checker](https://validator.w3.org/nu/) over `dist/client`. `vnu`
-  comes from the nix dev shell, and the audit falls back to `nix develop --command vnu`
-  when it is not already on PATH. Content models, attribute values, duplicate ids, and it
-  descends into `<svg>`.
-- CSS, with [stylelint](https://stylelint.io/) over the built stylesheets and the inline
-  `<style>` blocks, which are the ones no build step looks at.
-- Accessibility, with axe-core through Playwright: 1440x900 and 390x844, each of the four
-  themes, no violations.
-- Lighthouse, driving the system Chrome over the same build, once on the desktop profile
-  and once on the mobile one. Every category is in the report, performance included, and
-  each has a floor measured here. The reports land in `audit-report/lighthouse-desktop.html`
-  and `audit-report/lighthouse-mobile.html`, and both are attached to the Playwright
-  report.
+## Deploy
 
-`npm run test:e2e` runs the HTML and CSS checks as well, against the build that suite
-already makes. The axe and Lighthouse runs stay out of it.
+`npm run deploy` runs `npm run check`, then `npm run build`, then the e2e suite against that
+`dist/`, then `wrangler deploy` of the same `dist/`. It stops at the first step that fails.
+`E2E_PREBUILT=1` tells the suite to serve the existing `dist/` without building again, and to
+refuse a server already on 4310 rather than test it.
 
-### Two HTML checkers, and which runs where
+The deploy goes to my Cloudflare account, so it only works with my credentials. To host a
+fork, point `wrangler.jsonc` at a worker of your own.
 
-`npm run test:audit:html-validate` runs the HTML check through
-[html-validate](https://html-validate.org/) instead of Nu. Over the same `dist/client`,
-three runs each, Nu takes 1.1 to 1.4 s and html-validate 0.24 to 0.46 s.
+## Where things are
 
-Nu is the slower one and it is the one the audit runs, because the two are not equally
-accurate. html-validate never looks inside `<svg>`. Both duplicate ids fixed on this
-branch were inside one, and html-validate reported neither. html-validate also checks each
-`<noscript>` block as a document of its own, so an id the no-JS fallback shares with the
-markup around it goes unreported; Nu reads the page whole and catches it.
-
-html-validate keeps the seat in `npm run test:e2e`, where the check runs on every change
-and should not need Java or nix.
-
-### Never bend the site to a linter
-
-Hugo's rule, in his words: never downgrade or remove a progressive enhancement because a
-tool says it is not valid.
-
-Every message these checks ignore is listed with a reason, in `NU_IGNORED` and the two
-configs at the top of `audit/markup.ts`. If a check ever flags something the site does on
-purpose, add a line there saying why. Do not change the page or the stylesheet to satisfy
-a tool.
-
-Nu's CSS half is the old W3C CSS validator and it is years behind: it calls `anchor-name`
-a parse error. All of its `CSS:` messages are ignored for that reason and stylelint checks
-the CSS instead.
-
-stylelint earns its place. Version 17.15, September 2026, reads properties and values
-through css-tree 3.2 and mdn-data 2.27 with the csstools syntax patches on top. Measured
-against this build it flags none of `anchor()`, `sign()`, `::scroll-marker`, `@container`,
-`@property`, `:has()`, `text-wrap: balance`, `light-dark()`, `@starting-style`,
-`overflow: clip`, relative colours, nesting, `field-sizing`, view transitions or
-scroll-driven animations, and it still catches misspelt properties, bad units, invalid hex
-and duplicate declarations. The one rule that misfires, `selector-type-no-unknown` reading
-`::scroll-button(right)` as an element called `right`, is off. Keep stylelint current and
-rerun that list after an upgrade.
+- `src/pages/index.astro` is the page. It is one page.
+- `src/components/` holds the demos, the paper stack and the drawing sheets.
+- `src/scss/` holds the shared styles, and `src/themes.ts` the four themes.
+- `e2e/` holds the Playwright specs, and `audit/` the audits.
+- `plugins/` holds the Vite plugins the build uses, and `scripts/` the asset generators.
+- [TODO.md](TODO.md) lists what is left to do.
+- [docs/DEAD-ENDS.md](docs/DEAD-ENDS.md) lists approaches I tried and dropped, with the
+  numbers.
