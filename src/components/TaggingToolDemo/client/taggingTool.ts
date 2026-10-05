@@ -598,7 +598,7 @@ function atEdge(el: HTMLElement, key: string) {
 /** One Tab stop per row in place of two per card. The product leaves every field and button
     a stop of its own. */
 function rovePerRow(section: HTMLElement, group: Group) {
-  const items = [group.shared, group.sharedSave, ...group.cards.flatMap((card) => [card.input, card.save])];
+  const items: HTMLElement[] = [group.shared, group.sharedSave, ...group.cards.flatMap((card) => [card.input, card.save])];
   rove(section, items, (event, current) => {
     if ((event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') || !atEdge(current, event.key)) return null;
     return items[items.indexOf(current) + (event.key === 'ArrowLeft' ? -1 : 1)];

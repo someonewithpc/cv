@@ -138,7 +138,7 @@ export const highlightBlock = (code: string, lang: CodeLang, { lineComment = '',
   const lines = code.split('\n');
   const notes = lines.map((line) => (lineComment && line.includes(lineComment) ? line.slice(line.indexOf(lineComment)) : ''));
   const bare = lines.map((line, index) => line.slice(0, line.length - notes[index].length)).join('\n');
-  const tokens = highlighter.codeToTokensBase(bare, { lang, theme: 'cv' });
+  const tokens = highlighter.codeToTokensBase(bare, { lang, theme });
   const rendered = lang === 'xml' || lang === 'html' ? renderMarkup(tokens) : tokens.map((line) => renderLine(line));
   const body = rendered.map((line, index) => `<span class="line">${line}${span(notes[index], notes[index] ? 'comment' : undefined)}</span>`);
   return `<pre class="${classes(className)}" data-lang="${lang}"><code>${body.join('\n')}</code></pre>`;
@@ -195,7 +195,7 @@ export const highlightLines = (
     start += text.length + 1;
     return { text, offset, inserts };
   });
-  const tokens = highlighter.codeToTokensBase(before + bare + context[1], { lang, theme: 'cv' });
+  const tokens = highlighter.codeToTokensBase(before + bare + context[1], { lang, theme });
   return lines.map(({ text, offset, inserts }, index) => {
     const html = renderLine(tokens[skip + index], offset, offset + text.length, inserts);
     if (textOf(html) !== text) throw new Error(`highlightLines: ${JSON.stringify(textOf(html))} is not the code ${JSON.stringify(text)}`);
@@ -209,7 +209,7 @@ export const highlightSpans = (code: string, lang: CodeLang, context: [string, s
 
 export const highlightInline = (code: string, lang: CodeLang, context: [string, string] = ['', ''], className = '') => {
   const [before, after] = context;
-  const tokens = highlighter.codeToTokensBase(before + code + after, { lang, theme: 'cv' }).flat();
+  const tokens = highlighter.codeToTokensBase(before + code + after, { lang, theme }).flat();
   return `<code class="${classes(className)}">${renderLine(tokens, before.length, before.length + code.length)}</code>`;
 };
 
