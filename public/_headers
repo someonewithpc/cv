@@ -3,3 +3,6 @@
 
 /favicon.ico
   Cache-Control: public, max-age=604800
+
+/oembed.xml
+  Content-Type: text/xml; charset=utf-8

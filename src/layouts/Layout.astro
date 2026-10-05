@@ -20,9 +20,11 @@ const canonical = new URL(Astro.url.pathname, SITE_URL);
 const ogImage = new URL('/og.jpg', SITE_URL);
 const ogImageAlt =
   "The title block of Hugo Sales' CV on a white card over a wooden desk, with his name, the role Full stack developer and FOSS contributor, and links to his email, GitHub, Codeberg and LinkedIn";
-const oembedUrl = new URL('/oembed.json', SITE_URL);
-oembedUrl.searchParams.set('url', canonical.toString());
-oembedUrl.searchParams.set('format', 'json');
+const oembedUrl = (format: 'json' | 'xml') => {
+  const url = new URL(`/oembed.${format}`, SITE_URL);
+  url.searchParams.set('url', canonical.toString());
+  return url;
+};
 
 /* What the browser chrome around the page (DevTools device frame, Android's address bar,
    Safari's tab bar) should read as: each theme's own page background, not an accent. */
@@ -86,7 +88,8 @@ const skipScript = `(() => {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:image:alt" content={ogImageAlt} />
-    <link rel="alternate" type="application/json+oembed" href={oembedUrl} title={title} />
+    <link rel="alternate" type="application/json+oembed" href={oembedUrl('json')} title={title} />
+    <link rel="alternate" type="text/xml+oembed" href={oembedUrl('xml')} title={title} />
     <meta name="theme-color" content={pageBackground(OS_THEMES.light)} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content={pageBackground(OS_THEMES.dark)} media="(prefers-color-scheme: dark)" />
 
