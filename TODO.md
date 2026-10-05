@@ -278,4 +278,4 @@
 - [x] Drive the front-page watchers from paper-flip, not a style observer (C1) (#334)
 - [x] Let the keyboard reach Library Search's scrolling results at 768 px (A10) (#333)
 - [x] Recheck the 2020 and 2021 rows still marked Open, and show the snapshot date (T19) (#332)
-- [ ] A deploy ships the oEmbed card of its own source, not the previous build's (C63)
+- [x] A deploy ships the oEmbed card of its own source, not the previous build's (C63) (#331)
