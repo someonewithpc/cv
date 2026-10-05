@@ -1,5 +1,10 @@
 # Hugo Sales's CV and Portfolio
 
+The source for **[hsal.es](https://hsal.es)**, my CV and portfolio. It's laid out like a set of
+technical drawings on a cutting mat, with demos you can use in the browser. Some come from my
+work at Visrez, like the 3D space builder and the map marker editor, and others from my open
+source work, like the Fediverse playground. It's an Astro site, deployed to Cloudflare Workers.
+
 ## Checks and deploy
 
 `npm run check` runs `astro check`, which type-checks `src/` and the specs in `e2e/`. Playwright
