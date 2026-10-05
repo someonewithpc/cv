@@ -7,7 +7,7 @@
  * in once by CatalogPanel.vue. What stays this demo's own is the scene wiring: drag to
  * place, double-click to Build, and the walkthrough's aim points.
  */
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, useId, watch } from 'vue';
 
 import { formatSize, unitsFor } from '@/components/VariantsDemo/units';
 
@@ -31,7 +31,8 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:variantId': [id: string];
   select: [item: CatalogItem, variant: CatalogVariant];
-  confirm: [item: CatalogItem, variant: CatalogVariant];
+  /** `byKey` is set when Enter confirmed: the scene then walks the object in with the arrows. */
+  confirm: [item: CatalogItem, variant: CatalogVariant, byKey?: boolean];
   dragstart: [event: DragEvent, item: CatalogItem, variant: CatalogVariant];
   dragend: [];
   itemPointerdown: [event: PointerEvent, item: CatalogItem, variant: CatalogVariant];
@@ -71,6 +72,12 @@ const unavailablePax = computed(() => paxOptions.value.filter(
 const unavailableSize = computed(() => sizeOptions.value.filter(
   (size) => !variants.value.some((v) => v.size === size && v.pax === visible.value.pax),
 ));
+
+/** Read out with the picture, since a sighted pointer user learns the double-click from the title. */
+const keysId = useId();
+const keysText = computed(() => (props.item.layoutable
+  ? 'Enter picks it. Enter again opens Build.'
+  : 'Enter picks it. Enter again places it with the arrow keys.'));
 
 const title = computed(() => {
   if (!props.item.real) return `${props.item.name} (placeholder)`;
@@ -177,6 +184,21 @@ function onPictureClick(event: MouseEvent) {
   if (event.isTrusted && event.target === list.value) return;
   pick(visible.value);
 }
+
+/**
+ * The keyboard's click and double-click: Enter picks the card, and Enter on the card already
+ * picked confirms it. Space only picks, as a click does.
+ */
+function onPictureKey(event: KeyboardEvent) {
+  if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+  if (event.key === 'Enter' && props.active) {
+    event.preventDefault();
+    emit('confirm', props.item, visible.value, true);
+  } else if (event.key === 'Enter' || (event.key === ' ' && isGroup.value)) {
+    event.preventDefault();
+    pick(visible.value);
+  }
+}
 </script>
 
 <template>
@@ -197,7 +219,9 @@ function onPictureClick(event: MouseEvent) {
         :data-demo-target="`catalog:${item.id}`"
         :draggable="nativeDrag && Boolean(item.real)"
         :title="title"
+        :aria-describedby="item.real ? keysId : undefined"
         @click="onPictureClick"
+        @keydown="onPictureKey"
         @dblclick="emit('confirm', item, visible)"
         @dragstart="emit('dragstart', $event, item, visible)"
         @dragend="emit('dragend')"
@@ -275,8 +299,10 @@ function onPictureClick(event: MouseEvent) {
         :data-demo-target="`catalog:${item.id}`"
         :draggable="nativeDrag && Boolean(item.real)"
         :title="title"
+        :aria-describedby="item.real ? keysId : undefined"
         :aria-disabled="!item.real || undefined"
         @click="pick(visible)"
+        @keydown="onPictureKey"
         @dblclick="emit('confirm', item, visible)"
         @dragstart="emit('dragstart', $event, item, visible)"
         @dragend="emit('dragend')"
@@ -288,6 +314,8 @@ function onPictureClick(event: MouseEvent) {
         </span>
       </button>
     </div>
+
+    <span v-if="item.real" :id="keysId" hidden>{{ keysText }}</span>
 
     <div class="item-label">
       <span class="object-name">{{ item.name }}</span>
