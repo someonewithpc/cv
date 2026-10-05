@@ -5,6 +5,11 @@ technical drawings on a cutting mat, with demos you can use in the browser. Some
 work at Visrez, like the 3D space builder and the map marker editor, and others from my open
 source work, like the Fediverse playground. It's an Astro site, deployed to Cloudflare Workers.
 
+## Running it
+
+`nix develop` (or direnv) gives you Node and installs the dependencies, then `npm run dev`
+starts the dev server.
+
 ## Checks and deploy
 
 `npm run check` runs `astro check`, which type-checks `src/` and the specs in `e2e/`. Playwright
