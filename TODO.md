@@ -277,4 +277,4 @@
 - [x] Add an og:image so chat apps show the large link card (#326)
 - [x] Drive the front-page watchers from paper-flip, not a style observer (C1) (#334)
 - [x] Let the keyboard reach Library Search's scrolling results at 768 px (A10) (#333)
-- [ ] Recheck the 2020 and 2021 rows still marked Open, and show the snapshot date (T19)
+- [x] Recheck the 2020 and 2021 rows still marked Open, and show the snapshot date (T19) (#332)
