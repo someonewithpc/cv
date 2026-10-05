@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 90">
+<defs><linearGradient id="tp" x1="0" y1="0" x2="1" y2="0.2"><stop offset="0" stop-color="#f2f0ea"/><stop offset="0.5" stop-color="#e4e1d8"/><stop offset="0.5" stop-color="#dcd8ce"/><stop offset="1" stop-color="#ecebe4"/></linearGradient><pattern id="tt" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#8aa2b8" opacity="0.5"/></pattern></defs>
+<g transform="rotate(-6 70 45)">
+<path d="M14,10 L118,10 L118,10 L126.1,15 L121.4,20 L119.6,25 L127.4,30 L127.9,35 L127.4,40 L120.8,45 L121.3,50 L119.4,55 L120.7,60 L123.4,65 L120.5,70 L124.3,75 L124.1,80 L14,80 Z" fill="url(#tp)" stroke="#b9b5aa" stroke-width="0.5"/>
+<path d="M14,10 L26,30 L14,80" fill="none" stroke="#b5b1a6" stroke-width="0.5" opacity="0.6"/>
+<path d="M68,10 L74,80" fill="none" stroke="#7d8a96" stroke-width="0.7" opacity="0.5"/>
+<path d="M22,18 h40 M22,24 h30 M22,34 h46 M22,40 h18 M22,56 h38 M22,62 h24" stroke="#4d6b88" stroke-width="2" opacity="0.75"/>
+<text x="24" y="74" font-family="monospace" font-size="7" fill="#2f4b66" opacity="0.8">0417</text>
+<path d="M84,18 h26 M84,26 h20 M84,34 h28 M84,42 h14" stroke="#4d6b88" stroke-width="2" opacity="0.55"/>
+<rect x="84" y="52" width="30" height="20" fill="url(#tt)"/>
+<path d="M14,12 L118,12" stroke="#6c7f94" stroke-width="1.5" opacity="0.5" stroke-dasharray="3 2"/>
+<path d="M75.4,45.4 Q77.3,46.9 75.4,48.9 Q73.5,50.8 70,50.3 Q66.5,49.8 64.6,48.8 Q62.8,47.9 64.8,46.6 Q66.7,45.2 70.1,44.6 Q73.5,44 75.4,45.4 Z" fill="#9a8a66" opacity="0.1"/><path d="M101.7,35.5 Q99.2,36.3 97.7,35.7 Q96.1,35 95.3,33.2 Q94.4,31.3 95.7,30.6 Q96.9,29.9 99.4,30.6 Q101.9,31.3 103.1,33 Q104.2,34.7 101.7,35.5 Z" fill="#9a8a66" opacity="0.1"/><path d="M36.8,90.4 Q32.8,91.6 29.9,90.7 Q27,89.9 27.2,88.2 Q27.4,86.5 29.4,84.5 Q31.4,82.4 35.2,83.8 Q39,85.2 39.9,87.3 Q40.8,89.3 36.8,90.4 Z" fill="#9a8a66" opacity="0.1"/><path d="M76.5,57.3 Q75.3,57.3 76.1,55.5 Q76.8,53.7 79.3,54.1 Q81.7,54.5 83.3,54.5 Q85,54.5 84.1,55.8 Q83.3,57.1 80.4,57.2 Q77.6,57.3 76.5,57.3 Z" fill="#9a8a66" opacity="0.1"/><path d="M37.4,86.1 Q38.3,88.3 35.4,89.2 Q32.6,90.2 30.8,88.7 Q29.1,87.2 29,85.5 Q29,83.9 31,82.2 Q33.1,80.6 34.8,82.3 Q36.5,83.9 37.4,86.1 Z" fill="#9a8a66" opacity="0.1"/>
+</g>
+</svg>

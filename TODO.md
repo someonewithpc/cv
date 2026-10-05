@@ -275,3 +275,4 @@
 - [x] Cut the requests that start before first paint: the island scripts' shared chunks load as one file (#323)
 - [x] Reasons that lived only in `title` reach keyboard, touch and screen reader users, and a contribution row shows it opens (A21) (#272)
 - [x] Add an og:image so chat apps show the large link card (#326)
+- [ ] Put a theme-specific ornament on the desk beside the paper, hidden at narrow widths
