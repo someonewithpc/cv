@@ -31,6 +31,8 @@ export async function boot(host: HTMLElement) {
   ]);
 
   const app = createApp(MockSceneApp);
+  // useId() ids are per app; both scene apps share a page.
+  app.config.idPrefix = 'space-builder';
   app.mount(host);
   host.querySelector('.boot-placeholder')?.remove();
 }

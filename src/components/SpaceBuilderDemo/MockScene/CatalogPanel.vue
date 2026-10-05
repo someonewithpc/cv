@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   select: [item: CatalogItem, variant: CatalogVariant];
-  confirm: [item: CatalogItem, variant: CatalogVariant];
+  confirm: [item: CatalogItem, variant: CatalogVariant, byKey?: boolean];
   dragstart: [event: DragEvent, item: CatalogItem, variant: CatalogVariant];
   dragend: [];
   itemPointerdown: [event: PointerEvent, item: CatalogItem, variant: CatalogVariant];
