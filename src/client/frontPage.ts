@@ -23,20 +23,27 @@ export function isFrontPage(el: Element): boolean {
   return wrapper === null || readFront(wrapper);
 }
 
-/** Calls `onChange` on every change of front-page state, never for the initial one. */
+/**
+ * Calls `onChange` on every change of front-page state, never for the initial one. fold-drag.ts
+ * renumbers --page-index only where it then dispatches `paper-flip` on the stack (syncInert),
+ * so that event is the one to follow. A MutationObserver on the wrapper's style ran on every
+ * drag frame and every resize step, which write the fold and page sizes there too.
+ */
 export function watchFrontPage(el: Element, onChange: (front: boolean) => void): () => void {
   const wrapper = pageWrapper(el);
-  if (!wrapper) return () => {};
+  const stack = wrapper?.parentElement;
+  if (!wrapper || !stack) return () => {};
 
   let front = readFront(wrapper);
-  const observer = new MutationObserver(() => {
+  // A microtask, as the observer delivered it: after the rest of the flip has run.
+  const onFlip = () => queueMicrotask(() => {
     const next = readFront(wrapper);
     if (next === front) return;
     front = next;
     onChange(front);
   });
-  observer.observe(wrapper, { attributes: true, attributeFilter: ['style'] });
-  return () => observer.disconnect();
+  stack.addEventListener('paper-flip', onFlip);
+  return () => stack.removeEventListener('paper-flip', onFlip);
 }
 
 /**

@@ -10,7 +10,7 @@ import {
 
 import { reducedMotion } from '@/client/autoplayStatus';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { documentGate, watchPageActive } from '@/client/frontPage';
+import { documentGate, isFrontPage, watchFrontPage, watchPageActive } from '@/client/frontPage';
 
 import { MarkerEditor } from '../markers/MarkerEditor';
 import { useLiveMarkerEditorSessionCount } from '../markers/liveMarkerEditorSession';
@@ -52,24 +52,12 @@ export default function EditorLayerApp() {
   // render (and steal the live editor's marker-part singletons) no matter which page a
   // visitor is actually looking at. --page-index is what fold-drag.ts itself updates on a
   // committed flip (front = "1"), so it's the one signal that actually tracks the front page.
-  // It is read off the wrapper's inline style, where fold-drag.ts writes it, so the check
-  // below forces no style pass each time that style changes.
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
-    const section = host.closest('section');
-    const wrapper = section?.parentElement;
-    if (!wrapper) return;
-
-    const checkFront = () => {
-      setPageVisible(wrapper.style.getPropertyValue('--page-index').trim() === '1');
-    };
-    checkFront();
-
-    const observer = new MutationObserver(checkFront);
-    observer.observe(wrapper, { attributes: true, attributeFilter: ['style'] });
-    return () => observer.disconnect();
+    setPageVisible(isFrontPage(host));
+    return watchFrontPage(host, setPageVisible);
   }, []);
 
   useEffect(() => {
