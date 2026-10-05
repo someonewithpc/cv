@@ -390,6 +390,8 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
   // The build already drew the opening query's answer.
   pipeline.shown(initial);
 
+  reachScroll(tool);
+
   const onChange = () => {
     pipeline.request({ query: input.value, filters: readFilters(tool) });
   };
@@ -400,6 +402,25 @@ export function initLibrarySearch(host: HTMLElement, root: HTMLElement) {
   const walkthrough = script ? autoplay(tool, host, JSON.parse(script) as Step[], initial, onChange) : null;
   if (walkthrough) void walkthrough.start();
   else listenCount(tool, true);
+}
+
+/** A scrolling list nobody can focus is out of a keyboard visitor's reach, so the list takes
+    a Tab stop and a name while its rows overflow and gives both back once they fit. The sheet
+    resizes the box, and a filter hides or shows rows, so both are watched. */
+function reachScroll(tool: Tool) {
+  const { list } = tool;
+  const sync = () => {
+    if (list.scrollHeight > list.clientHeight + 1) {
+      list.tabIndex = 0;
+      list.setAttribute('aria-label', 'Search results');
+    } else {
+      list.removeAttribute('tabindex');
+      list.removeAttribute('aria-label');
+    }
+  };
+  const watch = new ResizeObserver(sync);
+  watch.observe(list);
+  list.querySelectorAll('.hit, .no-hits').forEach((row) => watch.observe(row));
 }
 
 /** The count is a live region only while every change to it is the visitor's own: while

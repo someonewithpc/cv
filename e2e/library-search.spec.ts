@@ -553,3 +553,19 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     }
   });
 }
+
+test('the results take a Tab stop while they scroll and give it back when they fit', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.goto('/');
+  const { tool } = await mountedTool(page);
+  const results = tool.locator('.results');
+  const overflows = () => results.evaluate((list) => list.scrollHeight > list.clientHeight + 1);
+
+  expect(await overflows(), 'the list scrolls at 768').toBe(true);
+  await expect(results).toHaveAttribute('tabindex', '0');
+  await expect(results).toHaveAccessibleName('Search results');
+
+  await tool.locator('.query-input').fill('zzzz-nothing-matches');
+  await expect(results).not.toHaveAttribute('tabindex');
+  expect(await overflows()).toBe(false);
+});
