@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue';
 
 import builderLogoUrl from '@/assets/demos/space-builder/builder-logo.png?url';
 import { watchDrawingNote } from '@/client/drawingNote';
@@ -113,6 +113,18 @@ watchEffect(() => {
 });
 
 const panel = ref<Panel>('closed');
+
+// Catalog and Options swap the sidebar's body, taking the focused card or field with it.
+// Focus that was in the sidebar stays there, on the header's back button.
+watch(panel, (next, previous) => {
+  if (next === 'closed' || previous === 'closed') return;
+  const sidebar = rootRef.value?.querySelector('.sidebar');
+  if (!sidebar?.contains(document.activeElement)) return;
+  void nextTick(() => {
+    if (document.activeElement && document.activeElement !== document.body) return;
+    rootRef.value?.querySelector<HTMLElement>('.sidebar-close')?.focus({ preventScroll: true });
+  });
+}, { flush: 'pre' });
 const phase = ref<Phase>('idle');
 const snapshot = ref<SceneSnapshot | null>(null);
 
