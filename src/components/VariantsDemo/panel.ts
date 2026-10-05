@@ -95,6 +95,15 @@ function enhanceCard(card: HTMLElement, selection: Selection) {
     if (icons.classList.contains('styles') && event.target === icons) return;
     pick(variantById(card.dataset.variant));
   });
+  // The picture picks only once this runs, so it is a disabled button until then. The
+  // carousel is a list, not a button, and takes Enter and Space for the click itself.
+  if (icons instanceof HTMLButtonElement) icons.disabled = false;
+  if (icons?.classList.contains('styles')) icons.addEventListener('keydown', (event) => {
+    if (event.target !== icons || (event.key !== 'Enter' && event.key !== ' ')) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+    event.preventDefault();
+    pick(variantById(card.dataset.variant));
+  });
 
   const styles = card.querySelector<HTMLElement>('ul.styles');
   if (styles) enhanceCarousel(card, styles, (variant) => {
