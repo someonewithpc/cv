@@ -6,6 +6,7 @@ import $store, { markerDecorationsSelector } from '../../../../store';
 import { optimizeAndParseSVGToComponent } from "../../optimizeAndParseSVGToComponent";
 import { MarkerPart, Point } from "../shared";
 import type { PointLiteral } from "../shared";
+import { onOptionKey } from "../../listboxKeys";
 
 export class IconMarkerDecoration extends MarkerPart {
   get default() {
@@ -115,21 +116,27 @@ export class IconMarkerDecoration extends MarkerPart {
   Configuration() {
     if (this.reactiveState.decorations.length === 0) return;
 
+    // One Tab stop for the list: the chosen icon, or the first while none is chosen.
+    const chosen = this.reactiveState.decorations.some((d) => d.id === this.reactiveState.activeDecoration);
+
     return (
       <>
         <ul role="listbox" aria-label="Decorations">
           {this.reactiveState.decorations.map((d, index) => {
             const decoration = d.resolvedSource;
+            const selected = d.id === this.reactiveState.activeDecoration;
 
             return (
               <li
                 key={d.id}
                 role="option"
                 aria-label={`Decoration ${index + 1}`}
-                aria-selected={d.id === this.reactiveState.activeDecoration}
+                aria-selected={selected}
+                tabIndex={selected || (!chosen && index === 0) ? 0 : -1}
                 onClick={() => {
                   this.reactiveState.activeDecoration = d.id;
                 }}
+                onKeyDown={onOptionKey}
               >
                 {decoration ? optimizeAndParseSVGToComponent(decoration) : this.Loader()}
               </li>

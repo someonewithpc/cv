@@ -30,6 +30,7 @@ import type { StateType, Markers, StepsType } from "./markerParts";
 import { MarkerPart, Point } from "./markerParts/shared";
 import { serializeMarker, deserializeMarker } from './markerParts/shared/serialization';
 import { useUpdateDecorationSnapCenter } from "./useUpdateDecorationSnapCenter";
+import { onOptionKey } from './listboxKeys';
 
 import './MarkerEditor.scss';
 
@@ -471,14 +472,9 @@ export function MarkerEditor({
                                   aria-label={part.title}
                                   aria-selected={state.active[step] === type}
                                   data-demo-target={`editor:${step}:${type}`}
-                                  tabIndex={0}
+                                  tabIndex={state.active[step] === type ? 0 : -1}
                                   onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
-                                  onKeyDown={(event) => {
-                                    // A list item with a click is not a keyboard target on its own.
-                                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                                    event.preventDefault();
-                                    setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }));
-                                  }}
+                                  onKeyDown={onOptionKey}
                                   title={part.title}
                                 >
                                   <Thumbnail space={space} />
