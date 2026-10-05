@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watchEffect } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue';
 
 import builderLogoUrl from '@/assets/demos/space-builder/builder-logo.png?url';
 import { watchDrawingNote } from '@/client/drawingNote';
@@ -21,6 +21,7 @@ import {
 } from './AutoPlayController';
 import CatalogPanel from './CatalogPanel.vue';
 import { CATALOG_ITEMS, variantOf, type CatalogItem, type CatalogVariant } from './catalogItems';
+import { ghostClient, ghostStart, ghostStep, isPlaceKey, KEY_PLACE_HINT, type KeyPoint } from './keyGhost';
 import OptionsPanel from './OptionsPanel.vue';
 import {
   RAIL_ARRANGE_TOOLS,
@@ -493,14 +494,15 @@ function selectCatalogItem(item: CatalogItem, variant: CatalogVariant = variantO
   panel.value = 'catalog';
 }
 
-function confirmCatalogItem(item: CatalogItem, variant?: CatalogVariant) {
+function confirmCatalogItem(item: CatalogItem, variant?: CatalogVariant, byKey = false) {
   selectCatalogItem(item, variant ?? variantOf(item, undefined));
   if (!item.real) {
     pushToast({ action: 'Placeholder · use Chair for the demo' });
     return;
   }
   if (!item.layoutable) {
-    pushToast({ action: 'Drag onto the floor to place' });
+    if (byKey) startKeyPlace();
+    else pushToast({ action: 'Drag onto the floor to place' });
     return;
   }
   // Match Space Builder: double-click advances past the catalog (Build path).
@@ -616,6 +618,65 @@ function onViewportDrop(event: DragEvent) {
   // so the next drag lands, rather than claiming an object that isn't there.
   if (placed) panel.value = 'closed';
   pushToast({ action: placed ? 'Object placed' : 'Still loading · drag again' });
+}
+
+/** Where the keyboard holds the ghost, as a fraction of the canvas; null while a pointer places. */
+let keyGhost: KeyPoint | null = null;
+
+watch(phase, (next) => {
+  if (next !== 'placing') keyGhost = null;
+});
+
+function showKeyGhost() {
+  const rect = canvasRef?.getBoundingClientRect();
+  if (!rect || !keyGhost) return;
+  const { x, y } = ghostClient(keyGhost, rect);
+  sceneRef.value?.setGhostAt(x, y);
+}
+
+/** Enter on a picked object that has no Build: the ghost waits mid-floor for the arrow keys. */
+function startKeyPlace() {
+  if (!userControl.value) yieldToUser(true);
+  phase.value = 'placing';
+  keyGhost = ghostStart();
+  sceneRef.value?.setGhostVisible(true);
+  showKeyGhost();
+  pushToast({ action: KEY_PLACE_HINT });
+}
+
+/**
+ * Caught on the way down, before the focused card reads Enter as another confirm and before
+ * Escape steps the panel back.
+ */
+function onPlaceKey(event: KeyboardEvent) {
+  if (!keyGhost || phase.value !== 'placing' || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.key === 'Escape') {
+    sceneRef.value?.setGhostVisible(false);
+    phase.value = 'idle';
+  } else if (isPlaceKey(event.key)) {
+    if (!event.repeat) placeKeyGhost();
+  } else {
+    const rect = canvasRef?.getBoundingClientRect();
+    const next = rect && ghostStep(keyGhost, event.key, rect);
+    if (!next) return;
+    keyGhost = next;
+    showKeyGhost();
+  }
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function placeKeyGhost() {
+  showKeyGhost();
+  if (!sceneRef.value?.placeGhostAsSingle()) {
+    pushToast({ action: 'Still loading · press Enter again' });
+    return;
+  }
+  phase.value = 'idle';
+  panel.value = 'closed';
+  pushToast({ action: 'Object placed' });
+  // The card that had focus went with the panel; Add is where the next object starts.
+  rootRef.value?.querySelector<HTMLElement>('.rail button[aria-keyshortcuts="A"]')?.focus();
 }
 
 function isEditableTarget(target: EventTarget | null) {
@@ -829,6 +890,7 @@ onMounted(async () => {
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
     root.addEventListener('keydown', onKeyDown);
+    root.addEventListener('keydown', onPlaceKey, true);
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
   } catch (error) {
@@ -861,6 +923,7 @@ onBeforeUnmount(() => {
   rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
   rootRef.value?.removeEventListener('keydown', onKeyDown);
+  rootRef.value?.removeEventListener('keydown', onPlaceKey, true);
   window.removeEventListener('pointerup', onPointerUp);
   window.removeEventListener('pointercancel', onPointerUp);
 });

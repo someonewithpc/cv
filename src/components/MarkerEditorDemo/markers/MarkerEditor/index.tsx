@@ -2,7 +2,7 @@ import '../client-only';
 
 import { faArrowRotateLeft, faArrowRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from 'react-dom';
 import { v4 as uuidv4 } from 'uuid';
 import cx from 'classnames';
@@ -30,6 +30,7 @@ import type { StateType, Markers, StepsType } from "./markerParts";
 import { MarkerPart, Point } from "./markerParts/shared";
 import { serializeMarker, deserializeMarker } from './markerParts/shared/serialization';
 import { useUpdateDecorationSnapCenter } from "./useUpdateDecorationSnapCenter";
+import { onOptionKey } from './listboxKeys';
 
 import './MarkerEditor.scss';
 
@@ -274,6 +275,42 @@ export function MarkerEditor({
 
   const editorRef = useRef<HTMLDivElement>(null);
 
+  // Where each handle was put by the keys, before any snap. Stepping from the snapped point
+  // would land back inside the snap radius and never get out.
+  const keyedPoints = useRef(new Map<string, Point>());
+
+  const moveControlPoint = (name: string, point: Point) => {
+    if (!activePart) return;
+    activePart.controlPoints[name] = point;
+    updateAll();
+    activeControlPointIndicatorRefs[name]['user'].current!.style.setProperty('translate', point.toCSSTranslate());
+  };
+
+  /** The handles for a pointer that is not a mouse; the walkthrough and a mouse use the mouse events. */
+  const dragControlPoint = (e: ReactPointerEvent<SVGSVGElement>) => {
+    if (!state.draggedControlPoint || e.pointerType === 'mouse') return;
+    e.preventDefault();
+    moveControlPoint(state.draggedControlPoint, new Point(
+      mapRange(e.clientX, svgRect!.left, svgRect!.right, -1, 1),
+      mapRange(e.clientY, svgRect!.top, svgRect!.bottom, -1, 1),
+    ));
+  };
+
+  const onControlPointKey = (e: ReactKeyboardEvent<SVGGElement>, name: string) => {
+    const step = ({ ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as Record<string, number[]>)[e.key];
+    if (!step || !activePart || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    const from = keyedPoints.current.get(name) ?? activePart.controlPoints[name];
+    const size = e.shiftKey ? 0.25 : 0.0625;
+    const clamp = (value: number) => Math.min(1, Math.max(-1, value));
+    const to = new Point(clamp(from.x + step[0] * size), clamp(from.y + step[1] * size));
+    keyedPoints.current.set(name, to);
+    moveControlPoint(name, new Point(to.x, to.y));
+    if (state.previousDecorationSnapCenter !== null) {
+      setState((prev) => ({ ...prev, previousDecorationSnapCenter: null }));
+    }
+  };
+
   // A visitor's open moves focus onto the dialog's first control; the walkthrough's opens
   // leave focus where the visitor has it. The selector gives focus back when this closes.
   useEffect(() => {
@@ -397,6 +434,15 @@ export function MarkerEditor({
                     e.preventDefault();
                     setState((prev) => ({ ...prev, draggedControlPoint: undefined, previousDecorationSnapCenter: null }));
                   }}
+                  onPointerMove={dragControlPoint}
+                  onPointerUp={(e) => {
+                    if (e.pointerType === 'mouse' || !state.draggedControlPoint) return;
+                    setState((prev) => ({ ...prev, draggedControlPoint: undefined, previousDecorationSnapCenter: null }));
+                  }}
+                  onPointerCancel={(e) => {
+                    if (e.pointerType === 'mouse' || !state.draggedControlPoint) return;
+                    setState((prev) => ({ ...prev, draggedControlPoint: undefined, previousDecorationSnapCenter: null }));
+                  }}
                 >
                   {Object.values(markerStepContent)}
 
@@ -409,11 +455,24 @@ export function MarkerEditor({
                           style={{
                             translate: activePart.controlPoints[controlPointName].toCSSTranslate(),
                           }}
+                          className="control-point"
+                          tabIndex={0}
+                          aria-label={`${_startCase(controlPointName.replace(/CP$/, ''))} handle`}
+                          aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
                           onMouseDown={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
                             setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as any }));
                           }}
+                          onPointerDown={(e) => {
+                            if (e.pointerType === 'mouse') return;
+                            e.stopPropagation();
+                            e.preventDefault();
+                            e.currentTarget.ownerSVGElement?.setPointerCapture(e.pointerId);
+                            setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as any }));
+                          }}
+                          onFocus={() => keyedPoints.current.delete(controlPointName)}
+                          onKeyDown={(e) => onControlPointKey(e, controlPointName)}
                         >
                           {/* We position the indicators on the top left and use CSS `translate` to move them to the appropriate place in order to bypass React's rendering, as it was unusably slow */}
                           <circle cx={-1} cy={-1} r={MARKER_EDITING_CIRCLE_RADIUS} style={{ stroke: 'var(--marker-handle-stroke)', fill: 'var(--marker-handle-fill)' }} strokeWidth={CONTROL_POINT_INDICATOR_STROKE_WIDTH} />
@@ -471,14 +530,9 @@ export function MarkerEditor({
                                   aria-label={part.title}
                                   aria-selected={state.active[step] === type}
                                   data-demo-target={`editor:${step}:${type}`}
-                                  tabIndex={0}
+                                  tabIndex={state.active[step] === type ? 0 : -1}
                                   onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
-                                  onKeyDown={(event) => {
-                                    // A list item with a click is not a keyboard target on its own.
-                                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                                    event.preventDefault();
-                                    setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }));
-                                  }}
+                                  onKeyDown={onOptionKey}
                                   title={part.title}
                                 >
                                   <Thumbnail space={space} />
