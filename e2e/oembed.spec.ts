@@ -2,24 +2,29 @@ import { expect, test } from '@playwright/test';
 
 import { AUTHOR_NAME, CONTACT, SITE_TITLE, SITE_URL } from '../src/site';
 
-// oembed.json only answers for the real hsal.es origin (see src/site.ts), never the
-// localhost address this suite serves the build from, so every request below targets
-// that fixed origin rather than baseURL.
+// Both endpoints are static files written by astro build, so they answer the same for any
+// query string; the discovery links name hsal.es, never the localhost origin the suite uses.
 const SITE_ROOT = `${SITE_URL}/`;
+const QUERY = `?url=${encodeURIComponent(SITE_ROOT)}&maxwidth=100`;
 
-test('homepage carries an oEmbed discovery link pointing at itself', async ({ page }) => {
+test('homepage carries a JSON and an XML oEmbed discovery link pointing at itself', async ({ page }) => {
   await page.goto('/');
-  const link = page.locator('link[type="application/json+oembed"]');
-  await expect(link).toHaveAttribute('href', /\/oembed\.json\?url=/);
-
-  const href = await link.getAttribute('href');
-  const discovered = new URL(href!);
-  expect(discovered.searchParams.get('url')).toBe(SITE_ROOT);
+  for (const [type, path] of [
+    ['application/json+oembed', '/oembed.json'],
+    ['text/xml+oembed', '/oembed.xml'],
+  ]) {
+    const href = await page.locator(`link[rel="alternate"][type="${type}"]`).getAttribute('href');
+    const discovered = new URL(href!);
+    expect(discovered.origin + discovered.pathname, type).toBe(SITE_URL + path);
+    expect(discovered.searchParams.get('url'), type).toBe(SITE_ROOT);
+  }
 });
 
-test('oembed.json answers with a rich embed for the site url', async ({ request }) => {
-  const response = await request.get(`/oembed.json?url=${encodeURIComponent(SITE_ROOT)}&format=json`);
+test('oembed.json answers with a rich embed whatever the query string', async ({ request }) => {
+  const response = await request.get(`/oembed.json${QUERY}`);
   expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toMatch(/^application\/json/);
+  expect(response.headers()['access-control-allow-origin']).toBe('*');
 
   const body = await response.json();
   expect(body).toMatchObject({
@@ -27,6 +32,8 @@ test('oembed.json answers with a rich embed for the site url', async ({ request 
     type: 'rich',
     title: SITE_TITLE,
     author_name: AUTHOR_NAME,
+    provider_name: AUTHOR_NAME,
+    provider_url: SITE_URL,
   });
 
   // The name must actually be in the rendered card, not just the JSON metadata field,
@@ -47,26 +54,26 @@ test('oembed.json answers with a rich embed for the site url', async ({ request 
   expect(body.html).not.toContain('Demos');
 });
 
-test('the rendered oEmbed card fragment is not served on its own', async ({ request }) => {
-  // OEMBED_CARD_HTML is baked into oembed.json.ts at build time (see
-  // scripts/render-oembed-card.mjs); the page that produces it shouldn't be a live route.
-  expect((await request.get('/oembed-card.html/')).status()).toBe(404);
-  expect((await request.get('/oembed-card.html')).status()).toBe(404);
+test('oembed.xml carries the same fields as oembed.json', async ({ page, request }) => {
+  const json = await (await request.get('/oembed.json')).json();
+  const response = await request.get(`/oembed.xml${QUERY}`);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toMatch(/^text\/xml/);
+
+  const xml = await response.text();
+  const fields = await page.evaluate((source) => {
+    const doc = new DOMParser().parseFromString(source, 'text/xml');
+    if (doc.querySelector('parsererror')) return null;
+    const root = doc.documentElement;
+    return { root: root.nodeName, values: Object.fromEntries([...root.children].map((el) => [el.nodeName, el.textContent])) };
+  }, xml);
+
+  expect(fields?.root).toBe('oembed');
+  expect(fields?.values).toEqual(Object.fromEntries(Object.entries(json).map(([key, value]) => [key, String(value)])));
 });
 
-test('oembed.json 404s for a url outside this site', async ({ request }) => {
-  const response = await request.get('/oembed.json?url=https%3A%2F%2Fexample.com%2F&format=json');
-  expect(response.status()).toBe(404);
-});
-
-test('oembed.json only supports the json format', async ({ request }) => {
-  const response = await request.get('/oembed.json?format=xml');
-  expect(response.status()).toBe(501);
-});
-
-test('oembed.json names its provider and can be read cross-origin', async ({ request }) => {
-  const response = await request.get(`/oembed.json?url=${encodeURIComponent(SITE_ROOT)}&format=json`);
-  expect(response.headers()['access-control-allow-origin']).toBe('*');
-  expect(response.headers()['cache-control']).toBe('public, max-age=86400');
-  expect(await response.json()).toMatchObject({ provider_name: AUTHOR_NAME, provider_url: SITE_URL, cache_age: 86400 });
+test('the card has no page of its own', async ({ request }) => {
+  for (const path of ['/oembed-card.html/', '/oembed-card.html', '/oembed-card-fragment/']) {
+    expect((await request.get(path)).status(), path).toBe(404);
+  }
 });
