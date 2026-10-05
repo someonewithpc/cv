@@ -100,6 +100,8 @@ function enhanceCard(card: HTMLElement, selection: Selection) {
   if (icons instanceof HTMLButtonElement) icons.disabled = false;
   if (icons?.classList.contains('styles')) icons.addEventListener('keydown', (event) => {
     if (event.target !== icons || (event.key !== 'Enter' && event.key !== ' ')) return;
+    // A focused scroll button or marker reports the list as the target, but the list is not :focus.
+    if (!icons.matches(':focus')) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
     event.preventDefault();
     pick(variantById(card.dataset.variant));
