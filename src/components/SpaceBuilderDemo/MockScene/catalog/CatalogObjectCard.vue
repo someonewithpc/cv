@@ -191,6 +191,9 @@ function onPictureClick(event: MouseEvent) {
  */
 function onPictureKey(event: KeyboardEvent) {
   if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+  // The carousel's scroll buttons and markers report the list as the key's target, but the
+  // list itself is not :focus then, and their own Enter only scrolls.
+  if (!(event.currentTarget as HTMLElement).matches(':focus')) return;
   if (event.key === 'Enter' && props.active) {
     event.preventDefault();
     emit('confirm', props.item, visible.value, true);
