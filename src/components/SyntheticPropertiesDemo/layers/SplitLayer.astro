@@ -506,13 +506,18 @@ input {
   transition: color 0.15s ease;
 }
 
-/* Pointing at a chip lights the pieces it fanned out into. */
-.synthetic-tool[data-dim-hover='0'] .piece[data-dim='0'],
-.synthetic-tool[data-dim-hover='1'] .piece[data-dim='1'],
-.synthetic-tool[data-dim-hover='2'] .piece[data-dim='2'],
-.synthetic-tool[data-dim-hover='3'] .piece[data-dim='3'] {
-  color: var(--accent-text);
-  font-weight: 600;
+/* Pointing at a chip, or focusing it, lights the pieces it fanned out into: --lit is 1 on
+   the pieces whose --i matches the chip's --dim-hover and 0 on the rest, for any count. */
+.synthetic-tool[data-dim-hover] .piece[data-dim] {
+  --lit: calc(1 - min(1, max(var(--i) - var(--dim-hover), var(--dim-hover) - var(--i))));
+
+  color: color-mix(in oklab, var(--accent-text) calc(var(--lit) * 100%), currentColor);
+  font-weight: calc(400 + 200 * var(--lit));
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .query-field input {

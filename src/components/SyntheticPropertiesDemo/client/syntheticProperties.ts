@@ -59,15 +59,23 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 function renderChips(tool: Tool) {
   const dimensions = splitSizes(tool.size.value);
+  // The walkthrough settling under a focused chip redraws the row; focus and the Tab stop
+  // stay on the same place in it.
+  const old = [...tool.chips.children] as HTMLElement[];
+  const focused = old.findIndex((chip) => chip === document.activeElement);
+  const stop = Math.min(Math.max(0, old.findIndex((chip) => chip.tabIndex === 0)), dimensions.length - 1);
   tool.chips.replaceChildren(
     ...dimensions.map((dimension, index) => {
       const chip = el(tool, 'li', 'chip', dimension.raw);
       if (dimension.cm === null) chip.classList.add('invalid');
       chip.dataset.dim = String(index);
       chip.style.setProperty('--i', String(index));
+      // One Tab stop for the row of chips; the arrow keys walk it.
+      chip.tabIndex = index === stop ? 0 : -1;
       return chip;
     }),
   );
+  if (focused >= 0) (tool.chips.children[stop] as HTMLElement | undefined)?.focus({ preventScroll: true });
 }
 
 function renderRow(tool: Tool, property: SyntheticProperty, row: number, unit?: string) {
@@ -382,12 +390,47 @@ export function initSyntheticProperties(host: HTMLElement, root: HTMLElement) {
     note.classList.add('nudge');
   });
 
-  // Pointing at a chip lights the pieces it became, row by row.
+  // Pointing at a chip, or focusing it, lights the pieces it became, row by row. The pointer
+  // leaving hands the light back to the focused chip, if there is one.
+  const light = (chip: HTMLElement | null | undefined) => {
+    if (chip?.dataset.dim) {
+      root.dataset.dimHover = chip.dataset.dim;
+      root.style.setProperty('--dim-hover', chip.dataset.dim);
+    } else {
+      delete root.dataset.dimHover;
+      root.style.removeProperty('--dim-hover');
+    }
+  };
+  const focusedChip = () => tool.chips.querySelector<HTMLElement>('.chip:focus');
   tool.chips.addEventListener('pointerover', (event) => {
-    const chip = (event.target as Element).closest<HTMLElement>('.chip');
-    if (chip?.dataset.dim) root.dataset.dimHover = chip.dataset.dim;
+    light((event.target as Element).closest<HTMLElement>('.chip'));
   });
-  tool.chips.addEventListener('pointerleave', () => delete root.dataset.dimHover);
+  tool.chips.addEventListener('pointerleave', () => light(focusedChip()));
+  tool.chips.addEventListener('focusin', (event) => {
+    const chip = event.target as HTMLElement;
+    tool.chips.querySelectorAll<HTMLElement>('.chip').forEach((other) => (other.tabIndex = other === chip ? 0 : -1));
+    light(chip);
+  });
+  tool.chips.addEventListener('focusout', (event) => {
+    if (!tool.chips.contains(event.relatedTarget as Node | null)) light(null);
+  });
+  tool.chips.addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const chips = [...tool.chips.querySelectorAll<HTMLElement>('.chip')];
+    const at = chips.indexOf(event.target as HTMLElement);
+    if (at < 0) return;
+    const next = {
+      ArrowLeft: chips[at - 1],
+      ArrowUp: chips[at - 1],
+      ArrowRight: chips[at + 1],
+      ArrowDown: chips[at + 1],
+      Home: chips[0],
+      End: chips[chips.length - 1],
+    }[event.key];
+    if (!next) return;
+    event.preventDefault();
+    next.focus();
+  });
 
   runPipeline(tool, false);
 
