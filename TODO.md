@@ -276,3 +276,4 @@
 - [x] Reasons that lived only in `title` reach keyboard, touch and screen reader users, and a contribution row shows it opens (A21) (#272)
 - [x] Add an og:image so chat apps show the large link card (#326)
 - [x] Drive the front-page watchers from paper-flip, not a style observer (C1) (#334)
+- [ ] Let the keyboard reach Library Search's scrolling results at 768 px (A10)
