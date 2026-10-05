@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "ASTRO_DEV_BACKGROUND=1 astro dev",
-    "build": "astro build && node scripts/render-oembed-card.mjs",
+    "build": "astro build",
     "preview": "ASTRO_PREVIEW_BACKGROUND=1 astro preview",
     "deploy": "npm run check && npm run build && E2E_PREBUILT=1 playwright test && wrangler deploy",
     "astro": "astro",
