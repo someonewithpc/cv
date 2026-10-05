@@ -70,6 +70,12 @@ $pip: 1.125rem;
     }
   }
 
+  // The thumbnail clips anything drawn outside it, so the ring goes inside, as the carousel's.
+  button.object-icons:focus-visible {
+    outline: 2px solid $visrez-brand;
+    outline-offset: -2px;
+  }
+
   .group-object-count {
     position: absolute;
     top: 0.5rem;

@@ -80,10 +80,10 @@ const TRAIL_PARTS = [1, 2, 3, 4, 5];
         <span class="active-pip" />
       </span>
     ) : (
-      <div class="object-icons">
+      <button type="button" class="object-icons" aria-label={item.name} disabled>
         <img src={visible.thumb} alt="" width="492" height="492" loading="lazy" />
         {variants.length > 1 && <span class="group-object-count">{variants.length}</span>}
-      </div>
+      </button>
     )}
   </div>
 
