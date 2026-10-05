@@ -1,5 +1,5 @@
 // The Worker's own routes. Static files are left to the assets layer, case-sensitive.
-const SERVER_ROUTES = ['/api/font-proxy', '/oembed.json'];
+const SERVER_ROUTES = ['/api/font-proxy'];
 
 // Decoded, single slashes, lower case: the one spelling every server-side path check reads.
 export function canonicalPath(pathname: string): string {

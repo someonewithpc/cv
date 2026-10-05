@@ -165,12 +165,10 @@ test.describe('font proxy budget path', () => {
       ['/API/Font-Proxy', '/api/font-proxy'],
       ['/Api//FONT-proxy/', '/api/font-proxy/'],
       ['/api/Font%2DProxy', '/api/font-proxy'],
-      ['/OEmbed.JSON', '/oembed.json'],
     ]) {
       const request = canonicalRequest(new Request(`https://cv.test${path}?url=x`));
       expect(new URL(request.url).pathname, path).toBe(routed);
       expect(new URL(request.url).search, path).toBe('?url=x');
-      if (!routed.startsWith('/api/')) continue;
       const budgets = days({ [TODAY]: DAILY_BYTES });
       const { calls, next } = handler(10);
       expect((await withBudget(request, budgets, context(), next, NOON)).status, path).toBe(503);
