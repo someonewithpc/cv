@@ -56,7 +56,7 @@ Nu's CSS half is the old W3C CSS validator and it is years behind: it calls `anc
 parse error. All of its `CSS:` messages are ignored for that reason and stylelint checks the
 CSS instead.
 
-stylelint 17.15, from September 2026, reads properties and values through css-tree 3.2 and
+stylelint 17.16, from October 2026, reads properties and values through css-tree 3.2 and
 mdn-data 2.27 with the csstools syntax patches on top. Measured against this build it flags
 none of `anchor()`, `sign()`, `::scroll-marker`, `@container`, `@property`, `:has()`,
 `text-wrap: balance`, `light-dark()`, `@starting-style`, `overflow: clip`, relative colours,

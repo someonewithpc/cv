@@ -88,7 +88,7 @@ const NU_IGNORED: { message: RegExp; because: string }[] = [
 // something this site uses on purpose, switch the rule off here and write down why.
 // Do not change the CSS.
 //
-// stylelint 17.15 (September 2026) reads properties and values through css-tree 3.2 and
+// stylelint 17.16 (October 2026) reads properties and values through css-tree 3.2 and
 // mdn-data 2.27, patched by @csstools/css-syntax-patches-for-csstree. Measured against
 // this site's build it flags none of anchor(), sign(), ::scroll-marker, @container,
 // @property, :has(), text-wrap: balance, light-dark(), @starting-style, overflow: clip,
