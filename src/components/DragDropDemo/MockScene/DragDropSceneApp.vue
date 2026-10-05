@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue';
+import { onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
@@ -13,6 +13,14 @@ import {
   type CatalogItem,
   type CatalogVariant,
 } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
+import {
+  ghostClient,
+  ghostStart,
+  ghostStep,
+  isPlaceKey,
+  KEY_PLACE_HINT,
+  type KeyPoint,
+} from '@/components/SpaceBuilderDemo/MockScene/keyGhost';
 import {
   claimSpaceBuilderGpu,
   prepareSpaceBuilderGpu,
@@ -265,14 +273,60 @@ function selectItem(item: CatalogItem, variant: CatalogVariant = variantsOf(item
  * seating category go to Build instead (draw an area, fill it), which is the Space Builder
  * stack's walkthrough, so the Chair only says where that lives.
  */
-function confirmItem(item: CatalogItem, variant: CatalogVariant = variantsOf(item)[0]) {
+function confirmItem(item: CatalogItem, variant: CatalogVariant = variantsOf(item)[0], byKey = false) {
   selectItem(item, variant);
   if (!item.real) return;
   if (item.layoutable) {
     showToast('Chair fills an area with Build · see the Space Builder stack');
     return;
   }
-  void armItem(item, variant);
+  void armItem(item, variant).then(() => {
+    if (byKey && phase.value === 'armed' && armedItem.value?.id === item.id) startKeyGhost();
+  });
+}
+
+/** Where the keyboard holds the armed ghost, as a fraction of the canvas; null for a pointer's. */
+let keyGhost: KeyPoint | null = null;
+
+watch(phase, (next) => {
+  if (next !== 'armed') keyGhost = null;
+});
+
+function keyGhostClient() {
+  invalidateRects();
+  const rect = canvasRect();
+  return rect && keyGhost ? ghostClient(keyGhost, rect) : null;
+}
+
+/** Enter armed it: the ghost waits mid-floor for the arrow keys instead of the pointer. */
+function startKeyGhost() {
+  keyGhost = ghostStart();
+  const at = keyGhostClient();
+  if (at) sceneRef.value?.setGhostAt(at.x, at.y);
+  showToast(KEY_PLACE_HINT);
+}
+
+/** Caught on the way down, before the focused card reads Enter as another confirm. */
+function onPlaceKey(event: KeyboardEvent) {
+  if (!keyGhost || phase.value !== 'armed' || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.key === 'Escape') {
+    disarm();
+  } else if (isPlaceKey(event.key)) {
+    const at = keyGhostClient();
+    if (at && !event.repeat) {
+      disarm();
+      dropOne(at.x, at.y);
+    }
+  } else {
+    const rect = canvasRect();
+    const next = rect && ghostStep(keyGhost, event.key, rect);
+    if (!next) return;
+    keyGhost = next;
+    const at = keyGhostClient();
+    if (at) sceneRef.value?.setGhostAt(at.x, at.y);
+  }
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 /**
@@ -1090,6 +1144,7 @@ onBeforeUnmount(() => {
     :data-floor="floorExtent"
     aria-label="Drag and drop demo, autoplaying the Add tool; drag a catalog card onto the floor, or pick one, then pick where it goes"
     @keydown="onKeyDown"
+    @keydown.capture="onPlaceKey"
   >
     <div class="viewport">
       <canvas data-scene-canvas class="scene-canvas" aria-label="Ground for placing or filling with chairs" />
