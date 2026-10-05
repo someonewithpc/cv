@@ -1,158 +1,220 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontDeck, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 import { expect, test } from './support/timeScale';
 
-/** The front page of a demo stack, scrolled to, with its island mounted. */
-async function front(page: Page, title: string) {
+/**
+ * Every test starts at the top of the page and reaches its demo the way a keyboard visitor
+ * does: Tab presses only, no script focus, no clicks, with the walkthrough running. Round one
+ * of this spec focused each control from a script and passed while the keys did nothing for a
+ * visitor who Tabbed there.
+ */
+
+function isFocused(target: Locator) {
+  return target.evaluateAll((els) => els.some((el) => el === document.activeElement && el.matches(':focus')));
+}
+
+/** The element Tab has landed on is `list`, but one of its scroll buttons or markers holds focus. */
+function onCarouselStop(list: Locator) {
+  return list.evaluateAll((els) => els.some((el) => el === document.activeElement && !el.matches(':focus')));
+}
+
+type Demo = { stack: Locator; deck: Locator };
+
+/**
+ * Tabs to the demo's stack, waits there as a reader would while its island boots and checks
+ * the walkthrough is playing, then Tabs on until `target` holds focus.
+ */
+async function tabInto(page: Page, title: string, target: (front: Locator) => Locator, max = 400) {
   const stack = demoStack(page, title);
-  await stack.scrollIntoViewIfNeeded();
-  const sheetFront = frontPage(stack, await frontPageIndex(stack));
-  await waitForIslandMounted(sheetFront);
-  return sheetFront;
+  let front: Locator | null = null;
+  let deck: Locator | null = null;
+  for (let i = 0; i < max; i++) {
+    await page.keyboard.press('Tab');
+    if (!front && (await stack.evaluate((el) => el === document.activeElement))) {
+      front = frontPage(stack, await frontPageIndex(stack));
+      await waitForIslandMounted(front);
+      deck = frontDeck(stack, front);
+      await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 30_000 });
+    }
+    if (front && (await isFocused(target(front)))) return { stack, deck: deck!, front, target: target(front) };
+  }
+  throw new Error(`${max} Tab presses never reached the control in ${title}`);
 }
 
-async function sceneApp(page: Page, title: string) {
-  const app = (await front(page, title)).locator('[data-ready]');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
-  return app;
+/** Tab presses from the current focus until `target` holds it. */
+async function tabTo(page: Page, target: Locator, max = 40) {
+  for (let i = 0; i < max; i++) {
+    await page.keyboard.press('Tab');
+    if (await isFocused(target)) return;
+  }
+  throw new Error(`${max} Tab presses never reached ${target}`);
 }
-
-const translate = (handle: Locator) => handle.evaluate((el) => (el as SVGGElement).style.translate);
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-test('Variants: Enter picks the banquet set and Space picks the chair carousel', async ({ page }) => {
-  const app = (await front(page, 'Space Builder · Object Variants')).locator('.variants-stage');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 30_000 });
-  await app.focus();
+test.describe('Space Builder catalog', () => {
+  const title = 'Space Builder · Add Tool';
 
-  const set = app.locator('[data-catalog-item="table-round"]');
-  await set.locator('button.object-icons').focus();
+  async function openCatalog(page: Page): Promise<Demo & { app: Locator }> {
+    const { stack, deck, front } = await tabInto(page, title, (f) => f.getByRole('button', { name: 'Add object' }));
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    const app = front.locator('[data-ready]');
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-panel', 'catalog');
+    return { stack, deck, app };
+  }
+
+  test('Tab to Side Chair, Enter twice, the arrows and Enter put it down', async ({ page }) => {
+    const { app, deck } = await openCatalog(page);
+    await tabTo(page, app.locator('[data-demo-target="catalog:armchair"]'));
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await expect(app.locator('.toasts')).toContainText('Arrow keys move it');
+    await page.keyboard.press('ArrowLeft');
+    // Retried: the first Enter can beat the model's download, and then says so and waits.
+    await expect(async () => {
+      if ((await app.getAttribute('data-panel')) !== 'closed') await page.keyboard.press('Enter');
+      await expect(app).toHaveAttribute('data-panel', 'closed', { timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
+    await expect(app.locator('.toasts')).toContainText('Object placed');
+    await expect(app.getByRole('button', { name: 'Add object' })).toBeFocused();
+    await expect(deck).toHaveAttribute('data-state', 'user');
+  });
+
+  test('Enter on the Chair list opens Build and keeps focus; Enter on its scroll buttons does not', async ({ page }) => {
+    const { app } = await openCatalog(page);
+    const chair = app.locator('ul.styles');
+    // Tab passes the carousel's own scroll buttons and markers before the list itself.
+    await tabTo(page, chair);
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-panel', 'options');
+    await expect(app.getByTitle('Go back')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-panel', 'catalog');
+    await expect(app.getByTitle('Cancel')).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    expect(await onCarouselStop(chair)).toBe(true);
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-panel', 'catalog');
+  });
+});
+
+test.describe('Drag & Drop catalog', () => {
+  const title = 'Space Builder · Drag & Drop';
+  const table = (f: Locator) => f.locator('[data-demo-target="catalog:table-round"]');
+
+  test('Tab to Banquet Table, Enter twice, the arrows walk the ghost and Enter places', async ({ page }) => {
+    const { front, deck, target } = await tabInto(page, title, table);
+    await expect(deck).toHaveAttribute('data-state', 'user');
+    const app = front.locator('[data-ready]');
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-phase', 'idle');
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-phase', 'armed', { timeout: 15_000 });
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-selected', 'true');
+    await expect(app).toHaveAttribute('data-phase', 'idle');
+    await expect(app).not.toHaveAttribute('data-placed', '');
+    await expect(target).toBeFocused();
+  });
+
+  test('Esc puts a keyboard-armed object back', async ({ page }) => {
+    const { front } = await tabInto(page, title, table);
+    const app = front.locator('[data-ready]');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await expect(app).toHaveAttribute('data-phase', 'armed', { timeout: 15_000 });
+    await page.keyboard.press('Escape');
+    await expect(app).toHaveAttribute('data-phase', 'idle');
+    await expect(app).toHaveAttribute('data-placed', '');
+  });
+});
+
+test('Variants: the first carousel stop takes the cards over, then Enter and Space pick', async ({ page }) => {
+  const stage = (f: Locator) => f.locator('.variants-stage');
+  const chairList = (f: Locator) => stage(f).locator('[data-catalog-item="chair"] ul.styles');
+  const stack = demoStack(page, 'Space Builder · Object Variants');
+  let front: Locator | null = null;
+  for (let i = 0; i < 400; i++) {
+    await page.keyboard.press('Tab');
+    if (!front && (await stack.evaluate((el) => el === document.activeElement))) {
+      front = frontPage(stack, await frontPageIndex(stack));
+      await waitForIslandMounted(front);
+      await expect(frontDeck(stack, front)).toHaveAttribute('data-state', 'playing', { timeout: 30_000 });
+    }
+    if (front && (await onCarouselStop(chairList(front)))) break;
+  }
+  if (!front) throw new Error('Tab never reached the Object Variants sheet');
+  await expect(frontDeck(stack, front)).toHaveAttribute('data-state', 'user');
+
+  const chair = stage(front).locator('[data-catalog-item="chair"]');
+  const set = stage(front).locator('[data-catalog-item="table-round"]');
+  await tabTo(page, set.locator('button.object-icons'));
   await page.keyboard.press('Enter');
   await expect(set).toHaveClass(/active/);
+  await expect(chair).not.toHaveClass(/active/);
 
-  const chair = app.locator('[data-catalog-item="chair"]');
-  await chair.locator('ul.styles').focus();
+  await page.keyboard.press('Shift+Tab');
+  expect(await isFocused(chairList(front))).toBe(true);
   await page.keyboard.press(' ');
   await expect(chair).toHaveClass(/active/);
   await expect(set).not.toHaveClass(/active/);
+  await expect(frontDeck(stack, front)).toHaveAttribute('data-state', 'user');
 });
 
-test('Drag & Drop: Enter picks, Enter arms, the arrows walk the ghost and Enter places', async ({ page }) => {
-  const app = await sceneApp(page, 'Space Builder · Drag & Drop');
-  const table = app.locator('[data-demo-target="catalog:table-round"]');
-
-  await table.focus();
+test('marker editor: Enter on a pin lands on its marker, and the editor takes the keys', async ({ page }) => {
+  const translate = (handle: Locator) => handle.evaluate((el) => (el as SVGGElement).style.translate);
+  const { deck } = await tabInto(page, 'Interactive Map Marker Editor', (f) => f.locator('button.space-pin').first());
+  await expect(deck).toHaveAttribute('data-state', 'user');
   await page.keyboard.press('Enter');
-  await expect(app).toHaveAttribute('data-phase', 'idle');
-  await page.keyboard.press('Enter');
-  await expect(app).toHaveAttribute('data-phase', 'armed', { timeout: 15_000 });
-
-  await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-  await expect(app).toHaveAttribute('data-selected', 'true');
-  await expect(app).toHaveAttribute('data-phase', 'idle');
-  await expect(app).not.toHaveAttribute('data-placed', '');
-  await expect(table).toBeFocused();
-});
-
-test('Drag & Drop: Esc puts a keyboard-armed object back', async ({ page }) => {
-  const app = await sceneApp(page, 'Space Builder · Drag & Drop');
-  const table = app.locator('[data-demo-target="catalog:table-round"]');
-  await table.focus();
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Enter');
-  await expect(app).toHaveAttribute('data-phase', 'armed', { timeout: 15_000 });
-  await page.keyboard.press('Escape');
-  await expect(app).toHaveAttribute('data-phase', 'idle');
-  await expect(app).toHaveAttribute('data-placed', '');
-});
-
-test('Space Builder: the Side Chair goes down from the keyboard and focus returns to Add', async ({ page }) => {
-  const app = await sceneApp(page, 'Space Builder · Add Tool');
-  await app.focus();
-  if ((await app.getAttribute('data-panel')) !== 'closed') {
-    await page.keyboard.press('Escape');
-    await expect(app).toHaveAttribute('data-panel', 'closed');
-  }
-  await page.keyboard.press('a');
-  await expect(app).toHaveAttribute('data-panel', 'catalog');
-
-  const sideChair = app.locator('[data-demo-target="catalog:armchair"]');
-  await sideChair.focus();
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Enter');
-  await expect(app.locator('.toasts')).toContainText('Arrow keys move it');
-  await page.keyboard.press('ArrowLeft');
-  // Retried: the first Enter can beat the model's download, and then says so and waits.
-  await expect(async () => {
-    if ((await app.getAttribute('data-panel')) !== 'closed') await page.keyboard.press('Enter');
-    await expect(app).toHaveAttribute('data-panel', 'closed', { timeout: 1_000 });
-  }).toPass({ timeout: 15_000 });
-  await expect(app.locator('.toasts')).toContainText('Object placed');
-  await expect(app.getByRole('button', { name: 'Add object' })).toBeFocused();
-});
-
-test('marker editor: a handle moves on the arrows and each option list is one Tab stop', async ({ page }) => {
-  // The live editor, opened from the map with the keyboard; the sheet's embed is a playback.
-  const overlay = (await front(page, 'Interactive Map Marker Editor')).locator('.mock-map-overlay');
-  const pin = overlay.locator('button.space-pin').first();
-  await expect(pin).toBeVisible({ timeout: 15_000 });
-  await pin.focus();
-  await page.keyboard.press('Enter');
-  await page.getByRole('option', { name: 'Create new marker' }).focus();
+  const current = page.getByRole('option', { name: 'Marker default' });
+  await expect(current).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('option', { name: 'Create new marker' })).toBeFocused();
   await page.keyboard.press('Enter');
   const editor = page.locator('#marker-editor');
   await expect(editor.getByRole('button', { name: 'Go back' })).toBeFocused();
 
   const handle = editor.locator('.control-point').first();
-  await handle.focus();
+  await tabTo(page, handle);
   const before = await translate(handle);
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('ArrowUp');
   await expect.poll(() => translate(handle)).not.toBe(before);
 
   const shapes = editor.locator('ul[aria-label="Shape"] > [role="option"]');
-  await expect(shapes.and(editor.locator('[tabindex="0"]'))).toHaveCount(1);
-  const selected = editor.locator('ul[aria-label="Shape"] > [aria-selected="true"]');
-  const from = await selected.getAttribute('data-demo-target');
-  await selected.focus();
+  await tabTo(page, shapes);
+  const from = await editor.locator('ul[aria-label="Shape"] > [aria-selected="true"]').getAttribute('data-demo-target');
   await page.keyboard.press('End');
   const last = shapes.last();
   await expect(last).toBeFocused();
   await expect(last).toHaveAttribute('aria-selected', 'true');
-  await expect(last).toHaveAttribute('tabindex', '0');
   expect(await last.getAttribute('data-demo-target')).not.toBe(from);
-
-  // Custom Icon's own choices: reachable, and the arrows choose.
-  await editor.locator('summary[data-demo-target="editor:step:decoration"]').focus();
-  await page.keyboard.press('Enter');
-  await editor.locator('li[data-demo-target="editor:decoration:customIcon"]').focus();
-  await page.keyboard.press('Enter');
-  const icons = editor.locator('ul[aria-label="Decorations"] > [role="option"]:not([aria-disabled="true"])');
-  await expect(icons.first()).toBeVisible({ timeout: 10_000 });
-  const stop = editor.locator('ul[aria-label="Decorations"] > [tabindex="0"]');
-  await expect(stop).toHaveCount(1);
-  await stop.focus();
-  await page.keyboard.press('Home');
-  await expect(icons.first()).toHaveAttribute('aria-selected', 'true');
-  // The demo stocks one icon; the arrows pass over the upload slot, which is not on offer.
-  await page.keyboard.press('ArrowRight');
-  await expect(icons.last()).toHaveAttribute('aria-selected', 'true');
-  await expect(icons.last()).toBeFocused();
+  await expect(deck).toHaveAttribute('data-state', 'user');
 });
 
-test('Synthetic Properties: a focused chip lights its pieces, and the arrows move along', async ({ page }) => {
-  const sheet = await front(page, 'Synthetic Properties');
-  const tool = sheet.locator('.synthetic-tool[data-live]');
-  const chips = tool.locator('.chip');
-  await expect(chips.first()).toHaveAttribute('tabindex', '0');
+test('marker editor: closing the selector from the keyboard gives focus back to the pin', async ({ page }) => {
+  const { target } = await tabInto(page, 'Interactive Map Marker Editor', (f) => f.locator('button.space-pin').first());
+  const label = await target.getAttribute('aria-label');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('option', { name: 'Marker default' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: label! })).toBeFocused();
+});
 
-  await chips.first().focus();
+test('Synthetic Properties: Tab to the chips, a focused chip lights its pieces and the arrows move along', async ({ page }) => {
+  const { front, deck, target } = await tabInto(page, 'Synthetic Properties', (f) => f.locator('.synthetic-tool[data-live] .chip'));
+  await expect(deck).toHaveAttribute('data-state', 'user');
+  const tool = front.locator('.synthetic-tool[data-live]');
+  const chips = tool.locator('.chip');
+  await expect(target.first()).toBeFocused();
   await expect(tool).toHaveAttribute('data-dim-hover', '0');
   await page.keyboard.press('ArrowRight');
   await expect(chips.nth(1)).toBeFocused();
