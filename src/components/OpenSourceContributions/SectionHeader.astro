@@ -1,10 +1,11 @@
 ---
 import SectionHeader from '../SectionHeader.astro';
 
-const { statistics } = Astro.props;
+const { statistics, snapshot } = Astro.props;
 ---
 
 <SectionHeader headingId="open-source-heading" sectionId="open-source" titleJp="オープンソース" title="Open Source" sheetCode="SH-OSS">
+  <div class="stats">
   <dl>
     <div>
       <dt>
@@ -28,10 +29,21 @@ const { statistics } = Astro.props;
       <dd>{statistics.closed}</dd>
     </div>
   </dl>
+  <p class="snapshot">Checked <time datetime={snapshot}>{snapshot}</time></p>
+  </div>
 </SectionHeader>
 
 <style lang="scss">
 @use "@/scss/_page-column.scss" as column;
+
+.snapshot {
+  margin: 0.75rem 0 0;
+  font-family: monospace, system-ui;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
 
 dl {
   display: flex;

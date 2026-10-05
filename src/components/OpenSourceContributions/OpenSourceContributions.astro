@@ -5,7 +5,7 @@ import SectionHeader from './SectionHeader.astro';
 import Highlights from './Highlights.astro';
 import { TEAR_DEPTH_REM, TEAR_TILE } from './tear';
 
-const { highlights, groups } = site;
+const { highlights, groups, snapshot } = site;
 
 /* Written once on the section, so the three sheets share one copy of each image. */
 const edges = [
@@ -25,7 +25,7 @@ const statistics = {
 
 <section id="open-source" aria-labelledby="open-source-heading" style={edges} tabindex="-1">
   <div class="intro">
-    <SectionHeader statistics={statistics} />
+    <SectionHeader statistics={statistics} snapshot={snapshot} />
 
     <Highlights highlights={highlights} />
   </div>

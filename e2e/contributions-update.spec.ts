@@ -55,3 +55,9 @@ test('every row names at least one technology and draws its icon', async ({ page
     }
   }
 });
+
+test('the counts say the day the states were last checked', async ({ page }) => {
+  const stamp = page.locator('#open-source header .snapshot time');
+  await expect(stamp).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}$/);
+  await expect(stamp).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+});
