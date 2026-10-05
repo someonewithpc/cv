@@ -42,7 +42,10 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
     // Down into shadow roots: with a button in one focused, document.activeElement is its host.
     let focused = document.activeElement;
     while (focused?.shadowRoot?.activeElement) focused = focused.shadowRoot.activeElement;
-    return focused instanceof Element && inside(focused) && focused.matches(':focus-visible');
+    if (!(focused instanceof Element) || !inside(focused)) return false;
+    // A carousel's ::scroll-button or ::scroll-marker holding focus leaves its list as the
+    // active element, matching neither :focus nor :focus-visible. Tab is how one gets there.
+    return focused.matches(':focus-visible') || (!pressed && !focused.matches(':focus'));
   }
 
   function restartResumeTimer() {
