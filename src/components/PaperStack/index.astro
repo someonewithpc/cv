@@ -1,11 +1,13 @@
 ---
+import type { HTMLTag } from 'astro/types';
+
 import flipHint from './assets/flip-hint.svg?raw';
 
 import { deterministicId } from '@/server/deterministicId';
 
 export type Props = {
   /** Tag name for the stack wrapper element. */
-  as?: string;
+  as?: HTMLTag;
   class?: string;
   /** Number of pages; the default slot is called as a function once per index. */
   pageCount: number;
