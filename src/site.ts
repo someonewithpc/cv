@@ -1,4 +1,5 @@
 export const SITE_URL = 'https://hsal.es';
+export const WEB_ANALYTICS_TOKEN = '85ed7736028741f7a690dde9435f3130';
 export const SITE_TITLE = "Hugo Sales' CV";
 export const SITE_DESCRIPTION =
   'CV of Hugo Sales, software engineer with upstream contributions to React, Astro and {fmt}, and co-maintainership of GNU social v3.';

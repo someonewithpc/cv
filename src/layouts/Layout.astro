@@ -6,7 +6,7 @@ import stencilUrl from '@/assets/fonts/allerta-stencil.woff2?url';
 import poppinsUrl from '@/assets/fonts/poppins-400-latin.woff2?url';
 import specialEliteUrl from '@/assets/fonts/special-elite-latin.woff2?url';
 import printUrl from '@/scss/print.scss?url';
-import { AUTHOR_NAME, CONTACT, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/site';
+import { AUTHOR_NAME, CONTACT, SITE_DESCRIPTION, SITE_TITLE, SITE_URL, WEB_ANALYTICS_TOKEN } from '@/site';
 import { OS_THEMES, THEME_IDS, THEME_STORAGE_KEY, THEMES, type ThemeId, type ThemeSettings } from '@/themes';
 
 type Props = {
@@ -60,6 +60,23 @@ const skipScript = `(() => {
     document.documentElement.dataset.skipWhileParsing = '';
   }
 })();`;
+
+/* Cloudflare Web Analytics: cookieless, so no consent banner. It loads on the production host
+   only (previews would count as visits) and not when the browser sends Global Privacy Control
+   or Do Not Track. */
+const analyticsScript = `
+const beacon = ${JSON.stringify(JSON.stringify({ token: WEB_ANALYTICS_TOKEN }))};
+if (
+  location.hostname === ${JSON.stringify(new URL(SITE_URL).hostname)} &&
+  !navigator.globalPrivacyControl &&
+  navigator.doNotTrack !== '1'
+) {
+  const script = document.createElement('script');
+  script.defer = true;
+  script.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+  script.dataset.cfBeacon = beacon;
+  document.head.append(script);
+}`;
 ---
 
 <!doctype html>
@@ -99,6 +116,7 @@ const skipScript = `(() => {
     <link rel="stylesheet" media="print" href={printUrl} />
     <script is:inline set:html={bootScript} />
     <script is:inline set:html={skipScript} />
+    <script type="module" is:inline set:html={analyticsScript} />
   </head>
   <body>
     <nav class="skip-nav" aria-label="Keyboard shortcuts">
