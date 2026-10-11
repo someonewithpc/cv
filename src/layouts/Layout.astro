@@ -178,6 +178,10 @@ if (
       const modifier = isMac ? 'Ctrl+Alt' : isFirefox ? 'Alt+Shift' : 'Alt';
       for (const mod of document.querySelectorAll('.ak-mod')) mod.textContent = modifier;
     </script>
+    <script>
+      import { startAnalytics } from '@/client/analytics';
+      startAnalytics();
+    </script>
     <ThemePicker />
     <TransportKeyArt />
     <slot />
