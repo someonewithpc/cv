@@ -280,3 +280,4 @@
 - [x] Recheck the 2020 and 2021 rows still marked Open, and show the snapshot date (T19) (#332)
 - [x] A deploy ships the oEmbed card of its own source, not the previous build's (C63) (#331)
 - [x] Count visits with Cloudflare Web Analytics on hsal.es only, skipped under GPC or DNT (#338)
+- [ ] Record visits and interactions in Workers Analytics Engine: the /api/e route, a monthly salt object and the visitor hash, landing dark (analytics plan PR 1)
