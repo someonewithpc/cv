@@ -10,6 +10,6 @@ export const CONTACT = {
   profiles: [
     { label: 'GitHub', href: 'https://github.com/someonewithpc' },
     { label: 'Codeberg', href: 'https://codeberg.org/someonewithpc' },
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/hugo-sales-52173b158/' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/someonewithpc/' },
   ],
 } as const;
