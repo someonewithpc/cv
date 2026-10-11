@@ -36,6 +36,12 @@ still reads start to finish, and the paper stacks fall back to a row you scroll 
 
 There are four themes, and a print stylesheet for the paper version.
 
+## What the site records about visitors
+
+The site loads Cloudflare Web Analytics, which sets no cookie and stores nothing in the
+browser. The script is skipped when the browser sends Global Privacy Control or Do Not Track.
+It only runs on hsal.es, so previews and local builds are not counted.
+
 ## Running it
 
 You need Node 22. The nix flake provides it: `nix develop` opens a shell with Node and installs
