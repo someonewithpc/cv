@@ -15,6 +15,7 @@ type Layer = {
 };
 
 type Props = {
+  /** Keyed by sheet id: the layer file's name in kebab case (selector, editor, path-data). */
   layers?: Record<string, Layer>;
   subtitle?: string;
   scale?: string;
@@ -62,6 +63,7 @@ const arrow = {
       const [id, { name, size, pageStyle, tech, motion }] = Object.entries(layers)[index];
       return (
         <TechnicalDrawingPage
+          id={id}
           title={name}
           subtitle={Astro.props.subtitle}
           scale={Astro.props.scale}

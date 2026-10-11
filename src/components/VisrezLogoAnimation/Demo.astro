@@ -28,8 +28,8 @@ const layers = {
   original: { name: 'Original Logo', size: originalVisrezLogoSize, pageStyle: 'blueprint' },
   cube: { name: 'Cube :)', pageStyle: 'blueprint', motion: true },
   path: { name: 'Authored Path', pageStyle: 'blueprint', motion: true },
-  pathData: { name: 'Path Data', pageStyle: 'blueprint path-data' },
-  allTogether: { name: 'Putting it all together', motion: true },
+  'path-data': { name: 'Path Data', pageStyle: 'blueprint path-data' },
+  'all-together': { name: 'Putting it all together', motion: true },
 } as const;
 
 type Layer = keyof typeof layers;
@@ -105,8 +105,8 @@ type Layer = keyof typeof layers;
       ),
       cube: (<CubeLayer />),
       path: (<PathLayer />),
-      pathData: (<PathDataLayer />),
-      allTogether: (<AllTogetherLayer />),
+      'path-data': (<PathDataLayer />),
+      'all-together': (<AllTogetherLayer />),
     }[layer])}
   </fragment>
 
@@ -122,8 +122,8 @@ type Layer = keyof typeof layers;
       ),
       cube: (<CubeAside />),
       path: (<PathAside />),
-      pathData: null,
-      allTogether: (<AllTogetherAside />),
+      'path-data': null,
+      'all-together': (<AllTogetherAside />),
     }[layer])}
   </fragment>
 </TechnicalDrawingStack>

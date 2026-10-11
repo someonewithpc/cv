@@ -28,6 +28,11 @@ const { id, class: className, letter, title, titleJp, scale, headingId, cardSide
    #paper-stack rather than the detail letter. */
 const targetId = id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+/* The demo's name in the analytics data (src/client/analytics.ts): the anchor without the
+   -demo suffix two of them carry to stay clear of an id the demo itself uses, so marker-editor
+   and theme-picker read like space-builder. */
+const demo = targetId.replace(/-demo$/, '');
+
 const hasCard = Astro.slots.has('card');
 
 /* The slip under a narrow view reads the stack's page count to know how far the fan drops
@@ -45,6 +50,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
 
 <section
   id={targetId}
+  data-demo={demo}
   class:list={['callout', className]}
   data-card={hasCard ? (cardSide ?? 'start') : undefined}
   aria-labelledby={headingId}

@@ -9,6 +9,9 @@ import { deterministicId } from '@/server/deterministicId';
 import { transportKeyArtId, transportKeys } from './transport-keys';
 
 type Props = {
+  /** The sheet's name in the stack's data: its layer key, which stays put when sheets are
+      reordered or retitled. Rendered as data-sheet-id, which the analytics flip event reads. */
+  id: string;
   title?: string | null;
   subtitle?: string;
   scale?: string;
@@ -24,6 +27,7 @@ type Props = {
 };
 
 const {
+  id,
   title,
   subtitle,
   scale,
@@ -57,6 +61,7 @@ const sheetAnchor = `--${noteId}-sheet`;
 
 <section
   class={pageStyle}
+  data-sheet-id={id}
   data-note={hasNote ? '' : undefined}
   data-motion-deck={motion ? '' : undefined}
   style={{ 'anchor-name': sheetAnchor, '--drawing-sheet-anchor': sheetAnchor }}

@@ -32,7 +32,7 @@ const sheetSize = toKiB(clientBundle.text);
 
 const layers = {
   transform: { name: null },
-  typemap: { name: 'Type Vocabulary', pageStyle: 'blueprint' },
+  'type-map': { name: 'Type Vocabulary', pageStyle: 'blueprint' },
   plugins: { name: 'Plugin Entities', pageStyle: 'blueprint' },
   phpstan: { name: 'Static Analysis', pageStyle: 'blueprint' },
 } as const;
@@ -51,7 +51,7 @@ type Layer = keyof typeof layers;
   <fragment slot="layers">
     {(layer: Layer) => ({
       transform: <TransformLayer />,
-      typemap: <TypeMapLayer />,
+      'type-map': <TypeMapLayer />,
       plugins: <PluginsLayer />,
       phpstan: <PhpstanLayer />,
     }[layer])}
