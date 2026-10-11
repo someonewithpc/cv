@@ -9,8 +9,16 @@
     "not_found_handling": "404-page"
   },
   "durable_objects": {
-    "bindings": [{ "name": "FONT_PROXY_BUDGET", "class_name": "FontProxyBudget" }]
+    "bindings": [
+      { "name": "FONT_PROXY_BUDGET", "class_name": "FontProxyBudget" },
+      { "name": "ANALYTICS_SALT", "class_name": "AnalyticsSalt" }
+    ]
   },
   // SQLite-backed, which Durable Objects need on Workers Free.
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["FontProxyBudget"] }]
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["FontProxyBudget"] },
+    { "tag": "v2", "new_sqlite_classes": ["AnalyticsSalt"] }
+  ],
+  // Where /api/e writes its data points; read through the Analytics Engine SQL API.
+  "analytics_engine_datasets": [{ "binding": "ANALYTICS", "dataset": "cv_events" }]
 }
