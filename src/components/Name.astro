@@ -20,11 +20,12 @@ import pronunciation from '@/assets/pronunciation.mp3?url';
 
     <p class="sheet-role monospace">Full stack developer / FOSS contributor</p>
 
+    {/* data-contact names the link kind the analytics contact event reports (src/client/analytics.ts). */}
     <address class="contact monospace">
       <ul>
-        <li><Fragment set:html={mailLink(CONTACT.email)} /></li>
+        <li data-contact="email"><Fragment set:html={mailLink(CONTACT.email)} /></li>
         {CONTACT.profiles.map(({ label, href }) => (
-          <li>
+          <li data-contact={label.toLowerCase()}>
             <a href={href} rel="me noopener noreferrer" target="_blank">
               {label}<span class="sr-only">, opens in a new tab</span>
             </a>

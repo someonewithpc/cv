@@ -14,7 +14,7 @@ export const EVENTS = {
   // theme name
   theme: ['string'],
   print: [],
-  // link kind: email, fediverse, github, phone
+  // link kind: email, or a profile's label in lower case (github, codeberg, linkedin)
   contact: ['string'],
   // seconds since load
   leave: ['number'],
