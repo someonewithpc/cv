@@ -42,6 +42,19 @@ The site loads Cloudflare Web Analytics, which sets no cookie and stores nothing
 browser. The script is skipped when the browser sends Global Privacy Control or Do Not Track.
 It only runs on hsal.es, so previews and local builds are not counted.
 
+Cloudflare Web Analytics cannot see interactions, so the page also reports a few of its own to
+`/api/e`: the visit (referrer host, viewport size bucket, theme), each section reached, sheet
+flips, the first touch of a demo, theme picks, printing, contact link clicks and how long the
+visit lasted. The session id is a variable in the page and dies with the tab. The visitor id is
+a hash of the address and the browser with a random salt that a Durable Object keeps for one
+calendar month and then deletes. Returning visits count within a month, and nothing can be
+reversed after it. The method errs both ways: a phone that changes network counts twice, and an
+office behind one address counts once. Nothing is sent under Global Privacy Control or Do Not
+Track, or off hsal.es. Analytics Engine keeps rows for 90 days. No cookie or browser storage is
+used.
+
+Sheet and demo ids are stable names, not positions. Renaming a layer should keep its id.
+
 ## Running it
 
 You need Node 22. The nix flake provides it: `nix develop` opens a shell with Node and installs
