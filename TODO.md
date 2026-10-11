@@ -281,4 +281,4 @@
 - [x] A deploy ships the oEmbed card of its own source, not the previous build's (C63) (#331)
 - [x] Count visits with Cloudflare Web Analytics on hsal.es only, skipped under GPC or DNT (#338)
 - [x] Record visits and interactions in Workers Analytics Engine: the /api/e route, a monthly salt object and the visitor hash, landing dark (analytics plan PR 1) (#339)
-- [ ] Send the page's visits and interactions to /api/e: session id in memory, batched beacons, GPC and DNT opt-outs, stable sheet ids (analytics plan PR 2)
+- [x] Send the page's visits and interactions to /api/e: session id in memory, batched beacons, GPC and DNT opt-outs, stable sheet ids (analytics plan PR 2) (#340)
