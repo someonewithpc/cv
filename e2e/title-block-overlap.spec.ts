@@ -24,7 +24,8 @@ async function settle(page: Page, selector: string) {
   return stack;
 }
 
-test('the space builder app shows nothing under the title block', async ({ page }) => {
+test('the space builder app shows nothing under the title block', async ({ page, browserName }) => {
+  test.skip(browserName === 'firefox', 'headless Firefox has no WebGL, so the app shows its boot error over the controls');
   await page.setViewportSize(VIEWPORT);
   await page.goto('/');
 

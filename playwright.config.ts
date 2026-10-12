@@ -1,4 +1,8 @@
 import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 
 import { defineConfig, devices } from '@playwright/test';
 
@@ -41,6 +45,39 @@ function systemFirefox(): string | undefined {
 }
 const FIREFOX = systemFirefox();
 const FIREFOX_SPECS = /\/e2e\/firefox-noscript-[^/]*\.spec\.ts$/;
+
+// Playwright's own Firefox build speaks Juggler, so javaScriptEnabled, emulateMedia, locators and
+// screenshots all work there, unlike the system Firefox above. `npx playwright install firefox`
+// puts it in the browsers path. On NixOS that download does not run, but nixpkgs'
+// playwright-driver.browsers does, so a build of the revision this Playwright expects is looked
+// for in the store too. Without either the project is left out.
+function playwrightFirefox(): string | undefined {
+  const core = dirname(createRequire(import.meta.url).resolve('playwright-core/package.json'));
+  const { browsers } = JSON.parse(readFileSync(join(core, 'browsers.json'), 'utf8')) as { browsers: { name: string; revision: string }[] };
+  const revision = browsers.find((browser) => browser.name === 'firefox')?.revision;
+  const binary = (root: string) => join(root, `firefox-${revision}`, 'firefox', 'firefox');
+  const own = process.env.PLAYWRIGHT_BROWSERS_PATH ?? join(homedir(), '.cache', 'ms-playwright');
+  if (existsSync(binary(own))) return binary(own);
+  if (!existsSync('/nix/store')) return undefined;
+  return readdirSync('/nix/store')
+    .filter((name) => name.endsWith('-playwright-browsers'))
+    .map((name) => binary(join('/nix/store', name)))
+    .find((path) => existsSync(path));
+}
+const PLAYWRIGHT_FIREFOX = playwrightFirefox();
+// The no-script and layout specs worth a second engine. FF1's chain line is checked here; FF3
+// and FF4 stay in firefox-noscript above. Tests that need the DevTools protocol or WebGL skip
+// themselves in Firefox, and the ones it fails today are marked fixme there.
+const PLAYWRIGHT_FIREFOX_SPECS = [
+  'noscript-handling.spec.ts',
+  'noscript-dedupe.spec.ts',
+  'callout-frame-dashes.spec.ts',
+  'content-width.spec.ts',
+  'sheet-contain.spec.ts',
+  'title-block-overlap.spec.ts',
+  'title-block-overflow.spec.ts',
+  'section-breakpoints.spec.ts',
+];
 
 export default defineConfig<PaceOptions>({
   testDir: './e2e',
@@ -105,6 +142,18 @@ export default defineConfig<PaceOptions>({
               launchOptions: { executablePath: FIREFOX, firefoxUserPrefs: { 'javascript.enabled': false } },
               screenshot: 'off' as const,
               trace: 'off' as const,
+            },
+          },
+        ]
+      : []),
+    ...(PLAYWRIGHT_FIREFOX
+      ? [
+          {
+            name: 'firefox',
+            testMatch: PLAYWRIGHT_FIREFOX_SPECS,
+            use: {
+              ...devices['Desktop Firefox'],
+              launchOptions: { executablePath: PLAYWRIGHT_FIREFOX },
             },
           },
         ]
