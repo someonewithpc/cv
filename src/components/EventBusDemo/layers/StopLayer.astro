@@ -55,6 +55,7 @@ const results = [
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-band' as *;
 @use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
@@ -102,7 +103,7 @@ code {
     color: var(--ink-muted);
     text-wrap: pretty;
 
-    @container technical-drawing-width (max-width: 56em) {
+    @include sheet-band(narrow) {
       display: none;
     }
   }
@@ -133,7 +134,7 @@ code {
 
   /* A narrow sheet has the height for the three cases but not for what each one means;
      the bus above already shows stop doing it. */
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     dt {
       flex-direction: column;
       margin: 0;

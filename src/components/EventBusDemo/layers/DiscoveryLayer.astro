@@ -99,6 +99,7 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-band' as *;
 @use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
@@ -336,7 +337,7 @@ code {
 
 /* A sheet between phone and desk widths is landscape and short: the listeners alone, with
    the block's own row under them. */
-@container technical-drawing-width (40em < width <= 56em) {
+@include sheet-band(mid) {
   .point span,
   .footnote,
   .row:not(.listener) {
@@ -346,7 +347,7 @@ code {
 
 /* Narrower still but not yet portrait, the window band where the stack's max-height clamps
    its 3/5 aspect: a squat sheet with the block in its corner, so only the listener rows. */
-@container technical-drawing-width (max-width: 40em) {
+@include sheet-band(portrait) {
   @container technical-drawing (orientation: landscape) {
     .point span,
     .scan,
@@ -358,7 +359,7 @@ code {
 }
 
 /* A narrow sheet: each method over its entry, the arrow turned to point down. */
-@container technical-drawing-width (max-width: 40em) {
+@include sheet-band(portrait) {
   .mapping {
     grid-template-columns: minmax(0, 1fr);
   }
