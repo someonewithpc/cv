@@ -70,8 +70,9 @@ export class Run {
     if (this.cancelled) throw new Cancelled();
   }
 
-  // In short steps, re-reading what is under the cursor between them: the page changes under
-  // a still cursor too, as when the drawn list closes
+  // In short steps, re-reading what is under the cursor between them while it rests on
+  // something that answers to hover: the page changes under a still cursor too, as when the
+  // drawn list closes. Anywhere else the one read at the end finds the same element
   async wait(ms: number) {
     let left = ms;
     for (;;) {
@@ -79,7 +80,7 @@ export class Run {
       await wait(step);
       left -= step;
       this.check();
-      this.controller.refresh();
+      if (left <= 0 || this.controller.tracking()) this.controller.refresh();
       if (left <= 0) return;
     }
   }
@@ -111,13 +112,20 @@ export class Run {
       ms = ARRIVAL_MS;
       ease = easeInOutQuad;
     }
+    // A glide that starts on something that answers to hover reads what is under the cursor
+    // on every frame, so rows light as it sweeps and a held control drops its halo the moment
+    // it leaves. Any other glide reads it only where it stops: passing over anything else
+    // changes nothing on the sheet
+    const follow = this.controller.tracking();
     const start = performance.now();
     for (;;) {
       await nextFrame();
       this.check();
       const t = Math.min((performance.now() - start) / ms, 1);
       const eased = ease(t);
-      this.cursor({ x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased });
+      const at = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
+      if (follow || t >= 1) this.cursor(at);
+      else this.controller.move(at);
       if (t >= 1) return;
     }
   }
@@ -297,6 +305,17 @@ export class Playthrough {
     this.at = { x: state.x, y: state.y };
     this.cursor(state);
     this.refresh();
+  }
+
+  /** Draw the cursor somewhere without reading what is under it */
+  move(at: { x: number; y: number }) {
+    this.at = at;
+    this.cursor({ ...at, clicking: false, dragging: false });
+  }
+
+  /** Whether the cursor rests on something that answers to its hover */
+  tracking() {
+    return this.over?.closest('[data-tracks-hover]') != null;
   }
 
   refresh() {

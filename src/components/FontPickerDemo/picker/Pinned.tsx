@@ -55,6 +55,8 @@ export function Pinned(
     <div
       ref={hostRef}
       className={cx('pinned', { 'is-interacting': interacting })}
+      // The halo drops the moment the pointer leaves, so the drawn cursor has to see it leave
+      data-tracks-hover={interacting ? '' : undefined}
       style={pin ? { height: pin.height } : undefined}
       onPointerEnter={grab}
       onPointerLeave={release}
