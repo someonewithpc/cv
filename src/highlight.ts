@@ -141,7 +141,7 @@ export const highlightBlock = (code: string, lang: CodeLang, { lineComment = '',
   const tokens = highlighter.codeToTokensBase(bare, { lang, theme });
   const rendered = lang === 'xml' || lang === 'html' ? renderMarkup(tokens) : tokens.map((line) => renderLine(line));
   const body = rendered.map((line, index) => `<span class="line">${line}${span(notes[index], notes[index] ? 'comment' : undefined)}</span>`);
-  return `<pre class="${classes(className)}" data-lang="${lang}"><code>${body.join('\n')}</code></pre>`;
+  return `<pre class="${classes(className)}" data-lang="${lang}" tabindex="0"><code>${body.join('\n')}</code></pre>`;
 };
 
 /**
