@@ -72,7 +72,9 @@ strips types before it runs a spec, so a type error there never fails `npm run t
 `npm run test:e2e` builds the site, serves it with `astro preview` on port 4310 and runs the
 Playwright suite against it. If a preview is already on that port it reuses it and skips the
 build. The suite drives the Chrome installed on your machine, and Firefox for the no-script
-specs when it is on PATH.
+specs when it is on PATH. It also runs the no-script and layout specs in Playwright's own Firefox
+build when it finds one: `npx playwright install firefox` puts it there, and on NixOS the config
+picks up a `playwright-driver.browsers` build of the right revision from the store.
 
 ## Audits
 
