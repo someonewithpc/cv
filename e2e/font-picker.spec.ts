@@ -182,7 +182,7 @@ test('held controls page: the drawn cursor rides each slider it drags', async ({
   while (Date.now() < deadline && (closest.plain > 16 || closest.held > 16)) {
     const sample = await page.evaluate(() => {
       const drawn = document.querySelector('.font-picker-cursor');
-      if (!drawn || !drawn.className.includes('--dragging')) return null;
+      if (!drawn?.hasAttribute('data-dragging')) return null;
       const c = drawn.getBoundingClientRect();
       return [...document.querySelectorAll<HTMLInputElement>('[data-demo-target^="size-"]')]
         .filter((el) => Number(el.value) > 1)

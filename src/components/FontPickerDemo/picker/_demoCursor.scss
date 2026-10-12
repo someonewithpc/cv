@@ -1,28 +1,18 @@
+@use '@/scss/demo-cursor' as cursor;
 @use '@/scss/demo-toast' as toast;
 
 // The drawn pointer and the notices both walkthroughs put on a sheet
 // The auto-play's drawn pointer, absolute on the sheet so it rides along with it
 .font-picker-cursor {
-  position: absolute;
+  // The playthrough eases every glide itself, frame by frame, so translate takes no transition
+  @include cursor.driven($glide: 0s, $drag-transition: null);
   z-index: 1100;
-  translate: -12% -8%;
   pointer-events: none;
   filter: drop-shadow(0 2px 2px color-mix(in oklab, #000 28%, transparent));
-  transition:
-    opacity 0.32s ease,
-    scale 0.12s ease;
   opacity: 1;
 
   &--fading {
     opacity: 0;
-  }
-
-  &--clicking {
-    scale: 0.86;
-  }
-
-  &--dragging {
-    scale: 0.9;
   }
 
   svg {
