@@ -183,6 +183,7 @@ function DemoPickerList(
     <ul
       className={cx('font-picker-demo-picker', { 'is-upward': !downward })}
       aria-hidden="true"
+      data-tracks-hover=""
       style={{
         left: rect.left - sheet.left,
         width: rect.width,
