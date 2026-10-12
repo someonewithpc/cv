@@ -73,8 +73,6 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
   function onPointer(event: PointerEvent) {
     if (!event.isTrusted || !options.listening()) return;
     if (inDeckGrace(event)) return;
-    const target = event.target;
-    if (!(target instanceof Node) || !host.contains(target)) return;
     if (event.pointerType !== 'touch') {
       takeOver();
       return;
@@ -108,8 +106,8 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
   host.addEventListener('pointerdown', onPress, true);
   host.addEventListener('keydown', onKey, true);
   if (options.pointer !== false) {
-    window.addEventListener('pointerdown', onPointer);
-    window.addEventListener('pointermove', onPointer);
+    host.addEventListener('pointerdown', onPointer);
+    host.addEventListener('pointermove', onPointer);
   }
 
   return {
@@ -129,8 +127,8 @@ export function watchHandover(host: HTMLElement, options: HandoverOptions) {
       host.removeEventListener('focusin', onFocusIn);
       host.removeEventListener('pointerdown', onPress, true);
       host.removeEventListener('keydown', onKey, true);
-      window.removeEventListener('pointerdown', onPointer);
-      window.removeEventListener('pointermove', onPointer);
+      host.removeEventListener('pointerdown', onPointer);
+      host.removeEventListener('pointermove', onPointer);
     },
   };
 }
