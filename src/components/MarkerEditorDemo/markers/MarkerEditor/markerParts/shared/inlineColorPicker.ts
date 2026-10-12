@@ -69,7 +69,7 @@ function element<K extends keyof HTMLElementTagNameMap>(
  * cost this whole path exists to avoid.
  *
  * A real pointer is tracked through pointer events with capture. The walkthrough presses
- * with mouse events only (see TechnicalDrawing/demo-cursor-press.ts), so its untrusted
+ * with mouse events only (see TechnicalDrawing/demoCursorPress.ts), so its untrusted
  * mousedown, moves and mouseup drive the same tracking; a real pointer's own mouse events
  * are trusted and skipped, having been handled once already.
  */

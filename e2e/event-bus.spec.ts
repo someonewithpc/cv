@@ -45,7 +45,7 @@ test('event bus: forward swipes visit every page in order, then wrap', async ({ 
   await page.goto('/');
   const stack = eventBusStack(page);
   await stack.scrollIntoViewIfNeeded();
-  // fold-drag.ts sets the role description as it wires the stack, wheel listener included.
+  // foldDrag.ts sets the role description as it wires the stack, wheel listener included.
   await expect(stack).toHaveAttribute('aria-roledescription', 'paper stack');
 
   await expect(stack.locator(':scope > div')).toHaveCount(PAGES.length);

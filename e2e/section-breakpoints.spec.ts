@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 // The Career and Open Source rules were container queries on their sections. They are now
-// media queries at the window widths src/scss/_page-column.scss derives from Layout.astro's
+// media queries at the window widths src/scss/_pageColumn.scss derives from Layout.astro's
 // page column. This spec checks that derivation against the browser: it measures each
 // section's content box as the window grows, and at every width where a rule's old
 // container condition turns over, the rule has to turn over too, at the same pixel. A change

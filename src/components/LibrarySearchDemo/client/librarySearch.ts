@@ -2,7 +2,7 @@ import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 import { watchHandover } from '@/client/walkthroughHandover';
-import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
+import { demoPress } from '@/components/TechnicalDrawing/demoCursorPress';
 
 import { libraryObjects } from '../objects';
 import { formatScore, serialise, type Filters, type SearchResult, type SearchState } from '../search';

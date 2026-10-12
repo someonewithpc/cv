@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 
 /**
  * What the stack says about the pages already turned, and what it actually draws for them:
- * `turned` is the count fold-drag.ts keeps on the stack, `standing` the pages held above the
+ * `turned` is the count foldDrag.ts keeps on the stack, `standing` the pages held above the
  * front one, and `showing` the sheet backs painted in the pile (see PaperStack/index.astro).
  * All three should agree with the number of turns.
  */
@@ -222,7 +222,7 @@ async function strip(stack: Locator) {
       shading: back.backgroundImage,
       // The two papers the strip could be painted in: the front page's, which is the flap's,
       // and the furthest pile page's, which is the strip's own, each read off the page's face.
-      // fold-drag.ts names the pile's paper on the stack as --pile-paper.
+      // foldDrag.ts names the pile's paper on the stack as --pile-paper.
       frontPaper: face(front),
       pilePaper: face(furthest),
       stackPaper: el.style.getPropertyValue('--pile-paper').trim(),

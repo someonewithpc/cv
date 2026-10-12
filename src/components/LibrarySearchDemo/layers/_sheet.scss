@@ -1,6 +1,6 @@
 @use "@/scss/sheet" as shared;
 @forward "@/scss/sheet" show sheet-content;
-@use '@/scss/sheet-orientation' as *;
+@use '@/scss/sheetOrientation' as *;
 // What the library search's four sheets share: the margin every layer keeps around its
 // content, and the panel the blueprint sheets draw their diagrams on.
 

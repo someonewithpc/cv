@@ -19,7 +19,7 @@ function toKiB(text: string) {
 // sheets, minified the way the site ships it.
 const srcRoot = path.join(process.cwd(), 'src');
 const { outputFiles: [bundle] } = await esbuild.build({
-  entryPoints: [path.join(srcRoot, 'components/PaperStack/fold-drag.ts')],
+  entryPoints: [path.join(srcRoot, 'components/PaperStack/foldDrag.ts')],
   bundle: true,
   minify: true,
   write: false,

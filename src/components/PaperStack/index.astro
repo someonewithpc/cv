@@ -1,7 +1,7 @@
 ---
 import type { HTMLTag } from 'astro/types';
 
-import flipHint from './assets/flip-hint.svg?raw';
+import flipHint from './assets/flipHint.svg?raw';
 
 import { deterministicId } from '@/server/deterministicId';
 
@@ -81,7 +81,7 @@ const pages = await Promise.all(
 ---
 
 <!-- The status beside the stack is what a screen reader hears once a turn has settled
-     (announceFront in fold-drag.ts). It is a sibling, not a child: every child of the stack is a
+     (announceFront in foldDrag.ts). It is a sibling, not a child: every child of the stack is a
      page. -->
 <Tag
   data-paper-stack-root
@@ -100,7 +100,7 @@ const pages = await Promise.all(
 
 <style lang="scss" is:global>
 @use 'sass:math';
-@use '@/scss/technical-drawing' as drawing;
+@use '@/scss/technicalDrawing' as drawing;
 @use '@/scss/colors' as colors;
 
 // The stack's custom properties, typed so they transition and animate. At the top level of the
@@ -189,13 +189,13 @@ const pages = await Promise.all(
 // clip's shadow two, through the clip): not inherited, so setting it restyles those and not the
 // page's content.
 // The sheet takes it from the stack otherwise, where it keeps the pulse off until the reveal
-// has run (releasePulse in fold-drag.ts).
+// has run (releasePulse in foldDrag.ts).
 @property --fold-pulse {
   syntax: '*';
   inherits: false;
 }
 
-// The reveal's go-ahead (see watchStackReveal in fold-drag.ts), set once on the stack and read by
+// The reveal's go-ahead (see watchStackReveal in foldDrag.ts), set once on the stack and read by
 // its pages alone.
 @property --fold-reveal {
   syntax: '*';
@@ -233,7 +233,7 @@ $fold-pulse-y: 2cm;
   @return 3 * (1 - $t) * $t * $t + $t * $t * $t;
 }
 
-// A sideways trackpad swipe over a stack turns its pages, and fold-drag.ts listens to the wheel
+// A sideways trackpad swipe over a stack turns its pages, and foldDrag.ts listens to the wheel
 // passively, so it cannot cancel the scroll a swipe starts with. Without this that scroll would also
 // take the browser back a page.
 html:has([data-paper-stack-root]:hover) {
@@ -245,7 +245,7 @@ html:has([data-paper-stack-root]:hover) {
   anchor-scope: --technical-drawing-stack;
 
   &[data-paper-stack] {
-    // No dog-ear pulse until the reveal has run: fold-drag.ts clears this when it ends
+    // No dog-ear pulse until the reveal has run: foldDrag.ts clears this when it ends
     // (watchStackReveal), and the front page's pulse layers come into being then (see
     // initial-fold-reveal below).
     --fold-pulse: none;
@@ -253,7 +253,7 @@ html:has([data-paper-stack-root]:hover) {
     // The stack's own box is an upright rectangle around the whole fan, including the
     // margin reserved for the splay, so a ring on it misses the sheet the reader is
     // looking at. Put it on the front sheet instead: it turns with the splay, and
-    // fold-drag.ts hands the paper-front class to the next page on a committed flip,
+    // foldDrag.ts hands the paper-front class to the next page on a committed flip,
     // so the ring follows the paper.
     //
     // The sheet rather than its wrapper, and inside its edge rather than outside it,
@@ -278,12 +278,12 @@ html:has([data-paper-stack-root]:hover) {
     display: grid;
     grid-template-areas: "content";
 
-    // A sideways swipe over the stack turns its pages (fold-drag.ts), so the browser mustn't
+    // A sideways swipe over the stack turns its pages (foldDrag.ts), so the browser mustn't
     // spend it panning. Vertical is left to the browser: the page still scrolls under a finger
     // that means to scroll, and it takes the gesture back the moment it decides that's what is
     // happening. A finger that sets off sideways gets no scroll at all, and the flap and the grab
     // are touch-action: none, so a finger working the paper holds the page still without a
-    // touchmove listener on the whole stack (fold-drag.ts, holdTouch).
+    // touchmove listener on the whole stack (foldDrag.ts, holdTouch).
     touch-action: pan-y;
 
     $per-page-splay: 1.5deg;
@@ -311,7 +311,7 @@ html:has([data-paper-stack-root]:hover) {
     // brightens and its cast shadow deepens with it, in place of the brightness and
     // drop-shadow filters this used to run through, which re-filtered a page-sized layer on
     // every frame of a drag. Declared and eased on the two elements that read it, keyed on
-    // the paper-in-hand and paper-will-commit classes fold-drag.ts puts on the sheet: a
+    // the paper-in-hand and paper-will-commit classes foldDrag.ts puts on the sheet: a
     // :has() on the flap's state would restyle the whole document at every hover and grab.
     @mixin fold-lift {
       --fold-lift: 0;
@@ -326,7 +326,7 @@ html:has([data-paper-stack-root]:hover) {
     // where the pulse starts and returns (see the keyframes below). Published as custom
     // properties because the crease it draws — from (100% - x, 100%) to (100%, 100% - y) on the
     // front page — is what anything pointing at the fold from outside the stack has to aim at.
-    // The size itself lives in scss/_technical-drawing.scss, shared with the frame's own
+    // The size itself lives in scss/_technicalDrawing.scss, shared with the frame's own
     // declaration in TechnicalDrawing/Stack.astro so the two cannot drift apart.
     --fold-rest-x: #{drawing.$fold-rest-x};
     --fold-rest-y: #{drawing.$fold-rest-y};
@@ -335,11 +335,11 @@ html:has([data-paper-stack-root]:hover) {
     // edge: intercepts (2.25em, 4.5em) by default, a 1-in-2 lean. The pin — where the wire's
     // edge bottoms out on that crease, halfway along — is where the paper is held: the splay
     // pivots around it, and the fold's crease can approach it but never cross it (see
-    // fold-drag.ts).
+    // foldDrag.ts).
     //
     // The lean is the one knob here, and everything downstream is derived from it rather than
     // written out again: the pin below, the wire's own angle and which edge it slides on (see
-    // the svg rule), the corner cut every page wears, and — in fold-drag.ts, which reads these
+    // the svg rule), the corner cut every page wears, and — in foldDrag.ts, which reads these
     // back — the fully-folded seed a flip lands on and the direction a back-drag pulls. A stack
     // whose pages are tall can lay the clip flatter by swapping the two, which transposes the
     // whole arrangement; the default suits a page wider than it is tall.
@@ -355,7 +355,7 @@ html:has([data-paper-stack-root]:hover) {
     // the paper clip at the viewport's top-left corner while the page loads.
     --flip-progress: 0;
 
-    // How many pages have been turned, counted onto the stack by fold-drag.ts. Same reason for
+    // How many pages have been turned, counted onto the stack by foldDrag.ts. Same reason for
     // the fallback as above: every page's rotate reads it.
     --pages-turned: 0;
 
@@ -408,12 +408,12 @@ html:has([data-paper-stack-root]:hover) {
     // page's crease (see .paper-front::before), so while a page is on its way there the strip
     // has to follow the page, not the number: a page turned forward climbs from the front crease
     // to its place at the top of the pile, and until it has passed the page turned before it
-    // the strip ends on that one's crease. --turn-ease runs 0 to 1 over the turn (fold-drag.ts
+    // the strip ends on that one's crease. --turn-ease runs 0 to 1 over the turn (foldDrag.ts
     // resets it at each restack; the page's own --turned-rise eases on the same clock), so the
     // furthest crease is the higher of the two. Easing these three between the two resting
     // positions instead left the strip's tip standing up to 3px proud of the pile at the top of
     // the crease, with page background beside it, for most of the turn. A page coming back the
-    // other way takes the front in one step (fold-drag.ts cancels its transitions as it
+    // other way takes the front in one step (foldDrag.ts cancels its transitions as it
     // promotes it), so the pile's furthest crease is the resting one from that moment.
     --pile-arc: calc(log(1 + var(--pages-turned)) / log(2));
     --pile-arc-under: calc(log(max(var(--pages-turned), 1)) / log(2));
@@ -432,7 +432,7 @@ html:has([data-paper-stack-root]:hover) {
 
     // The papers a page can be printed on, the same values TechnicalDrawing/Page.astro paints
     // the sheet's face with. Named here on the stack so that each page below can pick its own
-    // as --paper-surface, and fold-drag.ts can hand the pile's page on as --pile-paper by name.
+    // as --paper-surface, and foldDrag.ts can hand the pile's page on as --pile-paper by name.
     --paper-plain: #{colors.$sheet-paper};
     --paper-blueprint: var(--blueprint);
 
@@ -480,7 +480,7 @@ html:has([data-paper-stack-root]:hover) {
       // inside the stack: the stack's size containment makes it a stacking context of its own.
       order: calc(-1 * var(--page-index));
       z-index: calc(var(--page-count) + 1 - var(--page-index));
-      // --flip-progress (set to 1 by fold-drag.ts for the length of a drag) closes the fan by
+      // --flip-progress (set to 1 by foldDrag.ts for the length of a drag) closes the fan by
       // one page: the front page and the one behind it square up — so their folded-back corners
       // stay flush instead of fanning a gap open at the top-left — and by the time a committed
       // flip renumbers the stack there's no rotation left to pop. --paper-peek
@@ -532,7 +532,7 @@ html:has([data-paper-stack-root]:hover) {
         transition-duration: 0s;
       }
 
-      // The front page. A class rather than :first-child: fold-drag.ts hands it to the next
+      // The front page. A class rather than :first-child: foldDrag.ts hands it to the next
       // page when a completed drag flips this one onto the back of the stack, without touching
       // DOM order — so the rotate transition above can animate every page's re-splay.
       &.paper-front {
@@ -644,7 +644,7 @@ html:has([data-paper-stack-root]:hover) {
           --bend-crease: calc((1em - 1px) * var(--bend-sin) + (var(--fold-back-y) + 1px) * var(--bend-cos));
           // The strip is the back of the page turned most recently, going round behind the
           // stack, so it is that page's paper and not the front page's — pages in one stack can
-          // carry different backgrounds. fold-drag.ts names the furthest page's paper on
+          // carry different backgrounds. foldDrag.ts names the furthest page's paper on
           // the stack as --pile-paper whenever the pile changes, and leaves
           // it unset when nothing is turned, where the strip is transparent anyway. The fold
           // flap above stays on --bend-paper: that one really is the front page's own sheet.
@@ -672,7 +672,7 @@ html:has([data-paper-stack-root]:hover) {
           --fold-page-h: inherit;
           --fold-back-x: inherit;
           --fold-back-y: inherit;
-          // --fold-page-w/-h (actual pixel size) are kept in sync by fold-drag.ts via
+          // --fold-page-w/-h (actual pixel size) are kept in sync by foldDrag.ts via
           // ResizeObserver on this div — needed because the crease's excess/ratio
           // terms below mix lengths and can't be computed against a bare percentage
           // (percentages aren't real lengths until layout, so e.g. dividing by --fold-x
@@ -684,7 +684,7 @@ html:has([data-paper-stack-root]:hover) {
           // whether fold-x exceeds the page width and/or fold-y exceeds its height; crease1/
           // crease2 below is a single closed form that covers all four cases continuously, so
           // the polygon further down never needs to branch on which case it's in. Keeping the
-          // crease away from the pin is fold-drag.ts's job (the rim clamp in onFoldDrag), not
+          // crease away from the pin is foldDrag.ts's job (the rim clamp in onFoldDrag), not
           // this formula's — flooring these above 0 would bend the crease.
           --crease-excess-x: max(var(--fold-x) - var(--fold-page-w), 0px);
           --crease-excess-y: max(var(--fold-y) - var(--fold-page-h), 0px);
@@ -747,7 +747,7 @@ html:has([data-paper-stack-root]:hover) {
           }
         }
 
-        // Commit feedback: fades in riding the flap (fold-drag.ts writes the flap's visual
+        // Commit feedback: fades in riding the flap (foldDrag.ts writes the flap's visual
         // center every drag frame) while releasing would carry the gesture through (see
         // .paper-fold--will-commit above). A flap pulled out to the sheet's edge, or one coming
         // back from off the sheet, has its centre there too, so the hint stops a mat and half
@@ -898,7 +898,7 @@ html:has([data-paper-stack-root]:hover) {
           animation-play-state: paused;
         }
 
-        // The reveal waits for the reader: held until fold-drag.ts sets --fold-reveal on the
+        // The reveal waits for the reader: held until foldDrag.ts sets --fold-reveal on the
         // stack, the first time the stack's bottom edge, where the dog-ear is, comes on screen.
         // Run from load, it played out on every stack while the reader was still at the top of
         // the page. The pulse is not there at all until the reveal has finished: the stack's
@@ -912,7 +912,7 @@ html:has([data-paper-stack-root]:hover) {
         animation-play-state: var(--fold-reveal, paused);
 
         // The corner lands at rest at once. A zero-length animation still ends, and its
-        // animationend is what fold-drag.ts waits for.
+        // animationend is what foldDrag.ts waits for.
         @media (prefers-reduced-motion: reduce) {
           animation-duration: 0s;
           animation-delay: 0s;
@@ -990,7 +990,7 @@ html:has([data-paper-stack-root]:hover) {
         }
 
         // The three share one clock: the same timing, started together whenever a page takes
-        // the front, and paused, cancelled and restarted together by fold-drag.ts, which
+        // the front, and paused, cancelled and restarted together by foldDrag.ts, which
         // restarts them by setting --fold-pulse to none for a frame on the sheet (each layer
         // takes it by `inherit`; the sheet takes it from the stack, which holds it at none
         // until the reveal). The play state comes down from the sheet too, so a pointer
@@ -1101,11 +1101,11 @@ html:has([data-paper-stack-root]:hover) {
         --flap-curl: calc(var(--fold-shade-w) * 0.8);
         // A landing, forward or a back-drag's approach, folds the sheet a second time, at a
         // crease that travels between the resting crease and the tip. In this box's own
-        // coordinates that crease is another corner fold, which fold-drag.ts writes here as
+        // coordinates that crease is another corner fold, which foldDrag.ts writes here as
         // --land-x/-y (renderLanding) in the same terms as --fold-x/-y, so it takes the same
         // darkening. The crease closes into the corner as the landing completes and the first
         // fold's rendering takes over, so the shade fades out over its last 3em. The layer is
-        // in the list only while a landing runs, under the class fold-drag.ts sets with the
+        // in the list only while a landing runs, under the class foldDrag.ts sets with the
         // lengths: at rest it would be an empty gradient on every flap of every stack, and
         // the specs read the flap's list.
         --land-angle: atan2(max(var(--land-y), 1px), max(var(--land-x), 1px));
@@ -1149,7 +1149,7 @@ html:has([data-paper-stack-root]:hover) {
         // before the reveal, it showed as a stray dot there.
         opacity: sign(var(--fold-x));
 
-        // While dragging (and briefly during the release settle), fold-drag.ts switches to
+        // While dragging (and briefly during the release settle), foldDrag.ts switches to
         // this full-size mode and drives clip-path/transform directly via inline styles —
         // the crease can now wrap around either corner, so it no longer fits in a box
         // tightly sized to fold-x/fold-y the way the idle state above does.
@@ -1178,7 +1178,7 @@ html:has([data-paper-stack-root]:hover) {
         // deepens, so crossing the threshold reads as a state change.
 
         // A committed flip keeps this flap on the outgoing sheet until it has folded away behind
-        // the stack, so fold-drag.ts stands a second one in on the page taking the front, which
+        // the stack, so foldDrag.ts stands a second one in on the page taking the front, which
         // would otherwise wear a bare corner cut until the flip ended. It only paints the resting
         // dog-ear: the hand still finds the real flap, which takes this one's place the moment the
         // flip is done with it.
@@ -1250,7 +1250,7 @@ html:has([data-paper-stack-root]:hover) {
     // stack's top-left corner rests folded away behind, and the grab handle over it activates.
     // The resting cut is the crease the paper clip pins: it runs along the wire's outer-left
     // edge, passing through the pin (the pin sits halfway down it, so pin = rest/2 satisfies
-    // the crease equation exactly). fold-drag.ts's tease keeps the crease in that pinned
+    // the crease equation exactly). foldDrag.ts's tease keeps the crease in that pinned
     // family, pivoting it around the pin.
     &[data-paper-flipped] {
       --fold-back-x: var(--fold-back-rest-x);
@@ -1276,12 +1276,12 @@ html:has([data-paper-stack-root]:hover) {
   }
 }
 // Without JS the one stack above is the reader's copy too: these rules turn it into a plain
-// scroll-snap row and switch off everything only fold-drag.ts gives meaning to. They live in the
+// scroll-snap row and switch off everything only foldDrag.ts gives meaning to. They live in the
 // bundle with the rest, under a media query that is false on any page that runs script, so they
 // never reach the scripted stack. They used to sit in a <noscript><style>, which is only hidden
 // while scripting is on: a page loaded with JS and then switched off (DevTools, no reload) printed
 // the block's source as text above the stack. The !importants outrank the scripted sheet's own
-// compound selectors and the inline styles fold-drag.ts leaves behind; nothing else ever
+// compound selectors and the inline styles foldDrag.ts leaves behind; nothing else ever
 // competes with them.
 @media (scripting: none) {
   [data-paper-stack-root][data-paper-stack] {
@@ -1538,6 +1538,6 @@ html:has([data-paper-stack-root]:hover) {
 </style>
 
 <script>
-  import { initPaperStackFold } from './fold-drag';
+  import { initPaperStackFold } from './foldDrag';
   initPaperStackFold();
 </script>

@@ -139,7 +139,7 @@ function watchSections(): void {
   for (const el of document.querySelectorAll('main > [id], [data-demo]')) observer.observe(el);
 }
 
-/** The sheet drawn on top: the wrapper fold-drag.ts numbers 1 (see frontPage.ts). */
+/** The sheet drawn on top: the wrapper foldDrag.ts numbers 1 (see frontPage.ts). */
 function frontSheetId(stack: Element): string {
   for (const wrapper of stack.children as HTMLCollectionOf<HTMLElement>) {
     if (wrapper.style.getPropertyValue('--page-index').trim() !== '1') continue;

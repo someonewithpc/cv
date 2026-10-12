@@ -8,7 +8,7 @@ import { armDrawCounter, demoStack, dogEarShown, frontPage, frontPageIndex, fron
  * advanced cost a style resolve of that page and a repaint of the sheet. Seven stacks doing
  * that at once ate better than half a 60fps frame, for ever, which is time a page turn on one
  * of them no longer had. Now it is three animations the compositor runs, one per layer the
- * fold draws, and fold-drag.ts still pauses them while their stack is off screen.
+ * fold draws, and foldDrag.ts still pauses them while their stack is off screen.
  *
  * Read off the Web Animations API rather than off a class or an attribute, because that is
  * how it is driven: a class or an attribute would put the document's :has() rules back in

@@ -46,7 +46,7 @@ export default defineConfig<PaceOptions>({
   testDir: './e2e',
   timeout: 60_000,
   fullyParallel: true,
-  // Every test here drives a real WebGL/React/Vue-heavy page (Three.js scenes, fold-drag
+  // Every test here drives a real WebGL/React/Vue-heavy page (Three.js scenes, foldDrag
   // swipes with real waits). Chrome is not on software rendering here, whatever an earlier
   // version of this comment claimed: WebGL reports "ANGLE (AMD, Vulkan 1.4.354 (AMD Radeon
   // RX 7900 XTX (RADV NAVI31)), radv)", the box's own card. A worker still costs about a

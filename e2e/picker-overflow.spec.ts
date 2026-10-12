@@ -9,7 +9,7 @@ import { swipeStack } from './support/paperStack';
  * `right: 0`, so overflow anywhere on the page walks it off the edge of the screen and only a
  * reload brings it back.
  *
- * PaperStack used to leave that overflow behind. fold-drag.ts's renderFold puts the flip hint
+ * PaperStack used to leave that overflow behind. foldDrag.ts's renderFold puts the flip hint
  * at the flap's visual centre in page-local pixels, once per drag frame, and clearFoldRender
  * left those pixels on the hint when the gesture settled. Narrowing the window afterwards
  * stranded the hint (invisible at rest, still laid out) off the page's right edge: from a 768

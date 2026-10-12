@@ -1,6 +1,6 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { demoGate } from '@/client/frontPage';
-import { pathDataToString, transformPath } from '@/client/svg-utils';
+import { pathDataToString, transformPath } from '@/client/svgUtils';
 import { watchHandover } from '@/client/walkthroughHandover';
 import { THEME_IDS, type ThemeId } from '@/themes';
 

@@ -4,7 +4,7 @@ import {
   demoPress,
   demoPressDown,
   demoRelease,
-} from '@/components/TechnicalDrawing/demo-cursor-press';
+} from '@/components/TechnicalDrawing/demoCursorPress';
 
 import {
   clearHistory,

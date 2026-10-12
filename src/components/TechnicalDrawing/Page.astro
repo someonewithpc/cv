@@ -3,10 +3,10 @@ import { Icon } from 'astro-icon/components';
 
 import TechIcon from '@/components/TechIcon.astro';
 
-import { resolveTechs } from '@/server/tech-icons';
+import { resolveTechs } from '@/server/techIcons';
 import { deterministicId } from '@/server/deterministicId';
 
-import { transportKeyArtId, transportKeys } from './transport-keys';
+import { transportKeyArtId, transportKeys } from './transportKeys';
 
 type Props = {
   /** The sheet's name in the stack's data: its layer key, which stays put when sheets are
@@ -176,12 +176,12 @@ const sheetAnchor = `--${noteId}-sheet`;
 </section>
 
 <style lang="scss">
-@use '@/scss/hit-area' as *;
+@use '@/scss/hitArea' as *;
 @use 'sass:math';
 
 @use "@/scss/_colors.scss" as colors;
 @use "@/scss/_kbd.scss" as kbd;
-@use '@/scss/technical-drawing' as drawing;
+@use '@/scss/technicalDrawing' as drawing;
 
 /* A sine hash standing in for math.random(): the same $i/$j always lands on the same
    fractional part of a wildly oscillating sine, so the build is reproducible and the two
@@ -826,7 +826,7 @@ section {
      Those pages are the ones whose artwork crowds the corner most, so the ladder is
      only the floor. Where a sheet's own artwork leaves the block room for cells the
      ladder sheds, Stack.astro names the fit it can take in data-title-fit, and that
-     replaces the ladder's step (title-fit.ts). */
+     replaces the ladder's step (titleFit.ts). */
   @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-1; } }
   @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-2; } }
   @container technical-drawing-width (40em < width <= 46em) { &:not([data-title-fit]) { @include title-fit-3; } }
@@ -1035,7 +1035,7 @@ section {
 }
 
 /* The deck's own look, outside section {} so it holds wherever the deck is put: on the sheet,
-   or in the callout's card under it (deck-home.ts). */
+   or in the callout's card under it (deckHome.ts). */
 .demo-transport {
   display: flex;
   align-items: center;
@@ -1196,7 +1196,7 @@ section {
   .demo-transport[data-state='playing'] .demo-led:not([data-full-motion] *) { animation: none; }
 }
 
-/* The deck in the callout's card (deck-home.ts), which only a portrait sheet sends it to, so
+/* The deck in the callout's card (deckHome.ts), which only a portrait sheet sends it to, so
    the card is always the slip filed under the stack there (Callout.astro): its first entry, over
    the title and ruled off from it the way the entries are. The keys at the size a phone sheet gives
    them, the lamp and the state under them, and the instruction under those, since the slip is

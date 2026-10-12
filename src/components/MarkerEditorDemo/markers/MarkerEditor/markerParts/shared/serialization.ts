@@ -1,4 +1,4 @@
-import '../../../client-only';
+import '../../../clientOnly';
 
 import { createElement } from 'react';
 import { flushSync } from 'react-dom';

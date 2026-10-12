@@ -1,4 +1,4 @@
-import '../client-only';
+import '../clientOnly';
 
 import { useEffect, useRef } from 'react';
 

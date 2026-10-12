@@ -3,7 +3,7 @@ import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 import { settledResizeObserver } from '@/client/settledResize';
 import { watchHandover } from '@/client/walkthroughHandover';
-import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
+import { demoPress } from '@/components/TechnicalDrawing/demoCursorPress';
 
 import {
   EVENT,

@@ -291,3 +291,4 @@
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
 - [x] Make the dots under a no-script stack one Tab stop, the arrow keys moving between sheets (A19) (#354)
 - [x] Give the scene demo roots and the map overlay a group role and name, and drop the empty Tab stop on Place and Badge (A10) (#349)
+- [x] Name source files in camelCase, 19 of them were kebab-case (specs stay kebab-case; assets and routes keep their names) (#388)

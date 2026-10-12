@@ -24,7 +24,7 @@ async function liveBuffer(page: Page): Promise<Locator> {
 test('web-ts-mode: forward swipes visit every page in order, then wrap', async ({ page }) => {
   const stack = webTsStack(page);
   await stack.scrollIntoViewIfNeeded();
-  // fold-drag.ts has taken the stack over (the wheel turns pages only then), the scroll has
+  // foldDrag.ts has taken the stack over (the wheel turns pages only then), the scroll has
   // stopped under it and its own transitions have run out.
   await expect(stack).toHaveAttribute('aria-roledescription', 'paper stack');
   await expect.poll(async () => {
