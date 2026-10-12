@@ -7,6 +7,12 @@ $artwork-width: 20em;
 $fold-rest-x: 2cm;
 $fold-rest-y: 1cm;
 
+// Without script, a browser with no CSS carousel (no ::scroll-marker or ::scroll-button) shows
+// the next sheet's edge beside the one in front: PaperStack narrows each sheet in the row by the
+// peek, and Stack.astro takes it off the sheet's measure, which the type is sized from.
+$no-css-carousel: 'not (selector(::scroll-marker) and selector(::scroll-button(right)))';
+$sheet-peek: 1.75rem;
+
 // Type keyed on the sheet's shape without a container query: a font size that came out of
 // one, inside a stack, made Chrome take seconds to lay the stack out.
 
