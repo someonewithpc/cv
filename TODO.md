@@ -284,3 +284,4 @@
 - [x] Send the page's visits and interactions to /api/e: session id in memory, batched beacons, GPC and DNT opt-outs, stable sheet ids (analytics plan PR 2) (#340)
 - [x] Let a keyboard pick, place and edit in Space Builder, Variants and the marker editor (A17) (#335)
 - [x] Keep the Filters sheet's long table name inside the Predicate column so it never runs into Maximum (SAF6) (#344)
+- [ ] Wrap the Seat Count placeholder inside its field instead of cutting it off (SAF4)
