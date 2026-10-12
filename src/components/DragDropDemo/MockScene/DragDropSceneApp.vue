@@ -6,6 +6,7 @@ import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/
 import { demoGate, type DemoGate } from '@/client/frontPage';
 
 import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
+import { isSceneChrome } from '@/components/SpaceBuilderDemo/MockScene/isSceneChrome';
 import CatalogPanel from '@/components/SpaceBuilderDemo/MockScene/CatalogPanel.vue';
 import {
   CATALOG_ITEMS,
@@ -191,10 +192,6 @@ function removeSelectedObject() {
   selectedPlacement.value = false;
   syncPlaced();
   return true;
-}
-
-function isChrome(target: EventTarget | null) {
-  return target instanceof Element && target.closest('.sidebar, button, input, label, details');
 }
 
 /** Rects read once and reused until the page scrolls, the frame resizes or a new gesture starts,
@@ -435,7 +432,7 @@ function onPointerDown(event: PointerEvent) {
   invalidateRects();
   const scene = sceneRef.value;
   const root = rootRef.value;
-  if (!scene || !root || isChrome(event.target)) return;
+  if (!scene || !root || isSceneChrome(event.target)) return;
   yieldToUser();
 
   // An armed object goes down on the next plain left click, and the tool returns to view —
@@ -538,7 +535,7 @@ function onPointerUp(event: PointerEvent) {
 
 function onWheel(event: WheelEvent) {
   const scene = sceneRef.value;
-  if (!scene || isChrome(event.target)) return;
+  if (!scene || isSceneChrome(event.target)) return;
   applyWheelZoom(scene, event);
 }
 

@@ -6,6 +6,7 @@ import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/
 import { demoGate, type DemoGate } from '@/client/frontPage';
 
 import { autoplayStartedToast } from './AutoPlayController';
+import { isSceneChrome } from './isSceneChrome';
 import { LAYOUT_ICONS } from './layoutIcons';
 import { LAYOUT_LABELS, LAYOUT_STYLES, type LayoutOptions, type LayoutStyle } from './scene/layoutEngine';
 import {
@@ -107,14 +108,10 @@ function yieldToUser() {
   reportAutoplayState(rootRef.value, 'user');
 }
 
-function isChrome(target: EventTarget | null) {
-  return target instanceof Element && target.closest('.sidebar, button');
-}
-
 function onPointerDown(event: PointerEvent) {
   const scene = sceneRef.value;
   const root = rootRef.value;
-  if (!scene || !root || isChrome(event.target)) return;
+  if (!scene || !root || isSceneChrome(event.target, '.sidebar, button')) return;
 
   activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -177,7 +174,7 @@ function onPointerUp(event: PointerEvent) {
 
 function onWheel(event: WheelEvent) {
   const scene = sceneRef.value;
-  if (!scene || isChrome(event.target)) return;
+  if (!scene || isSceneChrome(event.target, '.sidebar, button')) return;
   applyWheelZoom(scene, event);
 }
 
