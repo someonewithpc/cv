@@ -83,6 +83,7 @@
     - [x] Sheets keep their phone type without script, so the toggles read and reach 24px (#171 L3, #212)
   - [x] web-ts-mode: painted buffer, parser ranges, selector depth hue, doctor (SH-11)
   - [ ] Paper stack: the pile, the fold, the holds and the no-script row
+    - [ ] Safari runs the initial fold reveal with the corner cut and no dog-ear over it
   - [x] Own theme picker: the control, the token layers, the default and the wipe (#189)
     - [x] Code in the theme's own colours, inline and in blocks (#207)
     - [x] Every demo sheet sets its code through the shared highlighter (#319)
