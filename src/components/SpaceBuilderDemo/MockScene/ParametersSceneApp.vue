@@ -581,7 +581,7 @@ $buttons-ui: #6c757d;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.65rem;
+  gap: 0.625rem;
   background: $visrez-scene;
   color: #adb5bd;
   font: 0.875rem/1.3 system-ui, sans-serif;
@@ -592,8 +592,8 @@ $buttons-ui: #6c757d;
 }
 
 .spinner {
-  width: 1.6rem;
-  height: 1.6rem;
+  width: 1.625rem;
+  height: 1.625rem;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
@@ -607,12 +607,12 @@ $buttons-ui: #6c757d;
 
 .flash {
   position: absolute;
-  top: 0.55rem;
+  top: 0.5rem;
   left: 50%;
   z-index: 2;
   translate: -50% 0;
   margin: 0;
-  padding: 0.3rem 0.65rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 0.25rem;
   background: $visrez-toast;
   color: #fff;
@@ -624,13 +624,13 @@ $buttons-ui: #6c757d;
 .hint {
   position: absolute;
   left: 50%;
-  bottom: 0.55rem;
+  bottom: 0.5rem;
   z-index: 2;
   translate: -50% 0;
   width: max-content;
   max-width: calc(100% - 1rem);
   margin: 0;
-  padding: 0.25rem 0.55rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   background: rgba(18, 22, 18, 0.72);
   color: #e8e4dc;
@@ -664,7 +664,7 @@ $buttons-ui: #6c757d;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  padding: 0.45rem 0.65rem;
+  padding: 0.5rem 0.625rem;
   border-bottom: 1px solid $light-grey;
 }
 
@@ -688,8 +688,8 @@ $buttons-ui: #6c757d;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: $nav-sidebar-bg;
   border-top: 1px solid $light-grey;
 }
@@ -698,8 +698,8 @@ $buttons-ui: #6c757d;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 0.32rem 0.65rem;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
   border: 1px solid transparent;
   border-radius: 3px;
   font: inherit;
@@ -733,7 +733,7 @@ $buttons-ui: #6c757d;
 
 .action--save {
   flex: 1.4;
-  padding-block: 0.55rem;
+  padding-block: 0.5rem;
   font-size: 0.875rem;
 }
 </style>

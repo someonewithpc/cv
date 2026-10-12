@@ -443,7 +443,7 @@ $nav-sidebar-bg: #323232;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.65rem;
+  gap: 0.625rem;
   background: $visrez-scene;
   color: #adb5bd;
   font: 0.875rem/1.3 system-ui, sans-serif;
@@ -454,8 +454,8 @@ $nav-sidebar-bg: #323232;
 }
 
 .spinner {
-  width: 1.6rem;
-  height: 1.6rem;
+  width: 1.625rem;
+  height: 1.625rem;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
@@ -469,12 +469,12 @@ $nav-sidebar-bg: #323232;
 
 .flash {
   position: absolute;
-  top: 0.55rem;
+  top: 0.5rem;
   left: 50%;
   z-index: 2;
   translate: -50% 0;
   margin: 0;
-  padding: 0.3rem 0.65rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 0.25rem;
   background: $visrez-toast;
   color: #fff;
@@ -486,13 +486,13 @@ $nav-sidebar-bg: #323232;
 .hint {
   position: absolute;
   left: 50%;
-  bottom: 0.55rem;
+  bottom: 0.5rem;
   z-index: 2;
   translate: -50% 0;
   width: max-content;
   max-width: calc(100% - 1rem);
   margin: 0;
-  padding: 0.25rem 0.55rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   background: rgba(18, 22, 18, 0.72);
   color: #e8e4dc;
@@ -526,7 +526,7 @@ $nav-sidebar-bg: #323232;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  padding: 0.45rem 0.65rem;
+  padding: 0.5rem 0.625rem;
   border-bottom: 1px solid #565656;
 }
 
@@ -561,7 +561,7 @@ $nav-sidebar-bg: #323232;
   flex-direction: column;
   padding: 0;
   border: 1px solid #495057;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   background: transparent;
   color: #adb5bd;
   cursor: pointer;
@@ -580,7 +580,7 @@ $nav-sidebar-bg: #323232;
   .style-label {
     display: block;
     margin: 0;
-    padding: 0.3rem 0.25rem;
+    padding: 0.25rem 0.25rem;
     background: #212529;
     text-align: center;
     font-size: 0.75rem;
@@ -591,7 +591,7 @@ $nav-sidebar-bg: #323232;
   .style-icon {
     display: grid;
     place-items: center;
-    padding: 0.55rem 0.35rem 0.7rem;
+    padding: 0.5rem 0.375rem 0.75rem;
     background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
     color: #151515;
 

@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.65rem;
+  gap: 0.625rem;
   background: $visrez-scene;
   color: #adb5bd;
   font: 0.875rem/1.3 system-ui, sans-serif;
@@ -424,8 +424,8 @@ onBeforeUnmount(() => {
 }
 
 .spinner {
-  width: 1.6rem;
-  height: 1.6rem;
+  width: 1.625rem;
+  height: 1.625rem;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
@@ -440,7 +440,7 @@ onBeforeUnmount(() => {
 .controls {
   position: absolute;
   left: 50%;
-  bottom: 0.55rem;
+  bottom: 0.5rem;
   z-index: 2;
   translate: -50% 0;
   display: flex;
@@ -449,7 +449,7 @@ onBeforeUnmount(() => {
 }
 
 .play-toggle {
-  padding: 0.28rem 0.7rem;
+  padding: 0.25rem 0.75rem;
   border: 1px solid $visrez-brand;
   border-radius: 0.25rem;
   background: color-mix(in oklab, $visrez-brand 25%, #171717);
@@ -470,7 +470,7 @@ onBeforeUnmount(() => {
 
 .hint {
   margin: 0;
-  padding: 0.25rem 0.55rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   background: rgba(18, 22, 18, 0.72);
   color: #e8e4dc;
@@ -482,14 +482,14 @@ onBeforeUnmount(() => {
 
 .fail-card {
   position: absolute;
-  top: 0.65rem;
-  left: 0.65rem;
+  top: 0.625rem;
+  left: 0.625rem;
   z-index: 2;
   margin: 0;
   width: 8rem;
-  padding: 0.4rem 0.45rem 0.5rem;
+  padding: 0.375rem 0.5rem 0.5rem;
   border: 1px solid #565656;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   background: rgba(50, 50, 50, 0.88);
   backdrop-filter: blur(2px);
   color: #f3f3f4;
@@ -498,8 +498,8 @@ onBeforeUnmount(() => {
   figcaption {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    margin-bottom: 0.35rem;
+    gap: 0.25rem;
+    margin-bottom: 0.375rem;
     font-size: 0.625rem;
     font-weight: 600;
     line-height: 1.2;
@@ -507,8 +507,8 @@ onBeforeUnmount(() => {
 
   .badge {
     display: inline-block;
-    padding: 0.04rem 0.3rem;
-    border-radius: 0.2rem;
+    padding: 0.04rem 0.25rem;
+    border-radius: 0.25rem;
     background: color-mix(in oklab, #f76d65 75%, #111);
     color: #fff5f4;
     font-size: 0.625rem;
@@ -521,8 +521,8 @@ onBeforeUnmount(() => {
 
 .fail-viewport {
   position: relative;
-  height: 3.4rem;
-  border-radius: 0.2rem;
+  height: 3.375rem;
+  border-radius: 0.25rem;
   background: #171717;
   border: 1px solid #444;
   overflow: hidden;
@@ -537,7 +537,7 @@ onBeforeUnmount(() => {
   rotate: -14deg;
   background: color-mix(in oklab, #89ab22 40%, transparent);
   border: 1.5px solid #6f8f1c;
-  border-radius: 0.12rem;
+  border-radius: 0.125rem;
 }
 
 .fail-tag {
@@ -545,7 +545,7 @@ onBeforeUnmount(() => {
   left: 50%;
   top: 52%;
   translate: -50% 0;
-  padding: 0 0.3rem;
+  padding: 0 0.25rem;
   border-radius: 0.5rem;
   border: 1.5px solid rgba(162, 206, 59, 0.7);
   background: rgba(25, 41, 21, 0.85);
@@ -558,7 +558,7 @@ onBeforeUnmount(() => {
 }
 
 .fail-note {
-  margin: 0.3rem 0 0;
+  margin: 0.25rem 0 0;
   font-size: 0.625rem;
   line-height: 1.35;
   color: #adb5bd;
@@ -566,19 +566,19 @@ onBeforeUnmount(() => {
 
 .math-card {
   position: absolute;
-  top: 0.65rem;
-  right: 0.65rem;
+  top: 0.625rem;
+  right: 0.625rem;
   z-index: 2;
-  padding: 0.4rem 0.55rem 0.45rem;
+  padding: 0.375rem 0.5rem 0.5rem;
   border: 1px solid #565656;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   background: rgba(50, 50, 50, 0.88);
   backdrop-filter: blur(2px);
   color: #f3f3f4;
   pointer-events: none;
 
   .math-title {
-    margin: 0 0 0.3rem;
+    margin: 0 0 0.25rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.625rem;
     font-weight: 700;
@@ -589,21 +589,21 @@ onBeforeUnmount(() => {
 
   dl {
     display: flex;
-    gap: 0.55rem;
+    gap: 0.5rem;
     margin: 0;
   }
 
   dl > div {
     display: grid;
     justify-items: center;
-    gap: 0.1rem;
+    gap: 0.125rem;
     // Fixed width per field — tabular-nums alone still reflows when the digit
     // *count* changes (e.g. "5°" vs "355°", "3.1m" vs "12.3m").
     width: 3rem;
   }
 
   dl > div:first-child {
-    width: 2.2rem;
+    width: 2.25rem;
   }
 
   dt {

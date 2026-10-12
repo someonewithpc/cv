@@ -344,7 +344,7 @@ onBeforeUnmount(() => {
     display: grid;
     place-content: center;
     justify-items: center;
-    gap: 0.65rem;
+    gap: 0.625rem;
     background: $visrez-scene;
     color: #adb5bd;
     font: 0.875rem/1.3 system-ui, sans-serif;
@@ -355,8 +355,8 @@ onBeforeUnmount(() => {
   }
 
   .spinner {
-    width: 1.6rem;
-    height: 1.6rem;
+    width: 1.625rem;
+    height: 1.625rem;
     border: 3px solid $visrez-brand;
     border-top-color: transparent;
     border-radius: 50%;
@@ -371,11 +371,11 @@ onBeforeUnmount(() => {
   .hint {
     position: absolute;
     left: 50%;
-    bottom: 0.55rem;
+    bottom: 0.5rem;
     z-index: 2;
     translate: -50% 0;
     margin: 0;
-    padding: 0.25rem 0.55rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     background: rgba(18, 22, 18, 0.72);
     color: #e8e4dc;
