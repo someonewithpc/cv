@@ -997,6 +997,12 @@ button.call {
     color: var(--ink-muted);
   }
 
+  /* The box is as wide as this tag. Firefox lays the line out a hair wider than the width it
+     measured and breaks the tag after the hyphen in u-photo, which grows the box a line. */
+  code {
+    white-space: nowrap;
+  }
+
   .by {
     display: block;
     font-size: max(0.5rem, 0.8125em);
