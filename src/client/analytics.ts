@@ -29,24 +29,21 @@ function hex(bytes: Uint8Array): string {
 
 const session = hex(crypto.getRandomValues(new Uint8Array(SESSION_BYTES)));
 
-/** Global Privacy Control, or the older Do Not Track: nothing is queued and nothing is sent. */
-function optedOut(): boolean {
-  const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
-  return !!nav.globalPrivacyControl || nav.doNotTrack === '1';
-}
-
 /**
- * Production only: a preview or a dev server must not write to the production dataset, and
- * the preview worker has no dataset anyway. `?analytics=1` lifts the guard so the e2e spec,
- * and a reviewer with the network tab open, can watch the beacons on a preview. It is not
- * a review switch to strip at landing: it is the only way the hooks get exercised in a test.
+ * Sends only on hsal.es, and never when the browser sends Global Privacy Control or Do Not
+ * Track, or is driven by WebDriver, Playwright, Puppeteer or safaridriver
+ * (`navigator.webdriver`). Nothing overrides this; the e2e specs map hsal.es to the test
+ * server and report `navigator.webdriver` as false.
  */
-function onProductionHost(): boolean {
+function computeEnabled(): boolean {
+  const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
   return location.hostname === new URL(SITE_URL).hostname
-    || new URLSearchParams(location.search).get('analytics') === '1';
+    && !nav.globalPrivacyControl
+    && nav.doNotTrack !== '1'
+    && !navigator.webdriver;
 }
 
-const enabled = !optedOut() && onProductionHost();
+const enabled = computeEnabled();
 
 let queue: Queued[] = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
