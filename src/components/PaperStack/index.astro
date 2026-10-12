@@ -436,6 +436,18 @@ html:has([data-paper-stack-root]:hover) {
     --paper-plain: #{colors.$sheet-paper};
     --paper-blueprint: var(--blueprint);
 
+    // On each frame of a turn Safari repaints every page under the moving one, blueprint grid
+    // and paper grain included. On Marker Editor's way back
+    // that held Safari to about 10 frames a second. A layer per page behind the front keeps them
+    // as painted. Chrome and Firefox turn smoothly without it and would only pay for the extra
+    // layers, so the @supports keeps them out: -apple-system-body is a font keyword only WebKit
+    // knows.
+    @supports (font: -apple-system-body) {
+      & > div:not(.paper-front) {
+        will-change: transform;
+      }
+    }
+
     & > div {
       grid-area: content;
       border-radius: $border-radius;
