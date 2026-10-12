@@ -1,6 +1,19 @@
 @use '../layers/sheet' as *;
 @use '../layers/sheetProse' as *;
 
+// The product pads its sidebar for a desktop map; a phone sheet has no room for that
+@mixin narrow-sheet {
+  gap: 0.75em;
+
+  nav {
+    padding: 0.75em;
+  }
+
+  li {
+    margin-bottom: 0.75em;
+  }
+}
+
 // The held-controls sheet: the product's settings column twice, side by side, with the sheet's
 // own labels around it. The column itself is styled by EditStyle.scss, as the picker's is
 .held-controls {
@@ -12,16 +25,14 @@
   color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
 
-  // The product pads its sidebar for a desktop map; a phone sheet has no room for that
-  @container technical-drawing-width (max-width: 56em) {
-    gap: 0.75em;
+  // Keyed on the stack's attribute, with the width query only for the page without script
+  [data-sheet-width='narrow'] & {
+    @include narrow-sheet;
+  }
 
-    nav {
-      padding: 0.75em;
-    }
-
-    li {
-      margin-bottom: 0.75em;
+  @media (scripting: none) {
+    @container technical-drawing-width (max-width: 56em) {
+      @include narrow-sheet;
     }
   }
 
