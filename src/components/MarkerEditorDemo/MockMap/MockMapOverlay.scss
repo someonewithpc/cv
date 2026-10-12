@@ -1,4 +1,5 @@
 @use '@/scss/technical-drawing' as drawing;
+@use '@/scss/demo-cursor' as cursor;
 @use '@/scss/demo-toast' as toast;
 
 .mock-map-overlay {
@@ -106,17 +107,10 @@
 .mock-map-demo-cursor {
   // Absolute on the carousel page so document/carousel scroll keeps the tip
   // glued to targets (fixed + viewport client coords desync on scroll).
-  position: absolute;
-  top: 0;
-  left: 0;
+  @include cursor.driven;
   z-index: 1100;
-  translate: calc(var(--cursor-x, 0px) - 12%) calc(var(--cursor-y, 0px) - 8%);
   pointer-events: none;
   filter: drop-shadow(0 2px 2px color-mix(in oklab, #000 28%, transparent));
-  transition:
-    translate 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.32s ease,
-    scale 0.12s ease;
   opacity: 1;
 
   &--fading {
@@ -125,15 +119,6 @@
       translate 0s,
       opacity 0.32s ease,
       scale 0.12s ease;
-  }
-
-  &--clicking {
-    scale: 0.86;
-  }
-
-  &--dragging {
-    transition: none;
-    scale: 0.9;
   }
 
   svg {

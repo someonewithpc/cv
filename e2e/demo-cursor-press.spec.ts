@@ -143,7 +143,7 @@ test('every walkthrough click pulses the cursor and rings, drags and the colour 
         if (record.type === 'attributes') {
           const el = record.target;
           if (!(el instanceof Element) || !el.hasAttribute('data-demo-cursor')) continue;
-          const nowClicking = el.classList.contains('mock-map-demo-cursor--clicking');
+          const nowClicking = el.hasAttribute('data-clicking');
           if (nowClicking && !clicking) log.push({ t: at(), kind: 'clicking' });
           clicking = nowClicking;
           const nowPressed = el.hasAttribute('data-pressed');
@@ -158,7 +158,7 @@ test('every walkthrough click pulses the cursor and rings, drags and the colour 
       }
     }).observe(document.body, {
       attributes: true,
-      attributeFilter: ['class', 'data-pressed'],
+      attributeFilter: ['data-clicking', 'data-pressed'],
       childList: true,
       subtree: true,
     });
