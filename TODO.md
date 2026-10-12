@@ -298,3 +298,4 @@
 - [x] Run the no-script and layout specs in Playwright's Firefox, so the Firefox fixes keep a spec there (171-FF6) (#376)
 - [x] Size the no-script sheet's type for the narrower sheet Firefox shows beside the next one's edge (FF7) (#381)
 - [x] Keep the EventResult and Selector Depth Hue sheets clear of the title block at 760px in Firefox too (FF8) (#379)
+- [ ] Keep the EventResult sheet inside its frame line on a narrow landscape sheet, with or without script (S28)
