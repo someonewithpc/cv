@@ -610,7 +610,7 @@ $buttons-ui: #6c757d;
   margin: 0;
   padding: 0.3rem 0.65rem;
   border-radius: 0.25rem;
-  background: rgba(26, 179, 148, 0.92);
+  background: $visrez-toast;
   color: #fff;
   font: 700 0.75rem/1.3 var(--font-poppins, system-ui, sans-serif);
   white-space: nowrap;

@@ -1429,7 +1429,7 @@ $light-grey: #565656;
   .toast {
     padding: 0.45rem 0.85rem;
     border-radius: 0.25rem;
-    background: rgba(26, 179, 148, 0.92);
+    background: $visrez-toast;
     color: #fff;
     font-size: 0.75rem;
     font-weight: 600;
