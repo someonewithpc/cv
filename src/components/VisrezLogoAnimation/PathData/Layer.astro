@@ -35,6 +35,17 @@ const listing = `<svg
 <style lang="scss">
 @use '@/scss/technical-drawing' as drawing;
 
+// On a landscape sheet the title block sits in the bottom-right corner of the listing's cell,
+// so the listing goes beside it or above it, whichever leaves it the larger type, and sizes
+// itself to fit there. The longest line with its margins and padding comes to 48.5em, and the
+// rest of the 1 / 0.019 is for small sizes, where Chrome rounds each glyph's advance up. The
+// listing's 24 lines with their margins and padding come to 36.5em.
+$inner-inline: calc(var(--sheet-inline) - 2px - 2 * var(--sheet-margin));
+$inner-block: calc(var(--sheet-block) - 2px - 2 * var(--sheet-margin));
+$beside: calc(0.019 * ($inner-inline - var(--title-block-inline)));
+$above: min(0.019 * $inner-inline, ($inner-block - var(--title-block-block)) / 36.5);
+$goes-beside: '#{$beside} - #{$above}';
+
 :global(article.technical-drawing-stack > * > section.path-data) {
   overflow: hidden;
 }
@@ -51,10 +62,15 @@ const listing = `<svg
   justify-content: flex-start;
   min-height: 0;
 
+  padding-inline-end: drawing.sheet-pick($goes-beside, var(--title-block-inline), 0rem);
+  padding-block-end: drawing.sheet-pick($goes-beside, 0rem, var(--title-block-block));
+
   /* Portrait gives the title block a row of its own; spanning to -1 would put
      the listing underneath it. */
   @container technical-drawing (orientation: portrait) {
     grid-row: 1;
+    padding-inline-end: 0;
+    padding-block-end: 0;
   }
 
   :global(pre) {
@@ -65,10 +81,14 @@ const listing = `<svg
     max-width: 100%;
     overflow: auto;
 
-    /* Sideways scrolling inside a swipeable carousel is a trap, so on a portrait sheet
-       shrink the listing until its longest line fits the sheet instead. */
+    /* Sideways scrolling inside a swipeable carousel is a trap, so shrink the listing until
+       its longest line fits the sheet on a portrait sheet, or the room the title block
+       leaves on a landscape one. */
     &, :global(code) {
-      font-size: drawing.portrait-or(min(0.875rem, 0.0195 * var(--sheet-inline)), 0.875rem);
+      font-size: drawing.portrait-or(
+        min(0.875rem, 0.0195 * var(--sheet-inline)),
+        min(0.875rem, max($beside, $above))
+      );
       line-height: 1.35;
     }
 
