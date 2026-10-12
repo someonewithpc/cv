@@ -657,9 +657,9 @@ section {
 
           :global(.tech-icon) {
             position: absolute;
-            /* White outside the Rails track, so it reads as a logo beside the seal and
+            /* The sheet's paper outside the Rails track, so it reads as a logo beside the seal and
                not as a red blot. The stroke sits under the fill and past the viewBox. */
-            --rails-outline: #fff;
+            --rails-outline: var(--sheet-paper);
             --rails-outline-width: 10;
 
             :global(svg) {
