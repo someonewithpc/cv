@@ -415,6 +415,6 @@ function onPictureKey(event: KeyboardEvent) {
 }
 
 :deep(.object-icons.is-demo-target) {
-  box-shadow: inset 0 0 0 0.1875rem rgba(137, 171, 36, 0.65);
+  box-shadow: inset 0 0 0 0.25rem rgba(137, 171, 36, 0.65);
 }
 </style>
