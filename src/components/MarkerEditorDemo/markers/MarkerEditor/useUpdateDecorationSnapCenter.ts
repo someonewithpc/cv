@@ -1,5 +1,6 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
 
+import { renderTogether } from "../../lib/imperativeReactComponent";
 import { MarkerPart, markers, Point } from "./markerParts";
 import type { StateType } from "./markerParts";
 
@@ -20,7 +21,7 @@ export function useUpdateDecorationSnapCenter(state: StateType, setState: Dispat
         decoration.controlPoints.center.y - shapeCenter.y) > tolerance) {
       decoration.controlPoints.center = shapeCenter;
       setState((prev) => ({ ...prev, previousDecorationSnapCenter: shapeCenter }));
-      updateAll();
+      renderTogether(updateAll);
     }
   }, [state.active.shape, state.active.decoration, state.previousDecorationSnapCenter, updateAll, setState]);
 }
