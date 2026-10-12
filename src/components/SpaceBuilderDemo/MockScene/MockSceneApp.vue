@@ -1622,8 +1622,8 @@ $scene-bg: #212121;
   // glued to targets (fixed + viewport client coords desync on scroll).
   position: absolute;
   z-index: 30;
-  width: 56px;
-  height: 56px;
+  width: 3.5rem;
+  height: 3.5rem;
   // Hotspot at the arrow tip (same idea as Marker Editor).
   translate: -12% -8%;
   // Scale the click pulse around the tip, not the box center — otherwise the
