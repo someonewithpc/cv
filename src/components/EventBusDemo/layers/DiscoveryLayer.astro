@@ -28,7 +28,7 @@ const components = ['Attachment', 'Avatar', 'Conversation', 'Feed', 'Posting', '
 const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoEncoder'];
 ---
 
-<div class="wrapper hl">
+<div class="wrapper hl" tabindex="0">
   <div class="discovery-layer">
     <p class="point">
       <strong>No module registers a listener</strong>
@@ -102,14 +102,25 @@ const plugins = ['ActivityPub', 'AudioEncoder', 'Embed', 'ImageEncoder', 'VideoE
 @use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
+// On a phone-height portrait sheet the module list and the mapping table, stacked, are taller than the cell, with the
+// type already at its floor. The content box fills its cell and the layer scrolls inside the
+// frame instead of running past it.
+:global(article.technical-drawing-stack > * > section .content:has(> .wrapper > .discovery-layer)) {
+  place-self: stretch;
+  height: auto;
+  min-height: 0;
+}
+
 .wrapper {
   @include sheet-content;
   @include clear-title-block;
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  place-items: center;
+  place-items: safe center;
   height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .discovery-layer {
