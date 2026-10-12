@@ -292,6 +292,7 @@
 - [x] Keep the Filters sheet's long table name inside the Predicate column so it never runs into Maximum (SAF6) (#344)
 - [x] Wrap the Seat Count placeholder inside its field instead of cutting it off (SAF4) (#345)
 - [x] Keep the theme switcher off the title block on a narrow window, with or without a classic scrollbar (SAF2) (#343)
+- [ ] Key the remaining 40em and 56em sheet rules on data-sheet-orientation and data-sheet-width, with the width query kept for the page without script (#220 171-NJ9)
 - [x] Let the keyboard scroll the code blocks, sheets and panels that scroll with nothing focusable in them, and keep the web-ts-mode notes out of the landmark list (A12) (#356)
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
 - [x] Make the dots under a no-script stack one Tab stop, the arrow keys moving between sheets (A19) (#354)
