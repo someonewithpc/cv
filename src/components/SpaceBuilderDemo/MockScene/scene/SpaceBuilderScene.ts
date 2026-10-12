@@ -524,6 +524,7 @@ export class SpaceBuilderScene {
           for (const value of Object.values(material)) {
             if ((value as Texture)?.isTexture) release(value as Texture);
           }
+          release(this.sharedDfgLut(material));
           release(material);
         }
         // An InstancedMesh keeps its matrices in a buffer of its own.
@@ -533,6 +534,18 @@ export class SpaceBuilderScene {
       if (light.isLight && light.shadow) release(light.shadow.map);
     });
     this.textures.forEach((t) => release(t));
+  }
+
+  /**
+   * Three keeps one DFG lookup texture per page for the standard materials of every renderer.
+   * Each renderer that uploads it adds a dispose listener to it, and that listener holds the
+   * whole renderer. Nothing in three ever disposes the texture, so every renderer that
+   * {@link attachGpu} replaced stayed alive. Disposing it here drops the listener, and the
+   * next renderer uploads the 16 by 16 texture again.
+   */
+  private sharedDfgLut(material: Material): Texture | undefined {
+    const { uniforms } = this.renderer.properties.get(material) as { uniforms?: { dfgLUT?: { value?: Texture } } };
+    return uniforms?.dfgLUT?.value;
   }
 
   /** Recreate the WebGL renderer after {@link releaseGpu}. */
