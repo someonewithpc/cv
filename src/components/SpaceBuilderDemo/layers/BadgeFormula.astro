@@ -69,6 +69,7 @@ const { place } = Astro.props;
 </figure>
 
 <style lang="scss">
+@use '@/scss/sheet-band' as *;
 .badge-formula {
   display: none;
   box-sizing: border-box;
@@ -137,7 +138,7 @@ const { place } = Astro.props;
 
 // A narrower landscape sheet tucks the note under the corner, and the card takes the note's
 // empty column, centred in the height above the title block.
-@container technical-drawing-width (max-width: 56em) {
+@include sheet-band(narrow) {
   @container technical-drawing not (orientation: portrait) {
     :global(.content) > .badge-formula {
       grid-column: 2;
