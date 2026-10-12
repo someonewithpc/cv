@@ -161,9 +161,16 @@ const squirclePath = [
   }
 
   // A wide sheet has the room this cap left empty: the chips stopped at 45% of
-  // the artwork cell while the pages either side of it filled theirs.
-  @container technical-drawing-width (min-width: 56em) {
+  // the artwork cell while the pages either side of it filled theirs. Keyed on the stack's
+  // attribute, with the width query only for the page without script.
+  :global([data-sheet-width='wide']) & {
     width: min(#{drawing.$artwork-width * 1.75}, 100%, 88cqh);
+  }
+
+  @media (scripting: none) {
+    @container technical-drawing-width (min-width: 56em) {
+      width: min(#{drawing.$artwork-width * 1.75}, 100%, 88cqh);
+    }
   }
   aspect-ratio: 1;
   display: grid;
