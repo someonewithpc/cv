@@ -1606,7 +1606,7 @@ $scene-bg: #212121;
 <style lang="scss">
 .space-builder-tag {
   padding: 0 0.45rem;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   border: 2px solid rgba(162, 206, 59, 0.85);
   background: rgba(25, 41, 21, 0.85);
   color: #fff;
