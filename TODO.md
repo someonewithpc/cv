@@ -283,3 +283,4 @@
 - [x] Record visits and interactions in Workers Analytics Engine: the /api/e route, a monthly salt object and the visitor hash, landing dark (analytics plan PR 1) (#339)
 - [x] Send the page's visits and interactions to /api/e: session id in memory, batched beacons, GPC and DNT opt-outs, stable sheet ids (analytics plan PR 2) (#340)
 - [x] Let a keyboard pick, place and edit in Space Builder, Variants and the marker editor (A17) (#335)
+- [x] Draw the Library Search and Tagging Tool select focus ring as an outline, which Safari paints (SAF7) (#357)

@@ -155,14 +155,17 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
   background: var(--surface-page);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  /* An outline, not a box-shadow: Safari paints no box-shadow on a select that keeps its
+     native look. Width 0 rather than none, so the ring can grow in. */
+  outline: 0 solid transparent;
+  transition: border-color 0.2s ease, outline-width 0.2s ease, outline-color 0.2s ease;
 
   /* The walkthrough's hand wears the ring on the control it works, without taking focus. */
   &:focus,
   &[data-demo-focus] {
-    outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 85%);
+    outline-width: 3px;
+    outline-color: color-mix(in oklch, var(--accent), transparent 85%);
   }
 }
 
