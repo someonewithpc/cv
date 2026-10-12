@@ -1618,8 +1618,8 @@ $light-grey: #565656;
   // glued to targets (fixed + viewport client coords desync on scroll).
   @include cursor.driven($click-scale: 0.88, $drag-scale: null);
   z-index: 30;
-  width: 56px;
-  height: 56px;
+  width: 3.5rem;
+  height: 3.5rem;
   // Scale the click pulse around the tip, not the box center — otherwise the
   // tip drifts off the aimed point and clicks look mis-aimed.
   transform-origin: 12% 8%;
