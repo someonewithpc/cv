@@ -291,3 +291,4 @@
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
 - [x] Make the dots under a no-script stack one Tab stop, the arrow keys moving between sheets (A19) (#354)
 - [x] Give the scene demo roots and the map overlay a group role and name, and drop the empty Tab stop on Place and Badge (A10) (#349)
+- [ ] The Bill of materials count announces the picked filter: the status gets new text on each change, not a CSS swap (A5)
