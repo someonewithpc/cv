@@ -48,7 +48,9 @@ Cloudflare Web Analytics cannot see interactions, so the page also reports a few
 flips, the first touch of a demo, theme picks, printing, contact link clicks and how long the
 visit lasted. The session id is a variable in the page and dies with the tab. The visitor id is
 a hash of the address and the browser with a random salt that a Durable Object keeps for one
-calendar month and then deletes. Returning visits count within a month, and nothing can be
+calendar month and then deletes. Each event also carries the country, city, region and time zone
+Cloudflare reads off the request, and nothing finer: no postcode, coordinates or network.
+Returning visits count within a month, and nothing can be
 reversed after it. The method errs both ways: a phone that changes network counts twice, and an
 office behind one address counts once. Nothing is sent under Global Privacy Control or Do Not
 Track, from a browser that reports `navigator.webdriver`, or off hsal.es. Analytics Engine
