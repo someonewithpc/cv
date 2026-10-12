@@ -289,3 +289,4 @@
 - [x] Keep the theme switcher off the title block on a narrow window, with or without a classic scrollbar (SAF2) (#343)
 - [x] Move the demo cursor with translate and keep its position out of React state, so a cursor frame is no layout and no render (171-PW3) (#380)
 - [x] Drive every demo cursor through one shared controller that writes its position and press straight to the element (after #380) (#398)
+- [x] Move the Drag and Drop walkthrough cursor onto the shared demo cursor controller (after #380) (#399)
