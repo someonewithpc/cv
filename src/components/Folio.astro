@@ -47,6 +47,12 @@ const { number, label } = Astro.props;
     inset-inline-start: 0;
     inline-size: var(--desk-edge);
     color: color-mix(in oklch, var(--ink), transparent 45%);
+    /* Painted after the sheets, not before them. The numeral is sticky, so the compositor
+       keeps it on a layer of its own that can be anywhere down its rail, and everything
+       painted after it that might cross that range (the mat, the sheets, every stack) has to
+       sit on layers above it: a dozen layers at the top of the page for four numerals. Nothing
+       follows the rail now, and nothing on the desk ever overlaps the lane it stands in. */
+    z-index: 1;
   }
 }
 
