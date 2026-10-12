@@ -64,8 +64,9 @@
   grid-area: 1 / 2;
 }
 
-// A sheet under 56em drops the note, and each column says what it shows in its own caption
-@container technical-drawing-width (max-width: 56em) {
+// A sheet under 56em drops the note, and each column says what it shows in its own caption.
+// Keyed on the stack's attribute, with the width query only for the page without script.
+@mixin narrow-sheet {
   .wrapper {
     grid-template-columns: minmax(0, 1fr);
     gap: 1em;
@@ -73,6 +74,16 @@
 
   .sheet-note {
     display: none;
+  }
+}
+
+:global([data-sheet-width='narrow']) {
+  @include narrow-sheet;
+}
+
+@media (scripting: none) {
+  @container technical-drawing-width (max-width: 56em) {
+    @include narrow-sheet;
   }
 }
 
