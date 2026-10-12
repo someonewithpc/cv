@@ -113,6 +113,7 @@ const rows = {
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-band' as *;
 @use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
@@ -128,7 +129,7 @@ const rows = {
      clear of the frame line by a few pixels in the monospace body face. */
   row-gap: 0.5em;
 
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     /* The title block reaches into the content column on a short landscape sheet, so
        the figure and the footnote keep to the column's left and stop short of it. */
     justify-items: start;
@@ -151,7 +152,7 @@ const rows = {
     width: 100%;
     max-width: 30rem;
 
-    @container technical-drawing-width (max-width: 56em) {
+    @include sheet-band(narrow) {
       max-width: calc(100% - 6em);
     }
 
@@ -170,7 +171,7 @@ const rows = {
   text-wrap: balance;
   color: var(--ink);
 
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     /* One line on a short landscape sheet; the figure needs the height more. */
     max-width: none;
     justify-self: center;
@@ -189,7 +190,7 @@ const rows = {
      artwork's short side, and so does this. */
   padding-block: 3em 2em;
 
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     padding-block: 2.5em 1em;
   }
 
@@ -232,7 +233,7 @@ const rows = {
     max-height: 4em;
     overflow: hidden;
 
-    @container technical-drawing-width (max-width: 56em) {
+    @include sheet-band(narrow) {
       max-height: 2.5em;
     }
 
@@ -252,7 +253,7 @@ const rows = {
   /* As wide as the figure, so on a landscape sheet it stops short of the title block. */
   max-width: 30rem;
 
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     max-width: calc(100% - 6em);
   }
 
@@ -260,7 +261,7 @@ const rows = {
     max-width: 30rem;
   }
 
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     /* A short landscape sheet has the note's tab in one bottom corner and the title
        block in the other; the footnote keeps out of both. */
     margin-inline: 3.5em;
@@ -278,7 +279,7 @@ const rows = {
 
   /* The mode alone, so the portrait sheet can wrap again in a browser without
      text-wrap: pretty, which would drop that shorthand and keep the line unbroken. */
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     text-wrap-mode: nowrap;
   }
 
