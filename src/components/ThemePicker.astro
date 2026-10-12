@@ -132,12 +132,14 @@ aside {
       flex-shrink: 0;
     }
 
-    /* The radio is the only input in a picker label, so it needs no qualifier. */
-    &:has(input:checked) svg.checked {
+    /* The radio is the only input in a picker label, so it needs no qualifier. It comes
+       before the icons: a :has() on the label instead put every element inserted anywhere on
+       the page through a restyle of every icon here. */
+    input:checked ~ svg.checked {
       display: revert;
     }
 
-    &:has(input:not(:checked)) svg.unchecked {
+    input:not(:checked) ~ svg.unchecked {
       display: revert;
     }
   }
