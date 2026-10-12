@@ -298,7 +298,7 @@
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
 - [x] Make the dots under a no-script stack one Tab stop, the arrow keys moving between sheets (A19) (#354)
 - [x] Give the scene demo roots and the map overlay a group role and name, and drop the empty Tab stop on Place and Badge (A10) (#349)
-- [ ] Listen for the walkthrough handover pointer events on each demo instead of on window (C6)
+- [x] Listen for the walkthrough handover pointer events on each demo instead of on window (C6) (#394)
 - [x] The Bill of materials count announces the picked filter: the status gets new text on each change, not a CSS swap (A5) (#348)
 - [x] Keep the marker editor's toast live region in the page between toasts, so readers announce the first one (A6) (#352)
 - [x] Give the paper stacks their arrow key hint through aria-describedby, not the draft aria-description (A7) (#351)
