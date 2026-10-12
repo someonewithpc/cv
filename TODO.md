@@ -302,7 +302,7 @@
 - [x] Keep the marker editor's parts panel and the schema driver's table inside the frame line on a phone's sheet, with or without script (S24) (#382)
 - [x] Keep the shared value fan and the range rules table inside the frame line on a 320px phone, with or without script (S25) (#383)
 - [x] Size the px left beyond hairlines in rem and em on the eighths grid (S9) (#368)
-- [ ] Drive the marker editor preview's dragged colours, widths and dash lengths from custom properties on its `<svg>`, so a drag no longer edits a stylesheet and Safari stops restyling the whole page for every move (SAF11)
+- [x] Drive the marker editor preview's dragged colours, widths and dash lengths from custom properties on its `<svg>`, so a drag no longer edits a stylesheet and Safari stops restyling the whole page for every move (SAF11) (#393)
 - [x] Commit the marker editor's part styles in one task, so Safari restyles the page once when the editor opens instead of seven times (SAF10) (#386)
 - [x] Keep Marker Editor's way back smooth in Safari by giving each page behind the front its own layer there (SAF9) (#374)
 - [x] Mount a demo island after the page turn that brings it up, so Safari's restyle for its stylesheet no longer stalls the turn (SAF8) (#370)
