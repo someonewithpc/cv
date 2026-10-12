@@ -1603,19 +1603,6 @@ $light-grey: #565656;
 </style>
 
 <style lang="scss">
-.space-builder-tag {
-  padding: 0 0.45rem;
-  border-radius: 10px;
-  border: 2px solid rgba(162, 206, 59, 0.85);
-  background: rgba(25, 41, 21, 0.85);
-  color: #fff;
-  font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
-  font-size: 0.875rem;
-  font-weight: 800;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
 .space-builder-demo-cursor {
   // Absolute inside `.space-builder-app` so page/carousel scroll keeps the tip
   // glued to targets (fixed + viewport client coords desync on scroll).

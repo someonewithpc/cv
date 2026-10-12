@@ -62,6 +62,8 @@ import {
 } from './layoutEngine';
 import { createDemoSkybox } from './demoSkybox';
 
+import './spaceBuilderTag.scss';
+
 /** The part of a catalog variant the scene needs to draw it. */
 export type CatalogGhostVariant = {
   id: string;
