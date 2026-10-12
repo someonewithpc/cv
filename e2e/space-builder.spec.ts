@@ -131,6 +131,34 @@ test('parameters page: editing seat count updates the field', async ({ page }) =
   await expect(app.locator('.invalid-feedback')).toHaveCount(0);
 });
 
+test('parameters page: the seat count placeholder shows in full inside its field', async ({ page }) => {
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Edit Parameters');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  const app = await waitForSceneReady(front);
+  const seats = app.locator('[data-demo-target="param:seats"]');
+  const hint = app.locator('.wrapping-placeholder .placeholder');
+  await seats.click();
+  await seats.fill('');
+  await expect(hint).toBeVisible();
+
+  const fits = await hint.evaluate((el) => {
+    const input = el.parentElement!.querySelector('input')!.getBoundingClientRect();
+    const text = document.createRange();
+    text.selectNodeContents(el);
+    const r = text.getBoundingClientRect();
+    return r.left >= input.left && r.right <= input.right && r.top >= input.top && r.bottom <= input.bottom;
+  });
+  expect(fits).toBe(true);
+
+  const emptyHeight = (await seats.boundingBox())!.height;
+  await seats.fill('24');
+  await expect(hint).toBeHidden();
+  expect((await seats.boundingBox())!.height).toBe(emptyHeight);
+});
+
 test('layouts page: picking a different layout style selects it', async ({ page }) => {
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
