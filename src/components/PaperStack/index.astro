@@ -1399,12 +1399,22 @@ html:has([data-paper-stack-root]:hover) {
       max-height: none;
       aspect-ratio: auto;
       contain-intrinsic-block-size: var(--sheet-block);
+      // The next sheet's edge shows in the row's end padding, so the content box is one sheet
+      // wide. The sheets' cqw lengths and size queries read that box (Stack.astro makes the
+      // stack the size container), and a sheet narrower than it had its artwork laid out for
+      // the wider row, past the frame line. The last sheet's negative margin keeps the row's
+      // scroll end where it was, with the one before it showing on the left.
+      width: calc(100% - var(--sheet-peek));
+      padding-inline-end: calc(var(--row-slack) + var(--sheet-peek));
 
       > * {
-        flex-basis: calc(100% - var(--sheet-peek));
         block-size: var(--sheet-block);
         scroll-snap-align: start;
         scroll-snap-stop: always;
+      }
+
+      > :last-child {
+        margin-inline-end: calc(-1 * var(--sheet-peek));
       }
     }
 
