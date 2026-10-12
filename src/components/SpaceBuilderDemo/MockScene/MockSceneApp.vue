@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 
 import builderLogoUrl from '@/assets/demos/space-builder/builder-logo.png?url';
+import { createDemoCursor } from '@/client/demoCursor';
 import { watchDrawingNote } from '@/client/drawingNote';
 import {
   inDeckGrace,
@@ -129,9 +130,9 @@ const phase = ref<Phase>('idle');
 const snapshot = ref<SceneSnapshot | null>(null);
 
 const cursorPhase = ref<CursorPhase>('gone');
-const cursorPos = reactive({ x: 0, y: 0 });
-const cursorClicking = ref(false);
-const cursorDragging = ref(false);
+/** Moves and presses the drawn cursor straight on its element, so a walkthrough frame is no render. */
+const cursor = createDemoCursor();
+const attachCursor = (el: unknown) => cursor.attach(el instanceof HTMLElement ? el : null);
 
 const toasts = ref<DemoToast[]>([]);
 let toastId = 0;
@@ -190,7 +191,7 @@ let lastCursorClientY: number | null = null;
 let lastCursorPositionEl: Element | null = null;
 
 function applyCursor(step: DemoCursorStep) {
-  cursorDragging.value = Boolean(step.dragging);
+  cursor.drag(Boolean(step.dragging));
 
   const scope = rootRef.value ?? document;
   const targetEl = step.target
@@ -208,8 +209,7 @@ function applyCursor(step: DemoCursorStep) {
   if (step.client) {
     if (step.client.x !== lastCursorClientX || step.client.y !== lastCursorClientY) {
       const point = toRootPoint(step.client.x, step.client.y);
-      cursorPos.x = point.x;
-      cursorPos.y = point.y;
+      cursor.move(point.x, point.y);
       lastCursorClientX = step.client.x;
       lastCursorClientY = step.client.y;
       lastCursorPositionEl = null;
@@ -217,8 +217,7 @@ function applyCursor(step: DemoCursorStep) {
   } else if (targetEl instanceof HTMLElement && targetEl !== lastCursorPositionEl) {
     const rect = targetEl.getBoundingClientRect();
     const point = toRootPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    cursorPos.x = point.x;
-    cursorPos.y = point.y;
+    cursor.move(point.x, point.y);
     lastCursorPositionEl = targetEl;
     lastCursorClientX = null;
     lastCursorClientY = null;
@@ -227,10 +226,10 @@ function applyCursor(step: DemoCursorStep) {
   if (cursorPhase.value === 'gone') cursorPhase.value = 'demo';
 
   if (step.click) {
-    cursorClicking.value = true;
+    cursor.press();
     if (clickTimer) clearTimeout(clickTimer);
     clickTimer = setTimeout(() => {
-      cursorClicking.value = false;
+      cursor.release();
     }, CURSOR_CLICK_MS);
   }
 }
@@ -1141,14 +1140,10 @@ onBeforeUnmount(() => {
 
     <div
       v-if="cursorPhase !== 'gone'"
+      :ref="attachCursor"
       class="space-builder-demo-cursor"
       data-demo-cursor
-      :class="[
-        `space-builder-demo-cursor--${cursorPhase}`,
-        { 'space-builder-demo-cursor--clicking': cursorClicking },
-        { 'space-builder-demo-cursor--dragging': cursorDragging },
-      ]"
-      :style="{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }"
+      :class="`space-builder-demo-cursor--${cursorPhase}`"
       aria-hidden="true"
     >
       <svg viewBox="0 0 32 32" width="56" height="56">
@@ -1603,35 +1598,22 @@ $light-grey: #565656;
 </style>
 
 <style lang="scss">
+@use '@/scss/demo-cursor' as cursor;
+
 .space-builder-demo-cursor {
   // Absolute inside `.space-builder-app` so page/carousel scroll keeps the tip
   // glued to targets (fixed + viewport client coords desync on scroll).
-  position: absolute;
+  @include cursor.driven($click-scale: 0.88, $drag-scale: null);
   z-index: 30;
   width: 56px;
   height: 56px;
-  // Hotspot at the arrow tip (same idea as Marker Editor).
-  translate: -12% -8%;
   // Scale the click pulse around the tip, not the box center — otherwise the
   // tip drifts off the aimed point and clicks look mis-aimed.
   transform-origin: 12% 8%;
   pointer-events: none;
-  transition:
-    left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.32s ease,
-    scale 0.12s ease;
 
   &--fading {
     opacity: 0;
-  }
-
-  &--dragging {
-    transition: none;
-  }
-
-  &--clicking {
-    scale: 0.88;
   }
 
   svg {
