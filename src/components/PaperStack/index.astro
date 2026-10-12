@@ -1377,8 +1377,8 @@ html:has([data-paper-stack-root]:hover) {
     // snap by their start so the edge stays on that side (the last sheet shows the one before it
     // instead), and a flick stops at the next sheet. The condition is the whole CSS carousel's,
     // so a browser that draws the arrows and dots keeps one full-width sheet.
-    @supports not (selector(::scroll-marker) and selector(::scroll-button(right))) {
-      --sheet-peek: 1.75rem;
+    @supports #{drawing.$no-css-carousel} {
+      --sheet-peek: #{drawing.$sheet-peek};
       gap: 1rem;
       // A start snap aims the sheet at the row's own edge, not inside the slack, and Firefox rested
       // the second sheet 2px past that edge, which cut off its left border. The padding moves the

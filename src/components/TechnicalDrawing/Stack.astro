@@ -152,12 +152,14 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
     min(100vw - var(--scrollbar-inline, 0px) - var(--mat-inset) * 2, var(--mat-max))
       - (var(--mat-rim) + var(--mat-line)) * 2
   );
-  --sheet-inline: min(
-    max(
-      var(--mat-inner) - (var(--mat-boundary, 0px) + var(--mat-clear)) * 2,
-      min(var(--mat-inner) - max(0px, var(--mat-boundary, 0px) - var(--mat-rim)) * 2, var(--breakout-max))
-    ),
-    var(--breakout-max)
+  --sheet-inline: calc(
+    min(
+      max(
+        var(--mat-inner) - (var(--mat-boundary, 0px) + var(--mat-clear)) * 2,
+        min(var(--mat-inner) - max(0px, var(--mat-boundary, 0px) - var(--mat-rim)) * 2, var(--breakout-max))
+      ),
+      var(--breakout-max)
+    ) - var(--sheet-peek, 0px)
   );
   --sheet-block: calc(var(--sheet-inline) / 2);
 
@@ -239,6 +241,17 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 @media (scripting: none) and (width <= 680px) {
   .technical-drawing-frame {
     --sheet-block: min(var(--sheet-inline) * 5 / 3, 36rem, 85svh);
+  }
+}
+
+// Where the no-script row narrows each sheet to show the next one's edge (PaperStack), the
+// sheet's measure is the row's less that edge, or the type and the artwork are sized for the
+// row and run past the sheet's frame line.
+@media (scripting: none) {
+  @supports #{drawing.$no-css-carousel} {
+    .technical-drawing-frame {
+      --sheet-peek: #{drawing.$sheet-peek};
+    }
   }
 }
 
