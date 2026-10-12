@@ -120,11 +120,25 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
     height: 56px;
     transform-origin: 12% 8%;
     pointer-events: none;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" fill="%23fff" stroke="%23222" stroke-width="1.6" stroke-linejoin="round"/></svg>') center / contain no-repeat;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
     transition:
       opacity 0.32s ease,
       scale 0.12s ease;
+
+    // The arrow is two masked layers, so its outline can take var(--accent) as the other demos' do
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" stroke="%23000" stroke-width="1.6" stroke-linejoin="round"/></svg>') center / contain no-repeat;
+      background: #fff;
+    }
+
+    &::after {
+      mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4 2.5v24.2l6.4-6.2 4.1 9.7 4.2-1.8-4.1-9.6H26z" fill="none" stroke="%23000" stroke-width="1.6" stroke-linejoin="round"/></svg>');
+      background: var(--accent, #222);
+    }
 
     &--fading {
       opacity: 0;
