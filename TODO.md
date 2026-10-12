@@ -301,4 +301,4 @@
 - [x] Stop a resize from relaying out the whole page at each breakpoint by giving the @font-face rules their own stylesheet (P10) (#373)
 - [x] Free the Space Builder renderer a page turn replaces, which the shared DFG lookup texture kept alive (P13) (#375)
 - [x] Leave target-size to the mobile Lighthouse profile, since a mouse keeps the demos' drawn controls (171-A11) (#378)
-- [ ] Move the demo cursor with translate and keep its position out of React state, so a cursor frame is no layout and no render (171-PW3)
+- [x] Move the demo cursor with translate and keep its position out of React state, so a cursor frame is no layout and no render (171-PW3) (#380)
