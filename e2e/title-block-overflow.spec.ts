@@ -102,8 +102,7 @@ const under = (all: Sheet[], except: string[] = []) => Object.fromEntries(
 );
 
 for (const width of WIDTHS) {
-  test(`the title block buries no text at ${width}px`, async ({ page, browserName }) => {
-    test.fixme(browserName === 'firefox' && width === 760, 'Firefox runs two prose lines under the title block at 760px');
+  test(`the title block buries no text at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
 
