@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-const KEYBOARD_ATTRIBUTES = ['tabindex', 'aria-roledescription', 'aria-description'];
+const KEYBOARD_ATTRIBUTES = ['tabindex', 'aria-roledescription', 'aria-describedby'];
 
 async function stackMetrics(stack: Locator) {
   return stack.evaluate((el) => ({
@@ -58,7 +58,8 @@ test('with JavaScript on the script takes the stacks over and claims the arrow k
   for (const [i, stack] of (await stacks(page)).entries()) {
     await expect(stack).toHaveAttribute('tabindex', '0');
     await expect(stack).toHaveAttribute('aria-roledescription', 'paper stack');
-    await expect(stack).toHaveAttribute('aria-description', /arrow keys/);
+    await expect(stack).toHaveAccessibleDescription(/arrow keys/);
+    await expect(stack).not.toHaveAttribute('aria-description');
 
     const { display, scrollWidth, clientWidth } = await stackMetrics(stack);
     expect(display, `stack ${i}`).toBe('grid');

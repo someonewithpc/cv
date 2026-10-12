@@ -2319,7 +2319,9 @@ export function initPaperStackFold(): void {
       // Only the scripted stack turns pages by keyboard; without JS it is a scroll row.
       stack.tabIndex = 0;
       stack.setAttribute('aria-roledescription', 'paper stack');
-      stack.setAttribute('aria-description', 'The left and right arrow keys turn the pages');
+      // Hidden text in Layout.astro, not aria-description: that attribute is still a draft and
+      // many screen readers skip it. A describedby reference reads hidden text all the same.
+      stack.setAttribute('aria-describedby', 'paper-stack-keys');
       observeFoldPageSizes(stack);
       attachFoldDrag(fold, grab);
       syncPileSurface(stack);
