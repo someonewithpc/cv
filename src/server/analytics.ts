@@ -117,17 +117,38 @@ export interface DataPoint {
   doubles: number[];
 }
 
-// Blob positions: 1 visitor, 2 session, 3 country, 4 to 6 the event's string extras.
-// Doubles: 1 the count, 2 the event's number. Padded so a query can name a position.
-export const BLOB_COUNT = 6;
-const EXTRA_BLOBS = BLOB_COUNT - 3;
+// Where the request came from, as Cloudflare reads it off the address. Only these four:
+// no postcode, coordinates or network (ASN) are ever stored.
+export interface Place {
+  country: string;
+  city: string;
+  region: string;
+  timezone: string;
+}
 
-export function dataPoint(event: Event, visitor: string, session: string, country: string): DataPoint {
+export const NOWHERE: Place = { country: '', city: '', region: '', timezone: '' };
+
+// Blob positions: 1 visitor, 2 session, 3 country, 4 to 6 the event's string extras,
+// 7 city, 8 region, 9 time zone. Doubles: 1 the count, 2 the event's number. Padded so a
+// query can name a position. 7 to 9 came after the rest so older rows keep their meaning.
+export const BLOB_COUNT = 9;
+const EXTRA_BLOBS = 3;
+
+export function dataPoint(event: Event, visitor: string, session: string, place: Place): DataPoint {
   const strings = event.extras.filter((extra): extra is string => typeof extra === 'string');
   const number = event.extras.find((extra): extra is number => typeof extra === 'number') ?? 0;
-  const blobs = [visitor, session, country, ...strings.slice(0, EXTRA_BLOBS)];
-  while (blobs.length < BLOB_COUNT) blobs.push('');
+  const extras = strings.slice(0, EXTRA_BLOBS);
+  while (extras.length < EXTRA_BLOBS) extras.push('');
+  const blobs = [visitor, session, place.country, ...extras, place.city, place.region, place.timezone];
   return { indexes: [event.name], blobs, doubles: [1, number] };
+}
+
+type RequestPlace = Partial<Record<keyof Place, unknown>>;
+
+export function placeOf(request: Request): Place {
+  const cf = (request as { cf?: RequestPlace }).cf ?? {};
+  const read = (value: unknown) => (typeof value === 'string' ? value : '');
+  return { country: read(cf.country), city: read(cf.city), region: read(cf.region), timezone: read(cf.timezone) };
 }
 
 export interface Dataset {
@@ -158,9 +179,9 @@ export async function handleEvents(request: Request, sink: EventSink): Promise<R
       request.headers.get('cf-connecting-ip'),
       request.headers.get('user-agent'),
     );
-    const country = (request as { cf?: { country?: string } }).cf?.country ?? '';
+    const place = placeOf(request);
     for (const event of payload.events) {
-      sink.dataset.writeDataPoint(dataPoint(event, visitor, payload.session, country));
+      sink.dataset.writeDataPoint(dataPoint(event, visitor, payload.session, place));
     }
   } catch (e) {
     console.error('analytics: dropping a batch', e);

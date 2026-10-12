@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { EVENTS, MAX_EVENTS } from '../src/analytics';
-import { BLOB_COUNT, type DataPoint, dataPoint, handleEvents, isEventPath, optedOut, parsePayload, readSalt, saltAlarmTime, saltName, type SaltStorage, visitorId } from '../src/server/analytics';
+import { BLOB_COUNT, type DataPoint, dataPoint, handleEvents, isEventPath, NOWHERE, optedOut, parsePayload, readSalt, saltAlarmTime, saltName, type SaltStorage, visitorId } from '../src/server/analytics';
 import { canonicalRequest } from '../src/server/requestPath';
 
 // Drives the event route's pure parts in the test process, with a scripted dataset and salt.
@@ -107,39 +107,41 @@ test.describe('analytics visitor id', () => {
   });
 });
 
+const LISBON = { country: 'PT', city: 'Lisbon', region: 'Lisbon', timezone: 'Europe/Lisbon' };
+
 test.describe('analytics data point', () => {
-  test('always carries six blobs and two doubles, extras in stable positions', () => {
+  test('always carries nine blobs and two doubles, extras in stable positions', () => {
     for (const name of Object.keys(EVENTS) as (keyof typeof EVENTS)[]) {
-      const point = dataPoint({ name, extras: [] }, 'v', SESSION, 'PT');
+      const point = dataPoint({ name, extras: [] }, 'v', SESSION, LISBON);
       expect(point.blobs, name).toHaveLength(BLOB_COUNT);
       expect(point.indexes, name).toEqual([name]);
       expect(point.doubles, name).toEqual([1, 0]);
     }
-    expect(dataPoint({ name: 'flip', extras: ['marker-editor', 'store'] }, 'v', SESSION, 'PT')).toEqual({
+    expect(dataPoint({ name: 'flip', extras: ['marker-editor', 'store'] }, 'v', SESSION, LISBON)).toEqual({
       indexes: ['flip'],
-      blobs: ['v', SESSION, 'PT', 'marker-editor', 'store', ''],
+      blobs: ['v', SESSION, 'PT', 'marker-editor', 'store', '', 'Lisbon', 'Lisbon', 'Europe/Lisbon'],
       doubles: [1, 0],
     });
-    expect(dataPoint({ name: 'leave', extras: [91] }, 'v', SESSION, '')).toEqual({
+    expect(dataPoint({ name: 'leave', extras: [91] }, 'v', SESSION, NOWHERE)).toEqual({
       indexes: ['leave'],
-      blobs: ['v', SESSION, '', '', '', ''],
+      blobs: ['v', SESSION, '', '', '', '', '', '', ''],
       doubles: [1, 91],
     });
   });
 });
 
 test.describe('analytics route', () => {
-  test('writes one point per event with the visitor, session and country', async () => {
+  test('writes one point per event with the visitor, session and place', async () => {
     const s = sink();
     const request = post(payload([['visit', 'example.org', 'wide', 'dark'], ['leave', 3]]), { 'cf-connecting-ip': '203.0.113.7' });
-    Object.assign(request, { cf: { country: 'PT' } });
+    Object.assign(request, { cf: { country: 'PT', city: 'Lisbon', region: 'Lisbon', timezone: 'Europe/Lisbon', postalCode: '1000-001', latitude: '38.7', asn: 3243 } });
     const response = await handleEvents(request, s);
     expect(response.status).toBe(204);
     expect(response.headers.get('set-cookie')).toBeNull();
     const visitor = await visitorId(SALT_A, '203.0.113.7', 'test');
     expect(s.points).toEqual([
-      { indexes: ['visit'], blobs: [visitor, SESSION, 'PT', 'example.org', 'wide', 'dark'], doubles: [1, 0] },
-      { indexes: ['leave'], blobs: [visitor, SESSION, 'PT', '', '', ''], doubles: [1, 3] },
+      { indexes: ['visit'], blobs: [visitor, SESSION, 'PT', 'example.org', 'wide', 'dark', 'Lisbon', 'Lisbon', 'Europe/Lisbon'], doubles: [1, 0] },
+      { indexes: ['leave'], blobs: [visitor, SESSION, 'PT', '', '', '', 'Lisbon', 'Lisbon', 'Europe/Lisbon'], doubles: [1, 3] },
     ]);
   });
 
