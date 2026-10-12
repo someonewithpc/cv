@@ -1,0 +1,21 @@
+// CSS2D labels live under .space-builder-labels (appended to label-host).
+.sb-scene-anno {
+  pointer-events: none;
+  translate: 0 -0.35rem;
+}
+
+.sb-scene-anno__text {
+  display: inline-block;
+  padding: 0.18rem 0.45rem 0.22rem;
+  border-radius: 0.25rem;
+  border-bottom: 0.09rem solid color-mix(in oklab, #f4f0ea 70%, transparent);
+  background: color-mix(in oklab, #3a3d42 72%, transparent);
+  color: #f4f0ea;
+  font-family: sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  line-height: 1.15;
+  box-shadow: 0 1px 2px color-mix(in oklab, #000 35%, transparent);
+}

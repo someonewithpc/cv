@@ -14,6 +14,8 @@ import {
   type SpaceBuilderScene,
 } from './SpaceBuilderScene';
 
+import './SceneArrowAnnotations.scss';
+
 export type SceneArrowDef = {
   /** Tip at a SelectArea handle sphere. */
   handle?: HandleKey;
