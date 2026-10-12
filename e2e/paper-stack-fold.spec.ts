@@ -309,7 +309,7 @@ const flapGrip = (stack: Locator) => stack.locator('.paper-front').evaluate((she
   };
 });
 
-// The dog-ear's own size, read the way fold-drag.ts writes it while dragging or resting.
+// The dog-ear's own size, read the way foldDrag.ts writes it while dragging or resting.
 const foldSize = (stack: Locator) => stack.locator('.paper-front').evaluate((sheet) => {
   const style = getComputedStyle(sheet);
   return {
@@ -319,7 +319,7 @@ const foldSize = (stack: Locator) => stack.locator('.paper-front').evaluate((she
 });
 
 // Drags the front page's dog-ear through a sequence of corner-relative offsets from the grab
-// point (in CSS px, +x right / +y down), a handful of pointermove events per leg so fold-drag.ts
+// point (in CSS px, +x right / +y down), a handful of pointermove events per leg so foldDrag.ts
 // sees the travel rather than a single jump. Leaves the button down; callers release it.
 const dragFold = async (page: Page, stack: Locator, legs: { dx: number, dy: number }[]): Promise<{ x: number, y: number }> => {
   const grip = await flapGrip(stack);
@@ -350,7 +350,7 @@ test.describe('a drag that pulls the wrong way cancels', () => {
 
     // Grabbing the corner and pulling it further away from the page — down and right, the
     // opposite of the fold — is the drag Hugo described as "weird": before the fix this runs the
-    // tip toward the near-zero singularity in foldSizeFromTip (see fold-drag.ts), and --fold-x/-y
+    // tip toward the near-zero singularity in foldSizeFromTip (see foldDrag.ts), and --fold-x/-y
     // rocket up rather than shrinking smoothly (this stack reads x 90.58, y 31.57 six pixels out
     // along the outward axis, more than a fifth again its 75.59/37.80 resting size, and by twelve
     // pixels out x is past 300 before flipping negative). 80px clears the 10px

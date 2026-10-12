@@ -50,7 +50,7 @@ export default function EditorLayerApp() {
   // fold's clip-path says which one is drawn on top), so an IntersectionObserver — even
   // rooted at the stack — reports all six as equally "visible" and this diagram would
   // render (and steal the live editor's marker-part singletons) no matter which page a
-  // visitor is actually looking at. --page-index is what fold-drag.ts itself updates on a
+  // visitor is actually looking at. --page-index is what foldDrag.ts itself updates on a
   // committed flip (front = "1"), so it's the one signal that actually tracks the front page.
   useEffect(() => {
     const host = hostRef.current;

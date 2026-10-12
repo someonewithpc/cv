@@ -540,7 +540,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
 import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
-import { isFoldPulse } from '@/components/PaperStack/fold-drag';
+import { isFoldPulse } from '@/components/PaperStack/foldDrag';
 import './demo-cursor-press';
 
 import { positionAnnotations } from './annotations-position';
@@ -568,7 +568,7 @@ const holdForResize = (animation: Animation) => {
 
 // The pages' own animations and their content's, one list per page. The dog-ear's pulse runs
 // on the page too (its crease clip-path), but it is one of three layers kept on one clock by
-// PaperStack's fold-drag.ts, which holds it off screen and through a resize itself; one layer
+// PaperStack's foldDrag.ts, which holds it off screen and through a resize itself; one layer
 // stopped here would leave the hole and the flap out of step. Every page is read before any is
 // written: asking for a page's animations resolves style first, and a page written in between
 // made that a whole-document resolve per page, 78 of them on load.

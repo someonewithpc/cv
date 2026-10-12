@@ -18,7 +18,7 @@ const h = 60;
 const fold = { x: 60, y: 40 };
 
 // The crease runs from (w - fold.x, h) to (w, h - fold.y); the tip is the corner reflected
-// across it (foldTipFromSize in fold-drag.ts, in sheet coordinates).
+// across it (foldTipFromSize in foldDrag.ts, in sheet coordinates).
 const a = { x: w - fold.x, y: h };
 const b = { x: w, y: h - fold.y };
 const d = { x: b.x - a.x, y: b.y - a.y };

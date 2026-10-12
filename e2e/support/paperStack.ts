@@ -46,7 +46,7 @@ export async function forEachStackInLane(
 
 /**
  * Each PaperStack page keeps its DOM position; a committed flip only renumbers which
- * wrapper's `--page-index` reads `1` (see PaperStack/fold-drag.ts). So "the front page" is
+ * wrapper's `--page-index` reads `1` (see PaperStack/foldDrag.ts). So "the front page" is
  * whichever direct child currently carries that custom property, not a fixed DOM index.
  */
 /**
@@ -77,7 +77,7 @@ export async function frontPageName(stack: Locator): Promise<string> {
 }
 
 /**
- * Turns the stack one page via a wheel swipe, the same gesture fold-drag.ts's own
+ * Turns the stack one page via a wheel swipe, the same gesture foldDrag.ts's own
  * `stack.addEventListener('wheel', ...)` drives real trackpad/mouse-wheel input through
  * (see BACK_COMMIT_REACH: a swipe has to cover a quarter of the page's diagonal to commit,
  * whichever way it runs). `fraction` is how much of that diagonal this swipe covers, kept to
@@ -91,7 +91,7 @@ export async function swipeStack(page: Page, stack: Locator, forward: boolean, f
   if (!box) throw new Error('PaperStack has no layout box to swipe');
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
-  // A back swipe with nothing turned has no page to bring back: fold-drag.ts's beginBack
+  // A back swipe with nothing turned has no page to bring back: foldDrag.ts's beginBack
   // declines it without starting a gesture, so no settle is coming.
   const starts = forward || (await stack.evaluate((el) => 'paperFlipped' in (el as HTMLElement).dataset));
   const diagonal = Math.hypot(box.width, box.height);
@@ -116,7 +116,7 @@ declare global {
 }
 
 /**
- * Runs `act`, then waits for the gesture it started to end. fold-drag.ts sets
+ * Runs `act`, then waits for the gesture it started to end. foldDrag.ts sets
  * `data-paper-settled` on the stack when a turn lands or a fold eases back to rest, whichever
  * way the gesture went, and nothing else sets it, so the attribute going on after `act` is the
  * end of the gesture. That holds however long a starved renderer takes over the glide, which a
@@ -256,7 +256,7 @@ export async function drawEveryStack(page: Page): Promise<void> {
 
 /**
  * Waits for the front page's dog-ear to finish drawing itself. The reveal waits for the stack's
- * bottom edge to come on screen (watchStackReveal in PaperStack/fold-drag.ts) and then takes a
+ * bottom edge to come on screen (watchStackReveal in PaperStack/foldDrag.ts) and then takes a
  * second, so a spec that scrolls a stack in and goes straight for the flap would find it 0 by 0.
  * A drag retires the reveal for good, which counts as done.
  */

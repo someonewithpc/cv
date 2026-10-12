@@ -157,7 +157,7 @@ if (
 
       // A click, a Tab-then-Enter/Space, a screen reader's activate gesture, and a real
       // accesskey press (which the browser both focuses and clicks) all land here alike. Replay
-      // the same ArrowLeft/ArrowRight keydown the stack's own listener (PaperStack/fold-drag.ts)
+      // the same ArrowLeft/ArrowRight keydown the stack's own listener (PaperStack/foldDrag.ts)
       // already turns pages on, then hand focus straight back so the ring returns to the stack
       // and a second press keeps working.
       for (const button of document.querySelectorAll<HTMLButtonElement>('.page-turn-key')) {

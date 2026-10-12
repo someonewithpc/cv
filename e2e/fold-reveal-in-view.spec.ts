@@ -6,7 +6,7 @@ import { demoStack } from './support/paperStack';
  * A stack's dog-ear draws itself once (initial-fold-reveal in PaperStack/index.astro) and then
  * breathes (the fold pulse). Both used to start at load, so on a stack further down the page
  * they had played out long before anyone scrolled to it. They now wait until the stack's
- * bottom edge, where the dog-ear is, comes on screen (watchStackReveal in fold-drag.ts), and
+ * bottom edge, where the dog-ear is, comes on screen (watchStackReveal in foldDrag.ts), and
  * the pulse only comes in once the reveal is over: while the page's clip-path pulse exists,
  * Chrome paints the page's crease cut where it stood when that animation started, so the flap
  * drew itself over an uncut corner.
