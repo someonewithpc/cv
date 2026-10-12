@@ -9,10 +9,7 @@ import TopologyLayer from './layers/TopologyLayer.astro';
 import WorktreesLayer from './layers/WorktreesLayer.astro';
 import InstallLayer from './layers/InstallLayer.astro';
 import HostsLayer from './layers/HostsLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 const srcRoot = path.join(process.cwd(), 'src');
 const clientEntry = path.join(srcRoot, 'components/FediversePlaygroundDemo/client/playground.ts');
