@@ -348,14 +348,14 @@ $light-grey: #565656;
 $nav-second-bg: #151515;
 
 .options-section {
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.875rem;
 
   summary {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.25rem 0.1rem 0.45rem;
-    margin-bottom: 0.55rem;
+    padding: 0.25rem 0.125rem 0.5rem;
+    margin-bottom: 0.5rem;
     border-bottom: 1px solid $light-grey;
     font-size: 0.875rem;
     font-weight: 600;
@@ -375,7 +375,7 @@ $nav-second-bg: #151515;
 
 .field {
   display: grid;
-  gap: 0.3rem;
+  gap: 0.25rem;
   margin-bottom: 0.75rem;
   font-size: 0.75rem;
   color: #ced4da;
@@ -389,7 +389,7 @@ $nav-second-bg: #151515;
   input[type='number'],
   input[type='text'] {
     min-width: 0;
-    padding: 0.4rem 0.5rem;
+    padding: 0.375rem 0.5rem;
     border: 1px solid $light-grey;
     border-radius: 0.25rem;
     background: $nav-second-bg;
@@ -442,13 +442,13 @@ $nav-second-bg: #151515;
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem 0.55rem;
+    gap: 0.375rem 0.5rem;
     font-weight: 600;
     color: #e9ecef;
   }
 
   .range-glyph {
-    height: 1.1rem;
+    height: 1.125rem;
     width: auto;
     color: #ced4da;
   }
@@ -457,9 +457,9 @@ $nav-second-bg: #151515;
     color: #adb5bd;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    padding: 0.15rem 0.35rem;
+    padding: 0.125rem 0.375rem;
     border: 1px solid $light-grey;
-    border-radius: 0.2rem;
+    border-radius: 0.25rem;
     background: $nav-second-bg;
     font-size: 0.625rem;
   }
@@ -468,7 +468,7 @@ $nav-second-bg: #151515;
 .blocks-of {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 0.35rem;
+  gap: 0.375rem;
   align-items: center;
 
   .times {
@@ -488,7 +488,7 @@ $nav-second-bg: #151515;
   }
 
   .placeholder {
-    padding: calc(0.4rem + 1px) calc(0.5rem + 1px);
+    padding: calc(0.375rem + 1px) calc(0.5rem + 1px);
     color: #adb5bd;
     pointer-events: none;
   }
@@ -501,7 +501,7 @@ $nav-second-bg: #151515;
 .invalid-feedback {
   background: #dc3545;
   color: #fff;
-  padding: 0.4rem 0.5rem;
+  padding: 0.375rem 0.5rem;
   border-radius: 0.5rem;
   font-size: 0.625rem;
   font-weight: 600;
@@ -532,7 +532,7 @@ $nav-second-bg: #151515;
   .item-label {
     display: block;
     margin: 0;
-    padding: 0.3rem 0.25rem;
+    padding: 0.25rem 0.25rem;
     background: #212529;
     text-align: center;
     font-size: 0.75rem;
@@ -543,7 +543,7 @@ $nav-second-bg: #151515;
   .layout-style-icons {
     display: grid;
     place-items: center;
-    padding: 0.55rem 0.35rem 0.7rem;
+    padding: 0.5rem 0.375rem 0.75rem;
     background: linear-gradient(59deg, #dee2e6 0%, #adb5bd 100%);
     color: #151515;
 
@@ -566,7 +566,7 @@ $nav-second-bg: #151515;
   }
 
   &.is-demo-target {
-    box-shadow: 0 0 0 0.15rem rgba(137, 171, 36, 0.85);
+    box-shadow: 0 0 0 0.125rem rgba(137, 171, 36, 0.85);
   }
 }
 </style>

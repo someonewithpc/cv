@@ -17,7 +17,7 @@
   border-radius: 0.5em;
   font-family: var(--font-poppins);
   // Room for corner action buttons outside each cell.
-  padding: 0.85em;
+  padding: 0.875em;
   overflow: visible;
 
   // A small map has no room above the pin (and the pin anchor caps the
@@ -116,7 +116,7 @@
 
       .marker-edit-icon, .marker-delete-icon, .marker-duplicate-icon {
         position: absolute;
-        $pad: 0.1em;
+        $pad: 0.125em;
         $size: 0.5em;
         $border: 1px;
         $final-size: calc(#{$size} + #{2 * $pad} + #{2 * $border});
@@ -135,23 +135,23 @@
 
         // Sit outside the corner so the marker stays readable.
         &.marker-edit-icon {
-          top: -0.4em;
-          right: -0.4em;
+          top: -0.375em;
+          right: -0.375em;
         }
 
         &.marker-duplicate-icon {
-          bottom: -0.4em;
-          right: -0.4em;
+          bottom: -0.375em;
+          right: -0.375em;
         }
 
         &.marker-delete-icon {
-          top: -0.4em;
-          left: -0.4em;
+          top: -0.375em;
+          left: -0.375em;
         }
 
         background: #333;
         border: #{$border} solid #888;
-        border-radius: 0.2em;
+        border-radius: 0.25em;
         padding: $pad;
         box-sizing: border-box;
 

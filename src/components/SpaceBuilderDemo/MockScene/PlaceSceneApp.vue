@@ -345,7 +345,7 @@ onBeforeUnmount(() => {
     display: grid;
     place-content: center;
     justify-items: center;
-    gap: 0.65rem;
+    gap: 0.625rem;
     background: #212121;
     color: #adb5bd;
     font: 0.875rem/1.3 system-ui, sans-serif;
@@ -356,8 +356,8 @@ onBeforeUnmount(() => {
   }
 
   .spinner {
-    width: 1.6rem;
-    height: 1.6rem;
+    width: 1.625rem;
+    height: 1.625rem;
     border: 3px solid #89ab24;
     border-top-color: transparent;
     border-radius: 50%;
@@ -372,11 +372,11 @@ onBeforeUnmount(() => {
   .hint {
     position: absolute;
     left: 50%;
-    bottom: 0.55rem;
+    bottom: 0.5rem;
     z-index: 2;
     translate: -50% 0;
     margin: 0;
-    padding: 0.25rem 0.55rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     background: rgba(18, 22, 18, 0.72);
     color: #e8e4dc;
@@ -392,14 +392,14 @@ onBeforeUnmount(() => {
 // CSS2D labels live under .space-builder-labels (appended to label-host).
 .sb-scene-anno {
   pointer-events: none;
-  translate: 0 -0.35rem;
+  translate: 0 -0.375rem;
 }
 
 .sb-scene-anno__text {
   display: inline-block;
-  padding: 0.18rem 0.45rem 0.22rem;
+  padding: 0.125rem 0.5rem 0.25rem;
   border-radius: 0.25rem;
-  border-bottom: 0.09rem solid color-mix(in oklab, #f4f0ea 70%, transparent);
+  border-bottom: 0.125rem solid color-mix(in oklab, #f4f0ea 70%, transparent);
   background: color-mix(in oklab, #3a3d42 72%, transparent);
   color: #f4f0ea;
   font-family: sans-serif;
@@ -412,7 +412,7 @@ onBeforeUnmount(() => {
 }
 
 .space-builder-tag {
-  padding: 0 0.45rem;
+  padding: 0 0.5rem;
   border-radius: 10px;
   border: 2px solid rgba(162, 206, 59, 0.85);
   background: rgba(25, 41, 21, 0.85);

@@ -83,7 +83,7 @@ bootIslands('[data-editor-layer-island]', boot);
   /* Stacked, the chrome's type is bound by the height the text column sets, so
      a narrower text column would shrink the editor rather than enlarge it. */
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-  gap: 0.9em;
+  gap: 0.875em;
   align-items: center;
 
   font-family: var(--font-poppins), system-ui, sans-serif;
@@ -111,21 +111,21 @@ bootIslands('[data-editor-layer-island]', boot);
 
 .panel {
   box-sizing: border-box;
-  padding: 0.85em;
+  padding: 0.875em;
   background: #333;
   border: 2px solid #666;
-  border-radius: 0.55em;
+  border-radius: 0.5em;
   display: grid;
-  gap: 0.55em;
+  gap: 0.5em;
   align-content: start;
-  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+  box-shadow: 0 0.375rem 0.875rem color-mix(in oklab, #000 28%, transparent);
   line-height: 1.4;
 }
 
 header {
   display: flex;
   flex-direction: column;
-  gap: 0.15em;
+  gap: 0.125em;
 
   .eyebrow {
     font-size: max(0.5rem, 0.75em);
@@ -143,9 +143,9 @@ p {
 
 ol {
   margin: 0;
-  padding-left: 1.15em;
+  padding-left: 1.125em;
   display: grid;
-  gap: 0.3em;
+  gap: 0.25em;
   font-size: max(0.5rem, 0.75em);
   opacity: 0.85;
 }
@@ -167,7 +167,7 @@ code {
   li {
     display: flex;
     align-items: center;
-    gap: 0.45em;
+    gap: 0.5em;
   }
 
   /* Describes the circle and cross drawn in .editor-layer, which portrait hides. */

@@ -44,7 +44,7 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-radius: 0.35em;
+    border-radius: 0.375em;
     background: $nav-sidebar-bg;
     color: #f3f3f4;
     font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
@@ -56,7 +56,7 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    padding: 0.45rem 0.65rem;
+    padding: 0.5rem 0.625rem;
     border-bottom: 1px solid $light-grey;
   }
 

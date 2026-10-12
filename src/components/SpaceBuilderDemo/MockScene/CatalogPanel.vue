@@ -86,7 +86,7 @@ const itemsVisible = computed(() => {
   input {
     box-sizing: border-box;
     width: 100%;
-    padding: 0.4rem 0.55rem;
+    padding: 0.375rem 0.5rem;
     border: 1px solid #495057;
     border-radius: 0.25rem;
     background: #212529;
@@ -101,7 +101,7 @@ const itemsVisible = computed(() => {
     &:focus {
       outline: 0;
       border-color: $visrez-brand;
-      box-shadow: 0 0 0 0.2rem rgba(137, 171, 36, 0.25);
+      box-shadow: 0 0 0 0.25rem rgba(137, 171, 36, 0.25);
     }
   }
 }

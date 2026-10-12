@@ -190,20 +190,20 @@ $cell-debug: 11.111%;
   @include code.code-roles-on-dark(#f4f0ea, #333);
 
   box-sizing: border-box;
-  padding: 0.85em;
+  padding: 0.875em;
   background: #333;
   border: 2px solid #666;
-  border-radius: 0.55em;
+  border-radius: 0.5em;
   display: grid;
   gap: 0.75em;
   align-content: start;
-  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+  box-shadow: 0 0.375rem 0.875rem color-mix(in oklab, #000 28%, transparent);
 }
 
 header {
   display: flex;
   flex-direction: column;
-  gap: 0.15em;
+  gap: 0.125em;
 
   .eyebrow {
     font-size: max(0.5rem, 0.75em);
@@ -216,20 +216,20 @@ header {
 .compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.65em;
+  gap: 0.625em;
   min-height: 0;
 }
 
 .card {
   margin: 0;
   display: grid;
-  gap: 0.35em;
+  gap: 0.375em;
   min-width: 0;
 
   figcaption {
     display: flex;
     align-items: center;
-    gap: 0.4em;
+    gap: 0.375em;
     font-size: max(0.5rem, 0.75em);
     font-weight: 600;
   }
@@ -250,7 +250,7 @@ header {
 .badge {
   display: inline-grid;
   place-items: center;
-  padding: 0.12em 0.4em;
+  padding: 0.125em 0.375em;
   border-radius: 0.25em;
   font-size: max(0.5rem, 0.75em);
   letter-spacing: 0.04em;
@@ -277,7 +277,7 @@ header {
   box-sizing: border-box;
   width: 100%;
   aspect-ratio: var(--sample-aspect) / 1;
-  border-radius: 0.35em;
+  border-radius: 0.375em;
   border: 1px solid #666;
   overflow: hidden;
   background-color: $preview-bg;
@@ -356,7 +356,7 @@ header {
   display: grid;
   grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
   grid-template-rows: auto 1fr auto;
-  gap: 0.35em 0.45em;
+  gap: 0.375em 0.5em;
   align-items: stretch;
 }
 
@@ -365,7 +365,7 @@ header {
   display: grid;
   grid-template-rows: subgrid;
   grid-row: 1 / span 3;
-  gap: 0.2em;
+  gap: 0.25em;
   min-width: 0;
 
   figcaption {
@@ -426,7 +426,7 @@ header {
   justify-self: center;
   width: 1px;
   align-self: stretch;
-  margin: 0.15em 0.1em;
+  margin: 0.125em 0.125em;
   background: color-mix(in oklab, #f4f0ea 35%, transparent);
 }
 
@@ -434,7 +434,7 @@ header {
   /* Stacking the two cards doubled the panel's height, and portrait has less
      of it to give, not more — keep them side by side. */
   .compare {
-    gap: 0.45em;
+    gap: 0.5em;
   }
 
 }

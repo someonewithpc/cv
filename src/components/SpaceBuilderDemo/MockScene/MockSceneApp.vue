@@ -1239,13 +1239,13 @@ $scene-bg: #212121;
   .rail-logo {
     display: grid;
     place-items: center;
-    padding: 0.55rem 0.35rem 0.4rem;
+    padding: 0.5rem 0.375rem 0.375rem;
   }
 
   .rail-logo-img {
     display: block;
-    width: 2.35rem;
-    height: 2.35rem;
+    width: 2.375rem;
+    height: 2.375rem;
     object-fit: contain;
   }
 
@@ -1319,8 +1319,8 @@ $scene-bg: #212121;
 
   .tool-icon {
     display: block;
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 1.375rem;
+    height: 1.375rem;
     background-color: currentColor;
     mask-size: contain;
     mask-repeat: no-repeat;
@@ -1393,7 +1393,7 @@ $scene-bg: #212121;
 
   .flash {
     position: absolute;
-    top: 0.45rem;
+    top: 0.5rem;
     left: 0;
     right: 0;
     display: flex;
@@ -1404,7 +1404,7 @@ $scene-bg: #212121;
     .flash-message {
       margin: 0;
       width: min(80%, 28rem);
-      padding: 0.55rem 0.9rem;
+      padding: 0.5rem 0.875rem;
       border-radius: 0.25rem;
       background: #d9edf7;
       border: 1px solid #bce8f1;
@@ -1422,13 +1422,13 @@ $scene-bg: #212121;
     translate: -50% 0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.375rem;
     pointer-events: none;
     z-index: 5;
   }
 
   .toast {
-    padding: 0.45rem 0.85rem;
+    padding: 0.5rem 0.875rem;
     border-radius: 0.25rem;
     background: rgba(26, 179, 148, 0.92);
     color: #fff;
@@ -1439,7 +1439,7 @@ $scene-bg: #212121;
 
     &.leaving {
       opacity: 0;
-      translate: 0 0.35rem;
+      translate: 0 0.375rem;
 
 
       @media (prefers-reduced-motion: reduce) {
@@ -1474,14 +1474,14 @@ $scene-bg: #212121;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.45rem 0.65rem;
+    padding: 0.5rem 0.625rem;
     border-bottom: 1px solid $light-grey;
   }
 
   .sidebar-close {
     display: grid;
     place-items: center;
-    padding: 0.2rem;
+    padding: 0.25rem;
     border: 0;
     background: transparent;
     color: #dfe4ea;
@@ -1513,8 +1513,8 @@ $scene-bg: #212121;
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.75rem;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
     min-height: 0;
     background: $nav-sidebar-bg;
     border-top: 1px solid $light-grey;
@@ -1532,7 +1532,7 @@ $scene-bg: #212121;
     }
 
     em {
-      margin: 0 0.35rem;
+      margin: 0 0.375rem;
       font-style: italic;
       opacity: 0.85;
     }
@@ -1542,8 +1542,8 @@ $scene-bg: #212121;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
-    padding: 0.32rem 0.65rem;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
     border: 1px solid transparent;
     border-radius: 3px;
     font: inherit;
@@ -1581,7 +1581,7 @@ $scene-bg: #212121;
 
   .action--save {
     flex: 1.4;
-    padding-block: 0.55rem;
+    padding-block: 0.5rem;
     font-size: 0.875rem;
   }
 
@@ -1605,7 +1605,7 @@ $scene-bg: #212121;
 
 <style lang="scss">
 .space-builder-tag {
-  padding: 0 0.45rem;
+  padding: 0 0.5rem;
   border-radius: 10px;
   border: 2px solid rgba(162, 206, 59, 0.85);
   background: rgba(25, 41, 21, 0.85);
