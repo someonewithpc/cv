@@ -35,6 +35,15 @@ const listing = `<svg
 <style lang="scss">
 @use '@/scss/technical-drawing' as drawing;
 
+// On a landscape sheet the listing's cell spans the whole sheet and the title block sits in its
+// bottom-right corner. The cell gives up the block's width on the right, so the listing keeps
+// every line and loses only the ends of the longest comments. Where that would leave it under
+// 30em beside the block (sheets 616 to 700px wide) it gives up the block's height instead,
+// which keeps more of it. What no longer fits scrolls inside the listing. Without script the
+// block's size is unset, so both paddings are invalid and fall back to none.
+$inner-inline: calc(var(--sheet-inline) - 2px - 2 * var(--sheet-margin));
+$goes-beside: '#{$inner-inline} - var(--title-block-inline) - 30em';
+
 :global(article.technical-drawing-stack > * > section.path-data) {
   overflow: hidden;
 }
@@ -50,11 +59,14 @@ const listing = `<svg
   overflow: hidden;
   justify-content: flex-start;
   min-height: 0;
+  padding-inline-end: drawing.sheet-pick($goes-beside, var(--title-block-inline), 0rem);
+  padding-block-end: drawing.sheet-pick($goes-beside, 0rem, var(--title-block-block));
 
   /* Portrait gives the title block a row of its own; spanning to -1 would put
      the listing underneath it. */
   @container technical-drawing (orientation: portrait) {
     grid-row: 1;
+    padding: 0;
   }
 
   :global(pre) {
@@ -62,8 +74,9 @@ const listing = `<svg
     min-height: 0;
     margin: 1em 1.25em;
     padding: 1em;
-    max-width: 100%;
+    max-width: calc(100% - 2.5em);
     overflow: auto;
+    scrollbar-gutter: stable;
 
     /* Sideways scrolling inside a swipeable carousel is a trap, so on a portrait sheet
        shrink the listing until its longest line fits the sheet instead. */
@@ -75,6 +88,8 @@ const listing = `<svg
     @container technical-drawing (orientation: portrait) {
       margin: 0.5em;
       padding: 0.5em;
+      max-width: calc(100% - 1em);
+      scrollbar-gutter: auto;
     }
 
     & > :global(code) > :global(.line) {
