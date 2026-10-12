@@ -1261,7 +1261,7 @@ $light-grey: #565656;
     display: grid;
     place-items: center;
     width: 100%;
-    padding: 9px 0;
+    padding: 0.5rem 0;
     border: 0;
     border-right: 4px solid $nav-main-bg;
     background: $nav-main-bg;
