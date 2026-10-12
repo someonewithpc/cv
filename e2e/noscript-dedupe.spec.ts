@@ -8,6 +8,7 @@ async function stackMetrics(stack: Locator) {
     pages: el.children.length,
     scrollWidth: el.scrollWidth,
     clientWidth: el.clientWidth,
+    pageWidths: [...el.children].reduce((sum, page) => sum + page.getBoundingClientRect().width, 0),
   }));
 }
 
@@ -30,12 +31,13 @@ test.describe('with JavaScript off', () => {
     await expect(page.locator('[data-paper-stack-root]')).toHaveCount(all.length);
 
     for (const [i, stack] of all.entries()) {
-      const { display, pages, scrollWidth, clientWidth } = await stackMetrics(stack);
+      const { display, pages, scrollWidth, pageWidths } = await stackMetrics(stack);
       expect(display, `stack ${i}`).toBe('flex');
       expect(pages, `stack ${i}`).toBeGreaterThan(1);
-      // A row of full-width pages, so every page is one scroll away rather than piled
-      // into the single grid cell the scripted stack uses.
-      expect(scrollWidth, `stack ${i}`).toBeGreaterThanOrEqual(clientWidth * pages - 1);
+      // A row of pages side by side, so every page is one scroll away rather than piled into
+      // the single grid cell the scripted stack uses. Chrome's pages fill the row; Firefox's
+      // leave the next page's edge in view.
+      expect(scrollWidth, `stack ${i}`).toBeGreaterThanOrEqual(pageWidths - 1);
 
       const folds = stack.locator('.paper-fold, .paper-clip, .paper-flip-hint');
       for (const fold of await folds.all()) await expect(fold).toBeHidden();
