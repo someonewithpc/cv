@@ -297,3 +297,4 @@
 - [x] A catalog drag in Space Builder places one chair where it drops, not a second one mid-floor as the drag starts (D1) (#358)
 - [x] Run the no-script and layout specs in Playwright's Firefox, so the Firefox fixes keep a spec there (171-FF6) (#376)
 - [x] Size the no-script sheet's type for the narrower sheet Firefox shows beside the next one's edge (FF7) (#381)
+- [ ] Keep the EventResult and Selector Depth Hue sheets clear of the title block at 760px in Firefox too (FF8)
