@@ -1182,7 +1182,7 @@ $buttons-ui: #6c757d;
 $light-grey: #565656;
 
 .space-builder-app {
-  --sb-rail: 70px;
+  --sb-rail: 4.375rem;
 
   position: relative;
   width: 100%;
@@ -1216,7 +1216,7 @@ $light-grey: #565656;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    width: 70px;
+    width: 4.375rem;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
@@ -1230,7 +1230,7 @@ $light-grey: #565656;
     // Page.astro sets --note-fold-reach, and it is 0 wherever there is no tab.
     border-block-end: var(--note-fold-reach, 0px) solid $nav-main-bg;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.35);
-    transform: translateX(calc(var(--sb-rail) - 70px));
+    transform: translateX(calc(var(--sb-rail) - 4.375rem));
     transition: transform 0.25s ease;
 
     @media (prefers-reduced-motion: reduce) {
