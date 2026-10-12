@@ -252,37 +252,167 @@ const forgetFoldSize = (sheet: HTMLElement): void => {
 
 const foldSizeOf = (sheet: HTMLElement): Vec => writtenFoldSizes.get(sheet) ?? currentFoldSize(sheet);
 
-// The corner cut and the drift together, off one computed-style object: what a landing frame
-// needs, and all it reads. (The drift is how far a turned page's corner cut stands over from its
-// left edge — see --turned-drift in index.astro; the page slides back by the same amount, so the
-// cut stays on the stack's edge.)
+// The corner cut and the drift together: what a landing frame needs. (The drift is how far a
+// turned page's corner cut stands over from its left edge — see --turned-drift in index.astro;
+// the page slides back by the same amount, so the cut stays on the stack's edge.)
 //
 // Both are transitioned, and every one of those transitions is started from this file: the cut
 // by a change of flipped state (300ms, on the stack), the drift by a renumbering (250ms, on the
-// page). Outside those windows the answer is last frame's, so a frame that asked again was
-// buying a style resolve to be told nothing had moved — and on this page that resolve is a
-// whole-document one whenever anything at all has touched a class, an attribute or the node tree
-// since the last paint, which a demo playing under the paper does several times a second. So the
-// reading is kept, and refreshed only while one of those transitions could still be running.
-// stirLanding below marks every place that starts one, plus the two that can move the values
-// without a transition at all — a resize and a theme change, both of which re-derive the em
-// lengths the cut is written in.
+// page). stirLanding below marks every place that starts one, plus the two that can move the
+// values without a transition at all — a resize and a theme change, both of which re-derive the
+// em lengths the cut is written in.
+//
+// A frame never reads them off computed style. By the time a frame callback runs, the browser
+// has advanced its animations and marked everything they touch for a style resolve, so a read
+// there resolves the stack on the spot, and the frame's own writes then make it resolve the
+// stack again before paint: two style passes and two layouts a frame, 36 to 47 forced ones a
+// turn, 90 to 135 ms (#220 P9). Instead, after the frame that starts a transition has painted,
+// the transition itself is taken from the browser: a CSSTransition carries its from and to
+// values, its start time and its timing, and the value at any frame follows from those and the
+// frame's own time, the very interpolation the browser paints. A frame computes it and reads
+// nothing: the transition's own getters would resolve style again, so none of them is called
+// once the reading is taken. A reading is taken then too, while style is still clean from the
+// paint and so costs nothing, for any value that moved without a transition (reduced motion
+// makes the transitions instant). Until a browser has handed a transition out once, the
+// readings are retaken each frame for as long as one could still be running, so a browser that
+// never does follows them one frame behind instead of not at all.
 const LANDING_SETTLE_MS = 600;
 
+// The timing functions a transition here can carry, as the browser applies them. The keywords
+// are the cubic beziers the spec defines them as; a solver like the one in index.astro, run at
+// the precision the browser's own gives.
+const bezier = (x1: number, y1: number, x2: number, y2: number) => (x: number): number => {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  let lo = 0, hi = 1, t = x;
+  for (let i = 0; i < 24; i++) {
+    t = (lo + hi) / 2;
+    const bx = 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t;
+    if (bx < x) lo = t; else hi = t;
+  }
+  return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+};
+const EASINGS: Record<string, (x: number) => number> = {
+  linear: (x) => x,
+  ease: bezier(0.25, 0.1, 0.25, 1),
+  'ease-in': bezier(0.42, 0, 1, 1),
+  'ease-out': bezier(0, 0, 0.58, 1),
+  'ease-in-out': bezier(0.42, 0, 0.58, 1),
+};
+const easingOf = (easing: string): ((x: number) => number) | undefined => {
+  const named = EASINGS[easing];
+  if (named) return named;
+  const bez = /^cubic-bezier\(([^)]+)\)$/.exec(easing);
+  if (!bez) return undefined;
+  const [x1, y1, x2, y2] = bez[1].split(',').map(Number);
+  return [x1, y1, x2, y2].some(Number.isNaN) ? undefined : bezier(x1, y1, x2, y2);
+};
+
+// A transition under way: where it runs from and to, when it started on the document's
+// timeline (null while the browser has yet to start it, when it still stands at from) and how
+// it eases.
+type Move = { anim: Animation, from: number, to: number, start: number | null, delay: number, duration: number, ease: (x: number) => number };
+type Reading = { at: number, move: Move | null };
+
+const CUT_NAMES = ['--fold-back-x', '--fold-back-y'];
+const DRIFT_NAMES = ['--turned-drift'];
+
+const landingReadings = new WeakMap<HTMLElement, Map<string, Reading>>();
 const landingLive = new WeakMap<HTMLElement, number>();
-const landingCache = new WeakMap<HTMLElement, { back: Vec, drift: number }>();
+// Stirred and not yet read: the one case a frame has to go to computed style.
+const landingStale = new WeakSet<HTMLElement>();
+const landingPending = new WeakSet<HTMLElement>();
+let movesSeen = false;
+
+// Runs a job after the next frame has painted. A frame callback would run before that frame's
+// style resolve, and a message posted from inside one is handled only once the frame's rendering
+// is done, so the job finds style clean and the transitions that resolve started.
+const afterPaint = (() => {
+  const jobs: (() => void)[] = [];
+  const channel = new MessageChannel();
+  channel.port1.onmessage = () => {
+    for (const job of jobs.splice(0)) job();
+  };
+  let armed = false;
+  return (job: () => void): void => {
+    jobs.push(job);
+    if (armed) return;
+    armed = true;
+    requestAnimationFrame(() => {
+      armed = false;
+      channel.port2.postMessage(null);
+    });
+  };
+})();
+
+const takeReadings = (el: HTMLElement, names: string[]): void => {
+  const moves = new Map<string, Move>();
+  for (const anim of el.getAnimations()) {
+    const name = (anim as CSSTransition).transitionProperty;
+    if (!name || !names.includes(name)) continue;
+    const effect = anim.effect as KeyframeEffect | null;
+    if (!effect) continue;
+    const [from, to] = effect.getKeyframes().map((k) => parseFloat(k[name] as string));
+    const { delay, duration, easing } = effect.getTiming();
+    const ease = easingOf(easing ?? 'linear');
+    if (Number.isNaN(from) || Number.isNaN(to) || typeof duration !== 'number' || !ease) continue;
+    moves.set(name, { anim, from, to, start: anim.startTime as number | null, delay: delay ?? 0, duration, ease });
+    movesSeen = true;
+  }
+  const style = getComputedStyle(el);
+  const readings = new Map<string, Reading>();
+  for (const name of names) {
+    readings.set(name, { at: parseFloat(style.getPropertyValue(name)), move: moves.get(name) ?? null });
+  }
+  landingReadings.set(el, readings);
+};
+
+const readLanding = (stack: HTMLElement): void => {
+  landingStale.delete(stack);
+  landingPending.delete(stack);
+  takeReadings(stack, CUT_NAMES);
+  for (const page of stack.children) takeReadings(page as HTMLElement, DRIFT_NAMES);
+  if (!movesSeen && performance.now() < (landingLive.get(stack) ?? 0)) readLandingAfterPaint(stack);
+};
+
+const readLandingAfterPaint = (stack: HTMLElement): void => {
+  if (landingPending.has(stack)) return;
+  landingPending.add(stack);
+  afterPaint(() => readLanding(stack));
+};
 
 const stirLanding = (stack: HTMLElement): void => {
   landingLive.set(stack, performance.now() + LANDING_SETTLE_MS);
+  landingStale.add(stack);
+  readLandingAfterPaint(stack);
+};
+
+// Where a value stands this frame, or nothing when it has to be read. A transition whose target
+// moved again under it was started from this file too, so a fresh reading is on its way.
+const readingOf = (el: HTMLElement, name: string): number | undefined => {
+  const reading = landingReadings.get(el)?.get(name);
+  if (!reading) return undefined;
+  const { move } = reading;
+  if (!move) return reading.at;
+  move.start ??= move.anim.startTime as number | null;
+  if (move.start === null) return move.from;
+  const now = document.timeline.currentTime as number | null;
+  if (now === null) return undefined;
+  const elapsed = now - move.start - move.delay;
+  if (elapsed >= move.duration) return move.to;
+  return move.from + (move.to - move.from) * move.ease(Math.max(elapsed, 0) / move.duration);
 };
 
 const currentLanding = (sheet: HTMLElement): { back: Vec, drift: number } => {
-  const kept = landingCache.get(sheet);
-  if (kept && performance.now() > (landingLive.get(sheet.parentElement!) ?? 0)) return kept;
+  const stack = sheet.parentElement!;
+  if (!landingStale.has(stack)) {
+    const x = readingOf(stack, CUT_NAMES[0]);
+    const y = readingOf(stack, CUT_NAMES[1]);
+    const drift = readingOf(sheet, DRIFT_NAMES[0]);
+    if (x !== undefined && y !== undefined && drift !== undefined) return { back: { x, y }, drift: drift || 0 };
+  }
   const [x, y, drift] = lengthsOf(sheet, '--fold-back-x', '--fold-back-y', '--turned-drift');
-  const fresh = { back: { x, y }, drift: drift || 0 };
-  landingCache.set(sheet, fresh);
-  return fresh;
+  return { back: { x, y }, drift: drift || 0 };
 };
 
 const currentBackFoldSize = (sheet: HTMLElement): Vec => currentLanding(sheet).back;
