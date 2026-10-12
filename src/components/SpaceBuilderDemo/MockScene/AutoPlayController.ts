@@ -73,7 +73,7 @@ const TYPE_CHAR_MS = 380;
 const TYPE_AFTER_CHAR_MS = 140;
 const TYPE_FIELD_GAP_MS = 520;
 
-/** Matches `.space-builder-demo-cursor` left/top transition duration. */
+/** Matches `.space-builder-demo-cursor` translate transition duration. */
 const CURSOR_TRAVEL_MS = 560;
 const SIDEBAR_SCROLL_MS = 480;
 /** Ignore sub-pixel / layout jitter when deciding whether the cursor actually moved. */
