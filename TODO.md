@@ -308,6 +308,7 @@
 - [x] Keep Marker Editor's way back smooth in Safari by giving each page behind the front its own layer there (SAF9) (#374)
 - [x] Mount a demo island after the page turn that brings it up, so Safari's restyle for its stylesheet no longer stalls the turn (SAF8) (#370)
 - [ ] Skip the sheets a no-script row has scrolled out of view, so the logo loops and the tagging tool carets stop ticking off screen (171-NJ6)
+- [ ] Hold the demo loops of a stack that is off screen or turned away, in CSS as well as script, so the caret, the variants pip and the logo stop running (171-R6)
 - [x] Pause a no-script row's animations while it is off screen, so the logo loops and the tagging tool carets stop ticking where nobody sees them (171-NJ6) (#387)
 - [x] Let the keyboard scroll the code blocks, sheets and panels that scroll with nothing focusable in them, and keep the web-ts-mode notes out of the landmark list (A12) (#356)
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)

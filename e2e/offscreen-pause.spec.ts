@@ -139,3 +139,13 @@ for (let lane = 0; lane < LANES; lane += 1) {
     });
   });
 }
+
+test('no stack animates while it is off screen', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect
+    .poll(() => page.evaluate(() => document.getAnimations({ subtree: true })
+      .filter((animation) => animation.playState === 'running' && animation.effect?.target instanceof Element
+        && animation.effect.target.closest('article.technical-drawing-stack')).length))
+    .toBe(0);
+});
