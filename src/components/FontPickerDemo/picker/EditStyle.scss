@@ -180,12 +180,12 @@
       display: flex;
 
       input[type='button'] {
-        margin: 5px;
-        padding: 5px;
+        margin: 0.25rem;
+        padding: 0.375rem;
         border: 1px solid gray;
-        border-radius: 5px;
+        border-radius: 0.25rem;
         font-weight: 700;
-        min-width: 80px;
+        min-width: 5rem;
         background: light-dark(#efefef, #3a3a3a);
         color: inherit;
         cursor: pointer;
