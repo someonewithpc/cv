@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage } from './support/paperStack';
 import { expect, pageWait, SLOW_RATE, test } from './support/timeScale';
 
 const PAGES = ['GNU social · Event Dispatch', 'EventResult', 'Module Discovery', 'Build-Time Guard'];
@@ -361,8 +361,8 @@ for (const width of [390, 1024, 1440]) {
 
 /** How far the demo's boxes reach past the sheet's frame line, and how much of the title block
     the smallest of them cover, in px. */
-async function sheetOverflow(front: Locator) {
-  return front.locator('section').evaluate((sheet) => {
+async function sheetOverflow(front: Locator, layer = '.event-bus-demo') {
+  return front.locator('section').first().evaluate((sheet, layer) => {
     const s = sheet.getBoundingClientRect();
     const inset = parseFloat(getComputedStyle(sheet).paddingTop) + 2;
     const block = sheet.querySelector(':scope > table')!.getBoundingClientRect();
@@ -370,7 +370,7 @@ async function sheetOverflow(front: Locator) {
     let past = -Infinity;
     let under = 0;
     let underDeck = 0;
-    for (const el of sheet.querySelectorAll('.event-bus-demo *')) {
+    for (const el of sheet.querySelectorAll(`${layer} *`)) {
       if (!el.checkVisibility() || el.closest('.event-bus-cursor')) continue;
       const b = el.getBoundingClientRect();
       if (b.width < 1 || b.height < 1) continue;
@@ -384,7 +384,7 @@ async function sheetOverflow(front: Locator) {
       if (acrossDeck > 0.5 && downDeck > 0.5) underDeck = Math.max(underDeck, acrossDeck * downDeck);
     }
     return { past, under, underDeck };
-  });
+  }, layer);
 }
 
 for (const width of [320, 336, 688, 720, 768]) {
@@ -416,3 +416,42 @@ for (const width of [320, 336, 688, 720, 768]) {
     }
   });
 }
+
+// A landscape sheet this short holds the EventResult cases at their floor type, and the
+// layer, cleared of the title block across its whole width, ran past the frame's bottom line.
+async function eventResultFits(sheet: Locator) {
+  const layer = '.wrapper:has(> .stop-layer)';
+  const { past, under } = await sheetOverflow(sheet, layer);
+  expect(past, 'past the frame line').toBeLessThanOrEqual(0);
+  expect(under, 'under the title block').toBe(0);
+  const below = await sheet.locator('section').first().evaluate((section, layer) => {
+    const inset = parseFloat(getComputedStyle(section).paddingBottom) + 2;
+    return section.querySelector(layer)!.getBoundingClientRect().bottom - (section.getBoundingClientRect().bottom - inset);
+  }, layer);
+  expect(below, 'the layer past the frame line').toBeLessThanOrEqual(0);
+}
+
+test.describe('EventResult on a narrow landscape sheet', () => {
+  for (const width of [688, 760, 768]) {
+    test(`stays inside the frame line and off the title block at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      const stack = eventBusStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await turnToPage(stack, 'EventResult');
+      await eventResultFits(frontPage(stack, await frontPageIndex(stack)));
+    });
+  }
+
+  test.describe('without script', () => {
+    test.use({ javaScriptEnabled: false });
+
+    for (const width of [688, 768]) {
+      test(`stays inside the frame line and off the title block at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto('/');
+        await eventResultFits(page.locator('article.technical-drawing-stack > *').filter({ has: page.locator('.stop-layer') }));
+      });
+    }
+  });
+});
