@@ -753,6 +753,8 @@ export default function MockMapApp() {
       ref={containerRef}
       className="mock-map-overlay"
       tabIndex={0}
+      role="group"
+      aria-label="Map of spaces, autoplaying the marker editor; pick a pin to take over"
       onFocus={() => {
         yieldToUser(true);
       }}
