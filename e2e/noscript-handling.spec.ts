@@ -35,10 +35,7 @@ test.describe('with JavaScript off', () => {
     await expectNoScriptPage(page);
   });
 
-  test('the artwork is scaled to the sheet, the slip shows its title, the islands say why', async ({ page, browserName }) => {
-    // Firefox's row narrows each sheet to show the next one's edge, but --sheet-inline still
-    // reads the row's width, so the type and the artwork are sized for a wider sheet.
-    test.fixme(browserName === 'firefox', 'Firefox sizes the no-script type for the row, not the narrower sheet');
+  test('the artwork is scaled to the sheet, the slip shows its title, the islands say why', async ({ page }) => {
     // A sheet narrower than 800px, where the sheet's scale is below the inherited 1rem.
     await page.setViewportSize({ width: 768, height: 900 });
     await page.goto('/');
@@ -71,10 +68,7 @@ test.describe('with JavaScript off', () => {
     expect(await placeholder.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('"This demo needs JavaScript."');
   });
 
-  test('a phone gets the portrait type, and the playground toggles are tall enough to tap', async ({ page, browserName }) => {
-    // Firefox's row narrows each sheet to show the next one's edge, but --sheet-inline still
-    // reads the row's width, so the type and the artwork are sized for a wider sheet.
-    test.fixme(browserName === 'firefox', 'Firefox sizes the no-script type for the row, not the narrower sheet');
+  test('a phone gets the portrait type, and the playground toggles are tall enough to tap', async ({ page }) => {
     // Under 680px the sheet is portrait (Stack.astro's no-script mirror of its width query), and
     // the type has to follow: the landscape size left every sheet at 7px, and the playground's
     // toggles, at 0.8em of that, under 16px tall.
@@ -98,9 +92,10 @@ test.describe('with JavaScript off', () => {
   });
 
   test('a phone sheet lays its grid out as portrait, inside the frame line', async ({ page, browserName }) => {
-    // Firefox's row narrows each sheet to show the next one's edge, but --sheet-inline still
-    // reads the row's width, so the type and the artwork are sized for a wider sheet.
-    test.fixme(browserName === 'firefox', 'Firefox sizes the no-script type for the row, not the narrower sheet');
+    // Firefox's row shows the next sheet's edge, so its sheet at 390px is the one Chrome draws
+    // at 362px. The marker editor's parts panel and the schema driver's table run past the frame
+    // line at that width in both engines.
+    test.fixme(browserName === 'firefox', 'a 335px sheet: Chrome fails the same way at a 362px window');
     // The demos key their portrait layouts on the attribute the stack's script writes. Without
     // script each rule has a no-script mirror under 680px; with none, a phone's sheets kept the
     // landscape grid and ran up to 200px past the frame line's right edge.
