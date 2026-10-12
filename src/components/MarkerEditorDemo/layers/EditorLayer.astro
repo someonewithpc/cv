@@ -64,6 +64,7 @@ bootIslands('[data-editor-layer-island]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/visrez' as *;
 @use '@/scss/sheet-orientation' as *;
 .wrapper {
   box-sizing: border-box;
@@ -88,7 +89,7 @@ bootIslands('[data-editor-layer-island]', boot);
 
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.625rem, 0.026 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
-  color: #f4f0ea;
+  color: $visrez-panel-ink;
 
   /* The chrome needs 32em by 60em even in its stacked layout, which is more of a phone
      sheet than the text leaves. So portrait keeps the text and drops the editor; the
@@ -112,8 +113,8 @@ bootIslands('[data-editor-layer-island]', boot);
 .panel {
   box-sizing: border-box;
   padding: 0.85em;
-  background: #333;
-  border: 2px solid #666;
+  background: $visrez-panel;
+  border: 2px solid $visrez-panel-border;
   border-radius: 0.55em;
   display: grid;
   gap: 0.55em;
@@ -162,7 +163,7 @@ code {
   display: grid;
   gap: 0.25em;
   font-size: max(0.5rem, 0.75em);
-  border-top: 1px solid color-mix(in oklab, #f4f0ea 22%, transparent);
+  border-top: 1px solid color-mix(in oklab, $visrez-panel-ink 22%, transparent);
 
   li {
     display: flex;
@@ -196,9 +197,9 @@ code {
 
   &.list {
     background:
-      linear-gradient(#f4f0ea 0 0) top / 100% 0.125em no-repeat,
-      linear-gradient(#f4f0ea 0 0) center / 100% 0.125em no-repeat,
-      linear-gradient(#f4f0ea 0 0) bottom / 100% 0.125em no-repeat;
+      linear-gradient($visrez-panel-ink 0 0) top / 100% 0.125em no-repeat,
+      linear-gradient($visrez-panel-ink 0 0) center / 100% 0.125em no-repeat,
+      linear-gradient($visrez-panel-ink 0 0) bottom / 100% 0.125em no-repeat;
     opacity: 0.7;
   }
 }

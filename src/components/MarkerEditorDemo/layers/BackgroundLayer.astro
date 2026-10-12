@@ -184,16 +184,16 @@ $cell-debug: 11.111%;
   place-items: stretch;
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.5rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
-  color: #f4f0ea;
+  color: $visrez-panel-ink;
 }
 
 .panel {
-  @include code.code-roles-on-dark(#f4f0ea, #333);
+  @include code.code-roles-on-dark($visrez-panel-ink, $visrez-panel);
 
   box-sizing: border-box;
   padding: 0.85em;
-  background: #333;
-  border: 2px solid #666;
+  background: $visrez-panel;
+  border: 2px solid $visrez-panel-border;
   border-radius: 0.55em;
   display: grid;
   gap: 0.75em;
@@ -258,12 +258,12 @@ header {
   text-transform: uppercase;
 
   &.bad {
-    background: color-mix(in oklab, #c45c2a 40%, #333);
+    background: color-mix(in oklab, #c45c2a 40%, $visrez-panel);
     color: #ffd4b8;
   }
 
   &.good {
-    background: color-mix(in oklab, $visrez-brand 40%, #333);
+    background: color-mix(in oklab, $visrez-brand 40%, $visrez-panel);
     color: #e8f5b8;
   }
 }
@@ -279,7 +279,7 @@ header {
   width: 100%;
   aspect-ratio: var(--sample-aspect) / 1;
   border-radius: 0.35em;
-  border: 1px solid #666;
+  border: 1px solid $visrez-panel-border;
   overflow: hidden;
   background-color: $preview-bg;
 
@@ -428,7 +428,7 @@ header {
   width: 1px;
   align-self: stretch;
   margin: 0.15em 0.1em;
-  background: color-mix(in oklab, #f4f0ea 35%, transparent);
+  background: color-mix(in oklab, $visrez-panel-ink 35%, transparent);
 }
 
 @container technical-drawing (orientation: portrait) {

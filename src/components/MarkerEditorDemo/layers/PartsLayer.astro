@@ -151,7 +151,7 @@ $op-slot: 1.1em;
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.75rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
-  color: #f4f0ea;
+  color: $visrez-panel-ink;
 
   // A wide sheet has room this coefficient left empty: the card stopped just past half
   // the artwork area while the pages either side of it filled theirs. Below the
@@ -169,14 +169,14 @@ $op-slot: 1.1em;
 }
 
 .panel {
-  @include code.code-roles-on-dark(#e8e4dc, #2a2a28);
+  @include code.code-roles-on-dark(#e8e4dc, $visrez-well);
 
   box-sizing: border-box;
   width: max-content;
   max-width: 100%;
   padding: 0.7em 0.8em;
-  background: #333;
-  border: 2px solid #666;
+  background: $visrez-panel;
+  border: 2px solid $visrez-panel-border;
   border-radius: 0.5em;
   display: grid;
   gap: 0.55em;
@@ -245,9 +245,9 @@ header {
   width: $sample;
   height: $sample;
   border-radius: 0.3em;
-  border: 1px solid #666;
+  border: 1px solid $visrez-panel-border;
   overflow: hidden;
-  background: #2a2a28;
+  background: $visrez-well;
   display: grid;
   place-items: center;
 
@@ -334,8 +334,8 @@ header {
   gap: 0.4em;
   padding: 0.5em 0.55em;
   border-radius: 0.35em;
-  border: 1px solid #555;
-  background: #2a2a28;
+  border: 1px solid $visrez-well-border;
+  background: $visrez-well;
 }
 
 .serialize-head {
@@ -358,7 +358,7 @@ header {
   line-height: 1.35;
 
   code {
-    color: #c5e06a;
+    color: $visrez-brand-light;
     font-size: 1em;
   }
 }
@@ -374,7 +374,7 @@ header {
   min-width: 0;
   padding: 0.45em 0.5em;
   border-radius: 0.3em;
-  border: 1px solid #555;
+  border: 1px solid $visrez-well-border;
   background: color-mix(in oklab, #000 22%, transparent);
   display: grid;
   gap: 0.25em;
@@ -409,7 +409,7 @@ header {
   line-height: 1.3;
 
   code {
-    color: #c5e06a;
+    color: $visrez-brand-light;
     font-size: 1em;
   }
 }
