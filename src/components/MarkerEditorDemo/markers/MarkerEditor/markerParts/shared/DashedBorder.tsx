@@ -5,7 +5,7 @@ import { type DebouncedFunc, debounce } from "./debounce";
 import type { SpaceType } from '../../../../store';
 
 import { SolidBorder } from "./SolidBorder";
-import { CONTROL_COMMIT_MS, keepReactOut } from "./liveStyleRule";
+import { CONTROL_COMMIT_MS, LiveProperty, keepReactOut, markerScope } from "./liveProperty";
 
 export class DashedBorder extends SolidBorder {
   protected get borderClassName(): string {
@@ -29,10 +29,15 @@ export class DashedBorder extends SolidBorder {
     this.commitDash.flush();
   };
 
+  private liveDash: LiveProperty;
+  private liveGap: LiveProperty;
+
   constructor(...args: any[]) {
     // @ts-ignore
     super(...args);
 
+    this.liveDash = new LiveProperty(this.container, `--live-${this.borderClassName}-dash-length`);
+    this.liveGap = new LiveProperty(this.container, `--live-${this.borderClassName}-gap-length`);
     this.commitDash = debounce(() => {
       this.reactiveState.dashLength = this.reactiveState.internal.dashLength;
       this.reactiveState.gapLength = this.reactiveState.internal.gapLength;
@@ -48,28 +53,30 @@ export class DashedBorder extends SolidBorder {
     };
   }
 
+  get liveProperties(): Record<string, string> {
+    return {
+      ...super.liveProperties,
+      [this.liveDash.name]: String(this.reactiveState.dashLength),
+      [this.liveGap.name]: String(this.reactiveState.gapLength),
+    };
+  }
+
   /** Both lengths live in one `stroke-dasharray`, so either slider writes the pair. */
   protected setDash(dashLength: number, gapLength: number) {
-    const rule = this.liveRule.get();
-    if (!rule) {
-      this.reactiveState.dashLength = dashLength;
-      this.reactiveState.gapLength = gapLength;
-      return;
-    }
-
-    rule.style.setProperty('stroke-dasharray', `${dashLength} ${gapLength}`);
+    this.liveDash.set(dashLength);
+    this.liveGap.set(gapLength);
     this.reactiveState.internal.dashLength = dashLength;
     this.reactiveState.internal.gapLength = gapLength;
     this.commitDash();
   }
 
-  Content({ space, extraProps }: { space: SpaceType, extraProps: Record<string, string> }) {
+  Content({ space, extraProps, live }: { space: SpaceType, extraProps: Record<string, string>, live?: boolean }) {
     return (
       <style {...extraProps}>
-        {`#marker-${space.markerId} .${this.borderClassName} {
+        {`${markerScope(space.markerId, live)} .${this.borderClassName} {
           stroke: var(--border-color, var(--brand));
-          stroke-width: ${this.reactiveState.width};
-          stroke-dasharray: ${this.reactiveState.dashLength} ${this.reactiveState.gapLength};
+          stroke-width: ${this.liveWidth.css(this.reactiveState.width, live)};
+          stroke-dasharray: ${this.liveDash.css(this.reactiveState.dashLength, live)} ${this.liveGap.css(this.reactiveState.gapLength, live)};
           stroke-linecap: ${this.reactiveState.strokeLinecap};
         }`}
       </style>

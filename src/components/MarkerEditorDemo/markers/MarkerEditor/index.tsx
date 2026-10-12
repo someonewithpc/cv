@@ -152,6 +152,14 @@ export function MarkerEditor({
     [state, controlPointIndicatorRefs],
   );
 
+  // Read on every render: a commit of a dragged value re-renders the editor through
+  // `reactiveState`, and React then writes the value the drag already set.
+  const liveProperties = Object.assign(
+    {},
+    ...Object.entries(state.active)
+      .map(([step, partName]) => ((markers[step as keyof Markers] as any)[partName] as MarkerPart).liveProperties),
+  );
+
   const updateAll = useCallback(() => {
     Object.entries(markers)
       .forEach(([step, options]) => {
@@ -170,7 +178,7 @@ export function MarkerEditor({
     Object.entries(state.active)
       .forEach(([step, partName]) => {
         markerStepContent[step].update(
-          ((markers[step as keyof Markers] as any)[partName] as MarkerPart).Content({ space, extraProps: {} }),
+          ((markers[step as keyof Markers] as any)[partName] as MarkerPart).Content({ space, extraProps: {}, live: true }),
         );
       });
   }, [state, controlPointIndicatorRefs, space]);
@@ -401,7 +409,7 @@ export function MarkerEditor({
                   id={`marker-${space.markerId}`}
                   viewBox="-1 -1 2 2"
                   ref={measureSvgRef}
-                  style={{ position: 'relative' }}
+                  style={{ position: 'relative', ...liveProperties } as React.CSSProperties}
                   xmlns="http://www.w3.org/2000/svg"
                   onMouseLeave={() => {
                     if (!state.draggedControlPoint) return;

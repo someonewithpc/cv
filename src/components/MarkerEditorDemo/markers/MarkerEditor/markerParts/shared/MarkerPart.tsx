@@ -192,7 +192,11 @@ export class MarkerPart {
   }
 
   Thumbnail({ space: _ }: { space: SpaceType }): React.ReactNode { throw new Error('Derived class must override `Thumbnail(space: SpaceType): ReactElement`'); }
-  Content({ space: _, extraProps: __ }: { space: SpaceType, extraProps: Record<string, string> }): React.ReactNode { throw new Error('Derived class must override `Content(space: SpaceType): ReactElement`'); }
+  /** The custom properties this part's preview rule reads, for the preview's `<svg>`. */
+  get liveProperties(): Record<string, string> { return {}; }
+
+  /** `live` renders for the editor's preview, where the dragged values are custom properties. */
+  Content({ space: _, extraProps: __ }: { space: SpaceType, extraProps: Record<string, string>, live?: boolean }): React.ReactNode { throw new Error('Derived class must override `Content(space: SpaceType): ReactElement`'); }
   Configuration({ space: _ }: { space: SpaceType }): React.ReactNode { return null; }
 
   SerializeContent({ space }: { space: SpaceType }): React.ReactNode {

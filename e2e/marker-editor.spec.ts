@@ -88,8 +88,8 @@ function paintShapeFill(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     const editor = document.querySelector('.marker-editor--embed');
     const input = editor?.querySelector<HTMLInputElement>('#marker-fill-color-marker-shape');
-    const style = editor?.querySelector('#marker-content-shapeFill style') as SVGStyleElement | null;
-    if (!input || !style) throw new Error('Marker editor shape fill controls not found');
+    const shape = editor?.querySelector('.marker-preview .marker-shape');
+    if (!input || !shape) throw new Error('Marker editor shape fill controls not found');
 
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     setValue.call(input, '#123456');
@@ -97,7 +97,7 @@ function paintShapeFill(page: import('@playwright/test').Page) {
     input.dispatchEvent(new Event('change', { bubbles: true }));
 
     return {
-      fill: (style.sheet?.cssRules[0] as CSSStyleRule | undefined)?.style.getPropertyValue('fill'),
+      fill: getComputedStyle(shape).fill,
       value: input.value,
     };
   });
@@ -114,20 +114,22 @@ test('editor page: a picker event paints the preview before React renders', asyn
 
   expect(await paintShapeFill(page)).toEqual({ fill: 'rgb(18, 52, 86)', value: '#123456' });
 
-  // And the colour still reaches React, which is what a saved marker serializes from.
-  // The map's walkthrough keeps reaching into this editor through its demo targets, colour
-  // inputs included, so every attempt writes ours again before reading the rule back.
+  // And the colour still reaches React, which is what a saved marker serializes from: the
+  // step's thumbnail holds React's copy. The map's walkthrough keeps reaching into this
+  // editor through its demo targets, colour inputs included, so every attempt writes ours
+  // again before reading the thumbnail back.
   await expect
     .poll(
       async () => {
         await paintShapeFill(page);
-        return page.evaluate(() => (
-          document.querySelector('.marker-editor--embed #marker-content-shapeFill style')?.textContent ?? ''
-        ));
+        return page.evaluate(() => {
+          const thumbnail = document.querySelector('.marker-editor--embed [data-demo-target="editor:shapeFill:solid"] svg');
+          return thumbnail ? getComputedStyle(thumbnail).color : '';
+        });
       },
       { timeout: 10_000 },
     )
-    .toContain('#123456');
+    .toBe('rgb(18, 52, 86)');
 });
 
 /**
