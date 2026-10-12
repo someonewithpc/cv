@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Every island's `<script type="module" src="...">` statically imports a few
- * shared chunks (fold-drag, pageIsland, themes, boot, ...), but the browser
+ * shared chunks (foldDrag, pageIsland, themes, boot, ...), but the browser
  * only discovers those once the entry script has arrived and been parsed:
  * one extra round trip per import depth. modulepreload tells it about the
  * shared chunks up front, from the entry list already in the page, so the

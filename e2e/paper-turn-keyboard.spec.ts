@@ -10,7 +10,7 @@ type TurnRecord = { pressed: number, committed: number, last: number };
 
 /**
  * When the turn commits and when it stops moving, both counted from the key press. A committed
- * flip renumbers every page wrapper's `--page-index` (fold-drag.ts's restack), so the first
+ * flip renumbers every page wrapper's `--page-index` (foldDrag.ts's restack), so the first
  * style write that moves the front page along is the commit; the last style write on any
  * wrapper is the glide finishing. `commit` is Infinity when nothing turns at all.
  */

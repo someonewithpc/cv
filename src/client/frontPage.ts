@@ -4,7 +4,7 @@
  * Once PaperStack's script runs, every page of a stack sits in the same CSS grid cell and
  * only the fold's clip-path decides which is drawn on top, so an IntersectionObserver —
  * even one rooted at the stack — reports all of them as equally visible. `--page-index` is
- * what fold-drag.ts itself renumbers on a committed flip (front = "1"), so it is the only
+ * what foldDrag.ts itself renumbers on a committed flip (front = "1"), so it is the only
  * signal that tracks the front page. MarkerEditorDemo's EditorLayerApp.tsx reads it the
  * same way.
  */
@@ -24,7 +24,7 @@ export function isFrontPage(el: Element): boolean {
 }
 
 /**
- * Calls `onChange` on every change of front-page state, never for the initial one. fold-drag.ts
+ * Calls `onChange` on every change of front-page state, never for the initial one. foldDrag.ts
  * renumbers --page-index only where it then dispatches `paper-flip` on the stack (syncInert),
  * so that event is the one to follow. A MutationObserver on the wrapper's style ran on every
  * drag frame and every resize step, which write the fold and page sizes there too.
@@ -47,7 +47,7 @@ export function watchFrontPage(el: Element, onChange: (front: boolean) => void):
 }
 
 /**
- * The stacks whose turn is already decided. fold-drag.ts marks one the moment its turn is
+ * The stacks whose turn is already decided. foldDrag.ts marks one the moment its turn is
  * certain to finish — a drag carried past the commit point, or a key, wheel or swipe turn as
  * it starts — and unmarks it as the stack settles. A module-level set rather than an attribute
  * on the stack, because the page's `:has()` rules make any attribute write a whole-document

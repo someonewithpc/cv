@@ -51,7 +51,7 @@ $sheet-margin: shared.$sheet-margin;
 }
 
 // A blueprint layer's root: the figure centred on the sheet. It never scrolls: a scroll box
-// on the sheet takes the sideways wheel that turns the page (PaperStack's fold-drag.ts), so
+// on the sheet takes the sideways wheel that turns the page (PaperStack's foldDrag.ts), so
 // each layer is cut to fit a phone's sheet instead.
 @mixin blueprint-root {
   height: 100%;
