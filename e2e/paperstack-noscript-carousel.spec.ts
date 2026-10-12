@@ -101,3 +101,31 @@ for (const width of [390, 1440]) {
     }
   });
 }
+
+test('without JS the dots under a stack are one Tab stop, and the arrow keys move between sheets', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const stack = page.locator('[data-paper-stack]').first();
+  const inStack = () => stack.evaluate((el) => el.contains(document.activeElement));
+  const sheet = () => stack.evaluate((el) => Math.round(el.scrollLeft / el.clientWidth));
+  await stack.evaluate((el) => { el.style.scrollBehavior = 'auto'; });
+
+  let presses = 0;
+  while (!(await inStack())) {
+    await page.keyboard.press('Tab');
+    expect(++presses).toBeLessThan(80);
+  }
+  // The first stop is the current sheet's dot: the arrows move to the next one and turn the row.
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(sheet).toBe(1);
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(sheet).toBe(0);
+
+  // Then the next arrow and the row itself; a dot per sheet would add four more.
+  let stops = 1;
+  for (;;) {
+    await page.keyboard.press('Tab');
+    if (!(await inStack())) break;
+    expect(++stops).toBeLessThanOrEqual(3);
+  }
+});
