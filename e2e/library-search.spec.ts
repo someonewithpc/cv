@@ -569,3 +569,24 @@ test('the results take a Tab stop while they scroll and give it back when they f
   await expect(results).not.toHaveAttribute('tabindex');
   expect(await overflows()).toBe(false);
 });
+
+for (const width of [320, 390, 768, 1024, 1440, 1920]) {
+  test(`filters page: each rule stays inside its own column at ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const stack = librarySearchStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await turnTo(page, stack, 'Filters');
+    const front = frontPage(stack, await frontPageIndex(stack));
+    const overflow = await front.locator('.rules > div').evaluateAll((rules: HTMLElement[]) =>
+      rules.flatMap((rule) => {
+        const box = rule.getBoundingClientRect();
+        return [...rule.querySelectorAll('*')].flatMap((el) =>
+          [...el.getClientRects()]
+            .filter((rect) => rect.left < box.left - 0.5 || rect.right > box.right + 0.5)
+            .map(() => `${rule.querySelector('dt')!.textContent} ${el.tagName}`),
+        );
+      }),
+    );
+    expect(overflow).toEqual([]);
+  });
+}
