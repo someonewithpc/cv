@@ -6,7 +6,7 @@ import type { SpaceType } from '../../../../store';
 
 import { MarkerPart } from "./";
 import { ColorField } from "./ColorField";
-import { CONTROL_COMMIT_MS, LiveStyleRule, keepReactOut } from "./liveStyleRule";
+import { CONTROL_COMMIT_MS, LiveProperty, keepReactOut, markerScope } from "./liveProperty";
 
 export class SolidBorderColor extends MarkerPart {
   protected get borderClassName(): string {
@@ -26,13 +26,13 @@ export class SolidBorderColor extends MarkerPart {
     this.commitColor.flush();
   };
 
-  private liveRule: LiveStyleRule;
+  private liveColor: LiveProperty;
 
   constructor(...args: any[]) {
     // @ts-ignore
     super(...args);
 
-    this.liveRule = new LiveStyleRule(this.container, `.${this.borderClassName}`, '--border-color');
+    this.liveColor = new LiveProperty(this.container, `--live-${this.borderClassName}-border-color`);
     this.commitColor = debounce((color: string) => {
       this.reactiveState.color = color;
     }, CONTROL_COMMIT_MS);
@@ -44,28 +44,26 @@ export class SolidBorderColor extends MarkerPart {
     };
   }
 
+  get liveProperties() {
+    return { [this.liveColor.name]: this.reactiveState.color };
+  }
+
   /**
-   * Paint the drag straight onto the live rule and notify subscribers only once it settles.
+   * Paint the drag straight onto the preview and notify subscribers only once it settles.
    * Writing `internal` keeps the input's value and the serialized marker current meanwhile,
    * without a re-render.
    */
   protected setColor(color: string) {
-    const rule = this.liveRule.get();
-    if (!rule) {
-      this.reactiveState.color = color;
-      return;
-    }
-
-    rule.style.setProperty('--border-color', color);
+    this.liveColor.set(color);
     this.reactiveState.internal.color = color;
     this.commitColor(color);
   }
 
-  Content({ space, extraProps }: { space: SpaceType, extraProps: Record<string, string> }) {
+  Content({ space, extraProps, live }: { space: SpaceType, extraProps: Record<string, string>, live?: boolean }) {
     return (
       <style {...extraProps}>
-        {`#marker-${space.markerId} .${this.borderClassName} {
-          --border-color: ${this.reactiveState.color};
+        {`${markerScope(space.markerId, live)} .${this.borderClassName} {
+          --border-color: ${this.liveColor.css(this.reactiveState.color, live)};
         }`}
       </style>
     );

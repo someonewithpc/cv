@@ -35,6 +35,12 @@ test('the fill colour picker is on the page and a drag paints the preview', asyn
 
   const before = await input.inputValue();
   const box = (await area.boundingBox())!;
+  const sheetText = () => page.evaluate(() => {
+    const style = document.querySelector('.marker-editor:not(.marker-editor--embed) #marker-content-shapeFill style');
+    const rule = (style as SVGStyleElement | null)?.sheet?.cssRules[0] as CSSStyleRule | undefined;
+    return `${style?.textContent}|${rule?.cssText}`;
+  });
+  const sheetBefore = await sheetText();
 
   // A finger crossing the saturation/value field. Every move has to land a colour: this is
   // the gesture the native chooser cannot show, because it draws over the preview.
@@ -51,15 +57,18 @@ test('the fill colour picker is on the page and a drag paints the preview', asyn
   const after = await input.inputValue();
   expect(after).not.toBe(before);
 
-  // The preview reads the parsed rule, not a re-rendered <style>: written inside the event,
-  // so it is already there with no frame in between.
+  // The preview reads a custom property written inside the event, so the colour is already
+  // there with no frame in between.
   const fill = await page.evaluate(() => {
-    const style = document.querySelector('.marker-editor:not(.marker-editor--embed) #marker-content-shapeFill style');
-    return ((style as SVGStyleElement | null)?.sheet?.cssRules[0] as CSSStyleRule | undefined)
-      ?.style.getPropertyValue('fill') ?? '';
+    const shape = document.querySelector('.marker-editor:not(.marker-editor--embed) .marker-preview .marker-shape');
+    return shape ? getComputedStyle(shape).fill : '';
   });
   const channels = [1, 3, 5].map((at) => parseInt(after.slice(at, at + 2), 16));
   expect(fill.replace(/\s/g, '')).toBe(`rgb(${channels.join(',')})`);
+
+  // And the drag leaves the preview's stylesheet as it was: Safari restyles the whole page
+  // for any edit to a sheet, about 310 ms a time on this page.
+  expect(await sheetText()).toBe(sheetBefore);
 });
 
 test('the thumbnail catches up once the drag stops', async ({ page }) => {

@@ -5,7 +5,7 @@ import { type DebouncedFunc, debounce } from "./debounce";
 import type { SpaceType } from '../../../../store';
 
 import { MarkerPart } from "./";
-import { CONTROL_COMMIT_MS, LiveStyleRule, keepReactOut } from "./liveStyleRule";
+import { CONTROL_COMMIT_MS, LiveProperty, keepReactOut, markerScope } from "./liveProperty";
 
 export class SolidBorder extends MarkerPart {
   protected get borderClassName(): string {
@@ -24,13 +24,13 @@ export class SolidBorder extends MarkerPart {
     this.commitWidth.flush();
   };
 
-  protected liveRule: LiveStyleRule;
+  protected liveWidth: LiveProperty;
 
   constructor(...args: any[]) {
     // @ts-ignore
     super(...args);
 
-    this.liveRule = new LiveStyleRule(this.container, `.${this.borderClassName}`, 'stroke-width');
+    this.liveWidth = new LiveProperty(this.container, `--live-${this.borderClassName}-border-width`);
     this.commitWidth = debounce((width: number) => {
       this.reactiveState.width = width;
     }, CONTROL_COMMIT_MS);
@@ -42,25 +42,23 @@ export class SolidBorder extends MarkerPart {
     };
   }
 
+  get liveProperties(): Record<string, string> {
+    return { [this.liveWidth.name]: String(this.reactiveState.width) };
+  }
+
   /** The colour pickers' path, for a slider: see SolidFill and `keepReactOut`. */
   protected setWidth(width: number) {
-    const rule = this.liveRule.get();
-    if (!rule) {
-      this.reactiveState.width = width;
-      return;
-    }
-
-    rule.style.setProperty('stroke-width', String(width));
+    this.liveWidth.set(width);
     this.reactiveState.internal.width = width;
     this.commitWidth(width);
   }
 
-  Content({ space, extraProps }: { space: SpaceType, extraProps: Record<string, string> }) {
+  Content({ space, extraProps, live }: { space: SpaceType, extraProps: Record<string, string>, live?: boolean }) {
     return (
       <style {...extraProps}>
-        {`#marker-${space.markerId} .${this.borderClassName} {
+        {`${markerScope(space.markerId, live)} .${this.borderClassName} {
           stroke: var(--border-color, var(--brand));
-          stroke-width: ${this.reactiveState.width};
+          stroke-width: ${this.liveWidth.css(this.reactiveState.width, live)};
           stroke-dasharray: none;
         }`}
       </style>

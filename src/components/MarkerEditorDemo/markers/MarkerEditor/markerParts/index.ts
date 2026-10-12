@@ -323,7 +323,7 @@ if (typeof module !== 'undefined' && (module as any).hot) {
 
         const space = markerEditingSpaceSelector(store.getState());
         if (space) {
-          markerStepContent[step].update(newPart.Content({ space, extraProps: {} }));
+          markerStepContent[step].update(newPart.Content({ space, extraProps: {}, live: true }));
         }
 
         cachedReactiveStateSnapshot = makePartReactiveStateSnapshot();
