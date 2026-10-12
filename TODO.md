@@ -296,6 +296,7 @@
 - [x] Key the remaining 40em and 56em sheet rules on data-sheet-orientation and data-sheet-width, with the width query kept for the page without script (171-NJ9) (#403)
 - [x] Read what is under the font picker's drawn cursor only where it stops, unless it rests on the drawn list or a held control (171-AP5) (#396)
 - [x] Keep the marker editor's parts panel and the schema driver's table inside the frame line on a phone's sheet, with or without script (S24) (#382)
+- [ ] Keep the shared value fan and the range rules table inside the frame line on a 320px phone, with or without script (S25)
 - [x] Let the keyboard scroll the code blocks, sheets and panels that scroll with nothing focusable in them, and keep the web-ts-mode notes out of the landmark list (A12) (#356)
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
 - [x] Make the dots under a no-script stack one Tab stop, the arrow keys moving between sheets (A19) (#354)
