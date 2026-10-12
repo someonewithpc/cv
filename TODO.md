@@ -282,6 +282,7 @@
 - [x] Count visits with Cloudflare Web Analytics on hsal.es only, skipped under GPC or DNT (#338)
 - [x] Record visits and interactions in Workers Analytics Engine: the /api/e route, a monthly salt object and the visitor hash, landing dark (analytics plan PR 1) (#339)
 - [x] Send the page's visits and interactions to /api/e: session id in memory, batched beacons, GPC and DNT opt-outs, stable sheet ids (analytics plan PR 2) (#340)
+- [ ] Skip browsers that report navigator.webdriver in both analytics gates, so our own test and audit runs stay out of the counts
 - [x] Let a keyboard pick, place and edit in Space Builder, Variants and the marker editor (A17) (#335)
 - [x] Keep the Filters sheet's long table name inside the Predicate column so it never runs into Maximum (SAF6) (#344)
 - [x] Wrap the Seat Count placeholder inside its field instead of cutting it off (SAF4) (#345)
