@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 /** Prose and code: what a page puts in its artwork cell and never moves again. */
-const PROSE = 'p, li, h3, h4, dd, dt, figcaption';
+const PROSE = 'p, li, h3, h4, dd, dt, figcaption, pre .line';
 
 /**
  * Landscape sheets, from a narrow laptop to wider than the 60em the page content caps at.
@@ -14,14 +14,13 @@ const WIDTHS = [760, 1024, 1440];
  * Pages whose artwork asks for more room than the column it was given, so it runs under the
  * block wherever the block is. Nothing about the sheet's own width says so, which is why the
  * sheet-width ladder cannot answer them. Space Builder's cover page hands its scene the whole
- * sheet; the Visrez listing is a full-width code block. The synthetic properties tool fills
- * its sheet too and scrolls its last line clear of the block (synthetic-properties.spec.ts).
- * The library search tool fills its first sheet as well, and its result list scrolls its
- * last row clear of the block (library-search.spec.ts checks that).
+ * sheet. The synthetic properties tool fills its sheet too and scrolls its last line clear of
+ * the block (synthetic-properties.spec.ts). The library search tool fills its first sheet as
+ * well, and its result list scrolls its last row clear of the block (library-search.spec.ts
+ * checks that).
  */
 const OVERRUNS_ITS_COLUMN = [
   'Space Builder · Add Tool',
-  'Path Data',
   'Synthetic Properties',
   'Library Search & Relevance',
 ];
