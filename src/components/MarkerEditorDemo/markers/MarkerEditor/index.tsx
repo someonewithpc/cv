@@ -1,4 +1,4 @@
-import '../client-only';
+import '../clientOnly';
 
 import { faArrowRotateLeft, faArrowRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

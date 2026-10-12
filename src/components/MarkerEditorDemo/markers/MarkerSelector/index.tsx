@@ -1,4 +1,4 @@
-import '../client-only';
+import '../clientOnly';
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
