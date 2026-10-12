@@ -296,3 +296,4 @@
 - [x] Give the paper stacks their arrow key hint through aria-describedby, not the draft aria-description (A7) (#351)
 - [x] A catalog drag in Space Builder places one chair where it drops, not a second one mid-floor as the drag starts (D1) (#358)
 - [x] Run the no-script and layout specs in Playwright's Firefox, so the Firefox fixes keep a spec there (171-FF6) (#376)
+- [ ] Size the no-script sheet's type for the narrower sheet Firefox shows beside the next one's edge (FF7)
