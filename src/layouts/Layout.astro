@@ -1,7 +1,7 @@
 ---
 import ThemePicker from '@/components/ThemePicker.astro';
 import TransportKeyArt from '@/components/TechnicalDrawing/TransportKeyArt.astro';
-import '@/assets/fonts/fonts.css';
+import fontsUrl from '@/assets/fonts/fonts.css?url';
 import stencilUrl from '@/assets/fonts/allerta-stencil.woff2?url';
 import poppinsUrl from '@/assets/fonts/poppins-400-latin.woff2?url';
 import specialEliteUrl from '@/assets/fonts/special-elite-latin.woff2?url';
@@ -114,6 +114,10 @@ if (
     <link rel="preload" as="font" type="font/woff2" href={specialEliteUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={poppinsUrl} crossorigin />
     <link rel="preload" as="font" type="font/woff2" href={stencilUrl} crossorigin />
+    {/* The @font-face rules get a sheet of their own. When a media query flips in a sheet that
+        also holds @font-face rules, Chrome drops its font cache and lays out the whole page
+        again, once per breakpoint a resize crosses. */}
+    <link rel="stylesheet" href={fontsUrl} />
     <link rel="stylesheet" media="print" href={printUrl} />
     <script is:inline set:html={bootScript} />
     <script is:inline set:html={skipScript} />
