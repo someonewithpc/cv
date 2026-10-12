@@ -287,4 +287,4 @@
 - [x] Keep the Filters sheet's long table name inside the Predicate column so it never runs into Maximum (SAF6) (#344)
 - [x] Wrap the Seat Count placeholder inside its field instead of cutting it off (SAF4) (#345)
 - [x] Keep the theme switcher off the title block on a narrow window, with or without a classic scrollbar (SAF2) (#343)
-- [ ] Keep the marker editor's parts panel and the schema driver's table inside the frame line on a phone's sheet, with or without script (S24)
+- [x] Keep the marker editor's parts panel and the schema driver's table inside the frame line on a phone's sheet, with or without script (S24) (#382)
