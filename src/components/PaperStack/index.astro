@@ -100,7 +100,7 @@ const pages = await Promise.all(
 
 <style lang="scss" is:global>
 @use 'sass:math';
-@use '@/scss/technical-drawing' as drawing;
+@use '@/scss/technicalDrawing' as drawing;
 @use '@/scss/colors' as colors;
 
 // The stack's custom properties, typed so they transition and animate. At the top level of the
@@ -326,7 +326,7 @@ html:has([data-paper-stack-root]:hover) {
     // where the pulse starts and returns (see the keyframes below). Published as custom
     // properties because the crease it draws — from (100% - x, 100%) to (100%, 100% - y) on the
     // front page — is what anything pointing at the fold from outside the stack has to aim at.
-    // The size itself lives in scss/_technical-drawing.scss, shared with the frame's own
+    // The size itself lives in scss/_technicalDrawing.scss, shared with the frame's own
     // declaration in TechnicalDrawing/Stack.astro so the two cannot drift apart.
     --fold-rest-x: #{drawing.$fold-rest-x};
     --fold-rest-y: #{drawing.$fold-rest-y};

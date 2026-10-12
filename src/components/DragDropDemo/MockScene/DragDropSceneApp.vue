@@ -1239,7 +1239,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-@use '@/scss/demo-toast' as toast;
+@use '@/scss/demoToast' as toast;
 
 $visrez-brand: #89ab24;
 $light-grey: #565656;

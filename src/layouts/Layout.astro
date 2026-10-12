@@ -51,7 +51,7 @@ const bootScript = `(() => {
 })();`;
 
 /* Skips the off-screen sheets while the page is parsed (skip-while-parsing in
-   scss/_page-column.scss), on a plain visit only. A fragment, a reload or a back or forward
+   scss/_pageColumn.scss), on a plain visit only. A fragment, a reload or a back or forward
    lands on a place further down, and the browser finds it against the laid-out page there, so
    those visits parse the whole page as before. The attribute goes at the end of <body>. */
 const skipScript = `(() => {
@@ -191,7 +191,7 @@ if (
 </html>
 
 <style lang="scss" is:global>
-@use "@/scss/_page-column.scss" as column;
+@use "@/scss/_pageColumn.scss" as column;
 @use "@/scss/_code.scss" as code;
 
 @include code.code-highlight;
@@ -269,7 +269,7 @@ body {
 }
 
 main {
-  /* The page column and its gutters are written from src/scss/_page-column.scss, which also
+  /* The page column and its gutters are written from src/scss/_pageColumn.scss, which also
      derives from them the window widths the Career and Open Source rules switch at. A change
      to them goes there. */
   --page-gap: #{column.page-gap(column.$page-gap-wide)};

@@ -106,7 +106,7 @@ for (const width of [1440, 390]) {
 }
 
 // The callouts and sheets round the stacks are skipped only while the page is parsed
-// (skip-while-parsing in scss/_page-column.scss), and a visit to a fragment parses it whole.
+// (skip-while-parsing in scss/_pageColumn.scss), and a visit to a fragment parses it whole.
 test('a fragment deep in a section lands at the top of the window on a fresh load', async ({ page }) => {
   await page.goto('/#highlight-gnu-social-v3');
   await page.waitForTimeout(1500);

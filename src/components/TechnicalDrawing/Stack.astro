@@ -119,7 +119,7 @@ const arrow = {
 </div>
 
 <style lang="scss">
-@use '@/scss/technical-drawing' as drawing;
+@use '@/scss/technicalDrawing' as drawing;
 
 // How long a hint takes to fade in, and how long one part of it waits for another.
 $hint-fade: 400ms;
@@ -167,7 +167,7 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 
   // The dog-ear's resting size, restated here for the hint layer: the hint layer is the
   // stack's sibling, so the property PaperStack publishes on the stack does not reach it by
-  // inheritance. From the same scss/_technical-drawing.scss source as PaperStack's own
+  // inheritance. From the same scss/_technicalDrawing.scss source as PaperStack's own
   // --fold-rest-x/-y, so the two cannot drift apart.
   --fold-rest-x: #{drawing.$fold-rest-x};
   --fold-rest-y: #{drawing.$fold-rest-y};
