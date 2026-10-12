@@ -310,6 +310,7 @@
 - [x] Run the no-script and layout specs in Playwright's Firefox, so the Firefox fixes keep a spec there (171-FF6) (#376)
 - [x] Size the no-script sheet's type for the narrower sheet Firefox shows beside the next one's edge (FF7) (#381)
 - [x] Keep the EventResult and Selector Depth Hue sheets clear of the title block at 760px in Firefox too (FF8) (#379)
+- [ ] Keep the EventResult sheet inside its frame line on a narrow landscape sheet, with or without script (S28)
 - [x] Stop a resize from relaying out the whole page at each breakpoint by giving the @font-face rules their own stylesheet (P10) (#373)
 - [x] Free the Space Builder renderer a page turn replaces, which the shared DFG lookup texture kept alive (P13) (#375)
 - [x] Leave target-size to the mobile Lighthouse profile, since a mouse keeps the demos' drawn controls (171-A11) (#378)
