@@ -402,8 +402,8 @@ test('main page: the walkthrough opens the Color list, lights Gold and closes on
   }
 });
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 900 }, { width: 1440, height: 900 }]) {
-  test(`main page: the tool fills the sheet and its last row scrolls clear of the title block at ${viewport.width}`, async ({ page }) => {
+for (const viewport of [{ width: 390, height: 844 }, { width: 720, height: 900 }, { width: 1024, height: 900 }, { width: 1440, height: 900 }]) {
+  test(`main page: the tool fills the sheet and its result list ends clear of the title block at ${viewport.width}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     const { front, tool } = await mountedTool(page);
     // Every object on show, so the list is long enough to scroll.
@@ -419,14 +419,17 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 900 
       const rows = [...list.querySelectorAll<HTMLElement>('.hit:not([hidden])')];
       const last = rows.at(-1)!.getBoundingClientRect();
       const box = tool.getBoundingClientRect();
-      const overlaps = last.right > block.left && last.left < block.right && last.bottom > block.top && last.top < block.bottom;
+      const listBox = list.getBoundingClientRect();
+      // The list's own box, not just its last row: a row scrolling past would pass under the
+      // block on its way.
+      const overlaps = listBox.right > block.left && listBox.left < block.right && listBox.bottom > block.top && listBox.top < block.bottom;
       return {
         fill: { w: box.width / content.width, h: box.height / content.height },
         scrolls: list.scrollHeight > list.clientHeight,
         overlaps,
         lastBottom: last.bottom,
         blockTop: block.top,
-        listBottom: list.getBoundingClientRect().bottom,
+        listBottom: listBox.bottom,
       };
     });
     console.log('layout', viewport.width, JSON.stringify(numbers));
