@@ -53,6 +53,7 @@ const aisleEnabled = computed(() => {
 });
 
 const seatsErrorId = useId();
+const seatsHintId = useId();
 const blocksLabelId = useId();
 
 function fieldActive(id: UiFieldId) {
@@ -96,17 +97,20 @@ function blockFromEvent(event: Event) {
     </summary>
     <label class="field" :class="{ invalid: seatsInvalid }">
       <span>Seat Count</span>
-      <input
-        data-demo-target="param:seats"
-        type="number"
-        min="0"
-        :value="snapshot?.options.seats || ''"
-        placeholder="Enter a value or leave empty to fill the selected area"
-        :disabled="!fieldActive('seats')"
-        :aria-invalid="seatsInvalid || undefined"
-        :aria-describedby="seatsInvalid ? seatsErrorId : undefined"
-        @change="emit('seats', numberFromEvent($event))"
-      >
+      <span class="wrapping-placeholder">
+        <input
+          data-demo-target="param:seats"
+          type="number"
+          min="0"
+          :value="snapshot?.options.seats || ''"
+          placeholder=" "
+          :disabled="!fieldActive('seats')"
+          :aria-invalid="seatsInvalid || undefined"
+          :aria-describedby="seatsInvalid ? `${seatsHintId} ${seatsErrorId}` : seatsHintId"
+          @change="emit('seats', numberFromEvent($event))"
+        >
+        <span :id="seatsHintId" class="placeholder">Enter a value or leave empty to fill the selected area</span>
+      </span>
       <span v-if="seatsInvalid" :id="seatsErrorId" class="invalid-feedback">
         Too many seats for this area (max {{ snapshot?.maxSeats ?? 0 }})
       </span>
@@ -470,6 +474,27 @@ $nav-second-bg: #151515;
   .times {
     color: #adb5bd;
     font-weight: 700;
+  }
+}
+
+// An input's placeholder never wraps, and the product's sentence is wider than this sidebar,
+// so the text sits in the input's grid cell instead and wraps to its width. The cell takes the
+// height of the wrapped text whether or not it shows, so typing a value moves nothing below.
+.wrapping-placeholder {
+  display: grid;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+
+  .placeholder {
+    padding: calc(0.4rem + 1px) calc(0.5rem + 1px);
+    color: #adb5bd;
+    pointer-events: none;
+  }
+
+  input:not(:placeholder-shown) + .placeholder {
+    visibility: hidden;
   }
 }
 
