@@ -301,6 +301,8 @@
 - [x] Give the marker selector and editor buttons a 24px touch target that does not change how they look (A24) (#364)
 - [x] Keep the marker editor's parts panel and the schema driver's table inside the frame line on a phone's sheet, with or without script (S24) (#382)
 - [x] Keep the shared value fan and the range rules table inside the frame line on a 320px phone, with or without script (S25) (#383)
+- [x] Size the px left beyond hairlines in rem and em on the eighths grid (S9) (#368)
+- [ ] Mount a demo island after the page turn that brings it up, so Safari's restyle for its stylesheet no longer stalls the turn (SAF8)
 - [x] Let the keyboard scroll the code blocks, sheets and panels that scroll with nothing focusable in them, and keep the web-ts-mode notes out of the landmark list (A12) (#356)
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
 - [x] Make the dots under a no-script stack one Tab stop, the arrow keys moving between sheets (A19) (#354)
