@@ -291,6 +291,7 @@
 - [x] Let a keyboard pick, place and edit in Space Builder, Variants and the marker editor (A17) (#335)
 - [x] Key the six sheet width rules added since #171 NJ9 on data-sheet-width, with the width query kept for the page without script (S6) (#362)
 - [x] Size the Space Builder and Drag and Drop sidebars against their frame with cqw, not the viewport (#361)
+- [ ] Draw the Library Search and Tagging Tool select focus ring as an outline, which Safari paints (SAF7)
 - [x] Keep the Filters sheet's long table name inside the Predicate column so it never runs into Maximum (SAF6) (#344)
 - [x] Wrap the Seat Count placeholder inside its field instead of cutting it off (SAF4) (#345)
 - [x] Keep the theme switcher off the title block on a narrow window, with or without a classic scrollbar (SAF2) (#343)
