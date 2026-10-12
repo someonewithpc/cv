@@ -104,6 +104,10 @@ for (const width of WIDTHS) {
   test(`the title block buries no text at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
+    // The pages behind the front one lean in the fan, and a leaning page's bounding boxes
+    // swell past their corners, so a box that stops a margin short of the block reads as
+    // reaching under it. Each page is measured the way it lies once it is in front.
+    await page.addStyleTag({ content: 'article.technical-drawing-stack > * { rotate: none !important; }' });
 
     expect(under(await sheets(page, PROSE), OVERRUNS_ITS_COLUMN)).toEqual({});
   });
