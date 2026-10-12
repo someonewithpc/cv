@@ -14,7 +14,14 @@ export function useRect<T extends Element | SVGElement>(
   const [refGeneration, setRefGeneration] = useState(0);
 
   const resize = useCallback(() => {
-    setRect(ref.current?.getBoundingClientRect());
+    const next = ref.current?.getBoundingClientRect();
+    setRect((prev) => (
+      prev && next
+      && prev.x === next.x && prev.y === next.y
+      && prev.width === next.width && prev.height === next.height
+        ? prev
+        : next
+    ));
   }, []);
 
   const measureRef = useCallback((el: T | null) => {
