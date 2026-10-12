@@ -1,0 +1,35 @@
+@use 'sass:list';
+@use 'sass:map';
+
+// Rules for one band of the frame's width. Stack.astro's script writes the band on the stack,
+// as data-sheet-orientation at 40em and data-sheet-width at 56em, so with script the rules key
+// on those and a resize step evaluates no container query for them. Without script nothing
+// writes either, and the frame's own query stands in at the same width. :where() keeps the
+// attribute out of the specificity, so both rules sit in the cascade where the query did.
+$sheet-bands: (
+  portrait: ("[data-sheet-orientation='portrait']", '(max-width: 40em)'),
+  mid: ("[data-sheet-orientation='landscape'][data-sheet-width='narrow']", '(40em < width <= 56em)'),
+  narrow: ("[data-sheet-width='narrow']", '(max-width: 56em)'),
+  wide: ("[data-sheet-width='wide']", 'not (max-width: 56em)'),
+);
+
+@mixin sheet-band($band) {
+  $attr: list.nth(map.get($sheet-bands, $band), 1);
+  $query: list.nth(map.get($sheet-bands, $band), 2);
+
+  @if & {
+    :global(:where(#{$attr})) & {
+      @content;
+    }
+  } @else {
+    :global(:where(#{$attr})) {
+      @content;
+    }
+  }
+
+  @media (scripting: none) {
+    @container technical-drawing-width #{$query} {
+      @content;
+    }
+  }
+}
