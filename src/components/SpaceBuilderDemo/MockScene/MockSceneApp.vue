@@ -447,7 +447,8 @@ function onPointerUp(event: PointerEvent) {
     scene.endAreaDraw();
     return;
   }
-  if (phase.value === 'placing' && event.isTrusted && event.button === 0) {
+  // Chrome sends a pointercancel with button 0 as a catalog drag starts; onViewportDrop places that one.
+  if (phase.value === 'placing' && event.type === 'pointerup' && event.isTrusted && event.button === 0) {
     scene?.placeGhostAsSingle();
     phase.value = 'idle';
     panel.value = 'closed';

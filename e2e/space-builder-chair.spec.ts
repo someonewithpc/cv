@@ -55,6 +55,26 @@ test('the catalog offers the chair, side chair and banquet table as real objects
   await expect(app.locator('[data-catalog-item="barstool"]')).toHaveClass(/placeholder/);
 });
 
+test('a chair dragged from the catalog onto the floor is placed once, on the drop', async ({ page }) => {
+  await page.goto('/');
+  const app = await openCatalog(page);
+
+  const card = await app.locator('[data-demo-target="catalog:chair"]').boundingBox();
+  const floor = await app.locator('canvas').first().boundingBox();
+  if (!card || !floor) throw new Error('The catalog card or the canvas has no layout box');
+
+  // Chrome cancels the pointer as the drag starts; nothing may land before the drop.
+  await page.mouse.move(card.x + card.width / 2, card.y + card.height / 3);
+  await page.mouse.down();
+  await page.mouse.move(floor.x + 200, floor.y + 260, { steps: 10 });
+  await expect(app).toHaveAttribute('data-panel', 'catalog');
+  expect(await app.locator('.toasts .toast').count()).toBe(0);
+
+  await page.mouse.up();
+  await expect(app).toHaveAttribute('data-panel', 'closed');
+  expect(await app.locator('.toasts .toast').allInnerTexts()).toEqual(['Object placed']);
+});
+
 test('a catalog model is only fetched once its item is picked', async ({ page }) => {
   const models: string[] = [];
   page.on('request', (request) => {
