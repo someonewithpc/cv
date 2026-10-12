@@ -1,0 +1,37 @@
+/**
+ * How a drawn walkthrough cursor moves, for the element src/client/demoCursor.ts drives. The
+ * cursor sits at its offset parent's origin and `translate` carries it to `--cursor-x` and
+ * `--cursor-y`, less the tip's offset in its own box, so a glide is a compositor transition and
+ * never a layout. A press and a drag scale it from the controller's data attributes.
+ *
+ * The demo keeps its own look (arrow, label, shadow, stacking) beside the include, so each
+ * one still matches its product.
+ */
+@mixin driven(
+  $tip-x: 12%,
+  $tip-y: 8%,
+  $glide: 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+  $click-scale: 0.86,
+  $drag-scale: 0.9,
+  $drag-transition: none
+) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  translate: calc(var(--cursor-x, 0px) - #{$tip-x}) calc(var(--cursor-y, 0px) - #{$tip-y});
+  transition:
+    translate $glide,
+    opacity 0.32s ease,
+    scale 0.12s ease;
+
+  &[data-clicking] {
+    scale: $click-scale;
+  }
+
+  // A drag follows the pointer frame by frame, so the glide would only make it lag. A demo
+  // whose script eases every move itself passes null and keeps its press transition.
+  &[data-dragging] {
+    transition: $drag-transition;
+    scale: $drag-scale;
+  }
+}
