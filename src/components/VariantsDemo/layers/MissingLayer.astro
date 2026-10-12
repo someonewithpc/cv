@@ -15,7 +15,7 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
   .filter((pax) => !variants.some((variant) => variant.pax === pax && variant.size === held));
 ---
 
-<div class="wrapper">
+<div class="wrapper missing-sheet" tabindex="0">
   <div class="sheet">
     <div class="panel">
       <header>
@@ -73,6 +73,22 @@ const missing = [...new Set(variants.map((variant) => variant.pax ?? 0))]
 @use './sheet' as *;
 
 @include sheet-chrome(44em);
+
+// The card keeps the product's size and the type is at its floor, so a phone-height page and a
+// short landscape one are both shorter than the panel. The content box fills its cell and the
+// panel scrolls inside the frame instead of running past it.
+:global(article.technical-drawing-stack > * > section .content:has(> .missing-sheet)) {
+  place-self: stretch;
+  height: auto;
+  min-height: 0;
+}
+
+.wrapper {
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  place-items: safe center;
+}
 
 .body {
   display: grid;
