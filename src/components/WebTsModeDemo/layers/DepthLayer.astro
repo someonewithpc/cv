@@ -210,6 +210,14 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   max-width: 48em;
   font-size: max(0.5rem, 0.875em);
 
+  // A narrow landscape sheet has the width to spare and not the height: the notes take the
+  // whole row and wrap in half the lines.
+  @container technical-drawing-width (max-width: 56em) {
+    @container technical-drawing (orientation: landscape) {
+      max-width: none;
+    }
+  }
+
   ol {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 
