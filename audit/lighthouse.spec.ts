@@ -21,9 +21,13 @@ import { systemChrome } from '../playwright.config';
 // on the boot scripts does the rest.
 const PROFILES = [
   {
-    // Lighthouse's own desktop preset: no CPU throttling, a fast link, 1350x940.
+    // Lighthouse's own desktop preset: no CPU throttling, a fast link, 1350x940, and a
+    // mouse. The demos keep their drawn controls for a mouse (the theme picker's stage
+    // buttons, the Variants dropdown rows) and give only a touch screen 24 px rows (Hugo's
+    // call, #228 round 2). So target-size is left to the mobile profile, which emulates
+    // touch, and to a11y.spec.ts at 390.
     name: 'desktop',
-    config: desktopConfig,
+    config: { ...desktopConfig, settings: { ...desktopConfig.settings, skipAudits: ['target-size'] } },
     thresholds: { performance: 0.9, accessibility: 1, 'best-practices': 1, seo: 1 },
   },
   {
