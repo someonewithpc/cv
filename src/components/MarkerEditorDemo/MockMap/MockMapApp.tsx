@@ -1,7 +1,6 @@
 import '../markers/client-only';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import store, {
@@ -104,16 +103,20 @@ function toHostPoint(rect: DOMRectReadOnly | undefined, pos: CursorPos): CursorP
   };
 }
 
+/** The cursor's position goes straight to the element, so a move is no React render. */
+function paintCursor(el: HTMLElement | null, pos: CursorPos) {
+  el?.style.setProperty('--cursor-x', `${pos.x}px`);
+  el?.style.setProperty('--cursor-y', `${pos.y}px`);
+}
+
 function DemoCursor({
-  x,
-  y,
+  cursorRef,
   phase,
   clicking,
   dragging,
   host,
 }: {
-  x: number;
-  y: number;
+  cursorRef: (el: HTMLDivElement | null) => void;
   phase: CursorPhase;
   clicking: boolean;
   dragging: boolean;
@@ -124,13 +127,13 @@ function DemoCursor({
   return createPortal(
     (
       <div
+        ref={cursorRef}
         className={[
           'mock-map-demo-cursor',
           `mock-map-demo-cursor--${phase}`,
           clicking ? 'mock-map-demo-cursor--clicking' : '',
           dragging ? 'mock-map-demo-cursor--dragging' : '',
         ].filter(Boolean).join(' ')}
-        style={{ '--cursor-x': `${x}px`, '--cursor-y': `${y}px` } as CSSProperties}
         aria-hidden="true"
         data-demo-cursor=""
       >
@@ -170,7 +173,16 @@ export default function MockMapApp() {
   const [inView, setInView] = useState(false);
   const [editingSpaceId, setEditingSpaceId] = useState<SpaceType['id'] | null>(null);
   const [cursorPhase, setCursorPhase] = useState<CursorPhase>('gone');
-  const [cursorPos, setCursorPos] = useState<CursorPos>({ x: 0, y: 0 });
+  const cursorPosRef = useRef<CursorPos>({ x: 0, y: 0 });
+  const cursorElRef = useRef<HTMLDivElement | null>(null);
+  const cursorRef = useCallback((el: HTMLDivElement | null) => {
+    cursorElRef.current = el;
+    paintCursor(el, cursorPosRef.current);
+  }, []);
+  const moveCursor = (pos: CursorPos) => {
+    cursorPosRef.current = pos;
+    paintCursor(cursorElRef.current, pos);
+  };
   const [cursorClicking, setCursorClicking] = useState(false);
   const [cursorDragging, setCursorDragging] = useState(false);
   const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
@@ -279,7 +291,7 @@ export default function MockMapApp() {
       const following = step.dragging && !step.click && dragHostRectRef.current;
       const rect = following ? dragHostRectRef.current : hostRect();
       dragHostRectRef.current = rect;
-      setCursorPos(toHostPoint(rect, pos));
+      moveCursor(toHostPoint(rect, pos));
     };
 
     if (step.client) {
@@ -360,7 +372,7 @@ export default function MockMapApp() {
   useEffect(() => {
     const overlay = containerRef.current;
     if (!overlay || !editorPortalHost) return;
-    setCursorPos(toHostPoint(hostRect(), overlayPoint(overlay, 0.42, 0.38)));
+    moveCursor(toHostPoint(hostRect(), overlayPoint(overlay, 0.42, 0.38)));
   }, [editorPortalHost]);
 
   // A step measures its target once, but accordion sections in the editor keep
@@ -396,9 +408,8 @@ export default function MockMapApp() {
         x: target.left + target.width / 2,
         y: target.top + target.height / 2,
       });
-      setCursorPos((prev) => (
-        Math.abs(prev.x - next.x) < 0.5 && Math.abs(prev.y - next.y) < 0.5 ? prev : next
-      ));
+      const prev = cursorPosRef.current;
+      if (Math.abs(prev.x - next.x) >= 0.5 || Math.abs(prev.y - next.y) >= 0.5) moveCursor(next);
     });
     const id = window.setInterval(() => {
       const el = activeTargetRef.current;
@@ -805,8 +816,7 @@ export default function MockMapApp() {
       </div>
 
       <DemoCursor
-        x={cursorPos.x}
-        y={cursorPos.y}
+        cursorRef={cursorRef}
         phase={cursorPhase}
         clicking={cursorClicking}
         dragging={cursorDragging}
