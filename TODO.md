@@ -261,6 +261,7 @@
 - [x] Colours that only work in one theme: the grab line, the Path layer, the All Together post-it, and the product colours left unnamed (S12) (#302)
 - [x] Let a plain scroll over a stack start without waiting on the main thread: passive wheel listener, cancelling ones only during a swipe (C3) (#243)
 - [x] Keep the Space Builder root rect between scrolls and resizes instead of reading it on every cursor frame (layout reads audit) (#318)
+- [ ] Observe the marker editor canvas once instead of building a new observer on every state change (171-AP4)
 - [x] Cut the Tab stops: one per contribution group and one per tagging tool row, arrows inside (A14) (#276)
 - [x] Bake the Space Builder catalog thumbnails at the size the cards actually show, not the 600px product original (P6) (#242)
 - [x] The Space Builder Offset layout ignored the product's OffsetMixin re-anchor terms, so a negative offset left chairs outside the area and the two directions did not differ as the product's do; the Offset chip also reused the Grid icon (C29) (#277)
