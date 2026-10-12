@@ -1,6 +1,7 @@
 @use 'sass:math';
 @use '@/scss/technical-drawing' as drawing;
 
+@use '@/scss/hit-area' as *;
 @use '@/scss/visrez' as *;
 $marker-editor-background: #333;
 
@@ -138,6 +139,7 @@ $chrome-stacked-block: 60;
           width: calc(#{$icon} + 2 * #{$pad} + 2px);
           height: calc(#{$icon} + 2 * #{$pad} + 2px);
           padding: 0;
+          @include hit-area;
 
           display: flex;
           align-items: center;
