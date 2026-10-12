@@ -276,12 +276,14 @@ const rows = {
   text-wrap: pretty;
   color: var(--ink-muted);
 
+  /* The mode alone, so the portrait sheet can wrap again in a browser without
+     text-wrap: pretty, which would drop that shorthand and keep the line unbroken. */
   @container technical-drawing-width (max-width: 56em) {
-    text-wrap: nowrap;
+    text-wrap-mode: nowrap;
   }
 
   @container technical-drawing (orientation: portrait) {
-    text-wrap: pretty;
+    text-wrap-mode: wrap;
   }
 
   code {
