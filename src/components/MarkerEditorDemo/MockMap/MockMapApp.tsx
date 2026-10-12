@@ -1,6 +1,6 @@
 import { CursorArrow } from '@/components/CursorArrow';
 import { elementCentre } from '@/client/cursorMotion';
-import '../markers/client-only';
+import '../markers/clientOnly';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';

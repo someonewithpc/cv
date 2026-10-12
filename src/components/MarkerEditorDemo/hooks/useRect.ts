@@ -1,4 +1,4 @@
-import '../markers/client-only';
+import '../markers/clientOnly';
 
 import { type MutableRefObject, useCallback, useLayoutEffect, useRef, useState } from 'react';
 

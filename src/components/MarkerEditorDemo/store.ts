@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import defaultMarkerSVG from './assets/default-marker.svg?raw';
-import defaultDecorationSVG from './assets/default-decoration.svg?raw';
+import defaultMarkerSVG from './assets/defaultMarker.svg?raw';
+import defaultDecorationSVG from './assets/defaultDecoration.svg?raw';
 
 export type MarkerType = {
   id: string | number;

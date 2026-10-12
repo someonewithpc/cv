@@ -1,4 +1,4 @@
-import '../markers/client-only';
+import '../markers/clientOnly';
 
 import { createElement, createRef, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
