@@ -325,6 +325,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="layouts-scene-app"
+    role="group"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="Layout Styles demo — autoplaying through each pack style, pick a chip to take over"

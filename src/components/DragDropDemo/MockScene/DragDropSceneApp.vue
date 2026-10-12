@@ -1136,6 +1136,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="drag-drop-scene-app"
+    role="group"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
     :data-phase="phase"

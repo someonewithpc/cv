@@ -446,6 +446,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="parameters-scene-app"
+    role="group"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="Edit Parameters demo — autoplaying slider demo, orbit to look around, edit the Options sidebar to take over"

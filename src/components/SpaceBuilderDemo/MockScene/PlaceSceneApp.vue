@@ -285,6 +285,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="place-scene-app"
+    role="group"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="SelectArea demo — orbit and resize the grab handles"
   >

@@ -326,6 +326,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="badge-scene-app"
+    role="group"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="Capacity Badge demo — auto-orbiting to show the tag tracking the camera; drag to take over"
   >
