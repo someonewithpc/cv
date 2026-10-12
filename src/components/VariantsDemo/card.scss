@@ -424,6 +424,13 @@ $pip-dot: 0.5625rem;
       max-height: 1.5em;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      // The bottom card opens its list over the label rows, so the name row grows with
+      // the dropdown rows and the list still fits.
+      @media (pointer: coarse) {
+        min-block-size: 1.5rem;
+        max-height: none;
+      }
     }
 
     .object-size,
@@ -491,6 +498,12 @@ $pip-dot: 0.5625rem;
     line-height: 1.5;
     white-space: nowrap;
     cursor: pointer;
+
+    // The rows stack with no gap, so a hit box past them would land on the next row.
+    // A finger gets taller rows instead; a mouse keeps the product's.
+    @media (pointer: coarse) {
+      min-block-size: 1.5rem;
+    }
   }
 
   .hover-select-current {
