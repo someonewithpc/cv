@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 
 // The marker editor walkthrough presses things by dispatching mousedown and mouseup on its
-// targets; the shared press layer (TechnicalDrawing/demo-cursor-press.ts) answers those with
+// targets; the shared press layer (TechnicalDrawing/demoCursorPress.ts) answers those with
 // a pulse on the drawn cursor and a flare at the event point, and ignores trusted presses.
 test('walkthrough presses pulse the drawn cursor and flare; the visitor\'s own do not', async ({ page }) => {
   await page.goto('/');

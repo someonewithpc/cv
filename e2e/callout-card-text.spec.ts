@@ -61,7 +61,7 @@ for (const width of [390, 1024, 1440]) {
         const pad = parseFloat(style.paddingLeft);
         const cells = [...card.querySelectorAll('.title-cell')].filter((cell) => cell.getClientRects().length > 0);
         const text = cells.map(entryText);
-        // Under a portrait sheet a deck is the first entry (deck-home.ts), its keys its first line.
+        // Under a portrait sheet a deck is the first entry (deckHome.ts), its keys its first line.
         const keys = [...card.querySelectorAll(':scope > [data-demo-transport]:not([hidden]) .demo-key')]
           .map((key) => key.getBoundingClientRect());
         const first = keys.length

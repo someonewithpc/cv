@@ -1,6 +1,6 @@
 import { reducedMotion } from '@/client/autoplayStatus';
 import { documentGate } from '@/client/frontPage';
-import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
+import { demoPress } from '@/components/TechnicalDrawing/demoCursorPress';
 
 import {
   DEFAULT_LAYOUT_OPTIONS,
