@@ -126,8 +126,8 @@ const steps = [
 @use "@/scss/_code.scss" as code;
 $preview-bg: #3d3d3b;
 $accent: #89ab24;
-$sample: 3.6em;
-$op-slot: 1.1em;
+$sample: 3.625em;
+$op-slot: 1.125em;
 
 .wrapper {
   box-sizing: border-box;
@@ -174,14 +174,14 @@ $op-slot: 1.1em;
   box-sizing: border-box;
   width: max-content;
   max-width: 100%;
-  padding: 0.7em 0.8em;
+  padding: 0.75em 0.75em;
   background: #333;
   border: 2px solid #666;
   border-radius: 0.5em;
   display: grid;
-  gap: 0.55em;
+  gap: 0.5em;
   justify-items: stretch;
-  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+  box-shadow: 0 0.25rem 0.75rem color-mix(in oklab, #000 28%, transparent);
 
   // max-content keeps the serialization note on one line, and on a phone that line, not
   // the drawing, is what set the card's width, and with it a 6px type scale.
@@ -193,7 +193,7 @@ $op-slot: 1.1em;
 header {
   display: flex;
   flex-direction: column;
-  gap: 0.08em;
+  gap: 0.125em;
 
   .eyebrow {
     font-size: max(0.5rem, 0.75em);
@@ -205,7 +205,7 @@ header {
 
 .assembly {
   display: grid;
-  gap: 0.2em;
+  gap: 0.25em;
   justify-items: center;
 }
 
@@ -244,7 +244,7 @@ header {
   box-sizing: border-box;
   width: $sample;
   height: $sample;
-  border-radius: 0.3em;
+  border-radius: 0.25em;
   border: 1px solid #666;
   overflow: hidden;
   background: #2a2a28;
@@ -331,16 +331,16 @@ header {
 
 .serialize {
   display: grid;
-  gap: 0.4em;
-  padding: 0.5em 0.55em;
-  border-radius: 0.35em;
+  gap: 0.375em;
+  padding: 0.5em 0.5em;
+  border-radius: 0.375em;
   border: 1px solid #555;
   background: #2a2a28;
 }
 
 .serialize-head {
   display: grid;
-  gap: 0.2em;
+  gap: 0.25em;
 }
 
 .serialize-label {
@@ -367,13 +367,13 @@ header {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 0.45em;
+  gap: 0.5em;
 }
 
 .flow-card {
   min-width: 0;
-  padding: 0.45em 0.5em;
-  border-radius: 0.3em;
+  padding: 0.5em 0.5em;
+  border-radius: 0.25em;
   border: 1px solid #555;
   background: color-mix(in oklab, #000 22%, transparent);
   display: grid;

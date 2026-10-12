@@ -185,16 +185,16 @@ const squirclePath = [
 }
 
 .panel {
-  padding: 0.85em;
+  padding: 0.875em;
   background: #333;
   border: 2px solid #666;
   border-radius: 0.5em;
   color: #f4f0ea;
-  box-shadow: 0 0.35rem 0.9rem color-mix(in oklab, #000 28%, transparent);
+  box-shadow: 0 0.375rem 0.875rem color-mix(in oklab, #000 28%, transparent);
 }
 
 .chips {
-  $item-size: 3.1em;
+  $item-size: 3.125em;
   $gap: 0.5em;
 
   display: grid;
@@ -215,8 +215,8 @@ const squirclePath = [
 
 .chip {
   position: relative;
-  width: 3.1em;
-  height: 3.1em;
+  width: 3.125em;
+  height: 3.125em;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -242,8 +242,8 @@ const squirclePath = [
     color: #fff;
 
     :global(svg) {
-      width: 1.45em;
-      height: 1.45em;
+      width: 1.5em;
+      height: 1.5em;
       stroke: currentColor;
       stroke-width: 2.25;
     }
@@ -294,7 +294,7 @@ const squirclePath = [
 .spaces {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45em;
+  gap: 0.5em;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -302,10 +302,10 @@ const squirclePath = [
   li {
     display: grid;
     justify-items: center;
-    gap: 0.3em;
-    padding: 0.45em 0.25em 0.5em;
+    gap: 0.25em;
+    padding: 0.5em 0.25em 0.5em;
     border: 1px dashed color-mix(in oklab, var(--sheet-ink-muted, #fff) 35%, transparent);
-    border-radius: 0.45em;
+    border-radius: 0.5em;
     background: color-mix(in oklab, #000 18%, transparent);
 
     &.active {

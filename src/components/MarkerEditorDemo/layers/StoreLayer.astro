@@ -81,7 +81,7 @@ const lanes = [
 <style lang="scss">
 @use '@/scss/sheet-orientation' as *;
 $accent: #89ab24;
-$op-slot: 0.85em;
+$op-slot: 0.875em;
 
 .wrapper {
   box-sizing: border-box;
@@ -123,19 +123,19 @@ $op-slot: 0.85em;
   box-sizing: border-box;
   width: max-content;
   max-width: 100%;
-  padding: 0.6em 0.65em;
+  padding: 0.625em 0.625em;
   background: #333;
   border: 2px solid #666;
   border-radius: 0.5em;
   display: grid;
-  gap: 0.45em;
-  box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, #000 28%, transparent);
+  gap: 0.5em;
+  box-shadow: 0 0.25rem 0.75rem color-mix(in oklab, #000 28%, transparent);
 }
 
 header {
   display: flex;
   flex-direction: column;
-  gap: 0.08em;
+  gap: 0.125em;
 
   .eyebrow {
     font-size: max(0.5rem, 0.75em);
@@ -162,8 +162,8 @@ $lane: 9.75em;
   align-content: start;
   width: 100%;
   min-width: 0;
-  padding: 0.3em 0.4em;
-  border-radius: 0.3em;
+  padding: 0.25em 0.375em;
+  border-radius: 0.25em;
   border: 1px dashed color-mix(in oklab, #fff 22%, transparent);
   background: color-mix(in oklab, #000 22%, transparent);
   box-sizing: border-box;
@@ -188,14 +188,14 @@ $lane: 9.75em;
   }
 
   .snap {
-    padding: 0.25em 0.35em;
-    border-radius: 0.22em;
+    padding: 0.25em 0.375em;
+    border-radius: 0.25em;
     background: color-mix(in oklab, #fff 6%, transparent);
     opacity: 0.75;
   }
 
   .empty {
-    padding: 0.25em 0.35em;
+    padding: 0.25em 0.375em;
     opacity: 0.55;
     font-style: italic;
     text-align: center;
@@ -220,9 +220,9 @@ $lane: 9.75em;
 
 .tree {
   display: grid;
-  gap: 0.08em;
-  padding: 0.25em 0.35em;
-  border-radius: 0.22em;
+  gap: 0.125em;
+  padding: 0.25em 0.375em;
+  border-radius: 0.25em;
   background: color-mix(in oklab, #000 18%, transparent);
 
   code {
@@ -250,9 +250,9 @@ $lane: 9.75em;
   width: 0;
   min-width: 100%;
   display: grid;
-  gap: 0.3em;
-  padding: 0.4em 0.45em;
-  border-radius: 0.3em;
+  gap: 0.25em;
+  padding: 0.375em 0.5em;
+  border-radius: 0.25em;
   border: 1px solid #555;
   background: #2a2a28;
   box-sizing: border-box;
@@ -277,8 +277,8 @@ $lane: 9.75em;
 .action-chip {
   display: inline-grid;
   place-items: center;
-  padding: 0.3em 0.4em;
-  border-radius: 0.22em;
+  padding: 0.25em 0.375em;
+  border-radius: 0.25em;
   border: 1px solid #555;
   background: color-mix(in oklab, #000 22%, transparent);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -290,8 +290,8 @@ $lane: 9.75em;
 .result-badge {
   display: inline-grid;
   place-items: center;
-  padding: 0.3em 0.45em;
-  border-radius: 0.22em;
+  padding: 0.25em 0.5em;
+  border-radius: 0.25em;
   background: color-mix(in oklab, $accent 40%, #333);
   color: #e8f5b8;
   font-size: max(0.5rem, 0.75em);
