@@ -326,7 +326,6 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="badge-scene-app"
-    tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="Capacity Badge demo — auto-orbiting to show the tag tracking the camera; drag to take over"
   >
@@ -387,10 +386,6 @@ $scene-bg: #212121;
   color-scheme: only dark;
   outline: none;
   touch-action: none;
-
-  &:focus-visible {
-    box-shadow: inset 0 0 0 2px $visrez-brand;
-  }
 }
 
 .scene-canvas {

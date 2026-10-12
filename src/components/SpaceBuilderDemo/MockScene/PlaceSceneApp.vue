@@ -285,7 +285,6 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="place-scene-app"
-    tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="SelectArea demo — orbit and resize the grab handles"
   >
@@ -319,10 +318,6 @@ onBeforeUnmount(() => {
   color-scheme: only dark;
   outline: none;
   touch-action: none;
-
-  &:focus-visible {
-    box-shadow: inset 0 0 0 2px #89ab24;
-  }
 
   .scene-canvas {
     display: block;
