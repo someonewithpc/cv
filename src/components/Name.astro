@@ -145,7 +145,7 @@ header {
         letter-spacing: 3px;
 
         :is(rp, rt) {
-          opacity: 0;
+          opacity: var(--name-heard, 0);
           transition: opacity 250ms ease;
         }
       }
@@ -226,13 +226,22 @@ header {
        phone narrower than that it pushed the page past the screen. */
     audio {
       max-width: 100%;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 250ms ease, visibility 0s 250ms;
+      opacity: var(--name-heard, 0);
+      visibility: var(--name-player, hidden);
+      transition: opacity 250ms ease, visibility 0s var(--name-player-delay, 250ms);
+    }
+
+    /* The ticked box reaches the player and the ruby through custom properties: a :has() with
+       a pseudo-class in it, followed by a descendant selector, restyled every audio, rp and rt
+       on the page whenever an element was inserted. */
+    &:has(input:checked) {
+      --name-heard: 1;
+      --name-player: visible;
+      --name-player-delay: 0s;
     }
 
     /* Match or beat the ruby hide rule specificity */
-    &:is(:hover, :focus-within, :has(input:checked)) {
+    &:is(:hover, :focus-within) {
       audio,
       h1 ruby :is(rp, rt) {
         opacity: 1;
@@ -241,7 +250,7 @@ header {
 
     /* Not on focus-within: the player is only reachable once asked for, or the keyboard would
        walk its controls on the way past the name. */
-    &:is(:hover, :has(input:checked)) audio {
+    &:hover audio {
       visibility: visible;
       transition-delay: 0s;
     }
