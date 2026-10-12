@@ -731,7 +731,9 @@ $career-inset: (gaps: 1, desk: column.$inset-desk-sheet);
   }
 
   /* The revision table takes the sheet and the cells stand in a column down its right, the
-     way a title block does. Below 52rem of sheet the cells go under the table, two to a line
+     way a title block does, ending level with the table's foot as a title block sits in the
+     corner. Standing there, See also comes after every link in the table on the page as it
+     does in Tab order. Below 52rem of sheet the cells go under the table, two to a line
      while there is room and one below that. */
   .sheet-body {
     display: grid;
@@ -742,6 +744,7 @@ $career-inset: (gaps: 1, desk: column.$inset-desk-sheet);
     @media #{column.section-width(">=", 52rem, $career-inset)} {
       grid-template-columns: minmax(0, 1fr) 15rem;
       gap: 2.5rem;
+      align-items: end;
     }
   }
 }

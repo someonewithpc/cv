@@ -80,6 +80,17 @@ test('the title block cells carry the degree, the languages and the reference sh
   }
 });
 
+test('the links on the sheet take Tab in the order they sit, top to bottom', async ({ page }) => {
+  for (const width of [390, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+
+    const tops = await page.locator('#career .sheet-body a').evaluateAll((links) => links.map((link) => link.getBoundingClientRect().top));
+    expect(tops.length, 'links on the sheet').toBeGreaterThan(2);
+    for (const [index, top] of tops.entries()) if (index) expect(top, `link ${index + 1} at ${width}px`).toBeGreaterThanOrEqual(tops[index - 1]);
+  }
+});
+
 test('the elevation under the table draws one bar per job, as long as the job lasted', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
