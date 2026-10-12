@@ -239,11 +239,11 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
 
 .results {
   min-height: 0;
-  margin: 0;
-  /* The title block lies over the list's bottom corner on a landscape sheet, so the rows
-     scroll on past it by its height (SearchLayer.astro sets the reach) and the last one
-     reads clear of it. */
-  padding: 0.5em var(--gutter) calc(var(--gutter) + var(--title-block-reach, 0px));
+  /* The title block lies over the tool's bottom corner on a landscape sheet, so the list
+     ends its height short (SearchLayer.astro sets the reach) and no row ever passes under
+     it. */
+  margin: 0 0 var(--title-block-reach, 0px);
+  padding: 0.5em var(--gutter) var(--gutter);
   list-style: none;
   overflow-y: auto;
   scrollbar-width: thin;
