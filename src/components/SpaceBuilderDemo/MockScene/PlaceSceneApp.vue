@@ -316,7 +316,7 @@ onBeforeUnmount(() => {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: #212121;
+  background: $visrez-scene;
   color-scheme: only dark;
   outline: none;
   touch-action: none;
@@ -343,7 +343,7 @@ onBeforeUnmount(() => {
     place-content: center;
     justify-items: center;
     gap: 0.65rem;
-    background: #212121;
+    background: $visrez-scene;
     color: #adb5bd;
     font: 0.875rem/1.3 system-ui, sans-serif;
 

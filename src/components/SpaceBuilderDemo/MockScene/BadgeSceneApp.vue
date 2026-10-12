@@ -373,7 +373,6 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use '@/scss/visrez' as *;
-$scene-bg: #212121;
 
 .badge-scene-app {
   position: relative;
@@ -381,7 +380,7 @@ $scene-bg: #212121;
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: $scene-bg;
+  background: $visrez-scene;
   color: #f3f3f4;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   color-scheme: only dark;
@@ -411,7 +410,7 @@ $scene-bg: #212121;
   place-content: center;
   justify-items: center;
   gap: 0.65rem;
-  background: $scene-bg;
+  background: $visrez-scene;
   color: #adb5bd;
   font: 0.875rem/1.3 system-ui, sans-serif;
 

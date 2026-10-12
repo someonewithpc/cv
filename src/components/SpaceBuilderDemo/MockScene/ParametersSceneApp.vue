@@ -516,7 +516,6 @@ onBeforeUnmount(() => {
 $light-grey: #565656;
 $nav-sidebar-bg: #323232;
 $buttons-ui: #6c757d;
-$scene-bg: #212121;
 
 .parameters-scene-app {
   position: relative;
@@ -526,7 +525,7 @@ $scene-bg: #212121;
   display: grid;
   grid-template-columns: minmax(0, 1fr) min(17.5rem, 42vw);
   color: #f3f3f4;
-  background: $scene-bg;
+  background: $visrez-scene;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   color-scheme: only dark;
   outline: none;
@@ -554,7 +553,7 @@ $scene-bg: #212121;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: $scene-bg;
+  background: $visrez-scene;
 }
 
 .scene-canvas {
@@ -579,7 +578,7 @@ $scene-bg: #212121;
   place-content: center;
   justify-items: center;
   gap: 0.65rem;
-  background: $scene-bg;
+  background: $visrez-scene;
   color: #adb5bd;
   font: 0.875rem/1.3 system-ui, sans-serif;
 

@@ -1171,7 +1171,6 @@ $nav-main-active-bg: #293846;
 $nav-sidebar-bg: #323232;
 $buttons-ui: #6c757d;
 $light-grey: #565656;
-$scene-bg: #212121;
 
 .space-builder-app {
   --sb-rail: 70px;
@@ -1192,7 +1191,7 @@ $scene-bg: #212121;
   grid-template-rows: minmax(0, 1fr);
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   color: #f3f3f4;
-  background: $scene-bg;
+  background: $visrez-scene;
   outline: none;
   color-scheme: only dark;
   forced-color-adjust: none;
@@ -1339,7 +1338,7 @@ $scene-bg: #212121;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    background: $scene-bg;
+    background: $visrez-scene;
     touch-action: none;
   }
 
@@ -1368,7 +1367,7 @@ $scene-bg: #212121;
     gap: 0.75rem;
     padding: 1rem;
     text-align: center;
-    background: #212121;
+    background: $visrez-scene;
     color: #ced4da;
     font-size: 0.875rem;
 
