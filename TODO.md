@@ -295,3 +295,4 @@
 - [x] Keep the marker editor's toast live region in the page between toasts, so readers announce the first one (A6) (#352)
 - [x] Give the paper stacks their arrow key hint through aria-describedby, not the draft aria-description (A7) (#351)
 - [x] A catalog drag in Space Builder places one chair where it drops, not a second one mid-floor as the drag starts (D1) (#358)
+- [ ] Run the no-script and layout specs in Playwright's Firefox, so the Firefox fixes keep a spec there (171-FF6)
