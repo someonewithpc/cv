@@ -130,13 +130,14 @@ $chrome-stacked-block: 60;
         height: fit-content;
 
         > button {
+          $border: 1px;
           background: #444;
-          border: 1px solid #aaa;
+          border: $border solid #aaa;
           border-radius: 0.2em;
           $icon: 0.85em;
           $pad: 0.2em;
-          width: calc(#{$icon} + 2 * #{$pad} + 2px);
-          height: calc(#{$icon} + 2 * #{$pad} + 2px);
+          width: calc(#{$icon} + 2 * (#{$pad} + #{$border}));
+          height: calc(#{$icon} + 2 * (#{$pad} + #{$border}));
           padding: 0;
 
           display: flex;

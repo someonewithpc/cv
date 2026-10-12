@@ -105,14 +105,16 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 // The breakpoints are widths of the Open Source section (OpenSourceContributions.astro says
 // why they are media queries).
 article {
+  $stripe: 0.25rem;
+
   display: grid;
   grid-template-columns: var(--grid);
   column-gap: 1.25rem;
   align-items: start;
   margin-bottom: 2.5rem;
-  padding: 1.25rem var(--cell-x) 1.25rem calc(var(--cell-x) + 3px);
+  padding: 1.25rem var(--cell-x) 1.25rem calc(var(--cell-x) + #{$stripe});
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
+  border-left: $stripe solid var(--accent);
   /* The corner every sheet on the desk and the cutting mat are cut with. At 0.5em these
      two were the only rounded card on the page, on paper cut half as round. */
   border-radius: 0.25rem;

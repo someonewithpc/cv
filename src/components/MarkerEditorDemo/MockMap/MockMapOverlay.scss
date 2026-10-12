@@ -193,7 +193,7 @@ article.technical-drawing-stack[data-sheet-orientation='landscape'][data-sheet-w
   // folded corner. The block starts right of the middle on every sheet in the band; the min
   // holds that anyway. The smaller chips the docked layout uses keep it to two rows.
   .marker-editing-overlay {
-    --marker-chip-artwork: 48px;
+    --marker-chip-artwork: 3rem;
     --free-right: min(50% - 57px * 1.14 / 2 - 1em, var(--block-left));
 
     left: calc(var(--free-right) / 2);

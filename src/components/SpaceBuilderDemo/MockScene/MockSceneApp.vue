@@ -1174,7 +1174,7 @@ $light-grey: #565656;
 $scene-bg: #212121;
 
 .space-builder-app {
-  --sb-rail: 70px;
+  --sb-rail: 4.375rem;
 
   position: relative;
   width: 100%;
@@ -1208,7 +1208,7 @@ $scene-bg: #212121;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    width: 70px;
+    width: 4.375rem;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
@@ -1222,7 +1222,7 @@ $scene-bg: #212121;
     // Page.astro sets --note-fold-reach, and it is 0 wherever there is no tab.
     border-block-end: var(--note-fold-reach, 0px) solid $nav-main-bg;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.35);
-    transform: translateX(calc(var(--sb-rail) - 70px));
+    transform: translateX(calc(var(--sb-rail) - 4.375rem));
     transition: transform 0.25s ease;
 
     @media (prefers-reduced-motion: reduce) {
@@ -1253,7 +1253,7 @@ $scene-bg: #212121;
     display: grid;
     place-items: center;
     width: 100%;
-    padding: 9px 0;
+    padding: 0.5rem 0;
     border: 0;
     border-right: 4px solid $nav-main-bg;
     background: $nav-main-bg;
@@ -1606,7 +1606,7 @@ $scene-bg: #212121;
 <style lang="scss">
 .space-builder-tag {
   padding: 0 0.45rem;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   border: 2px solid rgba(162, 206, 59, 0.85);
   background: rgba(25, 41, 21, 0.85);
   color: #fff;
@@ -1622,8 +1622,8 @@ $scene-bg: #212121;
   // glued to targets (fixed + viewport client coords desync on scroll).
   position: absolute;
   z-index: 30;
-  width: 56px;
-  height: 56px;
+  width: 3.5rem;
+  height: 3.5rem;
   // Hotspot at the arrow tip (same idea as Marker Editor).
   translate: -12% -8%;
   // Scale the click pulse around the tip, not the box center — otherwise the
