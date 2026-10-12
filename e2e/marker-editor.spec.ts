@@ -45,6 +45,23 @@ test('main page: map pins mount and clicking one opens the marker picker', async
   await expect(picker).not.toBeVisible();
 });
 
+test('the toast live region stays in the page while no toast shows', async ({ page }) => {
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const island = await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)));
+
+  // Readers skip text that arrives with a new live region, so it has to exist before the toast.
+  // One read of both: the autoplay keeps raising toasts, and a separate region count would
+  // pass on the next one.
+  const regionsWhileEmpty = () =>
+    island.evaluate((root) =>
+      root.querySelector('.mock-map-toast')
+        ? null
+        : root.querySelectorAll('.mock-map-toasts[aria-live="polite"]').length,
+    );
+  await expect.poll(regionsWhileEmpty, { timeout: 15_000 }).toBe(1);
+});
+
 test('main page on a narrow landscape sheet: the map fills it and the selector keeps clear of the title block', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 900 });
   const stack = markerEditorStack(page);
