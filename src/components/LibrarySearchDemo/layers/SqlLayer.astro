@@ -35,7 +35,7 @@ const state = { query: initialQuery, filters: {} };
         </p>
       </div>
 
-      <pre class="sql"><code data-live-part set:html={sqlHtml(state)} /></pre>
+      <pre class="sql" tabindex="0"><code data-live-part set:html={sqlHtml(state)} /></pre>
 
       <p class="sql-result" set:html={sqlResultHtml(search(state))} />
 

@@ -68,7 +68,7 @@ const countText = (hits: number) => `${hits} of ${libraryObjects.length} objects
       the walkthrough types, a screen reader would hear the count on every keystroke. */}
   <p class="count">{countText(result.hits.length)}</p>
 
-  <ol class="results">
+  <ol class="results" tabindex="0" aria-label="Search results">
     {rows.map(({ object, score }) => (
       <li class="hit" data-object={object.id} hidden={!matched.has(object.id)}>
         <img class="thumb" src={object.image} alt="" width="160" height="160" loading="lazy" />
