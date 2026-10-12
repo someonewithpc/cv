@@ -100,8 +100,9 @@ test.describe('with JavaScript off', () => {
     // script each rule has a no-script mirror under 680px; with none, a phone's sheets kept the
     // landscape grid and ran up to 200px past the frame line's right edge.
     // At 360 the sheet is 335px wide, where the marker editor's parts panel and the schema
-    // driver's table set a minimum width wider than the frame.
-    for (const width of [360, 375, 390]) {
+    // driver's table set a minimum width wider than the frame. At 320 it is 296px, where the
+    // shared value fan's columns and the range rules table's captures would not shrink.
+    for (const width of [320, 360, 375, 390]) {
       await page.setViewportSize({ width, height: 844 });
       await page.goto('/');
       const outside = await page.evaluate(() => {
@@ -116,13 +117,15 @@ test.describe('with JavaScript off', () => {
               if (el.closest('svg')) continue;
               const r = el.getBoundingClientRect();
               if (!r.width || !r.height) continue;
-              // Content that scrolls inside a box within the frame is the box's to show.
-              let scroller = el.parentElement!;
-              while (scroller !== sheet && getComputedStyle(scroller).overflowX === 'visible') scroller = scroller.parentElement!;
-              if (scroller !== sheet) {
-                const clip = scroller.getBoundingClientRect();
-                if (clip.left >= left - 1 && clip.right <= right + 1) continue;
+              // Content that scrolls inside a box within the frame is the box's to show, however
+              // many clipping boxes sit between them.
+              let clipped = false;
+              for (let ancestor = el.parentElement!; ancestor !== sheet && !clipped; ancestor = ancestor.parentElement!) {
+                if (getComputedStyle(ancestor).overflowX === 'visible') continue;
+                const clip = ancestor.getBoundingClientRect();
+                clipped = clip.left >= left - 1 && clip.right <= right + 1;
               }
+              if (clipped) continue;
               if (r.right > right + 1 || r.left < left - 1) found.push(`stack ${index}: ${el.tagName.toLowerCase()}.${el.classList[0] ?? ''}`);
             }
           }
