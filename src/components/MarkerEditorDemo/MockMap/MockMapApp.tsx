@@ -1,6 +1,7 @@
 import '../markers/client-only';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 
 import store, {
@@ -129,7 +130,7 @@ function DemoCursor({
           clicking ? 'mock-map-demo-cursor--clicking' : '',
           dragging ? 'mock-map-demo-cursor--dragging' : '',
         ].filter(Boolean).join(' ')}
-        style={{ left: x, top: y }}
+        style={{ '--cursor-x': `${x}px`, '--cursor-y': `${y}px` } as CSSProperties}
         aria-hidden="true"
         data-demo-cursor=""
       >
