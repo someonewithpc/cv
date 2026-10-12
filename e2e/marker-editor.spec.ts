@@ -37,11 +37,11 @@ test('main page: map pins mount and clicking one opens the marker picker', async
   await expect(page.getByText('Demo paused')).toBeVisible();
   await pins.first().click();
 
-  const picker = page.getByRole('listbox', { name: 'Markers' });
+  const picker = page.getByRole('list', { name: 'Markers' });
   await expect(picker).toBeVisible();
-  expect(await picker.getByRole('option').count()).toBeGreaterThan(0);
+  expect(await picker.getByRole('button').count()).toBeGreaterThan(0);
 
-  await page.getByRole('option', { name: 'Close marker selector' }).click();
+  await page.getByRole('button', { name: 'Close marker selector' }).click();
   await expect(picker).not.toBeVisible();
 });
 
@@ -288,7 +288,7 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(page.getByText('Demo paused')).toBeVisible();
       await pins.first().click();
 
-      const create = page.getByRole('option', { name: 'Create new marker' });
+      const create = page.getByRole('button', { name: 'Create new marker' });
       await create.focus();
       await page.keyboard.press('Enter');
 
@@ -320,7 +320,7 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(pins.first()).toBeVisible({ timeout: 15_000 });
       await overlay.focus();
       await pins.first().click();
-      await page.getByRole('option', { name: 'Create new marker' }).click();
+      await page.getByRole('button', { name: 'Create new marker' }).click();
 
       const editor = page.locator('#marker-editor');
       await expect(editor).toBeVisible();
@@ -359,7 +359,7 @@ test('Ctrl+Z undoes from inside the marker editor but leaves text fields their o
   await overlay.focus();
   await expect(page.getByText('Demo paused')).toBeVisible();
   await pins.first().click();
-  await page.getByRole('option', { name: 'Create new marker' }).click();
+  await page.getByRole('button', { name: 'Create new marker' }).click();
 
   const editor = page.locator('#marker-editor');
   await expect(editor.getByRole('button', { name: 'Go back' })).toBeFocused();

@@ -36,7 +36,7 @@
     --marker-chip-artwork: 48px;
   }
 
-  & > [role=listbox] {
+  & > ul {
     padding: 0;
     margin: 0 auto;
 
@@ -54,13 +54,32 @@
     color-scheme: only light;
     box-sizing: content-box;
 
-    li[role=option] {
+    > li {
       position: relative;
-      overflow: visible;
+      list-style: none;
       width: $item-size;
       height: $item-size;
+    }
 
-      list-style: none;
+    // The cell lights while the pointer or focus is anywhere in it, its corner buttons too.
+    > li:is(:focus-within, :hover) > .marker-choice {
+      border-color: #aaa;
+
+      &:disabled {
+        border-color: #666;
+      }
+    }
+
+    .marker-choice {
+      width: 100%;
+      height: 100%;
+
+      appearance: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+
       // Always 2px so hover/selection only changes color (no layout shift).
       border: 2px solid #666;
       border-radius: 0.5em;
@@ -76,25 +95,21 @@
       padding: $padding;
       box-sizing: border-box;
 
-      &[aria-selected="true"] {
+      &[aria-current="true"] {
         border-color: var(--brand, $visrez-brand);
       }
 
-      &:focus-within, &:hover, &.is-demo-target {
+      &.is-demo-target {
         border-color: #aaa;
       }
 
-      &[aria-selected="true"].is-demo-target {
+      &[aria-current="true"].is-demo-target {
         border-color: var(--brand, $visrez-brand);
       }
 
-      &[aria-disabled="true"] {
+      &:disabled {
         color: #777;
         cursor: not-allowed;
-
-        &:hover, &:focus-within {
-          border-color: #666;
-        }
 
         svg {
           color: inherit;
@@ -113,7 +128,9 @@
         height: 100%;
         display: block;
       }
+    }
 
+    li {
       .marker-edit-icon, .marker-delete-icon, .marker-duplicate-icon {
         position: absolute;
         $pad: 0.1em;

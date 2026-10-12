@@ -174,10 +174,10 @@ test('marker editor: Enter on a pin lands on its marker, and the editor takes th
   const { deck } = await tabInto(page, 'Interactive Map Marker Editor', (f) => f.locator('button.space-pin').first());
   await expect(deck).toHaveAttribute('data-state', 'user');
   await page.keyboard.press('Enter');
-  const current = page.getByRole('option', { name: 'Marker default' });
+  const current = page.getByRole('button', { name: 'Marker default' });
   await expect(current).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('option', { name: 'Create new marker' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Create new marker' })).toBeFocused();
   await page.keyboard.press('Enter');
   const editor = page.locator('#marker-editor');
   await expect(editor.getByRole('button', { name: 'Go back' })).toBeFocused();
@@ -204,7 +204,7 @@ test('marker editor: closing the selector from the keyboard gives focus back to 
   const { target } = await tabInto(page, 'Interactive Map Marker Editor', (f) => f.locator('button.space-pin').first());
   const label = await target.getAttribute('aria-label');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('option', { name: 'Marker default' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Marker default' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: label! })).toBeFocused();
 });

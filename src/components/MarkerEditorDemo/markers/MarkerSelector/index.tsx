@@ -1,6 +1,6 @@
 import '../client-only';
 
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faPencil, faPlus, faTrash, faUpload, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -26,26 +26,6 @@ import { InlineSVG } from './InlineSVG';
 import { SelectedMarkerPreview } from './SelectedMarkerPreview';
 
 import './MarkerSelector.scss';
-
-/**
- * The keyboard half of an option that is a list item with a click handler: a stop for Tab,
- * and Enter or Space doing what the click does. The item stays the element the click, the
- * demo cursor and the specs all aim at.
- */
-function pressable(onPress: () => void) {
-  return {
-    tabIndex: 0,
-    onClick: onPress,
-    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
-      // Keys from the Edit, Duplicate and Delete buttons inside the option bubble up here.
-      if (event.target !== event.currentTarget) return;
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      onPress();
-    },
-  };
-}
-
 
 const MarkerEditor = lazy(async () => {
   const mod = await import('../MarkerEditor');
@@ -95,7 +75,7 @@ export function MarkerSelector({
 
   useEffect(() => {
     if (!focusOnOpen) return;
-    listRef.current?.querySelector<HTMLElement>('[role="option"][aria-selected="true"]')?.focus({ preventScroll: true });
+    listRef.current?.querySelector<HTMLElement>('.marker-choice[aria-current="true"]')?.focus({ preventScroll: true });
   // On open only: a pick closes the selector, and the editor hands focus back itself.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -133,7 +113,9 @@ export function MarkerSelector({
           '--selector-anchor-y': `${position.y}%`,
         } as CSSProperties}
       >
-        <ul role="listbox" aria-label="Markers">
+        {/* Plain buttons in a list, not a listbox: a marker's Edit, Duplicate and Delete
+            buttons sit beside its pick button, and an option cannot hold controls. */}
+        <ul aria-label="Markers">
           {markers.map((marker) => {
             // A marker is in use when a space other than this one carries it. This space's own
             // choice is not a reason to keep the marker: picking another one, or deleting this
@@ -142,36 +124,37 @@ export function MarkerSelector({
             const deleteDisabled = usedElsewhere(marker.id);
 
             return (
-              <li
-                key={marker.id}
-                role="option"
-                aria-label={`Marker ${marker.id}`}
-                aria-selected={marker.id === currentMarker.id}
-                data-demo-target={`selector:marker:${marker.id}`}
-                style={{ position: 'relative' }}
-                {...pressable(() => {
-                  groupedUndo.batch(() => {
-                    if (space.markerId !== marker.id) {
-                      // The marker this space is leaving goes with it unless another space
-                      // still shows it; a marker nobody shows has no way back to the map. Only
-                      // markers made in the editor go: the built-in `default` has no delete
-                      // button, and the walkthrough's reset points every space back at it.
-                      const previous = space.markerId;
-                      const previousKind = markers.find((m) => m.id === previous)?.kind;
-                      dispatch(setSpaceMarker({ spaceId: space.id, markerId: marker.id }));
+              <li key={marker.id}>
+                <button
+                  type="button"
+                  className="marker-choice"
+                  aria-label={`Marker ${marker.id}`}
+                  aria-current={marker.id === currentMarker.id}
+                  data-demo-target={`selector:marker:${marker.id}`}
+                  onClick={() => {
+                    groupedUndo.batch(() => {
+                      if (space.markerId !== marker.id) {
+                        // The marker this space is leaving goes with it unless another space
+                        // still shows it; a marker nobody shows has no way back to the map. Only
+                        // markers made in the editor go: the built-in `default` has no delete
+                        // button, and the walkthrough's reset points every space back at it.
+                        const previous = space.markerId;
+                        const previousKind = markers.find((m) => m.id === previous)?.kind;
+                        dispatch(setSpaceMarker({ spaceId: space.id, markerId: marker.id }));
 
-                      if (previous !== undefined && previousKind === 'editor' && !usedElsewhere(previous)) {
-                        dispatch(removeMarker(previous));
+                        if (previous !== undefined && previousKind === 'editor' && !usedElsewhere(previous)) {
+                          dispatch(removeMarker(previous));
+                        }
                       }
-                    }
-                    setEditedMarkerId(undefined);
-                  });
-                  onClose();
-                })}
-              >
-                {marker.resolvedSource === undefined
-                  ? <img src={marker.source} alt="" />
-                  : <InlineSVG svgString={resolveMarkerSvgForSpace(marker.resolvedSource, space)} />}
+                      setEditedMarkerId(undefined);
+                    });
+                    onClose();
+                  }}
+                >
+                  {marker.resolvedSource === undefined
+                    ? <img src={marker.source} alt="" />
+                    : <InlineSVG svgString={resolveMarkerSvgForSpace(marker.resolvedSource, space)} />}
+                </button>
                 {marker.kind === 'editor' && (
                   <>
                     <button
@@ -180,8 +163,7 @@ export function MarkerSelector({
                       data-demo-target={`selector:edit:${marker.id}`}
                       title="Edit marker"
                       aria-label="Edit marker"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         openEditor(`selector:edit:${marker.id}`);
                         setEditedMarkerId(marker.id);
                         setEditedBaseMarkerId(marker.baseMarkerId);
@@ -195,8 +177,7 @@ export function MarkerSelector({
                       className="marker-duplicate-icon"
                       title="Duplicate marker"
                       aria-label="Duplicate marker"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         groupedUndo.batch(() => {
                           const newMarkerId = uuidv4();
                           dispatch(addMarker({
@@ -224,8 +205,7 @@ export function MarkerSelector({
                       aria-label={deleteDisabled
                         ? 'Cannot delete marker: marker is being used'
                         : 'Delete marker'}
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         if (!deleteDisabled) {
                           // One undo step for the one click, as the other handlers here do.
                           groupedUndo.batch(() => {
@@ -245,39 +225,44 @@ export function MarkerSelector({
               </li>
             );
           })}
-          <li
-            role="option"
-            aria-selected={false}
-            aria-label="Create new marker"
-            title="Create new marker"
-            data-demo-target="selector:create"
-            {...pressable(() => {
-              openEditor('selector:create');
-              setEditedMarkerId(uuidv4());
-              setIsNewMarker(true);
-            })}
-          >
-            <FontAwesomeIcon icon={faPlus} size="3x" color="var(--marker-chrome-icon)" />
+          <li>
+            <button
+              type="button"
+              className="marker-choice"
+              aria-label="Create new marker"
+              title="Create new marker"
+              data-demo-target="selector:create"
+              onClick={() => {
+                openEditor('selector:create');
+                setEditedMarkerId(uuidv4());
+                setIsNewMarker(true);
+              }}
+            >
+              <FontAwesomeIcon icon={faPlus} size="3x" color="var(--marker-chrome-icon)" />
+            </button>
           </li>
-          <li
-            role="option"
-            aria-selected={false}
-            aria-disabled="true"
-            aria-label="Uploading is not available in this demo"
-            title="Uploading is not available in this demo"
-            className="marker-uploader"
-          >
-            <FontAwesomeIcon icon={faUpload} size="3x" />
+          <li>
+            <button
+              type="button"
+              className="marker-choice"
+              disabled
+              aria-label="Uploading is not available in this demo"
+              title="Uploading is not available in this demo"
+            >
+              <FontAwesomeIcon icon={faUpload} size="3x" />
+            </button>
           </li>
-          <li
-            role="option"
-            aria-selected={false}
-            aria-label="Close marker selector"
-            data-demo-target="selector:close"
-            {...pressable(onClose)}
-            title="Close marker selector"
-          >
-            <FontAwesomeIcon icon={faXmark} size="3x" color="var(--marker-chrome-icon)" />
+          <li>
+            <button
+              type="button"
+              className="marker-choice"
+              aria-label="Close marker selector"
+              title="Close marker selector"
+              data-demo-target="selector:close"
+              onClick={onClose}
+            >
+              <FontAwesomeIcon icon={faXmark} size="3x" color="var(--marker-chrome-icon)" />
+            </button>
           </li>
         </ul>
       </section>
