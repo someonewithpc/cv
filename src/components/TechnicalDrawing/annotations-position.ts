@@ -17,7 +17,8 @@
  * cell or lie over the target or the title block and the mirror image would not.
  *
  * The overlay itself is re-sized to that square around the artwork rather than around the
- * wrapping `.content`, which can be a line box taller than an inline artwork.
+ * wrapping `.content`, which can be a line box taller than an inline artwork, and the square
+ * is cut to the sheet, with the viewBox cut to match so the unit and centre stay put.
  *
  * Sizes come from the observer, which reports layout boxes untouched by the stack's splay
  * rotate. Every other box is read from client rects and turned back by the page's rotation
@@ -59,11 +60,15 @@ type Overlay = {
   artwork: Element;
   callouts: SVGGElement[];
   targeted: Callout[];
-  size: { left: number; top: number; side: number };
+  section: Element | null;
+  /** The overlay's box in px of `.content` and its viewBox, in overlay units. */
+  size: { left: number; top: number; width: number; height: number };
+  view: Box;
   anchor: Point;
 };
 
 const overlays = new Map<Element, Overlay>();
+const sheets = new Map<Element, Set<Overlay>>();
 const boxes = new WeakMap<Element, [number, number]>();
 const pending = new Set<Overlay>();
 let frame = 0;
@@ -222,16 +227,32 @@ function read(overlay: Overlay): boolean {
   const cx = cw / 2 + a.left + a.width / 2 - (c.left + c.width / 2);
   const cy = ch / 2 + a.top + a.height / 2 - (c.top + c.height / 2);
 
-  overlay.size = { left: cx - 2 * unit, top: cy - 2 * unit, side: 4 * unit };
   overlay.anchor = { x: aw / (2 * unit), y: ah / (2 * unit) };
 
+  const rot = frameOf(overlay.svg);
+  const centre = { x: a.left + a.width / 2, y: a.top + a.height / 2 };
+  const { section } = overlay;
+  const everywhere: Box = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity };
+  const sheet = section ? toOverlay(section.getBoundingClientRect(), centre, unit, rot) : everywhere;
+  // The square twice the artwork's short side, cut to the sheet: a wide artwork's square
+  // otherwise runs past the sheet's top and bottom edges.
+  const cut = {
+    left: Math.max(-2, sheet.left),
+    top: Math.max(-2, sheet.top),
+    right: Math.min(2, sheet.right),
+    bottom: Math.min(2, sheet.bottom),
+  };
+  const view = cut.right > cut.left && cut.bottom > cut.top ? cut : { left: -2, top: -2, right: 2, bottom: 2 };
+  overlay.view = view;
+  overlay.size = {
+    left: cx + view.left * unit,
+    top: cy + view.top * unit,
+    width: (view.right - view.left) * unit,
+    height: (view.bottom - view.top) * unit,
+  };
+
   if (overlay.targeted.length) {
-    const rot = frameOf(overlay.svg);
-    const centre = { x: a.left + a.width / 2, y: a.top + a.height / 2 };
-    const section = overlay.svg.closest('section');
     const cellEl = section?.querySelector(':scope > .content') ?? section;
-    const everywhere: Box = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity };
-    const sheet = section ? toOverlay(section.getBoundingClientRect(), centre, unit, rot) : everywhere;
     const cell = cellEl ? toOverlay(cellEl.getBoundingClientRect(), centre, unit, rot) : sheet;
     const titleBlock = section?.querySelector(':scope > table');
     const avoid = titleBlock ? [toOverlay(titleBlock.getBoundingClientRect(), centre, unit, rot)] : [];
@@ -244,11 +265,13 @@ function read(overlay: Overlay): boolean {
 }
 
 function write(overlay: Overlay) {
-  const { svg, size, anchor, callouts, targeted } = overlay;
+  const { svg, size, view, anchor, callouts, targeted } = overlay;
   svg.style.left = `${size.left}px`;
   svg.style.top = `${size.top}px`;
-  svg.style.width = `${size.side}px`;
-  svg.style.height = `${size.side}px`;
+  svg.style.width = `${size.width}px`;
+  svg.style.height = `${size.height}px`;
+  const f = (n: number) => n.toFixed(5);
+  svg.setAttribute('viewBox', `${f(view.left)} ${f(view.top)} ${f(view.right - view.left)} ${f(view.bottom - view.top)}`);
   const drawn = new Set(targeted.map((callout) => callout.group));
   for (const callout of callouts) {
     if (drawn.has(callout)) continue;
@@ -260,7 +283,6 @@ function write(overlay: Overlay) {
   for (const callout of targeted) {
     if (!callout.underline) continue;
     const { tip, end, sign, underline, mirrored } = callout;
-    const f = (n: number) => n.toFixed(5);
     callout.group.removeAttribute('transform');
     callout.path.setAttribute('d', `M ${f(tip.x)} ${f(tip.y)} l ${f(end.x - tip.x)} ${f(end.y - tip.y)} l ${f(sign * underline)} 0`);
     const x = f(end.x + sign * callout.offset.x);
@@ -294,7 +316,7 @@ const observer = new ResizeObserver((entries) => {
     const [box] = entry.borderBoxSize;
     boxes.set(entry.target, box ? [box.inlineSize, box.blockSize] : [entry.contentRect.width, entry.contentRect.height]);
   }
-  const touched = new Set(entries.map((entry) => overlays.get(entry.target)));
+  const touched = new Set(entries.flatMap((entry) => [overlays.get(entry.target), ...(sheets.get(entry.target) ?? [])]));
   for (const overlay of touched) {
     if (overlay) schedule(overlay);
   }
@@ -358,7 +380,9 @@ export function positionAnnotations(scope: ParentNode) {
       artwork,
       callouts,
       targeted: callouts.map((group) => calloutOf(group, artwork)).filter((callout): callout is Callout => Boolean(callout)),
-      size: { left: 0, top: 0, side: 0 },
+      section: svg.closest('section'),
+      size: { left: 0, top: 0, width: 0, height: 0 },
+      view: { left: -2, top: -2, right: 2, bottom: 2 },
       anchor: { x: 1, y: 1 },
     };
     overlays.set(svg, overlay);
@@ -366,6 +390,12 @@ export function positionAnnotations(scope: ParentNode) {
     overlays.set(artwork, overlay);
     observer.observe(content);
     observer.observe(artwork);
+    if (overlay.section) {
+      // The sheet can grow or shrink around an artwork held at its widest, and the overlay
+      // is cut to the sheet.
+      if (!sheets.has(overlay.section)) observer.observe(overlay.section);
+      sheets.set(overlay.section, (sheets.get(overlay.section) ?? new Set()).add(overlay));
+    }
     if (overlay.targeted.length) {
       // Stack.astro cancels and restarts a page's animations as it turns; both events
       // arrive once the animation has settled where the faces will be read.
