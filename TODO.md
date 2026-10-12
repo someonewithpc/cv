@@ -302,4 +302,4 @@
 - [x] Free the Space Builder renderer a page turn replaces, which the shared DFG lookup texture kept alive (P13) (#375)
 - [x] Leave target-size to the mobile Lighthouse profile, since a mouse keeps the demos' drawn controls (171-A11) (#378)
 - [x] Move the demo cursor with translate and keep its position out of React state, so a cursor frame is no layout and no render (171-PW3) (#380)
-- [ ] Take the corner cut and drift reads off a page turn's frames: the landing follows the browser's own transitions instead of resolving style every frame (P9)
+- [x] Take the corner cut and drift reads off a page turn's frames: the landing follows the browser's own transitions instead of resolving style every frame (P9) (#377)
