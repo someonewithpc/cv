@@ -37,13 +37,13 @@ aside {
   text-wrap: pretty;
 
   @container technical-drawing (orientation: portrait) {
-    --pad-top: 0.55em;
-    --pad-inline: 0.7em;
+    --pad-top: 0.5em;
+    --pad-inline: 0.75em;
 
     line-height: 1.2;
     /* Clears the peeled corner, which sits 1.5em tall in the bottom left and
        otherwise eats the start of the last line. */
-    padding: var(--pad-top) var(--pad-inline) 1.6em;
+    padding: var(--pad-top) var(--pad-inline) 1.625em;
   }
 
   h3 {
@@ -122,7 +122,7 @@ aside {
   &[data-paper='torn'] {
     border-radius: 0.125em;
     box-shadow: none;
-    filter: drop-shadow(0 0.25em 0.3em rgba(0,0,0,0.3));
+    filter: drop-shadow(0 0.25em 0.25em rgba(0,0,0,0.3));
   }
 
   /* The top right corner folded down over the front. The flap is a float, so
