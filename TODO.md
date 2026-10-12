@@ -287,6 +287,7 @@
 - [x] Send the page's visits and interactions to /api/e: session id in memory, batched beacons, GPC and DNT opt-outs, stable sheet ids (analytics plan PR 2) (#340)
 - [x] Skip browsers that report navigator.webdriver in both analytics gates, so our own test and audit runs stay out of the counts (#347)
 - [x] Let a keyboard pick, place and edit in Space Builder, Variants and the marker editor (A17) (#335)
+- [ ] Key the six sheet width rules added since #171 NJ9 on data-sheet-width, with the width query kept for the page without script (S6)
 - [x] Size the Space Builder and Drag and Drop sidebars against their frame with cqw, not the viewport (#361)
 - [x] Keep the Filters sheet's long table name inside the Predicate column so it never runs into Maximum (SAF6) (#344)
 - [x] Wrap the Seat Count placeholder inside its field instead of cutting it off (SAF4) (#345)
