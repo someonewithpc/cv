@@ -785,25 +785,23 @@ export default function MockMapApp() {
         />
       )}
 
-      {toasts.length > 0 && (
-        <div className="mock-map-toasts" aria-live="polite">
-          {toasts.map((toast) => (
-            <div
-              key={toast.id}
-              className={`mock-map-toast${toast.leaving ? ' is-leaving' : ''}`}
-            >
-              {toast.keys && toast.keys.length > 0 && (
-                <span className="mock-map-toast__keys">
-                  {toast.keys.map((key, index) => (
-                    <kbd key={`${toast.id}-${index}`}>{key}</kbd>
-                  ))}
-                </span>
-              )}
-              <span className="mock-map-toast__action">{toast.action}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="mock-map-toasts" aria-live="polite">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`mock-map-toast${toast.leaving ? ' is-leaving' : ''}`}
+          >
+            {toast.keys && toast.keys.length > 0 && (
+              <span className="mock-map-toast__keys">
+                {toast.keys.map((key, index) => (
+                  <kbd key={`${toast.id}-${index}`}>{key}</kbd>
+                ))}
+              </span>
+            )}
+            <span className="mock-map-toast__action">{toast.action}</span>
+          </div>
+        ))}
+      </div>
 
       <DemoCursor
         x={cursorPos.x}
