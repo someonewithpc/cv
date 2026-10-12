@@ -216,7 +216,9 @@ section {
 
     color: var(--ink);
     background-color: var(--surface-raised);
-    border: 1px solid color-mix(in oklch, var(--line-strong), var(--accent-muted) 35%);
+    border: 1px solid var(--tech-sw-border, color-mix(in oklch, var(--line-strong), var(--accent-muted) 35%));
+    opacity: var(--tech-sw-opacity, 1);
+    filter: var(--tech-sw-filter, none);
 
     font-family: monospace, system-ui;
     font-size: 0.875rem;
@@ -231,20 +233,25 @@ section {
     }
   }
 
-  &:has(#tech-filter-software:checked) li.hw {
-    opacity: 0.3;
-    filter: grayscale(70%);
+  /* The filter's pick reaches the items through custom properties set on the section. A
+     :has() with a pseudo-class in it, followed by a descendant selector, put every element
+     inserted anywhere on the page through a restyle of every element in this section. */
+  &:has(#tech-filter-software:checked) {
+    --tech-hw-opacity: 0.3;
+    --tech-hw-filter: grayscale(70%);
+    --tech-sw-border: color-mix(in oklch, var(--line-strong), var(--accent) 45%);
   }
-  &:has(#tech-filter-hardware:checked) li:not(.hw) {
-    opacity: 0.3;
-    filter: grayscale(70%);
+  &:has(#tech-filter-hardware:checked) {
+    --tech-sw-opacity: 0.3;
+    --tech-sw-filter: grayscale(70%);
+    --tech-hw-border: var(--blueprint);
+    --tech-hw-background: color-mix(in oklch, var(--surface-raised), var(--blueprint) 10%);
   }
-  &:has(#tech-filter-software:checked) li:not(.hw) {
-    border-color: color-mix(in oklch, var(--line-strong), var(--accent) 45%);
-  }
-  &:has(#tech-filter-hardware:checked) li.hw {
-    border-color: var(--blueprint);
-    background-color: color-mix(in oklch, var(--surface-raised), var(--blueprint) 10%);
+  li.hw {
+    opacity: var(--tech-hw-opacity, 1);
+    filter: var(--tech-hw-filter, none);
+    border-color: var(--tech-hw-border, color-mix(in oklch, var(--line-strong), var(--accent-muted) 35%));
+    background-color: var(--tech-hw-background, var(--surface-raised));
   }
 
   @media (prefers-reduced-motion: reduce) {
