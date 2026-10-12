@@ -2,12 +2,16 @@
 // The catalog card, its style carousel and its dropdown rows, after Space Builder's
 // _catalog_object_field.scss, _catalog_subcategory_group_field.scss and _hover_select.scss.
 // Scoped under .variants-catalog so the panel and the drawn copy on the sheet share it.
+@use '@/scss/hit-area' as *;
 @use '@/scss/visrez' as *;
 $border: #3d4246;
 $row-bg: #212529;
 $duration: 250ms;
 $easing: ease-out;
-$pip: 1.125rem;
+// Pips sit 1.5rem apart so each one's touch target is 24px; the dot inside keeps the
+// product's size.
+$pip: 1.5rem;
+$pip-dot: 0.5625rem;
 
 .variants-catalog .option-item {
   position: relative;
@@ -218,25 +222,31 @@ $pip: 1.125rem;
       > .style::scroll-marker {
         content: '';
         box-sizing: border-box;
-        width: calc($pip / 2);
-        height: calc($pip / 2);
-        margin: calc($pip / 4);
-        border: 2px solid var(--active-pip-color);
+        width: $pip;
+        height: $pip;
+        // A ::scroll-marker takes no pseudo-element of its own for a hit box, so the marker
+        // is the whole cell: a transparent border clips its background to the dot, and an
+        // inset shadow draws the dot's ring.
+        border: calc(($pip - $pip-dot) / 2) solid transparent;
         border-radius: 100%;
-        background: transparent;
+        background: transparent padding-box;
+        box-shadow: inset 0 0 0 2px var(--active-pip-color);
         cursor: pointer;
         transition: background $duration $easing;
       }
 
       > .style::scroll-marker:target-current {
-        background: color-mix(in srgb, var(--active-pip-color), black 15%);
+        background-color: color-mix(in srgb, var(--active-pip-color), black 15%);
       }
 
       // Same `outline`-never-paints gap as the scroll buttons above: five of the six stops
       // the carousel adds to the Tab order are these markers, each landing with no ring
       // until this swapped to a box-shadow.
+      // The ring sits 2px outside the dot, as it did when the marker was the dot: the
+      // border gives up 2px and the brand band takes it.
       > .style::scroll-marker:focus-visible {
-        box-shadow: 0 0 0 2px $visrez-brand;
+        border-width: calc(($pip - $pip-dot) / 2 - 2px);
+        box-shadow: inset 0 0 0 2px $visrez-brand, inset 0 0 0 4px var(--active-pip-color);
       }
     }
   }
@@ -323,9 +333,10 @@ $pip: 1.125rem;
     }
 
     button {
+      @include hit-area;
       box-sizing: border-box;
-      width: calc($pip / 2);
-      height: calc($pip / 2);
+      width: $pip-dot;
+      height: $pip-dot;
       padding: 0;
       border: 2px solid var(--active-pip-color);
       border-radius: 100%;
@@ -334,7 +345,7 @@ $pip: 1.125rem;
       transition: background $duration $easing;
 
       &[aria-current='true'] {
-        background: color-mix(in srgb, var(--active-pip-color), black 15%);
+        background-color: color-mix(in srgb, var(--active-pip-color), black 15%);
       }
     }
   }
@@ -348,10 +359,10 @@ $pip: 1.125rem;
   .pip-track {
     position: absolute;
     z-index: 2;
-    bottom: calc(0.25rem + $pip / 4);
-    left: calc(50% - var(--pips, 1) * $pip / 2 + $pip / 4);
-    width: calc($pip / 2);
-    height: calc($pip / 2);
+    bottom: calc(0.25rem + ($pip - $pip-dot) / 2);
+    left: calc(50% - var(--pips, 1) * $pip / 2 + ($pip - $pip-dot) / 2);
+    width: $pip-dot;
+    height: $pip-dot;
     pointer-events: none;
     --variants-dot-x: calc(var(--index, 0) * #{$pip});
     transition: --variants-dot-x $duration $easing;
