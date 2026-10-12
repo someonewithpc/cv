@@ -14,6 +14,7 @@ import { addMarker, dataUrlToSvg, groupedUndo, markersSelector, setSpaceMarker, 
 import type { MarkerType, SpaceType } from '../../store';
 import { useRootElementEvents } from '../../hooks/useRootElementEvents';
 import { useLiveMarkerEditorSession } from '../liveMarkerEditorSession';
+import { renderTogether } from '../../lib/imperativeReactComponent';
 
 import {
   svgRef,
@@ -176,7 +177,7 @@ export function MarkerEditor({
   }, [state, controlPointIndicatorRefs, space]);
 
   // Ensure Content is updated on the first render, when regular state changes, or when the reactive getReactiveStateSnapshot state changes
-  useEffect(updateAll, [state, reactiveState, updateAll]);
+  useEffect(() => renderTogether(updateAll), [state, reactiveState, updateAll]);
 
   // Auto-move decoration to shape center when shape changes, unless user already moved it
   useUpdateDecorationSnapCenter(state, setState, updateAll);
