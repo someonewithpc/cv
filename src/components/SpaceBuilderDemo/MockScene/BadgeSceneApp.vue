@@ -546,7 +546,7 @@ onBeforeUnmount(() => {
   top: 52%;
   translate: -50% 0;
   padding: 0 0.3rem;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   border: 1.5px solid rgba(162, 206, 59, 0.7);
   background: rgba(25, 41, 21, 0.85);
   color: #fff;
