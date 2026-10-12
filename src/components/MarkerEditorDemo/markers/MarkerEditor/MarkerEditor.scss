@@ -1,7 +1,7 @@
 @use 'sass:math';
-@use '@/scss/technical-drawing' as drawing;
+@use '@/scss/technicalDrawing' as drawing;
 
-@use '@/scss/hit-area' as *;
+@use '@/scss/hitArea' as *;
 @use '@/scss/visrez' as *;
 $marker-editor-background: #333;
 

@@ -1,6 +1,6 @@
-@use '@/scss/technical-drawing' as drawing;
-@use '@/scss/demo-cursor' as cursor;
-@use '@/scss/demo-toast' as toast;
+@use '@/scss/technicalDrawing' as drawing;
+@use '@/scss/demoCursor' as cursor;
+@use '@/scss/demoToast' as toast;
 
 .mock-map-overlay {
   position: absolute;

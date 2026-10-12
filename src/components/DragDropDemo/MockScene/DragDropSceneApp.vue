@@ -1252,8 +1252,8 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use '@/scss/visrez' as *;
-@use '@/scss/demo-cursor' as cursor;
-@use '@/scss/demo-toast' as toast;
+@use '@/scss/demoCursor' as cursor;
+@use '@/scss/demoToast' as toast;
 
 $light-grey: #565656;
 $nav-sidebar-bg: #323232;

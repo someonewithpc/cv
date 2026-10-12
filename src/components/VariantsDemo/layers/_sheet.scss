@@ -1,4 +1,4 @@
-@use '@/scss/sheet-orientation' as *;
+@use '@/scss/sheetOrientation' as *;
 /** Shared chrome for the variants demo's blueprint sheets. */
 @mixin sheet-chrome($width: 46em) {
   .wrapper {

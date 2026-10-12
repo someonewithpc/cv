@@ -373,7 +373,7 @@
 - [x] Keep the Badge math card's labels in their case, so θ and r are not uppercased (#220 T16) (#454)
 - [x] Event Dispatch card says "the first one to return stop has the job" (#220 T17) (#453)
 - [x] Fix the typo "it's placement" in the wipe sheet headline (#220 T1) (#449)
-- [x] Write the stack geometry once in _technical-drawing.scss: the splay, the paper clip reach, the portrait width and height, the fold's resting size and the title block sizes (#220 C75) (#436)
+- [x] Write the stack geometry once in _technicalDrawing.scss: the splay, the paper clip reach, the portrait width and height, the fold's resting size and the title block sizes (#220 C75) (#436)
 - [x] Start the Paper Stack fold when its setup is called after DOMContentLoaded but before load (#220 C25) (#425)
 - [x] Read the annotation overlays once a frame after animation events, not once per event (#220 C7) (#410)
 - [x] Watch for a stack's bottom edge with one threshold per observer instead of 21 (#220 C8) (#409)

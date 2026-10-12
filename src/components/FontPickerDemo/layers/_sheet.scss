@@ -1,5 +1,5 @@
 @use "@/scss/sheet" as shared;
-@use '@/scss/sheet-orientation' as *;
+@use '@/scss/sheetOrientation' as *;
 // What the picker's four sheets share: one type scale and the margin every layer keeps
 // around its content. Both go on a layer's root and nowhere else.
 

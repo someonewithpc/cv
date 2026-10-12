@@ -76,7 +76,7 @@ type FoldGesture = {
 const FOLD_REVEAL_END = { x: 'var(--fold-rest-x)', y: 'var(--fold-rest-y)' };
 const PX_PER_CM = 96 / 2.54;
 
-// The dog-ear's resting size in px, read once from the length scss/_technical-drawing.scss
+// The dog-ear's resting size in px, read once from the length scss/_technicalDrawing.scss
 // publishes as --fold-rest-x/-y (always in cm).
 let foldRestPx: Vec | null = null;
 const restSizePx = (sheet: HTMLElement): Vec => {
@@ -99,7 +99,7 @@ const FOLD_CANCEL_GRACE = 48;
 // singularity in foldSizeFromTip long before the pin ever sees it, so this reads the pointer's
 // own travel from the grab instead of the fold's geometry. A plain fraction of the page diagonal
 // would not do, because the resting dog-ear that this measures against is
-// a fixed size in cm (see FOLD_REVEAL_END, $fold-rest-x/-y in _technical-drawing.scss), not a share of the
+// a fixed size in cm (see FOLD_REVEAL_END, $fold-rest-x/-y in _technicalDrawing.scss), not a share of the
 // page, so the singularity sits the same few pixels out from the grab on a phone sheet as on a
 // wide desktop one — a diagonal-scaled margin would let a big sheet wander much further into the
 // odd shapes than a small one before giving up. So this is a plain pixel count instead, tuned

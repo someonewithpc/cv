@@ -2,7 +2,7 @@
  * The drawn cursor a walkthrough moves, driven without the framework. The demo renders the
  * element and hands it over with `attach`; from then on a move, a press or a drag is a write on
  * that element, never a re-render. The position goes into `--cursor-x` and `--cursor-y`, which
- * the `demo-cursor` mixin (src/scss/_demo-cursor.scss) turns into `translate`, so a glide runs
+ * the `demo-cursor` mixin (src/scss/_demoCursor.scss) turns into `translate`, so a glide runs
  * as a compositor transition. A press and a drag set `data-clicking` and `data-dragging`.
  *
  * Positions are pixels inside the cursor's offset parent. The element can come and go (a

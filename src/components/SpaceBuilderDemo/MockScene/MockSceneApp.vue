@@ -1611,7 +1611,7 @@ $light-grey: #565656;
 </style>
 
 <style lang="scss">
-@use '@/scss/demo-cursor' as cursor;
+@use '@/scss/demoCursor' as cursor;
 
 .space-builder-demo-cursor {
   // Absolute inside `.space-builder-app` so page/carousel scroll keeps the tip
