@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 
+import { createDemoCursor } from '@/client/demoCursor';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
@@ -91,15 +92,16 @@ type KeyToast = { id: number; keys: string[]; action: string; leaving: boolean }
 const keyToasts = ref<KeyToast[]>([]);
 const demoPlaying = ref(false);
 const cursorVisible = ref(false);
-const cursorClicking = ref(false);
 /** Waiting on the double-clicked object's GLB, with the page held the way the product holds it. */
 const arming = ref(false);
-/** True while a tween is driving cursorPos every frame — the JS easing already
+/** True while a tween is moving the cursor every frame — the JS easing already
  * smooths motion, so the CSS position transition (meant for discrete jumps)
  * only adds trailing lag here, most visibly right at the drop, where it makes
  * the orbit look like it starts before the cursor visually finishes arriving. */
 const cursorInstant = ref(false);
-const cursorPos = reactive({ x: 0, y: 0 });
+/** Moves and presses the drawn cursor straight on its element, so a walkthrough frame is no render. */
+const cursor = createDemoCursor();
+const attachCursor = (el: unknown) => cursor.attach(el instanceof HTMLElement ? el : null);
 /**
  * The catalog thumbnail floated under the pointer while a drag is still over the sidebar.
  * `mixins/ObjectDrag.vue` hides the native drag image and moves the card's own `<img>` at
@@ -107,6 +109,19 @@ const cursorPos = reactive({ x: 0, y: 0 });
  */
 type DragThumb = { src: string; width: number; height: number; offsetX: number; offsetY: number };
 const draggedThumb = ref<DragThumb | null>(null);
+let thumbEl: HTMLElement | null = null;
+/** The floated thumbnail rides with the cursor, written on the same frame and outside Vue too. */
+function paintThumb() {
+  const thumb = draggedThumb.value;
+  if (!thumbEl || !thumb) return;
+  const { x, y } = cursor.position;
+  thumbEl.style.transform = `translate3d(${x - thumb.offsetX}px, ${y - thumb.offsetY}px, 0)`;
+}
+const attachThumb = (el: unknown) => {
+  thumbEl = el instanceof HTMLElement ? el : null;
+  paintThumb();
+};
+watch(draggedThumb, paintThumb, { flush: 'post' });
 let dragThumbSpec: DragThumb | null = null;
 /** Where the drawn cursor's hot spot is, in client coordinates, for the events it fires. */
 const cursorClient = { x: 0, y: 0 };
@@ -579,8 +594,8 @@ function moveCursorTo(clientX: number, clientY: number) {
   cursorClient.x = clientX;
   cursorClient.y = clientY;
   const p = toRootPoint(clientX, clientY);
-  cursorPos.x = p.x;
-  cursorPos.y = p.y;
+  cursor.move(p.x, p.y);
+  paintThumb();
 }
 
 /**
@@ -603,13 +618,13 @@ function fireCursorButton(type: 'mousedown' | 'mouseup') {
 }
 
 function pressCursor() {
-  cursorClicking.value = true;
+  cursor.press();
   fireCursorButton('mousedown');
 }
 
 function releaseCursor() {
   fireCursorButton('mouseup');
-  cursorClicking.value = false;
+  cursor.release();
 }
 
 /** Fraction of the canvas rect → client coords, so targets scale with viewport size. */
@@ -666,7 +681,7 @@ function orbitTween(token: number, deltaTheta: number, ms: number, startClient: 
     const totalDx = -deltaTheta / 0.005;
     let applied = 0;
     cursorInstant.value = true;
-    cursorClicking.value = true;
+    cursor.press();
     for (;;) {
       await gateFrame();
       const scene = sceneRef.value;
@@ -766,7 +781,7 @@ async function dragAndOrbit(
 
   await orbitTween(token, orbitDir * 0.4, 700, landed);
   cursorInstant.value = false;
-  cursorClicking.value = false;
+  cursor.release();
   if (token !== autoplayToken) return false;
   await wait(700);
   return true;
@@ -1203,10 +1218,10 @@ onBeforeUnmount(() => {
 
     <div
       v-if="draggedThumb"
+      :ref="attachThumb"
       class="demo-drag-thumb"
       :class="{ instant: cursorInstant }"
       :style="{
-        transform: `translate3d(${cursorPos.x - draggedThumb.offsetX}px, ${cursorPos.y - draggedThumb.offsetY}px, 0)`,
         width: `${draggedThumb.width}px`,
         height: `${draggedThumb.height}px`,
       }"
@@ -1217,10 +1232,10 @@ onBeforeUnmount(() => {
 
     <div
       v-if="cursorVisible"
+      :ref="attachCursor"
       class="demo-cursor"
       data-demo-cursor
-      :class="{ clicking: cursorClicking, instant: cursorInstant }"
-      :style="{ translate: `calc(${cursorPos.x}px - 12%) calc(${cursorPos.y}px - 8%)` }"
+      :class="{ instant: cursorInstant }"
       aria-hidden="true"
     >
       <svg viewBox="0 0 32 32" width="40" height="40">
@@ -1239,6 +1254,7 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use '@/scss/visrez' as *;
+@use '@/scss/demo-cursor' as cursor;
 @use '@/scss/demo-toast' as toast;
 
 $light-grey: #565656;
@@ -1401,33 +1417,26 @@ $nav-sidebar-bg: #323232;
 }
 
 .demo-cursor {
-  position: absolute;
-  top: 0;
-  left: 0;
+  @include cursor.driven($glide: 0.12s linear, $click-scale: 0.88, $drag-scale: null);
   // Above the sidebar (which has no z-index of its own) so it stays visible while the
   // autoplaying drag passes over the catalog, instead of being painted underneath it.
   z-index: 6;
   width: 40px;
   height: 40px;
-  // The hot spot, the path's tip, sits 12% 8% into the box; the inline translate takes it
-  // off the pointer's place so the tip lands there, and the shrinks below turn about it.
+  // The hot spot, the path's tip, sits 12% 8% into the box; the mixin's translate takes it
+  // off the pointer's place so the tip lands there, and the shrinks turn about it.
   transform-origin: 12% 8%;
   pointer-events: none;
   // Placed with `translate`, not left/top, so a moving cursor never dirties layout and the
   // scene's per-frame rect reads stay free of forced reflows — and not with `transform`
   // either: a `transform` is applied after `scale`, so a press would multiply the cursor's
   // whole offset by the shrink and slide it towards the app's top-left corner.
-  transition: translate 0.12s linear, scale 0.12s ease;
 
-  // While a tween is driving cursorPos every frame, its own easing already
+  // While a tween is moving the cursor every frame, its own easing already
   // smooths the motion — this transition would only add trailing lag on top,
   // most visibly right at the drop point.
   &.instant {
     transition: scale 0.12s ease;
-  }
-
-  &.clicking {
-    scale: 0.88;
   }
 
   svg {
