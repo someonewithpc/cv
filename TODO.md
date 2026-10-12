@@ -302,7 +302,7 @@
 - [x] Keep the marker editor's parts panel and the schema driver's table inside the frame line on a phone's sheet, with or without script (S24) (#382)
 - [x] Keep the shared value fan and the range rules table inside the frame line on a 320px phone, with or without script (S25) (#383)
 - [x] Size the px left beyond hairlines in rem and em on the eighths grid (S9) (#368)
-- [ ] Keep Marker Editor's way back smooth in Safari by giving each page behind the front its own layer there (SAF9)
+- [x] Keep Marker Editor's way back smooth in Safari by giving each page behind the front its own layer there (SAF9) (#374)
 - [x] Mount a demo island after the page turn that brings it up, so Safari's restyle for its stylesheet no longer stalls the turn (SAF8) (#370)
 - [x] Let the keyboard scroll the code blocks, sheets and panels that scroll with nothing focusable in them, and keep the web-ts-mode notes out of the landmark list (A12) (#356)
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
