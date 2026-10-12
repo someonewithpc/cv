@@ -450,7 +450,7 @@ section {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.6em;
+      gap: 0.625em;
 
       position: relative;
       max-height: 100%;
@@ -518,7 +518,7 @@ section {
     background: oklch(from var(--note-background, #e8e4dc) clamp(0.78, l, 0.92) min(c, 0.09) h);
     border-end-start-radius: 0.5em;
     /* clip-path also clips box-shadow, so the lift has to be a filter. */
-    filter: drop-shadow(0.1em -0.1em 0.3em rgba(0, 0, 0, 0.45));
+    filter: drop-shadow(0.125em -0.125em 0.25em rgba(0, 0, 0, 0.45));
     transform-origin: bottom left;
     transition: scale 120ms ease;
 
@@ -684,13 +684,13 @@ section {
             }
 
             &:first-child {
-              top: 0.2em;
-              left: 0.2em;
+              top: 0.25em;
+              left: 0.25em;
             }
 
             &:nth-child(2) {
-              right: 0.2em;
-              bottom: 0.2em;
+              right: 0.25em;
+              bottom: 0.25em;
             }
           }
 
@@ -908,7 +908,7 @@ section {
 
     & > table {
       td {
-        padding: 0.2em;
+        padding: 0.25em;
       }
     }
   }
@@ -986,7 +986,7 @@ section {
       max-width: 100%;
 
       td {
-        padding: 0.2em;
+        padding: 0.25em;
       }
 
       // Purely decorative on a phone sheet: drop the cell rather than squeeze
@@ -996,13 +996,13 @@ section {
       // No longer has to stay square once the sheet can't spare the width —
       // a shorter, wider strip still reads fine at this size.
       .title-tech-stack {
-        width: 2.6em;
+        width: 2.625em;
         height: 2em;
         aspect-ratio: auto;
 
         :global(.tech-icon svg) {
-          width: 1.3em;
-          height: 1.3em;
+          width: 1.25em;
+          height: 1.25em;
         }
       }
 
@@ -1207,7 +1207,7 @@ section {
   /* Over the title card, which spans every row of the slip and comes after it. */
   position: relative;
   grid-area: deck / 1 / deck / -1;
-  padding-bottom: 0.4375rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid color-mix(in oklch, var(--line-strong), transparent 45%);
 
   .demo-key svg {
