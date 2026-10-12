@@ -1318,7 +1318,7 @@ $nav-sidebar-bg: #323232;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.65rem;
+  gap: 0.625rem;
   background: $visrez-scene;
   color: #adb5bd;
   font: 0.875rem/1.3 system-ui, sans-serif;
@@ -1329,8 +1329,8 @@ $nav-sidebar-bg: #323232;
 }
 
 .spinner {
-  width: 1.6rem;
-  height: 1.6rem;
+  width: 1.625rem;
+  height: 1.625rem;
   border: 3px solid $visrez-brand;
   border-top-color: transparent;
   border-radius: 50%;
@@ -1351,7 +1351,7 @@ $nav-sidebar-bg: #323232;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.65rem;
+  gap: 0.625rem;
   background: color-mix(in oklab, $visrez-scene 72%, transparent);
   color: #e8e4dc;
   font: 0.75rem/1.3 var(--font-poppins, system-ui, sans-serif);
@@ -1359,12 +1359,12 @@ $nav-sidebar-bg: #323232;
 
 .demo-flash {
   position: absolute;
-  top: 0.55rem;
+  top: 0.5rem;
   left: 50%;
   z-index: 2;
   translate: -50% 0;
   margin: 0;
-  padding: 0.3rem 0.65rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 0.25rem;
   background: $visrez-toast;
   color: #fff;
@@ -1376,11 +1376,11 @@ $nav-sidebar-bg: #323232;
 .toast {
   position: absolute;
   // Below the "Demo playing" pill so autoplay's own toasts don't collide with it.
-  top: 2.3rem;
+  top: 2.25rem;
   left: 50%;
   translate: -50% 0;
   z-index: 2;
-  padding: 0.35rem 0.75rem;
+  padding: 0.375rem 0.75rem;
   border-radius: 0.25rem;
   background: $visrez-toast;
   color: #fff;
@@ -1511,7 +1511,7 @@ $nav-sidebar-bg: #323232;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  padding: 0.45rem 0.65rem;
+  padding: 0.5rem 0.625rem;
   border-bottom: 1px solid $light-grey;
 }
 
