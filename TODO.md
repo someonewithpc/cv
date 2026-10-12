@@ -290,3 +290,4 @@
 - [x] Let the keyboard scroll the code blocks, sheets and panels that scroll with nothing focusable in them, and keep the web-ts-mode notes out of the landmark list (A12) (#356)
 - [x] Take the Edit, Duplicate and Delete buttons out of the marker selector's options (A17b) (#350)
 - [x] Make the dots under a no-script stack one Tab stop, the arrow keys moving between sheets (A19) (#354)
+- [ ] Give the scene demo roots and the map overlay a group role and name, and drop the empty Tab stop on Place and Badge (A10)
