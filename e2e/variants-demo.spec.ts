@@ -92,7 +92,7 @@ async function dotOnPipRow(styles: Locator, dot: Locator, index: number) {
   const tile = await styles.boundingBox();
   const box = await dot.boundingBox();
   if (!tile || !box) throw new Error('The carousel or its dot has no layout box');
-  const pip = 18;
+  const pip = 24;
   const pips = await styles.locator('.style').count();
   const rowLeft = tile.x + tile.width / 2 - (pips * pip) / 2;
   expect(box.height).toBeGreaterThan(6);
@@ -329,7 +329,7 @@ test.describe('metric locale', () => {
     const dot = (frame: number[]) => frame[frame.length - 1];
     const tail = (frame: number[]) => frame[4];
     // The dot moved a pip; at some point the last part lagged it, and at the end all sit together.
-    expect(Math.max(...frames.map(dot))).toBeCloseTo(18, 0);
+    expect(Math.max(...frames.map(dot))).toBeCloseTo(24, 0);
     expect(Math.max(...frames.map((frame) => dot(frame) - tail(frame)))).toBeGreaterThan(2);
     const last = frames[frames.length - 1];
     last.forEach((value) => expect(value).toBeCloseTo(dot(last), 0));
