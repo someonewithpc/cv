@@ -511,11 +511,11 @@ section {
     padding: 0;
     border: 0;
     font: inherit;
-    color: oklch(from var(--note-background, #e8e4dc) 0.28 min(c, 0.06) h);
+    color: oklch(from var(--note-background, #{colors.$sheet-paper}) 0.28 min(c, 0.06) h);
     cursor: pointer;
 
     clip-path: polygon(0 0, 100% 100%, 0 100%);
-    background: oklch(from var(--note-background, #e8e4dc) clamp(0.78, l, 0.92) min(c, 0.09) h);
+    background: oklch(from var(--note-background, #{colors.$sheet-paper}) clamp(0.78, l, 0.92) min(c, 0.09) h);
     border-end-start-radius: 0.5em;
     /* clip-path also clips box-shadow, so the lift has to be a filter. */
     filter: drop-shadow(0.1em -0.1em 0.3em rgba(0, 0, 0, 0.45));
