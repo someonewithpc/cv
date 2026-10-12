@@ -63,13 +63,14 @@ const skipScript = `(() => {
 
 /* Cloudflare Web Analytics: cookieless, so no consent banner. It loads on the production host
    only (previews would count as visits) and not when the browser sends Global Privacy Control
-   or Do Not Track. */
+   or Do Not Track, or is driven by automation (navigator.webdriver). */
 const analyticsScript = `
 const beacon = ${JSON.stringify(JSON.stringify({ token: WEB_ANALYTICS_TOKEN }))};
 if (
   location.hostname === ${JSON.stringify(new URL(SITE_URL).hostname)} &&
   !navigator.globalPrivacyControl &&
-  navigator.doNotTrack !== '1'
+  navigator.doNotTrack !== '1' &&
+  !navigator.webdriver
 ) {
   const script = document.createElement('script');
   script.defer = true;
