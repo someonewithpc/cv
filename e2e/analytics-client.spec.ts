@@ -3,8 +3,24 @@ import { expect, test, type Page } from '@playwright/test';
 import { EVENT_PATH, SESSION_PATTERN } from '../src/analytics';
 import { demoStack, pressTurn } from './support/paperStack';
 
-// The page's own beacons, caught before they reach the worker. `?analytics=1` lifts the
-// production-host guard in src/client/analytics.ts; without it localhost sends nothing.
+// The page's own beacons, caught before they reach the worker. src/client/analytics.ts sends
+// only on hsal.es and not under automation. The astro server only answers to localhost, so
+// these specs load http://hsal.es/ and have each request answered from the test server; the
+// specs that expect beacons also report navigator.webdriver as false.
+
+async function serveAsProduction(page: Page, baseURL: string | undefined): Promise<void> {
+  await page.route('http://hsal.es/**', async (route) => {
+    const { pathname, search } = new URL(route.request().url());
+    if (pathname === EVENT_PATH) return route.fallback();
+    await route.fulfill({ response: await route.fetch({ url: new URL(pathname + search, baseURL).href }) });
+  });
+}
+
+async function hideAutomation(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+  });
+}
 
 type Beacon = { s: string, e: (string | number)[][] };
 
@@ -21,9 +37,11 @@ async function catchBeacons(page: Page): Promise<Beacon[]> {
 const events = (beacons: Beacon[]) => beacons.flatMap((beacon) => beacon.e);
 const named = (beacons: Beacon[], name: string) => events(beacons).filter(([event]) => event === name);
 
-test('a visit reports the load, the sections reached, a flip, a theme pick, a print, a contact click and the leave', async ({ page }) => {
+test('a visit reports the load, the sections reached, a flip, a theme pick, a print, a contact click and the leave', async ({ page, baseURL }) => {
+  await hideAutomation(page);
   const beacons = await catchBeacons(page);
-  await page.goto('/?analytics=1');
+  await serveAsProduction(page, baseURL);
+  await page.goto('http://hsal.es/');
 
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
@@ -84,18 +102,30 @@ test('every sheet carries a stable id and every demo a slug', async ({ page }) =
   expect(new Set(demos).size, 'a demo slug repeated').toBe(demos.length);
 });
 
-test('Global Privacy Control stops every beacon', async ({ page }) => {
+test('Global Privacy Control stops every beacon', async ({ page, baseURL }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true });
   });
+  await hideAutomation(page);
   const beacons = await catchBeacons(page);
-  await page.goto('/?analytics=1');
+  await serveAsProduction(page, baseURL);
+  await page.goto('http://hsal.es/');
   await page.locator('#theme-picker label:has(input[value="dark"])').click();
   await page.waitForTimeout(3000);
   expect(beacons).toEqual([]);
 });
 
-test('a host other than hsal.es sends nothing without the switch', async ({ page }) => {
+test('on hsal.es an automated browser sends nothing', async ({ page, baseURL }) => {
+  const beacons = await catchBeacons(page);
+  await serveAsProduction(page, baseURL);
+  await page.goto('http://hsal.es/');
+  await page.locator('#theme-picker label:has(input[value="dark"])').click();
+  await page.waitForTimeout(3000);
+  expect(beacons).toEqual([]);
+});
+
+test('a host other than hsal.es sends nothing', async ({ page, baseURL }) => {
+  await hideAutomation(page);
   const beacons = await catchBeacons(page);
   await page.goto('/');
   await page.locator('#theme-picker label:has(input[value="dark"])').click();
