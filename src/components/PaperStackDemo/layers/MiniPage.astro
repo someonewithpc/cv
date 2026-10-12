@@ -6,6 +6,8 @@
  * lays the real page out, at whatever size the caller gives it, and in line art so it reads
  * on paper and on the blueprint alike. The caller draws the page's own outline and fill.
  */
+import { NOTE } from '../note';
+
 type Props = { w: number; h: number };
 
 const { w, h } = Astro.props;
@@ -33,7 +35,7 @@ const cells = [1, 2, 3].map((n) => blockAt.x + tech + ((block.w - tech) * n) / 4
 const pt = (p: { x: number; y: number }) => `${p.x},${p.y}`;
 ---
 
-<g class="mini-page">
+<g class="mini-page" style={{ '--mini-note-paper': NOTE.background, '--mini-note-ink': NOTE.color }}>
   <rect class="fine" x={frame.x} y={frame.y} width={frame.w} height={frame.h} />
 
   <line class="ink" x1={heading.x1} y1={heading.y} x2={heading.x2} y2={heading.y} />
@@ -94,12 +96,12 @@ const pt = (p: { x: number; y: number }) => `${p.x},${p.y}`;
 
   // The note is the same paper on every theme and on the blueprint, as the real one is.
   .note {
-    fill: #ea1;
+    fill: var(--mini-note-paper);
     fill-opacity: 0.85;
   }
 
   .note-line {
-    stroke: #000;
+    stroke: var(--mini-note-ink);
     stroke-opacity: 0.6;
     stroke-width: 1;
     stroke-linecap: round;

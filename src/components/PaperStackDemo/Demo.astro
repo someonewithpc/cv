@@ -5,6 +5,7 @@ import * as esbuild from 'esbuild';
 
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
+import { NOTE } from './note';
 import { highlightInline } from '@/highlight';
 
 import PileLayer from './layers/PileLayer.astro';
@@ -56,7 +57,7 @@ type Layer = keyof typeof layers;
   <fragment slot="aside">
     {(layer: Layer) => ({
       pile: (
-        <PostIt background="#ea1" color="black">
+        <PostIt background={NOTE.background} color={NOTE.color}>
           All pages in the stack are overlapped by placing them in the same grid cell, with the order
           being controlled by CSS <Fragment set:html={highlightInline('order', 'css', ['a{', ': 1}'], 'note-code')} />, so they can be
           rearranged as the pages turn
