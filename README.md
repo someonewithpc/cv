@@ -39,7 +39,8 @@ There are four themes, and a print stylesheet for the paper version.
 ## What the site records about visitors
 
 The site loads Cloudflare Web Analytics, which sets no cookie and stores nothing in the
-browser. The script is skipped when the browser sends Global Privacy Control or Do Not Track.
+browser. The script is skipped when the browser sends Global Privacy Control or Do Not Track, and when
+the browser reports itself as automated, as Playwright and safaridriver do.
 It only runs on hsal.es, so previews and local builds are not counted.
 
 Cloudflare Web Analytics cannot see interactions, so the page also reports a few of its own to
@@ -50,8 +51,8 @@ a hash of the address and the browser with a random salt that a Durable Object k
 calendar month and then deletes. Returning visits count within a month, and nothing can be
 reversed after it. The method errs both ways: a phone that changes network counts twice, and an
 office behind one address counts once. Nothing is sent under Global Privacy Control or Do Not
-Track, or off hsal.es. Analytics Engine keeps rows for 90 days. No cookie or browser storage is
-used.
+Track, from a browser that reports `navigator.webdriver`, or off hsal.es. Analytics Engine
+keeps rows for 90 days. No cookie or browser storage is used.
 
 Sheet and demo ids are stable names, not positions. Renaming a layer should keep its id.
 
