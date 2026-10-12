@@ -1456,9 +1456,9 @@ $light-grey: #565656;
     grid-column: 2;
     grid-row: 1;
     // Space Builder gives the Add sidebar 780px of a 1440px window, three catalog cards
-    // across at 178px each. This frame is about half as wide, so take a comparable share
-    // and keep the cards near the product's size instead of shrinking them to fit.
-    width: min(22rem, 52vw);
+    // across at 178px each. The frame stands in for that window, so take a comparable
+    // share of it and keep the cards near the product's size instead of shrinking them.
+    width: min(22rem, 52cqw);
     min-height: 0;
     max-height: 100%;
     display: flex;
@@ -1585,9 +1585,8 @@ $light-grey: #565656;
     font-size: 0.875rem;
   }
 
-  // Narrow frame (phone-portrait or a squeezed tablet window): the sidebar's
-  // vw-based width no longer tracks the shrunk frame, so switch it to the
-  // frame's own size and let it claim less of it. The rail stays visible
+  // Narrow frame (phone-portrait or a squeezed tablet window): the sidebar
+  // takes a smaller cap and leaves the scene some room. The rail stays visible
   // while idle (it's the only way to reach Add on a touch device) but tucks
   // away once the sidebar it opens needs the room back, then reappears when
   // the sidebar closes.

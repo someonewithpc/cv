@@ -1250,7 +1250,7 @@ $nav-sidebar-bg: #323232;
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) min(17.5rem, 42vw);
+  grid-template-columns: minmax(0, 1fr) min(17.5rem, 50cqw);
   color: #f3f3f4;
   background: $visrez-scene;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
@@ -1262,9 +1262,9 @@ $nav-sidebar-bg: #323232;
     box-shadow: inset 0 0 0 2px $visrez-brand;
   }
 
-  // Narrow-but-landscape: the sidebar's vw-based width no longer tracks the
-  // shrunk frame. Declared before the portrait override below so portrait's
-  // full stacked layout still wins once the sheet flips orientation.
+  // Narrow-but-landscape: half the frame leaves the scene too little room, so the
+  // sidebar takes a smaller cap. Declared before the portrait override below so
+  // portrait's full stacked layout still wins once the sheet flips orientation.
   @container (max-width: 34rem) {
     grid-template-columns: minmax(0, 1fr) min(11rem, 68cqw);
   }
