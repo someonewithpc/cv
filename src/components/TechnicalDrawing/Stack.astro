@@ -273,9 +273,20 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
   --paper-clip-lean-x: calc(var(--paper-clip-reach) / 2);
   --paper-clip-lean-y: var(--paper-clip-reach);
 
-  @container technical-drawing-width (max-width: 40em) {
+  // Keyed on the stack's attribute, with the width query only for the page without script.
+  @mixin portrait-lean {
     --paper-clip-lean-x: var(--paper-clip-reach);
     --paper-clip-lean-y: calc(var(--paper-clip-reach) / 2);
+  }
+
+  :global(:where(article.technical-drawing-stack[data-sheet-orientation='portrait'])) ~ & {
+    @include portrait-lean;
+  }
+
+  @media (scripting: none) {
+    @container technical-drawing-width (max-width: 40em) {
+      @include portrait-lean;
+    }
   }
 }
 
@@ -444,8 +455,14 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
 
   // Portrait swings the way back's arrow up over the frame's top edge instead of out past its
   // left one, through where these words would otherwise sit.
-  @container technical-drawing-width (max-width: 40em) {
+  :global(:where(article.technical-drawing-stack[data-sheet-orientation='portrait'] ~ .flip-hints)) & {
     left: 3em;
+  }
+
+  @media (scripting: none) {
+    @container technical-drawing-width (max-width: 40em) {
+      left: 3em;
+    }
   }
 }
 

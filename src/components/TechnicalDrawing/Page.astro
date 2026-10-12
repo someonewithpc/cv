@@ -176,6 +176,7 @@ const sheetAnchor = `--${noteId}-sheet`;
 </section>
 
 <style lang="scss">
+@use '@/scss/sheet-band' as *;
 @use '@/scss/hit-area' as *;
 @use 'sass:math';
 
@@ -872,7 +873,7 @@ section {
     }
   }
 
-  @container technical-drawing-width (max-width: 56em) {
+  @include sheet-band(narrow) {
     --demo-inset: 0.5rem;
 
     .aside {
