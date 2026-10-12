@@ -33,6 +33,7 @@ bootIslands('[data-tagging-grid-demo]', boot);
 </script>
 
 <style lang="scss">
+@use '@/scss/demo-cursor' as cursor;
 @use "./sheet" as *;
 
 :global(article.technical-drawing-stack > * > section .content:has(.tagging-grid-demo)) {
@@ -72,26 +73,16 @@ bootIslands('[data-tagging-grid-demo]', boot);
 }
 
 .tagging-cursor {
-  position: absolute;
+  @include cursor.driven($glide: 0.52s cubic-bezier(0.22, 1, 0.36, 1), $click-scale: 0.85, $drag-scale: null);
   z-index: 3;
   width: 2em;
   height: 2em;
-  /* Hotspot at the arrow tip, and the click pulse scales around it so the tip
-     stays on the aimed point. */
-  translate: -12% -8%;
+  /* The click pulse scales around the arrow tip so the tip stays on the aimed point. */
   transform-origin: 12% 8%;
   pointer-events: none;
-  transition:
-    left 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    top 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    scale 0.12s ease;
 
   &[hidden] {
     display: none;
-  }
-
-  &.clicking {
-    scale: 0.85;
   }
 
   svg {
