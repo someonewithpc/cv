@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { drawEveryStack } from './support/paperStack';
 
 /**
- * TechnicalDrawing/annotations-position.ts anchors every callout of an Annotations
+ * TechnicalDrawing/annotationsPosition.ts anchors every callout of an Annotations
  * overlay to the artwork's own box, and a callout with a target to that element, at any
  * container width. Each annotated layer is checked in place: the stack's splay rotate is
  * switched off before the page's scripts run (it never moves layout, and turning every
@@ -149,7 +149,7 @@ async function readOverlays(page: import('@playwright/test').Page): Promise<Read
         const ends = segment && [segmentPoint(elements[0], segment[0], segment[1]), segmentPoint(elements[0], segment[2], segment[3])];
         // A callout with no segment mirrors across the target's vertical axis when its
         // authored side would leave the cell or lie over the target or the title block;
-        // annotations-position.ts marks that with data-mirrored on the group.
+        // annotationsPosition.ts marks that with data-mirrored on the group.
         const fx = !ends && callout.dataset.mirrored === 'true' ? 1 - ax : ax;
         const anchor = ends
           ? { x: (ends[0].x + ends[1].x) / 2, y: (ends[0].y + ends[1].y) / 2 }

@@ -51,7 +51,7 @@ export async function forEachStackInLane(
  */
 /**
  * The front page's transport deck. A landscape sheet keeps it in its bottom band; a portrait
- * sheet sends it under the page into the callout's card (TechnicalDrawing/deck-home.ts).
+ * sheet sends it under the page into the callout's card (TechnicalDrawing/deckHome.ts).
  */
 export function frontDeck(stack: Locator, front: Locator): Locator {
   const card = stack.page().locator('section.callout').filter({ has: stack }).locator('.callout-card > [data-demo-transport]');

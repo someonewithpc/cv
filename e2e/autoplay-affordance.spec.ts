@@ -7,7 +7,7 @@ import { expect, pageWait, test } from './support/timeScale';
  * The transport deck in the sheet's bottom band (see src/client/autoplayStatus.ts): cassette
  * keys, a lamp and a readout. On a landscape sheet it stays in the band, off the title block; a
  * portrait sheet's band cannot hold it, so it moves under the page into the callout's card
- * (TechnicalDrawing/deck-home.ts). Wherever it is, it drives the walkthrough.
+ * (TechnicalDrawing/deckHome.ts). Wherever it is, it drives the walkthrough.
  */
 const VIEWPORTS = [
   { name: 'desktop', viewport: { width: 1440, height: 900 } },

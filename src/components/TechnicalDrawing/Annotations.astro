@@ -4,7 +4,7 @@ import { deterministicId } from '@/server/deterministicId';
 
 /**
  * Callouts are authored in artwork units: a tip at (x, y) with |x|, |y| ≤ 1 sits
- * on the artwork, ±1 being its edges. With the script (annotations-position.ts,
+ * on the artwork, ±1 being its edges. With the script (annotationsPosition.ts,
  * run from Stack.astro), x is a fraction of the half width and y of the half
  * height, whatever the artwork's aspect. The stylesheet alone can only fit one
  * square, so without it both axes share the short side's unit and the long
@@ -49,7 +49,7 @@ const arrowId = `annotation-rounded-arrow-${deterministicId(seed)}`;
 ---
 
 {/* The overlay below is the no-script placement. Stack.astro's script runs
-    annotations-position.ts over it, which is what marks it data-annotations="js";
+    annotationsPosition.ts over it, which is what marks it data-annotations="js";
     a script here would never reach the page: the pages are rendered to a string
     and concatenated, and Astro drops the scripts of a component rendered that
     way (see the `pages` note in PaperStack/index.astro). */}

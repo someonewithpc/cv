@@ -287,7 +287,7 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
   }
 }
 
-// The creases' resting intercepts as boxes, for flip-hint.ts to read in pixels.
+// The creases' resting intercepts as boxes, for flipHint.ts to read in pixels.
 .crease-length {
   position: absolute;
   visibility: hidden;
@@ -316,7 +316,7 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
   stroke-linejoin: round;
 }
 
-// The peel hint waits for the reader to reach it: flip-hint.ts marks the frame once the line
+// The peel hint waits for the reader to reach it: flipHint.ts marks the frame once the line
 // has come up past the quarter mark of the viewport, so the words are written out in front of
 // the reader instead of being found already written. The mark stays, so scrolling back does not
 // start the line over. And a turned page has nothing left to peel.
@@ -478,7 +478,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
   }
 }
 
-// demo-cursor-press.ts marks whichever demo's own [data-demo-cursor] is pressed and draws a
+// demoCursorPress.ts marks whichever demo's own [data-demo-cursor] is pressed and draws a
 // flare at the event point, so these match elements outside this component's own markup.
 :global([data-demo-cursor][data-pressed]) {
   scale: 0.84;
@@ -541,12 +541,12 @@ import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
 import { isFoldPulse } from '@/components/PaperStack/foldDrag';
-import './demo-cursor-press';
+import './demoCursorPress';
 
-import { positionAnnotations } from './annotations-position';
-import { homeDeck } from './deck-home';
-import { drawFlipHints } from './flip-hint';
-import { forgetTextWidths, readTitleFit, writeTitleFit } from './title-fit';
+import { positionAnnotations } from './annotationsPosition';
+import { homeDeck } from './deckHome';
+import { drawFlipHints } from './flipHint';
+import { forgetTextWidths, readTitleFit, writeTitleFit } from './titleFit';
 
 // Being on screen is only half of it: every page of a stack shares one grid cell, so
 // intersection says nothing about which one is drawn on top. Without the --page-index
@@ -791,7 +791,7 @@ const measure = new ResizeObserver((entries) => {
   }
 });
 
-// Which cells of the title block each sheet's own artwork leaves room for (title-fit.ts). Only
+// Which cells of the title block each sheet's own artwork leaves room for (titleFit.ts). Only
 // the front page is measured: the pages behind it show no more of their block than an edge, and
 // measuring all of them made a resize step through the ladder's widths a tenth slower. A page
 // behind goes back to the ladder when the sheet resizes, and is measured when it comes to the
