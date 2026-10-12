@@ -498,6 +498,25 @@ image, svg, img, picture {
     content: "This demo needs JavaScript.";
   }
 }
+
+/* With script, a placeholder on a page behind the front one is under the sheet until a turn
+   brings it up, and its island only boots once it is at the front. Painted, its solid panel
+   is an opaque box after the sheet's grain blend, which makes Chrome give every page in the
+   stack its own compositor layer and a mask for the crease clip: about a dozen layers a
+   stack at rest, re-layerized on every frame of a turn. Not painted while the stack lies
+   still, it costs nothing, and the spinner stops ticking on the compositor for nobody. The
+   moment a hand or a key moves a page (data-paper-moving, fold-drag.ts) it is back, before
+   any of the page shows. Without script the pages stand in a row, every placeholder in view,
+   so the rule stays out of that mode. */
+@media (scripting: enabled) {
+  [data-paper-stack]:not([data-paper-moving]) > :not(.paper-front) .boot-placeholder {
+    visibility: hidden;
+
+    .boot-spinner {
+      animation-play-state: paused;
+    }
+  }
+}
 </style>
 
 <style is:global>
