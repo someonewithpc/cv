@@ -17,7 +17,7 @@ function toKiB(text: string) {
 }
 
 // The weight is the picker's own script, bundled the way the page ships it: the <script>
-// block of ThemePicker.astro with its svg-utils import, the path-data polyfill left out
+// block of ThemePicker.astro with its svgUtils import, the path-data polyfill left out
 // since the page only fetches it where getPathData is missing.
 const srcRoot = path.join(process.cwd(), 'src');
 const pickerSource = await fs.readFile(path.join(srcRoot, 'components/ThemePicker.astro'), 'utf8');
