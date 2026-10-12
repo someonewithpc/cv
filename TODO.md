@@ -272,7 +272,7 @@
 - [x] A vertical wheel right after a horizontal swipe on a stack scrolls the page without a mouse move first (#321)
 - [x] Fix sheet text that contradicts the code: the Sources caption, the Editor legend, the relevance empty state, the Default sheet's OS rule, the Caret readout, the Synthetic trigger text, the Discovery sheet, the Paper Stack page count, the Filters arrow and MissingLayer's sort text (T4 to T13) (#266)
 - [x] Give Lightning CSS browser targets so Safari gets the -webkit- prefixes it still needs (#325)
-- [ ] Stop the fold flap repeating its shading gradients, which made Safari redraw a page-sized image on every frame of a turn (SAF1)
+- [x] Stop the fold flap repeating its shading gradients, which made Safari redraw a page-sized image on every frame of a turn (SAF1) (#367)
 - [x] Cut the requests that start before first paint: the island scripts' shared chunks load as one file (#323)
 - [x] Reasons that lived only in `title` reach keyboard, touch and screen reader users, and a contribution row shows it opens (A21) (#272)
 - [x] Add an og:image so chat apps show the large link card (#326)
