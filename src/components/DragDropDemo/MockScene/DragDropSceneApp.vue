@@ -1445,8 +1445,8 @@ $scene-bg: #212121;
     padding: 0 0.25em;
     border: 1px solid var(--accent, #222);
     border-radius: 0.25em;
-    background: #fff;
-    color: #222;
+    background: var(--surface-raised, #fff);
+    color: var(--ink, #222);
     font: 0.625rem/1.5 monospace;
     letter-spacing: 0.08em;
   }
