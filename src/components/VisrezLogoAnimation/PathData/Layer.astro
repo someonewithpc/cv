@@ -30,7 +30,10 @@ const listing = `<svg
 `;
 ---
 
-<Fragment set:html={highlightBlock(listing, 'xml', { lineComment: '--', className: 'path-data-layer' })} />
+<Fragment
+  set:html={highlightBlock(listing, 'xml', { lineComment: '--', className: 'path-data-layer' })
+    .replace('<pre ', '<pre tabindex="0" role="region" aria-label="Logo markup" ')}
+/>
 
 <style lang="scss">
 @use '@/scss/technical-drawing' as drawing;
