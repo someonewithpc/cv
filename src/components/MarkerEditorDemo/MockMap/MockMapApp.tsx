@@ -1,6 +1,6 @@
 import '../markers/client-only';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import store, {
@@ -11,6 +11,7 @@ import store, {
   useAppSelector,
   type SpaceType,
 } from '../store';
+import { createDemoCursor } from '@/client/demoCursor';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
@@ -103,23 +104,13 @@ function toHostPoint(rect: DOMRectReadOnly | undefined, pos: CursorPos): CursorP
   };
 }
 
-/** The cursor's position goes straight to the element, so a move is no React render. */
-function paintCursor(el: HTMLElement | null, pos: CursorPos) {
-  el?.style.setProperty('--cursor-x', `${pos.x}px`);
-  el?.style.setProperty('--cursor-y', `${pos.y}px`);
-}
-
 function DemoCursor({
   cursorRef,
   phase,
-  clicking,
-  dragging,
   host,
 }: {
   cursorRef: (el: HTMLDivElement | null) => void;
   phase: CursorPhase;
-  clicking: boolean;
-  dragging: boolean;
   host: HTMLElement | null;
 }) {
   if (phase === 'gone' || typeof document === 'undefined' || !host) return null;
@@ -131,9 +122,7 @@ function DemoCursor({
         className={[
           'mock-map-demo-cursor',
           `mock-map-demo-cursor--${phase}`,
-          clicking ? 'mock-map-demo-cursor--clicking' : '',
-          dragging ? 'mock-map-demo-cursor--dragging' : '',
-        ].filter(Boolean).join(' ')}
+        ].join(' ')}
         aria-hidden="true"
         data-demo-cursor=""
       >
@@ -173,18 +162,8 @@ export default function MockMapApp() {
   const [inView, setInView] = useState(false);
   const [editingSpaceId, setEditingSpaceId] = useState<SpaceType['id'] | null>(null);
   const [cursorPhase, setCursorPhase] = useState<CursorPhase>('gone');
-  const cursorPosRef = useRef<CursorPos>({ x: 0, y: 0 });
-  const cursorElRef = useRef<HTMLDivElement | null>(null);
-  const cursorRef = useCallback((el: HTMLDivElement | null) => {
-    cursorElRef.current = el;
-    paintCursor(el, cursorPosRef.current);
-  }, []);
-  const moveCursor = (pos: CursorPos) => {
-    cursorPosRef.current = pos;
-    paintCursor(cursorElRef.current, pos);
-  };
-  const [cursorClicking, setCursorClicking] = useState(false);
-  const [cursorDragging, setCursorDragging] = useState(false);
+  const [cursor] = useState(createDemoCursor);
+  const moveCursor = (pos: CursorPos) => cursor.move(pos.x, pos.y);
   const [editorPortalHost, setEditorPortalHost] = useState<HTMLElement | null>(null);
   const [toasts, setToasts] = useState<DemoToast[]>([]);
   const userControlRef = useRef(false);
@@ -285,7 +264,7 @@ export default function MockMapApp() {
 
     clearTargetRetry();
     clearDemoTargetHighlight();
-    setCursorDragging(Boolean(step.dragging));
+    cursor.drag(Boolean(step.dragging));
 
     const place = (pos: CursorPos) => {
       const following = step.dragging && !step.click && dragHostRectRef.current;
@@ -320,9 +299,9 @@ export default function MockMapApp() {
 
     if (step.click) {
       clearClickTimer();
-      setCursorClicking(true);
+      cursor.press();
       clickTimerRef.current = setTimeout(() => {
-        setCursorClicking(false);
+        cursor.release();
         clickTimerRef.current = null;
       }, CURSOR_CLICK_MS);
     }
@@ -408,7 +387,7 @@ export default function MockMapApp() {
         x: target.left + target.width / 2,
         y: target.top + target.height / 2,
       });
-      const prev = cursorPosRef.current;
+      const prev = cursor.position;
       if (Math.abs(prev.x - next.x) >= 0.5 || Math.abs(prev.y - next.y) >= 0.5) moveCursor(next);
     });
     const id = window.setInterval(() => {
@@ -482,8 +461,7 @@ export default function MockMapApp() {
         clearTargetRetry();
         clearDemoTargetHighlight();
         clearClickTimer();
-        setCursorClicking(false);
-        setCursorDragging(false);
+        cursor.reset();
         setCursorPhase('gone');
       }
     });
@@ -541,8 +519,7 @@ export default function MockMapApp() {
     clearTargetRetry();
     clearDemoTargetHighlight();
     clearClickTimer();
-    setCursorClicking(false);
-    setCursorDragging(false);
+    cursor.reset();
   };
 
   // `pressed` comes from the deck, whose keys are on the sheet itself: the visitor is
@@ -573,8 +550,7 @@ export default function MockMapApp() {
     clearTargetRetry();
     clearDemoTargetHighlight();
     clearClickTimer();
-    setCursorClicking(false);
-    setCursorDragging(false);
+    cursor.reset();
     heldRef.current = false;
     nativePopupRef.current = false;
     userControlRef.current = false;
@@ -659,8 +635,7 @@ export default function MockMapApp() {
       clearTargetRetry();
       clearDemoTargetHighlight();
       clearClickTimer();
-      setCursorClicking(false);
-      setCursorDragging(false);
+      cursor.reset();
       cursorPhaseRef.current = 'gone';
       setCursorPhase('gone');
     };
@@ -816,10 +791,8 @@ export default function MockMapApp() {
       )}
 
       <DemoCursor
-        cursorRef={cursorRef}
+        cursorRef={cursor.attach}
         phase={cursorPhase}
-        clicking={cursorClicking}
-        dragging={cursorDragging}
         host={editorPortalHost}
       />
     </div>
