@@ -64,7 +64,12 @@ export function setStackTurning(stack: Element, turning: boolean): void {
   for (const notify of [...(turnWatchers.get(stack) ?? [])]) notify();
 }
 
-function watchStackTurning(stack: Element, onChange: () => void): () => void {
+export function isStackTurning(stack: Element): boolean {
+  return turningStacks.has(stack);
+}
+
+/** Calls `onChange` each time `stack` starts or stops a committed turn. */
+export function watchStackTurning(stack: Element, onChange: () => void): () => void {
   const watchers = turnWatchers.get(stack) ?? new Set<() => void>();
   turnWatchers.set(stack, watchers);
   watchers.add(onChange);
