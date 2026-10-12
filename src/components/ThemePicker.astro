@@ -61,7 +61,8 @@ ${themeVars(settings)}
 `;
 
 /* Below 52rem the picker sits over the content with no hover to lean on, so the
-   rules under that width only trim its chrome. */
+   rules under that width trim its chrome and lay the icons in a row: a row fits the band
+   Name.astro leaves above the title block, where a column ran down over its corner. */
 ---
 
 <div id="theme-picker-transition-background" />
@@ -146,6 +147,8 @@ aside {
   }
 
   @media (max-width: 52rem) {
+    display: flex;
+    gap: 0.25rem;
     padding: 0.15em 0.2em;
     border-width: 1px;
     border-bottom-left-radius: 0.7em;
@@ -158,6 +161,10 @@ aside {
       justify-content: center;
       min-width: 1.875rem;
       min-height: 1.875rem;
+
+      & + & {
+        margin-top: 0;
+      }
 
       span {
         position: absolute;

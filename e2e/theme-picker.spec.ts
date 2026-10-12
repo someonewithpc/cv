@@ -169,3 +169,18 @@ test('picking the theme already on screen does not start a transition', async ({
   await pick(page, 'arctic');
   expect(await page.evaluate(() => window.__viewTransitions)).toBe(1);
 });
+
+// The picker is fixed in the top right corner, over the band Name.astro leaves above the
+// title block on a narrow window. A classic scrollbar moves both the same way, so overlay
+// scrollbars catch it too.
+test('the picker stays off the title block on a narrow window', async ({ page }) => {
+  for (const width of [832, 390, 360, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    const picker = (await page.locator('#theme-picker').boundingBox())!;
+    const block = (await page.locator('#profile .title-block').boundingBox())!;
+    const across = Math.min(picker.x + picker.width, block.x + block.width) - Math.max(picker.x, block.x);
+    const down = Math.min(picker.y + picker.height, block.y + block.height) - Math.max(picker.y, block.y);
+    expect(across > 0 && down > 0, `picker over the title block at ${width}px`).toBe(false);
+  }
+});
