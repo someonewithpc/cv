@@ -99,34 +99,38 @@ test.describe('with JavaScript off', () => {
     // The demos key their portrait layouts on the attribute the stack's script writes. Without
     // script each rule has a no-script mirror under 680px; with none, a phone's sheets kept the
     // landscape grid and ran up to 200px past the frame line's right edge.
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
-    const outside = await page.evaluate(() => {
-      const found: string[] = [];
-      document.querySelectorAll('article.technical-drawing-stack').forEach((stack, index) => {
-        for (const sheet of stack.querySelectorAll('section')) {
-          if (sheet.closest('article') !== stack) continue;
-          const box = sheet.getBoundingClientRect();
-          const margin = parseFloat(getComputedStyle(sheet).paddingRight);
-          const [left, right] = [box.left + margin, box.right - margin];
-          for (const el of sheet.querySelectorAll('.content *')) {
-            if (el.closest('svg')) continue;
-            const r = el.getBoundingClientRect();
-            if (!r.width || !r.height) continue;
-            // Content that scrolls inside a box within the frame is the box's to show.
-            let scroller = el.parentElement!;
-            while (scroller !== sheet && getComputedStyle(scroller).overflowX === 'visible') scroller = scroller.parentElement!;
-            if (scroller !== sheet) {
-              const clip = scroller.getBoundingClientRect();
-              if (clip.left >= left - 1 && clip.right <= right + 1) continue;
+    // At 360 the sheet is 335px wide, where the marker editor's parts panel and the schema
+    // driver's table set a minimum width wider than the frame.
+    for (const width of [360, 375, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto('/');
+      const outside = await page.evaluate(() => {
+        const found: string[] = [];
+        document.querySelectorAll('article.technical-drawing-stack').forEach((stack, index) => {
+          for (const sheet of stack.querySelectorAll('section')) {
+            if (sheet.closest('article') !== stack) continue;
+            const box = sheet.getBoundingClientRect();
+            const margin = parseFloat(getComputedStyle(sheet).paddingRight);
+            const [left, right] = [box.left + margin, box.right - margin];
+            for (const el of sheet.querySelectorAll('.content *')) {
+              if (el.closest('svg')) continue;
+              const r = el.getBoundingClientRect();
+              if (!r.width || !r.height) continue;
+              // Content that scrolls inside a box within the frame is the box's to show.
+              let scroller = el.parentElement!;
+              while (scroller !== sheet && getComputedStyle(scroller).overflowX === 'visible') scroller = scroller.parentElement!;
+              if (scroller !== sheet) {
+                const clip = scroller.getBoundingClientRect();
+                if (clip.left >= left - 1 && clip.right <= right + 1) continue;
+              }
+              if (r.right > right + 1 || r.left < left - 1) found.push(`stack ${index}: ${el.tagName.toLowerCase()}.${el.classList[0] ?? ''}`);
             }
-            if (r.right > right + 1 || r.left < left - 1) found.push(`stack ${index}: ${el.tagName.toLowerCase()}.${el.classList[0] ?? ''}`);
           }
-        }
+        });
+        return found;
       });
-      return found;
-    });
-    expect(outside, 'elements past the frame line').toEqual([]);
+      expect(outside, `${width}px: elements past the frame line`).toEqual([]);
+    }
   });
 });
 
