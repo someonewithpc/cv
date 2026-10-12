@@ -3,9 +3,9 @@
 // adds nothing to the line box (line-height 0, no padding block) and keeps the text's own size, so
 // a ruled line with a chip stays centred in its band the way a line without one is.
 @mixin prose-kbd {
-  padding-inline: 0.1875em;
+  padding-inline: 0.25em;
   border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-  border-radius: 0.1875em;
+  border-radius: 0.25em;
   background: color-mix(in srgb, currentColor 8%, transparent);
   font-family: monospace, system-ui;
   font-size: 1em;
