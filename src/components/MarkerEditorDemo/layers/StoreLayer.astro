@@ -79,8 +79,8 @@ const lanes = [
 </div>
 
 <style lang="scss">
+@use '@/scss/visrez' as *;
 @use '@/scss/sheet-orientation' as *;
-$accent: #89ab24;
 $op-slot: 0.85em;
 
 .wrapper {
@@ -203,9 +203,9 @@ $lane: 9.75em;
 
   &.present {
     border-style: solid;
-    border-color: $accent;
+    border-color: $visrez-brand;
     border-width: 2px;
-    background: color-mix(in oklab, $accent 14%, transparent);
+    background: color-mix(in oklab, $visrez-brand 14%, transparent);
 
     figcaption {
       color: #e8f5b8;
@@ -263,7 +263,7 @@ $lane: 9.75em;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: $accent;
+  color: $visrez-brand;
 }
 
 .batch-pipeline {
@@ -292,7 +292,7 @@ $lane: 9.75em;
   place-items: center;
   padding: 0.3em 0.45em;
   border-radius: 0.22em;
-  background: color-mix(in oklab, $accent 40%, #333);
+  background: color-mix(in oklab, $visrez-brand 40%, #333);
   color: #e8f5b8;
   font-size: max(0.5rem, 0.75em);
   font-weight: 600;

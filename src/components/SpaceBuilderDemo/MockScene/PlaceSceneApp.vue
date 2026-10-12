@@ -309,6 +309,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss">
+@use '@/scss/visrez' as *;
 .place-scene-app {
   position: relative;
   width: 100%;
@@ -354,14 +355,14 @@ onBeforeUnmount(() => {
   .spinner {
     width: 1.6rem;
     height: 1.6rem;
-    border: 3px solid #89ab24;
+    border: 3px solid $visrez-brand;
     border-top-color: transparent;
     border-radius: 50%;
     animation: loading-spin 0.8s linear infinite;
 
     @media (prefers-reduced-motion: reduce) {
       animation: none;
-      border-color: #89ab24;
+      border-color: $visrez-brand;
     }
   }
 

@@ -512,7 +512,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-$visrez-brand: #89ab24;
+@use '@/scss/visrez' as *;
 $light-grey: #565656;
 $nav-sidebar-bg: #323232;
 $buttons-ui: #6c757d;

@@ -1,5 +1,6 @@
 // The Replace sidebar on its own, after MockSceneApp's shell so the two demos read as the
 // same product; the sheet cell around it stays the sheet's own.
+@use '@/scss/visrez' as *;
 $nav-sidebar-bg: #323232;
 $light-grey: #565656;
 
@@ -33,7 +34,7 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
   }
 
   &:focus-visible .sidebar {
-    box-shadow: inset 0 0 0 2px #89ab24;
+    box-shadow: inset 0 0 0 2px $visrez-brand;
   }
 
   .sidebar {

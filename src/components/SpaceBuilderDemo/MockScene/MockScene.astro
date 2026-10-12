@@ -22,6 +22,7 @@ bootIslands('[data-space-builder-island]', boot);
 <style lang="scss">
 // Stretch the drawing content cell so the interactive frame can fill the sheet
 // (default .content is fit-content + centered, which left empty vertical space).
+@use '@/scss/visrez' as *;
 :global(article.technical-drawing-stack > * > section .content:has(.mock-scene-demo)) {
   place-self: stretch;
   align-self: stretch;
@@ -68,7 +69,7 @@ bootIslands('[data-space-builder-island]', boot);
   &:focus-visible {
     box-shadow:
       inset 0 0 0 1px color-mix(in oklab, #000 35%, transparent),
-      0 0 0 2px #89ab24;
+      0 0 0 2px $visrez-brand;
   }
 
   .boot-placeholder {
@@ -87,14 +88,14 @@ bootIslands('[data-space-builder-island]', boot);
   .boot-spinner {
     width: 1.75rem;
     height: 1.75rem;
-    border: 3px solid #89ab24;
+    border: 3px solid $visrez-brand;
     border-top-color: transparent;
     border-radius: 50%;
     animation: loading-spin 0.8s linear infinite;
 
     @media (prefers-reduced-motion: reduce) {
       animation: none;
-      border-color: #89ab24;
+      border-color: $visrez-brand;
     }
   }
 }

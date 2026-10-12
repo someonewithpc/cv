@@ -97,6 +97,7 @@ const ts = (code: string) => highlightSpans(code, 'ts');
 </div>
 
 <style lang="scss">
+@use '@/scss/visrez' as *;
 @use "./sheet" as *;
 @use "./sheetProse" as *;
 
@@ -247,7 +248,7 @@ const ts = (code: string) => highlightSpans(code, 'ts');
 
     &.new {
       background: #cfe0b4;
-      box-shadow: inset 0 0 0 1px #89ab24;
+      box-shadow: inset 0 0 0 1px $visrez-brand;
     }
   }
 }

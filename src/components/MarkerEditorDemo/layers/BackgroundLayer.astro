@@ -148,6 +148,7 @@ const annotationFontSize = 0.1 * annotationScale;
 </div>
 
 <style lang="scss">
+@use '@/scss/visrez' as *;
 @use '@/scss/sheet-orientation' as *;
 @use "@/scss/_code.scss" as code;
 $preview-bg: #3d3d3b;
@@ -262,7 +263,7 @@ header {
   }
 
   &.good {
-    background: color-mix(in oklab, #89ab24 40%, #333);
+    background: color-mix(in oklab, $visrez-brand 40%, #333);
     color: #e8f5b8;
   }
 }

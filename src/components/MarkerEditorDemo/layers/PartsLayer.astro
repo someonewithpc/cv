@@ -122,10 +122,10 @@ const steps = [
 </div>
 
 <style lang="scss">
+@use '@/scss/visrez' as *;
 @use '@/scss/sheet-orientation' as *;
 @use "@/scss/_code.scss" as code;
 $preview-bg: #3d3d3b;
-$accent: #89ab24;
 $sample: 3.6em;
 $op-slot: 1.1em;
 
@@ -261,7 +261,7 @@ header {
     position: relative;
     width: calc(#{$sample} * 1.15);
     height: calc(#{$sample} * 1.15);
-    border-color: $accent;
+    border-color: $visrez-brand;
     border-width: 2px;
   }
 
@@ -348,7 +348,7 @@ header {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: $accent;
+  color: $visrez-brand;
 }
 
 .serialize-lead {
@@ -386,8 +386,8 @@ header {
 
   &.svg-tag {
     flex: 1 1 auto;
-    border-color: $accent;
-    background: color-mix(in oklab, $accent 10%, transparent);
+    border-color: $visrez-brand;
+    background: color-mix(in oklab, $visrez-brand 10%, transparent);
   }
 }
 

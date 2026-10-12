@@ -1,7 +1,7 @@
 // The Interactive Map's sidebar fieldset, as the Reactive Feedback sheet reproduces it
+@use '@/scss/visrez' as *;
 @use './statusBorder' as *;
 
-$visrez-brand: #89ab24;
 $sidebar-background: #e9e9e9;
 
 @mixin font-settings-fieldset($background-color) {

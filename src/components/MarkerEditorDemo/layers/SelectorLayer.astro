@@ -146,6 +146,7 @@ const squirclePath = [
 </div>
 
 <style lang="scss">
+@use '@/scss/visrez' as *;
 @use '@/scss/technical-drawing' as drawing;
 
 .wrapper {
@@ -235,7 +236,7 @@ const squirclePath = [
   }
 
   &.selected {
-    border-color: #89ab24;
+    border-color: $visrez-brand;
   }
 
   &.action {
@@ -310,8 +311,8 @@ const squirclePath = [
 
     &.active {
       border-style: solid;
-      border-color: #89ab24;
-      background: color-mix(in oklab, #89ab24 16%, transparent);
+      border-color: $visrez-brand;
+      background: color-mix(in oklab, $visrez-brand 16%, transparent);
     }
 
     svg {
