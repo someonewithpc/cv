@@ -300,3 +300,4 @@
 - [x] Keep the EventResult and Selector Depth Hue sheets clear of the title block at 760px in Firefox too (FF8) (#379)
 - [x] Stop a resize from relaying out the whole page at each breakpoint by giving the @font-face rules their own stylesheet (P10) (#373)
 - [x] Free the Space Builder renderer a page turn replaces, which the shared DFG lookup texture kept alive (P13) (#375)
+- [ ] Leave target-size to the mobile Lighthouse profile, since a mouse keeps the demos' drawn controls (171-A11)
