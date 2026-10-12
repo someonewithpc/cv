@@ -12,10 +12,7 @@ import EditorLayer from './layers/EditorLayer.astro';
 import BackgroundLayer from './layers/BackgroundLayer.astro';
 import PartsLayer from './layers/PartsLayer.astro';
 import StoreLayer from './layers/StoreLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 // Resolve from cwd — import.meta.url points at dist prerender chunks during build.
 const srcRoot = path.join(process.cwd(), 'src');

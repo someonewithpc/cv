@@ -7,10 +7,7 @@ import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 
 import DragDropScene from './MockScene/DragDropScene.astro';
 import HandoffLayer from './layers/HandoffLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 // The same scene the Space Builder stack runs — this demo imports it rather than
 // carrying its own copy, so the title block quotes the same number.

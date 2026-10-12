@@ -9,10 +9,7 @@ import BusLayer from './layers/BusLayer.astro';
 import StopLayer from './layers/StopLayer.astro';
 import DiscoveryLayer from './layers/DiscoveryLayer.astro';
 import GuardLayer from './layers/GuardLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 const srcRoot = path.join(process.cwd(), 'src');
 const clientEntry = path.join(srcRoot, 'components/EventBusDemo/client/eventBus.ts');

@@ -11,10 +11,7 @@ import { highlightInline } from '@/highlight';
 import PileLayer from './layers/PileLayer.astro';
 import FoldLayer from './layers/FoldLayer.astro';
 import RowLayer from './layers/RowLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 // The weight in the title block is the stack's own script, the one that turns these very
 // sheets, minified the way the site ships it.

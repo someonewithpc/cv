@@ -11,10 +11,7 @@ import TokensLayer from './layers/TokensLayer.astro';
 import DefaultLayer from './layers/DefaultLayer.astro';
 import WipeLayer from './layers/WipeLayer.astro';
 import CodeLayer from './layers/CodeLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 // The weight is the picker's own script, bundled the way the page ships it: the <script>
 // block of ThemePicker.astro with its svg-utils import, the path-data polyfill left out

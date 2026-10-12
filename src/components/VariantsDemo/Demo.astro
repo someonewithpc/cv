@@ -8,10 +8,7 @@ import PostIt from '@/components/PostIt.astro';
 import Panel from './Panel.astro';
 import GroupsLayer from './layers/GroupsLayer.astro';
 import MissingLayer from './layers/MissingLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 // The card's own source: its markup and styles, and the script that adds the picks.
 const here = path.join(process.cwd(), 'src/components/VariantsDemo');
