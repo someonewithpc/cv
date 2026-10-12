@@ -293,3 +293,4 @@
 - [x] Give the scene demo roots and the map overlay a group role and name, and drop the empty Tab stop on Place and Badge (A10) (#349)
 - [x] The Bill of materials count announces the picked filter: the status gets new text on each change, not a CSS swap (A5) (#348)
 - [x] Keep the marker editor's toast live region in the page between toasts, so readers announce the first one (A6) (#352)
+- [ ] Give the paper stacks their arrow key hint through aria-describedby, not the draft aria-description (A7)
