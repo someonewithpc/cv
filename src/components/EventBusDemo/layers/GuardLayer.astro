@@ -79,6 +79,7 @@ const source = highlightLines(
 </div>
 
 <style lang="scss">
+@use '@/scss/sheet-band' as *;
 @use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
@@ -108,7 +109,7 @@ const source = highlightLines(
   font-size: clamp(0.6875rem, 0.025 * min(var(--sheet-inline), var(--sheet-block)), 1.0625rem);
   color: var(--ink);
 
-  @container technical-drawing-width (max-width: 40em) {
+  @include sheet-band(portrait) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'point'
@@ -238,7 +239,7 @@ figure {
     translate: 0 -50%;
   }
 
-  @container technical-drawing-width (max-width: 40em) {
+  @include sheet-band(portrait) {
     &::before {
       top: 0;
       bottom: 0.375em;
@@ -317,7 +318,7 @@ figure {
 
 /* A sheet between phone and desk widths is landscape and short: two columns still, but
    only the source and the shell, with the block's own row under them. */
-@container technical-drawing-width (40em < width <= 56em) {
+@include sheet-band(mid) {
   .point span,
   .footnote {
     display: none;
@@ -333,7 +334,7 @@ figure {
 /* Narrower still but not yet portrait, the window band where the stack's max-height clamps
    its 3/5 aspect: the sheet is a squat one, so the columns stay side by side and the block
    keeps its corner. */
-@container technical-drawing-width (max-width: 40em) {
+@include sheet-band(portrait) {
   @container technical-drawing (orientation: landscape) {
     .point span,
     .footnote {
