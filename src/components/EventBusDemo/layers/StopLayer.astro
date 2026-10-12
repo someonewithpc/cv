@@ -58,6 +58,20 @@ const results = [
 @use '@/scss/sheet-orientation' as *;
 @use "./sheet" as *;
 
+/* The band Bus.astro lays out for a narrow landscape sheet. The script names it on the stack;
+   without it, the window widths it covers and the widest block the ladder gives it. */
+@mixin narrow-landscape {
+  :global(article.technical-drawing-stack[data-sheet-orientation='landscape'][data-sheet-width='narrow']) & {
+    @content;
+  }
+
+  @media (scripting: none) and (680px < width < 936px) {
+    --title-block-inline: 17.375rem;
+
+    @content;
+  }
+}
+
 .wrapper {
   @include sheet-content;
   @include clear-title-block;
@@ -66,6 +80,12 @@ const results = [
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
   height: 100%;
+
+  /* As on the bus's own page, the cases keep the title block's corner themselves, so the
+     row beside the block is not given up across the whole width. */
+  @include narrow-landscape {
+    padding-bottom: $sheet-margin;
+  }
 }
 
 .stop-layer {
@@ -178,6 +198,19 @@ code {
     margin: 0;
     color: var(--ink-muted);
     text-wrap: pretty;
+  }
+
+  @include narrow-landscape {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    justify-self: start;
+    box-sizing: border-box;
+    max-inline-size: calc(100% - var(--title-block-inline, 0px));
+    min-block-size: var(--title-block-block, 0px);
+
+    .enum {
+      justify-self: start;
+    }
   }
 
   [data-result='stop'] {
