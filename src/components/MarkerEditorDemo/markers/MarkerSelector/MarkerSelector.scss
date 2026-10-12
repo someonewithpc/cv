@@ -23,7 +23,7 @@
   // A small map has no room above the pin (and the pin anchor caps the
   // panel's width at half the map) — dock along the bottom edge instead,
   // leaving the focused pin visible above.
-  @container mock-map (max-width: 520px) {
+  @container mock-map (max-width: 32.5rem) {
     left: 0.625em;
     right: 0.625em;
     top: auto;
@@ -32,7 +32,7 @@
   }
 
   // Chips at full size would drop to three columns and stack too tall.
-  @container mock-map (max-width: 420px) {
+  @container mock-map (max-width: 26.25rem) {
     --marker-chip-artwork: 48px;
   }
 
