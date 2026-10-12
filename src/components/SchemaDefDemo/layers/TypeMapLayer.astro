@@ -168,10 +168,16 @@ table {
   font-size: fs(0.6875);
   line-height: 1.3;
 
+  /* Its cells never wrap, so on a phone its type follows the sheet down to 8px rather than run
+     past the frame line. */
+  @include portrait-sheet {
+    font-size: clamp(0.5rem, 0.028 * var(--sheet-inline), 0.6875rem);
+  }
+
   th {
     padding: 0 0.5em 0.25em 0;
     border-bottom: 1px solid var(--line-strong);
-    font-size: 0.875em;
+    font-size: max(0.875em, 0.5rem);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-align: left;
