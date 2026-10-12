@@ -134,6 +134,13 @@ code {
   /* A narrow sheet has the height for the three cases but not for what each one means;
      the bus above already shows stop doing it. */
   @container technical-drawing-width (max-width: 56em) {
+    /* Nor, on a landscape one, for a row of its own for the enum: it goes beside them. */
+    @container technical-drawing (orientation: landscape) {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 0.625em;
+    }
+
     dt {
       flex-direction: column;
       margin: 0;
