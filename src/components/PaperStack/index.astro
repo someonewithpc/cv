@@ -202,6 +202,17 @@ const pages = await Promise.all(
   inherits: false;
 }
 
+// Animated with --fold-x/-y by initial-fold-reveal so the reveal also changes a value the page's
+// children inherit. Safari restyles an animated element's children only when an inherited value
+// changes. With --fold-x/-y alone, the flap, the clip and its shadow kept the size they read on
+// the reveal's first frame, so the corner was cut with no dog-ear over it. The page's
+// grandchildren set it back to 0, which keeps it off everything printed on the page.
+@property --fold-reveal-tick {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
 // How far the flap is off the page, typed so its tone eases between rest, in hand and past the
 // commit point. Set on the flap and the cast shadow themselves, so nothing inherits it while it
 // eases.
@@ -917,8 +928,16 @@ html:has([data-paper-stack-root]:hover) {
         }
 
         @keyframes initial-fold-reveal {
-          from { --fold-x: 0cm; --fold-y: 0cm; }
-          to { --fold-x: #{drawing.$fold-rest-x}; --fold-y: #{drawing.$fold-rest-y}; }
+          from { --fold-x: 0cm; --fold-y: 0cm; --fold-reveal-tick: 0; }
+          to {
+            --fold-x: #{drawing.$fold-rest-x};
+            --fold-y: #{drawing.$fold-rest-y};
+            --fold-reveal-tick: 1;
+          }
+        }
+
+        > * > * {
+          --fold-reveal-tick: 0;
         }
 
         // Then the resting dog-ear breathes: it holds at rest, eases out to $fold-pulse-x/-y
