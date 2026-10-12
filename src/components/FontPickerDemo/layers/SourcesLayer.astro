@@ -386,12 +386,23 @@ const ts = (code: string) => highlightSpans(code, 'ts');
 }
 
 // A sheet under 56em keeps the row but not the label beside the last arrow, nor the two
-// listing lines that only show the stylesheet being followed
-@container technical-drawing-width (max-width: 56em) {
+// listing lines that only show the stylesheet being followed. Keyed on the stack's attribute,
+// with the width query only for the page without script.
+@mixin narrow-sheet {
   .hop-note,
   .listing .line:nth-child(2),
   .listing .line:nth-child(3) {
     display: none;
+  }
+}
+
+:global([data-sheet-width='narrow']) {
+  @include narrow-sheet;
+}
+
+@media (scripting: none) {
+  @container technical-drawing-width (max-width: 56em) {
+    @include narrow-sheet;
   }
 }
 

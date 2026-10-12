@@ -36,11 +36,22 @@
 
 /* Below 56em Page.astro tucks the note under the dog-eared corner, and the column it kept for
    it stands empty. The picker takes that column, and gives the title block back the height of
-   its own corner so nothing reads through it. */
-@container technical-drawing-width (max-width: 56em) {
-  :global(article.technical-drawing-stack > * > section > .content:has(.picker-layer)) {
-    grid-column: 1 / -1;
-    margin-bottom: 3.5em;
+   its own corner so nothing reads through it. Keyed on the stack's attribute, with the width
+   query only for the page without script. */
+@mixin take-note-column {
+  grid-column: 1 / -1;
+  margin-bottom: 3.5em;
+}
+
+:global(article.technical-drawing-stack[data-sheet-width='narrow'] > * > section > .content:has(.picker-layer)) {
+  @include take-note-column;
+}
+
+@media (scripting: none) {
+  @container technical-drawing-width (max-width: 56em) {
+    :global(article.technical-drawing-stack > * > section > .content:has(.picker-layer)) {
+      @include take-note-column;
+    }
   }
 }
 </style>
