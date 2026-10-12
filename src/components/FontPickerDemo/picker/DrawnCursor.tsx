@@ -1,23 +1,55 @@
+import { useState } from 'react';
+
+import { createDemoCursor, type DemoCursor } from '@/client/demoCursor';
+
 import type { CursorState } from './playthrough';
 
 export type CursorPhase = 'demo' | 'fading' | 'gone';
-export type DrawnCursorState = CursorState & { phase: CursorPhase };
 
-export const CURSOR_GONE: DrawnCursorState = { x: 0, y: 0, clicking: false, dragging: false, phase: 'gone' };
+/**
+ * The cursor a playthrough draws. React mounts it and holds its phase, which changes a few
+ * times a run; demoCursor.ts takes every move, press and drag straight to the element.
+ */
+export function useDrawnCursor() {
+  const [phase, setPhase] = useState<CursorPhase>('gone');
+  const [drawn] = useState(() => {
+    const cursor = createDemoCursor();
+    let current: CursorPhase = 'gone';
+    const to = (next: CursorPhase) => {
+      if (current === next) return;
+      current = next;
+      setPhase(next);
+    };
+    return {
+      cursor,
+      /** Place the cursor from a playthrough's client point, inside the page whose rect is `origin` */
+      show(state: CursorState, origin: { left: number; top: number }) {
+        cursor.move(state.x - origin.left, state.y - origin.top);
+        if (state.clicking) cursor.press();
+        else cursor.release();
+        cursor.drag(state.dragging);
+        to('demo');
+      },
+      fade() {
+        if (current !== 'gone') to('fading');
+      },
+      gone() {
+        cursor.reset();
+        to('gone');
+      },
+    };
+  });
+  return [drawn, phase] as const;
+}
 
 /** The pointer a walkthrough draws for itself, in the sheet's own ink. */
-export function DrawnCursor({ cursor }: { cursor: DrawnCursorState }) {
-  if (cursor.phase === 'gone') return null;
+export function DrawnCursor({ cursor, phase }: { cursor: DemoCursor; phase: CursorPhase }) {
+  if (phase === 'gone') return null;
 
   return (
     <div
-      className={[
-        'font-picker-cursor',
-        `font-picker-cursor--${cursor.phase}`,
-        cursor.clicking ? 'font-picker-cursor--clicking' : '',
-        cursor.dragging ? 'font-picker-cursor--dragging' : '',
-      ].filter(Boolean).join(' ')}
-      style={{ left: cursor.x, top: cursor.y }}
+      ref={cursor.attach}
+      className={`font-picker-cursor font-picker-cursor--${phase}`}
       data-demo-cursor=""
       aria-hidden="true"
     >

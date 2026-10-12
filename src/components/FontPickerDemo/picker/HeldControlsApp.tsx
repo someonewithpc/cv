@@ -6,7 +6,7 @@ import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
-import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
+import { DrawnCursor, useDrawnCursor } from './DrawnCursor';
 import { Pinned } from './Pinned';
 import { type CursorState, nextFrame, Playthrough, type Run, setNativeValue } from './playthrough';
 
@@ -110,7 +110,7 @@ function Column({ side }: { side: Side }) {
  * reset, play hands them back, and reset puts both at 1 and starts from the plain column.
  */
 function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> }) {
-  const [cursor, setCursor] = useState<DrawnCursorState>(CURSOR_GONE);
+  const [drawn, cursorPhase] = useDrawnCursor();
   const [grab, setGrab] = useState<{ top: number; left: number; width: number; gutter: number; thumb: number; side: Side } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [host, setHost] = useState<HTMLElement | null>(null);
@@ -207,13 +207,13 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       ],
       (state) => {
         if (state === null) {
-          setCursor((prev) => (prev.phase === 'gone' ? prev : { ...prev, phase: 'fading' }));
-          fadeTimer = window.setTimeout(() => setCursor(CURSOR_GONE), CURSOR_FADE_MS);
+          drawn.fade();
+          fadeTimer = window.setTimeout(() => drawn.gone(), CURSOR_FADE_MS);
           return;
         }
         window.clearTimeout(fadeTimer);
         const rect = page.getBoundingClientRect();
-        setCursor({ ...state, x: state.x - rect.left, y: state.y - rect.top, phase: 'demo' });
+        drawn.show(state, rect);
       },
       () => {},
       async (run) => {
@@ -361,7 +361,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
           </div>
         </>
       )}
-      <DrawnCursor cursor={cursor} />
+      <DrawnCursor cursor={drawn.cursor} phase={cursorPhase} />
       <div className="font-picker-toasts" aria-live="polite">
         {notice && <div className="font-picker-toast">{notice}</div>}
       </div>

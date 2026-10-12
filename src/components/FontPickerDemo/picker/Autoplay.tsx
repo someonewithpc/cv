@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
-import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
+import { DrawnCursor, useDrawnCursor } from './DrawnCursor';
 import { Playthrough, setNativeValue } from './playthrough';
 import { entranceFor, scenesFor } from './scenes';
 import { demoPicker } from './demoPicker';
@@ -24,7 +24,7 @@ type Toast = { id: number; text: string; leaving: boolean };
  * hands it back, and reset clears the picker and starts again from the first scene.
  */
 export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
-  const [cursor, setCursor] = useState<DrawnCursorState>(CURSOR_GONE);
+  const [drawn, cursorPhase] = useDrawnCursor();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [host, setHost] = useState<HTMLElement | null>(null);
   const toastId = useRef(0);
@@ -63,13 +63,13 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       (state) => {
         if (state === null) {
           demoPicker.close();
-          setCursor((prev) => (prev.phase === 'gone' ? prev : { ...prev, phase: 'fading' }));
-          fadeTimer = window.setTimeout(() => setCursor(CURSOR_GONE), CURSOR_FADE_MS);
+          drawn.fade();
+          fadeTimer = window.setTimeout(() => drawn.gone(), CURSOR_FADE_MS);
           return;
         }
         window.clearTimeout(fadeTimer);
         const rect = pageRect();
-        setCursor({ ...state, x: state.x - rect.left, y: state.y - rect.top, phase: 'demo' });
+        drawn.show(state, rect);
       },
       () => toast('Demo complete · looping again'),
       entranceFor(el),
@@ -209,7 +209,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
 
   return createPortal(
     <>
-      <DrawnCursor cursor={cursor} />
+      <DrawnCursor cursor={drawn.cursor} phase={cursorPhase} />
       <div className="font-picker-toasts" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={['font-picker-toast', t.leaving ? 'is-leaving' : ''].filter(Boolean).join(' ')}>
