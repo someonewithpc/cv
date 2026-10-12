@@ -18,11 +18,11 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
     <fieldset class="filter-toggle">
       <legend class="sr-only">Filter by category</legend>
       <div class="filter-toggle-track">
-        <input type="radio" name="tech-filter" id="tech-filter-all" checked>
+        <input type="radio" name="tech-filter" id="tech-filter-all" value="all" checked>
         <label for="tech-filter-all">All</label>
-        <input type="radio" name="tech-filter" id="tech-filter-software">
+        <input type="radio" name="tech-filter" id="tech-filter-software" value="software">
         <label for="tech-filter-software">Software</label>
-        <input type="radio" name="tech-filter" id="tech-filter-hardware">
+        <input type="radio" name="tech-filter" id="tech-filter-hardware" value="hardware">
         <label for="tech-filter-hardware">Hardware &amp; CAD</label>
       </div>
     </fieldset>
@@ -41,6 +41,20 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
       </li>
     ))}
   </ul>
+  <script>
+    // Screen readers miss a live region whose text only changes through CSS display, so the
+    // count is written as text once a radio changes; the spans stay as the no-JS view.
+    const count = document.querySelector<HTMLElement>('#bill-of-materials .filter-count');
+    if (count) {
+      const texts = new Map(
+        ['all', 'software', 'hardware'].map((value) => [value, count.querySelector(`.count-${value}`)?.textContent ?? '']),
+      );
+      count.closest('section')?.querySelector('.filter-toggle')?.addEventListener('change', (event) => {
+        const radio = event.target as HTMLInputElement;
+        count.textContent = texts.get(radio.value) ?? '';
+      });
+    }
+  </script>
 </section>
 
 <style lang="scss">
