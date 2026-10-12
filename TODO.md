@@ -288,3 +288,4 @@
 - [x] Wrap the Seat Count placeholder inside its field instead of cutting it off (SAF4) (#345)
 - [x] Keep the theme switcher off the title block on a narrow window, with or without a classic scrollbar (SAF2) (#343)
 - [x] Keep the marker editor's parts panel and the schema driver's table inside the frame line on a phone's sheet, with or without script (S24) (#382)
+- [ ] Keep the shared value fan and the range rules table inside the frame line on a 320px phone, with or without script (S25)
