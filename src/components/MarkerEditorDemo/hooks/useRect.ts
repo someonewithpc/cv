@@ -23,6 +23,7 @@ export function useRect<T extends Element | SVGElement>(
         : next
     ));
   }, []);
+  const observer = useRef<SettledResizeObserver | undefined>(undefined);
 
   const measureRef = useCallback((el: T | null) => {
     ref.current = el;
@@ -36,16 +37,25 @@ export function useRect<T extends Element | SVGElement>(
     const element = ref.current;
     if (!element) return;
 
-    let resizeObserver: SettledResizeObserver | undefined = settledResizeObserver(resize);
+    const resizeObserver = settledResizeObserver(resize);
     resizeObserver.observe(element);
+    observer.current = resizeObserver;
 
     return () => {
-      if (!resizeObserver) return;
       resizeObserver.disconnect();
-      resizeObserver = undefined;
+      if (observer.current === resizeObserver) observer.current = undefined;
     };
+  }, [resize, refGeneration]);
+
+  // A change in deps measures again after the next layout, as a fresh observer's first
+  // callback would, without building one: observing anew reports the current size.
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element || !observer.current) return;
+    observer.current.unobserve(element);
+    observer.current.observe(element);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resize, refGeneration, ...deps]);
+  }, deps);
 
   return { rect, measureRef };
 }
