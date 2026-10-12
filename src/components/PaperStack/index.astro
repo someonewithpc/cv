@@ -1324,6 +1324,39 @@ html:has([data-paper-stack-root]:hover) {
       0 calc(2 * var(--pile-step) + var(--row-slack)) 0 calc(1px - var(--pile-step) - var(--row-slack)) var(--line-strong);
     margin-bottom: calc(2 * var(--pile-step)) !important;
 
+    // With no script nothing pauses a sheet's loops (the logo layers, the tagging tool's carets)
+    // once it is off screen, and at rest they were the page's whole main-thread cost: a style pass
+    // and a repaint every frame while nothing in view moved. A view timeline on the row flips a
+    // custom property as the row enters and leaves the viewport, and a style query on it pauses
+    // every animation in the row while it is out. The flip sits at half a percent in from either
+    // end, so a sliver of the row in view counts as in. The sheets the row is not resting on are
+    // paused by their own scroll-state query below. A sheet in view is never touched, which keeps
+    // the paused-and-running pairs the status borders set. content-visibility on the sheets would
+    // skip them outright, but its paint containment snaps a sheet's contents to the pixel on a
+    // phone, where the sheets rest at fractional offsets, and moved text by a pixel.
+    @supports (animation-timeline: view()) {
+      animation: paper-row-off linear both;
+      animation-timeline: view();
+
+      @keyframes paper-row-off {
+        0%,
+        100% {
+          --paper-row-off: 1;
+        }
+
+        1%,
+        99% {
+          --paper-row-off: 0;
+        }
+      }
+
+      @container style(--paper-row-off: 1) {
+        > * * {
+          animation-play-state: paused !important;
+        }
+      }
+    }
+
     > * {
       flex: 0 0 100%;
       /* Clip both axes — annotation SVGs are 200% overlays and otherwise inflate
@@ -1348,11 +1381,16 @@ html:has([data-paper-stack-root]:hover) {
         transition: opacity 200ms ease-out, scale 200ms ease-out;
       }
 
-      // A sheet the row is not resting on sits back, so the current one reads at full strength.
+      // A sheet the row is not resting on sits back, so the current one reads at full strength,
+      // and its loops pause (see the row's view timeline above).
       @container scroll-state(not (snapped: x)) {
         > * {
           opacity: 0.5;
           scale: 0.96;
+        }
+
+        * {
+          animation-play-state: paused !important;
         }
       }
 
