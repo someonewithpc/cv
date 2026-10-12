@@ -1,3 +1,4 @@
+import { createDemoCursor, type DemoCursor } from '@/client/demoCursor';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, documentGate, type DemoGate } from '@/client/frontPage';
 import { describeKeys, rove } from '@/client/roving';
@@ -355,11 +356,12 @@ function initHeader(tool: Tool) {
 
 const wait = (ms: number) => documentGate().wait(ms);
 
-/** Matches the cursor's left/top transition in GridLayer.astro. */
+/** Matches the cursor's translate transition in GridLayer.astro. */
 const TRAVEL_MS = 520;
 
 type Cursor = {
   el: HTMLElement;
+  drawn: DemoCursor;
   host: HTMLElement;
   at: { x: number; y: number } | null;
 };
@@ -376,15 +378,14 @@ async function aim(cursor: Cursor, target: HTMLElement, atText = false) {
   const from = cursor.at;
   cursor.at = to;
   cursor.el.hidden = false;
-  cursor.el.style.left = `${to.x}px`;
-  cursor.el.style.top = `${to.y}px`;
+  cursor.drawn.move(to.x, to.y);
   await wait(!from || Math.hypot(to.x - from.x, to.y - from.y) > 6 ? TRAVEL_MS : 60);
 }
 
 async function press(cursor: Cursor) {
-  cursor.el.classList.add('clicking');
+  cursor.drawn.press();
   await wait(140);
-  cursor.el.classList.remove('clicking');
+  cursor.drawn.release();
 }
 
 /**
@@ -411,7 +412,9 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     return;
   }
 
-  const cursor: Cursor = { el: cursorEl, host, at: null };
+  const drawn = createDemoCursor();
+  drawn.attach(cursorEl);
+  const cursor: Cursor = { el: cursorEl, drawn, host, at: null };
   let run = 0;
   let active = false;
   let held = false;
