@@ -24,12 +24,25 @@ $sheet-margin: shared.$sheet-margin;
   }
 
   /* A sheet this narrow tucks its note under the dog-ear, so the note column is empty and the
-     panel takes it back, the way it does on a sheet with no note. */
-  @container technical-drawing-width (max-width: 56em) {
-    :global(article.technical-drawing-stack > * > section[data-note] .content:has([data-blueprint-sheet])) {
-      grid-column: 1 / -1;
+     panel takes it back, the way it does on a sheet with no note. Keyed on the stack's
+     attribute, with the width query only for the page without script. */
+  :global(article.technical-drawing-stack:where([data-sheet-width='narrow']) > * > section[data-note] .content:has([data-blueprint-sheet])) {
+    grid-column: 1 / -1;
+  }
+
+  @media (scripting: none) {
+    @container technical-drawing-width (max-width: 56em) {
+      :global(article.technical-drawing-stack > * > section[data-note] .content:has([data-blueprint-sheet])) {
+        grid-column: 1 / -1;
+      }
     }
   }
+}
+
+// A blueprint panel's padding where the note is tucked under the dog-ear (blueprint-wrapper).
+@mixin note-tucked {
+  padding-left: max($sheet-margin, calc(var(--note-fold-reach, 0px) - var(--sheet-margin)));
+  padding-right: calc(var(--title-block-inline, 0px) + $sheet-margin);
 }
 
 // A blueprint sheet's centred panel, clear of the title block wherever the block sits.
@@ -58,11 +71,17 @@ $sheet-margin: shared.$sheet-margin;
 
   /* Narrower, the note is a dog-ear in the bottom-left corner and the cell runs the whole
      width again. The dog-ear is a triangle, so the panel only moves far enough right that its
-     rounded corner keeps about a margin clear of the diagonal, and left of the title block. */
-  @container technical-drawing-width (max-width: 56em) {
-    :global(section[data-note]) & {
-      padding-left: max($sheet-margin, calc(var(--note-fold-reach, 0px) - var(--sheet-margin)));
-      padding-right: calc(var(--title-block-inline, 0px) + $sheet-margin);
+     rounded corner keeps about a margin clear of the diagonal, and left of the title block.
+     Keyed on the stack's attribute, with the width query only for the page without script. */
+  :global(:where([data-sheet-width='narrow']) section[data-note]) & {
+    @include note-tucked;
+  }
+
+  @media (scripting: none) {
+    @container technical-drawing-width (max-width: 56em) {
+      :global(section[data-note]) & {
+        @include note-tucked;
+      }
     }
   }
 
