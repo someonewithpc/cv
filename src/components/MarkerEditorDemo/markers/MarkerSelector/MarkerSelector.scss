@@ -1,3 +1,4 @@
+@use '@/scss/hit-area' as *;
 @use '@/scss/visrez' as *;
 
 .marker-editing-overlay {
@@ -132,6 +133,7 @@
         z-index: 1;
         font: inherit;
         appearance: none;
+        @include hit-area($position: false);
 
         // Sit outside the corner so the marker stays readable.
         &.marker-edit-icon {
