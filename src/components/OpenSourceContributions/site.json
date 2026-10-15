@@ -55,7 +55,7 @@
         {
           "repository": "withastro/compiler-rs",
           "title": "Fix wrong handling of combinators inside `:global()`",
-          "description": "Reworked Astro's `compiler_rs`'s `scope_css` pass so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path.",
+          "description": "Reworked the `scope_css` pass in Astro's `compiler_rs` so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path.",
           "url": "https://github.com/withastro/compiler-rs/pull/61",
           "number": 61,
           "updatedAt": "2026-06-29T15:19:45Z",
