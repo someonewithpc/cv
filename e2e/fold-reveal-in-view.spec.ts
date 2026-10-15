@@ -1,6 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test';
 
-import { demoStack } from './support/paperStack';
+import { demoStack, transitionsRunOut } from './support/paperStack';
 
 /**
  * A stack's dog-ear draws itself once (initial-fold-reveal in PaperStack/index.astro) and then
@@ -138,7 +138,8 @@ test('a page turned to the front by key draws its dog-ear with no pulse under it
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(700);
   }
-  await page.waitForTimeout(1500);
+  await expect(stack).toHaveAttribute('data-paper-settled', '');
+  await transitionsRunOut(stack);
 
   const frames = await page.evaluate(() => (window as Window & { turnFrames?: TurnFrame[] }).turnFrames!);
   const drawing = frames.filter((frame) => frame.progress > 0 && frame.progress < 1);
