@@ -44,7 +44,10 @@ test('the scene loads with the catalog beside it', async ({ page }) => {
 
 test('a single click only highlights a card', async ({ page }) => {
   const app = await openDemo(page);
+  const card = app.locator('[data-catalog-item="table-round"]');
+  await expect(card).not.toHaveClass(/\bactive\b/);
   await app.locator('[data-demo-target="catalog:table-round"]').click();
+  await expect(card).toHaveClass(/\bactive\b/);
   await expect(app).toHaveAttribute('data-phase', 'idle');
 });
 
