@@ -327,7 +327,7 @@
 - [x] Read the Fediverse graph's shared images from SHARED_SERVICES, and list in the compose file only the volumes a service mounts (C78) (#438)
 - [x] Take the Library Search size rows from SyntheticPropertiesDemo/units.ts (#220 C52) (#429)
 - [x] Scroll the tagging tool's variant inputs to their end as the product does, and move the property picker and the "Bring them back" footer out of the product panel (C91) (#452)
-- [ ] Build the Marker Editor autoplay step list once per preset (#220 C19)
+- [x] Build the Marker Editor autoplay step list once per preset (#220 C19) (#419)
 - [x] Re-aim the Interactive Map cursor on a toggle, a render or a running transition instead of a 150 ms poll that never stops (C15) (#417)
 - [x] Measure the Font Picker's drawn list once when it opens, not on every hovered row (#220 C14) (#416)
 - [x] Read the tagging tool's card fields once per focus instead of on every key, and move its cursor with the shared cursor motion (C17) (#415)
