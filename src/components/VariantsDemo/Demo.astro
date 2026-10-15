@@ -1,26 +1,13 @@
 ---
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
 import PostIt from '@/components/PostIt.astro';
+import { scriptWeight } from '@/server/scriptWeight';
 
 import Panel from './Panel.astro';
 import GroupsLayer from './layers/GroupsLayer.astro';
 import MissingLayer from './layers/MissingLayer.astro';
 
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
-
-// The card's own source: its markup and styles, and the script that adds the picks.
-const here = path.join(process.cwd(), 'src/components/VariantsDemo');
-const cardSources = await Promise.all(
-  ['Card.astro', 'card.scss', 'panel.ts']
-    .map((file) => readFile(path.join(here, file), 'utf8')),
-);
-
-const cardSize = toKiB(cardSources.join(''));
+const scriptSize = await scriptWeight('components/VariantsDemo/boot.ts');
 
 const layers = {
   main: { name: null },
@@ -35,7 +22,7 @@ type Layer = keyof typeof layers;
 <TechnicalDrawingStack
   subtitle="Space Builder · Object Variants"
   scale="1:1"
-  size={cardSize}
+  size={scriptSize}
   date="2024"
   tech={['vuejs', 'sass']}
   layers={layers}
