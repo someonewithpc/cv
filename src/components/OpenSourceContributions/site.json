@@ -476,7 +476,7 @@
         {
           "repository": "FreeCAD/FreeCAD",
           "title": "Quarter: scale pointer position to device pixels before flipping Y",
-          "description": "Fixed picking in the 3D view on fractional-scale screens. `toDevicePixelPosition()` flipped the Y axis in logical pixels and only then scaled to device pixels, so on a 2.67x panel a click landed 1 to 4 device pixels below the cursor.",
+          "description": "Fixed picking in the 3D view on fractional-scale screens. `toDevicePixelPosition()` flipped the Y axis in logical pixels and only then scaled to device pixels, so on a 2.67× panel a click landed 1 to 4 device pixels below the cursor.",
           "url": "https://github.com/FreeCAD/FreeCAD/pull/32899",
           "number": 32899,
           "updatedAt": "2026-09-24T05:58:34Z",
