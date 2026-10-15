@@ -1,6 +1,6 @@
 import { createRef, useEffect, useMemo } from "react";
 import { useSyncExternalStore } from "react";
-import _partition from 'lodash/partition';
+import _partition from 'lodash-es/partition';
 
 import { imperativeReactComponent } from '../../../lib/imperativeReactComponent';
 import store, { markerEditingSpaceSelector } from '../../../store';
