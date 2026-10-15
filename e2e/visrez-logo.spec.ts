@@ -10,23 +10,25 @@ function visrezStack(page: import('@playwright/test').Page) {
   return demoStack(page, 'Visrez Animated Loading Logo');
 }
 
-test('main page: the loading-logo SVG renders and its dash animation runs', async ({ page }) => {
+test('main page: the loading-logo dash animation is running and its clock advances', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
   const front = frontPage(stack, await frontPageIndex(stack));
 
-  const svg = front.locator('svg').first();
-  await expect(svg).toBeVisible();
-
-  const animatedPath = front.locator('svg [style*="dash-animation"]').first();
-  const animationName = await animatedPath.evaluate((el) => getComputedStyle(el).animationName);
-  expect(animationName).not.toBe('none');
+  const dash = front.locator('svg [style*="dash-animation"]').first();
+  const clock = () => dash.evaluate((path) => {
+    const run = path.getAnimations().find((animation) => animation.playState === 'running');
+    return run ? Number(run.currentTime) : null;
+  });
+  await expect.poll(clock, { timeout: 10_000 }).not.toBeNull();
+  const before = (await clock())!;
+  await expect.poll(async () => (await clock()) ?? 0, { timeout: 5000 }).toBeGreaterThan(before);
 });
 
 // Every page of a stack shares one grid cell once its script runs, so a covered page's
 // drawing is laid out and visible without turning to it. Turning is checked in
 // paper-stack-fold.spec.ts, which swipes this stack through every page by name.
-test('every inner page carries its drawing', async ({ page }) => {
+test('the static inner pages carry their drawing', async ({ page }) => {
   const stack = visrezStack(page);
   const pageNamed = (name: string) => stack.locator(':scope > div').filter({
     has: page.locator('h2.typewriter', { hasText: name }),
@@ -34,12 +36,27 @@ test('every inner page carries its drawing', async ({ page }) => {
 
   await expect(pageNamed('Original Logo').locator('svg').first()).toBeVisible();
   await expect(pageNamed('Cube :)').locator('svg').first()).toBeVisible();
-  await expect(pageNamed('Authored Path').locator('svg.path-layer')).toBeVisible();
   const listing = pageNamed('Path Data').locator('pre.path-data-layer');
   await expect(listing).toBeVisible();
   await expect(listing).toContainText('<svg');
-  await expect(pageNamed('Putting it all together').locator('svg.face')).toBeVisible();
 });
+
+for (const name of ['Authored Path', 'Putting it all together']) {
+  test(`${name} page: its drawing animates once the page is turned to`, async ({ page }) => {
+    const stack = visrezStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    await turnToPage(stack, name);
+    const front = frontPage(stack, await frontPageIndex(stack));
+
+    const clock = () => front.locator('section').first().evaluate((section) => {
+      const running = section.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running');
+      return running.length ? Math.max(...running.map((animation) => Number(animation.currentTime))) : null;
+    });
+    await expect.poll(clock, { timeout: 15_000 }).not.toBeNull();
+    const before = (await clock())!;
+    await expect.poll(async () => (await clock()) ?? 0, { timeout: 5000 }).toBeGreaterThan(before);
+  });
+}
 
 test('cube page: its diagram animation starts when the page is turned to', async ({ page }) => {
   const stack = visrezStack(page);
