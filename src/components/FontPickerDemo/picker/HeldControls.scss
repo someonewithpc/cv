@@ -95,9 +95,15 @@
 }
 
 .grab-measure {
+  // --travel is how far the slider is from the line, set each frame: the dimension spans it
+  // whichever way the slider went
+  --travel: 0px;
+
   position: absolute;
   z-index: 1080;
   pointer-events: none;
+  translate: 0 min(0px, var(--travel));
+  block-size: max(var(--travel), -1 * var(--travel));
   border-left: 1px solid var(--ink);
 
   &::before,
