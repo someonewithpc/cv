@@ -63,6 +63,12 @@ import {
   type LayoutStyle,
 } from './layoutEngine';
 import { createDemoSkybox } from './demoSkybox';
+import {
+  MIN_AREA_SIDE_M,
+  ORBIT_PHI_PER_PX,
+  ORBIT_THETA_PER_PX,
+  TAG_PAD_M,
+} from './sceneTuning';
 
 import './spaceBuilderTag.scss';
 
@@ -1089,10 +1095,10 @@ export class SpaceBuilderScene {
     const dx = clientX - this.lastPointer.x;
     const dy = clientY - this.lastPointer.y;
     this.lastPointer.set(clientX, clientY);
-    this.spherical.theta -= dx * 0.005;
+    this.spherical.theta -= dx * ORBIT_THETA_PER_PX;
     // Match OrbitControls: drag down decreases phi (more top-down).
     this.spherical.phi = Math.min(
-      Math.max(this.spherical.phi - dy * 0.004, ORBIT_PHI_MIN),
+      Math.max(this.spherical.phi - dy * ORBIT_PHI_PER_PX, ORBIT_PHI_MIN),
       ORBIT_PHI_MAX,
     );
     this.updateCamera();
@@ -1470,18 +1476,18 @@ export class SpaceBuilderScene {
         break;
     }
 
-    if (maxX - minX < 0.2) {
+    if (maxX - minX < MIN_AREA_SIDE_M) {
       if (this.draggingHandle === 'left' || this.draggingHandle === 'topLeft' || this.draggingHandle === 'bottomLeft') {
-        minX = maxX - 0.2;
+        minX = maxX - MIN_AREA_SIDE_M;
       } else {
-        maxX = minX + 0.2;
+        maxX = minX + MIN_AREA_SIDE_M;
       }
     }
-    if (maxZ - minZ < 0.2) {
+    if (maxZ - minZ < MIN_AREA_SIDE_M) {
       if (this.draggingHandle === 'top' || this.draggingHandle === 'topLeft' || this.draggingHandle === 'topRight') {
-        minZ = maxZ - 0.2;
+        minZ = maxZ - MIN_AREA_SIDE_M;
       } else {
-        maxZ = minZ + 0.2;
+        maxZ = minZ + MIN_AREA_SIDE_M;
       }
     }
 
@@ -1753,8 +1759,8 @@ export class SpaceBuilderScene {
     this.setArea({
       x: (minX + maxX) / 2,
       z: (minZ + maxZ) / 2,
-      width: Math.max(0.2, maxX - minX),
-      depth: Math.max(0.2, maxZ - minZ),
+      width: Math.max(MIN_AREA_SIDE_M, maxX - minX),
+      depth: Math.max(MIN_AREA_SIDE_M, maxZ - minZ),
       angle: this.area?.angle ?? 0,
     });
   }
@@ -1826,8 +1832,7 @@ export class SpaceBuilderScene {
       Math.abs(denomSin) > 1e-4 ? (w / 2) / Math.abs(denomSin) : Infinity,
     );
     // Extra pad past the silhouette so the capacity pill clears chairs / handles.
-    const pad = 0.95;
-    const offset = Number.isFinite(r) ? r + pad : 1.5;
+    const offset = Number.isFinite(r) ? r + TAG_PAD_M : 1.5;
     this.tagMetrics = { theta: cameraAngle, r: Number.isFinite(r) ? r : 0, offset };
     this.tagObject.position.set(
       this.area.x + offset * Math.sin(cameraAngle),

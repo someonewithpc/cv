@@ -38,6 +38,7 @@ const SEED_OPTIONS: LayoutOptions = {
   innerDiameter: 0,
 };
 
+const AREA_LIFT_PX = 36;
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
@@ -366,7 +367,7 @@ onMounted(async () => {
       requestAnimationFrame(() => {
         scene.forceResize();
         // Nudge the area up-screen so the capacity tag clears the hint text below.
-        scene.panByScreenDelta(0, -36);
+        scene.panByScreenDelta(0, -AREA_LIFT_PX);
       });
     });
 
