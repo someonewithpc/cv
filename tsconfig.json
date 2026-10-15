@@ -4,11 +4,10 @@
     "@vue/tsconfig/tsconfig.dom.json"
   ],
   "compilerOptions": {
-    "baseUrl": ".",
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [".astro/types.d.ts", "**/*"],
