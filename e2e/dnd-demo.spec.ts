@@ -7,23 +7,18 @@ import {
   frontPageIndex,
   sceneDraws,
   turnToPage,
-  waitForIslandMounted,
 } from './support/paperStack';
+import { waitForSceneReady } from './support/spaceBuilder';
 import { expect, pageWait, test } from './support/timeScale';
 
 function dragDropStack(page: Page) {
   return demoStack(page, 'Space Builder · Drag & Drop');
 }
 
-/** The scene app marks its own root `data-ready="true"` once Three.js has finished loading. */
 async function openDemo(page: Page): Promise<Locator> {
   const stack = dragDropStack(page);
   await stack.scrollIntoViewIfNeeded();
-  const front = frontPage(stack, await frontPageIndex(stack));
-  const island = await waitForIslandMounted(front);
-  const app = island.locator('[data-ready]');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
-  return app;
+  return waitForSceneReady(frontPage(stack, await frontPageIndex(stack)), 20_000);
 }
 
 test.beforeEach(async ({ page }) => {
