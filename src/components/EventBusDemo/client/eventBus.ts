@@ -1,6 +1,7 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { createCursorMover, type Point } from '@/client/cursorMotion';
 import { demoGate, type DemoGate } from '@/client/frontPage';
+import { drawingPageOf } from '@/client/drawingPage';
 import { settledResizeObserver } from '@/client/settledResize';
 import { watchHandover } from '@/client/walkthroughHandover';
 import { demoPress } from '@/components/TechnicalDrawing/demo-cursor-press';
@@ -535,7 +536,7 @@ export function initEventBus(host: HTMLElement, root: HTMLElement) {
     })),
     run: 0,
     running: Promise.resolve(),
-    gate: demoGate(host.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? host),
+    gate: demoGate(drawingPageOf(host) ?? host),
   };
 
   items.forEach((item, module) => {

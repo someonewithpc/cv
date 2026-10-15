@@ -2,6 +2,7 @@ import '../markers/client-only';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { drawingPageOf } from '@/client/drawingPage';
 
 import store, {
   markerEditingSpaceIdSelector,
@@ -345,7 +346,7 @@ export default function MockMapApp() {
     if (!overlay) return;
     // Attach to the carousel page (not the frame) so the editor scrolls off with it.
     setEditorPortalHost(
-      overlay.closest<HTMLElement>('article.technical-drawing-stack > * > section')
+      drawingPageOf(overlay)
       ?? overlay.closest<HTMLElement>('.mock-map-demo')
       ?? overlay,
     );
@@ -438,7 +439,7 @@ export default function MockMapApp() {
     // Attach to the carousel page so leaving the map slide pauses autoplay
     // (observing .mock-map-demo alone could still look "in view" mid-snap).
     const visibilityRoot =
-      overlay?.closest<HTMLElement>('article.technical-drawing-stack > * > section')
+      drawingPageOf(overlay)
       ?? overlay?.closest<HTMLElement>('.mock-map-demo')
       ?? overlay?.closest<HTMLElement>('.technical-drawing-frame')
       ?? overlay;

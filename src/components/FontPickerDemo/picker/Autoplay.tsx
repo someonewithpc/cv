@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
+import { drawingPageOf } from '@/client/drawingPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
 import { Playthrough, setNativeValue } from './playthrough';
@@ -34,7 +35,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     if (!el) return;
 
     // The carousel page: positioned, so cursor and toasts drawn into it ride along with it
-    const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
+    const page = drawingPageOf(el) ?? el;
     setHost(page);
 
     // The page's own rect, read once per run instead of on every cursor frame: it moves only
