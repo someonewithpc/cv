@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import sharp from 'sharp';
 
+import { THEME_IDS, THEME_STORAGE_KEY } from '../src/themes';
+
 /**
  * The chain-line boundary round each demo (Callout.astro `.callout-view`) is a repeating
  * gradient of hard stops: a 1rem dash, a 0.375rem gap, a 0.25rem dash, a 0.375rem gap. Its
@@ -10,7 +12,6 @@ import sharp from 'sharp';
  * theme, and that the space is still named.
  */
 
-const THEMES = ['light', 'dark', 'arctic', 'dark-forest'];
 // Past 105rem the title card stands beside the view (callout-inset.spec.ts), so the top edge
 // starts clear of it.
 const DESK_CARD = { width: 1728, height: 900 };
@@ -18,12 +19,12 @@ const REM = 16;
 // Which pixels of the first 2rem of the line are ink: dash, gap, dash, gap.
 const PATTERN = [...Array(2 * REM)].map((_, x) => (x < REM ? '#' : x < 1.375 * REM ? '.' : x < 1.625 * REM ? '#' : '.')).join('');
 
-for (const theme of THEMES) {
+for (const theme of THEME_IDS) {
   test(`the boundary draws both dashes in the ${theme} theme`, async ({ page }) => {
     await page.setViewportSize(DESK_CARD);
-    await page.addInitScript((picked) => {
-      localStorage.setItem('cv-theme', picked);
-    }, theme);
+    await page.addInitScript(([key, picked]) => {
+      localStorage.setItem(key, picked);
+    }, [THEME_STORAGE_KEY, theme]);
     await page.goto('/');
     await expect
       .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--theme-kind').trim()))
