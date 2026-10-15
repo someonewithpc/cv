@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { THEME_IDS } from '../src/themes';
+
 const opacity = (el: import('@playwright/test').Locator) =>
   el.evaluate((node) => Number(getComputedStyle(node).opacity));
 
@@ -67,7 +69,7 @@ for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    for (const theme of ['dark', 'arctic', 'dark-forest', 'light']) {
+    for (const theme of THEME_IDS.toReversed()) {
       await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
       await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
       await page.evaluate(() => document.fonts.ready);
