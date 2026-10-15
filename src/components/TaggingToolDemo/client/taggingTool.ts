@@ -26,7 +26,11 @@ type Group = {
   /** The save button's accessible name while base and variants agree, rendered server side. */
   setLabel: string;
   cards: Card[];
+  /** measureCards() for this spell of focus; null until the next mirror() reads it. */
+  metrics: CardMetrics[] | null;
 };
+
+type CardMetrics = { ch: number; textWidth: number; width: number };
 
 type Tool = {
   root: HTMLElement;
@@ -64,32 +68,51 @@ function titleize(text: string) {
 const ruler = document.createElement('canvas').getContext('2d');
 
 /** One character of the input's font, in px: what its ::before caret means by 1ch. */
-function chWidth(input: HTMLInputElement) {
-  if (!ruler) return parseFloat(getComputedStyle(input).fontSize) * 0.6;
-  const { fontStyle, fontWeight, fontSize, fontFamily } = getComputedStyle(input);
-  ruler.font = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
+function chWidth(style: CSSStyleDeclaration) {
+  if (!ruler) return parseFloat(style.fontSize) * 0.6;
+  ruler.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   return ruler.measureText('0').width;
+}
+
+/** What mirror() needs of each card's field: none of it changes while the shared field
+    keeps focus, so it is read once per spell of focus, not on every key. */
+function measureCards(group: Group): CardMetrics[] {
+  return group.cards.map(({ input }) => {
+    const style = getComputedStyle(input);
+    return {
+      ch: chWidth(style),
+      textWidth: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+      width: input.offsetWidth,
+    };
+  });
 }
 
 /** The product's shared_inputs.js handler: copy the value into every variant form
     and tell its ::before caret where the shared input's caret is. The product then
     scrolls each input to its end, which on a card too narrow for the value shows its
     tail with the caret clamped to the far edge; this scrolls only as far as it takes to
-    keep the caret in view, and tells the ::before how far that was. */
+    keep the caret in view, and tells the ::before how far that was. Every write comes
+    before every read, so a key costs one layout, not one per card. */
 function mirror(group: Group, eventType = 'keyup') {
   const { shared } = group;
   const caret = shared.selectionStart ?? shared.value.length;
+  if (eventType === 'focus') group.metrics = null;
+  const metrics = (group.metrics ??= measureCards(group));
 
   group.cards.forEach(({ form, input }) => {
     form.style.setProperty('--caret', String(caret));
     input.value = shared.value;
-    const ch = chWidth(input);
-    const style = getComputedStyle(input);
-    const textWidth = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    input.scrollLeft = eventType === 'blur' ? 0 : Math.max(0, (caret + 1) * ch - textWidth);
-    form.style.setProperty('--scroll', `${input.scrollLeft}px`);
-    form.style.setProperty('--input-width', `${input.offsetWidth}px`);
   });
+  const scrolls = group.cards.map(({ input }, i) => {
+    const { ch, textWidth } = metrics[i];
+    input.scrollLeft = eventType === 'blur' ? 0 : Math.max(0, (caret + 1) * ch - textWidth);
+    return input.scrollLeft;
+  });
+  group.cards.forEach(({ form }, i) => {
+    form.style.setProperty('--scroll', `${scrolls[i]}px`);
+    form.style.setProperty('--input-width', `${metrics[i].width}px`);
+  });
+  if (eventType === 'blur') group.metrics = null;
 }
 
 /** The mock server's round trip: nothing is stored, but a save takes as long to come
@@ -279,6 +302,7 @@ function restore(tool: Tool) {
     });
     group.root.classList.remove('autoplay');
     ringState(group.root, null);
+    group.metrics = null;
   });
   showProperty(tool, tool.initialProperty);
 }
@@ -309,6 +333,7 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
     sharedSaveName: sharedSave.querySelector<HTMLElement>('.sr-only')!,
     setLabel: sharedSave.dataset.label ?? '',
     cards,
+    metrics: null,
   };
 
   // Product: keyup/focus/click/blur. `input` too, so pasted or filled text mirrors as well.
