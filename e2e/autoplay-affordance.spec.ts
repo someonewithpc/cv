@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { deckPlacement, hoverTakeover, pauseHoldsThenReset } from './support/deck';
+import { installProbes } from './support/pageProbes';
 import { demoStack, frontDeck, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
@@ -226,18 +227,10 @@ test('the deck keeps the instruction beside the state', async ({ page }) => {
 test('the transport keys sit on a solid cap', async ({ page }) => {
   await page.goto('/');
   const deck = await playingDeck(markerEditorStack(page));
+  await installProbes(deck.page());
   const cap = await deck.locator('[data-demo-key="play"]').evaluate((el) => {
     const fill = getComputedStyle(el).getPropertyValue('--key-face-fill').trim();
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    const context = canvas.getContext('2d')!;
-    context.clearRect(0, 0, 1, 1);
-    // A fill the canvas cannot parse keeps the old style; transparent makes that a failure.
-    context.fillStyle = 'transparent';
-    context.fillStyle = fill;
-    context.fillRect(0, 0, 1, 1);
-    return { fill, alpha: context.getImageData(0, 0, 1, 1).data[3] };
+    return { fill, alpha: window.e2eProbes!.srgba(fill)[3] };
   });
   expect(cap.alpha, `cap fill ${cap.fill}`).toBe(255);
 });
