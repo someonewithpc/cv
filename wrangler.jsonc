@@ -20,5 +20,6 @@
     { "tag": "v2", "new_sqlite_classes": ["AnalyticsSalt"] }
   ],
   // Where /api/e writes its data points; read through the Analytics Engine SQL API.
-  "analytics_engine_datasets": [{ "binding": "ANALYTICS", "dataset": "cv_events" }]
+  "analytics_engine_datasets": [{ "binding": "ANALYTICS", "dataset": "cv_events" }],
+  "observability": { "enabled": true }
 }
