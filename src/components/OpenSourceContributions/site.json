@@ -5,7 +5,7 @@
       "title": "GNU social v3",
       "role": "Maintainer",
       "roleJp": "メンテナー",
-      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5, with an event driven and modular architecture, rewrote controllers and the posting form layer, expanded PHPUnit coverage, integrated PHPStan and dependency-hygiene tooling.",
+      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5 with an event driven and modular architecture. Rewrote the controllers and posting form layer, expanded PHPUnit coverage, and integrated PHPStan and tooling for dependency hygiene.",
       "repository": "GNUsocial/gnu-social",
       "commits": "~1200",
       "period": "2021–2022",
