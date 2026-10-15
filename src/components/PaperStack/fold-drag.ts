@@ -197,6 +197,10 @@ const FLIP_BASE_MS = 300;
 const FLIP_MAX_MS = 1400;
 const FLIP_MIN_MS = 200;
 
+// The wheel: the longest gap one frame may close, and the px a line-mode wheel delta counts for.
+const WHEEL_STALL_CAP_MS = 100;
+const WHEEL_LINE_PX = 16;
+
 const rotateVec = (v: Vec, angle: number): Vec => {
   const c = Math.cos(angle), s = Math.sin(angle);
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
@@ -2225,7 +2229,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     const live = swipe;
     if (!live) return;
     // A frame that arrives after a long stall (a hidden tab) shouldn't close the whole gap at once
-    const span = Math.min(now - live.painted, 100);
+    const span = Math.min(now - live.painted, WHEEL_STALL_CAP_MS);
     live.painted = now;
     const gap = live.target - live.travel;
     if (Math.abs(gap) >= 0.5) {
@@ -2276,7 +2280,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
 
   // Lines and pages only reach here from wheels that report in them; a trackpad's own units are
   // already the pixels the fold is measured in.
-  const wheelUnit = (e: WheelEvent) => e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sheet.clientHeight : 1;
+  const wheelUnit = (e: WheelEvent) => e.deltaMode === 1 ? WHEEL_LINE_PX : e.deltaMode === 2 ? sheet.clientHeight : 1;
 
   // The stacks cover most of the page, and a cancelling wheel listener on one makes every scroll
   // that starts over it wait for the main thread. So the stack listens passively, and this one,
