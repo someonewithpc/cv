@@ -321,7 +321,7 @@
 - [x] Share one status border module, the demo-toast mixins and one card stylesheet instead of the copies (C74) (#435)
 - [x] Pause the dog-ear reveal on the page's paper-in-hand class instead of a :has() on the flap's hover (#220 C24) (#426)
 - [x] Stop each element inserted on the page from restyling about 520 elements through `:has()` rules followed by a descendant selector (P16) (#411)
-- [ ] Scroll the tagging tool's variant inputs to their end as the product does, and move the property picker and the "Bring them back" footer out of the product panel (#220 C91)
+- [x] Scroll the tagging tool's variant inputs to their end as the product does, and move the property picker and the "Bring them back" footer out of the product panel (C91) (#452)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
 - [ ] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#220 E13)
