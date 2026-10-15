@@ -20,7 +20,10 @@ Lighthouse drives.
   comes from the nix dev shell, and the audit falls back to `nix develop --command vnu` when
   it is not already on PATH.
 - CSS, with [stylelint](https://stylelint.io/) over the built stylesheets and the inline
-  `<style>` blocks, which no build step looks at.
+  `<style>` blocks, which no build step looks at. The same config, `stylelint.config.mjs`, also
+  lints the source with `npm run lint:css`: `postcss-scss` reads the `.scss` files and
+  `postcss-html` reads the `<style lang="scss">` blocks in `.astro` and `.vue`. That command
+  needs both packages installed.
 - Accessibility, with axe-core through Playwright: 1440x900 and 390x844, each of the four
   themes, no violations.
 - Lighthouse, driving the system Chrome over the same build, once on the desktop profile and
