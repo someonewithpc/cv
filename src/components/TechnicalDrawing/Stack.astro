@@ -1,5 +1,6 @@
 ---
 import PaperStack from '@/components/PaperStack/index.astro';
+import { peelHint } from '@/peelHint';
 
 import TechnicalDrawingPage from './Page.astro';
 
@@ -29,18 +30,14 @@ type Props = {
 
 const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
-// A hand writes a small count out in words; only a stack deeper than a dozen gets a digit
-const inWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const sheetsBelow = totalLayers - 1;
-const hint = Astro.props.hint ?? `${inWords[sheetsBelow] ?? sheetsBelow} more sheets, peel this corner`;
+const hint = Astro.props.hint ?? peelHint(sheetsBelow);
 const hintBack = 'this corner drags the page back';
 // One span per character, spaces included so the line's width stays put: each callout types
-// itself out when it appears, and the stylesheet times each letter by its place in the line. The
-// stylesheet numbers the first 48 letters itself; a longer line carries the rest's index inline.
-const hintLettersNumbered = 48;
+// itself out when it appears, and the stylesheet times each letter by its place in the line.
 const struck = (line: string) => [...line].map((letter, index) => ({
   letter,
-  style: index < hintLettersNumbered ? undefined : `--i: ${index}`,
+  style: `--i: ${index}`,
 }));
 const hintLetters = struck(hint);
 const hintBackLetters = struck(hintBack);
@@ -403,15 +400,6 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
   }
 }
 
-// Each letter's place in its line, for the delay above. The count matches hintLettersNumbered in
-// the frontmatter.
-@for $n from 1 through 48 {
-  .hint-letter:nth-child(#{$n}) {
-    --i: #{$n - 1};
-  }
-}
-
-
 // The hint line, off the sheet in the room the fan reserves below it.
 .hint-words {
   max-width: 24em;
@@ -675,11 +663,10 @@ function initStack(stack: HTMLElement) {
 
   // A demo island boots only once its page is on screen, so the deck is listening long
   // before the first state is reported. One that beat it to it is read back instead.
-  [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
-    .forEach((page) => {
-      initAutoplayStatus(page);
-      homeDeck(stack, page);
-    });
+  pages.forEach((page) => {
+    initAutoplayStatus(page);
+    homeDeck(stack, page);
+  });
 
   positionAnnotations(stack);
 
@@ -689,7 +676,8 @@ function initStack(stack: HTMLElement) {
   // Feature-detected: where the button has the property the browser already opens it.
   // The popover attributes are the markup's fallback for pages without this script, so a
   // scripted page drops them and always opens the note as a modal.
-  for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
+  const noteTabs = [...stack.querySelectorAll<HTMLButtonElement>('button.note-fold')];
+  for (const tab of noteTabs) {
     tab.removeAttribute('popovertarget');
     const id = tab.getAttribute('commandfor');
     const note = id ? document.getElementById(id) : null;
@@ -704,7 +692,7 @@ function initStack(stack: HTMLElement) {
     note.addEventListener('close', () => markNoteOpen(note, false));
   }
   if (!('commandForElement' in HTMLButtonElement.prototype)) {
-    for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
+    for (const tab of noteTabs) {
       tab.addEventListener('click', () => {
         const id = tab.getAttribute('commandfor');
         const note = id ? document.getElementById(id) : null;

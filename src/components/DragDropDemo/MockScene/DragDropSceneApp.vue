@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { drawingPageOf } from '@/client/drawingPage';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 
@@ -1060,7 +1061,7 @@ onMounted(async () => {
     });
 
     const visibilityRoot =
-      root.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? root;
+      drawingPageOf(root) ?? root;
     const gate = demoGate(visibilityRoot);
     pageGate = gate;
     gate.onChange((active, reasons) => {
