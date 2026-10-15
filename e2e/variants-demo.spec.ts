@@ -86,7 +86,7 @@ async function dotOnPipRow(styles: Locator, dot: Locator, index: number) {
   const tile = await styles.boundingBox();
   const box = await dot.boundingBox();
   if (!tile || !box) throw new Error('The carousel or its dot has no layout box');
-  const pip = 18;
+  const pip = 1.125 * (await styles.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize)));
   const pips = await styles.locator('.style').count();
   const rowLeft = tile.x + tile.width / 2 - (pips * pip) / 2;
   expect(box.height).toBeGreaterThan(6);
