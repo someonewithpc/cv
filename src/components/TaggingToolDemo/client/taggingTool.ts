@@ -36,7 +36,7 @@ type Tool = {
   groups: Group[];
   property: string;
   initialProperty: string;
-  note: HTMLElement | null;
+  note: HTMLElement;
   /** Paces the save clocks and the ring's easing switch; holds while the sheet is off
       screen or behind another page, same as the walkthrough's own pacing. */
   gate: DemoGate;
@@ -213,13 +213,11 @@ function applyVisibility(tool: Tool) {
     if (complete) hidden += 1;
   });
 
-  if (tool.note) {
-    tool.note.hidden = hidden === 0;
-    tool.note.querySelector('.hidden-count')!.textContent =
-      hidden === 1
-        ? '1 object left the list once it was fully tagged.'
-        : `${hidden} objects left the list once they were fully tagged.`;
-  }
+  tool.note.hidden = hidden === 0;
+  tool.note.querySelector('.hidden-count')!.textContent =
+    hidden === 1
+      ? '1 object left the list once it was fully tagged.'
+      : `${hidden} objects left the list once they were fully tagged.`;
 }
 
 function afterSave(tool: Tool, group: Group, hide = true) {
@@ -342,9 +340,9 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
   return group;
 }
 
-function initHeader(tool: Tool) {
+function initControls(tool: Tool) {
   tool.select.addEventListener('change', () => showProperty(tool, tool.select.value));
-  tool.note?.querySelector('.demo-reset')?.addEventListener('click', () => restore(tool));
+  tool.note.querySelector('.demo-reset')!.addEventListener('click', () => restore(tool));
 }
 
 const wait = (ms: number) => documentGate().wait(ms);
@@ -422,7 +420,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     active = next;
   });
 
-  const handover = watchHandover(root, {
+  const handover = watchHandover(host, {
     listening: () => active,
     takeOver() {
       stop();
@@ -556,9 +554,10 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
 }
 
 export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
-  const select = root.querySelector<HTMLSelectElement>('.property-select');
+  const select = host.querySelector<HTMLSelectElement>('.property-select');
+  const note = host.querySelector<HTMLElement>('.demo-note');
   const list = root.querySelector<HTMLDataListElement>('datalist');
-  if (!select || !list) return;
+  if (!select || !note || !list) return;
 
   const tool: Tool = {
     root,
@@ -567,14 +566,14 @@ export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
     groups: [],
     property: root.dataset.property ?? select.value,
     initialProperty: root.dataset.property ?? select.value,
-    note: root.querySelector<HTMLElement>('.demo-note'),
+    note,
     gate: demoGate(root),
   };
   tool.groups = [...root.querySelectorAll<HTMLElement>('.grouped-objects')].map((section) =>
     initGroup(tool, section),
   );
 
-  initHeader(tool);
+  initControls(tool);
   applyVisibility(tool);
 
   const target = tool.groups.find((group) => group.root.hasAttribute('data-autoplay-target'));

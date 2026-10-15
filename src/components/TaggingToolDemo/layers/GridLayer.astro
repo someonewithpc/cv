@@ -1,6 +1,6 @@
 ---
 import Grid from '../Grid.astro';
-import { walkthrough } from '../objects';
+import { defaultProperty, properties, walkthrough } from '../objects';
 ---
 
 <div
@@ -8,6 +8,25 @@ import { walkthrough } from '../objects';
   data-walkthrough={JSON.stringify(walkthrough)}
   data-tagging-grid-demo
 >
+  {/* Demo-only, so beside the tool and not in it. The product renames the schema in
+      this spot; the picker is what makes the page worth showing on its own, since the
+      stored values change with the schema. The product also drops a fully tagged object
+      from the list, and the note offers it back so the sheet doesn't end up empty. */}
+  <div class="demo-controls">
+    <label>
+      Property
+      <select class="property-select" aria-label="Property schema">
+        {properties.map((entry) => (
+          <option value={entry.id} selected={entry.id === defaultProperty}>{entry.name}</option>
+        ))}
+      </select>
+    </label>
+    <p class="demo-note" hidden>
+      <span class="hidden-count"></span>
+      <button type="button" class="demo-reset">Bring them back</button>
+    </p>
+  </div>
+
   <Grid live />
 
   {/* The walkthrough's stand-in pointer. It sits outside the tool, which clips its
@@ -53,12 +72,72 @@ bootIslands('[data-tagging-grid-demo]', boot);
 
   position: relative;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: stretch;
+  gap: 0.5rem;
   /* A definite height, so the tool's rows resolve against the sheet rather than
      against their own content. */
   height: 100%;
   min-height: 0;
+}
+
+.tagging-grid-demo > :global(.tagging-tool) {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em 1.5em;
+  font-size: clamp(0.625rem, 0.02 * min(var(--sheet-inline), var(--sheet-block)), 0.875rem);
+  font-family: monospace, system-ui;
+  color: var(--ink-muted);
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 700;
+  }
+
+  .property-select {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 12em;
+    padding: 0.25em 0.5em;
+    border: 1px solid var(--line);
+    border-radius: 0.5em;
+    background: var(--surface-page);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 400;
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+  }
+}
+
+.demo-note {
+  margin: 0;
+
+  &[hidden] {
+    display: none;
+  }
+
+  .demo-reset {
+    margin-left: 0.5em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
 }
 
 /* The title block lies over the tool's bottom-right corner, so the rows scroll on past it

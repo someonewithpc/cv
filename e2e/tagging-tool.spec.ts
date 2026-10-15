@@ -35,8 +35,8 @@ async function mountedTool(page: import('@playwright/test').Page) {
   // the rows back the way the demo's own reset does, so every test below starts from the
   // values and the property the page opens on.
   await expect(tool.locator('.pending, .success')).toHaveCount(0, { timeout: 10_000 });
-  await tool.locator('.demo-reset').evaluate((button: HTMLButtonElement) => button.click());
-  await expect(tool.locator('.property-select')).toHaveValue('chair');
+  await tool.locator('xpath=..').locator('.demo-reset').evaluate((button: HTMLButtonElement) => button.click());
+  await expect(tool.locator('xpath=..').locator('.property-select')).toHaveValue('chair');
   return { stack, front, tool };
 }
 
@@ -165,7 +165,7 @@ test.describe('handover', () => {
     await expect(tool).toHaveAttribute('data-autoplay', 'user');
 
     // Reset starts the walkthrough over from the rows the page opens on.
-    const select = tool.locator('.property-select');
+    const select = tool.locator('xpath=..').locator('.property-select');
     const other = await select.evaluate((el: HTMLSelectElement) =>
       [...el.options].map((option) => option.value).find((value) => value !== el.value)!);
     await select.selectOption(other);
@@ -337,7 +337,7 @@ test('main page: the shared value mirrors onto the base and every variant, and E
   }
   // Its last gap is filled, so the object leaves the list the way set.js.erb drops it.
   await expect(gold).toBeHidden();
-  await expect(tool.locator('.demo-note')).toBeVisible();
+  await expect(tool.locator('xpath=..').locator('.demo-note')).toBeVisible();
 });
 
 // The save ring: src/scss/_statusBorder.scss on the row (a shared save) or the card (one
@@ -480,7 +480,7 @@ test('main page: picking another property brings up the values already stored fo
 
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
   const wood = tool.locator('.grouped-objects[data-group="wood"]');
-  await tool.locator('.property-select').selectOption('table color');
+  await tool.locator('xpath=..').locator('.property-select').selectOption('table color');
 
   // The product titleizes on save, so the base and its variants agree on case.
   await expect(wood.locator('.object-value').first()).toHaveValue('Wood');
