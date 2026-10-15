@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { demoStack, frontDeck, frontPage, frontPageIndex, frontPageName, swipeStack, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontDeck, frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 
 const PAGES = ['Library Search & Relevance', 'Relevance Scoring', 'Filters', 'Generated SQL'];
 
@@ -32,18 +32,6 @@ const form = (query: string) => `query=${encodeURIComponent(query).replace(/%20/
 /** The scores of the rows on show, top to bottom. */
 function shownScores(tool: Locator) {
   return tool.locator('.hit:not([hidden]) .value').evaluateAll((values) => values.map((value) => Number(value.textContent)));
-}
-
-/** Turns to `name` with the arrow key, which commits on the spot where a swipe has to be
-    eased in (paper-turn-keyboard.spec.ts), so a loaded machine cannot leave it short. */
-async function turnTo(page: Page, stack: Locator, name: string) {
-  for (let i = 0; i < PAGES.length && (await frontPageName(stack)) !== name; i += 1) {
-    const before = await frontPageName(stack);
-    await stack.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect.poll(() => frontPageName(stack), { timeout: 10_000 }).not.toBe(before);
-  }
-  expect(await frontPageName(stack)).toBe(name);
 }
 
 async function search(tool: Locator, query: string) {
@@ -147,7 +135,7 @@ test('main page: the sheet shows the transport deck, and its keys drive the walk
 test('generated SQL page: a bare number is quoted, and a seats after it folds into the phrase', async ({ page }) => {
   const { stack } = await mountedTool(page);
   // The bound query is printed on the Generated SQL sheet, not beside the tool.
-  await turnTo(page, stack, 'Generated SQL');
+  await turnToPage(stack, 'Generated SQL');
   const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
   await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
   const mangled = sheet.locator('.sent .mangled');
@@ -210,7 +198,7 @@ test('main page: a property filter narrows the rows but keeps the maximum', asyn
 
 test('generated SQL page: the request line shows the form sent, and a repeat is dropped', async ({ page }) => {
   const { stack } = await mountedTool(page);
-  await turnTo(page, stack, 'Generated SQL');
+  await turnToPage(stack, 'Generated SQL');
   const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
   await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
   const field = sheet.locator('.sheet-query');
@@ -445,7 +433,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1680, height: 105
     await stack.scrollIntoViewIfNeeded();
 
     for (const name of PAGES.slice(1)) {
-      await turnTo(page, stack, name);
+      await turnToPage(stack, name);
       const front = frontPage(stack, await frontPageIndex(stack));
       const fit = await front.locator(':scope > section').evaluate((section) => {
         const panel = section.querySelector<HTMLElement>('.panel')!;
@@ -464,7 +452,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1680, height: 105
 test('generated SQL page: all three copies of the fragment follow the query typed on it', async ({ page }) => {
   const stack = librarySearchStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnTo(page, stack, 'Generated SQL');
+  await turnToPage(stack, 'Generated SQL');
   const sheet = frontPage(stack, await frontPageIndex(stack)).locator('[data-library-search="sql"]');
   await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
 
@@ -483,7 +471,7 @@ test('every sheet keeps its own query: typing or filtering on one never moves an
 
   const sheets = { 'Relevance Scoring': 'relevance', 'Generated SQL': 'sql' } as const;
   for (const [name, kind] of Object.entries(sheets)) {
-    await turnTo(page, stack, name);
+    await turnToPage(stack, name);
     const sheet = frontPage(stack, await frontPageIndex(stack)).locator(`[data-library-search="${kind}"]`);
     await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
     await expect(sheet.locator('.sheet-query'), name).toHaveValue(opening);
@@ -503,7 +491,7 @@ test('every sheet keeps its own query: typing or filtering on one never moves an
 test('relevance page: the scoring table follows the query typed on it', async ({ page }) => {
   const stack = librarySearchStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnTo(page, stack, 'Relevance Scoring');
+  await turnToPage(stack, 'Relevance Scoring');
   const front = frontPage(stack, await frontPageIndex(stack));
   const sheet = front.locator('[data-library-search="relevance"]');
   await expect(sheet).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
@@ -517,7 +505,7 @@ test('relevance page: the scoring table follows the query typed on it', async ({
 test('property filters page: the filtered column renormalises to its own best row', async ({ page }) => {
   const stack = librarySearchStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnTo(page, stack, 'Filters');
+  await turnToPage(stack, 'Filters');
   const front = frontPage(stack, await frontPageIndex(stack));
   await expect(front.locator('section.blueprint')).toBeVisible();
 
@@ -534,7 +522,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await stack.scrollIntoViewIfNeeded();
 
     for (const name of PAGES) {
-      await turnTo(page, stack, name);
+      await turnToPage(stack, name);
       const front = frontPage(stack, await frontPageIndex(stack));
       const small = await front.locator(':scope > section .content').evaluate((content: HTMLElement) => {
         // Rendered size is the computed size times whatever scale the sheet is drawn at, read
@@ -575,7 +563,7 @@ for (const width of [320, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
     const stack = librarySearchStack(page);
     await stack.scrollIntoViewIfNeeded();
-    await turnTo(page, stack, 'Filters');
+    await turnToPage(stack, 'Filters');
     const front = frontPage(stack, await frontPageIndex(stack));
     const overflow = await front.locator('.rules > div').evaluateAll((rules: HTMLElement[]) =>
       rules.flatMap((rule) => {
