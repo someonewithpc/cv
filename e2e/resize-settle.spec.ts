@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { steady } from './support/steady';
 
 /**
  * A drag of the window edge resizes the page every frame. The measurements that only the
@@ -48,7 +49,7 @@ test('a window drag sizes a scene\'s drawing buffer once, for the final width', 
   await expect(island.locator('[data-ready]')).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
   const canvas = island.locator('canvas[data-scene-canvas]');
   await expect(canvas).toBeVisible();
-  await page.waitForTimeout(1_000);
+  await steady(page, () => canvas.getAttribute('width'));
 
   const midDrag = await dragWindow(page, canvas, 'width');
   expect(midDrag, 'drawing buffer resizes during the drag').toBeLessThanOrEqual(MAX_MID_DRAG);
@@ -73,8 +74,7 @@ test('a window drag moves the event bus token once, onto the final return', asyn
   await expect(bus).not.toHaveAttribute('data-result', 'pending');
   const token = bus.locator('.token');
   await expect(token).toBeVisible();
-  await page.waitForTimeout(1_000);
-  const before = await token.getAttribute('style');
+  const before = await steady(page, () => token.getAttribute('style'));
 
   const midDrag = await dragWindow(page, token, 'style');
   expect(midDrag, 'token moves during the drag').toBeLessThanOrEqual(MAX_MID_DRAG);
