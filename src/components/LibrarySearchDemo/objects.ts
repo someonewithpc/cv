@@ -1,3 +1,5 @@
+import { storedSizeProperties } from '../SyntheticPropertiesDemo/units';
+
 /** A library category: the key the product stores on `library_objects.category`. */
 export type Category = 'Banquet' | 'Reception' | 'Sofa' | 'Catering' | 'Outdoor' | 'Plants';
 
@@ -49,32 +51,13 @@ export const libraryObjects: readonly LibraryObject[] = [
   { id: '3610', name: 'Flower Pot', category: 'Plants', image: image('flower-pot.webp'), properties: [['color', 'White'], ['material', 'Fibreglass']], size: '40x40x60' },
 ];
 
-const CM_PER_INCH = 2.54;
-
-/** The six renderings of a size, under the names the product stores them as (#124 draws
-    them in full): every dimension in each unit, joined with ' by '. */
-function sizeProperties(size: string): [string, string][] {
-  const cms = size.split('x').map(Number);
-  const inches = (cm: number) => Math.round(cm / CM_PER_INCH);
-  const feet = (cm: number) => [Math.floor(inches(cm) / 12), inches(cm) % 12] as const;
-  const each = (render: (cm: number) => string) => cms.map(render).join(' by ');
-  return [
-    ['Size (centimeters)', each((cm) => `${cm}cm`)],
-    ['Size (meters)', each((cm) => `${cm / 100}m`)],
-    ['Size (inches)', each((cm) => `${inches(cm)}"`)],
-    ['Size (inches)', each((cm) => `${inches(cm)}in`)],
-    ['Size (feet-inches)', each((cm) => `${feet(cm)[0]}'${feet(cm)[1]}"`)],
-    ['Size (feet-inches)', each((cm) => `${feet(cm)[0]}ft${feet(cm)[1]}in`)],
-  ];
-}
-
 /** Every row of `library_object_synthetic_properties` for one object: the typed
     properties, the seat count under both of its names, and the six size renderings. */
 export function syntheticProperties(object: LibraryObject): readonly (readonly [string, string])[] {
   return [
     ...object.properties,
     ...(object.pax === undefined ? [] : [['Pax', String(object.pax)], ['Seats', String(object.pax)]] as const),
-    ...(object.size === undefined ? [] : sizeProperties(object.size)),
+    ...(object.size === undefined ? [] : storedSizeProperties(object.size).map(({ name, value }) => [name, value] as const)),
   ];
 }
 
