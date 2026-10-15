@@ -149,3 +149,21 @@ for (const [width, height] of [[1440, 900], [900, 760]]) {
     }
   });
 }
+
+// A portrait sheet hides the editor layer, and an embed mounted while the sheet was landscape
+// used to stay mounted behind it, its sidebar autoplay clicking every 1.4 s for nobody.
+test('turning the sheet portrait unmounts the hidden editor embed', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const stack = markerEditorStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Marker Editor');
+  const host = frontPage(stack, await frontPageIndex(stack)).locator('.editor-layer-host');
+  await expect(host.locator('[data-demo-target]').first()).toBeAttached();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(stack).toHaveAttribute('data-sheet-orientation', 'portrait');
+  await expect(host.locator('*')).toHaveCount(0);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(host.locator('[data-demo-target]').first()).toBeAttached();
+});
