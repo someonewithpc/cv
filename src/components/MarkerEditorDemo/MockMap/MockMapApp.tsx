@@ -16,7 +16,7 @@ import store, {
 } from '../store';
 import { createDemoCursor } from '@/client/demoCursor';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, onReducedMotionChange, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
 import { TOAST_VISIBLE_MS } from '@/client/toast';
 
@@ -686,8 +686,6 @@ export default function MockMapApp() {
   // the sheet's deck does not read paused over a demo that is still moving. The query is watched,
   // not read once: the setting can change while the page is open.
   useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-
     const park = () => {
       autoplayRef.current?.pause();
       clearResumeTimer();
@@ -707,8 +705,7 @@ export default function MockMapApp() {
     };
 
     apply();
-    query.addEventListener('change', apply);
-    return () => query.removeEventListener('change', apply);
+    return onReducedMotionChange(apply);
   // Stable refs / setters only, same as the pointer handoff below.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
