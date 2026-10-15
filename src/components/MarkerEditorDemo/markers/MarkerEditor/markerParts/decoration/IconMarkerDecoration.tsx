@@ -71,7 +71,7 @@ export class IconMarkerDecoration extends MarkerPart {
     };
   }
 
-  Loader(props: Record<string, any> = {}) {
+  Loader(props: Record<string, string | number> = {}) {
     return (
       <FontAwesomeIcon
         icon={faSpinner}

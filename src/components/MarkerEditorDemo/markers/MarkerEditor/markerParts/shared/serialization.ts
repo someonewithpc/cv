@@ -10,7 +10,7 @@ import { dataUrlToSvg, svgToDataUrl } from '../../../../store';
 import type { MarkerType, SpaceType } from '../../../../store';
 
 import { parseSVGDocument } from '../../optimizeAndParseSVGToComponent';
-import { markers } from '..';
+import { markersByStep, markers } from '..';
 import type { StateType } from '..';
 
 import { Point } from './Point';
@@ -23,6 +23,10 @@ function partition<T>(items: readonly T[], predicate: (item: T) => boolean): [T[
     (predicate(item) ? pass : fail).push(item);
   }
   return [pass, fail];
+}
+
+interface Serializable {
+  serialize(): string;
 }
 
 class Json {
@@ -39,7 +43,7 @@ class Json {
   }
 }
 
-const serializableConstructors: Record<string, new (data: string) => any> = {
+const serializableConstructors: Record<string, new (data: string) => object> = {
   Point,
   Number,
   String,
@@ -53,7 +57,7 @@ function serializableConstructorName(value: object): string {
   return entry?.[0] ?? value.constructor.name;
 }
 
-export function serializeKeyValue(property: string, name: string, value: any): [string, string] {
+export function serializeKeyValue(property: string, name: string, value: unknown): [string, string] {
   // We need to store the properties without uppercase letters, as that's technically not allowed by
   // the HTML spect and thus React warns us about it. See https://react.dev/warnings/unknown-prop
   const key = `data-${snakeCase(property)}-${snakeCase(name)}`;
@@ -62,16 +66,16 @@ export function serializeKeyValue(property: string, name: string, value: any): [
     return [key, `String:${value}`];
   } else if (typeof value === 'number') {
     return [key, `Number:${value.toFixed(3)}`];
-  } else if ('serialize' in value) {
-    return [key, `${serializableConstructorName(value)}:${value.serialize()}`];
-  } else if (value instanceof Object && value !== null) {
+  } else if (typeof value === 'object' && value !== null && 'serialize' in value) {
+    return [key, `${serializableConstructorName(value)}:${(value as Serializable).serialize()}`];
+  } else if (value instanceof Object) {
     return [key, `Json:${JSON.stringify(value)}`];
   } else {
     throw new Error(`Unknown type ${typeof value} in serializeKeyValue: ${property}, ${name}, ${value}`);
   }
 }
 
-export function deserializeKeyValue(key: string, value: string): [string, string | [string, any]] | null {
+export function deserializeKeyValue(key: string, value: string): [string, string | [string, unknown]] | null {
   const [prefix, property, ...nameParts] = key.split('-');
   if (prefix !== 'data') return null;
 
@@ -123,7 +127,7 @@ export function serializeMarker(state: StateType, space: SpaceType): string {
     root.render(
       Object.entries(state.active)
         .map(([step, partName]) => {
-          const part = (markers as any)[step][partName];
+          const part = markersByStep[step][partName];
           const SerializeContent = part.SerializeContent.bind(part);
           return createElement(SerializeContent, { space, key: `${step}-${partName}` });
         }),
@@ -150,7 +154,8 @@ export function deserializeMarker(storeMarker: MarkerType | undefined) {
         .map((attr) => deserializeKeyValue(attr.name, attr.value))
         .filter((deserialized) => deserialized !== null);
 
-      const [flatAttributes, nestedAttributes] = partition(attributes, ([, value]) => typeof value === 'string');
+      const [flatAttributes, nestedAttributesAny] = partition(attributes, ([, value]) => typeof value === 'string');
+      const nestedAttributes = nestedAttributesAny as [string, [string, unknown]][];
 
       console.assert(flatAttributes.length === 1 && flatAttributes[0][0] === 'kind', 'Unhandled attributes %o found when deserializing %o', flatAttributes, storeMarker);
       const [[, className]] = flatAttributes;
@@ -179,7 +184,7 @@ export function deserializeMarker(storeMarker: MarkerType | undefined) {
                 (part.state as Record<string, unknown>)[key] = value;
               }
             } else {
-              part[entry][key] = value;
+              (part as unknown as Record<string, Record<string, unknown>>)[entry][key] = value;
             }
           });
         });

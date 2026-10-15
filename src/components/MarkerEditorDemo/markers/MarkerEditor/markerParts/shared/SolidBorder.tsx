@@ -26,8 +26,7 @@ export class SolidBorder extends MarkerPart {
 
   protected liveRule: LiveStyleRule;
 
-  constructor(...args: any[]) {
-    // @ts-ignore
+  constructor(...args: ConstructorParameters<typeof MarkerPart>) {
     super(...args);
 
     this.liveRule = new LiveStyleRule(this.container, `.${this.borderClassName}`, 'stroke-width');

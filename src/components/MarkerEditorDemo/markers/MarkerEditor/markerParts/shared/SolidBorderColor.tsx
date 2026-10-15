@@ -28,8 +28,7 @@ export class SolidBorderColor extends MarkerPart {
 
   private liveRule: LiveStyleRule;
 
-  constructor(...args: any[]) {
-    // @ts-ignore
+  constructor(...args: ConstructorParameters<typeof MarkerPart>) {
     super(...args);
 
     this.liveRule = new LiveStyleRule(this.container, `.${this.borderClassName}`, '--border-color');
