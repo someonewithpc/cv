@@ -2471,8 +2471,11 @@ export function initPaperStackFold(): void {
   // observations in that order, and these observers write: --fold-page-w/-h on every page,
   // which dirtied the style of the whole document before the annotation observer got its turn
   // to read client rects, at about 40ms of forced style resolution on every resize step. Created
-  // last, they are delivered last, after every observer that reads.
-  if (document.readyState === 'complete') {
+  // last, they are delivered last, after every observer that reads. Between DOMContentLoaded
+  // and load the state is still "interactive", so ask the navigation entry whether the event
+  // has fired rather than wait for one that will not come.
+  const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  if (document.readyState === 'complete' || navigation?.domContentLoadedEventStart) {
     run();
   } else {
     document.addEventListener('DOMContentLoaded', run, { once: true });
