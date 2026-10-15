@@ -29,7 +29,12 @@ const themeVars = (settings: ThemeSettings) => Object.entries(themeVarsOf(settin
 /* With script, a pick writes data-theme and the radio's .checked class in the same commit,
    so the root's theme is read from the attribute alone. The radio rules stand only on a page
    whose script never ran (see rootRadioPicked in src/themes.ts). */
-const THEMES_CSS = `${Object.entries(OS_THEMES).map(([scheme, settings]) => (
+const THEMES_CSS = `  :root {
+${themeVars(THEMES.light)}
+    --theme-kind: light;
+  }
+
+${Object.entries(OS_THEMES).map(([scheme, settings]) => (
   `  @media (prefers-color-scheme: ${scheme}) {
     ${ROOT_FOLLOWING_OS} {
 ${themeVars(settings)}
@@ -188,21 +193,6 @@ aside {
 @use "@/scss/_colors.scss" as colors;
 
 :root {
-  --theme-canvas: oklch(0.97 0.011 85);
-  --theme-ink: oklch(0.24 0.025 260);
-  --theme-accent: oklch(0.60 0.12 130);
-  --theme-blueprint: oklch(0.622 0.121 254);
-  --theme-desk: rgb(229 200 160);
-  --theme-desk-tile: url("@/assets/desk/light.webp");
-  --theme-desk-tile-720: url("@/assets/desk/light-720.webp");
-  --theme-paper: oklch(1 0 90);
-  --theme-paper-grain: 0.45;
-  --theme-paper-sheet-grain: 0.48;
-  --theme-paper-blend: multiply;
-  --theme-paper-invert: 0;
-  --theme-mode: light;
-  --theme-kind: light;
-
   @include colors.color-variables;
 
   color-scheme: light dark;

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import * as sass from 'sass';
 
-import { OS_THEMES, THEMES, type ThemeSettings } from '@/themes';
+import { OS_THEMES, THEMES, themeVars, type ThemeSettings } from '@/themes';
 
 import { oklchCss, parseOklch, toneAt } from './contrast';
 
@@ -42,7 +42,7 @@ const seeds = (settings: ThemeSettings) => `
   --theme-blueprint: ${settings.blueprint};
   --theme-paper: ${settings.paper ?? 'initial'};
   --theme-mode: ${settings.follows};
-  --accent-text: ${settings.follows === 'dark' ? 'var(--accent-800)' : 'oklch(from var(--theme-accent) 0.42 c h)'};
+  --accent-text: ${themeVars(settings)['accent-text']};
   --wire: ${wireColor(settings)};
 `;
 
