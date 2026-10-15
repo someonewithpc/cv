@@ -71,6 +71,10 @@ export class IconMarkerDecoration extends MarkerPart {
     };
   }
 
+  get selectedDecorationId() {
+    return this.reactiveState.activeDecoration ?? this.reactiveState.decorations[0]?.id ?? null;
+  }
+
   Loader(props: Record<string, any> = {}) {
     return (
       <FontAwesomeIcon
@@ -83,9 +87,8 @@ export class IconMarkerDecoration extends MarkerPart {
 
   Content({ extraProps }: { extraProps: Record<string, string> }) {
     if (this.reactiveState.decorations.length === 0) return;
-    if (this.reactiveState.activeDecoration === null) this.reactiveState.activeDecoration = this.reactiveState.decorations[0].id;
 
-    const decoration = this.reactiveState.decorations.find((d) => d.id === this.reactiveState.activeDecoration)?.resolvedSource;
+    const decoration = this.reactiveState.decorations.find((d) => d.id === this.selectedDecorationId)?.resolvedSource;
 
     if (!decoration) {
       const w = 0.75;
@@ -124,7 +127,7 @@ export class IconMarkerDecoration extends MarkerPart {
         <ul role="listbox" aria-label="Decorations">
           {this.reactiveState.decorations.map((d, index) => {
             const decoration = d.resolvedSource;
-            const selected = d.id === this.reactiveState.activeDecoration;
+            const selected = d.id === this.selectedDecorationId;
 
             return (
               <li
