@@ -193,7 +193,7 @@ if (number != null) citePieces.push(null, `#${number}`);
     /* fit-content never goes under the longest identifier in the title, so without a cap one
        like assertStringable ran past a narrow column instead of breaking. */
     max-width: 100%;
-    color: var(--ink);
+    color: var(--row-title-ink, var(--ink));
     overflow-wrap: break-word;
     word-break: normal;
     hyphens: none;
@@ -228,7 +228,12 @@ if (number != null) citePieces.push(null, `#${number}`);
     }
   }
 
-  &:has(> details > summary:focus-visible) .title,
+  /* Through a custom property on the row: a :has() with a pseudo-class in it, followed by a
+     descendant selector, restyled every .title on the page whenever an element was inserted. */
+  &:has(> details > summary:focus-visible) {
+    --row-title-ink: var(--accent-text);
+  }
+
   .title:hover {
     color: var(--accent-text);
   }
