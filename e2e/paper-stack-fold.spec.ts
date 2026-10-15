@@ -2,6 +2,7 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { flapGrip } from './support/fold';
 import { demoStack, dogEarShown, frontPageIndex, frontPageName, pressTurn, swipeStack } from './support/paperStack';
+import { THEME_IDS } from '../src/themes';
 
 const DEMOS = [
   {
@@ -109,7 +110,7 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
 
   // The flap paints the back of the sheet in the page's own colour, which it can't read off the
   // page itself (it is the page's sibling), so a theme switch has to reach it too.
-  for (const theme of ['dark', 'arctic', 'dark-forest', 'light']) {
+  for (const theme of THEME_IDS.toReversed()) {
     await page.locator(`#theme-picker input[value="${theme}"]`).click({ force: true });
     // The picker writes data-theme back once its view transition has finished
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
@@ -131,7 +132,7 @@ test('every page paints the back of its sheet in its own paper, in every theme',
 
   // The stylesheet picks each page's back from its class, apart from the face Page.astro
   // paints, so a page kind the two disagree on shows here as a band of the wrong colour.
-  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+  for (const theme of THEME_IDS) {
     await page.locator(`#theme-picker input[value="${theme}"]`).click({ force: true });
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
@@ -156,7 +157,7 @@ test('visrez logo: the dog-ear is lit at its tip and shaded along the crease', a
   // corner, where the crease lies fold-x·sin(a) in. Its darkest stop has to sit on the crease
   // with a lighter stop either side of it: the corner is where the sheet lies flat and catches
   // the light, whichever of the flap's two renderings puts the corner nearer 0 or 2·crease.
-  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+  for (const theme of THEME_IDS) {
     await page.locator(`#theme-picker input[value="${theme}"]`).click({ force: true });
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
