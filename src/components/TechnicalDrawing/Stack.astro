@@ -34,12 +34,10 @@ const sheetsBelow = totalLayers - 1;
 const hint = Astro.props.hint ?? peelHint(sheetsBelow);
 const hintBack = 'this corner drags the page back';
 // One span per character, spaces included so the line's width stays put: each callout types
-// itself out when it appears, and the stylesheet times each letter by its place in the line. The
-// stylesheet numbers the first 48 letters itself; a longer line carries the rest's index inline.
-const hintLettersNumbered = 48;
+// itself out when it appears, and the stylesheet times each letter by its place in the line.
 const struck = (line: string) => [...line].map((letter, index) => ({
   letter,
-  style: index < hintLettersNumbered ? undefined : `--i: ${index}`,
+  style: `--i: ${index}`,
 }));
 const hintLetters = struck(hint);
 const hintBackLetters = struck(hintBack);
@@ -416,15 +414,6 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
     @include types-itself($hint-fade, 0ms);
   }
 }
-
-// Each letter's place in its line, for the delay above. The count matches hintLettersNumbered in
-// the frontmatter.
-@for $n from 1 through 48 {
-  .hint-letter:nth-child(#{$n}) {
-    --i: #{$n - 1};
-  }
-}
-
 
 // The hint line, off the sheet in the room the fan reserves below it.
 .hint-words {
