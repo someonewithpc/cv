@@ -1,4 +1,4 @@
-import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { onAutoplayCommand, onReducedMotionChange, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 import { STATUS_BORDER_DURATION, STATUS_BORDER_SWAP_AT } from '@/scss/statusBorder';
 
@@ -98,7 +98,7 @@ export function boot(host: HTMLElement) {
   // Every page of the stack shares one grid cell, so intersection alone would keep this
   // running behind whichever page the visitor turned to. Nothing ever unmounts an island,
   // so the watcher's stop function has no caller and is not returned.
-  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', play);
+  onReducedMotionChange(play);
 
   watchPageActive(host, (next) => {
     active = next;

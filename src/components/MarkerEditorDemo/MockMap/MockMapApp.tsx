@@ -12,7 +12,7 @@ import store, {
   type SpaceType,
 } from '../store';
 import { watchDrawingNote } from '@/client/drawingNote';
-import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, onReducedMotionChange, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
@@ -196,16 +196,32 @@ export default function MockMapApp() {
   const toastIdRef = useRef(0);
   const pushToastRef = useRef<(toast: DemoToastPayload) => void>(() => {});
 
+  const toastTimersRef = useRef(new Set<number>());
+  const toastLater = (run: () => void, ms: number) => {
+    const timers = toastTimersRef.current;
+    const timer = window.setTimeout(() => {
+      timers.delete(timer);
+      run();
+    }, ms);
+    timers.add(timer);
+  };
   pushToastRef.current = (payload: DemoToastPayload) => {
     const id = ++toastIdRef.current;
     setToasts((prev) => [...prev, { ...payload, id, leaving: false }]);
-    window.setTimeout(() => {
+    toastLater(() => {
       setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
-      window.setTimeout(() => {
+      toastLater(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }, TOAST_EXIT_MS);
     }, TOAST_VISIBLE_MS);
   };
+  useEffect(() => {
+    const timers = toastTimersRef.current;
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer);
+      timers.clear();
+    };
+  }, []);
 
   const editingSpace = spaces.find((s) => s.id === editingSpaceId);
   const focus = focusTransform(editingSpace);
@@ -651,8 +667,6 @@ export default function MockMapApp() {
   // that was still moving. The query is watched, not read once: the setting can change
   // while the page is open.
   useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-
     const park = () => {
       autoplayRef.current?.pause();
       clearResumeTimer();
@@ -673,8 +687,7 @@ export default function MockMapApp() {
     };
 
     apply();
-    query.addEventListener('change', apply);
-    return () => query.removeEventListener('change', apply);
+    return onReducedMotionChange(apply);
   // Stable refs / setters only, same as the pointer handoff below.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

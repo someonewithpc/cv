@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 
-import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, onReducedMotionChange, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
@@ -317,15 +317,13 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       play();
     });
 
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onMotionChange = () => {
+    const stopMotionWatch = onReducedMotionChange(() => {
       if (reducedMotion(el)) stop();
       play();
-    };
-    motionQuery.addEventListener('change', onMotionChange);
+    });
 
     return () => {
-      motionQuery.removeEventListener('change', onMotionChange);
+      stopMotionWatch();
       stopCommands();
       stopPageWatch();
       page.removeEventListener('pointermove', onPointer);

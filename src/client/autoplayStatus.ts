@@ -34,7 +34,16 @@ const MOTION_DECK_WORDS = {
   'data-autoplay-hint-playing': 'press pause to stop it',
 };
 
-const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let motionQuery: MediaQueryList | undefined;
+const reducedMotionQuery = () => (motionQuery ??= window.matchMedia('(prefers-reduced-motion: reduce)'));
+const prefersReducedMotion = () => reducedMotionQuery().matches;
+
+/** Runs `run` each time the visitor's reduced-motion setting changes. Every demo shares one query. */
+export function onReducedMotionChange(run: () => void) {
+  const query = reducedMotionQuery();
+  query.addEventListener('change', run);
+  return () => query.removeEventListener('change', run);
+}
 
 /** Reduced motion as a demo inside `el` should honour it: off while its sheet plays on request. */
 export function reducedMotion(el: Element | null | undefined): boolean {

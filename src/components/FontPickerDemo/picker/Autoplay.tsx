@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, onReducedMotionChange, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
@@ -48,12 +48,20 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     const pageResize = new ResizeObserver(invalidatePageRect);
     pageResize.observe(page);
 
+    const toastTimers = new Set<number>();
+    const toastLater = (run: () => void, ms: number) => {
+      const timer = window.setTimeout(() => {
+        toastTimers.delete(timer);
+        run();
+      }, ms);
+      toastTimers.add(timer);
+    };
     const toast = (text: string) => {
       const id = ++toastId.current;
       setToasts((prev) => [...prev, { id, text, leaving: false }]);
-      window.setTimeout(() => {
+      toastLater(() => {
         setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
-        window.setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), TOAST_EXIT_MS);
+        toastLater(() => setToasts((prev) => prev.filter((t) => t.id !== id)), TOAST_EXIT_MS);
       }, TOAST_VISIBLE_MS);
     };
 
@@ -181,15 +189,13 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       play();
     });
 
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onMotionChange = () => {
+    const stopMotionWatch = onReducedMotionChange(() => {
       if (reducedMotion(el)) hold();
       play();
-    };
-    motionQuery.addEventListener('change', onMotionChange);
+    });
 
     return () => {
-      motionQuery.removeEventListener('change', onMotionChange);
+      stopMotionWatch();
       stopCommands();
       stopPageWatch();
       page.removeEventListener('pointermove', onPointer);
@@ -201,6 +207,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       pageResize.disconnect();
       window.clearTimeout(resumeTimer);
       window.clearTimeout(fadeTimer);
+      for (const timer of toastTimers) window.clearTimeout(timer);
       controller.pause();
     };
   }, [root]);
