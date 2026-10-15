@@ -94,3 +94,51 @@ export function updateHandleHoverCursor(
   const handle = scene.pickHandle(clientX, clientY);
   element.style.cursor = handle ? (mode === 'forbid' ? 'not-allowed' : 'grab') : '';
 }
+
+/**
+ * Hover moves come from the root alone, so a page in the back never raycasts its
+ * handles. While a pointer is down, moves and ups come from window instead, so a drag
+ * that leaves the root keeps going where pointer capture is missing.
+ */
+export function bindScenePointers(
+  root: HTMLElement,
+  handlers: {
+    down: (event: PointerEvent) => void;
+    move: (event: PointerEvent) => void;
+    up: (event: PointerEvent) => void;
+    isActive: () => boolean;
+  },
+) {
+  let tracking = false;
+  const setTracking = (on: boolean) => {
+    if (on === tracking) return;
+    tracking = on;
+    if (on) {
+      root.removeEventListener('pointermove', handlers.move);
+      window.addEventListener('pointermove', handlers.move);
+      window.addEventListener('pointerup', up);
+      window.addEventListener('pointercancel', up);
+    } else {
+      window.removeEventListener('pointermove', handlers.move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      root.addEventListener('pointermove', handlers.move);
+    }
+  };
+  const down = (event: PointerEvent) => {
+    handlers.down(event);
+    if (handlers.isActive()) setTracking(true);
+  };
+  function up(event: PointerEvent) {
+    handlers.up(event);
+    if (!handlers.isActive()) setTracking(false);
+  }
+
+  root.addEventListener('pointerdown', down);
+  root.addEventListener('pointermove', handlers.move);
+  return () => {
+    setTracking(false);
+    root.removeEventListener('pointerdown', down);
+    root.removeEventListener('pointermove', handlers.move);
+  };
+}
