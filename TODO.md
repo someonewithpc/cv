@@ -323,3 +323,4 @@
 - [x] Wait for each arrow key to render before the next key in the Paper Stack no-script dots spec (#493)
 - [x] Wait for mount, not 2.5 s per stack, in the title block overflow spec (#220 E22) (#478)
 - [x] Find the demos the sheet-contain, title-block-jitter and stack-offscreen specs check by title instead of page position (#220 E19) (#479)
+- [ ] Run the flipped-pages strip turns alone in a serial project instead of describe.configure serial (#220 E20)
