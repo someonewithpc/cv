@@ -13,6 +13,7 @@
     "deploy": "npm run check && npm run build && E2E_PREBUILT=1 playwright test && wrangler deploy",
     "astro": "astro",
     "check": "astro check",
+    "lint:css": "stylelint \"src/**/*.{scss,astro,vue}\"",
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",
     "generate:catalog-thumb": "node scripts/render-catalog-thumb.mjs",
     "og:image": "node scripts/capture-og-image.mjs",
@@ -57,6 +58,8 @@
     "sass": "^1.105.1",
     "sharp": "^0.35.5",
     "stylelint": "^17.16.0",
+    "postcss-html": "^1.8.0",
+    "postcss-scss": "^4.0.9",
     "stylelint-config-recommended": "^18.0.0",
     "typescript": "^6.0.3",
     "wrangler": "^4.147.0"
