@@ -312,7 +312,7 @@
 - [x] Fixed colours that ignore the theme: the note fold fallback, the Rails outline, the toast and key borders, the tagging grid body, the Paper Stack note, the cursor labels and the Variants cursor (S11) (#363)
 - [x] Keep component styles inside their component: the original logo's Illustrator classes, the Space Builder tag, the marker editor's font settings and the layout utilities (S15) (#366)
 - [x] End the Library Search result list above the title block at every width (#220 S23) (#372)
-- [ ] Pause the dog-ear reveal on the page's paper-in-hand class instead of a :has() on the flap's hover (#220 C24)
+- [x] Pause the dog-ear reveal on the page's paper-in-hand class instead of a :has() on the flap's hover (#220 C24) (#426)
 - [x] Stop each element inserted on the page from restyling about 520 elements through `:has()` rules followed by a descendant selector (P16) (#411)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
