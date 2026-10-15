@@ -1,5 +1,6 @@
 import { devices, type Locator, type Page } from '@playwright/test';
 
+import { clickCarouselArrow } from './support/carousel';
 import {
   demoStack,
   frontPage,
@@ -39,13 +40,6 @@ async function openDemo(page: Page): Promise<Locator> {
 
 function card(app: Locator, id: string) {
   return app.locator(`[data-catalog-item="${id}"]`);
-}
-
-/** Clicks where the carousel's next arrow sits, a CSS scroll button with no DOM node. */
-async function clickNextArrow(page: Page, styles: Locator) {
-  const box = await styles.boundingBox();
-  if (!box) throw new Error('The carousel has no layout box');
-  await page.mouse.click(box.x + box.width - 14, box.y + box.height / 2);
 }
 
 /** Take the pointer out of the card sideways, in a few moves. */
@@ -135,7 +129,7 @@ test.describe('metric locale', () => {
     expect(await markerBackground(slides.nth(0))).not.toBe('rgba(0, 0, 0, 0)');
     await dotOnPipRow(styles, dot, 0);
 
-    await clickNextArrow(page, styles);
+    await clickCarouselArrow(page, styles, 'next');
     await expect(styles).toHaveAttribute('data-index', '1');
     await expect(chair).toHaveAttribute('data-variant', 'chair-gold');
     await expect.poll(() => markerBackground(slides.nth(1))).not.toBe('rgba(0, 0, 0, 0)');
@@ -323,7 +317,7 @@ test.describe('metric locale', () => {
       };
       requestAnimationFrame(tick);
     }));
-    await clickNextArrow(page, styles);
+    await clickCarouselArrow(page, styles, 'next');
     const frames = await sampling;
 
     const dot = (frame: number[]) => frame[frame.length - 1];
@@ -601,7 +595,7 @@ test.describe('scripting off', () => {
       .toHaveText('2.4m x 1.2m');
     await expect(chair.locator('.object-size .option-text')).toHaveText('42cm x 50cm x 95cm');
 
-    await clickNextArrow(page, styles);
+    await clickCarouselArrow(page, styles, 'next');
     await expect.poll(() => styles.evaluate((el) => Math.round(el.scrollLeft / el.clientWidth))).toBe(1);
     await expect.poll(() => markerBackground(slides.nth(1))).not.toBe('rgba(0, 0, 0, 0)');
     await expect.poll(() => markerBackground(slides.nth(0))).toBe('rgba(0, 0, 0, 0)');
