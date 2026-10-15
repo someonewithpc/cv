@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
     :data-ready="ready ? 'true' : 'false'"
     aria-label="Capacity Badge demo — auto-orbiting to show the tag tracking the camera; drag to take over"
   >
-    <canvas data-scene-canvas class="scene-canvas" aria-label="SelectArea with a camera-relative capacity tag" />
+    <canvas data-scene-canvas class="scene-canvas" aria-label="Area with a camera-relative capacity tag" />
     <div data-label-host class="label-host" />
 
     <div
