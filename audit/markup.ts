@@ -9,6 +9,8 @@ import { expect, test } from '@playwright/test';
 import { HtmlValidate, type ConfigData } from 'html-validate';
 import stylelint from 'stylelint';
 
+import cssConfig from '../stylelint.config.mjs';
+
 const run = promisify(execFile);
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -82,37 +84,6 @@ const NU_IGNORED: { message: RegExp; because: string }[] = [
     because: 'the original logo is on the page as the unoptimised original',
   },
 ];
-
-// Hugo's rule, and it outranks any linter: never downgrade or remove a progressive
-// enhancement because a tool says it is not valid. If one of these rules ever flags
-// something this site uses on purpose, switch the rule off here and write down why.
-// Do not change the CSS.
-//
-// stylelint 17.16 (October 2026) reads properties and values through css-tree 3.2 and
-// mdn-data 2.27, patched by @csstools/css-syntax-patches-for-csstree. Measured against
-// this site's build it flags none of anchor(), sign(), ::scroll-marker, @container,
-// @property, :has(), text-wrap: balance, light-dark(), @starting-style, overflow: clip,
-// relative colours, nesting, field-sizing, view transitions or scroll-driven animations,
-// and it still catches misspelt properties, bad units and invalid hex. So the list-driven
-// rules stay on, with the two exceptions below.
-const cssConfig = {
-  extends: ['stylelint-config-recommended'],
-  rules: {
-    // The bundle concatenates every component's styles, so the order two selectors end
-    // up in is not something any one stylesheet decides.
-    'no-descending-specificity': null,
-    'no-duplicate-selectors': null,
-    // clip: rect(0, 0, 0, 0) is the visually-hidden idiom.
-    'property-no-deprecated': [true, { ignoreProperties: ['clip'] }],
-    // Off, not narrowed: stylelint's selector parser reads ::scroll-button(right) as an
-    // element called right. An ignoreTypes list would have to grow with every new
-    // pseudo-element argument, and it would hide a real unknown element on the way.
-    'selector-type-no-unknown': null,
-    // :target-current is the scroll marker pseudo-class (CSS Overflow 5); stylelint 17's
-    // list does not have it yet.
-    'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['target-current'] }],
-  },
-};
 
 const filesUnder = async (dir: string, extension: string): Promise<string[]> => {
   const entries = await readdir(dir, { recursive: true, withFileTypes: true });
