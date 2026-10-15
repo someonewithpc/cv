@@ -124,13 +124,8 @@ export function styleUsesBlocks(style: LayoutStyle) {
   return style === 'grid';
 }
 
-/** Aisle between blocks only applies once "Blocks of" has a size (not herringbone aisle). */
-export function aisleNeedsBlocks(style: LayoutStyle) {
-  return styleUsesBlocks(style);
-}
-
 export function isAisleEnabled(style: LayoutStyle, options: LayoutOptions) {
-  if (!aisleNeedsBlocks(style)) return true;
+  if (!styleUsesBlocks(style)) return true;
   return options.blocks.width > 0 || options.blocks.height > 0;
 }
 
@@ -190,14 +185,6 @@ function countFit(size: number, obj: number, gap: number) {
   const stride = obj + gap;
   let n = Math.floor(size / stride);
   if (size - n * stride >= obj - 1e-9) n += 1;
-  return Math.max(0, n);
-}
-
-function countBlocks(size: number, blockSize: number, aisle: number) {
-  if (size < blockSize || blockSize <= 0) return 0;
-  const stride = blockSize + aisle;
-  let n = Math.floor(size / stride);
-  if (size - n * stride >= blockSize - 1e-9) n += 1;
   return Math.max(0, n);
 }
 
@@ -264,8 +251,8 @@ function layoutGrid(area: AreaRect, options: LayoutOptions): ChairPose[] {
     const bh = blockH > 0 ? blockH : Math.max(1, countFit(area.depth, sizeZ, options.distanceZ));
     const blockSizeX = occupiedSpan(bw, sizeX, options.distanceX);
     const blockSizeZ = occupiedSpan(bh, sizeZ, options.distanceZ);
-    const numBlocksX = countBlocks(area.width, blockSizeX, options.aisle);
-    const numBlocksZ = countBlocks(area.depth, blockSizeZ, options.aisle);
+    const numBlocksX = countFit(area.width, blockSizeX, options.aisle);
+    const numBlocksZ = countFit(area.depth, blockSizeZ, options.aisle);
     if (numBlocksX < 1 || numBlocksZ < 1) return poses;
 
     const strideX = blockSizeX + options.aisle;
