@@ -62,7 +62,9 @@ You need Node 22. The nix flake provides it: `nix develop` opens a shell with No
 the dependencies, and direnv does the same when you enter the directory. Without nix, run
 `npm install` yourself.
 
-`npm run dev` starts the dev server.
+`npm run dev` starts the dev server. `npm run preview` serves the last `npm run build` from
+`dist/`. Both set a background flag in `package.json`, so they detach from the terminal and keep
+running.
 
 ## Tests
 
@@ -92,6 +94,23 @@ refuse a server already on 4310 rather than test it.
 
 The deploy goes to my Cloudflare account, so it only works with my credentials. To host a
 fork, point `wrangler.jsonc` at a worker of your own.
+
+## Scripts
+
+`scripts/` holds one-off generators. Their output is committed, so you only run one when its
+source changes.
+
+- `npm run generate:tokyo-map` writes the marker editor's mock map SVG from OpenStreetMap
+  data, or from a saved Overpass response with `--input`.
+- `npm run generate:catalog-thumb` renders a Space Builder catalog model to its thumbnail
+  with headless Chrome.
+- `npm run og:image` shoots `public/og.jpg`, the picture link previews show. It needs a
+  running preview.
+- `node scripts/bake-desk-tiles.mjs` bakes each theme's desk tile into `src/assets/desk/`.
+- `node scripts/cut-paper-tile.mjs` cuts `src/assets/paper-fibre.webp` from a paper scan that
+  lives outside the repo.
+- `node scripts/capture-handoff-frames.mjs` shoots the four stills on the drag and drop
+  demo's "Picture to Model" sheet. It needs a running preview.
 
 ## Where things are
 
