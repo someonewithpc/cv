@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { demoStack, frontPageName } from './support/paperStack';
+import { demoStack, dogEarShown, frontPageName, settledAfter } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -33,9 +33,8 @@ async function turnTiming(page: Page, stack: Locator, key: string): Promise<{ co
     for (const child of el.children) observer.observe(child, { attributes: true, attributeFilter: ['style'] });
   });
   await stack.focus();
-  await page.keyboard.press(key);
-  // Comfortably past the end of the turn, so `last` is the glide finishing and not the wait.
-  await page.waitForTimeout(2500);
+  // Once the turn has settled, `last` is the glide finishing.
+  await settledAfter(stack, () => page.keyboard.press(key));
   return page.evaluate(() => {
     const record = (window as Window & { paperTurn?: TurnRecord }).paperTurn!;
     return {
@@ -48,7 +47,7 @@ async function turnTiming(page: Page, stack: Locator, key: string): Promise<{ co
 test('marker editor: an arrow key commits the turn without waiting', { tag: '@perf' }, async ({ page }) => {
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   // A key press has no hand still on the paper, so the flip commits on the spot and one glide
   // plays the turn out. Easing a swipe's worth of travel in first, then releasing at the end of
@@ -81,7 +80,7 @@ test('a key turn reads the dog-ear off the screen once', async ({ page }) => {
   await page.reload();
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
   await turnTiming(page, stack, 'ArrowRight');
   expect(await frontPageName(stack)).toBe('Marker Selector');
   expect(await page.evaluate(() => (window as Window & { foldReads?: number }).foldReads)).toBe(1);
@@ -90,7 +89,7 @@ test('a key turn reads the dog-ear off the screen once', async ({ page }) => {
 test('a settled turn writes the front sheet to the status beside the stack', async ({ page }) => {
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
   const status = stack.locator('xpath=following-sibling::*[1][@role="status"]');
   // Nothing on load: the page at the front is where the reader started.
   await expect(status).toHaveText('');
