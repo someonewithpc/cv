@@ -65,7 +65,7 @@ const listing = `<svg
     max-width: 100%;
     overflow: auto;
 
-    /* Sideways scrolling inside a swipeable carousel is a trap, so on a portrait sheet
+    /* Sideways scrolling inside a swipeable stack is a trap, so on a portrait sheet
        shrink the listing until its longest line fits the sheet instead. */
     &, :global(code) {
       font-size: drawing.portrait-or(min(0.875rem, 0.0195 * var(--sheet-inline)), 0.875rem);

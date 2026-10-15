@@ -73,10 +73,9 @@ const THUMB_MODEL = { height: 333 / 600, centre: 320 / 600 };
 const THUMB_FILL = 0.9;
 /**
  * The camera comes in on the drop before the drag starts, so the chair that lands on the
- * floor is about twice as tall in the frame. `applyWheelZoom` turns a wheel notch into a
+ * floor is 1.8x as tall in the frame. `applyWheelZoom` turns a wheel notch into a
  * radius factor of `exp(deltaY * 0.0012)`, and a third is as far in as the scene goes:
- * `setOrbitRadius` clamps the radius at 6 scene units, which from the opening 18 leaves
- * the placed chair 1.8x as tall. Only the capture zooms. The demo keeps the framing the
+ * `setOrbitRadius` clamps the radius at 6 scene units. Only the capture zooms. The demo keeps the framing the
  * product opens with, since it has a whole floor to show and not one drop.
  */
 const ZOOM_WHEEL_DELTA = Math.log(1 / 3) / 0.0012;

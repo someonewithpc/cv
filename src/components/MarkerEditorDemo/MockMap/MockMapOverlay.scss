@@ -104,7 +104,7 @@
 @include toast.keyframes;
 
 .mock-map-demo-cursor {
-  // Absolute on the carousel page so document/carousel scroll keeps the tip
+  // Absolute on the sheet so document/stack scroll keeps the tip
   // glued to targets (fixed + viewport client coords desync on scroll).
   position: absolute;
   top: 0;

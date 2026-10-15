@@ -1079,7 +1079,7 @@ export function bindUndoRedoKeys(
   };
 
   // The product listens on the editor's root, which a click always leaves focus inside. Here the
-  // editor is portaled onto the carousel page, and a click on bare paper leaves focus on the stack
+  // editor is portaled onto the sheet, and a click on bare paper leaves focus on the stack
   // around it, where this listener never hears the key. So a click inside the demo that lands
   // focus outside it hands focus to the demo itself, as an app that owns its window would.
   // It runs on pointerup for a mouse and on click for a touch, whose focus change comes later.

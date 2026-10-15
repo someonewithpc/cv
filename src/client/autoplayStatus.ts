@@ -4,7 +4,7 @@
  *
  * A demo app calls `reportAutoplayState` on its own root whenever the walkthrough starts,
  * hands over, or is switched off, and answers the keys through `onAutoplayCommand`. The deck
- * TechnicalDrawing/Page.astro renders on every sheet does the rest, so all three demos say the
+ * TechnicalDrawing/Page.astro renders on every sheet does the rest, so every demo says the
  * same thing in the same place without each scene app drawing its own controls.
  */
 export type AutoplayState = 'playing' | 'user' | 'paused' | 'off';

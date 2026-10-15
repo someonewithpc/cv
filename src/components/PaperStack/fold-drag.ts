@@ -1955,7 +1955,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     };
   };
 
-  // The other way a released approach can go: thrown hard enough (see thrownOverFront), the
+  // The other way a released approach can go: thrown hard enough (see releaseBack), the
   // corner finishes its flight out to the fully-folded seed on the release's own momentum, and
   // the page is promoted there and settles flat as the new front page — the gesture the hand
   // started, carried out by the throw.
@@ -2049,7 +2049,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
     };
   };
 
-  // What a back-drag's release does, from either phase: committed (its pull thrown a third of the
+  // What a back-drag's release does, from either phase: committed (its pull thrown a quarter of the
   // way to the opposite corner) the page stays in front — carried the rest of the way over first
   // if it hasn't got there — and short of that it goes back where it came from.
   const releaseBack = (ended: FoldGesture, time: number): (() => void) => {

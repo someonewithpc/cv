@@ -32,7 +32,7 @@ $chrome-stacked-block: 60;
   --marker-constraint-stroke: green;
   --marker-inert-ink: gray;
 
-  // Contained by the carousel page section (scrolls away with that page).
+  // Contained by the sheet section (scrolls away with that page).
   position: absolute;
   inset: 0;
   width: 100%;
@@ -52,10 +52,10 @@ $chrome-stacked-block: 60;
   align-items: center;
 
   // Dimmed frame stays visible, but don't trap wheel/touch — let the
-  // technical-drawing carousel scroll to another page underneath.
+  // technical-drawing stack scroll to another page underneath.
   pointer-events: none;
 
-  // A finger drags a handle instead of scrolling the carousel; the keys move a focused one.
+  // A finger drags a handle instead of scrolling the stack; the keys move a focused one.
   .control-point {
     touch-action: none;
     outline: none;
@@ -332,7 +332,7 @@ $chrome-stacked-block: 60;
 
             // The on-page picker: a saturation/value field over a hue strip, the shape
             // `vanilla-picker` gives the product's space builder. `touch-action: none` is
-            // what lets a finger drag it at all; without it the carousel takes the gesture.
+            // what lets a finger drag it at all; without it the stack takes the gesture.
             .marker-color-field {
               display: grid;
               gap: 0.25em;

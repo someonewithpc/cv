@@ -5,7 +5,7 @@
  * character for character. Everything else on the main sheet is read out of that text: the
  * field options are parsed from it, pushed through a port of SchemaDefDriver's
  * `loadMetadataForClass`, and printed the way Doctrine DBAL's MySQL platform prints a
- * CREATE TABLE. Nothing on the right-hand pane is typed in by hand, so the two panes cannot
+ * CREATE TABLE. Nothing on the output pane is typed in by hand, so the two panes cannot
  * drift apart.
  */
 

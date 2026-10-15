@@ -94,7 +94,7 @@ function overlayPoint(overlay: Element, nx: number, ny: number): CursorPos {
   };
 }
 
-/** Convert viewport client coords into a positioned host (carousel page) at `rect`. */
+/** Convert viewport client coords into a positioned host (the sheet) at `rect`. */
 function toHostPoint(rect: DOMRectReadOnly | undefined, pos: CursorPos): CursorPos {
   if (!rect) return pos;
   return {
@@ -260,7 +260,7 @@ export default function MockMapApp() {
   };
 
   /**
-   * Where the carousel page sits in the viewport. It moves only when the page resizes or
+   * Where the sheet sits in the viewport. It moves only when the page resizes or
    * scrolls, so it is read once after either and kept, and the re-glue below refreshes it
    * from the boxes the browser hands over. Reading it per placement forced a style and
    * layout pass after each press and release a step had just dispatched.
@@ -343,7 +343,7 @@ export default function MockMapApp() {
   useEffect(() => {
     const overlay = containerRef.current;
     if (!overlay) return;
-    // Attach to the carousel page (not the frame) so the editor scrolls off with it.
+    // Attach to the sheet (not the frame) so the editor scrolls off with it.
     setEditorPortalHost(
       overlay.closest<HTMLElement>('article.technical-drawing-stack > * > section')
       ?? overlay.closest<HTMLElement>('.mock-map-demo')
@@ -435,7 +435,7 @@ export default function MockMapApp() {
   useEffect(() => {
     const overlay = containerRef.current;
 
-    // Attach to the carousel page so leaving the map slide pauses autoplay
+    // Attach to the sheet so leaving the map slide pauses autoplay
     // (observing .mock-map-demo alone could still look "in view" mid-snap).
     const visibilityRoot =
       overlay?.closest<HTMLElement>('article.technical-drawing-stack > * > section')
@@ -704,7 +704,7 @@ export default function MockMapApp() {
   // the demo back while the picker is still open and the walkthrough would edit the marker
   // underneath it. Hold from the moment such a control takes focus: a deliberate takeover,
   // so the sheet's chip reads "You're in control" for as long as the popup is up.
-  // The editor is portaled onto the carousel page, hence document rather than the overlay.
+  // The editor is portaled onto the sheet, hence document rather than the overlay.
   useEffect(() => {
     const onFocusIn = (event: FocusEvent) => {
       if (!isNativePopupControl(event.target)) return;

@@ -642,7 +642,7 @@ const apply = (all: HTMLElement[]) => {
 };
 
 // Viewport root (not the stack): with root:stack the active slide was "intersecting" on load
-// even when still below the fold. Stack overflow still clips off-screen carousel slides from
+// even when still below the fold. Stack overflow still clips off-screen sheets from
 // the viewport intersection. One observer for every stack's pages, so the first pass on load
 // comes in one callback and pays one style resolve.
 const pageObserver = new IntersectionObserver((intersections) => {

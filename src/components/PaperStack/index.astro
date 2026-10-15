@@ -746,8 +746,8 @@ html:has([data-paper-stack-root]:hover) {
         }
 
         // Commit feedback: fades in riding the flap (fold-drag.ts writes the flap's visual
-        // center every drag frame) while releasing would carry the gesture through (see
-        // .paper-fold--will-commit above). A flap pulled out to the sheet's edge, or one coming
+        // center every drag frame) while releasing would carry the gesture through.
+        // A flap pulled out to the sheet's edge, or one coming
         // back from off the sheet, has its centre there too, so the hint stops a mat and half
         // its own size short of each edge and stays on the paper. Before the first drag frame
         // the two lengths are unset, the insets resolve to auto, and it rests in the corner.

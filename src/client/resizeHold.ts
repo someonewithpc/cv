@@ -15,8 +15,8 @@
  * The hold goes through the demo gates (src/client/frontPage.ts) as `holdAll('resize')`, so
  * every clock on a gate stops counting and runs out the time it had left once the size
  * settles. A walkthrough resumes at the step it was on. A stack pauses its front page's
- * animations (the dog-ear pulse, the deck's LED and the like) through `onResizeHold`, which
- * the gates cannot do. Nothing here touches a demo's autoplay state, so a demo the reader
+ * animations (the deck's LED and the like) through `onResizeHold`, which the gates cannot
+ * do. The dog-ear pulse is fold-drag.ts's. Nothing here touches a demo's autoplay state, so a demo the reader
  * paused from the deck stays paused.
  */
 import { holdAll, releaseAll } from './frontPage';

@@ -43,7 +43,7 @@ function cmToFeetInches(cm: number) {
   let inches = Math.round(preciseInches);
   let feet = Math.floor(cm / 2.54 / 12);
 
-  // Nudge toward a whole foot, as the product does, so 182cm lands on 6' and not 5'12".
+  // Mirrors the product's nudge, which tests the distance to a multiple of ten inches, not to a foot.
   const distanceToMultipleOfTen = (feet * 12 + preciseInches) % 10;
   const toleranceInches = 1.5;
   if (distanceToMultipleOfTen < toleranceInches && inches > toleranceInches) {

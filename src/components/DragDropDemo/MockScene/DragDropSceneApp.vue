@@ -63,9 +63,8 @@ const CLICK_ROUTE_ID = 'table-round';
 const RESUME_DELAY_MS = 2500;
 
 /**
- * Real objects first, placeholders greyed out after them. One style per card: the finish
- * carousel and the seat and size pickers are their own PR
- * (catalog-carousel); until that lands, each card places its default style.
+ * Real objects first, placeholders greyed out after them. One style per card, so there is no
+ * finish carousel or seat and size picker to drive; each card places its default style.
  */
 const DND_ITEMS: CatalogItem[] = [...CATALOG_ITEMS]
   .sort((a, b) => Number(b.real ?? false) - Number(a.real ?? false))
