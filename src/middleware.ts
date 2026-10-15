@@ -7,7 +7,7 @@ import { defineMiddleware } from 'astro:middleware';
    the notes met while turning sheets. No demo picks one; a new demo needs no change. */
 const PAPERS = ['peeled', 'taped', 'peeled-right', 'torn', 'folded'];
 const MARK = 'data-paper="next"';
-const STACK_OR_MARK = /class="technical-drawing-frame\b|data-paper="next"/g;
+const STACK_OR_MARK = /data-drawing-frame|data-paper="next"/g;
 
 export const onRequest = defineMiddleware(async (_context, next) => {
   const response = await next();
