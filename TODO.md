@@ -327,7 +327,7 @@
 - [x] Read the Fediverse graph's shared images from SHARED_SERVICES, and list in the compose file only the volumes a service mounts (C78) (#438)
 - [x] Take the Library Search size rows from SyntheticPropertiesDemo/units.ts (#220 C52) (#429)
 - [x] Scroll the tagging tool's variant inputs to their end as the product does, and move the property picker and the "Bring them back" footer out of the product panel (C91) (#452)
-- [ ] Read the tagging tool's card fields once per focus instead of on every key, and move its cursor with the shared cursor motion (#220 C17)
+- [x] Read the tagging tool's card fields once per focus instead of on every key, and move its cursor with the shared cursor motion (C17) (#415)
 - [x] Parse each marker's SVG in the marker selector once per marker and space, not on every render (C13) (#414)
 - [x] Unmount the Marker Editor sheet's embed when the sheet turns portrait, where its layer is hidden and the autoplay kept clicking (#220 C16) (#413)
 - [x] Held Controls reads the page rect once per run, lays out the grab line once per leg, and reads a slider again only when its value moves (C12 Held Controls) (#412)
