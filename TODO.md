@@ -311,4 +311,4 @@
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
 - [ ] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#220 E13)
 - [x] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#474)
-- [ ] Warn when a Firefox project is skipped because its browser is missing (#220 E12)
+- [x] Warn when a Firefox project is skipped because its browser is missing (#220 E12) (#475)
