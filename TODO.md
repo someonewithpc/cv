@@ -329,4 +329,4 @@
 - [x] Drop the title-fit-1 container rule that title-fit-2's identical range always covered (C23) (#418)
 - [x] Delete the unused svgo.config.mjs, the unused pencil and undo-2 lucide icons and the lodash-es/throttle pre-bundle (#220 C67) (#433)
 - [x] Rename `crossProduct` in `svg-utils.ts` to `dot`, since it returns a dot product (C90) (#448)
-- [ ] Comments say what the code does now: orphans, history and typos out of the PaperStack, theme, demo and capture comments (#220 C89)
+- [x] Comments say what the code does now: orphans, history and typos out of the PaperStack, theme, demo and capture comments (#220 C89) (#450)
