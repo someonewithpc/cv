@@ -509,7 +509,7 @@ function selectCatalogItem(item: CatalogItem, variant: CatalogVariant = variantO
 function confirmCatalogItem(item: CatalogItem, variant?: CatalogVariant, byKey = false) {
   selectCatalogItem(item, variant ?? variantOf(item, undefined));
   if (!item.real) {
-    pushToast({ action: 'Placeholder · use Chair for the demo' });
+    pushToast({ action: 'Placeholder · use Chair, Side Chair or Banquet Table' });
     return;
   }
   if (!item.layoutable) {
