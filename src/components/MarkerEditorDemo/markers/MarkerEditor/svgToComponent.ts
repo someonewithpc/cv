@@ -21,6 +21,7 @@ function parseInlineStyle(rawStyle: string | null): Record<string, string> {
 }
 
 function attributeNameToProp(name: string) {
+  if (name.startsWith('data-') || name.startsWith('aria-')) return name;
   if (name === 'class') return 'className';
   if (name === 'xlink:href') return 'xlinkHref';
   return camelCase(name.replace(':', '-'));
@@ -90,7 +91,7 @@ export function parseSVGDocument(svgData: string): SVGSVGElement {
   return root;
 }
 
-export function optimizeAndParseSVGToComponent(
+export function svgToComponent(
   svgData: string,
   props: Record<string, any> = {},
 ): ReactNode {

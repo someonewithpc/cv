@@ -3,7 +3,7 @@ import { faIcons, faSpinner, faUpload } from "@fortawesome/free-solid-svg-icons"
 
 import $store, { markerDecorationsSelector } from '../../../../store';
 
-import { optimizeAndParseSVGToComponent } from "../../optimizeAndParseSVGToComponent";
+import { svgToComponent } from "../../svgToComponent";
 import { MarkerPart, Point } from "../shared";
 import type { PointLiteral } from "../shared";
 import { onOptionKey } from "../../listboxKeys";
@@ -98,7 +98,7 @@ export class IconMarkerDecoration extends MarkerPart {
         'transform-origin': `${this.center.x} ${this.center.y}`,
       });
     } else {
-      return optimizeAndParseSVGToComponent(
+      return svgToComponent(
         decoration,
         {
           x: this.center.x - this.radius,
@@ -138,7 +138,7 @@ export class IconMarkerDecoration extends MarkerPart {
                 }}
                 onKeyDown={onOptionKey}
               >
-                {decoration ? optimizeAndParseSVGToComponent(decoration) : this.Loader()}
+                {decoration ? svgToComponent(decoration) : this.Loader()}
               </li>
             );
           })}
