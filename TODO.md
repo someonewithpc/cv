@@ -336,3 +336,4 @@
 - [x] Make `tsc --noEmit -p tsconfig.json` pass: drop the deprecated `baseUrl` and declare the `*.vue` and `*.astro` modules (E2) (#468)
 - [x] Read the rem from the page in the specs that assumed a 16px root, and resolve contact-alias's dist from the file (#220 E26) (#484)
 - [x] Clear the stale comments and leftovers in audit/markup.ts and eight e2e files (#220 E29) (#488)
+- [ ] Wait in the specs for what they read next, not a fixed time: expect.poll, settledAfter and the steady helpers in place of waitForTimeout (#220 E21)
