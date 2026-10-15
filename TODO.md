@@ -382,6 +382,7 @@
 - [x] Hyphenate the compound adjectives in the Career data: Full-stack, step-by-step, node-based, event-driven and ride-sharing (220 T28) (#464)
 - [x] Career copy that dates or misnames itself: the Leb entry's "current versions" is a 2021 claim, the Visrez map names "the resort" before any resort is introduced, and GNU social has three role names for one job, with "co-maintainership" in the meta description (#220 T21) (#458)
 - [x] Turn on Workers observability so the worker's 500s and 503s leave logs (#220 C61) (#428)
+- [ ] Clear demo timers and listeners on unmount, and share one reduced-motion query (C86)
 - [x] Name the unnamed numbers in the demos and the fold: the toast time, the Space Builder scene tuning and narrow width, the depth hue, the marker and font picker cursor offsets, and the fold's glide times (#220 C85) (#446)
 - [x] Type the marker editor, the font picker iframe, PostIt and the draw counter instead of casting to any (#220 C84) (#445)
 - [x] Remove the dead branches and members the audit found in Space Builder, the marker editor, the Event Bus demo and Drag and Drop (#220 C82) (#444)
