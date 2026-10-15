@@ -9,6 +9,7 @@ import {
   turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
+import { readRem } from './support/rem';
 import { expect, pageWait, test } from './support/timeScale';
 
 function dragDropStack(page: Page) {
@@ -437,8 +438,9 @@ test('every frame is the same size, and big enough to read', async ({ page }) =>
 
   // The frames grow into whatever height the plate has left. At 1440x900 that is about
   // 209x220, where a row of four sized off its width alone came to 219x125.
-  expect(pictures[0].width).toBeGreaterThanOrEqual(195);
-  expect(pictures[0].height).toBeGreaterThanOrEqual(195);
+  const floor = 12 * (await readRem(page));
+  expect(pictures[0].width).toBeGreaterThanOrEqual(floor);
+  expect(pictures[0].height).toBeGreaterThanOrEqual(floor);
 });
 
 test('the sidebar title stays inside its header, wrapping if it has to', async ({ page }) => {
