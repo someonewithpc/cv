@@ -1,4 +1,5 @@
 import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL } from './FontFamily';
+import { drawingPageOf } from '@/client/drawingPage';
 import { demoPicker } from './demoPicker';
 import { type Run, type Scene, setNativeValue } from './playthrough';
 
@@ -105,7 +106,7 @@ async function pickNewFamily(run: Run, root: HTMLElement, family: string) {
 /** Appears beyond the sheet's bottom edge; the scene's first glide brings it in from there */
 export function entranceFor(root: HTMLElement): Scene {
   return async (run) => {
-    const sheet = (root.closest('article.technical-drawing-stack > * > section') ?? root).getBoundingClientRect();
+    const sheet = (drawingPageOf(root) ?? root).getBoundingClientRect();
     run.appear({ x: sheet.right - sheet.width * 0.2, y: sheet.bottom + 80 });
     await run.wait(300);
   };

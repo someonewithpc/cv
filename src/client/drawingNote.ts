@@ -1,3 +1,5 @@
+import { drawingPageOf } from './drawingPage';
+
 /**
  * The note dialog covers its own drawing page while it is open, so anything
  * animating underneath should hold still until the note is folded away again.
@@ -6,7 +8,7 @@
  * initAutoplayStatus in autoplayStatus.ts.
  */
 export function watchDrawingNote(root: Element, onToggle: (open: boolean) => void) {
-  const page = root.closest('article.technical-drawing-stack > * > section');
+  const page = drawingPageOf(root);
   const dialog = page?.querySelector<HTMLDialogElement>('dialog.drawing-note');
   if (!dialog) return () => {};
 
