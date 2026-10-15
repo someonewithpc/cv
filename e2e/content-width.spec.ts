@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-/** --content-max / --breakout-max in Layout.astro: 60rem against a 16px root. */
-const CAP = 960;
+import { readRem } from './support/rem';
+
+/** --content-max / --breakout-max in Layout.astro, in rem. */
+const CAP_REM = 60;
 
 test('a wide viewport caps the content column and the demo stacks at 60rem', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  const CAP = CAP_REM * (await readRem(page));
 
   const main = page.locator('main');
   await expect(main).toHaveCSS('--content-max', '60rem');

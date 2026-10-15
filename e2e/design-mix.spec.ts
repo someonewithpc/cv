@@ -2,11 +2,16 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
+import { readRem } from './support/rem';
+
 /** The width past which Layout.astro gives the sheets a margin of desk on either side. */
 const DESK_FROM = 1024;
 
-/** The side the desk lays a scan down at: 45rem at a 16px root, as ThemePicker.astro sets it. */
-const TILE = 720;
+/** The side the desk lays a scan down at, in rem, as ThemePicker.astro sets it. */
+const TILE_REM = 45;
+
+/** Viewport widths are px and rem media queries answer to the browser's own default size, which a page cannot be asked for before it loads. */
+const BROWSER_REM = 16;
 
 /** Each theme's baked tile in src/assets/desk, and its average, which shows until the tile loads. */
 const DESKS = {
@@ -72,6 +77,7 @@ for (const { width, height } of NARROW) {
     // The 720px tile under 52rem, laid at the same size as the wide desk's.
     expect(background.image).toMatch(deskTile('light-720'));
     expect(background.blend).toBe('normal');
+    const TILE = TILE_REM * (await readRem(page));
     expect(background.size).toBe(`${TILE}px ${TILE}px`);
     expect(background.color).toBe(DESKS.light);
 
@@ -210,6 +216,7 @@ for (const [theme, bound] of Object.entries(SWING)) {
     await page.goto('/');
     await page.waitForTimeout(500);
 
+    const TILE = TILE_REM * (await readRem(page));
     const desk = await readDesk(page);
     const rows = desk.lightness;
     const width = rows[0].length;
@@ -376,7 +383,7 @@ test('the mat runs the full width of a phone and nothing scrolls sideways', asyn
 });
 
 /** The width from which index.astro opens a lane beside each stack for its title card. */
-const CARDS_FROM = 105 * 16;
+const CARDS_FROM = 105 * BROWSER_REM;
 
 /** Every detail's card, its stack, its boundary and its leader, in page order. */
 const readCards = (page: import('@playwright/test').Page) =>
@@ -446,7 +453,7 @@ test('a title card stands beside every detail at 1728px, alternating sides', asy
   }
 });
 
-for (const width of [CARDS_FROM - 16, 1440, 1280, 390]) {
+for (const width of [CARDS_FROM - BROWSER_REM, 1440, 1280, 390]) {
   test(`the title card is a slip under the stack at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width < 800 ? 844 : 800 });
     await page.goto('/');
@@ -536,7 +543,7 @@ const SHEETS = [
 ];
 
 /** The width from which Layout.astro has desk to spare for a folio. */
-const FOLIO_FROM = 76 * 16;
+const FOLIO_FROM = 76 * BROWSER_REM;
 
 const readFolios = (page: import('@playwright/test').Page) =>
   page.evaluate((sheets) => {
@@ -648,12 +655,12 @@ test('a folio rides along while its sheet scrolls past', async ({ page }) => {
   const after = folios[demosFolio];
   expect(after.numeral.top).toBeLessThan(before.numeral.top);
   // Stuck 1.5rem down the screen, and still on it.
-  expect(after.numeral.top).toBeCloseTo(24, 0);
+  expect(after.numeral.top).toBeCloseTo(1.5 * (await readRem(page)), 0);
   expect(after.numeral.left).toBeGreaterThanOrEqual(0);
   expect(after.numeral.right).toBeLessThan(clientWidth);
 });
 
-for (const [width, height] of [[FOLIO_FROM - 16, 900], [1024, 768], [390, 844]]) {
+for (const [width, height] of [[FOLIO_FROM - BROWSER_REM, 900], [1024, 768], [390, 844]]) {
   test(`no folio at ${width}px, where the desk has no margin to spare`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
@@ -847,7 +854,7 @@ test('the ruled sheets fit a phone without scrolling sideways', async ({ page })
     expect(sheet.layers, `${sheet.id} paper`).toBe(2);
     expect(sheet.mask, `${sheet.id} tear`).toContain('svg');
     // Wider ruling for a thumb.
-    expect(sheet.pitch, `${sheet.id} pitch`).toBeGreaterThan(32);
+    expect(sheet.pitch, `${sheet.id} pitch`).toBeGreaterThan(2 * (await readRem(page)));
     for (const height of sheet.rows) {
       expect(Math.abs(height - Math.round(height / sheet.pitch) * sheet.pitch), `${sheet.id} row`)
         .toBeLessThanOrEqual(1);
@@ -1410,11 +1417,12 @@ test("the title block's paper is the sheet's, on the sheet's phase", async ({ pa
         box.top + parseFloat(style.borderTopWidth) + y,
       ];
     };
+    const tile = 12 * parseFloat(getComputedStyle(document.documentElement).fontSize);
     const [sx, sy] = origin(sheet);
     const [bx, by] = origin(table);
     const off = (a: number, b: number) => {
-      const d = Math.abs(a - b) % 192;
-      return Math.min(d, 192 - d);
+      const d = Math.abs(a - b) % tile;
+      return Math.min(d, tile - d);
     };
     return { sheetFill: fill(sheet), blockFill: fill(table), dx: off(sx, bx), dy: off(sy, by) };
   });
