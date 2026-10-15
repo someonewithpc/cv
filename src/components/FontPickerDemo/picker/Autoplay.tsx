@@ -33,7 +33,7 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
     const el = root.current;
     if (!el) return;
 
-    // The carousel page: positioned, so cursor and toasts drawn into it ride along with it
+    // The sheet: positioned, so cursor and toasts drawn into it ride along with it
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
     setHost(page);
 

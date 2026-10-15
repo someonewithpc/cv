@@ -318,7 +318,7 @@ export function MarkerEditor({
     tabbables(editorRef.current)[0]?.focus({ preventScroll: true });
   }, [embed, focusOnOpen]);
 
-  // Horizontal / shift-wheel over the editor chrome should still move the carousel.
+  // Horizontal / shift-wheel over the editor chrome should still move the stack.
   // (The dimmed backdrop already passes through via pointer-events: none.)
   useEffect(() => {
     if (embed || !portalHost) return;
@@ -561,6 +561,6 @@ export function MarkerEditor({
 
   if (embed) return editor;
 
-  // Portal into the carousel page — avoid <dialog>/showModal (viewport top-layer + focus scroll).
+  // Portal into the sheet: avoid <dialog>/showModal (viewport top-layer + focus scroll).
   return createPortal(editor, portalHost!);
 }
