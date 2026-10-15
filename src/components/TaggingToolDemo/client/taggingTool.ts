@@ -1,5 +1,6 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, documentGate, type DemoGate } from '@/client/frontPage';
+import { createCursorMover } from '@/client/cursorMotion';
 import { describeKeys, rove } from '@/client/roving';
 import { watchHandover } from '@/client/walkthroughHandover';
 
@@ -380,13 +381,13 @@ function initHeader(tool: Tool) {
 
 const wait = (ms: number) => documentGate().wait(ms);
 
-/** Matches the cursor's left/top transition in GridLayer.astro. */
-const TRAVEL_MS = 520;
+/** The arrow's tip in the cursor's box, as GridLayer.astro draws it. */
+const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
 
 type Cursor = {
   el: HTMLElement;
   host: HTMLElement;
-  at: { x: number; y: number } | null;
+  mover: ReturnType<typeof createCursorMover>;
 };
 
 /** Moves the drawn cursor into `target`: a text field is aimed near its left edge, the
@@ -398,12 +399,12 @@ async function aim(cursor: Cursor, target: HTMLElement, atText = false) {
     x: box.left - host.left + (atText ? Math.min(box.width * 0.25, 28) : box.width / 2),
     y: box.top - host.top + box.height / 2,
   };
-  const from = cursor.at;
-  cursor.at = to;
-  cursor.el.hidden = false;
-  cursor.el.style.left = `${to.x}px`;
-  cursor.el.style.top = `${to.y}px`;
-  await wait(!from || Math.hypot(to.x - from.x, to.y - from.y) > 6 ? TRAVEL_MS : 60);
+  if (cursor.el.hidden) {
+    cursor.mover.jumpTo(to);
+    cursor.el.hidden = false;
+    return;
+  }
+  await cursor.mover.moveTo(to);
 }
 
 async function press(cursor: Cursor) {
@@ -436,7 +437,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     return;
   }
 
-  const cursor: Cursor = { el: cursorEl, host, at: null };
+  const cursor: Cursor = { el: cursorEl, host, mover: createCursorMover(cursorEl, { hotspot: CURSOR_HOTSPOT }) };
   let run = 0;
   let active = false;
   let held = false;
@@ -494,8 +495,8 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
 
   function stop() {
     run += 1;
+    cursor.mover.cancel();
     cursorEl!.hidden = true;
-    cursor.at = null;
     group.root.classList.remove('autoplay');
   }
 
