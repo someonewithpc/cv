@@ -25,6 +25,7 @@ import {
   useControlPointIndicatorRefs,
   useSyncSnappingControlPointsState,
   disabledStepCombinations,
+  markersByStep,
 } from "./markerParts";
 import type { StateType, Markers, StepsType } from "./markerParts";
 import { MarkerPart, Point } from "./markerParts/shared";
@@ -144,7 +145,7 @@ export function MarkerEditor({
   const controlPointIndicatorRefs = useControlPointIndicatorRefs();
 
   const activePart = useMemo(
-    () => (markers[state.step] as any)[state.active[state.step]] as MarkerPart,
+    () => markersByStep[state.step][state.active[state.step]],
     [state],
   );
   const activeControlPointIndicatorRefs = useMemo(
@@ -170,7 +171,7 @@ export function MarkerEditor({
     Object.entries(state.active)
       .forEach(([step, partName]) => {
         markerStepContent[step].update(
-          ((markers[step as keyof Markers] as any)[partName] as MarkerPart).Content({ space, extraProps: {} }),
+          markersByStep[step][partName].Content({ space, extraProps: {} }),
         );
       });
   }, [state, controlPointIndicatorRefs, space]);
@@ -183,7 +184,7 @@ export function MarkerEditor({
 
   // Because we bypass React, to reset them we must also do so manually, unfortunately
   const reset = useCallback(() => {
-    (markers[state.step] as any)[state.active[state.step]]?.reset();
+    markersByStep[state.step][state.active[state.step]]?.reset();
     setState((prev) => ({ ...prev, previousDecorationSnapCenter: null }));
     updateAll();
   }, [state, updateAll]);
@@ -462,14 +463,14 @@ export function MarkerEditor({
                           onMouseDown={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as any }));
+                            setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as StateType['draggedControlPoint'] }));
                           }}
                           onPointerDown={(e) => {
                             if (e.pointerType === 'mouse') return;
                             e.stopPropagation();
                             e.preventDefault();
                             e.currentTarget.ownerSVGElement?.setPointerCapture(e.pointerId);
-                            setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as any }));
+                            setState((prev) => ({ ...prev, draggedControlPoint: controlPointName as StateType['draggedControlPoint'] }));
                           }}
                           onFocus={() => keyedPoints.current.delete(controlPointName)}
                           onKeyDown={(e) => onControlPointKey(e, controlPointName)}
@@ -497,7 +498,7 @@ export function MarkerEditor({
               {(Object.keys(markers) as StepsType[])
                 .map((step) => {
                   const Configuration = markerConfigurationComponents[step][state.active[step] as string];
-                  const disabled = Object.entries(state.active).some(([activeStep, activeOption]) => (disabledStepCombinations as any)[activeStep]?.[activeOption]?.includes(step));
+                  const disabled = Object.entries(state.active).some(([activeStep, activeOption]) => (disabledStepCombinations as Record<string, Record<string, StepsType[]> | undefined>)[activeStep]?.[activeOption]?.includes(step));
                   return (
                     <Fragment key={step}>
                       <details
@@ -531,7 +532,7 @@ export function MarkerEditor({
                                   aria-selected={state.active[step] === type}
                                   data-demo-target={`editor:${step}:${type}`}
                                   tabIndex={state.active[step] === type ? 0 : -1}
-                                  onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as any } }))}
+                                  onClick={() => setState((prev) => ({ ...prev, active: { ...prev.active, [step]: type as StateType['active'][typeof step] } }))}
                                   onKeyDown={onOptionKey}
                                   title={part.title}
                                 >

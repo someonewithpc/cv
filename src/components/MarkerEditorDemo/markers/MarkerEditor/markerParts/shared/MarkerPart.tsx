@@ -21,7 +21,7 @@ export class MarkerPart {
   get defaultReactiveState() { return {}; }
   get reactiveStateStoreHandler() { return {}; }
   state!: this['default'];
-  reactiveState!: this['defaultReactiveState'] & { internal: Record<string, any>, subscribe: ((callback: Function) => (() => void)), getSnapshot: () => unknown };
+  reactiveState!: this['defaultReactiveState'] & { internal: Record<string, unknown> & { callback?: Function }, subscribe: ((callback: Function) => (() => void)), getSnapshot: () => unknown };
   controlPoints!: Record<string, Point>;
   snappingControlPoints: Point[] = [];
   container: React.RefObject<SVGSVGElement | null>;
@@ -47,7 +47,7 @@ export class MarkerPart {
         const handler = () => {
           Object.keys(that.reactiveStateStoreHandler)
             .forEach((key) => {
-              that.reactiveState[key as keyof typeof that['defaultReactiveState']] = (that.reactiveStateStoreHandler as Record<string, any>)[key];
+              (that.reactiveState as Record<string, unknown>)[key] = (that.reactiveStateStoreHandler as Record<string, unknown>)[key];
             });
         };
         const unsubscribeStore = $store.subscribe(handler);
@@ -66,7 +66,7 @@ export class MarkerPart {
 
     // A drag writes `internal` directly and commits the same value through the setter once it
     // settles, so the setter compares against what it last committed, not against `internal`.
-    const committed: Record<string, any> = { ...this.defaultReactiveState };
+    const committed: Record<string, unknown> = { ...this.defaultReactiveState };
 
     Object.defineProperties(
       this.reactiveState,
@@ -74,13 +74,13 @@ export class MarkerPart {
         Object.keys(this.defaultReactiveState).map((key) => [
           key,
           {
-            get: () => this.reactiveState.internal[key],
-            set: (val: any) => {
+            get: () => (this.reactiveState.internal as Record<string, unknown>)[key],
+            set: (val: unknown) => {
               // The store handler writes every key on every dispatch; only a change is
               // worth a new snapshot, and the re-render of the whole editor it costs.
               if (Object.is(committed[key], val)) return;
               committed[key] = val;
-              this.reactiveState.internal[key] = val;
+              (this.reactiveState.internal as Record<string, unknown>)[key] = val;
               this.reactiveState.internal.callback?.();
             },
             enumerable: true,
@@ -140,7 +140,7 @@ export class MarkerPart {
     to.y = value.y + (distance - dot) * normal.y;
   }
 
-  mergeControlPointDescriptors<Base extends Record<string, any>, Self extends Record<string, any>>(base: Base, self: Self): Base & Self {
+  mergeControlPointDescriptors<Base extends object, Self extends object>(base: Base, self: Self): Base & Self {
     const ret = {};
     const selfKeys = Object.keys(self);
     const parentDescriptor = Object.fromEntries(
@@ -173,7 +173,7 @@ export class MarkerPart {
                 (name) => !Object.keys(this.reactiveStateStoreHandler).includes(name)
               ).map((key) => [
                 key,
-                (this.reactiveState as any)[key],
+                (this.reactiveState as Record<string, unknown>)[key],
               ]),
           ),
         })

@@ -111,6 +111,8 @@ export const markers = {
 };
 
 export type Markers = typeof markers;
+
+export const markersByStep: Record<string, Record<string, MarkerPart>> = markers;
 export type StepsType = keyof Markers;
 export type ControlPointNamesTypeFor<T> = T[keyof T] extends infer M
                                  ? M extends { controlPoints: infer CP }
@@ -237,9 +239,9 @@ export function useSyncSnappingControlPointsState(state: StateType) {
           ? []
           : Object.entries(state.active)
               .filter(([otherStep, otherPart]) => otherStep !== step && otherPart !== part)
-              .flatMap(([otherStep, otherPart]) => Object.values((markers[otherStep as keyof typeof markers] as any)[otherPart].controlPoints));
+              .flatMap(([otherStep, otherPart]) => Object.values(markersByStep[otherStep][otherPart].controlPoints));
 
-        (markers[step as keyof typeof markers] as any)[part].setSnappingControlPoints(controlPoints);
+        markersByStep[step][part].setSnappingControlPoints(controlPoints);
       });
   }, [state.active, state.snappingDisabled]);
 }
@@ -272,10 +274,10 @@ export const markerThumbnailComponents: Record<string, Record<string, React.Comp
   ),
 );
 
-// @ts-ignore
-if (typeof module !== 'undefined' && (module as any).hot) {
-  // @ts-ignore
-  (module as any).hot.accept(
+declare const module: { hot?: { accept(paths: string[], callback: (paths: string[]) => void): void, decline(): void } } | undefined;
+
+if (typeof module !== 'undefined' && module.hot) {
+  module.hot.accept(
     [
       "./decoration/EmptyMarkerDecoration",
       "./decoration/IconMarkerDecoration",
@@ -301,7 +303,7 @@ if (typeof module !== 'undefined' && (module as any).hot) {
     ],
     (paths: string[]) => {
       paths.forEach((path) => {
-        const [, step, partName] = path.match(/.*\/markerParts\/([^/]+)\/([^/]+).tsx?/) as [any, keyof typeof markers, string];
+        const [, step, partName] = path.match(/.*\/markerParts\/([^/]+)\/([^/]+).tsx?/) as [string, keyof typeof markers, string];
         const [name, previousPart] = Object.entries(markers[step]).find(([, part]) => part.kind === partName) as [string, MarkerPart];
 
         const newPart = new classes[partName as keyof typeof classes](svgRef);
@@ -329,11 +331,10 @@ if (typeof module !== 'undefined' && (module as any).hot) {
         cachedReactiveStateSnapshot = makePartReactiveStateSnapshot();
         newPart.reactiveState.internal.callback?.();
 
-        (markers[step] as any)[name] = newPart;
+        markersByStep[step][name] = newPart;
       });
     },
   );
 
-  // @ts-ignore And for this module too
   module.hot.decline();
 }

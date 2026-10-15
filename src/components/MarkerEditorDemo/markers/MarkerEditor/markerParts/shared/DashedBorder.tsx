@@ -29,13 +29,12 @@ export class DashedBorder extends SolidBorder {
     this.commitDash.flush();
   };
 
-  constructor(...args: any[]) {
-    // @ts-ignore
+  constructor(...args: ConstructorParameters<typeof SolidBorder>) {
     super(...args);
 
     this.commitDash = debounce(() => {
-      this.reactiveState.dashLength = this.reactiveState.internal.dashLength;
-      this.reactiveState.gapLength = this.reactiveState.internal.gapLength;
+      this.reactiveState.dashLength = this.reactiveState.internal.dashLength as number;
+      this.reactiveState.gapLength = this.reactiveState.internal.gapLength as number;
     }, CONTROL_COMMIT_MS);
   }
 

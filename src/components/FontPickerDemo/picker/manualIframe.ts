@@ -69,7 +69,7 @@ function unseen(sources: Source[], seen: Set<string>): Source[] {
   return fresh;
 }
 
-function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc: Document, signal: AbortSignal, seen: Set<string>): Promise<any> {
+function processStylesheetResponses(responses: (FetchedStylesheet | null)[], doc: Document, signal: AbortSignal, seen: Set<string>): Promise<unknown> {
   // Cached sheets answer at once, so an aborted query would otherwise run every round to the end
   signal.throwIfAborted();
   return Promise.all(
