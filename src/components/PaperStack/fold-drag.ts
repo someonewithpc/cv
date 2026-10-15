@@ -88,7 +88,7 @@ const FOLD_CANCEL_GRACE = 48;
 // its limit; a hand pulling the wrong way from the start runs the tip toward the near-zero
 // singularity in foldSizeFromTip long before the pin ever sees it, so this reads the pointer's
 // own travel from the grab instead of the fold's geometry. A plain fraction of the page diagonal
-// looked like the natural scale at first, but the resting dog-ear that this measures against is
+// would not do, because the resting dog-ear that this measures against is
 // a fixed size in cm (see FOLD_REVEAL_END, $fold-rest-x/-y in index.astro), not a share of the
 // page, so the singularity sits the same few pixels out from the grab on a phone sheet as on a
 // wide desktop one — a diagonal-scaled margin would let a big sheet wander much further into the
@@ -117,7 +117,7 @@ const BACK_APPROACH_PULL = 0.105;
 // opposite corner, measured from the grab along the pull. Reading it off the pointer's own travel
 // rather than off where the fold has got to is what makes the gesture answer to the hand — the
 // unfold moves the corner at twice the pointer, so a commit staked on the fold's geometry (the
-// crease receding past a point a third of the way in, as it was) took a drag half way to the
+// crease receding past a point a third of the way in) would take a drag half way to the
 // corner to satisfy, twice what it looks like it is asking for. As a share of the whole
 // gesture — the pull that brings the page over plus the unfold that lays it flat — a quarter of
 // the diagonal sits a little inside where a forward drag's own commit falls in its, so fetching a
@@ -1123,10 +1123,6 @@ const syncInert = (stack: HTMLElement): void => {
   stack.dispatchEvent(new CustomEvent('paper-flip'));
 };
 
-// The flap paints the back of the sheet in the page's own color, but as a sibling of the page
-// content it can't see background definitions scoped inside it (e.g. a blueprint page
-// redefining its surface variable), so the resolved color is lifted onto the sheet for it.
-
 // [data-paper-flipped] means there is a previous page to go back to — equivalently, the stack
 // isn't in its original order (the originally-first page is always the first DOM child, since
 // flips only renumber --page-index, never reorder the DOM). It gates the folded-back top-left
@@ -1409,12 +1405,6 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   return glide;
 };
 
-// The first half of committing a flip: every page's --page-index shifts down one (the splay
-// rotation and paint order both follow it, with the rotate transition re-splaying the pages
-// around the shared pin), and the paper-front class plus the clip elements move to the new front
-// page — handing the class over restarts its fold-reveal animations. The fold itself stays
-// behind on the flipped page so finishFlip can fold it back down behind the stack.
-
 // A stack has one flap, and a committed flip keeps it on the outgoing sheet to the very end,
 // painting that sheet folding away behind the stack. So the page taking the front got its corner
 // cut on time but had nothing folded over the cut — a notch showing the page below rather than a
@@ -1450,8 +1440,8 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
 
   const next = pages.find((page) => pageIndex(page) === 2)!;
   // restartTurn's forced reflow is the last flush this function makes: after it come the moves
-  // and the classes, and the whole restack costs one document-wide resolve instead of the three
-  // it used to (the page's :has() rules put every element back in play on each one).
+  // and the classes, and the whole restack costs one document-wide resolve rather than three
+  // (the page's :has() rules put every element back in play on each one).
 
   // The strip behind the front crease follows this page up to the pile on --turn-ease (see
   // index.astro): back to 0 without a transition, then eased to 1 in the same recalc that
@@ -1468,8 +1458,8 @@ const restack = (sheet: HTMLElement, fold: HTMLElement): void => {
   stack.style.setProperty('--turn-ease', '1');
   sheet.classList.remove('paper-front');
   // index.astro holds the reveal back half a second so the dog-ear draws itself once the page
-  // has loaded, and restarting the animation here brought that wait along: the flip landed on a
-  // front page with a square corner, and the dog-ear only turned up once everything else had
+  // has loaded, and restarting the animation here would bring that wait along: the flip would land on a
+  // front page with a square corner, and the dog-ear would only turn up once everything else had
   // stopped moving. It has been introduced by now, so start it at once and let it curl up while
   // the sheet it replaces folds away behind the stack. The pulse keeps its own gap after it.
   next.style.animationDelay = '0s';
@@ -1696,7 +1686,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
     // The corner cut and the drift are read at the top of the frame, while style is still clean
     // from the last paint, then everything writes — same discipline as the other per-frame loops.
     // The drift especially: the frame that restacks writes a dozen classes, attributes and moved
-    // nodes, and reading it afterwards (as the landing call below used to) made that one frame
+    // nodes, and reading it afterwards would make that one frame
     // resolve the whole document twice over.
     const { back: backCut, drift } = currentLanding(sheet);
     if (p < d1) {
@@ -2467,7 +2457,7 @@ export function initPaperStackFold(): void {
 
   // After every other script on the page, not as soon as this one runs. A module script runs
   // before DOMContentLoaded, and this one is hoisted ahead of the drawing stack's, so the
-  // observers above used to be the first ones the browser created. It delivers resize
+  // observers above would be the first ones the browser creates. It delivers resize
   // observations in that order, and these observers write: --fold-page-w/-h on every page,
   // which dirtied the style of the whole document before the annotation observer got its turn
   // to read client rects, at about 40ms of forced style resolution on every resize step. Created
