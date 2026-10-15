@@ -3,8 +3,8 @@
  * The catalog card in the Add tool's "Select an Object" sidebar, which is where Space
  * Builder shows an object's variants. The picker itself — the style carousel, its pips and
  * sliding dot, and the seats and size rows — is the object variants demo's, reused here:
- * the markup follows VariantsDemo/Card.astro and the look is that demo's card.scss, pulled
- * in once by CatalogPanel.vue. What stays this demo's own is the scene wiring: drag to
+ * the markup follows VariantsDemo/Card.astro and the look is that demo's card.scss, which
+ * Card.astro puts on the page. What stays this demo's own is the scene wiring: drag to
  * place, double-click to Build, and the walkthrough's aim points.
  */
 import { computed, nextTick, ref, useId, watch } from 'vue';
