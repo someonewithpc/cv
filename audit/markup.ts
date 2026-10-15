@@ -15,8 +15,8 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const dist = join(root, 'dist/client');
 
 // html-validate is the second HTML checker, the one npm run test:e2e runs. It is pure JS
-// and four times faster than Nu, and it never looks inside <svg>, which is where both of
-// the duplicate ids this branch fixes were. The rules switched off below are the ones Nu
+// and four times faster than Nu, and it never looks inside <svg>, so duplicate ids there
+// go unseen by it. The rules switched off below are the ones Nu
 // has no opinion on either: house style, or accessibility advice that a11y.spec.ts covers
 // with axe against the rendered page.
 const htmlConfig: ConfigData = {
@@ -159,8 +159,7 @@ const runNu = async (files: string[]): Promise<NuMessage[]> => {
 };
 
 export const markupTests = ({ html }: { html: 'nu' | 'html-validate' }): void => {
-  // Both checks read the production build the web server put there; a reused server
-  // leaves nothing to read.
+  // Both checks read dist/client, which is the previous build when the web server is reused.
   test.beforeEach(() => {
     test.skip(!existsSync(dist), 'no build to check — run npm run build');
   });
