@@ -6,6 +6,10 @@ import { elementCentre } from '@/client/cursorMotion';
 import { documentGate } from '@/client/frontPage';
 
 export const CURSOR_TRAVEL_MS = 560;
+/** How far below the sheet the cursor first appears. */
+export const ENTRANCE_BELOW_SHEET_PX = 80;
+/** A range input's thumb radius: the track runs this far inside the input at each end. */
+export const THUMB_RADIUS_PX = 8;
 // The first glide after the cursor appears brings it in from beyond the sheet: a longer way,
 // taken unhurried, straight to whatever the scene reaches for first
 const ARRIVAL_MS = 2000;
@@ -36,7 +40,7 @@ export function setNativeValue(el: HTMLInputElement | HTMLSelectElement, value: 
 const thumbPoint = (input: HTMLInputElement, value: number, rect = input.getBoundingClientRect()) => {
   const min = Number(input.min), max = Number(input.max);
   const t = max === min ? 0 : (value - min) / (max - min);
-  return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
+  return { x: rect.left + THUMB_RADIUS_PX + (rect.width - 2 * THUMB_RADIUS_PX) * t, y: rect.top + rect.height / 2 };
 };
 
 // A press and its release, as the mouse events a real one raises, at the drawn cursor's hot

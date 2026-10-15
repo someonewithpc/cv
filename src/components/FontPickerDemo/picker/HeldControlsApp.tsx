@@ -8,7 +8,15 @@ import { watchPageActive } from '@/client/frontPage';
 
 import { DrawnCursor, useDrawnCursor } from './DrawnCursor';
 import { Pinned } from './Pinned';
-import { type CursorState, nextFrame, Playthrough, type Run, setNativeValue } from './playthrough';
+import {
+  ENTRANCE_BELOW_SHEET_PX,
+  type CursorState,
+  nextFrame,
+  Playthrough,
+  type Run,
+  setNativeValue,
+  THUMB_RADIUS_PX,
+} from './playthrough';
 
 import './EditStyle.scss';
 import './HeldControls.scss';
@@ -142,7 +150,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     // Where the thumb sits for a value: the track is inset by the thumb's radius
     const thumb = (input: HTMLInputElement, value = Number(input.value), rect = input.getBoundingClientRect()) => {
       const t = (value - Number(input.min)) / (Number(input.max) - Number(input.min));
-      return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
+      return { x: rect.left + THUMB_RADIUS_PX + (rect.width - 2 * THUMB_RADIUS_PX) * t, y: rect.top + rect.height / 2 };
     };
 
     // A drag runs along the track while the hand keeps the height it grabbed at, which is the
@@ -252,7 +260,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       () => {},
       async (run) => {
         const sheet = pageRect();
-        run.appear({ x: sheet.left + sheet.width * 0.2, y: sheet.bottom + 80 });
+        run.appear({ x: sheet.left + sheet.width * 0.2, y: sheet.bottom + ENTRANCE_BELOW_SHEET_PX });
         await run.wait(300);
       },
     );
