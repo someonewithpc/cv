@@ -292,7 +292,21 @@ test.describe('without JavaScript', () => {
     expect(await overlays.count()).toBeGreaterThanOrEqual(5);
     await expect(page.locator('svg[data-annotations="js"]')).toHaveCount(0);
     for (const overlay of await overlays.all()) {
-      expect(await overlay.locator('[data-tip] path').count()).toBeGreaterThan(0);
+      const callouts = await overlay.locator('[data-tip]').evaluateAll((groups, svg) => {
+        const frame = svg.getBoundingClientRect();
+        return groups.filter((group) => getComputedStyle(group).display !== 'none').map((group) => {
+          const path = group.querySelector('path')!.getBoundingClientRect();
+          const label = group.querySelector('text')!.getBoundingClientRect();
+          const inside = (b: DOMRect) =>
+            b.left >= frame.left - 1 && b.right <= frame.right + 1 && b.top >= frame.top - 1 && b.bottom <= frame.bottom + 1;
+          return { drawn: path.width + path.height > 0 && label.width > 0, inside: inside(path) && inside(label) };
+        });
+      }, await overlay.elementHandle());
+      expect(callouts.length).toBeGreaterThan(0);
+      for (const callout of callouts) {
+        expect(callout.drawn, 'a callout has no drawn arrow or label').toBe(true);
+        expect(callout.inside, 'a callout is placed outside its overlay').toBe(true);
+      }
     }
   });
 });
