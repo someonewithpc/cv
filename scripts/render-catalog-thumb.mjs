@@ -248,16 +248,21 @@ async function main() {
     stderr += chunk.toString();
   });
 
-  const result = await Promise.race([
-    receivePromise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`thumb timeout\n${stderr.slice(-800)}`)), 30000);
-    }),
-  ]);
-
-  chrome.kill('SIGKILL');
-  await new Promise((resolve) => server.close(resolve));
-  await rm(profile, { recursive: true, force: true });
+  let result;
+  let timer;
+  try {
+    result = await Promise.race([
+      receivePromise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`thumb timeout\n${stderr.slice(-800)}`)), 30000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+    chrome.kill('SIGKILL');
+    await new Promise((resolve) => server.close(resolve));
+    await rm(profile, { recursive: true, force: true });
+  }
 
   if (result.error) throw new Error(result.error);
   if (!result.dataUrl?.startsWith('data:image/webp;base64,')) {
