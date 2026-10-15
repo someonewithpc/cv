@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex } from './support/paperStack';
+import { openCatalog, waitForSceneReady } from './support/spaceBuilder';
 import { expect, test } from './support/timeScale';
 
 /** Real, loadable catalog objects; everything else in the catalog is a placeholder SVG. */
@@ -13,29 +14,6 @@ function modelFile(url: string) {
 
 function spaceBuilderStack(page: Page) {
   return demoStack(page, 'Space Builder · Add Tool');
-}
-
-async function waitForSceneReady(front: Locator): Promise<Locator> {
-  const island = await waitForIslandMounted(front);
-  const app = island.locator('[data-ready]');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
-  return app;
-}
-
-async function openCatalog(page: Page): Promise<Locator> {
-  const stack = spaceBuilderStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const app = await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
-
-  // Focusing the root takes the demo over from its auto-play loop (MockSceneApp.vue's
-  // `@focus="yieldToUser"`), which otherwise keeps toggling the panel underneath us.
-  await app.focus();
-  const addObject = app.getByRole('button', { name: 'Add object' });
-  if ((await app.getAttribute('data-panel')) !== 'catalog') {
-    await addObject.click();
-  }
-  await expect(app).toHaveAttribute('data-panel', 'catalog');
-  return app;
 }
 
 test('the catalog offers the chair, side chair and banquet table as real objects', async ({ page }) => {
