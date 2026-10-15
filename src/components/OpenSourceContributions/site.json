@@ -53,6 +53,22 @@
       "label": "Merged",
       "items": [
         {
+          "repository": "biomejs/biome",
+          "title": "fix(html): lex processing instructions in their own context",
+          "description": "Biome's HTML lexer read the `?` before `>` as part of a name, so `<?xml version=\"1.0\"?>` never closed and `astro check` rejected an SVG component that starts with an XML declaration ([withastro/compiler-rs#199](https://github.com/withastro/compiler-rs/issues/199)). Opened [#12159](https://github.com/biomejs/biome/pull/12159) with the fix and fixtures for the plain, Astro, Vue and Angular lexers. The maintainer landed a reworked version with me as co-author.",
+          "url": "https://github.com/biomejs/biome/pull/12292",
+          "number": 12292,
+          "updatedAt": "2026-10-13T06:24:59Z",
+          "stats": {
+            "additions": 2074,
+            "deletions": 8,
+            "changed_files": 24
+          },
+          "tags": [
+            "rust"
+          ]
+        },
+        {
           "repository": "withastro/compiler-rs",
           "title": "Fix wrong handling of combinators inside `:global()`",
           "description": "Reworked Astro's `compiler_rs`'s `scope_css` pass so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path",
