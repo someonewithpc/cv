@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PNG } from 'playwright-core/lib/utilsBundle';
+import sharp from 'sharp';
 
 /**
  * The chain-line boundary round each demo (Callout.astro `.callout-view`) is a repeating
@@ -37,10 +37,12 @@ for (const theme of THEMES) {
 
     // The view may rest at a fractional offset, so the line can fall on any of three rows.
     const box = (await view.boundingBox())!;
-    const shot = PNG.sync.read(
+    const { data, info } = await sharp(
       await page.screenshot({ clip: { x: box.x, y: Math.floor(box.y) - 1, width: 2 * REM + 1, height: 3 }, animations: 'disabled' }),
-    );
-    const at = (x: number, y: number) => [...shot.data.subarray((y * shot.width + x) * 4, (y * shot.width + x) * 4 + 3)];
+    )
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const at = (x: number, y: number) => [...data.subarray((y * info.width + x) * info.channels, (y * info.width + x) * info.channels + 3)];
     const distance = (a: number[], b: number[]) => Math.max(...a.map((channel, i) => Math.abs(channel - b[i])));
     // The gaps are clear, so the cutting mat's ruling shows through them: a pixel is ink when it
     // is nearer the dash's colour than the gap's.
