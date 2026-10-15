@@ -54,11 +54,11 @@ async function fetchStylesheet(source: { href: string }, signal: AbortSignal): P
 
 type Source = { href: string };
 
-// Each sheet is inlined once, however many @imports name it: two sheets importing the same
-// fonts.css used to inline it twice and build every face in it twice, and a sheet that
-// imported itself, or two that imported each other, was inlined again on every turn of the
-// microtask loop until the tab hung (the cache answers repeats with a resolved promise, so
-// the signal never got a say).
+// Each sheet is inlined once, however many @imports name it. Two sheets importing the same
+// fonts.css would otherwise build every face in it twice, and a sheet that imports itself, or
+// two that import each other, would be inlined again on every turn of the microtask loop until
+// the tab hangs (the cache answers repeats with a resolved promise, so the signal never gets a
+// say).
 function unseen(sources: Source[], seen: Set<string>): Source[] {
   const fresh = sources.filter((source) => {
     if (seen.has(source.href)) return false;
