@@ -55,9 +55,7 @@ test('a theme pick fades in, without the wipe', async ({ page }) => {
 
 test('a demo waits paused, plays at full motion on play, and pause puts it back', async ({ page }) => {
   await page.goto('/');
-  const stack = page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'GNU social · Event Dispatch' }),
-  });
+  const stack = demoStack(page, 'GNU social · Event Dispatch');
   await stack.scrollIntoViewIfNeeded();
   const sheet = frontPage(stack, await frontPageIndex(stack));
   const bus = sheet.locator('.event-bus[data-live]');
