@@ -187,15 +187,16 @@ const rows = {
   width: 100%;
   /* Room inside the artwork box for the callout labels, above and below the panel, so
      they never sit on the headline or the footnote. The callout lengths scale with the
-     artwork's short side, and so does this. */
-  padding-block: 3em 2em;
+     artwork's short side, and so does this. The top is the room the panel's old header
+     took, which the callout labels now stand in. */
+  padding-block: 5.875em 2em;
 
   @include sheet-band(narrow) {
-    padding-block: 2.5em 1em;
+    padding-block: 4.875em 1em;
   }
 
   @container technical-drawing (orientation: portrait) {
-    padding-block: 4.5em 3em;
+    padding-block: 7.375em 3em;
   }
   font-family: var(--font-poppins), system-ui, sans-serif;
   /* A short landscape sheet has to hold the grid, the callouts and the title block's
