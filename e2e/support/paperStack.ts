@@ -146,6 +146,14 @@ export async function settledAfter(stack: Locator, act: () => Promise<void>, sta
       })
       .toBe(1);
   }
+  await transitionsRunOut(stack);
+}
+
+/**
+ * Waits for the stack's own transitions to run out: the pile's 250ms drift, the corner cut's
+ * 300ms and the new front page's dog-ear reveal, which go on after a turn has landed.
+ */
+export async function transitionsRunOut(stack: Locator): Promise<void> {
   await expect
     .poll(() => stack.evaluate((el) => {
       const own = new Set<Element>([el, ...el.children]);
