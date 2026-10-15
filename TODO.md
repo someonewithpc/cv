@@ -321,4 +321,4 @@
 - [x] Tag the timing budgets @perf so a loaded run can leave them out: the marker editor key turn (900 and 2000 ms) and the resize layout cost (0.5 s) (#220 E24) (#483)
 - [x] Require the firefox-noscript row to move before the spec reads a settled snap (#220 E25) (#486)
 - [x] Wait for each arrow key to render before the next key in the Paper Stack no-script dots spec (#493)
-- [ ] Wait for mount, not 2.5 s per stack, in the title block overflow spec (#220 E22)
+- [x] Wait for mount, not 2.5 s per stack, in the title block overflow spec (#220 E22) (#478)
