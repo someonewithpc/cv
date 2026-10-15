@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { frontDeck, frontPage, frontPageIndex, frontPageName, swipeStack, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontDeck, frontPage, frontPageIndex, frontPageName, swipeStack, waitForIslandMounted } from './support/paperStack';
 
 const PAGES = ['Library Search & Relevance', 'Relevance Scoring', 'Filters', 'Generated SQL'];
 
@@ -9,10 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function librarySearchStack(page: Page) {
-  // By title, not by position: the demos run gains stacks over time.
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'Library Search & Relevance' }),
-  });
+  return demoStack(page, 'Library Search & Relevance');
 }
 
 async function mountedTool(page: Page) {
