@@ -18,6 +18,7 @@
 // scaling it barely shrinks the type, and sets them three over two, the lower two in the gaps
 // of the upper row, so their lines drop between boxes and never through one.
 
+import { escapeAttribute } from '@/escapeHtml';
 import type { PlaygroundConfig } from './config';
 import { dependenciesOf, SHARED_SERVICES, type ComposeFile, type Service } from './compose';
 
@@ -72,7 +73,6 @@ const GATE_CLEARANCE = 60;
 
 type Condition = 'service_healthy' | 'service_started' | 'service_completed_successfully' | 'listed';
 
-const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 function conditionOf(service: Service, dependency: string): Condition {
   const dependsOn = service.depends_on;
@@ -152,12 +152,12 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     const lines = linesOf(kind, id, emitted ? subs : ['not emitted']);
     let baseline = y + 12.5;
     const text = lines.map((line) => {
-      const markup = `<text class="${line.kind}" x="${x}" y="${baseline}">${escape(line.text)}</text>`;
+      const markup = `<text class="${line.kind}" x="${x}" y="${baseline}">${escapeAttribute(line.text)}</text>`;
       baseline += LINE[line.kind];
       return markup;
     });
-    const companions = also.length ? ` data-also="${escape(also.join(' '))}"` : '';
-    return `<g class="${classes}" data-service="${escape(id)}"${companions}>`
+    const companions = also.length ? ` data-also="${escapeAttribute(also.join(' '))}"` : '';
+    return `<g class="${classes}" data-service="${escapeAttribute(id)}"${companions}>`
       + `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${height}" rx="3" />`
       + text.join('')
       + '</g>';
@@ -251,7 +251,7 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
     const curve = `M${sx} ${installBottom} C${sx} ${bend} ${ex} ${bend} ${ex} ${slot.row ? m.data : m.data - 2}`;
     const d = slot.row ? `${curve} V${slot.y - 2}` : curve;
     const head = marker('arrow');
-    links.push(`<path class="edge link ${condition}" data-from="${escape(from)}" data-to="${escape(to)}" d="${d}" marker-end="url(#${head})" />`);
+    links.push(`<path class="edge link ${condition}" data-from="${escapeAttribute(from)}" data-to="${escapeAttribute(to)}" d="${d}" marker-end="url(#${head})" />`);
   });
 
   slots.forEach((slot, id) => {
@@ -286,8 +286,8 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
   const titleId = `fediverse-graph-title-${layout}`;
   const descId = `fediverse-graph-desc-${layout}`;
   return `<svg class="service-graph ${layout}" viewBox="0 0 ${m.w} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId}" aria-describedby="${descId}">`
-    + `<title id="${titleId}">${escape(title(config, compose))}</title>`
-    + `<desc id="${descId}">${escape(describe(config, compose))}</desc>`
+    + `<title id="${titleId}">${escapeAttribute(title(config, compose))}</title>`
+    + `<desc id="${descId}">${escapeAttribute(describe(config, compose))}</desc>`
     + `<defs>${arrow('arrow')}${arrow('gate')}</defs>`
     + `<g class="wires">${wires.join('')}</g>`
     + `<g class="links">${links.join('')}</g>`

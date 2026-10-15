@@ -5,6 +5,7 @@
  * blocks share it.
  */
 import { createHighlighter, type ThemeRegistration } from 'shiki';
+import { escapeHtml } from '@/escapeHtml';
 
 export type CodeLang = 'ts' | 'css' | 'html' | 'xml' | 'php' | 'sql' | 'ruby' | 'shellscript' | 'yaml' | 'emacs-lisp' | 'twig';
 
@@ -48,7 +49,6 @@ const theme: ThemeRegistration = {
 
 const highlighter = await createHighlighter({ themes: [theme], langs: ['ts', 'css', 'html', 'xml', 'php', 'sql', 'ruby', 'shellscript', 'yaml', 'emacs-lisp', 'twig'] });
 
-export const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const span = (text: string, kind?: string) => (kind ? `<span class="tok-${kind}">${escapeHtml(text)}</span>` : escapeHtml(text));
 
