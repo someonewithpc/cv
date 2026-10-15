@@ -103,6 +103,25 @@ test('a stack far down the page reveals its dog-ear only once its corner is on s
   expect(shown.flap).toBeGreaterThan(70);
 });
 
+test('a stack the reader scrolls back up to reveals its dog-ear as its bottom edge comes in at the top', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/');
+  const stack = page.locator('article.technical-drawing-stack').nth(-2);
+
+  await stack.evaluate((el) => {
+    const bottom = el.getBoundingClientRect().bottom + window.scrollY;
+    window.scrollTo({ top: bottom + 200, behavior: 'instant' });
+  });
+  await page.waitForTimeout(1500);
+  expect((await foldState(stack)).reveal).toBe('paused at 0');
+
+  await stack.evaluate((el) => {
+    const bottom = el.getBoundingClientRect().bottom + window.scrollY;
+    window.scrollTo({ top: bottom - 40, behavior: 'instant' });
+  });
+  await expect.poll(async () => (await foldState(stack)).reveal, { timeout: 3_000 }).toBe('finished at 1000');
+});
+
 type TurnFrame = { page: number, progress: number, pulses: number };
 
 test('a page turned to the front by key draws its dog-ear with no pulse under it', async ({ page }) => {

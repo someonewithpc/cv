@@ -1301,18 +1301,29 @@ const syncPulse = (stack: HTMLElement): void => {
 
 // index.astro holds each stack's reveal, and the pulse after it, until the stack's bottom edge
 // is on screen: the dog-ear sits in the bottom-right corner, so a stack that has only just come
-// up over the bottom of the window has not shown it yet. From below, the edge comes into view as
-// the stack's visible share either reaches 1 or, on a stack taller than the window, starts to
-// drop; the thresholds catch it within a twentieth of the stack's height. From above, the
-// bottom edge is the first thing on screen. The entry carries both rectangles, so nothing here
-// reads layout. Once a stack has revealed it is left alone: the reveal runs once per page load.
-const REVEAL_THRESHOLDS = Array.from({ length: 21 }, (_, i) => i / 20);
-
-let revealObserver: IntersectionObserver | undefined;
+// up over the bottom of the window has not shown it yet. Two observers with one threshold each
+// catch the edge whichever way it comes. From below, the first one's root reaches far up above
+// the window, so a stack is wholly inside it exactly when its bottom edge has come up past the
+// bottom of the window, however tall the stack is. Its 1px bottom margin is the same pixel of
+// slack the check allows, for a bottom edge on a fractional pixel. From above, the bottom edge is the first
+// thing on screen, so the second one, on the window itself, sees it come in. A stack already
+// above the window when the page loads is wholly inside the first root too, which is why both
+// check the edge against the top of the window. The entry carries both rectangles, so nothing
+// here reads layout. Once a stack has revealed it is left alone: the reveal runs once per page
+// load.
+let revealObservers: IntersectionObserver[] | undefined;
 
 const revealStack = (stack: HTMLElement): void => {
-  revealObserver!.unobserve(stack);
+  for (const observer of revealObservers!) observer.unobserve(stack);
   stack.style.setProperty('--fold-reveal', 'running');
+};
+
+const revealOnScreen = (entries: IntersectionObserverEntry[]): void => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting || !entry.rootBounds) continue;
+    const { bottom } = entry.boundingClientRect;
+    if (bottom >= 0 && bottom <= entry.rootBounds.bottom + 1) revealStack(entry.target as HTMLElement);
+  }
 };
 
 // The pulse comes in once the reveal is over (see initial-fold-reveal in index.astro for why
@@ -1325,15 +1336,11 @@ const releasePulse = (stack: HTMLElement): void => {
 };
 
 const watchStackReveal = (stack: HTMLElement): void => {
-  revealObserver ??= new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting || !entry.rootBounds) continue;
-      if (entry.boundingClientRect.bottom <= entry.rootBounds.bottom + 1) {
-        revealStack(entry.target as HTMLElement);
-      }
-    }
-  }, { threshold: REVEAL_THRESHOLDS });
-  revealObserver.observe(stack);
+  revealObservers ??= [
+    new IntersectionObserver(revealOnScreen, { threshold: 1, rootMargin: '10000% 0px 1px 0px' }),
+    new IntersectionObserver(revealOnScreen, { threshold: 0 }),
+  ];
+  for (const observer of revealObservers) observer.observe(stack);
   stack.addEventListener('animationend', (event) => {
     if (event.animationName === 'initial-fold-reveal') releasePulse(stack);
   });
