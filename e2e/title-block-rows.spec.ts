@@ -95,6 +95,9 @@ test('the title block sheds a cell only where the artwork leaves no room for it'
   const crowded: string[] = [];
   for (const width of SHED_WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
+    // The fit waits for the size to settle, and the block stands on the ladder until then.
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await expect(page.locator(':root')).not.toHaveAttribute('data-resizing', '');
     await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(done)))));
 
     const found = await page.locator('section > table').evaluateAll((tables, cells) => tables.flatMap((table, index) => {
