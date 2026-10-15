@@ -163,13 +163,7 @@ function sheetMargin(sheet: HTMLElement) {
   return value;
 }
 
-// Drawn into the sheet beside the auto-play's cursor, so the cursor stays on top of it; the
-// sidebar's own overflow would clip a list left inside it. Like the native picker it opens
-// upward when the room above is the larger, and scrolls inside whatever room that is
-function DemoPickerList(
-  { select, entries, hovered }:
-  { select: HTMLSelectElement, entries: { key: string, label: string, style: CSSProperties }[], hovered: number | null }
-) {
+function measureList(select: HTMLSelectElement, count: number) {
   const rect = select.getBoundingClientRect();
   const sheet = sheetOf(select).getBoundingClientRect();
   const fontSize = parseFloat(getComputedStyle(select).fontSize);
@@ -177,19 +171,33 @@ function DemoPickerList(
   const inset = 2 * sheetMargin(sheetOf(select));
   const below = sheet.bottom - rect.bottom - inset;
   const above = rect.top - sheet.top - inset;
-  const downward = below >= entries.length * fontSize * 2 || below >= above;
+  const downward = below >= count * fontSize * 2 || below >= above;
+  const style: CSSProperties = {
+    left: rect.left - sheet.left,
+    width: rect.width,
+    fontSize,
+    maxHeight: downward ? below : above,
+    ...(downward ? { top: rect.bottom - sheet.top } : { bottom: sheet.bottom - rect.top }),
+  };
+  return { downward, style };
+}
+
+// Drawn into the sheet beside the auto-play's cursor, so the cursor stays on top of it; the
+// sidebar's own overflow would clip a list left inside it. Like the native picker it opens
+// upward when the room above is the larger, and scrolls inside whatever room that is
+function DemoPickerList(
+  { select, entries, hovered }:
+  { select: HTMLSelectElement, entries: { key: string, label: string, style: CSSProperties }[], hovered: number | null }
+) {
+  // The list mounts when it opens and the select stays put while it is open, so one read serves
+  // every hovered step
+  const [layout] = useState(() => measureList(select, entries.length));
 
   return (
     <ul
-      className={cx('font-picker-demo-picker', { 'is-upward': !downward })}
+      className={cx('font-picker-demo-picker', { 'is-upward': !layout.downward })}
       aria-hidden="true"
-      style={{
-        left: rect.left - sheet.left,
-        width: rect.width,
-        fontSize,
-        maxHeight: downward ? below : above,
-        ...(downward ? { top: rect.bottom - sheet.top } : { bottom: sheet.bottom - rect.top }),
-      }}
+      style={layout.style}
     >
       {entries.map((entry, index) => (
         <li
