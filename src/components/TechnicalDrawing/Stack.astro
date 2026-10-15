@@ -54,7 +54,7 @@ const arrow = {
 };
 ---
 
-<div class="technical-drawing-frame">
+<div class="technical-drawing-frame" data-drawing-frame>
   <PaperStack as="article" class="technical-drawing-stack" pageCount={totalLayers} label={Astro.props.subtitle}>
     {(index: number) => {
       const [id, { name, size, pageStyle, tech, motion }] = Object.entries(layers)[index];
