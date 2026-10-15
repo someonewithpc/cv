@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { installProbes } from './support/pageProbes';
+
 /**
  * Docking DevTools narrows the window, and the page keeps showing its last frame until
  * layout at the new width is done. With #demos a subgrid of main, that layout took 1.3 s at
@@ -51,19 +53,15 @@ for (const javaScriptEnabled of [true, false]) {
 
     test('the sheet\'s measure matches the sheet at every width', async ({ page }) => {
       await page.goto('/');
+      await installProbes(page);
       for (const width of [400, 1060, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page.waitForTimeout(100);
         const sheet = await page.locator('article.technical-drawing-stack section').first().evaluate((section) => {
           // The variables hold the expression, not pixels, so a box sized by them reads them out.
-          const probe = document.createElement('div');
-          probe.style.cssText = 'position: absolute; visibility: hidden; width: var(--sheet-inline); height: var(--sheet-block)';
-          section.append(probe);
-          const measured = getComputedStyle(probe);
+          const inline = window.e2eProbes!.px('var(--sheet-inline)', section);
+          const block = window.e2eProbes!.px('var(--sheet-block)', section);
           const box = section.getBoundingClientRect();
-          const inline = parseFloat(measured.width);
-          const block = parseFloat(measured.height);
-          probe.remove();
           return {
             inline,
             block,
