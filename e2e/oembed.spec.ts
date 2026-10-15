@@ -25,6 +25,7 @@ test('oembed.json answers with a rich embed whatever the query string', async ({
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toMatch(/^application\/json/);
   expect(response.headers()['access-control-allow-origin']).toBe('*');
+  expect(response.headers()['cache-control']).toBe('public, max-age=86400');
 
   const body = await response.json();
   expect(body).toMatchObject({
