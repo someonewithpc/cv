@@ -158,10 +158,6 @@ export default defineConfig({
     resolve: {
       dedupe: ['react', 'react-dom', 'vue'],
       alias: [
-        // Deep paths (`lodash/startCase`) must rewrite too — a bare `lodash`
-        // alias only covers the package root.
-        { find: /^lodash$/, replacement: 'lodash-es' },
-        { find: /^lodash\/(.+)$/, replacement: 'lodash-es/$1' },
         srcAlias,
       ],
     },

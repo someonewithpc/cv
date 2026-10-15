@@ -31,7 +31,6 @@
     "astro": "^7.3.5",
     "astro-icon": "^1.2.0",
     "classnames": "^2.5.1",
-    "lodash": "^4.18.1",
     "lodash-es": "^4.18.1",
     "path-data-polyfill": "^1.0.10",
     "react": "^19.3.0",
