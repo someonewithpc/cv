@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
@@ -10,7 +11,7 @@ test('the contact row links the alias, and the built HTML never spells an addres
   await expect(link).toHaveAttribute('href', `mailto:${ALIAS}`);
   await expect(link).toHaveText(ALIAS);
 
-  const html = readFileSync('dist/client/index.html', 'utf8');
+  const html = readFileSync(join(import.meta.dirname, '..', 'dist', 'client', 'index.html'), 'utf8');
   // Lore URLs quote the personal address as part of a message id; those are links, not contact.
   const addresses = html.match(/[\w.+-]+@hsal\.es/g) ?? [];
   expect(addresses.filter((a) => !html.includes(`lore.kernel.org/git/${a.split('@')[0]}`))).toEqual([]);
