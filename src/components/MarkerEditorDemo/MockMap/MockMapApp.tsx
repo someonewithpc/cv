@@ -268,6 +268,8 @@ export default function MockMapApp() {
   const hostRectRef = useRef<DOMRectReadOnly | undefined>(undefined);
   /** Counts resizes and scrolls, so a box measured before one is not kept after it. */
   const hostMovesRef = useRef(0);
+  /** Re-aims the cursor at the highlighted target once its box may have moved. */
+  const reglueRef = useRef<() => void>(() => {});
   const hostRect = () => (hostRectRef.current ??= editorPortalHost?.getBoundingClientRect());
   /**
    * The host's rect from the placement that started the current drag. Every frame of a drag
@@ -357,7 +359,10 @@ export default function MockMapApp() {
       hostMovesRef.current += 1;
       hostRectRef.current = undefined;
     };
-    const resizes = new ResizeObserver(moved);
+    const resizes = new ResizeObserver(() => {
+      moved();
+      reglueRef.current();
+    });
     resizes.observe(editorPortalHost);
     // The page also moves when something above it changes the document's height.
     resizes.observe(document.documentElement);
@@ -375,18 +380,19 @@ export default function MockMapApp() {
     moveCursor(toHostPoint(hostRect(), overlayPoint(overlay, 0.42, 0.38)));
   }, [editorPortalHost]);
 
-  // A step measures its target once, but accordion sections in the editor keep
-  // animating afterwards and carry the target away from the parked cursor (the
-  // stacked narrow layout shifts headers by whole sections). Re-glue the cursor
-  // to the highlighted target until the next step retargets it. Each tick asks an
+  // A step measures its target once, but the target can move afterwards: an editor
+  // accordion header jumps when the section above it opens or closes (by a whole section
+  // in the stacked narrow layout), and a pin scales up as it is picked. Re-glue the
+  // cursor to the highlighted target after each toggle, render and host resize, and on a 150 ms
+  // tick only while a transition runs in the host. Each re-glue asks an
   // IntersectionObserver for the boxes, which the browser hands over from the next
-  // frame's own layout, so the tick forces none.
+  // frame's own layout, so it forces none.
   useEffect(() => {
     if (!inView || !editorPortalHost) return;
     let asked = { el: null as Element | null, moves: 0 };
     const boxes = new IntersectionObserver((entries) => {
       boxes.disconnect();
-      // A resize or scroll since the tick asked: these boxes are from before it.
+      // A resize or scroll since the re-glue asked: these boxes are from before it.
       if (hostMovesRef.current !== asked.moves) return;
       let host: DOMRectReadOnly | undefined;
       let target: DOMRectReadOnly | undefined;
@@ -411,7 +417,7 @@ export default function MockMapApp() {
       const prev = cursorPosRef.current;
       if (Math.abs(prev.x - next.x) >= 0.5 || Math.abs(prev.y - next.y) >= 0.5) moveCursor(next);
     });
-    const id = window.setInterval(() => {
+    const reglue = () => {
       const el = activeTargetRef.current;
       if (
         !el?.isConnected
@@ -425,9 +431,59 @@ export default function MockMapApp() {
       boxes.disconnect();
       boxes.observe(editorPortalHost);
       boxes.observe(el);
-    }, 150);
+    };
+    reglueRef.current = reglue;
+
+    // An element removed mid-transition fires no transitionend, so the tick also drops
+    // entries whose element has left the page.
+    const running = new Map<Element, Set<string>>();
+    let tick: number | undefined;
+    const tickWhileRunning = () => {
+      for (const el of running.keys()) if (!el.isConnected) running.delete(el);
+      reglue();
+      if (running.size === 0) {
+        window.clearInterval(tick);
+        tick = undefined;
+      }
+    };
+    const ownTransition = (event: TransitionEvent) => {
+      const el = event.target;
+      return el instanceof Element && !el.closest('[data-demo-cursor]') ? el : null;
+    };
+    const transitionStarted = (event: TransitionEvent) => {
+      const el = ownTransition(event);
+      if (!el) return;
+      const props = running.get(el) ?? new Set<string>();
+      props.add(event.propertyName);
+      running.set(el, props);
+      tick ??= window.setInterval(tickWhileRunning, 150);
+    };
+    const transitionStopped = (event: TransitionEvent) => {
+      const el = ownTransition(event);
+      const props = el && running.get(el);
+      if (!props) return;
+      props.delete(event.propertyName);
+      if (props.size === 0) running.delete(el);
+      if (running.size === 0) reglue();
+    };
+    // A React render that adds or drops nodes (a colour picker opening) shifts what follows.
+    const renders = new MutationObserver((records) => {
+      if (records.some((record) => !(record.target as Element).closest?.('[data-demo-cursor]'))) reglue();
+    });
+    renders.observe(editorPortalHost, { childList: true, subtree: true });
+    // toggle does not bubble, so the host listens in the capture phase.
+    editorPortalHost.addEventListener('toggle', reglue, true);
+    editorPortalHost.addEventListener('transitionrun', transitionStarted);
+    editorPortalHost.addEventListener('transitionend', transitionStopped);
+    editorPortalHost.addEventListener('transitioncancel', transitionStopped);
     return () => {
-      window.clearInterval(id);
+      reglueRef.current = () => {};
+      renders.disconnect();
+      editorPortalHost.removeEventListener('toggle', reglue, true);
+      editorPortalHost.removeEventListener('transitionrun', transitionStarted);
+      editorPortalHost.removeEventListener('transitionend', transitionStopped);
+      editorPortalHost.removeEventListener('transitioncancel', transitionStopped);
+      window.clearInterval(tick);
       boxes.disconnect();
     };
   }, [editorPortalHost, inView]);
