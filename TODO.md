@@ -382,7 +382,7 @@
 - [x] Hyphenate the compound adjectives in the Career data: Full-stack, step-by-step, node-based, event-driven and ride-sharing (220 T28) (#464)
 - [x] Career copy that dates or misnames itself: the Leb entry's "current versions" is a 2021 claim, the Visrez map names "the resort" before any resort is introduced, and GNU social has three role names for one job, with "co-maintainership" in the meta description (#220 T21) (#458)
 - [x] Turn on Workers observability so the worker's 500s and 503s leave logs (#220 C61) (#428)
-- [ ] Stop exporting symbols nothing outside their file imports, and delete the dead sheetRatios (#220 C81)
+- [x] Stop exporting symbols nothing outside their file imports, and delete the dead sheetRatios (#220 C81) (#441)
 - [x] Weigh every Space Builder title block the same way, as the minified script the sheet ships, and bundle the shared scene once (#220 C79) (#440)
 - [x] Write the peel hint words, the letter count, the sheet and note tab queries and the sheet selector once (#220 C77) (#439)
 - [x] Write each helper once that is written two or more times: the sr-only rule, ensurePathData, the front-page test, vector rotation, the ease-out loop, escape, the element centre, the drawn cursor, the HMR preamble, space letters, byPax and bySize (C73) (#437)
