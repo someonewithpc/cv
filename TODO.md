@@ -355,7 +355,7 @@
 - [x] Give the marker editor border controls unique ids and demo targets per border (#220 C41) (#424)
 - [x] Set the Icon decoration default selection without writing state during render (#220 C43) (#423)
 - [x] Hide the font picker and two-column loading placeholders when scripts are off, so their spinners stop turning over empty layers (#220 T32) (#467)
-- [ ] Keep the Badge math card's labels in their case, so θ and r are not uppercased (#220 T16)
+- [x] Keep the Badge math card's labels in their case, so θ and r are not uppercased (#220 T16) (#454)
 - [x] Event Dispatch card says "the first one to return stop has the job" (#220 T17) (#453)
 - [x] Fix the typo "it's placement" in the wipe sheet headline (#220 T1) (#449)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
