@@ -257,7 +257,7 @@
         {
           "repository": "pybluez/pybluez",
           "title": "Update README",
-          "description": "Named the Debian package that carries the BlueZ headers in the PyBluez build requirements, so the README says what to install rather than what is needed.",
+          "description": "Named the Debian package that carries the BlueZ headers in the PyBluez build requirements, so the README says what to install.",
           "url": "https://github.com/pybluez/pybluez/pull/119",
           "number": 119,
           "updatedAt": "2016-04-17T10:22:13Z",
