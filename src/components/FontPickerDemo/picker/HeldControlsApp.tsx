@@ -126,10 +126,12 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     setHost(page);
 
     // The page's rect, read once and kept until a scroll, a resize or the sheet's own box
-    // changes: the sliders never move the page itself
+    // changes: the sliders never move the page itself. The dragged slider's rect is kept with
+    // it, and also read again once the slider's value has moved its row
     let pageRectCache: DOMRect | null = null;
+    let sliderRect: DOMRect | null = null;
     const pageRect = () => (pageRectCache ??= page.getBoundingClientRect());
-    const invalidatePageRect = () => { pageRectCache = null; };
+    const invalidatePageRect = () => { pageRectCache = null; sliderRect = null; };
     window.addEventListener('scroll', invalidatePageRect, { passive: true });
     window.addEventListener('resize', invalidatePageRect);
     const pageResize = new ResizeObserver(invalidatePageRect);
@@ -138,8 +140,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     const slider = (side: Side) => el.querySelector<HTMLInputElement>(`[data-demo-target="size-${side}"]`);
 
     // Where the thumb sits for a value: the track is inset by the thumb's radius
-    const thumb = (input: HTMLInputElement, value = Number(input.value)) => {
-      const rect = input.getBoundingClientRect();
+    const thumb = (input: HTMLInputElement, value = Number(input.value), rect = input.getBoundingClientRect()) => {
       const t = (value - Number(input.min)) / (Number(input.max) - Number(input.min));
       return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
     };
@@ -156,8 +157,10 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       // Kept against the sheet, not the viewport: a page that scrolls under the walkthrough
       // would otherwise slide the hand up the column
       const holdY = thumb(input).y - pageRect().top;
+      sliderRect = null;
+      const at = (value = Number(input.value)) => thumb(input, value, sliderRect ??= input.getBoundingClientRect());
       const ride = (value: number, flags: Partial<CursorState> = { dragging: true }) => {
-        run.appear({ x: thumb(input, value).x, y: pageRect().top + holdY }, flags);
+        run.appear({ x: at(value).x, y: pageRect().top + holdY }, flags);
       };
 
       // The line the drag started on, left on the sheet while it runs, and a dimension from it
@@ -175,7 +178,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
         side,
       });
       const mark = () => {
-        const travel = thumb(input).y - pageRect().top - holdY;
+        const travel = at().y - pageRect().top - holdY;
         measureRef.current?.style.setProperty('--travel', `${travel}px`);
         // Written into the figure's own text node: replacing the node is a child list change,
         // which sends the page's :has() rules restyling the whole sheet every frame
@@ -195,19 +198,33 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       const span = to - 1;
       const start = performance.now();
       let snapped = 1;
+      let moved = false;
       for (;;) {
         await nextFrame();
         run.check();
+        // React draws a new value after the event that set it, so the row has moved by the
+        // next frame, not this one
+        if (moved) {
+          sliderRect = null;
+          moved = false;
+        }
         const t = Math.min((performance.now() - start) / ((span / step) * DRAG_STEP_MS), 1);
         const raw = 1 + span * t;
         const next = Math.round(raw / step) * step;
         if (next !== snapped) {
           snapped = next;
           setNativeValue(input, next.toFixed(3));
+          moved = true;
         }
         mark();
         ride(raw);
         if (t >= 1) break;
+      }
+      if (moved) {
+        await nextFrame();
+        run.check();
+        sliderRect = null;
+        mark();
       }
       ride(to, {});
       await run.wait(1800);
