@@ -6,7 +6,7 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { createPortal } from 'react-dom';
 import { v4 as uuidv4 } from 'uuid';
 import cx from 'classnames';
-import _startCase from 'lodash/startCase';
+import _startCase from 'lodash-es/startCase';
 
 import { useRect } from '../../hooks/useRect';
 import { mapRange } from '../../lib/mapRange';

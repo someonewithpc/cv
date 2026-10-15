@@ -1,4 +1,4 @@
-import { camelCase } from 'lodash';
+import camelCase from 'lodash-es/camelCase';
 
 import { unquoteCssString } from './cssString';
 import { getCurrentFonts } from './getCurrentFonts';

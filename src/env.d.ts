@@ -16,6 +16,21 @@ declare module 'lodash-es/snakeCase' {
   export default snakeCase;
 }
 
+declare module 'lodash-es/chunk' {
+  import { chunk } from 'lodash';
+  export default chunk;
+}
+
+declare module 'lodash-es/startCase' {
+  import { startCase } from 'lodash';
+  export default startCase;
+}
+
+declare module 'lodash-es/partition' {
+  import { partition } from 'lodash';
+  export default partition;
+}
+
 declare module '/@react-refresh' {
   const runtime: {
     injectIntoGlobalHook: (env: Window) => void;
