@@ -1,8 +1,6 @@
 // A border that reports on a request: an arc orbits while pending, then the ring sweeps
 // closed in the verdict's colour. One conic gradient driven by three custom properties,
-// registered below so they animate. Copied from
-// the font picker's FontPickerDemo/picker/_statusBorder.scss with the properties renamed;
-// the two should become one file when both are on main.
+// registered below so they animate.
 @use './visrez' as *;
 
 // These three numbers are also in statusBorder.ts: change both.
