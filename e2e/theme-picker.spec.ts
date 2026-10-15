@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { OS_THEME_IDS, THEME_IDS } from '../src/themes';
 
 declare global {
   interface Window {
@@ -44,6 +45,9 @@ const pick = async (page: import('@playwright/test').Page, theme: string) => {
 
 const widest = (clipPath: string) => Math.max(...[...clipPath.matchAll(/-?\d+(\.\d+)?/g)].map((m) => Math.abs(+m[0])));
 
+// The page opens on this theme, so picking it first would not wipe; it goes last.
+const OPENING_THEME = OS_THEME_IDS.light;
+
 test.use({ reducedMotion: 'no-preference' });
 
 test('every theme wipes in from its icon and sticks', async ({ page }) => {
@@ -51,7 +55,7 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#theme-picker input')).toHaveCount(4);
 
-  for (const theme of ['dark', 'arctic', 'dark-forest', 'light']) {
+  for (const theme of [...THEME_IDS.filter((id) => id !== OPENING_THEME), OPENING_THEME]) {
     await pick(page, theme);
 
     const wipes = await page.evaluate(() => window.__themeWipes.splice(0));
@@ -68,8 +72,8 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
   }
 
   await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('#theme-picker input[value="light"]')).toBeChecked();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', OPENING_THEME);
+  await expect(page.locator(`#theme-picker input[value="${OPENING_THEME}"]`)).toBeChecked();
 });
 
 const PAGE_BACKGROUNDS = {

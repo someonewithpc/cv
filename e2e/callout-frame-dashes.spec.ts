@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { PNG } from 'playwright-core/lib/utilsBundle';
+import { THEME_IDS } from '../src/themes';
 
 /**
  * The chain-line boundary round each demo (Callout.astro `.callout-view`) is a repeating
@@ -10,7 +11,7 @@ import { PNG } from 'playwright-core/lib/utilsBundle';
  * theme, and that the space is still named.
  */
 
-const THEMES = ['light', 'dark', 'arctic', 'dark-forest'];
+const THEMES = THEME_IDS;
 // Past 105rem the title card stands beside the view (callout-inset.spec.ts), so the top edge
 // starts clear of it.
 const DESK_CARD = { width: 1728, height: 900 };
