@@ -316,4 +316,4 @@
 - [x] Check that the Space Builder place and badge scenes draw a frame instead of only data-ready (E15) (#476)
 - [x] Assert behaviour in the tests that only confirmed static markup: the caret blink, the logo dash and the inner-page drawings run and advance their clocks (E16) (#477)
 - [x] Make the single-click and no-JavaScript specs assert what they claim: the card highlight, and that each callout is drawn inside its overlay (#220 E18) (#481)
-- [ ] Wait for the grain tile body before the byte-size assertion in the paper grain spec (#220 E23)
+- [x] Wait for the grain tile body before the byte-size assertion in the paper grain spec (#220 E23) (#482)
