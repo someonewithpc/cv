@@ -196,16 +196,32 @@ export default function MockMapApp() {
   const toastIdRef = useRef(0);
   const pushToastRef = useRef<(toast: DemoToastPayload) => void>(() => {});
 
+  const toastTimersRef = useRef(new Set<number>());
+  const toastLater = (run: () => void, ms: number) => {
+    const timers = toastTimersRef.current;
+    const timer = window.setTimeout(() => {
+      timers.delete(timer);
+      run();
+    }, ms);
+    timers.add(timer);
+  };
   pushToastRef.current = (payload: DemoToastPayload) => {
     const id = ++toastIdRef.current;
     setToasts((prev) => [...prev, { ...payload, id, leaving: false }]);
-    window.setTimeout(() => {
+    toastLater(() => {
       setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
-      window.setTimeout(() => {
+      toastLater(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }, TOAST_EXIT_MS);
     }, TOAST_VISIBLE_MS);
   };
+  useEffect(() => {
+    const timers = toastTimersRef.current;
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer);
+      timers.clear();
+    };
+  }, []);
 
   const editingSpace = spaces.find((s) => s.id === editingSpaceId);
   const focus = focusTransform(editingSpace);
