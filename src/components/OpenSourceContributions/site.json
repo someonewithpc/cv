@@ -657,7 +657,7 @@
         {
           "repository": "sgruhier/capistrano-db-tasks",
           "title": "Add support for specifying extra command line options during database dump and load",
-          "description": "Let capistrano-db-tasks pass extra mysqldump flags—needed for schemas where a non-unique key follows the primary key.",
+          "description": "Let capistrano-db-tasks pass extra mysqldump flags, needed for schemas where a non-unique key follows the primary key.",
           "url": "https://github.com/sgruhier/capistrano-db-tasks/pull/138",
           "number": 138,
           "updatedAt": "2023-12-20T19:27:58Z",
@@ -817,7 +817,7 @@
         {
           "repository": "PaulLeCam/react-leaflet",
           "title": "Allow customizing which class gets used for `LayersControl`",
-          "description": "Let React Leaflet's `LayersControl` instantiate a custom `L.Control` subclass—needed for image-based layer toggles.",
+          "description": "Let React Leaflet's `LayersControl` instantiate a custom `L.Control` subclass, needed for image-based layer toggles.",
           "url": "https://github.com/PaulLeCam/react-leaflet/pull/1092",
           "number": 1092,
           "updatedAt": "2024-06-03T08:39:52Z",
