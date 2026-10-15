@@ -1,4 +1,4 @@
-import { clamp } from "../../../../lib/mapRange";
+import clamp from 'lodash/clamp';
 import { Point } from "../shared";
 import type { PointLiteral } from "../shared";
 

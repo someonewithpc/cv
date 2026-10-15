@@ -441,7 +441,6 @@ function onPointerDown(event: PointerEvent) {
   // An armed object goes down on the next plain left click, and the tool returns to view —
   // it does not stay armed for a second click.
   if (phase.value === 'armed' && event.button === 0 && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
-    const item = armedItem.value;
     disarm();
     dropOne(event.clientX, event.clientY);
     return;

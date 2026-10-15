@@ -403,7 +403,6 @@ export class SpaceBuilderScene {
     this.updateCamera();
     this.markCameraHome();
 
-    this.scene.background = new Color('#6e8fc4');
     this.scene.fog = null;
     const sunDir = new Vector3(0.42, 0.78, 0.28).normalize();
     this.skybox = createDemoSkybox(sunDir);
@@ -483,10 +482,6 @@ export class SpaceBuilderScene {
     this.active = true;
     this.canvas.dataset.sceneActive = 'true';
     this.requestRender();
-  }
-
-  isActive() {
-    return this.active && !this.disposed && !this.gpuReleased;
   }
 
   /**
@@ -577,7 +572,6 @@ export class SpaceBuilderScene {
       alpha: false,
       powerPreference: 'high-performance',
     });
-    renderer.setClearColor(0x6e8fc4, 1);
     // Cap DPR — full retina + antialias made first WebGL frames noticeably late.
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.shadowMap.enabled = true;
@@ -795,12 +789,6 @@ export class SpaceBuilderScene {
     this.emitSnapshot();
   }
 
-  /** Hide the corner/edge/move/rotate lollipops without hiding the tinted fill plane. */
-  setHandlesVisible(visible: boolean) {
-    this.handles.visible = visible;
-    this.requestRender();
-  }
-
   /** Hide the capacity tag regardless of seat count — for pages with no chairs loaded. */
   setTagSuppressed(suppressed: boolean) {
     this.tagSuppressed = suppressed;
@@ -888,25 +876,6 @@ export class SpaceBuilderScene {
       };
       requestAnimationFrame(step);
     });
-  }
-
-  nudgeArea(dx: number, dz: number) {
-    if (!this.area) return;
-    this.setArea({
-      ...this.area,
-      x: this.area.x + dx,
-      z: this.area.z + dz,
-    });
-  }
-
-  rotateArea(delta: number, snap = false) {
-    if (!this.area) return;
-    let angle = this.area.angle + delta;
-    if (snap) {
-      const step = Math.PI / 8;
-      angle = Math.round(angle / step) * step;
-    }
-    this.setArea({ ...this.area, angle });
   }
 
   private activeGhost(): Object3D | null {
@@ -1607,15 +1576,6 @@ export class SpaceBuilderScene {
     grass.position.y = 0;
     grass.receiveShadow = true;
     this.scene.add(grass);
-
-    // Flat invisible plane for raycasts / chairs — displacement is visual only.
-    const flat = new Mesh(
-      new PlaneGeometry(GROUND_SIZE, GROUND_SIZE),
-      new MeshBasicMaterial({ visible: false }),
-    );
-    flat.rotation.x = -Math.PI / 2;
-    flat.position.y = 0.02;
-    this.scene.add(flat);
 
     const configureMap = (texture: Texture, { srgb = false } = {}) => {
       texture.wrapS = RepeatWrapping;

@@ -7,7 +7,3 @@ export function mapRange(value: number, fromMin: number, fromMax: number, toMin:
 
   return (value / fromMax) * (toMax - toMin) + toMin;
 }
-
-export function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
