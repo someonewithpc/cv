@@ -3,7 +3,8 @@
 // shared services it does not have either, search and media (see SHARED_SERVICES). What is
 // left out is what touches the disk: each recipe's configure() (nginx rewrite, certificates,
 // .env.local) and the file write. The merge, the shared-service dedupe, the web volumes and
-// depends_on, and the validation are the builder's own, line for line.
+// depends_on, and the validation follow the builder, except that its `web` is named `nginx`
+// here and the top-level volumes list only the ones a service mounts.
 
 import { listInstances, type InstanceContext, type PlaygroundConfig } from './config';
 
@@ -346,7 +347,7 @@ export function buildComposeFile(config: PlaygroundConfig): ComposeFile {
     version: '3',
     name: 'fediverse-playground',
     services: {},
-    volumes: { database: {}, mariadb: {}, search: {} },
+    volumes: {},
   };
 
   const sharedAdded = new Set<string>();
@@ -385,6 +386,13 @@ export function buildComposeFile(config: PlaygroundConfig): ComposeFile {
       volumes: [...((compose.services.nginx.volumes as string[]) ?? []), ...webVolumes],
       depends_on: [...new Set(webDependsOn.filter((name) => compose.services[name]))],
     };
+  }
+
+  for (const definition of Object.values(compose.services)) {
+    for (const mount of (definition.volumes as string[] | undefined) ?? []) {
+      const source = mount.split(':')[0];
+      if (mount.includes(':') && !/^[./]/.test(source)) compose.volumes[source] = {};
+    }
   }
 
   validateCompose(compose);
