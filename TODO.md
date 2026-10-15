@@ -312,3 +312,4 @@
 - [ ] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#220 E13)
 - [x] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#474)
 - [x] Warn when a Firefox project is skipped because its browser is missing (#220 E12) (#475)
+- [ ] Read the callout frame dash screenshot with sharp instead of playwright-core's private PNG (E7)
