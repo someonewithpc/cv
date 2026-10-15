@@ -185,9 +185,6 @@ export const themeVars = (settings: ThemeSettings, deskTile?: (name: string) => 
   'diff-remove-text': settings.follows === 'dark' ? 'oklch(from hsl(0 48% 46%) 0.73 c h)' : 'hsl(0 48% 46%)',
 });
 
-/** For scss/print.scss, through plugins/sassFromTs.mjs: the theme a printout takes. */
-export const sass = { printTheme: themeVars(THEMES.light) };
-
 /** The theme each prefers-color-scheme value shows: Light, and Forest for a dark scheme. */
 export const OS_THEME_IDS = {
   light: 'light',
@@ -224,3 +221,17 @@ export const rootRadioPicked = (id: string) => `:root:has(${themePicked(id)})`;
 /** `:root` while nothing is picked, so the OS colour scheme decides. Without script, a picked
    radio's rule outranks it: the id inside :has() is the heavier selector. */
 export const ROOT_FOLLOWING_OS = ':root:not([data-theme])';
+
+const idsFollowing = (mode: ThemeFollows) => THEME_IDS.filter((id) => THEMES[id].follows === mode);
+
+/**
+ * For Sass, through plugins/sassFromTs.mjs: the theme a printout takes, and the root selectors
+ * of the themes that follow each mode, so a stylesheet that treats dark themes alike lists no ids. `Showing` is by data-theme,
+ * `Radio` by the picked radio, for @media (scripting: none).
+ */
+export const sass = {
+  printTheme: themeVars(THEMES.light),
+  darkShowing: idsFollowing('dark').map(rootShowing).join(', '),
+  darkRadio: idsFollowing('dark').map(rootRadioPicked).join(', '),
+  lightRadio: idsFollowing('light').map(rootRadioPicked).join(', '),
+};
