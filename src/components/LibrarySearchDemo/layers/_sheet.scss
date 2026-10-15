@@ -117,7 +117,7 @@ $sheet-margin: shared.$sheet-margin;
   gap: 0.625em;
 }
 
-// The query field the live blueprint sheets carry, synced with the main sheet's.
+// The query field the live blueprint sheets carry; each sheet keeps its own query.
 @mixin query-field {
   box-sizing: border-box;
   width: 100%;

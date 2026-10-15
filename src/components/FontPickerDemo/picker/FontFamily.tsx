@@ -150,7 +150,7 @@ export function FontFamily(
   );
 }
 
-// The carousel page the select sits on, which is positioned; the sidebar has a <section> of its own
+// The sheet the select sits on, which is positioned; the sidebar has a <section> of its own
 const sheetOf = (el: Element) => el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? document.body;
 
 // The sheet's --sheet-margin in px: a custom property comes back as written, in rem

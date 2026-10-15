@@ -12,7 +12,7 @@
  *
  * The creases are the ones PaperStack publishes: the dog-ear's resting intercepts
  * (`--fold-rest-x/y`, from the sheet's bottom-right corner) and the folded-back corner's
- * (`--fold-back-rest-x/y`, from its top-left). Redrawn when the stack or the words change
+ * (`--paper-clip-lean-x/y`, from its top-left). Redrawn when the stack or the words change
  * size, which covers the viewport and the font arriving, and when a turned page settles.
  *
  * The shared annotation script was not a fit: it anchors a callout to an element of a page's

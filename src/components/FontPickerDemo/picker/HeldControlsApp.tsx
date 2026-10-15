@@ -119,7 +119,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     const el = root.current;
     if (!el) return;
 
-    // The carousel page: positioned, so a cursor drawn into it rides along with the page
+    // The sheet: positioned, so a cursor drawn into it rides along with the page
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
     setHost(page);
 

@@ -115,7 +115,7 @@ const itemsVisible = computed(() => {
 .catalog-grid {
   display: grid;
   // Space Builder lays the catalog out three across in a 780px sidebar; this one is a
-  // third of that, so keep its card size and let as many columns fit as will.
+  // third of that, so it takes two columns.
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   align-content: start;
