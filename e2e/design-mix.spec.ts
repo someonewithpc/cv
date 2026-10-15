@@ -741,14 +741,7 @@ const GROUPS = JSON.parse(
 /** Every ruled sheet: its paper, its tear, its pitch and the height of every row on it. */
 const readSheets = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
-    const px = (value: string) => {
-      const probe = document.createElement('div');
-      probe.style.width = value;
-      document.body.append(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string) => window.e2eProbes!.px(value);
 
     const intro = document.querySelector('#open-source .intro')!.getBoundingClientRect();
 
@@ -872,11 +865,7 @@ test('the margin goes before the writing loses any room', async ({ page }) => {
   const read = () =>
     page.locator('#open-source section[data-group="open"]').evaluate((sheet) => {
       const style = getComputedStyle(sheet);
-      const probe = document.createElement('div');
-      probe.style.width = style.getPropertyValue('--margin-x');
-      sheet.append(probe);
-      const margin = probe.getBoundingClientRect().width;
-      probe.remove();
+      const margin = window.e2eProbes!.px(style.getPropertyValue('--margin-x'), sheet);
       const left = sheet.getBoundingClientRect().left;
       return {
         margin,
@@ -926,14 +915,7 @@ type WrittenLine = {
  */
 const readWrittenLines = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
-    const px = (value: string, el: Element) => {
-      const probe = document.createElement('div');
-      probe.style.width = value;
-      el.append(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string, el: Element) => window.e2eProbes!.px(value, el);
     const kinds: [string, string][] = [
       ['group', 'h3'],
       ['head', '.lines > header'],
@@ -1027,14 +1009,7 @@ const expectCentred = (lines: WrittenLine[], pitch: number) => {
 const readPitch = (page: import('@playwright/test').Page) =>
   page.locator('#open-source section[data-group]').first().evaluate((sheet) => {
     const style = getComputedStyle(sheet);
-    const px = (value: string) => {
-      const probe = document.createElement('div');
-      probe.style.width = value;
-      sheet.append(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string) => window.e2eProbes!.px(value, sheet);
     return { pitch: px(style.getPropertyValue('--rule-pitch')), line: px(style.getPropertyValue('--line-height')) };
   });
 
@@ -1107,13 +1082,8 @@ for (const theme of ['light', 'dark-forest'] as const) {
       const lines = (await readWrittenLines(page)).filter((line) => line.sheet === 'merged');
       const strip = await sheet.evaluate((el) => {
         const style = getComputedStyle(el);
-        const probe = document.createElement('div');
-        probe.style.width = style.getPropertyValue('--margin-x');
-        el.append(probe);
-        const margin = probe.getBoundingClientRect().width;
-        probe.style.width = style.getPropertyValue('--rule-pitch');
-        const pitch = probe.getBoundingClientRect().width;
-        probe.remove();
+        const margin = window.e2eProbes!.px(style.getPropertyValue('--margin-x'), el);
+        const pitch = window.e2eProbes!.px(style.getPropertyValue('--rule-pitch'), el);
         // Left of the margin line, or on a sheet too narrow for a margin, the paper's own edge.
         const to = margin > 0 ? Math.floor(margin) - 6 : Math.floor(parseFloat(style.paddingLeft)) - 2;
         return { from: margin > 0 ? 4 : 2, to, pitch };
@@ -1194,11 +1164,7 @@ const readMarks = (page: import('@playwright/test').Page) =>
 
     for (const sheet of document.querySelectorAll<HTMLElement>('#open-source section[data-group]')) {
       const style = getComputedStyle(sheet);
-      const probe = document.createElement('div');
-      probe.style.width = style.getPropertyValue('--rule-pitch');
-      sheet.append(probe);
-      const pitch = probe.getBoundingClientRect().width;
-      probe.remove();
+      const pitch = window.e2eProbes!.px(style.getPropertyValue('--rule-pitch'), sheet);
 
       for (const row of sheet.querySelectorAll('.lines .row')) {
         const list = row.querySelector('ul');
