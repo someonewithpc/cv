@@ -153,11 +153,13 @@ export function FontFamily(
 // The carousel page the select sits on, which is positioned; the sidebar has a <section> of its own
 const sheetOf = (el: Element) => el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? document.body;
 
+const FALLBACK_SHEET_MARGIN_PX = 16;
+
 // The sheet's --sheet-margin in px: a custom property comes back as written, in rem
 function sheetMargin(sheet: HTMLElement) {
   const raw = getComputedStyle(sheet).getPropertyValue('--sheet-margin').trim();
   const value = parseFloat(raw);
-  if (Number.isNaN(value)) return 16;
+  if (Number.isNaN(value)) return FALLBACK_SHEET_MARGIN_PX;
   if (raw.endsWith('rem')) return value * parseFloat(getComputedStyle(document.documentElement).fontSize);
   if (raw.endsWith('em')) return value * parseFloat(getComputedStyle(sheet).fontSize);
   return value;

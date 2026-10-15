@@ -1,6 +1,6 @@
 import { ADD_GOOGLE_FONT, EXTRACT_FROM_URL } from './FontFamily';
 import { demoPicker } from './demoPicker';
-import { type Run, type Scene, setNativeValue } from './playthrough';
+import { ENTRANCE_BELOW_SHEET_PX, type Run, type Scene, setNativeValue } from './playthrough';
 
 const GOOGLE_FONT = 'Lobster';
 // A well-known page whose face could not look less like Poppins
@@ -106,7 +106,7 @@ async function pickNewFamily(run: Run, root: HTMLElement, family: string) {
 export function entranceFor(root: HTMLElement): Scene {
   return async (run) => {
     const sheet = (root.closest('article.technical-drawing-stack > * > section') ?? root).getBoundingClientRect();
-    run.appear({ x: sheet.right - sheet.width * 0.2, y: sheet.bottom + 80 });
+    run.appear({ x: sheet.right - sheet.width * 0.2, y: sheet.bottom + ENTRANCE_BELOW_SHEET_PX });
     await run.wait(300);
   };
 }
