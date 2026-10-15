@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
 
 const PAGES = ['schemaDef → Doctrine Metadata', 'Type Vocabulary', 'Plugin Entities', 'Static Analysis'];
 
@@ -9,10 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function schemaDefStack(page: Page) {
-  // By title, not by position: the demos run gains stacks over time.
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'Doctrine Metadata' }),
-  });
+  return demoStack(page, 'schemaDef → Doctrine Metadata');
 }
 
 async function mountedPanes(page: Page) {
