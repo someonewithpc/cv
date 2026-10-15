@@ -454,7 +454,7 @@ onBeforeUnmount(() => {
     aria-label="Edit Parameters demo — autoplaying slider demo, orbit to look around, edit the Options sidebar to take over"
   >
     <div class="viewport">
-      <canvas data-scene-canvas class="scene-canvas" aria-label="Populated SelectArea reacting to Options" />
+      <canvas data-scene-canvas class="scene-canvas" aria-label="Populated area reacting to Options" />
       <div data-label-host class="label-host" />
 
       <div
@@ -464,7 +464,7 @@ onBeforeUnmount(() => {
         :role="loadError ? 'status' : undefined"
       >
         <span v-if="!loadError" class="spinner" aria-hidden="true" />
-        <span>{{ loadError ? '3D scene unavailable' : 'Loading SelectArea…' }}</span>
+        <span>{{ loadError ? '3D scene unavailable' : 'Loading Options…' }}</span>
       </div>
 
       <p v-if="demoPlaying" class="flash" role="status">{{ autoplayStartedToast().action }}</p>

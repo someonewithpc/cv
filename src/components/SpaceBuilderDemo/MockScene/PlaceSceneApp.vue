@@ -289,9 +289,9 @@ onBeforeUnmount(() => {
     class="place-scene-app"
     role="group"
     :data-ready="ready ? 'true' : 'false'"
-    aria-label="SelectArea demo — orbit and resize the grab handles"
+    aria-label="Area demo — orbit and resize the grab handles"
   >
-    <canvas data-scene-canvas class="scene-canvas" aria-label="SelectArea grab handles in 3D" />
+    <canvas data-scene-canvas class="scene-canvas" aria-label="Area grab handles in 3D" />
     <div data-label-host class="label-host" />
 
     <div
@@ -301,7 +301,7 @@ onBeforeUnmount(() => {
       :role="loadError ? 'status' : undefined"
     >
       <span v-if="!loadError" class="spinner" aria-hidden="true" />
-      <span>{{ loadError ? '3D scene unavailable' : 'Loading SelectArea…' }}</span>
+      <span>{{ loadError ? '3D scene unavailable' : 'Loading the area…' }}</span>
     </div>
 
     <p v-if="ready && !loadError" class="hint">

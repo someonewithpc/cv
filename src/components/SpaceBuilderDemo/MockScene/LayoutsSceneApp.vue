@@ -333,7 +333,7 @@ onBeforeUnmount(() => {
     aria-label="Layout Styles demo — autoplaying through each pack style, pick a chip to take over"
   >
     <div class="viewport">
-      <canvas data-scene-canvas class="scene-canvas" aria-label="SelectArea with switchable layout styles" />
+      <canvas data-scene-canvas class="scene-canvas" aria-label="Area with switchable layout styles" />
       <div data-label-host class="label-host" />
 
       <div
