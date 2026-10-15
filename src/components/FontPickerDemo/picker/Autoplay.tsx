@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 import { drawingPageOf } from '@/client/drawingPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { DrawnCursor, useDrawnCursor } from './DrawnCursor';
 import { Playthrough, setNativeValue } from './playthrough';
@@ -12,7 +13,6 @@ import { demoPicker } from './demoPicker';
 
 const RESUME_DELAY_MS = 2500;
 const CURSOR_FADE_MS = 320;
-const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
 type Toast = { id: number; text: string; leaving: boolean };

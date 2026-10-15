@@ -4,6 +4,7 @@ import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import { isSceneChrome } from './isSceneChrome';
@@ -300,7 +301,7 @@ function saveArrangement() {
   if (savedTimer) clearTimeout(savedTimer);
   savedTimer = setTimeout(() => {
     saved.value = false;
-  }, 1800);
+  }, TOAST_VISIBLE_MS);
 }
 
 const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');

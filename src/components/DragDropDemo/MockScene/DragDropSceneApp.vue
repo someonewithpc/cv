@@ -7,6 +7,7 @@ import { elementCentre } from '@/client/cursorMotion';
 import { drawingPageOf } from '@/client/drawingPage';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
 import { isSceneChrome } from '@/components/SpaceBuilderDemo/MockScene/isSceneChrome';
@@ -172,7 +173,7 @@ function showToast(message: string) {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     toast.value = null;
-  }, 1800);
+  }, TOAST_VISIBLE_MS);
 }
 
 /** How long a shortcut toast is read for, and how long its collapse takes after that. */
