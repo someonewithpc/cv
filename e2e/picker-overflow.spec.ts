@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-import { swipeStack } from './support/paperStack';
+import { dogEarShown, swipeStack } from './support/paperStack';
+import { framesPass, pageSteady } from './support/steady';
 
 /**
  * A tablet has no horizontal scrollbar to warn with. Chrome answers a page that overflows
@@ -44,16 +45,16 @@ test('a page turned at desk width leaves nothing hanging off a tablet viewport',
   const stack = page.locator('article.technical-drawing-stack').first();
   await stack.scrollIntoViewIfNeeded();
   await expect(stack).toBeVisible();
-  await page.waitForTimeout(1000);
+  await dogEarShown(stack);
 
   // The gesture is what writes the hint's pixels; settling is what used to leave them.
   await swipeStack(page, stack, true);
 
   for (const width of STEPS) {
     await emulate(width);
-    await page.waitForTimeout(120);
+    await framesPass(page);
   }
-  await page.waitForTimeout(1500);
+  await pageSteady(page);
 
   const reading = await page.evaluate(() => ({
     innerWidth: window.innerWidth,
