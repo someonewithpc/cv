@@ -16,7 +16,7 @@ export type SearchState = Readonly<{ query: string; filters: Filters }>;
 export type MangledSegment = { text: string; rule: 'plain' | 'quoted' | 'folded' };
 
 /** Words InnoDB's full-text parser would split on: anything that is not a letter or a digit. */
-export function tokenize(text: string) {
+function tokenize(text: string) {
   return text
     .toLowerCase()
     .split(/[^\p{L}\p{N}]+/u)
@@ -24,7 +24,7 @@ export function tokenize(text: string) {
 }
 
 /** The controller's one rewrite: `gsub(/(\d+)( seats?|pax|size)?/i, '"\1\2"')`. */
-export const NUMBER_RULE = /(\d+)( seats?|pax|size)?/gi;
+const NUMBER_RULE = /(\d+)( seats?|pax|size)?/gi;
 
 /**
  * The query massaging that runs before MariaDB sees anything: a number is quoted so that 8
@@ -53,7 +53,7 @@ export type Term = {
   words: string[];
 };
 
-export function parseTerms(mangled: string): Term[] {
+function parseTerms(mangled: string): Term[] {
   const pieces = mangled.match(/[+-]?"[^"]*"|\S+/g) ?? [];
   return pieces.flatMap((text): Term[] => {
     const op = (text[0] === '+' || text[0] === '-' ? text[0] : '') as Term['op'];
@@ -110,7 +110,7 @@ export type SearchResult = {
   total: number;
 };
 
-export function passesFilters(object: LibraryObject, filters: Filters) {
+function passesFilters(object: LibraryObject, filters: Filters) {
   return (
     (!filters.category || object.category === filters.category)
     && (!filters.color || object.properties.some(([name, value]) => name === 'color' && value === filters.color))

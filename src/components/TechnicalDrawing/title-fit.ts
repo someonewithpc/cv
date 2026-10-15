@@ -44,7 +44,7 @@ type Box = { left: number; top: number; right: number; bottom: number };
 /** Every fit, best first: fewer cells shed, then the plainer arrangement. */
 const FITS = [0, 1, 2, 3].flatMap((shed) => ARRANGEMENTS.map((arrangement) => `${arrangement}${shed}`));
 
-export function ladderFit(frameEm: number, floorEm: number): string | null {
+function ladderFit(frameEm: number, floorEm: number): string | null {
   if (frameEm <= floorEm) return null;
   let fit: string | null = null;
   for (const [em, step] of LADDER) if (frameEm <= em) fit = step;
@@ -215,7 +215,7 @@ function inkEdges(sheet: HTMLElement, frame: (rect: DOMRect) => Box, tops: numbe
   return edges;
 }
 
-export type TitleFit = { sheet: HTMLElement; fit: string | null };
+type TitleFit = { sheet: HTMLElement; fit: string | null };
 
 /** Measures a sheet without writing to it. A `null` fit leaves the sheet on the ladder. */
 export function readTitleFit(sheet: HTMLElement): TitleFit {

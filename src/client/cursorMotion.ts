@@ -12,7 +12,7 @@ import { reducedMotion } from '@/client/autoplayStatus';
 
 export type Point = { x: number; y: number };
 
-export type CursorMotionOptions = {
+type CursorMotionOptions = {
   /** Where the tip sits in the element's box, as fractions; the top left corner by default. */
   hotspot?: Point;
   /** Shortest and longest hop, in ms. */
@@ -51,7 +51,7 @@ function settle(t: number, from: number) {
   return Math.sin(Math.PI * ((t - from) / (1 - from)));
 }
 
-export function hopDuration(distance: number, options: CursorMotionOptions = {}) {
+function hopDuration(distance: number, options: CursorMotionOptions = {}) {
   const { minMs, maxMs, msPerPx } = { ...DEFAULTS, ...options };
   return Math.min(maxMs, Math.max(minMs, 200 + distance * msPerPx));
 }
@@ -62,7 +62,7 @@ export function hopDuration(distance: number, options: CursorMotionOptions = {})
  * settle adds a few pixels past the target along the direction of travel and takes
  * them back before the last sample.
  */
-export function hopPath(from: Point, to: Point, options: CursorMotionOptions = {}) {
+function hopPath(from: Point, to: Point, options: CursorMotionOptions = {}) {
   const { curveFromPx, curveRatio, curveMaxPx, overshootMaxPx } = { ...DEFAULTS, ...options };
   const dx = to.x - from.x;
   const dy = to.y - from.y;

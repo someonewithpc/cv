@@ -11,7 +11,7 @@
 import { reducedMotion } from '@/client/autoplayStatus';
 
 /** How long the cursor stays pressed before the widget hears the release and the click. */
-export const PRESS_HOLD_MS = 140;
+const PRESS_HOLD_MS = 140;
 // The release visuals trail the up event by this much, so the widget's reaction to the click
 // (dispatched right after the up) is on screen before the cursor springs back.
 const RELEASE_MS = 50;
@@ -20,7 +20,7 @@ const STACK = 'article.technical-drawing-stack';
 const SHEET = 'section[data-sheet-id]';
 const INSTALLED = '__demoCursorPress';
 
-export interface DemoPressOptions {
+interface DemoPressOptions {
   /** Milliseconds between the down and the up; skipped under prefers-reduced-motion. */
   hold?: number;
   /** Send a `click` after the up (default true). */

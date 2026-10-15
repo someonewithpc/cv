@@ -33,7 +33,7 @@ type Recipe = {
 };
 
 /** The dev default every install script and the db container agree on; it is not a secret. */
-export const DEV_PASSWORD = 'fediverse-playground';
+const DEV_PASSWORD = 'fediverse-playground';
 
 /**
  * The builder's shared services. The tool names its nginx `web`; the sheet calls it `nginx`,
@@ -309,7 +309,7 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 /** utils/array.ts: lodash's mergeWith, where two arrays meeting concatenate instead of overwriting
     by index. It mutates and returns `first`, as mergeWith does. */
-export function mergeObjectsWithArrayConcat<T extends Record<string, unknown>>(first: T, second: Record<string, unknown>): T {
+function mergeObjectsWithArrayConcat<T extends Record<string, unknown>>(first: T, second: Record<string, unknown>): T {
   const target = first as Record<string, unknown>;
   Object.entries(second).forEach(([key, source]) => {
     const existing = target[key];

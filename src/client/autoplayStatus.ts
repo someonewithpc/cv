@@ -8,9 +8,9 @@
  * same thing in the same place without each scene app drawing its own controls.
  */
 export type AutoplayState = 'playing' | 'user' | 'paused' | 'off';
-export type AutoplayCommand = 'play' | 'pause' | 'reset';
+type AutoplayCommand = 'play' | 'pause' | 'reset';
 
-export const AUTOPLAY_STATE_ATTRIBUTE = 'data-autoplay-state';
+const AUTOPLAY_STATE_ATTRIBUTE = 'data-autoplay-state';
 const AUTOPLAY_STATE_EVENT = 'demo-autoplay-state';
 const AUTOPLAY_COMMAND_EVENT = 'demo-autoplay-command';
 

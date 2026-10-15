@@ -79,7 +79,7 @@ function onResize() {
   }
 }
 
-export function watchResizeHold() {
+function watchResizeHold() {
   if (listening || typeof window === 'undefined') return;
   listening = true;
   window.addEventListener('resize', onResize, { passive: true });

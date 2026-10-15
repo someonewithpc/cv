@@ -21,7 +21,7 @@ const toggle = (name: string) => `.toggle:has(input[name="${name}"]) input`;
  * leaves and takes Postgres, Redis and media with them, v2 leaves and the file has no
  * services, and the three come back. Every step is a control a visitor can work too.
  */
-export const WALKTHROUGH: Step[] = [
+const WALKTHROUGH: Step[] = [
   { aim: toggle('gnusocial-v2'), delay: 1600, act: 'click' },
   { aim: '.yaml summary', delay: 2600, act: 'click' },
   { aim: '.yaml pre', delay: 900 },
