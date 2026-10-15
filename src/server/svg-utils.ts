@@ -17,7 +17,7 @@ export function subtract(v0: Vertex, v1: Vertex): Vertex {
   return { x: v1.x - v0.x, y: v1.y - v0.y };
 }
 
-export function crossProduct(v0: Vertex, v1: Vertex): number {
+export function dot(v0: Vertex, v1: Vertex): number {
   return v0.x * v1.x + v0.y * v1.y;
 }
 
@@ -34,7 +34,7 @@ export function medianAngle(v0: Vertex, v1: Vertex, p2: Vertex): number {
   const a = subtract(v1, v0);
   const b = subtract(v1, p2);
 
-  return Math.acos(crossProduct(a, b) / (length(v1, v0) * length(v1, p2))) / 2;
+  return Math.acos(dot(a, b) / (length(v1, v0) * length(v1, p2))) / 2;
 }
 
 export function roundedCorners(vertices: Vertex[], radius: number): string {
