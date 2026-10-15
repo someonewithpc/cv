@@ -1,6 +1,8 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { clickCarouselArrow } from './support/carousel';
+import { demoStack, frontPage, frontPageIndex } from './support/paperStack';
+import { openCatalog, waitForSceneReady } from './support/spaceBuilder';
 import { expect, test } from './support/timeScale';
 
 /** Real, loadable catalog objects; everything else in the catalog is a placeholder SVG. */
@@ -13,29 +15,6 @@ function modelFile(url: string) {
 
 function spaceBuilderStack(page: Page) {
   return demoStack(page, 'Space Builder · Add Tool');
-}
-
-async function waitForSceneReady(front: Locator): Promise<Locator> {
-  const island = await waitForIslandMounted(front);
-  const app = island.locator('[data-ready]');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
-  return app;
-}
-
-async function openCatalog(page: Page): Promise<Locator> {
-  const stack = spaceBuilderStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const app = await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
-
-  // Focusing the root takes the demo over from its auto-play loop (MockSceneApp.vue's
-  // `@focus="yieldToUser"`), which otherwise keeps toggling the panel underneath us.
-  await app.focus();
-  const addObject = app.getByRole('button', { name: 'Add object' });
-  if ((await app.getAttribute('data-panel')) !== 'catalog') {
-    await addObject.click();
-  }
-  await expect(app).toHaveAttribute('data-panel', 'catalog');
-  return app;
 }
 
 test('the catalog offers the chair, side chair and banquet table as real objects', async ({ page }) => {
@@ -96,14 +75,6 @@ test('a catalog model is only fetched once its item is picked', async ({ page })
   expect(models).not.toContain('armchair.glb');
 });
 
-/** Clicks where one of the carousel's arrows sits; they are the scroller's own buttons. */
-async function clickArrow(page: Page, styles: Locator, side: 'previous' | 'next') {
-  const box = await styles.boundingBox();
-  if (!box) throw new Error('The carousel has no layout box');
-  const x = side === 'next' ? box.x + box.width - 14 : box.x + 14;
-  await page.mouse.click(x, box.y + box.height / 2);
-}
-
 test('the chair card steps through the library finishes', { tag: '@handover' }, async ({ page }) => {
   await page.goto('/');
   const app = await openCatalog(page);
@@ -120,19 +91,19 @@ test('the chair card steps through the library finishes', { tag: '@handover' }, 
   const finishes = await card.locator('li.style').evaluateAll((items) => items.map((item) => item.getAttribute('data-variant')));
   expect(finishes.at(-1)).toBe('chair-black');
   for (const finish of finishes.slice(1)) {
-    await clickArrow(page, styles, 'next');
+    await clickCarouselArrow(page, styles, 'next');
     await expect(card).toHaveAttribute('data-variant', finish!);
   }
 
   // At the end of the list the arrow is disabled, and a click on it scrolls nowhere.
   const atEnd = () => styles.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft < 1);
   await expect.poll(atEnd).toBe(true);
-  await clickArrow(page, styles, 'next');
+  await clickCarouselArrow(page, styles, 'next');
   await styles.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   expect(await atEnd()).toBe(true);
   await expect(card).toHaveAttribute('data-variant', 'chair-black');
 
-  await clickArrow(page, styles, 'previous');
+  await clickCarouselArrow(page, styles, 'previous');
   await expect(card).toHaveAttribute('data-variant', 'chair-white');
 });
 

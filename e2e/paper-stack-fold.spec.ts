@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
+import { flapGrip } from './support/fold';
 import { demoStack, dogEarShown, frontPageIndex, frontPageName, pressTurn, swipeStack } from './support/paperStack';
 
 const DEMOS = [
@@ -289,24 +290,6 @@ test('visrez logo: the dog-ear is drawn while the flip is still landing', async 
   // And the stand-in gives way rather than piling up.
   await expect(stack.locator('.paper-fold')).toHaveCount(1, { timeout: 2500 });
   await expect(stack.locator('.paper-fold--stand-in')).toHaveCount(0);
-});
-
-// A point on the folded-back corner itself, to grab with a real pointer drag (see
-// flip-hint-arrow.spec.ts's identical helper). The flap's box runs past the sheet edge, so its
-// centre can fall in the cut-away corner and land on the page under it instead; the resting
-// crease runs from (w - x, h) to (w, h - y) and the corner is mirrored across it, so the flap
-// is that triangle and its centroid is inside it on any sheet.
-const flapGrip = (stack: Locator) => stack.locator('.paper-front').evaluate((sheet) => {
-  const fold = sheet.querySelector<HTMLElement>('.paper-fold')!;
-  const style = getComputedStyle(fold);
-  const x = parseFloat(style.getPropertyValue('--fold-x'));
-  const y = parseFloat(style.getPropertyValue('--fold-y'));
-  const { right, bottom } = sheet.getBoundingClientRect();
-  const mirrored = { x: right - (2 * x * y * y) / (x * x + y * y), y: bottom - (2 * x * x * y) / (x * x + y * y) };
-  return {
-    x: (right - x + right + mirrored.x) / 3,
-    y: (bottom + bottom - y + mirrored.y) / 3,
-  };
 });
 
 // The dog-ear's own size, read the way fold-drag.ts writes it while dragging or resting.

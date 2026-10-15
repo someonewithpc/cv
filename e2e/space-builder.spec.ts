@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { deckPlacement } from './support/deck';
+import { waitForSceneReady } from './support/spaceBuilder';
 import {
   armDrawCounter,
   demoStack,
@@ -9,7 +11,6 @@ import {
   sceneDraws,
   swipeStack,
   turnToPage,
-  waitForIslandMounted,
 } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
@@ -18,14 +19,6 @@ test.beforeEach(async ({ page }) => {
 
 function spaceBuilderStack(page: import('@playwright/test').Page) {
   return demoStack(page, 'Space Builder · Add Tool');
-}
-
-/** Every scene app marks its own root `data-ready="true"` once Three.js has finished loading. */
-async function waitForSceneReady(front: import('@playwright/test').Locator) {
-  const island = await waitForIslandMounted(front);
-  const app = island.locator('[data-ready]');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
-  return app;
 }
 
 test('main page: scene loads and the add-object tool opens the catalog', async ({ page }) => {
@@ -257,31 +250,10 @@ for (const { name, viewport } of [
       const deck = frontDeck(stack, front);
       await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
 
-      const placement = await deck.evaluate((el) => {
-        // In the card, the deck is measured against the sheet it came off.
-        const inCard = el.parentElement!.matches('.callout-card');
-        const section = inCard
-          ? el.closest('section.callout')!.querySelector('article.technical-drawing-stack > * > section')!
-          : el.closest('section')!;
-        const sheet = section.getBoundingClientRect();
-        const box = el.getBoundingClientRect();
-        const band = parseFloat(getComputedStyle(section).paddingBottom);
-        const clearOf = (other: Element | null) => {
-          if (!other) return false;
-          const b = other.getBoundingClientRect();
-          return box.right <= b.left + 1 || box.left >= b.right - 1
-            || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
-        };
-        return {
-          inCard,
-          insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
-          clearOfDrawing: clearOf(section.querySelector('.content')),
-          clearOfTitleBlock: clearOf(section.querySelector('table')),
-        };
-      });
+      const placement = await deckPlacement(deck);
       // A phone sheet's band cannot hold the deck, so it moves under the page into the
       // callout's card instead.
-      expect(placement).toEqual({
+      expect(placement).toMatchObject({
         inCard: name === 'phone',
         insideBand: name === 'desktop',
         clearOfDrawing: true,

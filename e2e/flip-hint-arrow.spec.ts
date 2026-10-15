@@ -1,23 +1,10 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import sharp from 'sharp';
 
+import { contrast, type Rgb } from './support/colour';
+import { flapGrip } from './support/fold';
+import { installProbes } from './support/pageProbes';
 import { demoStack, dogEarShown, swipeStack } from './support/paperStack';
-
-type Rgb = readonly [number, number, number];
-
-const luminance = ([r, g, b]: Rgb) => {
-  const channel = (value: number) => {
-    const c = value / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
-};
-
-/** WCAG contrast ratio between two sRGB colours. */
-function contrast(a: Rgb, b: Rgb): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (light + 0.05) / (dark + 0.05);
-}
 
 /**
  * The hints point at a crease, so what these tests measure is geometry: where the tip of each
@@ -46,7 +33,8 @@ type Aim = {
   animations: number;
 };
 
-function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
+async function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
+  await installProbes(page);
   return page.evaluate((which) => {
     const frame = document.querySelector('.technical-drawing-frame')!;
     const front = frame.querySelector<HTMLElement>('.paper-front')!;
@@ -54,14 +42,7 @@ function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
 
     // The fold sizes are lengths in whatever unit the stack wrote them, so let the browser
     // resolve them instead of parsing.
-    const px = (value: string) => {
-      const probe = document.createElement('div');
-      probe.style.cssText = `position:absolute;visibility:hidden;width:${value || '0px'}`;
-      front.appendChild(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string) => window.e2eProbes!.px(value || '0px', front);
     const prop = (el: Element, name: string) => px(getComputedStyle(el).getPropertyValue(name).trim());
 
     const stack = frame.querySelector('article.technical-drawing-stack')!;
@@ -190,23 +171,6 @@ function strikes(page: Page, way: 'fwd' | 'back', calledFor: { on: 'frame' | 'st
     }).observe(watched, { attributes: true, attributeFilter: [mark] });
   }), { which: way, ...calledFor });
 }
-
-// A point on the folded-back corner itself. The flap's box runs past the sheet edge, so its
-// centre can fall in the cut-away corner and a press there lands on the page under it. The
-// resting crease runs from (w - x, h) to (w, h - y) and the corner is mirrored across it, so
-// the flap is that triangle; its centroid is inside it on any sheet.
-const flapGrip = (stack: Locator) => stack.locator('.paper-front').evaluate((sheet) => {
-  const fold = sheet.querySelector<HTMLElement>('.paper-fold')!;
-  const style = getComputedStyle(fold);
-  const x = parseFloat(style.getPropertyValue('--fold-x'));
-  const y = parseFloat(style.getPropertyValue('--fold-y'));
-  const { right, bottom } = sheet.getBoundingClientRect();
-  const mirrored = { x: right - (2 * x * y * y) / (x * x + y * y), y: bottom - (2 * x * x * y) / (x * x + y * y) };
-  return {
-    x: (right - x + right + mirrored.x) / 3,
-    y: (bottom + bottom - y + mirrored.y) / 3,
-  };
-});
 
 const armed = (page: Page, index: number) => page.evaluate((i) => {
   const hints = document.querySelectorAll('.technical-drawing-frame')[i].querySelector('.flip-hints')!;
@@ -561,6 +525,7 @@ test('the hint reads against the page in every theme and at every width', async 
       });
       await page.waitForTimeout(700);
 
+      await installProbes(page);
       const { words, path, ink } = await page.evaluate(() => {
         const frame = document.querySelector('.technical-drawing-frame')!;
         const text = frame.querySelector<HTMLElement>('.flip-hint--fwd.hint-words')!;
@@ -583,12 +548,7 @@ test('the hint reads against the page in every theme and at every width', async 
         }
         // The themes name their colours in oklch, which no amount of string work turns into the
         // sRGB the screenshot is in; the canvas already knows how.
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = 1;
-        const context = canvas.getContext('2d')!;
-        context.fillStyle = getComputedStyle(text).color;
-        context.fillRect(0, 0, 1, 1);
-        const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+        const [r, g, b] = window.e2eProbes!.srgba(getComputedStyle(text).color);
         return { words, path, ink: [r, g, b] as Rgb };
       });
 

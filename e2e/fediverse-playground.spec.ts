@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { drawEveryStack, frontPage, frontPageIndex, frontPageName } from './support/paperStack';
+import { demoStack, drawEveryStack, frontPage, frontPageIndex, frontPageName } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
 const PAGES = ['Fediverse Playground', 'A Branch for Every Server', 'Bringing a Server Up', 'Names on the Network'];
@@ -10,10 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function playgroundStack(page: Page) {
-  // By title, not by position: the demos run gains stacks over time.
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'Fediverse Playground' }),
-  });
+  return demoStack(page, 'Fediverse Playground');
 }
 
 async function mountedPlayground(page: Page) {

@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
+import { installProbes } from './support/pageProbes';
+
+test.beforeEach(async ({ page }) => {
+  await installProbes(page);
+});
+
 /** The width past which Layout.astro gives the sheets a margin of desk on either side. */
 const DESK_FROM = 1024;
 
@@ -735,14 +741,7 @@ const GROUPS = JSON.parse(
 /** Every ruled sheet: its paper, its tear, its pitch and the height of every row on it. */
 const readSheets = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
-    const px = (value: string) => {
-      const probe = document.createElement('div');
-      probe.style.width = value;
-      document.body.append(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string) => window.e2eProbes!.px(value);
 
     const intro = document.querySelector('#open-source .intro')!.getBoundingClientRect();
 
@@ -866,11 +865,7 @@ test('the margin goes before the writing loses any room', async ({ page }) => {
   const read = () =>
     page.locator('#open-source section[data-group="open"]').evaluate((sheet) => {
       const style = getComputedStyle(sheet);
-      const probe = document.createElement('div');
-      probe.style.width = style.getPropertyValue('--margin-x');
-      sheet.append(probe);
-      const margin = probe.getBoundingClientRect().width;
-      probe.remove();
+      const margin = window.e2eProbes!.px(style.getPropertyValue('--margin-x'), sheet);
       const left = sheet.getBoundingClientRect().left;
       return {
         margin,
@@ -920,14 +915,7 @@ type WrittenLine = {
  */
 const readWrittenLines = (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
-    const px = (value: string, el: Element) => {
-      const probe = document.createElement('div');
-      probe.style.width = value;
-      el.append(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string, el: Element) => window.e2eProbes!.px(value, el);
     const kinds: [string, string][] = [
       ['group', 'h3'],
       ['head', '.lines > header'],
@@ -1021,14 +1009,7 @@ const expectCentred = (lines: WrittenLine[], pitch: number) => {
 const readPitch = (page: import('@playwright/test').Page) =>
   page.locator('#open-source section[data-group]').first().evaluate((sheet) => {
     const style = getComputedStyle(sheet);
-    const px = (value: string) => {
-      const probe = document.createElement('div');
-      probe.style.width = value;
-      sheet.append(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string) => window.e2eProbes!.px(value, sheet);
     return { pitch: px(style.getPropertyValue('--rule-pitch')), line: px(style.getPropertyValue('--line-height')) };
   });
 
@@ -1101,13 +1082,8 @@ for (const theme of ['light', 'dark-forest'] as const) {
       const lines = (await readWrittenLines(page)).filter((line) => line.sheet === 'merged');
       const strip = await sheet.evaluate((el) => {
         const style = getComputedStyle(el);
-        const probe = document.createElement('div');
-        probe.style.width = style.getPropertyValue('--margin-x');
-        el.append(probe);
-        const margin = probe.getBoundingClientRect().width;
-        probe.style.width = style.getPropertyValue('--rule-pitch');
-        const pitch = probe.getBoundingClientRect().width;
-        probe.remove();
+        const margin = window.e2eProbes!.px(style.getPropertyValue('--margin-x'), el);
+        const pitch = window.e2eProbes!.px(style.getPropertyValue('--rule-pitch'), el);
         // Left of the margin line, or on a sheet too narrow for a margin, the paper's own edge.
         const to = margin > 0 ? Math.floor(margin) - 6 : Math.floor(parseFloat(style.paddingLeft)) - 2;
         return { from: margin > 0 ? 4 : 2, to, pitch };
@@ -1188,11 +1164,7 @@ const readMarks = (page: import('@playwright/test').Page) =>
 
     for (const sheet of document.querySelectorAll<HTMLElement>('#open-source section[data-group]')) {
       const style = getComputedStyle(sheet);
-      const probe = document.createElement('div');
-      probe.style.width = style.getPropertyValue('--rule-pitch');
-      sheet.append(probe);
-      const pitch = probe.getBoundingClientRect().width;
-      probe.remove();
+      const pitch = window.e2eProbes!.px(style.getPropertyValue('--rule-pitch'), sheet);
 
       for (const row of sheet.querySelectorAll('.lines .row')) {
         const list = row.querySelector('ul');
@@ -1337,12 +1309,7 @@ for (const theme of ['light', 'arctic', 'dark-forest'] as const) {
 
     const [painted, picked] = await sheet.evaluate((el) => {
       // Both come back as oklch() here, so a canvas fill turns each into the pixel it paints.
-      const rgb = (colour: string) => {
-        const cx = document.createElement('canvas').getContext('2d')!;
-        cx.fillStyle = colour;
-        cx.fillRect(0, 0, 1, 1);
-        return [...cx.getImageData(0, 0, 1, 1).data.slice(0, 3)];
-      };
+      const rgb = (colour: string) => window.e2eProbes!.srgba(colour).slice(0, 3);
       const paper = getComputedStyle(document.documentElement).getPropertyValue('--theme-paper').trim();
       return [rgb(getComputedStyle(el).backgroundColor), rgb(paper)];
     });
@@ -1392,12 +1359,7 @@ test("the title block's paper is the sheet's, on the sheet's phase", async ({ pa
   const block = await stack.evaluate((el) => {
     const sheet = el.querySelector('.paper-front > section')!;
     const table = sheet.querySelector(':scope > table')!;
-    const fill = (node: Element) => {
-      const cx = document.createElement('canvas').getContext('2d')!;
-      cx.fillStyle = getComputedStyle(node).backgroundColor;
-      cx.fillRect(0, 0, 1, 1);
-      return [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3);
-    };
+    const fill = (node: Element) => window.e2eProbes!.srgba(getComputedStyle(node).backgroundColor).slice(0, 3);
     // Both pseudo-elements are inset: 0 on their own element, so each tiles from that
     // element's padding box, which is its border box less its border. One tile is 12rem, so
     // in register is a whole number of tiles apart.

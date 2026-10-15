@@ -1,46 +1,16 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
-
-function spaceBuilderStack(page: Page) {
-  return demoStack(page, 'Space Builder · Add Tool');
-}
+import { clickCarouselArrow } from './support/carousel';
+import { demoStack } from './support/paperStack';
+import { openCatalog } from './support/spaceBuilder';
 
 /** The object variants demo, whose picker this one reuses. */
 function variantsStack(page: Page) {
   return demoStack(page, 'Space Builder · Object Variants');
 }
 
-async function waitForSceneReady(front: Locator): Promise<Locator> {
-  const island = await waitForIslandMounted(front);
-  const app = island.locator('[data-ready]');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 30_000 });
-  return app;
-}
-
-/** The Add tool's sidebar, open, with the walkthrough handed over to the test. */
-async function openCatalog(page: Page): Promise<Locator> {
-  const stack = spaceBuilderStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  const app = await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
-
-  await app.focus();
-  if ((await app.getAttribute('data-panel')) !== 'catalog') {
-    await app.getByRole('button', { name: 'Add object' }).click();
-  }
-  await expect(app).toHaveAttribute('data-panel', 'catalog');
-  return app;
-}
-
 function card(app: Locator, id: string) {
   return app.locator(`[data-catalog-item="${id}"]`);
-}
-
-/** Clicks where the carousel's next arrow sits, a scroll button with no node of its own. */
-async function clickNextArrow(page: Page, styles: Locator) {
-  const box = await styles.boundingBox();
-  if (!box) throw new Error('The carousel has no layout box');
-  await page.mouse.click(box.x + box.width - 14, box.y + box.height / 2);
 }
 
 /** Every part of the picker, by the class names the two demos share. */
@@ -102,7 +72,7 @@ test.describe('desktop', () => {
     const styles = chair.locator('ul.styles');
 
     await expect(chair).toHaveAttribute('data-variant', 'chair');
-    await clickNextArrow(page, styles);
+    await clickCarouselArrow(page, styles, 'next');
 
     await expect(chair).toHaveAttribute('data-variant', 'chair-gold');
     await expect(styles).toHaveAttribute('data-index', '1');

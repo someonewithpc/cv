@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 import { expect, test } from './support/timeScale';
 
 /**
@@ -15,9 +15,7 @@ const DEMOS = [
 ];
 
 function stack(page: Page, title: string) {
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: title }),
-  });
+  return demoStack(page, title);
 }
 
 for (const { title, region } of DEMOS) {
