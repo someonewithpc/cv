@@ -345,6 +345,7 @@
 - [x] Pass data-* and aria-* through the marker SVG parser and rename it svgToComponent (C45) (#427)
 - [x] Give the marker editor border controls unique ids and demo targets per border (#220 C41) (#424)
 - [x] Set the Icon decoration default selection without writing state during render (#220 C43) (#423)
+- [ ] Hide the font picker and two-column loading placeholders when scripts are off, so their spinners stop turning over empty layers (#220 T32)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
 - [ ] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#220 E13)
