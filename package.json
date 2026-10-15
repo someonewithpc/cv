@@ -4,7 +4,7 @@
   "type": "module",
   "version": "0.0.1",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.22.0"
   },
   "scripts": {
     "dev": "ASTRO_DEV_BACKGROUND=1 astro dev",
@@ -21,14 +21,14 @@
     "test:audit:html-validate": "AUDIT_HTML=html-validate playwright test --config playwright.audit.config.ts audit/markup.spec.ts"
   },
   "dependencies": {
-    "@astrojs/react": "^7.0.0",
-    "@astrojs/vue": "^7.0.3",
+    "@astrojs/react": "^7.1.0",
+    "@astrojs/vue": "^7.1.0",
     "@fortawesome/fontawesome-svg-core": "^7.3.1",
     "@fortawesome/free-regular-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/react-fontawesome": "^3.5.0",
     "@iconify-json/lucide": "^1.2.140",
-    "astro": "^7.3.5",
+    "astro": "^7.4.0",
     "astro-icon": "^1.2.0",
     "classnames": "^2.5.1",
     "lodash": "^4.18.1",
@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@astrojs/cloudflare": "^14.3.3",
+    "@astrojs/cloudflare": "^14.4.0",
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@types/lodash": "^4.17.25",
@@ -59,7 +59,7 @@
     "stylelint": "^17.16.0",
     "stylelint-config-recommended": "^18.0.0",
     "typescript": "^6.0.3",
-    "wrangler": "^4.147.0"
+    "wrangler": "^4.151.0"
   },
   "overrides": {
     "@astrojs/language-server": "2.16.16"
