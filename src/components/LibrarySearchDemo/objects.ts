@@ -70,7 +70,7 @@ function sizeProperties(size: string): [string, string][] {
 
 /** Every row of `library_object_synthetic_properties` for one object: the typed
     properties, the seat count under both of its names, and the six size renderings. */
-export function syntheticProperties(object: LibraryObject): readonly (readonly [string, string])[] {
+function syntheticProperties(object: LibraryObject): readonly (readonly [string, string])[] {
   return [
     ...object.properties,
     ...(object.pax === undefined ? [] : [['Pax', String(object.pax)], ['Seats', String(object.pax)]] as const),

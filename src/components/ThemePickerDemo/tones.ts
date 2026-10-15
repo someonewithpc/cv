@@ -12,7 +12,7 @@ import { liftedTo, mixWhite, oklchCss, parseOklch, toneAt } from './contrast';
  * here is the theme's own ink mixed into its own canvas until it lands on the ratio named
  * for it, so the drawings read the same on every sheet.
  */
-export const TONE_RATIOS = {
+const TONE_RATIOS = {
   /** The end frame's fill: the icon covering the page, a tint behind everything else. */
   fill: 1.5,
   /** The wipe's middle frame, over the end frame. */

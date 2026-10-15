@@ -8,7 +8,7 @@ const LATENCY_MS = [90, 260] as const;
 /** What a sheet's request pipeline has done so far, for the Generated SQL sheet to print. */
 export type RequestLog = { key: string; sent: number; dropped: number; aborted: number };
 
-export function wait(ms: number, signal?: AbortSignal) {
+function wait(ms: number, signal?: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
     const timer = setTimeout(resolve, ms);
     signal?.addEventListener('abort', () => {

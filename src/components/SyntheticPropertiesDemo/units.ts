@@ -37,7 +37,7 @@ export const renderings = [
 export type RenderingId = (typeof renderings)[number]['id'];
 
 /** The two names a seat count is stored under, so either word finds it. */
-export const paxAliases = ['Pax', 'Seats'] as const;
+const paxAliases = ['Pax', 'Seats'] as const;
 
 export type Dimension = {
   /** The piece of the string as the split left it, trimmed. */
