@@ -108,7 +108,8 @@ test('an opened note stays clear of its sheet\'s edges on a phone', async ({ pag
   const note = page.locator('dialog:modal aside.marker-font, dialog:popover-open aside.marker-font');
   await expect(note).toBeVisible();
   // The card fades and slides in.
-  await page.waitForTimeout(400);
+  await expect.poll(() => note.evaluate((el) => el.getAnimations({ subtree: true })
+    .filter((animation) => animation.playState === 'running').length)).toBe(0);
 
   expect(await note.evaluateAll(faultsOf, { least: LEAST, block: false })).toEqual([]);
 });
