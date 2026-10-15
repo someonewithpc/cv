@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
+import { framesPass, steady } from './support/steady';
+
 /** The width past which Layout.astro gives the sheets a margin of desk on either side. */
 const DESK_FROM = 1024;
 
@@ -18,6 +20,13 @@ const DESKS = {
 
 /** A theme's tile URL, hashed in a build (light.Ab12_x-Y.webp) or not in dev. */
 const deskTile = (theme: string) => new RegExp(`/${theme}(\\.[\\w-]+)?\\.webp`);
+
+/** Where each band of the page lies, which settles once the fonts are in and the islands have booted. */
+const bands = (page: import('@playwright/test').Page) => page.evaluate(() => [...document.querySelectorAll('main > *, main > .full-width > *')]
+  .map((el) => {
+    const { x, y, width, height } = el.getBoundingClientRect();
+    return [x, y, width, height];
+  }));
 
 const withTheme = async (page: import('@playwright/test').Page, theme: string) => {
   await page.addInitScript((id) => {
@@ -87,7 +96,7 @@ test('the wood shows in the gutter and between the bands on a phone', async ({ p
   await withTheme(page, 'light');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.waitForTimeout(500);
+  await steady(page, () => bands(page));
 
   const spots = await page.evaluate(() => {
     const main = document.querySelector('main')!;
@@ -208,7 +217,7 @@ for (const [theme, bound] of Object.entries(SWING)) {
     await withTheme(page, theme);
     await page.setViewportSize({ width: 2560, height: 1440 });
     await page.goto('/');
-    await page.waitForTimeout(500);
+    await steady(page, () => bands(page));
 
     const desk = await readDesk(page);
     const rows = desk.lightness;
@@ -268,7 +277,7 @@ for (const width of [390, 1024, 1440]) {
   test(`the home page does not scroll sideways at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/');
-    await page.waitForTimeout(1000);
+    await steady(page, () => bands(page));
 
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
@@ -361,7 +370,7 @@ test('each demo is a lettered detail and nothing else is called out', async ({ p
 test('the mat runs the full width of a phone and nothing scrolls sideways', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.waitForTimeout(1000);
+  await steady(page, () => bands(page));
 
   const fit = await page.locator('#demos .cutting-mat').evaluate((el) => ({
     width: el.getBoundingClientRect().width,
@@ -450,7 +459,7 @@ for (const width of [CARDS_FROM - 16, 1440, 1280, 390]) {
   test(`the title card is a slip under the stack at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width < 800 ? 844 : 800 });
     await page.goto('/');
-    await page.waitForTimeout(1000);
+    await steady(page, () => bands(page));
 
     const { mat, details } = await readCards(page);
     expect(details.length).toBeGreaterThan(0);
@@ -642,7 +651,7 @@ test('a folio rides along while its sheet scrolls past', async ({ page }) => {
     const demos = document.querySelector('#demos')!.getBoundingClientRect();
     window.scrollTo(0, demos.top + window.scrollY + 400);
   });
-  await page.waitForTimeout(200);
+  await framesPass(page);
 
   const { folios, clientWidth } = await readFolios(page);
   const after = folios[demosFolio];
@@ -657,7 +666,7 @@ for (const [width, height] of [[FOLIO_FROM - 16, 900], [1024, 768], [390, 844]])
   test(`no folio at ${width}px, where the desk has no margin to spare`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
-    await page.waitForTimeout(1000);
+    await steady(page, () => bands(page));
 
     const { folios, scrollWidth, clientWidth } = await readFolios(page);
     expect(folios).toHaveLength(SHEETS.length);
@@ -839,7 +848,7 @@ test('every contribution is written on the rules of its sheet at 1440px', async 
 test('the ruled sheets fit a phone without scrolling sideways', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.waitForTimeout(1000);
+  await steady(page, () => bands(page));
 
   const { sheets } = await readSheets(page);
   expect(sheets).toHaveLength(GROUPS.length);
@@ -1060,7 +1069,7 @@ for (const width of [1440, 390]) {
     await blockWebfonts(page);
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    await page.waitForTimeout(500);
+    await steady(page, () => bands(page));
 
     const lines = await readWrittenLines(page);
     expect(new Set(lines.map(({ kind }) => kind))).toEqual(
@@ -1223,7 +1232,7 @@ for (const width of [1440, 390]) {
   test(`every row's marks are centred in the band they stand in at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    await page.waitForTimeout(500);
+    await steady(page, () => bands(page));
 
     const marks = await readMarks(page);
     expect(marks.length).toBeGreaterThan(50);
@@ -1269,8 +1278,7 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     // The circle is set in Special Elite; the fallback centres a pixel or two differently.
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(300);
+    await steady(page, () => bands(page));
 
     const bubbles = await readBubbles(page);
     expect(bubbles.length).toBeGreaterThan(0);
@@ -1284,7 +1292,11 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
 
 test('the paper grain tile is fetched once and stays under 24 KB', async ({ page }) => {
   const paperRequests: string[] = [];
+  let paperSent = 0;
   let paperBytes = -1;
+  page.on('request', (request) => {
+    if (/\/paper-fibre(\.[\w-]+)?\.webp$/.test(request.url())) paperSent += 1;
+  });
   page.on('requestfinished', async (request) => {
     if (!/\/paper-fibre(\.[\w-]+)?\.webp$/.test(request.url())) return;
     paperRequests.push(request.url());
@@ -1298,13 +1310,19 @@ test('the paper grain tile is fetched once and stays under 24 KB', async ({ page
   // Dozens of sheets carry the grain, the drawing stacks' pages and the contributions sheets,
   // so scroll the whole page to give every one of them a chance to request the tile before
   // counting.
+  // The frames after a scroll paint the sheets it brought in, which is when they ask for the
+  // tile; every request asked for by then has to have come back before the count.
+  const settled = async () => {
+    await framesPass(page);
+    await expect.poll(() => paperRequests.length - paperSent).toBe(0);
+  };
   await page.evaluate(() => document.getElementById('open-source')?.scrollIntoView());
-  await page.waitForTimeout(300);
+  await settled();
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(300);
+  await settled();
 
   expect(paperRequests, `requested from:\n${paperRequests.join('\n')}`).toHaveLength(1);
-  expect(paperBytes).toBeGreaterThan(0);
+  await expect.poll(() => paperBytes).toBeGreaterThan(0);
   // 21,604 bytes today, cut losslessly by scripts/cut-paper-tile.mjs. Lossless is the point:
   // a lossy encode of paper fibre lays a visible transform grid over every sheet. The budget
   // is the room a 192px tile needs to stay lossless, and is deliberately too tight for a
@@ -1387,9 +1405,8 @@ test("the title block's paper is the sheet's, on the sheet's phase", async ({ pa
 
   const stack = page.locator('article.technical-drawing-stack').first();
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(800);
 
-  const block = await stack.evaluate((el) => {
+  const block = await steady(page, () => stack.evaluate((el) => {
     const sheet = el.querySelector('.paper-front > section')!;
     const table = sheet.querySelector(':scope > table')!;
     const fill = (node: Element) => {
@@ -1417,7 +1434,7 @@ test("the title block's paper is the sheet's, on the sheet's phase", async ({ pa
       return Math.min(d, 192 - d);
     };
     return { sheetFill: fill(sheet), blockFill: fill(table), dx: off(sx, bx), dy: off(sy, by) };
-  });
+  }));
 
   expect(block.blockFill).toEqual(block.sheetFill);
   expect(block.dx).toBeLessThan(1);
@@ -1428,14 +1445,13 @@ test('the fold flap is the back of the sheet, with no fibre on it', async ({ pag
   await page.goto('/');
   const stack = page.locator('article.technical-drawing-stack').first();
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(800);
 
   // The flap, the clip, the grab handle and the hint ride on top of the page rather than being
   // the page, so none of them may carry the tile.
   const riders = stack.locator(
     '.paper-front > :is(.paper-fold, .paper-back-grab, .paper-clip, .paper-clip-under, .paper-flip-hint)',
   );
-  expect(await riders.count()).toBeGreaterThan(0);
+  expect(await steady(page, () => riders.count())).toBeGreaterThan(0);
   for (const rider of await riders.all()) {
     for (const pseudo of ['::before', '::after']) {
       const painted = await rider.evaluate(
