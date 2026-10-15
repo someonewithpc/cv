@@ -5,7 +5,7 @@
       "title": "GNU social v3",
       "role": "Maintainer",
       "roleJp": "メンテナー",
-      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5, with an event driven and modular architecture, rewrote controllers and the posting form layer, expanded PHPUnit coverage, integrated PHPStan and dependency-hygiene tooling",
+      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5 with an event driven and modular architecture. Rewrote the controllers and posting form layer, expanded PHPUnit coverage, and integrated PHPStan and tooling for dependency hygiene.",
       "repository": "GNUsocial/gnu-social",
       "commits": "~1200",
       "period": "2021–2022",
@@ -55,7 +55,7 @@
         {
           "repository": "withastro/compiler-rs",
           "title": "Fix wrong handling of combinators inside `:global()`",
-          "description": "Reworked Astro's `compiler_rs`'s `scope_css` pass so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path",
+          "description": "Reworked the `scope_css` pass in Astro's `compiler_rs` so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path.",
           "url": "https://github.com/withastro/compiler-rs/pull/61",
           "number": 61,
           "updatedAt": "2026-06-29T15:19:45Z",
@@ -257,7 +257,7 @@
         {
           "repository": "pybluez/pybluez",
           "title": "Update README",
-          "description": "Named the Debian package that carries the BlueZ headers in the PyBluez build requirements, so the README says what to install rather than what is needed.",
+          "description": "Named the Debian package that carries the BlueZ headers in the PyBluez build requirements, so the README says what to install.",
           "url": "https://github.com/pybluez/pybluez/pull/119",
           "number": 119,
           "updatedAt": "2016-04-17T10:22:13Z",
@@ -333,7 +333,7 @@
         {
           "repository": "assimp/assimp",
           "title": "Fix build error",
-          "description": "Fix a spurious Assimp warning tracked in assimp#3222.",
+          "description": "Fixed a spurious Assimp warning tracked in assimp#3222.",
           "url": "https://github.com/assimp/assimp/pull/3555",
           "number": 3555,
           "updatedAt": "2020-12-24T15:48:21Z",
@@ -510,7 +510,7 @@
         {
           "repository": "Alexays/Waybar",
           "title": "feat(modules): add on-enter and on-leave events",
-          "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignores GTK's inferior crossings and latches on a hover flag so each command runs once per hover, and mirrors the `on-click` guard that keeps built-in actions from also running as shell commands.",
+          "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignored GTK's inferior crossings and latched on a hover flag so each command ran once per hover, and mirrored the `on-click` guard that keeps built-in actions from also running as shell commands.",
           "url": "https://github.com/Alexays/Waybar/pull/5312",
           "number": 5312,
           "updatedAt": "2026-09-23T20:51:37Z",
@@ -526,7 +526,7 @@
         {
           "repository": "cheapestinference/claude-auto-retry",
           "title": "Package as a Nix flake (NixOS + home-manager modules)",
-          "description": "Packaged claude-auto-retry as a Nix flake with NixOS and home-manager modules that build from source and manage the shell wrapper, reconcile timer, and `StopFailure` hook through real options instead of `npm i -g`. Also fixed the wrapper clobbering each tmux pane's `TERM`.",
+          "description": "Packaged claude-auto-retry as a Nix flake with NixOS and home-manager modules that build from source and manage the shell wrapper, the reconcile timer, and the `StopFailure` hook through real options instead of `npm i -g`. Also fixed the wrapper clobbering each tmux pane's `TERM`.",
           "url": "https://github.com/cheapestinference/claude-auto-retry/pull/82",
           "number": 82,
           "updatedAt": "2026-09-08T13:00:47Z",
@@ -543,7 +543,7 @@
         {
           "repository": "git/git",
           "title": "rebase: add `--[no-]edit` to `--continue`",
-          "description": "Add `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening $EDITOR after resolving conflicts, with `--edit` to override the config for a single continue.",
+          "description": "Added `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening `$EDITOR` after resolving conflicts, with `--edit` to override the config for a single continue.",
           "url": "https://lore.kernel.org/git/20260721140443.1809379-1-hugo@hsal.es/T/#me10fd97f2d1bfcc869c6b71e41a22b9727bd2e24",
           "updatedAt": "2026-07-21",
           "stats": {
@@ -657,7 +657,7 @@
         {
           "repository": "sgruhier/capistrano-db-tasks",
           "title": "Add support for specifying extra command line options during database dump and load",
-          "description": "Let capistrano-db-tasks pass extra mysqldump flags—needed for schemas where a non-unique key follows the primary key.",
+          "description": "Let capistrano-db-tasks pass extra mysqldump flags, needed for schemas where a non-unique key follows the primary key.",
           "url": "https://github.com/sgruhier/capistrano-db-tasks/pull/138",
           "number": 138,
           "updatedAt": "2023-12-20T19:27:58Z",
@@ -782,7 +782,7 @@
         {
           "repository": "gaoxiaoliangz/react-scoped-css",
           "title": "Update dependencies so it works with Webpack 5 and CRACO 7",
-          "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer",
+          "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer.",
           "url": "https://github.com/gaoxiaoliangz/react-scoped-css/pull/74",
           "number": 74,
           "updatedAt": "2023-08-11T15:16:20Z",
@@ -817,7 +817,7 @@
         {
           "repository": "PaulLeCam/react-leaflet",
           "title": "Allow customizing which class gets used for `LayersControl`",
-          "description": "Let React Leaflet's `LayersControl` instantiate a custom `L.Control` subclass—needed for image-based layer toggles.",
+          "description": "Let React Leaflet's `LayersControl` instantiate a custom `L.Control` subclass, needed for image-based layer toggles.",
           "url": "https://github.com/PaulLeCam/react-leaflet/pull/1092",
           "number": 1092,
           "updatedAt": "2024-06-03T08:39:52Z",
@@ -901,7 +901,7 @@
         {
           "repository": "NixOS/nixpkgs",
           "title": "gtk4: 4.22.4 -> 4.22.5",
-          "description": "Bumped gtk4 to 4.22.5 for upstream's munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged. Closed as a duplicate of #559510, the GNOME 51 update on staging, which takes gtk4 to 4.24.0.",
+          "description": "Bumped gtk4 to 4.22.5 for the upstream munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged. Closed as a duplicate of #559510, the GNOME 51 update on staging, which takes gtk4 to 4.24.0.",
           "url": "https://github.com/NixOS/nixpkgs/pull/561695",
           "number": 561695,
           "updatedAt": "2026-09-21T21:36:00Z",
@@ -1006,7 +1006,7 @@
         {
           "repository": "somnambulist-tech/cte-builder",
           "title": "Update to `Doctrine` 3 and `beberlei/assert` 3.3",
-          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3. Closed after the maintainer folded parts of it into 3.1.0, which supports DBAL 2 and 3 side by side",
+          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3. Closed after the maintainer folded parts of it into 3.1.0, which supports DBAL 2 and 3 side by side.",
           "url": "https://github.com/somnambulist-tech/cte-builder/pull/3",
           "number": 3,
           "updatedAt": "2021-12-27T16:33:57Z",
@@ -1066,7 +1066,7 @@
         {
           "repository": "melpa/melpa",
           "title": "Add `php-align` recipe",
-          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules. Closed once the thread led to `php-align.el` being merged into `php-mode` instead",
+          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules. Closed once the thread led to `php-align.el` being merged into `php-mode` instead.",
           "url": "https://github.com/melpa/melpa/pull/6759",
           "number": 6759,
           "updatedAt": "2020-03-25T03:53:14Z",
