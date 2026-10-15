@@ -151,12 +151,21 @@ const seatsInvalid = computed(() => {
   return snap.options.seats > 0 && snap.options.seats > snap.maxSeats;
 });
 
+const toastTimers = new Set<ReturnType<typeof setTimeout>>();
+function toastLater(run: () => void, ms: number) {
+  const timer = setTimeout(() => {
+    toastTimers.delete(timer);
+    run();
+  }, ms);
+  toastTimers.add(timer);
+}
+
 function pushToast(payload: DemoToastPayload) {
   const id = ++toastId;
   toasts.value = [...toasts.value.filter((t) => !t.leaving), { ...payload, id, leaving: false }];
-  setTimeout(() => {
+  toastLater(() => {
     toasts.value = toasts.value.map((t) => (t.id === id ? { ...t, leaving: true } : t));
-    setTimeout(() => {
+    toastLater(() => {
       toasts.value = toasts.value.filter((t) => t.id !== id);
     }, TOAST_EXIT_MS);
   }, TOAST_VISIBLE_MS);
@@ -928,6 +937,7 @@ onBeforeUnmount(() => {
   if (resumeTimer) clearTimeout(resumeTimer);
   if (handoffTimer) clearTimeout(handoffTimer);
   if (clickTimer) clearTimeout(clickTimer);
+  for (const timer of toastTimers) clearTimeout(timer);
   window.removeEventListener('pointermove', onTrustedPointer);
   window.removeEventListener('pointerdown', onTrustedPointer);
   document.removeEventListener('pointerout', onPointerLeaveWindow);
