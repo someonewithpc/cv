@@ -326,3 +326,4 @@
 - [x] Run the flipped-pages strip turns alone in a serial project instead of describe.configure serial (#220 E20) (#480)
 - [x] Share the e2e helpers the specs each copied: the deck placement and takeover, scene ready and catalog, carousel arrow, dog-ear grip, sheet margin, contrast, and the in-page length and colour probes (#220 E28) (#489)
 - [ ] Drop the title-fit-1 container rule that title-fit-2's identical range always covered (#220 C23)
+- [x] Drop the title-fit-1 container rule that title-fit-2's identical range always covered (C23) (#418)
