@@ -2,8 +2,7 @@ import { demoStack, frontPage, frontPageIndex, turnToPage } from './support/pape
 import { expect, test } from './support/timeScale';
 
 /**
- * Kept out of marker-editor.spec.ts: four other branches are editing that file, and a
- * test appended to its end conflicts with every one of them.
+ * The page-turn cases for the marker editor, kept apart from marker-editor.spec.ts.
  */
 
 test.beforeEach(async ({ page }) => {
