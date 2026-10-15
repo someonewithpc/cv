@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { installProbes } from './support/pageProbes';
+
 test.use({ viewport: { width: 1440, height: 1000 } });
 
 test.beforeEach(async ({ page }) => {
@@ -85,14 +87,10 @@ for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
     }, theme);
     await page.emulateMedia({ media: 'print', colorScheme: 'dark' });
 
+    await installProbes(page);
     const colours = await page.evaluate(() => {
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = 1;
-      const context = canvas.getContext('2d')!;
       const luminance = (colour: string) => {
-        context.fillStyle = colour;
-        context.fillRect(0, 0, 1, 1);
-        const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+        const [r, g, b] = window.e2eProbes!.srgba(colour);
         return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
       };
       const table = document.querySelector('#career ol')!;
