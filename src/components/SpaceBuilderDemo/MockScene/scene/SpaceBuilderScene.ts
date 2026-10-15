@@ -485,10 +485,6 @@ export class SpaceBuilderScene {
     this.requestRender();
   }
 
-  isActive() {
-    return this.active && !this.disposed && !this.gpuReleased;
-  }
-
   /**
    * Free the GPU's copy of the scene while this carousel page is off-screen.
    * Scene graph and CPU-side data stay; {@link attachGpu} rebuilds the renderer on the same
@@ -795,12 +791,6 @@ export class SpaceBuilderScene {
     this.emitSnapshot();
   }
 
-  /** Hide the corner/edge/move/rotate lollipops without hiding the tinted fill plane. */
-  setHandlesVisible(visible: boolean) {
-    this.handles.visible = visible;
-    this.requestRender();
-  }
-
   /** Hide the capacity tag regardless of seat count — for pages with no chairs loaded. */
   setTagSuppressed(suppressed: boolean) {
     this.tagSuppressed = suppressed;
@@ -888,25 +878,6 @@ export class SpaceBuilderScene {
       };
       requestAnimationFrame(step);
     });
-  }
-
-  nudgeArea(dx: number, dz: number) {
-    if (!this.area) return;
-    this.setArea({
-      ...this.area,
-      x: this.area.x + dx,
-      z: this.area.z + dz,
-    });
-  }
-
-  rotateArea(delta: number, snap = false) {
-    if (!this.area) return;
-    let angle = this.area.angle + delta;
-    if (snap) {
-      const step = Math.PI / 8;
-      angle = Math.round(angle / step) * step;
-    }
-    this.setArea({ ...this.area, angle });
   }
 
   private activeGhost(): Object3D | null {
