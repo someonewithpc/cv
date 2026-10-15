@@ -23,3 +23,10 @@
     border-color: $visrez-brand;
   }
 }
+
+// With scripts off no island boots, so the spinner would turn forever over an empty layer.
+@media (scripting: none) {
+  .boot-placeholder {
+    display: none;
+  }
+}
