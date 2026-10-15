@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
+import { inDeckGrace, isTransportControl, onAutoplayCommand, onReducedMotionChange, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
 
 import { CURSOR_GONE, DrawnCursor, type DrawnCursorState } from './DrawnCursor';
@@ -189,15 +189,13 @@ export function Autoplay({ root }: { root: RefObject<HTMLDivElement | null> }) {
       play();
     });
 
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onMotionChange = () => {
+    const stopMotionWatch = onReducedMotionChange(() => {
       if (reducedMotion(el)) hold();
       play();
-    };
-    motionQuery.addEventListener('change', onMotionChange);
+    });
 
     return () => {
-      motionQuery.removeEventListener('change', onMotionChange);
+      stopMotionWatch();
       stopCommands();
       stopPageWatch();
       page.removeEventListener('pointermove', onPointer);
