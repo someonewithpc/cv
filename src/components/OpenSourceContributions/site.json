@@ -5,7 +5,7 @@
       "title": "GNU social v3",
       "role": "Maintainer",
       "roleJp": "メンテナー",
-      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5, with an event driven and modular architecture, rewrote controllers and the posting form layer, expanded PHPUnit coverage, integrated PHPStan and dependency-hygiene tooling",
+      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5, with an event driven and modular architecture, rewrote controllers and the posting form layer, expanded PHPUnit coverage, integrated PHPStan and dependency-hygiene tooling.",
       "repository": "GNUsocial/gnu-social",
       "commits": "~1200",
       "period": "2021–2022",
@@ -55,7 +55,7 @@
         {
           "repository": "withastro/compiler-rs",
           "title": "Fix wrong handling of combinators inside `:global()`",
-          "description": "Reworked Astro's `compiler_rs`'s `scope_css` pass so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path",
+          "description": "Reworked Astro's `compiler_rs`'s `scope_css` pass so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path.",
           "url": "https://github.com/withastro/compiler-rs/pull/61",
           "number": 61,
           "updatedAt": "2026-06-29T15:19:45Z",
@@ -782,7 +782,7 @@
         {
           "repository": "gaoxiaoliangz/react-scoped-css",
           "title": "Update dependencies so it works with Webpack 5 and CRACO 7",
-          "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer",
+          "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer.",
           "url": "https://github.com/gaoxiaoliangz/react-scoped-css/pull/74",
           "number": 74,
           "updatedAt": "2023-08-11T15:16:20Z",
@@ -1006,7 +1006,7 @@
         {
           "repository": "somnambulist-tech/cte-builder",
           "title": "Update to `Doctrine` 3 and `beberlei/assert` 3.3",
-          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3. Closed after the maintainer folded parts of it into 3.1.0, which supports DBAL 2 and 3 side by side",
+          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3. Closed after the maintainer folded parts of it into 3.1.0, which supports DBAL 2 and 3 side by side.",
           "url": "https://github.com/somnambulist-tech/cte-builder/pull/3",
           "number": 3,
           "updatedAt": "2021-12-27T16:33:57Z",
@@ -1066,7 +1066,7 @@
         {
           "repository": "melpa/melpa",
           "title": "Add `php-align` recipe",
-          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules. Closed once the thread led to `php-align.el` being merged into `php-mode` instead",
+          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules. Closed once the thread led to `php-align.el` being merged into `php-mode` instead.",
           "url": "https://github.com/melpa/melpa/pull/6759",
           "number": 6759,
           "updatedAt": "2020-03-25T03:53:14Z",
