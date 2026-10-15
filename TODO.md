@@ -376,7 +376,7 @@
 - [x] Read the annotation overlays once a frame after animation events, not once per event (#220 C7) (#410)
 - [x] Watch for a stack's bottom edge with one threshold per observer instead of 21 (#220 C8) (#409)
 - [x] Fit the title block once a window resize settles, not on every step of the drag (#220 C2) (#406)
-- [ ] Open Source descriptions: past tense on the Assimp, git rebase and Waybar rows, and `$EDITOR` in code (T29)
+- [x] Open Source descriptions: past tense on the Assimp, git rebase and Waybar rows, and `$EDITOR` in code (T29) (#465)
 - [x] Hyphenate the compound adjectives in the Career data: Full-stack, step-by-step, node-based, event-driven and ride-sharing (220 T28) (#464)
 - [x] Career copy that dates or misnames itself: the Leb entry's "current versions" is a 2021 claim, the Visrez map names "the resort" before any resort is introduced, and GNU social has three role names for one job, with "co-maintainership" in the meta description (#220 T21) (#458)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
