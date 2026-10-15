@@ -34,7 +34,24 @@ const base = {
 // those are named here instead of switching the rules off.
 const sassAtRules = ['use', 'forward', 'mixin', 'include', 'function', 'return', 'if', 'else', 'each', 'for', 'while', 'at-root', 'content', 'debug', 'warn', 'error', 'extend'];
 
+// These rules read the value, prelude or selector as plain CSS, so a Sass variable, a
+// function call such as fs(0.5), an interpolation such as #{$id} or a mixin signature is
+// "unknown" or "invalid" to them although it compiles to valid CSS. Stylelint cannot
+// evaluate Sass, so these stay off for source files. Property
+// names, units, hex colours and the rest of the recommended rules stay on.
+const sassBlind = {
+  'at-rule-prelude-no-invalid': null,
+  'media-query-no-invalid': null,
+  'declaration-property-value-no-unknown': null,
+  // A partial is nested under its includer's selector, so the & has a root once compiled.
+  'nesting-selector-no-missing-scoping-root': null,
+};
+
 export default {
+  // postcss-html reads <style is:global set:html={css} /> and <style set:html={css}></style>
+  // as a style element with no end, or an empty one, because the CSS is a build-time string
+  // and not source in the file.
+  ignoreFiles: ['src/pages/index.astro', 'src/components/ThemePickerDemo/layers/PickerLayer.astro'],
   ...base,
   rules: base.rules,
   overrides: [
@@ -43,7 +60,8 @@ export default {
       customSyntax: 'postcss-scss',
       rules: {
         'at-rule-no-unknown': [true, { ignoreAtRules: sassAtRules }],
-        'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['target-current', 'global'] }],
+        'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['target-current', 'global', 'deep'] }],
+        ...sassBlind,
       },
     },
     {
@@ -51,7 +69,8 @@ export default {
       customSyntax: 'postcss-html',
       rules: {
         'at-rule-no-unknown': [true, { ignoreAtRules: sassAtRules }],
-        'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['target-current', 'global'] }],
+        'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['target-current', 'global', 'deep'] }],
+        ...sassBlind,
       },
     },
   ],
