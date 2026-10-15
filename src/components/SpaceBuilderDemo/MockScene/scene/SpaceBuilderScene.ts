@@ -1579,15 +1579,6 @@ export class SpaceBuilderScene {
     grass.receiveShadow = true;
     this.scene.add(grass);
 
-    // Flat invisible plane for raycasts / chairs — displacement is visual only.
-    const flat = new Mesh(
-      new PlaneGeometry(GROUND_SIZE, GROUND_SIZE),
-      new MeshBasicMaterial({ visible: false }),
-    );
-    flat.rotation.x = -Math.PI / 2;
-    flat.position.y = 0.02;
-    this.scene.add(flat);
-
     const configureMap = (texture: Texture, { srgb = false } = {}) => {
       texture.wrapS = RepeatWrapping;
       texture.wrapT = RepeatWrapping;
