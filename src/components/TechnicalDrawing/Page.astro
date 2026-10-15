@@ -339,7 +339,7 @@ section {
     /* Without script nothing sets the attribute, and the sheet is portrait by the same width
        query Stack.astro mirrors for --sheet-block; the landscape size left a phone's sheet at
        7px type. */
-    @media (scripting: none) and (width <= 680px) {
+    @media (scripting: none) and (width <= #{drawing.$portrait-window}) {
       font-size: min(1rem, 0.038 * var(--sheet-inline));
     }
   }
@@ -827,11 +827,11 @@ section {
      only the floor. Where a sheet's own artwork leaves the block room for cells the
      ladder sheds, Stack.astro names the fit it can take in data-title-fit, and that
      replaces the ladder's step (title-fit.ts). */
-  @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-1; } }
-  @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-2; } }
-  @container technical-drawing-width (40em < width <= 46em) { &:not([data-title-fit]) { @include title-fit-3; } }
-  @container technical-drawing-width (40em < width <= 43em) { &:not([data-title-fit]) { @include title-fit-4; } }
-  @container technical-drawing-width (40em < width <= 41em) { &:not([data-title-fit]) { @include title-fit-5; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 50em) { &:not([data-title-fit]) { @include title-fit-1; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 50em) { &:not([data-title-fit]) { @include title-fit-2; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 46em) { &:not([data-title-fit]) { @include title-fit-3; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 43em) { &:not([data-title-fit]) { @include title-fit-4; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 41em) { &:not([data-title-fit]) { @include title-fit-5; } }
 
   /* A fit is an arrangement and how many cells it sheds, in the ladder's order:
      T is the table, S the logo under the title, W that with the title wrapped. */
