@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
+import { clickCarouselArrow } from './support/carousel';
 import { demoStack } from './support/paperStack';
 import { openCatalog } from './support/spaceBuilder';
 
@@ -10,13 +11,6 @@ function variantsStack(page: Page) {
 
 function card(app: Locator, id: string) {
   return app.locator(`[data-catalog-item="${id}"]`);
-}
-
-/** Clicks where the carousel's next arrow sits, a scroll button with no node of its own. */
-async function clickNextArrow(page: Page, styles: Locator) {
-  const box = await styles.boundingBox();
-  if (!box) throw new Error('The carousel has no layout box');
-  await page.mouse.click(box.x + box.width - 14, box.y + box.height / 2);
 }
 
 /** Every part of the picker, by the class names the two demos share. */
@@ -78,7 +72,7 @@ test.describe('desktop', () => {
     const styles = chair.locator('ul.styles');
 
     await expect(chair).toHaveAttribute('data-variant', 'chair');
-    await clickNextArrow(page, styles);
+    await clickCarouselArrow(page, styles, 'next');
 
     await expect(chair).toHaveAttribute('data-variant', 'chair-gold');
     await expect(styles).toHaveAttribute('data-index', '1');
