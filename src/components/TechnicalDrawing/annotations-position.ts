@@ -66,6 +66,7 @@ type Overlay = {
 const overlays = new Map<Element, Overlay>();
 const boxes = new WeakMap<Element, [number, number]>();
 const pending = new Set<Overlay>();
+const stale = new Set<Overlay>();
 let frame = 0;
 
 const numbers = (value: string | undefined) => (value ?? '').trim().split(/\s+/).map(Number);
@@ -280,6 +281,10 @@ function write(overlay: Overlay) {
 
 function flush() {
   frame = 0;
+  for (const overlay of stale) {
+    if (read(overlay)) pending.add(overlay);
+  }
+  stale.clear();
   for (const overlay of pending) write(overlay);
   pending.clear();
 }
@@ -287,6 +292,13 @@ function flush() {
 function schedule(overlay: Overlay) {
   if (read(overlay)) pending.add(overlay);
   if (pending.size && !frame) frame = requestAnimationFrame(flush);
+}
+
+// A page turn cancels every animation in the artwork at once, and each one bubbles up here:
+// read the overlay once, in the next frame, however many arrive.
+function scheduleRead(overlay: Overlay) {
+  stale.add(overlay);
+  if (!frame) frame = requestAnimationFrame(flush);
 }
 
 const observer = new ResizeObserver((entries) => {
@@ -370,7 +382,7 @@ export function positionAnnotations(scope: ParentNode) {
       // Stack.astro cancels and restarts a page's animations as it turns; both events
       // arrive once the animation has settled where the faces will be read.
       for (const event of ['animationend', 'animationcancel']) {
-        artwork.addEventListener(event, () => schedule(overlay));
+        artwork.addEventListener(event, () => scheduleRead(overlay));
       }
     }
   }
