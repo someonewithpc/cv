@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { deckPlacement, hoverTakeover, pauseHoldsThenReset } from './support/deck';
 import {
   demoStack,
   frontPage,
@@ -211,7 +212,6 @@ for (const { name, viewport } of VIEWPORTS) {
       const deck = frontDeck(stack, front);
       const play = deck.locator('[data-demo-key="play"]');
       const pause = deck.locator('[data-demo-key="pause"]');
-      const reset = deck.locator('[data-demo-key="reset"]');
 
       await expect(deck).toHaveAttribute('data-state', 'playing', { timeout: 20_000 });
       await expect(deck).toContainText('AUTO PLAYING');
@@ -219,29 +219,8 @@ for (const { name, viewport } of VIEWPORTS) {
       // It is a stamp in the border band: inside the paper margin under the frame line,
       // clear of the drawing and of the title block. A phone sheet's band cannot hold it,
       // so it moves under the page into the callout's card.
-      const placement = await deck.evaluate((el) => {
-        // In the card, the deck is measured against the sheet it came off.
-        const inCard = el.parentElement!.matches('.callout-card');
-        const section = inCard
-          ? el.closest('section.callout')!.querySelector('article.technical-drawing-stack > * > section')!
-          : el.closest('section')!;
-        const sheet = section.getBoundingClientRect();
-        const box = el.getBoundingClientRect();
-        const band = parseFloat(getComputedStyle(section).paddingBottom);
-        const clearOf = (other: Element | null) => {
-          if (!other) return false;
-          const b = other.getBoundingClientRect();
-          return box.right <= b.left + 1 || box.left >= b.right - 1
-            || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
-        };
-        return {
-          inCard,
-          insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
-          clearOfDrawing: clearOf(section.querySelector('.content')),
-          clearOfTitleBlock: clearOf(section.querySelector('table')),
-        };
-      });
-      expect(placement).toEqual({
+      const placement = await deckPlacement(deck);
+      expect(placement).toMatchObject({
         inCard: name === 'phone',
         insideBand: name === 'desktop',
         clearOfDrawing: true,
@@ -250,11 +229,7 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(play).toHaveAttribute('aria-pressed', 'true');
       await expect(pause).toHaveAttribute('aria-pressed', 'false');
 
-      // Hovering the sheet is the takeover the deck's hint promises.
-      const box = (await stack.boundingBox())!;
-      await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.6);
-      await page.mouse.move(box.x + box.width * 0.42, box.y + box.height * 0.62);
-      await expect(deck).toHaveAttribute('data-state', 'user');
+      await hoverTakeover(page, stack, deck);
       await expect(deck).toContainText('MANUAL CONTROL');
       await expect(pause).toHaveAttribute('aria-pressed', 'true');
       await expect(play).toHaveAttribute('aria-pressed', 'false');
@@ -263,15 +238,7 @@ for (const { name, viewport } of VIEWPORTS) {
       await play.click();
       await expect(deck).toHaveAttribute('data-state', 'playing');
 
-      // Pause is the explicit takeover, and it holds past the idle resume (2s).
-      await pause.click();
-      await expect(deck).toHaveAttribute('data-state', 'user');
-      await page.waitForTimeout(3000);
-      await expect(deck).toHaveAttribute('data-state', 'user');
-
-      // Reset starts the walkthrough again.
-      await reset.click();
-      await expect(deck).toHaveAttribute('data-state', 'playing');
+      await pauseHoldsThenReset(page, deck);
     });
   });
 
