@@ -75,7 +75,7 @@ export class IconMarkerDecoration extends MarkerPart {
     return this.reactiveState.activeDecoration ?? this.reactiveState.decorations[0]?.id ?? null;
   }
 
-  Loader(props: Record<string, any> = {}) {
+  Loader(props: Record<string, string | number> = {}) {
     return (
       <FontAwesomeIcon
         icon={faSpinner}

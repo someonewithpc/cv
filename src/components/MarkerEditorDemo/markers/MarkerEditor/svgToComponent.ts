@@ -93,7 +93,7 @@ export function parseSVGDocument(svgData: string): SVGSVGElement {
 
 export function svgToComponent(
   svgData: string,
-  props: Record<string, any> = {},
+  props: Record<string, unknown> = {},
 ): ReactNode {
   return domNodeToReact(parseSVGDocument(svgData), { key: '', props });
 }

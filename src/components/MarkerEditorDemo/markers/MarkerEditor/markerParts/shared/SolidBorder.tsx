@@ -26,8 +26,7 @@ export class SolidBorder extends MarkerPart {
 
   protected liveWidth: LiveProperty;
 
-  constructor(...args: any[]) {
-    // @ts-ignore
+  constructor(...args: ConstructorParameters<typeof MarkerPart>) {
     super(...args);
 
     this.liveWidth = new LiveProperty(this.container, `--live-${this.borderClassName}-border-width`);

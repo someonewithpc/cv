@@ -28,8 +28,7 @@ export class SolidFill extends MarkerPart {
 
   private liveColor: LiveProperty;
 
-  constructor(...args: any[]) {
-    // @ts-ignore
+  constructor(...args: ConstructorParameters<typeof MarkerPart>) {
     super(...args);
 
     this.liveColor = new LiveProperty(this.container, `--live-${this.fillClassName}-fill`);

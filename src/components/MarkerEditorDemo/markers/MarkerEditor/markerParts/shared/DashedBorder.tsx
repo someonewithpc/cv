@@ -32,15 +32,14 @@ export class DashedBorder extends SolidBorder {
   private liveDash: LiveProperty;
   private liveGap: LiveProperty;
 
-  constructor(...args: any[]) {
-    // @ts-ignore
+  constructor(...args: ConstructorParameters<typeof SolidBorder>) {
     super(...args);
 
     this.liveDash = new LiveProperty(this.container, `--live-${this.borderClassName}-dash-length`);
     this.liveGap = new LiveProperty(this.container, `--live-${this.borderClassName}-gap-length`);
     this.commitDash = debounce(() => {
-      this.reactiveState.dashLength = this.reactiveState.internal.dashLength;
-      this.reactiveState.gapLength = this.reactiveState.internal.gapLength;
+      this.reactiveState.dashLength = this.reactiveState.internal.dashLength as number;
+      this.reactiveState.gapLength = this.reactiveState.internal.gapLength as number;
     }, CONTROL_COMMIT_MS);
   }
 

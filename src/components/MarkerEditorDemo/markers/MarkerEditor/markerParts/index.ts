@@ -111,6 +111,8 @@ export const markers = {
 };
 
 export type Markers = typeof markers;
+
+export const markersByStep: Record<string, Record<string, MarkerPart>> = markers;
 export type StepsType = keyof Markers;
 export type ControlPointNamesTypeFor<T> = T[keyof T] extends infer M
                                  ? M extends { controlPoints: infer CP }
@@ -237,9 +239,9 @@ export function useSyncSnappingControlPointsState(state: StateType) {
           ? []
           : Object.entries(state.active)
               .filter(([otherStep, otherPart]) => otherStep !== step && otherPart !== part)
-              .flatMap(([otherStep, otherPart]) => Object.values((markers[otherStep as keyof typeof markers] as any)[otherPart].controlPoints));
+              .flatMap(([otherStep, otherPart]) => Object.values(markersByStep[otherStep][otherPart].controlPoints));
 
-        (markers[step as keyof typeof markers] as any)[part].setSnappingControlPoints(controlPoints);
+        markersByStep[step][part].setSnappingControlPoints(controlPoints);
       });
   }, [state.active, state.snappingDisabled]);
 }
