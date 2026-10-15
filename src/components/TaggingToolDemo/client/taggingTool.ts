@@ -35,7 +35,7 @@ type Tool = {
   groups: Group[];
   property: string;
   initialProperty: string;
-  note: HTMLElement | null;
+  note: HTMLElement;
   /** Paces the save clocks and the ring's easing switch; holds while the sheet is off
       screen or behind another page, same as the walkthrough's own pacing. */
   gate: DemoGate;
@@ -61,34 +61,27 @@ function titleize(text: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-const ruler = document.createElement('canvas').getContext('2d');
-
-/** One character of the input's font, in px: what its ::before caret means by 1ch. */
-function chWidth(input: HTMLInputElement) {
-  if (!ruler) return parseFloat(getComputedStyle(input).fontSize) * 0.6;
-  const { fontStyle, fontWeight, fontSize, fontFamily } = getComputedStyle(input);
-  ruler.font = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
-  return ruler.measureText('0').width;
-}
-
-/** The product's shared_inputs.js handler: copy the value into every variant form
-    and tell its ::before caret where the shared input's caret is. The product then
-    scrolls each input to its end, which on a card too narrow for the value shows its
-    tail with the caret clamped to the far edge; this scrolls only as far as it takes to
-    keep the caret in view, and tells the ::before how far that was. */
+/** The product's shared_inputs.js handler: copy the value into every variant form, tell its
+    ::before caret where the shared input's caret is, and scroll each input to its end. Every
+    write comes before every read, so a key costs one layout, not one per card. */
 function mirror(group: Group, eventType = 'keyup') {
   const { shared } = group;
-  const caret = shared.selectionStart ?? shared.value.length;
+  const { value } = shared;
+  const start = shared.selectionStart ?? value.length;
+  // selectionStart counts a space twice, so the product clamps to the last space before it.
+  const caret = Math.max(start, value.lastIndexOf(' ', start));
 
   group.cards.forEach(({ form, input }) => {
     form.style.setProperty('--caret', String(caret));
-    input.value = shared.value;
-    const ch = chWidth(input);
-    const style = getComputedStyle(input);
-    const textWidth = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    input.scrollLeft = eventType === 'blur' ? 0 : Math.max(0, (caret + 1) * ch - textWidth);
-    form.style.setProperty('--scroll', `${input.scrollLeft}px`);
-    form.style.setProperty('--input-width', `${input.offsetWidth}px`);
+    input.value = value;
+  });
+  const scrolls = group.cards.map(({ input }) => (eventType === 'blur' ? 0 : input.scrollWidth));
+  group.cards.forEach(({ input }, i) => {
+    input.scrollLeft = scrolls[i];
+  });
+  const widths = group.cards.map(({ input }) => input.offsetWidth);
+  group.cards.forEach(({ form }, i) => {
+    form.style.setProperty('--input-width', `${widths[i]}px`);
   });
 }
 
@@ -219,13 +212,11 @@ function applyVisibility(tool: Tool) {
     if (complete) hidden += 1;
   });
 
-  if (tool.note) {
-    tool.note.hidden = hidden === 0;
-    tool.note.querySelector('.hidden-count')!.textContent =
-      hidden === 1
-        ? '1 object left the list once it was fully tagged.'
-        : `${hidden} objects left the list once they were fully tagged.`;
-  }
+  tool.note.hidden = hidden === 0;
+  tool.note.querySelector('.hidden-count')!.textContent =
+    hidden === 1
+      ? '1 object left the list once it was fully tagged.'
+      : `${hidden} objects left the list once they were fully tagged.`;
 }
 
 function afterSave(tool: Tool, group: Group, hide = true) {
@@ -348,9 +339,9 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
   return group;
 }
 
-function initHeader(tool: Tool) {
+function initControls(tool: Tool) {
   tool.select.addEventListener('change', () => showProperty(tool, tool.select.value));
-  tool.note?.querySelector('.demo-reset')?.addEventListener('click', () => restore(tool));
+  tool.note.querySelector('.demo-reset')!.addEventListener('click', () => restore(tool));
 }
 
 const wait = (ms: number) => documentGate().wait(ms);
@@ -426,7 +417,7 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
     active = next;
   });
 
-  const handover = watchHandover(root, {
+  const handover = watchHandover(host, {
     listening: () => active,
     takeOver() {
       stop();
@@ -560,9 +551,10 @@ async function autoplay(tool: Tool, host: HTMLElement, group: Group, script: Wal
 }
 
 export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
-  const select = root.querySelector<HTMLSelectElement>('.property-select');
+  const select = host.querySelector<HTMLSelectElement>('.property-select');
+  const note = host.querySelector<HTMLElement>('.demo-note');
   const list = root.querySelector<HTMLDataListElement>('datalist');
-  if (!select || !list) return;
+  if (!select || !note || !list) return;
 
   const tool: Tool = {
     root,
@@ -571,14 +563,14 @@ export function initTaggingTool(host: HTMLElement, root: HTMLElement) {
     groups: [],
     property: root.dataset.property ?? select.value,
     initialProperty: root.dataset.property ?? select.value,
-    note: root.querySelector<HTMLElement>('.demo-note'),
+    note,
     gate: demoGate(root),
   };
   tool.groups = [...root.querySelectorAll<HTMLElement>('.grouped-objects')].map((section) =>
     initGroup(tool, section),
   );
 
-  initHeader(tool);
+  initControls(tool);
   applyVisibility(tool);
 
   const target = tool.groups.find((group) => group.root.hasAttribute('data-autoplay-target'));

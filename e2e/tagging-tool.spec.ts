@@ -34,8 +34,8 @@ async function mountedTool(page: import('@playwright/test').Page) {
   // the rows back the way the demo's own reset does, so every test below starts from the
   // values and the property the page opens on.
   await expect(tool.locator('.pending, .success')).toHaveCount(0, { timeout: 10_000 });
-  await tool.locator('.demo-reset').evaluate((button: HTMLButtonElement) => button.click());
-  await expect(tool.locator('.property-select')).toHaveValue('chair');
+  await tool.locator('xpath=..').locator('.demo-reset').evaluate((button: HTMLButtonElement) => button.click());
+  await expect(tool.locator('xpath=..').locator('.property-select')).toHaveValue('chair');
   return { stack, front, tool };
 }
 
@@ -164,7 +164,7 @@ test.describe('handover', () => {
     await expect(tool).toHaveAttribute('data-autoplay', 'user');
 
     // Reset starts the walkthrough over from the rows the page opens on.
-    const select = tool.locator('.property-select');
+    const select = tool.locator('xpath=..').locator('.property-select');
     const other = await select.evaluate((el: HTMLSelectElement) =>
       [...el.options].map((option) => option.value).find((value) => value !== el.value)!);
     await select.selectOption(other);
@@ -336,7 +336,7 @@ test('main page: the shared value mirrors onto the base and every variant, and E
   }
   // Its last gap is filled, so the object leaves the list the way set.js.erb drops it.
   await expect(gold).toBeHidden();
-  await expect(tool.locator('.demo-note')).toBeVisible();
+  await expect(tool.locator('xpath=..').locator('.demo-note')).toBeVisible();
 });
 
 // The save ring: src/scss/_statusBorder.scss on the row (a shared save) or the card (one
@@ -387,7 +387,7 @@ test('main page: saving one object plays the ring on that card alone', async ({ 
   await expect(card).toHaveClass(/\bidle\b/, { timeout: 5_000 });
 });
 
-test('main page: typing mid-value keeps the shared caret put and scrolls each card to it, not to the end', async ({ page }) => {
+test('main page: typing mid-value scrolls each card to its end, as the product does', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
@@ -404,49 +404,21 @@ test('main page: typing mid-value keeps the shared caret put and scrolls each ca
 
   expect(await shared.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toEqual([7, 7]);
 
-  // Where the scroll ought to sit for the caret the shared input reports: mirror() scrolls
-  // just far enough to keep that caret and one character past it in view, and never to
-  // the input's end the way the product does.
-  const state = (form: import('@playwright/test').Locator) =>
-    form.evaluate((el) => {
-      const input = el.querySelector('input')!;
-      const style = getComputedStyle(input);
-      const ruler = document.createElement('canvas').getContext('2d')!;
-      ruler.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-      const ch = ruler.measureText('0').width;
-      const textWidth = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      const caret = Number(el.style.getPropertyValue('--caret'));
-      return {
-        value: input.value,
-        caret,
-        scrollLeft: input.scrollLeft,
-        scrollEnd: input.scrollWidth - input.clientWidth,
-        expected: Math.max(0, (caret + 1) * ch - textWidth),
-        scrollVar: el.style.getPropertyValue('--scroll'),
-      };
-    });
-
   const count = await forms.count();
   for (let i = 0; i < count; i += 1) {
-    const card = await state(forms.nth(i));
+    const card = await forms.nth(i).evaluate((el) => {
+      const input = el.querySelector('input')!;
+      return {
+        value: input.value,
+        caret: Number(el.style.getPropertyValue('--caret')),
+        scrollLeft: input.scrollLeft,
+        scrollEnd: input.scrollWidth - input.clientWidth,
+      };
+    });
     expect(card.value).toBe('ChampaXgne With Gold Trim And Piping');
     expect(card.caret).toBe(7);
     expect(card.scrollEnd).toBeGreaterThan(0);
-    expect(card.scrollLeft).toBe(0);
-  }
-
-  // Caret near the end but not at it: the input scrolls to that caret and stops short of
-  // its end, and the drawn caret is told how far.
-  const at = value.length + 1 - 4;
-  await shared.evaluate((el: HTMLInputElement, index) => el.setSelectionRange(index, index), at);
-  await shared.press('Shift');
-  for (let i = 0; i < count; i += 1) {
-    const card = await state(forms.nth(i));
-    expect(card.caret).toBe(at);
-    expect(card.expected).toBeGreaterThan(0);
-    expect(Math.abs(card.scrollLeft - card.expected)).toBeLessThanOrEqual(1);
-    expect(card.scrollLeft).toBeLessThan(card.scrollEnd - 1);
-    expect(parseFloat(card.scrollVar)).toBeCloseTo(card.scrollLeft, 0);
+    expect(Math.abs(card.scrollLeft - card.scrollEnd)).toBeLessThanOrEqual(1);
   }
 });
 
@@ -507,7 +479,7 @@ test('main page: picking another property brings up the values already stored fo
 
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
   const wood = tool.locator('.grouped-objects[data-group="wood"]');
-  await tool.locator('.property-select').selectOption('table color');
+  await tool.locator('xpath=..').locator('.property-select').selectOption('table color');
 
   // The product titleizes on save, so the base and its variants agree on case.
   await expect(wood.locator('.object-value').first()).toHaveValue('Wood');
