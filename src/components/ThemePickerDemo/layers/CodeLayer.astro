@@ -175,7 +175,7 @@ const frames = THEME_IDS.map((id) => {
         <circle class="centre" cx={cx} cy={cy} r="0.6" />
       </svg>
 
-      <span class="corner-icon" style={pct(cx, cy)}>
+      <span class="corner-icon" style={`${pct(cx, cy)}; --w: ${(icon.size / box.width) * 100}%; --h: ${(icon.size / box.height) * 100}%`}>
         {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} aria-hidden="true" />)}
       </span>
 
@@ -396,8 +396,8 @@ const frames = THEME_IDS.map((id) => {
 }
 
 .corner-icon {
-  width: calc(100% * 8 / 150);
-  height: calc(100% * 8 / 100);
+  width: var(--w);
+  height: var(--h);
   color: var(--ink);
 }
 
