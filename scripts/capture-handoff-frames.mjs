@@ -126,235 +126,237 @@ const browser = await chromium.launch({
   executablePath: systemChrome(),
   args: ['--use-angle=swiftshader'],
 });
-const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: SCALE });
-await context.addInitScript(() => localStorage.setItem('cv-theme', 'dark-forest'));
-const page = await context.newPage();
-await page.emulateMedia({ reducedMotion: 'reduce' });
-await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+try {
+  const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: SCALE });
+  await context.addInitScript(() => localStorage.setItem('cv-theme', 'dark-forest'));
+  const page = await context.newPage();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
 
-// The stack that holds the drag and drop scene, wherever it sits in the page's order.
-const stack = page.locator('article.technical-drawing-stack').filter({ has: page.locator('.drag-drop-scene-app') });
-await stack.scrollIntoViewIfNeeded();
-const app = stack.locator('.drag-drop-scene-app');
-await app.waitFor();
-await page.waitForFunction(
-  (el) => el.getAttribute('data-ready') === 'true',
-  await app.elementHandle(),
-  { timeout: 60_000 },
-);
-// The scene's first frames settle after the ready mark.
-await page.waitForTimeout(1500);
-// The sheet's title block lies over the island's corner; the frames show the app alone.
-await stack.locator('table[aria-label$="title block"]').evaluateAll((tables) => {
-  for (const table of tables) table.style.visibility = 'hidden';
-});
-// The Restart button sits in the canvas corner the wider crop reaches, and the drag is the
-// only thing these frames are about.
-await app.locator('.controls').evaluateAll((controls) => {
-  for (const el of controls) el.style.visibility = 'hidden';
-});
-
-const card = app.locator('[data-demo-target="catalog:chair"]');
-// Only the card that is dragged, so each frame can give the floor the width the rest of
-// the catalog was taking. Done here rather than in the app: the page a visitor gets keeps
-// its whole catalog, and nothing about these four stills belongs in it.
-await app.evaluate((el, width) => {
-  const hide = (node) => node?.style.setProperty('display', 'none');
-  for (const other of el.querySelectorAll('[data-catalog-item]')) {
-    if (other.getAttribute('data-catalog-item') !== 'chair') hide(other);
-  }
-  hide(el.querySelector('.catalog-search'));
-  // One card, one column, and a sidebar no wider than it needs to hold that column.
-  el.style.gridTemplateColumns = `minmax(0, 1fr) ${width}px`;
-  el.querySelector('.catalog-grid')?.style.setProperty('grid-template-columns', 'minmax(0, 1fr)');
-}, SIDEBAR_WIDTH_PX);
-
-// The tighter thumbnail, injected into the page about to be shot rather than shipped in the
-// app's own styles. The picture riding the pointer gets the same treatment, so frame 2 shows
-// one chair at one size in the card and in what was lifted from it.
-await page.addStyleTag({
-  content: `
-    .drag-drop-scene-app[data-ready] .object-icons img,
-    .drag-drop-scene-app[data-ready] .demo-drag-thumb img {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      padding: 0;
-      width: ${(100 * THUMB_FILL / THUMB_MODEL.height).toFixed(2)}%;
-      height: ${(100 * THUMB_FILL / THUMB_MODEL.height).toFixed(2)}%;
-      translate: -50% calc(-50% - ${(100 * (THUMB_MODEL.centre - 0.5)).toFixed(2)}%);
-    }
-  `,
-});
-
-const canvas = app.locator('canvas[data-scene-canvas]');
-const sidebar = app.locator('.sidebar');
-const boxOf = async (locator) => {
-  const box = await locator.boundingBox();
-  if (!box) throw new Error('No layout box');
-  return box;
-};
-const appBox = await boxOf(app);
-const cardBox = await boxOf(card);
-const canvasBox = await boxOf(canvas);
-const sidebarBox = await boxOf(sidebar);
-
-/** The moments, as pointer positions in the page. The card box is the picture's tile. */
-const press = { x: cardBox.x + cardBox.width * 0.5, y: cardBox.y + cardBox.height * 0.5 };
-// A tile's height below the press, which puts the carried picture just under the card it
-// came from: with one card in the catalog, a ghost over the card would show the same chair
-// twice in one frame, and the sidebar has no room to clear the card by more than this.
-const overSidebar = { x: cardBox.x + cardBox.width * 0.45, y: press.y + cardBox.height + 4 };
-const canvasEdge = { x: canvasBox.x + canvasBox.width * 0.88, y: canvasBox.y + canvasBox.height * 0.78 };
-const drop = { x: canvasBox.x + canvasBox.width * 0.78, y: canvasBox.y + canvasBox.height * 0.8 };
-const clipLeft = appBox.x + appBox.width * CROP.left;
-const clip = {
-  x: clipLeft,
-  y: appBox.y + appBox.height * CROP.top,
-  width: sidebarBox.x + sidebarBox.width - clipLeft,
-  height: appBox.height * (CROP.bottom - CROP.top),
-};
-
-/**
- * The digital zoom's extraction rectangle, in the frame's own raw pixels: a CHAIR_ZOOM-th of
- * the canvas portion's width and height, wide enough for the drop and the model's stop at the
- * canvas edge (frame 3) both to land inside it with room either side. Flush against the
- * frame's bottom edge, which is as far as it can sit without losing the chair's own feet or
- * the cursor drawn just past them, and it leaves everything above (most of the frame) as
- * margin for the chair's back and the grass around it.
- */
-const canvasPortionRaw = Math.round((sidebarBox.x - clip.x) * SCALE);
-const frameRaw = { width: Math.round(clip.width * SCALE), height: Math.round(clip.height * SCALE) };
-const zoomExtract = { width: Math.round(canvasPortionRaw / CHAIR_ZOOM), height: Math.round(frameRaw.height / CHAIR_ZOOM) };
-const dropRawX = Math.round((drop.x - clip.x) * SCALE);
-const edgeRawX = Math.round((canvasEdge.x - clip.x) * SCALE);
-zoomExtract.left = Math.min(
-  Math.max(Math.round((dropRawX + edgeRawX) / 2 - zoomExtract.width / 2), 0),
-  canvasPortionRaw - zoomExtract.width,
-);
-zoomExtract.top = frameRaw.height - zoomExtract.height;
-
-async function moveTo(to, from, steps = 12) {
-  for (let step = 1; step <= steps; step += 1) {
-    await page.mouse.move(from.x + ((to.x - from.x) * step) / steps, from.y + ((to.y - from.y) * step) / steps);
-    await page.waitForTimeout(16);
-  }
-}
-
-await app.evaluate((el, svg) => {
-  const scoped = [...el.attributes].map((a) => a.name).find((name) => name.startsWith('data-v-'));
-  const cursor = document.createElement('div');
-  cursor.className = 'demo-cursor instant';
-  cursor.dataset.captureCursor = '';
-  if (scoped) cursor.setAttribute(scoped, '');
-  cursor.setAttribute('aria-hidden', 'true');
-  cursor.innerHTML = svg;
-  el.appendChild(cursor);
-}, CURSOR_SVG);
-
-/**
- * Put the cursor at a pointer point of the page, the way the app places its own: with
- * `translate`, which the press shrink (`scale`) leaves alone, and offset by the hot spot.
- * A `transform` here would be multiplied by that shrink and slide towards the app's corner.
- * The drawn hot spot is then measured against the pointer, through the path's own screen
- * matrix, so a frame is never shot with the cursor beside the thing it acts on.
- */
-async function showCursor(at, pressed) {
-  const off = await app.evaluate((el, { x, y, pressed, hotSpot }) => {
-    const cursor = el.querySelector('[data-capture-cursor]');
-    const rect = el.getBoundingClientRect();
-    cursor.style.translate = `calc(${x - rect.left}px - 12%) calc(${y - rect.top}px - 8%)`;
-    cursor.classList.toggle('clicking', pressed);
-    const path = cursor.querySelector('path');
-    const ctm = path.getScreenCTM();
-    const drawn = new DOMPoint(hotSpot.x, hotSpot.y).matrixTransform(ctm);
-    return { x: drawn.x - x, y: drawn.y - y };
-  }, { x: at.x, y: at.y, pressed, hotSpot: HOT_SPOT });
-  if (Math.abs(off.x) > HOT_SPOT_SLACK || Math.abs(off.y) > HOT_SPOT_SLACK) {
-    throw new Error(`Cursor hot spot ${off.x.toFixed(2)}, ${off.y.toFixed(2)} px off the pointer`);
-  }
-}
-
-async function capture(index) {
-  await page.waitForTimeout(800);
-  const png = await page.screenshot({ clip, animations: 'disabled' });
-  // The digital zoom: the canvas portion is redrawn from zoomExtract at the portion's own
-  // size (CHAIR_ZOOM larger), the sidebar portion is redrawn as shot. Both land on one canvas
-  // the source image's own size, so the frame's own pixel dimensions never change.
-  const dataUrl = await page.evaluate(
-    async ({ png, quality, canvasPortionRaw, zoomExtract }) => {
-      const image = new Image();
-      image.src = `data:image/png;base64,${png}`;
-      await image.decode();
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(
-        image,
-        zoomExtract.left,
-        zoomExtract.top,
-        zoomExtract.width,
-        zoomExtract.height,
-        0,
-        0,
-        canvasPortionRaw,
-        canvas.height,
-      );
-      ctx.drawImage(
-        image,
-        canvasPortionRaw,
-        0,
-        canvas.width - canvasPortionRaw,
-        canvas.height,
-        canvasPortionRaw,
-        0,
-        canvas.width - canvasPortionRaw,
-        canvas.height,
-      );
-      return canvas.toDataURL('image/webp', quality);
-    },
-    { png: png.toString('base64'), quality: WEBP_QUALITY, canvasPortionRaw, zoomExtract },
+  // The stack that holds the drag and drop scene, wherever it sits in the page's order.
+  const stack = page.locator('article.technical-drawing-stack').filter({ has: page.locator('.drag-drop-scene-app') });
+  await stack.scrollIntoViewIfNeeded();
+  const app = stack.locator('.drag-drop-scene-app');
+  await app.waitFor();
+  await page.waitForFunction(
+    (el) => el.getAttribute('data-ready') === 'true',
+    await app.elementHandle(),
+    { timeout: 60_000 },
   );
-  const file = path.join(outDir, `handoff-${index}.webp`);
-  await writeFile(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
-  console.log(file);
+  // The scene's first frames settle after the ready mark.
+  await page.waitForTimeout(1500);
+  // The sheet's title block lies over the island's corner; the frames show the app alone.
+  await stack.locator('table[aria-label$="title block"]').evaluateAll((tables) => {
+    for (const table of tables) table.style.visibility = 'hidden';
+  });
+  // The Restart button sits in the canvas corner the wider crop reaches, and the drag is the
+  // only thing these frames are about.
+  await app.locator('.controls').evaluateAll((controls) => {
+    for (const el of controls) el.style.visibility = 'hidden';
+  });
+
+  const card = app.locator('[data-demo-target="catalog:chair"]');
+  // Only the card that is dragged, so each frame can give the floor the width the rest of
+  // the catalog was taking. Done here rather than in the app: the page a visitor gets keeps
+  // its whole catalog, and nothing about these four stills belongs in it.
+  await app.evaluate((el, width) => {
+    const hide = (node) => node?.style.setProperty('display', 'none');
+    for (const other of el.querySelectorAll('[data-catalog-item]')) {
+      if (other.getAttribute('data-catalog-item') !== 'chair') hide(other);
+    }
+    hide(el.querySelector('.catalog-search'));
+    // One card, one column, and a sidebar no wider than it needs to hold that column.
+    el.style.gridTemplateColumns = `minmax(0, 1fr) ${width}px`;
+    el.querySelector('.catalog-grid')?.style.setProperty('grid-template-columns', 'minmax(0, 1fr)');
+  }, SIDEBAR_WIDTH_PX);
+
+  // The tighter thumbnail, injected into the page about to be shot rather than shipped in the
+  // app's own styles. The picture riding the pointer gets the same treatment, so frame 2 shows
+  // one chair at one size in the card and in what was lifted from it.
+  await page.addStyleTag({
+    content: `
+      .drag-drop-scene-app[data-ready] .object-icons img,
+      .drag-drop-scene-app[data-ready] .demo-drag-thumb img {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        padding: 0;
+        width: ${(100 * THUMB_FILL / THUMB_MODEL.height).toFixed(2)}%;
+        height: ${(100 * THUMB_FILL / THUMB_MODEL.height).toFixed(2)}%;
+        translate: -50% calc(-50% - ${(100 * (THUMB_MODEL.centre - 0.5)).toFixed(2)}%);
+      }
+    `,
+  });
+
+  const canvas = app.locator('canvas[data-scene-canvas]');
+  const sidebar = app.locator('.sidebar');
+  const boxOf = async (locator) => {
+    const box = await locator.boundingBox();
+    if (!box) throw new Error('No layout box');
+    return box;
+  };
+  const appBox = await boxOf(app);
+  const cardBox = await boxOf(card);
+  const canvasBox = await boxOf(canvas);
+  const sidebarBox = await boxOf(sidebar);
+
+  /** The moments, as pointer positions in the page. The card box is the picture's tile. */
+  const press = { x: cardBox.x + cardBox.width * 0.5, y: cardBox.y + cardBox.height * 0.5 };
+  // A tile's height below the press, which puts the carried picture just under the card it
+  // came from: with one card in the catalog, a ghost over the card would show the same chair
+  // twice in one frame, and the sidebar has no room to clear the card by more than this.
+  const overSidebar = { x: cardBox.x + cardBox.width * 0.45, y: press.y + cardBox.height + 4 };
+  const canvasEdge = { x: canvasBox.x + canvasBox.width * 0.88, y: canvasBox.y + canvasBox.height * 0.78 };
+  const drop = { x: canvasBox.x + canvasBox.width * 0.78, y: canvasBox.y + canvasBox.height * 0.8 };
+  const clipLeft = appBox.x + appBox.width * CROP.left;
+  const clip = {
+    x: clipLeft,
+    y: appBox.y + appBox.height * CROP.top,
+    width: sidebarBox.x + sidebarBox.width - clipLeft,
+    height: appBox.height * (CROP.bottom - CROP.top),
+  };
+
+  /**
+   * The digital zoom's extraction rectangle, in the frame's own raw pixels: a CHAIR_ZOOM-th of
+   * the canvas portion's width and height, wide enough for the drop and the model's stop at the
+   * canvas edge (frame 3) both to land inside it with room either side. Flush against the
+   * frame's bottom edge, which is as far as it can sit without losing the chair's own feet or
+   * the cursor drawn just past them, and it leaves everything above (most of the frame) as
+   * margin for the chair's back and the grass around it.
+   */
+  const canvasPortionRaw = Math.round((sidebarBox.x - clip.x) * SCALE);
+  const frameRaw = { width: Math.round(clip.width * SCALE), height: Math.round(clip.height * SCALE) };
+  const zoomExtract = { width: Math.round(canvasPortionRaw / CHAIR_ZOOM), height: Math.round(frameRaw.height / CHAIR_ZOOM) };
+  const dropRawX = Math.round((drop.x - clip.x) * SCALE);
+  const edgeRawX = Math.round((canvasEdge.x - clip.x) * SCALE);
+  zoomExtract.left = Math.min(
+    Math.max(Math.round((dropRawX + edgeRawX) / 2 - zoomExtract.width / 2), 0),
+    canvasPortionRaw - zoomExtract.width,
+  );
+  zoomExtract.top = frameRaw.height - zoomExtract.height;
+
+  async function moveTo(to, from, steps = 12) {
+    for (let step = 1; step <= steps; step += 1) {
+      await page.mouse.move(from.x + ((to.x - from.x) * step) / steps, from.y + ((to.y - from.y) * step) / steps);
+      await page.waitForTimeout(16);
+    }
+  }
+
+  await app.evaluate((el, svg) => {
+    const scoped = [...el.attributes].map((a) => a.name).find((name) => name.startsWith('data-v-'));
+    const cursor = document.createElement('div');
+    cursor.className = 'demo-cursor instant';
+    cursor.dataset.captureCursor = '';
+    if (scoped) cursor.setAttribute(scoped, '');
+    cursor.setAttribute('aria-hidden', 'true');
+    cursor.innerHTML = svg;
+    el.appendChild(cursor);
+  }, CURSOR_SVG);
+
+  /**
+   * Put the cursor at a pointer point of the page, the way the app places its own: with
+   * `translate`, which the press shrink (`scale`) leaves alone, and offset by the hot spot.
+   * A `transform` here would be multiplied by that shrink and slide towards the app's corner.
+   * The drawn hot spot is then measured against the pointer, through the path's own screen
+   * matrix, so a frame is never shot with the cursor beside the thing it acts on.
+   */
+  async function showCursor(at, pressed) {
+    const off = await app.evaluate((el, { x, y, pressed, hotSpot }) => {
+      const cursor = el.querySelector('[data-capture-cursor]');
+      const rect = el.getBoundingClientRect();
+      cursor.style.translate = `calc(${x - rect.left}px - 12%) calc(${y - rect.top}px - 8%)`;
+      cursor.classList.toggle('clicking', pressed);
+      const path = cursor.querySelector('path');
+      const ctm = path.getScreenCTM();
+      const drawn = new DOMPoint(hotSpot.x, hotSpot.y).matrixTransform(ctm);
+      return { x: drawn.x - x, y: drawn.y - y };
+    }, { x: at.x, y: at.y, pressed, hotSpot: HOT_SPOT });
+    if (Math.abs(off.x) > HOT_SPOT_SLACK || Math.abs(off.y) > HOT_SPOT_SLACK) {
+      throw new Error(`Cursor hot spot ${off.x.toFixed(2)}, ${off.y.toFixed(2)} px off the pointer`);
+    }
+  }
+
+  async function capture(index) {
+    await page.waitForTimeout(800);
+    const png = await page.screenshot({ clip, animations: 'disabled' });
+    // The digital zoom: the canvas portion is redrawn from zoomExtract at the portion's own
+    // size (CHAIR_ZOOM larger), the sidebar portion is redrawn as shot. Both land on one canvas
+    // the source image's own size, so the frame's own pixel dimensions never change.
+    const dataUrl = await page.evaluate(
+      async ({ png, quality, canvasPortionRaw, zoomExtract }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${png}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(
+          image,
+          zoomExtract.left,
+          zoomExtract.top,
+          zoomExtract.width,
+          zoomExtract.height,
+          0,
+          0,
+          canvasPortionRaw,
+          canvas.height,
+        );
+        ctx.drawImage(
+          image,
+          canvasPortionRaw,
+          0,
+          canvas.width - canvasPortionRaw,
+          canvas.height,
+          canvasPortionRaw,
+          0,
+          canvas.width - canvasPortionRaw,
+          canvas.height,
+        );
+        return canvas.toDataURL('image/webp', quality);
+      },
+      { png: png.toString('base64'), quality: WEBP_QUALITY, canvasPortionRaw, zoomExtract },
+    );
+    const file = path.join(outDir, `handoff-${index}.webp`);
+    await writeFile(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
+    console.log(file);
+  }
+
+  await mkdir(outDir, { recursive: true });
+
+  // The frames are about one chair, so the camera comes in on it; the app's own wheel
+  // handler does the zoom, the same way a visitor would.
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.5);
+  await page.mouse.wheel(0, ZOOM_WHEEL_DELTA);
+  await page.waitForTimeout(600);
+
+  // 1. The press on the card: the drag is armed, nothing moves yet.
+  await page.mouse.move(press.x, press.y);
+  await page.mouse.down();
+  await showCursor(press, true);
+  await capture(1);
+
+  // 2. Over the sidebar: the card's picture rides the pointer, grabbed where the press landed.
+  await moveTo(overSidebar, press);
+  await showCursor(overSidebar, true);
+  await capture(2);
+
+  // 3. Just inside the canvas: the picture is gone and the model sits under the pointer.
+  await moveTo(canvasEdge, overSidebar);
+  await showCursor(canvasEdge, true);
+  await capture(3);
+
+  // 4. Released: one chair placed and selected.
+  await moveTo(drop, canvasEdge);
+  await page.mouse.up();
+  await showCursor(drop, false);
+  await capture(4);
+
+  // What HandoffLayer.astro lays the frames out from: the shot's own shape, and the canvas's
+  // share of it, which is where everything the captions point at happens.
+  console.log(`frame ${Math.round(clip.width * SCALE)}x${Math.round(clip.height * SCALE)}`);
+  console.log(`aspect ${(clip.width / clip.height).toFixed(3)}`);
+  console.log(`canvas fraction ${((sidebarBox.x - clip.x) / clip.width).toFixed(3)}`);
+} finally {
+  await browser.close();
 }
-
-await mkdir(outDir, { recursive: true });
-
-// The frames are about one chair, so the camera comes in on it; the app's own wheel
-// handler does the zoom, the same way a visitor would.
-await page.mouse.move(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.5);
-await page.mouse.wheel(0, ZOOM_WHEEL_DELTA);
-await page.waitForTimeout(600);
-
-// 1. The press on the card: the drag is armed, nothing moves yet.
-await page.mouse.move(press.x, press.y);
-await page.mouse.down();
-await showCursor(press, true);
-await capture(1);
-
-// 2. Over the sidebar: the card's picture rides the pointer, grabbed where the press landed.
-await moveTo(overSidebar, press);
-await showCursor(overSidebar, true);
-await capture(2);
-
-// 3. Just inside the canvas: the picture is gone and the model sits under the pointer.
-await moveTo(canvasEdge, overSidebar);
-await showCursor(canvasEdge, true);
-await capture(3);
-
-// 4. Released: one chair placed and selected.
-await moveTo(drop, canvasEdge);
-await page.mouse.up();
-await showCursor(drop, false);
-await capture(4);
-
-// What HandoffLayer.astro lays the frames out from: the shot's own shape, and the canvas's
-// share of it, which is where everything the captions point at happens.
-console.log(`frame ${Math.round(clip.width * SCALE)}x${Math.round(clip.height * SCALE)}`);
-console.log(`aspect ${(clip.width / clip.height).toFixed(3)}`);
-console.log(`canvas fraction ${((sidebarBox.x - clip.x) / clip.width).toFixed(3)}`);
-
-await browser.close();
