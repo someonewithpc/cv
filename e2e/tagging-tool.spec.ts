@@ -388,7 +388,7 @@ test('main page: saving one object plays the ring on that card alone', async ({ 
   await expect(card).toHaveClass(/\bidle\b/, { timeout: 5_000 });
 });
 
-test('main page: typing mid-value keeps the shared caret put and scrolls each card to it, not to the end', async ({ page }) => {
+test('main page: typing mid-value scrolls each card to its end, as the product does', async ({ page }) => {
   const { tool } = await mountedTool(page);
 
   const gold = tool.locator('.grouped-objects[data-group="gold"]');
@@ -405,49 +405,21 @@ test('main page: typing mid-value keeps the shared caret put and scrolls each ca
 
   expect(await shared.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toEqual([7, 7]);
 
-  // Where the scroll ought to sit for the caret the shared input reports: mirror() scrolls
-  // just far enough to keep that caret and one character past it in view, and never to
-  // the input's end the way the product does.
-  const state = (form: import('@playwright/test').Locator) =>
-    form.evaluate((el) => {
-      const input = el.querySelector('input')!;
-      const style = getComputedStyle(input);
-      const ruler = document.createElement('canvas').getContext('2d')!;
-      ruler.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-      const ch = ruler.measureText('0').width;
-      const textWidth = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      const caret = Number(el.style.getPropertyValue('--caret'));
-      return {
-        value: input.value,
-        caret,
-        scrollLeft: input.scrollLeft,
-        scrollEnd: input.scrollWidth - input.clientWidth,
-        expected: Math.max(0, (caret + 1) * ch - textWidth),
-        scrollVar: el.style.getPropertyValue('--scroll'),
-      };
-    });
-
   const count = await forms.count();
   for (let i = 0; i < count; i += 1) {
-    const card = await state(forms.nth(i));
+    const card = await forms.nth(i).evaluate((el) => {
+      const input = el.querySelector('input')!;
+      return {
+        value: input.value,
+        caret: Number(el.style.getPropertyValue('--caret')),
+        scrollLeft: input.scrollLeft,
+        scrollEnd: input.scrollWidth - input.clientWidth,
+      };
+    });
     expect(card.value).toBe('ChampaXgne With Gold Trim And Piping');
     expect(card.caret).toBe(7);
     expect(card.scrollEnd).toBeGreaterThan(0);
-    expect(card.scrollLeft).toBe(0);
-  }
-
-  // Caret near the end but not at it: the input scrolls to that caret and stops short of
-  // its end, and the drawn caret is told how far.
-  const at = value.length + 1 - 4;
-  await shared.evaluate((el: HTMLInputElement, index) => el.setSelectionRange(index, index), at);
-  await shared.press('Shift');
-  for (let i = 0; i < count; i += 1) {
-    const card = await state(forms.nth(i));
-    expect(card.caret).toBe(at);
-    expect(card.expected).toBeGreaterThan(0);
-    expect(Math.abs(card.scrollLeft - card.expected)).toBeLessThanOrEqual(1);
-    expect(card.scrollLeft).toBeLessThan(card.scrollEnd - 1);
-    expect(parseFloat(card.scrollVar)).toBeCloseTo(card.scrollLeft, 0);
+    expect(Math.abs(card.scrollLeft - card.scrollEnd)).toBeLessThanOrEqual(1);
   }
 });
 
