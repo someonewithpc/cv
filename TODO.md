@@ -327,6 +327,7 @@
 - [x] Read the Fediverse graph's shared images from SHARED_SERVICES, and list in the compose file only the volumes a service mounts (C78) (#438)
 - [x] Take the Library Search size rows from SyntheticPropertiesDemo/units.ts (#220 C52) (#429)
 - [x] Scroll the tagging tool's variant inputs to their end as the product does, and move the property picker and the "Bring them back" footer out of the product panel (C91) (#452)
+- [ ] Take Space Builder hover moves from the scene, not the whole window, and keep the handle meshes for picking (#220 C9)
 - [x] Lay the Space Builder chairs out once per area or options change, and leave the capacity tag text alone while the camera moves (#220 C10) (#407)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
