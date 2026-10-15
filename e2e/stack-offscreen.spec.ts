@@ -1,5 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 
+import { demoStack } from './support/paperStack';
+
 // Chrome and Firefox still ship window.find, which lib.dom dropped as non-standard.
 declare global {
   interface Window {
@@ -92,7 +94,7 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await page.waitForTimeout(1500);
-    const stack = page.locator('article.technical-drawing-stack').nth(3);
+    const stack = demoStack(page, 'Interactive Map Font Picker');
     await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
     await page.waitForTimeout(500);
     // The sheets behind the front one drop below the stack's bottom edge towards its right-hand
