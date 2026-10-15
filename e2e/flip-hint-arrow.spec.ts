@@ -3,6 +3,7 @@ import sharp from 'sharp';
 
 import { contrast, type Rgb } from './support/colour';
 import { flapGrip } from './support/fold';
+import { installProbes } from './support/pageProbes';
 import { demoStack, dogEarShown, swipeStack } from './support/paperStack';
 
 /**
@@ -530,6 +531,7 @@ test('the hint reads against the page in every theme and at every width', async 
       });
       await page.waitForTimeout(700);
 
+      await installProbes(page);
       const { words, path, ink } = await page.evaluate(() => {
         const frame = document.querySelector('.technical-drawing-frame')!;
         const text = frame.querySelector<HTMLElement>('.flip-hint--fwd.hint-words')!;
@@ -552,12 +554,7 @@ test('the hint reads against the page in every theme and at every width', async 
         }
         // The themes name their colours in oklch, which no amount of string work turns into the
         // sRGB the screenshot is in; the canvas already knows how.
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = 1;
-        const context = canvas.getContext('2d')!;
-        context.fillStyle = getComputedStyle(text).color;
-        context.fillRect(0, 0, 1, 1);
-        const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+        const [r, g, b] = window.e2eProbes!.srgba(getComputedStyle(text).color);
         return { words, path, ink: [r, g, b] as Rgb };
       });
 
