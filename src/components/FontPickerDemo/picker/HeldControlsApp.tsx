@@ -111,7 +111,9 @@ function Column({ side }: { side: Side }) {
  */
 function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> }) {
   const [cursor, setCursor] = useState<DrawnCursorState>(CURSOR_GONE);
-  const [grab, setGrab] = useState<{ top: number; left: number; width: number; gutter: number; thumb: number; side: Side } | null>(null);
+  const [grab, setGrab] = useState<{ top: number; left: number; width: number; gutter: number; side: Side } | null>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const figureRef = useRef<HTMLSpanElement>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [host, setHost] = useState<HTMLElement | null>(null);
 
@@ -123,11 +125,22 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
     setHost(page);
 
+    // The page's rect, read once and kept until a scroll, a resize or the sheet's own box
+    // changes: the sliders never move the page itself. The dragged slider's rect is kept with
+    // it, and also read again once the slider's value has moved its row
+    let pageRectCache: DOMRect | null = null;
+    let sliderRect: DOMRect | null = null;
+    const pageRect = () => (pageRectCache ??= page.getBoundingClientRect());
+    const invalidatePageRect = () => { pageRectCache = null; sliderRect = null; };
+    window.addEventListener('scroll', invalidatePageRect, { passive: true });
+    window.addEventListener('resize', invalidatePageRect);
+    const pageResize = new ResizeObserver(invalidatePageRect);
+    pageResize.observe(page);
+
     const slider = (side: Side) => el.querySelector<HTMLInputElement>(`[data-demo-target="size-${side}"]`);
 
     // Where the thumb sits for a value: the track is inset by the thumb's radius
-    const thumb = (input: HTMLInputElement, value = Number(input.value)) => {
-      const rect = input.getBoundingClientRect();
+    const thumb = (input: HTMLInputElement, value = Number(input.value), rect = input.getBoundingClientRect()) => {
       const t = (value - Number(input.min)) / (Number(input.max) - Number(input.min));
       return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
     };
@@ -143,28 +156,35 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
 
       // Kept against the sheet, not the viewport: a page that scrolls under the walkthrough
       // would otherwise slide the hand up the column
-      const holdY = thumb(input).y - page.getBoundingClientRect().top;
+      const holdY = thumb(input).y - pageRect().top;
+      sliderRect = null;
+      const at = (value = Number(input.value)) => thumb(input, value, sliderRect ??= input.getBoundingClientRect());
       const ride = (value: number, flags: Partial<CursorState> = { dragging: true }) => {
-        run.appear({ x: thumb(input, value).x, y: page.getBoundingClientRect().top + holdY }, flags);
+        run.appear({ x: at(value).x, y: pageRect().top + holdY }, flags);
       };
 
       // The line the drag started on, left on the sheet while it runs, and a dimension from it
-      // to where the slider is now: the plain column walks away from it, the held one does not
+      // to where the slider is now: the plain column walks away from it, the held one does not.
+      // The line and the gutter stay put for the leg, so only the dimension's end moves
       const column = input.closest<HTMLElement>('.column')!;
       const [plain, held] = el.querySelectorAll<HTMLElement>('.column');
+      const sheet = pageRect();
+      const box = column.getBoundingClientRect();
+      setGrab({
+        top: holdY,
+        left: box.left - sheet.left,
+        width: box.width,
+        gutter: (plain.getBoundingClientRect().right + held.getBoundingClientRect().left) / 2 - sheet.left,
+        side,
+      });
       const mark = () => {
-        const sheet = page.getBoundingClientRect();
-        const box = column.getBoundingClientRect();
-        setGrab({
-          top: holdY,
-          left: box.left - sheet.left,
-          width: box.width,
-          gutter: (plain.getBoundingClientRect().right + held.getBoundingClientRect().left) / 2 - sheet.left,
-          thumb: thumb(input).y - sheet.top,
-          side,
-        });
+        const travel = at().y - pageRect().top - holdY;
+        measureRef.current?.style.setProperty('--travel', `${travel}px`);
+        // Written into the figure's own text node: replacing the node is a child list change,
+        // which sends the page's :has() rules restyling the whole sheet every frame
+        const figure = figureRef.current?.firstChild;
+        if (figure) figure.nodeValue = `${Math.round(Math.abs(travel))}px`;
       };
-      mark();
       ride(1, { clicking: true });
       await run.wait(220);
 
@@ -178,19 +198,33 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       const span = to - 1;
       const start = performance.now();
       let snapped = 1;
+      let moved = false;
       for (;;) {
         await nextFrame();
         run.check();
+        // React draws a new value after the event that set it, so the row has moved by the
+        // next frame, not this one
+        if (moved) {
+          sliderRect = null;
+          moved = false;
+        }
         const t = Math.min((performance.now() - start) / ((span / step) * DRAG_STEP_MS), 1);
         const raw = 1 + span * t;
         const next = Math.round(raw / step) * step;
         if (next !== snapped) {
           snapped = next;
           setNativeValue(input, next.toFixed(3));
+          moved = true;
         }
         mark();
         ride(raw);
         if (t >= 1) break;
+      }
+      if (moved) {
+        await nextFrame();
+        run.check();
+        sliderRect = null;
+        mark();
       }
       ride(to, {});
       await run.wait(1800);
@@ -212,12 +246,12 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
           return;
         }
         window.clearTimeout(fadeTimer);
-        const rect = page.getBoundingClientRect();
+        const rect = pageRect();
         setCursor({ ...state, x: state.x - rect.left, y: state.y - rect.top, phase: 'demo' });
       },
       () => {},
       async (run) => {
-        const sheet = page.getBoundingClientRect();
+        const sheet = pageRect();
         run.appear({ x: sheet.left + sheet.width * 0.2, y: sheet.bottom + 80 });
         await run.wait(300);
       },
@@ -325,6 +359,9 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     motionQuery.addEventListener('change', onMotionChange);
 
     return () => {
+      window.removeEventListener('scroll', invalidatePageRect);
+      window.removeEventListener('resize', invalidatePageRect);
+      pageResize.disconnect();
       motionQuery.removeEventListener('change', onMotionChange);
       stopCommands();
       stopPageWatch();
@@ -346,18 +383,18 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
         <>
           <div className="grab-line" style={{ top: grab.top, left: grab.left, width: grab.width }} aria-hidden="true" />
           <div
+            ref={measureRef}
             className="grab-measure"
             data-side={grab.side}
             style={{
-              top: Math.min(grab.top, grab.thumb),
+              top: grab.top,
               // Down the middle of the gutter between the columns: the plain one's outer side
               // is the sheet's margin, and on a phone sheet the held one's is too
               left: grab.gutter,
-              height: Math.abs(grab.thumb - grab.top),
             }}
             aria-hidden="true"
           >
-            <span>{Math.round(Math.abs(grab.thumb - grab.top))}px</span>
+            <span ref={figureRef}>0px</span>
           </div>
         </>
       )}

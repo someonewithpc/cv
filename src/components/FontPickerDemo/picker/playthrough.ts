@@ -37,8 +37,7 @@ const center = (el: Element) => {
 };
 
 // Where a range input paints its thumb for a value: the track is inset by the thumb's radius
-const thumbPoint = (input: HTMLInputElement, value: number) => {
-  const rect = input.getBoundingClientRect();
+const thumbPoint = (input: HTMLInputElement, value: number, rect = input.getBoundingClientRect()) => {
   const min = Number(input.min), max = Number(input.max);
   const t = max === min ? 0 : (value - min) / (max - min);
   return { x: rect.left + 8 + (rect.width - 16) * t, y: rect.top + rect.height / 2 };
@@ -199,25 +198,44 @@ export class Run {
   }
 
   private async drag(input: HTMLInputElement, waypoints: number[], msPerLeg: number, value: number, step: number) {
-    for (const target of waypoints) {
-      const from = value;
-      const start = performance.now();
-      for (;;) {
-        await nextFrame();
-        this.check();
-        const t = Math.min((performance.now() - start) / msPerLeg, 1);
-        const raw = from + (target - from) * easeInOutQuad(t);
-        const snapped = Math.round(raw / step) * step;
-        if (snapped !== value) {
-          value = snapped;
-          setNativeValue(input, String(value));
+    // A size change reflows the page under the slider, and React draws it after the event
+    // that set the value, so the slider is read again on the frame after each step, and after
+    // a scroll or a resize. The frames in between keep the rect.
+    let rect: DOMRect | null = null;
+    const forget = () => { rect = null; };
+    window.addEventListener('scroll', forget, { capture: true, passive: true });
+    window.addEventListener('resize', forget);
+    try {
+      let moved = false;
+      for (const target of waypoints) {
+        const from = value;
+        const start = performance.now();
+        for (;;) {
+          await nextFrame();
+          this.check();
+          if (moved) {
+            rect = null;
+            moved = false;
+          }
+          const t = Math.min((performance.now() - start) / msPerLeg, 1);
+          const raw = from + (target - from) * easeInOutQuad(t);
+          const snapped = Math.round(raw / step) * step;
+          if (snapped !== value) {
+            value = snapped;
+            setNativeValue(input, String(value));
+            moved = true;
+          }
+          this.cursor(thumbPoint(input, raw, rect ??= input.getBoundingClientRect()), { dragging: true });
+          if (t >= 1) break;
         }
-        // Re-read the thumb every frame: a size change reflows the page under the slider
-        this.cursor(thumbPoint(input, raw), { dragging: true });
-        if (t >= 1) break;
+        await this.wait(500);
+        this.cursor(thumbPoint(input, value), { dragging: true });
+        rect = null;
+        moved = false;
       }
-      await this.wait(500);
-      this.cursor(thumbPoint(input, value), { dragging: true });
+    } finally {
+      window.removeEventListener('scroll', forget, { capture: true });
+      window.removeEventListener('resize', forget);
     }
   }
 
