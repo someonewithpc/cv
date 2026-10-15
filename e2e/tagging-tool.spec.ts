@@ -1,4 +1,4 @@
-import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
+import { demoStack, dogEarShown, frontPage, frontPageIndex, frontPageName, swipeStack, turnToPage, waitForIslandMounted } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
 const PAGES = ['Library Tagging Tool', 'Shared Value', 'Simulated Caret', 'Completed Objects'];
@@ -42,7 +42,7 @@ async function mountedTool(page: import('@playwright/test').Page) {
 test('tagging tool: forward swipes visit every page in order, then wrap', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
   expect(await frontPageName(stack)).toBe(PAGES[0]);
