@@ -374,7 +374,7 @@ function layoutChevron(area: AreaRect, options: LayoutOptions): ChairPose[] {
   const sizeZ = CHAIR_FOOTPRINT.depth;
   const { distanceX, distanceZ, aisle } = options;
 
-  if (area.width <= aisle + sizeX || angle >= Math.PI / 2 - 1e-3) return [];
+  if (area.width <= aisle + sizeX) return [];
 
   const cosA = Math.max(1e-6, Math.cos(angle));
   const sinA = Math.sin(angle);
