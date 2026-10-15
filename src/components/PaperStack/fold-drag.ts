@@ -73,10 +73,20 @@ type FoldGesture = {
   trail: { tip: Vec, time: number }[];
 };
 
-// Must match the "to" keyframe of initial-fold-reveal in index.astro
-const FOLD_REVEAL_END = { x: '2cm', y: '1cm' };
+const FOLD_REVEAL_END = { x: 'var(--fold-rest-x)', y: 'var(--fold-rest-y)' };
 const PX_PER_CM = 96 / 2.54;
-const FOLD_REVEAL_END_PX = { x: 2 * PX_PER_CM, y: 1 * PX_PER_CM };
+
+// The dog-ear's resting size in px, read once from the length scss/_technical-drawing.scss
+// publishes as --fold-rest-x/-y (always in cm).
+let foldRestPx: Vec | null = null;
+const restSizePx = (sheet: HTMLElement): Vec => {
+  if (!foldRestPx) {
+    const style = getComputedStyle(sheet);
+    const cm = (name: string) => parseFloat(style.getPropertyValue(name)) * PX_PER_CM;
+    foldRestPx = { x: cm('--fold-rest-x'), y: cm('--fold-rest-y') };
+  }
+  return foldRestPx;
+};
 
 // How far past the paper's reach (see the pin check in onFoldDrag) the pointer may stray while
 // the fold holds at its limit, before the drag lets go entirely.
@@ -89,7 +99,7 @@ const FOLD_CANCEL_GRACE = 48;
 // singularity in foldSizeFromTip long before the pin ever sees it, so this reads the pointer's
 // own travel from the grab instead of the fold's geometry. A plain fraction of the page diagonal
 // looked like the natural scale at first, but the resting dog-ear that this measures against is
-// a fixed size in cm (see FOLD_REVEAL_END, $fold-rest-x/-y in index.astro), not a share of the
+// a fixed size in cm (see FOLD_REVEAL_END, $fold-rest-x/-y in _technical-drawing.scss), not a share of the
 // page, so the singularity sits the same few pixels out from the grab on a phone sheet as on a
 // wide desktop one — a diagonal-scaled margin would let a big sheet wander much further into the
 // odd shapes than a small one before giving up. So this is a plain pixel count instead, tuned
@@ -1402,7 +1412,7 @@ const settleFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement,
   // The glide opens by reading where the fold stands, so it goes first: dropping the commit
   // feedback is a class change, and a read after one costs a whole-document resolve. Settling
   // means no flip is coming, so the feedback still drops in this same frame, just after.
-  const glide = glideFoldTip(sheet, section, fold, foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y), 1000, thrown, () => {
+  const glide = glideFoldTip(sheet, section, fold, foldTipFromSize(restSizePx(sheet).x, restSizePx(sheet).y), 1000, thrown, () => {
     restFold(sheet, section, fold);
   });
   markWillCommit(fold, false);
@@ -1749,7 +1759,7 @@ const bringFold = (
   commitTurn(sheet.parentElement!);
   const { seed } = approach;
   const over = { x: w + seed.x, y: h + seed.y };
-  const rest = foldTipFromSize(FOLD_REVEAL_END_PX.x, FOLD_REVEAL_END_PX.y);
+  const rest = foldTipFromSize(restSizePx(sheet).x, restSizePx(sheet).y);
   const from = approach.t;
   const d1 = Math.hypot(over.x - from.x, over.y - from.y) / 2;
   const d2 = Math.hypot(seed.x - rest.x, seed.y - rest.y) / 2;
