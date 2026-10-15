@@ -1012,7 +1012,7 @@ onBeforeUnmount(() => {
 
       <div v-if="!ready || loadError" class="boot-cover" :class="{ error: loadError }" :role="loadError ? 'status' : undefined">
         <span v-if="!loadError" class="spinner" aria-hidden="true" />
-        <span>{{ loadError ? '3D scene unavailable — see the blueprint pages for the Add tool flow.' : 'Loading scene…' }}</span>
+        <span>{{ loadError ? '3D scene unavailable. See the blueprint pages for the Add tool flow.' : 'Loading scene…' }}</span>
       </div>
 
       <div v-if="snapshot?.flash" class="flash" role="status">
