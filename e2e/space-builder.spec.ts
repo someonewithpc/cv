@@ -102,7 +102,8 @@ test('main page: typing A or Ctrl+A in an Options field does not close the sideb
   await expect(app).toHaveAttribute('data-panel', 'closed');
 });
 
-test('place page: select-area scene loads', async ({ page }) => {
+test('place page: select-area scene loads and draws', async ({ page }) => {
+  await armDrawCounter(page);
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
   await turnToPage(stack, 'Place Area');
@@ -110,6 +111,7 @@ test('place page: select-area scene loads', async ({ page }) => {
 
   const app = await waitForSceneReady(front);
   await expect(app.locator('canvas[data-scene-canvas]')).toBeVisible();
+  await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(0);
 });
 
 test('parameters page: editing seat count updates the field', async ({ page }) => {
@@ -210,7 +212,8 @@ test('layouts page: a wheel over a sidebar gap scrolls the page instead of zoomi
   expect(prevented).toBe(false);
 });
 
-test('badge page: capacity-badge scene loads', async ({ page }) => {
+test('badge page: capacity-badge scene loads and draws', async ({ page }) => {
+  await armDrawCounter(page);
   const stack = spaceBuilderStack(page);
   await stack.scrollIntoViewIfNeeded();
   await turnToPage(stack, 'Capacity Badge');
@@ -218,6 +221,7 @@ test('badge page: capacity-badge scene loads', async ({ page }) => {
 
   const app = await waitForSceneReady(front);
   await expect(app.locator('canvas[data-scene-canvas]')).toBeVisible();
+  await expect.poll(() => sceneDraws(app), { timeout: 20_000 }).toBeGreaterThan(0);
 });
 
 test('main page: no WebGL unpack warnings across a GPU release and re-attach', async ({ page }) => {
