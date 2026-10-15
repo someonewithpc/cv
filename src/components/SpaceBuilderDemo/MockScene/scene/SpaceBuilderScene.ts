@@ -1571,6 +1571,7 @@ export class SpaceBuilderScene {
       this.skybox = null;
     }
     if (!this.gpuReleased) {
+      this.releaseGpuCopies();
       this.renderer.dispose();
       this.gpuReleased = true;
     }
