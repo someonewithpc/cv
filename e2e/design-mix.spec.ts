@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
+import { installProbes } from './support/pageProbes';
+
+test.beforeEach(async ({ page }) => {
+  await installProbes(page);
+});
+
 /** The width past which Layout.astro gives the sheets a margin of desk on either side. */
 const DESK_FROM = 1024;
 
@@ -1336,12 +1342,7 @@ for (const theme of ['light', 'arctic', 'dark-forest'] as const) {
 
     const [painted, picked] = await sheet.evaluate((el) => {
       // Both come back as oklch() here, so a canvas fill turns each into the pixel it paints.
-      const rgb = (colour: string) => {
-        const cx = document.createElement('canvas').getContext('2d')!;
-        cx.fillStyle = colour;
-        cx.fillRect(0, 0, 1, 1);
-        return [...cx.getImageData(0, 0, 1, 1).data.slice(0, 3)];
-      };
+      const rgb = (colour: string) => window.e2eProbes!.srgba(colour).slice(0, 3);
       const paper = getComputedStyle(document.documentElement).getPropertyValue('--theme-paper').trim();
       return [rgb(getComputedStyle(el).backgroundColor), rgb(paper)];
     });
@@ -1391,12 +1392,7 @@ test("the title block's paper is the sheet's, on the sheet's phase", async ({ pa
   const block = await stack.evaluate((el) => {
     const sheet = el.querySelector('.paper-front > section')!;
     const table = sheet.querySelector(':scope > table')!;
-    const fill = (node: Element) => {
-      const cx = document.createElement('canvas').getContext('2d')!;
-      cx.fillStyle = getComputedStyle(node).backgroundColor;
-      cx.fillRect(0, 0, 1, 1);
-      return [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3);
-    };
+    const fill = (node: Element) => window.e2eProbes!.srgba(getComputedStyle(node).backgroundColor).slice(0, 3);
     // Both pseudo-elements are inset: 0 on their own element, so each tiles from that
     // element's padding box, which is its border box less its border. One tile is 12rem, so
     // in register is a whole number of tiles apart.
