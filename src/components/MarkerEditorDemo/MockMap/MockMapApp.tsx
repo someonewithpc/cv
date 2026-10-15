@@ -1,3 +1,4 @@
+import { elementCentre } from '@/client/cursorMotion';
 import '../markers/client-only';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -75,14 +76,6 @@ function sceneToOverlay(
   return {
     x: (sceneX / 100) * focus.scale + (0.5 - focus.x * focus.scale),
     y: (sceneY / 100) * focus.scale + (0.5 - focus.y * focus.scale),
-  };
-}
-
-function elementCenter(el: Element): CursorPos {
-  const rect = el.getBoundingClientRect();
-  return {
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2,
   };
 }
 
@@ -314,7 +307,7 @@ export default function MockMapApp() {
       } else {
         activeTargetRef.current = el;
         el.classList.add('is-demo-target');
-        place(elementCenter(el));
+        place(elementCentre(el));
       }
     }
 

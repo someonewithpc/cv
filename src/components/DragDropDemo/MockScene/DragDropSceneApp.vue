@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 
 import { watchDrawingNote } from '@/client/drawingNote';
+import { elementCentre } from '@/client/cursorMotion';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 
@@ -643,12 +644,6 @@ function tweenPoint(
   })();
 }
 
-function elementCenter(el: Element | null) {
-  if (!el) return null;
-  const rect = el.getBoundingClientRect();
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-}
-
 async function pulseClick(token: number) {
   pressCursor();
   await wait(160);
@@ -702,7 +697,8 @@ async function revealCatalogCard(root: HTMLElement, id: string) {
 
 function catalogButton(root: HTMLElement, id: string) {
   const item = CATALOG_ITEMS.find((entry) => entry.id === id);
-  const pos = elementCenter(root.querySelector(`[data-demo-target="catalog:${id}"]`));
+  const target = root.querySelector(`[data-demo-target="catalog:${id}"]`);
+  const pos = target ? elementCentre(target) : null;
   return item && pos ? { item, pos } : null;
 }
 

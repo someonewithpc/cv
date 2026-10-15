@@ -2,6 +2,7 @@
 // and resumed between them. Everything a scene does goes through a Run bound to one token,
 // so a pause mid-scene unwinds it at the next await instead of leaving a half-typed field.
 
+import { elementCentre } from '@/client/cursorMotion';
 import { documentGate } from '@/client/frontPage';
 
 export const CURSOR_TRAVEL_MS = 560;
@@ -30,11 +31,6 @@ export function setNativeValue(el: HTMLInputElement | HTMLSelectElement, value: 
   el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
 }
-
-const center = (el: Element) => {
-  const rect = el.getBoundingClientRect();
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-};
 
 // Where a range input paints its thumb for a value: the track is inset by the thumb's radius
 const thumbPoint = (input: HTMLInputElement, value: number) => {
@@ -123,7 +119,7 @@ export class Run {
   }
 
   async moveTo(el: Element) {
-    await this.glide(center(el));
+    await this.glide(elementCentre(el));
   }
 
   /** Move to an element and press it there: the cursor pulses and the element gets the
@@ -132,7 +128,7 @@ export class Run {
     await this.moveTo(el);
     // A press elsewhere takes the focus off a field the run was typing into, as a click would
     if (document.activeElement !== el) this.controller.focus(null);
-    const at = center(el);
+    const at = elementCentre(el);
     this.cursor(at, { clicking: true });
     mouse('mousedown', el, at);
     try {
