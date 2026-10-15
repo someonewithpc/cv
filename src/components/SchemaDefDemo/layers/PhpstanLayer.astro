@@ -15,7 +15,7 @@ const steps = [
     file: 'config/phpstan-bootstrap.php',
     code: ['$kernel->boot();', 'return $kernel;'],
     php: true,
-    text: 'GNUsocialProvider requires it, then starts every module as a request would',
+    text: 'GNUsocialProvider requires the real kernel, then starts every module as a request would',
   },
   {
     title: 'Table map',
