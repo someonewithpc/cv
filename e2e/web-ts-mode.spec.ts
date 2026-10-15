@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack } from './support/paperStack';
+import { THEME_IDS } from '../src/themes';
 
 const PAGES = ['web-ts-mode', 'Parser Ranges', 'Selector Depth Hue', 'Doctor Report'];
 
@@ -204,7 +205,7 @@ test('doctor page: the report keeps the real layout and says what is not on PATH
   await expect(report).toContainText('vue: not found (tried vue-language-server, vls)');
 });
 
-for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+for (const theme of THEME_IDS) {
   test(`depth page: every level stands out from the paper and from the next level, and the last is green, ${theme} theme`, async ({ page }) => {
     await page.addInitScript((id) => {
       try {

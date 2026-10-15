@@ -48,6 +48,8 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
 </span>
 
 <style lang="scss">
+@use "ts:src/themes.ts" as themes;
+
 @mixin light-strokes {
   --icon-contrast-stroke: rgb(0 0 0 / 0.5);
   --icon-contrast-stroke-width: 3;
@@ -85,11 +87,10 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
   }
 }
 
-/* Dark-following themes (dark, dark-forest): boost contrast strokes. Read from the root's
+/* Dark-following themes: boost contrast strokes. Read from the root's
    data-theme, which the picker's script writes; the radios only speak for a page without
    script (see ThemePicker.astro for why :root:has() stays out of the scripted cascade). */
-:global(:root[data-theme='dark']),
-:global(:root[data-theme='dark-forest']) {
+:global(#{themes.$dark-showing}) {
   .tech-icon {
     @include dark-strokes;
   }
@@ -104,8 +105,7 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
 }
 
 @media (scripting: none) {
-  :global(:root:has(#theme-dark:is(:not(.with-transition):checked, .with-transition.checked))),
-  :global(:root:has(#theme-dark-forest:is(:not(.with-transition):checked, .with-transition.checked))) {
+  :global(#{themes.$dark-radio}) {
     .tech-icon {
       @include dark-strokes;
     }
@@ -113,8 +113,7 @@ const { tech, class: className, decorative = false, inline = false } = Astro.pro
 
   /* A light theme picked under a dark OS: the id in :has() outranks the OS rule above. */
   @media (prefers-color-scheme: dark) {
-    :global(:root:has(#theme-light:is(:not(.with-transition):checked, .with-transition.checked))),
-    :global(:root:has(#theme-arctic:is(:not(.with-transition):checked, .with-transition.checked))) {
+    :global(#{themes.$light-radio}) {
       .tech-icon {
         @include light-strokes;
       }

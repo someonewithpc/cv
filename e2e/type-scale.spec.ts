@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
+import { THEME_IDS } from '../src/themes';
 
 /** The build the preview serves; the web server builds it before any spec runs. */
 const CLIENT = join(import.meta.dirname, '..', 'dist', 'client');
@@ -88,7 +89,7 @@ test('the Career sheet sets its copy at 0.875 of the root size', async ({ page }
   }
 });
 
-for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+for (const theme of THEME_IDS) {
   for (const width of [390, 768, 1440]) {
     test(`with a 20px default the Career sheet fits ${width}px in the ${theme} theme`, async ({ page }) => {
       await page.addInitScript((id) => localStorage.setItem('cv-theme', id), theme);
