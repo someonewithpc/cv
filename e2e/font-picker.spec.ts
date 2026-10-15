@@ -36,6 +36,19 @@ test('main page: the picker mounts and a chosen face reaches the specimen', asyn
     .toContain(chosenFamily);
 });
 
+test('main page: the walkthrough extracts its first face with no other site reachable', async ({ page, baseURL }) => {
+  const origin = new URL(baseURL!).origin;
+  await page.route((url) => url.origin !== origin, (route) => route.abort());
+  await page.goto('/');
+
+  const stack = fontPickerStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const island = await waitForIslandMounted(front);
+
+  await expect(island.locator('select[data-demo-target="family"] option', { hasText: 'Alfa Slab One' })).toBeAttached({ timeout: 40_000 });
+});
+
 test('main page: the size slider scales the specimen', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
