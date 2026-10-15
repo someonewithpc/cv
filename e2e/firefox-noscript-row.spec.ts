@@ -27,9 +27,13 @@ const readRow = (page: Page, index = 0) =>
     } satisfies Row;
   }, index);
 
-// The row once its snap has finished. A snap scrolls smoothly, and a sheet on its way can pass
-// through the slack before it comes to rest somewhere else.
-const settled = async (page: Page) => {
+// Runs a scroll and returns the row once its snap has finished. A snap scrolls smoothly, so two
+// equal reads can happen before it starts; the row has to leave where it was first. With the pref
+// off no page script runs, so there is no scrollend to wait for and every read goes through evaluate.
+const settled = async (page: Page, scroll: () => Promise<void>) => {
+  const from = (await readRow(page)).scrollLeft;
+  await scroll();
+  await expect.poll(async () => (await readRow(page)).scrollLeft !== from).toBe(true);
   let last = Number.NaN;
   await expect
     .poll(async () => {
@@ -101,23 +105,23 @@ for (const width of [1440, 390]) {
 
       await page.mouse.move(Math.round((start.rowLeft + start.rowRight) / 2), Math.round(start.rowMiddle));
       // A third of a sheet: short of the next one, so only the snap can carry the row there.
-      await page.mouse.wheel(Math.round((start.rowRight - start.rowLeft) / 3), 0);
-      expect(inSlack(await settled(page), 1)).toBe(true);
+      const wheel = () => page.mouse.wheel(Math.round((start.rowRight - start.rowLeft) / 3), 0);
+      expect(inSlack(await settled(page, wheel), 1)).toBe(true);
 
       // A short scroll with no wheel behind it (a scrollbar drag, a keyboard step) settles by the
       // snap alone. Firefox rested the second sheet 2px past the row's edge that way.
-      await page.evaluate(() => {
-        const row = document.querySelector<HTMLElement>('[data-paper-stack-root]')!;
-        row.scrollTo({ left: 0, behavior: 'instant' });
-        row.scrollBy({ left: 100, behavior: 'instant' });
-      });
-      expect(inSlack(await settled(page), 1)).toBe(true);
+      await page.evaluate(() => document.querySelector('[data-paper-stack-root]')!.scrollTo({ left: 0, behavior: 'instant' }));
+      await expect.poll(async () => (await readRow(page)).scrollLeft).toBe(0);
+      const shortStep = () =>
+        page.evaluate(() => document.querySelector('[data-paper-stack-root]')!.scrollBy({ left: 100, behavior: 'instant' }));
+      expect(inSlack(await settled(page, shortStep), 1)).toBe(true);
 
-      await page.evaluate(() => {
-        const row = document.querySelector<HTMLElement>('[data-paper-stack-root]')!;
-        row.scrollTo({ left: row.scrollWidth, behavior: 'instant' });
-      });
-      expect(inSlack(await settled(page), -1)).toBe(true);
+      const toEnd = () =>
+        page.evaluate(() => {
+          const row = document.querySelector<HTMLElement>('[data-paper-stack-root]')!;
+          row.scrollTo({ left: row.scrollWidth, behavior: 'instant' });
+        });
+      expect(inSlack(await settled(page, toEnd), -1)).toBe(true);
     });
   });
 }
