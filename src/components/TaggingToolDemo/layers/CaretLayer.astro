@@ -27,7 +27,7 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
           <span aria-hidden="true">→</span>
           <span><code class="hl" set:html={highlightSpans(`--caret: ${selectionStart}`, 'css', ['a{', '}'])} /></span>
           <span aria-hidden="true">→</span>
-          <span><code class="hl" set:html={highlightSpans('left: min(var(--caret) * 1ch - var(--scroll), var(--input-width) - 1ch) + 0.5ch', 'css', ['a{', '}'])} /></span>
+          <span><code class="hl" set:html={highlightSpans('left: min(var(--caret) * 1ch, var(--input-width) - 1ch) + 0.5ch', 'css', ['a{', '}'])} /></span>
         </div>
       </div>
 
@@ -38,7 +38,7 @@ const cells = [...value].map((char, index) => ({ char: char === ' ' ? '␣' : ch
         </li>
         <li>
           <span class="n" aria-hidden="true">2</span>
-          <span>Each variant form gets <code>--caret</code> and its input's <code>--input-width</code>; the value is copied in and scrolled just far enough to keep that caret in view</span>
+          <span>Each variant form gets <code>--caret</code> and its input's <code>--input-width</code>; the value is copied in and scrolled to its end</span>
         </li>
         <li>
           <span class="n" aria-hidden="true">3</span>
