@@ -334,6 +334,7 @@
 - [x] Move the Space Builder walkthrough cursor onto the shared demo cursor controller (after #380) (#400)
 - [x] Move the Drag and Drop walkthrough cursor onto the shared demo cursor controller (after #380) (#399)
 - [x] Take the corner cut and drift reads off a page turn's frames: the landing follows the browser's own transitions instead of resolving style every frame (P9) (#377)
+- [ ] Take the pulse lookup and Stack.astro's flip read off a page turn: both ask for animations once the next frame has painted, when style is clean (P18)
 - [x] Fixed colours that ignore the theme: the note fold fallback, the Rails outline, the toast and key borders, the tagging grid body, the Paper Stack note, the cursor labels and the Variants cursor (S11) (#363)
 - [x] Keep component styles inside their component: the original logo's Illustrator classes, the Space Builder tag, the marker editor's font settings and the layout utilities (S15) (#366)
 - [x] End the Library Search result list above the title block at every width (#220 S23) (#372)
