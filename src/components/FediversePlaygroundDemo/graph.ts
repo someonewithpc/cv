@@ -19,7 +19,7 @@
 // of the upper row, so their lines drop between boxes and never through one.
 
 import type { PlaygroundConfig } from './config';
-import { dependenciesOf, type ComposeFile, type Service } from './compose';
+import { dependenciesOf, SHARED_SERVICES, type ComposeFile, type Service } from './compose';
 
 export type Layout = 'landscape' | 'portrait';
 
@@ -55,14 +55,6 @@ const METRICS: Record<Layout, Metrics> = {
 /** The services a recipe runs beside its app; the app's box counts them. */
 const COMPANIONS: Record<string, readonly string[]> = {
   mastodon: ['streaming', 'sidekiq'],
-};
-
-const IMAGES: Record<SharedId, string> = {
-  db: 'postgres:alpine',
-  redis: 'redis:alpine',
-  media: 'darthsim/imgproxy',
-  mariadb: 'mariadb:10.3',
-  search: 'elasticsearch:7.17.4',
 };
 
 /** A line of a box's text: the name, or the small print under it. */
@@ -264,7 +256,7 @@ export function renderGraph(config: PlaygroundConfig, compose: ComposeFile, { fr
 
   slots.forEach((slot, id) => {
     const emitted = Boolean(services[id]);
-    nodes.push(box(id, 'shared', slot.x, slot.y, imageLines(IMAGES[id as SharedId]), {
+    nodes.push(box(id, 'shared', slot.x, slot.y, imageLines(SHARED_SERVICES[id].image as string), {
       emitted,
       fresh: isFresh(id),
       height: SHARED_HEIGHT,
