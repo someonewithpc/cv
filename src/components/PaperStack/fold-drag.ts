@@ -6,8 +6,8 @@
 
 import { setStackTurning } from '@/client/frontPage';
 import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
+import { rotateVec, type Vec } from '@/client/vec';
 
-type Vec = { x: number, y: number };
 
 // What a release hands the glide that takes over: where the throw's speed would coast the fold's
 // tip to, and that speed (px per ms). See coastTip.
@@ -180,11 +180,6 @@ const SWIPE_START = 8;
 // the button comes up) from being read as the throw.
 const THROW_WINDOW_MS = 100;
 const THROW_COAST_MS = 120;
-
-const rotateVec = (v: Vec, angle: number): Vec => {
-  const c = Math.cos(angle), s = Math.sin(angle);
-  return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
-};
 
 // .paper-fold's transform carries the box's local (0,0) corner (the visible, grabbable tip)
 // away from its untransformed position, landing here instead (relative to the sheet's
@@ -936,6 +931,26 @@ const coastMs = (distance: number, speed: number): number => (speed > 0 ? 3 * di
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const glideMs = (ms: number): number => (reducedMotion.matches ? 1 : ms);
 
+// One ease-out run on its own rAF clock: `draw` gets the cubic-eased progress each frame, then
+// `onDone` runs once after the frame that reaches 1. The timestamp is clamped below zero too: a
+// rAF timestamp is the frame's vsync time, which can precede the start captured here, and a
+// negative progress would extrapolate the run backwards past its start. Returns the cancel.
+const runEaseOut = (duration: number, draw: (eased: number) => void, onDone: () => void): (() => void) => {
+  let frame = 0;
+  const start = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(Math.max((now - start) / duration, 0), 1);
+    draw(1 - (1 - t) ** 3);
+    if (t < 1) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
+    onDone();
+  };
+  frame = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(frame);
+};
+
 // Glides the fold's tip to a target along a straight tip-space path, easing out like released
 // tension, over a duration scaled to how far the tip has to travel — a long glide takes visibly
 // longer than a small nudge — and no longer than the release's own speed would take to cover it.
@@ -955,14 +970,7 @@ const glideFoldTip = (
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
   const duration = glideMs(Math.max(Math.min(baseMs + distance / 3, baseMs + 500, coastMs(distance, thrown)), 120));
 
-  let frame = 0;
-  const start = performance.now();
-  const step = (now: number) => {
-    // Clamped below zero too: a rAF timestamp is the frame's vsync time, which can precede the
-    // start captured above, and a negative t would extrapolate the glide backwards past its
-    // start.
-    const t = Math.min(Math.max((now - start) / duration, 0), 1);
-    const eased = 1 - (1 - t) ** 3;
+  return runEaseOut(duration, (eased) => {
     const tip = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
     // Read every frame, not once at glide start: restack() begins the stack's own 300ms
     // --fold-back-x/-y transition from 0 to rest, so a value captured up front would go stale
@@ -974,16 +982,7 @@ const glideFoldTip = (
     const size = foldSizeFromTip(tip.x, tip.y);
     writeFoldSize(sheet, size);
     renderFold(section, fold, width, height, tip, backCut);
-
-    if (t < 1) {
-      frame = requestAnimationFrame(step);
-      return;
-    }
-    onDone();
-  };
-  frame = requestAnimationFrame(step);
-
-  return () => cancelAnimationFrame(frame);
+  }, onDone);
 };
 
 // The second half of a flip: the page lies folded fully over at the resting crease, blank back
@@ -1090,22 +1089,11 @@ const glideLanding = (
   // down quickly instead of crawling
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
   const duration = glideMs(Math.max(ms * distance / Math.hypot(seed.x, seed.y), 100));
-  let frame = 0;
-  const start = performance.now();
-  const step = (now: number) => {
-    const tt = Math.min(Math.max((now - start) / duration, 0), 1);
-    const eased = 1 - (1 - tt) ** 3;
+  return runEaseOut(duration, (eased) => {
     const t = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
     const { back, drift } = currentLanding(sheet);
     renderLanding(section, fold, width, height, seed, back, t, drift);
-    if (tt < 1) {
-      frame = requestAnimationFrame(step);
-      return;
-    }
-    onDone();
-  };
-  frame = requestAnimationFrame(step);
-  return () => cancelAnimationFrame(frame);
+  }, onDone);
 };
 
 const pageIndex = (page: HTMLElement): number => parseFloat(page.style.getPropertyValue('--page-index'));
@@ -1688,11 +1676,8 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   const home = { x: width, y: height };
 
   let settling = false;
-  let frame = 0;
-  const start = performance.now();
-  const step = (now: number) => {
-    const tt = Math.min(Math.max((now - start) / duration, 0), 1);
-    const p = (1 - (1 - tt) ** 3) * total;
+  const cancelRun = runEaseOut(duration, (eased) => {
+    const p = eased * total;
     // The corner cut and the drift are read at the top of the frame, while style is still clean
     // from the last paint, then everything writes — same discipline as the other per-frame loops.
     // The drift especially: the frame that restacks writes a dozen classes, attributes and moved
@@ -1716,18 +1701,12 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
       const t = { x: home.x + to.x * (1 - k), y: home.y + to.y * (1 - k) };
       renderLanding(section, fold, width, height, to, backCut, t, drift);
     }
-    if (tt < 1) {
-      frame = requestAnimationFrame(step);
-      return;
-    }
-    finishFlip(sheet, section, fold);
-  };
-  frame = requestAnimationFrame(step);
+  }, () => finishFlip(sheet, section, fold));
 
   // A re-grab mid-fold-back-down fast-forwards to the settled end state; before the restack the
   // fold is still the front page's, and the grab simply takes it over where it stands.
   return () => {
-    cancelAnimationFrame(frame);
+    cancelRun();
     if (settling) finishFlip(sheet, section, fold);
   };
 };
@@ -1763,11 +1742,8 @@ const bringFold = (
     onPromoted();
   };
 
-  let frame = 0;
-  const start = performance.now();
-  const step = (now: number) => {
-    const tt = Math.min(Math.max((now - start) / duration, 0), 1);
-    const p = (1 - (1 - tt) ** 3) * total;
+  const cancelRun = runEaseOut(duration, (eased) => {
+    const p = eased * total;
     const { back: backCut, drift } = currentLanding(sheet);
     if (p < d1) {
       const k = p / d1;
@@ -1781,19 +1757,13 @@ const bringFold = (
       writeFoldSize(sheet, size);
       renderFold(section, fold, w, h, tip, backCut);
     }
-    if (tt < 1) {
-      frame = requestAnimationFrame(step);
-      return;
-    }
-    restFold(sheet, section, fold);
-  };
-  frame = requestAnimationFrame(step);
+  }, () => restFold(sheet, section, fold));
 
   // The turn was committed when the key landed, so a re-grab mid-flight takes the page as
   // arrived rather than undoing it: fast-forward to the end state and let the new gesture start
   // from a stack at rest.
   return () => {
-    cancelAnimationFrame(frame);
+    cancelRun();
     if (!promoted) promote();
     restFold(sheet, section, fold);
   };

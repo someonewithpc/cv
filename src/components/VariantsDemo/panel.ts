@@ -1,5 +1,5 @@
 import { reducedMotion } from '@/client/autoplayStatus';
-import { variantsOf, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
+import { variantByPax, variantBySize, variantsOf, type CatalogVariant } from '@/components/SpaceBuilderDemo/MockScene/catalogItems';
 
 import { formatSize, unitsFor } from './units';
 import { VARIANT_CARDS } from './variantsCatalog';
@@ -149,17 +149,6 @@ function enhanceCard(card: HTMLElement, selection: Selection) {
   };
 }
 
-/** Keep as much of the current pick as the library allows, the way the product does. */
-function byPax(variants: CatalogVariant[], current: CatalogVariant, pax: number) {
-  return variants.find((v) => (v.pax ?? 0) === pax && v.size === current.size)
-    ?? variants.find((v) => (v.pax ?? 0) === pax);
-}
-
-function bySize(variants: CatalogVariant[], current: CatalogVariant, size: string) {
-  return variants.find((v) => v.size === size && v.pax === current.pax)
-    ?? variants.find((v) => v.size === size);
-}
-
 function enhanceRow(
   row: HTMLDetailsElement,
   variants: CatalogVariant[],
@@ -169,8 +158,8 @@ function enhanceRow(
 ) {
   const isPax = row.classList.contains('object-pax');
   const resolve = (value: string) => (isPax
-    ? byPax(variants, held(), Number(value))
-    : bySize(variants, held(), value));
+    ? variantByPax(variants, held(), Number(value))
+    : variantBySize(variants, held(), value));
 
   row.querySelectorAll<HTMLElement>('.hover-select-options li').forEach((option) => {
     const button = option.querySelector('button');

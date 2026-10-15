@@ -19,7 +19,8 @@
  * artwork, and the crease is not an element but a line the stack's clip-path draws.
  */
 
-type Point = { x: number; y: number };
+import { rotateVec, type Vec as Point } from '@/client/vec';
+
 type Way = 'fwd' | 'back';
 
 /** How far the nib stops short of the paper, along the normal. */
@@ -68,10 +69,7 @@ const unit = (v: Point) => {
   return { x: v.x / length, y: v.y / length };
 };
 const add = (a: Point, b: Point, k = 1) => ({ x: a.x + b.x * k, y: a.y + b.y * k });
-const rotate = ({ x, y }: Point, degrees: number) => {
-  const r = (degrees * Math.PI) / 180;
-  return { x: x * Math.cos(r) - y * Math.sin(r), y: x * Math.sin(r) + y * Math.cos(r) };
-};
+const rotate = (v: Point, degrees: number) => rotateVec(v, (degrees * Math.PI) / 180);
 const at = ({ x, y }: Point) => `${x.toFixed(1)} ${y.toFixed(1)}`;
 
 /** The front part of a cubic, split at `t`. */

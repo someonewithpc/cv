@@ -11,7 +11,7 @@ import { computed, nextTick, ref, useId, watch } from 'vue';
 
 import { formatSize, unitsFor } from '@/components/VariantsDemo/units';
 
-import { variantsOf, type CatalogItem, type CatalogVariant } from '../catalogItems';
+import { variantByPax, variantBySize, variantsOf, type CatalogItem, type CatalogVariant } from '../catalogItems';
 import HoverSelect from './HoverSelect.vue';
 
 const props = withDefaults(defineProps<{
@@ -121,17 +121,6 @@ function pick(variant: CatalogVariant | undefined) {
   held.value = variant;
   show(variant);
   emit('select', props.item, variant);
-}
-
-/** Keep as much of the current pick as the library allows, the way the product does. */
-function byPax(pax: string | number) {
-  return variants.value.find((v) => (v.pax ?? 0) === Number(pax) && v.size === held.value.size)
-    ?? variants.value.find((v) => (v.pax ?? 0) === Number(pax));
-}
-
-function bySize(size: string | number) {
-  return variants.value.find((v) => v.size === size && v.pax === held.value.pax)
-    ?? variants.value.find((v) => v.size === size);
 }
 
 function pickRow(row: 'pax' | 'size', variant: CatalogVariant | undefined) {
@@ -331,8 +320,8 @@ function onPictureKey(event: KeyboardEvent) {
         :current="visible.pax ?? 0"
         :unavailable="unavailablePax"
         :moved="movedRow === 'pax'"
-        @pick="pickRow('pax', byPax($event))"
-        @hover="show(byPax($event))"
+        @pick="pickRow('pax', variantByPax(variants, held, Number($event)))"
+        @hover="show(variantByPax(variants, held, Number($event)))"
         @seen="clearFlag('pax')"
         @revert="show(held)"
       >
@@ -356,8 +345,8 @@ function onPictureKey(event: KeyboardEvent) {
         :current-text="formatSize(visible.size ?? '', units)"
         :unavailable="unavailableSize"
         :moved="movedRow === 'size'"
-        @pick="pickRow('size', bySize($event))"
-        @hover="show(bySize($event))"
+        @pick="pickRow('size', variantBySize(variants, held, String($event)))"
+        @hover="show(variantBySize(variants, held, String($event)))"
         @seen="clearFlag('size')"
         @revert="show(held)"
       >

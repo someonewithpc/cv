@@ -2,6 +2,7 @@ import $store, { spaceGlobalOrderSelector } from '../store';
 import type { SpaceType } from '../store';
 
 import { serializeKeyValue } from './MarkerEditor/markerParts/shared/serialization';
+import { spaceLetters } from './MarkerEditor/markerParts/shared/spaceLetters';
 
 const SPACE_TEXT_KINDS = new Set([
   'SpaceNumberMarkerDecoration',
@@ -14,21 +15,7 @@ function spaceNumber(space: SpaceType, offset: number) {
 }
 
 function spaceLetter(space: SpaceType, offset: number, uppercase: boolean) {
-  // spaceNumber is 1-based (lobby = 1); bijective base-26 expects that after n--.
-  let remaining = spaceNumber(space, offset);
-  const digits: number[] = [];
-
-  while (remaining > 0) {
-    remaining -= 1;
-    digits.push(remaining % 26);
-    remaining = Math.floor(remaining / 26);
-  }
-
-  const letter = digits
-    .reverse()
-    .map((digit) => String.fromCharCode('a'.charCodeAt(0) + digit))
-    .join('');
-
+  const letter = spaceLetters(spaceNumber(space, offset));
   return uppercase ? letter.toUpperCase() : letter;
 }
 

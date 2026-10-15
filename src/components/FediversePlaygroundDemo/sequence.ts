@@ -4,6 +4,8 @@
 // stylesheet shows the one the sheet asks for. The type is set in the drawing's own units, sized so neither
 // drawing puts it under 8px on the sheet.
 
+import { escapeHtml } from '@/escapeHtml';
+
 export type Lane = { id: string; head: string[] };
 
 export type Step =
@@ -32,7 +34,6 @@ const METRICS: Record<Layout, Metrics> = {
   portrait: { w: 340, inset: 2, headLine: 12, headWidth: 80, row: 25, font: 9.25, advance: 0.6 },
 };
 
-const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export function renderSequence(lanes: Lane[], steps: Step[], layout: Layout): string {
   const m = METRICS[layout];
@@ -59,7 +60,7 @@ export function renderSequence(lanes: Lane[], steps: Step[], layout: Layout): st
       const lineY = mid + 4;
       const dir = Math.sign(x2 - x1);
       parts.push(`<path class="message${step.gate ? ' gate' : ''}" d="M${x1} ${lineY} H${x2 - dir * 1}" marker-end="url(#install-${step.gate ? 'gate' : 'arrow'}-${layout})" />`);
-      parts.push(`<text class="label${step.gate ? ' gate' : ''}" x="${(x1 + x2) / 2}" y="${lineY - 4}">${escape(step.text)}</text>`);
+      parts.push(`<text class="label${step.gate ? ' gate' : ''}" x="${(x1 + x2) / 2}" y="${lineY - 4}">${escapeHtml(step.text)}</text>`);
       return;
     }
 
@@ -75,7 +76,7 @@ export function renderSequence(lanes: Lane[], steps: Step[], layout: Layout): st
     } else {
       parts.push(`<rect class="step" x="${left}" y="${boxY}" width="${width}" height="${boxHeight}" rx="2" />`);
     }
-    parts.push(`<text class="step" x="${left + width / 2}" y="${mid + m.font * 0.35}">${escape(step.text)}</text>`);
+    parts.push(`<text class="step" x="${left + width / 2}" y="${mid + m.font * 0.35}">${escapeHtml(step.text)}</text>`);
   });
 
   const lifelines = lanes.map((_, lane) => {
@@ -88,7 +89,7 @@ export function renderSequence(lanes: Lane[], steps: Step[], layout: Layout): st
     const x = laneX(index);
     const texts = lane.head.map((line, row) => {
       const cls = lane.head.length > 1 && row === 0 ? 'head prefix' : 'head';
-      return `<text class="${cls}" x="${x}" y="${4 + m.headLine * (row + 0.5) + m.font * 0.35}">${escape(line)}</text>`;
+      return `<text class="${cls}" x="${x}" y="${4 + m.headLine * (row + 0.5) + m.font * 0.35}">${escapeHtml(line)}</text>`;
     });
     return `<rect class="head" x="${x - m.headWidth / 2}" y="0" width="${m.headWidth}" height="${headHeight}" rx="3" />${texts.join('')}`;
   });

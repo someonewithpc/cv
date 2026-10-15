@@ -69,3 +69,10 @@ export function transformPath(pathData: PathCommand[], fromViewBox: ViewBox, toV
 export function pathDataToString(pathData: PathCommand[]): string {
   return pathData.reduce((acc, { type, values }) => acc + `${type} ${values.join(' ')} `, '');
 }
+
+let pathDataPolyfill: Promise<void> | null = null;
+export function ensurePathData(): Promise<void> {
+  if ('getPathData' in SVGPathElement.prototype) return Promise.resolve();
+  pathDataPolyfill ??= import('path-data-polyfill').then(() => undefined);
+  return pathDataPolyfill;
+}

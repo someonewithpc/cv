@@ -57,6 +57,17 @@ export function variantOf(item: CatalogItem, variantId: string | undefined): Cat
   return variants.find((variant) => variant.id === variantId) ?? variants[0];
 }
 
+/** Keep as much of the current pick as the library allows, the way the product does. */
+export function variantByPax(variants: CatalogVariant[], current: CatalogVariant, pax: number) {
+  return variants.find((v) => (v.pax ?? 0) === pax && v.size === current.size)
+    ?? variants.find((v) => (v.pax ?? 0) === pax);
+}
+
+export function variantBySize(variants: CatalogVariant[], current: CatalogVariant, size: string) {
+  return variants.find((v) => v.size === size && v.pax === current.pax)
+    ?? variants.find((v) => v.size === size);
+}
+
 const BANQUET_WIDE = '2.43m x 1.21m';
 const BANQUET_NARROW = '1.82m x 76cm';
 const CHAIR_SIZE = '42cm x 50cm x 95cm';
