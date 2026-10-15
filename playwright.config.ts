@@ -135,6 +135,21 @@ export default defineConfig<PaceOptions>({
     {
       name: 'chromium',
       testIgnore: FIREFOX_SPECS,
+      grepInvert: /@serial/,
+      teardown: 'serial',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: { executablePath: systemChrome() },
+      },
+    },
+    {
+      // Tests that sample every frame of a page turn (tagged @serial). As the teardown of
+      // chromium this project starts once every other test has finished, and its one file
+      // runs in one worker, so nothing starves the sampler and a failure in one test does
+      // not skip the next.
+      name: 'serial',
+      grep: /@serial/,
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: { executablePath: systemChrome() },
