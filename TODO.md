@@ -380,7 +380,7 @@
 - [x] Open Source descriptions: past tense on the Assimp, git rebase and Waybar rows, and `$EDITOR` in code (T29) (#465)
 - [x] Hyphenate the compound adjectives in the Career data: Full-stack, step-by-step, node-based, event-driven and ride-sharing (220 T28) (#464)
 - [x] Career copy that dates or misnames itself: the Leb entry's "current versions" is a 2021 claim, the Visrez map names "the resort" before any resort is introduced, and GNU social has three role names for one job, with "co-maintainership" in the meta description (#220 T21) (#458)
-- [ ] Turn on Workers observability so the worker's 500s and 503s leave logs (#220 C61)
+- [x] Turn on Workers observability so the worker's 500s and 503s leave logs (#220 C61) (#428)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
 - [ ] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#220 E13)
