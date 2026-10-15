@@ -1231,7 +1231,6 @@ html:has([data-paper-stack-root]:hover) {
       // under the paper's own tone, no brighter than the flap lying flat. The rank and the
       // rise are the sheet's own; the pseudo-element takes them from it.
       --turned-rank: inherit;
-      --turned-rise: inherit;
       --turned-step: calc(var(--turned-rise) - #{$turn-lift} * log(max(var(--turned-rank), 1)) / log(2));
       background:
         linear-gradient(
