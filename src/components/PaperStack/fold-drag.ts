@@ -6,8 +6,8 @@
 
 import { setStackTurning } from '@/client/frontPage';
 import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
+import { rotateVec, type Vec } from '@/client/vec';
 
-type Vec = { x: number, y: number };
 
 // What a release hands the glide that takes over: where the throw's speed would coast the fold's
 // tip to, and that speed (px per ms). See coastTip.
@@ -180,11 +180,6 @@ const SWIPE_START = 8;
 // the button comes up) from being read as the throw.
 const THROW_WINDOW_MS = 100;
 const THROW_COAST_MS = 120;
-
-const rotateVec = (v: Vec, angle: number): Vec => {
-  const c = Math.cos(angle), s = Math.sin(angle);
-  return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
-};
 
 // .paper-fold's transform carries the box's local (0,0) corner (the visible, grabbable tip)
 // away from its untransformed position, landing here instead (relative to the sheet's
