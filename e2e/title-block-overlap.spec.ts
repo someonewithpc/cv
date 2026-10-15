@@ -1,5 +1,8 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
+import { steady } from './support/steady';
+
 /**
  * The window Hugo reported the Space Builder cover from. The sheet stops growing at its 60em
  * cap, so every desktop window from about 1024 up draws the same 960x480 sheet with the title
@@ -20,7 +23,9 @@ const APPS = '.space-builder-app .rail, .space-builder-app .sidebar, .space-buil
 async function settle(page: Page, selector: string) {
   const stack = page.locator(selector);
   await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-  await page.waitForTimeout(2500);
+  const island = await waitForIslandMounted(frontPage(stack, await frontPageIndex(stack)));
+  await expect(island.locator('[data-ready]')).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
+  await steady(page, () => stack.boundingBox());
   return stack;
 }
 
@@ -33,7 +38,7 @@ test('the space builder app shows nothing under the title block', async ({ page,
   // Reduced motion leaves the sidebar shut, so open it the way a reader would.
   await stack.locator('[data-demo-target="tool:add"]').first().click();
   await expect(stack.locator('.space-builder-app .sidebar').first()).toBeVisible();
-  await page.waitForTimeout(500);
+  await steady(page, () => stack.locator('.space-builder-app .sidebar').first().boundingBox());
 
   const overlaps = await stack.evaluate((el, what) => {
     const section = el.querySelector('section');
@@ -75,8 +80,7 @@ test('the space builder and drag and drop apps share one margin, gone on a phone
   expect(builder).toBe(dragDrop);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.waitForTimeout(500);
-  const phone = await insets();
+  const phone = await steady(page, insets);
   expect(phone[0]).toBe(phone[1]);
   // What is left is the 2px that keeps the frame line clear.
   expect(phone[0]).toBeLessThanOrEqual(2);
