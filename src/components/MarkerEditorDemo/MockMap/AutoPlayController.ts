@@ -165,21 +165,27 @@ function press(el: Element, click: boolean) {
 }
 
 /**
- * The page's scroll offset, read once after each scroll and kept until the next. Reading
- * it for every synthetic mouse event forced a style and layout pass on each drag frame.
+ * The page's scroll offset for the length of one drag, read once after each scroll and kept
+ * until the next. Reading it for every synthetic mouse event forced a style and layout pass
+ * on each drag frame.
  */
-let pageScroll: { x: number; y: number } | null = null;
-let watchingScroll = false;
-
-function currentScroll() {
-  if (!watchingScroll) {
-    watchingScroll = true;
-    window.addEventListener('scroll', () => { pageScroll = null; }, { passive: true });
-  }
-  return (pageScroll ??= { x: window.scrollX, y: window.scrollY });
+function watchScroll() {
+  let offset: { x: number; y: number } | null = null;
+  const forget = () => { offset = null; };
+  window.addEventListener('scroll', forget, { passive: true });
+  return {
+    read: () => (offset ??= { x: window.scrollX, y: window.scrollY }),
+    stop: () => window.removeEventListener('scroll', forget),
+  };
 }
 
-function mouseEvent(type: string, clientX: number, clientY: number, buttons: number) {
+function mouseEvent(
+  type: string,
+  clientX: number,
+  clientY: number,
+  buttons: number,
+  currentScroll: () => { x: number; y: number },
+) {
   const event = new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
@@ -393,7 +399,8 @@ export class AutoPlayController {
 
       const root = document.documentElement;
       // Taken with the drag's start points, so the frames' mouse events read nothing.
-      currentScroll();
+      const scroll = watchScroll();
+      scroll.read();
       let curX = from.x;
       let curY = from.y;
       let settled = false;
@@ -412,6 +419,7 @@ export class AutoPlayController {
       const finish = (x: number, y: number) => {
         if (settled) return;
         settled = true;
+        scroll.stop();
         if (this.dragCleanup === cleanup) {
           this.dragCleanup = null;
         }
@@ -470,7 +478,7 @@ export class AutoPlayController {
             curY = from.y + (to.y - from.y) * eased;
 
             this.onCursor({ client: { x: curX, y: curY }, dragging: true });
-            surface.dispatchEvent(mouseEvent('mousemove', curX, curY, 1));
+            surface.dispatchEvent(mouseEvent('mousemove', curX, curY, 1, scroll.read));
 
             if (t < 1) {
               this.dragRaf = requestAnimationFrame(tick);
