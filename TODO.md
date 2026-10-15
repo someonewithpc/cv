@@ -304,7 +304,7 @@
 - [x] Leave target-size to the mobile Lighthouse profile, since a mouse keeps the demos' drawn controls (171-A11) (#378)
 - [x] Move the demo cursor with translate and keep its position out of React state, so a cursor frame is no layout and no render (171-PW3) (#380)
 - [x] Take the corner cut and drift reads off a page turn's frames: the landing follows the browser's own transitions instead of resolving style every frame (P9) (#377)
-- [ ] Take the pulse lookup and Stack.astro's flip read off a page turn: both ask for animations once the next frame has painted, when style is clean (P18)
+- [x] Take the pulse lookup and Stack.astro's flip read off a page turn: both ask for animations once the next frame has painted, when style is clean (P18) (#492)
 - [x] Fixed colours that ignore the theme: the note fold fallback, the Rails outline, the toast and key borders, the tagging grid body, the Paper Stack note, the cursor labels and the Variants cursor (S11) (#363)
 - [x] Keep component styles inside their component: the original logo's Illustrator classes, the Space Builder tag, the marker editor's font settings and the layout utilities (S15) (#366)
 - [x] End the Library Search result list above the title block at every width (#220 S23) (#372)
