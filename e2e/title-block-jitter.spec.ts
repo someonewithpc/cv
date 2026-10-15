@@ -1,6 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test';
 
-import { frontPage, frontPageIndex, pressTurn } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, pressTurn } from './support/paperStack';
 
 /**
  * Page.astro hands every title-block cell a random tilt through --random1 and --random2, from
@@ -18,7 +18,7 @@ async function cellsWithoutJitter(front: Locator): Promise<string[]> {
 
 test('every title-block cell keeps its tilt, before and after a page turn', async ({ page }) => {
   await page.goto('/');
-  const stack = page.locator('article.technical-drawing-stack').nth(1);
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
 
   const first = frontPage(stack, await frontPageIndex(stack));
