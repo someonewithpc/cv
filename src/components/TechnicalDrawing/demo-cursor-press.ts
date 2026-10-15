@@ -17,6 +17,7 @@ export const PRESS_HOLD_MS = 140;
 const RELEASE_MS = 50;
 const FLARE_MS = 400;
 const STACK = 'article.technical-drawing-stack';
+const SHEET = 'section[data-sheet-id]';
 const INSTALLED = '__demoCursorPress';
 
 export interface DemoPressOptions {
@@ -106,10 +107,12 @@ function flare(x: number, y: number, kind: 'down' | 'up', target: EventTarget | 
   window.setTimeout(remove, FLARE_MS);
 }
 
+// A stack can hold a cursor on several of its pages, so the pressed page's own cursor wins.
 function cursorFor(target: EventTarget | null): HTMLElement | null {
-  const stack = target instanceof Element ? target.closest(STACK) : null;
-  const cursors = [...(stack ?? document).querySelectorAll<HTMLElement>('[data-demo-cursor]')];
-  return cursors.at(-1) ?? null;
+  const element = target instanceof Element ? target : null;
+  const sheet = element?.closest(SHEET);
+  const scope = sheet?.querySelector('[data-demo-cursor]') ? sheet : (element?.closest(STACK) ?? document);
+  return [...scope.querySelectorAll<HTMLElement>('[data-demo-cursor]')].at(-1) ?? null;
 }
 
 function down(event: MouseEvent) {
