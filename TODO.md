@@ -338,7 +338,7 @@
 - [x] Held Controls reads the page rect once per run, lays out the grab line once per leg, and reads a slider again only when its value moves (C12 Held Controls) (#412)
 - [x] Take Space Builder hover moves from the scene, not the whole window, and keep the handle meshes for picking (#220 C9) (#408)
 - [x] Lay the Space Builder chairs out once per area or options change, and leave the capacity tag text alone while the camera moves (#220 C10) (#407)
-- [ ] Set the Icon decoration default selection without writing state during render (#220 C43)
+- [x] Set the Icon decoration default selection without writing state during render (#220 C43) (#423)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
 - [ ] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#220 E13)
