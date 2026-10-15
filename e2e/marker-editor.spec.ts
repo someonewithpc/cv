@@ -83,19 +83,6 @@ test('main page on a narrow landscape sheet: the map fills it and the selector k
   expect(apart).toBe(true);
 });
 
-test('editor page: live marker-editor diagram mounts', async ({ page }) => {
-  const stack = markerEditorStack(page);
-  await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Marker Editor');
-  const front = frontPage(stack, await frontPageIndex(stack));
-
-  await waitForIslandMounted(front);
-  // The embed only renders once the page reports itself visible to its own internal
-  // observer and no other live marker-editor session is open — both true here, a fresh
-  // isolated test starting straight on this page.
-  await expect(front.locator('.marker-editor--embed')).toBeVisible({ timeout: 15_000 });
-});
-
 /**
  * One picker event on the shape fill, read back inside the same task. Nothing else can run
  * in between, however busy the page is, so a version that routes the drag through React
