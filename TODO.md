@@ -322,3 +322,4 @@
 - [x] Require the firefox-noscript row to move before the spec reads a settled snap (#220 E25) (#486)
 - [x] Wait for each arrow key to render before the next key in the Paper Stack no-script dots spec (#493)
 - [x] Wait for mount, not 2.5 s per stack, in the title block overflow spec (#220 E22) (#478)
+- [ ] Find the demos the sheet-contain, title-block-jitter and stack-offscreen specs check by title instead of page position (#220 E19)
