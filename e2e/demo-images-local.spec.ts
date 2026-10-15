@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { frontPageName } from './support/paperStack';
+import { frontPageName, settledAfter, waitForFrontMounted } from './support/paperStack';
 
 /**
  * Every picture a demo shows ships with the site. A texture, thumbnail or photo pulled
@@ -34,15 +34,15 @@ test('no demo loads an image from another host', async ({ page, baseURL }) => {
   for (let index = 0; index < stackCount; index += 1) {
     const stack = stacks.nth(index);
     await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    await page.waitForTimeout(1500);
+    await waitForFrontMounted(stack);
 
     const pageCount = await stack.locator(':scope > div').count();
     for (let turn = 1; turn < pageCount; turn += 1) {
       const before = await frontPageName(stack);
       await stack.focus();
-      await page.keyboard.press('ArrowRight');
-      await expect.poll(async () => frontPageName(stack), { timeout: 15_000 }).not.toBe(before);
-      await page.waitForTimeout(800);
+      await settledAfter(stack, () => page.keyboard.press('ArrowRight'));
+      expect(await frontPageName(stack)).not.toBe(before);
+      await waitForFrontMounted(stack);
     }
   }
 
