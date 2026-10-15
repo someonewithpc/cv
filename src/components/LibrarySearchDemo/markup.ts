@@ -1,3 +1,4 @@
+import { escapeAttribute } from '@/escapeHtml';
 import { variantOf } from './objects';
 import {
   formatScore,
@@ -13,16 +14,12 @@ import {
    prints them at build time with set:html, and the client swaps them in as the visitor
    types, so both come out of the one function. The layers style them through :global(). */
 
-export function escapeHtml(text: string) {
-  return text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
-}
-
 /** The mangled query, with each rewrite marked by the rule that made it. */
 export function mangledHtml(query: string) {
   const { text, segments } = mangle(query);
   if (!text.trim()) return '<span class="empty">(nothing to match)</span>';
   return segments
-    .map(({ text, rule }) => (rule === 'plain' ? escapeHtml(text) : `<span class="rule-${rule}">${escapeHtml(text)}</span>`))
+    .map(({ text, rule }) => (rule === 'plain' ? escapeAttribute(text) : `<span class="rule-${rule}">${escapeAttribute(text)}</span>`))
     .join('');
 }
 
@@ -31,9 +28,9 @@ const BADGE: Record<SqlMark, string> = { where: '1', select: '2', order: '3', ma
 export function sqlHtml(state: SearchState) {
   return sqlSegments(state)
     .map(({ text, mark }) => {
-      if (!mark) return escapeHtml(text);
-      if (mark === 'comment') return `<span class="sql-comment">${escapeHtml(text)}</span>`;
-      return `<span class="frag" data-mark="${mark}"><span class="badge" aria-hidden="true">${BADGE[mark]}</span>${escapeHtml(text)}</span>`;
+      if (!mark) return escapeAttribute(text);
+      if (mark === 'comment') return `<span class="sql-comment">${escapeAttribute(text)}</span>`;
+      return `<span class="frag" data-mark="${mark}"><span class="badge" aria-hidden="true">${BADGE[mark]}</span>${escapeAttribute(text)}</span>`;
     })
     .join('');
 }
@@ -63,7 +60,7 @@ export function relevanceHtml(state: SearchState) {
   const termRows = terms
     .map(
       (term) => `<tr>
-        <td><code>${escapeHtml(term.text)}</code></td>
+        <td><code>${escapeAttribute(term.text)}</code></td>
         <td class="num">${term.df}</td>
         <td class="num">${fixed(term.idf)}</td>
         <td class="num">${term.op === '-' ? '<span class="excluded">excluded</span>' : fixed(term.idf * term.idf)}</td>
@@ -80,7 +77,7 @@ export function relevanceHtml(state: SearchState) {
         .join(' + ');
       const score = hit.score ?? 0;
       return `<tr>
-        <td class="name">${escapeHtml(hit.object.name)} <span class="variant">${escapeHtml(variantOf(hit.object))}</span></td>
+        <td class="name">${escapeAttribute(hit.object.name)} <span class="variant">${escapeAttribute(variantOf(hit.object))}</span></td>
         <td class="sum"><code>${sum}</code></td>
         <td class="num">${fixed(hit.relevance)}</td>
         <td class="score"><span class="meter"><span class="bar" style="--score: ${score}"></span><span class="value">${formatScore(hit.score)}</span></span></td>
