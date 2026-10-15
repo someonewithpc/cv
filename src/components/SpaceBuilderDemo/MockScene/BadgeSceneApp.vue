@@ -20,6 +20,7 @@ import {
   type ScreenPoint,
 } from './scene/sceneViewportGestures';
 import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
+import { TAG_PAD_M } from './scene/sceneTuning';
 
 /** Radians/second — a full lap takes ~25s, gentle enough not to be nauseating. */
 const ORBIT_SPEED = 0.25;
@@ -354,7 +355,7 @@ onBeforeUnmount(() => {
     </figure>
 
     <div v-if="ready && !loadError && readout" class="math-card">
-      <p class="math-title">offset = r + 0.95m</p>
+      <p class="math-title">offset = r + {{ TAG_PAD_M }}m</p>
       <dl>
         <div><dt>θ</dt><dd>{{ readout.theta }}</dd></div>
         <div><dt>r</dt><dd>{{ readout.r }}</dd></div>

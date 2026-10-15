@@ -1,4 +1,5 @@
 import type { SpaceBuilderScene } from './SpaceBuilderScene';
+import { TOUCH_HANDLE_SLOP_PX, WHEEL_ZOOM_PER_DELTA } from './sceneTuning';
 
 export type ScreenPoint = { x: number; y: number };
 
@@ -15,7 +16,7 @@ export function isTouchPointer(event: PointerEvent) {
 
 /** Fat-finger hit slop for SelectArea handles (CSS px). */
 export function handleScreenSlop(event: PointerEvent) {
-  return isTouchPointer(event) ? 48 : 0;
+  return isTouchPointer(event) ? TOUCH_HANDLE_SLOP_PX : 0;
 }
 
 export function pinchDistance(a: ScreenPoint, b: ScreenPoint) {
@@ -66,7 +67,7 @@ export function applyWheelZoom(scene: SpaceBuilderScene, event: WheelEvent) {
   if (event.ctrlKey) return;
   event.preventDefault();
   // deltaY > 0 → zoom out (larger radius).
-  const factor = Math.exp(event.deltaY * 0.0012);
+  const factor = Math.exp(event.deltaY * WHEEL_ZOOM_PER_DELTA);
   scene.dolly(factor);
 }
 

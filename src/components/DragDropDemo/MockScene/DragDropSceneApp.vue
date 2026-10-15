@@ -40,6 +40,7 @@ import {
   type PinchState,
   type ScreenPoint,
 } from '@/components/SpaceBuilderDemo/MockScene/scene/sceneViewportGestures';
+import { ORBIT_THETA_PER_PX } from '@/components/SpaceBuilderDemo/MockScene/scene/sceneTuning';
 import type { SpaceBuilderScene } from '@/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene';
 
 /**
@@ -666,12 +667,12 @@ async function pulseClick(token: number) {
 /** Incremental orbit so the drop reads as a real 3D scene, not a flat image — the demo
  * cursor drags horizontally in step with the rotation, as if it were the one causing it.
  * `startClient` is where the drag left off; the horizontal travel is the inverse of
- * `SpaceBuilderScene.orbit()`'s `theta -= dx * 0.005`, so the same eased curve that drives
+ * `SpaceBuilderScene.orbit()`'s `theta -= dx * ORBIT_THETA_PER_PX`, so the same eased curve that drives
  * the camera also drives the cursor. */
 function orbitTween(token: number, deltaTheta: number, ms: number, startClient: { x: number; y: number }) {
   return (async () => {
     const start = gateNow();
-    const totalDx = -deltaTheta / 0.005;
+    const totalDx = -deltaTheta / ORBIT_THETA_PER_PX;
     let applied = 0;
     cursorInstant.value = true;
     cursor.press();
