@@ -382,7 +382,7 @@
 - [x] Hyphenate the compound adjectives in the Career data: Full-stack, step-by-step, node-based, event-driven and ride-sharing (220 T28) (#464)
 - [x] Career copy that dates or misnames itself: the Leb entry's "current versions" is a 2021 claim, the Visrez map names "the resort" before any resort is introduced, and GNU social has three role names for one job, with "co-maintainership" in the meta description (#220 T21) (#458)
 - [x] Turn on Workers observability so the worker's 500s and 503s leave logs (#220 C61) (#428)
-- [ ] Type the marker editor, the font picker iframe, PostIt and the draw counter instead of casting to any (#220 C84)
+- [x] Type the marker editor, the font picker iframe, PostIt and the draw counter instead of casting to any (#220 C84) (#445)
 - [x] Remove the dead branches and members the audit found in Space Builder, the marker editor, the Event Bus demo and Drag and Drop (#220 C82) (#444)
 - [x] Free the Space Builder scene's GPU copies on dispose, and say in the GPU comment that released pages keep an empty context (C87) (#443)
 - [x] Stop exporting symbols nothing outside their file imports, and delete the dead sheetRatios (#220 C81) (#441)
