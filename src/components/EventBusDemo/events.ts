@@ -25,8 +25,6 @@ export type Attachment = {
 export type Listener = {
   /** The module's class, which is also its directory under plugins/. */
   module: string;
-  kind: 'component' | 'plugin';
-  method: string;
   priority: number;
   /** What the handler returns for each attachment, by id. */
   returns: Record<string, EventResult>;
@@ -59,8 +57,6 @@ export const defaultAttachment = 'jpeg';
 export const listeners: Listener[] = [
   {
     module: 'AudioEncoder',
-    kind: 'plugin',
-    method: `on${EVENT}`,
     priority: 0,
     resizes: false,
     returns: { jpeg: 'next', mp4: 'next', ogg: 'stop', gif: 'next' },
@@ -68,8 +64,6 @@ export const listeners: Listener[] = [
   },
   {
     module: 'ImageEncoder',
-    kind: 'plugin',
-    method: `on${EVENT}`,
     priority: 0,
     resizes: true,
     returns: { jpeg: 'stop', mp4: 'next', ogg: 'next', gif: 'stop' },
@@ -77,8 +71,6 @@ export const listeners: Listener[] = [
   },
   {
     module: 'VideoEncoder',
-    kind: 'plugin',
-    method: `on${EVENT}`,
     priority: 0,
     resizes: true,
     returns: { jpeg: 'next', mp4: 'stop', ogg: 'next', gif: 'next' },
@@ -91,8 +83,6 @@ export type Outcome = {
   results: (EventResult | null)[];
   /** What Event::handle hands back to the emitter: the last answer given. */
   result: EventResult;
-  /** The module that claimed the event, if one did. */
-  claimedBy: string | null;
   /** What ended up in $res. */
   rendered: Rendered;
 };
@@ -123,7 +113,7 @@ export function dispatch(attachmentId: string, enabled: (module: string) => bool
   }
 
   // Nobody appended a block, so the template's own branch renders a plain link.
-  return { results, result, claimedBy, rendered };
+  return { results, result, rendered };
 }
 
 /**
@@ -167,5 +157,5 @@ export function resize(enabled: (module: string) => boolean = () => true) {
     adds its resizer and answers next, so the dispatcher hands back next. */
 export function dispatchResize(enabled: (module: string) => boolean = () => true): Outcome {
   const results = listeners.map((listener) => (listener.resizes && enabled(listener.module) ? ('next' as const) : null));
-  return { results, result: 'next', claimedBy: null, rendered: 'link' };
+  return { results, result: 'next', rendered: 'link' };
 }
