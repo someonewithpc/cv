@@ -335,4 +335,4 @@
 - [x] Correct the comments that no longer match the code: fold-drag.ts, PaperStack, Annotations, resizeHold, flip-hint, the carousel mentions and the demo layer notes (#451)
 - [x] Make `tsc --noEmit -p tsconfig.json` pass: drop the deprecated `baseUrl` and declare the `*.vue` and `*.astro` modules (E2) (#468)
 - [x] Read the rem from the page in the specs that assumed a 16px root, and resolve contact-alias's dist from the file (#220 E26) (#484)
-- [ ] Clear the stale comments and leftovers in audit/markup.ts and eight e2e files (#220 E29)
+- [x] Clear the stale comments and leftovers in audit/markup.ts and eight e2e files (#220 E29) (#488)
