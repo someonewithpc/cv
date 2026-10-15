@@ -6,6 +6,7 @@
 
 /oembed.*
   Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400
 
 /oembed.xml
   Content-Type: text/xml; charset=utf-8
