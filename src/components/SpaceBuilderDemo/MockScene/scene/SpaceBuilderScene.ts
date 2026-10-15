@@ -1,3 +1,5 @@
+import { TOAST_VISIBLE_MS } from '@/client/toast';
+
 import {
   ACESFilmicToneMapping,
   AmbientLight,
@@ -761,7 +763,7 @@ export class SpaceBuilderScene {
     this.setOptions({ style });
   }
 
-  setFlash(message: string | null, ms = 1800) {
+  setFlash(message: string | null, ms = TOAST_VISIBLE_MS) {
     if (this.flashTimer) clearTimeout(this.flashTimer);
     this.flash = message;
     this.emitSnapshot();

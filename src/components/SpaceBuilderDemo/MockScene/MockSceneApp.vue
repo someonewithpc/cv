@@ -11,6 +11,7 @@ import {
   reportAutoplayState,
 } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import {
   AutoPlayController,
@@ -55,7 +56,6 @@ import type {
 const RESUME_DELAY_MS = 2000;
 const CURSOR_FADE_MS = 320;
 const CURSOR_CLICK_MS = 180;
-const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
 type CursorPhase = 'demo' | 'fading' | 'gone';

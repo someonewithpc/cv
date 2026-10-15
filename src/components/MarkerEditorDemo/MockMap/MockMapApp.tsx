@@ -14,6 +14,7 @@ import store, {
 import { watchDrawingNote } from '@/client/drawingNote';
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -37,7 +38,6 @@ const CURSOR_FADE_MS = 320;
 const CURSOR_CLICK_MS = 180;
 const TARGET_RETRY_MS = 40;
 const TARGET_RETRY_ATTEMPTS = 20;
-const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
 /**
