@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { demoStack, frontPage, frontPageName, swipeStack, turnToPage } from './support/paperStack';
+import { demoStack, dogEarShown, frontPage, frontPageName, swipeStack, turnToPage } from './support/paperStack';
 
 const PAGES = ['Paper Stack', 'The Fold', 'Without JavaScript'];
 
@@ -15,7 +15,7 @@ test.describe('with script', () => {
     const stack = paperStackDemo(page);
     await stack.scrollIntoViewIfNeeded();
     await expect(stack).toHaveAttribute('aria-roledescription', 'paper stack');
-    await page.waitForTimeout(500);
+    await dogEarShown(stack);
 
     expect(await stack.locator(':scope > div').count()).toBe(PAGES.length);
     expect(await frontPageName(stack)).toBe(PAGES[0]);
