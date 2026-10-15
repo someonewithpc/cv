@@ -410,6 +410,18 @@
       "label": "Open",
       "items": [
         {
+          "repository": "gcc.gnu.org",
+          "title": "wrong code at -O3: IPA-CP redirects a recursive call to a clone made for a different polymorphic context",
+          "description": "Reported a GCC 16 miscompile after FreeCAD booleans started crashing: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Bisected it to IPA-CP's multi-sweep cloning with prebuilt snapshots, reduced two testcases, and wrote a fix for `perhaps_add_new_callers` that is going to gcc-patches once bootstrap and regtest pass.",
+          "url": "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127917",
+          "number": 127917,
+          "updatedAt": "2026-10-15T23:02:00Z",
+          "tags": [
+            "gcc",
+            "cplusplus"
+          ]
+        },
+        {
           "repository": "torvalds/linux",
           "title": "drm/amd/display: Keep eDP native timing after resume with video=",
           "description": "Two patches on amd-gfx. After an HDMI hotplug and a suspend/resume, a 3840x2400 eDP panel booted with a `video=` mode came back squeezed into the top-left corner: the fbdev reprobe had dropped the native mode and amdgpu scaled onto the first one left. The fix falls back to the encoder's native mode on eDP and LVDS, with KUnit tests that fail without it. On 7.2.8, 103 of 103 resumes were wrong before and 1363 of 1363 right after.",
