@@ -1291,12 +1291,21 @@ const syncClocks = (pulses: Animation[], running: boolean): void => {
 };
 
 // The same after anything that starts the pulse over (a flip hands it to the next page, a
-// settle restarts it, the flap comes back to the front after a flip), at the start of the next
-// frame. The new animations come into being in that frame's style resolve, and asking for them
+// settle restarts it, the flap comes back to the front after a flip), once the next frame has
+// painted. The new animations come into being in that frame's style resolve, and asking for them
 // now would force one in the middle of the turn: a whole-document one, with the page's :has()
-// rules.
+// rules. At the start of the next frame was no better, as the turn has dirtied style again by
+// then; after the paint it is clean, and every stack due is read in one go.
+const pulsesDue = new Set<HTMLElement>();
 const syncPulse = (stack: HTMLElement): void => {
-  requestAnimationFrame(() => alignPulse(stack));
+  if (pulsesDue.size === 0) {
+    afterPaint(() => {
+      const stacks = [...pulsesDue];
+      pulsesDue.clear();
+      alignPulses(stacks);
+    });
+  }
+  pulsesDue.add(stack);
 };
 
 // index.astro holds each stack's reveal, and the pulse after it, until the stack's bottom edge
