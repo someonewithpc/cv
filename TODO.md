@@ -314,4 +314,4 @@
 - [x] Warn when a Firefox project is skipped because its browser is missing (#220 E12) (#475)
 - [x] Read the callout frame dash screenshot with sharp instead of playwright-core's private PNG (E7) (#471)
 - [x] Check that the Space Builder place and badge scenes draw a frame instead of only data-ready (E15) (#476)
-- [ ] Assert behaviour in the tests that only confirmed static markup: the caret blink, the logo dash and the inner-page drawings run and advance their clocks (E16)
+- [x] Assert behaviour in the tests that only confirmed static markup: the caret blink, the logo dash and the inner-page drawings run and advance their clocks (E16) (#477)
