@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
+import { clickCarouselArrow } from './support/carousel';
 import { demoStack, frontPage, frontPageIndex } from './support/paperStack';
 import { openCatalog, waitForSceneReady } from './support/spaceBuilder';
 import { expect, test } from './support/timeScale';
@@ -74,14 +75,6 @@ test('a catalog model is only fetched once its item is picked', async ({ page })
   expect(models).not.toContain('armchair.glb');
 });
 
-/** Clicks where one of the carousel's arrows sits; they are the scroller's own buttons. */
-async function clickArrow(page: Page, styles: Locator, side: 'previous' | 'next') {
-  const box = await styles.boundingBox();
-  if (!box) throw new Error('The carousel has no layout box');
-  const x = side === 'next' ? box.x + box.width - 14 : box.x + 14;
-  await page.mouse.click(x, box.y + box.height / 2);
-}
-
 test('the chair card steps through the library finishes', { tag: '@handover' }, async ({ page }) => {
   await page.goto('/');
   const app = await openCatalog(page);
@@ -98,19 +91,19 @@ test('the chair card steps through the library finishes', { tag: '@handover' }, 
   const finishes = await card.locator('li.style').evaluateAll((items) => items.map((item) => item.getAttribute('data-variant')));
   expect(finishes.at(-1)).toBe('chair-black');
   for (const finish of finishes.slice(1)) {
-    await clickArrow(page, styles, 'next');
+    await clickCarouselArrow(page, styles, 'next');
     await expect(card).toHaveAttribute('data-variant', finish!);
   }
 
   // At the end of the list the arrow is disabled, and a click on it scrolls nowhere.
   const atEnd = () => styles.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft < 1);
   await expect.poll(atEnd).toBe(true);
-  await clickArrow(page, styles, 'next');
+  await clickCarouselArrow(page, styles, 'next');
   await styles.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   expect(await atEnd()).toBe(true);
   await expect(card).toHaveAttribute('data-variant', 'chair-black');
 
-  await clickArrow(page, styles, 'previous');
+  await clickCarouselArrow(page, styles, 'previous');
   await expect(card).toHaveAttribute('data-variant', 'chair-white');
 });
 
