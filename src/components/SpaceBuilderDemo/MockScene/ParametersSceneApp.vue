@@ -449,7 +449,7 @@ onBeforeUnmount(() => {
     role="group"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
-    aria-label="Edit Parameters demo — autoplaying slider demo, orbit to look around, edit the Options sidebar to take over"
+    aria-label="Edit Parameters demo, autoplaying slider demo. Orbit to look around, edit the Options sidebar to take over"
   >
     <div class="viewport">
       <canvas data-scene-canvas class="scene-canvas" aria-label="Populated SelectArea reacting to Options" />
