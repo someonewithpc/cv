@@ -7,6 +7,9 @@ import { Point, type PointLiteral } from './Point';
 
 const partKinds = new WeakMap<Function, string>();
 
+// How close a dragged point must come to a control point, in marker units, to snap onto it
+const SNAP_RADIUS = 0.05;
+
 export class MarkerPart {
   /** Saved markers carry `data-kind`, and the bundler renames `constructor.name`. */
   static registerKinds(classes: Record<string, Function>) {
@@ -107,7 +110,7 @@ export class MarkerPart {
       { minCP: null as Point | null, minDist: Infinity },
     );
 
-    if (minDist <= 0.05 && minCP) {
+    if (minDist <= SNAP_RADIUS && minCP) {
       point.x = minCP.x;
       point.y = minCP.y;
     }

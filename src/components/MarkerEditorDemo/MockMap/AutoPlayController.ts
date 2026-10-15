@@ -51,6 +51,20 @@ const DRAG_REFERENCE_CANVAS_PX = 450;
 /** Where the cursor rests on the map between targets, as a fraction of the overlay. */
 export const REST_CURSOR_FRACTION = { x: 0.48, y: 0.44 };
 
+/** Where the cursor sits on the overlay once the editor has opened. */
+export const EDITOR_OPEN_CURSOR_FRACTION = { x: 0.42, y: 0.38 };
+
+/** The off-map rest: a fraction across the overlay and px below it, or px in from the window corner. */
+const OFF_MAP_CURSOR = { across: 0.88, below: 52, cornerInset: 48 };
+
+const DEFAULT_DRAG_MS = 620;
+const HUE_DRAG_MS = 380;
+const SLIDER_DRAG_MS = 420;
+const SNAP_RELEASE_DELAY_MS = 40;
+
+// A little over the 0.55 s cursor transition in MockMapOverlay.scss
+const CURSOR_TRAVEL_MS = 560;
+
 type CpDrag = {
   cp: string;
   /** Px at the reference canvas width — scaled to the live canvas when run. */
@@ -347,9 +361,9 @@ export class AutoPlayController {
     const overlay = document.querySelector('.mock-map-overlay');
     if (overlay) {
       const rect = overlay.getBoundingClientRect();
-      return { client: { x: rect.left + rect.width * 0.88, y: rect.bottom + 52 } };
+      return { client: { x: rect.left + rect.width * OFF_MAP_CURSOR.across, y: rect.bottom + OFF_MAP_CURSOR.below } };
     }
-    return { client: { x: window.innerWidth - 48, y: window.innerHeight - 48 } };
+    return { client: { x: window.innerWidth - OFF_MAP_CURSOR.cornerInset, y: window.innerHeight - OFF_MAP_CURSOR.cornerInset } };
   }
 
   /** Close UI and restore the map to the default markers so the demo can loop cleanly. */
@@ -380,7 +394,7 @@ export class AutoPlayController {
     surface: Element,
     from: { x: number; y: number },
     to: { x: number; y: number },
-    { durationMs = 620, disableSnap = false }: { durationMs?: number; disableSnap?: boolean } = {},
+    { durationMs = DEFAULT_DRAG_MS, disableSnap = false }: { durationMs?: number; disableSnap?: boolean } = {},
   ): Promise<void> {
     return new Promise((resolve) => {
       if (this.paused) {
@@ -479,7 +493,7 @@ export class AutoPlayController {
           };
 
           this.dragRaf = requestAnimationFrame(tick);
-        }, disableSnap ? 40 : 0);
+        }, disableSnap ? SNAP_RELEASE_DELAY_MS : 0);
       });
     });
   }
@@ -532,7 +546,7 @@ export class AutoPlayController {
     if (Math.abs(to.h - from.h) > 1) {
       const bar = hue.getBoundingClientRect();
       const at = (h: number) => ({ x: bar.left + bar.width * (h / 360), y: bar.top + bar.height / 2 });
-      await this.animateDrag(hue, hue, at(from.h), at(to.h), { durationMs: 380 });
+      await this.animateDrag(hue, hue, at(from.h), at(to.h), { durationMs: HUE_DRAG_MS });
       if (this.paused) return;
       await this.wait(120);
       if (this.paused) return;
@@ -546,9 +560,9 @@ export class AutoPlayController {
     await this.animateDrag(area, area, at(from), at(to));
     if (this.paused) return;
 
-    // Back to the swatch (the cursor takes 0.55 s to get there), then press it closed.
+    // Back to the swatch, then press it closed.
     this.onCursor({ target });
-    await this.wait(560);
+    await this.wait(CURSOR_TRAVEL_MS);
     if (this.paused || host.hidden) return;
     this.onCursor({ target, click: true });
     await press(input, false);
@@ -596,7 +610,7 @@ export class AutoPlayController {
       const min = parseFloat(input.min || '0');
       const max = parseFloat(input.max || '1');
       const from = parseFloat(input.value);
-      const durationMs = 420;
+      const durationMs = SLIDER_DRAG_MS;
       let startedAt = 0;
       let settled = false;
       let curValue = from;
