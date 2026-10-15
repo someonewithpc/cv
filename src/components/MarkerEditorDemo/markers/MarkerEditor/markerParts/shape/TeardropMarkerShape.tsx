@@ -21,7 +21,7 @@ export class TeardropMarkerShape extends MarkerShape {
       },
       set center(value: PointLiteral | Point) {
         marker.constrainVertical(value, marker.state.center);
-        // TODO this isn't really corect
+        // TODO this isn't really correct
         marker.constrainRadius(marker.state.center, marker.state.center, marker.state.sectorStart, 0.05, 1);
         marker.constrainSnap(marker.state.center);
       },

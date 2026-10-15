@@ -31,7 +31,7 @@ export type ThemeSettings = {
   paperGrain: string;
   /** The same on the contributions paper, which reads as the rougher sheet. Spread 2.6, and
    * L* 91.7 against the 96.5 the sheet has bare: multiply pays for roughness in darkening.
-   * Round 4 ran this at 0.44, which is spread 3.2 at L* 90.6, and that read as too strong. */
+   * At 0.44 the spread is 3.2 at L* 90.6, which reads as too strong. */
   paperSheetGrain: string;
   /** multiply for a light sheet, screen for a dark one -- see paper-grain in _colors.scss. */
   paperBlend: 'multiply' | 'screen';
@@ -54,10 +54,9 @@ export type ThemeSettings = {
 
 export const THEMES = {
   light: {
-    // Round 1 lifted the light paper off grey, oklch(0.94 0.014 85) to here, at Hugo's ask.
     canvas: 'oklch(0.97 0.011 85)',
     ink: 'oklch(0.24 0.025 260)',
-    // Moss, Hugo's pick (2026-10-04) from the round 3 candidates. Keywords follow the accent
+    // Moss. Keywords follow the accent
     // and strings mix from it, as the roles in scss/_code.scss derive them.
     accent: 'oklch(0.60 0.12 130)',
     blueprint: 'oklch(0.622 0.121 254)',
