@@ -417,7 +417,6 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 720, height: 900 }
         listBottom: listBox.bottom,
       };
     });
-    console.log('layout', viewport.width, JSON.stringify(numbers));
     // Wall to wall inside the inset: nothing but the padding between the tool and the cell.
     expect(numbers.fill.w).toBeGreaterThan(0.9);
     expect(numbers.fill.h).toBeGreaterThan(0.85);
