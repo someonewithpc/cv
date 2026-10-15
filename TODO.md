@@ -331,3 +331,4 @@
 - [x] Rename `crossProduct` in `svg-utils.ts` to `dot`, since it returns a dot product (C90) (#448)
 - [x] Comments say what the code does now: orphans, history and typos out of the PaperStack, theme, demo and capture comments (#220 C89) (#450)
 - [ ] Correct the comments that no longer match the code: fold-drag.ts, PaperStack, Annotations, resizeHold, flip-hint, the carousel mentions and the demo layer notes (#220 C88)
+- [x] Correct the comments that no longer match the code: fold-drag.ts, PaperStack, Annotations, resizeHold, flip-hint, the carousel mentions and the demo layer notes (#451)
