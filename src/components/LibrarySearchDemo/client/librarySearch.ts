@@ -37,10 +37,15 @@ type Tool = {
     seen sorting themselves rather than the list being redrawn. */
 function render(tool: Tool, result: SearchResult) {
   const { list, rows } = tool;
+  const moving = !reducedMotion(tool.root);
+  // All the rows are read before the reorder and all of them after it, never one between
+  // two animate() calls, where each read would lay the page out again.
   const before = new Map<HTMLElement, number>();
-  rows.forEach((row) => {
-    if (!row.hidden) before.set(row, row.getBoundingClientRect().top);
-  });
+  if (moving) {
+    rows.forEach((row) => {
+      if (!row.hidden) before.set(row, row.getBoundingClientRect().top);
+    });
+  }
 
   const shown = new Set<string>();
   const ordered = result.hits.map((hit) => {
@@ -67,14 +72,15 @@ function render(tool: Tool, result: SearchResult) {
 
   if (tool.count) tool.count.textContent = `${result.hits.length} of ${libraryObjects.length} objects`;
 
-  if (reducedMotion(tool.root)) return;
-  ordered.forEach((row) => {
+  if (!moving) return;
+  const after = ordered.map((row) => (before.has(row) ? row.getBoundingClientRect().top : 0));
+  ordered.forEach((row, i) => {
     const from = before.get(row);
     if (from === undefined) {
       row.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MOVE_MS, easing: 'ease-out' });
       return;
     }
-    const dy = from - row.getBoundingClientRect().top;
+    const dy = from - after[i];
     if (Math.abs(dy) < 1) return;
     row.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }], {
       duration: MOVE_MS,
