@@ -339,7 +339,7 @@ section {
     /* Without script nothing sets the attribute, and the sheet is portrait by the same width
        query Stack.astro mirrors for --sheet-block; the landscape size left a phone's sheet at
        7px type. */
-    @media (scripting: none) and (width <= 680px) {
+    @media (scripting: none) and (width <= #{drawing.$portrait-window}) {
       font-size: min(1rem, 0.038 * var(--sheet-inline));
     }
   }
@@ -588,8 +588,13 @@ section {
   }
 
   & > table {
-    $title-tech-size: 4em;
+    $title-tech-size: drawing.$title-tech-size;
     $title-tech-icon-size: 2.25em;
+
+    --title-tech-size: #{$title-tech-size};
+    --title-tech-stacked-width: #{drawing.$title-tech-stacked-width};
+    --title-wrap-width: #{drawing.$title-wrap-width};
+    --portrait-width: #{drawing.$portrait-width};
 
     position: absolute;
     right: var(--sheet-margin);
@@ -793,7 +798,7 @@ section {
 
       /* td as well, or the base rule's 4em square outranks this one. */
       td.title-tech .title-tech-stack {
-        width: 2.625em;
+        width: drawing.$title-tech-stacked-width;
         height: 2em;
         aspect-ratio: auto;
 
@@ -812,9 +817,9 @@ section {
 
   @mixin title-fit-5 {
     @include title-fit-4;
-    /* Narrow enough that the title has to take a second line. 11rem is what clears
-       the artwork cell on a 60em sheet, which is as wide as a sheet gets. */
-    & > table { max-width: 11rem; }
+    /* Narrow enough that the title has to take a second line. $title-wrap-width is what
+       clears the artwork cell on a 60em sheet, which is as wide as a sheet gets. */
+    & > table { max-width: drawing.$title-wrap-width; }
   }
 
   /* Pick the step from the sheet's own width. The lower bound keeps the ladder out
@@ -827,11 +832,11 @@ section {
      only the floor. Where a sheet's own artwork leaves the block room for cells the
      ladder sheds, Stack.astro names the fit it can take in data-title-fit, and that
      replaces the ladder's step (title-fit.ts). */
-  @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-1; } }
-  @container technical-drawing-width (40em < width <= 50em) { &:not([data-title-fit]) { @include title-fit-2; } }
-  @container technical-drawing-width (40em < width <= 46em) { &:not([data-title-fit]) { @include title-fit-3; } }
-  @container technical-drawing-width (40em < width <= 43em) { &:not([data-title-fit]) { @include title-fit-4; } }
-  @container technical-drawing-width (40em < width <= 41em) { &:not([data-title-fit]) { @include title-fit-5; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 50em) { &:not([data-title-fit]) { @include title-fit-1; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 50em) { &:not([data-title-fit]) { @include title-fit-2; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 46em) { &:not([data-title-fit]) { @include title-fit-3; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 43em) { &:not([data-title-fit]) { @include title-fit-4; } }
+  @container technical-drawing-width (#{drawing.$portrait-width} < width <= 41em) { &:not([data-title-fit]) { @include title-fit-5; } }
 
   /* A fit is an arrangement and how many cells it sheds, in the ladder's order:
      T is the table, S the logo under the title, W that with the title wrapped. */
@@ -853,7 +858,7 @@ section {
   /* The title wraps where title-fit-5 wraps it, but the row of cells under it
      may run wider than that, so the cap is on the lettering, not the block. */
   &[data-title-fit^='W'] > table td.title-name header {
-    max-width: calc(11rem - 0.4em - 1px);
+    max-width: calc(#{drawing.$title-wrap-width} - 0.4em - 1px);
   }
 
   /* A sheet this narrow cannot host the note beside the artwork — landscape

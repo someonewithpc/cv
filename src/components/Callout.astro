@@ -86,6 +86,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
 <style lang="scss">
 @use "@/scss/_page-column.scss" as column;
 @use "@/scss/gloss" as gloss;
+@use "@/scss/technical-drawing" as drawing;
 
 .callout {
   @include column.skip-while-parsing(48rem);
@@ -391,7 +392,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
     isolation: isolate;
   }
 
-  /* The stack fans its sheets out about a pin at its top-left corner, each turned by 1.5deg
+  /* The stack fans its sheets out about a pin at its top-left corner, each turned by the splay
      times the log of its place (PaperStack), so the hindmost one drops below the front sheet by
      the sine of its turn times how far along it is. The view carries the stack's page count
      (--slip-pages, set above from the rendered stack) so the slip knows how far that is, and
@@ -405,7 +406,7 @@ const slipStyle = inWords[pageCount - 2] !== undefined
     --slip-pad: 1rem;
     /* Clear of the peel hint the stack writes under its right-hand corner. */
     --slip-width: min(34rem, 100% - 24rem);
-    --slip-turn: calc(1.5deg * log(var(--slip-pages, 6)));
+    --slip-turn: calc(#{drawing.$per-page-splay} * log(var(--slip-pages, 6)));
     --slip-sine: sin(var(--slip-turn));
     --slip-paper: var(--theme-paper, light-dark(var(--surface-raised), var(--surface-sunken)));
 
@@ -426,14 +427,14 @@ const slipStyle = inWords[pageCount - 2] !== undefined
      that row as deep as the deepest limit asks: the fan's, and the peel hint's piece by piece.
      Rounding the slip's height to a whole pixel leaves the lead row the difference. */
   .callout[data-card] .callout-card {
-    /* 1 on a landscape sheet, 0 on a portrait one: the stack turns at 40em (Stack.astro). */
-    --slip-land: max(0, sign(100cqi - 40rem));
+    /* 1 on a landscape sheet, 0 on a portrait one: the stack turns at its portrait width (Stack.astro). */
+    --slip-land: max(0, sign(100cqi - #{drawing.$portrait-width-number}rem));
     --slip-tan: tan(var(--slip-turn));
     /* The pin every sheet turns on, from the paper clip's reach (Stack.astro, PaperStack). */
-    --slip-reach: clamp(2.75rem, 7.5cqi, 4.5rem);
+    --slip-reach: clamp(#{drawing.$paper-clip-reach-min}rem, #{drawing.$paper-clip-reach-share}cqi, #{drawing.$paper-clip-reach-max}rem);
     --slip-pin-x: calc(var(--slip-reach) / (2 + 2 * var(--slip-land)));
     --slip-pin-y: calc(var(--slip-reach) / (4 - 2 * var(--slip-land)));
-    --slip-sheet: calc(var(--slip-land) * 50cqi + (1 - var(--slip-land)) * min(500cqi / 3, 36rem, 85svh));
+    --slip-sheet: calc(var(--slip-land) * 50cqi + (1 - var(--slip-land)) * min(100cqi * #{drawing.$portrait-height-per-width}, #{drawing.$portrait-max-height}, #{drawing.$portrait-max-viewport}));
 
     display: grid;
     grid-template-columns: [title-start] fit-content(100%) [title-end] minmax(0, 1fr);

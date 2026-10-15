@@ -7,6 +7,35 @@ $artwork-width: 20em;
 $fold-rest-x: 2cm;
 $fold-rest-y: 1cm;
 
+// The stack's geometry, which Stack, Page, PaperStack and Callout each lay out from.
+// Each sheet in the fan is turned by this much times the log of its place (PaperStack), and
+// Callout's slip reads the same turn to know how far the hindmost sheet drops.
+$per-page-splay: 1.5deg;
+
+// The paper clip's reach along the sheet's long side, as a floor, a share of the frame's width
+// and a cap, in a unit each user supplies (em on the stack, rem in the callout).
+$paper-clip-reach-min: 2.75;
+$paper-clip-reach-share: 7.5;
+$paper-clip-reach-max: 4.5;
+
+// The stack turns portrait at this frame width, and a portrait sheet is as tall as 5:3 of its
+// width, capped by $portrait-max-height and the viewport. Without script the width
+// query's 40em is $portrait-window wide, once the gutter is at its 1.25rem cap.
+$portrait-width-number: 40;
+$portrait-width: $portrait-width-number * 1em;
+$portrait-window: 680px;
+$portrait-height-per-width: unquote('5 / 3');
+$portrait-aspect: unquote('3 / 5');
+$portrait-max-height: 36rem;
+$portrait-max-viewport: 85svh;
+
+// The title block's logo cell: a square in a table, and a flat 2.625em by 2em once the logo
+// stacks under the title. title-fit.ts measures the block against the same sizes. A wrapped
+// title runs at most $title-wrap-width, which clears the artwork on a 60em sheet.
+$title-tech-size: 4em;
+$title-tech-stacked-width: 2.625em;
+$title-wrap-width: 11rem;
+
 // Without script, a browser with no CSS carousel (no ::scroll-marker or ::scroll-button) shows
 // the next sheet's edge beside the one in front: PaperStack narrows each sheet in the row by the
 // peek, and Stack.astro takes it off the sheet's measure, which the type is sized from.
