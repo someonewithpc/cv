@@ -280,6 +280,7 @@
 - [x] Let the keyboard reach Library Search's scrolling results at 768 px (A10) (#333)
 - [x] Recheck the 2020 and 2021 rows still marked Open, and show the snapshot date (T19) (#332)
 - [x] A deploy ships the oEmbed card of its own source, not the previous build's (C63) (#331)
+- [x] Send Cache-Control on the oEmbed files for the day their cache_age says, and add author_url (C62) (#430)
 - [x] Count visits with Cloudflare Web Analytics on hsal.es only, skipped under GPC or DNT (#338)
 - [x] Record visits and interactions in Workers Analytics Engine: the /api/e route, a monthly salt object and the visitor hash, landing dark (analytics plan PR 1) (#339)
 - [x] Send the page's visits and interactions to /api/e: session id in memory, batched beacons, GPC and DNT opt-outs, stable sheet ids (analytics plan PR 2) (#340)
