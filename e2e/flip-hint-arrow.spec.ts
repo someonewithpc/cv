@@ -1,24 +1,9 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import sharp from 'sharp';
 
+import { contrast, type Rgb } from './support/colour';
 import { flapGrip } from './support/fold';
 import { demoStack, dogEarShown, swipeStack } from './support/paperStack';
-
-type Rgb = readonly [number, number, number];
-
-const luminance = ([r, g, b]: Rgb) => {
-  const channel = (value: number) => {
-    const c = value / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
-};
-
-/** WCAG contrast ratio between two sRGB colours. */
-function contrast(a: Rgb, b: Rgb): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (light + 0.05) / (dark + 0.05);
-}
 
 /**
  * The hints point at a crease, so what these tests measure is geometry: where the tip of each
