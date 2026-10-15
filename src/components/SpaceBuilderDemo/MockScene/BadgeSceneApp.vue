@@ -605,7 +605,6 @@ onBeforeUnmount(() => {
   dt {
     font-size: 0.625rem;
     color: #adb5bd;
-    text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 

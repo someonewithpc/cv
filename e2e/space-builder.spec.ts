@@ -303,6 +303,8 @@ test('badge page: the readout shows the home angle and follows a drag', async ({
 
   const readout = app.locator('.math-card dd');
   await expect(readout).toHaveText(['50°', '4.44m', '5.39m']);
+  // The labels are the formula's own letters, so the card must not uppercase them (T16).
+  await expect(app.locator('.math-card dt').evaluateAll((els) => els.map((el) => getComputedStyle(el).textTransform))).resolves.toEqual(['none', 'none', 'none']);
 
   const box = await app.locator('canvas[data-scene-canvas]').boundingBox();
   if (!box) throw new Error('the badge scene has no canvas box');
