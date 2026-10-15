@@ -1,4 +1,5 @@
 import { documentGate } from '@/client/frontPage';
+import { elementCentre } from '@/client/cursorMotion';
 import { hexToHsv } from '@/components/MarkerEditorDemo/markers/MarkerEditor/markerParts/shared/inlineColorPicker';
 import {
   demoPress,
@@ -152,11 +153,6 @@ function setNativeInputValue(input: HTMLInputElement | HTMLTextAreaElement, valu
   proto?.set?.call(input, value);
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
-}
-
-function elementCentre(el: Element) {
-  const rect = el.getBoundingClientRect();
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 }
 
 /** A press at the element centre, where the drawn cursor rests, ending in a click or not. */
