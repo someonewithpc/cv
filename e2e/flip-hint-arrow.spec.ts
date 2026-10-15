@@ -33,7 +33,8 @@ type Aim = {
   animations: number;
 };
 
-function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
+async function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
+  await installProbes(page);
   return page.evaluate((which) => {
     const frame = document.querySelector('.technical-drawing-frame')!;
     const front = frame.querySelector<HTMLElement>('.paper-front')!;
@@ -41,14 +42,7 @@ function aim(page: Page, way: 'fwd' | 'back'): Promise<Aim> {
 
     // The fold sizes are lengths in whatever unit the stack wrote them, so let the browser
     // resolve them instead of parsing.
-    const px = (value: string) => {
-      const probe = document.createElement('div');
-      probe.style.cssText = `position:absolute;visibility:hidden;width:${value || '0px'}`;
-      front.appendChild(probe);
-      const width = probe.getBoundingClientRect().width;
-      probe.remove();
-      return width;
-    };
+    const px = (value: string) => window.e2eProbes!.px(value || '0px', front);
     const prop = (el: Element, name: string) => px(getComputedStyle(el).getPropertyValue(name).trim());
 
     const stack = frame.querySelector('article.technical-drawing-stack')!;
