@@ -355,7 +355,7 @@
 - [x] Give the marker editor border controls unique ids and demo targets per border (#220 C41) (#424)
 - [x] Set the Icon decoration default selection without writing state during render (#220 C43) (#423)
 - [x] Hide the font picker and two-column loading placeholders when scripts are off, so their spinners stop turning over empty layers (#220 T32) (#467)
-- [ ] Say "one more sheet" when a stack has one sheet below, not "one more sheets" (#220 T24)
+- [x] Say "one more sheet" when a stack has one sheet below, not "one more sheets" (#220 T24) (#460)
 - [x] Pick one case per label: Open Source in the access-key legend and Interests, the pronunciation guide in sentence case, Title Case for layer and marker names, Bob and Alice capitalised in Worktrees prose (#220 T26) (#459)
 - [x] Use one loading text per Space Builder boot, and no internal SelectArea name in visitor-facing text (T14) (#457)
 - [x] Name Side Chair and Banquet Table in the Space Builder placeholder toast, and say seat count updates once the field is left, not as you drag (#220 T15) (#456)
