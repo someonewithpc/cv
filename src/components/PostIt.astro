@@ -1,3 +1,11 @@
+---
+interface Props {
+  background?: string;
+  color?: string;
+  title?: string;
+}
+---
+
 {/* src/middleware.ts swaps "next" for this note's paper, in page order. */}
 <aside class="marker-font" data-paper="next" style={{ '--background': Astro.props.background, '--color': Astro.props.color }}>
   {Astro.props.title && <h3>{Astro.props.title}</h3>}
