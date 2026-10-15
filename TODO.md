@@ -328,4 +328,4 @@
 - [ ] Drop the title-fit-1 container rule that title-fit-2's identical range always covered (#220 C23)
 - [x] Drop the title-fit-1 container rule that title-fit-2's identical range always covered (C23) (#418)
 - [x] Delete the unused svgo.config.mjs, the unused pencil and undo-2 lucide icons and the lodash-es/throttle pre-bundle (#220 C67) (#433)
-- [ ] Rename `crossProduct` in `svg-utils.ts` to `dot`, since it returns a dot product (C90)
+- [x] Rename `crossProduct` in `svg-utils.ts` to `dot`, since it returns a dot product (C90) (#448)
