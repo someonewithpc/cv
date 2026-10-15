@@ -72,3 +72,15 @@ declare module 'cloudflare:workers' {
     constructor(ctx: unknown, env: unknown);
   }
 }
+
+declare module '*.vue' {
+  import type { DefineComponent } from 'vue';
+  const component: DefineComponent<object, object, unknown>;
+  export default component;
+}
+
+declare module '*.astro' {
+  import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
+  const component: AstroComponentFactory;
+  export default component;
+}
