@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { dogEarShown, forEachStackInLane, LANES, settledAfter } from './support/paperStack';
+import { framesPass, steady } from './support/steady';
 
 /**
  * Opening Chrome's responsive device mode is mobile emulation applied to a page that is
@@ -88,10 +89,26 @@ async function flapPoint(stack: Locator): Promise<{ x: number, y: number }> {
   return point;
 }
 
+/**
+ * Waits for every island on screen to mount. bootWhenVisible.ts boots a host once a fifth of it
+ * is in view, and an island on a covered page waits for a turn (pageIsland.ts), so those two
+ * are left pending.
+ */
+async function frontIslandsMounted(page: Page): Promise<void> {
+  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-mounted="pending"]')]
+    .filter((host) => {
+      const sheet = host.closest('[data-paper-stack-root] > div');
+      const front = !sheet || getComputedStyle(sheet).getPropertyValue('--page-index').trim() === '1';
+      const box = host.getBoundingClientRect();
+      const shown = Math.min(box.bottom, innerHeight) - Math.max(box.top, 0);
+      return front && box.height > 0 && shown >= box.height * 0.2;
+    }).length), { message: 'an island on screen never mounted', timeout: 15_000 }).toBe(0);
+}
+
 async function openAtDesk(page: Page): Promise<void> {
   await page.setViewportSize(DESKTOP);
   await page.goto('/');
-  await page.waitForTimeout(1500);
+  await steady(page, () => widths(page));
 }
 
 /** Runs `enter`, switches to every emulated frame, and checks the widths in each. */
@@ -99,8 +116,7 @@ async function checkFrames(page: Page, enter: () => Promise<void>, frames = FRAM
   await enter();
   for (const frame of frames) {
     await deviceMode(page, frame.width, frame.height);
-    await page.waitForTimeout(300);
-    const reading = await widths(page);
+    const reading = await steady(page, () => widths(page));
     expect(reading.clientWidth, `${frame.name}: containing block`).toBe(frame.width);
     expect(reading.innerWidth, `${frame.name}: layout viewport`).toBe(reading.clientWidth);
     expect(reading.bodyScrollWidth, `${frame.name}: body`).toBeLessThanOrEqual(reading.innerWidth);
@@ -125,7 +141,7 @@ test('the foot of the page fits the frame', async ({ page }) => {
   await openAtDesk(page);
   await checkFrames(page, async () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(1200);
+    await frontIslandsMounted(page);
   });
 });
 
@@ -133,7 +149,6 @@ for (let lane = 0; lane < LANES; lane += 1) {
   test(`the stacks in lane ${lane} fit the frame mid-turn and once they have settled`, async ({ page }) => {
     await forEachStackInLane(page, lane, openAtDesk, async (page, stack) => {
       await stack.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(1200);
       await stack.focus();
 
       // The gesture happens at desk width: what this is watching for is state carried across
@@ -141,7 +156,7 @@ for (let lane = 0; lane < LANES; lane += 1) {
       await settledAfter(stack, async () => {
         await page.keyboard.press('ArrowRight');
         await checkFrames(page, async () => {
-          await page.waitForTimeout(200);
+          await expect(stack).not.toHaveAttribute('data-paper-settled');
         });
         await page.setViewportSize(DESKTOP);
       });
@@ -152,7 +167,6 @@ for (let lane = 0; lane < LANES; lane += 1) {
   test(`the stacks in lane ${lane} fit the frame with the fold held open`, async ({ page }) => {
     await forEachStackInLane(page, lane, openAtDesk, async (page, stack) => {
       await stack.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(1200);
       const box = await stack.boundingBox();
       expect(box).not.toBeNull();
       const grab = await flapPoint(stack);
@@ -166,7 +180,11 @@ for (let lane = 0; lane < LANES; lane += 1) {
           await page.mouse.move(grab.x - (box!.width * 0.5 * step) / 8, grab.y - (box!.height * 0.3 * step) / 8);
           await page.waitForTimeout(25);
         }
-        await page.waitForTimeout(150);
+        // The fold eases after the pointer; with the pointer held it comes to rest there.
+        await steady(page, () => stack.locator('.paper-fold').evaluate((el) => {
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { x, y, width, height };
+        }));
       });
       await page.mouse.up();
     });
@@ -175,7 +193,6 @@ for (let lane = 0; lane < LANES; lane += 1) {
   test(`the stacks in lane ${lane} fit the frame with a swipe in flight`, async ({ page }) => {
     await forEachStackInLane(page, lane, openAtDesk, async (page, stack) => {
       await stack.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(1200);
       const box = await stack.boundingBox();
       expect(box).not.toBeNull();
 
@@ -186,7 +203,6 @@ for (let lane = 0; lane < LANES; lane += 1) {
           await page.mouse.wheel(travel / 8, 0);
           await page.waitForTimeout(30);
         }
-        await page.waitForTimeout(150);
       });
     });
   });
@@ -199,7 +215,7 @@ test('a theme change mid-transition fits the frame', async ({ page }) => {
   expect(count).toBeGreaterThan(0);
   await checkFrames(page, async () => {
     await choices.nth(count - 1).evaluate((input) => (input as HTMLInputElement).click());
-    await page.waitForTimeout(120);
+    await expect(page.locator('html')).toHaveClass(/theme-transition/);
   });
 });
 
@@ -207,7 +223,6 @@ test('the theme picker under the pointer fits the frame', async ({ page }) => {
   await openAtDesk(page);
   await checkFrames(page, async () => {
     await page.locator('#theme-picker').hover({ force: true });
-    await page.waitForTimeout(600);
   });
 });
 
@@ -217,8 +232,8 @@ test('every island booted at desk width fits the frame', async ({ page }) => {
     const height = await page.evaluate(() => document.body.scrollHeight);
     for (let y = 0; y < height; y += 600) {
       await page.evaluate((to) => window.scrollTo(0, to), y);
-      await page.waitForTimeout(200);
+      await framesPass(page);
+      await frontIslandsMounted(page);
     }
-    await page.waitForTimeout(2000);
   });
 });
