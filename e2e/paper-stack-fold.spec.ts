@@ -52,7 +52,7 @@ for (const demo of DEMOS) {
   test(`${demo.label}: forward swipes visit every page in order, then wrap`, async ({ page }) => {
     const stack = demoStack(page, demo.pages[0]);
     await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await dogEarShown(stack);
 
     expect(await stack.locator(':scope > div').count()).toBe(demo.pages.length);
     expect(await frontPageIndex(stack)).toBe(0);
@@ -72,7 +72,7 @@ for (const demo of DEMOS) {
 test('marker editor: backward swipe is clamped at the first page', async ({ page }) => {
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   expect(await frontPageName(stack)).toBe('Interactive Map Marker Editor');
 
@@ -86,7 +86,7 @@ test('marker editor: backward swipe is clamped at the first page', async ({ page
 test('a horizontal swipe then a vertical wheel without a mouse move scrolls the page', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   for (const forward of [false, true]) {
     await swipeStack(page, stack, forward);
@@ -104,7 +104,7 @@ test('a horizontal swipe then a vertical wheel without a mouse move scrolls the 
 test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   // The flap paints the back of the sheet in the page's own colour, which it can't read off the
   // page itself (it is the page's sibling), so a theme switch has to reach it too.
@@ -126,8 +126,6 @@ test('visrez logo: the dog-ear repaints when the theme changes', async ({ page }
 });
 
 test('every page paints the back of its sheet in its own paper, in every theme', async ({ page }) => {
-  await page.waitForTimeout(500);
-
   // The stylesheet picks each page's back from its class, apart from the face Page.astro
   // paints, so a page kind the two disagree on shows here as a band of the wrong colour.
   for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
@@ -182,7 +180,7 @@ test('visrez logo: the dog-ear is lit at its tip and shaded along the crease', a
 test('visrez logo: a back-drag shades the crease from its first move', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
   await pressTurn(stack, 'ArrowRight');
 
   // A short pull on the folded-back corner: the previous page starts to fold up behind the
@@ -222,7 +220,7 @@ test('visrez logo: a back-drag shades the crease from its first move', async ({ 
 test('visrez logo: the dog-ear is drawn while the flip is still landing', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   // Watch from inside the page. A flip renumbers --page-index halfway through and only hands the
   // flap over at the very end, so what matters is the paper: from the renumber on, the page at
@@ -358,7 +356,10 @@ test.describe('a drag that pulls the wrong way cancels', () => {
     // that is reached.
     await dragFold(page, stack, [{ dx: 80, dy: 80 }]);
     await page.mouse.up();
-    await page.waitForTimeout(1500);
+    await expect.poll(async () => {
+      const rest = await foldSize(stack);
+      return Math.max(Math.abs(rest.x - restBefore.x), Math.abs(rest.y - restBefore.y));
+    }, { message: 'the fold never eased back to rest' }).toBeLessThan(0.5);
 
     expect(await frontPageIndex(stack), 'front page unchanged, no flip').toBe(before);
     const restAfter = await foldSize(stack);
