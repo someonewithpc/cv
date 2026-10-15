@@ -32,3 +32,14 @@ export async function steady<T>(page: Page, read: () => Promise<T>, timeout = 10
     last = next;
   }
 }
+
+/**
+ * Waits for the page to stop changing its size and scroll position: after a load, the fonts
+ * coming in and the islands booting on screen, or the browser landing on a fragment.
+ */
+export async function pageSteady(page: Page): Promise<void> {
+  await steady(page, () => page.evaluate(() => {
+    const root = document.documentElement;
+    return [root.scrollWidth, root.scrollHeight, scrollX, scrollY];
+  }));
+}
