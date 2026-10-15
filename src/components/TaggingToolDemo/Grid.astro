@@ -48,19 +48,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
     {usedValues(property).map((value) => <option value={value} />)}
   </datalist>
 
-  <div class="panel-actions-heading">
-    <label>
-      Property
-      {/* Demo-only: the product renames the schema here. A picker is what makes the page
-          worth showing on its own, since the stored values change with the schema. */}
-      <select class="form-control property-select" aria-label="Property schema">
-        {properties.map((entry) => (
-          <option value={entry.id} selected={entry.id === property}>{entry.name}</option>
-        ))}
-      </select>
-    </label>
-  </div>
-
   <div class="body">
     {rows.map((group, index) => {
       // The fading row has just been saved, so it reads as fully tagged on its way out.
@@ -144,13 +131,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
       );
     })}
   </div>
-
-  {live && (
-    <p class="demo-note" hidden>
-      <span class="hidden-count"></span>
-      <button type="button" class="demo-reset">Bring them back</button>
-    </p>
-  )}
 </div>
 
 <style lang="scss">
@@ -163,7 +143,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
    whole tool scales with the sheet. 1em here is the product's 14px. */
 .tagging-tool {
   --radius-panel: 0.714em;   /* 10px */
-  --radius-control: 0.571em; /* 8px */
   --gutter: 1.071em;         /* 15px, half a Bootstrap gutter */
   --highlight: color-mix(in oklch, var(--surface-raised), var(--ink) 5%);
 
@@ -173,7 +152,7 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
   outline: none;
 
@@ -207,46 +186,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-.form-control {
-  box-sizing: border-box;
-  min-width: 0;
-  height: 2.429em; /* 34px */
-  padding: 0.429em 0.857em;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-control);
-  background: var(--surface-page);
-  color: var(--ink);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 90%);
-  }
-}
-
-/* The product's panel header: one labelled inline control, left-aligned. */
-.panel-actions-heading {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5em;
-  padding: 0.714em var(--gutter);
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--line);
-
-  label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5em;
-    font-weight: 700;
-  }
-
-  .property-select {
-    width: 12em;
-    font-weight: 400;
-  }
 }
 
 /* The list of rows. Rows stretch into any spare height, but never below what a row
@@ -519,32 +458,6 @@ const propertyName = properties.find((entry) => entry.id === property)?.name ?? 
 
   input {
     background-color: var(--highlight);
-  }
-}
-
-/* Demo-only: the product drops a fully tagged object from the list; this
-   footer offers it back so the sheet doesn't end up empty. */
-.demo-note {
-  margin: 0;
-  padding: 0.5em var(--gutter);
-  border-top: 1px dashed var(--line-strong);
-  background: var(--surface-raised);
-  font-family: monospace, system-ui;
-  font-size: 0.875em;
-  color: var(--ink-muted);
-
-  &[hidden] {
-    display: none;
-  }
-
-  .demo-reset {
-    margin-left: 0.5em;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--accent-text);
-    text-decoration: underline;
-    cursor: pointer;
   }
 }
 
