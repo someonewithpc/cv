@@ -382,7 +382,7 @@
 - [x] Hyphenate the compound adjectives in the Career data: Full-stack, step-by-step, node-based, event-driven and ride-sharing (220 T28) (#464)
 - [x] Career copy that dates or misnames itself: the Leb entry's "current versions" is a 2021 claim, the Visrez map names "the resort" before any resort is introduced, and GNU social has three role names for one job, with "co-maintainership" in the meta description (#220 T21) (#458)
 - [x] Turn on Workers observability so the worker's 500s and 503s leave logs (#220 C61) (#428)
-- [ ] Pair post-its to stacks through a data-drawing-frame attribute instead of a regex on the frame's class (#220 C65)
+- [x] Pair post-its to stacks through a data-drawing-frame attribute instead of a regex on the frame's class (#220 C65) (#432)
 - [x] Log a failed island boot as an error, not a debug line nobody sees (C22) (#420)
 - [x] Clear demo timers and listeners on unmount, and share one reduced-motion query (C86) (#447)
 - [x] Name the unnamed numbers in the demos and the fold: the toast time, the Space Builder scene tuning and narrow width, the depth hue, the marker and font picker cursor offsets, and the fold's glide times (#220 C85) (#446)
