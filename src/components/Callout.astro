@@ -44,7 +44,7 @@ const view = await Astro.slots.render('default');
 const pageCount = Number(view.match(/data-page-count="(\d+)"/)?.[1]);
 const inWords = ['one', 'two', 'three', 'four', 'five', 'six', 'seven'];
 const slipStyle = inWords[pageCount - 2] !== undefined
-  ? `--slip-pages: ${pageCount}; --slip-hint: '${inWords[pageCount - 2]} more sheets, peel this corner'`
+  ? `--slip-pages: ${pageCount}; --slip-hint: '${inWords[pageCount - 2]} more ${pageCount === 2 ? 'sheet' : 'sheets'}, peel this corner'`
   : undefined;
 ---
 
