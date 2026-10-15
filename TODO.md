@@ -393,6 +393,7 @@
 - [x] Weigh every Space Builder title block the same way, as the minified script the sheet ships, and bundle the shared scene once (#220 C79) (#440)
 - [x] Write the peel hint words, the letter count, the sheet and note tab queries and the sheet selector once (#220 C77) (#439)
 - [x] Write each helper once that is written two or more times: the sr-only rule, ensurePathData, the front-page test, vector rotation, the ease-out loop, escape, the element centre, the drawn cursor, the HMR preamble, space letters, byPax and bySize (C73) (#437)
+- [ ] Take the dependency updates npm outdated lists, short of TypeScript 7 (#220 E4)
 - [x] Lint the Sass source with stylelint: a config file with postcss-scss and postcss-html overrides, so `npm run lint:css` reads .scss, .astro and .vue (#220 E3) (#466)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
