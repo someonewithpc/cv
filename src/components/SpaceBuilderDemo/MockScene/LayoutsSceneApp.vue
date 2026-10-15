@@ -402,7 +402,7 @@ $nav-sidebar-bg: #323232;
   // Narrow-but-landscape: the sidebar's vw-based width no longer tracks the
   // shrunk frame. Declared before the portrait override below so portrait's
   // full stacked layout still wins once the sheet flips orientation.
-  @container (max-width: 34rem) {
+  @container (max-width: #{$scene-narrow-width}) {
     grid-template-columns: minmax(0, 1fr) min(11rem, 68cqw);
   }
 
@@ -549,7 +549,7 @@ $nav-sidebar-bg: #323232;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 
-  @container (max-width: 34rem) {
+  @container (max-width: #{$scene-narrow-width}) {
     grid-template-columns: minmax(0, 1fr);
   }
 }

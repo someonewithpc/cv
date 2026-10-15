@@ -123,7 +123,7 @@ const itemsVisible = computed(() => {
 
   // Matches the rail-hide breakpoint in MockSceneApp.vue — below it the
   // sidebar is too narrow for two columns of thumbnails to stay legible.
-  @container (max-width: 34rem) {
+  @container (max-width: #{$scene-narrow-width}) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
