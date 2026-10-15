@@ -1,5 +1,6 @@
 ---
 import PaperStack from '@/components/PaperStack/index.astro';
+import { peelHint } from '@/peelHint';
 
 import TechnicalDrawingPage from './Page.astro';
 
@@ -29,10 +30,8 @@ type Props = {
 
 const { layers = {}, tech: stackTech } = Astro.props;
 const totalLayers = Object.keys(layers).length;
-// A hand writes a small count out in words; only a stack deeper than a dozen gets a digit
-const inWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const sheetsBelow = totalLayers - 1;
-const hint = Astro.props.hint ?? `${inWords[sheetsBelow] ?? sheetsBelow} more ${sheetsBelow === 1 ? 'sheet' : 'sheets'}, peel this corner`;
+const hint = Astro.props.hint ?? peelHint(sheetsBelow);
 const hintBack = 'this corner drags the page back';
 // One span per character, spaces included so the line's width stays put: each callout types
 // itself out when it appears, and the stylesheet times each letter by its place in the line. The

@@ -1,5 +1,6 @@
 ---
 import AnchorLink from '@/components/AnchorLink.astro';
+import { peelHint } from '@/peelHint';
 
 /**
  * A drawing callout: a reference bubble with the detail's letter, its label, a leader down to a
@@ -42,9 +43,8 @@ const hasCard = Astro.slots.has('card');
    printed whole: a template literal or concatenation drops its hoisted scripts. */
 const view = await Astro.slots.render('default');
 const pageCount = Number(view.match(/data-page-count="(\d+)"/)?.[1]);
-const inWords = ['one', 'two', 'three', 'four', 'five', 'six', 'seven'];
-const slipStyle = inWords[pageCount - 2] !== undefined
-  ? `--slip-pages: ${pageCount}; --slip-hint: '${inWords[pageCount - 2]} more ${pageCount === 2 ? 'sheet' : 'sheets'}, peel this corner'`
+const slipStyle = pageCount >= 2
+  ? `--slip-pages: ${pageCount}; --slip-hint: '${peelHint(pageCount - 1)}'`
   : undefined;
 ---
 
