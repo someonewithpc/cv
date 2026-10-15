@@ -3,9 +3,11 @@ import type { PauseReason } from '@/client/frontPage';
 import type { SpaceBuilderScene } from './SpaceBuilderScene';
 
 /**
- * Only one Space Builder carousel page may own a WebGL context at a time.
- * Pausing the rAF loop is not enough — a live renderer still holds GPU memory,
- * and creating a second context on the next slide can crash the tab.
+ * Only one Space Builder carousel page holds a live renderer and its uploads at a time.
+ * Pausing the rAF loop is not enough, since a live renderer still holds GPU memory.
+ * A released page keeps its canvas's WebGL context, emptied, because forceContextLoss()
+ * leaves the canvas unable to get a new one. So every page a visitor has opened keeps a
+ * context, but only the holder's has textures, buffers and shadow maps in it.
  */
 let holder: SpaceBuilderScene | null = null;
 
