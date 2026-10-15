@@ -410,6 +410,22 @@
       "label": "Open",
       "items": [
         {
+          "repository": "torvalds/linux",
+          "title": "drm/amd/display: Keep eDP native timing after resume with video=",
+          "description": "Two patches on amd-gfx. After an HDMI hotplug and a suspend/resume, a 3840x2400 eDP panel booted with a `video=` mode came back squeezed into the top-left corner: the fbdev reprobe had dropped the native mode and amdgpu scaled onto the first one left. The fix falls back to the encoder's native mode on eDP and LVDS, with KUnit tests that fail without it. On 7.2.8, 103 of 103 resumes were wrong before and 1363 of 1363 right after.",
+          "url": "https://lore.kernel.org/all/20261014223041.171317-1-hugo@hsal.es/",
+          "updatedAt": "2026-10-14T22:30:39Z",
+          "stats": {
+            "additions": 140,
+            "deletions": 0,
+            "changed_files": 2
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
           "repository": "peteonrails/voxtype",
           "title": "feat(daemon): record the next push-to-talk dictation while one transcribes",
           "description": "Kept the microphone open while a push-to-talk dictation transcribes in Voxtype. A press in that window is queued and recorded on the open capture, so the next sentence is no longer lost",
