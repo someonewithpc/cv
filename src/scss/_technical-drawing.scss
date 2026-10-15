@@ -29,6 +29,13 @@ $portrait-aspect: unquote('3 / 5');
 $portrait-max-height: 36rem;
 $portrait-max-viewport: 85svh;
 
+// The title block's logo cell: a square in a table, and a flat 2.625em by 2em once the logo
+// stacks under the title. title-fit.ts measures the block against the same sizes. A wrapped
+// title runs at most $title-wrap-width, which clears the artwork on a 60em sheet.
+$title-tech-size: 4em;
+$title-tech-stacked-width: 2.625em;
+$title-wrap-width: 11rem;
+
 // Without script, a browser with no CSS carousel (no ::scroll-marker or ::scroll-button) shows
 // the next sheet's edge beside the one in front: PaperStack narrows each sheet in the row by the
 // peek, and Stack.astro takes it off the sheet's measure, which the type is sized from.
