@@ -17,6 +17,7 @@ import {
 import {
   applyWheelZoom,
   beginPinch,
+  bindScenePointers,
   trySetPointerCapture,
   updateHandleHoverCursor,
   updatePinch,
@@ -48,6 +49,7 @@ let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
+let stopPointers: (() => void) | null = null;
 let pinch: PinchState | null = null;
 
 const seatsInvalid = ref(false);
@@ -409,12 +411,14 @@ onMounted(async () => {
       if (command === 'pause') yieldToUser();
       else restartDemo();
     });
-    root.addEventListener('pointerdown', onPointerDown);
+    stopPointers = bindScenePointers(root, {
+      down: onPointerDown,
+      move: onPointerMove,
+      up: onPointerUp,
+      isActive: () => activePointers.size > 0,
+    });
     root.addEventListener('wheel', onWheel, { passive: false });
     root.addEventListener('contextmenu', onContextMenu);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerUp);
   } catch (error) {
     console.debug('Parameters scene failed to start', error);
     loadError.value = true;
@@ -433,12 +437,10 @@ onBeforeUnmount(() => {
   sceneRef.value?.dispose();
   sceneRef.value = null;
   canvasRef = null;
-  rootRef.value?.removeEventListener('pointerdown', onPointerDown);
+  stopPointers?.();
+  stopPointers = null;
   rootRef.value?.removeEventListener('wheel', onWheel);
   rootRef.value?.removeEventListener('contextmenu', onContextMenu);
-  window.removeEventListener('pointermove', onPointerMove);
-  window.removeEventListener('pointerup', onPointerUp);
-  window.removeEventListener('pointercancel', onPointerUp);
 });
 </script>
 
