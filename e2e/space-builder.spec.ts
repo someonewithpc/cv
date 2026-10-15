@@ -315,6 +315,38 @@ test('badge page: the readout shows the home angle and follows a drag', async ({
   await expect(readout).toHaveText(['16°', '3.42m', '4.37m']);
 });
 
+test('badge page: an orbit leaves the capacity tag text alone', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const stack = spaceBuilderStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Capacity Badge');
+  const app = await waitForSceneReady(frontPage(stack, await frontPageIndex(stack)));
+  const tag = app.locator('.space-builder-tag');
+  await expect(tag).toHaveText(/\d+ seats/);
+  const text = await tag.textContent();
+
+  await tag.evaluate((el) => {
+    const writes = { count: 0 };
+    (window as unknown as { tagWrites: typeof writes }).tagWrites = writes;
+    new MutationObserver((records) => {
+      writes.count += records.length;
+    }).observe(el, { childList: true, characterData: true, subtree: true });
+  });
+  const box = await app.locator('canvas[data-scene-canvas]').boundingBox();
+  if (!box) throw new Error('the badge scene has no canvas box');
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 120, cy, { steps: 6 });
+  await page.mouse.up();
+
+  await expect(app.locator('.math-card dd').first()).toHaveText('16°');
+  await expect(tag).toHaveText(text!);
+  expect(await page.evaluate(() => (window as unknown as { tagWrites: { count: number } }).tagWrites.count)).toBe(0);
+});
+
 // The sheet's grid row once grew to the note column's height, and the scene went out over the
 // deck with it; the r row of the tag-offset card ran past the card's right edge. 1040 is one of
 // the windows whose sheet once had too little room beside the scene for the note and the card.
