@@ -308,9 +308,8 @@ html:has([data-paper-stack-root]:hover) {
 
     // How far the flap is off the page: 0 lying flat, 1 in hand (hovered or dragged, and the
     // outgoing sheet's flap folding away after a flip), 2 past the commit point. The flap
-    // brightens and its cast shadow deepens with it, in place of the brightness and
-    // drop-shadow filters this used to run through, which re-filtered a page-sized layer on
-    // every frame of a drag. Declared and eased on the two elements that read it, keyed on
+    // brightens and its cast shadow deepens with it, in place of brightness and
+    // drop-shadow filters, which would re-filter a page-sized layer on every frame of a drag. Declared and eased on the two elements that read it, keyed on
     // the paper-in-hand and paper-will-commit classes fold-drag.ts puts on the sheet: a
     // :has() on the flap's state would restyle the whole document at every hover and grab.
     @mixin fold-lift {
@@ -522,10 +521,9 @@ html:has([data-paper-stack-root]:hover) {
       // The drift and the rise are what ease, not the translate they feed: the corner cut and
       // the band below read the same two numbers, so cut, band and translate arrive together
       // and the page's left edge stays on the stack's while it climbs. Easing the translate on
-      // its own left the cut at the new drift while the translate was still catching up, which
-      // opened a hairline of page background at the top of the crease, between the strip and
+      // its own would leave the cut at the new drift while the translate is still catching up,
+      // which opens a hairline of page background at the top of the crease, between the strip and
       // the band, for the length of the turn. Both are registered as lengths.
-      // TODO transition rotate at startup isn't working
       transition: rotate 250ms ease-in-out, --turned-drift 250ms ease-in-out, --turned-rise 250ms ease-in-out;
 
       @media (prefers-reduced-motion: reduce) {
@@ -1173,10 +1171,6 @@ html:has([data-paper-stack-root]:hover) {
           cursor: grabbing;
         }
 
-        // Past the commit point the sheet lifts a step further (--fold-lift 2, from the sheet's
-        // paper-will-commit class): the flap brightens past its in-hand tone and its shadow
-        // deepens, so crossing the threshold reads as a state change.
-
         // A committed flip keeps this flap on the outgoing sheet until it has folded away behind
         // the stack, so fold-drag.ts stands a second one in on the page taking the front, which
         // would otherwise wear a bare corner cut until the flip ended. It only paints the resting
@@ -1370,11 +1364,11 @@ html:has([data-paper-stack-root]:hover) {
       }
     }
 
-    // Firefox has neither ::scroll-button() nor ::scroll-marker, so nothing on the row said it
-    // scrolls: one sheet filled it, and the scrollbar is an overlay that shows only mid-scroll.
-    // There the sheets stand a rem apart, as the first carousel had them (TechnicalDrawingStack,
-    // f9110506), and each is narrow enough that the next one's edge shows on the right. They
-    // snap by their start so the edge stays on that side (the last sheet shows the one before it
+    // Firefox has neither ::scroll-button() nor ::scroll-marker, so nothing on the row says it
+    // scrolls: one sheet fills it, and the scrollbar is an overlay that shows only mid-scroll.
+    // There the sheets stand a rem apart, and each is narrow enough that the next one's edge
+    // shows on the right. They snap
+    // by their start so the edge stays on that side (the last sheet shows the one before it
     // instead), and a flick stops at the next sheet. The condition is the whole CSS carousel's,
     // so a browser that draws the arrows and dots keeps one full-width sheet.
     @supports #{drawing.$no-css-carousel} {
