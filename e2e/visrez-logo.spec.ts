@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { installProbes } from './support/pageProbes';
 import { demoStack, frontPage, frontPageIndex, pressTurn, turnToPage } from './support/paperStack';
+import { THEME_IDS } from '../src/themes';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -94,7 +95,7 @@ test('cube page: twelve edges, drawn in ink that stands off the grid on every th
   });
   const distance = (a: number[], b: number[]) => Math.hypot(...a.map((channel, i) => channel - b[i]));
 
-  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+  for (const theme of THEME_IDS) {
     await page.locator(`#theme-picker label:has(input[value="${theme}"])`).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await page.waitForTimeout(900);
