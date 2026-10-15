@@ -9,7 +9,7 @@ import snakeCase from 'lodash-es/snakeCase';
 import { dataUrlToSvg, svgToDataUrl } from '../../../../store';
 import type { MarkerType, SpaceType } from '../../../../store';
 
-import { parseSVGDocument } from '../../optimizeAndParseSVGToComponent';
+import { parseSVGDocument } from '../../svgToComponent';
 import { markers } from '..';
 import type { StateType } from '..';
 
