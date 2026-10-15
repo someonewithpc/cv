@@ -1,6 +1,6 @@
 import { THEMES, type ThemeSettings } from '@/themes';
 
-import { contrastRatio, liftedTo, mixWhite, oklchCss, parseOklch, toneAt } from './contrast';
+import { liftedTo, mixWhite, oklchCss, parseOklch, toneAt } from './contrast';
 
 /**
  * The tones the drawings on the blueprint sheets paint with, set per theme at build time.
@@ -12,7 +12,7 @@ import { contrastRatio, liftedTo, mixWhite, oklchCss, parseOklch, toneAt } from 
  * here is the theme's own ink mixed into its own canvas until it lands on the ratio named
  * for it, so the drawings read the same on every sheet.
  */
-export const TONE_RATIOS = {
+const TONE_RATIOS = {
   /** The end frame's fill: the icon covering the page, a tint behind everything else. */
   fill: 1.5,
   /** The wipe's middle frame, over the end frame. */
@@ -47,15 +47,6 @@ export const sheetTones = (settings: ThemeSettings): Record<ToneName, string> =>
     line: tone(TONE_RATIOS.line),
     accent: oklchCss(liftedTo(accent, [1, 0, accent[2]], canvas, TONE_RATIOS.accent)),
   };
-};
-
-/** The ratio each tone lands on against the sheet's canvas, for the record. */
-export const sheetRatios = (settings: ThemeSettings): Record<ToneName, number> => {
-  const { canvas } = sheet(settings);
-  const tones = sheetTones(settings);
-  return Object.fromEntries(
-    Object.entries(tones).map(([name, css]) => [name, Math.round(contrastRatio(canvas, parseOklch(css)) * 100) / 100]),
-  ) as Record<ToneName, number>;
 };
 
 /**

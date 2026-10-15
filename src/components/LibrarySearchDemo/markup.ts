@@ -13,7 +13,7 @@ import {
    prints them at build time with set:html, and the client swaps them in as the visitor
    types, so both come out of the one function. The layers style them through :global(). */
 
-export function escapeHtml(text: string) {
+function escapeHtml(text: string) {
   return text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }
 

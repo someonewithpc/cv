@@ -338,6 +338,6 @@ export function summary(compose: ComposeFile): string {
 }
 
 /** How many depends_on references the file holds; validateCompose has checked every one. */
-export function countReferences(compose: ComposeFile): number {
+function countReferences(compose: ComposeFile): number {
   return Object.values(compose.services).reduce((total, service) => total + dependenciesOf(service).length, 0);
 }

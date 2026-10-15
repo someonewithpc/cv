@@ -3,7 +3,7 @@
  * writes the variables and the radios from this table; the theme picker demo draws it.
  */
 
-export type ThemeFollows = 'light' | 'dark';
+type ThemeFollows = 'light' | 'dark';
 
 export type ThemeSettings = {
   canvas: string;
@@ -209,7 +209,7 @@ export const THEME_STORAGE_KEY = 'cv-theme';
 export const themeInputId = (id: string) => `theme-${id}`;
 
 /** The picker's radio for `id`, picked: checked, or marked checked while a wipe runs. */
-export const themePicked = (id: string) => `#${themeInputId(id)}:is(:not(.with-transition):checked, .with-transition.checked)`;
+const themePicked = (id: string) => `#${themeInputId(id)}:is(:not(.with-transition):checked, .with-transition.checked)`;
 
 export const ANY_THEME_PICKED = THEME_IDS.map(themePicked).join(', ');
 
