@@ -238,9 +238,9 @@ export class AutoPlayController {
   /**
    * Counts the pauses. A step in flight awaits presses, drags and waits, and pause() cannot
    * reach into those; it only sets `paused`. restart() and resume() then clear `paused` again,
-   * and the suspended step, seeing it clear, carried on: it bumped the index restart() had
-   * just reset and scheduled a timer of its own beside the new one, and two chains drove the
-   * demo from then on. So every step remembers the generation it started in and stands down
+   * and a suspended step that sees it clear would carry on: bump the index restart() had just
+   * reset and schedule a timer of its own beside the new one, so two chains would drive the
+   * demo. So every step remembers the generation it started in and stands down
    * at its next await once a pause has moved it on, whatever `paused` says by then.
    */
   private generation = 0;
