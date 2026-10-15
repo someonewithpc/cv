@@ -5,6 +5,7 @@ import { contrast, type Rgb } from './support/colour';
 import { flapGrip } from './support/fold';
 import { installProbes } from './support/pageProbes';
 import { demoStack, dogEarShown, swipeStack } from './support/paperStack';
+import { THEME_IDS, THEME_STORAGE_KEY } from '../src/themes';
 
 /**
  * The hints point at a crease, so what these tests measure is geometry: where the tip of each
@@ -512,8 +513,8 @@ test('the hint reads against the page in every theme and at every width', async 
   test.slow();
   await page.goto('/');
 
-  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
-    await page.evaluate((name) => localStorage.setItem('cv-theme', name), theme);
+  for (const theme of THEME_IDS) {
+    await page.evaluate(([key, name]) => localStorage.setItem(key, name), [THEME_STORAGE_KEY, theme]);
     await page.reload();
     await page.waitForTimeout(1200);
 
