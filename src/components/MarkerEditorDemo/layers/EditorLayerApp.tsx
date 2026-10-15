@@ -44,6 +44,7 @@ export default function EditorLayerApp() {
   const space = spaces.find((s) => s.id === 'space-cafe') ?? spaces[0];
   const [pageVisible, setPageVisible] = useState(false);
   const [pageActive, setPageActive] = useState(false);
+  const [portrait, setPortrait] = useState(false);
   const stepRef = useRef(0);
 
   // Once PaperStack's script takes over, every page shares the same grid cell (only the
@@ -66,6 +67,17 @@ export default function EditorLayerApp() {
     return watchPageActive(host, (active) => setPageActive(active));
   }, []);
 
+  // A portrait sheet hides .editor-layer, so the embed would keep clicking a sidebar nobody sees.
+  useEffect(() => {
+    const stack = hostRef.current?.closest<HTMLElement>('article.technical-drawing-stack');
+    if (!stack) return;
+    const read = () => setPortrait(stack.dataset.sheetOrientation === 'portrait');
+    read();
+    const observer = new MutationObserver(read);
+    observer.observe(stack, { attributes: true, attributeFilter: ['data-sheet-orientation'] });
+    return () => observer.disconnect();
+  }, []);
+
   // While this slide is active, close the live map editor so its session
   // lock releases and we can mount the embed.
   useLayoutEffect(() => {
@@ -75,6 +87,7 @@ export default function EditorLayerApp() {
 
   const ready =
     pageVisible
+    && !portrait
     && !editingSpaceId
     && liveSessions === 0
     && Boolean(space);
