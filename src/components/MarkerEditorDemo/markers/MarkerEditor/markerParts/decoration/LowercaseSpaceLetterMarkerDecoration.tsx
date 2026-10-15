@@ -11,5 +11,5 @@ export class LowercaseSpaceLetterMarkerDecoration extends LetterSpaceNumberMarke
     );
   }
 
-  title = 'Lower case Space Letter';
+  title = 'Lower Case Space Letter';
 }

@@ -16,5 +16,5 @@ export class UppercaseSpaceLetterMarkerDecoration extends LetterSpaceNumberMarke
     );
   }
 
-  title = 'Upper case Space Letter';
+  title = 'Upper Case Space Letter';
 }
