@@ -81,23 +81,13 @@ const THUMB_FILL = 0.9;
  */
 const ZOOM_WHEEL_DELTA = Math.log(1 / 3) / 0.0012;
 /**
- * A second pass on the placed chair, on top of the dolly above: re-aiming the orbit target
- * at the drop before dollying was tried first and does nothing, provably. Panning translates
- * camera and target together, so the ground point under any fixed screen pixel — the drop
- * included — moves by exactly the pan itself; the gap between that point and the target is
- * invariant under a translation, at a fixed radius. The gap only closes enough to matter past
- * where the chair's mat clears the grass patch onto the water beyond it, which is the frame
- * lying about the floor. Cropping the capture tighter is the same lever as this one — cropping
- * a rectilinear render and digitally zooming it are the same transform — but there is no slack
- * to spend it from: the sidebar already fills the frame's full height, so shrinking the crop's
- * height cuts the sidebar, and holding the frame's aspect ratio (required so the sheet's frame
- * boxes keep their round 6 sizes, which depend on it) ties the width to whatever the height is.
- * So this digital zoom, done after the shot instead of before it: extract a rectangle around
- * the drop from the canvas portion alone and scale it back up to that portion's own size,
- * leaving the sidebar untouched beside it. It is exactly what a narrower field of view on the
- * capture's camera would render, without a scene API this script has no way to reach — the
- * capture has no handle on the running scene, only the page's DOM and input, and there is no
- * user gesture that changes field of view for it to drive.
+ * A second pass on the placed chair, on top of the dolly above: extract a rectangle around the
+ * drop from the canvas portion of the shot and scale it back up to that portion's own size,
+ * leaving the sidebar untouched beside it. It is what a narrower field of view would render.
+ * The capture has no handle on the running scene to change the field of view, and re-aiming the
+ * orbit target does nothing, since panning moves camera and target together. A tighter crop of
+ * the whole frame would cut the sidebar, and the frame's aspect ratio is fixed by the sheet's
+ * frame boxes.
  */
 const CHAIR_ZOOM = 1.5;
 const WEBP_QUALITY = 0.9;
