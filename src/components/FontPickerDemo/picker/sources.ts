@@ -27,7 +27,9 @@ export async function loadGoogleFont(family: string, signal: AbortSignal): Promi
 }
 
 export async function loadPageFonts(url: string, signal: AbortSignal): Promise<LoadedFaces> {
-  const absolute = /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`;
+  // This site's own pages are fetched over the scheme it was loaded with
+  const scheme = url.startsWith(`${location.host}/`) ? location.protocol : 'https:';
+  const absolute = /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `${scheme}//${url}`;
 
   const result = await manualIframe(absolute, signal);
   if (!result) throw new Error('Nothing to load');

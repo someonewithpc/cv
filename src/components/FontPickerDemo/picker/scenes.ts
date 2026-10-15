@@ -3,12 +3,14 @@ import { demoPicker } from './demoPicker';
 import { type Run, type Scene, setNativeValue } from './playthrough';
 
 const GOOGLE_FONT = 'Lobster';
-// A well-known page whose face could not look less like Poppins
-const EMBED_URL = 'rust-lang.org';
+// Pages of this site, so the walkthrough does not depend on someone else's fonts staying put
+const FIXTURES = '/fixtures/font-picker';
+// A page whose face could not look less like Poppins
+const embedUrl = () => `${location.host}${FIXTURES}/slab/`;
 const EMBED_FAMILY = 'Alfa Slab One';
 // The weight slider only tells on a variable face, and this page has one
-const VARIABLE_FONT_URL = 'astro.build';
-const VARIABLE_FAMILY = 'Obviously';
+const variableFontUrl = () => `${location.host}${FIXTURES}/grotesque/`;
+const VARIABLE_FAMILY = 'Bricolage Grotesque';
 
 const target = <T extends HTMLElement>(root: HTMLElement, name: string) => {
   const el = root.querySelector<T>(`[data-demo-target="${name}"]`);
@@ -115,7 +117,7 @@ export function scenesFor(root: HTMLElement): Scene[] {
   return [
     // A page's own fonts first: that is the product's point, and the change is the largest
     async (run) => {
-      await extractFrom(run, root, EMBED_URL);
+      await extractFrom(run, root, embedUrl());
       await pickNewFamily(run, root, EMBED_FAMILY);
     },
 
@@ -143,7 +145,7 @@ export function scenesFor(root: HTMLElement): Scene[] {
     // The weight slider last, once a variable face is on: a single-weight face like
     // Permanent Marker would not move for it
     async (run) => {
-      await extractFrom(run, root, VARIABLE_FONT_URL);
+      await extractFrom(run, root, variableFontUrl());
       await pickNewFamily(run, root, VARIABLE_FAMILY);
       await run.slide(target<HTMLInputElement>(root, 'weight'), [700, 300, 400]);
       await run.wait(600);

@@ -48,6 +48,9 @@ async function readCapped(res: Response): Promise<string> {
   return chunks.map((chunk) => decoder.decode(chunk, { stream: true })).join('') + decoder.decode();
 }
 
+// This origin needs no proxy: it allows its own reads, and the proxy refuses private hosts
+const isSameOrigin = (url: string) => typeof location !== 'undefined' && new URL(url, location.href).origin === location.origin;
+
 /** fetch() under the limits above; `direct` skips the proxy but keeps the limits */
 export async function cappedFetch(url: string, { signal, direct = false }: { signal?: AbortSignal, direct?: boolean } = {}): Promise<CappedResponse> {
   if (spent.requests >= LIMITS.requests || spent.bytes >= LIMITS.sessionBytes) throw new FetchCapError('Fetch allowance spent');
@@ -60,7 +63,7 @@ export async function cappedFetch(url: string, { signal, direct = false }: { sig
     throw error;
   };
 
-  const res = await fetch(direct ? url : proxyPrefix + encodeURIComponent(url), { signal: combined }).catch(timedOut);
+  const res = await fetch(direct || isSameOrigin(url) ? url : proxyPrefix + encodeURIComponent(url), { signal: combined }).catch(timedOut);
   return {
     ok: res.ok,
     status: res.status,
