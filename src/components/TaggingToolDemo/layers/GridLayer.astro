@@ -71,20 +71,19 @@ bootIslands('[data-tagging-grid-demo]', boot);
   }
 }
 
+/* Placed by translate alone: cursorMotion.ts animates each hop with its own duration and
+   folds the hotspot, the arrow's tip at 12% 8%, into every keyframe. The click pulse
+   scales around the tip so it stays on the aimed point. */
 .tagging-cursor {
   position: absolute;
   z-index: 3;
+  top: 0;
+  left: 0;
   width: 2em;
   height: 2em;
-  /* Hotspot at the arrow tip, and the click pulse scales around it so the tip
-     stays on the aimed point. */
-  translate: -12% -8%;
   transform-origin: 12% 8%;
   pointer-events: none;
-  transition:
-    left 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    top 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    scale 0.12s ease;
+  transition: scale 0.12s ease;
 
   &[hidden] {
     display: none;
