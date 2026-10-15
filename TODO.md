@@ -370,6 +370,7 @@
 - [x] Keep the Badge math card's labels in their case, so θ and r are not uppercased (#220 T16) (#454)
 - [x] Event Dispatch card says "the first one to return stop has the job" (#220 T17) (#453)
 - [x] Fix the typo "it's placement" in the wipe sheet headline (#220 T1) (#449)
+- [ ] Watch for a stack's bottom edge with one threshold per observer instead of 21 (#220 C8)
 - [x] Fit the title block once a window resize settles, not on every step of the drag (#220 C2) (#406)
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
