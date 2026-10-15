@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
+import { deckPlacement, hoverTakeover, pauseHoldsThenReset } from './support/deck';
 import { demoStack, frontDeck, frontPage, frontPageIndex, waitForIslandMounted } from './support/paperStack';
 import { expect, pageWait, test } from './support/timeScale';
 
@@ -49,29 +50,6 @@ const DECK_DEMOS = [
   'Theme Picker',
 ];
 
-/** Where the deck sits, measured against the sheet it is drawn on. */
-function placement(deck: Locator) {
-  return deck.evaluate((el) => {
-    const section = el.closest('section')!;
-    const sheet = section.getBoundingClientRect();
-    const box = el.getBoundingClientRect();
-    const band = parseFloat(getComputedStyle(section).paddingBottom);
-    const clearOf = (other: Element | null) => {
-      if (!other) return false;
-      const b = other.getBoundingClientRect();
-      return box.right <= b.left + 1 || box.left >= b.right - 1
-        || box.bottom <= b.top + 1 || box.top >= b.bottom - 1;
-    };
-    return {
-      insideSheet: box.left >= sheet.left - 1 && box.right <= sheet.right + 1
-        && box.top >= sheet.top - 1 && box.bottom <= sheet.bottom + 1,
-      insideBand: box.top >= sheet.bottom - band - 1 && box.bottom <= sheet.bottom + 1,
-      clearOfDrawing: clearOf(section.querySelector('.content')),
-      clearOfTitleBlock: clearOf(section.querySelector('table')),
-    };
-  });
-}
-
 /** Where a deck in the callout's card sits: under the stack it belongs to, as the slip's first
  *  entry, over the title. */
 function cardPlacement(deck: Locator) {
@@ -110,7 +88,7 @@ for (const { name, viewport } of VIEWPORTS) {
       for (const stack of [markerEditorStack(page), spaceBuilderStack(page)]) {
         const deck = await playingDeck(stack);
         if (name === 'desktop') {
-          const where = await placement(deck);
+          const where = await deckPlacement(deck);
           expect(where.insideSheet, 'inside the sheet').toBe(true);
           expect(where.insideBand, 'inside the bottom band').toBe(true);
           expect(where.clearOfTitleBlock, 'clear of the title block').toBe(true);
@@ -142,7 +120,7 @@ for (const [width, home] of [[390, 'card'], [680, 'card'], [681, 'band'], [1440,
       if (home === 'card') {
         expect(await cardPlacement(deck), id).toEqual({ inCard: true, first: true, underStack: true, withinStackWidth: true });
       } else {
-        const where = await placement(deck);
+        const where = await deckPlacement(deck);
         expect(where.insideBand, `${id} in the band`).toBe(true);
         expect(where.clearOfTitleBlock, `${id} clear of the title block`).toBe(true);
       }
@@ -158,7 +136,7 @@ test('the deck goes back to the band when the sheet turns landscape, and still d
   expect((await cardPlacement(deck)).inCard).toBe(true);
 
   await page.setViewportSize({ width: 1440, height: 900 });
-  await expect.poll(async () => (await placement(deck)).insideBand).toBe(true);
+  await expect.poll(async () => (await deckPlacement(deck)).insideBand).toBe(true);
   await deck.locator('[data-demo-key="pause"]').click();
   await expect(deck).toHaveAttribute('data-state', 'user');
 });
@@ -170,7 +148,6 @@ test('the deck drives the walkthrough from its keys', { tag: '@handover' }, asyn
 
   const play = deck.locator('[data-demo-key="play"]');
   const pause = deck.locator('[data-demo-key="pause"]');
-  const reset = deck.locator('[data-demo-key="reset"]');
 
   // Big enough to aim at. A key drawn in the band is capped by the band, which is one
   // margin deep like the other three sides.
@@ -180,24 +157,13 @@ test('the deck drives the walkthrough from its keys', { tag: '@handover' }, asyn
   await expect(play).toHaveAttribute('aria-pressed', 'true');
   await expect(pause).toHaveAttribute('aria-pressed', 'false');
 
-  // Hovering the sheet is the takeover the deck promises.
-  const box = (await stack.boundingBox())!;
-  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.6);
-  await page.mouse.move(box.x + box.width * 0.42, box.y + box.height * 0.62);
-  await expect(deck).toHaveAttribute('data-state', 'user');
+  await hoverTakeover(page, stack, deck);
   await expect(pause).toHaveAttribute('aria-pressed', 'true');
 
   await play.click();
   await expect(deck).toHaveAttribute('data-state', 'playing');
 
-  // Pause is the explicit takeover, and it holds past the idle resume (2s).
-  await pause.click();
-  await expect(deck).toHaveAttribute('data-state', 'user');
-  await pageWait(page, 3000);
-  await expect(deck).toHaveAttribute('data-state', 'user');
-
-  await reset.click();
-  await expect(deck).toHaveAttribute('data-state', 'playing');
+  await pauseHoldsThenReset(page, deck);
 });
 
 test('a deck press gives the pointer a second to leave the key before it takes over', async ({ page }) => {
