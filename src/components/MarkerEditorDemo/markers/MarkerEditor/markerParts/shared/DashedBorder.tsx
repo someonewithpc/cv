@@ -84,14 +84,14 @@ export class DashedBorder extends SolidBorder {
     return (
       <>
         {super.Configuration()}
-        <label htmlFor="marker-dash-length">Dash Length</label>
+        <label htmlFor={`marker-dash-length-${this.borderClassName}`}>Dash Length</label>
         <input
-          id="marker-dash-length"
+          id={`marker-dash-length-${this.borderClassName}`}
           type="range"
           min="0.01"
           max="1.0"
           step="0.001"
-          data-demo-target="editor:dash-length"
+          data-demo-target={`editor:dash-length:${this.borderClassName}`}
           ref={(input) => {
             if (!input) return;
             input.value = String(this.reactiveState.dashLength);
@@ -99,14 +99,14 @@ export class DashedBorder extends SolidBorder {
             input.addEventListener('change', this.flushDash);
           }}
         />
-        <label htmlFor="marker-gap-length">Gap Length</label>
+        <label htmlFor={`marker-gap-length-${this.borderClassName}`}>Gap Length</label>
         <input
-          id="marker-gap-length"
+          id={`marker-gap-length-${this.borderClassName}`}
           type="range"
           min="0.01"
           max="1.0"
           step="0.001"
-          data-demo-target="editor:gap-length"
+          data-demo-target={`editor:gap-length:${this.borderClassName}`}
           ref={(input) => {
             if (!input) return;
             input.value = String(this.reactiveState.gapLength);
@@ -114,11 +114,11 @@ export class DashedBorder extends SolidBorder {
             input.addEventListener('change', this.flushDash);
           }}
         />
-        <label htmlFor="marker-line-cap">Line Cap</label>
+        <label htmlFor={`marker-line-cap-${this.borderClassName}`}>Line Cap</label>
         <select
-          id="marker-line-cap"
+          id={`marker-line-cap-${this.borderClassName}`}
           value={this.reactiveState.strokeLinecap}
-          data-demo-target="editor:line-cap"
+          data-demo-target={`editor:line-cap:${this.borderClassName}`}
           onChange={(e) => {
             this.reactiveState.strokeLinecap = e.target.value as 'butt' | 'round' | 'square';
           }}

@@ -74,14 +74,14 @@ export class SolidBorder extends MarkerPart {
   Configuration() {
     return (
       <>
-        <label htmlFor="marker-border-width">Width</label>
+        <label htmlFor={`marker-border-width-${this.borderClassName}`}>Width</label>
         <input
-          id="marker-border-width"
+          id={`marker-border-width-${this.borderClassName}`}
           type="range"
           min="0.0"
           max="0.5"
           step="0.001"
-          data-demo-target="editor:border-width"
+          data-demo-target={`editor:border-width:${this.borderClassName}`}
           ref={(input) => {
             if (!input) return;
             input.value = String(this.reactiveState.width);
