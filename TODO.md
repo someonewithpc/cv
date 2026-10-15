@@ -355,6 +355,7 @@
 - [x] Give the marker editor border controls unique ids and demo targets per border (#220 C41) (#424)
 - [x] Set the Icon decoration default selection without writing state during render (#220 C43) (#423)
 - [x] Hide the font picker and two-column loading placeholders when scripts are off, so their spinners stop turning over empty layers (#220 T32) (#467)
+- [ ] Name Side Chair and Banquet Table in the Space Builder placeholder toast, and say seat count updates once the field is left, not as you drag (#220 T15)
 - [x] The Original Logo callout names its `<g>` layers, not `<span>` (#220 T2) (#455)
 - [x] Keep the Badge math card's labels in their case, so θ and r are not uppercased (#220 T16) (#454)
 - [x] Event Dispatch card says "the first one to return stop has the job" (#220 T17) (#453)
