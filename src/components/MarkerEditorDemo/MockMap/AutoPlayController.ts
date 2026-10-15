@@ -699,41 +699,41 @@ export class AutoPlayController {
       },
       {
         delay: () => (hasWidth() ? 380 : 40),
-        cursor: () => (hasWidth() ? { target: 'editor:border-width' } : undefined),
+        cursor: () => (hasWidth() ? { target: 'editor:border-width:marker-shape' } : undefined),
       },
       {
         delay: () => (hasWidth() ? 160 : 40),
-        cursor: () => (hasWidth() ? { target: 'editor:border-width' } : undefined),
+        cursor: () => (hasWidth() ? { target: 'editor:border-width:marker-shape' } : undefined),
         run: async () => {
           const width = this.currentPreset().borderWidth;
           if (width == null) return;
-          await this.animateRangeInput('editor:border-width', width);
+          await this.animateRangeInput('editor:border-width:marker-shape', width);
         },
       },
       {
         delay: () => (hasDash() ? 380 : 40),
-        cursor: () => (hasDash() ? { target: 'editor:dash-length' } : undefined),
+        cursor: () => (hasDash() ? { target: 'editor:dash-length:marker-shape' } : undefined),
       },
       {
         delay: () => (hasDash() ? 160 : 40),
-        cursor: () => (hasDash() ? { target: 'editor:dash-length' } : undefined),
+        cursor: () => (hasDash() ? { target: 'editor:dash-length:marker-shape' } : undefined),
         run: async () => {
           const dash = this.currentPreset().dashLength;
           if (dash == null) return;
-          await this.animateRangeInput('editor:dash-length', dash);
+          await this.animateRangeInput('editor:dash-length:marker-shape', dash);
         },
       },
       {
         delay: () => (hasGap() ? 380 : 40),
-        cursor: () => (hasGap() ? { target: 'editor:gap-length' } : undefined),
+        cursor: () => (hasGap() ? { target: 'editor:gap-length:marker-shape' } : undefined),
       },
       {
         delay: () => (hasGap() ? 160 : 40),
-        cursor: () => (hasGap() ? { target: 'editor:gap-length' } : undefined),
+        cursor: () => (hasGap() ? { target: 'editor:gap-length:marker-shape' } : undefined),
         run: async () => {
           const gap = this.currentPreset().gapLength;
           if (gap == null) return;
-          await this.animateRangeInput('editor:gap-length', gap);
+          await this.animateRangeInput('editor:gap-length:marker-shape', gap);
         },
       },
     ];

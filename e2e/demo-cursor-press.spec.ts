@@ -166,7 +166,7 @@ test('every walkthrough click pulses the cursor and rings, drags and the colour 
 
   await page.waitForFunction(
     () => ((window as Window & { __walkLog?: WalkEntry[] }).__walkLog ?? [])
-      .some((entry) => entry.target === 'editor:border-width'),
+      .some((entry) => entry.target === 'editor:border-width:marker-shape'),
     undefined,
     { timeout: 120_000 },
   );
