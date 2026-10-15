@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { deckPlacement } from './support/deck';
+import { waitForSceneReady } from './support/spaceBuilder';
 import {
   armDrawCounter,
   demoStack,
@@ -10,7 +11,6 @@ import {
   sceneDraws,
   swipeStack,
   turnToPage,
-  waitForIslandMounted,
 } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
@@ -19,14 +19,6 @@ test.beforeEach(async ({ page }) => {
 
 function spaceBuilderStack(page: import('@playwright/test').Page) {
   return demoStack(page, 'Space Builder · Add Tool');
-}
-
-/** Every scene app marks its own root `data-ready="true"` once Three.js has finished loading. */
-async function waitForSceneReady(front: import('@playwright/test').Locator) {
-  const island = await waitForIslandMounted(front);
-  const app = island.locator('[data-ready]');
-  await expect(app).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
-  return app;
 }
 
 test('main page: scene loads and the add-object tool opens the catalog', async ({ page }) => {
