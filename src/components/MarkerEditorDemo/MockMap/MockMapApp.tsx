@@ -646,10 +646,9 @@ export default function MockMapApp() {
     }, RESUME_DELAY_MS);
   };
 
-  // The Space Builder scenes have always parked themselves under reduced motion; the map
-  // walkthrough never checked, so the sheet's deck would read paused over a demo
-  // that was still moving. The query is watched, not read once: the setting can change
-  // while the page is open.
+  // Like the Space Builder scenes, the map walkthrough parks itself under reduced motion, so
+  // the sheet's deck does not read paused over a demo that is still moving. The query is watched,
+  // not read once: the setting can change while the page is open.
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -701,8 +700,8 @@ export default function MockMapApp() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inView, dispatch]);
 
-  // Opening a native popup takes the pointer off the sheet, so the idle timer used to hand
-  // the demo back while the picker was still open and the walkthrough edited the marker
+  // Opening a native popup takes the pointer off the sheet, so the idle timer would hand
+  // the demo back while the picker is still open and the walkthrough would edit the marker
   // underneath it. Hold from the moment such a control takes focus: a deliberate takeover,
   // so the sheet's chip reads "You're in control" for as long as the popup is up.
   // The editor is portaled onto the carousel page, hence document rather than the overlay.
