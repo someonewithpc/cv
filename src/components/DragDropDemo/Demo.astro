@@ -1,36 +1,12 @@
 ---
-import path from 'node:path';
-
-import * as esbuild from 'esbuild';
-
 import TechnicalDrawingStack from '@/components/TechnicalDrawing/Stack.astro';
+import { scriptWeight } from '@/server/scriptWeight';
 
 import DragDropScene from './MockScene/DragDropScene.astro';
 import HandoffLayer from './layers/HandoffLayer.astro';
-import { toKiB } from '@/fileSize';
 
-// The same scene the Space Builder stack runs — this demo imports it rather than
-// carrying its own copy, so the title block quotes the same number.
-const srcRoot = path.join(process.cwd(), 'src');
-const sceneEntry = path.join(
-  srcRoot,
-  'components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene.ts',
-);
-
-const { outputFiles: [sceneBundle] } = await esbuild.build({
-  entryPoints: [sceneEntry],
-  bundle: true,
-  minify: true,
-  write: false,
-  format: 'esm',
-  packages: 'external',
-  // Asset URLs (chair.glb?url) are strings Vite fills in; the bundle only measures code.
-  external: ['*?url'],
-  alias: { '@': srcRoot },
-  loader: { '.scss': 'empty' },
-});
-
-const sceneSize = toKiB(sceneBundle.text);
+// The same scene the Space Builder stack runs, so the title block quotes the same number.
+const sceneSize = await scriptWeight('components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene.ts');
 
 const layers = {
   main: { name: null },
