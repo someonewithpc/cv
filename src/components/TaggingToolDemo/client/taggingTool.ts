@@ -27,7 +27,11 @@ type Group = {
   /** The save button's accessible name while base and variants agree, rendered server side. */
   setLabel: string;
   cards: Card[];
+  /** measureCards() for this spell of focus; null until the next mirror() reads it. */
+  metrics: CardMetrics[] | null;
 };
+
+type CardMetrics = { width: number };
 
 type Tool = {
   root: HTMLElement;
@@ -62,6 +66,12 @@ function titleize(text: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+/** The width of each card's field: it does not change while the shared field keeps
+    focus, so it is read once per spell of focus, not on every key. */
+function measureCards(group: Group): CardMetrics[] {
+  return group.cards.map(({ input }) => ({ width: input.offsetWidth }));
+}
+
 /** The product's shared_inputs.js handler: copy the value into every variant form, tell its
     ::before caret where the shared input's caret is, and scroll each input to its end. Every
     write comes before every read, so a key costs one layout, not one per card. */
@@ -71,6 +81,8 @@ function mirror(group: Group, eventType = 'keyup') {
   const start = shared.selectionStart ?? value.length;
   // selectionStart counts a space twice, so the product clamps to the last space before it.
   const caret = Math.max(start, value.lastIndexOf(' ', start));
+  if (eventType === 'focus') group.metrics = null;
+  const metrics = (group.metrics ??= measureCards(group));
 
   group.cards.forEach(({ form, input }) => {
     form.style.setProperty('--caret', String(caret));
@@ -80,10 +92,10 @@ function mirror(group: Group, eventType = 'keyup') {
   group.cards.forEach(({ input }, i) => {
     input.scrollLeft = scrolls[i];
   });
-  const widths = group.cards.map(({ input }) => input.offsetWidth);
   group.cards.forEach(({ form }, i) => {
-    form.style.setProperty('--input-width', `${widths[i]}px`);
+    form.style.setProperty('--input-width', `${metrics[i].width}px`);
   });
+  if (eventType === 'blur') group.metrics = null;
 }
 
 /** The mock server's round trip: nothing is stored, but a save takes as long to come
@@ -271,6 +283,7 @@ function restore(tool: Tool) {
     });
     group.root.classList.remove('autoplay');
     ringState(group.root, null);
+    group.metrics = null;
   });
   showProperty(tool, tool.initialProperty);
 }
@@ -301,6 +314,7 @@ function initGroup(tool: Tool, section: HTMLElement): Group {
     sharedSaveName: sharedSave.querySelector<HTMLElement>('.sr-only')!,
     setLabel: sharedSave.dataset.label ?? '',
     cards,
+    metrics: null,
   };
 
   // Product: keyup/focus/click/blur. `input` too, so pasted or filled text mirrors as well.
