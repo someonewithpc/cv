@@ -705,11 +705,10 @@ function initStack(stack: HTMLElement) {
 
   // A demo island boots only once its page is on screen, so the deck is listening long
   // before the first state is reported. One that beat it to it is read back instead.
-  [...stack.querySelectorAll<HTMLElement>(':scope > * > section')]
-    .forEach((page) => {
-      initAutoplayStatus(page);
-      homeDeck(stack, page);
-    });
+  pages.forEach((page) => {
+    initAutoplayStatus(page);
+    homeDeck(stack, page);
+  });
 
   positionAnnotations(stack);
 
@@ -719,7 +718,8 @@ function initStack(stack: HTMLElement) {
   // Feature-detected: where the button has the property the browser already opens it.
   // The popover attributes are the markup's fallback for pages without this script, so a
   // scripted page drops them and always opens the note as a modal.
-  for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
+  const noteTabs = [...stack.querySelectorAll<HTMLButtonElement>('button.note-fold')];
+  for (const tab of noteTabs) {
     tab.removeAttribute('popovertarget');
     const id = tab.getAttribute('commandfor');
     const note = id ? document.getElementById(id) : null;
@@ -734,7 +734,7 @@ function initStack(stack: HTMLElement) {
     note.addEventListener('close', () => markNoteOpen(note, false));
   }
   if (!('commandForElement' in HTMLButtonElement.prototype)) {
-    for (const tab of stack.querySelectorAll<HTMLButtonElement>('button.note-fold')) {
+    for (const tab of noteTabs) {
       tab.addEventListener('click', () => {
         const id = tab.getAttribute('commandfor');
         const note = id ? document.getElementById(id) : null;
