@@ -19,6 +19,7 @@ export async function oembedFields() {
     type: 'rich',
     title: SITE_TITLE,
     author_name: AUTHOR_NAME,
+    author_url: SITE_URL,
     provider_name: AUTHOR_NAME,
     provider_url: SITE_URL,
     cache_age: 86400,
