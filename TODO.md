@@ -315,4 +315,4 @@
 - [x] Read the callout frame dash screenshot with sharp instead of playwright-core's private PNG (E7) (#471)
 - [x] Check that the Space Builder place and badge scenes draw a frame instead of only data-ready (E15) (#476)
 - [x] Assert behaviour in the tests that only confirmed static markup: the caret blink, the logo dash and the inner-page drawings run and advance their clocks (E16) (#477)
-- [ ] Make the single-click and no-JavaScript specs assert what they claim: the card highlight, and that each callout is drawn inside its overlay (#220 E18)
+- [x] Make the single-click and no-JavaScript specs assert what they claim: the card highlight, and that each callout is drawn inside its overlay (#220 E18) (#481)
