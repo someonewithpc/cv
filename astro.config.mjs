@@ -113,7 +113,6 @@ export default defineConfig({
         'lodash-es/partition',
         'lodash-es/camelCase',
         'lodash-es/snakeCase',
-        'lodash-es/throttle',
         'lodash-es/clamp',
         'path-data-polyfill',
         '@fortawesome/react-fontawesome',
