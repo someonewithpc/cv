@@ -1,6 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 
-import { demoStack, frontPageName, pressTurn } from './support/paperStack';
+import { demoStack, dogEarShown, frontPageName, pressTurn, settledAfter, transitionsRunOut } from './support/paperStack';
+import { framesPass, steady } from './support/steady';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -48,7 +49,7 @@ async function standing(stack: Locator) {
 test('marker editor: the pile behind the stack counts the pages turned', async ({ page }) => {
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   // Nothing turned yet, so nothing stands behind the stack.
   expect(await pile(stack)).toEqual({ turned: '0', standing: 0, showing: 0 });
@@ -72,7 +73,7 @@ test('marker editor: the pile behind the stack counts the pages turned', async (
 test('marker editor: a turned page goes to the back of the pile, on an arc', async ({ page }) => {
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   for (let i = 0; i < 3; i += 1) await pressTurn(stack, 'ArrowRight');
   const sheets = await standing(stack);
@@ -248,7 +249,7 @@ const offLine = (p: Point, line: Point[]) => Math.abs(sideOf(p, line));
 test('logo demo: the strip is the turned page\'s paper, not the front page\'s', async ({ page }) => {
   const stack = demoStack(page, 'Visrez Animated Loading Logo');
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
+  await dogEarShown(stack);
 
   // Nothing turned: no pile to paint, and no colour on the stack for one.
   expect(await strip(stack)).toMatchObject({ opacity: '0', stackPaper: '' });
@@ -412,7 +413,7 @@ async function pullFlap(stack: Locator) {
     });
     if (!point) continue;
     await page.mouse.move(point.x, point.y);
-    await page.waitForTimeout(150);
+    await framesPass(page);
     if (await onFlap(point.x, point.y)) from = point;
   }
   if (!from) throw new Error('no point on the flap takes the pointer');
@@ -472,7 +473,7 @@ test.describe('the strip through a turn', () => {
       });
       const stack = page.locator('article.technical-drawing-stack').first();
       await stack.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(500);
+      await dogEarShown(stack);
 
       // Two pages turned by hand: the first climbs out of an empty pile, the second has to pass
       // the first on its way up, which is where the strip used to stand proud of the pile.
@@ -483,7 +484,7 @@ test.describe('the strip through a turn', () => {
         expectStripToFollow(await watchedTurn(stack), `${width} forward turn ${turn}`);
         // Wait for the flip to land: the stand-in flap gives way to the real one.
         await expect.poll(() => stack.locator('.paper-fold').count(), { timeout: 15_000 }).toBe(1);
-        await page.waitForTimeout(500);
+        await transitionsRunOut(stack);
       }
       expect(await pile(stack)).toMatchObject({ turned: '2' });
 
@@ -500,14 +501,12 @@ test.describe('the strip through a turn', () => {
         await page.mouse.move(start.x + box.width * step / along, start.y + box.height * step / along);
         await page.waitForTimeout(40);
       }
-      await page.waitForTimeout(400);
-      const held = await strip(stack);
+      const held = await steady(page, () => strip(stack));
       expect(offLine(held.corners[0], held.near)).toBeLessThan(1.5);
       expect(offLine(held.corners[3], held.near)).toBeLessThan(1.5);
       expect(apart(held.corners[1], held.far[0])).toBeLessThan(1);
       expect(apart(held.corners[2], held.far[1])).toBeLessThan(1);
-      await page.mouse.up();
-      await page.waitForTimeout(1000);
+      await settledAfter(stack, () => page.mouse.up());
 
       // And a page coming back down from the pile carries the strip with it, so the strip's far
       // edge has to stay on the page left standing furthest out.
@@ -537,7 +536,7 @@ for (const width of [390, 1440]) {
     for (let i = 0; i < count; i += 1) {
       const stack = stacks.nth(i);
       await stack.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(500);
+      await dogEarShown(stack);
 
       let turned = 0;
       let first: Awaited<ReturnType<typeof foldAndPile>> | null = null;
