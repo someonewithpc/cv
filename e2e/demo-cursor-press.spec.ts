@@ -200,3 +200,29 @@ test('every walkthrough click pulses the cursor and rings, drags and the colour 
   expect(targets).toContain('editor:border-color:marker-shape:area');
   expect(targets).toContain('editor:fill-color:marker-decoration:area');
 });
+
+// Font Picker draws a cursor on more than one of its pages, and a page's cursor lingers while
+// it fades. Stand-in cursors on the first and last pages make that overlap certain: a press
+// on the first page pulses the first page's cursor, not whichever is last in the stack.
+test('a press pulses the cursor on the pressed page', async ({ page }) => {
+  await page.goto('/');
+  const stack = demoStack(page, 'Interactive Map Font Picker');
+  await stack.scrollIntoViewIfNeeded();
+  const pressed = await stack.evaluate((el) => {
+    const sheets = el.querySelectorAll('section[data-sheet-id]');
+    const [first, last] = [sheets[0], sheets[sheets.length - 1]].map((sheet) => {
+      const cursor = document.createElement('div');
+      cursor.setAttribute('data-demo-cursor', '');
+      cursor.dataset.standIn = sheet.getAttribute('data-sheet-id')!;
+      sheet.append(cursor);
+      return cursor;
+    });
+    first.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    const hit = [...el.querySelectorAll<HTMLElement>('[data-demo-cursor][data-pressed]')];
+    first.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    first.remove();
+    last.remove();
+    return { want: first.dataset.standIn, got: hit.map((cursor) => cursor.dataset.standIn ?? 'real') };
+  });
+  expect(pressed.got).toEqual([pressed.want]);
+});
