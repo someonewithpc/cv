@@ -113,7 +113,7 @@ export class MarkerPart {
     }
   }
 
-  // Constain `to` to be between `min` and `max` distance from `from`, in the direction of `value`
+  // Constrain `to` to be between `min` and `max` distance from `from`, in the direction of `value`
   constrainRadius(value: PointLiteral | Point, to: Point, from: Point, min: number, max: number) {
     const newRadius = from.distanceTo(value);
     // A handle dropped exactly on its reference point has no direction; keep the last one

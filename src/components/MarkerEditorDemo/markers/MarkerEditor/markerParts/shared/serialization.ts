@@ -55,7 +55,7 @@ function serializableConstructorName(value: object): string {
 
 export function serializeKeyValue(property: string, name: string, value: any): [string, string] {
   // We need to store the properties without uppercase letters, as that's technically not allowed by
-  // the HTML spect and thus React warns us about it. See https://react.dev/warnings/unknown-prop
+  // the HTML spec and thus React warns us about it. See https://react.dev/warnings/unknown-prop
   const key = `data-${snakeCase(property)}-${snakeCase(name)}`;
 
   if (typeof value === 'string') {

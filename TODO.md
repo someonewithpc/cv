@@ -120,7 +120,7 @@
       - [x] PaperStack focus ring should follow page border (#12)
     - [x] Page turn is laggy (#50)
     - [-] Page indicator
-  - [ ] Anotations
+  - [ ] Annotations
     - [x] JS to make sure the placement is correct, when JS available, as progressive enhancement
 - [x] Scroll animation stacking demos
 - [x] Section divider with ripped paper effect

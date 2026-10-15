@@ -148,7 +148,7 @@ export function circleUseableRadius(area: AreaRect, options: LayoutOptions) {
 export function maxInnerDiameter(area: AreaRect, options: LayoutOptions) {
   const useable = circleUseableRadius(area, options);
   if (useable <= 0) return 0.5;
-  // Slightly past 2×useable so the top of the slider can clear the outer ring.
+  // Slightly past 2× the usable radius so the top of the slider can clear the outer ring.
   return Number((useable * 2 + 0.05).toFixed(2));
 }
 

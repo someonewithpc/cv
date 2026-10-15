@@ -19,7 +19,7 @@ export class CircleMarkerShape extends MarkerShape {
       },
       set center(value: PointLiteral | Point) {
         marker.constrainVertical(value, marker.state.center);
-        // TODO this isn't really corect
+        // TODO this isn't really correct
         marker.constrainRadius(marker.state.center, marker.state.center, marker.state.radiusPoint, 0.05, 1);
         marker.constrainSnap(marker.state.center);
       },
@@ -42,7 +42,7 @@ export class CircleMarkerShape extends MarkerShape {
 
   get path() {
     return [
-      `M ${this.center.x + this.radius}, ${this.center.y}`,                                        // Move to the where the circle starts
+      `M ${this.center.x + this.radius}, ${this.center.y}`,                                        // Move to where the circle starts
       `A ${this.radius}, ${this.radius}, 0 1 1, ${this.center.x - this.radius}, ${this.center.y}`, // Arc for top of circle ending in left side
       `A ${this.radius}, ${this.radius}, 0 0 1, ${this.center.x + this.radius}, ${this.center.y}`, // Arc for bottom of circle going back to the start, with the other arc flag
       'z',                                                                                         // Close the path by drawing a line back to the starting point
