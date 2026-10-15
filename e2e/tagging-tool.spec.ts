@@ -568,20 +568,32 @@ test.describe(() => {
   });
 });
 
-test('shared value page: the mirroring blueprint diagram is shown', async ({ page }) => {
+/** The running blink on the front sheet's caret, as its clock; null while none runs. */
+function caretClock(front: import('@playwright/test').Locator) {
+  return front.locator('.caret').first().evaluate((caret) => {
+    const blink = caret.getAnimations().find((animation) => animation.playState === 'running');
+    return blink ? Number(blink.currentTime) : null;
+  });
+}
+
+async function expectCaretBlinking(front: import('@playwright/test').Locator) {
+  await expect.poll(() => caretClock(front), { timeout: 10_000 }).not.toBeNull();
+  const before = (await caretClock(front))!;
+  await expect.poll(async () => (await caretClock(front)) ?? 0, { timeout: 5000 }).toBeGreaterThan(before);
+}
+
+test('shared value page: its caret blinks once the page is turned to', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
   await turnToPage(stack, 'Shared Value');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section.blueprint')).toBeVisible();
+  await expectCaretBlinking(frontPage(stack, await frontPageIndex(stack)));
 });
 
-test('simulated caret page: the caret-math blueprint diagram is shown', async ({ page }) => {
+test('simulated caret page: its caret blinks once the page is turned to', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
   await turnToPage(stack, 'Simulated Caret');
-  const front = frontPage(stack, await frontPageIndex(stack));
-  await expect(front.locator('section.blueprint')).toBeVisible();
+  await expectCaretBlinking(frontPage(stack, await frontPageIndex(stack)));
 });
 
 test('completed objects page: the leaving-the-list blueprint diagram is shown', async ({ page }) => {
