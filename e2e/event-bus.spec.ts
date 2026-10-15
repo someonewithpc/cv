@@ -25,6 +25,7 @@ async function mountedBus(page: Page) {
 /** A dispatch down the whole chain, about 3 s of page time, and the walkthrough's longest
     step, a 2.8 s hold and the cursor's move to the next control. */
 const RUN_MS = 3_000;
+const RESUME_DELAY_MS = 6_000;
 const STEP_MS = 4_000;
 
 /** Page time as a wall-clock expect timeout at the pace this test plays at. */
@@ -89,6 +90,21 @@ test.describe(() => {
     const before = await state();
     await pageWait(page, STEP_MS);
     expect(await state()).toBe(before);
+  });
+
+  test('main page: keyboard focus on a control takes the walkthrough over and the quiet spell does not give it back', { tag: '@handover' }, async ({ page }) => {
+    await page.goto('/');
+    const { front, bus } = await mountedBus(page);
+    await expect(bus).toHaveAttribute('data-autoplay-state', 'playing');
+
+    await listener(bus, 'AudioEncoder').locator('.load').focus();
+    await expect(bus).toHaveAttribute('data-autoplay-state', 'user');
+    await expect(front.locator('.event-bus-cursor')).toBeHidden();
+
+    // Past the 6 s quiet spell and a whole walkthrough step, with focus still in the demo.
+    await pageWait(page, RESUME_DELAY_MS + STEP_MS);
+    await expect(bus).toHaveAttribute('data-autoplay-state', 'user');
+    await expect(front.locator('.event-bus-cursor')).toBeHidden();
   });
 
   test('main page: the drawing note pauses the walkthrough until it closes', { tag: '@handover' }, async ({ page }) => {
