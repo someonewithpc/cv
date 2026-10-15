@@ -184,7 +184,7 @@ test.describe('access keys', () => {
     const before = await frontPageName(stack);
     // Tab moves focus off the stack and onto the button (it is a real Tab stop now), but
     // Layout.astro remembers the stack as the last one focused, so Enter here still turns it —
-    // the same path a real Tab-then-Enter or an Alt+8 accesskey press both reach.
+    // the same path a real Tab-then-Enter or an Alt+N accesskey press both reach.
     await page.locator('.page-turn-key[data-turn="ArrowRight"]').focus();
     await page.keyboard.press('Enter');
     await expect.poll(async () => frontPageName(stack), { timeout: 15_000 }).not.toBe(before);
