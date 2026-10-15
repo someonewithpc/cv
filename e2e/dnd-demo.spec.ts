@@ -9,6 +9,7 @@ import {
   turnToPage,
   waitForIslandMounted,
 } from './support/paperStack';
+import { steady } from './support/steady';
 import { expect, pageWait, test } from './support/timeScale';
 
 function dragDropStack(page: Page) {
@@ -100,8 +101,7 @@ test('dragging an object onto the floor places exactly one in a live scene', asy
   }
   // The scene draws only when something in it changes, so the count before the drop has to
   // be read once the last move's frame is out.
-  await page.waitForTimeout(200);
-  const drawnBeforeDrop = await sceneDraws(app);
+  const drawnBeforeDrop = await steady(page, () => sceneDraws(app));
   await page.mouse.up();
 
   await expect(app).toHaveAttribute('data-selected', 'true');
@@ -168,9 +168,7 @@ test('every catalog picture stays inside its own tile and off its label', async 
     await page.setViewportSize(viewport);
     await dragDropStack(page).scrollIntoViewIfNeeded();
     // The sidebar reflows with the sheet's orientation; measure after it has settled.
-    await page.waitForTimeout(400);
-
-    const cards = await app.locator('[data-catalog-item]').evaluateAll((items) =>
+    const cards = await steady(page, () => app.locator('[data-catalog-item]').evaluateAll((items) =>
       items.map((item) => {
         const picture = item.querySelector('.object-icons img')!.getBoundingClientRect();
         const tile = item.querySelector('.object-icons')!.getBoundingClientRect();
@@ -182,7 +180,7 @@ test('every catalog picture stays inside its own tile and off its label', async 
           labelTop: label ? label.top : null,
         };
       }),
-    );
+    ));
     expect(cards.length).toBeGreaterThan(0);
 
     const SLACK = 0.5;
