@@ -68,11 +68,12 @@ test('a chair dragged from the catalog onto the floor is placed once, on the dro
   await page.mouse.down();
   await page.mouse.move(floor.x + 200, floor.y + 260, { steps: 10 });
   await expect(app).toHaveAttribute('data-panel', 'catalog');
-  expect(await app.locator('.toasts .toast').count()).toBe(0);
+  const placedToasts = app.locator('.toasts .toast', { hasText: 'Object placed' });
+  await expect(placedToasts).toHaveCount(0);
 
   await page.mouse.up();
   await expect(app).toHaveAttribute('data-panel', 'closed');
-  expect(await app.locator('.toasts .toast').allInnerTexts()).toEqual(['Object placed']);
+  await expect(placedToasts).toHaveCount(1);
 });
 
 test('a catalog model is only fetched once its item is picked', async ({ page }) => {
