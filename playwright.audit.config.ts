@@ -8,6 +8,8 @@ const PORT = Number(process.env.AUDIT_PORT ?? 4311);
 export default defineConfig({
   ...base,
   testDir: './audit',
+  // The audit tests match neither the slow-walkthroughs nor the firefox projects, so only chromium runs.
+  projects: base.projects?.filter((project) => project.name === 'chromium'),
   // Lighthouse times a machine, not a page: anything else rendering on this one while it
   // runs lands in its numbers.
   workers: 1,
