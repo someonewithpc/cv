@@ -318,30 +318,6 @@ export function MarkerEditor({
     tabbables(editorRef.current)[0]?.focus({ preventScroll: true });
   }, [embed, focusOnOpen]);
 
-  // Horizontal / shift-wheel over the editor chrome should still move the carousel.
-  // (The dimmed backdrop already passes through via pointer-events: none.)
-  useEffect(() => {
-    if (embed || !portalHost) return;
-
-    const stack =
-      portalHost.closest<HTMLElement>('article.technical-drawing-stack')
-      ?? portalHost.querySelector<HTMLElement>('article.technical-drawing-stack');
-    const editor = editorRef.current;
-    if (!stack || !editor) return;
-
-    const onWheel = (e: WheelEvent) => {
-      const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey;
-      if (!horizontal) return;
-
-      const delta = e.shiftKey && e.deltaX === 0 ? e.deltaY : e.deltaX || e.deltaY;
-      stack.scrollLeft += delta;
-      e.preventDefault();
-    };
-
-    editor.addEventListener('wheel', onWheel, { passive: false });
-    return () => editor.removeEventListener('wheel', onWheel);
-  }, [portalHost, embed]);
-
   if (!embed && !portalHost) return null;
 
   const editor = (
