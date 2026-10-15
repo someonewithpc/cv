@@ -406,7 +406,6 @@ export class SpaceBuilderScene {
     this.updateCamera();
     this.markCameraHome();
 
-    this.scene.background = new Color('#6e8fc4');
     this.scene.fog = null;
     const sunDir = new Vector3(0.42, 0.78, 0.28).normalize();
     this.skybox = createDemoSkybox(sunDir);
@@ -576,7 +575,6 @@ export class SpaceBuilderScene {
       alpha: false,
       powerPreference: 'high-performance',
     });
-    renderer.setClearColor(0x6e8fc4, 1);
     // Cap DPR — full retina + antialias made first WebGL frames noticeably late.
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.shadowMap.enabled = true;
