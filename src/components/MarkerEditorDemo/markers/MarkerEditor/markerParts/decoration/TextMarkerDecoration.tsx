@@ -1,4 +1,4 @@
-import { clamp } from "../../../../lib/mapRange";
+import clamp from 'lodash/clamp';
 
 import $store, { spaceGlobalOrderSelector } from '../../../../store';
 import type { SpaceType } from '../../../../store';

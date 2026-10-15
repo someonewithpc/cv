@@ -1,6 +1,6 @@
 import $store from '../../../../store';
 import type { SpaceType } from '../../../../store';
-import { clamp } from '../../../../lib/mapRange';
+import clamp from 'lodash/clamp';
 import { serializeKeyValue } from './serialization';
 
 import { Point, type PointLiteral } from './Point';
