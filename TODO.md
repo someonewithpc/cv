@@ -327,7 +327,7 @@
 - [x] Read the Fediverse graph's shared images from SHARED_SERVICES, and list in the compose file only the volumes a service mounts (C78) (#438)
 - [x] Take the Library Search size rows from SyntheticPropertiesDemo/units.ts (#220 C52) (#429)
 - [x] Scroll the tagging tool's variant inputs to their end as the product does, and move the property picker and the "Bring them back" footer out of the product panel (C91) (#452)
-- [ ] Unmount the Marker Editor sheet's embed when the sheet turns portrait, where its layer is hidden and the autoplay kept clicking (#220 C16)
+- [x] Unmount the Marker Editor sheet's embed when the sheet turns portrait, where its layer is hidden and the autoplay kept clicking (#220 C16) (#413)
 - [x] Held Controls reads the page rect once per run, lays out the grab line once per leg, and reads a slider again only when its value moves (C12 Held Controls) (#412)
 - [x] Take Space Builder hover moves from the scene, not the whole window, and keep the handle meshes for picking (#220 C9) (#408)
 - [x] Lay the Space Builder chairs out once per area or options change, and leave the capacity tag text alone while the camera moves (#220 C10) (#407)
