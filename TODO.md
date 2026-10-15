@@ -355,6 +355,7 @@
 - [x] Give the marker editor border controls unique ids and demo targets per border (#220 C41) (#424)
 - [x] Set the Icon decoration default selection without writing state during render (#220 C43) (#423)
 - [x] Hide the font picker and two-column loading placeholders when scripts are off, so their spinners stop turning over empty layers (#220 T32) (#467)
+- [ ] Copy spelling: "centred" and "Serialisation" in the marker editor sheets, and "2.67×" to match "3×" (#220 T27)
 - [x] Use periods and commas, not em dashes, in Space Builder UI text and aria-labels (#220 T30) (#462)
 - [x] Name the real kernel in the Phpstan boot step, so "it" has a referent (#220 T31) (#461)
 - [x] Say "one more sheet" when a stack has one sheet below, not "one more sheets" (#220 T24) (#460)
