@@ -206,7 +206,7 @@
 - [x] Name the Visrez green `$visrez-brand` and define it once in `src/scss/_visrez.scss`, so the Variants and Space Builder catalog cards and the status border no longer each carry a bare `$brand` hex (#307)
 - [x] The theme picker demo's stage buttons are 36 by 9 px, under the 24 px target size (A1) (#228)
 - [x] The audit's axe run skips WCAG 2.2, so it never checks target size (E30) (#228)
-- [ ] Two walkthrough keyboard-handover specs: Event Bus and the theme picker demo stay taken over after the quiet spell (E30)
+- [x] Two walkthrough keyboard-handover specs: Event Bus and the theme picker demo stay taken over after the quiet spell (E30) (#487)
 - [x] Keyboard focus takes a walkthrough over once and never restarts it (C32 to C35) (#231)
 - [x] Transport deck in the bottom band where it fits, in the callout's slip under the page where it does not, on every demo (L9) (#234)
 - [x] Pressing a deck key over the sheet and moving off it pauses the demo it just started, so pointer take-over waits one second after a deck press (#315)
