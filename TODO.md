@@ -307,3 +307,4 @@
 - [x] Fixed colours that ignore the theme: the note fold fallback, the Rails outline, the toast and key borders, the tagging grid body, the Paper Stack note, the cursor labels and the Variants cursor (S11) (#363)
 - [x] Keep component styles inside their component: the original logo's Illustrator classes, the Space Builder tag, the marker editor's font settings and the layout utilities (S15) (#366)
 - [x] End the Library Search result list above the title block at every width (#220 S23) (#372)
+- [x] Tag the timing budgets @perf so a loaded run can leave them out: the marker editor key turn (900 and 2000 ms) and the resize layout cost (0.5 s) (#220 E24) (#483)

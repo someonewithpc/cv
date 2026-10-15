@@ -17,6 +17,7 @@
     "generate:catalog-thumb": "node scripts/render-catalog-thumb.mjs",
     "og:image": "node scripts/capture-og-image.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:loaded": "playwright test --grep-invert @perf",
     "test:audit": "playwright test --config playwright.audit.config.ts",
     "test:audit:html-validate": "AUDIT_HTML=html-validate playwright test --config playwright.audit.config.ts audit/markup.spec.ts"
   },
