@@ -136,6 +136,7 @@
 - [x] Drop the flaky phone seat-row hover test in the variants demo e2e spec (#144)
 - [x] Fix the e2e specs that fail under load (#164)
 - [x] Make the flaky e2e specs deterministic: annotations-position, offscreen-pause, space-builder-chair, contributions-links, reduced-motion (#327)
+- [ ] Record a Playwright trace on every failed e2e test, since there is no CI and no local retry for on-first-retry to fire on (#220 E10)
 - [x] Make demos more usable without JS (#19)
   - [x] No-JS paper stack carousel styled as a stack of sheets, with arrows and a dot per sheet (#169)
 - [x] Page half-drawn with JS off, and stylesheet source printed when JS is switched off after load (#170)
