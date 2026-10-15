@@ -207,7 +207,7 @@ async function main() {
       let data = null;
       let filePath = candidates[0];
       for (const candidate of candidates) {
-        if (!candidate.startsWith(root)) continue;
+        if (!candidate.startsWith(root + path.sep)) continue;
         try {
           data = await readFile(candidate);
           filePath = candidate;
