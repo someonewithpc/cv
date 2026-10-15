@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack } from './support/paperStack';
 
 const PAGES = ['web-ts-mode', 'Parser Ranges', 'Selector Depth Hue', 'Doctor Report'];
 
@@ -9,10 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function webTsStack(page: Page) {
-  // By title, not by position: the demos run gains stacks over time.
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'web-ts-mode' }),
-  });
+  return demoStack(page, 'web-ts-mode');
 }
 
 async function liveBuffer(page: Page): Promise<Locator> {
