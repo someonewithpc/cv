@@ -26,8 +26,7 @@ test.describe('with JavaScript off', () => {
     await page.goto('/');
 
     const all = await stacks(page);
-    // The pages used to be in the HTML twice: a flat copy and the scripted stack, each with
-    // its own root. One root per stack is the whole point of this branch.
+    // Each stack's pages are in the HTML once, under one root per stack.
     await expect(page.locator('[data-paper-stack-root]')).toHaveCount(all.length);
 
     for (const [i, stack] of all.entries()) {

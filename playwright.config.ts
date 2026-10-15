@@ -65,9 +65,8 @@ function playwrightFirefox(): string | undefined {
     .find((path) => existsSync(path));
 }
 const PLAYWRIGHT_FIREFOX = playwrightFirefox();
-// The no-script and layout specs worth a second engine. FF1's chain line is checked here; FF3
-// and FF4 stay in firefox-noscript above. Tests that need the DevTools protocol or WebGL skip
-// themselves in Firefox, and the ones it fails today are marked fixme there.
+// The no-script and layout specs worth a second engine. Tests that need the DevTools protocol
+// or WebGL skip themselves in Firefox.
 const PLAYWRIGHT_FIREFOX_SPECS = [
   'noscript-handling.spec.ts',
   'noscript-dedupe.spec.ts',
