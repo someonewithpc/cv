@@ -579,7 +579,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
 import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
 import { isResizeHeld, isSizeSettling, onResizeHold, onSizeSettled } from '@/client/resizeHold';
-import { isFoldPulse } from '@/components/PaperStack/fold-drag';
+import { afterPaint, isFoldPulse } from '@/components/PaperStack/fold-drag';
 import './demo-cursor-press';
 
 import { positionAnnotations } from './annotations-position';
@@ -668,6 +668,21 @@ const apply = (all: HTMLElement[]) => {
   });
 };
 
+// A flip renumbers the pages in the middle of the turn's writes, so asking for their animations
+// there resolved style and layout on the spot. Once the next frame has painted, style is clean;
+// both pages the flip moved are handled together.
+const flipped = new Set<HTMLElement>();
+const applyAfterFlip = (page: HTMLElement) => {
+  if (flipped.size === 0) {
+    afterPaint(() => {
+      const pages = [...flipped];
+      flipped.clear();
+      apply(pages);
+    });
+  }
+  flipped.add(page);
+};
+
 // Viewport root (not the stack): with root:stack the active slide was "intersecting" on load
 // even when still below the fold. Stack overflow still clips off-screen sheets from
 // the viewport intersection. One observer for every stack's pages, so the first pass on load
@@ -689,7 +704,7 @@ function initStack(stack: HTMLElement) {
   if (pages[0]) watchSkipping(stack, pages[0]);
   pages.forEach((page) => {
     pageObserver.observe(page);
-    watchFrontPage(page, () => apply([page]));
+    watchFrontPage(page, () => applyAfterFlip(page));
   });
 
   onResizeHold((holding) => {

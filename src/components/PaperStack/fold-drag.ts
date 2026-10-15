@@ -337,7 +337,7 @@ let movesSeen = false;
 // Runs a job after the next frame has painted. A frame callback would run before that frame's
 // style resolve, and a message posted from inside one is handled only once the frame's rendering
 // is done, so the job finds style clean and the transitions that resolve started.
-const afterPaint = (() => {
+export const afterPaint = (() => {
   const jobs: (() => void)[] = [];
   const channel = new MessageChannel();
   channel.port1.onmessage = () => {
