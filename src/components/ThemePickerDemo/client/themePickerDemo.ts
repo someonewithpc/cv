@@ -1,6 +1,6 @@
 import { onAutoplayCommand, reducedMotion, reportAutoplayState, type AutoplayState } from '@/client/autoplayStatus';
 import { demoGate } from '@/client/frontPage';
-import { pathDataToString, transformPath } from '@/client/svg-utils';
+import { ensurePathData, pathDataToString, transformPath } from '@/client/svg-utils';
 import { watchHandover } from '@/client/walkthroughHandover';
 import { THEME_IDS, type ThemeId } from '@/themes';
 
@@ -12,13 +12,6 @@ const FIRST_HOLD_MS = 1400;
 
 /** One loop of the walkthrough: every theme, then nothing picked, so the OS decides again. */
 const STEPS: Array<ThemeId | null> = [...THEME_IDS, null];
-
-let pathDataPolyfill: Promise<void> | null = null;
-function ensurePathData() {
-  if ('getPathData' in SVGPathElement.prototype) return Promise.resolve();
-  pathDataPolyfill ??= import('path-data-polyfill').then(() => undefined);
-  return pathDataPolyfill;
-}
 
 /** Browsers without declarative shadow DOM leave the template in place; attach it by hand. */
 function adoptTemplate(stage: HTMLElement): ShadowRoot | null {

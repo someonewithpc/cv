@@ -250,16 +250,9 @@ html.theme-transition {
 </style>
 
 <script>
-import { transformPath, pathDataToString } from '@/client/svg-utils';
+import { ensurePathData, transformPath, pathDataToString } from '@/client/svg-utils';
 import { THEME_STORAGE_KEY, THEMES, type ThemeId, type ThemeSettings } from '@/themes';
 
-
-let pathDataPolyfill: Promise<void> | null = null;
-function ensurePathData() {
-  if ('getPathData' in SVGPathElement.prototype) return Promise.resolve();
-  pathDataPolyfill ??= import('path-data-polyfill').then(() => undefined);
-  return pathDataPolyfill;
-}
 
 const inputs = [...document.querySelectorAll<HTMLInputElement>('#theme-picker input')];
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
