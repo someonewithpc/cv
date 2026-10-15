@@ -337,6 +337,8 @@ export class SpaceBuilderScene {
   private tagObject!: CSS2DObject;
   private tagEl!: HTMLDivElement;
   private tagMetrics: { theta: number; r: number; offset: number } | null = null;
+  /** {@link layoutChairs} for the current area and options; cleared whenever either changes. */
+  private layoutCache: ReturnType<typeof layoutChairs> | null = null;
   private tagSuppressed = false;
   private chairs: InstancedMesh | null = null;
   /** Individually drag-placed chairs (Add tool, no area) — accumulate, don't replace. */
@@ -728,9 +730,7 @@ export class SpaceBuilderScene {
   }
 
   getSnapshot(): SceneSnapshot {
-    const result = this.area
-      ? layoutChairs(this.area, this.options)
-      : { seats: 0, maxSeats: 0, valid: false, poses: [] };
+    const result = this.layout() ?? { seats: 0, maxSeats: 0, valid: false, poses: [] };
     return {
       area: this.area,
       options: {
@@ -746,6 +746,7 @@ export class SpaceBuilderScene {
   }
 
   setOptions(partial: Partial<LayoutOptions>) {
+    this.layoutCache = null;
     this.options = {
       ...this.options,
       ...partial,
@@ -775,6 +776,7 @@ export class SpaceBuilderScene {
 
   clearArea() {
     this.area = null;
+    this.layoutCache = null;
     this.selectGroup.visible = false;
     this.tagObject.visible = false;
     this.singlePoses = [];
@@ -786,6 +788,7 @@ export class SpaceBuilderScene {
 
   reset() {
     this.clearArea();
+    this.layoutCache = null;
     this.options = {
       ...DEFAULT_OPTIONS,
       blocks: { ...DEFAULT_OPTIONS.blocks },
@@ -804,11 +807,12 @@ export class SpaceBuilderScene {
   /** Hide the capacity tag regardless of seat count — for pages with no chairs loaded. */
   setTagSuppressed(suppressed: boolean) {
     this.tagSuppressed = suppressed;
-    this.updateTagPosition();
+    this.updateTag();
   }
 
   setArea(area: AreaRect) {
     this.area = { ...area };
+    this.layoutCache = null;
     this.selectGroup.visible = true;
     this.clampInnerDiameter();
     this.updateSelectVisual();
@@ -1777,10 +1781,9 @@ export class SpaceBuilderScene {
     this.handleByKey.left.position.set(-hw, 0, 0);
 
     const mat = this.selectMesh.material as MeshBasicMaterial;
-    const result = layoutChairs(this.area, this.options);
-    mat.color.set(result.valid ? 0x89ab22 : 0xf76d65);
+    mat.color.set(this.layout()?.valid ? 0x89ab22 : 0xf76d65);
     this.updateInnerGuide();
-    this.updateTagPosition();
+    this.updateTag();
   }
 
   private clampInnerDiameter() {
@@ -1789,6 +1792,7 @@ export class SpaceBuilderScene {
     const max = maxInnerDiameter(this.area, this.options);
     if (this.options.innerDiameter > max) {
       this.options.innerDiameter = max;
+      this.layoutCache = null;
     }
   }
 
@@ -1803,15 +1807,26 @@ export class SpaceBuilderScene {
     this.innerGuide.scale.set(radius, 1, radius);
   }
 
+  private layout() {
+    if (!this.area) return null;
+    this.layoutCache ??= layoutChairs(this.area, this.options);
+    return this.layoutCache;
+  }
+
+  /** Tag text and visibility, which only change with the area or options. */
+  private updateTag() {
+    const layout = this.layout();
+    const seats = layout && !this.tagSuppressed ? layout.seats : 0;
+    const text = tagContent(seats, this.options);
+    if (this.tagEl.textContent !== text) this.tagEl.textContent = text;
+    this.tagObject.visible = seats > 0;
+    this.updateTagPosition();
+  }
+
+  /** Camera-facing tag placement; runs on every orbit, pan and zoom step. */
   private updateTagPosition() {
     this.requestRender();
-    if (!this.area || this.tagSuppressed) {
-      this.tagObject.visible = false;
-      return;
-    }
-    const result = layoutChairs(this.area, this.options);
-    this.tagEl.textContent = tagContent(result.seats, this.options);
-    this.tagObject.visible = result.seats > 0;
+    if (!this.area || !this.tagObject.visible) return;
 
     const cameraAngle = this.spherical.theta;
     const h = this.area.depth;
@@ -1836,8 +1851,8 @@ export class SpaceBuilderScene {
 
   /** Area-packed poses (if any) plus every individually drag-placed chair. */
   private composedChairPoses(): ChairPose[] {
-    if (!this.area) return this.singlePoses;
-    const { poses } = layoutChairs(this.area, this.options);
+    const poses = this.layout()?.poses;
+    if (!poses) return this.singlePoses;
     return this.singlePoses.length ? [...poses, ...this.singlePoses] : poses;
   }
 
