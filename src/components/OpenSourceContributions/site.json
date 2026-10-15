@@ -333,7 +333,7 @@
         {
           "repository": "assimp/assimp",
           "title": "Fix build error",
-          "description": "Fix a spurious Assimp warning tracked in assimp#3222.",
+          "description": "Fixed a spurious Assimp warning tracked in assimp#3222.",
           "url": "https://github.com/assimp/assimp/pull/3555",
           "number": 3555,
           "updatedAt": "2020-12-24T15:48:21Z",
@@ -510,7 +510,7 @@
         {
           "repository": "Alexays/Waybar",
           "title": "feat(modules): add on-enter and on-leave events",
-          "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignores GTK's inferior crossings and latches on a hover flag so each command runs once per hover, and mirrors the `on-click` guard that keeps built-in actions from also running as shell commands.",
+          "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignored GTK's inferior crossings and latched on a hover flag so each command ran once per hover, and mirrored the `on-click` guard that keeps built-in actions from also running as shell commands.",
           "url": "https://github.com/Alexays/Waybar/pull/5312",
           "number": 5312,
           "updatedAt": "2026-09-23T20:51:37Z",
@@ -543,7 +543,7 @@
         {
           "repository": "git/git",
           "title": "rebase: add `--[no-]edit` to `--continue`",
-          "description": "Add `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening $EDITOR after resolving conflicts, with `--edit` to override the config for a single continue.",
+          "description": "Added `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening `$EDITOR` after resolving conflicts, with `--edit` to override the config for a single continue.",
           "url": "https://lore.kernel.org/git/20260721140443.1809379-1-hugo@hsal.es/T/#me10fd97f2d1bfcc869c6b71e41a22b9727bd2e24",
           "updatedAt": "2026-07-21",
           "stats": {
