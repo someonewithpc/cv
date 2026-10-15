@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { installProbes } from './support/pageProbes';
 import { demoStack, frontPage, frontPageIndex, pressTurn, turnToPage } from './support/paperStack';
 
 test.beforeEach(async ({ page }) => {
@@ -85,17 +86,9 @@ test('cube page: twelve edges, drawn in ink that stands off the grid on every th
   // Resolve the strip's ink and the sheet's grid colour on the same sheet, so the reading
   // follows the theme rather than the token names. The tokens are oklch mixes, and Chrome
   // keeps them in oklch when computed; a canvas turns both into sRGB bytes.
+  await installProbes(page);
   const colours = () => front.locator('section.blueprint').evaluate((sheet) => {
-    const rgb = (value: string) => {
-      const probe = document.createElement('span');
-      probe.style.color = value;
-      sheet.append(probe);
-      const context = document.createElement('canvas').getContext('2d')!;
-      context.fillStyle = getComputedStyle(probe).color;
-      context.fillRect(0, 0, 1, 1);
-      probe.remove();
-      return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
-    };
+    const rgb = (value: string) => window.e2eProbes!.srgba(value, sheet).slice(0, 3);
     const edge = sheet.querySelector('.scene .edge')!;
     return { ink: rgb(getComputedStyle(edge, '::before').backgroundColor), grid: rgb('var(--blueprint-grid)') };
   });
