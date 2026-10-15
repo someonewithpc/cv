@@ -43,7 +43,7 @@ test('the static inner pages carry their drawing', async ({ page }) => {
   await expect(listing).toContainText('<svg');
 });
 
-for (const name of ['Authored Path', 'Putting it all together']) {
+for (const name of ['Authored Path', 'Putting It All Together']) {
   test(`${name} page: its drawing animates once the page is turned to`, async ({ page }) => {
     const stack = visrezStack(page);
     await stack.scrollIntoViewIfNeeded();
@@ -130,7 +130,7 @@ test('cube page: every strip is cut to a point at each end, so the vertices join
 test('wrapping round to the first page brings its corner back whole at once', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Putting it all together');
+  await turnToPage(stack, 'Putting It All Together');
 
   await stack.evaluate((el) => {
     const w = window as Window & { cornerHits?: boolean[] };

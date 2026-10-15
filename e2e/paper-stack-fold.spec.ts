@@ -13,7 +13,7 @@ const DEMOS = [
       'Cube :)',
       'Authored Path',
       'Path Data',
-      'Putting it all together',
+      'Putting It All Together',
     ],
   },
   {
