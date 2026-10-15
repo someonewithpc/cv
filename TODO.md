@@ -307,3 +307,4 @@
 - [x] Fixed colours that ignore the theme: the note fold fallback, the Rails outline, the toast and key borders, the tagging grid body, the Paper Stack note, the cursor labels and the Variants cursor (S11) (#363)
 - [x] Keep component styles inside their component: the original logo's Illustrator classes, the Space Builder tag, the marker editor's font settings and the layout utilities (S15) (#366)
 - [x] End the Library Search result list above the title block at every width (#220 S23) (#372)
+- [ ] Start the Paper Stack fold when its setup is called after DOMContentLoaded but before load (#220 C25)
