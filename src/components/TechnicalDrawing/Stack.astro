@@ -125,7 +125,11 @@ const arrow = {
 $hint-fade: 400ms;
 
 // How far the resting crease reaches along the sheet's long side, for the stack and the hint layer.
-$paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
+$paper-clip-reach: clamp(
+  #{drawing.$paper-clip-reach-min}em,
+  #{drawing.$paper-clip-reach-share}cqw,
+  #{drawing.$paper-clip-reach-max}em
+);
 
 // The width container has to be an ancestor of the stack, not the stack itself: the stack is
 // what the aspect query below styles, and an element never matches a container it declares
@@ -212,11 +216,11 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
   --paper-clip-lean-x: calc(var(--paper-clip-reach) / 2);
   --paper-clip-lean-y: var(--paper-clip-reach);
 
-  @container technical-drawing-width (max-width: 40em) {
+  @container technical-drawing-width (max-width: #{drawing.$portrait-width}) {
     /* Portrait has to stack artwork, note and title block where landscape put
        them side by side, so take the height a phone actually has. */
-    --technical-drawing-aspect: 3 / 5;
-    max-height: min(36rem, 85svh);
+    --technical-drawing-aspect: #{drawing.$portrait-aspect};
+    max-height: min(#{drawing.$portrait-max-height}, #{drawing.$portrait-max-viewport});
 
     /* Transpose the paper clip with the page. The lean sets the resting crease,
        and the crease is what a flip folds the sheet along, so on a page this
@@ -230,17 +234,17 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
 }
 
 // A portrait sheet is as tall as the stack's portrait rule above makes it. The script names the
-// orientation the frame's width query picked; without script, the query's 40em is a 680px
-// window once the gutter is at its 1.25rem cap. The hint layer is the stack's sibling and
+// orientation the frame's width query picked; without script, the query's portrait width is a
+// $portrait-window once the gutter is at its 1.25rem cap. The hint layer is the stack's sibling and
 // places a hint on the sheet's bottom edge, so it takes the same height.
 :global(article.technical-drawing-stack[data-sheet-orientation='portrait']),
 :global(article.technical-drawing-stack[data-sheet-orientation='portrait']) ~ .flip-hints {
-  --sheet-block: min(var(--sheet-inline) * 5 / 3, 36rem, 85svh);
+  --sheet-block: min(var(--sheet-inline) * #{drawing.$portrait-height-per-width}, #{drawing.$portrait-max-height}, #{drawing.$portrait-max-viewport});
 }
 
-@media (scripting: none) and (width <= 680px) {
+@media (scripting: none) and (width <= #{drawing.$portrait-window}) {
   .technical-drawing-frame {
-    --sheet-block: min(var(--sheet-inline) * 5 / 3, 36rem, 85svh);
+    --sheet-block: min(var(--sheet-inline) * #{drawing.$portrait-height-per-width}, #{drawing.$portrait-max-height}, #{drawing.$portrait-max-viewport});
   }
 }
 
@@ -284,7 +288,7 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
   }
 
   @media (scripting: none) {
-    @container technical-drawing-width (max-width: 40em) {
+    @container technical-drawing-width (max-width: #{drawing.$portrait-width}) {
       @include portrait-lean;
     }
   }
@@ -306,7 +310,7 @@ $paper-clip-reach: clamp(2.75em, 7.5cqw, 4.5em);
   visibility: hidden;
   pointer-events: none;
 
-  @container technical-drawing-width (max-width: 40em) {
+  @container technical-drawing-width (max-width: #{drawing.$portrait-width}) {
     height: 2px;
   }
 }
@@ -460,7 +464,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
   }
 
   @media (scripting: none) {
-    @container technical-drawing-width (max-width: 40em) {
+    @container technical-drawing-width (max-width: #{drawing.$portrait-width}) {
       left: 3em;
     }
   }
