@@ -1,15 +1,12 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName, swipeStack } from './support/paperStack';
 import { expect, pageWait, SLOW_RATE, test } from './support/timeScale';
 
 const PAGES = ['GNU social · Event Dispatch', 'EventResult', 'Module Discovery', 'Build-Time Guard'];
 
 function eventBusStack(page: Page) {
-  // By title, not by position: the demos run gains stacks over time.
-  return page.locator('article.technical-drawing-stack').filter({
-    has: page.locator('h2.typewriter', { hasText: 'GNU social · Event Dispatch' }),
-  });
+  return demoStack(page, 'GNU social · Event Dispatch');
 }
 
 async function mountedBus(page: Page) {
