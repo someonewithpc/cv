@@ -50,6 +50,7 @@ const demoPlaying = ref(false);
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
+let stopCommands: (() => void) | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let stopPointers: (() => void) | null = null;
@@ -406,7 +407,7 @@ onMounted(async () => {
       }
     });
 
-    onAutoplayCommand(root, (command) => {
+    stopCommands = onAutoplayCommand(root, (command) => {
       if (command === 'pause') yieldToUser();
       else restartDemo();
     });
@@ -425,6 +426,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  stopCommands?.();
+  stopCommands = null;
   reduceQuery.removeEventListener('change', onReduceChange);
   stopPageWatch?.();
   stopPageWatch = null;

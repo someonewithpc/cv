@@ -36,6 +36,7 @@ const readout = ref<{ theta: string; r: string; offset: string } | null>(null);
 const sceneRef = shallowRef<SpaceBuilderScene | null>(null);
 let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
+let stopCommands: (() => void) | null = null;
 let stopClockWatch: (() => void) | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
@@ -285,7 +286,7 @@ onMounted(async () => {
     });
     stopClockWatch = documentGate().onChange(() => applyOrbitState());
 
-    onAutoplayCommand(root, (command) => {
+    stopCommands = onAutoplayCommand(root, (command) => {
       // Reset under reduced motion leaves the orbit still, as the deck says.
       if (command === 'pause' || reducedMotion(root)) pauseForManualControl();
       else if (!playing.value) togglePlay();
@@ -303,6 +304,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  stopCommands?.();
+  stopCommands = null;
   reduceQuery.removeEventListener('change', onReduceChange);
   stopClockWatch?.();
   stopClockWatch = null;

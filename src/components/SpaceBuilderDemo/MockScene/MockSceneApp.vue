@@ -142,6 +142,7 @@ let handoffTimer: ReturnType<typeof setTimeout> | null = null;
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 let stopPageWatch: (() => void) | null = null;
 let stopNoteWatch: (() => void) | null = null;
+let stopCommands: (() => void) | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
 const activePointers = new Map<number, ScreenPoint>();
 let pinch: PinchState | null = null;
@@ -887,7 +888,7 @@ onMounted(async () => {
       }
     });
 
-    onAutoplayCommand(root, (command) => {
+    stopCommands = onAutoplayCommand(root, (command) => {
       syncReducedMotion();
       if (command === 'reset') {
         restartDemo();
@@ -921,6 +922,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  stopCommands?.();
+  stopCommands = null;
   reduceQuery.removeEventListener('change', onReduceChange);
   window.removeEventListener('scroll', forgetRootRect);
   window.removeEventListener('resize', forgetRootRect);
