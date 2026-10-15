@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import cx from 'classnames';
 
 import { useDebounce } from './useDebounce';
@@ -38,6 +38,8 @@ export function SubForm(
   { visible: boolean, notEmpty: boolean, status: string, children: ReactNode }
 ) {
   const [hasFocus, setHasFocus] = useState(false);
+  const swapTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(swapTimer.current), []);
 
   return (
     <fieldset
@@ -45,15 +47,20 @@ export function SubForm(
       onFocus={() => setHasFocus(true)}
       onBlur={() => setHasFocus(false)}
       onAnimationStart={(e) => {
+        // Animations inside the fieldset bubble up here too
+        if (e.target !== e.currentTarget) return;
         // The pending loop eases in, then goes linear at the point where the bezier
         // already is, so the orbit has no seam. currentTarget changes once the event has
         // bubbled, so capture it first
         const target = e.currentTarget;
-        setTimeout(() => {
+        window.clearTimeout(swapTimer.current);
+        swapTimer.current = window.setTimeout(() => {
           target.style.setProperty('animation-timing-function', 'linear');
         }, STATUS_BORDER_DURATION * STATUS_BORDER_SWAP_AT);
       }}
       onAnimationEnd={(e) => {
+        if (e.target !== e.currentTarget) return;
+        window.clearTimeout(swapTimer.current);
         e.currentTarget.style.removeProperty('animation-timing-function');
       }}
     >
