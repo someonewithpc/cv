@@ -792,7 +792,7 @@ const measure = new ResizeObserver((entries) => {
     const wide = inlineSize >= SHEET_WIDE_EM * em;
     // Both only when they actually change. Writing the same value back is still an attribute
     // write, and this page carries enough `:has()` rules that any attribute change invalidates
-    // every element in the document (see PR #50).
+    // every element in the document.
     const orientation = portrait ? 'portrait' : 'landscape';
     if (stack.dataset.sheetOrientation !== orientation) stack.dataset.sheetOrientation = orientation;
     const band = wide ? 'wide' : 'narrow';
