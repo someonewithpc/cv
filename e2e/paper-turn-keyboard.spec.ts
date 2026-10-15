@@ -45,7 +45,7 @@ async function turnTiming(page: Page, stack: Locator, key: string): Promise<{ co
   });
 }
 
-test('marker editor: an arrow key commits the turn without waiting', async ({ page }) => {
+test('marker editor: an arrow key commits the turn without waiting', { tag: '@perf' }, async ({ page }) => {
   const stack = demoStack(page, 'Interactive Map Marker Editor');
   await stack.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);

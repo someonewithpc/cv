@@ -12,7 +12,7 @@ const WIDE = { width: 1440, height: 900 };
 const DOCKED = { width: 900, height: 900 };
 const BUDGET_SECONDS = 0.5;
 
-test('narrowing the window and widening it again lays the page out quickly', async ({ page }) => {
+test('narrowing the window and widening it again lays the page out quickly', { tag: '@perf' }, async ({ page }) => {
   await page.setViewportSize(WIDE);
   await page.goto('/');
   await page.waitForTimeout(2000);
