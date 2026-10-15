@@ -327,4 +327,4 @@
 - [x] Share the e2e helpers the specs each copied: the deck placement and takeover, scene ready and catalog, carousel arrow, dog-ear grip, sheet margin, contrast, and the in-page length and colour probes (#220 E28) (#489)
 - [ ] Drop the title-fit-1 container rule that title-fit-2's identical range always covered (#220 C23)
 - [x] Drop the title-fit-1 container rule that title-fit-2's identical range always covered (C23) (#418)
-- [ ] Delete the unused svgo.config.mjs, the unused pencil and undo-2 lucide icons and the lodash-es/throttle pre-bundle (#220 C67)
+- [x] Delete the unused svgo.config.mjs, the unused pencil and undo-2 lucide icons and the lodash-es/throttle pre-bundle (#220 C67) (#433)
