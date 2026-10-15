@@ -181,6 +181,22 @@ const SWIPE_START = 8;
 const THROW_WINDOW_MS = 100;
 const THROW_COAST_MS = 120;
 
+// A glide to a target runs its base time plus one ms per GLIDE_PX_PER_MS of travel, at most
+// GLIDE_EXTRA_MS over the base and at least GLIDE_MIN_MS, so a nudge stays quick.
+const GLIDE_PX_PER_MS = 3;
+const GLIDE_EXTRA_MS = 500;
+const GLIDE_MIN_MS = 120;
+
+// A landing back onto the stack takes LANDING_MS for the whole approach and never less than
+// LANDING_MIN_MS.
+const LANDING_MS = 400;
+const LANDING_MIN_MS = 100;
+
+// A flip takes FLIP_BASE_MS plus one ms per two px of tip travel, between FLIP_MIN_MS and FLIP_MAX_MS.
+const FLIP_BASE_MS = 300;
+const FLIP_MAX_MS = 1400;
+const FLIP_MIN_MS = 200;
+
 const rotateVec = (v: Vec, angle: number): Vec => {
   const c = Math.cos(angle), s = Math.sin(angle);
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
@@ -953,7 +969,7 @@ const glideFoldTip = (
   const { x: fx, y: fy } = foldSizeOf(sheet);
   const from = foldTipFromSize(fx, fy);
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
-  const duration = glideMs(Math.max(Math.min(baseMs + distance / 3, baseMs + 500, coastMs(distance, thrown)), 120));
+  const duration = glideMs(Math.max(Math.min(baseMs + distance / GLIDE_PX_PER_MS, baseMs + GLIDE_EXTRA_MS, coastMs(distance, thrown)), GLIDE_MIN_MS));
 
   let frame = 0;
   const start = performance.now();
@@ -1089,7 +1105,7 @@ const glideLanding = (
   // Duration in proportion to the flight left to run, so a barely-started approach lays back
   // down quickly instead of crawling
   const distance = Math.hypot(from.x - to.x, from.y - to.y);
-  const duration = glideMs(Math.max(ms * distance / Math.hypot(seed.x, seed.y), 100));
+  const duration = glideMs(Math.max(ms * distance / Math.hypot(seed.x, seed.y), LANDING_MIN_MS));
   let frame = 0;
   const start = performance.now();
   const step = (now: number) => {
@@ -1684,7 +1700,7 @@ const flipFold = (sheet: HTMLElement, section: HTMLElement, fold: HTMLElement, t
   // full tilt, so the ease-out's opening speed stays roughly the same wherever the hand lets go —
   // unless the hand let go faster than that, in which case the flip sets off at the speed it was
   // thrown at. The crease covers half the ground the tip does, so the throw reaches it halved.
-  const duration = glideMs(Math.max(Math.min(300 + total / 2, 1400, coastMs(total, thrown / 2)), 200));
+  const duration = glideMs(Math.max(Math.min(FLIP_BASE_MS + total / 2, FLIP_MAX_MS, coastMs(total, thrown / 2)), FLIP_MIN_MS));
   const home = { x: width, y: height };
 
   let settling = false;
@@ -1754,7 +1770,7 @@ const bringFold = (
   const d1 = Math.hypot(over.x - from.x, over.y - from.y) / 2;
   const d2 = Math.hypot(seed.x - rest.x, seed.y - rest.y) / 2;
   const total = d1 + d2;
-  const duration = glideMs(Math.max(Math.min(300 + total / 2, 1400), 200));
+  const duration = glideMs(Math.max(Math.min(FLIP_BASE_MS + total / 2, FLIP_MAX_MS), FLIP_MIN_MS));
 
   let promoted = false;
   const promote = () => {
@@ -1958,7 +1974,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       finishFlip(sheet, section, fold);
       restIdleFold(front);
     };
-    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.t, home, 400, finish);
+    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.t, home, LANDING_MS, finish);
     return () => {
       cancelGlide();
       if (!done) finish();
@@ -1982,7 +1998,7 @@ const attachFoldDrag = (fold: HTMLElement, grab: HTMLElement) => {
       sheet.insertBefore(grab, sheet.querySelector('.paper-flip-hint'));
       cancelSettleFold = settleFold(sheet, section, fold);
     };
-    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.t, tip, 400, finish);
+    const cancelGlide = glideLanding(sheet, section, fold, approach.seed, approach.t, tip, LANDING_MS, finish);
     return () => {
       cancelGlide();
       if (!done) finish();
