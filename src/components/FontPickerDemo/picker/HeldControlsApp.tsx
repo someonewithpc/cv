@@ -123,6 +123,16 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     const page = el.closest<HTMLElement>('article.technical-drawing-stack > * > section') ?? el;
     setHost(page);
 
+    // The page's rect, read once and kept until a scroll, a resize or the sheet's own box
+    // changes: the sliders never move the page itself
+    let pageRectCache: DOMRect | null = null;
+    const pageRect = () => (pageRectCache ??= page.getBoundingClientRect());
+    const invalidatePageRect = () => { pageRectCache = null; };
+    window.addEventListener('scroll', invalidatePageRect, { passive: true });
+    window.addEventListener('resize', invalidatePageRect);
+    const pageResize = new ResizeObserver(invalidatePageRect);
+    pageResize.observe(page);
+
     const slider = (side: Side) => el.querySelector<HTMLInputElement>(`[data-demo-target="size-${side}"]`);
 
     // Where the thumb sits for a value: the track is inset by the thumb's radius
@@ -143,9 +153,9 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
 
       // Kept against the sheet, not the viewport: a page that scrolls under the walkthrough
       // would otherwise slide the hand up the column
-      const holdY = thumb(input).y - page.getBoundingClientRect().top;
+      const holdY = thumb(input).y - pageRect().top;
       const ride = (value: number, flags: Partial<CursorState> = { dragging: true }) => {
-        run.appear({ x: thumb(input, value).x, y: page.getBoundingClientRect().top + holdY }, flags);
+        run.appear({ x: thumb(input, value).x, y: pageRect().top + holdY }, flags);
       };
 
       // The line the drag started on, left on the sheet while it runs, and a dimension from it
@@ -153,7 +163,7 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
       const column = input.closest<HTMLElement>('.column')!;
       const [plain, held] = el.querySelectorAll<HTMLElement>('.column');
       const mark = () => {
-        const sheet = page.getBoundingClientRect();
+        const sheet = pageRect();
         const box = column.getBoundingClientRect();
         setGrab({
           top: holdY,
@@ -212,12 +222,12 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
           return;
         }
         window.clearTimeout(fadeTimer);
-        const rect = page.getBoundingClientRect();
+        const rect = pageRect();
         drawn.show(state, rect);
       },
       () => {},
       async (run) => {
-        const sheet = page.getBoundingClientRect();
+        const sheet = pageRect();
         run.appear({ x: sheet.left + sheet.width * 0.2, y: sheet.bottom + 80 });
         await run.wait(300);
       },
@@ -325,6 +335,9 @@ function Walkthrough({ root }: { root: React.RefObject<HTMLDivElement | null> })
     motionQuery.addEventListener('change', onMotionChange);
 
     return () => {
+      window.removeEventListener('scroll', invalidatePageRect);
+      window.removeEventListener('resize', invalidatePageRect);
+      pageResize.disconnect();
       motionQuery.removeEventListener('change', onMotionChange);
       stopCommands();
       stopPageWatch();
