@@ -65,6 +65,15 @@ function playwrightFirefox(): string | undefined {
     .find((path) => existsSync(path));
 }
 const PLAYWRIGHT_FIREFOX = playwrightFirefox();
+
+// A missing Firefox drops its project without a word, and the suite reports green with less
+// coverage. Workers load this file too, so only the runner process says so.
+function warnMissing(project: string, found: string | undefined, how: string) {
+  if (found || process.env.TEST_WORKER_INDEX !== undefined) return;
+  console.warn(`[playwright] The "${project}" project is skipped: ${how}.`);
+}
+warnMissing('firefox-noscript', FIREFOX, 'no firefox on PATH');
+warnMissing('firefox', PLAYWRIGHT_FIREFOX, 'no Playwright Firefox build found, run `npx playwright install firefox`');
 // The no-script and layout specs worth a second engine. FF1's chain line is checked here; FF3
 // and FF4 stay in firefox-noscript above. Tests that need the DevTools protocol or WebGL skip
 // themselves in Firefox, and the ones it fails today are marked fixme there.
