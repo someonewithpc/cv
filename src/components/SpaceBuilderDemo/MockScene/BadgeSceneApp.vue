@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
     class="badge-scene-app"
     role="group"
     :data-ready="ready ? 'true' : 'false'"
-    aria-label="Capacity Badge demo — auto-orbiting to show the tag tracking the camera; drag to take over"
+    aria-label="Capacity Badge demo. Auto-orbiting to show the tag tracking the camera, drag to take over"
   >
     <canvas data-scene-canvas class="scene-canvas" aria-label="SelectArea with a camera-relative capacity tag" />
     <div data-label-host class="label-host" />
@@ -350,7 +350,7 @@ onBeforeUnmount(() => {
           <span class="fail-tag">48 seats</span>
         </div>
       </div>
-      <p class="fail-note">Buried under the box on orbit — not what shipped.</p>
+      <p class="fail-note">Buried under the box on orbit. Not what shipped.</p>
     </figure>
 
     <div v-if="ready && !loadError && readout" class="math-card">
