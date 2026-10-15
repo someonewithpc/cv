@@ -526,7 +526,7 @@
         {
           "repository": "cheapestinference/claude-auto-retry",
           "title": "Package as a Nix flake (NixOS + home-manager modules)",
-          "description": "Packaged claude-auto-retry as a Nix flake with NixOS and home-manager modules that build from source and manage the shell wrapper, reconcile timer, and `StopFailure` hook through real options instead of `npm i -g`. Also fixed the wrapper clobbering each tmux pane's `TERM`.",
+          "description": "Packaged claude-auto-retry as a Nix flake with NixOS and home-manager modules that build from source and manage the shell wrapper, the reconcile timer, and the `StopFailure` hook through real options instead of `npm i -g`. Also fixed the wrapper clobbering each tmux pane's `TERM`.",
           "url": "https://github.com/cheapestinference/claude-auto-retry/pull/82",
           "number": 82,
           "updatedAt": "2026-09-08T13:00:47Z",
@@ -901,7 +901,7 @@
         {
           "repository": "NixOS/nixpkgs",
           "title": "gtk4: 4.22.4 -> 4.22.5",
-          "description": "Bumped gtk4 to 4.22.5 for upstream's munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged. Closed as a duplicate of #559510, the GNOME 51 update on staging, which takes gtk4 to 4.24.0.",
+          "description": "Bumped gtk4 to 4.22.5 for the upstream munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged. Closed as a duplicate of #559510, the GNOME 51 update on staging, which takes gtk4 to 4.24.0.",
           "url": "https://github.com/NixOS/nixpkgs/pull/561695",
           "number": 561695,
           "updatedAt": "2026-09-21T21:36:00Z",
