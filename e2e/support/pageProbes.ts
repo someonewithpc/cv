@@ -44,12 +44,17 @@ const define = () => {
   };
 };
 
+const wired = new WeakSet<Page>();
+
 /**
  * Puts `window.e2eProbes` into the page now and into every page it loads after, for use inside
  * `evaluate`. The themes name their colours in oklch and the sheets write lengths as
  * expressions, which no string work turns into pixels or sRGB; the browser already knows how.
  */
 export async function installProbes(page: Page): Promise<void> {
-  await page.addInitScript(define);
+  if (!wired.has(page)) {
+    wired.add(page);
+    await page.addInitScript(define);
+  }
   await page.evaluate(define);
 }
