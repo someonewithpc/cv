@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { demoStack, frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack, turnToPage } from './support/paperStack';
+import { pageWait, test as paced } from './support/timeScale';
 
 const PAGES = ['Theme Picker', 'The Wipe', 'The Wipe in Code', 'Token Layers', 'Default and Override'];
 
@@ -214,5 +215,23 @@ test.describe('without script', () => {
     expect(await sheet.locator('[data-stage]').evaluate((el) => !!el.shadowRoot && !el.querySelector('template'))).toBe(true);
     await expect(screen(sheet)).not.toHaveAttribute('data-demo-theme');
     await expect.poll(() => screen(sheet).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('oklch(0.323 0.044 139)');
+  });
+});
+
+paced.describe('keyboard handover', () => {
+  paced.use({ walkthroughRate: 4 });
+
+  paced('main page: focus on a stage key takes the walkthrough over and the quiet spell does not give it back', { tag: '@handover' }, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    const sheet = await mountedSheet(page);
+    await expect(sheet).toHaveAttribute('data-autoplay-state', 'playing');
+
+    await stageKey(sheet, 'arctic').focus();
+    await expect(sheet).toHaveAttribute('data-autoplay-state', 'user');
+
+    // Past the 6 s quiet spell and the longest hold, with focus still on the key.
+    await pageWait(page, 6_000 + 2_800);
+    await expect(sheet).toHaveAttribute('data-autoplay-state', 'user');
   });
 });
