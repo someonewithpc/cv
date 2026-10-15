@@ -248,6 +248,7 @@ export class AutoPlayController {
   private stepInFlight: number | null = null;
   private presetIndex = 0;
   private demoMarkerIds: Array<MarkerType['id'] | null> = DEMO_PRESETS.map(() => null);
+  private readonly stepsBySlot: Step[][] = [];
   private sessionIsCreate = false;
   private readonly dispatch: AppDispatch;
   private readonly getState: () => RootState;
@@ -739,7 +740,12 @@ export class AutoPlayController {
     ];
   }
 
+  /** Built once per preset. The drag steps are the only part that reads the preset at build time. */
   private get steps(): Step[] {
+    return (this.stepsBySlot[this.slotIndex()] ??= this.buildSteps());
+  }
+
+  private buildSteps(): Step[] {
     const preset = () => this.currentPreset();
     const primary = () => preset().primarySpaceId;
     const secondary = () => preset().secondarySpaceId;
