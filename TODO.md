@@ -11,6 +11,7 @@
   - [x] Theme Picker animation switching doesn't work (#4)
   - [x] Desk base colour matches the wood veneer's own average (#145): each theme bakes its wood into one tile and paints that tile's average under it
   - [x] Browser chrome (DevTools device frame, Android, Safari) takes the picked theme's page colour (#237)
+  - [ ] E2E specs take the theme list and storage key from src/themes instead of hard-coding them (#220 E27)
 - [x] Tech icon cloud
   - [x] SVG icon in light mode broken
   - [x] More tools (Cursor, Claude Code, Cloudflare, AWS, K8s, LE, TreeSitter, …)
