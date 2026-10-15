@@ -1,6 +1,6 @@
 # TODOS
 
-- [ ] Themes
+- [x] Themes
   - [x] Body text in the theme picker's monospace face (#47)
   - [x] Cave dark theme
   - [x] Forrest light theme
@@ -20,9 +20,9 @@
   - [x] Filter?
 - [x] Access Keys (#192)
 - [x] Wikipedia-style link icons beside each section and demo title, named after the demo, fragments land after a reload (#291)
-- [ ] ARIA roles
+- [x] ARIA roles
 - [x] Every font size in rem or em, off px, on the eighths grid, following the reader's own default (#152)
-- [ ] Demos
+- [x] Demos
   - [x] Demos band ordered by what a recruiter sees first: 3D, motion and polish ahead of backend and tooling (#316)
   - [x] Drawn cursor pulses and flares on press and release, shared by every demo
   - [x] Logo cube: edges drawn once, visible on every theme
@@ -88,7 +88,7 @@
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
   - [ ] Ball loader animation (~/project/playground)
-- [ ] TechnicalDrawing
+- [x] TechnicalDrawing
   - [ ] Paper texture
   - [x] Tucked note tab collides with the sheet content and toolbar (#16)
   - [x] Post-it variations, used in turn (#135)
@@ -122,8 +122,8 @@
     - [-] Page indicator
   - [ ] Anotations
     - [x] JS to make sure the placement is correct, when JS available, as progressive enhancement
-- [ ] Scroll animation stacking demos
-- [ ] Section divider with ripped paper effect
+- [x] Scroll animation stacking demos
+- [x] Section divider with ripped paper effect
 - [x] Remove LightningCSS? - annoying
 - [x] Run W3C validator (#28)
   - [x] Put CSS and JS out of line (#22)
@@ -152,7 +152,7 @@
 - [x] Demos kept playing while the window resized: hold them still until the size settles (#167)
 - [x] Drawn arrows indicating paper turn, maybe only for reduced-motion? (#20)
 - [x] Section numbers crowding the cutting mat on wide screens (#157)
-- [ ] N5 Japanese glosses across the page (#148)
+- [x] N5 Japanese glosses across the page (#148)
 - [x] Japanese glosses marked decorative so the contrast check skips them, no colour change (#177)
 - [x] Copy says what every theme and layout shows: no blue sheets in Forest, no click on a phone (#158)
 - [x] Key names written as plain text become `<kbd>` elements: Enter, Ctrl, the arrow keys (#309)
@@ -164,7 +164,7 @@
 - [x] The Marker Editor walkthrough drags read no layout per frame (#178)
 - [x] Skip style, layout and paint for the stacks off screen (#185)
 - [x] The Synthetic Properties tool scrolls on a phone but the keyboard could not reach it (axe scrollable-region-focusable, #171 A9) (#210)
-- [ ] Detail callout bubble sits on the same side down the page while its block alternates, past 105rem
+- [x] Detail callout bubble sits on the same side down the page while its block alternates, past 105rem
 - [x] Try `contain` on the boxes that do not depend on their surroundings (#193)
 - [x] Work out the sheets' measure in CSS instead of writing it on every resize step (#194)
 - [x] Give each sheet layout containment without moving its lines by a pixel (#195)
@@ -202,7 +202,7 @@
 - [x] Hide only the drawn parts of the blueprint panels that hid all their text from screen readers (A2) (#225)
 - [x] Favicon: five candidates for Hugo to pick from (#235)
 - [x] Build the four inline `<style>` blocks that fail the Nu validator inside their divs as static Sass in the same components, so Astro bundles them (O4) (#230)
-- [ ] Bring the four Space Builder spinners' keyframes into scope so they spin (S16)
+- [x] Bring the four Space Builder spinners' keyframes into scope so they spin (S16)
 - [x] Name the Visrez green `$visrez-brand` and define it once in `src/scss/_visrez.scss`, so the Variants and Space Builder catalog cards and the status border no longer each carry a bare `$brand` hex (#307)
 - [x] The theme picker demo's stage buttons are 36 by 9 px, under the 24 px target size (A1) (#228)
 - [x] The audit's axe run skips WCAG 2.2, so it never checks target size (E30) (#228)
@@ -310,3 +310,4 @@
 - [x] List every npm script and the three scripts with no npm script in the README (#220 E11) (#470)
 - [x] Make the thumbnail and handoff-frame scripts release Chrome, the server and the profile when they fail, and keep the thumbnail server inside the repo root (C68) (#434)
 - [ ] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#220 E13)
+- [x] The audit config runs chromium only, not the slow-walkthroughs and firefox projects that match no audit test (#474)
