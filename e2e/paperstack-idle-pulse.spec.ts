@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { armDrawCounter, demoStack, dogEarShown, frontPage, frontPageIndex, frontPageName, sceneDraws } from './support/paperStack';
+import { framesPass } from './support/steady';
 
 /**
  * The resting dog-ear breathes on a loop (the fold pulse in PaperStack/index.astro). It used to
@@ -38,13 +39,11 @@ test('the resting dog-ear breathes only on a stack that is on screen', async ({ 
 
   // The foot of the page, nowhere near the first stack however many demos come after it.
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await page.waitForTimeout(1000);
-  expect(await pulseStates(first)).toEqual(PAUSED);
+  await expect.poll(() => pulseStates(first), { timeout: 5_000 }).toEqual(PAUSED);
 
   // Back in view, and the tease picks up where it left off.
   await first.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1000);
-  expect(await pulseStates(first)).toEqual(RUNNING);
+  await expect.poll(() => pulseStates(first), { timeout: 5_000 }).toEqual(RUNNING);
 });
 
 test('a page turn leaves the new front page breathing', async ({ page }) => {
@@ -53,7 +52,7 @@ test('a page turn leaves the new front page breathing', async ({ page }) => {
 
   const stack = page.locator('article.technical-drawing-stack').first();
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1000);
+  await dogEarShown(stack);
   const before = await frontPageName(stack);
 
   await stack.evaluate((el) => (el as HTMLElement).focus());
@@ -155,7 +154,7 @@ async function takeFlap(stack: Locator): Promise<{ x: number, y: number }> {
     });
     if (!point) continue;
     await page.mouse.move(point.x, point.y);
-    await page.waitForTimeout(150);
+    await framesPass(page);
     const held = await stack.evaluate(
       (el, at) => document.elementFromPoint(at.x, at.y) === el.querySelector('.paper-fold'),
       point,
