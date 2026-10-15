@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { contrast, type Rgb } from './support/colour';
+import { installProbes } from './support/pageProbes';
 import { demoStack, frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack } from './support/paperStack';
 
 const PAGES = ['web-ts-mode', 'Parser Ranges', 'Selector Depth Hue', 'Doctor Report'];
@@ -231,17 +232,9 @@ for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
     await page.goto('/');
 
     const scale = webTsStack(page).locator('.scale');
+    await installProbes(page);
     const { paper, levels } = await scale.evaluate((plate) => {
-      // Any CSS colour to sRGB bytes, the way it lands on the screen.
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = 1;
-      const context = canvas.getContext('2d', { willReadFrequently: true })!;
-      const bytes = (color: string) => {
-        context.clearRect(0, 0, 1, 1);
-        context.fillStyle = color;
-        context.fillRect(0, 0, 1, 1);
-        return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
-      };
+      const bytes = (color: string) => window.e2eProbes!.srgba(color).slice(0, 3);
       const paper = bytes(getComputedStyle(plate).backgroundColor);
       const levels = [...plate.querySelectorAll('.swatch')].map((swatch) => bytes(getComputedStyle(swatch).backgroundColor));
       return { paper, levels };
