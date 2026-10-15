@@ -2,6 +2,7 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 import sharp from 'sharp';
 
 import { demoStack, dogEarShown, swipeStack } from './support/paperStack';
+import { framesPass, steady } from './support/steady';
 
 type Rgb = readonly [number, number, number];
 
@@ -215,7 +216,6 @@ const armed = (page: Page, index: number) => page.evaluate((i) => {
 
 test('the way out points square at the middle of the dog-ear crease', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(1200);
 
   const forward = await peelHintShown(page);
   expect(forward.painted).toBe(true);
@@ -238,11 +238,10 @@ test('the way out points square at the middle of the dog-ear crease', async ({ p
 
 test('the top stack alone carries the hints', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(1200);
 
   const frames = await page.locator('.technical-drawing-frame').count();
   expect(frames).toBeGreaterThanOrEqual(2);
-  expect(await armed(page, 0)).toBe(true);
+  await expect.poll(() => armed(page, 0)).toBe(true);
   for (let i = 1; i < frames; i += 1) {
     expect(await armed(page, i), `stack ${i}`).toBe(false);
   }
@@ -250,11 +249,9 @@ test('the top stack alone carries the hints', async ({ page }) => {
 
 test('a turn hands over to the way back, which points at the folded-away crease', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(800);
 
   const stack = page.locator('article.technical-drawing-stack').first();
   await stack.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(500);
 
   await swipeStack(page, stack, true);
   await expect(stack).toHaveAttribute('data-paper-turned', '');
@@ -291,11 +288,9 @@ test.describe('with motion allowed', () => {
 
   test('the way back waits for the turned page to settle, then types itself out', async ({ page }) => {
     await page.goto('/');
-    await page.waitForTimeout(1200);
 
     const stack = page.locator('article.technical-drawing-stack').first();
     await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
     const backHint = page.locator('.technical-drawing-frame').first().locator('.flip-hint--back.hint-words');
     const opacity = () => backHint.evaluate((el) => Number(getComputedStyle(el).opacity));
     const letters = backHint.locator('.hint-letter');
@@ -365,7 +360,6 @@ test.describe('with motion allowed', () => {
   // on the page until the line has come up past the quarter mark of the viewport.
   test('the peel hint waits to be scrolled to, then types itself out', async ({ page }) => {
     await page.goto('/');
-    await page.waitForTimeout(1200);
 
     const frame = page.locator('.technical-drawing-frame').first();
     const hint = frame.locator('.flip-hint--fwd.hint-words');
@@ -380,7 +374,8 @@ test.describe('with motion allowed', () => {
       const box = document.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
       window.scrollTo(0, scrollY + box.top - innerHeight + 40);
     });
-    await page.waitForTimeout(600);
+    // The mark comes from an intersection observer, which reports in the frame after the scroll.
+    await framesPass(page);
     expect(await frame.evaluate((el) => el.hasAttribute('data-hint-seen'))).toBe(false);
     expect(await opacity('hint-words')).toBe(0);
     expect(await opacity('hint-arrow')).toBe(0);
@@ -399,15 +394,16 @@ test.describe('with motion allowed', () => {
     expect(marks.lastAt, 'the arrow follows the last letter').toBeLessThan(marks.arrowAt);
     const allShown = () => letters.evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1'));
     await expect.poll(allShown, { timeout: 3000 }).toBe(true);
+    await expect.poll(() => opacity('hint-arrow'), { timeout: 3000 }).toBe(1);
 
     // Scrolling away and back finds it written, not writing
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(400);
+    await framesPass(page);
     await page.evaluate(() => {
       const words = document.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect();
       window.scrollTo(0, scrollY + words.top - innerHeight / 2);
     });
-    await page.waitForTimeout(200);
+    await framesPass(page);
     expect(await allShown()).toBe(true);
     expect(await opacity('hint-arrow')).toBe(1);
   });
@@ -468,6 +464,11 @@ function placed(page: Page, way: 'fwd' | 'back'): Promise<Place> {
   }, way);
 }
 
+const frameBox = (page: Page) => page.locator('.technical-drawing-frame').first().evaluate((el) => {
+  const { x, y, width, height } = el.getBoundingClientRect();
+  return { x, y, width, height };
+});
+
 const sizes = [
   { width: 360, height: 780 },
   { width: 390, height: 844 },
@@ -484,24 +485,22 @@ test('each arrow runs from its words to the middle of its crease at every width'
   // below, so the same marker.
   test.slow();
   await page.goto('/');
-  await page.waitForTimeout(1200);
 
   const stack = page.locator('article.technical-drawing-stack').first();
   for (const way of ['fwd', 'back'] as const) {
     if (way === 'back') {
       await stack.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(500);
       await swipeStack(page, stack, true);
       await expect(stack).toHaveAttribute('data-paper-turned', '');
       await backArrowShown(page);
     }
     for (const size of sizes) {
       await page.setViewportSize(size);
-      await page.waitForTimeout(700);
       const label = `${way} at ${size.width}`;
 
       // The peel hint is written when it is scrolled to, so bring it into view at each width.
-      const arrow = way === 'fwd' ? await peelHintShown(page) : await aim(page, way);
+      if (way === 'fwd') await peelHintShown(page);
+      const arrow = await steady(page, () => aim(page, way));
       expect(arrow.painted, `${label} painted`).toBe(true);
       expect(arrow.tailToWords, `${label} tail at the words`).toBeLessThan(12);
       expect(arrow.tipToMiddle, `${label} tip on the crease's middle`).toBeLessThan(6);
@@ -512,11 +511,10 @@ test('each arrow runs from its words to the middle of its crease at every width'
 
 test('both hints sit in the gap beside the stack at every width', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(1200);
 
   for (const size of sizes) {
     await page.setViewportSize(size);
-    await page.waitForTimeout(700);
+    await steady(page, () => frameBox(page));
     const label = `at ${size.width}`;
 
     for (const way of ['fwd', 'back'] as const) {
@@ -525,9 +523,8 @@ test('both hints sit in the gap beside the stack at every width', async ({ page 
         const frame = document.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
         window.scrollTo(0, scrollY + (which === 'fwd' ? frame.bottom : frame.top) - innerHeight / 2);
       }, way);
-      await page.waitForTimeout(300);
 
-      const place = await placed(page, way);
+      const place = await steady(page, () => placed(page, way));
       expect(place.onSheet, `${way} on the sheet ${label}`).toBeLessThan(0.3);
       expect(place.toNeighbour, `${way} room to the neighbour ${label}`).toBeGreaterThan(8);
       expect(place.inView, `${way} in view ${label}`).toBeGreaterThanOrEqual(0);
@@ -551,17 +548,21 @@ test('the hint reads against the page in every theme and at every width', async 
   for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
     await page.evaluate((name) => localStorage.setItem('cv-theme', name), theme);
     await page.reload();
-    await page.waitForTimeout(1200);
 
     for (const size of contrastSizes) {
       await page.setViewportSize(size);
+      await steady(page, () => frameBox(page));
       await page.evaluate(() => {
         const frame = document.querySelector('.technical-drawing-frame')!.getBoundingClientRect();
         window.scrollTo(0, scrollY + frame.bottom - innerHeight / 2);
       });
-      await page.waitForTimeout(700);
+      // The halo under the ink is what is measured, and it comes in with the hint.
+      await expect.poll(async () => {
+        const forward = await aim(page, 'fwd');
+        return forward.painted && forward.animations === 0;
+      }, { timeout: 5000 }).toBe(true);
 
-      const { words, path, ink } = await page.evaluate(() => {
+      const { words, path, ink } = await steady(page, () => page.evaluate(() => {
         const frame = document.querySelector('.technical-drawing-frame')!;
         const text = frame.querySelector<HTMLElement>('.flip-hint--fwd.hint-words')!;
         const box = text.getBoundingClientRect();
@@ -590,7 +591,7 @@ test('the hint reads against the page in every theme and at every width', async 
         context.fillRect(0, 0, 1, 1);
         const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
         return { words, path, ink: [r, g, b] as Rgb };
-      });
+      }));
 
       // Hide the ink and leave the halo: what remains is what each stroke and glyph is read
       // against.
