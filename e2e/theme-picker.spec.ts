@@ -41,7 +41,9 @@ const instrument = async (page: import('@playwright/test').Page) => {
 
 const pick = async (page: import('@playwright/test').Page, theme: string) => {
   await page.locator(`#theme-picker label:has(input[value="${theme}"])`).click();
-  await page.waitForTimeout(900);
+  const html = page.locator('html');
+  await expect(html).toHaveAttribute('data-theme', theme);
+  await expect(html).not.toHaveClass(/theme-transition/);
 };
 
 const widest = (clipPath: string) => Math.max(...[...clipPath.matchAll(/-?\d+(\.\d+)?/g)].map((m) => Math.abs(+m[0])));
@@ -139,7 +141,7 @@ test('a transition that never finishes still applies and persists the pick', asy
   });
   await page.goto('/');
 
-  await pick(page, 'dark');
+  await page.locator('#theme-picker label:has(input[value="dark"])').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY)).toBe('dark');
 });
