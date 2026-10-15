@@ -333,6 +333,7 @@ export class SpaceBuilderScene {
   private selectGroup = new Group();
   private handles = new Group();
   private handleByKey = {} as Record<HandleKey, Group>;
+  private handleMeshes: Mesh[] = [];
   private innerGuide!: Mesh;
   private tagObject!: CSS2DObject;
   private tagEl!: HTMLDivElement;
@@ -1323,13 +1324,7 @@ export class SpaceBuilderScene {
     this.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
-    const handleMeshes: Mesh[] = [];
-    for (const group of Object.values(this.handleByKey)) {
-      group.traverse((obj) => {
-        if (obj instanceof Mesh) handleMeshes.push(obj);
-      });
-    }
-    const handleHits = this.raycaster.intersectObjects(handleMeshes, false);
+    const handleHits = this.raycaster.intersectObjects(this.handleMeshes, false);
     const handleKey = handleHits[0]?.object.userData.handleKey;
     if (typeof handleKey === 'string') return handleKey as HandleKey;
 
@@ -1724,6 +1719,7 @@ export class SpaceBuilderScene {
       const handle = this.makeLollipop(color);
       handle.traverse((obj) => {
         obj.userData.handleKey = key;
+        if (obj instanceof Mesh) this.handleMeshes.push(obj);
       });
       this.handleByKey[key] = handle;
       this.handles.add(handle);
