@@ -1284,13 +1284,11 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
 
 test('the paper grain tile is fetched once and stays under 24 KB', async ({ page }) => {
   const paperRequests: string[] = [];
-  let paperBytes = -1;
-  page.on('requestfinished', async (request) => {
+  const paperBodies: Promise<number>[] = [];
+  page.on('requestfinished', (request) => {
     if (!/\/paper-fibre(\.[\w-]+)?\.webp$/.test(request.url())) return;
     paperRequests.push(request.url());
-    const response = await request.response();
-    const body = await response?.body();
-    if (body) paperBytes = body.byteLength;
+    paperBodies.push(request.response().then((response) => response?.body()).then((body) => body?.byteLength ?? -1));
   });
 
   await page.setViewportSize({ width: 1440, height: 2400 });
@@ -1304,6 +1302,7 @@ test('the paper grain tile is fetched once and stays under 24 KB', async ({ page
   await page.waitForTimeout(300);
 
   expect(paperRequests, `requested from:\n${paperRequests.join('\n')}`).toHaveLength(1);
+  const paperBytes = await paperBodies[0];
   expect(paperBytes).toBeGreaterThan(0);
   // 21,604 bytes today, cut losslessly by scripts/cut-paper-tile.mjs. Lossless is the point:
   // a lossy encode of paper fibre lays a visible transform grid over every sheet. The budget
