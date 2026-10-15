@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { installProbes } from './support/pageProbes';
+
 /**
  * The flip-hint layer is the stack's sibling inside .technical-drawing-frame, so PaperStack's
  * own --fold-rest-x/-y (published on the stack, for the dog-ear to rest at) does not reach it
@@ -12,14 +14,8 @@ import { expect, test } from '@playwright/test';
 test('the frame\'s fold-rest size matches the dog-ear\'s 2cm by 1cm rest, in px', async ({ page }) => {
   await page.goto('/');
 
-  const pxPerCm = await page.evaluate(() => {
-    const probe = document.createElement('div');
-    probe.style.cssText = 'position:absolute;visibility:hidden;width:1cm';
-    document.body.appendChild(probe);
-    const width = probe.getBoundingClientRect().width;
-    probe.remove();
-    return width;
-  });
+  await installProbes(page);
+  const pxPerCm = await page.evaluate(() => window.e2eProbes!.px('1cm'));
 
   const frames = await page.locator('.technical-drawing-frame').count();
   expect(frames).toBeGreaterThan(0);
@@ -27,14 +23,7 @@ test('the frame\'s fold-rest size matches the dog-ear\'s 2cm by 1cm rest, in px'
   for (let i = 0; i < frames; i += 1) {
     const [x, y] = await page.locator('.technical-drawing-frame').nth(i).evaluate((frame) => {
       const style = getComputedStyle(frame);
-      const px = (value: string) => {
-        const probe = document.createElement('div');
-        probe.style.cssText = `position:absolute;visibility:hidden;width:${value}`;
-        frame.appendChild(probe);
-        const width = probe.getBoundingClientRect().width;
-        probe.remove();
-        return width;
-      };
+      const px = (value: string) => window.e2eProbes!.px(value, frame);
       return [px(style.getPropertyValue('--fold-rest-x')), px(style.getPropertyValue('--fold-rest-y'))];
     });
     expect(Math.abs(x - 2 * pxPerCm), `frame ${i} --fold-rest-x`).toBeLessThanOrEqual(0.5);
