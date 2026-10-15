@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { THEME_IDS, THEME_STORAGE_KEY } from '../src/themes';
+
 declare global {
   interface Window {
     __themeWipes: { pseudoElement: string; clipPaths: string[] }[];
@@ -51,7 +53,7 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#theme-picker input')).toHaveCount(4);
 
-  for (const theme of ['dark', 'arctic', 'dark-forest', 'light']) {
+  for (const theme of THEME_IDS.toReversed()) {
     await pick(page, theme);
 
     const wipes = await page.evaluate(() => window.__themeWipes.splice(0));
@@ -64,7 +66,7 @@ test('every theme wipes in from its icon and sticks', async ({ page }) => {
     expect(widest(to)).toBeGreaterThan(widest(from) * 2);
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    expect(await page.evaluate(() => localStorage.getItem('cv-theme'))).toBe(theme);
+    expect(await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(theme);
   }
 
   await page.reload();
@@ -96,7 +98,7 @@ test('the theme-color meta follows each pick', async ({ page }) => {
 });
 
 test('a stored theme sets the chrome colour before paint', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('cv-theme', 'arctic'));
+  await page.addInitScript((key) => localStorage.setItem(key, 'arctic'), THEME_STORAGE_KEY);
   await page.goto('/');
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
@@ -116,7 +118,7 @@ test('a second pick during the wipe wins', async ({ page }) => {
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'arctic');
   await expect(page.locator('#theme-picker input[value="arctic"]')).toBeChecked();
-  expect(await page.evaluate(() => localStorage.getItem('cv-theme'))).toBe('arctic');
+  expect(await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY)).toBe('arctic');
 
   // The first transition's cleanup must not strip the class from the second one.
   await expect(page.locator('html')).toHaveClass('');
@@ -139,7 +141,7 @@ test('a transition that never finishes still applies and persists the pick', asy
 
   await pick(page, 'dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  expect(await page.evaluate(() => localStorage.getItem('cv-theme'))).toBe('dark');
+  expect(await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY)).toBe('dark');
 });
 
 test('a hidden page skips the transition', async ({ page }) => {

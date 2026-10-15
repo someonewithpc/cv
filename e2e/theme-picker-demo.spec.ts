@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { demoStack, frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack, turnToPage } from './support/paperStack';
+import { THEME_STORAGE_KEY } from '../src/themes';
 
 const PAGES = ['Theme Picker', 'The Wipe', 'The Wipe in Code', 'Token Layers', 'Default and Override'];
 
@@ -21,7 +22,7 @@ async function mountedSheet(page: Page): Promise<Locator> {
    reached like any other element. */
 const screen = (sheet: Locator) => sheet.locator('[data-stage] [data-screen]');
 const stageKey = (sheet: Locator, id: string) => sheet.locator('[data-stage] button[data-pick="' + id + '"]');
-const stored = (page: Page) => page.evaluate(() => localStorage.getItem('cv-theme'));
+const stored = (page: Page) => page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY);
 
 /** What the page keeps of a pick: the stamp, the stored key, the checked radio. */
 async function pageUntouched(page: Page) {

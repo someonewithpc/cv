@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
+import { THEME_STORAGE_KEY, type ThemeId } from '../src/themes';
+
 /** The width past which Layout.astro gives the sheets a margin of desk on either side. */
 const DESK_FROM = 1024;
 
@@ -14,19 +16,19 @@ const DESKS = {
   dark: 'rgb(22, 30, 36)',
   arctic: 'rgb(212, 203, 197)',
   'dark-forest': 'rgb(37, 27, 12)',
-} as const;
+} as const satisfies Record<ThemeId, string>;
 
 /** A theme's tile URL, hashed in a build (light.Ab12_x-Y.webp) or not in dev. */
 const deskTile = (theme: string) => new RegExp(`/${theme}(\\.[\\w-]+)?\\.webp`);
 
 const withTheme = async (page: import('@playwright/test').Page, theme: string) => {
-  await page.addInitScript((id) => {
+  await page.addInitScript(([key, id]) => {
     try {
-      localStorage.setItem('cv-theme', id);
+      localStorage.setItem(key, id);
     } catch {
       /* ignore */
     }
-  }, theme);
+  }, [THEME_STORAGE_KEY, theme]);
 };
 
 for (const [theme, desk] of Object.entries(DESKS)) {
@@ -149,7 +151,7 @@ const SWING = {
   dark: 13,
   arctic: 7,
   'dark-forest': 12,
-} as const;
+} as const satisfies Record<ThemeId, number>;
 
 /**
  * Reads the desk out of a screenshot of the bare margin beside the sheets, as L* per pixel.

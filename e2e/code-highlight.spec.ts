@@ -1,13 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { demoStack } from './support/paperStack';
+import { THEME_IDS, THEME_STORAGE_KEY } from '../src/themes';
 
 /* The colour of the first `selector` token inside the code set by src/highlight.ts. */
 const tokenColour = (page: Page, selector: string) =>
   page.locator(selector).first().evaluate((el) => getComputedStyle(el).color);
 
 const pick = async (page: Page, theme: string) => {
-  await page.evaluate((id) => localStorage.setItem('cv-theme', id), theme);
+  await page.evaluate(([key, id]) => localStorage.setItem(key, id), [THEME_STORAGE_KEY, theme]);
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 };
@@ -28,7 +29,7 @@ test('code is coloured by kind from the theme on screen, inline and in blocks', 
   const keyword = 'article[aria-label="Theme Picker"] pre.hl .tok-keyword';
   const inline = 'article[aria-label="Theme Picker"] code.hl.selector .tok-selector';
   const seen = new Set<string>();
-  for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+  for (const theme of THEME_IDS) {
     await pick(page, theme);
     const [block, word, plain] = await Promise.all([
       tokenColour(page, keyword),
