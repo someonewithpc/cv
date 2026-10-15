@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { demoStack } from './support/paperStack';
+
 /**
  * Each sheet has layout containment, so a change inside it lays out the sheet alone
  * (Page.astro). It must paint exactly as it did without it. Adding style containment next to
@@ -8,9 +10,11 @@ import { expect, test } from '@playwright/test';
  * its rule and again with layout containment taken off, and the two shots must match. With
  * script on, the logo sheet animates, so only the Marker Editor's sheet is shot there.
  */
+const ADD_TOOL = 'Space Builder · Add Tool';
+const MARKER_EDITOR = 'Interactive Map Marker Editor';
 const SHEET = 'article.technical-drawing-stack > * > section';
 
-for (const [javaScriptEnabled, stacks] of [[false, [0, 1]], [true, [1]]] as const) {
+for (const [javaScriptEnabled, stacks] of [[false, [ADD_TOOL, MARKER_EDITOR]], [true, [MARKER_EDITOR]]] as const) {
   test.describe(`script ${javaScriptEnabled ? 'on' : 'off'}`, () => {
     test.use({ javaScriptEnabled, reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
 
@@ -28,8 +32,8 @@ for (const [javaScriptEnabled, stacks] of [[false, [0, 1]], [true, [1]]] as cons
         tag.textContent = text;
       }, css);
 
-      for (const index of stacks) {
-        const sheet = page.locator('article.technical-drawing-stack').nth(index).locator(':scope > * > section').first();
+      for (const title of stacks) {
+        const sheet = demoStack(page, title).locator(':scope > * > section').first();
         await sheet.scrollIntoViewIfNeeded();
         await page.waitForTimeout(1000);
         if (javaScriptEnabled) await page.clock.pauseAt(Date.now() + 1000);
@@ -40,7 +44,7 @@ for (const [javaScriptEnabled, stacks] of [[false, [0, 1]], [true, [1]]] as cons
         const plain = await shot();
         await setRule('');
 
-        expect(contained.equals(plain), `sheet ${index + 1} moved when layout containment came off`).toBe(true);
+        expect(contained.equals(plain), `${title} moved when layout containment came off`).toBe(true);
         if (javaScriptEnabled) await page.clock.resume();
       }
     });
