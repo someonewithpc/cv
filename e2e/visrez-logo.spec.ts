@@ -38,7 +38,7 @@ test('every inner page carries its drawing', async ({ page }) => {
   const listing = pageNamed('Path Data').locator('pre.path-data-layer');
   await expect(listing).toBeVisible();
   await expect(listing).toContainText('<svg');
-  await expect(pageNamed('Putting it all together').locator('svg.face')).toBeVisible();
+  await expect(pageNamed('Putting It All Together').locator('svg.face')).toBeVisible();
 });
 
 test('cube page: its diagram animation starts when the page is turned to', async ({ page }) => {
@@ -119,7 +119,7 @@ test('cube page: every strip is cut to a point at each end, so the vertices join
 test('wrapping round to the first page brings its corner back whole at once', async ({ page }) => {
   const stack = visrezStack(page);
   await stack.scrollIntoViewIfNeeded();
-  await turnToPage(stack, 'Putting it all together');
+  await turnToPage(stack, 'Putting It All Together');
 
   await stack.evaluate((el) => {
     const w = window as Window & { cornerHits?: boolean[] };
