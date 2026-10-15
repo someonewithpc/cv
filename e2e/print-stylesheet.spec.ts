@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { THEME_IDS } from '../src/themes';
+
 test.use({ viewport: { width: 1440, height: 1000 } });
 
 test.beforeEach(async ({ page }) => {
@@ -78,7 +80,7 @@ test('the contributions print one line per entry, closed, the title across the r
   }
 });
 
-for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
+for (const theme of THEME_IDS) {
   test(`print comes out light with the OS dark and the ${theme} theme picked`, async ({ page }) => {
     await page.evaluate((id) => {
       document.documentElement.dataset.theme = id;
