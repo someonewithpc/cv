@@ -34,6 +34,12 @@ const MarkerEditor = lazy(async () => {
 
 type Position = { x: number; y: number };
 
+// Parsed and serialised once per marker and space, not on every render of the selector.
+function MarkerChoiceSvg({ source, space }: { source: string; space: SpaceType }) {
+  const svg = useMemo(() => resolveMarkerSvgForSpace(source, space), [source, space]);
+  return <InlineSVG svgString={svg} />;
+}
+
 export function MarkerSelector({
   space,
   position,
@@ -153,7 +159,7 @@ export function MarkerSelector({
                 >
                   {marker.resolvedSource === undefined
                     ? <img src={marker.source} alt="" />
-                    : <InlineSVG svgString={resolveMarkerSvgForSpace(marker.resolvedSource, space)} />}
+                    : <MarkerChoiceSvg source={marker.resolvedSource} space={space} />}
                 </button>
                 {marker.kind === 'editor' && (
                   <>
