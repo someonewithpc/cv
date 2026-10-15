@@ -15,9 +15,11 @@
  * already has and keeps it, rather than trading width with the block from frame to frame.
  */
 
+/** A length Page.astro publishes on the title block, as its number. */
+const metric = (block: HTMLElement, name: string) => parseFloat(getComputedStyle(block).getPropertyValue(name));
+
 /** The ladder's steps, as the frame width they start at: `40em < width <= em`. */
 const LADDER: readonly [number, string][] = [[50, 'T2'], [46, 'T3'], [43, 'S3'], [41, 'W3']];
-const LADDER_FLOOR_EM = 40;
 
 /** Table, stacked (the logo under the title), wrapped (the title on two lines as well). */
 const ARRANGEMENTS = ['T', 'S', 'W'] as const;
@@ -26,10 +28,9 @@ type Arrangement = (typeof ARRANGEMENTS)[number];
 /** How tall each arrangement runs at most, in the block's own em. */
 const HEIGHT_EM: Record<Arrangement, number> = { T: 5.5, S: 8, W: 10 };
 
-/** Page.astro's logo cell: `$title-tech-size` square in a table, 2.625em wide once stacked. */
-const TECH_EM: Record<Arrangement, number> = { T: 4, S: 2.625, W: 2.625 };
-/** The widest a wrapped title runs, the cell's padding and hairline included. */
-const WRAP_REM = 11;
+/** Page.astro's logo cell, in em: square in a table, narrower once stacked (published on the block). */
+const techEm = (block: HTMLElement, arrangement: Arrangement) =>
+  metric(block, arrangement === 'T' ? '--title-tech-size' : '--title-tech-stacked-width');
 /** Clear paper kept between the artwork and the block. */
 const CLEARANCE_REM = 0.5;
 
@@ -43,8 +44,8 @@ type Box = { left: number; top: number; right: number; bottom: number };
 /** Every fit, best first: fewer cells shed, then the plainer arrangement. */
 const FITS = [0, 1, 2, 3].flatMap((shed) => ARRANGEMENTS.map((arrangement) => `${arrangement}${shed}`));
 
-export function ladderFit(frameEm: number): string | null {
-  if (frameEm <= LADDER_FLOOR_EM) return null;
+export function ladderFit(frameEm: number, floorEm: number): string | null {
+  if (frameEm <= floorEm) return null;
   let fit: string | null = null;
   for (const [em, step] of LADDER) if (frameEm <= em) fit = step;
   return fit;
@@ -88,6 +89,8 @@ function cellWidth(cell: HTMLElement | null): number {
 
 /** The block's width for every fit in FITS. */
 function fitWidths(block: HTMLElement, rem: number): Map<string, number> {
+  /** The widest a wrapped title runs, the cell's padding and hairline included. */
+  const wrap = metric(block, '--title-wrap-width') * rem;
   const cell = (name: string) => block.querySelector<HTMLElement>(`td.title-${name}`);
   const em = parseFloat(getComputedStyle(block).fontSize);
   const tech = cell('tech');
@@ -100,10 +103,10 @@ function fitWidths(block: HTMLElement, rem: number): Map<string, number> {
   const out = new Map<string, number>();
   rows.forEach((row, shed) => {
     for (const arrangement of ARRANGEMENTS) {
-      const logo = tech ? TECH_EM[arrangement] * em + techPad : 0;
+      const logo = tech ? techEm(block, arrangement) * em + techPad : 0;
       const width = arrangement === 'T' ? logo + Math.max(name, row)
         : arrangement === 'S' ? Math.max(name, logo + row)
-        : Math.max(logo + row, Math.min(name, WRAP_REM * rem));
+        : Math.max(logo + row, Math.min(name, wrap));
       out.set(`${arrangement}${shed}`, width);
     }
   });
@@ -221,7 +224,7 @@ export function readTitleFit(sheet: HTMLElement): TitleFit {
   if (!block || !frame) return { sheet, fit: null };
 
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const ladder = ladderFit(frame.clientWidth / (parseFloat(getComputedStyle(frame).fontSize) || rem));
+  const ladder = ladderFit(frame.clientWidth / (parseFloat(getComputedStyle(frame).fontSize) || rem), metric(block, '--portrait-width'));
   if (!ladder) return { sheet, fit: null };
 
   const em = parseFloat(getComputedStyle(block).fontSize);

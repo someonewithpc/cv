@@ -589,8 +589,13 @@ section {
   }
 
   & > table {
-    $title-tech-size: 4em;
+    $title-tech-size: drawing.$title-tech-size;
     $title-tech-icon-size: 2.25em;
+
+    --title-tech-size: #{$title-tech-size};
+    --title-tech-stacked-width: #{drawing.$title-tech-stacked-width};
+    --title-wrap-width: #{drawing.$title-wrap-width};
+    --portrait-width: #{drawing.$portrait-width};
 
     position: absolute;
     right: var(--sheet-margin);
@@ -794,7 +799,7 @@ section {
 
       /* td as well, or the base rule's 4em square outranks this one. */
       td.title-tech .title-tech-stack {
-        width: 2.625em;
+        width: drawing.$title-tech-stacked-width;
         height: 2em;
         aspect-ratio: auto;
 
@@ -813,9 +818,9 @@ section {
 
   @mixin title-fit-5 {
     @include title-fit-4;
-    /* Narrow enough that the title has to take a second line. 11rem is what clears
-       the artwork cell on a 60em sheet, which is as wide as a sheet gets. */
-    & > table { max-width: 11rem; }
+    /* Narrow enough that the title has to take a second line. $title-wrap-width is what
+       clears the artwork cell on a 60em sheet, which is as wide as a sheet gets. */
+    & > table { max-width: drawing.$title-wrap-width; }
   }
 
   /* Pick the step from the sheet's own width. The lower bound keeps the ladder out
@@ -853,7 +858,7 @@ section {
   /* The title wraps where title-fit-5 wraps it, but the row of cells under it
      may run wider than that, so the cap is on the lettering, not the block. */
   &[data-title-fit^='W'] > table td.title-name header {
-    max-width: calc(11rem - 0.4em - 1px);
+    max-width: calc(#{drawing.$title-wrap-width} - 0.4em - 1px);
   }
 
   /* A sheet this narrow cannot host the note beside the artwork — landscape
