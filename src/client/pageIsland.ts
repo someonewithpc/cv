@@ -28,7 +28,7 @@ function bootIsland(host: HTMLElement, boot: Boot) {
     try {
       await boot(host);
     } catch (error) {
-      console.debug('Island failed to boot', host, error);
+      console.error('Island failed to boot', host, error);
       delete host.dataset.mounted;
     }
   };
