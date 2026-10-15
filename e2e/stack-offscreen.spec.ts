@@ -1,5 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 
+import { framesPass, pageSteady } from './support/steady';
+
 // Chrome and Firefox still ship window.find, which lib.dom dropped as non-standard.
 declare global {
   interface Window {
@@ -20,7 +22,7 @@ const drawn = (stack: Locator) =>
 
 test('a stack far down the page is skipped until the reader gets near it', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(1500);
+  await pageSteady(page);
   const last = page.locator('article.technical-drawing-stack').last();
   expect(await drawn(last), 'the last stack is laid out with the page at the top').toBe(false);
 
@@ -30,7 +32,7 @@ test('a stack far down the page is skipped until the reader gets near it', async
 
 test('a skipped stack keeps the height it has once drawn', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(1500);
+  await pageSteady(page);
   const stacks = page.locator('article.technical-drawing-stack');
   const height = (stack: Locator) => stack.evaluate((el) => el.getBoundingClientRect().height);
   const all = await stacks.all();
@@ -44,7 +46,7 @@ test('a skipped stack keeps the height it has once drawn', async ({ page }) => {
 
 test('focus reaches a skipped stack and its pages turn', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(1500);
+  await pageSteady(page);
   const last = page.locator('article.technical-drawing-stack').last();
   const front = () => last.evaluate((el) => [...el.children].findIndex(
     (child) => (child as HTMLElement).style.getPropertyValue('--page-index').trim() === '1'));
@@ -61,7 +63,7 @@ test('focus reaches a skipped stack and its pages turn', async ({ page }) => {
 
 test('find-in-page reaches the text of a skipped stack', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(1500);
+  await pageSteady(page);
   const last = page.locator('article.technical-drawing-stack').last();
   const words = await last.evaluate((el) => [...el.querySelectorAll('.paper-front .content *')]
     .filter((node) => node.children.length === 0)
@@ -83,6 +85,7 @@ test('a link past the stacks lands on its target and stays there', async ({ page
   await expect(target).toBeInViewport();
   const top = () => target.evaluate((el) => Math.round(el.getBoundingClientRect().top));
   const landed = await top();
+  // A late shift marks nothing on the page, so the check is that nothing moves for a while.
   await page.waitForTimeout(1500);
   expect(await top()).toBe(landed);
 });
@@ -91,10 +94,11 @@ for (const width of [1440, 390]) {
   test(`the fanned sheets paint and take the pointer past the stack's box at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    await page.waitForTimeout(1500);
+    await pageSteady(page);
     const stack = page.locator('article.technical-drawing-stack').nth(3);
     await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    await page.waitForTimeout(500);
+    // A skipped stack is drawn again in the rendering update after it comes near the viewport.
+    await framesPass(page);
     // The sheets behind the front one drop below the stack's bottom edge towards its right-hand
     // corner. A paint clip at the box would cut them off there, and hit testing with them.
     const hit = await stack.evaluate((el) => {
@@ -109,7 +113,7 @@ for (const width of [1440, 390]) {
 // (skip-while-parsing in scss/_page-column.scss), and a visit to a fragment parses it whole.
 test('a fragment deep in a section lands at the top of the window on a fresh load', async ({ page }) => {
   await page.goto('/#highlight-gnu-social-v3');
-  await page.waitForTimeout(1500);
+  await pageSteady(page);
   expect(await page.locator('#highlight-gnu-social-v3').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
   await expect(page.locator('html')).not.toHaveAttribute('data-skip-while-parsing');
 });

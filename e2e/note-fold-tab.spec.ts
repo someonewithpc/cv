@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { forEachStackInLane, frontPageName, LANES } from './support/paperStack';
+import { dogEarShown, forEachStackInLane, frontPageName, LANES, settledAfter, waitForFrontMounted } from './support/paperStack';
 
 /**
  * Between the portrait breakpoint and 56em the note is tucked behind a folded
@@ -37,16 +37,17 @@ async function checkStack(page: Page, stack: Locator): Promise<void> {
   let pagesChecked = 0;
   // Centred, so the whole stack is in view for the hit tests below.
   await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-  await page.waitForTimeout(2000);
+  await waitForFrontMounted(stack);
+  await dogEarShown(stack);
 
   const pageCount = await stack.locator(':scope > div').count();
   for (let turn = 0; turn < pageCount; turn += 1) {
     if (turn > 0) {
       const before = await frontPageName(stack);
       await stack.focus();
-      await page.keyboard.press('ArrowRight');
-      await expect.poll(async () => frontPageName(stack), { timeout: 15_000 }).not.toBe(before);
-      await page.waitForTimeout(800);
+      await settledAfter(stack, () => page.keyboard.press('ArrowRight'));
+      expect(await frontPageName(stack)).not.toBe(before);
+      await waitForFrontMounted(stack);
     }
 
     const measured = await stack.evaluate((el, controls) => {

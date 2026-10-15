@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { demoStack, frontPage, frontPageIndex, pressTurn, turnToPage } from './support/paperStack';
+import { steady } from './support/steady';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -87,9 +88,9 @@ test('cube page: twelve edges, drawn in ink that stands off the grid on every th
   for (const theme of ['light', 'dark', 'arctic', 'dark-forest']) {
     await page.locator(`#theme-picker label:has(input[value="${theme}"])`).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await page.waitForTimeout(900);
+    await expect(page.locator('html')).not.toHaveClass(/theme-transition/);
 
-    const { ink, grid } = await colours();
+    const { ink, grid } = await steady(page, colours);
     // The accent this replaced sat 30 from the grid on the arctic sheet; the ink sits 160 or more.
     expect(distance(ink, grid), `${theme}: ink ${ink} against grid ${grid}`).toBeGreaterThan(120);
   }

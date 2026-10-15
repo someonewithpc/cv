@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { framesPass, pageSteady } from './support/steady';
+
 /**
  * Docking DevTools narrows the window, and the page keeps showing its last frame until
  * layout at the new width is done. With #demos a subgrid of main, that layout took 1.3 s at
@@ -15,7 +17,7 @@ const BUDGET_SECONDS = 0.5;
 test('narrowing the window and widening it again lays the page out quickly', async ({ page }) => {
   await page.setViewportSize(WIDE);
   await page.goto('/');
-  await page.waitForTimeout(2000);
+  await pageSteady(page);
 
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
@@ -53,7 +55,8 @@ for (const javaScriptEnabled of [true, false]) {
       await page.goto('/');
       for (const width of [400, 1060, 1440]) {
         await page.setViewportSize({ width, height: 900 });
-        await page.waitForTimeout(100);
+        // A script that wrote the measure would do it from a resize observer, a frame on.
+        if (javaScriptEnabled) await framesPass(page);
         const sheet = await page.locator('article.technical-drawing-stack section').first().evaluate((section) => {
           // The variables hold the expression, not pixels, so a box sized by them reads them out.
           const probe = document.createElement('div');

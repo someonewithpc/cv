@@ -146,6 +146,14 @@ export async function settledAfter(stack: Locator, act: () => Promise<void>, sta
       })
       .toBe(1);
   }
+  await transitionsRunOut(stack);
+}
+
+/**
+ * Waits for the stack's own transitions to run out: the pile's 250ms drift, the corner cut's
+ * 300ms and the new front page's dog-ear reveal, which go on after a turn has landed.
+ */
+export async function transitionsRunOut(stack: Locator): Promise<void> {
   await expect
     .poll(() => stack.evaluate((el) => {
       const own = new Set<Element>([el, ...el.children]);
@@ -190,11 +198,16 @@ export async function waitForIslandMounted(page: Locator, selector = '[data-moun
 export async function waitForEveryStackMounted(page: Page): Promise<void> {
   for (const stack of await page.locator('article.technical-drawing-stack').all()) {
     await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    const front = frontPage(stack, await frontPageIndex(stack));
-    const island = front.locator('[data-mounted]').first();
-    if ((await island.count()) === 0) continue;
-    await expect(island).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
+    await waitForFrontMounted(stack);
   }
+}
+
+/** Waits for the island on the stack's front page, if it has one, to mount. */
+export async function waitForFrontMounted(stack: Locator): Promise<void> {
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const island = front.locator('[data-mounted]').first();
+  if ((await island.count()) === 0) return;
+  await expect(island).toHaveAttribute('data-mounted', 'true', { timeout: 15_000 });
 }
 
 type CountedCanvas = HTMLCanvasElement & { __draws?: number };

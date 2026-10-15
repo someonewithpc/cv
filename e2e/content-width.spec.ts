@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { pageSteady } from './support/steady';
+
 /** --content-max / --breakout-max in Layout.astro: 60rem against a 16px root. */
 const CAP = 960;
 
@@ -33,7 +35,7 @@ test('a wide viewport caps the content column and the demo stacks at 60rem', asy
 test('a phone viewport fits the demo stacks without scrolling sideways', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.waitForTimeout(1000);
+  await pageSteady(page);
 
   const overflow = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
