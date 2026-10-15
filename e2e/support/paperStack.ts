@@ -243,8 +243,7 @@ export async function armDrawCounter(page: Page): Promise<void> {
         };
       });
       return context;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
+    } as unknown as HTMLCanvasElement['getContext'];
   });
   await page.reload();
 }
