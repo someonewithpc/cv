@@ -19,6 +19,9 @@ function preconnectedHosts() {
   return preconnects;
 }
 
+// Fonts this site serves itself need no proxy
+const ownOrigin = (baseURL: string | undefined) => !!baseURL && new URL(baseURL).origin === location.origin;
+
 type Candidate = { family: string, face: FontFace, rule: CSSFontFaceRule, finalSrc: string };
 
 /**
@@ -43,7 +46,7 @@ export default async function loadFontFacesFromStyleElement(el: HTMLStyleElement
     if (!fontFamily || !src || !/url\(/.test(src)) return;
 
     // Absolute URLs routed through our proxy, since webfont loads are CORS-gated
-    const { transformed, relativeSources } = transformFontFaceSrcToProxiedAbsoluteURL(src, baseURL, proxyPrefix);
+    const { transformed, relativeSources } = transformFontFaceSrcToProxiedAbsoluteURL(src, baseURL, ownOrigin(baseURL) ? undefined : proxyPrefix);
 
     // If all sources are already preconnected (e.g. fonts.gstatic.com), fetch them directly
     const finalSrc = relativeSources.every((s) => preconnectedHosts().includes(
