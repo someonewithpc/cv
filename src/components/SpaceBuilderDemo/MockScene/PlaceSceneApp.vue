@@ -289,7 +289,7 @@ onBeforeUnmount(() => {
     class="place-scene-app"
     role="group"
     :data-ready="ready ? 'true' : 'false'"
-    aria-label="Area demo — orbit and resize the grab handles"
+    aria-label="Area demo. Orbit and resize the grab handles"
   >
     <canvas data-scene-canvas class="scene-canvas" aria-label="Area grab handles in 3D" />
     <div data-label-host class="label-host" />
