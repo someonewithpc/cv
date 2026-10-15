@@ -42,7 +42,14 @@ async function sheets(page: Page, selector: string): Promise<Sheet[]> {
   for (let index = 0; index < count; index += 1) {
     const stack = stacks.nth(index);
     await stack.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    await page.waitForTimeout(2500);
+    await stack.evaluate(async (el) => {
+      await document.fonts.ready;
+      await new Promise<void>((resolve) => {
+        const mounted = () => el.dataset.sheetWidth !== undefined && !el.querySelector('astro-island[ssr]');
+        const poll = () => (mounted() ? requestAnimationFrame(() => requestAnimationFrame(() => resolve())) : requestAnimationFrame(poll));
+        poll();
+      });
+    });
 
     const found = await stack.evaluate((el, what) =>
       [...el.querySelectorAll('section')].map((section) => {
