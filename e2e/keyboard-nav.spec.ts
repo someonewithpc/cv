@@ -173,7 +173,6 @@ test.describe('access keys', () => {
     await page.goto('/');
     const stack = demoStack(page, 'Visrez Animated Loading Logo');
     await stack.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
 
     for (let i = 0; i < 200; i += 1) {
       await page.keyboard.press('Tab');
