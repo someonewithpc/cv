@@ -34,6 +34,7 @@ test('oembed.json answers with a rich embed whatever the query string', async ({
     author_name: AUTHOR_NAME,
     provider_name: AUTHOR_NAME,
     provider_url: SITE_URL,
+    author_url: SITE_URL,
   });
 
   // The name must actually be in the rendered card, not just the JSON metadata field,
