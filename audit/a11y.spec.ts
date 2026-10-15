@@ -2,8 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { waitForEveryStackMounted } from '../e2e/support/paperStack';
-
-const THEMES = ['light', 'dark', 'arctic', 'dark-forest'];
+import { THEME_IDS, THEME_STORAGE_KEY } from '../src/themes';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
@@ -26,10 +25,10 @@ for (const viewport of VIEWPORTS) {
       test.use({ hasTouch: true });
     }
 
-    for (const theme of THEMES) {
+    for (const theme of THEME_IDS) {
       test(`${viewport.name} in the ${theme} theme has no axe violations`, async ({ page }) => {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
-        await page.addInitScript((value) => localStorage.setItem('cv-theme', value), theme);
+        await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [THEME_STORAGE_KEY, theme]);
 
         await page.goto('/');
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
