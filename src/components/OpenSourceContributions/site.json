@@ -412,10 +412,10 @@
         {
           "repository": "gcc.gnu.org",
           "title": "wrong code at -O3: IPA-CP redirects a recursive call to a clone made for a different polymorphic context",
-          "description": "Reported a GCC 16 miscompile after FreeCAD booleans started crashing: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Bisected it to IPA-CP's multi-sweep cloning with prebuilt snapshots, reduced two testcases, and wrote a fix for `perhaps_add_new_callers` that is going to gcc-patches once bootstrap and regtest pass.",
+          "description": "Reported a GCC 16 miscompile after FreeCAD booleans started crashing: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Bisected it to IPA-CP's multi-sweep cloning with prebuilt snapshots, reduced two testcases, and sent a fix to gcc-patches that checks the polymorphic context before redirecting a call to a clone. Bootstrapped and regtested on x86_64, awaiting review.",
           "url": "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127917",
           "number": 127917,
-          "updatedAt": "2026-10-15T23:02:00Z",
+          "updatedAt": "2026-10-16T10:50:48Z",
           "tags": [
             "gcc",
             "cplusplus"
