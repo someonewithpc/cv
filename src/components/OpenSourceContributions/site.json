@@ -53,6 +53,23 @@
       "label": "Merged",
       "items": [
         {
+          "repository": "gcc.gnu.org",
+          "title": "ipa-cp: Check polymorphic contexts before redirecting to a clone [PR127917]",
+          "description": "FreeCAD booleans crashed on NixOS: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Traced it to GCC 16's IPA-CP redirecting a recursive call to a clone made for a different polymorphic context, bisected it with prebuilt snapshots to two January changes, reduced it to two short C++ testcases, and wrote the fix and a regression test, bootstrapped and regtested on x86_64. Reviewed and pushed to master by the IPA maintainer the same day, with a GCC 16 backport to follow (bug 127917). Meanwhile a nixpkgs PR builds OCCT with `-fno-ipa-cp-clone` and adds an install check for the miscompile, an OpenCascade issue asks for the OCCT 8 fix to be backported to 7.9, and a FreeCAD PR backports its OpenCascade 8 support to the 1.1 branch.",
+          "url": "https://gcc.gnu.org/cgit/gcc/commit/?id=ebd81e6e396d3d50e4ac89404e45f5d2029a186d",
+          "number": 127917,
+          "updatedAt": "2026-10-16T09:50:48Z",
+          "tags": [
+            "gcc",
+            "cplusplus"
+          ],
+          "stats": {
+            "additions": 85,
+            "deletions": 1,
+            "changed_files": 2
+          }
+        },
+        {
           "repository": "withastro/compiler-rs",
           "title": "Fix wrong handling of combinators inside `:global()`",
           "description": "Reworked Astro's `compiler_rs`'s `scope_css` pass so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path",
@@ -393,18 +410,6 @@
       "id": "open",
       "label": "Open",
       "items": [
-        {
-          "repository": "gcc.gnu.org",
-          "title": "wrong code at -O3: IPA-CP redirects a recursive call to a clone made for a different polymorphic context",
-          "description": "FreeCAD booleans crashed on NixOS: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Traced it to GCC 16's IPA-CP redirecting a recursive call to a clone made for a different polymorphic context, bisected it with prebuilt snapshots to two January changes, reduced it to two short C++ testcases, and sent a fix to gcc-patches that checks the context before redirecting, bootstrapped and regtested on x86_64, awaiting review. Meanwhile a nixpkgs PR builds OCCT with `-fno-ipa-cp-clone` and adds an install check for the miscompile, an OpenCascade issue asks for the OCCT 8 fix to be backported to 7.9, and the FreeCAD report was closed since their builds ship OCCT 8.",
-          "url": "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127917",
-          "number": 127917,
-          "updatedAt": "2026-10-16T10:50:48Z",
-          "tags": [
-            "gcc",
-            "cplusplus"
-          ]
-        },
         {
           "repository": "torvalds/linux",
           "title": "drm/amd/display: Keep eDP native timing after resume with video=",
