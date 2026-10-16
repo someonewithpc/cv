@@ -118,8 +118,13 @@ test('without JS the dots under a stack are one Tab stop, and the arrow keys mov
   // The first stop is the current sheet's dot: the arrows move to the next one and turn the row.
   await page.keyboard.press('ArrowRight');
   await expect.poll(sheet).toBe(1);
+  // Both moves have to be rendered before the next key or Tab: the arrow keys step from the dot the row
+  // last drew as current, and Tab skips the arrows the row last drew disabled, so a key sent in the
+  // same frame steps from the old dot and wraps, or counts an arrow that is about to be disabled.
+  await expect.poll(async () => (await sheetOpacities(stack)).slice(0, 2)).toEqual([0.5, 1]);
   await page.keyboard.press('ArrowLeft');
   await expect.poll(sheet).toBe(0);
+  await expect.poll(async () => (await sheetOpacities(stack)).slice(0, 2)).toEqual([1, 0.5]);
 
   // Then the next arrow and the row itself; a dot per sheet would add four more.
   let stops = 1;
