@@ -885,6 +885,23 @@
       "label": "Closed",
       "items": [
         {
+          "repository": "FreeCAD/FreeCAD",
+          "title": "[Backport releases/FreeCAD-1-1] Adapt FreeCAD to OpenCascade 8",
+          "description": "Backported the OpenCascade 8 support from main to the 1.1 release branch, 15 commits plus the `-Werror` guards and the TechDraw fix, so distros shipping FreeCAD 1.1 could build against OCCT 8 and sidestep the GCC 16 miscompile of 7.9.3. Tested with `FreeCADCmd -t 0` on OCCT 8.0.1 and 7.9.3: 1666 tests with the same results as 1.1.4, and the cube minus cylinder recomputes instead of crashing. Closed by the maintainers: the 1.1 branch gets no further releases and 26.3 is the first version to support OCCT 8.",
+          "url": "https://github.com/FreeCAD/FreeCAD/pull/33629",
+          "number": 33629,
+          "updatedAt": "2026-10-16T16:03:51Z",
+          "stats": {
+            "additions": 654,
+            "deletions": 328,
+            "changed_files": 130
+          },
+          "tags": [
+            "freecad",
+            "cplusplus"
+          ]
+        },
+        {
           "repository": "gaoxiaoliangz/react-scoped-css",
           "title": "Update dependencies so it works with Webpack 5 and CRACO 7",
           "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer",
