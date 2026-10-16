@@ -396,7 +396,7 @@
         {
           "repository": "gcc.gnu.org",
           "title": "wrong code at -O3: IPA-CP redirects a recursive call to a clone made for a different polymorphic context",
-          "description": "Reported a GCC 16 miscompile after FreeCAD booleans started crashing: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Bisected it to IPA-CP's multi-sweep cloning with prebuilt snapshots, reduced two testcases, and sent a fix to gcc-patches that checks the polymorphic context before redirecting a call to a clone. Bootstrapped and regtested on x86_64, awaiting review.",
+          "description": "FreeCAD booleans crashed on NixOS: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Traced it to GCC 16's IPA-CP redirecting a recursive call to a clone made for a different polymorphic context, bisected it with prebuilt snapshots to two January changes, reduced it to two short C++ testcases, and sent a fix to gcc-patches that checks the context before redirecting, bootstrapped and regtested on x86_64, awaiting review. Meanwhile a nixpkgs PR builds OCCT with `-fno-ipa-cp-clone` and adds an install check for the miscompile, an OpenCascade issue asks for the OCCT 8 fix to be backported to 7.9, and the FreeCAD report was closed since their builds ship OCCT 8.",
           "url": "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127917",
           "number": 127917,
           "updatedAt": "2026-10-16T10:50:48Z",
