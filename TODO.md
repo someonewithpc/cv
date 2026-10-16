@@ -320,4 +320,4 @@
 - [x] Wait for the grain tile body before the byte-size assertion in the paper grain spec (#220 E23) (#482)
 - [x] Tag the timing budgets @perf so a loaded run can leave them out: the marker editor key turn (900 and 2000 ms) and the resize layout cost (0.5 s) (#220 E24) (#483)
 - [x] Require the firefox-noscript row to move before the spec reads a settled snap (#220 E25) (#486)
-- [ ] Wait for each arrow key to render before the next key in the Paper Stack no-script dots spec
+- [x] Wait for each arrow key to render before the next key in the Paper Stack no-script dots spec (#493)
