@@ -465,6 +465,23 @@
       "label": "Open",
       "items": [
         {
+          "repository": "NixOS/nixpkgs",
+          "title": "opencascade-occt: build with `-fno-ipa-cp-clone` on GCC 16",
+          "description": "GCC 16 at `-O3` miscompiles OCCT 7.9.3: classifying a point on an edge or vertex of a solid segfaults, and so do booleans where faces touch along a line, which is how FreeCAD crashed on a cube minus an inscribed cylinder. Builds OCCT with `-fno-ipa-cp-clone` when the compiler is GCC 16 or newer and adds an install check that runs the failing classification, so the build fails if the miscompile ever comes back.",
+          "url": "https://github.com/NixOS/nixpkgs/pull/574647",
+          "number": 574647,
+          "updatedAt": "2026-10-16T15:05:45Z",
+          "stats": {
+            "additions": 36,
+            "deletions": 1,
+            "changed_files": 1
+          },
+          "tags": [
+            "nixos",
+            "cplusplus"
+          ]
+        },
+        {
           "repository": "inauman/libfprint",
           "title": "elanpress: support 04f3:0c6e",
           "description": "Added the ELAN 04f3:0c6e press sensor of the ASUS ROG Flow X13 to libfprint's new `elanpress` driver. On master it sits under the swipe-only `elan` driver, where enrolment fails with a protocol error and verify never matches. Two follow-up fixes: no touch is built from a background frame captured with the finger down, and more distinct probe frames are kept per touch. Scored offline on a recorded session, 15 held-out touches of the enrolled finger matched at 0.848 to 0.954 while 47 touches from other fingers and another person stayed at 0.294 to 0.761, so no false accepts. Opened against the branch behind libfprint!654, awaiting review.",
