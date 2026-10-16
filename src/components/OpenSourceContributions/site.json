@@ -2,6 +2,44 @@
   "snapshot": "2026-10-05",
   "highlights": [
     {
+      "title": "GCC 16 wrong-code fix",
+      "role": "Contributor",
+      "roleJp": "コントリビューター",
+      "description": "FreeCAD on NixOS crashed on a cube minus an inscribed cylinder. Traced the crash through OpenCascade 7.9.3's point classifier to a wrong-code bug in GCC 16: interprocedural constant propagation redirected a recursive call to a clone specialised for a different dynamic type, so the program ran the wrong virtual method. Bisected GCC to two January 2026 changes, reduced the miscompile to a standalone C++ testcase of a few dozen lines, wrote the fix and a regression test, and bootstrapped and regtested GCC. The IPA maintainer reviewed and pushed it to master the same day, with a GCC 16 backport planned. Alongside it, a nixpkgs workaround that builds OpenCascade with -fno-ipa-cp-clone and fails the build if the miscompile returns, an OpenCascade request to backport its fix to 7.9, and a FreeCAD PR backporting OpenCascade 8 support to the 1.1 branch.",
+      "repository": "gcc.gnu.org",
+      "period": "2026",
+      "links": [
+        {
+          "label": "Commit",
+          "url": "https://gcc.gnu.org/cgit/gcc/commit/?id=ebd81e6e396d3d50e4ac89404e45f5d2029a186d"
+        },
+        {
+          "label": "Bug 127917",
+          "url": "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127917"
+        },
+        {
+          "label": "Review",
+          "url": "https://inbox.sourceware.org/gcc-patches/20261016105048.1126852-1-hugo@hsal.es/T/"
+        },
+        {
+          "label": "nixpkgs",
+          "url": "https://github.com/NixOS/nixpkgs/pull/574647"
+        },
+        {
+          "label": "OpenCascade",
+          "url": "https://github.com/Open-Cascade-SAS/OCCT/issues/1637"
+        },
+        {
+          "label": "FreeCAD",
+          "url": "https://github.com/FreeCAD/FreeCAD/pull/33629"
+        }
+      ],
+      "tags": [
+        "gcc",
+        "cplusplus"
+      ]
+    },
+    {
       "title": "GNU social v3",
       "role": "Maintainer",
       "roleJp": "メンテナー",
