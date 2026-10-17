@@ -10,10 +10,7 @@ import PickerLayer from './layers/PickerLayer.astro';
 import SourcesLayer from './layers/SourcesLayer.astro';
 import FeedbackLayer from './layers/FeedbackLayer.astro';
 import PinnedLayer from './layers/PinnedLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 // Resolve from cwd — import.meta.url points at dist prerender chunks during build.
 const srcRoot = path.join(process.cwd(), 'src');

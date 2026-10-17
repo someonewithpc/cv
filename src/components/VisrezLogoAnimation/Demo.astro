@@ -15,10 +15,7 @@ import PathAside from './Path/Aside.astro';
 import PathDataLayer from './PathData/Layer.astro';
 import AllTogetherLayer from './AllTogether/Layer.astro';
 import AllTogetherAside from './AllTogether/Aside.astro';
-
-function toKiB(text: string) {
-  return Math.ceil(text.length / 1024 * 10) / 10 + 'KiB';
-}
+import { toKiB } from '@/fileSize';
 
 const visrezLogoAnimationSize = toKiB(VisrezLogoAnimationRaw);
 const originalVisrezLogoSize = toKiB(OriginalVisrezLogoRaw);

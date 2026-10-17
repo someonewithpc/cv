@@ -9,10 +9,7 @@ import TransformLayer from './layers/TransformLayer.astro';
 import TypeMapLayer from './layers/TypeMapLayer.astro';
 import PluginsLayer from './layers/PluginsLayer.astro';
 import PhpstanLayer from './layers/PhpstanLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 // What the sheet ships: the script that pairs the two panes. The schema and the port of the
 // driver run at build time and never reach the browser.

@@ -10,10 +10,7 @@ import SearchLayer from './layers/SearchLayer.astro';
 import RelevanceLayer from './layers/RelevanceLayer.astro';
 import FiltersLayer from './layers/FiltersLayer.astro';
 import SqlLayer from './layers/SqlLayer.astro';
-
-function toKiB(text: string) {
-  return `${Math.ceil((text.length / 1024) * 10) / 10}KiB`;
-}
+import { toKiB } from '@/fileSize';
 
 const srcRoot = path.join(process.cwd(), 'src');
 const clientDir = path.join(srcRoot, 'components/LibrarySearchDemo/client');
