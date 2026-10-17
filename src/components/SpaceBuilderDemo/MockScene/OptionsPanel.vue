@@ -513,7 +513,7 @@ $nav-second-bg: #151515;
   gap: 0.5rem;
 
   // Matches the narrow-frame breakpoint in MockSceneApp.vue / ParametersSceneApp.vue.
-  @container (max-width: 34rem) {
+  @container (max-width: #{$scene-narrow-width}) {
     grid-template-columns: 1fr;
   }
 }

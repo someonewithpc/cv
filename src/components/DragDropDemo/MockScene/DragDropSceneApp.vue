@@ -4,6 +4,7 @@ import { onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vu
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
 import CatalogPanel from '@/components/SpaceBuilderDemo/MockScene/CatalogPanel.vue';
@@ -35,6 +36,7 @@ import {
   type PinchState,
   type ScreenPoint,
 } from '@/components/SpaceBuilderDemo/MockScene/scene/sceneViewportGestures';
+import { ORBIT_THETA_PER_PX } from '@/components/SpaceBuilderDemo/MockScene/scene/sceneTuning';
 import type { SpaceBuilderScene } from '@/components/SpaceBuilderDemo/MockScene/scene/SpaceBuilderScene';
 
 /**
@@ -155,7 +157,7 @@ function showToast(message: string) {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     toast.value = null;
-  }, 1800);
+  }, TOAST_VISIBLE_MS);
 }
 
 /** How long a shortcut toast is read for, and how long its collapse takes after that. */
@@ -659,12 +661,12 @@ async function pulseClick(token: number) {
 /** Incremental orbit so the drop reads as a real 3D scene, not a flat image — the demo
  * cursor drags horizontally in step with the rotation, as if it were the one causing it.
  * `startClient` is where the drag left off; the horizontal travel is the inverse of
- * `SpaceBuilderScene.orbit()`'s `theta -= dx * 0.005`, so the same eased curve that drives
+ * `SpaceBuilderScene.orbit()`'s `theta -= dx * ORBIT_THETA_PER_PX`, so the same eased curve that drives
  * the camera also drives the cursor. */
 function orbitTween(token: number, deltaTheta: number, ms: number, startClient: { x: number; y: number }) {
   return (async () => {
     const start = gateNow();
-    const totalDx = -deltaTheta / 0.005;
+    const totalDx = -deltaTheta / ORBIT_THETA_PER_PX;
     let applied = 0;
     cursorInstant.value = true;
     cursorClicking.value = true;
@@ -1266,7 +1268,7 @@ $nav-sidebar-bg: #323232;
   // Narrow-but-landscape: the sidebar's vw-based width no longer tracks the
   // shrunk frame. Declared before the portrait override below so portrait's
   // full stacked layout still wins once the sheet flips orientation.
-  @container (max-width: 34rem) {
+  @container (max-width: #{$scene-narrow-width}) {
     grid-template-columns: minmax(0, 1fr) min(11rem, 68cqw);
   }
 

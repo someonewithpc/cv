@@ -11,6 +11,7 @@ import {
   reportAutoplayState,
 } from '@/client/autoplayStatus';
 import { watchPageActive } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import {
   AutoPlayController,
@@ -55,7 +56,6 @@ import type {
 const RESUME_DELAY_MS = 2000;
 const CURSOR_FADE_MS = 320;
 const CURSOR_CLICK_MS = 180;
-const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
 type CursorPhase = 'demo' | 'fading' | 'gone';
@@ -1591,7 +1591,7 @@ $light-grey: #565656;
   // while idle (it's the only way to reach Add on a touch device) but tucks
   // away once the sidebar it opens needs the room back, then reappears when
   // the sidebar closes.
-  @container (max-width: 34rem) {
+  @container (max-width: #{$scene-narrow-width}) {
     .sidebar {
       width: min(11rem, 68cqw);
     }

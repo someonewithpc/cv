@@ -14,6 +14,7 @@ import store, {
 import { watchDrawingNote } from '@/client/drawingNote';
 import { inDeckGrace, isTransportControl, onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { documentGate, watchPageActive } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { MarkerSelector } from '../markers/MarkerSelector';
 
@@ -22,6 +23,7 @@ import {
   autoplayPausedToast,
   autoplayStartedToast,
   bindUndoRedoKeys,
+  EDITOR_OPEN_CURSOR_FRACTION,
   REST_CURSOR_FRACTION,
   type DemoCursorStep,
   type DemoToastPayload,
@@ -37,7 +39,6 @@ const CURSOR_FADE_MS = 320;
 const CURSOR_CLICK_MS = 180;
 const TARGET_RETRY_MS = 40;
 const TARGET_RETRY_ATTEMPTS = 20;
-const TOAST_VISIBLE_MS = 1800;
 const TOAST_EXIT_MS = 320;
 
 /**
@@ -372,7 +373,7 @@ export default function MockMapApp() {
   useEffect(() => {
     const overlay = containerRef.current;
     if (!overlay || !editorPortalHost) return;
-    moveCursor(toHostPoint(hostRect(), overlayPoint(overlay, 0.42, 0.38)));
+    moveCursor(toHostPoint(hostRect(), overlayPoint(overlay, EDITOR_OPEN_CURSOR_FRACTION.x, EDITOR_OPEN_CURSOR_FRACTION.y)));
   }, [editorPortalHost]);
 
   // A step measures its target once, but accordion sections in the editor keep

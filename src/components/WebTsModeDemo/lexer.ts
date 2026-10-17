@@ -854,7 +854,9 @@ export function lexStylesheet(src: string): Painted {
 
 const START_HUE = 0.62;
 const END_HUE = 0.33;
-const HUE_STEP = 0.22;
+export const HUE_STEP = 0.22;
+const FACE_SATURATION = 0.85;
+const FACE_LIGHTNESS = { base: 0.755, perDepth: 0.03, min: 0.55, max: 0.78 };
 
 function hslToRgb(h: number, s: number, l: number): number[] {
   const k = (n: number) => (n + h * 12) % 12;
@@ -880,6 +882,7 @@ export function depthHue(depth: number): number {
   else if (delta < -0.5) delta += 1;
   const amount = Math.min(1, Math.max(0, depth * HUE_STEP));
   const h = (((START_HUE + delta * amount) % 1) + 1) % 1;
-  const l = Math.max(0.55, Math.min(0.78, 0.755 + 0.03 * depth));
-  return Math.round(oklchHue(hslToRgb(h, 0.85, l)) * 10) / 10;
+  const { base, perDepth, min, max } = FACE_LIGHTNESS;
+  const l = Math.max(min, Math.min(max, base + perDepth * depth));
+  return Math.round(oklchHue(hslToRgb(h, FACE_SATURATION, l)) * 10) / 10;
 }

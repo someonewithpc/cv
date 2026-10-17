@@ -6,7 +6,7 @@
  */
 import { highlightSpans } from '@/highlight';
 import Window from '../Window.astro';
-import { depthHue, lexStylesheet, paintSelectorList } from '../lexer';
+import { depthHue, HUE_STEP, lexStylesheet, paintSelectorList } from '../lexer';
 import { depthSample } from '../samples';
 
 const { lines } = lexStylesheet(depthSample.text);
@@ -24,7 +24,7 @@ const runs: { text: string; depth: number | null }[] = [];
 
 const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   depth,
-  amount: Math.min(1, depth * 0.22),
+  amount: Math.min(1, depth * HUE_STEP),
 }));
 ---
 

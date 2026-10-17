@@ -1,14 +1,14 @@
 ---
 import { highlightSpans } from '@/highlight';
-import { renderDimension, renderings } from '../units';
+import { CM_PER_INCH, INCHES_PER_FOOT, renderDimension, renderings } from '../units';
 
 // Two of the sample's dimensions, and one that shows both corrections: 182cm rounds to
 // 180cm and 1.8m, and its 71.65in is five feet and 11.65in, which rounds up into a sixth foot.
 const columns = [160, 80, 182];
 const carry = 182;
-const carryInches = carry / 2.54;
-const wholeFeet = Math.floor(carryInches / 12);
-const rest = carryInches - wholeFeet * 12;
+const carryInches = carry / CM_PER_INCH;
+const wholeFeet = Math.floor(carryInches / INCHES_PER_FOOT);
+const rest = carryInches - wholeFeet * INCHES_PER_FOOT;
 
 // The rule each rendering applies to one row of split_sizes, as the corrected SQL says it.
 const rules: Record<(typeof renderings)[number]['id'], string> = {

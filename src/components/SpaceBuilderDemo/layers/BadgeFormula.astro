@@ -1,4 +1,6 @@
 ---
+import { TAG_PAD_M } from '../MockScene/scene/sceneTuning';
+
 // The drawing shows the tag-offset card wherever it has room beside or under the scene. A
 // portrait sheet has none, and there the copy in the note, which the corner tab opens, shows
 // instead, after the note's own text.
@@ -59,7 +61,7 @@ const { place } = Astro.props;
       </mstyle>
     </math>
     <math display="block">
-      <mtext>offset</mtext><mo>=</mo><mi>r</mi><mo>+</mo><mn>0.95</mn>
+      <mtext>offset</mtext><mo>=</mo><mi>r</mi><mo>+</mo><mn>{TAG_PAD_M}</mn>
     </math>
   </div>
   <p class="badge-formula-note">

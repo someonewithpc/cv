@@ -4,6 +4,7 @@ import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
+import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { autoplayStartedToast } from './AutoPlayController';
 import OptionsPanel from './OptionsPanel.vue';
@@ -37,6 +38,7 @@ const SEED_OPTIONS: LayoutOptions = {
   innerDiameter: 0,
 };
 
+const AREA_LIFT_PX = 36;
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
@@ -301,7 +303,7 @@ function saveArrangement() {
   if (savedTimer) clearTimeout(savedTimer);
   savedTimer = setTimeout(() => {
     saved.value = false;
-  }, 1800);
+  }, TOAST_VISIBLE_MS);
 }
 
 const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -365,7 +367,7 @@ onMounted(async () => {
       requestAnimationFrame(() => {
         scene.forceResize();
         // Nudge the area up-screen so the capacity tag clears the hint text below.
-        scene.panByScreenDelta(0, -36);
+        scene.panByScreenDelta(0, -AREA_LIFT_PX);
       });
     });
 
@@ -538,7 +540,7 @@ $buttons-ui: #6c757d;
   // Narrow-but-landscape: the sidebar's vw-based width no longer tracks the
   // shrunk frame. Declared before the portrait override below so portrait's
   // full stacked layout still wins once the sheet flips orientation.
-  @container (max-width: 34rem) {
+  @container (max-width: #{$scene-narrow-width}) {
     grid-template-columns: minmax(0, 1fr) min(11rem, 68cqw);
   }
 

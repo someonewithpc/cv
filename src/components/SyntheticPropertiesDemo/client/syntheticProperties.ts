@@ -17,8 +17,10 @@ import {
 } from '../units';
 
 
-/** The longest delay in SplitLayer.astro's `.running` animations, plus its duration. */
-const RUN_MS = 1700;
+/** The longest delay in SplitLayer.astro's `.running` animations plus its duration: the text flash, 700ms + 0.9s. */
+const RUN_ANIMATION_MS = 1600;
+const RUN_SETTLE_MS = 100;
+const RUN_MS = RUN_ANIMATION_MS + RUN_SETTLE_MS;
 /** The tip of the drawn arrow, as fractions of the cursor's box. */
 const CURSOR_HOTSPOT = { x: 0.12, y: 0.08 };
 /** Where on a field the cursor clicks before it types: near the start of the text. */
