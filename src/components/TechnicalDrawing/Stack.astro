@@ -552,7 +552,7 @@ $way-back-shown: ':global(article.technical-drawing-stack[data-paper-flipped][da
 <script>
 import { initAutoplayStatus } from '@/client/autoplayStatus';
 import { isFrontPage, watchFrontPage } from '@/client/frontPage';
-import { isResizeHeld, onResizeHold } from '@/client/resizeHold';
+import { isResizeHeld, isSizeSettling, onResizeHold, onSizeSettled } from '@/client/resizeHold';
 import { isFoldPulse } from '@/components/PaperStack/fold-drag';
 import './demo-cursor-press';
 
@@ -817,8 +817,7 @@ const fitTitleBlocks = (sheets: HTMLElement[]) => sheets
 // measured its callouts where they stood at the old size.
 const fitPending = new Set<HTMLElement>();
 let fitFrame = 0;
-const fitLater = (sheets: HTMLElement[]) => {
-  sheets.forEach((sheet) => fitPending.add(sheet));
+const fitNextFrame = () => {
   fitFrame ||= requestAnimationFrame(() => {
     fitFrame = 0;
     const pending = [...fitPending];
@@ -826,8 +825,21 @@ const fitLater = (sheets: HTMLElement[]) => {
     fitTitleBlocks(pending);
   });
 };
+// While the window is being resized the fit waits for the settled size (resizeHold.ts): a pass
+// walks every box of the front page's artwork, and on every step of a drag it measured a size
+// the next step replaced. A sheet that resized in the meantime goes back to the ladder, the
+// floor that clears every page's artwork, so a fit taken at a wider size never covers it.
+const fitLater = (sheets: HTMLElement[]) => {
+  sheets.forEach((sheet) => fitPending.add(sheet));
+  if (!isSizeSettling()) fitNextFrame();
+};
+onSizeSettled(() => {
+  if (fitPending.size) fitNextFrame();
+});
 const fitTitleBlock = new ResizeObserver((entries) => {
-  fitLater(entries.map((entry) => entry.target as HTMLElement));
+  const sheets = entries.map((entry) => entry.target as HTMLElement);
+  if (isSizeSettling()) sheets.forEach((sheet) => writeTitleFit({ sheet, fit: null }));
+  fitLater(sheets);
 });
 
 // The top stack alone carries the hints: one is a nudge, one per demo is wallpaper, and by the
