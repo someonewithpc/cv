@@ -1193,8 +1193,12 @@ const announceFront = (stack: HTMLElement): void => {
 // hands the rendering back, and dropped the moment a gesture starts moving a page again. Hints
 // that point at the page (TechnicalDrawing's way-back callout) wait for it, so their arrow is
 // never drawn across a sheet still gliding over.
+// [data-paper-moving] is the gap between those two: a page on the move, by hand or by key. A
+// stack carries neither on load, so the rules that hold the pile still at rest (Layout.astro's
+// boot placeholders) key on this one rather than on the absence of the first.
 const settle = (stack: HTMLElement): void => {
   stack.dataset.paperSettled = '';
+  delete stack.dataset.paperMoving;
   announceFront(stack);
   // The turn is over, whichever way it went: the page that ended up at the front comes alive
   // here, and a gesture that came back short of committing gets its demo back.
@@ -1203,6 +1207,7 @@ const settle = (stack: HTMLElement): void => {
 
 const unsettle = (stack: HTMLElement): void => {
   delete stack.dataset.paperSettled;
+  stack.dataset.paperMoving = '';
 };
 
 // The demos under the paper hold still for the rest of a turn (watchPageActive in
