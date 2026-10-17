@@ -1128,6 +1128,11 @@ html:has([data-paper-stack-root]:hover) {
             rgb(0 0 0 / var(--flap-flat)) calc(var(--flap-crease) + var(--flap-curl))
           );
         background: var(--flap-shade) var(--bend-paper);
+        // Each gradient already fills the box, so repeating it draws nothing more. Safari tiles a
+        // repeating gradient through an image the size of the box, and the shading changes on
+        // every frame of a turn, so it drew a new page-sized image per layer per frame: 250 to
+        // 500 ms frames on Space Builder's turns. Unrepeated, it draws the gradient straight.
+        background-repeat: no-repeat;
         &.paper-fold--landing {
           background:
             linear-gradient(
@@ -1137,6 +1142,7 @@ html:has([data-paper-stack-root]:hover) {
               rgb(0 0 0 / 0) calc(var(--land-crease) + var(--land-curl))
             ),
             var(--flap-shade) var(--bend-paper);
+          background-repeat: no-repeat;
         }
         border: 1px solid var(--line-strong);
 
