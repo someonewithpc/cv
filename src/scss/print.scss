@@ -1,14 +1,16 @@
 // Printed output. Linked from Layout.astro with media="print", so the screen never parses it.
 // No desk, no theme picker, no demos: the demos run in the browser and mean nothing on paper,
-// so the whole band goes and the printout is the title block, the career, the bill of
-// materials and the contributions, in the light theme whatever the picker had set, with the
-// contributions as a compact list and links as plain text.
+// so the whole band goes, and the cover's sheet index with it, since it would name a sheet
+// that is not there. The printout is the title block, the career, the bill of materials and
+// the contributions, in the light theme whatever the picker had set, with the contributions
+// as a compact list and links as plain text.
 @use "ts:src/themes.ts" as themes;
 
 @media print {
   #theme-picker,
   #theme-picker-transition-background,
   #demos,
+  .sheet-nav,
   .folio-rail,
   .skip-nav {
     display: none !important;

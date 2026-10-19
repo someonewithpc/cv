@@ -41,6 +41,9 @@ import pronunciation from '@/assets/pronunciation.mp3?url';
 
     <audio controls aria-label="Pronunciation of Hugo Sales"><source src={pronunciation} type="audio/mpeg"></audio>
   </figure>
+
+  {/* The cover's sheet index (index.astro), under the title block and never over it. */}
+  <slot />
 </header>
 
 <style lang="scss">
@@ -53,7 +56,9 @@ header {
   }
 
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   margin-block: 1.25rem 0.25rem;
 
   @media (max-width: 52rem) {

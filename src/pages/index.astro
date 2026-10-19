@@ -3,6 +3,7 @@ import Layout from '@/layouts/Layout.astro';
 
 import Folio from '@/components/Folio.astro';
 import Name from '@/components/Name.astro';
+import SheetNav from '@/components/SheetNav.astro';
 import Career from '@/components/Career/Career.astro';
 import TechIconCloud from '@/components/TechIconCloud.astro';
 import SectionHeader from '@/components/SectionHeader.astro';
@@ -37,10 +38,12 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
         shows, so the margin and the paper say the same thing; the top sheet has no heading
         but the name, so the name is what its folio reads. */}
     <Folio number={1} label="Hugo Sales" />
-    <Name />
+    <Name>
+      <SheetNav />
+    </Name>
 
     {/* The demos come first: a visitor who scrolls once sees the work itself before the table
-        that names it. */}
+        that names it. The sheet index on the cover is what points past them. */}
     <Folio number={2} label="Demos" />
     <section id="demos" class="full-width" aria-labelledby="demos-heading" tabindex="-1">
       <div class="cutting-mat">

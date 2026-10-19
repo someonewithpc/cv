@@ -1,0 +1,98 @@
+---
+/**
+ * The sheet index on the cover sheet, as a drawing set carries one: every sheet in the set by
+ * number and title in one row, each sheet below the cover a link to it. It stands with the
+ * title block at every width, so a phone, which has no folio in the margin, still says what
+ * the set holds and where the Career went once the demos moved above it.
+ */
+type Sheet = { number: number; title: string; id?: string };
+
+/* One entry per Folio in index.astro, in page order; design-mix.spec.ts holds the two to the
+   same order. The cover is the sheet the index is on, so it is named and not linked. */
+const SHEETS: Sheet[] = [
+  { number: 1, title: 'Hugo Sales' },
+  { number: 2, id: 'demos', title: 'Demos' },
+  { number: 3, id: 'career', title: 'Career' },
+  { number: 4, id: 'bill-of-materials', title: 'Bill of materials' },
+  { number: 5, id: 'open-source', title: 'Open Source' },
+];
+---
+
+<nav class="sheet-nav monospace" aria-label="Sheets">
+  <ol>
+    {SHEETS.map(({ number, id, title }) => (
+      <li>
+        <span class="no" aria-hidden="true">{String(number).padStart(2, '0')}</span>
+        {id ? <a href={`#${id}`}>{title}</a> : <span class="cover" aria-current="location">{title}</span>}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style lang="scss">
+/* A slip of the same paper as the title block, framed with the hairline the sheets on the
+   desk take, so it reads as a strip on the cover and not as a second title block. */
+.sheet-nav {
+  width: min(100%, 42rem);
+  padding: 0.25rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: var(--surface-page);
+  box-shadow: var(--sheet-lift);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+
+/* One row, centred, that wraps on a phone; the numbers do the separating. */
+ol {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 1.5ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5ch;
+}
+
+.no {
+  color: var(--ink-faint);
+}
+
+/* The cover's own entry stands as tall as the linked ones. */
+.cover {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  color: var(--ink);
+}
+
+/* The same link as the contact row in the title block, 1.5rem tall for the touch target. */
+a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  color: var(--ink);
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-muted);
+  text-underline-offset: 0.25em;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--accent-text);
+    text-decoration-style: solid;
+    text-decoration-color: currentColor;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 0.125rem;
+    border-radius: 0.125rem;
+  }
+}
+</style>
