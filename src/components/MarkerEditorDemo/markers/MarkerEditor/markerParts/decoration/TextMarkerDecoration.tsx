@@ -1,4 +1,4 @@
-import clamp from 'lodash/clamp';
+import clamp from 'lodash-es/clamp';
 
 import $store, { spaceGlobalOrderSelector } from '../../../../store';
 import type { SpaceType } from '../../../../store';

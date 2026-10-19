@@ -1,4 +1,4 @@
-import clamp from 'lodash/clamp';
+import clamp from 'lodash-es/clamp';
 import { Point } from "../shared";
 import type { PointLiteral } from "../shared";
 

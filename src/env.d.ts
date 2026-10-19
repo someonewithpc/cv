@@ -31,6 +31,11 @@ declare module 'lodash-es/partition' {
   export default partition;
 }
 
+declare module 'lodash-es/clamp' {
+  import { clamp } from 'lodash';
+  export default clamp;
+}
+
 declare module '/@react-refresh' {
   const runtime: {
     injectIntoGlobalHook: (env: Window) => void;
