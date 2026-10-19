@@ -5,7 +5,7 @@
       "title": "GNU social v3",
       "role": "Maintainer",
       "roleJp": "メンテナー",
-      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5 with an event driven and modular architecture. Rewrote the controllers and posting form layer, expanded PHPUnit coverage, and integrated PHPStan and tooling for dependency hygiene.",
+      "description": "Led the GNU social v3 rewrite from 2021 to 2022 with ~1200 commits, funded by NLnet through the NGI0 Discovery programme. Ported the federated microblogging stack to Symfony 5 with an event driven and modular architecture. Rewrote the controllers and posting form layer, expanded PHPUnit coverage, and integrated PHPStan and tooling for dependency hygiene",
       "repository": "GNUsocial/gnu-social",
       "commits": "~1200",
       "period": "2021–2022",
@@ -28,7 +28,7 @@
       "title": "Blender GSoC 2019",
       "role": "GSoC student",
       "roleJp": "GSoCの学生",
-      "description": "Proposed replacing Blender's Python OBJ, STL, and PLY importers/exporters with a shared C/C++ IO framework using memory-mapped files and optional parallelization. A prototype patch made OBJ and STL import and export about 3× faster, and the proposal was accepted into the GSoC programme.",
+      "description": "Proposed replacing Blender's Python OBJ, STL, and PLY importers/exporters with a shared C/C++ IO framework using memory-mapped files and optional parallelization. A prototype patch made OBJ and STL import and export about 3× faster, and the proposal was accepted into the GSoC programme",
       "repository": "blender/blender",
       "period": "2019",
       "links": [
@@ -55,7 +55,7 @@
         {
           "repository": "withastro/compiler-rs",
           "title": "Fix wrong handling of combinators inside `:global()`",
-          "description": "Reworked the `scope_css` pass in Astro's `compiler_rs` so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path.",
+          "description": "Reworked the `scope_css` pass in Astro's `compiler_rs` so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path",
           "url": "https://github.com/withastro/compiler-rs/pull/61",
           "number": 61,
           "updatedAt": "2026-06-29T15:19:45Z",
@@ -72,7 +72,7 @@
         {
           "repository": "withastro/compiler-rs",
           "title": "JSX in object literal transforms incorrectly",
-          "description": "Fixed JSX-in-object-literal transforms in the Astro Rust compiler so object literals can contain JSX expressions (astro#17198).",
+          "description": "Fixed JSX-in-object-literal transforms in the Astro Rust compiler so object literals can contain JSX expressions (astro#17198)",
           "url": "https://github.com/withastro/compiler-rs/pull/58",
           "number": 58,
           "updatedAt": "2026-06-25T15:28:58Z",
@@ -89,7 +89,7 @@
         {
           "repository": "bootstrap-vue-next/bootstrap-vue-next",
           "title": "feat(BPopover): Add close-on-hide prop to close the popover when it hides by clipping out of view",
-          "description": "Added a `close-on-hide` prop to `BPopover` so popovers dismiss when clipping middleware hides them from view.",
+          "description": "Added a `close-on-hide` prop to `BPopover` so popovers dismiss when clipping middleware hides them from view",
           "url": "https://github.com/bootstrap-vue-next/bootstrap-vue-next/pull/2040",
           "number": 2040,
           "updatedAt": "2024-07-19T14:36:02Z",
@@ -106,7 +106,7 @@
         {
           "repository": "react/react",
           "title": "Add support for `transition{run,start,cancel}` events",
-          "description": "Added React support for `transitionrun`, `transitionstart`, and `transitioncancel` events, with matching test coverage.",
+          "description": "Added React support for `transitionrun`, `transitionstart`, and `transitioncancel` events, with matching test coverage",
           "url": "https://github.com/react/react/pull/27345",
           "number": 27345,
           "updatedAt": "2024-04-08T21:23:04Z",
@@ -123,7 +123,7 @@
         {
           "repository": "xuoe/redux-observers",
           "title": "Refresh the state between observer runs",
-          "description": "Fixed chained Redux observers so each run sees the latest store state after upstream observers dispatch updates.",
+          "description": "Fixed chained Redux observers so each run sees the latest store state after upstream observers dispatch updates",
           "url": "https://github.com/xuoe/redux-observers/pull/23",
           "number": 23,
           "updatedAt": "2023-11-05T13:33:37Z",
@@ -140,7 +140,7 @@
         {
           "repository": "DefinitelyTyped/DefinitelyTyped",
           "title": "[leaflet] Forward given feature property type",
-          "description": "Forwarded Leaflet's feature property generic through `@types/leaflet` so callers can type GeoJSON features precisely.",
+          "description": "Forwarded Leaflet's feature property generic through `@types/leaflet` so callers can type GeoJSON features precisely",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/pull/69237",
           "number": 69237,
           "updatedAt": "2024-04-14T08:24:23Z",
@@ -157,7 +157,7 @@
         {
           "repository": "DefinitelyTyped/DefinitelyTyped",
           "title": "[leaflet] Turn on strictNullChecks and fix errors that arise",
-          "description": "Enabled `strictNullChecks` on the Leaflet typings and fixed the resulting type errors.",
+          "description": "Enabled `strictNullChecks` on the Leaflet typings and fixed the resulting type errors",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/pull/69238",
           "number": 69238,
           "updatedAt": "2024-04-22T13:42:41Z",
@@ -174,7 +174,7 @@
         {
           "repository": "nonsequitur/inf-ruby",
           "title": "Add custom variable to specify a wrapper for the determined commands to launch a console",
-          "description": "Added an inf-ruby variable to wrap the console command, making it easy to launch Ruby inside Docker.",
+          "description": "Added an inf-ruby variable to wrap the console command, making it easy to launch Ruby inside Docker",
           "url": "https://github.com/nonsequitur/inf-ruby/pull/190",
           "number": 190,
           "updatedAt": "2024-12-16T02:04:41Z",
@@ -190,7 +190,7 @@
         {
           "repository": "DefinitelyTyped/DefinitelyTyped",
           "title": "[leaflet] Update to leaflet 1.9.1",
-          "description": "Brought `@types/leaflet` up to Leaflet 1.9.1.",
+          "description": "Brought `@types/leaflet` up to Leaflet 1.9.1",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/pull/62487",
           "number": 62487,
           "updatedAt": "2022-10-15T08:31:17Z",
@@ -207,7 +207,7 @@
         {
           "repository": "fmtlib/fmt",
           "title": "Add `n` specifier for tuple and pair",
-          "description": "Added an `n` format specifier for `std::tuple` and `std::pair` in {fmt}, following the tuple-formatting design from #4090.",
+          "description": "Added an `n` format specifier for `std::tuple` and `std::pair` in {fmt}, following the tuple-formatting design from #4090",
           "url": "https://github.com/fmtlib/fmt/pull/4107",
           "number": 4107,
           "updatedAt": "2024-08-05T21:56:44Z",
@@ -223,7 +223,7 @@
         {
           "repository": "bootstrap-vue-next/bootstrap-vue-next",
           "title": "feat(BOffcanvas): allow specifying a width",
-          "description": "Added a width prop to `BOffcanvas` so sidebar sizing matches bootstrap-vue migration expectations.",
+          "description": "Added a width prop to `BOffcanvas` so sidebar sizing matches bootstrap-vue migration expectations",
           "url": "https://github.com/bootstrap-vue-next/bootstrap-vue-next/pull/1903",
           "number": 1903,
           "updatedAt": "2024-05-24T14:19:24Z",
@@ -240,7 +240,7 @@
         {
           "repository": "bootstrap-vue-next/bootstrap-vue-next",
           "title": "feat(BInput): Alias BFormInput to BInput",
-          "description": "Aliased `BFormInput` as `BInput` for bootstrap-vue compatibility.",
+          "description": "Aliased `BFormInput` as `BInput` for bootstrap-vue compatibility",
           "url": "https://github.com/bootstrap-vue-next/bootstrap-vue-next/pull/1892",
           "number": 1892,
           "updatedAt": "2024-05-21T18:46:30Z",
@@ -257,7 +257,7 @@
         {
           "repository": "pybluez/pybluez",
           "title": "Update README",
-          "description": "Named the Debian package that carries the BlueZ headers in the PyBluez build requirements, so the README says what to install.",
+          "description": "Named the Debian package that carries the BlueZ headers in the PyBluez build requirements, so the README says what to install",
           "url": "https://github.com/pybluez/pybluez/pull/119",
           "number": 119,
           "updatedAt": "2016-04-17T10:22:13Z",
@@ -273,7 +273,7 @@
         {
           "repository": "DefinitelyTyped/DefinitelyTyped",
           "title": "Update Leaflet declaration to include missing methods, as of version 1.8",
-          "description": "Filled in missing Leaflet methods in the DefinitelyTyped declarations for v1.8.",
+          "description": "Filled in missing Leaflet methods in the DefinitelyTyped declarations for v1.8",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/pull/61339",
           "number": 61339,
           "updatedAt": "2022-09-15T20:47:42Z",
@@ -285,7 +285,7 @@
         {
           "repository": "lstrojny/functional-php",
           "title": "Add `entries` and `from_entries`, similar to JavaScript's `Object.entries` and `Object.fromEntries`",
-          "description": "Added `entries` and `from_entries` helpers to functional-php, mirroring JavaScript's `Object.entries` / `Object.fromEntries`.",
+          "description": "Added `entries` and `from_entries` helpers to functional-php, mirroring JavaScript's `Object.entries` / `Object.fromEntries`",
           "url": "https://github.com/lstrojny/functional-php/pull/243",
           "number": 243,
           "updatedAt": "2022-04-05T14:57:29Z",
@@ -296,7 +296,7 @@
         {
           "repository": "vivien/i3blocks-contrib",
           "title": "Add option to memory to allow not showing the percentage",
-          "description": "Added an i3blocks memory option to hide the percentage label while keeping the usage bar.",
+          "description": "Added an i3blocks memory option to hide the percentage label while keeping the usage bar",
           "url": "https://github.com/vivien/i3blocks-contrib/pull/311",
           "number": 311,
           "updatedAt": "2021-10-22T03:22:52Z",
@@ -307,7 +307,7 @@
         {
           "repository": "callstack/masked-view",
           "title": "Update Android Tools gradle version",
-          "description": "Bumped Android Gradle tooling in masked-view to unblock react-native-gesture-handler builds.",
+          "description": "Bumped Android Gradle tooling in masked-view to unblock react-native-gesture-handler builds",
           "url": "https://github.com/callstack/masked-view/pull/101",
           "number": 101,
           "updatedAt": "2021-07-14T00:39:05Z",
@@ -320,7 +320,7 @@
         {
           "repository": "software-mansion/react-native-reanimated",
           "title": "Update Android Tools gradle version",
-          "description": "Bumped Android Gradle tooling in Reanimated to unblock react-native-gesture-handler builds.",
+          "description": "Bumped Android Gradle tooling in Reanimated to unblock react-native-gesture-handler builds",
           "url": "https://github.com/software-mansion/react-native-reanimated/pull/1666",
           "number": 1666,
           "updatedAt": "2021-02-01T08:13:24Z",
@@ -333,7 +333,7 @@
         {
           "repository": "assimp/assimp",
           "title": "Fix build error",
-          "description": "Fixed a spurious Assimp warning tracked in assimp#3222.",
+          "description": "Fixed a spurious Assimp warning tracked in assimp#3222",
           "url": "https://github.com/assimp/assimp/pull/3555",
           "number": 3555,
           "updatedAt": "2020-12-24T15:48:21Z",
@@ -345,7 +345,7 @@
         {
           "repository": "symfony/symfony",
           "title": "[Translation] Add support for calling `trans` with ICU formatted messages",
-          "description": "Extended Symfony's Translator so `trans()` accepts ICU-formatted messages directly (symfony#37228).",
+          "description": "Extended Symfony's Translator so `trans()` accepts ICU-formatted messages directly (symfony#37228)",
           "url": "https://github.com/symfony/symfony/pull/37371",
           "number": 37371,
           "updatedAt": "2020-10-05T08:52:44Z",
@@ -356,7 +356,7 @@
         {
           "repository": "lstrojny/functional-php",
           "title": "Add `ary` function which ignores arguments over the supplied number",
-          "description": "Added `ary`, a helper that trims excess arguments before invoking a callable.",
+          "description": "Added `ary`, a helper that trims excess arguments before invoking a callable",
           "url": "https://github.com/lstrojny/functional-php/pull/215",
           "number": 215,
           "updatedAt": "2020-06-09T14:17:05Z",
@@ -367,7 +367,7 @@
         {
           "repository": "lstrojny/functional-php",
           "title": "Fix tests",
-          "description": "Repaired functional-php's PHPUnit suite after upstream dependency and PHP version drift.",
+          "description": "Repaired functional-php's PHPUnit suite after upstream dependency and PHP version drift",
           "url": "https://github.com/lstrojny/functional-php/pull/218",
           "number": 218,
           "updatedAt": "2020-05-25T13:09:11Z",
@@ -378,7 +378,7 @@
         {
           "repository": "th3rdwave/react-native-safe-area-context",
           "title": "Update Android Tools gradle version",
-          "description": "Bumped Android Gradle tooling in react-native-safe-area-context to unblock a react-native-gesture-handler build.",
+          "description": "Bumped Android Gradle tooling in react-native-safe-area-context to unblock a react-native-gesture-handler build",
           "url": "https://github.com/th3rdwave/react-native-safe-area-context/pull/173",
           "number": 173,
           "tags": [
@@ -396,7 +396,7 @@
         {
           "repository": "peteonrails/voxtype",
           "title": "feat(daemon): record the next push-to-talk dictation while one transcribes",
-          "description": "Kept the microphone open while a push-to-talk dictation transcribes in Voxtype. A press in that window is queued and recorded on the open capture, so the next sentence is no longer lost.",
+          "description": "Kept the microphone open while a push-to-talk dictation transcribes in Voxtype. A press in that window is queued and recorded on the open capture, so the next sentence is no longer lost",
           "url": "https://github.com/peteonrails/voxtype/pull/837",
           "number": 837,
           "updatedAt": "2026-10-05T16:52:46Z",
@@ -412,7 +412,7 @@
         {
           "repository": "peteonrails/voxtype",
           "title": "feat(hotkey): cancel the recording when the hotkey becomes a shortcut",
-          "description": "Added `hotkey.cancel_on_other_key` for a modifier used as the hotkey. Pressing any other key while it is held cancels the recording, so Right Ctrl+C no longer dictates.",
+          "description": "Added `hotkey.cancel_on_other_key` for a modifier used as the hotkey. Pressing any other key while it is held cancels the recording, so Right Ctrl+C no longer dictates",
           "url": "https://github.com/peteonrails/voxtype/pull/835",
           "number": 835,
           "updatedAt": "2026-10-05T16:52:19Z",
@@ -428,7 +428,7 @@
         {
           "repository": "peteonrails/voxtype",
           "title": "feat(hotkey): double-tap to latch push-to-talk on",
-          "description": "Added `hotkey.double_tap_latch`. A double tap keeps the recording running after the key is released, until the next press, and holding the key works as before. A small `TapLatch` state machine in the evdev listener does the timing.",
+          "description": "Added `hotkey.double_tap_latch`. A double tap keeps the recording running after the key is released, until the next press, and holding the key works as before. A small `TapLatch` state machine in the evdev listener does the timing",
           "url": "https://github.com/peteonrails/voxtype/pull/833",
           "number": 833,
           "updatedAt": "2026-10-05T16:52:06Z",
@@ -444,7 +444,7 @@
         {
           "repository": "peteonrails/voxtype",
           "title": "feat(hotkey): pick the Whisper language with a modifier key",
-          "description": "Added `[hotkey.language_modifiers]`, which maps modifier keys to Whisper language codes. Holding one during a recording transcribes that recording in that language, and the next goes back to the configured one.",
+          "description": "Added `[hotkey.language_modifiers]`, which maps modifier keys to Whisper language codes. Holding one during a recording transcribes that recording in that language, and the next goes back to the configured one",
           "url": "https://github.com/peteonrails/voxtype/pull/831",
           "number": 831,
           "updatedAt": "2026-10-05T16:41:45Z",
@@ -460,7 +460,7 @@
         {
           "repository": "peteonrails/voxtype",
           "title": "fix(whisper): retry when the decoder loops on a phrase",
-          "description": "Added a loop check to the Whisper transcriber. When a phrase of three or more words repeats three or more times in a row, it retries with beam search, and keeps one copy of each phrase if the retry loops too.",
+          "description": "Added a loop check to the Whisper transcriber. When a phrase of three or more words repeats three or more times in a row, it retries with beam search, and keeps one copy of each phrase if the retry loops too",
           "url": "https://github.com/peteonrails/voxtype/pull/827",
           "number": 827,
           "updatedAt": "2026-10-05T16:21:14Z",
@@ -476,7 +476,7 @@
         {
           "repository": "FreeCAD/FreeCAD",
           "title": "Quarter: scale pointer position to device pixels before flipping Y",
-          "description": "Fixed picking in the 3D view on fractional-scale screens. `toDevicePixelPosition()` flipped the Y axis in logical pixels and only then scaled to device pixels, so on a 2.67× panel a click landed 1 to 4 device pixels below the cursor.",
+          "description": "Fixed picking in the 3D view on fractional-scale screens. `toDevicePixelPosition()` flipped the Y axis in logical pixels and only then scaled to device pixels, so on a 2.67× panel a click landed 1 to 4 device pixels below the cursor",
           "url": "https://github.com/FreeCAD/FreeCAD/pull/32899",
           "number": 32899,
           "updatedAt": "2026-09-24T05:58:34Z",
@@ -493,7 +493,7 @@
         {
           "repository": "wispr-flow-linux/helper",
           "title": "feat: omit listed VK codes from the global key monitor",
-          "description": "Added `WISPR_CAPTURE_IGNORE_VK`, a list of virtual-key codes the Linux helper leaves out of its global key monitor, so a push-to-talk bind on <kbd>Right Ctrl</kbd> stops firing on <kbd>Left Ctrl</kbd> as well. Skipped keys do not take a sequence index, so the app never sees a gap, and paste injection is untouched.",
+          "description": "Added `WISPR_CAPTURE_IGNORE_VK`, a list of virtual-key codes the Linux helper leaves out of its global key monitor, so a push-to-talk bind on <kbd>Right Ctrl</kbd> stops firing on <kbd>Left Ctrl</kbd> as well. Skipped keys do not take a sequence index, so the app never sees a gap, and paste injection is untouched",
           "url": "https://github.com/wispr-flow-linux/helper/pull/15",
           "number": 15,
           "updatedAt": "2026-09-17T17:19:05Z",
@@ -510,7 +510,7 @@
         {
           "repository": "Alexays/Waybar",
           "title": "feat(modules): add on-enter and on-leave events",
-          "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignored GTK's inferior crossings and latched on a hover flag so each command ran once per hover, and mirrored the `on-click` guard that keeps built-in actions from also running as shell commands.",
+          "description": "Added `on-enter` and `on-leave` command hooks to every Waybar module, requested since 2023. Ignored GTK's inferior crossings and latched on a hover flag so each command ran once per hover, and mirrored the `on-click` guard that keeps built-in actions from also running as shell commands",
           "url": "https://github.com/Alexays/Waybar/pull/5312",
           "number": 5312,
           "updatedAt": "2026-09-23T20:51:37Z",
@@ -526,7 +526,7 @@
         {
           "repository": "cheapestinference/claude-auto-retry",
           "title": "Package as a Nix flake (NixOS + home-manager modules)",
-          "description": "Packaged claude-auto-retry as a Nix flake with NixOS and home-manager modules that build from source and manage the shell wrapper, the reconcile timer, and the `StopFailure` hook through real options instead of `npm i -g`. Also fixed the wrapper clobbering each tmux pane's `TERM`.",
+          "description": "Packaged claude-auto-retry as a Nix flake with NixOS and home-manager modules that build from source and manage the shell wrapper, the reconcile timer, and the `StopFailure` hook through real options instead of `npm i -g`. Also fixed the wrapper clobbering each tmux pane's `TERM`",
           "url": "https://github.com/cheapestinference/claude-auto-retry/pull/82",
           "number": 82,
           "updatedAt": "2026-09-08T13:00:47Z",
@@ -543,7 +543,7 @@
         {
           "repository": "git/git",
           "title": "rebase: add `--[no-]edit` to `--continue`",
-          "description": "Added `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening `$EDITOR` after resolving conflicts, with `--edit` to override the config for a single continue.",
+          "description": "Added `git rebase --continue --no-edit` and `rebase.noEdit` to skip opening `$EDITOR` after resolving conflicts, with `--edit` to override the config for a single continue",
           "url": "https://lore.kernel.org/git/20260721140443.1809379-1-hugo@hsal.es/T/#me10fd97f2d1bfcc869c6b71e41a22b9727bd2e24",
           "updatedAt": "2026-07-21",
           "stats": {
@@ -559,7 +559,7 @@
         {
           "repository": "pear/XML_XRD",
           "title": "Switch to PSR-4 with XRD namespace",
-          "description": "Modernized XML_XRD with PSR-4 autoloading under an `XRD` namespace, replacing legacy PEAR layout.",
+          "description": "Modernized XML_XRD with PSR-4 autoloading under an `XRD` namespace, replacing legacy PEAR layout",
           "url": "https://github.com/pear/XML_XRD/pull/4",
           "number": 4,
           "updatedAt": "2024-01-11T10:03:56Z",
@@ -575,7 +575,7 @@
         {
           "repository": "Leaflet/Leaflet",
           "title": "Add `setInteractive`",
-          "description": "Added `setInteractive` on Leaflet layers so interactivity can be toggled after creation.",
+          "description": "Added `setInteractive` on Leaflet layers so interactivity can be toggled after creation",
           "url": "https://github.com/Leaflet/Leaflet/pull/9055",
           "number": 9055,
           "updatedAt": "2025-03-02T16:31:04Z",
@@ -592,7 +592,7 @@
         {
           "repository": "svg/svgo",
           "title": "feat: make `optimize` return the AST and export `parseSvg` for browser bundle",
-          "description": "Made SVGO's `optimize` return the AST and exported `parseSvg` in the browser bundle to avoid double parsing.",
+          "description": "Made SVGO's `optimize` return the AST and exported `parseSvg` in the browser bundle to avoid double parsing",
           "url": "https://github.com/svg/svgo/pull/2194",
           "number": 2194,
           "updatedAt": "2026-03-14T23:07:17Z",
@@ -608,7 +608,7 @@
         {
           "repository": "pear/XML_XRD",
           "title": "Update tests to PHPUnit 9.5",
-          "description": "Updated XML_XRD tests to PHPUnit 9.5 as part of broader PEAR modernization.",
+          "description": "Updated XML_XRD tests to PHPUnit 9.5 as part of broader PEAR modernization",
           "url": "https://github.com/pear/XML_XRD/pull/3",
           "number": 3,
           "updatedAt": "2024-01-11T10:01:39Z",
@@ -624,7 +624,7 @@
         {
           "repository": "Leaflet/Leaflet",
           "title": "Allow controls to use the 'button' role rather than requiring an <a> element",
-          "description": "Let Leaflet controls use `role=\"button\"` instead of requiring anchor elements in control markup.",
+          "description": "Let Leaflet controls use `role=\"button\"` instead of requiring anchor elements in control markup",
           "url": "https://github.com/Leaflet/Leaflet/pull/9462",
           "number": 9462,
           "updatedAt": "2025-03-01T07:49:38Z",
@@ -641,7 +641,7 @@
         {
           "repository": "aspiers/stow",
           "title": "Add option to use absolute paths",
-          "description": "Added a GNU Stow option to emit absolute symlinks when packages must resolve outside the stow tree.",
+          "description": "Added a GNU Stow option to emit absolute symlinks when packages must resolve outside the stow tree",
           "url": "https://github.com/aspiers/stow/pull/68",
           "number": 68,
           "updatedAt": "2024-07-14T19:14:27Z",
@@ -657,7 +657,7 @@
         {
           "repository": "sgruhier/capistrano-db-tasks",
           "title": "Add support for specifying extra command line options during database dump and load",
-          "description": "Let capistrano-db-tasks pass extra mysqldump flags, needed for schemas where a non-unique key follows the primary key.",
+          "description": "Let capistrano-db-tasks pass extra mysqldump flags, needed for schemas where a non-unique key follows the primary key",
           "url": "https://github.com/sgruhier/capistrano-db-tasks/pull/138",
           "number": 138,
           "updatedAt": "2023-12-20T19:27:58Z",
@@ -673,7 +673,7 @@
         {
           "repository": "pear/XML_XRD",
           "title": "Fix deprecation warning caused by missing return types",
-          "description": "Added missing return types on XML_XRD to clear PHP 8 deprecation warnings.",
+          "description": "Added missing return types on XML_XRD to clear PHP 8 deprecation warnings",
           "url": "https://github.com/pear/XML_XRD/pull/2",
           "number": 2,
           "updatedAt": "2024-01-11T14:34:20Z",
@@ -689,7 +689,7 @@
         {
           "repository": "domdfcoding/whiptail",
           "title": "Ensure negative height is not given to `whiptail`",
-          "description": "Clamped negative whiptail menu heights that broke item rendering from v0.52.22 onward.",
+          "description": "Clamped negative whiptail menu heights that broke item rendering from v0.52.22 onward",
           "url": "https://github.com/domdfcoding/whiptail/pull/45",
           "number": 45,
           "updatedAt": "2023-05-21T14:01:42Z",
@@ -705,7 +705,7 @@
         {
           "repository": "marwano/whiptail",
           "title": "Ensure negative height is not given to `whiptail`",
-          "description": "Clamped negative whiptail menu heights that broke item rendering from v0.52.22 onward.",
+          "description": "Clamped negative whiptail menu heights that broke item rendering from v0.52.22 onward",
           "url": "https://github.com/marwano/whiptail/pull/2",
           "number": 2,
           "updatedAt": "2022-11-21T22:08:13Z",
@@ -721,7 +721,7 @@
         {
           "repository": "lstrojny/functional-php",
           "title": "Add `cartesian_product` and `InvalidArgumentException::assertStringable`",
-          "description": "Added `cartesian_product` and `InvalidArgumentException::assertStringable` to functional-php.",
+          "description": "Added `cartesian_product` and `InvalidArgumentException::assertStringable` to functional-php",
           "url": "https://github.com/lstrojny/functional-php/pull/244",
           "number": 244,
           "updatedAt": "2021-12-10T13:24:27Z",
@@ -732,7 +732,7 @@
         {
           "repository": "retejs/keyboard-plugin",
           "title": "Add copy and paste functionality",
-          "description": "Added copy/paste shortcuts to the Rete.js keyboard plugin for moving node selections between editor states.",
+          "description": "Added copy/paste shortcuts to the Rete.js keyboard plugin for moving node selections between editor states",
           "url": "https://github.com/retejs/keyboard-plugin/pull/3",
           "number": 3,
           "updatedAt": "2021-10-28T19:08:17Z",
@@ -743,7 +743,7 @@
         {
           "repository": "retejs/keyboard-plugin",
           "title": "Spawn context menu at mouse position, clamped to viewport",
-          "description": "Opened the Rete.js context menu at the pointer and clamped it to the viewport edges.",
+          "description": "Opened the Rete.js context menu at the pointer and clamped it to the viewport edges",
           "url": "https://github.com/retejs/keyboard-plugin/pull/2",
           "number": 2,
           "updatedAt": "2021-07-06T23:08:38Z",
@@ -754,7 +754,7 @@
         {
           "repository": "retejs/keyboard-plugin",
           "title": "Switch from `event.code` to `event.key`, to allow for remapped layouts",
-          "description": "Switched Rete.js shortcuts from `event.code` to `event.key` so remapped and non-QWERTY layouts work.",
+          "description": "Switched Rete.js shortcuts from `event.code` to `event.key` so remapped and non-QWERTY layouts work",
           "url": "https://github.com/retejs/keyboard-plugin/pull/1",
           "number": 1,
           "updatedAt": "2021-07-06T23:01:14Z",
@@ -765,7 +765,7 @@
         {
           "repository": "vivien/i3blocks-contrib",
           "title": "Add `redshift` block to display the current screen temperature",
-          "description": "Added a redshift i3blocks module that shows the current screen colour temperature.",
+          "description": "Added a redshift i3blocks module that shows the current screen colour temperature",
           "url": "https://github.com/vivien/i3blocks-contrib/pull/310",
           "number": 310,
           "updatedAt": "2020-03-21T04:36:47Z",
@@ -782,7 +782,7 @@
         {
           "repository": "gaoxiaoliangz/react-scoped-css",
           "title": "Update dependencies so it works with Webpack 5 and CRACO 7",
-          "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer.",
+          "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer",
           "url": "https://github.com/gaoxiaoliangz/react-scoped-css/pull/74",
           "number": 74,
           "updatedAt": "2023-08-11T15:16:20Z",
@@ -800,7 +800,7 @@
         {
           "repository": "symfony/polyfill",
           "title": "Only define classes if they don't exist",
-          "description": "Wrapped every Intl stub class in a `class_exists` guard, so loading the polyfill next to a real `intl` extension stops fataling with \"Cannot declare class Normalizer, because the name is already in use\".",
+          "description": "Wrapped every Intl stub class in a `class_exists` guard, so loading the polyfill next to a real `intl` extension stops fataling with \"Cannot declare class Normalizer, because the name is already in use\"",
           "url": "https://github.com/symfony/polyfill/pull/277",
           "number": 277,
           "updatedAt": "2020-07-22T08:38:01Z",
@@ -817,7 +817,7 @@
         {
           "repository": "PaulLeCam/react-leaflet",
           "title": "Allow customizing which class gets used for `LayersControl`",
-          "description": "Let React Leaflet's `LayersControl` instantiate a custom `L.Control` subclass, needed for image-based layer toggles.",
+          "description": "Let React Leaflet's `LayersControl` instantiate a custom `L.Control` subclass, needed for image-based layer toggles",
           "url": "https://github.com/PaulLeCam/react-leaflet/pull/1092",
           "number": 1092,
           "updatedAt": "2024-06-03T08:39:52Z",
@@ -835,7 +835,7 @@
         {
           "repository": "bootstrap-vue-next/bootstrap-vue-next",
           "title": "feat(BDropdown): add prop for max height and width for the dropdown menu",
-          "description": "Added `max-height` and `max-width` props to `BDropdown` so a menu can override the size `@floating-ui/vue` works out for it, with an example in the docs.",
+          "description": "Added `max-height` and `max-width` props to `BDropdown` so a menu can override the size `@floating-ui/vue` works out for it, with an example in the docs",
           "url": "https://github.com/bootstrap-vue-next/bootstrap-vue-next/pull/1925",
           "number": 1925,
           "updatedAt": "2024-05-30T21:34:20Z",
@@ -852,7 +852,7 @@
         {
           "repository": "clauderic/dnd-kit",
           "title": "Pass DND Context to sorting `strategy`",
-          "description": "Passed drag-and-drop context into dnd-kit sorting strategies so custom sorters can read sensors and collisions.",
+          "description": "Passed drag-and-drop context into dnd-kit sorting strategies so custom sorters can read sensors and collisions",
           "url": "https://github.com/clauderic/dnd-kit/pull/1322",
           "number": 1322,
           "updatedAt": "2024-03-30T11:28:34Z",
@@ -868,7 +868,7 @@
         {
           "repository": "clauderic/dnd-kit",
           "title": "Add `initial` and `delta` to `pointerCoordinates` in `collisionDetection`",
-          "description": "Added `initial` and `delta` pointer coordinates to dnd-kit collision detection for frame-to-frame movement.",
+          "description": "Added `initial` and `delta` pointer coordinates to dnd-kit collision detection for frame-to-frame movement",
           "url": "https://github.com/clauderic/dnd-kit/pull/1321",
           "number": 1321,
           "updatedAt": "2024-03-30T11:28:33Z",
@@ -884,7 +884,7 @@
         {
           "repository": "DefinitelyTyped/DefinitelyTyped",
           "title": "[leaflet] Support optional altitude in LatLngTuple",
-          "description": "Allowed optional altitude in Leaflet's `LatLngTuple` typing.",
+          "description": "Allowed optional altitude in Leaflet's `LatLngTuple` typing",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/pull/66805",
           "number": 66805,
           "updatedAt": "2023-09-23T14:47:04Z",
@@ -901,7 +901,7 @@
         {
           "repository": "NixOS/nixpkgs",
           "title": "gtk4: 4.22.4 -> 4.22.5",
-          "description": "Bumped gtk4 to 4.22.5 for the upstream munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged. Closed as a duplicate of #559510, the GNOME 51 update on staging, which takes gtk4 to 4.24.0.",
+          "description": "Bumped gtk4 to 4.22.5 for the upstream munmap() fix in the Wayland dmabuf format table, which took down any GTK4 client on Hyprland whenever a monitor was plugged in. Traced from a coredump and first sent as a backported patch; the reviewer asked for the bump once 4.22.5 was tagged. Closed as a duplicate of #559510, the GNOME 51 update on staging, which takes gtk4 to 4.24.0",
           "url": "https://github.com/NixOS/nixpkgs/pull/561695",
           "number": 561695,
           "updatedAt": "2026-09-21T21:36:00Z",
@@ -918,7 +918,7 @@
         {
           "repository": "scylladb/seastar",
           "title": "Fix table in README",
-          "description": "Fixed a malformed Markdown table in the Seastar README.",
+          "description": "Fixed a malformed Markdown table in the Seastar README",
           "url": "https://github.com/scylladb/seastar/pull/681",
           "number": 681,
           "updatedAt": "2023-01-07T12:17:08Z",
@@ -934,7 +934,7 @@
         {
           "repository": "PaulLeCam/react-leaflet",
           "title": "Support dynamic changing of Marker `interactive` property",
-          "description": "Synced Leaflet marker `interactive` when the React Leaflet prop changes after mount.",
+          "description": "Synced Leaflet marker `interactive` when the React Leaflet prop changes after mount",
           "url": "https://github.com/PaulLeCam/react-leaflet/pull/1086",
           "number": 1086,
           "updatedAt": "2023-08-02T09:11:35Z",
@@ -951,7 +951,7 @@
         {
           "repository": "unplugin/unplugin-vue-components",
           "title": "feat(bootstrap-vue-next): allow specifying component aliases",
-          "description": "Let `BootstrapVueNextResolver` take a map of component aliases, so a project moving off bootstrap-vue can keep auto-importing the names it already uses.",
+          "description": "Let `BootstrapVueNextResolver` take a map of component aliases, so a project moving off bootstrap-vue can keep auto-importing the names it already uses",
           "url": "https://github.com/unplugin/unplugin-vue-components/pull/757",
           "number": 757,
           "updatedAt": "2024-06-01T15:16:37Z",
@@ -968,7 +968,7 @@
         {
           "repository": "retejs/history-plugin",
           "title": "Fix `event clear does not exist`",
-          "description": "Bound the missing `clear` event when the Rete.js history plugin installs, so clearing the history no longer throws (retejs/history-plugin#16).",
+          "description": "Bound the missing `clear` event when the Rete.js history plugin installs, so clearing the history no longer throws (retejs/history-plugin#16)",
           "url": "https://github.com/retejs/history-plugin/pull/17",
           "number": 17,
           "updatedAt": "2023-01-28T18:38:02Z",
@@ -984,7 +984,7 @@
         {
           "repository": "Codeception/Codeception",
           "title": "Add explicit return types to methods overriding Symfony methods, silencing deprecation warnings",
-          "description": "Added explicit return types on Symfony overrides in Codeception to silence Symfony 5.4 deprecations.",
+          "description": "Added explicit return types on Symfony overrides in Codeception to silence Symfony 5.4 deprecations",
           "url": "https://github.com/Codeception/Codeception/pull/6316",
           "number": 6316,
           "updatedAt": "2022-01-09T16:42:56Z",
@@ -995,7 +995,7 @@
         {
           "repository": "getopt-php/getopt-php",
           "title": "Update type signatures to avoid warnings in PHP 8.1",
-          "description": "Updated getopt-php type signatures for PHP 8.1 and PHPStan cleanliness.",
+          "description": "Updated getopt-php type signatures for PHP 8.1 and PHPStan cleanliness",
           "url": "https://github.com/getopt-php/getopt-php/pull/172",
           "number": 172,
           "updatedAt": "2022-01-04T11:00:34Z",
@@ -1006,7 +1006,7 @@
         {
           "repository": "somnambulist-tech/cte-builder",
           "title": "Update to `Doctrine` 3 and `beberlei/assert` 3.3",
-          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3. Closed after the maintainer folded parts of it into 3.1.0, which supports DBAL 2 and 3 side by side.",
+          "description": "Upgraded cte-builder to Doctrine 3 and beberlei/assert 3.3. Closed after the maintainer folded parts of it into 3.1.0, which supports DBAL 2 and 3 side by side",
           "url": "https://github.com/somnambulist-tech/cte-builder/pull/3",
           "number": 3,
           "updatedAt": "2021-12-27T16:33:57Z",
@@ -1017,7 +1017,7 @@
         {
           "repository": "software-mansion/react-native-screens",
           "title": "Update Android Tools gralde version",
-          "description": "Bumped Android Gradle tooling in react-native-screens to unblock gesture-handler builds.",
+          "description": "Bumped Android Gradle tooling in react-native-screens to unblock gesture-handler builds",
           "url": "https://github.com/software-mansion/react-native-screens/pull/792",
           "number": 792,
           "updatedAt": "2021-02-04T15:58:26Z",
@@ -1030,7 +1030,7 @@
         {
           "repository": "react-native-community/react-native-template-typescript",
           "title": "Update Android Tools gradle version",
-          "description": "Bumped Android Gradle tooling in the TypeScript RN template to fix Groovy/Java7 build failures.",
+          "description": "Bumped Android Gradle tooling in the TypeScript RN template to fix Groovy/Java7 build failures",
           "url": "https://github.com/react-native-community/react-native-template-typescript/pull/179",
           "number": 179,
           "updatedAt": "2021-01-28T17:53:57Z",
@@ -1043,7 +1043,7 @@
         {
           "repository": "symfony/symfony-docs",
           "title": "[Translator] Document support for calling 'trans' with ICU formatted messages",
-          "description": "Documented Symfony Translator ICU message support alongside symfony#37371.",
+          "description": "Documented Symfony Translator ICU message support alongside symfony#37371",
           "url": "https://github.com/symfony/symfony-docs/pull/13875",
           "number": 13875,
           "updatedAt": "2020-12-22T16:32:25Z",
@@ -1055,7 +1055,7 @@
         {
           "repository": "vivien/i3blocks-contrib",
           "title": "Add aur-update2, a simple pikaur based update checker",
-          "description": "Added an aur-update2 i3blocks module that surfaces pending AUR upgrades via pikaur.",
+          "description": "Added an aur-update2 i3blocks module that surfaces pending AUR upgrades via pikaur",
           "url": "https://github.com/vivien/i3blocks-contrib/pull/309",
           "number": 309,
           "updatedAt": "2020-06-27T10:18:58Z",
@@ -1066,7 +1066,7 @@
         {
           "repository": "melpa/melpa",
           "title": "Add `php-align` recipe",
-          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules. Closed once the thread led to `php-align.el` being merged into `php-mode` instead.",
+          "description": "Packaged `php-align` for MELPA with a recipe covering its PHP alignment rules. Closed once the thread led to `php-align.el` being merged into `php-mode` instead",
           "url": "https://github.com/melpa/melpa/pull/6759",
           "number": 6759,
           "updatedAt": "2020-03-25T03:53:14Z",
@@ -1077,7 +1077,7 @@
         {
           "repository": "PHP-CS-Fixer/PHP-CS-Fixer",
           "title": "Add option to allow single line functions (in the braces category)",
-          "description": "Added a PHP CS Fixer option to keep single-line autogenerated getters and setters.",
+          "description": "Added a PHP CS Fixer option to keep single-line autogenerated getters and setters",
           "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/pull/4889",
           "number": 4889,
           "updatedAt": "2020-03-18T18:15:01Z",
@@ -1088,7 +1088,7 @@
         {
           "repository": "includeos/IncludeOS",
           "title": "Fixed small errors in clean build",
-          "description": "Fixed IncludeOS build-system issues blocking a clean CI build.",
+          "description": "Fixed IncludeOS build-system issues blocking a clean CI build",
           "url": "https://github.com/includeos/IncludeOS/pull/1842",
           "number": 1842,
           "updatedAt": "2018-08-30T12:04:05Z",
@@ -1099,7 +1099,7 @@
         {
           "repository": "OVYA/php-cs-fixer",
           "title": "Fix broken functions",
-          "description": "Repaired a php-cs-fixer wrapper for Emacs, swapping its broken patch step for a direct file fix and a buffer revert.",
+          "description": "Repaired a php-cs-fixer wrapper for Emacs, swapping its broken patch step for a direct file fix and a buffer revert",
           "url": "https://github.com/OVYA/php-cs-fixer/pull/11",
           "number": 11,
           "tags": [
@@ -1109,7 +1109,7 @@
         {
           "repository": "git/git",
           "title": "Add a `-p`/`--parents` option to `git mv`",
-          "description": "Lets `git mv` create missing leading directories in the destination instead of failing: `git mv -p foo bar/quux/` creates `bar/` and `bar/quux/` first, then moves `foo` into place.",
+          "description": "Lets `git mv` create missing leading directories in the destination instead of failing: `git mv -p foo bar/quux/` creates `bar/` and `bar/quux/` first, then moves `foo` into place",
           "url": "https://lore.kernel.org/git/20231009233458.1371351-1-hugo@hsal.es/",
           "updatedAt": "2023-10-09",
           "tags": [
@@ -1120,7 +1120,7 @@
         {
           "repository": "git/git",
           "title": "Add `restore.defaultDestination` option",
-          "description": "Argued for `restore.defaultDestination` on the Git mailing list (mirrored as git/git#1467) so users control where restored files land during recovery.",
+          "description": "Argued for `restore.defaultDestination` on the Git mailing list (mirrored as git/git#1467) so users control where restored files land during recovery",
           "url": "https://lore.kernel.org/git/pull.1467.git.git.1678578153640.gitgitgadget@gmail.com/",
           "updatedAt": "2023-03-11",
           "tags": [
@@ -1131,7 +1131,7 @@
         {
           "repository": "Bumblebee-Project/bbswitch",
           "title": "bbswitch",
-          "description": "Fixed bbswitch kernel-module packaging and build issues for NVIDIA GPU power switching in a personal fork, never submitted upstream.",
+          "description": "Fixed bbswitch kernel-module packaging and build issues for NVIDIA GPU power switching in a personal fork, never submitted upstream",
           "url": "https://github.com/someonewithpc/bbswitch/commit/60599f45755836e2154cf91487fe7f52b9cab07b",
           "tags": [
             "c"
@@ -1140,7 +1140,7 @@
         {
           "repository": "someonewithpc/gnufm",
           "title": "gnufm",
-          "description": "Fixed and extended GNU FM (Libre.fm) PHP code in a fork of the Savannah-hosted music platform, never submitted upstream.",
+          "description": "Fixed and extended GNU FM (Libre.fm) PHP code in a fork of the Savannah-hosted music platform, never submitted upstream",
           "url": "https://github.com/someonewithpc/gnufm/commit/9abebfef2aff3b46f0c7de7b7b5e19dfd936a30c",
           "tags": [
             "php"
