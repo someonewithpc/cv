@@ -426,4 +426,4 @@
 - [x] Read the rem from the page in the specs that assumed a 16px root, and resolve contact-alias's dist from the file (#220 E26) (#484)
 - [x] Clear the stale comments and leftovers in audit/markup.ts and eight e2e files (#220 E29) (#488)
 - [x] Wait in the specs for what they read next, not a fixed time: expect.poll, settledAfter and the steady helpers in place of waitForTimeout (#220 E21) (#490)
-- [x] Name source files in camelCase, 19 of them were kebab-case (specs stay kebab-case; assets and routes keep their names) (#388)
+- [x] Name source files in camelCase, 21 of them were kebab-case (specs stay kebab-case; assets and routes keep their names) (#388)
