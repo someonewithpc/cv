@@ -5,7 +5,7 @@
       "title": "GCC 16 wrong-code fix",
       "role": "Contributor",
       "roleJp": "コントリビューター",
-      "description": "FreeCAD on NixOS crashed on a cube minus an inscribed cylinder. The crash led through OpenCascade 7.9.3's point classifier to a wrong-code bug in GCC 16, where interprocedural constant propagation redirected a recursive call to a clone specialised for a different dynamic type, so the program ran the wrong virtual method. Bisected GCC to two January 2026 changes, reduced the miscompile to a C++ testcase of a few dozen lines, wrote the fix and a regression test, and bootstrapped and regtested GCC. The IPA maintainer reviewed it and pushed it to master the same day, with a GCC 16 backport planned. Around it, a nixpkgs workaround builds OpenCascade with `-fno-ipa-cp-clone` and fails the build if the miscompile returns, an OpenCascade issue asks for a 7.9 backport of its fix, and a FreeCAD PR backports OpenCascade 8 support to the 1.1 branch",
+      "description": "FreeCAD on NixOS crashed on a boolean subtract of a cube and an inscribed cylinder. The crash led through OpenCascade 7.9.3's point classifier to a wrong-code bug in GCC 16, where interprocedural constant propagation redirected a recursive call to a clone specialised for a different dynamic type, so the program ran the wrong virtual method. Bisected GCC to two January 2026 changes, reduced the miscompile to a C++ testcase of a few dozen lines, wrote the fix and a regression test, and bootstrapped and regtested GCC. The IPA maintainer reviewed it and pushed it to master the same day, with a GCC 16 backport planned. Around it, a nixpkgs workaround builds OpenCascade with `-fno-ipa-cp-clone` and fails the build if the miscompile returns, an OpenCascade issue asks for a 7.9 backport of its fix, and a FreeCAD PR backports OpenCascade 8 support to the 1.1 branch",
       "repository": "gcc.gnu.org",
       "period": "2026",
       "links": [
@@ -467,7 +467,7 @@
         {
           "repository": "NixOS/nixpkgs",
           "title": "opencascade-occt: build with `-fno-ipa-cp-clone` on GCC 16",
-          "description": "GCC 16 at `-O3` miscompiles OCCT 7.9.3. Classifying a point on an edge or vertex of a solid segfaults, and so do booleans where faces touch along a line, which is how FreeCAD crashed on a cube minus an inscribed cylinder. Builds OCCT with `-fno-ipa-cp-clone` when the compiler is GCC 16 or newer and adds an install check that runs the failing classification, so the build fails if the miscompile comes back",
+          "description": "GCC 16 at `-O3` miscompiles OCCT 7.9.3. Classifying a point on an edge or vertex of a solid segfaults, and so do booleans where faces touch along a line, which is how FreeCAD crashed on a boolean subtract of a cube and an inscribed cylinder. Builds OCCT with `-fno-ipa-cp-clone` when the compiler is GCC 16 or newer and adds an install check that runs the failing classification, so the build fails if the miscompile comes back",
           "url": "https://github.com/NixOS/nixpkgs/pull/574647",
           "number": 574647,
           "updatedAt": "2026-10-16T15:05:45Z",
