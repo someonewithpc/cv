@@ -5,7 +5,7 @@
       "title": "GCC 16 wrong-code fix",
       "role": "Contributor",
       "roleJp": "コントリビューター",
-      "description": "FreeCAD on NixOS crashed on a cube minus an inscribed cylinder. Traced the crash through OpenCascade 7.9.3's point classifier to a wrong-code bug in GCC 16: interprocedural constant propagation redirected a recursive call to a clone specialised for a different dynamic type, so the program ran the wrong virtual method. Bisected GCC to two January 2026 changes, reduced the miscompile to a standalone C++ testcase of a few dozen lines, wrote the fix and a regression test, and bootstrapped and regtested GCC. The IPA maintainer reviewed and pushed it to master the same day, with a GCC 16 backport planned. Alongside it, a nixpkgs workaround that builds OpenCascade with -fno-ipa-cp-clone and fails the build if the miscompile returns, an OpenCascade request to backport its fix to 7.9, and a FreeCAD PR backporting OpenCascade 8 support to the 1.1 branch.",
+      "description": "FreeCAD on NixOS crashed on a cube minus an inscribed cylinder. The crash led through OpenCascade 7.9.3's point classifier to a wrong-code bug in GCC 16, where interprocedural constant propagation redirected a recursive call to a clone specialised for a different dynamic type, so the program ran the wrong virtual method. Bisected GCC to two January 2026 changes, reduced the miscompile to a C++ testcase of a few dozen lines, wrote the fix and a regression test, and bootstrapped and regtested GCC. The IPA maintainer reviewed it and pushed it to master the same day, with a GCC 16 backport planned. Around it, a nixpkgs workaround builds OpenCascade with `-fno-ipa-cp-clone` and fails the build if the miscompile returns, an OpenCascade issue asks for a 7.9 backport of its fix, and a FreeCAD PR backports OpenCascade 8 support to the 1.1 branch",
       "repository": "gcc.gnu.org",
       "period": "2026",
       "links": [
@@ -93,7 +93,7 @@
         {
           "repository": "biomejs/biome",
           "title": "fix(html): lex processing instructions in their own context",
-          "description": "Biome's HTML lexer read the `?` before `>` as part of a name, so `<?xml version=\"1.0\"?>` never closed and `astro check` rejected an SVG component that starts with an XML declaration ([withastro/compiler-rs#199](https://github.com/withastro/compiler-rs/issues/199)). Opened [#12159](https://github.com/biomejs/biome/pull/12159) with the fix and fixtures for the plain, Astro, Vue and Angular lexers. The maintainer landed a reworked version with me as co-author.",
+          "description": "Biome's HTML lexer read the `?` before `>` as part of a name, so `<?xml version=\"1.0\"?>` never closed and `astro check` rejected an SVG component that starts with an XML declaration ([withastro/compiler-rs#199](https://github.com/withastro/compiler-rs/issues/199)). Opened [#12159](https://github.com/biomejs/biome/pull/12159) with the fix and fixtures for the plain, Astro, Vue and Angular lexers. The maintainer landed a reworked version with me as co-author",
           "url": "https://github.com/biomejs/biome/pull/12292",
           "number": 12292,
           "updatedAt": "2026-10-13T06:24:59Z",
@@ -109,7 +109,7 @@
         {
           "repository": "gcc.gnu.org",
           "title": "ipa-cp: Check polymorphic contexts before redirecting to a clone [PR127917]",
-          "description": "FreeCAD booleans crashed on NixOS: OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. Traced it to GCC 16's IPA-CP redirecting a recursive call to a clone made for a different polymorphic context, bisected it with prebuilt snapshots to two January changes, reduced it to two short C++ testcases, and wrote the fix and a regression test, bootstrapped and regtested on x86_64. Reviewed and pushed to master by the IPA maintainer the same day, with a GCC 16 backport to follow (bug 127917). Meanwhile a nixpkgs PR builds OCCT with `-fno-ipa-cp-clone` and adds an install check for the miscompile, an OpenCascade issue asks for the OCCT 8 fix to be backported to 7.9, and a FreeCAD PR backports its OpenCascade 8 support to the 1.1 branch.",
+          "description": "FreeCAD booleans crashed on NixOS because OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. GCC 16's IPA-CP had redirected a recursive call to a clone made for a different polymorphic context. Bisected it with prebuilt snapshots to two January changes, reduced it to two short C++ testcases, wrote the fix and a regression test, and bootstrapped and regtested on x86_64. The IPA maintainer reviewed it and pushed it to master the same day, with a GCC 16 backport to follow (bug 127917). A nixpkgs PR builds OCCT with `-fno-ipa-cp-clone` and adds an install check for the miscompile, an OpenCascade issue asks for the OCCT 8 fix to be backported to 7.9, and a FreeCAD PR backports its OpenCascade 8 support to the 1.1 branch",
           "url": "https://gcc.gnu.org/cgit/gcc/commit/?id=ebd81e6e396d3d50e4ac89404e45f5d2029a186d",
           "number": 127917,
           "updatedAt": "2026-10-16T09:50:48Z",
@@ -467,7 +467,7 @@
         {
           "repository": "NixOS/nixpkgs",
           "title": "opencascade-occt: build with `-fno-ipa-cp-clone` on GCC 16",
-          "description": "GCC 16 at `-O3` miscompiles OCCT 7.9.3: classifying a point on an edge or vertex of a solid segfaults, and so do booleans where faces touch along a line, which is how FreeCAD crashed on a cube minus an inscribed cylinder. Builds OCCT with `-fno-ipa-cp-clone` when the compiler is GCC 16 or newer and adds an install check that runs the failing classification, so the build fails if the miscompile ever comes back.",
+          "description": "GCC 16 at `-O3` miscompiles OCCT 7.9.3. Classifying a point on an edge or vertex of a solid segfaults, and so do booleans where faces touch along a line, which is how FreeCAD crashed on a cube minus an inscribed cylinder. Builds OCCT with `-fno-ipa-cp-clone` when the compiler is GCC 16 or newer and adds an install check that runs the failing classification, so the build fails if the miscompile comes back",
           "url": "https://github.com/NixOS/nixpkgs/pull/574647",
           "number": 574647,
           "updatedAt": "2026-10-16T15:05:45Z",
@@ -484,7 +484,7 @@
         {
           "repository": "inauman/libfprint",
           "title": "elanpress: support 04f3:0c6e",
-          "description": "Added the ELAN 04f3:0c6e press sensor of the ASUS ROG Flow X13 to libfprint's new `elanpress` driver. On master it sits under the swipe-only `elan` driver, where enrolment fails with a protocol error and verify never matches. Two follow-up fixes: no touch is built from a background frame captured with the finger down, and more distinct probe frames are kept per touch. Scored offline on a recorded session, 15 held-out touches of the enrolled finger matched at 0.848 to 0.954 while 47 touches from other fingers and another person stayed at 0.294 to 0.761, so no false accepts. Opened against the branch behind libfprint!654, awaiting review.",
+          "description": "Added the ELAN 04f3:0c6e press sensor of the ASUS ROG Flow X13 to libfprint's new `elanpress` driver. On master it sits under the swipe-only `elan` driver, where enrolment fails with a protocol error and verify never matches. Two follow-up fixes keep a background frame captured with the finger down from becoming a touch, and keep more distinct probe frames per touch. Scored offline on a recorded session, 15 held-out touches of the enrolled finger matched at 0.848 to 0.954 and 47 touches from other fingers and another person stayed at 0.294 to 0.761, so no false accepts. Opened against the branch behind libfprint!654, awaiting review",
           "url": "https://gitlab.freedesktop.org/inauman/libfprint/-/merge_requests/1",
           "number": 1,
           "updatedAt": "2026-10-16T13:49:58Z",
@@ -501,7 +501,7 @@
         {
           "repository": "torvalds/linux",
           "title": "drm/amd/display: Keep eDP native timing after resume with video=",
-          "description": "Two patches on amd-gfx. After an HDMI hotplug and a suspend/resume, a 3840x2400 eDP panel booted with a `video=` mode came back squeezed into the top-left corner: the fbdev reprobe had dropped the native mode and amdgpu scaled onto the first one left. The fix falls back to the encoder's native mode on eDP and LVDS, with KUnit tests that fail without it. On 7.2.8, 103 of 103 resumes were wrong before and 1363 of 1363 right after. A second series on dri-devel, `drm/client: Keep larger modes in connector->modes on fbdev hotplug`, fixes the same bug for every driver by probing connectors with the device's mode size limits, with KUnit tests. Both are under review.",
+          "description": "Two patches on amd-gfx. After an HDMI hotplug and a suspend/resume, a 3840x2400 eDP panel booted with a `video=` mode came back squeezed into the top-left corner. The fbdev reprobe had dropped the native mode and amdgpu scaled onto the first one left. The fix falls back to the encoder's native mode on eDP and LVDS, with KUnit tests that fail without it. On 7.2.8, 103 of 103 resumes were wrong before and 1363 of 1363 right after. A second series on dri-devel, `drm/client: Keep larger modes in connector->modes on fbdev hotplug`, fixes the same bug for every driver by probing connectors with the device's mode size limits, with KUnit tests. Both are under review",
           "url": "https://lore.kernel.org/all/20261014223041.171317-1-hugo@hsal.es/",
           "updatedAt": "2026-10-15T21:25:45Z",
           "stats": {
@@ -903,7 +903,7 @@
         {
           "repository": "FreeCAD/FreeCAD",
           "title": "[Backport releases/FreeCAD-1-1] Adapt FreeCAD to OpenCascade 8",
-          "description": "Backported the OpenCascade 8 support from main to the 1.1 release branch, 15 commits plus the `-Werror` guards and the TechDraw fix, so distros shipping FreeCAD 1.1 could build against OCCT 8 and sidestep the GCC 16 miscompile of 7.9.3. Tested with `FreeCADCmd -t 0` on OCCT 8.0.1 and 7.9.3: 1666 tests with the same results as 1.1.4, and the cube minus cylinder recomputes instead of crashing. Closed by the maintainers: the 1.1 branch gets no further releases and 26.3 is the first version to support OCCT 8.",
+          "description": "Backported the OpenCascade 8 support from main to the 1.1 release branch, 15 commits plus the `-Werror` guards and the TechDraw fix, so distros shipping FreeCAD 1.1 could build against OCCT 8 and sidestep the GCC 16 miscompile of 7.9.3. Tested with `FreeCADCmd -t 0` on OCCT 8.0.1 and 7.9.3, 1666 tests with the same results as 1.1.4, and the cube minus cylinder recomputes instead of crashing. The maintainers closed it, since the 1.1 branch gets no further releases and 26.3 is the first version to support OCCT 8",
           "url": "https://github.com/FreeCAD/FreeCAD/pull/33629",
           "number": 33629,
           "updatedAt": "2026-10-16T16:03:51Z",
