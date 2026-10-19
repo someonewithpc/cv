@@ -1,22 +1,20 @@
 import { demoStack, turnToPage } from './support/paperStack';
 import { expect, test } from './support/timeScale';
 
-// The tagging tool's save ring and the font picker's fieldset border each animate three custom
-// properties. The stylesheet registers them with @property: an unregistered property has no
-// type, so a keyframe between two angles would flip halfway instead of moving.
+// The tagging tool's save ring and the font picker's fieldset border animate the same three custom
+// properties from src/scss/_statusBorder.scss. The stylesheet registers them with @property: an
+// unregistered property has no type, so a keyframe between two angles would flip halfway instead
+// of moving.
 const PROPERTIES = {
   '--status-border-colored-width': '360deg',
   '--status-border-color': 'rgb(187, 187, 187)',
   '--status-border-start': '0deg',
-  '--font-settings-border-colored-width': '360deg',
-  '--font-settings-border-color': 'rgb(187, 187, 187)',
-  '--font-settings-border-start': '0deg',
 };
 
 test.describe('without JS', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('the stylesheet registers the six border properties', async ({ page }) => {
+  test('the stylesheet registers the three border properties', async ({ page }) => {
     await page.goto('/');
     // A registered property computes to its initial value on an element that never sets it
     const values = await page.locator('body').evaluate((body, names) => {
@@ -55,5 +53,5 @@ test('the font picker fieldset border passes through the angles between its keyf
   const stack = demoStack(page, 'Interactive Map Font Picker');
   await stack.scrollIntoViewIfNeeded();
   await turnToPage(stack, 'Loading Indicator');
-  await halfwayStart(stack.locator('[data-border-demo]'), '--font-settings-border-start');
+  await halfwayStart(stack.locator('[data-border-demo]'), '--status-border-start');
 });
