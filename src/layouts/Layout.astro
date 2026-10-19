@@ -459,6 +459,14 @@ main {
       padding: 0;
       border: 0;
     }
+
+    /* The header lays no paper down, so a rim on it would be desk added to the row gap above
+       the title block and under the sheet index. Without one, the cover and the sheet under
+       it are the row gap apart, as any other two sheets are. */
+    &#main > #profile {
+      padding-block: 0;
+      border-block: 0;
+    }
   }
 
   > :not(.full-width, .breakout, .folio-rail) {

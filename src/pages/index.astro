@@ -211,7 +211,9 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
   // layout before the next frame, and the old frame stayed on screen for all of it.
   grid-template-columns: var(--page-columns);
   row-gap: 4em;
-  margin-top: 8rem;
+  /* The same strip of desk the Career and the Bill of materials sheets leave above them, so
+     the cover and this sheet sit as close as any other two. */
+  margin-top: 1.5rem;
 
   // Cut the demos off at the window's own two edges. The fold flap is a page-sized box
   // mirrored across the crease (renderFold in foldDrag.ts), so for the length of a fold or a
@@ -234,7 +236,6 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
 
   @media (max-width: 52rem) {
     row-gap: 2.5em;
-    margin-top: 4.5rem;
   }
 
   /* On the desk the desk's row gap is what separates this section from the one above. */

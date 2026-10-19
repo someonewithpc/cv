@@ -59,10 +59,12 @@ header {
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  margin-block: 1.25rem 0.25rem;
+  /* No margin under it: the sheet below sets the strip of desk between the two, as every
+     sheet does for the one above it. */
+  margin-block: 1.25rem 0;
 
   @media (max-width: 52rem) {
-    margin-block: 3.25rem 0.25rem;
+    margin-block: 3.25rem 0;
   }
 
   .title-block {
