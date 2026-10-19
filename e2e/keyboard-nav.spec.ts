@@ -5,7 +5,7 @@ import { demoStack, frontPageName } from './support/paperStack';
 import { pageWait, test as paced } from './support/timeScale';
 
 test.describe('skip link', () => {
-  test('moves focus to the Career section, not back to the top, and the next Tab lands inside it', async ({ page }) => {
+  test('moves focus to the Demos section, not back to the top, and the next Tab lands inside it', async ({ page }) => {
     await page.goto('/');
 
     await page.keyboard.press('Tab');
@@ -13,17 +13,17 @@ test.describe('skip link', () => {
 
     await page.keyboard.press('Enter');
     // The native anchor jump plus the tabindex="-1" focus move both land in the same task; give
-    // the browser one to settle before reading document.activeElement. #career, not #main:
+    // the browser one to settle before reading document.activeElement. #demos, not #main:
     // #main starts right where the reader already was (no visible change), so the skip link
     // targets the first section with real content instead.
-    await expect(page.locator('#career')).toBeFocused();
+    await expect(page.locator('#demos')).toBeFocused();
 
     await page.keyboard.press('Tab');
-    // The theme picker (also in the DOM before #career, but a Tab stop of its own) and every
+    // The theme picker (also in the DOM before #demos, but a Tab stop of its own) and every
     // section start (tabindex="-1") are accesskey landing spots, not sequential Tab stops, so
-    // the next real stop after the skip link is the first focusable control inside Career: the
+    // the next real stop after the skip link is the first focusable control inside Demos: the
     // link beside its title.
-    await expect(page.locator('#career a.anchor[href="#career"]')).toBeFocused();
+    await expect(page.locator('#demos a.anchor[href="#demos"]')).toBeFocused();
   });
 });
 
@@ -99,7 +99,7 @@ test.describe('access keys', () => {
     expect(items[2]).toContain('Top of the page');
     expect(items[7]).toContain('Previous page');
     expect(items[8]).toContain('Next page');
-    for (const [index, key] of ['S', 'T', 'H', 'C', 'B', 'M', 'O', 'P', 'N'].entries()) {
+    for (const [index, key] of ['S', 'T', 'H', 'M', 'C', 'B', 'O', 'P', 'N'].entries()) {
       await expect(page.locator('.accesskey-legend li').nth(index).locator('kbd')).toHaveText(key);
     }
   });

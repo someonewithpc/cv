@@ -39,15 +39,9 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
     <Folio number={1} label="Hugo Sales" />
     <Name />
 
-    {/* The CV itself sits right behind the title block, where a drawing keeps its revision
-        table, and before the bill of materials the roles refer to. */}
-    <Folio number={2} label="Career" />
-    <Career />
-
-    <Folio number={3} label="Bill of materials" />
-    <TechIconCloud />
-
-    <Folio number={4} label="Demos" />
+    {/* The demos come first: a visitor who scrolls once sees the work itself before the table
+        that names it. */}
+    <Folio number={2} label="Demos" />
     <section id="demos" class="full-width" aria-labelledby="demos-heading" tabindex="-1">
       <div class="cutting-mat">
         <SectionHeader
@@ -183,6 +177,14 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
       </div>
     </section>
 
+    {/* The CV, drawn the way a sheet keeps its revision table, before the bill of materials
+        the roles refer to. */}
+    <Folio number={3} label="Career" />
+    <Career />
+
+    <Folio number={4} label="Bill of materials" />
+    <TechIconCloud />
+
     <Folio number={5} label="Open Source" />
     <OpenSourceContributions />
   </main>
@@ -190,9 +192,9 @@ import { MAT_GRID_CSS } from '@/cuttingMatGrid';
 
 <style lang="scss">
 @use "@/scss/gloss" as gloss;
-// tabindex="-1": the accesskey's landing spot, not a Tab stop. The skip link also targets
-// #career (Career.astro), the first section with real content, rather than #main: #main
-// starts right where the reader already was, so jumping there produced no visible change.
+// tabindex="-1": the accesskey's landing spot, not a Tab stop. The skip link (Layout.astro)
+// also targets #demos, the first section with real content, rather than #main: #main starts
+// right where the reader already was, so jumping there produced no visible change.
 #demos:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -0.125rem;
