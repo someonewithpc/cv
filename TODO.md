@@ -38,7 +38,7 @@
     - [x] Marker editor pages past the second look rough (#18)
     - [x] Colour picker lags while dragging (#17)
     - [x] Map fills a narrow landscape sheet under the title block, and the marker selector keeps clear of the block (#317)
-    - [ ] The Composable Parts card and the Marker Selector chips stop short of the note beside them, and the note sits in the middle of the room between the artwork and the frame line
+    - [x] The Composable Parts card and the Marker Selector chips stop short of the note beside them, and the note sits in the middle of the room between the artwork and the frame line (#514)
   - [x] Space builder add tool
     - [x] Layouts page demo doesn't work (#14)
     - [x] Drag and drop furniture doesn't work (#14)
