@@ -756,6 +756,22 @@
           ]
         },
         {
+          "repository": "withastro/compiler-rs",
+          "title": "fix(astro2tsx): print processing instructions as comments",
+          "description": "With the Biome lexer fix, `<?xml version=\"1.0\"?>` parses as an `HtmlProcessingInstruction` in Astro files, and `astro2tsx` copied it into the TSX verbatim, where TypeScript cannot parse `<?`. It now prints each instruction as a JSX comment through the path HTML comments use, at the root before the doctype and inside elements. New snapshot fixtures and a type-check test cover it, and `astro check` on the repro went from 7 errors to 0. Closes [#199](https://github.com/withastro/compiler-rs/issues/199). Still a draft, with a conflict against the base",
+          "url": "https://github.com/withastro/compiler-rs/pull/200",
+          "number": 200,
+          "updatedAt": "2026-10-12T13:45:27Z",
+          "stats": {
+            "additions": 186,
+            "deletions": 16,
+            "changed_files": 14
+          },
+          "tags": [
+            "rust"
+          ]
+        },
+        {
           "repository": "FreeCAD/FreeCAD",
           "title": "Quarter: scale pointer position to device pixels before flipping Y",
           "description": "Fixed picking in the 3D view on fractional-scale screens. `toDevicePixelPosition()` flipped the Y axis in logical pixels and only then scaled to device pixels, so on a 2.67× panel a click landed 1 to 4 device pixels below the cursor",
