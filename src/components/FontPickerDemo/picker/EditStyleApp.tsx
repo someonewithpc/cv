@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 
-import { DEFAULT_FAMILY, commitOverride, endPreview, previewOverride, registerExternalFaces, resetOverride, useFontOverride } from './fontOverride';
+import { DEFAULT_FAMILY, commitOverride, endPreview, overrideStyle, previewOverride, registerExternalFaces, resetOverride, useFontOverride } from './fontOverride';
 import { useFontFaces } from './useFontFaces';
 import type { LoadedFaces } from './sources';
 
@@ -19,7 +19,8 @@ type SubFormName = 'google' | 'embed' | null;
 export default function EditStyleApp() {
   const rootRef = useRef<HTMLDivElement>(null);
   const { fontFaces } = useFontFaces();
-  const { committed, externalFaces } = useFontOverride();
+  const { committed, shown, externalFaces } = useFontOverride();
+  const override = overrideStyle(shown);
 
   const options = useMemo(() => fontFaces.map(toOption), [fontFaces]);
 
@@ -62,7 +63,14 @@ export default function EditStyleApp() {
   const weightIsFree = selected !== undefined && options.filter((o) => o.family === selected.family).length === 1;
 
   return (
-    <div className="edit-style" ref={rootRef} role="region" aria-label="Font settings">
+    <div
+      className="edit-style"
+      ref={rootRef}
+      role="region"
+      aria-label="Font settings"
+      style={override.style}
+      {...override.attributes}
+    >
       <aside className="sidebar">
         <nav>
           <section className="edit-settings">

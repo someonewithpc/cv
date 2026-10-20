@@ -461,3 +461,30 @@
     }
   }
 }
+
+// What the visitor picked, from the properties fontOverride.ts writes on the root. The face is
+// set on the root and inherited, not forced: what declares a face of its own keeps it, which is
+// the dropdown's rows and the family label with the committed face, and the monospace readout.
+// The size goes on the two columns, not the grid: its tracks are in em too, and scaling them
+// with the type would squeeze the specimen for the sidebar's sake
+[data-font-picker-island] .edit-style {
+  &:where([data-font-size]) > * {
+    font-size: calc(var(--font-tools-size) * 1em);
+  }
+
+  &:where([data-font-family]) {
+    font-family: var(--font-tools-family), sans-serif;
+  }
+
+  &:where([data-font-style]) {
+    font-style: var(--font-tools-style);
+  }
+
+  &:where([data-font-weight]) {
+    font-weight: var(--font-tools-weight);
+
+    :is(b, strong) {
+      font-weight: var(--font-tools-bold);
+    }
+  }
+}
