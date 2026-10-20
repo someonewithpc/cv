@@ -17,7 +17,7 @@ export const SHEET_VIEWPORTS = [
 export type ClearSheetOptions = {
   /** Selector for what a walkthrough paints where it likes: its cursor, its toasts. */
   skip: string;
-  /** Count a box only where it shows: a list scrolls inside the sheet, and a card scrolled out paints nothing. */
+  /** Count a box or a text run only where it shows: a list scrolls inside the sheet, and a card scrolled out paints nothing. */
   clipToScrollers?: boolean;
   /** Take an Annotations overlay's ink to be its callouts, since the overlay is twice its artwork's size by design. */
   annotationInk?: boolean;
@@ -59,11 +59,9 @@ export function clearSheet(front: Locator, options: ClearSheetOptions) {
       if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0) return true;
       return [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim());
     };
-    const visible = (el: Element) => {
-      const b = el.getBoundingClientRect();
+    const clipped = (el: Element, b: DOMRect) => {
       const r = { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
-      if (!clipToScrollers) return r;
-      for (let a = el.parentElement; a && a !== root.parentElement; a = a.parentElement) {
+      for (let a = el.parentElement; a && a !== root.parentElement && a !== section; a = a.parentElement) {
         const cs = getComputedStyle(a);
         if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
         const c = a.getBoundingClientRect();
@@ -73,6 +71,10 @@ export function clearSheet(front: Locator, options: ClearSheetOptions) {
         r.bottom = Math.min(r.bottom, c.bottom);
       }
       return r;
+    };
+    const visible = (el: Element) => {
+      const b = el.getBoundingClientRect();
+      return clipToScrollers ? clipped(el, b) : { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
     };
     const boxes = [...root.querySelectorAll('*')]
       .filter(paints)
@@ -97,8 +99,9 @@ export function clearSheet(front: Locator, options: ClearSheetOptions) {
       const text = node.textContent!.trim();
       if (!text || node.parentElement?.closest(furniture)) continue;
       range.selectNodeContents(node);
-      for (const r of range.getClientRects()) {
-        if (r.width === 0 || r.height === 0) continue;
+      for (const run of range.getClientRects()) {
+        const r = clipToScrollers ? clipped(node.parentElement!, run) : run;
+        if (r.right <= r.left || r.bottom <= r.top) continue;
         if (r.left < frame.left || r.right > frame.right || r.top < frame.top || r.bottom > frame.bottom) {
           outside.push(text);
           break;
