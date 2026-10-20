@@ -432,3 +432,4 @@
 - [x] Name source files in camelCase, 21 of them were kebab-case (specs stay kebab-case; assets and routes keep their names) (#388)
 - [x] The two hyphens of "--page-index" on the Paper Stack drawing read as two in Menlo, not one long dash (CHM10) (#518)
 - [x] A finger swiping over a Space Builder or Drag and Drop scene at 390 scrolls the page until a tap takes the scene over (CHM11) (#520)
+- [ ] Give the Space Builder panel controls the scene's 2px brand focus ring in place of the browser's own
