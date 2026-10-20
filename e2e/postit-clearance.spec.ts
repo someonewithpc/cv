@@ -88,6 +88,62 @@ for (const width of [980, 1100, 1440]) {
   });
 }
 
+// The artwork beside a note ends short of it. What counts is every box in the artwork cell that
+// is in flow, cut to whatever scroll or clip box holds it: absolute overlays such as the callout
+// arrows and the drawn cursors are meant to cross into the note's column. The pages behind the
+// front one are tilted in the pile, which takes a few pixels off the gap they show.
+const ARTWORK_GAP = 8;
+
+function artworkReach(notes: HTMLElement[], least: number) {
+  const faults: string[] = [];
+  for (const note of notes) {
+    const paper = note.getBoundingClientRect();
+    const content = note.closest('section')?.querySelector(':scope > .content');
+    if (!content) continue;
+    let reach = -Infinity;
+    let what = '';
+    const walk = (parent: Element, clip: { left: number, right: number, top: number, bottom: number }) => {
+      for (const el of parent.children) {
+        const style = getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') continue;
+        if (style.position === 'absolute' || style.position === 'fixed') continue;
+        const box = el.getBoundingClientRect();
+        const cut = {
+          left: Math.max(box.left, clip.left), right: Math.min(box.right, clip.right),
+          top: Math.max(box.top, clip.top), bottom: Math.min(box.bottom, clip.bottom),
+        };
+        const shown = cut.right > cut.left && cut.bottom > cut.top;
+        const beside = Math.min(cut.bottom, paper.bottom) > Math.max(cut.top, paper.top);
+        if (shown && beside && cut.right > reach) {
+          reach = cut.right;
+          what = `${el.tagName.toLowerCase()}.${el.getAttribute('class')?.split(' ')[0] ?? ''}`;
+        }
+        if (el instanceof SVGElement) continue;
+        walk(el, style.overflowX === 'visible' ? clip : cut);
+      }
+    };
+    walk(content, { left: -Infinity, right: Infinity, top: -Infinity, bottom: Infinity });
+    const gap = paper.left - reach;
+    if (gap < least) {
+      const page = note.closest('section')?.querySelector('h2')?.textContent?.trim();
+      faults.push(`${page}: ${what} ends ${Math.round(gap)}px from the note`);
+    }
+  }
+  return faults;
+}
+
+for (const width of [980, 1440]) {
+  test(`the artwork beside a note ends short of it at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await drawEveryStack(page);
+
+    const notes = page.locator('aside.marker-font:visible');
+    expect(await notes.count()).toBeGreaterThan(0);
+    expect(await notes.evaluateAll(artworkReach, ARTWORK_GAP)).toEqual([]);
+  });
+}
+
 // On a phone the note opens over its sheet from the folded corner.
 test('an opened note stays clear of its sheet\'s edges on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
