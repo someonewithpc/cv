@@ -532,6 +532,22 @@
           ]
         },
         {
+          "repository": "outfoxxed/hy3",
+          "title": "fix: guard workspace monitor before dereferencing it",
+          "description": "When the last monitor disconnects, Hyprland leaves workspaces pointing at the monitor it is destroying, and hy3 dereferenced that pointer on the next window map or unmap and segfaulted. Checks the workspace's monitor in `insertNode`, `recalcGeometry`, `moveNodeToWorkspace` and the tab group constructor, and the focused monitor in the dispatchers and cursor warp, which is null while no monitor is connected; each place skips its monitor work. Fixes #332 and #336",
+          "url": "https://github.com/outfoxxed/hy3/pull/346",
+          "number": 346,
+          "updatedAt": "2026-10-20T14:05:43Z",
+          "stats": {
+            "additions": 23,
+            "deletions": 9,
+            "changed_files": 2
+          },
+          "tags": [
+            "cplusplus"
+          ]
+        },
+        {
           "repository": "peteonrails/voxtype",
           "title": "feat(audio): keep recording after a stop until the mic goes quiet",
           "description": "Letting go of push-to-talk a moment early cut the last word, and Whisper dropped it or guessed. With `audio.stop_tail_ms` set, the daemon keeps capturing after the stop until the last 160 ms are quiet, for at most that long; a clean release stops at once. Quiet is three times the recording's noise floor, taken as its 10th-percentile frame and capped where quiet speech starts, so the bar follows the mic and the room. Off by default, with a schema entry, a field in the configure TUI, docs and a unit test",
