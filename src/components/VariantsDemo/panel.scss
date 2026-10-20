@@ -37,6 +37,10 @@ article.technical-drawing-stack > * > section .content:has(.variants-stage) {
     box-shadow: inset 0 0 0 2px $visrez-brand;
   }
 
+  :where(#{$scene-focusables}):focus-visible {
+    @include scene-focus-ring;
+  }
+
   .sidebar {
     position: relative;
     box-sizing: border-box;
