@@ -1545,6 +1545,9 @@ $light-grey: #565656;
   .sidebar-footer {
     flex: 0 0 auto;
     display: flex;
+    // The narrow frame's 11rem sidebar has room for Clear and Reset, so Save takes the next
+    // row, and Build goes under the drag hint
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
@@ -1596,6 +1599,8 @@ $light-grey: #565656;
   }
 
   .action--primary {
+    // At the end of its row, on the row of its own too
+    margin-inline-start: auto;
     background: $visrez-brand;
     border-color: $visrez-brand;
     color: #fff;
