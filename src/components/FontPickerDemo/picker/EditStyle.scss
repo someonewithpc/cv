@@ -33,6 +33,11 @@
     margin: 0;
   }
 
+  .specimen-samples {
+    display: grid;
+    gap: inherit;
+  }
+
   .specimen-display {
     font-size: 6em;
     line-height: 1;
@@ -76,6 +81,34 @@
     }
   }
 
+  // On a landscape sheet the title block reaches into this column, and at 2em the samples
+  // stand twice the sheet's height. So the specimen takes the row the sidebar sets, less the
+  // title block's band, and centres in it. A sample that does not fit whole wraps into a
+  // second column the box clips. The type stays at the size the control asks for, and the
+  // readout stays on the sheet at every size.
+  @at-root .edit-style > .specimen {
+    align-self: stretch;
+    contain: size;
+    margin-block-end: calc(var(--title-block-block, 0px) + 0.5rem);
+    grid-template-rows: minmax(0, auto) auto;
+    align-content: center;
+
+    .specimen-samples {
+      display: flex;
+      flex-flow: column wrap;
+      align-content: flex-start;
+      column-gap: 0;
+      row-gap: inherit;
+      min-height: 0;
+      overflow: clip;
+
+      > * {
+        flex: none;
+        inline-size: 100%;
+      }
+    }
+  }
+
   [data-sheet-orientation='portrait'] & {
     // Above the sidebar on a phone sheet, and without the alphabet block; what is left has
     // to fit the 11em the sidebar leaves it
@@ -92,6 +125,18 @@
 
     .specimen-glyphs {
       display: none;
+    }
+
+    // The sidebar under it scrolls instead, so the specimen keeps its own height here
+    @at-root [data-sheet-orientation='portrait'] .edit-style > .specimen {
+      align-self: auto;
+      contain: none;
+      margin-block-end: 0;
+
+      .specimen-samples {
+        display: grid;
+        overflow: visible;
+      }
     }
 
     figcaption {

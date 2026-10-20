@@ -146,6 +146,9 @@ test.describe('on a landscape phone', () => {
       const outside = [...section.querySelectorAll('.picker-layer *')].filter((el) => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) return false;
+        // A sample too big for the specimen wraps into the column the specimen clips
+        const samples = el.closest('.specimen-samples')?.getBoundingClientRect();
+        if (samples && r.left >= samples.right - 1) return false;
         return r.right > sheet.right + 1 || r.bottom > sheet.bottom + 1
           || r.left < sheet.left - 1 || r.top < sheet.top - 1;
       }).length;
@@ -205,7 +208,8 @@ test('held controls page: the drawn cursor rides each slider it drags', async ({
 
 const PAGES = [null, 'Font Extraction', 'Loading Indicator', 'Held Controls'] as const;
 
-const clearSheetOf = (front: import('@playwright/test').Locator) => clearSheet(front, { skip: '[data-demo-cursor], .font-picker-toasts' });
+// The sidebar scrolls, and a sample too big for the specimen wraps into a column it clips
+const clearSheetOf = (front: import('@playwright/test').Locator) => clearSheet(front, { skip: '[data-demo-cursor], .font-picker-toasts', clipToScrollers: true });
 
 for (const viewport of SHEET_VIEWPORTS) {
   test.describe(`at ${viewport.width}x${viewport.height}`, () => {

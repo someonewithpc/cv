@@ -11,13 +11,15 @@ export function Specimen() {
 
   return (
     <figure className="specimen">
-      <p className="specimen-display" aria-hidden="true">Aa</p>
-      <p className="specimen-pangram">The quick brown fox jumps over the lazy dog</p>
-      <p className="specimen-glyphs" aria-hidden="true">
-        ABCDEFGHIJKLMNOPQRSTUVWXYZ<br />
-        abcdefghijklmnopqrstuvwxyz<br />
-        0123456789 !?&amp;@%
-      </p>
+      <div className="specimen-samples">
+        <p className="specimen-display" aria-hidden="true">Aa</p>
+        <p className="specimen-pangram">The quick brown fox jumps over the lazy dog</p>
+        <p className="specimen-glyphs" aria-hidden="true">
+          ABCDEFGHIJKLMNOPQRSTUVWXYZ<br />
+          abcdefghijklmnopqrstuvwxyz<br />
+          0123456789 !?&amp;@%
+        </p>
+      </div>
       <figcaption>
         <span><span className="monospace">Family</span> {family}</span>
         <span><span className="monospace">Weight</span> {shown.weight ?? 400}</span>
