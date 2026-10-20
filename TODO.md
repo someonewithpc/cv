@@ -429,4 +429,4 @@
 - [x] Clear the stale comments and leftovers in audit/markup.ts and eight e2e files (#220 E29) (#488)
 - [x] Wait in the specs for what they read next, not a fixed time: expect.poll, settledAfter and the steady helpers in place of waitForTimeout (#220 E21) (#490)
 - [x] Name source files in camelCase, 21 of them were kebab-case (specs stay kebab-case; assets and routes keep their names) (#388)
-- [ ] The Font Picker writes its settings as properties on the demo, not into a stylesheet that Safari restyles the whole page for on every step
+- [x] The Font Picker writes its settings as properties on the demo, not into a stylesheet that Safari restyles the whole page for on every step (#522)
