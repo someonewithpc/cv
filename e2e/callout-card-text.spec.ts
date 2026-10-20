@@ -8,6 +8,10 @@ import { expect, test } from '@playwright/test';
  * that shows: the slip's sides and foot, and at the top whatever lies over it.
  */
 
+// The top stack's demo, Space Builder's Add tool. Held off, its slip stays as it is before the
+// demo has loaded, with no deck in it.
+const TOP_DEMO_APP = /\/MockSceneApp\.[\w-]+\.js$/;
+
 // The span of an entry's text, and where its first and last lines stand.
 const entryText = (cell: Element) => {
   const range = document.createRange();
@@ -122,9 +126,12 @@ for (const width of [390, 1024, 1440]) {
 // are over them. On a phone the label would crowd the words, so the title stays under them; at
 // 560px the label stands level with the hint, left of it, with its text under it; at 768px the
 // title's text fits beside it too, and the notes and the rule over them run on under it.
+// This is the slip before the top stack's demo has loaded. That stack is on screen at load, and
+// once its demo reports, a portrait sheet's deck stands first in the slip (the deck test below).
 for (const [width, place] of [[390, 'under'], [560, 'level'], [768, 'beside']] as const) {
   test(`the title stands ${place === 'under' ? 'under' : 'beside'} the peel hint at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
+    await page.route(TOP_DEMO_APP, (route) => route.abort());
     await page.goto('/');
     const callout = page.locator('#demos .callout[data-card]:has(.technical-drawing-frame[data-hint-show])');
     await expect(callout).toHaveCount(1);
