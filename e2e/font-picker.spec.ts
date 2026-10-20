@@ -53,6 +53,37 @@ test('main page: the size slider scales the specimen', async ({ page }) => {
   await expect.poll(() => pangram.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(before);
 });
 
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  test(`main page: the walkthrough's notice keeps off the deck and the title block at ${viewport.width}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const stack = fontPickerStack(page);
+    await stack.scrollIntoViewIfNeeded();
+    const front = frontPage(stack, await frontPageIndex(stack));
+    const toast = front.locator('.font-picker-toast:not(.is-leaving)').first();
+    await expect(toast).toBeVisible({ timeout: 15_000 });
+    await toast.evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)));
+
+    const boxes = await front.evaluate((sheet) => {
+      const box = (el: Element | null) => {
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 ? { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom } : null;
+      };
+      return {
+        toast: box(sheet.querySelector('.font-picker-toast:not(.is-leaving)')),
+        others: [box(sheet.querySelector('section > table')), box(sheet.querySelector('.demo-transport:not([hidden])'))],
+      };
+    });
+    expect(boxes.toast).not.toBeNull();
+    for (const other of boxes.others) {
+      if (!other) continue;
+      const apart = boxes.toast!.right <= other.left || boxes.toast!.left >= other.right
+        || boxes.toast!.bottom <= other.top || boxes.toast!.top >= other.bottom;
+      expect(apart, JSON.stringify({ toast: boxes.toast, other })).toBe(true);
+    }
+  });
+}
+
 test('main page: the drawn cursor leaves when its page is no longer in front', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
