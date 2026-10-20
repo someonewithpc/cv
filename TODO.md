@@ -436,3 +436,4 @@
 - [x] The Font picker specimen and its readout stay on the sheet, clear of the title block, at every size from 0.5em to 2em (CHM8) (#519)
 - [x] Clear, Reset and Save fit the Space Builder sidebar footer at 390, where Save was cut to "Sav" (CHM9) (#517)
 - [x] Link the island stylesheets after every other sheet, so Safari does not restyle the whole page each time a demo boots (#521)
+- [ ] The Font Picker walkthrough notices sit over the transport deck and the title block
