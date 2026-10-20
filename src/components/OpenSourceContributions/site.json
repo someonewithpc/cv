@@ -533,6 +533,22 @@
         },
         {
           "repository": "peteonrails/voxtype",
+          "title": "perf(output): keep keyboard devices open between dictations",
+          "description": "The modifier guard opened every `/dev/input/event*` node on each paste and closed them all afterwards, and each close waits for a kernel RCU grace period of 10 to 35 ms, so the guard alone added a few hundred milliseconds before every output (#543). Keyboards now stay open in a process-wide cache; each call still lists `/dev/input` and opens only nodes that are new or re-created, told apart by inode, so hotplug keeps working, and any close runs on a background thread off the output path",
+          "url": "https://github.com/peteonrails/voxtype/pull/899",
+          "number": 899,
+          "updatedAt": "2026-10-20T13:25:52Z",
+          "stats": {
+            "additions": 99,
+            "deletions": 9,
+            "changed_files": 1
+          },
+          "tags": [
+            "rust"
+          ]
+        },
+        {
+          "repository": "peteonrails/voxtype",
           "title": "fix(whisper): drop the copy when a reduced audio context restarts the transcript",
           "description": "With context window optimisation on, Whisper sometimes reaches the end of the speech and transcribes the clip again from the start, returning the transcript twice or with its opening sentence repeated at the end; the loop check from #827 needs three copies, so these got through. If the first pass used a reduced `audio_ctx` and the text ends with a copy of its first six or more words, the text before the copy is kept, with no second pass. Replaying 20 archived dictations on large-v3-turbo, the three that came back doubled now match the full-context output at no extra cost. Stacked on #827",
           "url": "https://github.com/peteonrails/voxtype/pull/898",
