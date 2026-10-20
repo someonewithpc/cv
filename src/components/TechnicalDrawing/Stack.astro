@@ -645,8 +645,11 @@ const apply = (all: HTMLElement[]) => {
         return;
       }
       // Already held at its start by an earlier pass: leave it there. Playing it here
-      // would run it off screen, which is the very thing this function is for.
-      if (animation.playState !== 'running' && animation.playState !== 'finished') return;
+      // would run it off screen, which is the very thing this function is for. One paused
+      // further in was running until the data-held flag above paused it, in this pass or an
+      // earlier one, and goes back to its start like a running one.
+      const { playState } = animation;
+      if (playState === 'idle' || (playState === 'paused' && !animation.currentTime)) return;
       animation.cancel();
       // Cancelled animations get removed, so start them, but pause immediately
       animation.play();
