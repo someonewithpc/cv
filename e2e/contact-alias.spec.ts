@@ -12,9 +12,10 @@ test('the contact row links the alias, and the built HTML never spells an addres
   await expect(link).toHaveText(ALIAS);
 
   const html = readFileSync(join(import.meta.dirname, '..', 'dist', 'client', 'index.html'), 'utf8');
-  // Lore URLs quote the personal address as part of a message id; those are links, not contact.
+  // A public-inbox archive (lore.kernel.org, inbox.sourceware.org) names a mail by its message
+  // id, which carries the personal address as a path segment; those are links, not contact.
   const addresses = html.match(/[\w.+-]+@hsal\.es/g) ?? [];
-  expect(addresses.filter((a) => !html.includes(`lore.kernel.org/git/${a.split('@')[0]}`))).toEqual([]);
+  expect(addresses.filter((a) => !html.includes(`/${a}/`))).toEqual([]);
   expect(html).not.toContain(ALIAS);
 });
 
