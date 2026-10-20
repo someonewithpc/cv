@@ -585,9 +585,9 @@
           "description": "Kept the microphone open while a push-to-talk dictation transcribes in Voxtype. A press in that window is queued and recorded on the open capture, so the next sentence is no longer lost",
           "url": "https://github.com/peteonrails/voxtype/pull/837",
           "number": 837,
-          "updatedAt": "2026-10-05T16:52:46Z",
+          "updatedAt": "2026-10-20T13:18:22Z",
           "stats": {
-            "additions": 118,
+            "additions": 128,
             "deletions": 1,
             "changed_files": 1
           },
@@ -601,11 +601,11 @@
           "description": "Added `hotkey.cancel_on_other_key` for a modifier used as the hotkey. Pressing any other key while it is held cancels the recording, so Right Ctrl+C no longer dictates",
           "url": "https://github.com/peteonrails/voxtype/pull/835",
           "number": 835,
-          "updatedAt": "2026-10-05T16:52:19Z",
+          "updatedAt": "2026-10-20T13:18:22Z",
           "stats": {
-            "additions": 87,
+            "additions": 97,
             "deletions": 0,
-            "changed_files": 4
+            "changed_files": 5
           },
           "tags": [
             "rust"
@@ -617,11 +617,11 @@
           "description": "Added `hotkey.double_tap_latch`. A double tap keeps the recording running after the key is released, until the next press, and holding the key works as before. A small `TapLatch` state machine in the evdev listener does the timing",
           "url": "https://github.com/peteonrails/voxtype/pull/833",
           "number": 833,
-          "updatedAt": "2026-10-05T16:52:06Z",
+          "updatedAt": "2026-10-20T13:18:22Z",
           "stats": {
-            "additions": 178,
+            "additions": 188,
             "deletions": 1,
-            "changed_files": 4
+            "changed_files": 5
           },
           "tags": [
             "rust"
@@ -633,7 +633,7 @@
           "description": "Added `[hotkey.language_modifiers]`, which maps modifier keys to Whisper language codes. Holding one during a recording transcribes that recording in that language, and the next goes back to the configured one",
           "url": "https://github.com/peteonrails/voxtype/pull/831",
           "number": 831,
-          "updatedAt": "2026-10-05T16:41:45Z",
+          "updatedAt": "2026-10-20T13:18:22Z",
           "stats": {
             "additions": 119,
             "deletions": 1,
@@ -649,7 +649,7 @@
           "description": "Added a loop check to the Whisper transcriber. When a phrase of three or more words repeats three or more times in a row, it retries with beam search, and keeps one copy of each phrase if the retry loops too",
           "url": "https://github.com/peteonrails/voxtype/pull/827",
           "number": 827,
-          "updatedAt": "2026-10-05T16:21:14Z",
+          "updatedAt": "2026-10-20T13:18:22Z",
           "stats": {
             "additions": 79,
             "deletions": 1,
