@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { contrast, type Rgb } from './support/colour';
 import { installProbes } from './support/pageProbes';
-import { demoStack, frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack } from './support/paperStack';
+import { demoStack, frontPage, frontPageIndex, frontPageName, settledAfter, swipeStack, turnToPage } from './support/paperStack';
 
 const PAGES = ['web-ts-mode', 'Parser Ranges', 'Selector Depth Hue', 'Doctor Report'];
 
@@ -187,6 +187,33 @@ test('depth page: each selector level gets its own hue, and nesting starts again
   );
   expect(colours).toHaveLength(6);
   expect(new Set(colours).size).toBe(6);
+});
+
+test('depth page: the levels under the deepest selector do not touch', async ({ page }) => {
+  const stack = webTsStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Selector Depth Hue');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  // Levels on one line keep at least half an em apart: one-character runs such as
+  // the closing brackets are only 1ch wide.
+  const closest = await front.locator('.walk .level').evaluateAll((labels) => {
+    // The text's own box: a label's element can be stretched taller than its line.
+    const boxes = labels.filter((label) => label.textContent!.trim()).map((label) => {
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      return range.getBoundingClientRect();
+    });
+    let least = Infinity;
+    for (const [i, a] of boxes.entries()) {
+      for (const b of boxes.slice(i + 1)) {
+        if (Math.abs(a.top - b.top) > a.height / 2) continue;
+        least = Math.min(least, Math.max(b.left - a.right, a.left - b.right));
+      }
+    }
+    return least / parseFloat(getComputedStyle(labels[0]).fontSize);
+  });
+  expect(closest).toBeGreaterThanOrEqual(0.5);
 });
 
 test('doctor page: the report keeps the real layout and says what is not on PATH', async ({ page }) => {
