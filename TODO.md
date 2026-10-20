@@ -89,7 +89,7 @@
   - [x] Own theme picker: the control, the token layers, the default and the wipe (#189)
     - [x] Code in the theme's own colours, inline and in blocks (#207)
     - [x] Every demo sheet sets its code through the shared highlighter (#319)
-    - [ ] The wipe's five steps fit a wide sheet, heading uncut and no scrolling
+    - [x] The wipe's five steps fit a wide sheet, heading uncut and no scrolling (#513)
   - [ ] TechnicalDrawing
     - [ ] Arrow heads - rounding
   - [ ] Ball loader animation (~/project/playground)
