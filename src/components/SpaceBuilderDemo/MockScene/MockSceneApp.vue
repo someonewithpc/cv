@@ -1633,6 +1633,10 @@ $light-grey: #565656;
     }
   }
 }
+
+.space-builder-app :deep(:where(#{$scene-focusables}):focus-visible) {
+  @include scene-focus-ring;
+}
 </style>
 
 <style lang="scss">

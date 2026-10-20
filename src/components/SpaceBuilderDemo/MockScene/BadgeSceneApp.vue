@@ -634,4 +634,8 @@ onBeforeUnmount(() => {
 .badge-scene-app[data-touch-claimed] .scene-canvas {
   touch-action: none;
 }
+
+.badge-scene-app :deep(:where(#{$scene-focusables}):focus-visible) {
+  @include scene-focus-ring;
+}
 </style>

@@ -14,3 +14,12 @@ $visrez-well-border: #555;
 $visrez-brand-light: #c5e06a;
 // Below this container width the ported scene panels switch to their narrow layout
 $scene-narrow-width: 34rem;
+// The keyboard focus ring of the ported scene controls: the 2px brand outline the rail buttons
+// and the layout chips draw. A scene root takes it for every control in it, under :where() so a
+// control that draws its own focus, such as the catalog search's halo, keeps it.
+$scene-focusables: 'button, input, select, summary, textarea';
+
+@mixin scene-focus-ring {
+  outline: 2px solid $visrez-brand;
+  outline-offset: 1px;
+}

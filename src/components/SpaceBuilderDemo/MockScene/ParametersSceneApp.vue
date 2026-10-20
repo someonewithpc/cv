@@ -747,4 +747,8 @@ $buttons-ui: #6c757d;
 .parameters-scene-app[data-touch-claimed] .scene-canvas {
   touch-action: none;
 }
+
+.parameters-scene-app :deep(:where(#{$scene-focusables}):focus-visible) {
+  @include scene-focus-ring;
+}
 </style>
