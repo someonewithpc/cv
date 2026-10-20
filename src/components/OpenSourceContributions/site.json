@@ -532,6 +532,22 @@
           ]
         },
         {
+          "repository": "upower/power-profiles-daemon",
+          "title": "Read the daemon options from `power-profiles-daemon.conf`",
+          "description": "Blocking a driver or an action meant overriding `ExecStart` in a systemd drop-in, which breaks when a distribution installs the daemon elsewhere or changes the unit. The daemon now looks for `power-profiles-daemon.conf` and a `.conf.d/` directory in `/etc`, `/run`, `/usr/local/lib` and `/usr/lib`, in systemd's order and with systemd's rules: a later key replaces an earlier one, a drop-in of the same name higher up masks the lower one, a link to `/dev/null` masks a file, and files are opened without blocking and read rather than mapped so a FIFO or a truncated file cannot stop startup. The `[Daemon]` group takes `BlockDrivers` and `BlockActions`, and unknown keys, groups and names get a warning. A second commit makes `SetActionEnabled` refuse to turn on a blocked action instead of reporting success",
+          "url": "https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/merge_requests/241",
+          "number": 241,
+          "updatedAt": "2026-10-20T14:01:02Z",
+          "stats": {
+            "additions": 620,
+            "deletions": 27,
+            "changed_files": 3
+          },
+          "tags": [
+            "c"
+          ]
+        },
+        {
           "repository": "outfoxxed/hy3",
           "title": "fix: switch tabs on touchscreen taps",
           "description": "Tapping a tab on a touchscreen did not switch to it, and the tab bar could disappear until a new window opened, because the click handler only listened to mouse buttons, which Hyprland never raises for touch. Moves the lookup into `Hy3Layout::tabAt()` and calls it from an `input.touch.down` listener too; a tap on a tab cancels its down, motion and up events so the client underneath never sees the touch, and the listener repeats Hyprland's own checks for the locked session, kill mode, workspace swipes and covering surfaces. Tested in a VM with a virtual touchscreen and earlier on a real one",
