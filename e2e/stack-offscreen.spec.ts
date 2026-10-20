@@ -112,7 +112,10 @@ for (const width of [1440, 390]) {
 test('a fragment deep in a section lands at the top of the window on a fresh load', async ({ page }) => {
   await page.goto('/#highlight-gnu-social-v3');
   await page.waitForTimeout(1500);
-  expect(await page.locator('#highlight-gnu-social-v3').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
+  // Text line boxes leave the fragment a fraction of a pixel off a whole one, and the window
+  // scrolls to whole pixels, so it lands up to half a pixel either side of the top.
+  const top = await page.locator('#highlight-gnu-social-v3').evaluate((el) => el.getBoundingClientRect().top);
+  expect(Math.abs(top), 'the fragment lands within half a pixel of the top of the window').toBeLessThan(0.5);
   await expect(page.locator('html')).not.toHaveAttribute('data-skip-while-parsing');
 });
 
