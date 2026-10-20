@@ -533,6 +533,22 @@
         },
         {
           "repository": "peteonrails/voxtype",
+          "title": "feat(audio): keep recording after a stop until the mic goes quiet",
+          "description": "Letting go of push-to-talk a moment early cut the last word, and Whisper dropped it or guessed. With `audio.stop_tail_ms` set, the daemon keeps capturing after the stop until the last 160 ms are quiet, for at most that long; a clean release stops at once. Quiet is three times the recording's noise floor, taken as its 10th-percentile frame and capped where quiet speech starts, so the bar follows the mic and the room. Off by default, with a schema entry, a field in the configure TUI, docs and a unit test",
+          "url": "https://github.com/peteonrails/voxtype/pull/900",
+          "number": 900,
+          "updatedAt": "2026-10-20T13:26:06Z",
+          "stats": {
+            "additions": 155,
+            "deletions": 1,
+            "changed_files": 7
+          },
+          "tags": [
+            "rust"
+          ]
+        },
+        {
+          "repository": "peteonrails/voxtype",
           "title": "perf(output): keep keyboard devices open between dictations",
           "description": "The modifier guard opened every `/dev/input/event*` node on each paste and closed them all afterwards, and each close waits for a kernel RCU grace period of 10 to 35 ms, so the guard alone added a few hundred milliseconds before every output (#543). Keyboards now stay open in a process-wide cache; each call still lists `/dev/input` and opens only nodes that are new or re-created, told apart by inode, so hotplug keeps working, and any close runs on a background thread off the output path",
           "url": "https://github.com/peteonrails/voxtype/pull/899",
