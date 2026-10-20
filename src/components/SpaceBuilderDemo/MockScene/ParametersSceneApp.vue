@@ -6,6 +6,7 @@ import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/
 import { demoGate, type DemoGate } from '@/client/frontPage';
 import { TOAST_VISIBLE_MS } from '@/client/toast';
 
+import { useTouchClaim } from './touchClaim';
 import { autoplayStartedToast } from './AutoPlayController';
 import { isSceneChrome } from './isSceneChrome';
 import OptionsPanel from './OptionsPanel.vue';
@@ -44,6 +45,7 @@ const AREA_LIFT_PX = 36;
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
+const { claimed: touchClaimed, passes: touchPasses, release: releaseTouch } = useTouchClaim(() => {});
 const snapshot = ref<SceneSnapshot | null>(null);
 const demoPlaying = ref(false);
 
@@ -174,6 +176,7 @@ function onPointerDown(event: PointerEvent) {
   const scene = sceneRef.value;
   const root = rootRef.value;
   if (!scene || !root || isSceneChrome(event.target)) return;
+  if (touchPasses(event)) return;
 
   activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -387,6 +390,7 @@ onMounted(async () => {
     gate.onChange((active, reasons) => {
       inView = active;
       if (!active) {
+        releaseTouch();
         releaseSpaceBuilderGpu(scene, reasons);
         return;
       }
@@ -450,6 +454,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="parameters-scene-app"
+    :data-touch-claimed="touchClaimed ? '' : undefined"
     role="group"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
@@ -533,7 +538,7 @@ $buttons-ui: #6c757d;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   color-scheme: only dark;
   outline: none;
-  touch-action: none;
+  touch-action: pan-y;
 
   &:focus-visible {
     box-shadow: inset 0 0 0 2px $visrez-brand;
@@ -564,7 +569,7 @@ $buttons-ui: #6c757d;
   display: block;
   width: 100%;
   height: 100%;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .label-host {
@@ -735,5 +740,11 @@ $buttons-ui: #6c757d;
   flex: 1.4;
   padding-block: 0.5rem;
   font-size: 0.875rem;
+}
+
+// A finger scrolls past the scene until a tap claims it (touchClaim.ts)
+.parameters-scene-app[data-touch-claimed],
+.parameters-scene-app[data-touch-claimed] .scene-canvas {
+  touch-action: none;
 }
 </style>

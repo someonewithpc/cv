@@ -5,6 +5,7 @@ import { watchDrawingNote } from '@/client/drawingNote';
 import { onAutoplayCommand, reducedMotion, reportAutoplayState } from '@/client/autoplayStatus';
 import { demoGate, type DemoGate } from '@/client/frontPage';
 
+import { useTouchClaim } from './touchClaim';
 import { autoplayStartedToast } from './AutoPlayController';
 import { isSceneChrome } from './isSceneChrome';
 import { LAYOUT_ICONS } from './layoutIcons';
@@ -43,6 +44,7 @@ const HOLD_MS = 1700;
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
+const { claimed: touchClaimed, passes: touchPasses, release: releaseTouch } = useTouchClaim(() => {});
 const snapshot = ref<SceneSnapshot | null>(null);
 const demoPlaying = ref(false);
 
@@ -115,6 +117,7 @@ function onPointerDown(event: PointerEvent) {
   const scene = sceneRef.value;
   const root = rootRef.value;
   if (!scene || !root || isSceneChrome(event.target, '.sidebar, button')) return;
+  if (touchPasses(event)) return;
 
   activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -265,6 +268,7 @@ onMounted(async () => {
     gate.onChange((active, reasons) => {
       inView = active;
       if (!active) {
+        releaseTouch();
         releaseSpaceBuilderGpu(scene, reasons);
         return;
       }
@@ -327,6 +331,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="layouts-scene-app"
+    :data-touch-claimed="touchClaimed ? '' : undefined"
     role="group"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
@@ -395,7 +400,7 @@ $nav-sidebar-bg: #323232;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   color-scheme: only dark;
   outline: none;
-  touch-action: none;
+  touch-action: pan-y;
 
   &:focus-visible {
     box-shadow: inset 0 0 0 2px $visrez-brand;
@@ -426,7 +431,7 @@ $nav-sidebar-bg: #323232;
   display: block;
   width: 100%;
   height: 100%;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .label-host {
@@ -611,5 +616,11 @@ $nav-sidebar-bg: #323232;
       color: #fff;
     }
   }
+}
+
+// A finger scrolls past the scene until a tap claims it (touchClaim.ts)
+.layouts-scene-app[data-touch-claimed],
+.layouts-scene-app[data-touch-claimed] .scene-canvas {
+  touch-action: none;
 }
 </style>

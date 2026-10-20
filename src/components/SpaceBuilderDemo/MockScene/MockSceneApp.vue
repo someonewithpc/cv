@@ -25,6 +25,7 @@ import CatalogPanel from './CatalogPanel.vue';
 import { CATALOG_ITEMS, variantOf, type CatalogItem, type CatalogVariant } from './catalogItems';
 import { ghostClient, ghostStart, ghostStep, isPlaceKey, KEY_PLACE_HINT, type KeyPoint } from './keyGhost';
 import OptionsPanel from './OptionsPanel.vue';
+import { useTouchClaim } from './touchClaim';
 import {
   RAIL_ARRANGE_TOOLS,
   RAIL_EDIT_TOOLS,
@@ -101,6 +102,13 @@ const canBuildSelected = computed(() => Boolean(selectedCatalogItem.value?.layou
 const loadError = ref(false);
 const inView = ref(false);
 const userControl = ref(false);
+// A tap on the scene is the take-over a touch gives; a swipe over it scrolls the page. Any
+// other take-over, Build in the sidebar or the deck's key, hands the scene the finger too.
+const { claimed: touchClaimed, passes: touchPasses, claim: claimTouch, release: releaseTouch } = useTouchClaim(() => yieldToUser(true));
+watch(userControl, (control) => {
+  if (control) claimTouch();
+  else releaseTouch();
+});
 // Read again whenever the deck may have set or cleared the sheet's data-full-motion.
 const reducedMotion = ref(false);
 const syncReducedMotion = () => { reducedMotion.value = reducedMotionAt(rootRef.value); };
@@ -327,6 +335,7 @@ function onTrustedPointer(event: PointerEvent) {
     }
   }
 
+  if (onScene(event.target) && touchPasses(event)) return;
   pointerOver = true;
   if (isTransportControl(event.target) || inDeckGrace(event)) return;
   yieldToUser(event.type === 'pointerdown');
@@ -344,13 +353,19 @@ function onFocusIn() {
   yieldToUser(true);
 }
 
+function onScene(target: EventTarget | null) {
+  return target instanceof Element && target.closest('.viewport') !== null;
+}
+
 function onPointerDown(event: PointerEvent) {
   if (!event.isTrusted) return;
-  if (!userControl.value) yieldToUser(true);
 
   const target = event.target as HTMLElement | null;
   // UI chrome handles its own clicks — don't steal them for orbit/draw.
-  if (target?.closest('.rail, .sidebar, .flash, .toasts, button, input, label, details')) return;
+  const onChrome = target?.closest('.rail, .sidebar, .flash, .toasts, button, input, label, details') != null;
+  if (!onChrome && touchPasses(event)) return;
+  if (!userControl.value) yieldToUser(true);
+  if (onChrome) return;
 
   const scene = sceneRef.value;
   if (!scene) return;
@@ -856,6 +871,7 @@ onMounted(async () => {
       inView.value = active;
 
       if (!active) {
+        releaseTouch();
         controller.pause();
         releaseSpaceBuilderGpu(scene, reasons);
         if (cursorPhase.value === 'demo') parkedMidWalk = true;
@@ -963,6 +979,7 @@ onBeforeUnmount(() => {
     aria-label="Space Builder Add tool demo"
     :data-ready="ready ? 'true' : 'false'"
     :data-user-control="userControl ? 'true' : 'false'"
+    :data-touch-claimed="touchClaimed ? '' : undefined"
     :data-panel="panel"
     @focusin="onFocusIn"
   >
@@ -1348,6 +1365,15 @@ $light-grey: #565656;
     min-height: 0;
     overflow: hidden;
     background: $visrez-scene;
+  }
+
+  // A finger scrolls past the scene until a tap claims it (touchClaim.ts)
+  .viewport,
+  .scene-canvas {
+    touch-action: pan-y;
+  }
+
+  &[data-touch-claimed] :is(.viewport, .scene-canvas) {
     touch-action: none;
   }
 
@@ -1357,7 +1383,6 @@ $light-grey: #565656;
     height: 100%;
     // Ensure the drawing buffer isn't left at the HTML default 300×150.
     max-width: none;
-    touch-action: none;
   }
 
   .label-host {

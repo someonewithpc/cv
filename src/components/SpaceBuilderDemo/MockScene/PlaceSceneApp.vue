@@ -4,6 +4,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { watchDrawingNote } from '@/client/drawingNote';
 import { watchPageActive } from '@/client/frontPage';
 
+import { useTouchClaim } from './touchClaim';
 import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
 import {
   claimSpaceBuilderGpu,
@@ -27,6 +28,7 @@ import {
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
+const { claimed: touchClaimed, passes: touchPasses, release: releaseTouch } = useTouchClaim(() => {});
 
 let sceneRef: SpaceBuilderScene | null = null;
 let canvasRef: HTMLCanvasElement | null = null;
@@ -42,6 +44,7 @@ function onPointerDown(event: PointerEvent) {
   const root = rootRef.value;
   if (!scene || !root) return;
   if (event.target instanceof Element && event.target.closest('button, a, input')) return;
+  if (touchPasses(event)) return;
 
   activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -232,6 +235,7 @@ onMounted(async () => {
       ?? root;
     stopPageWatch = watchPageActive(visibilityRoot, (active, reasons) => {
       if (!active) {
+        releaseTouch();
         releaseSpaceBuilderGpu(scene, reasons);
         return;
       }
@@ -287,6 +291,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="place-scene-app"
+    :data-touch-claimed="touchClaimed ? '' : undefined"
     role="group"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="Area demo. Orbit and resize the grab handles"
@@ -321,13 +326,13 @@ onBeforeUnmount(() => {
   background: $visrez-scene;
   color-scheme: only dark;
   outline: none;
-  touch-action: none;
+  touch-action: pan-y;
 
   .scene-canvas {
     display: block;
     width: 100%;
     height: 100%;
-    touch-action: none;
+    touch-action: pan-y;
   }
 
   .label-host {
@@ -384,5 +389,11 @@ onBeforeUnmount(() => {
     pointer-events: none;
     white-space: nowrap;
   }
+}
+
+// A finger scrolls past the scene until a tap claims it (touchClaim.ts)
+.place-scene-app[data-touch-claimed],
+.place-scene-app[data-touch-claimed] .scene-canvas {
+  touch-action: none;
 }
 </style>

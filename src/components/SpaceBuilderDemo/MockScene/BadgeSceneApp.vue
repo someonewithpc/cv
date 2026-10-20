@@ -19,6 +19,7 @@ import {
   type PinchState,
   type ScreenPoint,
 } from './scene/sceneViewportGestures';
+import { useTouchClaim } from './touchClaim';
 import type { SpaceBuilderScene } from './scene/SpaceBuilderScene';
 import { TAG_PAD_M } from './scene/sceneTuning';
 
@@ -28,6 +29,7 @@ const ORBIT_SPEED = 0.25;
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
+const { claimed: touchClaimed, passes: touchPasses, release: releaseTouch } = useTouchClaim(pauseForManualControl);
 const playing = ref(false);
 /** The math card's text. Set only when a shown number changes, so an orbit frame that
  * moves the camera less than a degree or a centimetre re-renders nothing. */
@@ -96,6 +98,7 @@ function applyOrbitState() {
 
 function togglePlay() {
   playing.value = !playing.value;
+  if (playing.value) releaseTouch();
   applyOrbitState();
 }
 
@@ -111,6 +114,7 @@ function onPointerDown(event: PointerEvent) {
   const root = rootRef.value;
   if (!scene || !root) return;
   if (event.target instanceof Element && event.target.closest('button, a')) return;
+  if (touchPasses(event)) return;
 
   activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   trySetPointerCapture(event.currentTarget, event.pointerId);
@@ -268,6 +272,7 @@ onMounted(async () => {
     stopPageWatch = watchPageActive(visibilityRoot, (active, reasons) => {
       inView = active;
       if (!active) {
+        releaseTouch();
         releaseSpaceBuilderGpu(scene, reasons);
         applyOrbitState();
         return;
@@ -330,6 +335,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="badge-scene-app"
+    :data-touch-claimed="touchClaimed ? '' : undefined"
     role="group"
     :data-ready="ready ? 'true' : 'false'"
     aria-label="Capacity Badge demo. Auto-orbiting to show the tag tracking the camera, drag to take over"
@@ -389,14 +395,14 @@ onBeforeUnmount(() => {
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   color-scheme: only dark;
   outline: none;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .scene-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .label-host {
@@ -621,5 +627,11 @@ onBeforeUnmount(() => {
     white-space: nowrap;
     text-align: center;
   }
+}
+
+// A finger scrolls past the scene until a tap claims it (touchClaim.ts)
+.badge-scene-app[data-touch-claimed],
+.badge-scene-app[data-touch-claimed] .scene-canvas {
+  touch-action: none;
 }
 </style>

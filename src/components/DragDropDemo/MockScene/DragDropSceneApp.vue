@@ -11,6 +11,7 @@ import { TOAST_VISIBLE_MS } from '@/client/toast';
 
 import { autoplayStartedToast } from '@/components/SpaceBuilderDemo/MockScene/AutoPlayController';
 import { isSceneChrome } from '@/components/SpaceBuilderDemo/MockScene/isSceneChrome';
+import { useTouchClaim } from '@/components/SpaceBuilderDemo/MockScene/touchClaim';
 import CatalogPanel from '@/components/SpaceBuilderDemo/MockScene/CatalogPanel.vue';
 import {
   CATALOG_ITEMS,
@@ -82,6 +83,8 @@ const DND_ITEMS: CatalogItem[] = [...CATALOG_ITEMS]
 const rootRef = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const loadError = ref(false);
+// A tap on the scene takes it over; a swipe over it scrolls the page until then
+const { claimed: touchClaimed, passes: touchPasses, claim: claimTouch, release: releaseTouch } = useTouchClaim(() => yieldToUser());
 const phase = ref<Phase>('idle');
 const selectedId = ref('chair');
 const toast = ref<string | null>(null);
@@ -452,6 +455,8 @@ function onPointerDown(event: PointerEvent) {
   const scene = sceneRef.value;
   const root = rootRef.value;
   if (!scene || !root || isSceneChrome(event.target)) return;
+  // An armed card is already the visitor's, and the tap that places it is theirs too
+  if (phase.value === 'idle' && touchPasses(event)) return;
   yieldToUser();
 
   // An armed object goes down on the next plain left click, and the tool returns to view —
@@ -955,6 +960,7 @@ async function restartDemo() {
   resumeTimer = null;
   stopAutoplay();
   userControl = false;
+  releaseTouch();
   // A restart asks for the walkthrough, so a pointer resting on the scene is not in its way.
   pointerOver = false;
   sceneRef.value?.reset();
@@ -973,11 +979,13 @@ function yieldToUser(keepControl = false) {
   resumeTimer = null;
   if (demoPlaying.value) stopAutoplay();
   userControl = true;
+  claimTouch();
   reportAutoplayState(rootRef.value, 'user');
   if (keepControl) return;
   resumeTimer = setTimeout(() => {
     resumeTimer = null;
     userControl = false;
+    releaseTouch();
     // startAutoplay reports 'playing' for itself, and declines while the visitor still has
     // hold of the scene, in which case the deck rightly goes on reading MANUAL CONTROL.
     startAutoplay();
@@ -1007,6 +1015,7 @@ function onRealPointerMove(event: PointerEvent) {
   // Off the demo and already known to be off it: the rest of the page is not this demo's
   // business, and the quiet spell is already counting down.
   if (!over && !pointerOver) return;
+  if (event.target instanceof Element && event.target.closest('.viewport') && touchPasses(event)) return;
   pointerOver = over;
   yieldToUser();
 }
@@ -1015,6 +1024,8 @@ function onRealPointerMove(event: PointerEvent) {
 function onRealPointerLeave(event: PointerEvent) {
   if (!event.isTrusted || !pointerOver) return;
   pointerOver = false;
+  // A finger lifting off a scene it only scrolled past is not a visitor leaving it
+  if (touchPasses(event)) return;
   yieldToUser();
 }
 
@@ -1076,6 +1087,7 @@ onMounted(async () => {
     gate.onChange((active, reasons) => {
       inView = active;
       if (!active) {
+        releaseTouch();
         releaseSpaceBuilderGpu(scene, reasons);
         return;
       }
@@ -1148,6 +1160,7 @@ onBeforeUnmount(() => {
   <div
     ref="rootRef"
     class="drag-drop-scene-app"
+    :data-touch-claimed="touchClaimed ? '' : undefined"
     role="group"
     tabindex="0"
     :data-ready="ready ? 'true' : 'false'"
@@ -1270,7 +1283,7 @@ $nav-sidebar-bg: #323232;
   font-family: 'Open Sans', var(--font-poppins, system-ui, sans-serif);
   color-scheme: only dark;
   outline: none;
-  touch-action: none;
+  touch-action: pan-y;
 
   &:focus-visible {
     box-shadow: inset 0 0 0 2px $visrez-brand;
@@ -1301,7 +1314,7 @@ $nav-sidebar-bg: #323232;
   display: block;
   width: 100%;
   height: 100%;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .label-host {
@@ -1529,5 +1542,13 @@ $nav-sidebar-bg: #323232;
   overflow-y: auto;
   padding: 0.75rem;
   scrollbar-width: thin;
+}
+
+// A finger scrolls past the scene until a tap claims it (touchClaim.ts); the catalog beside
+// it keeps the finger for its drags
+.drag-drop-scene-app[data-touch-claimed],
+.drag-drop-scene-app[data-touch-claimed] .scene-canvas,
+.drag-drop-scene-app > :not(.viewport) {
+  touch-action: none;
 }
 </style>
