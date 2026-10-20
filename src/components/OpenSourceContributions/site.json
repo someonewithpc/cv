@@ -533,6 +533,22 @@
         },
         {
           "repository": "outfoxxed/hy3",
+          "title": "fix: switch tabs on touchscreen taps",
+          "description": "Tapping a tab on a touchscreen did not switch to it, and the tab bar could disappear until a new window opened, because the click handler only listened to mouse buttons, which Hyprland never raises for touch. Moves the lookup into `Hy3Layout::tabAt()` and calls it from an `input.touch.down` listener too; a tap on a tab cancels its down, motion and up events so the client underneath never sees the touch, and the listener repeats Hyprland's own checks for the locked session, kill mode, workspace swipes and covering surfaces. Tested in a VM with a virtual touchscreen and earlier on a real one",
+          "url": "https://github.com/outfoxxed/hy3/pull/344",
+          "number": 344,
+          "updatedAt": "2026-10-20T14:05:46Z",
+          "stats": {
+            "additions": 129,
+            "deletions": 8,
+            "changed_files": 4
+          },
+          "tags": [
+            "cplusplus"
+          ]
+        },
+        {
+          "repository": "outfoxxed/hy3",
           "title": "fix: crash on plugin unload with tab groups open",
           "description": "Unloading hy3 with a tab group open crashed Hyprland on the next animation tick, which any reload that changes the plugin path triggers, such as a NixOS switch that rebuilds hy3. Hyprland calls PLUGIN_EXIT first and removes the layouts after, and removing them put fading tab groups back on a list whose tick listener was already gone. Removes the layout at the start of PLUGIN_EXIT so the clears free what is left, and drops the tab pass element from the render pass as hyprbars does. Tested in a VM through an unload, a reload and six swaps between builds",
           "url": "https://github.com/outfoxxed/hy3/pull/345",
