@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 import { cssString, unquoteCssString } from '../src/components/FontPickerDemo/picker/cssString';
-import { render } from '../src/components/FontPickerDemo/picker/fontOverride';
+import { overrideStyle } from '../src/components/FontPickerDemo/picker/fontOverride';
 import { FetchCapError, LIMITS, cappedFetch, resetSpent } from '../src/components/FontPickerDemo/picker/proxiedFetch';
 
-// The picker's own modules, run in the test process: the CSS they write is parsed by the
+// The picker's own modules, run in the test process: the CSS values they write are parsed by the
 // browser, and fetch is replaced so nothing leaves the machine
 
 const HOSTILE = [
@@ -14,23 +14,31 @@ const HOSTILE = [
   'Line\nbreak</style><style>body{display:none}',
 ];
 
-test('a family name with quotes, braces and semicolons stays inside its font-family rule', async ({ page }) => {
+test('a family name with quotes, braces and semicolons stays inside its font-family value', async ({ page }) => {
   for (const family of HOSTILE) {
     expect(unquoteCssString(cssString(family))).toBe(family);
 
-    const css = render({ family, style: 'normal', size: 1, weight: null }, {});
-    const parsed = await page.evaluate((text) => {
+    const { style } = overrideStyle({ family, style: 'normal', size: 1, weight: null });
+    const read = await page.evaluate((props) => {
       const sheet = new CSSStyleSheet();
-      sheet.replaceSync(text);
-      return [...sheet.cssRules].map((rule) => ({
-        selector: (rule as CSSStyleRule).selectorText,
-        fontFamily: (rule as CSSStyleRule).style.getPropertyValue('font-family'),
-      }));
-    }, css);
+      sheet.replaceSync('.root { font-family: var(--font-tools-family), sans-serif; }');
+      document.adoptedStyleSheets = [sheet];
+      const root = document.createElement('div');
+      root.className = 'root';
+      for (const [name, value] of Object.entries(props)) root.style.setProperty(name, value);
+      document.body.append(root);
+      return {
+        fontFamily: getComputedStyle(root).fontFamily,
+        properties: [...root.style].length,
+        rules: sheet.cssRules.length,
+        bodyDisplay: getComputedStyle(document.body).display,
+      };
+    }, style);
 
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0].selector).toBe('[data-font-picker-island] .edit-style');
-    expect(unquoteCssString(parsed[0].fontFamily.replace(/, sans-serif$/, ''))).toBe(family);
+    expect(read.properties).toBe(1);
+    expect(read.rules).toBe(1);
+    expect(read.bodyDisplay).toBe('block');
+    expect(unquoteCssString(read.fontFamily.replace(/, sans-serif$/, ''))).toBe(family);
   }
 });
 

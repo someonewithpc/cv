@@ -27,48 +27,43 @@ function emit() {
   listeners.forEach((listener) => listener());
 }
 
-function styleElement() {
-  let el = document.head.querySelector<HTMLStyleElement>('style[data-font-tools]');
-  if (!el) {
-    el = document.createElement('style');
-    el.dataset.fontTools = '';
-    document.head.append(el);
+// The settings go on the demo's root as properties that EditStyle.scss reads, never into a
+// stylesheet: Safari restyles the whole page each time a sheet's text changes, about 480 ms at
+// 1440 px, and the walkthrough changed it on every step. A face from a subform needs no sheet
+// either, since loading it already added it to document.fonts
+export type OverrideStyle = Record<`--font-tools-${string}`, string>;
+
+/** The root's attributes and properties for an override; an unset field has neither */
+export function overrideStyle({ family, style, size, weight }: FontOverride): {
+  attributes: Record<string, ''>;
+  style: OverrideStyle;
+} {
+  const attributes: Record<string, ''> = {};
+  const props: OverrideStyle = {};
+
+  if (size !== 1) {
+    attributes['data-font-size'] = '';
+    props['--font-tools-size'] = String(size);
   }
-  return el;
-}
-
-// The demo alone wears the settings, sidebar and specimen both, the way everything under
-// the product's wrapper does. The face is set on the root and inherited, not forced: what
-// declares a face of its own keeps it, which is the dropdown's rows and the family label
-// with the committed face, and the monospace readout
-const ROOT = '[data-font-picker-island] .edit-style';
-// The size goes on the two columns, not the grid: its tracks are in em too, and scaling them
-// with the type would squeeze the specimen for the sidebar's sake
-const SIZED = `${ROOT} > *`;
-
-export function render({ family, style, size, weight }: FontOverride, externalFaces: Record<string, string>) {
-  const rules: string[] = [];
-
-  if (size !== 1) rules.push(`${SIZED} { font-size: ${size}em; }`);
-
   if (family !== null) {
-    if (externalFaces[family]) rules.push(externalFaces[family]);
-    rules.push(`${ROOT} {
-  font-family: ${cssString(family)}, sans-serif;${style !== 'normal' ? `\n  font-style: ${style};` : ''}
-}`);
+    attributes['data-font-family'] = '';
+    props['--font-tools-family'] = cssString(family);
+    if (style !== 'normal') {
+      attributes['data-font-style'] = '';
+      props['--font-tools-style'] = style;
+    }
   }
-
   if (weight !== null) {
-    rules.push(`${ROOT} { font-weight: ${weight}; }
-${ROOT} :is(b, strong) { font-weight: ${Math.min(1000, Math.round((weight * 7 / 4) / 50) * 50)}; }`);
+    attributes['data-font-weight'] = '';
+    props['--font-tools-weight'] = String(weight);
+    props['--font-tools-bold'] = String(Math.min(1000, Math.round((weight * 7 / 4) / 50) * 50));
   }
 
-  return rules.join('\n\n');
+  return { attributes, style: props };
 }
 
 function show(override: FontOverride) {
   state = { ...state, shown: override };
-  styleElement().textContent = render(override, state.externalFaces);
   emit();
 }
 
