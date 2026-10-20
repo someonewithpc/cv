@@ -533,6 +533,22 @@
         },
         {
           "repository": "outfoxxed/hy3",
+          "title": "fix: crash on plugin unload with tab groups open",
+          "description": "Unloading hy3 with a tab group open crashed Hyprland on the next animation tick, which any reload that changes the plugin path triggers, such as a NixOS switch that rebuilds hy3. Hyprland calls PLUGIN_EXIT first and removes the layouts after, and removing them put fading tab groups back on a list whose tick listener was already gone. Removes the layout at the start of PLUGIN_EXIT so the clears free what is left, and drops the tab pass element from the render pass as hyprbars does. Tested in a VM through an unload, a reload and six swaps between builds",
+          "url": "https://github.com/outfoxxed/hy3/pull/345",
+          "number": 345,
+          "updatedAt": "2026-10-20T14:05:40Z",
+          "stats": {
+            "additions": 6,
+            "deletions": 0,
+            "changed_files": 1
+          },
+          "tags": [
+            "cplusplus"
+          ]
+        },
+        {
+          "repository": "outfoxxed/hy3",
           "title": "fix: guard workspace monitor before dereferencing it",
           "description": "When the last monitor disconnects, Hyprland leaves workspaces pointing at the monitor it is destroying, and hy3 dereferenced that pointer on the next window map or unmap and segfaulted. Checks the workspace's monitor in `insertNode`, `recalcGeometry`, `moveNodeToWorkspace` and the tab group constructor, and the focused monitor in the dispatchers and cursor warp, which is null while no monitor is connected; each place skips its monitor work. Fixes #332 and #336",
           "url": "https://github.com/outfoxxed/hy3/pull/346",
