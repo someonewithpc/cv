@@ -1095,6 +1095,22 @@
           ]
         },
         {
+          "repository": "peteonrails/voxtype",
+          "title": "fix(output): keep the text on the clipboard when the modifier guard skips a paste",
+          "description": "In paste mode the output chain held only the paste method. When a modifier was still down past `modifier_release_timeout_ms`, the guard skipped the paste and nothing else ran, so the dictation was lost although the notification said it was copied to the clipboard. Hit with Right Ctrl as the hotkey. Added `wl-copy` after the paste, as type mode already has, with a test that the chain keeps a method that survives the keystroke filter. Closed as a duplicate of [#588](https://github.com/peteonrails/voxtype/pull/588) and [#654](https://github.com/peteonrails/voxtype/pull/654)",
+          "url": "https://github.com/peteonrails/voxtype/pull/829",
+          "number": 829,
+          "updatedAt": "2026-10-05T16:32:30Z",
+          "stats": {
+            "additions": 18,
+            "deletions": 1,
+            "changed_files": 1
+          },
+          "tags": [
+            "rust"
+          ]
+        },
+        {
           "repository": "gaoxiaoliangz/react-scoped-css",
           "title": "Update dependencies so it works with Webpack 5 and CRACO 7",
           "description": "Updated react-scoped-css for Webpack 5 and CRACO 7 without deprecated loader APIs. Closed as implemented by the maintainer",
