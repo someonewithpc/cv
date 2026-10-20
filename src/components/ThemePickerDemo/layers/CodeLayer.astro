@@ -1,7 +1,7 @@
 ---
 /**
  * The wipe's script, five steps in the order the picker runs them, each with the lines it
- * runs, and under the frames what transformPath does with a path. Every fragment is
+ * runs, and beside them what transformPath does with a path. Every fragment is
  * checked against its source at build, whitespace aside, so the sheet cannot drift from the
  * code. src/highlight.ts colours the fragments at build in the theme's own tokens, so nothing
  * ships to colour them at runtime and the theme picker restyles them. Beside the
@@ -111,10 +111,10 @@ for (const { code, from, check } of [...steps.map((step) => step.fragment), ...i
 }
 
 /* The drawing, in a 150 by 100 box: the viewport fills it, 16:10, with room above for the
-   dimension and beside the corner for the icon's label. The end frame is the icon grown to
-   its true size for each theme, centred on the icon's box and cut at the drawing's edge, so
-   the dimension line runs off the drawing and carries a break. Labels are HTML, placed in
-   per cent of the box. */
+   dimension and, under it beside the extension line, the icon's label. The end frame is the
+   icon grown to its true size for each theme, centred on the icon's box and cut at the
+   drawing's edge, so the dimension line runs off the drawing and carries a break. Labels
+   are HTML, placed in per cent of the box. */
 const box = { width: 150, height: 100 };
 const viewport = { x: 6, y: 26, width: 102.4, height: 64 };
 const right = viewport.x + viewport.width;
@@ -141,50 +141,51 @@ const frames = THEME_IDS.map((id) => {
       <li>
         <span class="step-name"><span class="balloon">{index + 1}</span><span set:html={ticks(name)} /></span>
         <Fragment set:html={highlightBlock(fragment.code.join('\n'), 'ts')} />
-        {index === 3 && (
-          <div class="inside">
-            <span class="inside-name">Inside <Fragment set:html={highlightInline('transformPath', 'ts', ['', '()'])} />, for both frames</span>
-            {inside.map((row) => (
-              <div class="row">
-                <Fragment set:html={highlightBlock(row.fragment.code.join('\n'), 'ts')} />
-                <span class="note" set:html={ticks(row.note)} />
-              </div>
-            ))}
-          </div>
-        )}
       </li>
     ))}
   </ol>
 
   <div class="figure">
-    <div class="drawing" aria-hidden="true">
-      {frames.map(({ id, span }) => (
-        <span class="end-icon" data-shown={id} style={`${pct(cx, cy)}; --span: ${span}`}>
-          <Icon name={THEMES[id].icons.checked} aria-hidden="true" />
+    <div class="drawing-cell">
+      <div class="drawing" aria-hidden="true">
+        {frames.map(({ id, span }) => (
+          <span class="end-icon" data-shown={id} style={`${pct(cx, cy)}; --span: ${span}`}>
+            <Icon name={THEMES[id].icons.checked} aria-hidden="true" />
+          </span>
+        ))}
+
+        <svg class="geometry" aria-hidden="true" viewBox={`0 0 ${box.width} ${box.height}`}>
+          <rect class="viewport" x={viewport.x} y={viewport.y} width={viewport.width} height={viewport.height} />
+          <line class="diagonal" x1={viewport.x} y1={bottom} x2={right} y2={viewport.y} />
+          <line class="extension" x1={cx} y1={cy - icon.size / 2 - 1} x2={cx} y2={dimY - 2} />
+          <line class="dim" x1="0" y1={dimY} x2={cx} y2={dimY} />
+          <line class="tick" x1={cx} y1={dimY - 1.5} x2={cx} y2={dimY + 1.5} />
+          <polyline class="break" points={`${viewport.x + 6},${dimY - 3} ${viewport.x + 4},${dimY + 3} ${viewport.x + 2},${dimY - 3}`} />
+          <rect class="icon-box" x={cx - icon.size / 2} y={cy - icon.size / 2} width={icon.size} height={icon.size} />
+          <circle class="centre" cx={cx} cy={cy} r="0.6" />
+        </svg>
+
+        <span class="corner-icon" style={`${pct(cx, cy)}; --w: ${(icon.size / box.width) * 100}%; --h: ${(icon.size / box.height) * 100}%`}>
+          {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} aria-hidden="true" />)}
         </span>
+
+        {frames.map(({ id, factor }) => (
+          <span class="label" data-shown={id} style={`${pct(cx / 2, dimY - 1.5)}; --dx: -50%; --dy: -100%`}><Fragment set:html={highlightInline(`size = diagonal × ${factor}`, 'ts')} /></span>
+        ))}
+        <span class="label" style={`${pct(cx - 2, (dimY + viewport.y) / 2)}; --dx: -100%; --dy: -50%`}><Fragment set:html={ticks('`rect`, `cx`, `cy`')} /></span>
+        <span class="label" style={`${pct(viewport.x + viewport.width / 2 + 3, viewport.y + viewport.height / 2 + 3)}; --dx: 0; --dy: 0`}><Fragment set:html={ticks('`diagonal`')} /></span>
+        <span class="label" style={`${pct(viewport.x, bottom + 1)}; --dx: 0; --dy: 0`}>viewport</span>
+      </div>
+    </div>
+
+    <div class="inside">
+      <span class="inside-name">Inside <Fragment set:html={highlightInline('transformPath', 'ts', ['', '()'])} />, for both frames</span>
+      {inside.map((row) => (
+        <div class="row">
+          <Fragment set:html={highlightBlock(row.fragment.code.join('\n'), 'ts')} />
+          <span class="note" set:html={ticks(row.note)} />
+        </div>
       ))}
-
-      <svg class="geometry" aria-hidden="true" viewBox={`0 0 ${box.width} ${box.height}`}>
-        <rect class="viewport" x={viewport.x} y={viewport.y} width={viewport.width} height={viewport.height} />
-        <line class="diagonal" x1={viewport.x} y1={bottom} x2={right} y2={viewport.y} />
-        <line class="extension" x1={cx} y1={cy - icon.size / 2 - 1} x2={cx} y2={dimY - 2} />
-        <line class="dim" x1="0" y1={dimY} x2={cx} y2={dimY} />
-        <line class="tick" x1={cx} y1={dimY - 1.5} x2={cx} y2={dimY + 1.5} />
-        <polyline class="break" points={`${viewport.x + 6},${dimY - 3} ${viewport.x + 4},${dimY + 3} ${viewport.x + 2},${dimY - 3}`} />
-        <rect class="icon-box" x={cx - icon.size / 2} y={cy - icon.size / 2} width={icon.size} height={icon.size} />
-        <circle class="centre" cx={cx} cy={cy} r="0.6" />
-      </svg>
-
-      <span class="corner-icon" style={`${pct(cx, cy)}; --w: ${(icon.size / box.width) * 100}%; --h: ${(icon.size / box.height) * 100}%`}>
-        {THEME_IDS.map((id) => <Icon name={THEMES[id].icons.checked} data-shown={id} aria-hidden="true" />)}
-      </span>
-
-      {frames.map(({ id, factor }) => (
-        <span class="label" data-shown={id} style={`${pct(cx / 2, dimY - 1.5)}; --dx: -50%; --dy: -100%`}><Fragment set:html={highlightInline(`size = diagonal × ${factor}`, 'ts')} /></span>
-      ))}
-      <span class="label" style={`${pct(cx + icon.size / 2 + 2, cy)}; --dx: 0; --dy: -50%`}><Fragment set:html={ticks('`rect`, `cx`, `cy`')} /></span>
-      <span class="label" style={`${pct(viewport.x + viewport.width / 2 + 3, viewport.y + viewport.height / 2 + 3)}; --dx: 0; --dy: 0`}><Fragment set:html={ticks('`diagonal`')} /></span>
-      <span class="label" style={`${pct(viewport.x, bottom + 1)}; --dx: 0; --dy: 0`}>viewport</span>
     </div>
   </div>
 </div>
@@ -203,9 +204,9 @@ const frames = THEME_IDS.map((id) => {
 
 @include stretch-cell(".code-sheet");
 
-/* The steps take the wider left column and the sheet's full height; the drawing on the
-   right stops above the title block. The right column is never narrower than the block, so
-   the block reaches into that column only. */
+/* The steps take the wider left column and the sheet's full height; the drawing and the
+   transformPath box on the right stop above the title block. The right column is never
+   narrower than the block, so the block reaches into that column only. */
 .code-sheet {
   @include sheet-content;
   @include sheet-type(0.025, 0.032);
@@ -216,8 +217,16 @@ const frames = THEME_IDS.map((id) => {
   .figure {
     grid-column: 2;
     grid-row: 2;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 0.5em;
     padding-bottom: var(--title-block-block, 0px);
-    justify-items: center;
+    justify-items: stretch;
+  }
+
+  .drawing-cell {
+    display: grid;
+    place-items: center;
+    min-height: 0;
     container-type: size;
   }
 
@@ -225,7 +234,11 @@ const frames = THEME_IDS.map((id) => {
     .figure {
       grid-column: auto;
       grid-row: auto;
+      grid-template-rows: auto;
       padding-bottom: 0;
+    }
+
+    .drawing-cell {
       container-type: normal;
     }
   }
@@ -237,7 +250,9 @@ const frames = THEME_IDS.map((id) => {
   margin: 0;
   padding: 0;
   list-style: none;
-  align-content: center;
+  /* safe: a list taller than its row starts at the top, under the header, instead of
+     spilling past the sheet's top edge where nothing can reach it. */
+  align-content: safe center;
 
   li {
     display: grid;
@@ -257,6 +272,9 @@ const frames = THEME_IDS.map((id) => {
     text-wrap: pretty;
   }
 
+}
+
+:is(.steps, .inside) {
   :global(pre) {
     margin: 0;
     padding: 0.125em 0.375em;
@@ -273,13 +291,14 @@ const frames = THEME_IDS.map((id) => {
   }
 }
 
-/* transformPath's lines, each with its sentence, under the frames' step. */
+/* transformPath's lines, each with its sentence, ruled like a step. */
 .inside {
   display: grid;
   gap: 0.125em;
-  margin-top: 0.125em;
-  padding-top: 0.25em;
-  border-top: 1px solid var(--line);
+  padding: 0.125em 0.5em;
+  border: 1px solid var(--line);
+  border-radius: 0.25em;
+  background: var(--sheet-paper);
 
   .inside-name {
     font-family: monospace, system-ui;
