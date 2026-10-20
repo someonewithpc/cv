@@ -200,6 +200,21 @@ test.describe('reduced motion', () => {
     expect(await fill()).not.toBe(darkFill);
   });
 
+  // On a landscape sheet the steps and the drawing fit the frame: the sheet does not scroll and
+  // the steps list does not run past its row, where the top of a centred list was cut off.
+  for (const width of [1440, 980]) {
+    test(`code page: the steps fit the sheet at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      const stack = pickerStack(page);
+      await stack.scrollIntoViewIfNeeded();
+      await turnToPage(stack, 'The Wipe in Code');
+      const sheet = frontPage(stack, await frontPageIndex(stack)).locator('.code-sheet');
+      const overflow = (el: Element) => el.scrollHeight - el.clientHeight;
+      expect(await sheet.evaluate(overflow)).toBeLessThanOrEqual(1);
+      expect(await sheet.locator('.steps').evaluate(overflow)).toBeLessThanOrEqual(1);
+    });
+  }
 });
 
 test.describe('without script', () => {
