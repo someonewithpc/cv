@@ -433,3 +433,4 @@
 - [x] The two hyphens of "--page-index" on the Paper Stack drawing read as two in Menlo, not one long dash (CHM10) (#518)
 - [x] A finger swiping over a Space Builder or Drag and Drop scene at 390 scrolls the page until a tap takes the scene over (CHM11) (#520)
 - [x] Give the Space Builder panel controls the scene's 2px brand focus ring in place of the browser's own (#516)
+- [ ] The Font picker specimen and its readout stay on the sheet, clear of the title block, at every size from 0.5em to 2em (CHM8)
