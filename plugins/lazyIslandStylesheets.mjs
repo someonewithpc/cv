@@ -8,6 +8,12 @@ import { fileURLToPath } from 'node:url';
  * first render. Vite's preload helper already loads a dynamic chunk's CSS and
  * waits for it before the import resolves, so those links can go: each sheet
  * then arrives with its island, and before it mounts.
+ *
+ * The helper links each sheet at the end of <head>, which puts it before the
+ * <style> elements in the body. Safari only takes its cheap path for a new
+ * sheet when it comes after every other sheet in the document. Anywhere else
+ * it rebuilds the style of the whole page, about 380 ms at 1440 px, once per
+ * island. So the helper links them at the end of <body> instead.
  */
 export const lazyIslandStylesheets = () => {
   /** @type {Set<string>} */
@@ -19,6 +25,15 @@ export const lazyIslandStylesheets = () => {
     apply: 'build',
     enforce: 'post',
     applyToEnvironment: (environment) => environment.name === 'client',
+    transform: {
+      filter: { id: /^\0vite\/preload-helper\.js$/ },
+      handler(code) {
+        const head = 'document.head.appendChild(link)';
+        const count = code.split(head).length - 1;
+        if (count !== 1) this.error(`Expected one ${head} in Vite's preload helper, found ${count}`);
+        return { code: code.replace(head, 'document.body.appendChild(link)'), map: null };
+      },
+    },
     generateBundle(_options, bundle) {
       const chunks = Object.values(bundle).filter((item) => item.type === 'chunk');
       const byName = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
