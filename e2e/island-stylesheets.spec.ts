@@ -47,3 +47,23 @@ test('an island brings its stylesheet and mounts styled', async ({ page }) => {
   );
   expect(position).toBe('absolute');
 });
+
+/**
+ * Safari restyles the whole page, about 380 ms at 1440 px, for a sheet that lands before
+ * another sheet in the document. A sheet that comes after all of them costs it a few ms.
+ */
+test('an island stylesheet comes after every other sheet in the document', async ({ page }) => {
+  await page.goto('/');
+  const stack = demoStack(page, 'Interactive Map Marker Editor');
+  await stack.scrollIntoViewIfNeeded();
+  await expect(stack.locator('.mock-map-overlay').first()).toBeAttached({ timeout: 15_000 });
+
+  const order = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('style, link[rel="stylesheet"]')].map((el) =>
+      el instanceof HTMLLinkElement ? new URL(el.href).pathname : 'style',
+    ),
+  );
+  const firstIsland = order.findIndex((entry) => /\/_astro\/MockMapApp\.[^/]+\.css$/.test(entry));
+  expect(firstIsland, 'the Marker Editor map stylesheet').toBeGreaterThan(-1);
+  expect(order.slice(firstIsland).filter((entry) => entry === 'style')).toEqual([]);
+});
