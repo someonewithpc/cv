@@ -136,6 +136,9 @@ $op-slot: 1.125em;
   margin-inline: auto;
   position: relative;
   display: grid;
+  /* Here and in .parts-layer an auto track grows to the card's max-content, so the card
+     ran past the artwork cell and under the note beside it. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
 
   @include portrait-sheet {
@@ -148,6 +151,7 @@ $op-slot: 1.125em;
   width: max-content;
   max-width: 100%;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: clamp(0.75rem, 0.024 * min(var(--sheet-inline), var(--sheet-block)), 1rem);
