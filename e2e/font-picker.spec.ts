@@ -53,6 +53,44 @@ test('main page: the size slider scales the specimen', async ({ page }) => {
   await expect.poll(() => pangram.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(before);
 });
 
+// Safari restyles the whole page whenever a stylesheet is added or its text changes, about
+// 480 ms at 1440 px, so a face or a size reaches the demo without one
+test('main page: choosing a face and a size writes no stylesheet', async ({ page }) => {
+  const stack = fontPickerStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  const front = frontPage(stack, await frontPageIndex(stack));
+  const island = await waitForIslandMounted(front);
+  const family = island.locator('select[data-demo-target="family"]');
+  await expect(family).toBeVisible({ timeout: 15_000 });
+  await family.focus();
+
+  await page.evaluate(() => {
+    const writes: string[] = [];
+    (window as unknown as { __sheetWrites: string[] }).__sheetWrites = writes;
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const target = record.target.nodeType === Node.TEXT_NODE ? record.target.parentElement : record.target;
+        if (target instanceof HTMLStyleElement) writes.push('text');
+        for (const node of record.addedNodes) if (node instanceof HTMLStyleElement) writes.push('style');
+      }
+    }).observe(document, { subtree: true, childList: true, characterData: true });
+  });
+
+  const faces = await family.locator('option:not([value^="--"])').evaluateAll((options) =>
+    options.map((option) => (option as HTMLOptionElement).value),
+  );
+  await family.selectOption(faces[faces.length - 1]);
+  const chosenFamily = JSON.parse(faces[faces.length - 1]).family as string;
+  const pangram = island.locator('.specimen-pangram');
+  await expect.poll(() => pangram.evaluate((el) => getComputedStyle(el).fontFamily)).toContain(chosenFamily);
+
+  const before = await pangram.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  await island.locator('input[data-demo-target="size"]').fill('1.5');
+  await expect.poll(() => pangram.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(before);
+
+  expect(await page.evaluate(() => (window as unknown as { __sheetWrites: string[] }).__sheetWrites)).toEqual([]);
+});
+
 test('main page: the drawn cursor leaves when its page is no longer in front', async ({ page }) => {
   const stack = fontPickerStack(page);
   await stack.scrollIntoViewIfNeeded();
