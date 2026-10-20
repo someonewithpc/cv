@@ -186,6 +186,35 @@ for (const [width, place] of [[390, 'under'], [560, 'level'], [768, 'beside']] a
   });
 }
 
+// With its demo loaded, a portrait sheet's deck is the slip's first entry and its lines run on
+// to the slip's inner edge, so the hint holds the deck as a whole by the inset, and the title
+// stands under the deck.
+for (const width of [390, 560]) {
+  test(`the deck stands under the peel hint at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    const callout = page.locator('#demos .callout[data-card]:has(.technical-drawing-frame[data-hint-show])');
+    await callout.locator('.callout-card').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    const deck = callout.locator('.callout-card > [data-demo-transport]');
+    await expect(deck).toHaveAttribute('data-state', /./, { timeout: 20_000 });
+    await page.evaluate(() => document.fonts.ready);
+
+    const { pad, hint, deckTop, deckBottom, titleTop } = await callout.evaluate((el) => {
+      const card = el.querySelector<HTMLElement>('.callout-card')!;
+      const deck = card.querySelector(':scope > [data-demo-transport]')!.getBoundingClientRect();
+      return {
+        pad: parseFloat(getComputedStyle(card).paddingLeft),
+        hint: el.querySelector('.flip-hint--fwd.hint-words')!.getBoundingClientRect().bottom,
+        deckTop: deck.top,
+        deckBottom: deck.bottom,
+        titleTop: card.querySelector('.title-cell dt')!.getBoundingClientRect().top,
+      };
+    });
+    expect(Math.abs(deckTop - hint - pad), `deck held the inset below the hint (${deckTop - hint} against ${pad})`).toBeLessThanOrEqual(1.5);
+    expect(titleTop, 'title under the deck').toBeGreaterThanOrEqual(deckBottom);
+  });
+}
+
 // The slip's lead is worked out from the width alone, so a resize settles at once and stays put:
 // read twice a few frames apart, every slip is the same height at every step of the way, and the
 // same on the way back down as on the way up.
