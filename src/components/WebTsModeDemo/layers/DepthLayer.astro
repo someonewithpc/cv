@@ -199,9 +199,16 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
 }
 
 .level {
-  min-height: 1.2em;
+  min-height: 1.25em;
   font-size: max(0.5rem, 0.75em);
+  line-height: 1.25;
   color: var(--buffer-dim);
+}
+
+/* One-character runs such as the closing brackets sit 1ch apart, too close for their levels
+   to read as separate numbers, so every other level drops a line. */
+.run:nth-child(even) .level {
+  padding-top: 1.25em;
 }
 
 .notes {
