@@ -431,3 +431,4 @@
 - [x] Wait in the specs for what they read next, not a fixed time: expect.poll, settledAfter and the steady helpers in place of waitForTimeout (#220 E21) (#490)
 - [x] Name source files in camelCase, 21 of them were kebab-case (specs stay kebab-case; assets and routes keep their names) (#388)
 - [x] The two hyphens of "--page-index" on the Paper Stack drawing read as two in Menlo, not one long dash (CHM10) (#518)
+- [ ] A finger swiping over a Space Builder or Drag and Drop scene at 390 scrolls the page until a tap takes the scene over (CHM11)
