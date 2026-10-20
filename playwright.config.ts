@@ -114,7 +114,9 @@ export default defineConfig<PaceOptions>({
   reporter: [['html', { open: 'never' }]],
   use: {
     baseURL: `http://localhost:${PORT}`,
-    trace: 'on-first-retry',
+    // There is no CI and no local retry, so on-first-retry never records; a run that wants a
+    // trace for its failures asks with E2E_TRACE=1, since recording slows the timing specs.
+    trace: process.env.E2E_TRACE ? 'retain-on-failure' : 'on-first-retry',
     screenshot: 'only-on-failure',
   },
   projects: [
