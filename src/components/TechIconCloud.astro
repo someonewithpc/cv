@@ -10,7 +10,7 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
 
 <section id="bill-of-materials" aria-labelledby="tech-icon-cloud-label" tabindex="-1">
   <div class="anchor-row cloud-label-row">
-    <p id="tech-icon-cloud-label" class="cloud-label monospace">Skills</p>
+    <h2 id="tech-icon-cloud-label" class="cloud-label typewriter">Skills</h2>
     <AnchorLink id="bill-of-materials" label="Skills" />
   </div>
 
@@ -73,8 +73,10 @@ section {
     outline-offset: -0.125rem;
   }
 
+  /* The sheet's title, set like the other sheets' headings (SectionHeader.astro) but smaller:
+     the cloud is one sheet of chips, not a sheet with a header and a body. */
   .cloud-label-row {
-    --anchor-size: 0.625rem;
+    --anchor-size: 1.5rem;
     justify-content: center;
     margin-bottom: 0.75rem;
   }
@@ -82,9 +84,10 @@ section {
   .cloud-label {
     margin: 0;
     font-size: var(--anchor-size);
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--ink-faint);
+    line-height: 1.05;
+    color: var(--ink);
     text-align: center;
   }
 
