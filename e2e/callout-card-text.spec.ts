@@ -230,6 +230,10 @@ test('every slip holds its height while the window is resized', async ({ page })
   await page.setViewportSize({ width: 400, height: 900 });
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
+  // The top stack is on screen at load, and its deck goes into the slip once its demo has
+  // loaded. The slip grows an entry then, which is not the resize under test, so it lands first.
+  await expect(page.locator('#demos .callout[data-card] .callout-card > [data-demo-transport]').first())
+    .toHaveAttribute('data-state', /./, { timeout: 20_000 });
 
   const widths = Array.from({ length: 51 }, (_, i) => 400 + i * 10);
   const up = new Map<number, number[]>();
