@@ -533,6 +533,22 @@
         },
         {
           "repository": "peteonrails/voxtype",
+          "title": "fix(whisper): drop the copy when a reduced audio context restarts the transcript",
+          "description": "With context window optimisation on, Whisper sometimes reaches the end of the speech and transcribes the clip again from the start, returning the transcript twice or with its opening sentence repeated at the end; the loop check from #827 needs three copies, so these got through. If the first pass used a reduced `audio_ctx` and the text ends with a copy of its first six or more words, the text before the copy is kept, with no second pass. Replaying 20 archived dictations on large-v3-turbo, the three that came back doubled now match the full-context output at no extra cost. Stacked on #827",
+          "url": "https://github.com/peteonrails/voxtype/pull/898",
+          "number": 898,
+          "updatedAt": "2026-10-20T13:25:29Z",
+          "stats": {
+            "additions": 139,
+            "deletions": 1,
+            "changed_files": 1
+          },
+          "tags": [
+            "rust"
+          ]
+        },
+        {
+          "repository": "peteonrails/voxtype",
           "title": "feat(daemon): record the next push-to-talk dictation while one transcribes",
           "description": "Kept the microphone open while a push-to-talk dictation transcribes in Voxtype. A press in that window is queued and recorded on the open capture, so the next sentence is no longer lost",
           "url": "https://github.com/peteonrails/voxtype/pull/837",
