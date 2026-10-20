@@ -175,6 +175,10 @@ const squirclePath = [
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+  /* On a wide sheet the chip row is wider than this square, which the height caps. Its track
+     then overflows both sides of the square, centred on the artwork cell, instead of running
+     off the right into the note. */
+  justify-content: center;
 }
 
 .selector-layer {
