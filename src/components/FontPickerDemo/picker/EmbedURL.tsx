@@ -33,7 +33,7 @@ export function EmbedURL({ visible, onLoaded }: { visible: boolean, onLoaded: (f
       </p>
       <p role="note">
         <FontAwesomeIcon icon={faTriangleExclamation} />&nbsp;
-        Note: selecting a font this way requires that that font file extracted from the page remain
+        Note: selecting a font this way requires that the font file extracted from the page remain
         available in the same location, meaning that if the font used on that page changes, you may
         need to update it here too
       </p>
