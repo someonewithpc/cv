@@ -120,7 +120,7 @@ const clipTransform = `translate(${pin.x} ${pin.y}) rotate(${clipAngle}) scale($
         length={0.22}
         fontSize={annotationFontSize}
         text="front page, --page-index 1"
-      />
+      >front page, <tspan class="hyphen-apart">-</tspan>-page-index 1</ArrowAnnotation>
       <ArrowAnnotation
         target='[data-part="ear"]'
         anchor="center"
@@ -188,5 +188,11 @@ const clipTransform = `translate(${pin.x} ${pin.y}) rotate(${clipAngle}) scale($
     @include line-art(1.5);
     stroke: var(--ink-muted);
   }
+}
+
+// Menlo's hyphen fills its whole cell, so on a Mac the two in "--page-index" join into one
+// long dash. An eighth of a space after the first keeps them two in every monospace face.
+.hyphen-apart {
+  letter-spacing: 0.125em;
 }
 </style>
