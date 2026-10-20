@@ -25,8 +25,8 @@
  * (taken from the overlay's screen matrix), so a page positioned while splayed at the back
  * of the stack is right when it turns to the front. The artwork is not expected to be
  * translated inside `.content`. A target whose position comes from an animation (the cube's
- * faces) is re-read when an animation on the artwork ends or is cancelled, and every overlay
- * is re-read when a web font finishes loading.
+ * faces) is re-read when an animation on the artwork starts, ends or is cancelled, and every
+ * overlay is re-read when a web font finishes loading.
  */
 
 type Point = { x: number; y: number };
@@ -410,8 +410,10 @@ export function positionAnnotations(scope: ParentNode) {
     }
     if (overlay.targeted.length) {
       // Stack.astro cancels and restarts a page's animations as it turns; both events
-      // arrive once the animation has settled where the faces will be read.
-      for (const event of ['animationend', 'animationcancel']) {
+      // arrive once the animation has settled where the faces will be read. One that had
+      // already finished is sent back to its start with no cancel event, only the start of
+      // its new run.
+      for (const event of ['animationend', 'animationcancel', 'animationstart']) {
         artwork.addEventListener(event, () => scheduleRead(overlay));
       }
     }
