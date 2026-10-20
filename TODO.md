@@ -153,7 +153,7 @@
 - [x] Contributions paper torn along a fine edge, every line on its rule (#92)
 - [x] Open Source intro card has no inset below 1024px, text sits on the card's edges (#139)
 - [x] Refresh the contributions list: move the PRs that closed or merged, add the new ones (#140)
-- [ ] Record the power-profiles-daemon state fix MR and the ones Hugo sends after it (Hugo asked 2026-10-20)
+- [x] Record the power-profiles-daemon state fix MR and the ones Hugo sends after it (Hugo asked 2026-10-20) (#511)
 - [x] Match the Blender GSoC highlight to the cover letter (#149)
 - [x] Work History (#146)
 - [x] Resizing the window is glacially slow: cut the style recalc on resize and page turns (#159)
