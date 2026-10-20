@@ -74,7 +74,7 @@
     - [x] Font proxy stops relaying for the day after 1 GB
     - [x] Font proxy budget holds on every path spelling, the Worker routes its own paths in lower case, and the proxy counts upstream bytes, times out and shuts with a 503 when its object fails (#226)
     - [x] Picker, Held Controls and Loading Indicator sheets show the restart, play and pause deck (#160)
-    - [ ] The Embed URL note says "requires that the font file", not "that that"
+    - [x] The Embed URL note says "requires that the font file", not "that that" (#512)
   - [x] GNU social schemaDef to Doctrine metadata, two panes with a cross-highlight (SH-08)
     - [x] Cards run down to the title block, intro and rule beside it (#153)
     - [x] The schemaDef sheets take their code colours from the shared highlighter (#314)
