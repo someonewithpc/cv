@@ -33,7 +33,9 @@ export function bootWhenVisible(
   afterDomContentLoaded(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries[0]?.isIntersecting) return;
+        // A busy load can queue two records for the target before this runs, the first laid out
+        // off screen and the second on it. The last one is where the target is now.
+        if (!entries.at(-1)?.isIntersecting) return;
         observer.disconnect();
         afterIdle(boot);
       },
