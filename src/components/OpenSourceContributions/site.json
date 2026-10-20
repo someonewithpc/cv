@@ -465,6 +465,23 @@
       "label": "Open",
       "items": [
         {
+          "repository": "upower/power-profiles-daemon",
+          "title": "Save the user's action and battery-aware choices correctly",
+          "description": "power-profiles-daemon saved an action as off whenever it was inactive for one run, so a `--block-action` debug flag or a failed probe switched it off for good in `state.ini`, and a `configure-action` choice was lost if the daemon stopped before the next profile change. The first commit keeps the state file to the user's own choices instead of what is active right now; the second writes it as soon as `configure-action` or `configure-battery-aware` runs. Seven new integration tests cover the blocked, opt-in and failed-probe cases and the restarts; all 152 pass",
+          "url": "https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/merge_requests/240",
+          "number": 240,
+          "updatedAt": "2026-10-20T11:53:16Z",
+          "stats": {
+            "additions": 162,
+            "deletions": 10,
+            "changed_files": 2
+          },
+          "tags": [
+            "c",
+            "python"
+          ]
+        },
+        {
           "repository": "NixOS/nixpkgs",
           "title": "opencascade-occt: build with `-fno-ipa-cp-clone` on GCC 16",
           "description": "GCC 16 at `-O3` miscompiles OCCT 7.9.3. Classifying a point on an edge or vertex of a solid segfaults, and so do booleans where faces touch along a line, which is how FreeCAD crashed on a boolean subtract of a cube and an inscribed cylinder. Builds OCCT with `-fno-ipa-cp-clone` when the compiler is GCC 16 or newer and adds an install check that runs the failing classification, so the build fails if the miscompile comes back",
