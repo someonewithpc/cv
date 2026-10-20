@@ -147,7 +147,14 @@ header {
 
   .index {
     font-size: max(0.5rem, 0.625em);
+    line-height: 1.25;
     color: var(--ink-faint);
+  }
+
+  /* A two-digit index is wider than its 1ch cell, so every other one drops a line and each
+     index has two cells of room. */
+  &:nth-child(even) .index {
+    padding-top: 1.25em;
   }
 
   &.before .char {
