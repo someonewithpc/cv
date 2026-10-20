@@ -466,6 +466,22 @@
       "items": [
         {
           "repository": "upower/power-profiles-daemon",
+          "title": "amdgpu_panel_power: Allow configuring the levels in the settings file",
+          "description": "The action picks the panel's ABM level from the profile and the battery charge, with power-saver at 0 above 50% and balanced at 1 below 30%, and nobody could change it: one user wanted the saving at any charge (#185), others found level 3 too strong (#159). Adds a `load_settings` vfunc so an action reads its own group from `power-profiles-daemon.conf`, with `PowerSaverLevel`, `BalancedLevel` and `PerformanceLevel` keys that apply on battery at any charge; unset keys keep today's steps, and unknown groups, keys or values out of 0 to 4 get a warning. A first commit fixes a leak already on main, where both error returns in `set_panel_power()` skipped freeing the drm device list. Measured on an ASUS ROG Flow X13: level 4 saves 0.4 to 0.6 W of about 10.4 W. Stacked on !241",
+          "url": "https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/merge_requests/242",
+          "number": 242,
+          "updatedAt": "2026-10-20T14:24:36Z",
+          "stats": {
+            "additions": 895,
+            "deletions": 35,
+            "changed_files": 6
+          },
+          "tags": [
+            "c"
+          ]
+        },
+        {
+          "repository": "upower/power-profiles-daemon",
           "title": "Save the user's action and battery-aware choices correctly",
           "description": "power-profiles-daemon saved an action as off whenever it was inactive for one run, so a `--block-action` debug flag or a failed probe switched it off for good in `state.ini`, and a `configure-action` choice was lost if the daemon stopped before the next profile change. The first commit keeps the state file to the user's own choices instead of what is active right now; the second writes it as soon as `configure-action` or `configure-battery-aware` runs. Seven new integration tests cover the blocked, opt-in and failed-probe cases and the restarts; all 152 pass",
           "url": "https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/merge_requests/240",
