@@ -24,13 +24,12 @@
 // notices sit in the room left of the block, centred in its height, and on a portrait sheet,
 // where that room is too narrow, just above the block
 .font-picker-toasts {
-  @include toast.stack;
+  @include toast.column;
   z-index: 40;
   left: var(--sheet-margin);
   right: calc(var(--sheet-margin) + var(--title-block-inline));
   bottom: var(--sheet-margin);
   height: var(--title-block-block);
-  translate: none;
   justify-content: center;
 
   [data-sheet-orientation='portrait'] & {
