@@ -100,8 +100,8 @@ const squirclePath = [
         only="landscape"
       />
       {/* Aimed at the B marker's centre, the tip stopping on its rim, down past "Cafe"
-          to below the cards; the label runs left from there, where the cell has the
-          room (the note fold takes the right) but not for the wording on one line. */}
+          to below the cards; the label runs left from there, since the title block takes
+          the right. The frame line is close on that side, so it wraps as short as portrait. */}
       <ArrowAnnotation
         target=".spaces li.active svg"
         anchor="center"
@@ -111,7 +111,7 @@ const squirclePath = [
         angle={-105}
         length={0.72}
         text="Each marker gets the letter or number matching its ordering"
-        lines={['Each marker gets the letter', 'or number matching its', 'ordering']}
+        lines={['Each marker gets the', 'letter or number', 'matching its ordering']}
         only="landscape"
       />
 
@@ -175,6 +175,17 @@ const squirclePath = [
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+  /* On a wide sheet the chip row is wider than this square, which the height caps. Its track
+     then overflows both sides of the square, centred on the artwork cell, instead of running
+     off the right into the note. */
+  justify-content: center;
+
+  /* The title block reaches into the artwork cell from the right. Centred on the whole cell,
+     the space row ran under it at 1024. The end margin takes that reach off the cell, so the
+     square centres on the room between the frame line and the block's left edge. */
+  :global([data-sheet-orientation='landscape']) & {
+    margin-inline-end: max(0px, 100% - (var(--sheet-inline) - 2px - 2 * var(--sheet-margin) - var(--title-block-inline)));
+  }
 }
 
 .selector-layer {
