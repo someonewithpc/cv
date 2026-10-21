@@ -179,6 +179,13 @@ const squirclePath = [
      then overflows both sides of the square, centred on the artwork cell, instead of running
      off the right into the note. */
   justify-content: center;
+
+  /* The title block reaches into the artwork cell from the right. Centred on the whole cell,
+     the space row ran under it at 1024. The end margin takes that reach off the cell, so the
+     square centres on the room between the frame line and the block's left edge. */
+  :global([data-sheet-orientation='landscape']) & {
+    margin-inline-end: max(0px, 100% - (var(--sheet-inline) - 2px - 2 * var(--sheet-margin) - var(--title-block-inline)));
+  }
 }
 
 .selector-layer {
