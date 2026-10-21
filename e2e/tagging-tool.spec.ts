@@ -569,6 +569,33 @@ test('simulated caret page: its caret blinks once the page is turned to', async 
   await expectCaretBlinking(frontPage(stack, await frontPageIndex(stack)));
 });
 
+test('simulated caret page: the index labels under the value do not touch', async ({ page }) => {
+  const stack = taggingToolStack(page);
+  await stack.scrollIntoViewIfNeeded();
+  await turnToPage(stack, 'Simulated Caret');
+  const front = frontPage(stack, await frontPageIndex(stack));
+
+  // Indices on one line keep at least half an em apart: a two-digit index is
+  // wider than its 1ch cell.
+  const closest = await front.locator('.ruler .index').evaluateAll((labels) => {
+    // The text's own box: a label's element can be stretched taller than its line.
+    const boxes = labels.filter((label) => label.textContent!.trim()).map((label) => {
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      return range.getBoundingClientRect();
+    });
+    let least = Infinity;
+    for (const [i, a] of boxes.entries()) {
+      for (const b of boxes.slice(i + 1)) {
+        if (Math.abs(a.top - b.top) > a.height / 2) continue;
+        least = Math.min(least, Math.max(b.left - a.right, a.left - b.right));
+      }
+    }
+    return least / parseFloat(getComputedStyle(labels[0]).fontSize);
+  });
+  expect(closest).toBeGreaterThanOrEqual(0.5);
+});
+
 test('completed objects page: the leaving-the-list blueprint diagram is shown', async ({ page }) => {
   const stack = taggingToolStack(page);
   await stack.scrollIntoViewIfNeeded();
