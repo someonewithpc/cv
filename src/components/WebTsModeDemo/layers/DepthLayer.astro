@@ -2,7 +2,7 @@
 /**
  * Selector depth, painted the way web-ts-treesit.el paints it, over a nested stylesheet
  * from this CV, next to the hue scale the faces come from. The deepest selector is taken
- * apart below, one level at a time.
+ * apart under the scale, one level at a time.
  */
 import { highlightSpans } from '@/highlight';
 import Window from '../Window.astro';
@@ -39,27 +39,29 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
       modeLine={`-:%%-  ${depthSample.file}    (Web-TS)`}
     />
 
-    <div class="scale" role="group" aria-label="Depth hue scale">
-      <span class="scale-title">Depth, and the share of the way to hue 0.33</span>
-      <ol>
-        {scale.map(({ depth, amount }) => (
-          <li>
-            <span class="swatch" style={`--depth: ${depth}; --hue: ${depthHue(depth)}`}></span>
-            <span class="n">{depth}</span>
-            <span class="amount">{depth === 0 ? 'base face' : amount === 1 ? '1.00 end hue' : amount.toFixed(2)}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </div>
+    <div class="side">
+      <div class="scale" role="group" aria-label="Depth hue scale">
+        <span class="scale-title">Depth, and the share of the way to hue 0.33</span>
+        <ol>
+          {scale.map(({ depth, amount }) => (
+            <li>
+              <span class="swatch" style={`--depth: ${depth}; --hue: ${depthHue(depth)}`}></span>
+              <span class="n">{depth}</span>
+              <span class="amount">{depth === 0 ? 'base face' : amount === 1 ? '1.00 end hue' : amount.toFixed(2)}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
 
-  <div class="walk" role="group" aria-label={`${deepest}, taken apart by depth`}>
-    {runs.map(({ text, depth }) => (
-      <span class="run">
-        <code class:list={['f-selector', { deep: (depth ?? 0) > 0, gap: depth === null }]} style={depth ? `--depth: ${depth}; --hue: ${depthHue(depth)}` : undefined}>{text}</code>
-        <span class="level">{depth ?? ''}</span>
-      </span>
-    ))}
+      <div class="walk" role="group" aria-label={`${deepest}, taken apart by depth`}>
+        {runs.map(({ text, depth }) => (
+          <span class="run">
+            <code class:list={['f-selector', { deep: (depth ?? 0) > 0, gap: depth === null }]} style={depth ? `--depth: ${depth}; --hue: ${depthHue(depth)}` : undefined}>{text}</code>
+            <span class="level">{depth ?? ''}</span>
+          </span>
+        ))}
+      </div>
+    </div>
   </div>
 
   <section class="notes">
@@ -124,6 +126,15 @@ const scale = [0, 1, 2, 3, 4, 5].map((depth) => ({
   border: 1px solid var(--line-strong);
   border-radius: 0.25em;
   overflow: hidden;
+}
+
+// The walk takes the room beside the snippet under the scale, which the sheet has, rather than a
+// row of its own, which a narrow landscape sheet does not.
+.side {
+  display: grid;
+  justify-items: center;
+  gap: 1em;
+  max-width: 100%;
 }
 
 .scale {
