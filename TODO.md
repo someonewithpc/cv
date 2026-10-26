@@ -442,4 +442,4 @@
 - [x] Keep the ruler labels on the Simulated Caret and Selector Depth Hue sheets apart, two-digit indices included (#515)
 - [x] The Font Picker walkthrough notices sit over the transport deck and the title block (#523)
 - [x] Record the browser family, network and bot signals on visits (Hugo asked for it on 2026-10-26) (#524)
-- [ ] Rewrite the README for the public repo (Hugo asked for it on 2026-10-26)
+- [x] Rewrite the README for the public repo (Hugo asked for it on 2026-10-26) (#525)
