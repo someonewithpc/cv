@@ -118,7 +118,7 @@ export interface DataPoint {
 }
 
 // Where the request came from, as Cloudflare reads it off the address. Only these four:
-// no postcode, coordinates or network (ASN) are ever stored.
+// no postcode or coordinates are ever stored.
 export interface Place {
   country: string;
   city: string;
@@ -151,20 +151,43 @@ export function browserFamily(userAgent: string | null): BrowserFamily {
   return FAMILY_AGENTS.find(([, pattern]) => pattern.test(userAgent))?.[0] ?? 'other';
 }
 
+// What a visit says about the client beyond its place: the browser family, the network's
+// operator as Cloudflare names it ("Amazon.com", "MEO") and Cloudflare's category for a
+// verified bot. A datacentre operator is the plainest sign of a script.
+export interface Agent {
+  browser: string;
+  network: string;
+  botCategory: string;
+}
+
+export const NO_AGENT: Agent = { browser: '', network: '', botCategory: '' };
+
+type RequestAgent = { asOrganization?: unknown, verifiedBotCategory?: unknown };
+
+export function agentOf(request: Request): Agent {
+  const cf = (request as { cf?: RequestAgent }).cf ?? {};
+  const read = (value: unknown) => (typeof value === 'string' ? value.slice(0, MAX_EXTRA_LENGTH) : '');
+  return {
+    browser: browserFamily(request.headers.get('user-agent')),
+    network: read(cf.asOrganization),
+    botCategory: read(cf.verifiedBotCategory),
+  };
+}
+
 // Blob positions: 1 visitor, 2 session, 3 country, 4 to 6 the event's string extras,
-// 7 city, 8 region, 9 time zone, 10 the browser family (visits only). Doubles: 1 the count,
-// 2 the event's number. Padded so a query can name a position. 7 onwards came after the
-// rest so older rows keep their meaning.
-export const BLOB_COUNT = 10;
+// 7 city, 8 region, 9 time zone, and on visits only 10 the browser family, 11 the network
+// and 12 the verified bot category. Doubles: 1 the count, 2 the event's number. Padded so a
+// query can name a position. 7 onwards came after the rest so older rows keep their meaning.
+export const BLOB_COUNT = 12;
 const EXTRA_BLOBS = 3;
 
-export function dataPoint(event: Event, visitor: string, session: string, place: Place, browser = ''): DataPoint {
+export function dataPoint(event: Event, visitor: string, session: string, place: Place, agent: Agent = NO_AGENT): DataPoint {
   const strings = event.extras.filter((extra): extra is string => typeof extra === 'string');
   const number = event.extras.find((extra): extra is number => typeof extra === 'number') ?? 0;
   const extras = strings.slice(0, EXTRA_BLOBS);
   while (extras.length < EXTRA_BLOBS) extras.push('');
-  const onVisit = event.name === 'visit' ? browser : '';
-  const blobs = [visitor, session, place.country, ...extras, place.city, place.region, place.timezone, onVisit];
+  const { browser, network, botCategory } = event.name === 'visit' ? agent : NO_AGENT;
+  const blobs = [visitor, session, place.country, ...extras, place.city, place.region, place.timezone, browser, network, botCategory];
   return { indexes: [event.name], blobs, doubles: [1, number] };
 }
 
@@ -202,9 +225,9 @@ export async function handleEvents(request: Request, sink: EventSink): Promise<R
     const userAgent = request.headers.get('user-agent');
     const visitor = await visitorId(await sink.salt(), request.headers.get('cf-connecting-ip'), userAgent);
     const place = placeOf(request);
-    const browser = browserFamily(userAgent);
+    const agent = agentOf(request);
     for (const event of payload.events) {
-      sink.dataset.writeDataPoint(dataPoint(event, visitor, payload.session, place, browser));
+      sink.dataset.writeDataPoint(dataPoint(event, visitor, payload.session, place, agent));
     }
   } catch (e) {
     console.error('analytics: dropping a batch', e);
