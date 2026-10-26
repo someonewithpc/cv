@@ -49,8 +49,11 @@ flips, the first touch of a demo, theme picks, printing, contact link clicks and
 visit lasted. The session id is a variable in the page and dies with the tab. The visitor id is
 a hash of the address and the browser with a random salt that a Durable Object keeps for one
 calendar month and then deletes. Each event also carries the country, city, region and time zone
-Cloudflare reads off the request, and nothing finer: no postcode, coordinates or network.
-Returning visits count within a month, and nothing can be
+Cloudflare reads off the request, and nothing finer: no postcode or coordinates. The visit
+event also carries three things the worker reads to tell people from bots: the browser family
+(chrome, firefox, safari and so on, or bot for a known crawler, never the full user agent or a
+version), the name of the network's operator as Cloudflare gives it (an ISP or a cloud
+provider), and Cloudflare's category for a verified bot. Returning visits count within a month, and nothing can be
 reversed after it. The method errs both ways: a phone that changes network counts twice, and an
 office behind one address counts once. Nothing is sent under Global Privacy Control or Do Not
 Track, from a browser that reports `navigator.webdriver`, or off hsal.es. Analytics Engine
