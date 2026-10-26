@@ -91,6 +91,23 @@
       "label": "Merged",
       "items": [
         {
+          "repository": "inauman/libfprint",
+          "title": "elanpress: support 04f3:0c6e",
+          "description": "Added the ELAN 04f3:0c6e press sensor of the ASUS ROG Flow X13 to libfprint's new `elanpress` driver. On master it sits under the swipe-only `elan` driver, where enrolment fails with a protocol error and verify never matches. Two follow-up fixes keep a background frame captured with the finger down from becoming a touch, and keep more distinct probe frames per touch. Scored offline on a recorded session, 15 held-out touches of the enrolled finger matched at 0.848 to 0.954 and 47 touches from other fingers and another person stayed at 0.294 to 0.761, so no false accepts. inauman took all three commits into the branch behind [libfprint!654](https://gitlab.freedesktop.org/libfprint/libfprint/-/merge_requests/654) on 2026-10-20 and closed this one, so they now wait on upstream review there",
+          "url": "https://gitlab.freedesktop.org/inauman/libfprint/-/merge_requests/1",
+          "number": 1,
+          "updatedAt": "2026-10-20T23:44:18Z",
+          "stats": {
+            "additions": 56,
+            "deletions": 16,
+            "changed_files": 4
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
           "repository": "biomejs/biome",
           "title": "fix(html): lex processing instructions in their own context",
           "description": "Biome's HTML lexer read the `?` before `>` as part of a name, so `<?xml version=\"1.0\"?>` never closed and `astro check` rejected an SVG component that starts with an XML declaration ([withastro/compiler-rs#199](https://github.com/withastro/compiler-rs/issues/199)). Opened [#12159](https://github.com/biomejs/biome/pull/12159) with the fix and fixtures for the plain, Astro, Vue and Angular lexers. The maintainer landed a reworked version with me as co-author",
@@ -528,23 +545,6 @@
           "tags": [
             "nixos",
             "cplusplus"
-          ]
-        },
-        {
-          "repository": "inauman/libfprint",
-          "title": "elanpress: support 04f3:0c6e",
-          "description": "Added the ELAN 04f3:0c6e press sensor of the ASUS ROG Flow X13 to libfprint's new `elanpress` driver. On master it sits under the swipe-only `elan` driver, where enrolment fails with a protocol error and verify never matches. Two follow-up fixes keep a background frame captured with the finger down from becoming a touch, and keep more distinct probe frames per touch. Scored offline on a recorded session, 15 held-out touches of the enrolled finger matched at 0.848 to 0.954 and 47 touches from other fingers and another person stayed at 0.294 to 0.761, so no false accepts. Opened against the branch behind libfprint!654, awaiting review",
-          "url": "https://gitlab.freedesktop.org/inauman/libfprint/-/merge_requests/1",
-          "number": 1,
-          "updatedAt": "2026-10-16T13:49:58Z",
-          "stats": {
-            "additions": 56,
-            "deletions": 16,
-            "changed_files": 4
-          },
-          "tags": [
-            "linux",
-            "c"
           ]
         },
         {
