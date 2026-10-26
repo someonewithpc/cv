@@ -482,6 +482,23 @@
       "label": "Open",
       "items": [
         {
+          "repository": "libfprint/libfprint",
+          "title": "fpi-env: Add helpers to read numbers from the environment",
+          "description": "Drivers that take a setting from an environment variable parsed it by hand with `g_ascii_strtoll()`, so `5x` read as 5, `abc` as 0, and an out-of-range value was dropped without a message. `fpi_env_get_int64()` and `fpi_env_get_double()` take the accepted range and a default, and log anything malformed or out of range along with the default they return instead. The virtual devices' `HOT_SECONDS` settings and mafpmoc's `MAFP_ENROLL_SAMPLES` move to them, and the elanpress driver in [libfprint!654](https://gitlab.freedesktop.org/libfprint/libfprint/-/merge_requests/654) can follow. Awaiting review",
+          "url": "https://gitlab.freedesktop.org/libfprint/libfprint/-/merge_requests/686",
+          "number": 686,
+          "updatedAt": "2026-10-25T17:08:01Z",
+          "stats": {
+            "additions": 322,
+            "deletions": 28,
+            "changed_files": 11
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
           "repository": "sashiko-dev/sashiko",
           "title": "ai/claude-cli: constrain tool-calling replies with `--json-schema`",
           "description": "Sashiko runs `claude` with `--tools \"\"`, and when a review stage asked for tool calls, Opus 5.5 sometimes wrote them out as plain text, then kept inventing calls and results until the 600 s timeout killed it. Requests with tools now also pass `--json-schema`, so the turn ends on one structured reply, and the model still has no files, commands or network. A drm/client kernel series that ran for about 7 hours and failed now gets a full review in 13 minutes. Fixes [#737](https://github.com/sashiko-dev/sashiko/issues/737), awaiting review",
