@@ -55,51 +55,6 @@ Printing the page gives a paper CV. The print stylesheet drops the desk, the the
 the demos. It keeps the title block, the career, the bill of materials and the open source
 contributions, in the light theme.
 
-## What the site records about visitors
-
-The page loads Cloudflare Web Analytics. It sets no cookie and stores nothing in the browser.
-
-That script can't see what you do on the page, so the page also sends a few events of its own
-to `/api/e`:
-
-- the visit, with the referring site's host, a rough viewport size and the theme in use
-- each section you reach
-- each sheet you turn
-- the first time you touch each demo
-- each theme you pick
-- printing
-- clicks on the contact links
-- how long the tab stayed open
-
-The page makes a random session id when it loads. It lives only in memory and goes away when
-you close the tab.
-
-The worker turns your IP address and user agent into a visitor id by hashing them with a
-random salt. A Durable Object keeps one salt per calendar month and deletes it a day after the
-month ends. After that, nobody can tell which visits came from the same person, me included.
-So the site recognises a return visit within the same month and not after. The method is wrong
-both ways. A phone that changes network counts as two visitors, and an office behind one
-address counts as one.
-
-Each event also carries the country, region, city and time zone that Cloudflare reads off the
-request. The worker never stores a postcode or coordinates.
-
-The visit event carries three more fields that help tell people from bots:
-
-- the browser family, such as chrome, firefox or safari, or bot for a known crawler. The worker
-  never stores the full user agent or the version
-- the name of the network's operator as Cloudflare gives it, such as an ISP or a cloud provider
-- Cloudflare's category for a verified bot
-
-The events go to Cloudflare Analytics Engine, which keeps them for 90 days.
-
-The page sends nothing in these cases:
-
-- your browser sends Global Privacy Control or Do Not Track. The worker also drops any event
-  that arrives with a `Sec-GPC: 1` or `DNT: 1` header
-- your browser reports `navigator.webdriver`, as Playwright, Puppeteer and safaridriver do
-- the page runs on any host other than hsal.es, such as a local build
-
 ## Running it
 
 You need Node 22 or later. With Nix, `nix develop` opens a shell with Node and installs the
@@ -152,3 +107,6 @@ of your own.
 Email me at [contact@hsal.es](mailto:contact@hsal.es). I'm someonewithpc on
 [GitHub](https://github.com/someonewithpc), [Codeberg](https://codeberg.org/someonewithpc) and
 [LinkedIn](https://www.linkedin.com/in/someonewithpc/).
+
+The page keeps some non-identifying analytics: which sections and demos get used, and for how
+long, with no cookies and nothing that names you
