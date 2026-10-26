@@ -482,6 +482,22 @@
       "label": "Open",
       "items": [
         {
+          "repository": "torvalds/linux",
+          "title": "drm/amd/display: Keep eDP native timing after resume with video=",
+          "description": "Two patches on amd-gfx. After an HDMI hotplug and a suspend/resume, a 3840x2400 eDP panel booted with a `video=` mode came back squeezed into the top-left corner. The fbdev reprobe had dropped the native mode and amdgpu scaled onto the first one left. On eDP and LVDS the fix falls back to a listed mode of the native size, or else to the encoder's native mode, with KUnit tests that fail without it. On 7.2.8, 103 of 103 resumes were wrong before and 1363 of 1363 right after. v2 is rebased onto amd-staging-drm-next, as Tom Chung at AMD asked. A second series on dri-devel, `drm/client: Keep larger modes in connector->modes on fbdev hotplug`, fixes the same bug for every driver. Both are under review",
+          "url": "https://lore.kernel.org/all/20261024163347.2413649-1-hugo@hsal.es/",
+          "updatedAt": "2026-10-24T16:33:45Z",
+          "stats": {
+            "additions": 271,
+            "deletions": 2,
+            "changed_files": 2
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
           "repository": "upower/power-profiles-daemon",
           "title": "amdgpu_panel_power: Allow configuring the levels in the settings file",
           "description": "The action picks the panel's ABM level from the profile and the battery charge, with power-saver at 0 above 50% and balanced at 1 below 30%, and nobody could change it: one user wanted the saving at any charge (#185), others found level 3 too strong (#159). Adds a `load_settings` vfunc so an action reads its own group from `power-profiles-daemon.conf`, with `PowerSaverLevel`, `BalancedLevel` and `PerformanceLevel` keys that apply on battery at any charge; unset keys keep today's steps, and unknown groups, keys or values out of 0 to 4 get a warning. A first commit fixes a leak already on main, where both error returns in `set_panel_power()` skipped freeing the drm device list. Measured on an ASUS ROG Flow X13: level 4 saves 0.4 to 0.6 W of about 10.4 W. Stacked on !241",
@@ -545,22 +561,6 @@
           "tags": [
             "nixos",
             "cplusplus"
-          ]
-        },
-        {
-          "repository": "torvalds/linux",
-          "title": "drm/amd/display: Keep eDP native timing after resume with video=",
-          "description": "Two patches on amd-gfx. After an HDMI hotplug and a suspend/resume, a 3840x2400 eDP panel booted with a `video=` mode came back squeezed into the top-left corner. The fbdev reprobe had dropped the native mode and amdgpu scaled onto the first one left. The fix falls back to the encoder's native mode on eDP and LVDS, with KUnit tests that fail without it. On 7.2.8, 103 of 103 resumes were wrong before and 1363 of 1363 right after. A second series on dri-devel, `drm/client: Keep larger modes in connector->modes on fbdev hotplug`, fixes the same bug for every driver by probing connectors with the device's mode size limits, with KUnit tests. Both are under review",
-          "url": "https://lore.kernel.org/all/20261014223041.171317-1-hugo@hsal.es/",
-          "updatedAt": "2026-10-15T21:25:45Z",
-          "stats": {
-            "additions": 140,
-            "deletions": 0,
-            "changed_files": 2
-          },
-          "tags": [
-            "linux",
-            "c"
           ]
         },
         {
