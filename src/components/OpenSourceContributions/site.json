@@ -482,6 +482,23 @@
       "label": "Open",
       "items": [
         {
+          "repository": "inauman/libfprint",
+          "title": "elanpress: don't let rejected frames set the relative contrast bar",
+          "description": "The quality gate drops frames under half the best contrast of a touch, but it took that best from every frame, including ones the absolute gates reject. A frame from a finger landing or lifting is mostly ridge edges and can have twice the contrast of a full press, and on 0c6e one such frame put the bar above all eight full-contact frames of its touch. The best now comes only from frames that pass the absolute gates, with a unit test that feeds that touch. Replaying 116 touches from daily use, six keep more probe frames and the rest are unchanged. Awaiting review on the branch behind [libfprint!654](https://gitlab.freedesktop.org/libfprint/libfprint/-/merge_requests/654)",
+          "url": "https://gitlab.freedesktop.org/inauman/libfprint/-/merge_requests/3",
+          "number": 3,
+          "updatedAt": "2026-10-25T17:13:34Z",
+          "stats": {
+            "additions": 230,
+            "deletions": 14,
+            "changed_files": 6
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
           "repository": "libfprint/libfprint",
           "title": "fpi-env: Add helpers to read numbers from the environment",
           "description": "Drivers that take a setting from an environment variable parsed it by hand with `g_ascii_strtoll()`, so `5x` read as 5, `abc` as 0, and an out-of-range value was dropped without a message. `fpi_env_get_int64()` and `fpi_env_get_double()` take the accepted range and a default, and log anything malformed or out of range along with the default they return instead. The virtual devices' `HOT_SECONDS` settings and mafpmoc's `MAFP_ENROLL_SAMPLES` move to them, and the elanpress driver in [libfprint!654](https://gitlab.freedesktop.org/libfprint/libfprint/-/merge_requests/654) can follow. Awaiting review",
