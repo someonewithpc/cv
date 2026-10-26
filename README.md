@@ -1,129 +1,154 @@
-# Hugo Sales's CV and Portfolio
+# Hugo Sales's CV and portfolio
 
-The source for **[hsal.es](https://hsal.es)**, my CV and portfolio. It's laid out like a set of
-technical drawings on a cutting mat, with demos you can use in the browser. Some come from my
-work at Visrez, like the 3D space builder and the map marker editor, and others from my open
-source work, like the Fediverse playground. It's an Astro site, deployed to Cloudflare Workers.
+This is the source for [hsal.es](https://hsal.es), my CV and portfolio. The page is drawn as a
+set of technical drawing sheets lying on a cutting mat. Each demo is a stack of sheets you turn
+by the dog-eared corner. The top sheet runs a working copy of something I built. The sheets
+behind it show how it works.
 
 ## The demos
 
-| | Demo | From | Built with | In `src/components/` |
-| --- | --- | --- | --- | --- |
-| A | Space builder | Visrez | Vue, Three.js | `SpaceBuilderDemo` |
-| B | Marker editor | Visrez | React, Leaflet, Redux | `MarkerEditorDemo` |
-| C | Drag and drop | Visrez | Vue, Three.js | `DragDropDemo` |
-| D | Font picker | Visrez | React | `FontPickerDemo` |
-| E | Loading logo | Visrez | SVG, CSS animation | `VisrezLogoAnimation` |
-| F | Theme picker | This site | Astro, CSS, View Transitions | `ThemePickerDemo` |
-| G | Object variants | Visrez | Vue, Sass | `VariantsDemo` |
-| H | Tagging tool | Visrez | CSS, JavaScript | `TaggingToolDemo` |
-| I | Paper stack | This site | CSS, TypeScript | `PaperStackDemo` |
-| J | Event bus | GNU social | PHP, Symfony | `EventBusDemo` |
-| K | Fediverse playground | Open source | TypeScript, Docker | `FediversePlaygroundDemo` |
-| L | Library search | Visrez | Rails, MariaDB | `LibrarySearchDemo` |
-| M | Synthetic properties | Visrez | Rails, MariaDB | `SyntheticPropertiesDemo` |
-| N | Schema driver | GNU social | PHP, Symfony, Doctrine | `SchemaDefDemo` |
-| O | web-ts-mode | Open source | Emacs Lisp, tree-sitter | `WebTsModeDemo` |
+Most demos come from my work at Visrez, where I built a 3D planner for event spaces and tools
+for venue maps. The rest come from GNU social, my own open source tools, or this site.
 
-The "Built with" column names what the original used. The demos themselves run on Astro,
-React, Vue and plain TypeScript.
+| | Demo | From | What it shows |
+| --- | --- | --- | --- |
+| A | Space builder | Visrez | Draw a rectangle on a 3D floor and it fills with chairs. Sliders set spacing, aisles and seat count |
+| B | Marker editor | Visrez | A pin editor for venue maps. Shape, border, fill and decoration are separate parts |
+| C | Drag and drop | Visrez | Drag an object off the catalogue and it lands in the 3D scene where you drop it |
+| D | Font picker | Visrez | A font list built from `document.fonts`, with nothing hardcoded |
+| E | Loading logo | Visrez | The animated Visrez logo, and the steps that turned an Illustrator export into one SVG path |
+| F | Theme picker | This site | The control that switches between the four themes, and how its wipe is drawn |
+| G | Object variants | Visrez | One catalogue card covers a whole family of finishes and sizes |
+| H | Tagging tool | Visrez | One input tags a base object and every variant under it |
+| I | Paper stack | This site | How the sheet stacks on this page fold and turn, and what they become without JavaScript |
+| J | Event bus | GNU social | How plugins claim events, and what happens when you switch one off |
+| K | Fediverse playground | My own tool | A CLI that runs a small federated network on one machine from one YAML file |
+| L | Library search | Visrez | One search box over every property of a library object, scored by MariaDB |
+| M | Synthetic properties | Visrez | A size stored once and found by a search for 5ft3in or 1.6m |
+| N | Schema driver | GNU social | A Doctrine driver that turns one PHP array per table into the ORM mapping and the schema |
+| O | web-ts-mode | My own tool | An Emacs major mode for Astro and Vue files, with one tree-sitter parser per language |
+
+The originals were written in Vue, React, Rails, PHP and Emacs Lisp. The copies here run in
+the browser on Astro, React, Vue and TypeScript. Each demo has its own folder under
+`src/components/`.
 
 ## How it's built
 
-Astro renders the whole page to HTML at build time, and a Cloudflare Worker serves it. The
-demos are islands that load their script when you scroll to them. Without JavaScript the page
-still reads start to finish, and the paper stacks fall back to a row you scroll sideways.
+The site is built with [Astro](https://astro.build) and served by a Cloudflare Worker. Astro
+renders the page to HTML at build time. The demos are islands that load their script when you
+scroll to them. Without JavaScript the page still reads from top to bottom, and each stack of
+sheets becomes a row you scroll sideways.
 
-There are four themes, and a print stylesheet for the paper version.
+Besides the built files, the worker answers two endpoints. One collects the page's analytics
+events. The other is a proxy that lets the font picker load fonts from other sites, with a
+daily byte limit.
+
+The demos use React, Vue, Three.js, Leaflet and Redux. Styles are Sass. The fonts are
+self-hosted: Poppins, Special Elite, Allerta Stencil and Permanent Marker. Icons come from
+Lucide through astro-icon and from Font Awesome. The skills section draws its own SVG icons
+from `src/icons/`.
+
+There are four themes: Light, Dark, Arctic and Forest. The page follows your system's light or
+dark setting until you pick one.
+
+Printing the page gives a paper CV. The print stylesheet drops the desk, the theme picker and
+the demos. It keeps the title block, the career, the bill of materials and the open source
+contributions, in the light theme.
 
 ## What the site records about visitors
 
-The site loads Cloudflare Web Analytics, which sets no cookie and stores nothing in the
-browser. The script is skipped when the browser sends Global Privacy Control or Do Not Track, and when
-the browser reports itself as automated, as Playwright and safaridriver do.
-It only runs on hsal.es, so previews and local builds are not counted.
+The page loads Cloudflare Web Analytics. It sets no cookie and stores nothing in the browser.
 
-Cloudflare Web Analytics cannot see interactions, so the page also reports a few of its own to
-`/api/e`: the visit (referrer host, viewport size bucket, theme), each section reached, sheet
-flips, the first touch of a demo, theme picks, printing, contact link clicks and how long the
-visit lasted. The session id is a variable in the page and dies with the tab. The visitor id is
-a hash of the address and the browser with a random salt that a Durable Object keeps for one
-calendar month and then deletes. Each event also carries the country, city, region and time zone
-Cloudflare reads off the request, and nothing finer: no postcode or coordinates. The visit
-event also carries three things the worker reads to tell people from bots: the browser family
-(chrome, firefox, safari and so on, or bot for a known crawler, never the full user agent or a
-version), the name of the network's operator as Cloudflare gives it (an ISP or a cloud
-provider), and Cloudflare's category for a verified bot. Returning visits count within a month, and nothing can be
-reversed after it. The method errs both ways: a phone that changes network counts twice, and an
-office behind one address counts once. Nothing is sent under Global Privacy Control or Do Not
-Track, from a browser that reports `navigator.webdriver`, or off hsal.es. Analytics Engine
-keeps rows for 90 days. No cookie or browser storage is used.
+That script can't see what you do on the page, so the page also sends a few events of its own
+to `/api/e`:
 
-Sheet and demo ids are stable names, not positions. Renaming a layer should keep its id.
+- the visit, with the referring site's host, a rough viewport size and the theme in use
+- each section you reach
+- each sheet you turn
+- the first time you touch each demo
+- each theme you pick
+- printing
+- clicks on the contact links
+- how long the tab stayed open
+
+The page makes a random session id when it loads. It lives only in memory and goes away when
+you close the tab.
+
+The worker turns your IP address and user agent into a visitor id by hashing them with a
+random salt. A Durable Object keeps one salt per calendar month and deletes it a day after the
+month ends. After that, nobody can tell which visits came from the same person, me included.
+So the site recognises a return visit within the same month and not after. The method is wrong
+both ways. A phone that changes network counts as two visitors, and an office behind one
+address counts as one.
+
+Each event also carries the country, region, city and time zone that Cloudflare reads off the
+request. The worker never stores a postcode or coordinates.
+
+The visit event carries three more fields that help tell people from bots:
+
+- the browser family, such as chrome, firefox or safari, or bot for a known crawler. The worker
+  never stores the full user agent or the version
+- the name of the network's operator as Cloudflare gives it, such as an ISP or a cloud provider
+- Cloudflare's category for a verified bot
+
+The events go to Cloudflare Analytics Engine, which keeps them for 90 days.
+
+The page sends nothing in these cases:
+
+- your browser sends Global Privacy Control or Do Not Track. The worker also drops any event
+  that arrives with a `Sec-GPC: 1` or `DNT: 1` header
+- your browser reports `navigator.webdriver`, as Playwright, Puppeteer and safaridriver do
+- the page runs on any host other than hsal.es, such as a local build
 
 ## Running it
 
-You need Node 22. The nix flake provides it: `nix develop` opens a shell with Node and installs
-the dependencies, and direnv does the same when you enter the directory. Without nix, run
-`npm install` yourself.
+You need Node 22 or later. With Nix, `nix develop` opens a shell with Node and installs the
+dependencies, and the `.envrc` lets direnv do the same when you enter the folder. Without Nix,
+run `npm install`.
 
-`npm run dev` starts the dev server. `npm run preview` serves the last `npm run build` from
-`dist/`. Both set a background flag in `package.json`, so they detach from the terminal and keep
-running.
+- `npm run dev` starts the dev server.
+- `npm run build` builds the site into `dist/`.
+- `npm run preview` serves the last build.
+
+The dev and preview servers detach from the terminal and keep running. Stop them with
+`npx astro dev stop` and `npx astro preview stop`.
 
 ## Tests
 
-`npm run check` runs `astro check`, which type-checks `src/` and the specs in `e2e/`. Playwright
-strips types before it runs a spec, so a type error there never fails `npm run test:e2e`.
+- `npm run check` type-checks `src/` and the Playwright specs with `astro check`.
+- `npm run lint:css` runs stylelint over the styles.
+- `npm run test:e2e` builds the site, serves it on port 4310 and runs the Playwright suite in
+  `e2e/`.
+- `npm run test:audit` checks the built site's HTML and CSS, its accessibility in all four
+  themes, and its Lighthouse scores. [docs/AUDITS.md](docs/AUDITS.md) explains each check.
 
-`npm run test:e2e` builds the site, serves it with `astro preview` on port 4310 and runs the
-Playwright suite against it. If a preview is already on that port it reuses it and skips the
-build. The suite drives the Chrome installed on your machine, and Firefox for the no-script
-specs when it is on PATH. It also runs the no-script and layout specs in Playwright's own Firefox
-build when it finds one: `npx playwright install firefox` puts it there, and on NixOS the config
-picks up a `playwright-driver.browsers` build of the right revision from the store.
+The suite drives the Chrome or Chromium on your `PATH`, not a browser Playwright downloads. A
+few specs load the page without JavaScript in Firefox. They run when Firefox is on your `PATH`
+or after `npx playwright install firefox`, and the suite warns when it skips them.
 
-## Audits
+## Deploying
 
-`npm run test:audit` checks the built site four ways: HTML with the W3C Nu checker, CSS with
-stylelint, accessibility with axe-core in all four themes, and Lighthouse on desktop and
-mobile. It takes about two minutes. [docs/AUDITS.md](docs/AUDITS.md) says what each check
-covers, why there are two HTML checkers, and where the ignored messages are listed.
+`npm run deploy` type-checks, builds, runs the Playwright suite against that build, then runs
+`wrangler deploy`. It stops at the first step that fails.
 
-## Deploy
+The deploy goes to my Cloudflare account. To host a copy, point `wrangler.jsonc` at a worker
+of your own.
 
-`npm run deploy` runs `npm run check`, then `npm run build`, then the e2e suite against that
-`dist/`, then `wrangler deploy` of the same `dist/`. It stops at the first step that fails.
-`E2E_PREBUILT=1` tells the suite to serve the existing `dist/` without building again, and to
-refuse a server already on 4310 rather than test it.
+## Layout
 
-The deploy goes to my Cloudflare account, so it only works with my credentials. To host a
-fork, point `wrangler.jsonc` at a worker of your own.
-
-## Scripts
-
-`scripts/` holds one-off generators. Their output is committed, so you only run one when its
-source changes.
-
-- `npm run generate:tokyo-map` writes the marker editor's mock map SVG from OpenStreetMap
-  data, or from a saved Overpass response with `--input`.
-- `npm run generate:catalog-thumb` renders a Space Builder catalog model to its thumbnail
-  with headless Chrome.
-- `npm run og:image` shoots `public/og.jpg`, the picture link previews show. It needs a
-  running preview.
-- `node scripts/bake-desk-tiles.mjs` bakes each theme's desk tile into `src/assets/desk/`.
-- `node scripts/cut-paper-tile.mjs` cuts `src/assets/paper-fibre.webp` from a paper scan that
-  lives outside the repo.
-- `node scripts/capture-handoff-frames.mjs` shoots the four stills on the drag and drop
-  demo's "Picture to Model" sheet. It needs a running preview.
-
-## Where things are
-
-- `src/pages/index.astro` is the page. It is one page.
-- `src/components/` holds the demos, the paper stack and the drawing sheets.
-- `src/scss/` holds the shared styles, and `src/themes.ts` the four themes.
+- `src/pages/index.astro` is the whole site. It is one page.
+- `src/components/` holds the demos, the sheet stacks and the drawing parts.
+- `src/scss/` holds the shared styles. `src/themes.ts` defines the themes.
+- `src/worker.ts` is the Cloudflare Worker. `src/server/` holds the analytics and font proxy
+  code it runs.
 - `e2e/` holds the Playwright specs, and `audit/` the audits.
-- `plugins/` holds the Vite plugins the build uses, and `scripts/` the asset generators.
-- [TODO.md](TODO.md) lists what is left to do.
-- [docs/DEAD-ENDS.md](docs/DEAD-ENDS.md) lists approaches I tried and dropped, with the
-  numbers.
+- `scripts/` holds one-off generators for committed assets, such as the map and the link
+  preview image.
+- [TODO.md](TODO.md) lists what is done and what is left.
+- [docs/DEAD-ENDS.md](docs/DEAD-ENDS.md) lists approaches I tried and dropped, with the numbers.
+
+## Contact
+
+Email me at [contact@hsal.es](mailto:contact@hsal.es). I'm someonewithpc on
+[GitHub](https://github.com/someonewithpc), [Codeberg](https://codeberg.org/someonewithpc) and
+[LinkedIn](https://www.linkedin.com/in/someonewithpc/).
