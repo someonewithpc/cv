@@ -128,18 +128,43 @@ export interface Place {
 
 export const NOWHERE: Place = { country: '', city: '', region: '', timezone: '' };
 
+// The browser's family on a visit, read off the User-Agent header here in the worker so a
+// script cannot pick its own. Only the family is kept, never the string or a version.
+export const BROWSER_FAMILIES = ['bot', 'edge', 'opera', 'samsung', 'firefox', 'chrome', 'safari', 'other', 'none'] as const;
+export type BrowserFamily = (typeof BROWSER_FAMILIES)[number];
+
+const BOT_AGENT = /googlebot|bingbot|linkedinbot|facebookexternalhit|twitterbot|slackbot|discordbot|whatsapp|telegrambot|curl|python-requests|go-http-client|headlesschrome|bot|crawler|spider|fetch|preview/i;
+
+// Ordered: Edge, Opera and Samsung Internet also name Chrome and Safari, and Chrome names Safari.
+const FAMILY_AGENTS: [BrowserFamily, RegExp][] = [
+  ['edge', /\bEdg(e|A|iOS)?\//],
+  ['opera', /\bOPR\/|\bOpera\b/],
+  ['samsung', /\bSamsungBrowser\//],
+  ['firefox', /\b(Firefox|FxiOS)\//],
+  ['chrome', /\b(Chrome|CriOS|Chromium)\//],
+  ['safari', /\bSafari\//],
+];
+
+export function browserFamily(userAgent: string | null): BrowserFamily {
+  if (!userAgent?.trim()) return 'none';
+  if (BOT_AGENT.test(userAgent)) return 'bot';
+  return FAMILY_AGENTS.find(([, pattern]) => pattern.test(userAgent))?.[0] ?? 'other';
+}
+
 // Blob positions: 1 visitor, 2 session, 3 country, 4 to 6 the event's string extras,
-// 7 city, 8 region, 9 time zone. Doubles: 1 the count, 2 the event's number. Padded so a
-// query can name a position. 7 to 9 came after the rest so older rows keep their meaning.
-export const BLOB_COUNT = 9;
+// 7 city, 8 region, 9 time zone, 10 the browser family (visits only). Doubles: 1 the count,
+// 2 the event's number. Padded so a query can name a position. 7 onwards came after the
+// rest so older rows keep their meaning.
+export const BLOB_COUNT = 10;
 const EXTRA_BLOBS = 3;
 
-export function dataPoint(event: Event, visitor: string, session: string, place: Place): DataPoint {
+export function dataPoint(event: Event, visitor: string, session: string, place: Place, browser = ''): DataPoint {
   const strings = event.extras.filter((extra): extra is string => typeof extra === 'string');
   const number = event.extras.find((extra): extra is number => typeof extra === 'number') ?? 0;
   const extras = strings.slice(0, EXTRA_BLOBS);
   while (extras.length < EXTRA_BLOBS) extras.push('');
-  const blobs = [visitor, session, place.country, ...extras, place.city, place.region, place.timezone];
+  const onVisit = event.name === 'visit' ? browser : '';
+  const blobs = [visitor, session, place.country, ...extras, place.city, place.region, place.timezone, onVisit];
   return { indexes: [event.name], blobs, doubles: [1, number] };
 }
 
@@ -174,14 +199,12 @@ export async function handleEvents(request: Request, sink: EventSink): Promise<R
     if (Number(request.headers.get('content-length')) > MAX_BODY_BYTES) return empty(204);
     const payload = parsePayload(await request.text());
     if (!payload || !sink.dataset) return empty(204);
-    const visitor = await visitorId(
-      await sink.salt(),
-      request.headers.get('cf-connecting-ip'),
-      request.headers.get('user-agent'),
-    );
+    const userAgent = request.headers.get('user-agent');
+    const visitor = await visitorId(await sink.salt(), request.headers.get('cf-connecting-ip'), userAgent);
     const place = placeOf(request);
+    const browser = browserFamily(userAgent);
     for (const event of payload.events) {
-      sink.dataset.writeDataPoint(dataPoint(event, visitor, payload.session, place));
+      sink.dataset.writeDataPoint(dataPoint(event, visitor, payload.session, place, browser));
     }
   } catch (e) {
     console.error('analytics: dropping a batch', e);
