@@ -6,11 +6,12 @@ import { expect, test } from './support/timeScale';
 /**
  * S23: a demo that draws over its own sheet (the marker editor's dialog and backdrop, the font
  * picker's toasts) leaves the deck on top, so pause stays in sight and in reach. In the band the
- * deck outranks those layers on the sheet; in the slip it is off the sheet they are drawn on.
+ * deck outranks those layers on the sheet; in the slip it is off the sheet they are drawn on. The
+ * font picker's toasts keep clear of the band deck, so there they may also sit apart from it.
  */
 const OVERLAYS = [
-  { demo: 'Interactive Map Marker Editor', overlay: '#marker-editor' },
-  { demo: 'Interactive Map Font Picker', overlay: '.font-picker-toast' },
+  { demo: 'Interactive Map Marker Editor', overlay: '#marker-editor', clearOfDeck: false },
+  { demo: 'Interactive Map Font Picker', overlay: '.font-picker-toast', clearOfDeck: true },
 ];
 
 /** Whether the deck paints over the overlay wherever the two meet. Both let the pointer
@@ -44,7 +45,7 @@ for (const width of [1440, 1024, 554, 390]) {
   test.describe(`${width}px, deck in the ${home}`, () => {
     test.use({ viewport: { width, height: 900 } });
 
-    for (const { demo, overlay } of OVERLAYS) {
+    for (const { demo, overlay, clearOfDeck } of OVERLAYS) {
       test(`pause works while ${demo} shows ${overlay}`, async ({ page }) => {
         await page.goto('/');
         const stack = demoStack(page, demo);
@@ -59,7 +60,7 @@ for (const width of [1440, 1024, 554, 390]) {
         await expect(deck).toHaveAttribute('data-state', 'playing');
         expect(await deck.evaluate((el) => el.parentElement!.matches('.callout-card'))).toBe(home === 'slip');
         expect(['deck', 'apart']).toContain(await deckOnTop(deck, layer));
-        if (home === 'band') expect(await deckOnTop(deck, layer)).toBe('deck');
+        if (home === 'band' && !clearOfDeck) expect(await deckOnTop(deck, layer)).toBe('deck');
 
         await deck.locator('[data-demo-key="pause"]').click();
         await expect(deck).toHaveAttribute('data-state', 'user');
