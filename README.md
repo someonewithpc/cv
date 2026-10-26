@@ -106,21 +106,21 @@ You need Node 22 or later. With Nix, `nix develop` opens a shell with Node and i
 dependencies, and the `.envrc` lets direnv do the same when you enter the folder. Without Nix,
 run `npm install`.
 
-- `npm run dev` starts the dev server.
-- `npm run build` builds the site into `dist/`.
-- `npm run preview` serves the last build.
+- `npm run dev` starts the dev server
+- `npm run build` builds the site into `dist/`
+- `npm run preview` serves the last build
 
 The dev and preview servers detach from the terminal and keep running. Stop them with
 `npx astro dev stop` and `npx astro preview stop`.
 
 ## Tests
 
-- `npm run check` type-checks `src/` and the Playwright specs with `astro check`.
-- `npm run lint:css` runs stylelint over the styles.
+- `npm run check` type-checks `src/` and the Playwright specs with `astro check`
+- `npm run lint:css` runs stylelint over the styles
 - `npm run test:e2e` builds the site, serves it on port 4310 and runs the Playwright suite in
-  `e2e/`.
+  `e2e/`
 - `npm run test:audit` checks the built site's HTML and CSS, its accessibility in all four
-  themes, and its Lighthouse scores. [docs/AUDITS.md](docs/AUDITS.md) explains each check.
+  themes, and its Lighthouse scores. [docs/AUDITS.md](docs/AUDITS.md) explains each check
 
 The suite drives the Chrome or Chromium on your `PATH`, not a browser Playwright downloads. A
 few specs load the page without JavaScript in Firefox. They run when Firefox is on your `PATH`
@@ -136,16 +136,16 @@ of your own.
 
 ## Layout
 
-- `src/pages/index.astro` is the whole site. It is one page.
-- `src/components/` holds the demos, the sheet stacks and the drawing parts.
-- `src/scss/` holds the shared styles. `src/themes.ts` defines the themes.
+- `src/pages/index.astro` is the whole site. It is one page
+- `src/components/` holds the demos, the sheet stacks and the drawing parts
+- `src/scss/` holds the shared styles. `src/themes.ts` defines the themes
 - `src/worker.ts` is the Cloudflare Worker. `src/server/` holds the analytics and font proxy
-  code it runs.
-- `e2e/` holds the Playwright specs, and `audit/` the audits.
+  code it runs
+- `e2e/` holds the Playwright specs, and `audit/` the audits
 - `scripts/` holds one-off generators for committed assets, such as the map and the link
-  preview image.
-- [TODO.md](TODO.md) lists what is done and what is left.
-- [docs/DEAD-ENDS.md](docs/DEAD-ENDS.md) lists approaches I tried and dropped, with the numbers.
+  preview image
+- [TODO.md](TODO.md) lists what is done and what is left
+- [docs/DEAD-ENDS.md](docs/DEAD-ENDS.md) lists approaches I tried and dropped, with the numbers
 
 ## Contact
 
