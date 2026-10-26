@@ -530,6 +530,22 @@
           ]
         },
         {
+          "repository": "peteonrails/voxtype",
+          "title": "fix(hotkey): wait in `poll()` between events instead of a 5 ms sleep",
+          "description": "The evdev listener slept 5 ms between passes over its devices, so an idle daemon woke about 200 times a second to find nothing to read. It now blocks in `poll()` on the keyboard fds and the inotify watch, with a 100 ms timeout so the stop signal and the device checks still run, and handles key events as they arrive. On my laptop an idle daemon went from about 229 wakeups a second to about 42. A draft, waiting on CI approval and review",
+          "url": "https://github.com/peteonrails/voxtype/pull/903",
+          "number": 903,
+          "updatedAt": "2026-10-21T11:36:27Z",
+          "stats": {
+            "additions": 20,
+            "deletions": 2,
+            "changed_files": 1
+          },
+          "tags": [
+            "rust"
+          ]
+        },
+        {
           "repository": "upower/power-profiles-daemon",
           "title": "amdgpu_panel_power: Allow configuring the levels in the settings file",
           "description": "The action picks the panel's ABM level from the profile and the battery charge, with power-saver at 0 above 50% and balanced at 1 below 30%, and nobody could change it: one user wanted the saving at any charge (#185), others found level 3 too strong (#159). Adds a `load_settings` vfunc so an action reads its own group from `power-profiles-daemon.conf`, with `PowerSaverLevel`, `BalancedLevel` and `PerformanceLevel` keys that apply on battery at any charge; unset keys keep today's steps, and unknown groups, keys or values out of 0 to 4 get a warning. A first commit fixes a leak already on main, where both error returns in `set_panel_power()` skipped freeing the drm device list. Measured on an ASUS ROG Flow X13: level 4 saves 0.4 to 0.6 W of about 10.4 W. Stacked on !241",
