@@ -498,6 +498,23 @@
           ]
         },
         {
+          "repository": "inauman/libfprint",
+          "title": "elanpress: faster matching",
+          "description": "On 0c6e a rejected press against 80 enrolled images took about a second on 16 threads, nearly all of it in the NCC inner loop. Five commits rework that loop: 16-bit layers so every sum is one multiply-add, summed-area tables for the single-layer sums, a half-resolution search kept to the best quarter-resolution peaks, SSE2 intrinsics, and AVX2 and AVX-512 copies picked at run time. Matching 3 probe frames against 80 images on one core went from 2.1 s to 0.17 s. Every commit but the peak search gives the same scores on 240 genuine and 3136 impostor matches. Awaiting review",
+          "url": "https://gitlab.freedesktop.org/inauman/libfprint/-/merge_requests/2",
+          "number": 2,
+          "updatedAt": "2026-10-24T22:13:31Z",
+          "stats": {
+            "additions": 569,
+            "deletions": 101,
+            "changed_files": 3
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
           "repository": "torvalds/linux",
           "title": "drm/client: Keep larger modes in connector->modes on fbdev hotplug",
           "description": "On an ASUS ROG Flow X13 booted with `video=eDP-1:1920x1200@60`, an HDMI hotplug made fbdev reprobe every connector with its 1920x1200 framebuffer as the limit. The 3840x2400 eDP panel lost its native mode from `connector->modes`, and after suspend/resume amdgpu drove it at 1920x1200 with the image squeezed into the top-left corner. Patch 1 makes `drm_client_modeset_probe()` probe with the device's mode size limits, as fbdev's first probe already does, and moves the framebuffer size check into the fbdev mode pickers. Patch 2 adds KUnit tests. v2 also checks the size of the CRTC's current mode before the firmware config falls back to it, which Sashiko found. With only this series applied, 255 of 255 resumes kept the native timing, against 28 of 29 wrong without it. Ville Syrjälä said on 2026-10-16 the approach should be fine but gave no tag, so it is still under review",
