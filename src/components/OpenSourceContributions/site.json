@@ -483,6 +483,23 @@
       "items": [
         {
           "repository": "inauman/libfprint",
+          "title": "elanpress: reject non-finite and out-of-range `FP_ELANPRESS_*` values",
+          "description": "Every `FP_ELANPRESS_*` setting comes from the environment, and some bad values broke the driver instead of being refused: a `nan` quality gate rejected nothing, a huge `FP_ELANPRESS_NORM_WIN` hit an undefined int cast, and a tiny `FP_ELANPRESS_ROT_STEP` overflowed the count of rotated probes. Five commits make the shared parser ignore values that are not finite, bound the integer, rotation and overlap settings, and log what it ignored or clamped. Each has a unit test that fails without it. Stacked on !3, awaiting review",
+          "url": "https://gitlab.freedesktop.org/inauman/libfprint/-/merge_requests/4",
+          "number": 4,
+          "updatedAt": "2026-10-25T17:13:40Z",
+          "stats": {
+            "additions": 575,
+            "deletions": 70,
+            "changed_files": 6
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
+          "repository": "inauman/libfprint",
           "title": "elanpress: don't let rejected frames set the relative contrast bar",
           "description": "The quality gate drops frames under half the best contrast of a touch, but it took that best from every frame, including ones the absolute gates reject. A frame from a finger landing or lifting is mostly ridge edges and can have twice the contrast of a full press, and on 0c6e one such frame put the bar above all eight full-contact frames of its touch. The best now comes only from frames that pass the absolute gates, with a unit test that feeds that touch. Replaying 116 touches from daily use, six keep more probe frames and the rest are unchanged. Awaiting review on the branch behind [libfprint!654](https://gitlab.freedesktop.org/libfprint/libfprint/-/merge_requests/654)",
           "url": "https://gitlab.freedesktop.org/inauman/libfprint/-/merge_requests/3",
