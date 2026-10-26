@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { EVENTS, MAX_EVENTS } from '../src/analytics';
-import { BLOB_COUNT, type DataPoint, dataPoint, handleEvents, isEventPath, NOWHERE, optedOut, parsePayload, readSalt, saltAlarmTime, saltName, type SaltStorage, visitorId } from '../src/server/analytics';
+import { agentOf, BLOB_COUNT, browserFamily, type DataPoint, dataPoint, handleEvents, isEventPath, NOWHERE, optedOut, parsePayload, readSalt, saltAlarmTime, saltName, type SaltStorage, visitorId } from '../src/server/analytics';
 import { canonicalRequest } from '../src/server/requestPath';
 
 // Drives the event route's pure parts in the test process, with a scripted dataset and salt.
@@ -110,7 +110,7 @@ test.describe('analytics visitor id', () => {
 const LISBON = { country: 'PT', city: 'Lisbon', region: 'Lisbon', timezone: 'Europe/Lisbon' };
 
 test.describe('analytics data point', () => {
-  test('always carries nine blobs and two doubles, extras in stable positions', () => {
+  test('always carries twelve blobs and two doubles, extras in stable positions', () => {
     for (const name of Object.keys(EVENTS) as (keyof typeof EVENTS)[]) {
       const point = dataPoint({ name, extras: [] }, 'v', SESSION, LISBON);
       expect(point.blobs, name).toHaveLength(BLOB_COUNT);
@@ -119,14 +119,57 @@ test.describe('analytics data point', () => {
     }
     expect(dataPoint({ name: 'flip', extras: ['marker-editor', 'store'] }, 'v', SESSION, LISBON)).toEqual({
       indexes: ['flip'],
-      blobs: ['v', SESSION, 'PT', 'marker-editor', 'store', '', 'Lisbon', 'Lisbon', 'Europe/Lisbon'],
+      blobs: ['v', SESSION, 'PT', 'marker-editor', 'store', '', 'Lisbon', 'Lisbon', 'Europe/Lisbon', '', '', ''],
       doubles: [1, 0],
     });
     expect(dataPoint({ name: 'leave', extras: [91] }, 'v', SESSION, NOWHERE)).toEqual({
       indexes: ['leave'],
-      blobs: ['v', SESSION, '', '', '', '', '', '', ''],
+      blobs: ['v', SESSION, '', '', '', '', '', '', '', '', '', ''],
       doubles: [1, 91],
     });
+  });
+
+  test('carries the agent on visits only', () => {
+    const agent = { browser: 'firefox', network: 'MEO', botCategory: '' };
+    expect(dataPoint({ name: 'visit', extras: ['', 'wide', 'dark'] }, 'v', SESSION, LISBON, agent).blobs.slice(9)).toEqual(['firefox', 'MEO', '']);
+    expect(dataPoint({ name: 'leave', extras: [5] }, 'v', SESSION, LISBON, agent).blobs.slice(9)).toEqual(['', '', '']);
+  });
+});
+
+test.describe('analytics browser family', () => {
+  const agents: [string | null, string][] = [
+    ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36', 'chrome'],
+    ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/141.0.7390.41 Mobile/15E148 Safari/604.1', 'chrome'],
+    ['Mozilla/5.0 (X11; Linux x86_64; rv:144.0) Gecko/20100101 Firefox/144.0', 'firefox'],
+    ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15', 'safari'],
+    ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 'edge'],
+    ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 OPR/124.0.0.0', 'opera'],
+    ['Mozilla/5.0 (Linux; Android 15; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36', 'samsung'],
+    ['Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', 'bot'],
+    ['LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)', 'bot'],
+    ['facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', 'bot'],
+    ['WhatsApp/2.23.20.0', 'bot'],
+    ['curl/8.9.1', 'bot'],
+    ['python-requests/2.32.3', 'bot'],
+    ['Go-http-client/2.0', 'bot'],
+    ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36', 'bot'],
+    ['Lynx/2.9.2 libwww-FM/2.14', 'other'],
+    ['', 'none'],
+    [null, 'none'],
+  ];
+  for (const [agent, family] of agents) {
+    test(`${family} for ${agent?.slice(0, 48) ?? 'no header'}`, () => {
+      expect(browserFamily(agent)).toBe(family);
+    });
+  }
+
+  test('reads the network and bot category off cf, cut to the extra length', () => {
+    const request = new Request(ROUTE, { headers: { 'user-agent': 'curl/8.9.1' } });
+    Object.assign(request, { cf: { asOrganization: 'Amazon.com', verifiedBotCategory: 'Search Engine Crawler' } });
+    expect(agentOf(request)).toEqual({ browser: 'bot', network: 'Amazon.com', botCategory: 'Search Engine Crawler' });
+    Object.assign(request, { cf: { asOrganization: 'x'.repeat(100), verifiedBotCategory: 7 } });
+    expect(agentOf(request)).toEqual({ browser: 'bot', network: 'x'.repeat(64), botCategory: '' });
+    expect(agentOf(new Request(ROUTE))).toEqual({ browser: 'none', network: '', botCategory: '' });
   });
 });
 
@@ -134,14 +177,14 @@ test.describe('analytics route', () => {
   test('writes one point per event with the visitor, session and place', async () => {
     const s = sink();
     const request = post(payload([['visit', 'example.org', 'wide', 'dark'], ['leave', 3]]), { 'cf-connecting-ip': '203.0.113.7' });
-    Object.assign(request, { cf: { country: 'PT', city: 'Lisbon', region: 'Lisbon', timezone: 'Europe/Lisbon', postalCode: '1000-001', latitude: '38.7', asn: 3243 } });
+    Object.assign(request, { cf: { country: 'PT', city: 'Lisbon', region: 'Lisbon', timezone: 'Europe/Lisbon', postalCode: '1000-001', latitude: '38.7', asn: 3243, asOrganization: 'MEO' } });
     const response = await handleEvents(request, s);
     expect(response.status).toBe(204);
     expect(response.headers.get('set-cookie')).toBeNull();
     const visitor = await visitorId(SALT_A, '203.0.113.7', 'test');
     expect(s.points).toEqual([
-      { indexes: ['visit'], blobs: [visitor, SESSION, 'PT', 'example.org', 'wide', 'dark', 'Lisbon', 'Lisbon', 'Europe/Lisbon'], doubles: [1, 0] },
-      { indexes: ['leave'], blobs: [visitor, SESSION, 'PT', '', '', '', 'Lisbon', 'Lisbon', 'Europe/Lisbon'], doubles: [1, 3] },
+      { indexes: ['visit'], blobs: [visitor, SESSION, 'PT', 'example.org', 'wide', 'dark', 'Lisbon', 'Lisbon', 'Europe/Lisbon', 'other', 'MEO', ''], doubles: [1, 0] },
+      { indexes: ['leave'], blobs: [visitor, SESSION, 'PT', '', '', '', 'Lisbon', 'Lisbon', 'Europe/Lisbon', '', '', ''], doubles: [1, 3] },
     ]);
   });
 
