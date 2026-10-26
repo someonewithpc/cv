@@ -514,6 +514,22 @@
           ]
         },
         {
+          "repository": "torvalds/linux",
+          "title": "drm/client: Don't print a NULL firmware config mode",
+          "description": "When some tiles of a tiled display are missing, `drm_client_firmware_config()` swaps in `drm_connector_fallback_non_tiled_mode()`, which can return NULL, and the debug message after it still read `modes[i]->name`. It now prints `(none)` there, and drops the stray colon in `[CONNECTOR::%d:%s]` that broke grepping the log for a connector id. Sashiko found it while reviewing the fbdev hotplug series. Thomas Zimmermann suggested the v2 form and gave his Reviewed-by on 2026-10-23",
+          "url": "https://lore.kernel.org/all/20261023112125.2855499-1-hugo@hsal.es/",
+          "updatedAt": "2026-10-23T11:29:28Z",
+          "stats": {
+            "additions": 2,
+            "deletions": 2,
+            "changed_files": 1
+          },
+          "tags": [
+            "linux",
+            "c"
+          ]
+        },
+        {
           "repository": "upower/power-profiles-daemon",
           "title": "amdgpu_panel_power: Allow configuring the levels in the settings file",
           "description": "The action picks the panel's ABM level from the profile and the battery charge, with power-saver at 0 above 50% and balanced at 1 below 30%, and nobody could change it: one user wanted the saving at any charge (#185), others found level 3 too strong (#159). Adds a `load_settings` vfunc so an action reads its own group from `power-profiles-daemon.conf`, with `PowerSaverLevel`, `BalancedLevel` and `PerformanceLevel` keys that apply on battery at any charge; unset keys keep today's steps, and unknown groups, keys or values out of 0 to 4 get a warning. A first commit fixes a leak already on main, where both error returns in `set_panel_power()` skipped freeing the drm device list. Measured on an ASUS ROG Flow X13: level 4 saves 0.4 to 0.6 W of about 10.4 W. Stacked on !241",
