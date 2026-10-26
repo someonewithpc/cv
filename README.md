@@ -34,14 +34,14 @@ the browser on Astro, React, Vue and TypeScript. Each demo has its own folder un
 
 ## How it's built
 
-The site is built with [Astro](https://astro.build) and served by a Cloudflare Worker. Astro
-renders the page to HTML at build time. The demos are islands that load their script when you
-scroll to them. Without JavaScript the page still reads from top to bottom, and each stack of
-sheets becomes a row you scroll sideways.
+The site is static. [Astro](https://astro.build) renders the page to HTML at build time and
+Cloudflare serves the built files from its asset store. The demos are islands that load their
+script when you scroll to them. Without JavaScript the page still reads from top to bottom, and
+each stack of sheets becomes a row you scroll sideways.
 
-Besides the built files, the worker answers two endpoints. One collects the page's analytics
-events. The other is a proxy that lets the font picker load fonts from other sites, with a
-daily byte limit.
+A small Cloudflare Worker sits beside the files and only runs for two paths. One collects the
+page's analytics events. The other is a proxy that lets the font picker load fonts from other
+sites, with a daily byte limit.
 
 The demos use React, Vue, Three.js, Leaflet and Redux. Styles are Sass. The fonts are
 self-hosted: Poppins, Special Elite, Allerta Stencil and Permanent Marker. Icons come from
