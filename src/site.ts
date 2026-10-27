@@ -7,6 +7,7 @@ export const AUTHOR_NAME = 'Hugo Sales';
 
 export const CONTACT = {
   email: 'contact@hsal.es',
+  printEmail: 'hugo@hsal.es',
   username: 'someonewithpc',
   profiles: [
     { label: 'GitHub', href: 'https://github.com/someonewithpc' },
