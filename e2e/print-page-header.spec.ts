@@ -20,7 +20,7 @@ test('every printed page carries the name, hsal.es and the page number in its to
   const [rule] = rules;
   expect(rule.media).toBe('print');
   expect(rule.margin).toBe('1cm');
-  expect(rule.text).toMatch(/@top-left\s*{[^}]*content:\s*"Hugo Sales · hsal\.es"[^}]*font:\s*8pt monospace/);
+  expect(rule.text).toMatch(/@top-left\s*{[^}]*content:\s*"Hugo Sales · https:\/\/hsal\.es"[^}]*font:\s*8pt monospace/);
   expect(rule.text).toMatch(/@top-right\s*{[^}]*content:\s*counter\(page\) " \/ " counter\(pages\)[^}]*font:\s*8pt monospace/);
 
   const pdf = await page.pdf({ format: 'A4', printBackground: false });
