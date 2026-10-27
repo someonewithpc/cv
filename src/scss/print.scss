@@ -122,7 +122,7 @@
       break-inside: avoid;
     }
 
-    .sheet:last-child {
+    .sheet:last-of-type {
       margin-bottom: 0 !important;
       padding-bottom: 0 !important;
     }
@@ -153,6 +153,60 @@
       .row > ul {
         justify-self: start !important;
       }
+    }
+  }
+
+  // Paper gets a pick of the contributions, the rows marked print in site.json, and a line
+  // with the address of the full list. The picks print as one list with no group headings:
+  // the headings and their counts speak of every row, printed or not, and the stats row
+  // keeps the counts. A group with no pick goes whole.
+  #open-source {
+    .row:not([data-print]),
+    .sheet:not(:has(.row[data-print])),
+    section[data-group] h3 {
+      display: none !important;
+    }
+
+    // Open before merged would still put biome ahead of the GCC fix, which is the second
+    // merged row. So the sheets, groups and lists give up their boxes, every row becomes a
+    // flex item of the section and the order is set per row: Linux, GCC, the rest. Only
+    // print.scss orders them, so the screen keeps its groups.
+    &#open-source {
+      display: flex !important;
+      flex-direction: column;
+    }
+
+    .sheet,
+    section[data-group],
+    .lines {
+      display: contents !important;
+    }
+
+    .intro {
+      order: -4;
+    }
+
+    .sheet:not(:has([data-group='open'])) .lines > header {
+      display: none !important;
+    }
+
+    .lines > header {
+      order: -3;
+    }
+
+    .row[data-status='open'] {
+      order: -2;
+    }
+
+    .row[data-print='second'] {
+      order: -1;
+    }
+
+    .print-only {
+      order: 1;
+      display: block !important;
+      margin: 1rem 0 0;
+      font-size: 0.875rem;
     }
   }
 
