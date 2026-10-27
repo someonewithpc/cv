@@ -29,8 +29,10 @@ test('the table head, the cells and the highlight cards print no fill and keep t
 
   for (const box of await page.locator('#career .table, #career .cells').all()) {
     await expect(box).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-    await expect(box).toHaveCSS('border-top-width', '1px');
   }
+  // The table's own frame goes in print (print-career-strip); its cells draw the lines.
+  await expect(page.locator('#career .table')).toHaveCSS('border-top-width', '0px');
+  await expect(page.locator('#career .cells')).toHaveCSS('border-top-width', '1px');
 
   const cards = page.locator('#open-source .intro article');
   expect(await cards.count()).toBeGreaterThan(0);
