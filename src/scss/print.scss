@@ -16,6 +16,12 @@
     display: none !important;
   }
 
+  // The Japanese glosses over the headings and labels: every one is marked lang="ja", and
+  // the English under each stays.
+  [lang='ja'] {
+    display: none !important;
+  }
+
   // The light theme's variables (src/themes.ts), over whichever theme the data-theme attribute
   // or prefers-color-scheme picked. The fibre tile goes with the grain set to 0: a tile blended
   // onto a sheet makes Chrome rasterise the whole sheet, 2 MB per contributions page.
