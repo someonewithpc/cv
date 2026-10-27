@@ -112,6 +112,12 @@
     background: none !important;
   }
 
+  // A career row is at most a third of a page. Split, its description overflowed the first
+  // page's piece and the next row printed over the lost lines.
+  #career .row {
+    break-inside: avoid;
+  }
+
   // The contributions as a list: one line per entry, no torn edges and no lift, and no
   // disclosure body under a triangle nobody can click on paper. Document type: the screen
   // sets the rows and the highlight cards at the reader's text size, 16px on a 30px ruling,
