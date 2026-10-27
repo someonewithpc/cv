@@ -39,7 +39,7 @@
     margin: 1cm;
 
     @top-left {
-      content: "Hugo Sales · hsal.es";
+      content: "Hugo Sales · https://hsal.es";
       font: 8pt monospace, system-ui;
       color: #{map.get(themes.$print-theme, "theme-ink")};
     }
