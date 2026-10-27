@@ -125,7 +125,7 @@
           ]
         },
         {
-          "print": true,
+          "print": "second",
           "repository": "gcc.gnu.org",
           "title": "ipa-cp: Check polymorphic contexts before redirecting to a clone [PR127917]",
           "description": "FreeCAD booleans crashed on NixOS because OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. GCC 16's IPA-CP had redirected a recursive call to a clone made for a different polymorphic context. Bisected it with prebuilt snapshots to two January changes, reduced it to two short C++ testcases, wrote the fix and a regression test, and bootstrapped and regtested on x86_64. The IPA maintainer reviewed it and pushed it to master the same day, with a GCC 16 backport to follow (bug 127917). A nixpkgs PR builds OCCT with `-fno-ipa-cp-clone` and adds an install check for the miscompile, an OpenCascade issue asks for the OCCT 8 fix to be backported to 7.9, and a FreeCAD PR backports its OpenCascade 8 support to the 1.1 branch",

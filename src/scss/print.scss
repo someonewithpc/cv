@@ -167,7 +167,43 @@
       display: none !important;
     }
 
+    // Open before merged would still put biome ahead of the GCC fix, which is the second
+    // merged row. So the sheets, groups and lists give up their boxes, every row becomes a
+    // flex item of the section and the order is set per row: Linux, GCC, the rest. Only
+    // print.scss orders them, so the screen keeps its groups.
+    &#open-source {
+      display: flex !important;
+      flex-direction: column;
+    }
+
+    .sheet,
+    section[data-group],
+    .lines {
+      display: contents !important;
+    }
+
+    .intro {
+      order: -4;
+    }
+
+    .sheet:not(:has([data-group='open'])) .lines > header {
+      display: none !important;
+    }
+
+    .lines > header {
+      order: -3;
+    }
+
+    .row[data-status='open'] {
+      order: -2;
+    }
+
+    .row[data-print='second'] {
+      order: -1;
+    }
+
     .print-only {
+      order: 1;
       display: block !important;
       margin: 1rem 0 0;
       font-size: 0.875rem;
