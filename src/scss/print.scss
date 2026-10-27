@@ -207,11 +207,13 @@
     // The section's bottom padding and the last sheet's tear margin added a page with
     // nothing on it, and a group heading could end a page with its list on the next. The
     // gaps between the sheets are desk, and there is no desk on paper: 1rem, like the
-    // bands' gaps below. A row never straddles a page: its lower band printed as a page of
-    // its own with no text on it.
+    // bands' gaps below. The desk above the section goes too: on Letter its margin pushed the
+    // first card off the page and left the heading alone. A row never straddles a page: its
+    // lower band printed as a page of its own with no text on it.
     &#open-source {
       --sheet-gap: 1rem !important;
 
+      margin-top: 0 !important;
       padding-bottom: 0 !important;
     }
 
