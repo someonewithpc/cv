@@ -455,4 +455,4 @@
 - [x] In print the contribution column takes the width the tech and repo columns leave, across the whole sheet (Hugo asked for it on 2026-10-27) (#535)
 - [x] Leave the drawing stamps out of print (Hugo asked for it on 2026-10-27) (#536)
 - [x] Print the skills as one list without the filter, dimmed chips and the group count (Hugo asked for it on 2026-10-27) (#537)
-- [ ] In print, start Open Source under the skills cloud when the page has room, its stats with it, and move the first card whole to the next page when it does not fit (Hugo asked for it on 2026-10-27)
+- [x] In print, start Open Source under the skills cloud when the page has room, its stats with it, and move the first card whole to the next page when it does not fit (Hugo asked for it on 2026-10-27) (#538)
