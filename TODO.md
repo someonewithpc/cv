@@ -452,4 +452,4 @@
 - [x] In print, keep each section heading on the page with what follows it and print highlight cards and career rows whole (Hugo asked for it on 2026-10-27) (#532)
 - [x] Print the IPA over the name and leave out the pronunciation checkbox, the player and the dotted underline (Hugo asked for it on 2026-10-27) (#533)
 - [x] No empty bordered box under the career table at the foot of a printed page (Hugo asked for it on 2026-10-27) (#534)
-- [ ] In print the contribution column takes the width the tech and repo columns leave, across the whole sheet (Hugo asked for it on 2026-10-27)
+- [x] In print the contribution column takes the width the tech and repo columns leave, across the whole sheet (Hugo asked for it on 2026-10-27) (#535)
