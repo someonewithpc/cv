@@ -8,16 +8,15 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('section headers print on the page with what follows them', async ({ page }) => {
-  for (const header of [
-    page.locator('#career > header'),
-    page.locator('#open-source .intro > header'),
-    page.locator('.cloud-label-row'),
-  ]) {
+  for (const header of [page.locator('#career > header'), page.locator('.cloud-label-row')]) {
     await expect(header).toHaveCSS('break-after', 'avoid');
     await expect(header).toHaveCSS('break-inside', 'avoid');
   }
 
-  await expect(page.locator('#open-source .intro > header .stats')).toHaveCSS('break-after', 'avoid');
+  const openSource = page.locator('#open-source .intro > header');
+  await expect(openSource).toHaveCSS('break-inside', 'avoid');
+  await expect(openSource).toHaveCSS('break-after', 'auto');
+  await expect(openSource.locator('.stats')).toHaveCSS('break-after', 'auto');
   await expect(page.locator('#career .revisions > h3')).toHaveCSS('break-after', 'avoid');
   await expect(page.locator('#career .table > .head')).toHaveCSS('break-after', 'avoid');
 });
