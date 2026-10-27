@@ -447,3 +447,4 @@
 - [x] Print the career sheet and the highlight cards with no dot grid and no grey fills, hairlines kept (Hugo asked for it on 2026-10-27) (#526)
 - [x] Print the short address after each profile, highlight and contribution link (Hugo asked for it on 2026-10-27) (#527)
 - [x] Print only the picked contributions, merged ones plus the Linux patches, as a list of about a page with a line to the full list (Hugo asked for it on 2026-10-27) (#528)
+- [ ] Leave the Japanese glosses out of print (Hugo asked for it on 2026-10-27)
