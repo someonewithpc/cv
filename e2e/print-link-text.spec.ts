@@ -48,7 +48,7 @@ test('highlight and contribution links print their short address', async ({ page
 });
 
 test('a contribution row prints its address on a line under the title', async ({ page }) => {
-  const row = page.locator('#open-source .row a.title[data-print]').first();
+  const row = page.locator('#open-source .row[data-print] a.title[data-print]').first();
   const { text, link, after } = await row.evaluate((a) => ({
     text: a.querySelector('.title-text')!.getBoundingClientRect().bottom,
     link: a.getBoundingClientRect().bottom,
