@@ -12,7 +12,7 @@ test('print hides every Japanese gloss and keeps the English and the sheet stamp
   expect(new Set(displays)).toEqual(new Set(['none']));
 
   await expect(page.locator('#career-heading')).toHaveText(/Career/i);
-  await expect(page.locator('#career dt', { hasText: 'See also' })).toBeVisible();
+  await expect(page.locator('#career dt', { hasText: 'Education' })).toBeVisible();
   await expect(page.locator('#career .sheet-code')).toHaveText(/SH-CV\s*\/\s*REV A/);
   await expect(page.locator('#open-source .sheet-code')).toHaveText(/SH-OSS\s*\/\s*REV A/);
 
