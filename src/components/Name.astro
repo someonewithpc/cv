@@ -1,6 +1,7 @@
 ---
 import { CONTACT } from '@/site';
 import { mailLink } from '../mailLink';
+import { printUrl } from '../printUrl';
 import pronunciation from '@/assets/pronunciation.mp3?url';
 ---
 
@@ -23,10 +24,10 @@ import pronunciation from '@/assets/pronunciation.mp3?url';
     {/* data-contact names the link kind the analytics contact event reports (src/client/analytics.ts). */}
     <address class="contact monospace">
       <ul>
-        <li data-contact="email"><Fragment set:html={mailLink(CONTACT.email)} /></li>
+        <li data-contact="email"><Fragment set:html={mailLink(CONTACT.email, CONTACT.printEmail)} /></li>
         {CONTACT.profiles.map(({ label, href }) => (
           <li data-contact={label.toLowerCase()}>
-            <a href={href} rel="me noopener noreferrer" target="_blank">
+            <a href={href} data-print={printUrl(href)} rel="me noopener noreferrer" target="_blank">
               {label}<span class="sr-only">, opens in a new tab</span>
             </a>
           </li>
