@@ -241,10 +241,16 @@
   }
 
   // With the addresses the contact row takes two lines, and a separator dot would start the
-  // second. The gap parts the entries instead.
+  // second. The gap parts the entries instead. An entry is its label and its address and
+  // never breaks: the row wraps between entries, so no address is split or runs past the
+  // title block.
   .title-block .contact {
     ul {
       column-gap: 2ch !important;
+    }
+
+    li {
+      white-space: nowrap;
     }
 
     li + li::before {
