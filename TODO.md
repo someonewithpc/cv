@@ -450,4 +450,4 @@
 - [x] Leave the Japanese glosses out of print (Hugo asked for it on 2026-10-27) (#530)
 - [x] Leave the See also cell out of print and print the Visrez demos link as "Demos at https://hsal.es" (Hugo asked for it on 2026-10-27) (#531)
 - [x] In print, keep each section heading on the page with what follows it and print highlight cards and career rows whole (Hugo asked for it on 2026-10-27) (#532)
-- [ ] Print the IPA over the name and leave out the pronunciation checkbox, the player and the dotted underline (Hugo asked for it on 2026-10-27)
+- [x] Print the IPA over the name and leave out the pronunciation checkbox, the player and the dotted underline (Hugo asked for it on 2026-10-27) (#533)
