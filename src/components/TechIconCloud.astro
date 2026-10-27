@@ -31,6 +31,7 @@ const softwareCount = TECH_ICONS.length - hardwareCount;
       <span class="count-software">{softwareCount} software</span>
       <span class="count-hardware">{hardwareCount} hardware &amp; CAD</span>
     </p>
+    <p class="print-count monospace">{TECH_ICONS.length} skills</p>
   </div>
 
   <ul>
@@ -187,6 +188,10 @@ section {
     span {
       display: none;
     }
+  }
+
+  .print-count {
+    display: none;
   }
 
   &:has(#tech-filter-all:checked) .filter-count .count-all {
