@@ -129,6 +129,18 @@
       border: none !important;
     }
 
+    // An outline sits 1px outside its cell, so a row that starts a page drew its top line at
+    // the foot of the page before, a stray rule under the table. With no gaps between the rows
+    // and 1px of padding on top, each row's top line falls inside the row, on its own page.
+    .table,
+    .table ol {
+      row-gap: 0 !important;
+    }
+
+    .table .row {
+      padding-top: 1px;
+    }
+
     .table :is(.head, .row) > *,
     .cells .cell {
       background: none !important;
