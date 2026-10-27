@@ -34,6 +34,15 @@ test('print keeps only the picked rows, the GCC fix and the Linux patches among 
     rows.map((row) => ({ status: row.getAttribute('data-status'), repository: row.querySelector('cite')!.textContent }))
   );
   expect(shown.some(({ repository }) => repository!.startsWith('gcc.gnu.org'))).toBe(true);
+
+  const printed = await picked.evaluateAll((rows) =>
+    rows
+      .map((row) => ({ top: row.getBoundingClientRect().top, repository: row.querySelector('cite')!.textContent! }))
+      .sort((a, b) => a.top - b.top)
+      .map(({ repository }) => repository)
+  );
+  expect(printed.slice(0, 3)).toEqual(Array(3).fill('torvalds/linux'));
+  expect(printed[3].startsWith('gcc.gnu.org')).toBe(true);
   expect(shown.filter(({ repository }) => repository === 'torvalds/linux')).toHaveLength(3);
   for (const { status, repository } of shown) {
     expect(status === 'merged' || repository === 'torvalds/linux', `${repository} is ${status}`).toBe(true);
