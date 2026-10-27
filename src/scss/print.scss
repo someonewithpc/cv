@@ -217,23 +217,44 @@
       break-after: avoid;
     }
 
-    // One line per entry: the marks take 4rem (three at most), the repository 14rem and the
-    // title the rest. On screen each row is its own grid and its columns come from the width
-    // of .lines through its container queries, which under 50rem (every paper size) split
-    // the writing in half. .lines is a block here, not a grid: Chrome prints a grid with
-    // subgrid rows as one piece, so a group's whole list moved to a fresh page and left its
-    // heading alone on a ruled one. The repository column is fixed so the titles line up
-    // down the list; a plain auto track would hand it the widest reference's max-content,
-    // react-native-community/react-native-template-typescript#179 at 590px, and leave the
-    // title 16px. At A4 the list is 2760px tall at 14rem, 2784 at 12rem and at 16rem.
+    // The writing runs the full width of the band: no margin and no paper either side of it,
+    // since the margin only held the disclosure triangles hidden above. The tech and repo
+    // columns are as wide as the group's widest row, from the --tech-marks and --repo-chars
+    // the section carries, and the title takes the rest. The repo column never takes more
+    // than half the row; react-native-community/react-native-template-typescript#179, which
+    // the section leaves out of its count, wraps onto a second line. Each row is its own grid,
+    // so the widths come from the section and not from a max-content track. .lines is a block
+    // here, not a grid: Chrome prints a grid with subgrid rows as one piece, so a group's
+    // whole list moved to a fresh page and left its heading alone on a ruled one.
+    section[data-group] {
+      --margin-ink: transparent !important;
+
+      padding-inline: 0 !important;
+    }
+
     .lines {
       display: block !important;
 
       > header,
       .row {
-        --grid: 4rem 14rem minmax(0, 1fr) !important;
+        --grid:
+          max(2.25rem, var(--tech-marks) * 1.375rem - 0.25rem)
+          min(var(--repo-chars) * 1ch, 50%)
+          minmax(0, 1fr) !important;
 
         grid-template-columns: var(--grid) !important;
+      }
+
+      // 1ch above is the width of one character of the row's own type, so the header takes
+      // the rows' size and its labels set their smaller one.
+      > header {
+        font-size: inherit !important;
+        letter-spacing: 0 !important;
+
+        span {
+          font-size: 0.75rem;
+          letter-spacing: 0.08em;
+        }
       }
 
       .row > ul {

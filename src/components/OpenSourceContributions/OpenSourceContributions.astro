@@ -5,6 +5,8 @@ import SectionHeader from './SectionHeader.astro';
 import Highlights from './Highlights.astro';
 import { TEAR_DEPTH_REM, TEAR_TILE } from './tear';
 
+import { resolveTechByIconSuffix } from '@/server/techIcons';
+
 const { highlights, groups, snapshot } = site;
 
 /* Written once on the section, so the three sheets share one copy of each image. */
@@ -14,6 +16,18 @@ const edges = [
   ...['top', 'bottom'].flatMap((side) =>
     ['mask', 'core', 'shade'].map((layer) => `--${layer === 'mask' ? 'tear' : layer}-${side}: url(/tears/${side}-${layer}.svg)`),
   ),
+].join('; ');
+
+/* print.scss sizes a group's tech and repo columns to its widest row, and the grid of one row
+   cannot see the others, so the group carries both widths: the most marks on a row and the
+   characters in its longest reference. A reference over 48 characters, half a printed row,
+   would squeeze every title in its group, so it is left out and wraps onto a second line. */
+const REPO_CHARS_MAX = 48;
+const reference = ({ repository, number }: { repository: string; number?: number | null }) =>
+  repository.length + (number == null ? 0 : `#${number}`.length);
+const columnWidths = (items: (typeof groups)[number]['items']) => [
+  `--tech-marks: ${Math.max(1, ...items.map(({ tags }) => tags.filter((suffix) => resolveTechByIconSuffix(suffix)).length))}`,
+  `--repo-chars: ${Math.max(0, ...items.map(reference).filter((chars) => chars <= REPO_CHARS_MAX))}`,
 ].join('; ');
 
 const statistics = {
@@ -34,7 +48,7 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
 
   {groups.map(({ id, label, items }, index) => (
     <div class="sheet" style={`--tear-shift: ${index * -4.5}rem`}>
-      <section data-group={id} aria-labelledby={`group-${id}`}>
+      <section data-group={id} aria-labelledby={`group-${id}`} style={columnWidths(items)}>
         <h3 id={`group-${id}`}>
           <span class="typewriter">{label}</span>
           <data value={items.length}>{items.length}</data>
