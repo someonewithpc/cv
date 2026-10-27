@@ -41,8 +41,8 @@ test('print keeps only the picked rows, the GCC fix and the Linux patches among 
 
   await expect(page.locator('#open-source section[data-group="closed"]')).toBeHidden();
   await expect(page.locator('#group-closed')).toBeHidden();
-  await expect(page.locator('#group-merged')).toBeVisible();
-  await expect(page.locator('#group-merged data')).toBeHidden();
+  await expect(page.locator('#group-merged')).toBeHidden();
+  await expect(page.locator('#group-open')).toBeHidden();
   await expect(page.locator('#open-source .stats')).toBeVisible();
 
   const line = page.locator('#open-source .print-only');
