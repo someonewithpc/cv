@@ -3,7 +3,8 @@
 // so the whole band goes, and the cover's sheet index with it, since it would name a sheet
 // that is not there. The printout is the title block, the career, the bill of materials and
 // the contributions, in the light theme whatever the picker had set, with the contributions
-// as a compact list and links as plain text.
+// as a compact list and links as plain text, each profile, card and contribution link followed
+// by its short address.
 @use "sass:map";
 @use "ts:src/themes.ts" as themes;
 
@@ -218,6 +219,37 @@
   a {
     color: inherit !important;
     text-decoration: none !important;
+  }
+
+  // The short address comes from the href at build time (src/printUrl.ts), since attr(href)
+  // cannot drop the scheme. A margin, not a space in content: the contact and card links are
+  // flex boxes, which drop a leading space from their items.
+  a[data-print]::after {
+    content: attr(data-print);
+    margin-inline-start: 0.5ch;
+    font-size: 0.875em;
+    color: var(--ink-muted);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  // The contact and card links are flex boxes on screen, which set the address as a block of
+  // its own beside the words. Inline, it runs on after them and wraps like text.
+  a[data-print]:not(.title) {
+    display: inline !important;
+    min-height: 0 !important;
+  }
+
+  // With the addresses the contact row takes two lines, and a separator dot would start the
+  // second. The gap parts the entries instead.
+  .title-block .contact {
+    ul {
+      column-gap: 2ch !important;
+    }
+
+    li + li::before {
+      display: none !important;
+    }
   }
 
   #open-source .title-text {

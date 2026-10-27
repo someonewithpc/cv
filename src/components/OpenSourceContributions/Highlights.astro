@@ -3,6 +3,7 @@ import { Icon } from 'astro-icon/components';
 
 import TechIcon from '@/components/TechIcon.astro';
 
+import { printUrl } from '@/printUrl';
 import { resolveTechByIconSuffix } from '@/server/techIcons';
 
 type Link = {
@@ -87,6 +88,7 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
         {entry.links.map(({ label, url }) => (
           <a
             href={url}
+            data-print={printUrl(url) === label ? undefined : printUrl(url)}
             rel="noopener noreferrer"
             target="_blank"
             aria-label={`${label} (${entry.title}), opens in a new tab`}
