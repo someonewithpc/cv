@@ -453,4 +453,4 @@
 - [x] Print the IPA over the name and leave out the pronunciation checkbox, the player and the dotted underline (Hugo asked for it on 2026-10-27) (#533)
 - [x] No empty bordered box under the career table at the foot of a printed page (Hugo asked for it on 2026-10-27) (#534)
 - [x] In print the contribution column takes the width the tech and repo columns leave, across the whole sheet (Hugo asked for it on 2026-10-27) (#535)
-- [ ] Leave the drawing stamps out of print (Hugo asked for it on 2026-10-27)
+- [x] Leave the drawing stamps out of print (Hugo asked for it on 2026-10-27) (#536)
