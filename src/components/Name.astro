@@ -24,7 +24,7 @@ import pronunciation from '@/assets/pronunciation.mp3?url';
     {/* data-contact names the link kind the analytics contact event reports (src/client/analytics.ts). */}
     <address class="contact monospace">
       <ul>
-        <li data-contact="email"><Fragment set:html={mailLink(CONTACT.email)} /></li>
+        <li data-contact="email"><Fragment set:html={mailLink(CONTACT.email, CONTACT.printEmail)} /></li>
         {CONTACT.profiles.map(({ label, href }) => (
           <li data-contact={label.toLowerCase()}>
             <a href={href} data-print={printUrl(href)} rel="me noopener noreferrer" target="_blank">

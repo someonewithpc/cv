@@ -258,6 +258,20 @@
     }
   }
 
+  // The email entry prints hugo@hsal.es in place of the contact@hsal.es alias the screen
+  // shows, at the size and ink of the screen text, so the address is printed once.
+  .title-block .contact a[href^="mailto:"][data-print] {
+    > span {
+      display: none;
+    }
+
+    &::after {
+      margin-inline-start: 0;
+      font-size: inherit;
+      color: inherit;
+    }
+  }
+
   #open-source .title-text {
     text-decoration: none !important;
   }
