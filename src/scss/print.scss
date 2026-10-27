@@ -53,10 +53,25 @@
   // default (background graphics off) drops the mask with the backgrounds, leaving the whole
   // border. Print this one's graphics whatever the dialog says.
   .title-block {
+    // Paper cannot tick a box or play a clip, so the block drops both and prints the IPA
+    // over the name, as on screen with the guide switched on (Name.astro). The player keeps
+    // its height while hidden, so it goes with display: none. The dotted underline only
+    // hints at the guide.
+    --name-heard: 1 !important;
+
     box-shadow: none !important;
 
     &::after {
       print-color-adjust: exact;
+    }
+
+    .note-row,
+    audio {
+      display: none !important;
+    }
+
+    h1 span {
+      text-decoration: none !important;
     }
   }
 
