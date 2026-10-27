@@ -353,17 +353,12 @@
     }
   }
 
-  // A section's stamp, gloss and title print on the page with what follows them, and so do
-  // the Open Source stats and their date, which sit in the same header. A highlight card is
-  // at most a third of a page, so it moves whole rather than tearing, as a career row does.
+  // A section's stamp, gloss and title print on the page with what follows them. A highlight
+  // card is at most a third of a page, so it moves whole rather than tearing, as a career row
+  // does.
   #career > header,
-  #open-source .intro > header,
   .cloud-label-row {
     break-inside: avoid;
-    break-after: avoid;
-  }
-
-  #open-source .intro > header .stats {
     break-after: avoid;
   }
 
@@ -374,6 +369,28 @@
 
   #open-source .intro > article {
     break-inside: avoid;
+  }
+
+  // The Open Source header and its stats print as one piece, under the skills cloud when the
+  // page has room, and the first card follows only if it fits too. On A4 the GCC card is two
+  // thirds of a page, so keeping it with the header moved all three to the next page and left
+  // the skills cloud alone on a page two thirds blank. Instead, the stats carry an invisible
+  // 12rem tail below them: a header with less than that left under it goes to the next page
+  // with its card, so it never ends a page alone.
+  #open-source .intro > header {
+    break-inside: avoid;
+    break-after: auto;
+
+    .stats {
+      break-after: auto;
+
+      &::after {
+        content: "";
+        display: block;
+        height: 12rem;
+        margin-bottom: -12rem;
+      }
+    }
   }
 
   // The drawing stamps: the title block's DWG line and each sheet's SH / REV A code. The
