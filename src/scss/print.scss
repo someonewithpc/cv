@@ -383,6 +383,29 @@
     display: none !important;
   }
 
+  // The skills filter is a control and means nothing on paper. Whatever it was set to when
+  // ctrl+P was pressed, all the chips print undimmed and the count says all of them.
+  #bill-of-materials {
+    --tech-sw-opacity: initial !important;
+    --tech-sw-filter: initial !important;
+    --tech-sw-border: initial !important;
+    --tech-hw-opacity: initial !important;
+    --tech-hw-filter: initial !important;
+    --tech-hw-border: initial !important;
+    --tech-hw-background: initial !important;
+
+    .filter-toggle,
+    .filter-count {
+      display: none !important;
+    }
+
+    .print-count {
+      display: block !important;
+      margin: 0;
+      font-size: 0.75rem;
+    }
+  }
+
   // Nothing on paper is a hyperlink.
   a {
     color: inherit !important;
