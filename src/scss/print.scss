@@ -376,6 +376,13 @@
     break-inside: avoid;
   }
 
+  // The drawing stamps: the title block's DWG line and each sheet's SH / REV A code. The
+  // career table's revision column stays, since the timeline's markers refer to its numbers.
+  .title-block .sheet-meta,
+  .sheet-code {
+    display: none !important;
+  }
+
   // Nothing on paper is a hyperlink.
   a {
     color: inherit !important;
