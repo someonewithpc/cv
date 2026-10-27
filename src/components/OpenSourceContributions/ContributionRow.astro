@@ -21,6 +21,7 @@ type Props = {
     changed_files: number;
   } | null;
   updatedAt?: string | null;
+  print?: boolean;
 };
 
 const {
@@ -33,6 +34,7 @@ const {
   number,
   stats,
   updatedAt,
+  print,
 } = Astro.props;
 
 const hasMeta = updatedAt || stats;
@@ -52,7 +54,7 @@ repository.split('/').forEach((part, index) => {
 if (number != null) citePieces.push(null, `#${number}`);
 ---
 
-<div class="row" data-status={status}>
+<div class="row" data-status={status} data-print={print || undefined}>
   <ul aria-label="Technologies">
     {tags.map((suffix) => {
       const resolved = resolveTechByIconSuffix(suffix);

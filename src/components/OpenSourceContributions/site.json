@@ -108,6 +108,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "biomejs/biome",
           "title": "fix(html): lex processing instructions in their own context",
           "description": "Biome's HTML lexer read the `?` before `>` as part of a name, so `<?xml version=\"1.0\"?>` never closed and `astro check` rejected an SVG component that starts with an XML declaration ([withastro/compiler-rs#199](https://github.com/withastro/compiler-rs/issues/199)). Opened [#12159](https://github.com/biomejs/biome/pull/12159) with the fix and fixtures for the plain, Astro, Vue and Angular lexers. The maintainer landed a reworked version with me as co-author",
@@ -124,6 +125,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "gcc.gnu.org",
           "title": "ipa-cp: Check polymorphic contexts before redirecting to a clone [PR127917]",
           "description": "FreeCAD booleans crashed on NixOS because OpenCascade's bounding box tree walk ran the line selector's `Accept` on the point selector. GCC 16's IPA-CP had redirected a recursive call to a clone made for a different polymorphic context. Bisected it with prebuilt snapshots to two January changes, reduced it to two short C++ testcases, wrote the fix and a regression test, and bootstrapped and regtested on x86_64. The IPA maintainer reviewed it and pushed it to master the same day, with a GCC 16 backport to follow (bug 127917). A nixpkgs PR builds OCCT with `-fno-ipa-cp-clone` and adds an install check for the miscompile, an OpenCascade issue asks for the OCCT 8 fix to be backported to 7.9, and a FreeCAD PR backports its OpenCascade 8 support to the 1.1 branch",
@@ -141,6 +143,7 @@
           }
         },
         {
+          "print": true,
           "repository": "withastro/compiler-rs",
           "title": "Fix wrong handling of combinators inside `:global()`",
           "description": "Reworked the `scope_css` pass in Astro's `compiler_rs` so combinators inside `:global()` hoist correctly, dropping the broken `ParserOptions::css_modules` path",
@@ -158,6 +161,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "withastro/compiler-rs",
           "title": "JSX in object literal transforms incorrectly",
           "description": "Fixed JSX-in-object-literal transforms in the Astro Rust compiler so object literals can contain JSX expressions (astro#17198)",
@@ -175,6 +179,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "bootstrap-vue-next/bootstrap-vue-next",
           "title": "feat(BPopover): Add close-on-hide prop to close the popover when it hides by clipping out of view",
           "description": "Added a `close-on-hide` prop to `BPopover` so popovers dismiss when clipping middleware hides them from view",
@@ -192,6 +197,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "react/react",
           "title": "Add support for `transition{run,start,cancel}` events",
           "description": "Added React support for `transitionrun`, `transitionstart`, and `transitioncancel` events, with matching test coverage",
@@ -243,6 +249,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "DefinitelyTyped/DefinitelyTyped",
           "title": "[leaflet] Turn on strictNullChecks and fix errors that arise",
           "description": "Enabled `strictNullChecks` on the Leaflet typings and fixed the resulting type errors",
@@ -293,6 +300,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "fmtlib/fmt",
           "title": "Add `n` specifier for tuple and pair",
           "description": "Added an `n` format specifier for `std::tuple` and `std::pair` in {fmt}, following the tuple-formatting design from #4090",
@@ -431,6 +439,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "symfony/symfony",
           "title": "[Translation] Add support for calling `trans` with ICU formatted messages",
           "description": "Extended Symfony's Translator so `trans()` accepts ICU-formatted messages directly (symfony#37228)",
@@ -566,6 +575,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "torvalds/linux",
           "title": "drm/client: Keep larger modes in connector->modes on fbdev hotplug",
           "description": "On an ASUS ROG Flow X13 booted with `video=eDP-1:1920x1200@60`, an HDMI hotplug made fbdev reprobe every connector with its 1920x1200 framebuffer as the limit. The 3840x2400 eDP panel lost its native mode from `connector->modes`, and after suspend/resume amdgpu drove it at 1920x1200 with the image squeezed into the top-left corner. Patch 1 makes `drm_client_modeset_probe()` probe with the device's mode size limits, as fbdev's first probe already does, and moves the framebuffer size check into the fbdev mode pickers. Patch 2 adds KUnit tests. v2 also checks the size of the CRTC's current mode before the firmware config falls back to it, which Sashiko found. With only this series applied, 255 of 255 resumes kept the native timing, against 28 of 29 wrong without it. Ville Syrjälä said on 2026-10-16 the approach should be fine but gave no tag, so it is still under review",
@@ -582,6 +592,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "torvalds/linux",
           "title": "drm/amd/display: Keep eDP native timing after resume with video=",
           "description": "Two patches on amd-gfx. After an HDMI hotplug and a suspend/resume, a 3840x2400 eDP panel booted with a `video=` mode came back squeezed into the top-left corner. The fbdev reprobe had dropped the native mode and amdgpu scaled onto the first one left. On eDP and LVDS the fix falls back to a listed mode of the native size, or else to the encoder's native mode, with KUnit tests that fail without it. On 7.2.8, 103 of 103 resumes were wrong before and 1363 of 1363 right after. v2 is rebased onto amd-staging-drm-next, as Tom Chung at AMD asked. A second series on dri-devel, `drm/client: Keep larger modes in connector->modes on fbdev hotplug`, fixes the same bug for every driver. Both are under review",
@@ -598,6 +609,7 @@
           ]
         },
         {
+          "print": true,
           "repository": "torvalds/linux",
           "title": "drm/client: Don't print a NULL firmware config mode",
           "description": "When some tiles of a tiled display are missing, `drm_client_firmware_config()` swaps in `drm_connector_fallback_non_tiled_mode()`, which can return NULL, and the debug message after it still read `modes[i]->name`. It now prints `(none)` there, and drops the stray colon in `[CONNECTOR::%d:%s]` that broke grepping the log for a connector id. Sashiko found it while reviewing the fbdev hotplug series. Thomas Zimmermann suggested the v2 form and gave his Reviewed-by on 2026-10-23",

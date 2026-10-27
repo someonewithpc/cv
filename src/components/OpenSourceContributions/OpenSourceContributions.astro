@@ -21,6 +21,8 @@ const statistics = {
   open: groups.find((group) => group.id === 'open')?.items.length ?? 0,
   closed: groups.find((group) => group.id === 'closed')?.items.length ?? 0,
 };
+
+const total = groups.reduce((sum, group) => sum + group.items.length, 0);
 ---
 
 <section id="open-source" aria-labelledby="open-source-heading" style={edges} tabindex="-1">
@@ -52,6 +54,9 @@ const statistics = {
       </section>
     </div>
   ))}
+
+  {/* Paper prints only the rows marked print in site.json (print.scss), so it says where the rest are. */}
+  <p class="print-only" hidden>The full list of {total} contributions is at hsal.es#open-source</p>
 </section>
 
 <style lang="scss">

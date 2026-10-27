@@ -55,7 +55,7 @@ test('the contributions print one line per entry, closed, the title across the r
     await expect(row).toBeHidden();
   }
 
-  const lines = await page.locator('#open-source .row').evaluateAll((els) =>
+  const lines = await page.locator('#open-source .row[data-print]').evaluateAll((els) =>
     els.map((el) => {
       const row = el.getBoundingClientRect();
       const [marks, repo, title] = ['ul', 'cite', '.title'].map((sel) => el.querySelector(sel)!.getBoundingClientRect());
@@ -72,8 +72,8 @@ test('the contributions print one line per entry, closed, the title across the r
     expect(line.height).toBeLessThanOrEqual(lineHeight * 1.5 * 3 + 1);
   }
   // The repositories line up down the list, since the rows share the sheet's columns.
-  const repoLefts = await page.locator('#open-source section[data-group]').evaluateAll((groups) =>
-    groups.map((group) => new Set(Array.from(group.querySelectorAll('.row cite')).map((cite) => Math.round(cite.getBoundingClientRect().left))).size),
+  const repoLefts = await page.locator('#open-source section[data-group]:has(.row[data-print])').evaluateAll((groups) =>
+    groups.map((group) => new Set(Array.from(group.querySelectorAll('.row[data-print] cite')).map((cite) => Math.round(cite.getBoundingClientRect().left))).size),
   );
   for (const distinct of repoLefts) {
     expect(distinct).toBe(1);
