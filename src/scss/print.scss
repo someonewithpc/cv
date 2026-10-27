@@ -122,7 +122,7 @@
       break-inside: avoid;
     }
 
-    .sheet:last-child {
+    .sheet:last-of-type {
       margin-bottom: 0 !important;
       padding-bottom: 0 !important;
     }
@@ -153,6 +153,23 @@
       .row > ul {
         justify-self: start !important;
       }
+    }
+  }
+
+  // Paper gets a pick of the contributions, the rows marked print in site.json, and a line
+  // with the address of the full list. A group with no pick goes with its heading, and the
+  // groups' counts go too: they count every row, printed or not. The stats row keeps them.
+  #open-source {
+    .row:not([data-print]),
+    .sheet:not(:has(.row[data-print])),
+    section[data-group] h3 data {
+      display: none !important;
+    }
+
+    .print-only {
+      display: block !important;
+      margin: 1rem 0 0;
+      font-size: 0.875rem;
     }
   }
 
