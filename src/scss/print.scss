@@ -108,7 +108,9 @@
   // accent tint edge to edge, and the table head, the cells and the highlight cards a grey
   // fill. The table's and the cells' hairlines are their grid gaps showing the line colour
   // behind the fills, so here each cell draws its own as an outline over the gap, which
-  // prints with background graphics off too.
+  // prints with background graphics off too. The table's frame goes as well: when a whole
+  // row moved to the next page, the space it left at the foot of this one printed as an empty
+  // bordered box.
   #career {
     --surface-page: var(--theme-paper) !important;
 
@@ -121,6 +123,10 @@
     .table,
     .cells {
       background: none !important;
+    }
+
+    .table {
+      border: none !important;
     }
 
     .table :is(.head, .row) > *,
