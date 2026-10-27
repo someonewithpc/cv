@@ -393,8 +393,11 @@
   }
 
   // The contact and card links are flex boxes on screen, which set the address as a block of
-  // its own beside the words. Inline, it runs on after them and wraps like text.
-  a[data-print]:not(.title) {
+  // its own beside the words. Inline, it runs on after them and wraps like text. A card link
+  // whose label is its address prints no address, and goes inline too: left a 3rem flex box,
+  // its words sat half a line below the other links in the row.
+  a[data-print]:not(.title),
+  #open-source .intro nav a {
     display: inline !important;
     min-height: 0 !important;
   }
