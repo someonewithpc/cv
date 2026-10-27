@@ -60,6 +60,19 @@
     }
   }
 
+  // The career table's frame and fill belong to the table, so when a whole row moves to the next
+  // page, the space it leaves at the foot of this one printed as an empty bordered box, grey
+  // with background graphics on. Each cell draws its own hairline instead, as an outline over
+  // the 1px gaps, and the leftover space draws nothing.
+  #career .table {
+    border: none !important;
+    background: none !important;
+
+    :is(.head, .row) > * {
+      outline: 1px solid var(--line-strong);
+    }
+  }
+
   // The contributions as a list: one line per entry, no torn edges and no lift, and no
   // disclosure body under a triangle nobody can click on paper. Document type: the screen
   // sets the rows and the highlight cards at the reader's text size, 16px on a 30px ruling,
