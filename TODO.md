@@ -278,6 +278,7 @@
 - [x] Safari draws every paper stack with its last page on top, since WebKit paints rotated pages in DOM order and ignores `order` (#320)
 - [x] Match the tagging tool's wood base object's table colour casing to its variants' (C53) (#285)
 - [x] Add a print stylesheet: no desk, no theme picker, every page of each stack down the page, contributions open, light theme, links as text (S21) (#261)
+- [ ] Print a header on every page with the name, hsal.es and the page number (Hugo asked for it on 2026-10-27)
 - [x] Take container-unit type out of the drawing stacks, the pattern that froze Chrome for 20 s (S5) (#244)
 - [x] home, svg-aria and a11y scroll every stack then wait a fixed 2 s instead of its mount (E17) (#289)
 - [x] A vertical wheel right after a horizontal swipe on a stack scrolls the page without a mouse move first (#321)
