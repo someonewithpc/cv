@@ -219,11 +219,11 @@
 
     // The writing runs the full width of the band: no margin and no paper either side of it,
     // since the margin only held the disclosure triangles hidden above. The tech and repo
-    // columns are as wide as the group's widest row, from the --tech-marks and --repo-chars
-    // the section carries, and the title takes the rest. The repo column never takes more
-    // than half the row; react-native-community/react-native-template-typescript#179, which
-    // the section leaves out of its count, wraps onto a second line. Each row is its own grid,
-    // so the widths come from the section and not from a max-content track. .lines is a block
+    // columns are as wide as the widest printed pick, from the --tech-marks and --repo-chars
+    // #open-source carries, and the title takes the rest. The repo column never takes more
+    // than half the row; a reference the count leaves out wraps onto a second line. Each row
+    // is its own grid, so the widths come from the section and not from a max-content track,
+    // and every pick lines up whichever group it comes from. .lines is a block
     // here, not a grid: Chrome prints a grid with subgrid rows as one piece, so a group's
     // whole list moved to a fresh page and left its heading alone on a ruled one.
     section[data-group] {

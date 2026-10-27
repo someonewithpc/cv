@@ -18,16 +18,17 @@ const edges = [
   ),
 ].join('; ');
 
-/* print.scss sizes a group's tech and repo columns to its widest row, and the grid of one row
-   cannot see the others, so the group carries both widths: the most marks on a row and the
-   characters in its longest reference. A reference over 48 characters, half a printed row,
-   would squeeze every title in its group, so it is left out and wraps onto a second line. */
-const REPO_CHARS_MAX = 48;
+/* Paper prints only the picks, as one list across the groups (print.scss), so their tech and
+   repo columns are as wide as the widest pick: the most marks on a row and the characters in
+   the longest reference. A reference over 32 characters, about a third of a printed row, would
+   squeeze every title, so it is left out and wraps at its slash onto a second line. */
+const REPO_CHARS_MAX = 32;
 const reference = ({ repository, number }: { repository: string; number?: number | null }) =>
   repository.length + (number == null ? 0 : `#${number}`.length);
-const columnWidths = (items: (typeof groups)[number]['items']) => [
-  `--tech-marks: ${Math.max(1, ...items.map(({ tags }) => tags.filter((suffix) => resolveTechByIconSuffix(suffix)).length))}`,
-  `--repo-chars: ${Math.max(0, ...items.map(reference).filter((chars) => chars <= REPO_CHARS_MAX))}`,
+const picks = groups.flatMap(({ items }) => items).filter(({ print }) => print);
+const columnWidths = [
+  `--tech-marks: ${Math.max(1, ...picks.map(({ tags }) => tags.filter((suffix) => resolveTechByIconSuffix(suffix)).length))}`,
+  `--repo-chars: ${Math.max(0, ...picks.map(reference).filter((chars) => chars <= REPO_CHARS_MAX))}`,
 ].join('; ');
 
 const statistics = {
@@ -39,7 +40,7 @@ const statistics = {
 const total = groups.reduce((sum, group) => sum + group.items.length, 0);
 ---
 
-<section id="open-source" aria-labelledby="open-source-heading" style={edges} tabindex="-1">
+<section id="open-source" aria-labelledby="open-source-heading" style={`${edges}; ${columnWidths}`} tabindex="-1">
   <div class="intro">
     <SectionHeader statistics={statistics} snapshot={snapshot} />
 
@@ -48,7 +49,7 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
 
   {groups.map(({ id, label, items }, index) => (
     <div class="sheet" style={`--tear-shift: ${index * -4.5}rem`}>
-      <section data-group={id} aria-labelledby={`group-${id}`} style={columnWidths(items)}>
+      <section data-group={id} aria-labelledby={`group-${id}`}>
         <h3 id={`group-${id}`}>
           <span class="typewriter">{label}</span>
           <data value={items.length}>{items.length}</data>
