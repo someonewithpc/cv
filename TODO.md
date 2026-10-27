@@ -445,3 +445,4 @@
 - [x] Record the browser family, network and bot signals on visits (Hugo asked for it on 2026-10-26) (#524)
 - [x] Rewrite the README for the public repo (Hugo asked for it on 2026-10-26) (#525)
 - [x] Print the career sheet and the highlight cards with no dot grid and no grey fills, hairlines kept (Hugo asked for it on 2026-10-27) (#526)
+- [ ] Print the short address after each profile, highlight and contribution link (Hugo asked for it on 2026-10-27)
