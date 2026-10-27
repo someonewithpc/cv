@@ -156,6 +156,28 @@
     }
   }
 
+  // The See also cell is an index of sections with no page numbers, and Chrome has no
+  // target-counter() to give it any. Without it the four cells fill two rows of two.
+  #career .cells .cell:has(.refs) {
+    display: none !important;
+  }
+
+  // The demos do not print, so the Visrez row's pointer to them gives the site's address,
+  // in full: a bare hsal.es may not read as an address. The address keeps its case under
+  // the row's capitals. The link's ::after is its touch target, absolutely placed, so it
+  // goes back into the line to carry the word.
+  #career .see:has(a[href="#demos"]) {
+    a[href="#demos"]::after {
+      content: " at";
+      position: static !important;
+    }
+
+    &::after {
+      content: " https://hsal.es";
+      text-transform: none;
+    }
+  }
+
   // Nothing on paper is a hyperlink.
   a {
     color: inherit !important;
