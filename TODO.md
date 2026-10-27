@@ -443,4 +443,4 @@
 - [x] The Font Picker walkthrough notices sit over the transport deck and the title block (#523)
 - [x] Record the browser family, network and bot signals on visits (Hugo asked for it on 2026-10-26) (#524)
 - [x] Rewrite the README for the public repo (Hugo asked for it on 2026-10-26) (#525)
-- [ ] Print only the picked contributions, merged ones plus the Linux patches, on one page with a line to the full list (Hugo asked for it on 2026-10-27)
+- [ ] Print only the picked contributions, merged ones plus the Linux patches, as a list of about a page with a line to the full list (Hugo asked for it on 2026-10-27)
