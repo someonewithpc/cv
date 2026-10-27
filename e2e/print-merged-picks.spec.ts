@@ -47,5 +47,5 @@ test('print keeps only the picked rows, the GCC fix and the Linux patches among 
 
   const line = page.locator('#open-source .print-only');
   await expect(line).toBeVisible();
-  await expect(line).toHaveText(`The full list of ${total} contributions is at hsal.es#open-source`);
+  await expect(line).toHaveText(`The full list of ${total} contributions is at https://hsal.es/#open-source`);
 });
