@@ -60,6 +60,36 @@
     }
   }
 
+  // No fills on paper. With background graphics on, the career sheet printed its dot grid and
+  // accent tint edge to edge, and the table head, the cells and the highlight cards a grey
+  // fill. The table's and the cells' hairlines are their grid gaps showing the line colour
+  // behind the fills, so here each cell draws its own as an outline over the gap, which
+  // prints with background graphics off too.
+  #career {
+    --surface-page: var(--theme-paper) !important;
+
+    background: none !important;
+
+    &::before {
+      display: none !important;
+    }
+
+    .table,
+    .cells {
+      background: none !important;
+    }
+
+    .table :is(.head, .row) > *,
+    .cells .cell {
+      background: none !important;
+      outline: 1px solid var(--line-strong);
+    }
+  }
+
+  #open-source .intro article {
+    background: none !important;
+  }
+
   // The contributions as a list: one line per entry, no torn edges and no lift, and no
   // disclosure body under a triangle nobody can click on paper. Document type: the screen
   // sets the rows and the highlight cards at the reader's text size, 16px on a 30px ruling,
