@@ -156,6 +156,30 @@
     }
   }
 
+  // A section's stamp, gloss and title print on the page with what follows them, and so do
+  // the Open Source stats and their date, which sit in the same header. A highlight card or
+  // a career row is at most a third of a page, so it moves whole rather than tearing.
+  #career > header,
+  #open-source .intro > header,
+  .cloud-label-row {
+    break-inside: avoid;
+    break-after: avoid;
+  }
+
+  #open-source .intro > header .stats {
+    break-after: avoid;
+  }
+
+  #career .revisions > h3,
+  #career .table > .head {
+    break-after: avoid;
+  }
+
+  #open-source .intro > article,
+  #career .row {
+    break-inside: avoid;
+  }
+
   // Nothing on paper is a hyperlink.
   a {
     color: inherit !important;
