@@ -272,6 +272,13 @@
     }
   }
 
+  // A contribution's address is long, and run on after its title it wrapped the title to three
+  // or four lines. On a line of its own under the title, the title keeps its line.
+  #open-source .row a.title[data-print]::after {
+    display: block;
+    margin-inline-start: 0;
+  }
+
   #open-source .title-text {
     text-decoration: none !important;
   }
