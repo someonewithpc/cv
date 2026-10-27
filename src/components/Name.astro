@@ -1,6 +1,7 @@
 ---
 import { CONTACT } from '@/site';
 import { mailLink } from '../mailLink';
+import { printUrl } from '../printUrl';
 import pronunciation from '@/assets/pronunciation.mp3?url';
 ---
 
@@ -26,7 +27,7 @@ import pronunciation from '@/assets/pronunciation.mp3?url';
         <li data-contact="email"><Fragment set:html={mailLink(CONTACT.email)} /></li>
         {CONTACT.profiles.map(({ label, href }) => (
           <li data-contact={label.toLowerCase()}>
-            <a href={href} rel="me noopener noreferrer" target="_blank">
+            <a href={href} data-print={printUrl(href)} rel="me noopener noreferrer" target="_blank">
               {label}<span class="sr-only">, opens in a new tab</span>
             </a>
           </li>

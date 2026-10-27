@@ -4,6 +4,7 @@ import { Icon } from 'astro-icon/components';
 import BacktickText from '@/components/OpenSourceContributions/BacktickText.astro';
 import TechIcon from '@/components/TechIcon.astro';
 
+import { printUrl } from '@/printUrl';
 import { resolveTechByIconSuffix } from '@/server/techIcons';
 
 type Props = {
@@ -67,7 +68,7 @@ if (number != null) citePieces.push(null, `#${number}`);
   <div class="meta">
     <cite>{citePieces.map((piece) => (piece === null ? <wbr /> : piece))}</cite>
 
-    <a class="title" href={url} rel="noopener noreferrer" target="_blank"><span class="title-text"><BacktickText text={title} /></span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" /><span class="sr-only"> ({repository}), opens in a new tab</span></a>
+    <a class="title" href={url} data-print={printUrl(url)} rel="noopener noreferrer" target="_blank"><span class="title-text"><BacktickText text={title} /></span><Icon name="lucide:external-link" class="external-link" aria-hidden="true" /><span class="sr-only"> ({repository}), opens in a new tab</span></a>
   </div>
 
   {/* The summary is the row: it lies under the technologies, the repository and
