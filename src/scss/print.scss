@@ -169,4 +169,26 @@
   #open-source .external-link {
     display: none !important;
   }
+
+  // The Open Source header and its stats print as one piece, under the skills cloud when the
+  // page has room, and the first card follows only if it fits too. On A4 the GCC card is two
+  // thirds of a page, so keeping it with the header moved all three to the next page and left
+  // the skills cloud alone on a page two thirds blank. Instead, the stats carry an invisible
+  // 12rem tail below them: a header with less than that left under it goes to the next page
+  // with its card, so it never ends a page alone.
+  #open-source .intro > header {
+    break-inside: avoid;
+    break-after: auto;
+
+    .stats {
+      break-after: auto;
+
+      &::after {
+        content: "";
+        display: block;
+        height: 12rem;
+        margin-bottom: -12rem;
+      }
+    }
+  }
 }

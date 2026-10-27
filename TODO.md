@@ -443,3 +443,4 @@
 - [x] The Font Picker walkthrough notices sit over the transport deck and the title block (#523)
 - [x] Record the browser family, network and bot signals on visits (Hugo asked for it on 2026-10-26) (#524)
 - [x] Rewrite the README for the public repo (Hugo asked for it on 2026-10-26) (#525)
+- [x] In print, start Open Source under the skills cloud when the page has room, its stats with it, and move the first card whole to the next page when it does not fit (Hugo asked for it on 2026-10-27) (#538)
