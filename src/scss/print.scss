@@ -222,6 +222,14 @@
       break-inside: avoid;
     }
 
+    // The picks print as a table with horizontal rules only: a hairline over each pick parts
+    // it from the header or the pick above, and the padding keeps the writing off the rules.
+    // A border prints with background graphics off.
+    .row[data-print] {
+      padding-block: 0.375rem;
+      border-block-start: 1px solid var(--line-strong);
+    }
+
     .sheet:last-of-type {
       margin-bottom: 0 !important;
       padding-bottom: 0 !important;
