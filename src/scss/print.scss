@@ -146,6 +146,12 @@
       background: none !important;
       outline: 1px solid var(--line-strong);
     }
+
+    // The dash before each line of a row's notes is a 1px background, so with background
+    // graphics off the lines printed with no marker.
+    li::before {
+      print-color-adjust: exact;
+    }
   }
 
   #open-source .intro article {
