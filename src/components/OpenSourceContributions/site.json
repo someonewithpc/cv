@@ -2,6 +2,37 @@
   "snapshot": "2026-10-05",
   "highlights": [
     {
+      "title": "Linux kernel",
+      "role": "Contributor",
+      "roleJp": "コントリビューター",
+      "description": "Patches to the amdgpu display driver and the DRM client helpers, from bugs met on an ASUS ROG Flow X13: a 3840x2400 eDP panel that came back scaled into a corner after resume, a firmware backlight table that could overrun its 99 points, panel self-refresh left on across a modeset. Each went to amd-gfx or dri-devel with the measurement that found it and KUnit tests where the code allows. 2 patches are in AMD's drm-next tree on the way to mainline and 2 more carry a maintainer's Reviewed-by",
+      "repository": "torvalds/linux",
+      "commits": "2 merged",
+      "period": "2026",
+      "links": [
+        {
+          "label": "drm/amdgpu: Clamp the ATIF backlight curve to its 99 points",
+          "url": "https://lore.kernel.org/r/20261031153948.127016-1-hugo@hsal.es"
+        },
+        {
+          "label": "drm/amd/display: Keep eDP native timing after resume with video=",
+          "url": "https://lore.kernel.org/all/20261024163347.2413649-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/client: Don't print a NULL firmware config mode",
+          "url": "https://lore.kernel.org/r/20261023112125.2855499-1-hugo@hsal.es"
+        },
+        {
+          "label": "drm/amd/display: Take every stream out of self-refresh before a modeset",
+          "url": "https://lore.kernel.org/r/20261029165420.2255749-1-hugo@hsal.es"
+        }
+      ],
+      "tags": [
+        "linux",
+        "c"
+      ]
+    },
+    {
       "title": "GCC 16 wrong-code fix",
       "role": "Contributor",
       "roleJp": "コントリビューター",
