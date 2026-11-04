@@ -456,3 +456,4 @@
 - [x] Leave the drawing stamps out of print (Hugo asked for it on 2026-10-27) (#536)
 - [x] Print the skills as one list without the filter, dimmed chips and the group count (Hugo asked for it on 2026-10-27) (#537)
 - [x] In print, start Open Source under the skills cloud when the page has room, its stats with it, and move the first card whole to the next page when it does not fit (Hugo asked for it on 2026-10-27) (#538)
+- [x] A Linux kernel highlight card listing the merged and reviewed patches, synced from the personal list (Hugo asked for it on 2026-11-04)
