@@ -17,6 +17,7 @@
     "generate:tokyo-map": "node scripts/generate-tokyo-map.mjs",
     "generate:catalog-thumb": "node scripts/render-catalog-thumb.mjs",
     "og:image": "node scripts/capture-og-image.mjs",
+    "sync:linux-highlight": "node scripts/sync-linux-highlight.mjs",
     "test:e2e": "playwright test",
     "test:e2e:loaded": "playwright test --grep-invert @perf",
     "test:audit": "playwright test --config playwright.audit.config.ts",
