@@ -22,13 +22,46 @@ const SHEETS: Sheet[] = [
 <nav class="sheet-nav monospace" aria-label="Sheets">
   <ol>
     {SHEETS.map(({ number, id, title }) => (
-      <li>
+      <li data-current={id === 'profile' ? '' : undefined}>
         <span class="no" aria-hidden="true">{String(number).padStart(2, '0')}</span>
         <a href={`#${id}`} aria-current={id === 'profile' ? 'location' : undefined}>{title}</a>
       </li>
     ))}
   </ol>
 </nav>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('.sheet-nav');
+  if (nav) {
+    const links = new Map(
+      [...nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')].map((link) => [link.hash.slice(1), link]),
+    );
+
+    const markCurrent = (id: string) => {
+      for (const [sheet, link] of links) {
+        const current = sheet === id;
+        if (current) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+        link.parentElement?.toggleAttribute('data-current', current);
+      }
+    };
+
+    /* The sheet being read is the one across a line a quarter of the way down the window:
+       high enough that the cover still holds it at the top of the page, low enough that a
+       link's jump, which puts its sheet's top at the window's top, lands on it. In the desk
+       between two sheets the line crosses nothing, and the last sheet stays marked. */
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) if (entry.isIntersecting) markCurrent(entry.target.id);
+      },
+      { rootMargin: '-25% 0px -75% 0px' },
+    );
+    for (const id of links.keys()) {
+      const sheet = document.getElementById(id);
+      if (sheet) observer.observe(sheet);
+    }
+  }
+</script>
 
 <style lang="scss">
 /* A slip of the same paper as the title block, framed with the hairline the sheets on the
@@ -63,6 +96,11 @@ li {
 
 .no {
   color: var(--ink-faint);
+}
+
+/* On the li and not through a :has() on it, which would restyle the page on every insertion. */
+[data-current] .no {
+  color: var(--accent-text);
 }
 
 /* The same link as the contact row in the title block, 1.5rem tall for the touch target. */
