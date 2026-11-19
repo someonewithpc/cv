@@ -599,7 +599,7 @@ test('the desk margin carries one numbered folio per sheet, named after that she
   }
 });
 
-test('the cover sheet indexes every sheet in folio order, each one below it linked', async ({ page }) => {
+test('the cover sheet indexes every sheet in folio order, each one linked', async ({ page }) => {
   await page.goto('/');
 
   const entries = page.locator('#profile .sheet-nav li');
@@ -607,13 +607,11 @@ test('the cover sheet indexes every sheet in folio order, each one below it link
   for (const [index, { number, id, heading }] of SHEETS.entries()) {
     const entry = entries.nth(index);
     await expect(entry.locator('.no')).toHaveText(number);
-    if (id === 'profile') {
-      await expect(entry.locator('a'), 'the cover is the sheet the index is on').toHaveCount(0);
-    } else {
-      await expect(entry.locator('a')).toHaveAttribute('href', `#${id}`);
-      // textContent, not innerText: the heading is set in capitals by CSS and the index is not.
-      await expect(entry.locator('a')).toHaveText((await page.locator(heading).textContent())!.trim());
-    }
+    await expect(entry.locator('a')).toHaveAttribute('href', `#${id}`);
+    // textContent, not innerText: the heading is set in capitals by CSS and the index is not.
+    // The cover's heading is two ruby bases, one per word.
+    const words = await page.locator(heading).allTextContents();
+    await expect(entry.locator('a')).toHaveText(words.map((word) => word.trim()).join(' '));
   }
 });
 

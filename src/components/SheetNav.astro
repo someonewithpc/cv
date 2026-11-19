@@ -1,16 +1,17 @@
 ---
 /**
  * The sheet index on the cover sheet, as a drawing set carries one: every sheet in the set by
- * number and title in one row, each sheet below the cover a link to it. It stands with the
+ * number and title in one row, each a link to its sheet. It stands with the
  * title block at every width, so a phone, which has no folio in the margin, still says what
  * the set holds and where the Career went once the demos moved above it.
  */
-type Sheet = { number: number; title: string; id?: string };
+type Sheet = { number: number; title: string; id: string };
 
 /* One entry per Folio in index.astro, in page order; design-mix.spec.ts holds the two to the
-   same order. The cover is the sheet the index is on, so it is named and not linked. */
+   same order. The cover links to its own header, the way back to the top once the index
+   is read further down. */
 const SHEETS: Sheet[] = [
-  { number: 1, title: 'Hugo Sales' },
+  { number: 1, id: 'profile', title: 'Hugo Sales' },
   { number: 2, id: 'demos', title: 'Demos' },
   { number: 3, id: 'career', title: 'Career' },
   { number: 4, id: 'bill-of-materials', title: 'Skills' },
@@ -23,7 +24,7 @@ const SHEETS: Sheet[] = [
     {SHEETS.map(({ number, id, title }) => (
       <li>
         <span class="no" aria-hidden="true">{String(number).padStart(2, '0')}</span>
-        {id ? <a href={`#${id}`}>{title}</a> : <span class="cover" aria-current="location">{title}</span>}
+        <a href={`#${id}`} aria-current={id === 'profile' ? 'location' : undefined}>{title}</a>
       </li>
     ))}
   </ol>
@@ -64,14 +65,6 @@ li {
   color: var(--ink-faint);
 }
 
-/* The cover's own entry stands as tall as the linked ones. */
-.cover {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.5rem;
-  color: var(--ink);
-}
-
 /* The same link as the contact row in the title block, 1.5rem tall for the touch target. */
 a {
   display: inline-flex;
@@ -87,6 +80,11 @@ a {
     color: var(--accent-text);
     text-decoration-style: solid;
     text-decoration-color: currentColor;
+  }
+
+  /* The sheet being read is named, not pointed at: no dotted rule under it. */
+  &[aria-current] {
+    text-decoration-line: none;
   }
 
   &:focus-visible {
