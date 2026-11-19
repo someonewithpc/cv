@@ -185,6 +185,12 @@ if (
       for (const mod of document.querySelectorAll('.ak-mod')) mod.textContent = modifier;
     </script>
     <script>
+      import { followSheetLinks } from '@/client/sheetJump';
+
+      const legend = document.querySelector('.accesskey-legend');
+      if (legend) followSheetLinks(legend);
+    </script>
+    <script>
       import { startAnalytics } from '@/client/analytics';
       startAnalytics();
     </script>

@@ -44,6 +44,8 @@ const SHEETS: Sheet[] = [
 
   {/* In the rail and not beside it: a child of #main is a band of the page to its rules and tests. */}
   <script>
+    import { followSheetLinks } from '@/client/sheetJump';
+
     const nav = document.querySelector<HTMLElement>('.sheet-nav');
     const row = nav?.querySelector<HTMLOListElement>('ol');
     if (nav && row) {
@@ -101,6 +103,8 @@ const SHEETS: Sheet[] = [
         const sheet = document.getElementById(id);
         if (sheet) observer.observe(sheet);
       }
+
+      followSheetLinks(nav);
 
       /* The pinned row stops short of the theme picker. Its width comes from its labels' type,
          whose advances round differently at each size, so it is measured: on load and when the

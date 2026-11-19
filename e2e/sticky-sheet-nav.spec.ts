@@ -163,6 +163,7 @@ for (const viewport of [
     // A jump lands its sheet under the strip, and the strip scrolls to show it as current.
     await links.filter({ hasText: 'Open Source' }).evaluate((link: HTMLElement) => link.click());
     await expect(page).toHaveURL(/#open-source$/);
+    await expect(page.locator('#open-source')).toBeFocused();
     const current = nav(page).getByRole('link', { name: 'Open Source' });
     await expect(current).toHaveAttribute('aria-current', 'location');
     await expect(nav(page).locator('[aria-current]')).toHaveCount(1);
@@ -172,7 +173,6 @@ for (const viewport of [
         return !!link && link.x >= 0 && link.x + link.width <= picker.left + 1;
       }, { message: 'the current sheet scrolled into the strip' })
       .toBe(true);
-    // Polled, as keyboard-nav.spec.ts does: the stacks above can still settle after the jump.
     await expect
       .poll(async () => (await box(page, '#open-source')).top, { message: 'the sheet starts just below the strip' })
       .toBeGreaterThanOrEqual(strip.bottom - 1);
