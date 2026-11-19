@@ -85,13 +85,30 @@
       ]
     },
     {
-      "title": "GCC 16 wrong-code fix",
+      "title": "GCC",
       "role": "Contributor",
       "roleJp": "コントリビューター",
-      "description": "FreeCAD on NixOS crashed on a boolean subtract of a cube and an inscribed cylinder. The crash led through OpenCascade 7.9.3's point classifier to a wrong-code bug in GCC 16, where interprocedural constant propagation redirected a recursive call to a clone specialised for a different dynamic type, so the program ran the wrong virtual method. Bisected GCC to two January 2026 changes, reduced the miscompile to a C++ testcase of a few dozen lines, wrote the fix and a regression test, and bootstrapped and regtested GCC. The IPA maintainer reviewed it and pushed it to master the same day, then backported it to releases/gcc-16 for GCC 16.3. Around it, a nixpkgs workaround builds OpenCascade with `-fno-ipa-cp-clone` and fails the build if the miscompile returns, an OpenCascade issue asks for a 7.9 backport of its fix, and a FreeCAD PR backports OpenCascade 8 support to the 1.1 branch",
+      "description": "FreeCAD on NixOS crashed on a boolean subtract of a cube and an inscribed cylinder. The crash led through OpenCascade 7.9.3's point classifier to a wrong-code bug in GCC 16, where interprocedural constant propagation redirected a recursive call to a clone specialised for a different dynamic type, so the program ran the wrong virtual method. Bisected GCC to two January 2026 changes, reduced the miscompile to a C++ testcase of a few dozen lines, wrote the fix and a regression test, and bootstrapped and regtested GCC. The IPA maintainer reviewed it and pushed it to master the same day, then backported it to releases/gcc-16 for GCC 16.3. Around it, a nixpkgs workaround builds OpenCascade with `-fno-ipa-cp-clone` and fails the build if the miscompile returns, an OpenCascade issue asks for a 7.9 backport of its fix, and a FreeCAD PR backports OpenCascade 8 support to the 1.1 branch. 3 patches to the C and C++ front ends followed on gcc-patches and are under review",
       "repository": "gcc.gnu.org",
+      "commits": "1 merged",
       "period": "2026",
       "links": [
+        {
+          "label": "ipa-cp: Check polymorphic contexts before redirecting to a clone [PR127917]",
+          "url": "https://inbox.sourceware.org/gcc-patches/20261016105048.1126852-1-hugo@hsal.es/T/"
+        },
+        {
+          "label": "c++: Check complain before -Wint-to-pointer-cast [PR127708]",
+          "url": "https://inbox.sourceware.org/gcc-patches/20261118055714.780618-1-hugo@hsal.es/"
+        },
+        {
+          "label": "c++: Return a string from pragma_lex after a string error [PR123400]",
+          "url": "https://inbox.sourceware.org/gcc-patches/20261118171143.2104333-1-hugo@hsal.es/"
+        },
+        {
+          "label": "c-family: Don't copy the deprecated or unavailable attributes with copy [PR128072]",
+          "url": "https://inbox.sourceware.org/gcc-patches/20261118-pr128072-copy-deprecated-v1-0-cb0ef968c52b@hsal.es/"
+        },
         {
           "label": "Commit",
           "url": "https://gcc.gnu.org/cgit/gcc/commit/?id=ebd81e6e396d3d50e4ac89404e45f5d2029a186d"
@@ -99,10 +116,6 @@
         {
           "label": "Bug 127917",
           "url": "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127917"
-        },
-        {
-          "label": "Review",
-          "url": "https://inbox.sourceware.org/gcc-patches/20261016105048.1126852-1-hugo@hsal.es/T/"
         },
         {
           "label": "nixpkgs",
