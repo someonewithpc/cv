@@ -89,7 +89,8 @@ const kernelHighlight = {
   repository: 'torvalds/linux',
   commits: `${kernelMerged} merged`,
   period: '2026',
-  links: patchLinks(kernel),
+  links: [],
+  patches: patchLinks(kernel),
   tags: ['linux', 'c'],
 };
 
@@ -118,8 +119,8 @@ const gccHighlight = {
   repository: 'gcc.gnu.org',
   commits: `${count(gcc, (item) => item.merged)} merged`,
   period: '2026',
+  patches: patchLinks(gcc),
   links: [
-    ...patchLinks(gcc),
     { label: 'Commit', url: 'https://gcc.gnu.org/cgit/gcc/commit/?id=ebd81e6e396d3d50e4ac89404e45f5d2029a186d' },
     { label: 'Bug 127917', url: 'https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127917' },
     { label: 'nixpkgs', url: 'https://github.com/NixOS/nixpkgs/pull/574647' },

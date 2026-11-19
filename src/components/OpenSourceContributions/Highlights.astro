@@ -20,6 +20,7 @@ type Highlight = {
   commits?: string;
   period?: string;
   links: Link[];
+  patches?: Link[];
   tags: string[];
 };
 
@@ -83,8 +84,28 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 
     <p>{entry.description}</p>
 
-    {entry.links?.length > 0 && (
+    {(entry.links.length > 0 || !!entry.patches?.length) && (
       <nav aria-label={`${entry.title} links`}>
+        {!!entry.patches?.length && (
+          <details>
+            <summary>{entry.patches.length} patches</summary>
+            <ul>
+              {entry.patches.map(({ label, url }) => (
+                <li>
+                  <a
+                    href={url}
+                    data-print={printUrl(url)}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    aria-label={`${label} (${entry.title}), opens in a new tab`}
+                  >
+                    {label}<Icon name="lucide:external-link" class="external-link" aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
         {entry.links.map(({ label, url }) => (
           <a
             href={url}
@@ -231,6 +252,34 @@ article {
       .external-link {
         width: 0.75em;
         height: 0.75em;
+      }
+    }
+
+    // The patch lists grow with every patch sent, so they start folded and the description's
+    // counts say what is in them.
+    details {
+      flex-basis: 100%;
+    }
+
+    summary {
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: fit-content;
+      font-family: monospace, system-ui;
+      color: var(--accent-text);
+      cursor: pointer;
+    }
+
+    ul {
+      display: grid;
+      list-style: none;
+      padding-inline-start: 1.25rem;
+      border-inline-start: 1px solid var(--line);
+
+      a {
+        min-height: 2rem;
       }
     }
   }

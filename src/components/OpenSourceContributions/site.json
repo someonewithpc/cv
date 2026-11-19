@@ -9,7 +9,8 @@
       "repository": "torvalds/linux",
       "commits": "3 merged",
       "period": "2026",
-      "links": [
+      "links": [],
+      "patches": [
         {
           "label": "ACPI: AC: Sleep quirk for the ASUS ROG Flow X13 GV301Q",
           "url": "https://lore.kernel.org/all/20261031211938.581230-1-hugo@hsal.es/"
@@ -92,7 +93,7 @@
       "repository": "gcc.gnu.org",
       "commits": "1 merged",
       "period": "2026",
-      "links": [
+      "patches": [
         {
           "label": "ipa-cp: Check polymorphic contexts before redirecting to a clone [PR127917]",
           "url": "https://inbox.sourceware.org/gcc-patches/20261016105048.1126852-1-hugo@hsal.es/T/"
@@ -108,7 +109,9 @@
         {
           "label": "c-family: Don't copy the deprecated or unavailable attributes with copy [PR128072]",
           "url": "https://inbox.sourceware.org/gcc-patches/20261118-pr128072-copy-deprecated-v1-0-cb0ef968c52b@hsal.es/"
-        },
+        }
+      ],
+      "links": [
         {
           "label": "Commit",
           "url": "https://gcc.gnu.org/cgit/gcc/commit/?id=ebd81e6e396d3d50e4ac89404e45f5d2029a186d"
