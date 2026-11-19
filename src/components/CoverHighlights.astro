@@ -1,0 +1,105 @@
+---
+/**
+ * The cover's highlights, under the title block: the three projects a reader should hear about
+ * before the demos, each a link to its card or entries in the Open Source sheet. Drawn as the
+ * hairline cells of a title block (TitleCard.astro) on the title block's paper.
+ */
+type Highlight = { role: string; detail: string; href: string };
+
+const HIGHLIGHTS: Highlight[] = [
+  { role: 'Linux contributor', detail: 'amdgpu, DRM, ACPI and intel_pstate patches', href: '#highlight-linux-kernel' },
+  { role: 'GCC contributor', detail: 'A GCC 16 wrong-code fix, backported for 16.3', href: '#highlight-gcc' },
+  { role: 'GNU social maintainer', detail: 'Led the v3 rewrite from 2021 to 2022', href: '#highlight-gnu-social-v3' },
+];
+---
+
+<aside class="cover-highlights" aria-labelledby="cover-highlights-label">
+  <p id="cover-highlights-label" class="label monospace">Highlights</p>
+  <ul>
+    {HIGHLIGHTS.map(({ role, detail, href }) => (
+      <li>
+        <a href={href}>
+          <span class="role typewriter">{role}</span>
+          <span class="detail">{detail}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</aside>
+
+<style lang="scss">
+/* The hairlines are the grid's gaps over the frame's colour, as in TitleCard.astro. */
+.cover-highlights {
+  width: min(100%, 42rem);
+  display: grid;
+  gap: 1px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  background: var(--line-strong);
+  box-shadow: var(--sheet-lift);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.label {
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  background: var(--surface-page);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @media (max-width: 40rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+li {
+  display: grid;
+  background: var(--surface-page);
+}
+
+a {
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+  padding: 0.375rem 0.75rem 0.5rem;
+  color: var(--ink);
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+}
+
+.role {
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-muted);
+  text-underline-offset: 0.25em;
+}
+
+a:is(:hover, :focus-visible) .role {
+  color: var(--accent-text);
+  text-decoration-style: solid;
+  text-decoration-color: currentColor;
+}
+
+.detail {
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+</style>

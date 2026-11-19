@@ -230,14 +230,24 @@ test('every slip holds its height while the window is resized', async ({ page })
   await page.setViewportSize({ width: 400, height: 900 });
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
-  // The top stack is on screen at load, and its deck goes into the slip once its demo has
-  // loaded. The slip grows an entry then, which is not the resize under test, so it lands first.
+  // The top stack's deck goes into the slip once its demo has loaded, which takes the stack on
+  // screen; at 400px the cover reaches below the window. The slip grows an entry then, which is
+  // not the resize under test, so it lands first.
+  await page.locator('#demos .callout[data-card]').first().scrollIntoViewIfNeeded();
   await expect(page.locator('#demos .callout[data-card] .callout-card > [data-demo-transport]').first())
     .toHaveAttribute('data-state', /./, { timeout: 20_000 });
 
+  // A stack the sweep brings on screen loads its demo and its slip grows an entry part way
+  // through, so only the slips whose deck was in the same state before and after are held.
+  const loaded = () =>
+    page.locator('#demos .callout[data-card] .callout-card').evaluateAll((cards) =>
+      cards.map((card) => card.querySelector(':scope > [data-demo-transport]')?.hasAttribute('data-state') ?? false),
+    );
+  const before = await loaded();
+
   const widths = Array.from({ length: 51 }, (_, i) => 400 + i * 10);
   const up = new Map<number, number[]>();
-  const moved: string[] = [];
+  const moved: { index: number; text: string }[] = [];
   for (const width of [...widths, ...widths.slice(0, -1).reverse()]) {
     await page.setViewportSize({ width, height: 900 });
     const [first, second] = await page.evaluate(
@@ -252,15 +262,16 @@ test('every slip holds its height while the window is resized', async ({ page })
         }),
     );
     first.forEach((height, index) => {
-      if (Math.abs(height - second[index]) > 0.1) moved.push(`${width}px slip ${index}: ${height} then ${second[index]}`);
+      if (Math.abs(height - second[index]) > 0.1) moved.push({ index, text: `${width}px slip ${index}: ${height} then ${second[index]}` });
     });
-    const before = up.get(width);
-    if (!before) up.set(width, second);
+    const onTheWayUp = up.get(width);
+    if (!onTheWayUp) up.set(width, second);
     else second.forEach((height, index) => {
-      if (Math.abs(height - before[index]) > 0.1) moved.push(`${width}px slip ${index}: ${before[index]} up, ${height} down`);
+      if (Math.abs(height - onTheWayUp[index]) > 0.1) moved.push({ index, text: `${width}px slip ${index}: ${onTheWayUp[index]} up, ${height} down` });
     });
   }
-  expect(moved).toEqual([]);
+  const after = await loaded();
+  expect(moved.filter(({ index }) => before[index] === after[index]).map(({ text }) => text)).toEqual([]);
 });
 
 // Without a script the stack is a scroll row with no fan, and the slip climbs under the front
