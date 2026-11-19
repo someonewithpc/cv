@@ -23,3 +23,7 @@ test('the kernel and GCC cards fold their patch lists under a count', async ({ p
 test("the GCC card's other links stay in view with its patches folded", async ({ page }) => {
   await expect(page.locator('#highlight-gcc nav > a', { hasText: 'Commit' })).toBeVisible();
 });
+
+test('the Blender GSoC card is gone', async ({ page }) => {
+  await expect(page.locator('#highlight-blender-gsoc-2019')).toHaveCount(0);
+});
