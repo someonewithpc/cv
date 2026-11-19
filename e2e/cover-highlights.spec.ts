@@ -54,3 +54,13 @@ for (const width of [360, 1440]) {
     else expect(new Set(cells).size).toBe(1);
   });
 }
+
+test('the card prints with its cells outlined and no shadow', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await page.emulateMedia({ media: 'print' });
+  const highlights = page.locator(card);
+  await expect(highlights).toBeVisible();
+  await expect(highlights).toHaveCSS('box-shadow', 'none');
+  await expect(highlights.locator('li').first()).toHaveCSS('outline-style', 'solid');
+});

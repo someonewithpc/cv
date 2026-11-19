@@ -1,10 +1,10 @@
 // Printed output. Linked from Layout.astro with media="print", so the screen never parses it.
 // No desk, no theme picker, no demos: the demos run in the browser and mean nothing on paper,
 // so the whole band goes, and the cover's sheet index with it, since it would name a sheet
-// that is not there. The printout is the title block, the career, the bill of materials and
-// the contributions, in the light theme whatever the picker had set, with the contributions
-// as a compact list and links as plain text, each profile, card and contribution link followed
-// by its short address.
+// that is not there. The printout is the title block and its highlights, the career, the bill
+// of materials and the contributions, in the light theme whatever the picker had set, with the
+// contributions as a compact list and links as plain text, each profile, card and contribution
+// link followed by its short address.
 @use "sass:map";
 @use "ts:src/themes.ts" as themes;
 
@@ -100,6 +100,24 @@
     }
 
     h1 span {
+      text-decoration: none !important;
+    }
+  }
+
+  // The highlights under the title block print as they stand, an index of the cards further on.
+  // Their hairlines are grid gaps over the frame's colour, which goes with the backgrounds, so
+  // each cell draws its own as an outline, as the career cells do below. The roles link to
+  // anchors, which mean nothing on paper, so they drop the link's underline.
+  .cover-highlights {
+    background: none !important;
+    box-shadow: none !important;
+
+    .label,
+    li {
+      outline: 1px solid var(--line-strong) !important;
+    }
+
+    .role {
       text-decoration: none !important;
     }
   }
