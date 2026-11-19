@@ -2,6 +2,89 @@
   "snapshot": "2026-10-05",
   "highlights": [
     {
+      "title": "Linux kernel",
+      "role": "Contributor",
+      "roleJp": "コントリビューター",
+      "description": "Patches to the amdgpu display driver, the DRM client helpers, ACPI and intel_pstate. Most come from bugs met on an ASUS ROG Flow X13: a 3840x2400 eDP panel that came back scaled into a corner after resume, a firmware backlight table that could overrun its 99 points, panel self-refresh left on across a modeset. Each went to its subsystem list with the measurement that found it and KUnit tests where the code allows. 3 patches are merged into maintainer trees on the way to mainline, 7 more carry a Reviewed-by and 7 are under review",
+      "repository": "torvalds/linux",
+      "commits": "3 merged",
+      "period": "2026",
+      "links": [
+        {
+          "label": "ACPI: AC: Sleep quirk for the ASUS ROG Flow X13 GV301Q",
+          "url": "https://lore.kernel.org/all/20261031211938.581230-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/amdgpu: Clamp the ATIF backlight curve to its 99 points",
+          "url": "https://lore.kernel.org/r/20261031153948.127016-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Keep eDP native timing after resume with video=",
+          "url": "https://lore.kernel.org/all/20261024163347.2413649-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Fix the doubled AUX backlight minimum on the custom curve",
+          "url": "https://lore.kernel.org/amd-gfx/20261103-amdgpu-aux-curve-min-v1-0-62119efdcc6d@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Leave self-refresh before an ABM level update",
+          "url": "https://lore.kernel.org/r/20261113-amdgpu-psr-abm-update-next-v2-0-27ce790856ea@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Take every stream out of self-refresh before a modeset",
+          "url": "https://lore.kernel.org/r/20261029165420.2255749-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Commit panel_power_savings writes from the kernel",
+          "url": "https://lore.kernel.org/r/20261116-abm-sysfs-commit-v3-0-7a3d84a5328e@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Hold the VRR vblank reference only on active CRTCs",
+          "url": "https://lore.kernel.org/r/20261031143351.3222033-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/client: Don't print a NULL firmware config mode",
+          "url": "https://lore.kernel.org/r/20261023112125.2855499-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Stop rounding backlight levels to whole percents",
+          "url": "https://lore.kernel.org/lkml/20261103-backlight-curve-rfc-v1-0-6e4813a8f2eb@hsal.es/"
+        },
+        {
+          "label": "cpufreq: intel_pstate: Refresh cpuinfo.max_freq when a CPU goes online",
+          "url": "https://lore.kernel.org/all/20261114-intel-pstate-online-max-freq-v1-1-1bbdae2b4986@hsal.es/"
+        },
+        {
+          "label": "drm: panel-backlight-quirks: Add ASUS ROG Flow X13 3840x2400 panel",
+          "url": "https://lore.kernel.org/r/20261031134551.2735792-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Warn about an invalid ATIF backlight signal range",
+          "url": "https://lore.kernel.org/lkml/20261104-backlight-curve-validate-v1-0-10c688880e85@hsal.es/"
+        },
+        {
+          "label": "drm/amd/display: Copy probed modes for atomic_check",
+          "url": "https://lore.kernel.org/r/20261114-amdgpu-modes-four-v1-0-f11e2a6cd407@hsal.es/"
+        },
+        {
+          "label": "ACPI: processor: thermal: Recompute the frequency cap when boost changes",
+          "url": "https://lore.kernel.org/all/20261101185807.112449-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/client: Clear stale cmdline modes before the 1024x768 clone pass",
+          "url": "https://lore.kernel.org/all/20261031215700.1077873-1-hugo@hsal.es/"
+        },
+        {
+          "label": "drm/client: Keep larger modes in connector->modes on fbdev hotplug",
+          "url": "https://lore.kernel.org/all/20261024165355.2782145-1-hugo@hsal.es/"
+        }
+      ],
+      "tags": [
+        "linux",
+        "c"
+      ]
+    },
+    {
       "title": "GCC 16 wrong-code fix",
       "role": "Contributor",
       "roleJp": "コントリビューター",
