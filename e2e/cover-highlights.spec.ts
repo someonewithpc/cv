@@ -6,7 +6,7 @@ test('the highlights card sits between the title block and the sheet index', asy
   await page.goto('/');
   const order = await page.locator('#profile').evaluate((header) =>
     [...header.children].map((el) => el.className.split(' ')[0]));
-  expect(order).toEqual(['title-block', 'cover-highlights', 'sheet-nav']);
+  expect(order).toEqual(['title-block', 'cover-highlights', 'sheet-nav-room']);
 });
 
 test('every highlight links to an anchor that exists on the page', async ({ page }) => {

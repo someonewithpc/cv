@@ -1,9 +1,18 @@
 ---
 /**
  * The sheet index on the cover sheet, as a drawing set carries one: every sheet in the set by
- * number and title in one row, each a link to its sheet. It stands with the
- * title block at every width, so a phone, which has no folio in the margin, still says what
- * the set holds and where the Career went once the demos moved above it.
+ * number and title in one row, each a link to its sheet. It stands under the title block at
+ * every width, so a phone, which has no folio in the margin, still says what the set holds
+ * and where the Career went once the demos moved above it.
+ *
+ * Once the cover scrolls away the same nav stays in reach, so there is one landmark and one
+ * set of links whatever the scroll. It is position: sticky, and a sticky box cannot leave its
+ * parent, so the nav is not inside the cover's header: it is a sibling of the sheets in
+ * #main, in a rail over every sheet after the cover, and it is pulled up into the room the
+ * header leaves for it under the title block (Name.astro). Without folios it pins to the top
+ * of the window, up to the theme picker's corner. With folios in the margin it lies at the
+ * foot of the folio's rail, on the desk beside the paper. Which of the two looks it takes is
+ * a scroll-state container query; script only stands in for it where the browser has none.
  */
 type Sheet = { number: number; title: string; id: string };
 
@@ -19,77 +28,191 @@ const SHEETS: Sheet[] = [
 ];
 ---
 
-<nav class="sheet-nav monospace" aria-label="Sheets">
-  <ol>
-    {SHEETS.map(({ number, id, title }) => (
-      <li data-current={id === 'profile' ? '' : undefined}>
-        <span class="no" aria-hidden="true">{String(number).padStart(2, '0')}</span>
-        <a href={`#${id}`} aria-current={id === 'profile' ? 'location' : undefined}>{title}</a>
-      </li>
-    ))}
-  </ol>
-</nav>
+<div class="sheet-nav-rail">
+  <div class="sheet-nav-pin">
+    <nav class="sheet-nav monospace" aria-label="Sheets">
+      <ol>
+        {SHEETS.map(({ number, id, title }) => (
+          <li data-current={id === 'profile' ? '' : undefined}>
+            <span class="no" aria-hidden="true">{String(number).padStart(2, '0')}</span>
+            <a href={`#${id}`} aria-current={id === 'profile' ? 'location' : undefined}>{title}</a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </div>
 
-<script>
-  const nav = document.querySelector<HTMLElement>('.sheet-nav');
-  if (nav) {
-    const links = new Map(
-      [...nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')].map((link) => [link.hash.slice(1), link]),
-    );
+  {/* In the rail and not beside it: a child of #main is a band of the page to its rules and tests. */}
+  <script>
+    const nav = document.querySelector<HTMLElement>('.sheet-nav');
+    const row = nav?.querySelector<HTMLOListElement>('ol');
+    if (nav && row) {
+      const links = new Map(
+        [...nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')].map((link) => [link.hash.slice(1), link]),
+      );
+      const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-    const markCurrent = (id: string) => {
-      for (const [sheet, link] of links) {
-        const current = sheet === id;
-        if (current) link.setAttribute('aria-current', 'location');
-        else link.removeAttribute('aria-current');
-        link.parentElement?.toggleAttribute('data-current', current);
+      /* Where the row is wider than the strip, the strip scrolls so the sheet being read sits in
+         its middle. Only the row scrolls; scrollIntoView would move the page too. */
+      const showCurrent = () => {
+        const current = row.querySelector<HTMLElement>('[data-current]');
+        if (!current || row.scrollWidth <= row.clientWidth) return;
+        row.scrollTo({
+          left: current.offsetLeft - (row.clientWidth - current.offsetWidth) / 2,
+          behavior: reducedMotion.matches ? 'auto' : 'smooth',
+        });
+      };
+
+      /* Which ends of the row are scrolled out of sight, for the fade on that edge. */
+      const markEnds = () => {
+        const max = row.scrollWidth - row.clientWidth;
+        row.toggleAttribute('data-more-start', row.scrollLeft > 1);
+        row.toggleAttribute('data-more-end', row.scrollLeft < max - 1);
+      };
+      row.addEventListener('scroll', markEnds, { passive: true });
+      /* Also how the row hears that it was stuck or let go, since the strip and the cover's
+         slip are not the same width. */
+      new ResizeObserver(() => {
+        markEnds();
+        showCurrent();
+      }).observe(row);
+
+      const markCurrent = (id: string) => {
+        for (const [sheet, link] of links) {
+          const current = sheet === id;
+          if (current) link.setAttribute('aria-current', 'location');
+          else link.removeAttribute('aria-current');
+          link.parentElement?.toggleAttribute('data-current', current);
+        }
+        showCurrent();
+      };
+
+      /* The sheet being read is the one across a line a quarter of the way down the window:
+         high enough that the cover still holds it at the top of the page, low enough that a
+         link's jump, which puts its sheet's top at the window's top, lands on it. In the desk
+         between two sheets the line crosses nothing, and the last sheet stays marked. */
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) if (entry.isIntersecting) markCurrent(entry.target.id);
+        },
+        { rootMargin: '-25% 0px -75% 0px' },
+      );
+      for (const id of links.keys()) {
+        const sheet = document.getElementById(id);
+        if (sheet) observer.observe(sheet);
       }
-    };
 
-    /* The sheet being read is the one across a line a quarter of the way down the window:
-       high enough that the cover still holds it at the top of the page, low enough that a
-       link's jump, which puts its sheet's top at the window's top, lands on it. In the desk
-       between two sheets the line crosses nothing, and the last sheet stays marked. */
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) if (entry.isIntersecting) markCurrent(entry.target.id);
-      },
-      { rootMargin: '-25% 0px -75% 0px' },
-    );
-    for (const id of links.keys()) {
-      const sheet = document.getElementById(id);
-      if (sheet) observer.observe(sheet);
+      /* The pinned row stops short of the theme picker. Its width comes from its labels' type,
+         whose advances round differently at each size, so it is measured: on load and when the
+         picker changes size, never while scrolling. */
+      const picker = document.getElementById('theme-picker');
+      if (picker) {
+        new ResizeObserver(() => {
+          nav.style.setProperty('--sheet-nav-end', `${picker.offsetWidth}px`);
+        }).observe(picker);
+      }
+
+      /* Firefox has no scroll-state query yet. The nav sticks there all the same, and this only
+         tells the styles when it is stuck: once the room it leaves under the title block has
+         started to pass above the window, which is when a sticky box at top: 0 starts to stick. */
+      const pin = nav.parentElement;
+      const room = document.querySelector('.sheet-nav-room');
+      if (pin && room && !CSS.supports('container-type', 'scroll-state')) {
+        new IntersectionObserver(
+          ([entry]) => pin.toggleAttribute('data-stuck', entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0)),
+          { threshold: [0, 1] },
+        ).observe(room);
+      }
     }
-  }
-</script>
+  </script>
+</div>
 
 <style lang="scss">
-/* A slip of the same paper as the title block, framed with the hairline the sheets on the
-   desk take, so it reads as a strip on the cover and not as a second title block. */
+@use '@/scss/pageColumn' as column;
+
+/* The stuck look, from the scroll-state query or, without one, from the script above. */
+@mixin stuck {
+  @container sheet-nav scroll-state(stuck: top) {
+    @content;
+  }
+
+  :global(.sheet-nav-pin[data-stuck]) & {
+    @content;
+  }
+}
+
+/* The cover's room for the index (Name.astro) is this tall, so the slip is too, and it is
+   one line at every width. The links are the touch target's height, and on a phone the
+   theme picker's row of icons. */
+:global(#main) {
+  --sheet-nav-link: 1.5rem;
+  --sheet-nav-block: calc(var(--sheet-nav-link) + 0.5rem + 2px);
+
+  @media (max-width: 52rem) {
+    --sheet-nav-link: 1.875rem;
+  }
+}
+
+/* Over every sheet after the cover, so the nav can stick until the last one ends. A rail
+   like the folios', absolutely positioned in its grid rows so that it takes no grid cell
+   from the sheets, and it lets every click through to them. */
+.sheet-nav-rail {
+  position: absolute;
+  grid-row: 2 / 6;
+  grid-column: full-width;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Its top is where the room under the title block starts: the room's height, and on the desk
+   the row gap, above the first sheet after the cover. */
+.sheet-nav-pin {
+  position: sticky;
+  top: 0;
+  margin-block-start: calc(-1 * (var(--sheet-nav-block) + var(--desk-gap, 0px)));
+  container: sheet-nav / scroll-state;
+}
+
+/* A slip of the same paper as the title block, as wide as it, framed with the hairline the
+   sheets on the desk take, so it reads as a strip on the cover and not as a second title
+   block. The title block is 42rem at most, in the page column, inside the rim the header
+   takes on the desk. */
 .sheet-nav {
-  width: min(100%, 42rem);
-  padding: 0.25rem 1rem;
+  --cover-inset: 0px;
+
+  @media (width > #{column.$desk-from}) {
+    --cover-inset: #{column.$inset-desk-sheet};
+  }
+
+  box-sizing: border-box;
+  inline-size: min(42rem, min(100% - var(--page-gap) * 2, var(--content-max)) - var(--cover-inset) * 2);
+  block-size: var(--sheet-nav-block);
+  margin-inline: auto;
+  padding: 0 1rem;
   border: 1px solid var(--line);
   border-radius: 0.25rem;
   background: var(--surface-page);
   box-shadow: var(--sheet-lift);
   font-size: 0.75rem;
   letter-spacing: 0.06em;
+  pointer-events: auto;
 }
 
-/* One row, centred, that wraps on a phone; the numbers do the separating. */
+/* One row, centred; the numbers do the separating. */
 ol {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: safe center;
   gap: 0 1.5ch;
   margin: 0;
-  padding: 0;
+  padding: 0.25rem;
   list-style: none;
 }
 
 li {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 0.5ch;
 }
@@ -103,11 +226,11 @@ li {
   color: var(--accent-text);
 }
 
-/* The same link as the contact row in the title block, 1.5rem tall for the touch target. */
+/* The same link as the contact row in the title block. */
 a {
   display: inline-flex;
   align-items: center;
-  min-height: 1.5rem;
+  min-height: var(--sheet-nav-link);
   color: var(--ink);
   text-decoration: underline dotted;
   text-decoration-color: var(--accent-muted);
@@ -129,6 +252,117 @@ a {
     outline: 2px solid var(--accent);
     outline-offset: 0.125rem;
     border-radius: 0.125rem;
+  }
+}
+
+/* No folio, so no margin to lie in: the row pins to the top of the window, from its left edge
+   to the theme picker, hanging from the top like the picker does. */
+@media (width < 76rem) {
+  /* Five entries are wider than a phone leaves, so the row scrolls sideways under its fade
+     rather than wrapping into a block that would cover the page once it is stuck. The block
+     padding keeps the focus ring inside the scroller's clip. */
+  ol {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    &[data-more-end] {
+      mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+    }
+
+    &[data-more-start] {
+      mask-image: linear-gradient(to left, #000 calc(100% - 2rem), transparent);
+    }
+
+    &[data-more-start][data-more-end] {
+      mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+    }
+  }
+
+  .sheet-nav {
+    @include stuck {
+      inline-size: calc(100% - var(--sheet-nav-end, 0px));
+      block-size: auto;
+      margin-inline: 0;
+      padding: 0 0.5rem;
+      border-block-start: 0;
+      border-inline-start: 0;
+      border-radius: 0 0 0.25rem;
+
+      ol {
+        padding-block: 0.125rem;
+      }
+    }
+  }
+
+  /* A link's jump lands under the pinned row, not behind it. */
+  :global(:is(#demos, #career, #bill-of-materials, #open-source)) {
+    scroll-margin-top: 2.5rem;
+  }
+}
+
+/* Folios in the margin: the index lies at the foot of the folio's rail, centred in it as the
+   folio is, a paper slip on the desk beside the sheets and clear of all of them. */
+@media (width >= 76rem) {
+  .sheet-nav {
+    @include stuck {
+      position: fixed;
+      left: 0;
+      bottom: 1.5rem;
+      display: flex;
+      justify-content: center;
+      inline-size: var(--desk-edge);
+      block-size: auto;
+      margin: 0;
+      padding: 0 calc(var(--folio-gap) / 4);
+      border: 0;
+      background: none;
+      box-shadow: none;
+
+      ol {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        min-width: 0;
+        padding: 0.375rem 0.5rem;
+        border: 1px solid var(--line);
+        border-radius: 0.25rem;
+        background: var(--surface-page);
+        box-shadow: var(--sheet-lift);
+      }
+
+      /* Where the rail is narrow the number stands over its title, as the folio's numeral
+         stands over its label. */
+      li {
+        flex-direction: column;
+        gap: 0;
+        text-align: center;
+      }
+
+      a {
+        justify-content: center;
+      }
+
+      @media (width >= 87rem) {
+        ol {
+          gap: 0.125rem;
+        }
+
+        li {
+          flex-direction: row;
+          gap: 0.5ch;
+          text-align: start;
+        }
+
+        a {
+          justify-content: start;
+        }
+      }
+    }
   }
 }
 </style>

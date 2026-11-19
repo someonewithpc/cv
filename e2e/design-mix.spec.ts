@@ -97,7 +97,7 @@ test('the wood shows in the gutter and between the bands on a phone', async ({ p
 
   const spots = await page.evaluate(() => {
     const main = document.querySelector('main')!;
-    const bands = [...main.children].filter((el) => !el.classList.contains('folio-rail'));
+    const bands = [...main.children].filter((el) => !el.matches('.folio-rail, .sheet-nav-rail'));
     const first = bands[0].getBoundingClientRect();
     const second = bands[1].getBoundingClientRect();
     return {
@@ -487,7 +487,8 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
   const sheets = await page.evaluate(() => {
     const main = document.querySelector('main')!;
     const bands = [
-      // A folio stands in the desk margin, not laid down as a band. #open-source is not one
+      // A folio stands in the desk margin, not laid down as a band, and the sheet index's rail
+      // only carries the index. #open-source is not one
       // band of paper either: it lays down a sheet for its heading and one torn sheet of
       // ruled paper per group, which the tests below measure. The demos lay down no sheet:
       // their title is written on the cutting mat. Nor does the name: its title block is the
@@ -495,6 +496,7 @@ test('every band on the desk is a sheet of the same width, edged and lifted', as
       ...[...main.children].filter((el) =>
         !el.classList.contains('full-width')
         && !el.classList.contains('folio-rail')
+        && !el.classList.contains('sheet-nav-rail')
         && el.id !== 'open-source'
         && el.id !== 'profile'),
       ...main.querySelectorAll(':scope > .full-width > *:not(.cutting-mat)'),
@@ -602,7 +604,7 @@ test('the desk margin carries one numbered folio per sheet, named after that she
 test('the cover sheet indexes every sheet in folio order, each one linked', async ({ page }) => {
   await page.goto('/');
 
-  const entries = page.locator('#profile .sheet-nav li');
+  const entries = page.locator('.sheet-nav li');
   await expect(entries).toHaveCount(SHEETS.length);
   for (const [index, { number, id, heading }] of SHEETS.entries()) {
     const entry = entries.nth(index);
