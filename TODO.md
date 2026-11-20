@@ -458,3 +458,4 @@
 - [x] In print, start Open Source under the skills cloud when the page has room, its stats with it, and move the first card whole to the next page when it does not fit (Hugo asked for it on 2026-10-27) (#538)
 - [x] Highlight cards for the Linux kernel and GCC that list every sent patch under a fold, synced from the personal list, and no Blender GSoC card (Hugo asked for it on 2026-11-04 and 2026-11-19) (#539)
 - [x] Add a highlights card after the name card naming the Linux, GCC and GNU social work (Hugo asked for it on 2026-11-19) (#540)
+- [x] Keep the sheet index in reach after scrolling past the cover (Hugo asked for it on 2026-11-19) (#541)

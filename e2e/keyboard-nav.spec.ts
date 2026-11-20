@@ -139,7 +139,7 @@ test.describe('access keys', () => {
   });
 
   for (const [width, height] of [[1440, 900], [390, 844]]) {
-    test(`each section key puts its section's top at the top of the viewport and focuses it, at ${width}px`, async ({ page }) => {
+    test(`each section key puts its section's top at the top of the viewport, under the pinned sheet index, and focuses it, at ${width}px`, async ({ page }) => {
       // An access key on a section would focus it, and focus() centres anything taller than the
       // viewport: Alt+O left the reader mid-sheet on a torn edge. The keys are links now, so a
       // real press focuses the link and follows it; focus() then click() is that same sequence.
@@ -154,7 +154,13 @@ test.describe('access keys', () => {
         });
         const section = page.locator(`#${id}`);
         await expect(section).toBeFocused();
-        await expect.poll(async () => section.evaluate((el) => Math.abs(el.getBoundingClientRect().top))).toBeLessThan(1);
+        // Narrower than the folios, the sheet index pins to the top of the window and the
+        // sections' scroll-margin-top (SheetNav.astro) lands them under it.
+        await expect
+          .poll(async () =>
+            section.evaluate((el) => Math.abs(el.getBoundingClientRect().top - parseFloat(getComputedStyle(el).scrollMarginTop))),
+          )
+          .toBeLessThan(1);
       }
     });
   }
